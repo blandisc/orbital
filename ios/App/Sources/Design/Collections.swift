@@ -183,6 +183,8 @@ struct BecauseCard<Related: View>: View {
     /// La versión de Inicio: de fondo, el póster del título de arriba desenfocado (la tarjeta toma su color) y todo encima
     /// como en la sala oscura. Sin ella, la superficie de siempre (Para ti).
     var artBackdrop = false
+    /// «No recomendar por esta» (mantener el dedo sobre el mazo): el título de arriba ya no sirve de base. Sin ella, sin menú.
+    var stopSeeding: ((String) -> Void)? = nil
     @ViewBuilder var related: () -> Related
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -231,6 +233,13 @@ struct BecauseCard<Related: View>: View {
             BecauseDeck(seeds: seeds, index: index) { step in
                 guard !seeds.isEmpty else { return }
                 choose(seeds[(index + step + seeds.count) % seeds.count].id)
+            }
+            .contextMenu {
+                if let stopSeeding, let current {
+                    Button(role: .destructive) { stopSeeding(current.id) } label: {
+                        Label("No recomendar por esta", systemImage: "hand.thumbsdown")
+                    }
+                }
             }
             // La columna mide siempre lo del mazo (el nombre tiene su lugar de dos renglones y las flechas van abajo): antes un
             // nombre largo la estiraba y la tarjeta, con todo lo de abajo, cambiaba de alto al pasar de un título a otro.

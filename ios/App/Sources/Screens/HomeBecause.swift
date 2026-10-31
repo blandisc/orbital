@@ -31,7 +31,8 @@ struct HomeBecause: View {
         let state: BecauseRelated = because.seed.imdb != selected ? .loading : items.isEmpty ? .none : .ready
         return BecauseCard(seeds: seeds, selected: selected, state: state,
                            choose: { id in if let pick = model.seeds.first(where: { $0.imdb == id }) { Task { await model.choose(pick) } } },
-                           artBackdrop: true) {
+                           artBackdrop: true,
+                           stopSeeding: { id in if let pick = model.seeds.first(where: { $0.imdb == id }) { stop(pick) } }) {
             ForEach(items) { s in TitleLink(route: s.route, width: DS.Collections.relatedPoster) }
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -40,6 +41,16 @@ struct HomeBecause: View {
             guard let at = seeds.firstIndex(where: { $0.id == selected }), seeds.count > 1 else { return }
             let neighbors = [seeds[(at + 1) % seeds.count].id, seeds[(at - 1 + seeds.count) % seeds.count].id]
             ImagePipeline.shared.prefetchPosters(neighbors.flatMap { (model.preloaded[$0] ?? []).prefix(DS.Collections.relatedPlaceholders + 1).map(\.poster) })
+        }
+    }
+
+    /// «No recomendar por esta»: sale del mazo al momento y el aviso ofrece «Deshacer».
+    private func stop(_ pick: TraktEntry) {
+        Task {
+            await model.stopSeeding(pick)
+            env.notify("Ya no recomiendo por esta", detail: pick.title, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
+                Task { await model.resumeSeeding(pick) }
+            }
         }
     }
 

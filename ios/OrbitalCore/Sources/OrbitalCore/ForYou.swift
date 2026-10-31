@@ -29,12 +29,15 @@ public actor ForYou {
     /// espera la red, y `lists()` y `mosaic()` pedían tus listas de Trakt dos veces a la vez).
     private var inflight: [String: Task<any Sendable, any Error>] = [:]
     private var dismissed: Set<String>
+    /// «No recomendar por esta»: lo que viste y ya no quieres que sirva de base para «Por lo que viste».
+    private var unseeded: Set<String>
 
     public init(trakt: Trakt?, tmdb: Tmdb?, charts: Charts? = nil, addons: AddonRegistry? = nil, http: HTTPClient? = nil,
                 region: @escaping @Sendable () -> String, kv: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }) {
         self.trakt = trakt; self.tmdb = tmdb; self.charts = charts; self.addons = addons; self.http = http
         self.region = region; self.kv = kv; self.clock = clock
         dismissed = Set(kv.data("foryou-dismissed").flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [])
+        unseeded = Set(kv.data("foryou-unseeded").flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [])
     }
 
     public var traktLinked: Bool { trakt?.linked ?? false }
@@ -68,6 +71,18 @@ public actor ForYou {
     public func dismiss(_ imdb: String) {
         dismissed.insert(imdb)
         kv.set("foryou-dismissed", data: try? JSONEncoder().encode(Array(dismissed)))
+    }
+
+    /// «No recomendar por esta»: ese título ya no sale en el mazo de «Por lo que viste» ni se usa para recomendar.
+    public func stopSeeding(_ imdb: String) {
+        unseeded.insert(imdb)
+        kv.set("foryou-unseeded", data: try? JSONEncoder().encode(Array(unseeded)))
+    }
+
+    /// Deshace `stopSeeding` (el aviso de «Listo» trae «Deshacer»).
+    public func resumeSeeding(_ imdb: String) {
+        unseeded.remove(imdb)
+        kv.set("foryou-unseeded", data: try? JSONEncoder().encode(Array(unseeded)))
     }
 
     // MARK: listas disponibles
@@ -162,7 +177,8 @@ public actor ForYou {
     /// Lo último que viste (títulos distintos): de dónde sale «Porque viste» y lo que se puede elegir.
     public func recentSeeds() async -> [TraktEntry] {
         guard let trakt, trakt.linked else { return [] }
-        return (try? await remember("trakt:recent:\(Self.becauseChoices)", ttl: Self.mineTTL) { try await trakt.recentlyWatched(limit: Self.becauseChoices) }) ?? []
+        let recent = (try? await remember("trakt:recent:\(Self.becauseChoices)", ttl: Self.mineTTL) { try await trakt.recentlyWatched(limit: Self.becauseChoices) }) ?? []
+        return recent.filter { !unseeded.contains($0.imdb) }
     }
 
     /// «Porque viste» con cualquier título (también uno que no esté en lo último que viste: desde su ficha).

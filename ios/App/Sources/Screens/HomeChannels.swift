@@ -41,6 +41,14 @@ struct HomeChannels: View {
             }
         }
         .task { await model.load() }
+        // Las imágenes de lo que va al aire en todos los canales, de antemano: los de la derecha ya no llegan vacíos al
+        // deslizar (la tira es perezosa y cada tarjeta pedía su imagen hasta que aparecía).
+        .task(id: model.channels.map(\.id)) {
+            let now = Date()
+            ImagePipeline.shared.prefetchPosters(model.channels.compactMap { channel in
+                channel.onAir(at: now).map { $0.episode.still.isEmpty ? channel.background : $0.episode.still }
+            })
+        }
         .sheet(isPresented: $choosing, onDismiss: { Task { await model.load() } }) { ChannelsSheet(model: model) }
     }
 
@@ -65,6 +73,9 @@ struct HomeChannels: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 ZStack(alignment: .bottomLeading) {
                     PosterView(url: still, title: name(channel.pick), aspect: DS.Poster.stillAspect, fallback: channel.background)
+                        // La imagen sale de golpe en cuanto llega: sin esto heredaba la animación de 14 s del acercamiento y
+                        // aparecía despacio, fundiéndose desde adentro (31 oct 2026).
+                        .transaction { $0.animation = nil }
                         // El «cachito»: la imagen del capítulo se acerca despacio, como si estuviera pasando.
                         .phaseAnimator(reduceMotion ? [false] : [false, true]) { view, near in
                             view.scaleEffect(near ? DS.HomeChannels.driftScale : 1)
@@ -131,10 +142,9 @@ struct ChannelsSheet: View {
                     if query.trimmingCharacters(in: .whitespaces).count >= ChannelsModel.minQuery {
                         results
                     } else {
-                        section(Text("Tus canales"), model.picks)
-                        if !model.suggestions.isEmpty { section(Text("Te sugerimos"), model.suggestions) }
-                        Text("Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va.")
-                            .recipe(.footnote, color: DS.textMuted)
+                        // La nota va pegada a los pósters de arriba (antes tenía el aire de una sección y quedaba suelta).
+                        section(Text("Tus canales"), model.picks, note: model.suggestions.isEmpty)
+                        if !model.suggestions.isEmpty { section(Text("Te sugerimos"), model.suggestions, note: true) }
                     }
                 }
                 .padding(DS.Space.gutter)
@@ -153,7 +163,7 @@ struct ChannelsSheet: View {
         .presentationDetents([.large])
     }
 
-    private func section(_ title: Text, _ picks: [ChannelsModel.Pick]) -> some View {
+    private func section(_ title: Text, _ picks: [ChannelsModel.Pick], note: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: title, level: .section)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: DS.HomeChannels.gridColumns), spacing: DS.Space.s3) {
@@ -171,6 +181,10 @@ struct ChannelsSheet: View {
                     .accessibilityLabel(Text(verbatim: name(pick)))
                     .accessibilityValue(model.isChannel(pick.id) ? Text("Es canal") : Text("No es canal"))
                 }
+            }
+            if note {
+                Text("Cada canal pasa episodios al azar de esa serie, todo el día. Toca uno y entras justo donde va.")
+                    .recipe(.footnote, color: DS.textMuted)
             }
         }
     }

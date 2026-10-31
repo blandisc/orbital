@@ -308,8 +308,10 @@ public final class Services: ObservableModel {
         if !settings.value.traktClientID.isEmpty { secrets.set(SecretKey.traktClientID, settings.value.traktClientID) }
         if !settings.value.orbitalAddress.isEmpty { secrets.set(SecretKey.orbitalAddress, settings.value.orbitalAddress) }
         // El país, como lo demás, solo si falta: el que elegiste aquí (o el que ya se trajo) no lo pisa la consola.
-        let regionChanged = keys.region.count == 2 && !settings.value.regionChosen && keys.region != settings.value.region
-        if keys.region.count == 2, !settings.value.regionChosen { settings.update { $0.region = keys.region; $0.regionChosen = true } }
+        // Si el iPhone ya dice su país, manda ese (es donde estás tú, no donde está la tele).
+        let fromConsole = keys.region.count == 2 && !settings.value.regionChosen && Locale.current.region == nil
+        let regionChanged = fromConsole && keys.region != settings.value.region
+        if fromConsole { settings.update { $0.region = keys.region; $0.regionChosen = true } }
         // Solo se rearma si algo cambió: rearmar tira las cachés (traducciones, listas) y vuelve a pintar toda la app, y esto
         // corre en cada arranque.
         // La sesión prestada de antes se olvida aquí SIN revocarla (revocarla desconectaría la consola): Ajustes ofrece conectar

@@ -55,6 +55,26 @@ public final class BecauseModel: ObservableModel {
         if let items = found?.items { preloaded[seed.imdb] = items }
     }
 
+    /// «No recomendar por esta» (mantener el dedo sobre el mazo): el título sale del mazo y ya no se usa para recomendar.
+    /// Si era el de arriba, pasa al siguiente. `resumeSeeding` lo regresa.
+    public func stopSeeding(_ seed: TraktEntry) async {
+        let forYou = services.forYou
+        await forYou.stopSeeding(seed.imdb)
+        let at = seeds.firstIndex { $0.imdb == seed.imdb } ?? 0
+        seeds.removeAll { $0.imdb == seed.imdb }
+        preloaded[seed.imdb] = nil
+        guard selected == seed.imdb || because?.seed.imdb == seed.imdb else { return }
+        if seeds.isEmpty { because = nil; selected = nil; chosen = nil; return }
+        await choose(seeds[min(at, seeds.count - 1)])
+    }
+
+    /// Deshace «No recomendar por esta»: vuelve al mazo y arriba.
+    public func resumeSeeding(_ seed: TraktEntry) async {
+        await services.forYou.resumeSeeding(seed.imdb)
+        seeds = await services.forYou.recentSeeds()
+        await choose(seed)
+    }
+
     /// Pruebas: como si nada se hubiera traído de antemano.
     func forgetPreloadedForTesting() { preloading?.cancel(); preloaded = [:] }
 

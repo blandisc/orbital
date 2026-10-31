@@ -88,9 +88,10 @@ final class ImagePipeline: @unchecked Sendable {
     /// La imagen reducida a `maxPixel`: de memoria, de disco o de la red. Varias peticiones comparten el trabajo; si
     /// todas las que esperaban se cancelan, el trabajo también.
     /// Pide de antemano los pósters de una tira (un Top 10): cuando llegas a verlos ya están (antes salían de a poco).
-    func prefetchPosters(_ urls: [String]) {
+    /// `maxPoints`: el tamaño con que se van a pintar (el de `PosterView` si no se dice otro).
+    func prefetchPosters(_ urls: [String], maxPoints: CGFloat? = nil) {
         Task { @MainActor in
-            let pixels = DS.Image.card * Self.screenScale   // el tamaño con que los pinta `PosterView`
+            let pixels = (maxPoints ?? DS.Image.card) * Self.screenScale   // el tamaño con que los pinta `PosterView`
             for case let url? in urls.map(URL.init(string:)) { Task.detached(priority: .utility) { _ = await self.image(url, maxPixel: pixels) } }
         }
     }
@@ -104,7 +105,7 @@ final class ImagePipeline: @unchecked Sendable {
             session.dataTask(with: request).resume()
         }
     }
-    static let imageHosts = ["https://images.metahub.space/", "https://episodes.metahub.space/"]
+    static let imageHosts = ["https://images.metahub.space/", "https://episodes.metahub.space/", "https://image.tmdb.org/"]
 
     /// Como `prefetchPosters`, pero espera a que estén (para enseñar varios carteles juntos, ya con imagen).
     nonisolated func warmPosters(_ urls: [String]) async {

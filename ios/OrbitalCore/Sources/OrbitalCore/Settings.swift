@@ -38,9 +38,16 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var autoNextDownload = true         // reponer el siguiente episodio al terminar de bajar uno
     public var deleteWhenWatched = false
     public var warnCellularOverGB = 5.0
-    public var region = "MX"                   // para «lo más popular en Netflix» (TMDB)
+    /// Tu país para lo popular en plataformas (Top 10 de Netflix y JustWatch) y «dónde verla»: el del iPhone hasta que elijas
+    /// otro en Ajustes (antes era México para todos).
+    public var region = AppSettings.phoneRegion
     /// Ya hay país: lo elegiste en Ajustes o se trajo una vez de tu Orbital. Conectarla después ya no lo cambia.
     public var regionChosen = false
+    /// El país del iPhone (Ajustes › General › Idioma y región), o México si no lo dice.
+    public static var phoneRegion: String {
+        let code = Locale.current.region?.identifier ?? ""
+        return code.count == 2 && code.allSatisfy(\.isLetter) ? code.uppercased() : "MX"
+    }
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
