@@ -16,6 +16,8 @@ import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
 import { createHero } from "./components/hero.js";
 import { createHome } from "./components/home.js";
+import { consoleGames, gameConsoles } from "./core/games.js";
+import { createGamePage } from "./components/game-page.js";
 import { createGames } from "./components/games.js";
 import { createHints } from "./components/hints.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
@@ -230,6 +232,13 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  // La página de un juego (Opciones › Ver ficha), como la de producto del Apple TV.
+  gamePage: createGamePage({
+    onAction: (action, item) => gamePageAction(action, item),
+    onShow: (item) => ui.backdrop.show(item.hero || item.image || null),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { delete document.body.dataset.gamePage; sound.play("back"); restoreBackdrop(); renderHints(); },
+  }),
   year: createYear({
     load: () => api.forYouYear(),
     onPick: (item) => openTitle(item),
@@ -267,7 +276,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.gamePage.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -338,7 +347,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.calendar, ui.search, ui.settings];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -684,6 +693,33 @@ function gamesFocused(target) {
     ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
   }
   renderHints();
+}
+
+/** La página de un juego, con los demás de su consola en el orden de Juegos. */
+function openGamePage(item) {
+  if (!item) return;
+  const home = gameConsoles(state.allRows).find((c) => consoleGames(state.allRows, c.id).some((g) => g.id === item.id));
+  const list = home ? consoleGames(state.allRows, home.id, "recent") : [item];
+  sound.play("open");
+  document.body.dataset.gamePage = "true"; // lo de atrás se esconde: solo queda el arte del juego (game-page.css)
+  ui.gamePage.open(item, list, { glyphs: glyphs(), runningId: state.running?.id, consoleName: home?.name || "" });
+  renderHints();
+}
+
+function gamePageAction(action, item) {
+  if (!item) return;
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, page: true }));
+  if (action === "alt") {
+    const alt = alternativeRunner(item);
+    return alt ? launch(item, alt.id) : rumble("edge");
+  }
+  return launch(item);
+}
+
+/** Al cerrar una página encima, el fondo vuelve a lo enfocado de la sección. */
+function restoreBackdrop() {
+  if (inGames()) gamesFocused(ui.games.current);
+  else if (inHome()) homeFocused(ui.home.current);
 }
 
 function gamesActivate(target, action = "select") {
@@ -1660,6 +1696,9 @@ async function runCommand(command, context = null) {
         return playChannel(command.channel, command.category, { confirmed: true, keep: !!command.keep });
       case "title":
         return openTitle(findItem(command.id));
+      case "game-page":
+        ui.sheet.close();
+        return openGamePage(findItem(command.id));
       case "title-ref":
         return openTitle(command.ref);
       case "search":

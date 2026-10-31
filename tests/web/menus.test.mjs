@@ -11,7 +11,9 @@ const zelda = {
 test("opciones de un juego: solo lo que no hace otro botón, emulador e imagen en su propia hoja", () => {
   const menu = gameMenu(zelda);
   assert.equal(menu.title, "Zelda");
-  assert.deepEqual(menu.options.map((o) => o.label), ["Añadir a favoritos", "Cambiar emulador", "Cambiar imagen", "Ocultar"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Ver ficha", "Añadir a favoritos", "Cambiar emulador", "Cambiar imagen", "Ocultar"]);
+  assert.deepEqual(menu.options[0].command, { type: "game-page", id: zelda.id }); // su página, como la de producto del Apple TV
+  assert.ok(!gameMenu(zelda, { page: true }).options.some((o) => o.label === "Ver ficha")); // desde la página, no se repite
   assert.ok(!menu.options.some((o) => o.command.type === "close")); // B cierra: sin «Cancelar»
   const runners = runnerMenu(zelda);
   assert.deepEqual(runners.options.map((o) => o.label), ["Abrir con Eden", "Usar siempre Eden"]);
@@ -23,7 +25,7 @@ test("opciones de un juego: solo lo que no hace otro botón, emulador e imagen e
 
 test("opciones de un juego favorito y sin alternativas", () => {
   const menu = gameMenu({ id: "steam:1", title: "Hades", favorite: true, runners: [], source: "steam", category: "steam" });
-  assert.deepEqual(menu.options.map((o) => o.label), ["Quitar de favoritos", "Ocultar"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Ver ficha", "Quitar de favoritos", "Ocultar"]);
   assert.deepEqual(menu.options.at(-1).command.prefs, { hidden: true }); // se deshace con Y unos segundos
   assert.ok(menu.options.at(-1).command.title);
   assert.equal(gameMenu(null), null);

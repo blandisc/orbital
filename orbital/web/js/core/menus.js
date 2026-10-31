@@ -9,7 +9,7 @@ import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
  * Opciones de lo enfocado (Y). Solo lo que no hace otro botón: A abre, X es la alternativa (otro
  * emulador o la ficha). Sin «Cancelar»: B cierra cualquier hoja.
  */
-export function gameMenu(item, { running = null, phone = false } = {}) {
+export function gameMenu(item, { running = null, phone = false, page = false } = {}) {
   if (!item) return null;
   const isOpen = running?.id === item.id;
   if (item.source === "search") {
@@ -28,6 +28,8 @@ export function gameMenu(item, { running = null, phone = false } = {}) {
     const series = item.extra?.kind === "series" || String(item.id || "").startsWith("cinemeta:series:");
     options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", command: { type: "title", id: item.id } });
   }
+  // Un juego: su página (como la de producto del Apple TV), con la sinopsis y lo tuyo con él. Desde la página, no se repite.
+  if (isGame(item) && !page) options.push({ icon: "info", label: "Ver ficha", command: { type: "game-page", id: item.id } });
   // Una película o serie: elegir otro póster o fondo (de TMDB) cuando el de siempre no te gusta.
   const metaId = item.extra?.meta_id || item.meta_id;
   if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
