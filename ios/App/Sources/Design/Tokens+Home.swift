@@ -38,15 +38,17 @@ extension DS {
     enum ParaTiB {
         /// El botón del mosaico sobre el muro de Para ti (blanco, redondo, abajo a la derecha).
         static let walkButton: CGFloat = 52
-        static let coverHeight: CGFloat = 300, coverWall: CGFloat = 724, coverColumns = 7, coverPosters = 84, coverTilt: Double = -10
+        /// El muro: ocho columnas (con siete, girado, quedaba una orilla sin pósters) de trece pósters cada vuelta.
+        static let coverHeight: CGFloat = 300, coverWall: CGFloat = 828, coverColumns = 8, coverPosters = 96, coverTilt: Double = -10
+        static let coverRows = 13, coverWallHeight: CGFloat = 1900
         static let coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.8, coverBaseAt: Double = 0.6
         /// Cuánto sube el muro (hasta la orilla de la pantalla, detrás del título y la barra: sin corte) y cuánto baja bajo los
         /// círculos; qué tanto se ve hasta arriba y el velo que deja leer el título encima.
         static let coverBleedUp: CGFloat = 900, coverTitleZone: CGFloat = 260, coverBleedDown: CGFloat = 72, coverUnderBar: Double = 0.85, coverTitleVeil: Double = 0.55
-        /// El vaivén del muro: un renglón sobre su diagonal, ida en 40 s y vuelta en otros 40; corre solo con la portada a la vista.
-        /// Lo mueve Core Animation (`CoreDrift`), no SwiftUI: por eso la duración va en segundos y no como `Animation`.
-        static let coverDrift: CGFloat = 150, coverDriftX: CGFloat = 26, coverVisibleFrom: Double = 0.1
-        static let coverDriftSeconds: TimeInterval = 40
+        /// Cada columna del muro baja sola, a su ritmo (puntos por segundo, una por columna: ninguna va pareja con su vecina), y
+        /// arranca en otra parte de su vuelta (`coverPhaseStep`). Corre solo con la portada a la vista (`coverVisibleFrom`). Lo
+        /// mueve Core Animation (`CoreDrift`), no SwiftUI: por eso van en números y no como `Animation`.
+        static let coverPace: [Double] = [14, 8, 19, 11, 16, 7, 13, 10], coverPhaseStep = 0.37, coverVisibleFrom: Double = 0.1
         static let deckPoster: CGFloat = 84, deckShift: CGFloat = 10, deckTurn: Double = 5, deckBehind: Double = 0.6
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3

@@ -79,12 +79,25 @@ struct MosaicCover: View {
         #endif
     }
 
-    /// El vaivén: el muro baja y sube un renglón sobre su diagonal, sin prisa. Lo mueve Core Animation sobre el muro ya
-    /// pintado (`CoreDrift`): con `phaseAnimator` SwiftUI volvía a pintar los 72 pósters en cada cuadro, un núcleo entero
-    /// en reposo y el muro negro o apagado mientras tanto (Fernando, 31 oct 2026). Quieto con «Reducir movimiento» y en las
-    /// pruebas (`-demo-no-idle`); fuera de pantalla se pausa donde iba.
+    /// El muro: una parrilla inclinada donde cada columna baja sola, cada una a su ritmo (Fernando, 31 oct 2026: «no debe ser
+    /// uniforme»; antes el muro entero iba y venía de una pieza). Lo mueve Core Animation sobre las columnas ya pintadas
+    /// (`CoreDrift`): SwiftUI no repinta nada en cada cuadro. Quieto con «Reducir movimiento» y en las pruebas
+    /// (`-demo-no-idle`); fuera de pantalla se pausa donde iba.
     private var moving: some View {
-        CoreDrift(content: AnyView(wall.environment(\.perfTag, perfTag)), enabled: !still, running: onScreen)
+        let columns = DS.ParaTiB.coverColumns
+        return HStack(spacing: DS.Space.s2) {
+            ForEach(0..<columns, id: \.self) { c in
+                let posters = column(c)
+                CoreDrift(key: posters, content: AnyView(strip(posters).environment(\.perfTag, c == 0 ? perfTag : nil)),
+                          contentHeight: Self.loop * 2, loop: Self.loop,
+                          speed: DS.ParaTiB.coverPace[c % DS.ParaTiB.coverPace.count], phase: Double(c) * DS.ParaTiB.coverPhaseStep,
+                          enabled: !still, running: onScreen)
+                    .frame(width: Self.columnWidth, height: DS.ParaTiB.coverWallHeight)
+            }
+        }
+        .frame(width: DS.ParaTiB.coverWall, height: DS.ParaTiB.coverWallHeight)
+        .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var still: Bool {
@@ -94,21 +107,24 @@ struct MosaicCover: View {
         return reduceMotion
     }
 
-    /// Un muro fijo (no perezoso): girado y más alto que su marco dentro del desplazamiento de la página, una rejilla perezosa
-    /// no sabía qué piezas se veían y las armaba tarde (al volver del mosaico se quedaba negro unos segundos).
-    private var wall: some View {
-        let columns = DS.ParaTiB.coverColumns
-        let rows = stride(from: 0, to: order.count, by: columns).map { Array(order[$0..<min($0 + columns, order.count)]) }
-        return VStack(spacing: DS.Space.s2) {
-            ForEach(rows.indices, id: \.self) { r in
-                HStack(spacing: DS.Space.s2) {
-                    ForEach(rows[r].indices, id: \.self) { c in PosterView(url: rows[r][c], title: "", maxPoints: DS.Image.mosaic) }
-                }
+    /// El ancho de una columna del muro y lo que mide una vuelta de su tira (sus pósters una vez, con su separación).
+    private static let columnWidth = (DS.ParaTiB.coverWall - DS.Space.s2 * CGFloat(DS.ParaTiB.coverColumns - 1)) / CGFloat(DS.ParaTiB.coverColumns)
+    private static let loop = (columnWidth / DS.Poster.aspect + DS.Space.s2) * CGFloat(DS.ParaTiB.coverRows)
+
+    /// Los pósters de una columna: uno de cada `coverColumns` del orden del muro (así las vecinas no repiten).
+    private func column(_ c: Int) -> [String] {
+        guard !order.isEmpty else { return [] }
+        return (0..<DS.ParaTiB.coverRows).map { order[(c + $0 * DS.ParaTiB.coverColumns) % order.count] }
+    }
+
+    /// La tira de una columna, dos veces seguida: al bajar una vuelta entera queda igual que al principio y se repite sin corte.
+    private func strip(_ posters: [String]) -> some View {
+        VStack(spacing: DS.Space.s2) {
+            ForEach(0..<(posters.count * 2), id: \.self) { i in
+                PosterView(url: posters[i % posters.count], title: "", maxPoints: DS.Image.mosaic).frame(width: Self.columnWidth)
             }
         }
-        .frame(width: DS.ParaTiB.coverWall)
-        .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: Self.columnWidth, alignment: .top)
     }
 
     /// Las orillas: arriba sube mucho más que la pantalla (al jalar para actualizar siguen los pósters, Fernando, 31 oct
@@ -258,36 +274,52 @@ struct ListRow: View {
     }
 }
 
-/// Un vaivén lento hecho por Core Animation: SwiftUI pinta el contenido una vez y el servidor de render lo desliza, sin
-/// volver a pintarlo ni despertar a la app en cada cuadro (`phaseAnimator` lo repintaba entero 60 veces por segundo).
-/// `running` en falso lo pausa donde va, sin brincar; `enabled` en falso lo quita y lo deja en su lugar.
+/// Una columna del muro que baja sola, hecha por Core Animation: SwiftUI la pinta una vez y el servidor de render la desliza,
+/// sin volver a pintarla ni despertar a la app en cada cuadro. La tira mide dos vueltas (`contentHeight`) y baja una vuelta
+/// (`loop`) a `speed` puntos por segundo; al llegar empieza otra vez, sin que se note. `phase` (0 a 1) la arranca a medio
+/// camino para que las columnas no vayan parejas. `running` en falso la pausa donde va; `enabled` en falso la deja quieta.
+/// El contenido solo se vuelve a armar si cambian sus pósters (`key`): antes se rearmaba con cada cambio de la pantalla y
+/// entrar a Explorar se trababa.
 private struct CoreDrift: UIViewRepresentable {
+    let key: [String]
     let content: AnyView
+    let contentHeight: CGFloat
+    let loop: CGFloat
+    let speed: Double
+    let phase: Double
     let enabled: Bool
     let running: Bool
 
-    func makeUIView(context: Context) -> DriftView { DriftView(content) }
+    func makeUIView(context: Context) -> DriftView {
+        let view = DriftView(content, contentHeight: contentHeight, loop: loop, duration: Double(loop) / max(speed, 1), phase: phase)
+        view.key = key
+        return view
+    }
 
     func updateUIView(_ view: DriftView, context: Context) {
-        view.host.rootView = content
+        if view.key != key { view.key = key; view.host.rootView = content }
         view.set(enabled: enabled, running: running)
     }
 }
 
-/// La vista de `CoreDrift`: aloja el contenido de SwiftUI y anima su capa (ida y vuelta, sin fin).
+/// La vista de `CoreDrift`: aloja la tira de SwiftUI y anima su capa hacia abajo, sin fin.
 private final class DriftView: UIView {
     let host: UIHostingController<AnyView>
+    var key: [String] = []
+    private let contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double
     private var enabled = false, running = false
-    private static let key = "orbital.coverDrift"
+    private static let animationKey = "orbital.coverDrift"
 
-    init(_ content: AnyView) {
+    init(_ content: AnyView, contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double) {
         host = UIHostingController(rootView: content)
+        self.contentHeight = contentHeight; self.loop = loop; self.duration = duration; self.phase = phase
         host.safeAreaRegions = []   // el muro no se recorre por la barra ni la isla: va de orilla a orilla
         host.view.backgroundColor = .clear
         host.view.isUserInteractionEnabled = false
         host.view.accessibilityElementsHidden = true
         super.init(frame: .zero)
         isUserInteractionEnabled = false
+        clipsToBounds = true
         addSubview(host.view)
     }
 
@@ -295,7 +327,7 @@ private final class DriftView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        host.view.frame = bounds
+        host.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: contentHeight)
     }
 
     /// Al volver a la ventana (otra pestaña, la app al frente) la animación sigue ahí; si iOS la quitó, se vuelve a poner.
@@ -313,20 +345,22 @@ private final class DriftView: UIView {
     private func sync() {
         let layer = host.view.layer
         guard enabled else {
-            layer.removeAnimation(forKey: Self.key)
+            layer.removeAnimation(forKey: Self.animationKey)
             (layer.speed, layer.timeOffset, layer.beginTime) = (1, 0, 0)
+            layer.transform = CATransform3DMakeTranslation(0, -loop * CGFloat(phase), 0)
             return
         }
-        if layer.animation(forKey: Self.key) == nil, window != nil {
-            let drift = CABasicAnimation(keyPath: "transform.translation")
-            drift.fromValue = NSValue(cgSize: .zero)
-            drift.toValue = NSValue(cgSize: CGSize(width: DS.ParaTiB.coverDriftX, height: DS.ParaTiB.coverDrift))
-            drift.duration = DS.ParaTiB.coverDriftSeconds
-            drift.autoreverses = true
-            drift.repeatCount = .infinity
-            drift.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            drift.isRemovedOnCompletion = false   // sobrevive a que la app pase al fondo
-            layer.add(drift, forKey: Self.key)
+        if layer.animation(forKey: Self.animationKey) == nil, window != nil {
+            layer.transform = CATransform3DIdentity
+            let fall = CABasicAnimation(keyPath: "transform.translation.y")
+            fall.fromValue = -loop
+            fall.toValue = 0
+            fall.duration = duration
+            fall.timeOffset = duration * phase
+            fall.repeatCount = .infinity
+            fall.timingFunction = CAMediaTimingFunction(name: .linear)
+            fall.isRemovedOnCompletion = false   // sobrevive a que la app pase al fondo
+            layer.add(fall, forKey: Self.animationKey)
         }
         // Pausa y reanuda en el mismo punto (el reloj de la capa se detiene; nada brinca al volver a la vista).
         if running, layer.speed == 0 {
