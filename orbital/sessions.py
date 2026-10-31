@@ -42,30 +42,33 @@ def _cloud_game_ready(exe: str) -> bool:
     return bool(hwnd) and windows.is_fullscreen(hwnd) and geforcenow.in_game_title(windows.title(hwnd))
 
 
-TASKBAR_BACK_AFTER = 3.0  # s tras la pantalla de carga: el juego ya está en pantalla completa y tapa la barra
-_taskbar_holds = 0  # aperturas en curso (dos a la vez: la barra vuelve cuando acaba la última)
 _taskbar_lock = threading.Lock()
+_taskbar_hidden = False  # lo abierto la tiene escondida hasta que se cierra
 
 
-def taskbar_hidden(fn, *args, **kwargs):
-    """Corre `fn` con la barra de tareas de Windows escondida y la regresa unos segundos después. Al abrir un juego, el
-    emulador le roba el foco a Orbital con su ventana aún sin pantalla completa y Windows sacaba su barra encima de la
-    pantalla de carga. Antes se escondía todo el tiempo y ya nunca se veía, ni en el escritorio."""
-    global _taskbar_holds
+def hide_taskbar() -> None:
+    """Esconde la barra de tareas de Windows mientras haya algo abierto. Al abrir, el emulador o el reproductor le roban el
+    foco a Orbital con su ventana aún sin pantalla completa y Windows sacaba su barra encima; antes volvía a los 3 s de la
+    pantalla de carga y, si Windows no reconocía la pantalla completa (un video que se abre otra vez en otro mpv, 31 oct 2026),
+    se quedaba encima de la película. Regresa al cerrarse lo abierto (show_taskbar), nunca en el escritorio de siempre."""
+    global _taskbar_hidden
     from . import windows
 
     with _taskbar_lock:
-        _taskbar_holds += 1
-        if _taskbar_holds == 1:
+        if not _taskbar_hidden:
             windows.set_taskbar_visible(False)
-    try:
-        return fn(*args, **kwargs)
-    finally:
-        time.sleep(TASKBAR_BACK_AFTER)
-        with _taskbar_lock:
-            _taskbar_holds -= 1
-            if _taskbar_holds == 0:
-                windows.set_taskbar_visible(True)
+            _taskbar_hidden = True
+
+
+def show_taskbar() -> None:
+    """La barra de tareas de vuelta (se cerró lo abierto, o no llegó a abrir)."""
+    global _taskbar_hidden
+    from . import windows
+
+    with _taskbar_lock:
+        if _taskbar_hidden:
+            windows.set_taskbar_visible(True)
+            _taskbar_hidden = False
 
 RESOLUTION_CHECK = 5.0  # s: con la tele en 1080p, cada cuánto se revisa que siga abierto el juego que la bajó
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
@@ -293,10 +296,17 @@ class Sessions:
         health.note_dwm(f"antes de abrir {title}")
 
         def reveal(*args, **kwargs):
-            shown = taskbar_hidden(focus.bring_game_to_front, *args, **kwargs)
+            hide_taskbar()
+            shown = focus.bring_game_to_front(*args, **kwargs)
             health.note_dwm(f"con {title} al frente")
             if shown:
+                # El puntero a la esquina: si no, Windows lo enseñaba encima del video o del juego (el de Edge estaba
+                # escondido por la interfaz y el reproductor solo lo esconde después de moverlo).
+                from . import windows
+                windows.park_cursor()
                 self.park_soon(item_id)
+            elif self.launcher.status() is None:
+                show_taskbar()  # no abrió: la barra de siempre
             return shown
 
         threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
@@ -476,6 +486,7 @@ class Sessions:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:
             system.bring_to_front()
+        show_taskbar()  # Orbital ya está al frente: la barra vuelve sin asomarse encima de nada
         if self.release_video_memory is not None and not item_id.startswith(("media:", "app:")):
             # Un juego (los emuladores Vulkan le dejan ~100-250 MB a DWM cada vez, y Smash más mientras corre): si quedó
             # lleno, se libera aquí, junto al parpadeo de volver a 4K, y no a media película (los videos se trababan).

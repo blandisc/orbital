@@ -606,6 +606,16 @@ def taskbars() -> list[int]:
     return found
 
 
+def park_cursor() -> None:
+    """El puntero a la esquina de abajo a la derecha de la pantalla principal: ahí no tapa nada y, al moverse, el
+    reproductor lo esconde solo (cursor-autohide)."""
+    if not WIN:
+        return
+    width, height = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)  # SM_CXSCREEN, SM_CYSCREEN
+    if width > 0 and height > 0:
+        user32.SetCursorPos(width - 1, height - 1)
+
+
 def set_taskbar_visible(visible: bool) -> int:
     """Esconde o regresa la barra de tareas (en todos los monitores). Devuelve cuántas tocó."""
     bars = taskbars()

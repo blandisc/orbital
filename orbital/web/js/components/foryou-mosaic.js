@@ -44,6 +44,10 @@ const IDLE_MS = 2000; // quieto 2 s: el mosaico empieza a subir solo (el iPhone 
 // (--duration-glide, una transición de transform por columna; JavaScript solo trae piezas al empezar cada tramo, no en
 // cada cuadro). El primero arranca suave, el último se frena, y pasado AMBIENT_MS se queda quieto.
 const AMBIENT_MS = 90_000;
+// Con el protector de pantalla el mosaico no se queda quieto a los 90 s (Fernando, 31 oct 2026: «no avanzan los pósters»):
+// cada SAVER_REST_MS da un paso corto —un arranque y un frenado— y vuelve a parar. Se mueve ~8 s de cada 20: avanza sin que la
+// tarjeta gráfica trabaje todo el tiempo.
+const SAVER_REST_MS = 12_000;
 const RAMP = .5; // los tramos de arranque y frenado recorren la mitad (--ease-glide-in/out llegan a la velocidad del resto)
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
@@ -81,6 +85,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   let columns = [];
   let focus = { col: 0, row: 0 };
   let mode = "focus"; // focus | ambient
+  let saver = false; // con el protector de pantalla (foryou.screensaver)
   let running = false;
   let idleTimer = 0;
   let coveredSeen = false; // el temporizador de inactividad vio una capa encima (hoja, ficha…)
@@ -352,7 +357,12 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
     frame = 0;
     if (!running || mode !== "ambient") return;
     const ms = glideMs();
-    const last = Math.max(1, Math.round(AMBIENT_MS / ms)) - 1;
+    const last = saver ? 1 : Math.max(1, Math.round(AMBIENT_MS / ms)) - 1;
+    if (i > last && saver && !document.hidden) { // el protector: quieto un rato y otro paso
+      freeze();
+      frame = setTimeout(() => glide(0), SAVER_REST_MS);
+      return;
+    }
     if (i > last || document.hidden) return freeze(); // quieto del todo: ningún ciclo (cualquier botón lo despierta)
     el.classList.add(GLIDES[0]);
     el.classList.toggle(GLIDES[1], i === 0);
@@ -565,6 +575,8 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
 
   return {
     el, setPool, handle, wake, start, stop, removeItem, setLogoDark, relayout: () => pool.length && paint(),
+    /** Con el protector de pantalla, la deriva sigue a pasos (SAVER_REST_MS); sin él, se detiene a los AMBIENT_MS. */
+    saver: (on) => { saver = !!on; },
     get current() { return current(); },
     get ambient() { return mode === "ambient"; },
     get empty() { return !pool.length; },

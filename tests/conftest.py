@@ -53,11 +53,14 @@ def _no_real_machine_actions(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _no_real_taskbar(monkeypatch):
-    """Ninguna prueba esconde la barra de tareas de verdad (las ventanas de Orbital de mentiras la esconderían)."""
-    from orbital import windows
+    """Ninguna prueba esconde la barra de tareas de verdad (las ventanas de Orbital de mentiras la esconderían) ni mueve el
+    puntero de la tele."""
+    from orbital import sessions, windows
 
     calls: list[bool] = []
     monkeypatch.setattr(windows, "set_taskbar_visible", lambda visible: calls.append(visible) or 1)
+    monkeypatch.setattr(windows, "park_cursor", lambda: None)
+    monkeypatch.setattr(sessions, "_taskbar_hidden", False)
     return calls
 
 

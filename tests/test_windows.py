@@ -84,10 +84,10 @@ def test_kiosk_not_reopened_after_exit_to_desktop(tmp_path):
     assert not kiosk.is_open
 
 
-def test_the_taskbar_stays_visible_and_hides_only_while_something_opens(tmp_path, _no_real_taskbar, monkeypatch):
+def test_the_taskbar_stays_visible_and_hides_only_while_something_is_open(tmp_path, _no_real_taskbar):
     """La barra de Windows se ve como siempre (antes se escondía todo el modo consola y ya nunca salía); al abrir la
-    ventana de Orbital se regresa por si quedó escondida, y solo se esconde mientras abre un juego. (Con el sustituto
-    de conftest: nunca se toca la barra de verdad.)"""
+    ventana de Orbital se regresa por si quedó escondida, y solo se esconde mientras hay un juego o un video abierto (antes
+    volvía a los 3 s y se quedaba encima de la película). (Con el sustituto de conftest: nunca se toca la barra de verdad.)"""
     from orbital import sessions
 
     fake = tmp_path / "browser.cmd"
@@ -95,10 +95,13 @@ def test_the_taskbar_stays_visible_and_hides_only_while_something_opens(tmp_path
     kiosk = KioskWindow("http://x", str(fake), tmp_path / "perfil")
     assert kiosk.open()
     assert _no_real_taskbar[-1] is True  # a la vista
-    monkeypatch.setattr(sessions, "TASKBAR_BACK_AFTER", 0)
-    seen = []
-    assert sessions.taskbar_hidden(lambda: seen.append(list(_no_real_taskbar)) or "ok") == "ok"
-    assert seen[0][-1] is False and _no_real_taskbar[-1] is True  # escondida al abrir, de regreso al terminar
+    sessions.hide_taskbar()
+    sessions.hide_taskbar()  # un video que se abre otra vez en otro mpv: sigue escondida, sin tocarla dos veces
+    assert _no_real_taskbar[-2:] == [True, False]  # escondida mientras está abierto
+    sessions.show_taskbar()
+    assert _no_real_taskbar[-1] is True  # de regreso al cerrarse
+    sessions.show_taskbar()
+    assert _no_real_taskbar.count(True) == 2  # ya estaba a la vista: no se toca otra vez
     assert kiosk.close()
     assert _no_real_taskbar[-1] is True
     off = KioskWindow("http://x", str(fake), tmp_path / "perfil2", hide_taskbar=False)
