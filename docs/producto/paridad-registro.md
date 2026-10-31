@@ -48,7 +48,7 @@ Cómo se mantiene:
 ## Olas de la TV
 
 - **Ola 0 · el mecanismo** (este registro, el vocabulario con pendientes, la tabla espejo y sus pruebas).
-- **Ola 1 · el lenguaje**: rótulos de sección, porqué, selectores, botones, pie de pistas, «Nuevo», velo, vacío y carga; Explorar.
+- **Ola 1 · el lenguaje** (rama `claude/tv-ola-1-lenguaje`): hecho Explorar, rótulos de sección y porqué, botones redondos, pie de tres pistas, «Nuevo» como listón y pestañas de texto. **Falta (ola 1b)**: una pieza de velo para texto sobre arte, el estado vacío, la carga con esqueleto y los cuatro espacios con nombre (12 · 24 · 40 · 56). Por decidir: dónde va el acento arcoíris del azul de Orbital.
 - **Ola 2 · los lugares**: Películas y series como el Inicio del iPhone, el mazo, Decide por mí, Mi lista, tus canales.
 - **Ola 3 · lo tuyo**: calificar, «¿Cuándo la viste?», Lo que ves, Colecciones, filtro avanzado.
 
