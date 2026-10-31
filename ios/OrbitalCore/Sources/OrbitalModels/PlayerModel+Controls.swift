@@ -63,6 +63,7 @@ extension PlayerModel {
     public func seek(to seconds: Double) async {
         userTouched()
         let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
+        skipAnchor = nil   // lo buscaste tú: la posición nueva sí vale para «Saltar intro»
         if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
         if !playbackSettled { startupPosition = target }   // un salto al arrancar: el medio segundo se cuenta desde el punto nuevo
         // Al soltar la barra con un arrastre en curso: la búsqueda final va en la misma fila (nunca dos a la vez, que

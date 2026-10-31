@@ -10,9 +10,14 @@ extension Notification.Name {
 /// Los botones de volumen del iPhone como botones del control (como el control del Apple TV): mientras esta vista está en
 /// pantalla, subir o bajar llama a `onPress` y el volumen del iPhone se regresa a donde estaba (no cambia, ni sale el aviso
 /// del sistema: lo tapa un `MPVolumeView` invisible). Al irse, el volumen queda como lo tenías.
+///
+/// Con el reproductor en pantalla los botones son del video (`yieldsToPlayer`): no se tocan ni se regresan. Antes, si el control
+/// seguía montado detrás del reproductor, cada botón se deshacía al instante y el volumen del iPhone no subía ni bajaba (31 oct).
 struct HardwareVolumeButtons: UIViewRepresentable {
     /// `true` al subir, `false` al bajar.
     let onPress: (Bool) -> Void
+    /// Hay un reproductor en pantalla: los botones de volumen son suyos.
+    @MainActor static var yieldsToPlayer = false
 
     func makeCoordinator() -> Coordinator { Coordinator(onPress: onPress) }
 
@@ -47,7 +52,7 @@ struct HardwareVolumeButtons: UIViewRepresentable {
             Self.activate()
             // Tras la voz del control (que suelta la sesión), se vuelve a tomar: si no, los botones volvían a ser del iPhone.
             released = NotificationCenter.default.addObserver(forName: .orbitalAudioReleased, object: nil, queue: .main) { _ in
-                Task { @MainActor in Self.activate() }
+                Task { @MainActor in if !HardwareVolumeButtons.yieldsToPlayer { Self.activate() } }
             }
             original = session.outputVolume
             base = session.outputVolume
@@ -65,6 +70,7 @@ struct HardwareVolumeButtons: UIViewRepresentable {
 
         private func changed(_ value: Float) {
             if resetting { resetting = false; return }
+            if HardwareVolumeButtons.yieldsToPlayer { base = value; original = value; return }   // el volumen es del video
             guard abs(value - base) > Self.noise else { return }
             onPress(value > base)
             set(base)
@@ -90,6 +96,8 @@ struct HardwareVolumeButtons: UIViewRepresentable {
             observation?.invalidate()
             observation = nil
             if let released { NotificationCenter.default.removeObserver(released) }
+            // Con el video en pantalla la sesión es suya: soltarla (o regresar el volumen) le quitaba el sonido o el volumen.
+            guard !HardwareVolumeButtons.yieldsToPlayer else { return }
             // Se suelta la sesión avisando a las demás apps (tu música sigue, sin cortarse); el reproductor pone la suya al abrir.
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             if let original, abs(original - base) > Self.noise { set(original) }

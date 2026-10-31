@@ -502,6 +502,69 @@ final class PlayerModelTests: XCTestCase {
     }
 
     // MARK: intro y siguiente episodio
+    /// El caso del iPhone el 31 oct: pausaste ya pasada la intro, saliste de la app y al volver el motor rearmado dijo un momento
+    /// 0:00 (y en pausa ya no volvió a avisar): salía «Saltar intro» y se quedaba. Hasta que el motor confirma donde ibas, no hay botón.
+    func testBackFromBackgroundInPauseDoesNotBringBackSkipIntro() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        let chapters = [Chapter(title: "Intro", time: 0), Chapter(title: "Capítulo 2", time: 90)]
+        await rig.model.handle(rig.playing(600, chapters: chapters))
+        await rig.model.handle(rig.playing(601, chapters: chapters))
+        await rig.model.pause()
+        await rig.model.handle(rig.playing(601, chapters: chapters, state: .paused))
+        XCTAssertNil(rig.model.skipIntroTo)
+        rig.model.appDidEnterBackgroundFully()
+        await rig.model.appDidBecomeActive()
+        await rig.model.handle(rig.playing(0, chapters: chapters, state: .paused))
+        XCTAssertNil(rig.model.skipIntroTo, "el 0:00 del motor rearmado no es donde ibas")
+        await rig.model.handle(rig.playing(600, chapters: chapters, state: .paused))
+        XCTAssertNil(rig.model.skipIntroTo)
+        await rig.model.handle(rig.playing(0, chapters: chapters, state: .paused))
+        XCTAssertNil(rig.model.skipIntroTo)
+        await rig.model.seek(to: 30)
+        await rig.model.handle(rig.playing(30, chapters: chapters, state: .paused))
+        XCTAssertEqual(rig.model.skipIntroTo, 90, "si tú regresas a la intro, el botón sí sale")
+    }
+
+    /// Pausaste dentro de la intro: al volver el botón sigue ahí.
+    func testBackFromBackgroundInsideTheIntroKeepsTheButton() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        let chapters = [Chapter(title: "Intro", time: 0), Chapter(title: "Capítulo 2", time: 90)]
+        await rig.model.handle(rig.playing(40, chapters: chapters))
+        await rig.model.handle(rig.playing(41, chapters: chapters))
+        await rig.model.pause()
+        await rig.model.handle(rig.playing(41, chapters: chapters, state: .paused))
+        rig.model.appDidEnterBackgroundFully()
+        await rig.model.appDidBecomeActive()
+        await rig.model.handle(rig.playing(40, chapters: chapters, state: .paused))
+        XCTAssertEqual(rig.model.skipIntroTo, 90)
+    }
+
+    /// En pausa, volver a la app tras un rato fuera rearma el video sin la ruedita (se ve el cuadro y el play); si tocas play
+    /// mientras, ahí sí carga y suena en cuanto está listo.
+    func testBackFromBackgroundInPauseRearmsWithoutShowingTheLoad() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(600))
+        await rig.model.handle(rig.playing(601))
+        await rig.model.pause()
+        await rig.model.handle(rig.playing(601, state: .paused))
+        rig.model.appDidEnterBackgroundFully()
+        rig.engine.hangRestore = true
+        let back = Task { await rig.model.appDidBecomeActive() }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        await rig.model.handle(rig.playing(0, state: .loading))
+        XCTAssertTrue(rig.model.restoringQuietly)
+        XCTAssertEqual(PlayerPresentation.loadKind(rig.model), .none, "rearmando en pausa: sin carga a la vista")
+        await rig.model.togglePlay()
+        XCTAssertNotEqual(PlayerPresentation.loadKind(rig.model), .none, "tocaste play: ahora sí, la carga")
+        await rig.engine.stop()   // el motor termina de rearmar
+        await back.value
+        XCTAssertFalse(rig.model.restoringQuietly)
+        XCTAssertEqual(rig.engine.calls.last, "play", "suena lo que pediste")
+    }
+
     func testIntroCanBeSkippedOnlyInsideTheIntroChapter() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

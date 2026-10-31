@@ -255,6 +255,15 @@ extension PlayerScreen {
         .transition(.opacity).allowsHitTesting(false)
     }
 
+    /// El volumen cambió fuera del arrastre (los botones del iPhone, unos audífonos): el mismo indicador que al deslizar, porque
+    /// encima del video iOS no enseña el suyo. Mientras arrastras ya se ve (y es ese mismo cambio).
+    func showHardwareVolume(_ level: Float) {
+        guard drag.verticalKind != .volume, ThisDevice.hasTouchScreenControls else { return }
+        drag.indicator = (.volume, "speaker.wave.2.fill", Double(level))
+        if !drag.indicatorVisible { drag.indicatorHideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { drag.indicatorVisible = true } }
+        scheduleIndicatorHide()
+    }
+
     func scheduleIndicatorHide() {
         drag.indicatorHideTask?.cancel()
         drag.indicatorHideTask = Task {

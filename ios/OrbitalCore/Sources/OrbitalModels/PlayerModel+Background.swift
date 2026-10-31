@@ -47,9 +47,16 @@ extension PlayerModel {
         // El plazo corre desde antes de rearmar: si el motor se colgaba rearmando (un enlace caducado tras mucho rato fuera), nada
         // lo revisaba y cargaba para siempre.
         if resume { foregroundCheck = (clock().addingTimeInterval(Self.foregroundStallSeconds), position) }
+        if position > 0 { skipAnchor = position }
+        // En pausa, rearmar es cosa del motor: tú ves el cuadro donde ibas y el play, sin la ruedita. Si tocas play mientras,
+        // entonces sí se enseña la carga (ya querías verlo) y suena en cuanto el video está listo.
+        restoringQuietly = !resume
         let restored = await engine.restoreAfterBackground(resume: resume)
+        restoringQuietly = false
         guard mine == generation, !closing else { return }
-        if !restored { foregroundCheck = nil; return await reloadCurrentSource(at: position, resume: resume) }
+        if !restored { foregroundCheck = nil; return await reloadCurrentSource(at: position, resume: resume || playRequest != nil) }
+        if !resume, playRequest != nil { await engine.play() }   // el motor terminó de rearmar en pausa: lo que pediste
+        if hasPlayed { updateSkipIntro(snapshot) }   // en pausa el motor ya no avisa: el botón se decide con lo de ahora
     }
 
     /// El plazo tras volver: el video tenía que avanzar y no lo hizo (negro o congelado) → se pide de nuevo.
@@ -90,6 +97,7 @@ extension PlayerModel {
             }
         }
         guard mine == generation, !closing else { return }
+        if position > 0 { skipAnchor = position }
         await engine.stop()   // suelta lo que el motor estuviera abriendo (si se colgó, la carga nueva no queda detrás)
         guard mine == generation, !closing else { return }
         startLoading()

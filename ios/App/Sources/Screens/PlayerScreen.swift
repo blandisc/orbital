@@ -203,7 +203,7 @@ struct PlayerScreen: View {
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
             .onGeometryChange(for: CGSize.self) { $0.size } action: { layoutSize = $0 }
             if padlock.locked { lockLayer } else { gestureLayer(model) }
-            SystemVolumeControl(volume: $requestedVolume)
+            SystemVolumeControl(volume: $requestedVolume) { showHardwareVolume($0) }
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
             // Cargando o reconectando: al centro del video, no de la pantalla (en vertical los controles van bajo el video
@@ -301,7 +301,8 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: drag.dragAxis)
         .animation(DS.Motion.base(reduceMotion), value: ipodFace)
-        .onAppear { Perf.mark("player.shown") }
+        .onAppear { Perf.mark("player.shown"); HardwareVolumeButtons.yieldsToPlayer = true }
+        .onDisappear { HardwareVolumeButtons.yieldsToPlayer = false }
         .onChange(of: model.snapshot.state) { if model.snapshot.state == .playing { Perf.mark("player.firstFrame") } }
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.

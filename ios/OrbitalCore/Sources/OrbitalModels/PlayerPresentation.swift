@@ -41,6 +41,8 @@ public final class PlayerPresentation: ObservableModel {
         if model.phase == .preparing || !model.hasPlayed || model.reconnecting { return .now }
         // Sonó un instante y se detuvo a llenar el búfer (o recarga por la pista de audio): sigue la misma carga, no pausa → carga.
         if !model.playbackSettled, model.wantsToPlay || model.snapshot.state == .loading { return .now }
+        // Rearmando en pausa al volver a la app: no pediste nada, así que nada carga a la vista (el play responde igual).
+        if model.restoringQuietly, !model.awaitingPlayback { return .none }
         if model.awaitingPlayback || model.snapshot.state == .loading || model.snapshot.state == .buffering { return .soon }
         return .none
     }

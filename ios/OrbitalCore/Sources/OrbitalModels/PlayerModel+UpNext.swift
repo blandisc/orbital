@@ -33,7 +33,13 @@ extension PlayerModel {
         // aplica (salía «Saltar intro» a media película al regresar a la app).
         // Y hasta que el video corre de verdad (`playbackSettled`, lo mismo que quita la carga del botón grande): el motor dice
         // «suena» con casi nada en el búfer y el botón salía con el video aún cargando (30 oct).
-        if s.state == .loading || !playbackSettled || reconnecting || backgrounded { skipIntroTo = nil; return }
+        if s.state == .loading || !playbackSettled || reconnecting || backgrounded || restoringQuietly { skipIntroTo = nil; return }
+        // De vuelta a la app, el motor rearmado dice un momento 0:00 y luego, en pausa, ya no avisa: el botón salía con la intro
+        // ya pasada y se quedaba (31 oct). Hasta que la posición coincide con donde ibas, no hay botón.
+        if let anchor = skipAnchor {
+            guard abs(s.position - anchor) <= Self.skipAnchorTolerance else { skipIntroTo = nil; return }
+            if s.state == .playing { skipAnchor = nil }   // ya corre desde ahí: de aquí en adelante la posición es de verdad
+        }
         let sorted = s.chapters.sorted { $0.time < $1.time }
         for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
             let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
@@ -44,6 +50,9 @@ extension PlayerModel {
         }
         skipIntroTo = nil
     }
+
+    /// Qué tanto puede diferir la posición del motor rearmado de donde ibas (cae en el cuadro clave anterior).
+    static let skipAnchorTolerance: Double = 5
 
     public func skipIntro() async { if let target = skipIntroTo { await seek(to: target) } }
 

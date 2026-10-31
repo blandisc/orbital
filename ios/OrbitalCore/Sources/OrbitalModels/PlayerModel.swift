@@ -275,7 +275,7 @@ public final class PlayerModel: ObservableModel {
         failedSources = []; hasPlayed = false; playbackSettled = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
         scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
-        upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
+        upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; skipAnchor = nil; reachedEnd = false; finalReported = false
         pendingResumeFraction = nil
         notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
@@ -516,6 +516,12 @@ public final class PlayerModel: ObservableModel {
     /// Tras volver: si iba sonando y en este plazo no avanzó, el video se pide otra vez en el mismo punto.
     var foregroundCheck: (deadline: Date, position: Double)?
     var bufferingSince: Date?
+    /// Rearmando en pausa al volver de segundo plano: el video se vuelve a pedir sin enseñar la carga (se ve el cuadro guardado
+    /// y el play). Antes, tras un rato fuera, volvías a una ruedita aunque solo quisieras ver dónde ibas.
+    public internal(set) var restoringQuietly = false { didSet { if oldValue != restoringQuietly { changed() } } }
+    /// Al volver a pedir el video (regresar a la app, reconectar): el punto donde iba. Hasta que el motor lo confirma, lo que
+    /// diga de la posición (pasa un momento por 0 o por el inicio) no cuenta para «Saltar intro».
+    var skipAnchor: Double?
 
 }
 
