@@ -256,7 +256,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   }
 
   function renderTabs() {
-    mount(tabs, seasons().map((s, i) => Pill(s.label, { on: i === season, role: "tab", onClick: () => setSeason(i) })));
+    mount(tabs, seasons().map((s, i) => Pill(s.label, { on: i === season, tone: "tab", role: "tab", onClick: () => setSeason(i) })));
     showSeasonTab();
   }
 

@@ -39,6 +39,15 @@
 .pill--outline { box-shadow: var(--edge-strong); }
 .pill--fill { background: var(--color-fill); }
 .pill--on { color: var(--color-text); background: var(--color-fill-hover); box-shadow: none; }
+/* Pestañas de texto (tone "tab", como DSTextTabs del iPhone): para cambiar lo que ves (los filtros de una consola, Series ·
+   Películas de una lista, las temporadas). Sin cápsula: el texto tenue y la elegida en blanco, en negrita, con su rayita. */
+.pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; }
+.pill--tab.pill--on { color: var(--color-text); font-weight: var(--weight-bold); background: transparent; }
+.pill--tab.pill--on::after {
+  content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 0; height: var(--tab-mark);
+  border-radius: var(--tab-mark); background: currentColor;
+}
+.pill--tab.pill--focused::after, .pill--tab.is-focused::after { content: none; }
 .pill--focused, .pill.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
 /* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila
    enfocada (foco invertido, fondo claro) se invierte con ella. Con el dedo, cada una del alto de un dedo. */

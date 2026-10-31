@@ -94,7 +94,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   function paintTabs() {
     tabsEl.hidden = list.tabs.length < 2;
     mount(tabsEl, list.tabs.map((t, i) => Pill(t.label, {
-      on: i === tab, className: zone === "tabs" && i === tab && "pill--focused",
+      on: i === tab, tone: "tab", className: zone === "tabs" && i === tab && "pill--focused",
       tabindex: "-1", role: "tab", "aria-selected": i === tab ? "true" : "false", onClick: () => switchTab(i),
     })));
   }

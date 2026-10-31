@@ -27,14 +27,14 @@ export function BrowseHead({ title, meta, glow = null, media = {} }) {
 }
 
 /**
- * Filtros en píldora (Jugados · Añadidos… / Series · Películas). `options` = [{ id, label }]; cada uno
+ * Filtros como pestañas de texto (Jugados · Añadidos… / Series · Películas), como DSTextTabs del iPhone. `options` = [{ id, label }]; cada uno
  * se registra en `targets` como `filter:<n>` → { kind: "filter", value }.
  */
 export function fillFilters(container, options, { current, targets, onPick }) {
   mount(container, options.map((o, n) => {
     targets.set(`filter:${n}`, { kind: "filter", value: o.id });
     return Pill(o.label, {
-      on: o.id === current, tone: "outline", tabindex: "-1", role: "tab",
+      on: o.id === current, tone: "tab", tabindex: "-1", role: "tab",
       "aria-selected": o.id === current ? "true" : "false", "data-focus-id": `filter:${n}`,
       onClick: () => onPick?.(targets.get(`filter:${n}`), `filter:${n}`),
     });
