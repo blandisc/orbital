@@ -40,7 +40,7 @@ struct DecideTile: View {
                     else { title.font(DS.TextRecipe.label.font) }
                 }
                 .foregroundStyle(DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                .shadow(color: DS.scrimStrong, radius: DS.Decide.labelShadow)
+                .shadow(DS.Elevation.low.color(DS.scrimStrong))
                 .padding(.horizontal, DS.Space.s2).padding(.bottom, DS.Space.s1)
             }
             .frame(minWidth: 0, maxWidth: .infinity).frame(height: height)   // ds-exception: mínimo 0 para que la imagen no estire la columna
@@ -55,17 +55,18 @@ struct DecideTile: View {
                         .contentTransition(.numericText())
                 }
             }
-            .overlay(shape.strokeBorder(selected ? DS.brandMoon : DS.hairline, lineWidth: selected ? DS.Decide.chosenStroke : DS.Size.hairline))
+            .overlay(shape.strokeBorder(selected ? .clear : DS.hairline, lineWidth: DS.Stroke.hairline))
+            .dsSelectionRing(selected, in: shape)   // lo elegido en el color del texto, nunca turquesa (D5)
             .overlay(alignment: .topTrailing) {
                 if selected {
                     Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.labelLarge.font)
-                        .foregroundStyle(DS.backdropDeep, DS.brandMoon)
+                        .foregroundStyle(DS.bg, DS.text)
                         .padding(DS.Space.s1)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            .shadow(color: selected ? DS.brandMoon.opacity(DS.Decide.glowOpacity) : .clear, radius: DS.Decide.glowRadius)
-            .opacity(dimmed ? DS.Decide.otherOpacity : 1)
+            .glow(selected ? DS.text.opacity(DS.Decide.glowOpacity) : .clear)
+            .opacity(dimmed ? DS.Opacity.dimmed : 1)
             .scaleEffect(selected ? DS.Decide.chosenScale : 1)
             .animation(DS.Motion.pop(reduceMotion), value: selected)
             .animation(DS.Motion.base(reduceMotion), value: dimmed)

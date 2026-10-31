@@ -99,7 +99,7 @@ struct PageDots: View {
                         .frame(width: i == index ? DS.Size.pageDot * DS.Size.pageDotStretch : DS.Size.pageDot, height: DS.Size.pageDot)
                 }
             }
-            .animation(reduceMotion ? nil : .spring(response: DS.Size.pageDotSpring, dampingFraction: DS.Size.pageDotDamping), value: index)
+            .animation(DS.Motion.spring(reduceMotion), value: index)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("\(index + 1) de \(count)"))
         }
@@ -313,7 +313,7 @@ struct MosaicCaption<More: View>: View {
                 more()
             }
             Button(action: watch) { Image(systemName: "play.fill") }   // como en toda la app (antes, una flecha en las series)
-                .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)
+                .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)   // ds-exception: el ▶ toma el color del arte; DSIconButton no tiene versión de arte
                 .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))
         }
         .accessibilityElement(children: .contain)
@@ -411,12 +411,13 @@ enum PointerHover {
 
 extension View {
     /// Receta: la respuesta al puntero de las piezas del catálogo (`PosterCard`, `RemoteKey`…), con su esquina redondeada.
-    @ViewBuilder func pointerHover(_ kind: PointerHover) -> some View {
+    /// `radius`: la esquina de la pieza (un póster recorta a `md`); por omisión, la de siempre de cada tipo.
+    @ViewBuilder func pointerHover(_ kind: PointerHover, radius: CGFloat? = nil) -> some View {
         switch kind {
         // Sin `focusable` aquí: hacía tronar la app en iOS 26.3 al dibujar los pósters (29 oct) y en el simulador no movía
         // el foco del teclado de todos modos.
-        case .lift: contentShape(.hoverEffect, .rect(cornerRadius: DS.Radius.lg)).hoverEffect(.lift)
-        case .highlight: contentShape(.hoverEffect, .rect(cornerRadius: DS.Radius.md)).hoverEffect(.highlight)
+        case .lift: contentShape(.hoverEffect, .rect(cornerRadius: radius ?? DS.Radius.lg, style: .continuous)).hoverEffect(.lift)
+        case .highlight: contentShape(.hoverEffect, .rect(cornerRadius: radius ?? DS.Radius.md, style: .continuous)).hoverEffect(.highlight)
         }
     }
 }

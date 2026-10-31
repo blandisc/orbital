@@ -57,9 +57,11 @@ struct WideCard: View {
             .overlay(alignment: .topTrailing) {
                 if let platform { PlatformBadge(name: platform).padding(DS.Space.s2) }
                 else {
-                    badge.recipe(.badge, color: DS.text)
+                    // La placa oscura de lo que va sobre el arte, como `DSBadge` (sin vidrio: una placa sobre arte no es una capa
+                    // que flota, D20).
+                    badge.recipe(.badge, color: DS.paper)
                         .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-                        .glassEffect(.regular, in: Capsule()).padding(DS.Space.s2).onArt()
+                        .background(DS.badgeBackground, in: Capsule()).padding(DS.Space.s2)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
@@ -112,7 +114,7 @@ struct PlatformBadge: View {
                     if case .success(let image) = phase { image.resizable().scaledToFit() } else { Color.clear }
                 }
                 .frame(width: DS.PlatformBadge.logo, height: DS.PlatformBadge.logo)
-                .clipShape(RoundedRectangle(cornerRadius: DS.PlatformBadge.logoRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.logo(DS.PlatformBadge.logo), style: .continuous))
                 styled(short)
             }
             .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s2).padding(.vertical, DS.Space.s1)
@@ -121,7 +123,7 @@ struct PlatformBadge: View {
             .accessibilityLabel(spoken)
         } else {
             styled(short)
-                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1).glassEffect(.regular, in: Capsule())
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1).background(DS.badgeBackground, in: Capsule())   // sin vidrio (D20)
                 .accessibilityLabel(spoken)
         }
     }

@@ -103,7 +103,7 @@ struct Mosaic: View {
         }
         .overlay {
             if runtime.isEmpty {
-                if loading { ProgressView() }
+                if loading { DSLoadingState() }
                 else {
                     DSEmptyState(symbol: "square.grid.3x3", title: Text("No pude armar tu mosaico"), message: Text("Revisa tu conexión e intenta de nuevo.")) {
                         if let retry { Button("Reintentar", action: retry) }
@@ -321,7 +321,9 @@ private struct MosaicTileCell: View {
             if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s3) }
             if focused {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    if !inWatchlist, let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: inWatchlist ? "En Mi lista" : badgeKey(tile.item.reason)) }
+                    // «En Mi lista» con su ícono, como en un póster (D10: íconos, no cápsulas de texto).
+                    if inWatchlist { DSIconBadge(symbol: "bookmark.fill", label: "En Mi lista") }
+                    else if let platform = tile.item.platformName { PlatformBadge(name: platform) } else { DSBadge(text: badgeKey(tile.item.reason)) }
                     TitleLogo(url: tile.item.logo, title: tile.item.title)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(factVariants(tile.item, language: language).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }

@@ -104,7 +104,7 @@ private struct PosterFlightLayer: ViewModifier {
                     PosterView(url: flight.poster, title: flight.title, aspect: nil)
                         .frame(width: rect.width, height: rect.height)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                        .shadow(color: DS.scrimStrong, radius: DS.PlayerPanel.liftShadow)
+                        .shadow(DS.Elevation.floating.drop(0))
                         .position(x: rect.midX, y: rect.midY)
                         .opacity(flight.fading ? 0 : 1)
                 }
@@ -137,7 +137,7 @@ func launchPosterFlight(_ flight: Binding<PosterFlight?>, route: TitleRoute, fro
     flight.wrappedValue = PosterFlight(poster: route.poster, title: route.title, from: from)
     Task { @MainActor in
         await Task.yield()   // un cuadro en el lugar del póster, para que el resorte tenga de dónde salir
-        withAnimation(.spring(duration: DesignTokens.Motion.slow, bounce: DS.TitleAction.flightBounce)) { flight.wrappedValue?.landed = true }
+        withAnimation(DS.Motion.spring(reduceMotion)) { flight.wrappedValue?.landed = true }
         try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))
         withAnimation(DS.Motion.fade) { flight.wrappedValue?.fading = true }
         try? await Task.sleep(for: .seconds(DesignTokens.Motion.base))

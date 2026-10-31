@@ -11,8 +11,8 @@ struct PlatformFanCard: View {
 
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
-        FanCard(name: name, eyebrow: Text("TOP"), posters: posters, tint: tint) {
-            PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.logo, radius: DS.PlatformFan.logoRadius, tint: tint, glow: DS.PlatformFan.glow)
+        FanCard(name: name, eyebrow: Text("Top"), posters: posters, tint: tint) {
+            PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.logo, radius: DS.Radius.logo(DS.PlatformFan.logo), tint: tint, glow: DS.PlatformFan.glow)
         }
         .accessibilityLabel(Text("Rankings de \(name)"))
     }
@@ -32,7 +32,7 @@ struct FanCard<Emblem: View>: View {
         ZStack(alignment: .topLeading) {
             RadialGradient(colors: [tint.opacity(DS.PlatformFan.tintTop), .clear], center: .bottom, startRadius: 0,
                            endRadius: DS.PlatformFan.height)
-            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).padding(DS.Space.s3) }
+            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).textCase(.uppercase).padding(DS.Space.s3) }
             fan.frame(maxWidth: .infinity)
             VStack { Spacer(); emblem().padding(.bottom, DS.Space.s3) }.frame(maxWidth: .infinity)
         }
@@ -85,7 +85,7 @@ struct PlatformLogoTile: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-        .shadow(color: tint, radius: glow)
+        .glow(glow > 0 ? tint : .clear, .strong)   // `glow: 0` lo apaga
         .accessibilityHidden(true)
     }
 
@@ -116,12 +116,11 @@ struct PlatformPill: View {
                 // El mismo peso elegida o no: antes la elegida pasaba a negritas, se ensanchaba y empujaba a las demás.
                 Text(verbatim: name).font(DS.TextRecipe.label.font).lineLimit(1).fixedSize()
             }
-            .foregroundStyle(DS.text)
-            .padding(.leading, DS.PlatformFan.pillInset).padding(.trailing, DS.Space.s4).padding(.vertical, DS.PlatformFan.pillInset)
-            .background(selected ? tint.opacity(DS.PlatformFan.tintTop) : DS.fill, in: Capsule())
-            .overlay(Capsule().strokeBorder(selected ? tint : .clear, lineWidth: DS.PlatformFan.pillStroke))
         }
-        .buttonStyle(.plain)
+        // El botón secundario de siempre; la elegida, con el anillo de lo elegido en el color del texto (D5, D9). Antes una
+        // cápsula a mano con el borde del color de la plataforma.
+        .dsSecondaryButton()
+        .dsSelectionRing(selected, in: Capsule())
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
