@@ -63,6 +63,15 @@ public final class MatchDeckModel: ObservableModel {
         try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: true)
     }
 
+    /// «Deshacer» del aviso de guardar: sale de Mi lista y la carta vuelve arriba del mazo.
+    public func undo(_ s: Suggestion) async {
+        guard saved.contains(where: { $0.imdb == s.imdb }) else { return }
+        saved.removeAll { $0.imdb == s.imdb }
+        cards.removeAll { $0.imdb == s.imdb }
+        cards.insert(s, at: 0)
+        try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: false)
+    }
+
     /// Descartar la de arriba (izquierda o ✕): no vuelve en un mes.
     public func discard(_ s: Suggestion) {
         cards.removeAll { $0.imdb == s.imdb }

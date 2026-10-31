@@ -98,6 +98,7 @@ struct ParaTiView: View {
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
             if Demo.isOn, Demo.mode == "mosaic" { m.mode = .mosaic }
             if Demo.isOn, Demo.open == "decide" { Task { try? await Task.sleep(for: .seconds(4)); deciding = true } }   // cuando ya cargó lo que se sugiere
+            if Demo.isOn, Demo.open == "match" { Task { try? await Task.sleep(for: .seconds(4)); matching = true } }   // el mazo «¿Qué vemos hoy?»
             if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
             await m.load()

@@ -168,6 +168,11 @@ extension DS {
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220), mood: CGFloat = 64
         /// La carta es un póster: alto entre ancho.
         static let cardAspect: CGFloat = 1.5
+        /// La carta: cuántos géneros, su relleno, el logo de Trakt y el sello («MI LISTA», «PASO»): su giro, orilla e interletrado.
+        static let genres = 3, chipFill = 0.18, ratingLogo: CGFloat = 16
+        static let stampTilt: Double = 12, stampLine: CGFloat = 3, stampTracking: CGFloat = 1.5
+        /// Los botones con su nombre debajo y el contador de guardadas.
+        static let actionLabelGap: CGFloat = 6, actionRow: CGFloat = 72, veilFrom = 0.35
     }
 
     /// Lo que ves y el Wrapped (`WatchingCard`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): el alto de

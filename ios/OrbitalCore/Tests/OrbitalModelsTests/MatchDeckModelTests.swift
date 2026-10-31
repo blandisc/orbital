@@ -36,6 +36,20 @@ final class MatchDeckModelTests: XCTestCase {
         XCTAssertEqual(model.cards.map(\.imdb), ["tt2"])
     }
 
+    func testDeshacerRegresaLaCartaArribaYLaSacaDeLoGuardado() async throws {
+        let rig = try ServicesRig()
+        let pool = [s("tt1", ["drama"]), s("tt2", ["drama"])]
+        let model = MatchDeckModel(rig.services, pool: pool, watched: { [] })
+        await model.load()
+        let top = try XCTUnwrap(model.cards.first)
+        await model.save(top)
+        XCTAssertEqual(model.saved.map(\.imdb), [top.imdb])
+        await model.undo(top)
+        XCTAssertTrue(model.saved.isEmpty)
+        XCTAssertEqual(model.cards.first?.imdb, top.imdb)
+        XCTAssertEqual(model.cards.count, 2)
+    }
+
     func testDescartarNoVuelveEnUnMes() async throws {
         let rig = try ServicesRig()
         let clock = rig.clock

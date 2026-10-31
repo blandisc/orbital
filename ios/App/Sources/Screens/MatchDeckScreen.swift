@@ -12,6 +12,8 @@ struct MatchDeckScreen: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     @State private var model: MatchDeckModel?
+    /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
+    @State private var command: MatchCommand?
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
@@ -21,6 +23,16 @@ struct MatchDeckScreen: View {
                     Text("¿Qué vemos hoy?").recipe(.title)
                 }
                 Spacer()
+                // Cuántas llevas guardadas en esta vuelta (en Mi lista).
+                if let model, !model.saved.isEmpty {
+                    Label { Text(verbatim: "\(model.saved.count)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
+                        .recipe(.footnote, color: DS.text).fontWeight(.bold).tint(DS.brandMoon)
+                        .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+                        .background(DS.fill, in: Capsule())
+                        .contentTransition(.numericText())
+                        .accessibilityLabel(Text("\(model.saved.count) guardadas en Mi lista"))
+                        .accessibilityIdentifier("match-saved-count")
+                }
                 Button { dismiss() } label: { Image(systemName: "xmark") }
                     .buttonStyle(.glass).buttonBorderShape(.circle)
                     .accessibilityLabel(Text("Cerrar")).accessibilityIdentifier("match-close")
@@ -38,7 +50,9 @@ struct MatchDeckScreen: View {
                     emptyState(model).frame(maxHeight: .infinity)
                 } else {
                     MatchDeck(cards: model.cards,
-                              onSave: { s in Task { await model.save(s) } },
+                              genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
+                              command: $command,
+                              onSave: { s in save(s, model) },
                               onDiscard: { model.discard($0) },
                               onOpen: { s in dismiss(); onOpenTitle(s.route) })
                         .frame(maxHeight: .infinity)
@@ -80,20 +94,40 @@ struct MatchDeckScreen: View {
         }
     }
 
+    /// Guarda en Mi lista y lo dice, con «Deshacer» (antes el «+» la guardaba sin avisar y no se sabía qué había pasado).
+    private func save(_ s: Suggestion, _ model: MatchDeckModel) {
+        Task { await model.save(s) }
+        env.notify("Guardada en Mi lista", detail: s.title, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
+            Task { await model.undo(s) }
+        }
+    }
+
+    /// Paso · Ver ya · Mi lista, cada uno con su nombre debajo; Paso y Mi lista hacen salir volando la carta.
     private func actions(_ model: MatchDeckModel) -> some View {
-        HStack(spacing: DS.Space.s6) {
-            Button { if let s = model.cards.first { model.discard(s) } } label: { Image(systemName: "xmark").font(DS.TextRecipe.title.font) }
-                .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
-                .accessibilityLabel(Text("Descartar")).accessibilityIdentifier("match-discard")
-            Button { if let s = model.cards.first { dismiss(); onPlay(s.route) } } label: { Image(systemName: "play.fill").font(DS.TextRecipe.title.font) }
-                .dsSolidPrimaryButton(shape: .circle).controlSize(.large)
-                .accessibilityLabel(Text("Ver")).accessibilityIdentifier("match-play")
-            Button { if let s = model.cards.first { Task { await model.save(s) } } } label: { Image(systemName: "plus").font(DS.TextRecipe.title.font) }
-                .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
-                .accessibilityLabel(Text("Guardar")).accessibilityIdentifier("match-save")
+        HStack(alignment: .top, spacing: DS.Space.s6) {
+            action(Text("Paso"), id: "match-discard") {
+                Button { command = .discard } label: { Image(systemName: "xmark").font(DS.TextRecipe.title.font) }
+                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+            }
+            action(Text("Ver ya"), id: "match-play") {
+                Button { if let s = model.cards.first { dismiss(); onPlay(s.route) } } label: { Image(systemName: "play.fill").font(DS.TextRecipe.title.font) }
+                    .dsSolidPrimaryButton(shape: .circle).controlSize(.large)
+            }
+            action(Text("Mi lista"), id: "match-save") {
+                Button { command = .save } label: { Image(systemName: "bookmark.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.brandMoon) }
+                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+            }
         }
         .frame(maxWidth: .infinity)
         .sensoryFeedback(.impact(flexibility: .soft), trigger: model.cards.first?.imdb)
+    }
+
+    private func action(_ name: Text, id: String, @ViewBuilder button: () -> some View) -> some View {
+        VStack(spacing: DS.Match.actionLabelGap) {
+            button().accessibilityLabel(name).accessibilityIdentifier(id)
+                .frame(height: DS.Match.actionRow)   // el mismo renglón para los tres: los nombres quedan parejos
+            name.recipe(.caption, color: DS.textMuted).fontWeight(.semibold).accessibilityHidden(true)
+        }
     }
 
     static func symbol(_ m: DecideModel.Mood) -> String {
