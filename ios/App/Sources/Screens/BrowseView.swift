@@ -113,7 +113,7 @@ struct BrowseView: View {
         .toolbarVisibility(barHidden && searching ? .hidden : .visible, for: .navigationBar)
         // El contenido conserva tu tamaño de letra (el de afuera); solo el campo y la barra se topan abajo.
         .environment(\.dynamicTypeSize, typeSize)
-        .background(Backdrop(tint: tint.colors, sky: true))
+        .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // Automático: a la vista al abrir y se guarda al bajar. En iOS 27, al esconderse la barra de abajo el campo sube
@@ -135,14 +135,6 @@ struct BrowseView: View {
         // `.searchPresentationToolbarBehavior(.avoidHidingContent)` para dejar el título, y en iOS 27 la lupa y el texto
         // brincaban de lugar al abrir el campo.
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                let filter = env.advancedFilter
-                let _ = filter.track()
-                Button { showFilter = true } label: { Image(systemName: "slider.horizontal.3") }
-                    .badge(filter.filter.activeCount)
-                    .accessibilityLabel(Text("Filtros de búsqueda"))
-                    .accessibilityIdentifier("browse-filters")
-            }
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
         .advancedFilter(isPresented: $showFilter) { openTitle = $0 }
@@ -218,6 +210,7 @@ struct BrowseView: View {
     // MARK: sin escribir
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
+        filterDoor
         if !search.model.recent.isEmpty { recent }
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
@@ -225,6 +218,19 @@ struct BrowseView: View {
         if !model.popular.isEmpty { popular(model) }
         else if model.isLoading { DSLoadingState() }
         explore
+    }
+
+    /// La puerta del filtro avanzado, arriba de todo (en la barra, iOS la escondía en el «…»): dice lo que ya elegiste.
+    private var filterDoor: some View {
+        let model = env.advancedFilter
+        let _ = model.track()
+        let f = model.filter
+        let parts = [FilterText.format(f), FilterText.genres(f), FilterText.years(f), FilterText.length(f), FilterText.rating(f),
+                     FilterText.fame(f), FilterText.countries(f), FilterText.studios(f)].compactMap { $0 }.prefix(2)
+        let summary = parts.dropFirst().reduce(parts.first) { sum, next in sum.map { Text("\($0), \(next)") } }
+        return FilterDoor(active: f.activeCount, summary: summary) { showFilter = true }
+            .padding(.horizontal, DS.Space.gutter)
+            .accessibilityIdentifier("browse-filters")
     }
 
     /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.

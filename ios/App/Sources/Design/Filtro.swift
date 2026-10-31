@@ -33,6 +33,39 @@ struct FilterTile: View {
     }
 }
 
+/// La puerta del filtro avanzado arriba de Buscar: se ve siempre (en la barra, iOS la mandaba al «…» y no aparecía). Dice
+/// lo que ya elegiste («3 filtros · Terror, Los 80») o qué se puede filtrar.
+struct FilterDoor: View {
+    let active: Int
+    let summary: Text?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.section.font).foregroundStyle(DS.backdropDeep)
+                    .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
+                    .background(DS.brandMoon, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text("Búsqueda avanzada").recipe(.cardTitle)
+                    if active > 0, let summary {
+                        Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.brandMoon).lineLimit(1)
+                    } else {
+                        Text("Género, época, calificación, duración y más").recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+            }
+            .padding(DS.Space.s3)
+            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// Una opción grande con ícono (Todo · Películas · Series, Corta · Normal · Larga): un mosaico que se enciende al elegirla.
 struct FilterChoice: View {
     let symbol: String

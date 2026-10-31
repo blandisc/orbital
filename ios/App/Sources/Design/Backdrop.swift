@@ -31,8 +31,9 @@ struct Backdrop: View {
     var tint: ArtColors?
     /// La ficha: toda la pantalla del color del arte (no solo un velo arriba), en los dos modos.
     var immersive = false
-    /// El cielo de estrellas detrás (`SkyField`): en las pantallas con poco contenido, como «Lo que ves» y Buscar.
-    var sky = false
+    /// El cielo de estrellas detrás (`SkyField`): en todas las pantallas (Fernando, 30 oct 2026; antes solo Buscar y «Lo que
+    /// ves»). `false` solo donde algo de afuera lo pida.
+    var sky = true
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

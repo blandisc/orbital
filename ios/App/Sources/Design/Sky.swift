@@ -2,7 +2,7 @@ import SwiftUI
 import CoreMotion
 
 // El cielo de fondo (docs/producto/muvy-busqueda-premios/propuesta.html § Cielo): Crepúsculo de noche, Bruma lunar de día.
-// Va detrás de las pantallas con poco contenido («Lo que ves», Buscar) con `Backdrop(sky: true)`; las tarjetas son vidrio encima.
+// Va detrás de todas las pantallas (`Backdrop`); las tarjetas son vidrio encima.
 
 /// Un cielo mínimo: pocas estrellas en dos capas (muchas diminutas lejos, unas cuantas más grandes cerca), las tres más
 /// brillantes con un halo suave, una franja de luz muy tenue en diagonal y, cada minuto, una estrella fugaz finita. Las
