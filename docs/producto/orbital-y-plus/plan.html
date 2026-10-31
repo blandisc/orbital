@@ -1,0 +1,407 @@
+<title>Orbital y Orbital Plus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una sola columna de lectura; la guía vive en un iPhone que se reproduce solo, al centro de la página. Oscuro a propósito, como la app. */
+:root{
+  --bg:#0c0c0e; --surface:#18181c; --raised:#1e1e23; --line:#2a2a31;
+  --fg:#f2f2f4; --muted:#9a9aa4; --moon:#5fd6c6; --moon-soft:rgba(95,214,198,.14);
+  --warn:#f3b450; --bad:#ff6b6b; --plus:#c9a7ff;
+  --display:"Unbounded","Avenir Next",system-ui,sans-serif;
+  --body:"Instrument Sans","Helvetica Neue",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);margin:0}
+.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px;display:flex;flex-direction:column;gap:64px}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(30px,6vw,48px);line-height:1.1}
+h2{font-size:clamp(22px,4vw,28px);line-height:1.2}
+h3{font-size:17px;font-family:var(--body);letter-spacing:0}
+p{margin:0;max-width:65ch}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--moon)}
+.lead{color:var(--muted);font-size:18px}
+section{display:flex;flex-direction:column;gap:20px}
+.hero{gap:16px}
+.hero h1 .plus{color:var(--plus)}
+.goals{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.goal{background:var(--surface);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.goal b{font-family:var(--display);font-size:13px;color:var(--moon);font-weight:500}
+@media (max-width:620px){.goals{grid-template-columns:1fr}}
+
+/* Tabla de diferencias */
+.tablebox{overflow-x:auto;border-radius:18px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th,td{padding:12px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{font:600 13px/1.2 var(--body);color:var(--muted)}
+th.o{color:var(--moon)} th.p{color:var(--plus)}
+td.y{color:var(--fg)} td.n{color:var(--muted)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.dot.y{background:var(--moon)} .dot.n{background:var(--line)} .dot.p{background:var(--plus)}
+
+/* Auditoría */
+.audit{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:14px 16px;background:var(--surface);border-radius:14px;align-items:start}
+.item p{color:var(--muted);font-size:15px}
+.item p b{color:var(--fg);font-weight:600}
+.tag{font:600 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;padding:6px 8px;border-radius:8px;text-align:center}
+.tag.block{background:rgba(255,107,107,.14);color:var(--bad)}
+.tag.conf{background:rgba(243,180,80,.14);color:var(--warn)}
+.tag.noise{background:var(--raised);color:var(--muted)}
+code{font:13px ui-monospace,Menlo,monospace;color:var(--muted)}
+@media (max-width:520px){.item{grid-template-columns:1fr;gap:8px}.tag{justify-self:start}}
+
+/* Demostración de la guía */
+.demo{display:grid;grid-template-columns:300px 1fr;gap:32px;align-items:start}
+@media (max-width:720px){.demo{grid-template-columns:1fr;justify-items:center}}
+.switch{display:inline-flex;background:var(--surface);border-radius:999px;padding:4px;gap:4px}
+.switch button{font:600 14px var(--body);border:0;border-radius:999px;padding:8px 16px;background:transparent;color:var(--muted);cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.switch button:focus-visible,.steps button:focus-visible{outline:2px solid var(--moon);outline-offset:2px}
+.phone{width:280px;max-width:100%;aspect-ratio:9/19.5;border-radius:44px;background:#000;border:8px solid #222228;position:relative;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.screen{position:absolute;inset:0;padding:44px 18px 22px;display:flex;flex-direction:column;gap:12px;opacity:0;transform:translateX(24px);transition:opacity .45s ease,transform .55s cubic-bezier(.2,.9,.3,1.15);pointer-events:none}
+.screen.on{opacity:1;transform:none}
+.screen.gone{transform:translateX(-24px)}
+.orbitbar{display:flex;gap:6px;justify-content:center;padding-bottom:4px}
+.orbitbar i{width:7px;height:7px;border-radius:50%;background:#333;transition:background .3s,transform .3s}
+.orbitbar i.lit{background:var(--moon);transform:scale(1.25)}
+.s-title{font:700 20px/1.15 var(--display);text-wrap:balance}
+.s-sub{font-size:12.5px;color:var(--muted);line-height:1.4}
+.cta{margin-top:auto;background:var(--fg);color:#000;border-radius:999px;text-align:center;padding:12px;font-weight:600;font-size:14px}
+.ghost{text-align:center;color:var(--muted);font-size:13px}
+
+/* 1 · Bienvenida */
+.wall{position:absolute;inset:-20%;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;transform:rotate(-12deg);opacity:.35;animation:drift 18s ease-in-out infinite alternate}
+.wall span{aspect-ratio:2/3;border-radius:6px}
+@keyframes drift{to{transform:rotate(-12deg) translate(-30px,-40px)}}
+.veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.2),#000 72%)}
+.welcome{position:relative;z-index:1;margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.logo{display:flex;align-items:center;gap:10px;font:700 26px var(--display)}
+.ring{width:38px;height:38px;position:relative}
+.ring svg{width:100%;height:100%;overflow:visible}
+.ring circle.path{fill:none;stroke:var(--fg);stroke-width:2.5;stroke-dasharray:110;stroke-dashoffset:110}
+.ring circle.m{fill:var(--moon);opacity:0}
+.on .ring circle.path{animation:draw 1s .2s ease-out forwards}
+.on .ring circle.m{animation:moon .6s 1s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes moon{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.letters span{display:inline-block;opacity:0;transform:translateY(8px)}
+.on .letters span{animation:rise .4s ease-out forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* 2 · Lo que ya viste */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.pick{aspect-ratio:2/3;border-radius:8px;position:relative;display:flex;align-items:flex-end;padding:5px;font:600 8.5px/1.1 var(--body);color:rgba(255,255,255,.9);transition:transform .25s}
+.pick.sel{outline:2px solid var(--moon);animation:pop .35s cubic-bezier(.3,1.8,.5,1)}
+.pick.sel::after{content:"✓";position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:var(--moon);color:#000;font:700 11px/18px var(--body);text-align:center}
+@keyframes pop{40%{transform:scale(.9)}100%{transform:scale(1)}}
+.count{font-size:12px;color:var(--moon);font-weight:600}
+
+/* 3 · Plataformas */
+.plats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.plat{border-radius:12px;background:#151518;padding:14px 8px;text-align:center;font:700 13px var(--body);color:#555;transition:all .3s;border:1px solid #222}
+.plat.lit{color:#fff;border-color:transparent;transform:scale(1.03)}
+.country{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);background:#151518;border-radius:10px;padding:8px 10px}
+
+/* 4 · Historial */
+.code{font:700 28px/1 var(--display);letter-spacing:.12em;text-align:center;padding:18px 0;background:#151518;border-radius:14px}
+.code span{display:inline-block;opacity:0}
+.on .code span{animation:rise .3s ease-out forwards}
+.waiting{display:flex;gap:6px;justify-content:center;align-items:center;font-size:12px;color:var(--muted)}
+.waiting i{width:6px;height:6px;border-radius:50%;background:var(--moon);animation:blink 1.2s infinite}
+.waiting i:nth-child(2){animation-delay:.2s}.waiting i:nth-child(3){animation-delay:.4s}
+@keyframes blink{50%{opacity:.2}}
+
+/* Plus · Ver aquí mismo */
+.rd{display:flex;flex-direction:column;gap:8px}
+.rd div{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:#ccc;background:#151518;border-radius:12px;padding:10px}
+.rd div b{color:var(--plus);font-family:var(--display);font-size:13px}
+
+/* 5 · Avisos */
+.notif{background:rgba(40,40,46,.92);border-radius:16px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:11.5px;transform:translateY(-120px);opacity:0}
+.on .notif{animation:drop .7s .4s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes drop{to{transform:none;opacity:1}}
+.notif .ic{width:30px;height:30px;border-radius:8px;background:#000;display:grid;place-items:center;flex:none}
+.notif .ic i{width:10px;height:10px;border-radius:50%;background:var(--moon)}
+.notif b{display:block;font-size:12px}
+
+/* 6 · Listo */
+.orbit{position:relative;width:200px;height:200px;margin:20px auto 0}
+.orbit .core{position:absolute;inset:80px;border-radius:50%;background:var(--moon);box-shadow:0 0 40px var(--moon)}
+.orbit .track{position:absolute;inset:10px;border-radius:50%;border:1.5px solid #333}
+.orbit .spin{position:absolute;inset:0;animation:spin 9s linear infinite}
+.orbit .spin span{position:absolute;width:34px;aspect-ratio:2/3;border-radius:5px;left:83px;top:0;transform-origin:17px 100px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.steps{display:flex;flex-direction:column;gap:6px;min-width:0;width:100%}
+.steps button{display:grid;grid-template-columns:28px 1fr;gap:12px;text-align:left;background:transparent;border:0;border-radius:14px;padding:12px;color:var(--fg);font:inherit;cursor:pointer;align-items:start}
+.steps button[aria-current="true"]{background:var(--surface)}
+.steps .n{font:600 13px/28px var(--display);width:28px;height:28px;border-radius:50%;background:var(--raised);text-align:center;color:var(--muted)}
+.steps button[aria-current="true"] .n{background:var(--moon);color:#000}
+.steps .plusstep .n{color:var(--plus)}
+.steps strong{display:block;font-size:15px}
+.steps small{display:block;color:var(--muted);font-size:14px;line-height:1.45;margin-top:2px}
+
+/* Fases */
+.phases{display:flex;flex-direction:column;gap:0;position:relative}
+.phase{display:grid;grid-template-columns:44px 1fr;gap:16px;padding-bottom:22px;position:relative}
+.phase::before{content:"";position:absolute;left:21px;top:44px;bottom:0;width:2px;background:var(--line)}
+.phase:last-child::before{display:none}
+.phase .k{width:44px;height:44px;border-radius:50%;border:2px solid var(--moon);display:grid;place-items:center;font:700 15px var(--display);color:var(--moon)}
+.phase div p{color:var(--muted);font-size:15px}
+.phase .done{font-size:13px;color:var(--moon);margin-top:6px}
+
+/* Decisiones */
+.decisions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:680px){.decisions{grid-template-columns:1fr}}
+.dec{background:var(--surface);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dec .rec{background:var(--moon-soft);border-radius:12px;padding:10px 12px;font-size:14.5px}
+.dec .rec b{color:var(--moon)}
+.dec .tradeoff{font-size:14px;color:var(--muted)}
+.note{font-size:14px;color:var(--muted);border-left:2px solid var(--plus);padding-left:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:opacity .2s!important}.ring circle.path{stroke-dashoffset:0}.ring circle.m,.letters span,.code span,.notif{opacity:1;transform:none}}
+</style>
+
+<div class="wrap">
+
+<section class="hero">
+  <span class="eyebrow">Plan · 30 oct 2026</span>
+  <h1>Orbital y Orbital <span class="plus">Plus</span></h1>
+  <p class="lead">Un solo código, dos apps. Orbital va a la App Store y es para cualquiera, aunque nunca haya oído de Stremio. Orbital Plus es la tuya y la de tu gente, y además lo pone todo a ver aquí mismo.</p>
+  <div class="goals">
+    <div class="goal"><b>Objetivo 1</b><h3>Sin consola ni Stremio</h3><p class="s-sub" style="font-size:15px">Alguien sin cuenta de Stremio y sin la TV de Orbital instala, entra y la usa completa.</p></div>
+    <div class="goal"><b>Objetivo 2</b><h3>Para quien no es técnico</h3><p class="s-sub" style="font-size:15px">Una guía de un minuto, sin claves ni palabras raras, con animaciones que dan ganas de seguir.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Las dos apps</span>
+  <h2>Qué trae cada una</h2>
+  <p class="lead" style="font-size:16px">La de la tienda no trae el código de Real-Debrid, ni de los complementos, ni de la consola. No es que esté escondido: no viene en esa app. Apple prohíbe las funciones escondidas (regla 2.5.19), y así no hay nada que descubrir.</p>
+  <div class="tablebox">
+  <table>
+    <thead><tr><th></th><th class="o">Orbital · App Store</th><th class="p">Orbital Plus · tú y tu gente</th></tr></thead>
+    <tbody>
+      <tr><td>Para quién</td><td class="y">Cualquiera</td><td class="y">Tú, tu familia y amigos</td></tr>
+      <tr><td>Descubrir: Inicio, Para ti, Buscar, Lo que ves, Premios, el mazo</td><td class="y"><span class="dot y"></span>Sí</td><td class="y"><span class="dot y"></span>Sí</td></tr>
+      <tr><td>Llevar lo que ves (Trakt, si quieres)</td><td class="y"><span class="dot y"></span>Sí</td><td class="y"><span class="dot y"></span>Sí</td></tr>
+      <tr><td>«Dónde verla» abre Netflix, Max, Disney+…</td><td class="y"><span class="dot y"></span>Sí</td><td class="y"><span class="dot y"></span>Sí</td></tr>
+      <tr><td>Ver tus propios videos (Archivos, AirDrop, OneDrive; luego Plex y Jellyfin)</td><td class="y"><span class="dot y"></span>Sí</td><td class="y"><span class="dot y"></span>Sí</td></tr>
+      <tr><td>Ver cualquier título al instante (Real-Debrid)</td><td class="n"><span class="dot n"></span>No, ni el código</td><td class="y"><span class="dot p"></span>Sí</td></tr>
+      <tr><td>La consola en la TV: control, voz, Siri</td><td class="n"><span class="dot n"></span>No</td><td class="y"><span class="dot p"></span>Sí, se prende en Ajustes</td></tr>
+      <tr><td>Copia en Stremio, Simpson al azar, acompañante de juegos</td><td class="n"><span class="dot n"></span>No</td><td class="y"><span class="dot p"></span>Sí</td></tr>
+      <tr><td>Cómo se instala</td><td class="y">App Store</td><td class="y">TestFlight interno: una liga y se actualiza sola</td></tr>
+      <tr><td>Conviven en el mismo iPhone</td><td class="y" colspan="2">Sí: son dos apps distintas, cada una con su ícono</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Orbital nunca menciona a Plus ni a Real-Debrid. La maqueta de bibliotecas de la propuesta Muvy decía «Solo en Orbital Plus»; eso sale. Plus no se cobra.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Objetivo 1 · dónde estamos</span>
+  <h2>Lo que todavía detiene a alguien nuevo</h2>
+  <p class="lead" style="font-size:16px">Lo grande ya está en la app: no hace falta cuenta de Stremio, lo tuyo vive en el teléfono y se sincroniza con Trakt, y la consola se prende en Ajustes. La revisión de hoy encontró esto:</p>
+  <div class="audit">
+    <div class="item"><span class="tag block">Bloquea</span><p><b>Sin Real-Debrid de pago no se puede terminar la guía.</b> «Continuar» no se prende hasta que la clave es Premium, y la guía no se puede saltar. Alguien nuevo se queda en la pantalla 4. <code>OnboardingModel.swift:36</code></p></div>
+    <div class="item"><span class="tag block">Bloquea</span><p><b>La guía habla como programador:</b> «copia el texto largo» de una página de tokens, «complementos», Torrentio, Comet. Para quien no es técnico, ahí se acaba.</p></div>
+    <div class="item"><span class="tag block">Bloquea</span><p><b>Mi media (OneDrive) pide registrar una app en Microsoft.</b> Nadie lo va a hacer. <code>OneDriveSettings.swift:21</code></p></div>
+    <div class="item"><span class="tag conf">Confunde</span><p><b>Mensajes que mandan a Stremio:</b> «Agrégalos en Stremio y vuelve a entrar», «revisa tus complementos en Stremio», y 53 textos más de Stremio guardados. <code>Degraded.swift:73,78</code></p></div>
+    <div class="item"><span class="tag conf">Confunde</span><p><b>Stremio por debajo:</b> si no hay complementos en el teléfono, toma los de la cuenta de Stremio; la información de los títulos sale de un servidor de Stremio (Cinemeta). <code>Addons.swift:109</code> · <code>Cinemeta.swift:71</code></p></div>
+    <div class="item"><span class="tag noise">Sobra</span><p><b>La consola sigue asomándose:</b> Ajustes › «Orbital en la TV», los atajos de Siri de la TV, el control del Centro de control y los permisos que hablan de Alexa.</p></div>
+    <div class="item"><span class="tag noise">Sobra</span><p><b>Lo que es solo tuyo:</b> «Un Simpson al azar» y el acompañante de juegos, a la vista de todos.</p></div>
+    <div class="item"><span class="tag noise">Sobra</span><p><b>Ajustes pide claves:</b> Client ID de Trakt, dirección y token de la consola, la dirección de un complemento.</p></div>
+  </div>
+  <p class="note">Al separar las dos apps, la mitad de esta lista se va sola: la consola, Stremio, los complementos y lo tuyo pasan a Plus y dejan de existir en Orbital.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Objetivo 2 · la guía nueva</span>
+  <h2>Un minuto, nada obligatorio, todo se mueve</h2>
+  <p class="lead" style="font-size:16px">Maqueta animada: se reproduce sola. Toca un paso para verlo, o cambia a Plus para ver el paso que se suma.</p>
+  <div class="switch" role="group" aria-label="Versión">
+    <button type="button" id="v-orbital" aria-pressed="true">Orbital</button>
+    <button type="button" id="v-plus" aria-pressed="false">Orbital Plus</button>
+  </div>
+  <div class="demo">
+    <div class="phone" id="phone" aria-label="Maqueta de la guía">
+      <div class="screen" data-s="welcome">
+        <div class="wall" id="wall"></div><div class="veil"></div>
+        <div class="welcome">
+          <div class="logo"><span class="ring"><svg viewBox="0 0 40 40"><circle class="path" cx="20" cy="20" r="17"/><circle class="m" cx="33" cy="9" r="4.5"/></svg></span><span class="letters" id="letters"></span></div>
+          <div class="s-title" style="font-size:22px">Todo lo que ves, en un solo lugar.</div>
+          <div class="s-sub">Qué ver hoy, dónde verlo y lo que llevas visto.</div>
+          <div class="cta" style="margin-top:12px">Empezar</div>
+        </div>
+      </div>
+      <div class="screen" data-s="taste">
+        <div class="orbitbar"></div>
+        <div class="s-title">¿Cuáles ya viste?</div>
+        <div class="s-sub">Con esto armamos tus recomendaciones.</div>
+        <div class="grid" id="grid"></div>
+        <div class="count" id="count">Elige 3 o más</div>
+        <div class="cta">Seguir</div>
+      </div>
+      <div class="screen" data-s="platforms">
+        <div class="orbitbar"></div>
+        <div class="s-title">¿Dónde ves tus series?</div>
+        <div class="s-sub">Te decimos en cuál está cada cosa.</div>
+        <div class="plats" id="plats"></div>
+        <div class="country">🇲🇽 México <span style="margin-left:auto">Cambiar</span></div>
+        <div class="cta">Seguir</div>
+      </div>
+      <div class="screen" data-s="rd">
+        <div class="orbitbar"></div>
+        <div class="s-title">Ver aquí mismo</div>
+        <div class="s-sub">Con Real-Debrid, todo se reproduce en la app al instante.</div>
+        <div class="rd">
+          <div><b>1</b>Toca «Conectar». Se abre Real-Debrid.</div>
+          <div><b>2</b>Escribe el código que te damos. Listo, sin copiar claves.</div>
+        </div>
+        <div class="code" id="rdcode"></div>
+        <div class="cta">Conectar</div>
+        <div class="ghost">Lo hago después</div>
+      </div>
+      <div class="screen" data-s="history">
+        <div class="orbitbar"></div>
+        <div class="s-title">Trae tu historial</div>
+        <div class="s-sub">Si usas Trakt, conéctalo y no pierdes nada al cambiar de iPhone.</div>
+        <div class="code" id="tkcode"></div>
+        <div class="waiting"><i></i><i></i><i></i>&nbsp;Esperando a Trakt</div>
+        <div class="cta">Abrir Trakt</div>
+        <div class="ghost">Ahora no</div>
+      </div>
+      <div class="screen" data-s="notify">
+        <div class="notif"><span class="ic"><i></i></span><span><b>Sale hoy · The Bear</b>Temporada 4. Ya está en Disney+.</span></div>
+        <div class="orbitbar" style="margin-top:12px"></div>
+        <div class="s-title" style="margin-top:8px">¿Te avisamos?</div>
+        <div class="s-sub">Cuando salga algo de lo que sigues. Nada más.</div>
+        <div class="cta">Sí, avísame</div>
+        <div class="ghost">Ahora no</div>
+      </div>
+      <div class="screen" data-s="done">
+        <div class="orbitbar"></div>
+        <div class="orbit"><div class="track"></div><div class="core"></div><div class="spin" id="spin"></div></div>
+        <div class="s-title" style="text-align:center;margin-top:16px">Listo, Fernando.</div>
+        <div class="s-sub" style="text-align:center">Tu Inicio ya está armado con lo que te gusta.</div>
+        <div class="cta">Ir a Inicio</div>
+      </div>
+    </div>
+    <div class="steps" id="steps"></div>
+  </div>
+  <p class="note">Cómo se mueve: una sola transición entre pasos (sale a la izquierda, entra con un resorte suave), la barra de avance es una órbita de lunas, y cada toque rebota. Con «Reducir movimiento», solo fundidos. Todo con los tokens de movimiento que ya existen; el logotipo que se dibuja y el muro de pósters ya existen y se reusan.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Además de la guía</span>
+  <h2>Para que no se pierda nadie</h2>
+  <div class="audit">
+    <div class="item"><span class="tag noise">Palabras</span><p><b>Sin jerga.</b> Fuera de «Avanzado», ningún texto dice clave, token, API, complemento ni servidor. Una prueba lo revisa, como las demás reglas del diseño.</p></div>
+    <div class="item"><span class="tag noise">Errores</span><p><b>Cada error dice qué hacer</b>, en una frase y con un botón: Reintentar, Abrir Ajustes.</p></div>
+    <div class="item"><span class="tag noise">Día uno</span><p><b>Sin historial no hay filas vacías.</b> Inicio, Para ti y Lo que ves invitan a empezar.</p></div>
+    <div class="item"><span class="tag noise">Persona real</span><p><b>Alguien que nunca usó Stremio</b> instala y hace cinco cosas sin ayuda: encontrar una película, ver dónde está, marcar algo visto, guardarlo en Mi lista y abrir un video suyo. Se graba y se corrige lo que tropiece.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Orden</span>
+  <h2>Cinco fases</h2>
+  <div class="phases">
+    <div class="phase"><span class="k">0</span><div><h3>Tus decisiones</h3><p>Las seis de abajo.</p></div></div>
+    <div class="phase"><span class="k">1</span><div><h3>Dos apps de un código</h3><p>Orbital y Orbital Plus se compilan aparte. Real-Debrid, complementos, consola, Stremio y lo tuyo quedan solo en Plus.</p><div class="done">Quedó cuando: las dos se instalan juntas y una prueba confirma que Orbital no trae nada de Real-Debrid.</div></div></div>
+    <div class="phase"><span class="k">2</span><div><h3>Cerrar el desacople</h3><p>Fuera los mensajes de Stremio, los títulos salen de TMDB, OneDrive sin registrar nada, las claves a «Avanzado».</p><div class="done">Quedó cuando: ni «Stremio» ni una clave a la vista en Orbital.</div></div></div>
+    <div class="phase"><span class="k">3</span><div><h3>La guía nueva</h3><p>Primero apruebas las maquetas; luego las piezas entran al catálogo y se arman las pantallas.</p><div class="done">Quedó cuando: pasa en iPhone SE, mini y Pro Max, con video del antes y el después.</div></div></div>
+    <div class="phase"><span class="k">4</span><div><h3>Pulido para no técnicos</h3><p>Palabras, errores, día uno y la prueba con una persona real.</p><div class="done">Quedó cuando: esa persona hace las cinco cosas sola.</div></div></div>
+    <div class="phase"><span class="k">5</span><div><h3>Lista para la App Store</h3><p>Cuenta de desarrollador (99 USD al año), política de privacidad, el aviso de TMDB, Orbital registrada en Trakt y en Microsoft, revisar que el nombre esté libre, notas para Apple y capturas. Después: importar de TV Time, y Plex y Jellyfin.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Fase 0</span>
+  <h2>Lo que decides tú</h2>
+  <div class="decisions">
+    <div class="dec"><h3>1 · Qué reproduce Orbital al salir</h3><div class="rec"><b>Recomiendo:</b> «Dónde verla» más tus videos (Archivos, AirDrop, OneDrive). Plex y Jellyfin en la siguiente versión.</div><p class="tradeoff">Gana: sale antes. Pierde: en la tienda, «Ver» casi siempre abre otra app.</p></div>
+    <div class="dec"><h3>2 · Trakt en Orbital</h3><div class="rec"><b>Recomiendo:</b> opcional. Lo tuyo se guarda en el teléfono igual.</div><p class="tradeoff">Gana: nadie se atora con algo que no conoce. Pierde: sin Trakt, al cambiar de iPhone no viaja el historial.</p></div>
+    <div class="dec"><h3>3 · OneDrive</h3><div class="rec"><b>Recomiendo:</b> registrar una app de Microsoft para Orbital (gratis, unos minutos).</div><p class="tradeoff">Gana: Mi media funciona con solo entrar a tu cuenta. La otra opción es esconder Mi media en Orbital.</p></div>
+    <div class="dec"><h3>4 · Cómo repartes Plus</h3><div class="rec"><b>Recomiendo:</b> TestFlight interno. Una liga, y se actualiza sola.</div><p class="tradeoff">Pierde: cada versión dura 90 días y cada persona tiene que estar en tu equipo de Apple (hasta 100).</p></div>
+    <div class="dec"><h3>5 · Real-Debrid con código</h3><div class="rec"><b>Recomiendo:</b> conectar con un código, como Trakt, si la prueba confirma que Real-Debrid lo permite.</div><p class="tradeoff">Gana: nadie copia ni pega claves. Si no se puede: pegar la clave, guiado paso a paso.</p></div>
+    <div class="dec"><h3>6 · Por dónde empezar</h3><div class="rec"><b>Recomiendo:</b> la fase 1 primero.</div><p class="tradeoff">Separar las dos apps decide qué entra en cada guía y borra la mitad de lo pendiente. La guía va después, con tus maquetas aprobadas.</p></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var hues=[[18,60],[210,45],[350,55],[40,70],[160,40],[270,45],[5,65],[190,55],[30,50],[300,40],[120,35],[230,55]];
+  function poster(i){var h=hues[i%hues.length];return "linear-gradient(160deg,hsl("+h[0]+" "+h[1]+"% 42%),hsl("+((h[0]+30)%360)+" "+h[1]+"% 16%))";}
+  var wall=document.getElementById("wall");
+  for(var i=0;i<35;i++){var s=document.createElement("span");s.style.background=poster(i);wall.appendChild(s);}
+  var L=document.getElementById("letters");"orbital".split("").forEach(function(c,i){var s=document.createElement("span");s.textContent=c;s.style.animationDelay=(1.1+i*.07)+"s";L.appendChild(s);});
+  var titles=["Parásitos","The Bear","Dune","Severance","Coco","Oppenheimer","Shōgun","Roma","Barbie"];
+  var grid=document.getElementById("grid");
+  titles.forEach(function(t,i){var d=document.createElement("div");d.className="pick";d.style.background=poster(i+2);d.textContent=t;grid.appendChild(d);});
+  var plats=[["Netflix","#e50914"],["Max","#2b3fe0"],["Disney+","#0f3d8f"],["Prime Video","#1399d6"],["Apple TV+","#3a3a3f"],["Vix","#ff5b00"]];
+  var P=document.getElementById("plats");
+  plats.forEach(function(p){var d=document.createElement("div");d.className="plat";d.textContent=p[0];d.dataset.c=p[1];P.appendChild(d);});
+  function fillCode(id,txt){var el=document.getElementById(id);el.innerHTML="";txt.split("").forEach(function(c,i){var s=document.createElement("span");s.textContent=c;s.style.animationDelay=(.3+i*.08)+"s";el.appendChild(s);});}
+  fillCode("rdcode","K7Q4");fillCode("tkcode","4F2A-9C");
+  var spin=document.getElementById("spin");
+  for(var k=0;k<6;k++){var s=document.createElement("span");s.style.background=poster(k+2);s.style.transform="rotate("+(k*60)+"deg)";spin.appendChild(s);}
+
+  var info={
+    welcome:["Bienvenida","El logotipo se dibuja sobre un muro de pósters que se mece despacio. Un solo botón."],
+    taste:["Lo que ya viste","Tocas pósters populares de tu país: rebotan y se marcan. Con tres basta para que Para ti tenga sentido desde el primer minuto."],
+    platforms:["Tus plataformas","Los logos se encienden al tocarlos. El país sale solo. Así «Dónde verla» te dice en cuál de las tuyas está."],
+    rd:["Ver aquí mismo","Solo en Plus. Qué es Real-Debrid en dos renglones y se conecta con un código, sin copiar claves. Los complementos ya vienen puestos y no se explican."],
+    history:["Trae tu historial","Trakt, si lo usas: el código grande y un botón que lo abre. «Ahora no» siempre a la vista."],
+    notify:["Avisos","Antes de pedir el permiso, una notificación de ejemplo baja desde arriba para que veas qué vas a recibir."],
+    done:["Listo","Los pósters que elegiste giran en órbita y vuelan a su lugar en tu Inicio."]
+  };
+  var flows={orbital:["welcome","taste","platforms","history","notify","done"],plus:["welcome","taste","platforms","rd","history","notify","done"]};
+  var mode="orbital",idx=0,timer=null,screens={};
+  document.querySelectorAll(".screen").forEach(function(s){screens[s.dataset.s]=s;});
+  var stepsEl=document.getElementById("steps");
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function renderSteps(){
+    stepsEl.innerHTML="";
+    flows[mode].forEach(function(key,i){
+      var b=document.createElement("button");b.type="button";
+      if(key==="rd")b.className="plusstep";
+      b.innerHTML='<span class="n">'+(i+1)+'</span><span><strong>'+info[key][0]+'</strong><small>'+info[key][1]+'</small></span>';
+      b.addEventListener("click",function(){show(i,true);});
+      stepsEl.appendChild(b);
+    });
+  }
+  function playScene(key,s){
+    var bar=s.querySelector(".orbitbar");
+    if(bar){var n=flows[mode].length-1;bar.innerHTML="";for(var j=1;j<=n;j++){var d=document.createElement("i");if(j<=idx)d.className="lit";bar.appendChild(d);}}
+    if(key==="taste"){
+      var picks=s.querySelectorAll(".pick"),c=document.getElementById("count");
+      picks.forEach(function(p){p.classList.remove("sel");});c.textContent="Elige 3 o más";
+      [0,4,1,5].forEach(function(n,k){setTimeout(function(){if(screens.taste.classList.contains("on")){picks[n].classList.add("sel");var t=s.querySelectorAll(".pick.sel").length;c.textContent=t<3?"Elige "+(3-t)+" más":t+" elegidas · ¡bien!";}},600+k*600);});
+    }
+    if(key==="platforms"){
+      var ps=s.querySelectorAll(".plat");ps.forEach(function(p){p.classList.remove("lit");p.style.background="";});
+      [0,2,1].forEach(function(n,k){setTimeout(function(){ps[n].classList.add("lit");ps[n].style.background=ps[n].dataset.c;},600+k*550);});
+    }
+  }
+  function show(i,manual){
+    var list=flows[mode];idx=(i+list.length)%list.length;
+    Object.keys(screens).forEach(function(k){var s=screens[k];if(s.classList.contains("on")){s.classList.remove("on");s.classList.add("gone");}else s.classList.remove("gone");});
+    var key=list[idx],s=screens[key];
+    void s.offsetWidth;s.classList.remove("gone");s.classList.add("on");
+    playScene(key,s);
+    stepsEl.querySelectorAll("button").forEach(function(b,j){b.setAttribute("aria-current",j===idx?"true":"false");});
+    clearTimeout(timer);
+    if(!reduce)timer=setTimeout(function(){show(idx+1);},manual?7000:4200);
+  }
+  function setMode(m){mode=m;document.getElementById("v-orbital").setAttribute("aria-pressed",m==="orbital");document.getElementById("v-plus").setAttribute("aria-pressed",m==="plus");renderSteps();show(m==="plus"?3:0,true);}
+  document.getElementById("v-orbital").addEventListener("click",function(){setMode("orbital");});
+  document.getElementById("v-plus").addEventListener("click",function(){setMode("plus");});
+  renderSteps();show(0);
+})();
+</script>
