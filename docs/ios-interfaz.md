@@ -48,7 +48,7 @@ Un estado discreto dice «Stremio al día» o «N cambios por subir» (si no hub
   `Radius`, `Font` (escala de Orbital sobre Dynamic Type, equivale a «Tamaño del texto»), `Motion`
   (duración y curva; respeta «Reducir movimiento»).
 - **Catálogo de piezas** (equivalencia con Orbital): `Chip`, `Badge`, `ProgressBar`, `SectionHead`,
-  `PosterCard` (`card`), `FeatureTile` (`tiles`), `EpisodeRow`, `SourceRow` (`sources`), `DownloadRow`,
+  `PosterCard` (`card`), `FeatureHero` (`tiles`), `EpisodeRow`, `SourceRow` (`sources`), `DownloadRow`,
   `Sheet` (`sheet`), `Toast`, `StatusPill`, `PlayerControls`, `TrackPanel`. Una pantalla solo se arma con
   estas piezas; si falta una, se añade al catálogo.
 - **Prueba automática** (`swift test`): los valores de `Palette` coinciden con `palette.json` (misma idea

@@ -26,7 +26,7 @@
   background: var(--color-fill); box-shadow: inset 0 0 0 2px transparent;
   transition: box-shadow var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
-.login__field--focused { background: var(--color-fill-hover); box-shadow: inset 0 0 0 2px var(--color-focus); }
+.login__field--focused { background: var(--color-fill-hover); box-shadow: var(--focus-lift); transform: scale(var(--inverse-scale)); }
 .login__label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--weight-medium); }
 .login__value { min-height: 1.6em; font-size: var(--type-section); font-weight: var(--weight-medium); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .login__field--secret .login__value { letter-spacing: var(--tracking-digits); }

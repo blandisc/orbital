@@ -175,3 +175,24 @@ test("el mando solo se pide en core/pads.js (pedirlo una vez deja a Edge leyénd
     .map(([file, i, line]) => `${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 100)}`);
   assert.deepEqual(offenders, [], `Usa core/pads.js (pads(), onConnected()):\n${offenders.join("\n")}`);
 });
+
+// El lenguaje de la TV (Apple TV, 31 oct 2026; docs/sistema-de-diseno.md § «Lenguaje de la TV»).
+const cssLines = () => COMPONENT_CSS.flatMap((file) => stripCssComments(read(file)).split("\n").map((line, i) => [file, i, line]));
+const where = ([file, i, line]) => `${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 110)}`;
+
+test("vidrio: lo que flota se desenfoca con la receta (--filter-glass), nunca con un blur a mano", () => {
+  const offenders = cssLines().filter(([, , line]) => /backdrop-filter\s*:/.test(line) && !/backdrop-filter:\s*(var\(--filter-glass\)|none)/.test(line));
+  assert.deepEqual(offenders.map(where), [], "Usa background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass)");
+});
+
+test("el foco se levanta: ningún componente dibuja un anillo con --color-focus (solo :focus-visible en base.css)", () => {
+  const offenders = cssLines().filter(([, , line]) => line.includes("var(--color-focus)"));
+  assert.deepEqual(offenders.map(where), [], "Enfocado: crece y flota con var(--focus-lift); en una fila o una tecla, el foco invertido");
+});
+
+test("«Jugar» y los principales van en blanco: nada pinta un botón principal con el color del arte", () => {
+  const button = stripCssComments(read(join(STYLES, "components", "button.css")));
+  assert.match(button, /\.button--primary\s*\{[^}]*background:\s*var\(--color-primary\)/);
+  const offenders = cssLines().filter(([, , line]) => /primary|play/.test(line) && /background[^;]*--art-accent/.test(line));
+  assert.deepEqual(offenders.map(where), []);
+});

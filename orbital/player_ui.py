@@ -96,6 +96,10 @@ SOFT = ass_color(PALETTE["ink-200"])  # texto secundario claro (sinopsis, datos)
 MUTED = ass_color(PALETTE["ink-300"])
 PANEL = ass_color(PALETTE["ink-950"])  # tarjetas y paneles sobre el video
 ON_LIGHT = ass_color(PALETTE["ink-1000"])  # texto sobre lo enfocado (fondo claro)
+# Vidrio, como en Orbital (--color-glass y --edge-glass, rediseño Apple TV del 31 oct 2026): un panel oscuro translúcido con un
+# filo blanco casi transparente. Lo usan los botones secundarios y las píldoras táctiles; el principal va en blanco.
+GLASS_ALPHA = "50"
+GLASS_EDGE_ALPHA = "D6"
 SHADE = "&H000000&"  # degradados y velos sobre el video (negro de verdad, a propósito)
 # Botones del mando en su color, los mismos que en la interfaz: A verde, B rojo, X azul, Y amarillo.
 GLYPH = {"A": ass_color(PALETTE["pad-green"]), "B": ass_color(PALETTE["pad-red"]),
@@ -193,10 +197,11 @@ def current_label(tracks: list[dict], kind: str) -> str:
 
 # --- piezas de dibujo (reutilizables) ------------------------------------------------------------
 def _shape(path: str, color: str, alpha: str = "00", *, outline: str | None = None, width: float = 0,
-           fill_alpha: str | None = None, blur: float = 0) -> str:
-    """Una figura ASS (coordenadas absolutas del lienzo). `outline`: además, un borde de ese color."""
+           fill_alpha: str | None = None, blur: float = 0, outline_alpha: str = "00") -> str:
+    """Una figura ASS (coordenadas absolutas del lienzo). `outline`: además, un borde de ese color (`outline_alpha`: su
+    transparencia; el filo del vidrio es un blanco casi transparente)."""
     fill = f"\\1c{color}\\1a&H{fill_alpha or alpha}&"
-    border = f"\\3c{outline}\\3a&H00&\\bord{width:g}" if outline else "\\bord0"
+    border = f"\\3c{outline}\\3a&H{outline_alpha}&\\bord{width:g}" if outline else "\\bord0"
     soft = f"\\blur{blur:g}" if blur else ""
     return f"{{\\an7\\pos(0,0){border}\\shad0{soft}{fill}\\p1}}{path}{{\\p0}}"
 
@@ -583,7 +588,7 @@ def paused_ass(hud: Hud) -> str:
 
 
 def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "hud") -> str:
-    """Botones como los de Orbital: el primero claro (lo que hace A), los demás tenues. Con el dedo, sin
+    """Botones como los de Orbital: cápsulas; el primero en blanco (lo que hace A), los demás de vidrio. Con el dedo, sin
     el glifo del mando y más altos; cada uno anota su lugar (su acción: la tecla, «a», «x», «y»)."""
     out = []
     for i, (key, label) in enumerate(items):
@@ -594,7 +599,8 @@ def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "h
         shape, gw = ("", 0.0) if TOUCH else glyph(x + 16, y + 31, key, 30)
         lead = 26 if TOUCH else 16 + gw + 12
         w = lead + text_width(label, 24, "semi") + 26
-        out.append(rrect(x, y, w, h, 14, TEXT, "00" if primary else "D4"))
+        out.append(rrect(x, y, w, h, h / 2, TEXT) if primary
+                   else rrect(x, y, w, h, h / 2, PANEL, GLASS_ALPHA, outline=TEXT, width=1.5, outline_alpha=GLASS_EDGE_ALPHA))
         if shape:
             out.append(shape)
         out.append(text(x + lead, y + h / 2, esc(label), 24, ON_LIGHT if primary else TEXT, weight="semi", align=4))
@@ -615,7 +621,7 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
     x = (right - total) if right is not None else (center - total / 2) if center is not None else (left if left is not None else MARGIN)
     out = []
     for (label, action), w in zip(items, widths, strict=True):
-        out.append(rrect(x, y, w, h, h / 2, PANEL, "30", outline=TEXT, width=1.5))
+        out.append(rrect(x, y, w, h, h / 2, PANEL, GLASS_ALPHA, outline=TEXT, width=1.5, outline_alpha=GLASS_EDGE_ALPHA))
         out.append(text(x + w / 2, y + h / 2, esc(label), size, weight="semi", align=5))
         targets[layer].append((x, y, w, h, action))
         x += w + gap

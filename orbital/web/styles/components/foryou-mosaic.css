@@ -47,7 +47,7 @@
 .foryou-mosaic__kind {
   position: absolute; left: var(--space-3); top: var(--space-3); z-index: var(--z-raised); display: grid; place-items: center;
   width: 2.2rem; height: 2.2rem; border-radius: 50%; color: var(--color-text);
-  background: var(--color-badge-bg); backdrop-filter: blur(var(--blur-glass)); box-shadow: var(--edge-strong);
+  background: var(--color-glass); backdrop-filter: var(--filter-glass); box-shadow: var(--edge-glass);
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
 .foryou-mosaic__kind svg { width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; }

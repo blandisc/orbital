@@ -81,12 +81,12 @@ def status(server) -> dict:
 
 def test_boots_and_shows_the_library(page):
     ready(page)
-    # Inicio: lo último que jugaste a lo grande y tus consolas (con foto; sin arte, el respaldo).
-    page.locator(".tile--feature").wait_for(timeout=5000)
+    # Inicio (como el Apple TV): lo que te toca a lo grande, «A continuación» y tus consolas (con foto; sin arte, el respaldo).
+    page.locator(".feature-hero").wait_for(timeout=5000)
     assert page.locator(".tile--console").count() >= 4
-    assert page.locator(".tile--row").count() == 4  # «También tenías», en renglones
+    assert page.locator(".home__track--upnext .card").count() == 5  # lo de arriba y los cuatro que siguen
     page.keyboard.press("e")  # RB: a Juegos, con sus filas de portadas
-    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
+    page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
     assert page.locator("button.card").count() >= 6
 
 
@@ -94,7 +94,7 @@ def test_focused_piece_is_marked_with_aria_current(page):
     """El sistema de diseño promete `aria-current` en lo enfocado, en cualquier pieza (core/focus-mark.js)."""
     ready(page)
     page.keyboard.press("e")  # Juegos: portada enfocada, filtro y consola del riel
-    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
+    page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
     page.wait_for_timeout(400)
     assert page.locator(".card--focused[aria-current=true]:visible").count() == 1  # las vistas ocultas conservan su último foco
     page.keyboard.press("m")  # el menú: una opción enfocada (.sheet__item--focused) sin que la hoja lo ponga a mano
@@ -137,7 +137,7 @@ def _open_with_art(page, server, art) -> None:
     page.reload()  # que nada venga de la memoria del navegador
     ready(page)
     page.keyboard.press("e")  # Juegos: una portada con su fondo
-    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=8000)
+    page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=8000)
     page.wait_for_timeout(400)
     page.keyboard.press("Enter")
     page.locator(".launch").wait_for(timeout=5000)
