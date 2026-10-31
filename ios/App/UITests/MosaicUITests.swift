@@ -78,16 +78,70 @@ final class MosaicUITests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap(); sleep(2); snap("4-vuelta-ficha") }
     }
 
-    /// El muro de pósters detrás de «Para ti» sigue ahí después de pasear por el mosaico (se quedaba negro).
+    /// El muro de pósters detrás de «Para ti» está ahí en cuanto vuelves del mosaico o de otra pestaña, y es el mismo de antes
+    /// (Fernando, 31 oct 2026: «cuando entras se sigue; si sales, desaparece»). Con el vaivén encendido, como en su iPhone.
+    /// Se mide en la captura: la franja del muro varía mucho de brillo con pósters y casi nada si está negra.
     func testCoverWallAfterWalking() {
         app.launchArguments = ["-demo", "-demo-trakt", "-demo-tmdb", "-demo-tab", "1", "-demo-mode", "lists", "-demo-appearance", "dark"]
         app.launch()
-        let walk = app.buttons["paraTi-walk-mosaic"]
-        func snap(_ name: String) { let a = XCTAttachment(screenshot: app.screenshot()); a.name = name; a.lifetime = .keepAlways; add(a) }
-        XCTAssertTrue(walk.waitForExistence(timeout: 30)); sleep(3); snap("a-listas")
+        let walk = app.buttons["paraTi-walk-mosaic"], probe = app.otherElements["paraTi-cover-wall"]
+        func snap(_ name: String) -> XCUIScreenshot {
+            let shot = app.screenshot(); let a = XCTAttachment(screenshot: shot); a.name = name; a.lifetime = .keepAlways; add(a); return shot
+        }
+        /// La franja del muro: de la orilla de arriba de la portada al botón del mosaico.
+        func wall(_ shot: XCUIScreenshot) -> Double {
+            texture(shot, top: walk.frame.maxY - 280, bottom: walk.frame.minY - 8)
+        }
+        XCTAssertTrue(walk.waitForExistence(timeout: 30))
+        // Con los pósters ya bajados (la primera vez llegan de la red).
+        var before = 0.0
+        for _ in 0..<20 { before = wall(app.screenshot()); if before > 0.12 { break }; sleep(1) }
+        _ = snap("a-listas")
+        let wallBefore = probe.label
+        XCTAssertGreaterThan(before, 0.12, "el muro se ve antes de entrar al mosaico")
+
         walk.tap(); XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20)); sleep(3)
-        app.buttons["paraTi-back"].tap(); sleep(3); snap("b-de-vuelta")
-        sleep(5); snap("c-despues")
+        app.buttons["paraTi-back"].tap()
+        XCTAssertTrue(walk.waitForExistence(timeout: 5))
+        let back = wall(snap("b-de-vuelta"))
+        XCTAssertGreaterThan(back, before * 0.6, "al volver del mosaico el muro ya está (antes: \(before), al volver: \(back))")
+        XCTAssertEqual(probe.label, wallBefore, "y es el mismo muro, sin revolver")
+
+        app.tabBars.buttons.element(boundBy: 0).tap(); sleep(2)
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        XCTAssertTrue(walk.waitForExistence(timeout: 5))
+        let tab = wall(snap("c-vuelta-pestana"))
+        XCTAssertGreaterThan(tab, before * 0.6, "al volver de otra pestaña también (antes: \(before), al volver: \(tab))")
+        XCTAssertEqual(probe.label, wallBefore, "el mismo muro tras cambiar de pestaña")
+        print("muro (variación de brillo): antes \(before), de vuelta del mosaico \(back), de vuelta de otra pestaña \(tab)")
+        sleep(5); _ = snap("d-despues")
+    }
+
+    /// Qué tan variado es el brillo de una franja de la captura (de `top` a `bottom`, en puntos): un muro de pósters da
+    /// ~0.2, el fondo negro con estrellas casi 0.
+    private func texture(_ shot: XCUIScreenshot, top: CGFloat, bottom: CGFloat) -> Double {
+        guard let image = shot.image.cgImage else { return 0 }
+        let (w, h) = (image.width, image.height)
+        var pixels = [UInt8](repeating: 0, count: w * h * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                          space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard drawn else { return 0 }
+        let scale = CGFloat(h) / app.frame.height
+        let rows = max(0, Int(top * scale))..<min(h, Int(bottom * scale))
+        var values: [Double] = []
+        for y in stride(from: rows.lowerBound, to: rows.upperBound, by: 6) {
+            for x in stride(from: 0, to: w, by: 6) {
+                let i = (y * w + x) * 4
+                values.append((0.299 * Double(pixels[i]) + 0.587 * Double(pixels[i + 1]) + 0.114 * Double(pixels[i + 2])) / 255)
+            }
+        }
+        guard !values.isEmpty else { return 0 }
+        let mean = values.reduce(0, +) / Double(values.count)
+        return (values.map { ($0 - mean) * ($0 - mean) }.reduce(0, +) / Double(values.count)).squareRoot()
     }
 
     func testDraggingUpScrollsTheMosaicDown() {

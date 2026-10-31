@@ -5,27 +5,38 @@ import SwiftUI
 
 /// La portada de Para ti: un muro de pósters inclinado que se funde con el fondo, con su porqué y «Pasear por el mosaico».
 /// El muro sube detrás de la barra y baja un poco bajo los círculos, apagándose poco a poco en las dos orillas (antes se
-/// cortaba en seco); el espacio de la página no cambia. Cada vez que se arma salen otros pósters en otro orden, y el muro
+/// cortaba en seco); el espacio de la página no cambia. Cada vez que llegan otros pósters salen en otro orden, y el muro
 /// se desliza despacio sobre su diagonal (quieto con «Reducir movimiento» o fuera de pantalla).
 struct MosaicCover: View {
     let posters: [String]
     let onWalk: () -> Void
-    @State private var order: [String] = []
+    @State private var order: [String]
     @State private var onScreen = true
     /// El muro de la última vez (de qué pósters salió y su orden): sobrevive a que la pantalla se vuelva a armar.
     @MainActor private static var remembered: (source: [String], order: [String]) = ([], [])
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.perfTag) private var perfTag
+
+    init(posters: [String], onWalk: @escaping () -> Void) {
+        self.posters = posters
+        self.onWalk = onWalk
+        // Al volver del mosaico (o de otra pestaña) el muro de antes ya en el primer cuadro: sin un instante vacío.
+        _order = State(initialValue: Self.wall(for: posters))
+    }
 
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: DS.ParaTiB.coverHeight)
-            .overlay {
-                // El arte ocupa más que su marco (arriba y abajo) pero no ensancha la página: se recorta a los lados.
+            .overlay(alignment: .bottom) {
+                // El arte ocupa más que su marco (arriba y abajo) pero no ensancha la página: se recorta a los lados. Con su
+                // propio alto (no con un margen negativo): la máscara y el recorte medían el marco de 300 y cortaban en seco
+                // todo lo que subía detrás del título y la barra (Fernando, 31 oct 2026: «ahora no se ve bien»).
                 ZStack { moving; veil }
-                    .padding(.top, -DS.ParaTiB.coverBleedUp).padding(.bottom, -DS.ParaTiB.coverBleedDown)
+                    .frame(height: DS.ParaTiB.coverBleedUp + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown)
                     .mask { fade }
                     .clipped()
+                    .offset(y: DS.ParaTiB.coverBleedDown)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
@@ -44,27 +55,54 @@ struct MosaicCover: View {
                 .accessibilityIdentifier("paraTi-walk-mosaic")
                 .padding(.horizontal, DS.Space.gutter)
             }
+            .overlay { demoProbe }
             .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
-            // Otro muro cuando llegan otros pósters; al volver del mosaico, el mismo de antes (Fernando, 31 oct 2026: revolverlo
-            // otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
-            .onChange(of: posters, initial: true) {
-                if Self.remembered.source == posters, !Self.remembered.order.isEmpty { order = Self.remembered.order; return }
-                // Revueltos y, si son pocos, repetidos hasta llenar el muro (al jalar para actualizar no queda hueco arriba).
-                let pool = posters.shuffled()
-                order = pool.isEmpty ? [] : (0..<DS.ParaTiB.coverPosters).map { pool[$0 % pool.count] }
-                Self.remembered = (posters, order)
-            }
+            // Otro muro solo cuando llegan pósters de verdad distintos; al volver del mosaico, el mismo de antes (Fernando,
+            // 31 oct 2026: revolverlo otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
+            .onChange(of: posters) { order = Self.wall(for: posters) }
     }
 
-    /// El vaivén: el muro baja y sube un renglón sobre su diagonal, sin prisa (quieto con «Reducir movimiento» o fuera de pantalla).
-    @ViewBuilder private var moving: some View {
-        if reduceMotion || !onScreen {
-            wall
-        } else {
-            wall.phaseAnimator([false, true]) { view, drifted in
-                view.offset(x: drifted ? DS.ParaTiB.coverDriftX : 0, y: drifted ? DS.ParaTiB.coverDrift : 0)
-            } animation: { _ in DS.ParaTiB.coverDriftAnimation }
+    /// Solo en el modo demo: qué muro se armó (cuántos pósters y los primeros), para que la prueba de interfaz compruebe que
+    /// al volver del mosaico o de otra pestaña es el mismo (`MosaicUITests.testCoverWallAfterWalking`).
+    @ViewBuilder private var demoProbe: some View {
+        #if DEBUG
+        if Demo.isOn {
+            Color.clear
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim: "\(order.count) " + order.prefix(DS.ParaTiB.coverColumns).map { $0.split(separator: "/").suffix(2).joined(separator: "/") }.joined(separator: ",")))
+                .accessibilityIdentifier("paraTi-cover-wall")
+                .allowsHitTesting(false)
         }
+        #endif
+    }
+
+    /// El orden del muro para estos pósters: el de la última vez si sale de los mismos (o si los nuevos solo agregan y el
+    /// muro ya no tenía repetidos que cambiar); si no, revueltos y, si son pocos, repetidos hasta llenarlo (al jalar para
+    /// actualizar no queda hueco arriba).
+    @MainActor private static func wall(for posters: [String]) -> [String] {
+        let before = remembered, shown = Set(before.order), now = Set(posters)
+        if !before.order.isEmpty, Set(before.source) == now || (shown.isSubset(of: now) && shown.count >= min(now.count, DS.ParaTiB.coverPosters)) {
+            return before.order
+        }
+        let pool = posters.shuffled()
+        let order = pool.isEmpty ? [] : (0..<DS.ParaTiB.coverPosters).map { pool[$0 % pool.count] }
+        remembered = (posters, order)
+        return order
+    }
+
+    /// El vaivén: el muro baja y sube un renglón sobre su diagonal, sin prisa. Lo mueve Core Animation sobre el muro ya
+    /// pintado (`CoreDrift`): con `phaseAnimator` SwiftUI volvía a pintar los 72 pósters en cada cuadro, un núcleo entero
+    /// en reposo y el muro negro o apagado mientras tanto (Fernando, 31 oct 2026). Quieto con «Reducir movimiento» y en las
+    /// pruebas (`-demo-no-idle`); fuera de pantalla se pausa donde iba.
+    private var moving: some View {
+        CoreDrift(content: AnyView(wall.environment(\.perfTag, perfTag)), enabled: !still, running: onScreen)
+    }
+
+    private var still: Bool {
+        #if DEBUG
+        if Demo.noIdle { return true }
+        #endif
+        return reduceMotion
     }
 
     /// Un muro fijo (no perezoso): girado y más alto que su marco dentro del desplazamiento de la página, una rejilla perezosa
@@ -228,5 +266,87 @@ struct ListRow: View {
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Un vaivén lento hecho por Core Animation: SwiftUI pinta el contenido una vez y el servidor de render lo desliza, sin
+/// volver a pintarlo ni despertar a la app en cada cuadro (`phaseAnimator` lo repintaba entero 60 veces por segundo).
+/// `running` en falso lo pausa donde va, sin brincar; `enabled` en falso lo quita y lo deja en su lugar.
+private struct CoreDrift: UIViewRepresentable {
+    let content: AnyView
+    let enabled: Bool
+    let running: Bool
+
+    func makeUIView(context: Context) -> DriftView { DriftView(content) }
+
+    func updateUIView(_ view: DriftView, context: Context) {
+        view.host.rootView = content
+        view.set(enabled: enabled, running: running)
+    }
+}
+
+/// La vista de `CoreDrift`: aloja el contenido de SwiftUI y anima su capa (ida y vuelta, sin fin).
+private final class DriftView: UIView {
+    let host: UIHostingController<AnyView>
+    private var enabled = false, running = false
+    private static let key = "orbital.coverDrift"
+
+    init(_ content: AnyView) {
+        host = UIHostingController(rootView: content)
+        host.safeAreaRegions = []   // el muro no se recorre por la barra ni la isla: va de orilla a orilla
+        host.view.backgroundColor = .clear
+        host.view.isUserInteractionEnabled = false
+        host.view.accessibilityElementsHidden = true
+        super.init(frame: .zero)
+        isUserInteractionEnabled = false
+        addSubview(host.view)
+    }
+
+    @available(*, unavailable) required init?(coder: NSCoder) { nil }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        host.view.frame = bounds
+    }
+
+    /// Al volver a la ventana (otra pestaña, la app al frente) la animación sigue ahí; si iOS la quitó, se vuelve a poner.
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        sync()
+    }
+
+    func set(enabled: Bool, running: Bool) {
+        guard enabled != self.enabled || running != self.running else { return }
+        (self.enabled, self.running) = (enabled, running)
+        sync()
+    }
+
+    private func sync() {
+        let layer = host.view.layer
+        guard enabled else {
+            layer.removeAnimation(forKey: Self.key)
+            (layer.speed, layer.timeOffset, layer.beginTime) = (1, 0, 0)
+            return
+        }
+        if layer.animation(forKey: Self.key) == nil, window != nil {
+            let drift = CABasicAnimation(keyPath: "transform.translation")
+            drift.fromValue = NSValue(cgSize: .zero)
+            drift.toValue = NSValue(cgSize: CGSize(width: DS.ParaTiB.coverDriftX, height: DS.ParaTiB.coverDrift))
+            drift.duration = DS.ParaTiB.coverDriftSeconds
+            drift.autoreverses = true
+            drift.repeatCount = .infinity
+            drift.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            drift.isRemovedOnCompletion = false   // sobrevive a que la app pase al fondo
+            layer.add(drift, forKey: Self.key)
+        }
+        // Pausa y reanuda en el mismo punto (el reloj de la capa se detiene; nada brinca al volver a la vista).
+        if running, layer.speed == 0 {
+            let pausedAt = layer.timeOffset
+            (layer.speed, layer.timeOffset, layer.beginTime) = (1, 0, 0)
+            layer.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) - pausedAt
+        } else if !running, layer.speed != 0 {
+            let now = layer.convertTime(CACurrentMediaTime(), from: nil)
+            (layer.speed, layer.timeOffset) = (0, now)
+        }
     }
 }

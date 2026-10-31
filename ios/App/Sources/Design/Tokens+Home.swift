@@ -44,8 +44,9 @@ extension DS {
         /// círculos; qué tanto se ve hasta arriba y el velo que deja leer el título encima.
         static let coverBleedUp: CGFloat = 900, coverTitleZone: CGFloat = 260, coverBleedDown: CGFloat = 72, coverUnderBar: Double = 0.85, coverTitleVeil: Double = 0.55
         /// El vaivén del muro: un renglón sobre su diagonal, ida en 40 s y vuelta en otros 40; corre solo con la portada a la vista.
+        /// Lo mueve Core Animation (`CoreDrift`), no SwiftUI: por eso la duración va en segundos y no como `Animation`.
         static let coverDrift: CGFloat = 150, coverDriftX: CGFloat = 26, coverVisibleFrom: Double = 0.1
-        static let coverDriftAnimation = Animation.easeInOut(duration: 40)
+        static let coverDriftSeconds: TimeInterval = 40
         static let deckPoster: CGFloat = 84, deckShift: CGFloat = 10, deckTurn: Double = 5, deckBehind: Double = 0.6
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3
