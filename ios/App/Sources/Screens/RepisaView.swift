@@ -11,7 +11,7 @@ struct CollectionsCardLoader: View {
     var body: some View {
         let model = env.repisa
         let _ = model.track()
-        NavigationLink(value: RepisaRoute()) { CollectionsCard(seen: model.seenTotal) {} .allowsHitTesting(false) }
+        NavigationLink(value: RepisaRoute()) { CollectionsCard(seen: model.seenTotal) }
             .buttonStyle(.plain)
             .task { if !model.loaded { await model.load() } }
     }

@@ -96,10 +96,16 @@ struct CanonPoster: View {
 /// La tarjeta de Colecciones en Para ti: tres estatuillas en su repisa y cuántas del canon llevas.
 struct CollectionsCard: View {
     let seen: Int
-    let action: () -> Void
+    /// nil: solo la tarjeta (va dentro de un `NavigationLink`, que es quien recibe el toque). Con botón adentro y los toques
+    /// apagados para no chocar, el enlace se quedaba sin dónde tocar y no se podía entrar (Fernando, 30 oct 2026).
+    var action: (() -> Void)?
 
     var body: some View {
-        Button(action: action) {
+        if let action { Button(action: action) { card }.buttonStyle(.plain).accessibilityIdentifier("collections-card") }
+        else { card.accessibilityIdentifier("collections-card") }
+    }
+
+    private var card: some View {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 ShelfLedge {
                     HStack(alignment: .bottom, spacing: DS.Space.s6) {
@@ -114,8 +120,6 @@ struct CollectionsCard: View {
             }
             .padding(DS.Space.s4)
             .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("collections-card")
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 }

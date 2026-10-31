@@ -12,7 +12,7 @@ struct WatchingCardLoader: View {
         let model = env.watching
         let _ = model.track()
         if model.linked, !model.failed {   // sin historial (falló), la tarjeta no ocupa lugar en Para ti
-            NavigationLink(value: WatchingRoute()) { WatchingCard(stats: model.loaded ? model.stats(.week) : nil) {}.allowsHitTesting(false) }
+            NavigationLink(value: WatchingRoute()) { WatchingCard(stats: model.loaded ? model.stats(.week) : nil) }
                 .buttonStyle(.plain)
                 .task { await model.load() }
         }

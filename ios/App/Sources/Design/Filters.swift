@@ -32,8 +32,8 @@ struct DSKindFilter: View {
     var menu = false
     /// En la barra de arriba (Inicio): solo los tres íconos, sin texto; cada uno dice su nombre a VoiceOver.
     var icons = false
-    /// Pestañas de texto (Inicio y «Lo que se ve hoy»): la elegida en blanco con una marca turquesa debajo, las otras en
-    /// gris; sin cápsula (Fernando, 30 oct 2026: la cápsula gris no le gustaba). Se lee sobre el arte con su sombra.
+    /// Pestañas con ícono y nombre (Inicio y «Lo que se ve hoy», iguales): la elegida en blanco con una marca turquesa
+    /// debajo, las otras en gris; sin cápsula (Fernando, 30 oct 2026). Se lee sobre el arte con su sombra.
     var tabs = false
 
     var body: some View {
@@ -44,10 +44,15 @@ struct DSKindFilter: View {
                         let on = kind == option.0
                         Button { kind = option.0 } label: {
                             VStack(spacing: DS.Space.s1) {
-                                Text(option.1).recipe(.cardTitle, color: on ? DS.text : DS.textMuted).fontWeight(on ? .bold : .medium).lineLimit(1)
+                                HStack(spacing: DS.Space.s1) {
+                                    Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
+                                    Text(option.1).lineLimit(1)
+                                }
+                                .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))
+                                .foregroundStyle(on ? DS.text : DS.textMuted)
                                 Capsule().fill(on ? DS.eyebrow : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
                             }
-                            .frame(minHeight: DS.Size.touchTarget)
+                            .padding(.vertical, DS.Space.s1)   // sin alto mínimo: menos aire arriba bajo la barra (Fernando, 30 oct 2026)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)

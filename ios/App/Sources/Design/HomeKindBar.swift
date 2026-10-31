@@ -19,6 +19,6 @@ struct HomeKindBar: View {
         .accessibilityIdentifier("home-kind-filter")
         .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Space.gutter)
-        .padding(.bottom, DS.Space.s2)
+        .padding(.bottom, DS.Space.s1)
     }
 }

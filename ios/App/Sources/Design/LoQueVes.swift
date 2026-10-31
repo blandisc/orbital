@@ -11,11 +11,16 @@ import OrbitalCore
 struct WatchingCard: View {
     /// nil: aún cargando (esqueleto).
     let stats: WatchingStats?
-    let action: () -> Void
+    /// nil: solo la tarjeta (dentro de un `NavigationLink`, que recibe el toque; ver `CollectionsCard`).
+    var action: (() -> Void)?
     @Environment(\.calendar) private var calendar
 
     var body: some View {
-        Button(action: action) {
+        if let action { Button(action: action) { card }.buttonStyle(.plain).accessibilityIdentifier("watching-card") }
+        else { card.accessibilityIdentifier("watching-card") }
+    }
+
+    private var card: some View {
             HStack(alignment: .bottom, spacing: DS.Space.s4) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Eyebrow(text: Text("Lo que ves · Esta semana"), reason: true)
@@ -40,9 +45,6 @@ struct WatchingCard: View {
                     .padding(DS.Space.s4).accessibilityHidden(true)
             }
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("watching-card")
     }
 
     /// «4 h 12 min», o solo minutos si no llega a una hora.
