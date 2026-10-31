@@ -20,7 +20,7 @@ for k in range(0, len(files), 4):
     h = max(im.height for im in ims) + 30
     sheet = Image.new('RGB', (w * len(ims) + 10 * (len(ims) - 1), h), 'white')
     d = ImageDraw.Draw(sheet)
-    for i, (im, f) in enumerate(zip(ims, group)):
+    for i, (im, f) in enumerate(zip(ims, group, strict=True)):
         x = i * (w + 10)
         sheet.paste(im, (x, 30))
         d.text((x + 5, 8), os.path.basename(f), fill='black')
