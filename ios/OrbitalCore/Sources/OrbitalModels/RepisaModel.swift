@@ -83,7 +83,7 @@ public final class RepisaModel: ObservableModel {
     }
 
     private func cached(_ id: String, fresh: Bool) -> [CanonCollection.Item]? {
-        guard let data = services.kv.data(Self.cacheKey(id)), let saved = try? JSONDecoder().decode(Cached.self, from: data) else { return nil }
+        guard let data = services.caches.data(Self.cacheKey(id)), let saved = try? JSONDecoder().decode(Cached.self, from: data) else { return nil }
         // Las que vienen de tus listas se quedan fijas: no caducan.
         let fixed = Canon.lists.first { $0.id == id }.map { if case .mine = $0.source { true } else { false } } ?? false
         if fresh, !fixed, clock().timeIntervalSince(saved.at) > Self.listTTL { return nil }
@@ -95,6 +95,7 @@ public final class RepisaModel: ObservableModel {
 
     private func save(_ id: String, _ items: [CanonCollection.Item]) {
         let rows = items.map { [$0.imdb, $0.kind, $0.title, $0.year.map(String.init) ?? "", $0.rank.map(String.init) ?? ""] }
-        services.kv.set(Self.cacheKey(id), data: try? JSONEncoder().encode(Cached(at: clock(), rows: rows)))
+        let cached = Cached(at: clock(), rows: rows)
+        services.caches.set(Self.cacheKey(id)) { try? JSONEncoder().encode(cached) }
     }
 }

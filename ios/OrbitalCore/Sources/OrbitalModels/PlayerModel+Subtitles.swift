@@ -33,11 +33,6 @@ extension PlayerModel {
         Dictionary((request?.savedSubtitles ?? []).map { ($0.trackName, $0) }, uniquingKeysWith: { a, _ in a })
     }
 
-    /// El video trae (sin contar SDH ni forzados) subtítulos en ese idioma.
-    public func videoHasSubtitles(language: String) -> Bool {
-        videoTracks.contains { !SubtitleFilter.hides($0) && SubtitleLanguage.code($0.language) == language }
-    }
-
     /// La versión puesta ahora (su `id`), o nil sin subtítulos.
     public var selectedVersionID: String? {
         guard let id = snapshot.selectedSubtitle else { return nil }
@@ -90,30 +85,6 @@ extension PlayerModel {
         }
     }
 
-    /// El botón de subtítulos de los controles (un toque): la versión siguiente del idioma puesto, sin pausar ni abrir nada;
-    /// sin subtítulos, la mejor de tu idioma (`languages`: los tuyos, en orden). La primera vez busca también en internet, en
-    /// segundo plano, para que haya más versiones en la vuelta. Enseña la tira (‹ anterior y «Este va bien»).
-    /// Devuelve la versión puesta (nil: no hay ninguna en ese idioma).
-    @discardableResult
-    public func cycleSubtitle(languages: [String]) async -> SubtitleVersion? {
-        userTouched(); stopBriefSubtitles()
-        if foundSubtitles == nil, !searchingSubtitles, !subtitleSearchFailed { Task { await ensureSubtitleSearch() } }
-        let s = snapshot
-        let playing = s.selectedSubtitle.flatMap { id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }
-        let language = playing ?? languages.first { !subtitleVersions(language: $0).isEmpty } ?? languages.first
-        guard let language else { return nil }
-        var versions = subtitleVersions(language: language)
-        if versions.isEmpty {   // el video no trae ese idioma: se espera a lo de internet
-            await ensureSubtitleSearch()
-            versions = subtitleVersions(language: language)
-        }
-        guard let next = SubtitleVersions.next(after: playing == nil ? nil : selectedVersionID, in: versions) else { return nil }
-        tryingSubtitles = language
-        await apply(next)
-        rememberVersion(next)
-        return next
-    }
-
     /// Mantener presionado el botón: apaga los subtítulos o los vuelve a prender (lo que tenías, lo que elegiste en este
     /// título o lo mejor de tus idiomas). Devuelve la versión puesta; nil si quedaron apagados (o no hay ninguna).
     @discardableResult
@@ -152,19 +123,6 @@ extension PlayerModel {
 
     /// Todas las versiones de todos los idiomas que hay ahora (para encontrar la puesta).
     var allSubtitleVersions: [SubtitleVersion] { subtitleLanguages.flatMap { subtitleVersions(language: $0.code) } }
-
-    /// ‹ › de la tira: la versión anterior o la siguiente del mismo idioma.
-    public func stepVersion(_ delta: Int) async {
-        guard let language = tryingSubtitles else { return }
-        let versions = subtitleVersions(language: language)
-        guard !versions.isEmpty else { return }
-        let at = versions.firstIndex { $0.id == selectedVersionID } ?? -1
-        let next = ((at + delta) % versions.count + versions.count) % versions.count
-        await apply(versions[next])
-        rememberVersion(versions[next])
-    }
-
-    public func dismissTry() { tryingSubtitles = nil }
 
     /// «Este va bien»: cierra la tira y, en una serie, recuerda idioma y copia para el siguiente episodio.
     public func confirmSubtitle() {

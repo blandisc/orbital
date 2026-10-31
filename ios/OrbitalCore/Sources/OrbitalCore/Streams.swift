@@ -405,13 +405,6 @@ public enum Streams {
         }.map(\.element)
     }
 
-    /// «latino», «castellano» o "" según lo que diga el nombre de la fuente (si dice los dos, «latino»: trae esa pista).
-    /// 🇪🇸 sola no lo dice: Torrentio la pone a cualquier «Spanish».
-    public static func spanishDub(_ text: String) -> String {
-        let codes = audioLanguages(text, marks: allMatches(flagPattern, text).joined(separator: " / ")).map(\.code)
-        return codes.contains("es-419") ? "latino" : codes.contains("es-ES") ? "castellano" : ""
-    }
-
     static let stopwords: Set<String> = ["the", "and", "los", "las", "del", "une", "les", "der", "die", "das", "una"]
     static let scriptFree = r("[\u{0400}-\u{04FF}\u{3040}-\u{30FF}\u{4E00}-\u{9FFF}\u{AC00}-\u{D7AF}]", caseInsensitive: false)   // cirílico, japonés, chino, coreano
 

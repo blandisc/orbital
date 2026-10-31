@@ -38,10 +38,11 @@ public struct IntroDB: Sendable {
     private func fetch(videoID: String) async -> SkipSegments? {
         let parts = videoID.split(separator: ":").map(String.init)
         guard let imdb = parts.first, imdb.range(of: #"^tt[0-9]{7,9}$"#, options: .regularExpression) != nil else { return nil }
-        var components = URLComponents(string: Self.api + "/segments")!
-        components.queryItems = [URLQueryItem(name: "imdb_id", value: imdb)]
-        if parts.count >= 3 { components.queryItems! += [URLQueryItem(name: "season", value: parts[1]), URLQueryItem(name: "episode", value: parts[2])] }
-        else { components.queryItems!.append(URLQueryItem(name: "is_movie", value: "true")) }
+        guard var components = URLComponents(string: Self.api + "/segments") else { return nil }
+        var query = [URLQueryItem(name: "imdb_id", value: imdb)]
+        if parts.count >= 3 { query += [URLQueryItem(name: "season", value: parts[1]), URLQueryItem(name: "episode", value: parts[2])] }
+        else { query.append(URLQueryItem(name: "is_movie", value: "true")) }
+        components.queryItems = query
         guard let url = components.url,
               let response = try? await http.send(HTTPRequest(url: url, timeout: 6)), response.status == 200,
               let json = JSON.parse(response.data) else { return nil }

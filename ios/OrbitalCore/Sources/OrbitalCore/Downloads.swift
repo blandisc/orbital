@@ -388,10 +388,6 @@ public actor Downloads {
         return Array(ids.dropFirst(lastDone + 1).filter { !have.contains($0) }.prefix(ahead))
     }
 
-    /// Quita lo ya visto (para «borrar al terminar de verlo»).
-    public func removeWatched(isWatched: @Sendable (DownloadItem) -> Bool) async {
-        for item in all where item.state == .done && isWatched(item) { await remove(item.id) }
-    }
 }
 
 public enum DownloadFiles {

@@ -227,11 +227,6 @@ public final class TitleModel: ObservableModel {
         try? await services.tmdb.details(kind: title.kind, tmdbID: title.tmdbID, urgent: true).imdb
     }
 
-    /// Marca como vistos los episodios de la temporada elegida que te faltan (como «Marcar como visto» en cada uno).
-    public func markSeasonWatched() async {
-        for row in rows where !row.watched { await markWatched(row.id) }
-    }
-
     /// «4 de 10 vistos» de la temporada elegida.
     public var seasonProgress: (watched: Int, total: Int) { (rows.filter(\.watched).count, rows.count) }
 
@@ -537,7 +532,6 @@ public final class TitleModel: ObservableModel {
     /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
     public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
 
-    public func clearMessage() { message = nil }
 }
 
 /// Una de tus listas de Trakt, con si el título que ves está en ella.

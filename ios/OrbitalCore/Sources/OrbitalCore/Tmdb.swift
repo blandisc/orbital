@@ -47,7 +47,16 @@ public struct Tmdb: Sendable {
     public let key: String
     public var language: String
 
-    public init(http: HTTPClient, key: String, language: String = "es-MX") { self.http = http; self.key = key; self.language = language }
+    /// Lo ya pedido de `details` (en disco) y la fila de lo que sale a la red: los da quien arma la app (`Services`), para que
+    /// todas las copias de `Tmdb` (se rearma al cambiar una clave) compartan la misma memoria y la misma fila. Antes eran
+    /// globales (`static`) y la demostración escribía en la memoria de tu iPhone (auditoría, 31 oct 2026, B6).
+    let memo: TmdbDetailsMemo?
+    let gate: TmdbDetailsGate
+
+    /// `memo` nil (pruebas): sin memoria. Sin `gate`, una fila propia de 6.
+    public init(http: HTTPClient, key: String, language: String = "es-MX", memo: TmdbDetailsMemo? = nil, gate: TmdbDetailsGate? = nil) {
+        self.http = http; self.key = key; self.language = language; self.memo = memo; self.gate = gate ?? TmdbDetailsGate()
+    }
     public var configured: Bool { !key.isEmpty }
 
     public static func image(_ path: JSON?, size: String = "w500") -> String? {
@@ -73,13 +82,24 @@ public struct Tmdb: Sendable {
         var headers: [String: String] = [:]
         if key.hasPrefix("eyJ") { headers["Authorization"] = "Bearer \(key)" } else { items.append(("api_key", key)) }
         if !items.contains(where: { $0.0 == "language" }) { items.append(("language", language)) }
-        var components = URLComponents(string: Tmdb.api + path)!
-        components.queryItems = items.map { URLQueryItem(name: $0.0, value: $0.1) }
+        guard let url = Tmdb.url(path, items) else {
+            Log.network.error("TMDB: dirección inválida para \(path, privacy: .public)")
+            throw TmdbError.network("dirección inválida")
+        }
         let response: HTTPResponse
-        do { response = try await http.send(HTTPRequest(url: components.url!, headers: headers, timeout: 10)) } catch { throw TmdbError.network("\(error)") }
+        do { response = try await http.send(HTTPRequest(url: url, headers: headers, timeout: 10)) } catch { throw TmdbError.network("\(error)") }
         if response.status == 401 { throw TmdbError.badKey }
         guard response.status == 200, let json = JSON.parse(response.data), json.object != nil else { throw TmdbError.http(response.status) }
         return json
+    }
+
+    /// La dirección de una consulta: la ruta se codifica (un id raro con espacios, «?» o «#» no rompe la dirección ni la
+    /// app; antes era `URLComponents(string:)!`). nil si aun así no se puede armar.
+    static func url(_ path: String, _ items: [(String, String)]) -> URL? {
+        guard var components = URLComponents(string: api) else { return nil }
+        components.path += path.hasPrefix("/") ? path : "/" + path   // `path` codifica lo que no va en una ruta
+        components.queryItems = items.map { URLQueryItem(name: $0.0, value: $0.1) }
+        return components.url
     }
 
     public func platforms(region: String) async throws -> [String: PlatformInfo] {
@@ -130,17 +150,15 @@ public struct Tmdb: Sendable {
         (3172, "Blumhouse"), (521, "DreamWorks Animation"), (90733, "NEON"),
     ]
 
-    /// Lo que ya se pidió (14 días, en disco): cada título de Temporadas, Plataformas y Estudios pide sus detalles para saber
-    /// su IMDb, y eran ~260 peticiones en cada arranque (Fernando, 31 oct 2026: «está muy lenta»). nil (pruebas): sin memoria.
-    nonisolated(unsafe) public static var detailsMemo: TmdbDetailsMemo?
-
+    /// Lo que ya se pidió (14 días, en disco, `memo`): cada título de Temporadas, Plataformas y Estudios pide sus detalles para
+    /// saber su IMDb, y eran ~260 peticiones en cada arranque (Fernando, 31 oct 2026: «está muy lenta»).
     /// `urgent`: lo pediste tú (abrir una ficha): no hace fila detrás de lo que se carga de fondo (auditoría, 31 oct 2026).
     public func details(kind: String, tmdbID: Int, urgent: Bool = false) async throws -> TmdbDetails {
         let memoKey = "\(language):\(kind):\(tmdbID)"
-        if let memo = Self.detailsMemo, let hit = await memo.get(memoKey) { return hit }
+        if let memo, let hit = await memo.get(memoKey) { return hit }
         let fresh = urgent ? try await fetchDetails(kind: kind, tmdbID: tmdbID)
-            : try await TmdbDetailsGate.shared.details(memoKey) { try await fetchDetails(kind: kind, tmdbID: tmdbID) }
-        if let memo = Self.detailsMemo, fresh.imdb != nil { await memo.set(memoKey, fresh) }
+            : try await gate.details(memoKey) { try await fetchDetails(kind: kind, tmdbID: tmdbID) }
+        if let memo, fresh.imdb != nil { await memo.set(memoKey, fresh) }
         return fresh
     }
 
@@ -179,10 +197,6 @@ public struct Tmdb: Sendable {
         let row = data[kind == "movie" ? "movie_results" : "tv_results"]?.array?.first
         guard let votes = row?["vote_count"]?.intValue, votes >= Self.minVotes, let r = row?["vote_average"]?.doubleValue, r > 0 else { return nil }
         return r
-    }
-    /// El idioma original de un título de IMDb («es», «en», «ja»…), de la misma consulta de `find`; nil si TMDB no lo tiene.
-    public func originalLanguage(imdb: String, kind: String) async throws -> String? {
-        try await original(imdb: imdb, kind: kind).language
     }
 
     /// El idioma original y los nombres de un título (como `original` de la TV): para el audio de las versiones que no lo
@@ -482,17 +496,19 @@ public actor TmdbDetailsMemo {
 /// Los detalles de TMDB que salen a la red: unos cuantos a la vez entre todas las secciones (Para ti, Plataformas,
 /// Temporadas, Estudios…) y uno solo por título aunque lo pidan dos secciones a la vez. Antes cada lista los pedía todos
 /// de golpe (decenas al abrir Para ti) y competían con lo que se ve primero (Fernando, 31 oct 2026: tardaba ~5 s).
-actor TmdbDetailsGate {
-    static let shared = TmdbDetailsGate(limit: 6)
+public actor TmdbDetailsGate {
     private let limit: Int
     private var running = 0
     private var waiting: [CheckedContinuation<Void, Never>] = []
     private var inflight: [String: Task<TmdbDetails, any Error>] = [:]
 
-    init(limit: Int) { self.limit = limit }
+    public init(limit: Int = 6) { self.limit = limit }
 
-    /// Cuántos esperan cada título: si todos se van (saliste de Para ti), la petición se cancela; si aún no empezaba, ni sale.
-    private var waiters: [String: Int] = [:]
+    /// Quiénes siguen esperando cada título: si todos se van (saliste de Para ti), la petición se cancela; si aún no
+    /// empezaba, ni sale. Antes se contaban hasta que la espera terminaba, así que con dos secciones esperando el mismo
+    /// título y las dos fuera, cada una veía a la otra y nadie cancelaba (auditoría, 31 oct 2026, B9).
+    private var waiters: [String: Set<Int>] = [:]
+    private var nextWaiter = 0
 
     func details(_ key: String, _ fetch: @escaping @Sendable () async throws -> TmdbDetails) async throws -> TmdbDetails {
         let task: Task<TmdbDetails, any Error>
@@ -500,20 +516,25 @@ actor TmdbDetailsGate {
             task = Task { try await self.limited(fetch) }
             inflight[key] = task
         }
-        waiters[key, default: 0] += 1
-        defer {
-            waiters[key, default: 1] -= 1
-            if waiters[key] == 0 { waiters[key] = nil; if inflight[key] == task { inflight[key] = nil } }
-        }
+        nextWaiter += 1
+        let me = nextWaiter
+        waiters[key, default: []].insert(me)
+        defer { leave(key, me, task) }
         return try await withTaskCancellationHandler { try await task.value } onCancel: {
-            Task { await self.leave(key, task) }
+            Task { await self.leave(key, me, task) }
         }
     }
 
-    /// Quien esperaba se fue: si era el último, se cancela la petición.
-    private func leave(_ key: String, _ task: Task<TmdbDetails, any Error>) {
-        if (waiters[key] ?? 0) <= 1 { task.cancel() }
+    /// Quien esperaba se fue (o ya recibió lo suyo): si era el último, se cancela la petición y se suelta.
+    private func leave(_ key: String, _ waiter: Int, _ task: Task<TmdbDetails, any Error>) {
+        guard waiters[key]?.remove(waiter) != nil, waiters[key]?.isEmpty == true else { return }
+        waiters[key] = nil
+        task.cancel()   // si ya terminó, no hace nada
+        if inflight[key] == task { inflight[key] = nil }
     }
+
+    /// Cuántos títulos siguen en vuelo (pruebas).
+    var inflightCount: Int { inflight.count }
 
     private func limited(_ fetch: @Sendable () async throws -> TmdbDetails) async throws -> TmdbDetails {
         if running < limit { running += 1 } else { await withCheckedContinuation { waiting.append($0) } }   // el lugar lo pasa quien termina

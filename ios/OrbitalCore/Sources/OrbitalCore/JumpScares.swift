@@ -50,7 +50,7 @@ public struct JumpScares: Sendable {
     }
 
     static func searchURL(title: String) -> URL? {
-        var c = URLComponents(string: site + "/")!
+        guard var c = URLComponents(string: site + "/") else { return nil }
         c.queryItems = [URLQueryItem(name: "s", value: title)]
         return c.url
     }

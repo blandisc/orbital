@@ -53,12 +53,15 @@ public final class ParaTiModel: ObservableModel {
         super.init()
         restoreSnapshot()
         // El corazón de una ficha (o «Quitar de favoritos» en «Tuyo»): la lista de Favoritos cambia al momento, sin recargar.
-        favoriteObserver = NotificationCenter.default.addObserver(forName: FavoriteChange.name, object: nil, queue: .main) { [weak self] note in
+        notifications.observe(FavoriteChange.name) { [weak self] note in
             guard let change = FavoriteChange.read(note) else { return }
             MainActor.assumeIsolated { self?.setFavorite(change.suggestion, shown: change.add) }
         }
     }
-    private var favoriteObserver: NSObjectProtocol?
+    /// Se dejan de escuchar al irse el modelo.
+    let notifications = NotificationTokens()
+    /// El muro de la portada de la última vez (mismo muro al volver del mosaico o de otra pestaña).
+    public let coverWall = CoverWallMemory()
     private var hiddenFavorites: [String: (Int, Suggestion)] = [:]
 
     /// Un título que entra o sale de tus favoritos («Tuyo › Favoritos»): sale al instante y, con «Deshacer», vuelve a su lugar.
@@ -85,7 +88,7 @@ public final class ParaTiModel: ObservableModel {
     private struct Snapshot: Codable { var console: Bool; var kind: String; var lists: [ForYouList]; var rails: [String: Data] }
 
     private func restoreSnapshot() {
-        guard let data = services.kv.data(Self.snapshotKey), let saved = try? JSONDecoder().decode(Snapshot.self, from: data),
+        guard let data = services.caches.data(Self.snapshotKey), let saved = try? JSONDecoder().decode(Snapshot.self, from: data),
               saved.kind == kind else { return }
         source = saved.console ? .console : .phone
         lists = saved.lists
@@ -96,8 +99,11 @@ public final class ParaTiModel: ObservableModel {
 
     private func saveSnapshot() {
         guard !Task.isCancelled, !lists.isEmpty else { return }
-        let rails = railItems.compactMapValues { ForYou.encode(Array($0.prefix(Self.snapshotRowLimit))) }
-        services.kv.set(Self.snapshotKey, data: try? JSONEncoder().encode(Snapshot(console: source == .console, kind: kind, lists: lists, rails: rails)))
+        let rails = railItems.mapValues { Array($0.prefix(Self.snapshotRowLimit)) }
+        let console = source == .console, kind = kind, lists = lists
+        services.caches.set(Self.snapshotKey) {   // se codifica fuera del hilo principal
+            try? JSONEncoder().encode(Snapshot(console: console, kind: kind, lists: lists, rails: rails.compactMapValues { ForYou.encode($0) }))
+        }
     }
     static let snapshotRowLimit = 20
 
@@ -315,12 +321,7 @@ public final class ParaTiModel: ObservableModel {
         if kind == "all" {
             async let series = forYou.newOnPlatforms(kind: "series")
             async let movies = forYou.newOnPlatforms(kind: "movie")
-            let (a, b) = await (series, movies)
-            var mixed: [Suggestion] = []
-            for i in 0..<max(a.count, b.count) {
-                if i < a.count { mixed.append(a[i]) }
-                if i < b.count { mixed.append(b[i]) }
-            }
+            let mixed = Interleave.suggestions([await series, await movies])
             if kind == asked { newOnPlatforms = mixed }   // cambiaste de tipo mientras llegaba: gana el que pediste al último
         } else {
             let found = await forYou.newOnPlatforms(kind: asked)
@@ -351,20 +352,12 @@ public final class ParaTiModel: ObservableModel {
         guard !wanted.isEmpty else { return }
         loadingKeys.formUnion(wanted.map(\.key))
         triedThisLoad.formUnion(wanted.map(\.key))
-        let remote = services.forYouRemote, local = services.forYou, source = source, kind = kind
+        let fetcher = shelfFetcher, kind = kind
         await withTaskGroup(of: (String, [Suggestion]?).self) { group in
             for entry in wanted {
                 group.addTask {
-                    @Sendable func fetch(_ kind: String) async -> [Suggestion]? {
-                        switch source {
-                        case .console:
-                            // Un estante que tarda (la consola refrescando JustWatch) tiene una segunda oportunidad.
-                            if let found = try? await remote.items(listID: entry.listID, kind: kind) { return found }
-                            guard !Task.isCancelled else { return nil }
-                            return try? await remote.items(listID: entry.listID, kind: kind)
-                        case .phone: return try? await local.items(listID: entry.listID, kind: kind)
-                        }
-                    }
+                    // Un estante que tarda (la consola refrescando JustWatch) tiene una segunda oportunidad.
+                    @Sendable func fetch(_ kind: String) async -> [Suggestion]? { await fetcher.items(listID: entry.listID, kind: kind, retry: true) }
                     guard kind == "all" else { return (entry.key, await fetch(kind)) }
                     // «Todo»: series y películas a la vez, alternadas (un estante que no separa trae lo mismo en ambas: sin repetir).
                     async let series = fetch("series")
@@ -383,34 +376,33 @@ public final class ParaTiModel: ObservableModel {
     }
 
     /// Una y una (serie, película…), sin repetir títulos: lo que queda de la más larga va al final.
-    nonisolated static func interleaved(_ a: [Suggestion], _ b: [Suggestion]) -> [Suggestion] {
-        var out: [Suggestion] = [], seen = Set<String>()
-        for i in 0..<max(a.count, b.count) {
-            for list in [a, b] where i < list.count && seen.insert(list[i].imdb).inserted { out.append(list[i]) }
-        }
-        return out
-    }
+    nonisolated static func interleaved(_ a: [Suggestion], _ b: [Suggestion]) -> [Suggestion] { Interleave.suggestions([a, b]) }
 
-    private func itemsFromCurrentSource(listID: String) async -> [Suggestion] {
-        switch source {
-        case .console: return (try? await services.forYouRemote.items(listID: listID, kind: kind)) ?? []
-        case .phone: return (try? await services.forYou.items(listID: listID, kind: kind)) ?? []
+    /// De dónde salen los estantes ahora (tu Orbital o el iPhone): una sola forma de pedirlos para estantes, rankings y
+    /// «¿Qué vemos?» (antes la misma elección estaba copiada cuatro veces).
+    struct ShelfFetcher: Sendable {
+        let remote: RemoteForYou, local: ForYou, source: Source
+        /// nil: falló o no contestó (no es «vacío»). `retry`: con la consola, una segunda oportunidad.
+        func items(listID: String, kind: String, retry: Bool = false) async -> [Suggestion]? {
+            switch source {
+            case .console:
+                if let found = try? await remote.items(listID: listID, kind: kind) { return found }
+                guard retry, !Task.isCancelled else { return nil }
+                return try? await remote.items(listID: listID, kind: kind)
+            case .phone: return try? await local.items(listID: listID, kind: kind)
+            }
         }
     }
+    private var shelfFetcher: ShelfFetcher { ShelfFetcher(remote: services.forYouRemote, local: services.forYou, source: source) }
 
     public func items(for list: ForYouList) -> [Suggestion] { railItems[key(list)] ?? [] }
 
     /// «¿Qué vemos?» › De qué listas: lo de una lista que aún no se abrió, pedido solo si la eliges (series y películas,
     /// alternadas). Tienes muchas listas: no se piden todas al abrir la hoja.
     public func decideLoader(for list: ForYouList) -> @Sendable () async -> [Suggestion] {
-        let remote = services.forYouRemote, local = services.forYou, source = source, id = list.id
+        let fetcher = shelfFetcher, id = list.id
         return {
-            @Sendable func fetch(_ kind: String) async -> [Suggestion] {
-                switch source {
-                case .console: return (try? await remote.items(listID: id, kind: kind)) ?? []
-                case .phone: return (try? await local.items(listID: id, kind: kind)) ?? []
-                }
-            }
+            @Sendable func fetch(_ kind: String) async -> [Suggestion] { await fetcher.items(listID: id, kind: kind) ?? [] }
             async let series = fetch("series")
             async let movies = fetch("movie")
             return await ParaTiModel.interleaved(series, movies)
@@ -445,15 +437,10 @@ public final class ParaTiModel: ObservableModel {
         let wanted = hub.rankings.filter { (rankingItems[$0.id] == nil || staleRankings.contains($0.id)) && !rankingLoading.contains($0.id) }
         guard !wanted.isEmpty else { return }
         rankingLoading.formUnion(wanted.map(\.id))
-        let remote = services.forYouRemote, local = services.forYou, source = source
+        let fetcher = shelfFetcher
         await withTaskGroup(of: (String, [Suggestion]?).self) { group in
             for ranking in wanted {
-                group.addTask {
-                    switch source {
-                    case .console: return (ranking.id, try? await remote.items(listID: ranking.listID, kind: ranking.kind))
-                    case .phone: return (ranking.id, try? await local.items(listID: ranking.listID, kind: ranking.kind))
-                    }
-                }
+                group.addTask { (ranking.id, await fetcher.items(listID: ranking.listID, kind: ranking.kind)) }
             }
             for await (id, found) in group {
                 rankingLoading.remove(id)

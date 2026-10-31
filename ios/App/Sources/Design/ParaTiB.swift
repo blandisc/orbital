@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalModels
 
 // Las piezas de Para ti B (docs/producto/inicio-benchmark/para-ti/): los círculos para saltar a cada parte, la portada del mosaico y la
 // tarjeta de «¿Qué vemos hoy?».
@@ -9,19 +10,21 @@ import SwiftUI
 /// se desliza despacio sobre su diagonal (quieto con «Reducir movimiento» o fuera de pantalla).
 struct MosaicCover: View {
     let posters: [String]
+    /// El muro de la última vez (de qué pósters salió y su orden), en `ParaTiModel`: sobrevive a que la pantalla se vuelva
+    /// a armar. El orden lo decide `CoverWall` (OrbitalModels, con pruebas).
+    let memory: CoverWallMemory
     let onWalk: () -> Void
     @State private var order: [String]
     @State private var onScreen = true
-    /// El muro de la última vez (de qué pósters salió y su orden): sobrevive a que la pantalla se vuelva a armar.
-    @MainActor private static var remembered: (source: [String], order: [String]) = ([], [])
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.perfTag) private var perfTag
 
-    init(posters: [String], onWalk: @escaping () -> Void) {
+    init(posters: [String], memory: CoverWallMemory, onWalk: @escaping () -> Void) {
         self.posters = posters
+        self.memory = memory
         self.onWalk = onWalk
         // Al volver del mosaico (o de otra pestaña) el muro de antes ya en el primer cuadro: sin un instante vacío.
-        _order = State(initialValue: Self.wall(for: posters))
+        _order = State(initialValue: memory.order(for: posters, size: DS.ParaTiB.coverPosters))
     }
 
     var body: some View {
@@ -59,7 +62,7 @@ struct MosaicCover: View {
             .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
             // Otro muro solo cuando llegan pósters de verdad distintos; al volver del mosaico, el mismo de antes (Fernando,
             // 31 oct 2026: revolverlo otra vez pedía pósters nuevos y el muro se quedaba negro unos segundos).
-            .onChange(of: posters) { order = Self.wall(for: posters) }
+            .onChange(of: posters) { order = memory.order(for: posters, size: DS.ParaTiB.coverPosters) }
     }
 
     /// Solo en el modo demo: qué muro se armó (cuántos pósters y los primeros), para que la prueba de interfaz compruebe que
@@ -74,28 +77,6 @@ struct MosaicCover: View {
                 .allowsHitTesting(false)
         }
         #endif
-    }
-
-    /// El orden del muro para estos pósters (los primeros pesan más: los del mosaico). Con los mismos pósters (al volver del
-    /// mosaico o de otra pestaña), el mismo muro. Si llegaron más distintos, se arma otro con todos (antes solo se cambiaban
-    /// los repetidos de arriba, escondidos tras el título, y abajo se quedaban franjas de los mismos pósters: auditoría del
-    /// 31 oct 2026). Si son pocos, se repiten en tandas revueltas cada una (sin franjas en diagonal).
-    @MainActor private static func wall(for posters: [String]) -> [String] {
-        let before = remembered, now = Set(posters), size = DS.ParaTiB.coverPosters
-        if !before.order.isEmpty, now.isSubset(of: Set(before.source)) || Set(before.order).count >= min(now.count, size) {
-            return before.order
-        }
-        let distinct = Array(NSOrderedSet(array: posters).array.compactMap { $0 as? String }.prefix(size))
-        var order: [String] = []
-        while !distinct.isEmpty, order.count < size {
-            var batch = distinct.shuffled()
-            // Que una tanda no empiece con el último de la anterior (dos iguales juntos).
-            if let last = order.last, batch.first == last, batch.count > 1 { batch.swapAt(0, batch.count - 1) }
-            order += batch
-        }
-        order = Array(order.prefix(size))
-        remembered = (posters, order)
-        return order
     }
 
     /// El vaivén: el muro baja y sube un renglón sobre su diagonal, sin prisa. Lo mueve Core Animation sobre el muro ya

@@ -106,23 +106,23 @@ public final class HomeModel: ObservableModel {
         self.services = services
         defer {
             // El corazón de una ficha (o «Quitar de favoritos» aquí): la fila cambia al momento, sin esperar la recarga.
-            favoriteObserver = NotificationCenter.default.addObserver(forName: FavoriteChange.name, object: nil, queue: .main) { [weak self] note in
+            notifications.observe(FavoriteChange.name) { [weak self] note in
                 guard let change = FavoriteChange.read(note) else { return }
                 MainActor.assumeIsolated { self?.setFavorite(change.suggestion, shown: change.add) }
             }
         }
         topBrand = services.kv.data(Self.topBrandKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { b in Self.topServices.contains { $0.brand == b } ? b : nil } ?? "netflix"
         super.init()
-        if let data = services.kv.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
+        if let data = services.caches.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
             continueWatching = cache.continueWatching; myList = cache.myList
         }
         defer {
             // Lo tuyo cambió (lo viste, lo guardaste, llegó algo de Trakt): Inicio se vuelve a armar con lo del teléfono.
-            libraryObserver = NotificationCenter.default.addObserver(forName: LocalLibrary.changed, object: nil, queue: .main) { [weak self] _ in
+            notifications.observe(LocalLibrary.changed) { [weak self] _ in
                 MainActor.assumeIsolated { guard let self else { return }; Task { await self.showLibrary() } }
             }
         }
-        if let data = services.kv.data(Self.listsKey), let saved = try? JSONDecoder().decode([String: Data].self, from: data) {
+        if let data = services.caches.data(Self.listsKey), let saved = try? JSONDecoder().decode([String: Data].self, from: data) {
             spotlight = ForYou.decode(saved["spotlight"]); forYouPicks = ForYou.decode(saved["forYou"])
             for kind in ["series", "movie"] {
                 let k = "\(topBrand):\(kind)"
@@ -138,7 +138,7 @@ public final class HomeModel: ObservableModel {
         var lists: [String: [Suggestion]] = ["spotlight": spotlight, "forYou": forYouPicks, "pending": Array(watchlistDetails.prefix(Self.rowLimit * 3)),
                                                      "favorites": Array(favorites.prefix(Self.rowLimit))]
         for kind in ["series", "movie"] { lists["top:\(topBrand):\(kind)"] = top(kind: kind) }
-        services.kv.set(Self.listsKey, data: try? JSONEncoder().encode(lists.compactMapValues { ForYou.encode($0) }))
+        services.caches.set(Self.listsKey) { [lists] in try? JSONEncoder().encode(lists.compactMapValues { ForYou.encode($0) }) }
     }
 
     /// Al volver a Inicio (otra pestaña, una ficha): solo si lo último tiene más de un minuto. Deslizar hacia abajo, volver de
@@ -261,7 +261,8 @@ public final class HomeModel: ObservableModel {
         // Lo que ya estás viendo no se repite arriba.
         let watching = Set(continueWatching.map(\.metaID))
         if spotlight.contains(where: { watching.contains($0.imdb) }) { spotlight.removeAll { watching.contains($0.imdb) } }
-        services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
+        let cache = Cache(continueWatching: continueWatching, myList: myList)
+        services.caches.set(Self.cacheKey) { try? JSONEncoder().encode(cache) }
         publishWidget()
     }
 
@@ -371,8 +372,8 @@ public final class HomeModel: ObservableModel {
         }
     }
     private var hiddenFavorites: [String: (Int, Suggestion)] = [:]
-    private var favoriteObserver: NSObjectProtocol?
-    private var libraryObserver: NSObjectProtocol?
+    /// Se dejan de escuchar al irse el modelo.
+    let notifications = NotificationTokens()
 
     /// «Quitar de Seguir viendo».
     public func dismiss(_ item: HomeItem) async {

@@ -77,15 +77,6 @@ public final class SettingsModel: ObservableModel {
         }
     }
 
-    /// El secreto de una aplicación de Trakt antigua va al Keychain (no a los ajustes). Las nuevas (PKCE) no tienen: el código
-    /// de dispositivo y la renovación funcionan sin él.
-    public func setTraktSecret(_ secret: String) {
-        let trimmed = secret.trimmingCharacters(in: .whitespacesAndNewlines)
-        services.secrets.set(SecretKey.traktClientSecret, trimmed.isEmpty ? nil : trimmed)
-        services.reconfigure()
-        trakt = computeTraktState()
-    }
-
     public func setOrbitalToken(_ token: String) {
         let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
         services.secrets.set(SecretKey.orbitalToken, trimmed.isEmpty ? nil : trimmed)

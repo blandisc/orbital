@@ -137,12 +137,21 @@ public actor Trakt {
     private func call(_ method: String, _ path: String, body: JSON? = nil, auth: Bool = true, params: [(String, String)] = []) async throws -> (Int, JSON?) {
         var headers = ["trakt-api-version": "2", "trakt-api-key": clientID, "Content-Type": "application/json"]
         if auth { headers["Authorization"] = "Bearer \(try await access())" }
-        var components = URLComponents(url: Trakt.api.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
-        if !params.isEmpty { components.queryItems = params.map { URLQueryItem(name: $0.0, value: $0.1) } }
+        guard let url = Trakt.url(path, params) else {
+            Log.network.error("Trakt: dirección inválida para \(path, privacy: .public)")
+            throw TraktError.invalid("dirección inválida")
+        }
         do {
-            let response = try await http.send(HTTPRequest(url: components.url!, method: method, headers: headers, body: body?.serialized(), timeout: 10))
+            let response = try await http.send(HTTPRequest(url: url, method: method, headers: headers, body: body?.serialized(), timeout: 10))
             return (response.status, JSON.parse(response.data))
         } catch let error as NetworkError { throw TraktError.network("\(error)") }
+    }
+
+    /// La dirección de una consulta, con la ruta codificada; nil (error, no cierre) si no se puede armar.
+    static func url(_ path: String, _ params: [(String, String)]) -> URL? {
+        guard var components = URLComponents(url: api.appendingPathComponent(path), resolvingAgainstBaseURL: false) else { return nil }
+        if !params.isEmpty { components.queryItems = params.map { URLQueryItem(name: $0.0, value: $0.1) } }
+        return components.url
     }
 
     func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {

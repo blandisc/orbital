@@ -31,7 +31,7 @@ public final class WatchingModel: ObservableModel {
     public init(_ services: Services, clock: @escaping @Sendable () -> Date = { Date() }, calendar: Calendar = .current) {
         self.services = services; self.clock = clock; self.calendar = calendar
         super.init()
-        if let data = services.kv.data(Self.cacheKey), let saved = try? JSONDecoder().decode(Saved.self, from: data) {
+        if let data = services.caches.data(Self.cacheKey), let saved = try? JSONDecoder().decode(Saved.self, from: data) {
             plays = saved.plays.map { TraktPlay(at: $0.at, kind: $0.kind, imdb: $0.imdb, title: $0.title, minutes: $0.minutes, genres: $0.genres, season: $0.season, episode: $0.episode) }
             since = saved.since
             loaded = true
@@ -95,6 +95,6 @@ public final class WatchingModel: ObservableModel {
     private func save() {
         guard let since else { return }
         let saved = Saved(since: since, plays: plays.map { .init(at: $0.at, kind: $0.kind, imdb: $0.imdb, title: $0.title, minutes: $0.minutes, genres: $0.genres, season: $0.season, episode: $0.episode) })
-        services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(saved))
+        services.caches.set(Self.cacheKey) { try? JSONEncoder().encode(saved) }   // se codifica fuera del hilo principal
     }
 }

@@ -93,10 +93,14 @@ public final class LocalLibrary: @unchecked Sendable {
     private let url: URL?
     private let lock = NSLock()
     private var entries: [String: LibraryEntry]
+    /// El archivo se escribe aquí, fuera del candado: quien cambia algo no espera a codificar toda la biblioteca.
+    private let writer = DispatchQueue(label: "orbital.local-library", qos: .utility)
+    private var version = 0
 
     public init(url: URL? = nil) {
         self.url = url
-        entries = url.flatMap { try? Data(contentsOf: $0) }.flatMap { try? JSONDecoder().decode([String: LibraryEntry].self, from: $0) } ?? [:]
+        // Un archivo dañado no se lee como vacío (la siguiente escritura lo pisaría): se aparta y se registra.
+        entries = url.flatMap { StoredFile.read([String: LibraryEntry].self, from: $0, what: "la biblioteca") } ?? [:]
     }
 
     public var isEmpty: Bool { lock.withLock { entries.isEmpty } }
@@ -124,9 +128,18 @@ public final class LocalLibrary: @unchecked Sendable {
     /// Al cerrar la sesión de todo: el teléfono olvida lo tuyo.
     public func clear() { lock.withLock { entries = [:]; persist() } }
 
+    /// Se llama con el candado puesto: toma una copia (barata: el diccionario se copia al escribirse) y la escribe la fila.
+    /// Si llegan varios cambios seguidos, solo se escribe el último (cada uno trae todo).
     private func persist() {
         guard let url else { return }
-        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let data = try? JSONEncoder().encode(entries) { try? data.write(to: url, options: .atomic) }
+        version += 1
+        let mine = version, snapshot = entries
+        writer.async {   // retiene la biblioteca hasta escribir: lo último que cambiaste no se pierde
+            guard self.lock.withLock({ self.version == mine }) else { return }   // ya viene uno más nuevo
+            StoredFile.write(snapshot, to: url, what: "la biblioteca")
+        }
     }
+
+    /// Espera a que lo cambiado esté en el archivo (pruebas, y antes de que iOS suspenda la app).
+    public func flush() { writer.sync {} }
 }

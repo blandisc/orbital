@@ -25,7 +25,7 @@ public final class CatalogModel: ObservableModel {
     public init(_ services: Services) {
         self.services = services
         super.init()
-        if let data = services.kv.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
+        if let data = services.caches.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
             movies = cache.movies; series = cache.series
         }
     }
@@ -59,7 +59,8 @@ public final class CatalogModel: ObservableModel {
         guard !Task.isCancelled else { return }
         if !newMovies.isEmpty { movies = newMovies }
         if !newSeries.isEmpty { series = newSeries }
-        services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(movies: Array(movies.prefix(Self.translatedForSearch)), series: Array(series.prefix(Self.translatedForSearch)))))
+        let cache = Cache(movies: Array(movies.prefix(Self.translatedForSearch)), series: Array(series.prefix(Self.translatedForSearch)))
+        services.caches.set(Self.cacheKey) { try? JSONEncoder().encode(cache) }
     }
 
 
@@ -87,14 +88,7 @@ public final class CatalogModel: ObservableModel {
         update(Self.interleave(movies, series))
     }
 
-    static func interleave(_ movies: [CatalogItem], _ series: [CatalogItem]) -> [CatalogItem] {
-        var out: [CatalogItem] = []
-        for i in 0..<max(movies.count, series.count) {
-            if i < movies.count { out.append(movies[i]) }
-            if i < series.count { out.append(series[i]) }
-        }
-        return out
-    }
+    static func interleave(_ movies: [CatalogItem], _ series: [CatalogItem]) -> [CatalogItem] { Interleave.turns([movies, series], id: \.id) }
 
     /// Lo que más se está viendo en Trakt (nil si no contestó o no hay Trakt), como fichas cortas.
     private func trending(_ kind: String) async -> [JSON]? {

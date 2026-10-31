@@ -506,14 +506,7 @@ public actor ForYou {
     }
 
     /// Una de cada fuente por turno (así el mosaico no es solo recomendaciones), sin repetir.
-    public static func interleave(_ batches: [[Suggestion]], limit: Int) -> [Suggestion] {
-        var out: [Suggestion] = [], seen = Set<String>(), i = 0
-        while batches.contains(where: { i < $0.count }) && out.count < limit {
-            for batch in batches where i < batch.count && seen.insert(batch[i].imdb).inserted { out.append(batch[i]) }
-            i += 1
-        }
-        return Array(out.prefix(limit))
-    }
+    public static func interleave(_ batches: [[Suggestion]], limit: Int) -> [Suggestion] { Interleave.suggestions(batches, limit: limit) }
 
     /// Los títulos de tu watchlist (para la etiqueta «En tu lista» en cualquier póster).
     public func watchlistKeys() async -> Set<String> {

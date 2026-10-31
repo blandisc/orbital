@@ -178,13 +178,11 @@ public final class FilePendingStore: PendingStore, @unchecked Sendable {
     private let lock = NSLock()
     public init(url: URL) { self.url = url }
     public func load() -> PendingWork {
-        lock.withLock { (try? Data(contentsOf: url)).flatMap { try? JSONDecoder().decode(PendingWork.self, from: $0) } ?? PendingWork() }
+        // Dañado: se aparta (no se pisa en la siguiente escritura) y se registra.
+        lock.withLock { StoredFile.read(PendingWork.self, from: url, what: "el trabajo pendiente") ?? PendingWork() }
     }
     public func save(_ work: PendingWork) {
-        lock.withLock {
-            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if let data = try? JSONEncoder().encode(work) { try? data.write(to: url, options: .atomic) }
-        }
+        lock.withLock { StoredFile.write(work, to: url, what: "el trabajo pendiente") }
     }
 }
 

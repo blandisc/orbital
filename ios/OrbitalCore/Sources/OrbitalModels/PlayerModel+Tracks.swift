@@ -181,16 +181,6 @@ extension PlayerModel {
     /// Hay subtítulos de ese idioma para poner ya (del video, guardados con la descarga o encontrados en internet).
     public func hasSubtitles(language: String) -> Bool { !subtitleVersions(language: language).isEmpty }
 
-    /// Suma el siguiente de ese idioma que aún no se sumó y lo activa.
-    public func addFoundSubtitle(language: String) async {
-        guard let option = foundSubtitles?.first(where: { $0.language == language && !addedSubtitleURLs.contains($0.url) }) else { return }
-        userTouched()
-        knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
-        addedExternalSubtitle = true
-        addedSubtitleURLs.insert(option.url)
-        await engine.addSubtitle(url: option.url, language: option.language)
-    }
-
     /// El motor ya sumó el subtítulo externo: se activa.
     func selectNewSubtitleIfAny(_ s: EngineSnapshot) async {
         guard addedExternalSubtitle else { return }

@@ -158,9 +158,9 @@ public enum StremioLibrary {
         let millis = Int(floor(when * 1000)) % 1000
         let date = Date(timeIntervalSince1970: Double(seconds))
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
         let c = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
-        return String(format: "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", c.year!, c.month!, c.day!, c.hour!, c.minute!, c.second!, millis)
+        return String(format: "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", c.year ?? 1970, c.month ?? 1, c.day ?? 1, c.hour ?? 0, c.minute ?? 0, c.second ?? 0, millis)
     }
 
     public static func epoch(_ value: JSON?) -> Double? {
@@ -271,12 +271,6 @@ public enum StremioLibrary {
         item["temp"] = .bool(add ? false : (item["temp"].map(truthy) ?? false))
         item["_mtime"] = .string(iso(now))
         return .object(item)
-    }
-
-    /// ¿Está en tu biblioteca de Stremio («Mi lista»)? Ni quitado ni temporal.
-    public static func isInLibrary(_ raw: JSON?) -> Bool {
-        guard let raw else { return false }
-        return !(raw["removed"].map(truthy) ?? false) && !(raw["temp"].map(truthy) ?? false)
     }
 
     /// Marca un video como visto sin tocar el resto: solo el bitfield de `state.watched`. Si ese video es justo el que Stremio

@@ -9,6 +9,12 @@ public final class Services: ObservableModel {
     public let http: HTTPClient
     public let secrets: SecretsStore
     public let kv: KeyValueStore
+    /// Lo último que se vio (historial de Trakt, Inicio, Para ti, Buscar, Top 10), en archivos de Caches (`CacheStore`);
+    /// `kv` queda para ajustes y lo tuyo chico. Sin `cacheRoot` (pruebas), va en `kv`.
+    public let caches: CacheStore
+    /// La memoria en disco de los detalles de TMDB y la fila de lo que sale a la red: una sola para todas las copias de `Tmdb`.
+    private let detailsMemo: TmdbDetailsMemo?
+    private let detailsGate = TmdbDetailsGate(limit: 6)
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
     /// Lo que guardaste en Trakt y aún no llega (sin conexión, o con tu Orbital apagada): se manda en cuanto se pueda.
@@ -140,8 +146,11 @@ public final class Services: ObservableModel {
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
                 builtInTraktClientID: String = Services.bundledTraktClientID, builtInTMDBKey: String = Services.bundledTMDBKey,
                 device: OrbitalRemote.Device? = nil,
-                allowsOrbital: Bool = true) {
+                allowsOrbital: Bool = true, detailsMemo: TmdbDetailsMemo? = nil) {
         self.cacheRoot = cacheRoot
+        self.caches = CacheStore(directory: cacheRoot?.appendingPathComponent("models", isDirectory: true), legacy: kv)
+        self.detailsMemo = detailsMemo
+        let detailsGate = self.detailsGate
         self.allowsOrbital = allowsOrbital
         self.device = device
         self.builtInTraktClientID = builtInTraktClientID
@@ -180,12 +189,12 @@ public final class Services: ObservableModel {
         let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
         let finder = StreamFinder(http: http, registry: registry, clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
-        let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX")
+        let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
-        self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX") }, clock: clock, store: kv)
+        self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate) }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, builtIn: builtInTraktClientID, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
-        self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
+        self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: {
             let on = allowsOrbital && settings.value.orbitalEnabled
@@ -195,7 +204,7 @@ public final class Services: ObservableModel {
                                   pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
-        let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey)) }, cinemeta: cinemeta)
+        let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) }, cinemeta: cinemeta)
         let prefs = titlePrefs
         Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
                                       checked: { key in prefs.checkedAudio(key) }) }
@@ -348,12 +357,12 @@ public final class Services: ObservableModel {
     /// Tras cambiar una clave (TMDB, Trakt): se rearman las piezas que dependen de ellas.
     public func reconfigure() {
         let s = settings.value
-        let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX")
+        let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let settings = settings, secrets = secrets
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         self.tmdb = tmdb
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, builtIn: builtInTraktClientID, clock: clock)
-        let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)
+        let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         watch = WatchService(library: library, stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt,
                              pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
