@@ -174,18 +174,53 @@ const SIDES = {
   ios: [...walk(join(ROOT, "ios", "App"), [".swift", ".xcstrings"]), ...walk(join(ROOT, "ios", "OrbitalCore", "Sources"), [".swift"])].flatMap(literals),
 };
 
+const TERMS = [...VOCAB.verbos, ...VOCAB.nombres, ...VOCAB.formatos];
+/** Lo que un lado todavía dice mal de un término: que no lo diga (si le toca) o que diga lo que se evita. */
+function faults(term, side) {
+  const out = [];
+  if (term.en.includes(side) && !SIDES[side].some((s) => s.includes(term.texto))) out.push(`${side}: no dice «${term.texto}»`);
+  for (const avoid of term.evitar ?? []) {
+    const hit = SIDES[side].find((s) => s.includes(avoid));
+    if (hit) out.push(`${side}: dice «${avoid}» (va «${term.texto}»): ${hit.slice(0, 90)}`);
+  }
+  return out;
+}
+
 test("las dos apps dicen lo mismo (design/vocabulario.json)", () => {
+  // Un lado con `pendiente` se salta: lo que falta está en el registro de paridad, con su ola.
+  const problems = TERMS.flatMap((term) => Object.keys(SIDES).filter((side) => !term.pendiente?.[side]).flatMap((side) => faults(term, side)));
+  assert.deepEqual(problems, [], problems.join("\n"));
+});
+
+test("un pendiente del vocabulario es de verdad y está en el registro de paridad", () => {
+  // El trinquete: cuando un lado ya cumple, se quita la marca (y desde ahí la prueba lo cuida).
+  const registro = read("docs", "producto", "paridad-registro.md");
   const problems = [];
-  for (const term of [...VOCAB.verbos, ...VOCAB.nombres, ...VOCAB.formatos]) {
-    for (const side of term.en) {
-      if (!SIDES[side].some((s) => s.includes(term.texto))) problems.push(`${side}: no dice «${term.texto}»`);
+  for (const term of TERMS) {
+    for (const side of Object.keys(term.pendiente ?? {})) {
+      if (!(side in SIDES)) problems.push(`«${term.texto}»: pendiente en un lado que no existe (${side})`);
+      else if (faults(term, side).length === 0) problems.push(`«${term.texto}»: ${side} ya cumple; quita su pendiente`);
+      if (!registro.includes(`«${term.texto}»`)) problems.push(`«${term.texto}»: su pendiente no está en docs/producto/paridad-registro.md`);
     }
-    for (const avoid of term.evitar ?? []) {
-      for (const [side, strings] of Object.entries(SIDES)) {
-        const hit = strings.find((s) => s.includes(avoid));
-        if (hit) problems.push(`${side}: dice «${avoid}» (va «${term.texto}»): ${hit.slice(0, 90)}`);
-      }
-    }
+  }
+  assert.deepEqual(problems, [], problems.join("\n"));
+});
+
+// --- La tabla espejo: cada papel del iPhone tiene su pieza en la TV (o dice por qué no) ---------------------------
+test("cada papel del lenguaje del iPhone está en la tabla espejo de la TV", () => {
+  const doc = read("docs", "sistema-de-diseno.md");
+  const section = (title, until) => doc.split(title)[1]?.split(until)[0] ?? "";
+  const firstCells = (text) => text.split("\n").filter((l) => l.startsWith("| ") && !l.startsWith("|---"))
+    .map((l) => l.split("|")[1].trim()).filter((c) => c && c !== "Papel");
+  const iphone = firstCells(section("### Lenguaje de diseño del iPhone", "**Glosario"));
+  assert.ok(iphone.length > 10, "no encontré la tabla del lenguaje del iPhone");
+  const mirrorRows = section("### Tabla espejo (iPhone ↔ TV)", "\n### ").split("\n").filter((l) => l.startsWith("| ") && !l.startsWith("|---"));
+  const mirror = new Map(mirrorRows.map((l) => l.split("|").map((c) => c.trim())).map((c) => [c[1], c[3]]));
+  const problems = [];
+  for (const papel of iphone) if (!mirror.has(papel)) problems.push(`falta «${papel}» en la tabla espejo`);
+  for (const [papel, estado] of mirror) {
+    if (papel === "Papel") continue;
+    if (!/^(Igual|Pendiente · ola \d|Distinto a propósito: .+|Solo iPhone: .+)$/.test(estado)) problems.push(`«${papel}»: estado «${estado}» (Igual · Pendiente · ola N · Distinto a propósito: … · Solo iPhone: …)`);
   }
   assert.deepEqual(problems, [], problems.join("\n"));
 });

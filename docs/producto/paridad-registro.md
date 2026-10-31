@@ -1,0 +1,59 @@
+# Registro de paridad: una sola Orbital
+
+Lo que la TV y el iPhone todavía no hacen igual, con su ola y quién lo hace. Se lee **antes de empezar cualquier trabajo de
+interfaz** en cualquiera de las dos apps, y se actualiza en el mismo commit que lo resuelve.
+
+Cómo se mantiene:
+
+- Cuando se decide algo del iPhone, el commit dice qué pasa en la TV: «En la TV: igual», «En la TV: distinto a propósito
+  (motivo)» o «En la TV: pendiente (ola N)». Lo pendiente entra aquí.
+- Los textos pendientes se marcan en `design/vocabulario.json` (`pendiente`, por lado). Las piezas pendientes, en la tabla
+  espejo de `docs/sistema-de-diseno.md`. `tests/web/design-parity.test.mjs` falla si un pendiente no está aquí, si un lado ya
+  cumple y sigue marcado, o si un papel nuevo del iPhone no tiene renglón en la tabla espejo.
+- Análisis de origen: «Una sola Orbital» (31 oct 2026), https://claude.ai/artifact/APC5mXnkx3msJtg1TvSEhc.
+
+## Decisiones de Fernando (31 oct 2026)
+
+| Decisión | En el iPhone | En la TV |
+|---|---|---|
+| La sección de descubrir se llama **Explorar** | Ya (31 oct) | Pendiente · ola 1 (pestaña, encabezado, menús; la voz entiende las dos) |
+| Las listas (Plataformas, Premios, Años…) | En Explorar | **Se quedan en Películas y series**: en la TV conviven juegos y video, y Explorar es el mosaico |
+| Películas y series es el Inicio del iPhone (Seguir viendo, Lo nuevo de lo tuyo, Por lo que viste, Top 10, Mi lista) | — | Pendiente · ola 2 (arriba; las listas siguen abajo) |
+| Filtro avanzado | En Buscar | **En Películas y series y en ☰** · Pendiente · ola 3 |
+| Mazo «¿Qué vemos hoy?», opción A (Paso · Ver ya · Mi lista) | Ya | Pendiente · ola 2 |
+| «Mi lista» es tu watchlist de Trakt | Ya (quedan textos) | Pendiente · ola 2 («Guardar en…» todavía separa las dos) |
+| Los canales de tus series: una lista guardada en Trakt, para Ultra, Plus y Orbital | En el teléfono | Pendiente · ola 2 (categoría en TV en vivo). Nombre propuesto: «Tus canales» (en el glosario, «Tus series» son las que estás viendo) |
+| Porqué en turquesa, solo si ayuda; sección = rótulo con ícono y línea | Ya | Pendiente · ola 1 |
+| Un botón sólido y redondos con su nombre bajo el enfocado; pie de tres pistas y ☰ | — | Pendiente · ola 1 |
+| Calificar: estrellas en la ficha y aviso al terminar | Ya | Pendiente · ola 3 |
+| «Lo que ves» reemplaza a «Tu año» | Ya | Pendiente · ola 3 |
+| Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |
+
+## Textos pendientes (`design/vocabulario.json`)
+
+| Término | Lado | Qué falta | Ola |
+|---|---|---|---|
+| «Mi lista» | TV | «Guardar en…» dice «tu watchlist» aparte | 2 |
+| «Mi lista» | iPhone | Avisos y Ajustes con «tu watchlist» | sesión del iPhone |
+| «Explorar» | TV | La pestaña, su encabezado y los menús dicen «Para ti» | 1 |
+| «Decide por mí» | TV | La TV le dice «¿Qué vemos?» | 2 |
+| «Decide por mí» | iPhone | Dos textos con «¿Qué vemos?» | sesión del iPhone |
+| «¿Qué vemos hoy?» | TV | El mazo no existe | 2 |
+| «Colecciones» | TV | La vitrina no existe | 3 |
+| «Colecciones» | iPhone | Un texto dice «… del canon en tu repisa» | sesión del iPhone |
+| «Lo que ves» | TV | La entrada es «Tu año» | 3 |
+| «¿Cuándo la viste?» | TV | Marcar como vista no pregunta la fecha | 3 |
+| «Reintentar» | iPhone | Dos textos con «Intentar de nuevo» | sesión del iPhone |
+
+## Olas de la TV
+
+- **Ola 0 · el mecanismo** (este registro, el vocabulario con pendientes, la tabla espejo y sus pruebas).
+- **Ola 1 · el lenguaje**: rótulos de sección, porqué, selectores, botones, pie de pistas, «Nuevo», velo, vacío y carga; Explorar.
+- **Ola 2 · los lugares**: Películas y series como el Inicio del iPhone, el mazo, Decide por mí, Mi lista, tus canales.
+- **Ola 3 · lo tuyo**: calificar, «¿Cuándo la viste?», Lo que ves, Colecciones, filtro avanzado.
+
+## Distinto a propósito
+
+Descargas, gestos del reproductor, PiP, modo claro y el cielo que se mueve son del teléfono. Juegos, TV en vivo, la voz y el
+mando son de la TV. El aviso va abajo en el iPhone y arriba a la derecha en la TV. La superficie de las tarjetas es ink-850 en el
+iPhone e ink-900 en la TV.

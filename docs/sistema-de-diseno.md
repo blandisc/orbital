@@ -82,7 +82,6 @@ agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` re
 | Hoja con encabezado propio | `dsSheetContent()` · `DS.Space.sheetTop` | Toda hoja sin barra de navegación (calendario, «Tu Orbital», Decide por mí, Guardar en…, Versión, Stremio) deja 24 pt del asa a su primer título y el margen de siempre a los lados; `sides: false` si un carrusel llega a las orillas. | sí |
 | Aviso | `Toast` · `dsNoticePlacement(lift:)` · `DS.Toast.gap` | Abajo, al alcance del pulgar, y siempre a 8 pt (`DS.Toast.gap`) de lo que tenga debajo: la barra de pestañas, «Viendo en la TV» o lo que la pantalla deje flotando (el pie del mosaico lo declara en `AppUI.noticeLift`). Nunca un margen a ojo. La pastilla de calificar va en el mismo lugar. Uno a la vez: el nuevo reemplaza al que solo informa y espera detrás del que trae salida («Deshacer»). Una acción que tarda avisa al tocar («Mandando a tu Orbital…») y confirma al terminar («Ya está en tu Orbital»). (30 oct 2026) | sí |
 | Etiqueta | íconos antes que texto | Nada de cápsulas de texto para estados; un ícono o el dato tal cual (`DSBadge` solo sobre el arte o «HOY»; «Nuevo» sobre un póster, el listón de la esquina `DSCornerRibbon`). | — |
-
 | Texto sobre arte | `ArtVeil` | Todo texto encima de un póster, fotograma o fondo desenfocado va sobre su velo (`bottom`, `top`, `both`, `full`, `leading`; `soft`, `strong`, `deep`). Nunca un degradado a mano. | sí |
 | Cargando | el esqueleto de su forma · `DSLoadingState` | Una lista o fila carga con su esqueleto (`FeedSkeleton`, `ShelfSkeleton`, `CheckRowSkeleton`); un área que no es lista, con `DSLoadingState`. Junto a un botón, el indicador chico con su texto («Conectando…»). | sí |
 | Sin conexión o error | `DSErrorState(offline:retry:)` · `DSNotice` | Un área que no llegó dice «Sin conexión» o «No se pudo cargar» con «Reintentar»; nunca un vacío que diga «nada» cuando lo que pasó es que no llegó. Dentro de una sección, `DSNotice`. | — |
@@ -129,6 +128,38 @@ lo que ya se puede ver («HOY», «Nuevo»). El color del arte: el botón princi
 
 **Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento): nunca `--palette-*` directo. Un valor nuevo
 primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), no cuánto vale.
+
+### Tabla espejo (iPhone ↔ TV)
+
+Una sola Orbital (Fernando, 31 oct 2026): cada papel del lenguaje del iPhone tiene aquí su pieza de la TV y su estado. Estado:
+`Igual`, `Pendiente · ola N` (con su renglón en `docs/producto/paridad-registro.md`), `Distinto a propósito: motivo` o
+`Solo iPhone: motivo`. `tests/web/design-parity.test.mjs` falla si un papel nuevo del iPhone no tiene renglón aquí. Cuando se
+decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · distinto a propósito · pendiente»).
+
+| Papel | Pieza de la TV | Estado | Nota |
+|---|---|---|---|
+| Encabezado | `.shelf__heading` y los títulos de Inicio y Juegos, con el dato gris a la derecha | Pendiente · ola 1 | Pieza `section-head`: sección = rótulo con ícono en el azul de Orbital, mayúsculas chicas y línea; subsección = título blanco. |
+| Arranque de una parte grande | — | Pendiente · ola 1 | Los grupos de Películas y series (Plataformas, Estudios, Premios, Años…). |
+| Renglón de lista | `sheet__item` | Pendiente · ola 3 | Las listas de lo tuyo y la entrada de «Lo que ves». |
+| Porqué | receta `--type-eyebrow`, sin color propio | Pendiente · ola 1 | `--color-reason` (el turquesa), solo cuando el porqué dice algo que el título no. |
+| Botón principal | `Button({ art: true })` | Igual | Sólido en el color del arte, texto oscuro. |
+| Botón secundario | `Button` (ghost, relleno tenue) | Distinto a propósito: con el mando el foco invierte el botón y un borde fino no se ve a tres metros | — |
+| Botón de ícono | Los redondos de la ficha (`title__action`), con su nombre bajo el enfocado | Pendiente · ola 1 | Llevarlos al destacado de Inicio y de Películas y series. |
+| Selector | `Pill` (para todo) y `Segmented` (Ajustes) | Pendiente · ola 1 | Por lo que hace: pestañas de texto, segmentado, cápsulas y mosaicos; lo elegido en blanco. |
+| Búsqueda avanzada | «Ordenar y filtrar» de `list-screen` | Pendiente · ola 3 | En la TV vive en Películas y series y en ☰ (Fernando, 31 oct 2026). |
+| Marcar como vista | «Marcar como vista», sin fecha | Pendiente · ola 3 | La hoja «¿Cuándo la viste?». |
+| Vacío | Textos de estado de cada vista (`browse__empty`, `calendar__empty`…) | Pendiente · ola 1 | Una pieza: ícono, título y una línea. |
+| Tarjeta | `--color-surface` (ink-900) y `--radius-*` | Distinto a propósito: la superficie es ink-900 en la TV (lo explica `design/tokens.json`) | — |
+| Hoja con encabezado propio | `sheet`, `side-panel` | Igual | — |
+| Aviso | `toast` | Distinto a propósito: arriba a la derecha, porque abajo va el pie de pistas y se lee desde el sillón | Mismos tonos, textos y duración (`--duration-notice`). |
+| Etiqueta | `Badge` y `Chip` | Pendiente · ola 1 | «Nuevo» como listón en la esquina del póster; «HOY» se queda en placa. |
+| Texto sobre arte | Velos sueltos por pieza (`--color-scrim`, degradados) | Pendiente · ola 1 | Una pieza de velo con sus variantes. |
+| Cargando | Cada vista con su propio «Cargando…» | Pendiente · ola 1 | El esqueleto de su forma. |
+| Sin conexión o error | Mensajes en palabras con «Reintentar» | Igual | — |
+| Números y fechas | `core/format.js` | Igual | — |
+| Logos de marca | `--platform-*` y los logos de `ui.js` | Igual | — |
+| Lo que se mueve solo | El mosaico se detiene a los 90 s; todo respeta movimiento reducido | Igual | La TV no tiene cielo que se mueva: Orbital no gasta detrás de un juego. |
+| Accesibilidad | Foco visible y pistas de cada superficie | Solo iPhone: es cómo SwiftUI agrupa los identificadores | — |
 
 ### Movimiento
 
