@@ -45,9 +45,4 @@ extension DS {
         /// «La temporada»: el ancho de sus pósters y cuánto la tiñe su color. Un renglón de «Tuyo»: cuánto asoma cada póster.
         static let seasonPoster: CGFloat = 76, seasonGlow: Double = 0.35, rowShift: CGFloat = 14
     }
-
-    enum HomeKind {
-        /// Cuánto se queda a la vista el nombre del tipo elegido («Series») después de tocar su ícono en la barra.
-        static let tipHold: Duration = .milliseconds(1100)
-    }
 }

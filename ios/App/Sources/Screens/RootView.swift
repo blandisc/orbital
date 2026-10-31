@@ -421,7 +421,7 @@ struct BannerView: View {
             let hasAction = banner.action != nil
             Toast(tone: banner.tone, title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
                   actionTitle: hasAction ? banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver" : nil, actionSymbol: banner.actionSymbol,
-                  action: hasAction ? { env.runBannerAction(banner) } : nil,
+                  action: hasAction ? { env.runBannerAction(banner) } : nil, symbol: banner.symbol,
                   seconds: Toast.duration(banner.tone, hasAction: hasAction), dismiss: { env.dismissBanner(banner.serial) })
                 .id(banner.serial)
                 .transition(DS.Motion.notice(reduceMotion))

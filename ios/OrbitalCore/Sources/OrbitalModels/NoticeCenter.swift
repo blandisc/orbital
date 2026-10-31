@@ -15,12 +15,14 @@ public struct Notice: Equatable, Sendable {
     public var detail: String?
     public var actionTitle: String?
     public var actionSymbol: String?
+    /// Otro ícono que el del tono (el del tipo al cambiar Todo · Películas · Series en Inicio).
+    public var symbol: String?
     /// Su número: cada aviso es otro aunque diga lo mismo (para animar el cambio y quitar justo ese).
     public var serial = 0
 
-    public init(text: String, tone: NoticeTone, action: NoticeAction? = nil, detail: String? = nil, actionTitle: String? = nil, actionSymbol: String? = nil, serial: Int = 0) {
+    public init(text: String, tone: NoticeTone, action: NoticeAction? = nil, detail: String? = nil, actionTitle: String? = nil, actionSymbol: String? = nil, symbol: String? = nil, serial: Int = 0) {
         self.text = text; self.tone = tone; self.action = action; self.detail = detail
-        self.actionTitle = actionTitle; self.actionSymbol = actionSymbol; self.serial = serial
+        self.actionTitle = actionTitle; self.actionSymbol = actionSymbol; self.symbol = symbol; self.serial = serial
     }
 }
 

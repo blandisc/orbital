@@ -18,7 +18,8 @@ public final class RatingsModel: ObservableModel {
 
     /// Cuánto hacia atrás se busca lo que terminaste.
     public nonisolated static let window: TimeInterval = 14 * 86400
-    /// Una serie se recuerda cuando ya llevas varios episodios en la ventana (uno solo aún no es opinión).
+    /// Una serie se recuerda cuando ya llevas varios episodios distintos en la ventana (uno solo aún no es opinión; ver el mismo
+    /// dos veces no cuenta doble). Se califica la serie, no el episodio.
     public nonisolated static let seriesEpisodes = 3
     static let dismissedKey = "ratings-dismissed"
     /// Lo que se recuerda de lo que dijiste «no calificar» (lo más reciente).
@@ -56,9 +57,14 @@ public final class RatingsModel: ObservableModel {
         lastRefresh = now
         async let rated = try? trakt.myRatings()
         async let plays = try? trakt.plays(since: now.addingTimeInterval(-Self.window), until: now, maxPages: 2)
+        async let paused = try? trakt.playback(fresh: true)
         if let rated = await rated { ratings = rated }
+        // Una película que Trakt aún tiene a medias después de la vez que cuenta como vista: no la terminaste (la volviste a
+        // abrir, o la marcó vista otro aparato o Stremio sin que la vieras completa).
+        var unfinished: [String: Date] = [:]
+        for p in await paused ?? [] where !p.target.isEpisode { unfinished[p.target.imdb] = max(unfinished[p.target.imdb] ?? .distantPast, p.pausedAt) }
         queue = Self.reminders(plays: await plays ?? [], rated: Set(ratings.keys).union(services.traktOutbox.pendingRatings.keys),
-                               dismissed: dismissed, now: now)
+                               dismissed: dismissed, unfinished: unfinished, now: now)
     }
 
     /// Calificar (o, con nil, quitar tu calificación). Sale de la fila y se manda a Trakt.
@@ -81,14 +87,15 @@ public final class RatingsModel: ObservableModel {
         Set(services.kv.data(Self.dismissedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [])
     }
 
-    /// La regla del recordatorio: películas que terminaste en la ventana y series con varios episodios en ella; sin lo ya
-    /// calificado ni lo descartado; lo más reciente primero.
-    public nonisolated static func reminders(plays: [TraktPlay], rated: Set<String>, dismissed: Set<String>, now: Date) -> [Candidate] {
+    /// La regla del recordatorio: películas que terminaste en la ventana (y que Trakt no tiene otra vez a medias) y series con
+    /// varios episodios distintos en ella; sin lo ya calificado ni lo descartado; lo más reciente primero.
+    public nonisolated static func reminders(plays: [TraktPlay], rated: Set<String>, dismissed: Set<String>,
+                                             unfinished: [String: Date] = [:], now: Date) -> [Candidate] {
         let recent = plays.filter { $0.at <= now && now.timeIntervalSince($0.at) <= window && !$0.imdb.isEmpty }
         var out: [String: Candidate] = [:]
-        var episodes: [String: Int] = [:]
+        var episodes: [String: Set<String>] = [:]
         for play in recent {
-            if play.kind == "series" { episodes[play.imdb, default: 0] += 1 }
+            if play.kind == "series" { episodes[play.imdb, default: []].insert("\(play.season ?? -1):\(play.episode ?? -1)") }
             let candidate = Candidate(imdb: play.imdb, kind: play.kind, title: play.title,
                                       poster: String(format: ForYou.metahubPoster, play.imdb), finished: play.at)
             if let have = out[play.imdb], have.finished >= play.at { continue }
@@ -96,7 +103,8 @@ public final class RatingsModel: ObservableModel {
         }
         return out.values
             .filter { !rated.contains($0.imdb) && !dismissed.contains($0.imdb) }
-            .filter { $0.kind != "series" || episodes[$0.imdb, default: 0] >= seriesEpisodes }
+            .filter { $0.kind != "series" || episodes[$0.imdb, default: []].count >= seriesEpisodes }
+            .filter { c in c.kind == "series" || (unfinished[c.imdb].map { $0 <= c.finished } ?? true) }
             .sorted { $0.finished > $1.finished }
     }
 }
