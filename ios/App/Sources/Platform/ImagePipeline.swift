@@ -183,36 +183,42 @@ final class ImagePipeline: @unchecked Sendable {
                      status: (stored.response as? HTTPURLResponse)?.statusCode ?? 200)
             return stored.data
         }
-        // Primero se apunta el trabajo bajo el candado; la tarea se arma afuera (Swift 6 no deja mandar un cierre creado
-        // dentro de otro cierre que sigue usando lo mismo).
-        let (job, isNew): (Shared<Data?>, Bool) = lock.withLock {
-            if let existing = downloads[url] { existing.waiters += 1; return (existing, false) }
-            let fresh = Shared<Data?>()
-            downloads[url] = fresh
-            return (fresh, true)
+        // Ya va en camino: se une a esa descarga.
+        if let existing: Shared<Data?> = lock.withLock({ () -> Shared<Data?>? in
+            guard let e = downloads[url] else { return nil }
+            e.waiters += 1
+            return e
+        }) {
+            return await wait(existing) { [self] in if downloads[url] === existing { downloads[url] = nil } }
         }
-        if isNew {
-            let fresh = job
-            fresh.task = Task.detached(priority: .userInitiated) { [self, fresh, request, url, urgent] in
-                defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
-                if !urgent { guard await network.acquire() else { return nil } }
-                lock.withLock { fresh.started = true }
-                defer { if !urgent { Task { await network.release() } } }
-                let start = Perf.now()
-                let result = try? await session.data(for: request)
-                Perf.net(kind: "img", url: url, start: start, end: Perf.now(), bytes: result?.0.count ?? 0,
-                         status: (result?.1 as? HTTPURLResponse)?.statusCode ?? -1)
-                guard let (fresh, response) = result,
-                      let http = response as? HTTPURLResponse, http.statusCode < 400 else { return nil }
-                // `URLSession` ya guarda lo que trae cabeceras de caché (metahub manda 60 días); solo se fuerza si no las trae.
-                if http.value(forHTTPHeaderField: "Cache-Control") == nil {
-                    cache.storeCachedResponse(CachedURLResponse(response: response, data: fresh, userInfo: nil, storagePolicy: .allowed), for: request)
-                }
-                if !fresh.isEmpty { recentBytes.setObject(fresh as NSData, forKey: url as NSURL, cost: fresh.count) }
-                return fresh
-            
+        // La tarea se arma ANTES de apuntarla en la tabla. Antes se apuntaba primero y se armaba después, afuera del
+        // candado: quien llegaba en ese hueco encontraba el trabajo sin tarea y la app se cerraba (pasaba siempre en el
+        // simulador al abrir, con muchas imágenes a la vez). Si otro ganó mientras tanto, se cancela la nuestra y se une.
+        let fresh = Shared<Data?>()
+        fresh.task = Task.detached(priority: .userInitiated) { [self, fresh, request, url, urgent] in
+            defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
+            if !urgent { guard await network.acquire() else { return nil } }
+            lock.withLock { fresh.started = true }
+            defer { if !urgent { Task { await network.release() } } }
+            let start = Perf.now()
+            let result = try? await session.data(for: request)
+            Perf.net(kind: "img", url: url, start: start, end: Perf.now(), bytes: result?.0.count ?? 0,
+                     status: (result?.1 as? HTTPURLResponse)?.statusCode ?? -1)
+            guard let (fresh, response) = result,
+                  let http = response as? HTTPURLResponse, http.statusCode < 400 else { return nil }
+            // `URLSession` ya guarda lo que trae cabeceras de caché (metahub manda 60 días); solo se fuerza si no las trae.
+            if http.value(forHTTPHeaderField: "Cache-Control") == nil {
+                cache.storeCachedResponse(CachedURLResponse(response: response, data: fresh, userInfo: nil, storagePolicy: .allowed), for: request)
             }
+            if !fresh.isEmpty { recentBytes.setObject(fresh as NSData, forKey: url as NSURL, cost: fresh.count) }
+            return fresh
         }
+        let job: Shared<Data?> = lock.withLock {
+            if let existing = downloads[url] { existing.waiters += 1; return existing }
+            downloads[url] = fresh
+            return fresh
+        }
+        if job !== fresh { fresh.task.cancel() }
         return await wait(job) { [self] in if downloads[url] === job { downloads[url] = nil } }
     }
 

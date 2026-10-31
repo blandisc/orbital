@@ -318,9 +318,14 @@ public final class HomeModel: ObservableModel {
         let usable = watchables.filter { ["movie", "series"].contains($0.type) }
         let localizer = services.localizer
         func metas(_ kind: String) -> [JSON] { usable.filter { $0.type == kind }.map { JSON.object(["id": .string($0.id), "name": .string($0.name)]) } }
-        async let movies = localizer.catalog(kind: "movie", metas: metas("movie")), series = localizer.catalog(kind: "series", metas: metas("series"))
+        // Las dos a la vez con dos tareas, no con `async let`: en la versión optimizada `async let` entregaba aquí una lista
+        // sin memoria y la app se cerraba al abrir Inicio (siempre en el simulador).
+        let movieMetas = metas("movie"), seriesMetas = metas("series")
+        let movies = Task { await localizer.catalog(kind: "movie", metas: movieMetas) }
+        let series = Task { await localizer.catalog(kind: "series", metas: seriesMetas) }
+        let found = await movies.value + series.value
         var localized: [String: String] = [:]
-        for meta in await movies + series {
+        for meta in found {
             if let id = meta["id"]?.string, let name = meta["name"]?.string { localized[id] = name }
         }
         return usable.map { w in

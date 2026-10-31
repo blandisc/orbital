@@ -356,25 +356,36 @@ public actor Localizer {
         return Localizer.apply(meta, found)
     }
 
-    /// Título y sinopsis de una fila (sin episodios: una consulta por título).
+    /// Título y sinopsis de una fila (sin episodios: una consulta por título). Unas cuantas a la vez; al terminar una, entra
+    /// la siguiente. Sin funciones anidadas que toquen el grupo: así, en la versión optimizada, la lista que regresaba salía
+    /// dañada y la app se cerraba al abrir Inicio.
     public func catalog(kind: String, metas: [JSON]) async -> [JSON] {
         guard let lang = active else { return metas }
-        return await withTaskGroup(of: (Int, JSON).self) { group in
-            var out = metas, next = 0
-            func add() {
-                guard next < metas.count else { return }
+        return await withTaskGroup(of: (Int, JSON).self, returning: [JSON].self) { group in
+            var out = metas
+            var next = 0
+            while next < min(Localizer.concurrency, metas.count) {
                 let i = next, meta = metas[i]
+                group.addTask { (i, await self.localized(meta, kind: kind, lang: lang)) }
                 next += 1
-                group.addTask {
-                    guard let imdb = meta["id"]?.string, imdb.hasPrefix("tt"),
-                          let found = await self.translation(kind: kind, imdb: imdb, lang: lang, episodes: false), !found.isEmpty else { return (i, meta) }
-                    return (i, Localizer.apply(meta, found))
+            }
+            while let (i, meta) = await group.next() {
+                out[i] = meta
+                if next < metas.count {
+                    let j = next, more = metas[j]
+                    group.addTask { (j, await self.localized(more, kind: kind, lang: lang)) }
+                    next += 1
                 }
             }
-            for _ in 0..<Localizer.concurrency { add() }   // unas cuantas a la vez; al terminar una, entra la siguiente
-            for await (i, meta) in group { out[i] = meta; add() }
             return out
         }
+    }
+
+    /// Una ficha de una fila con su título y sinopsis traducidos (si TMDB los tiene).
+    private func localized(_ meta: JSON, kind: String, lang: String) async -> JSON {
+        guard let imdb = meta["id"]?.string, imdb.hasPrefix("tt"),
+              let found = await translation(kind: kind, imdb: imdb, lang: lang, episodes: false), !found.isEmpty else { return meta }
+        return Localizer.apply(meta, found)
     }
 
     /// La ficha de Cinemeta con lo que TMDB tiene traducido; lo vacío se queda como estaba.
