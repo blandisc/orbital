@@ -51,4 +51,14 @@ final class CriticsTests: XCTestCase {
         let none = try? await forYou(http).items(listID: "critics", kind: "movie")
         XCTAssertTrue(none?.isEmpty ?? true, "sin copia, nada (el estante no se pinta)")
     }
+
+    func testTitlesThatHaveNotComeOutYetAreLeftOut() async throws {
+        let http = FakeHTTP()
+        let clock = Clock(), year = Calendar.current.component(.year, from: clock.now)
+        http.json[moviesURL] = [["imdb_id": "tt19850008", "title": "The Batman: Part II", "mediatype": "movie", "release_year": .int(year + 2)],
+                                ["imdb_id": "tt1", "title": "Uno", "mediatype": "movie", "release_year": .int(year)],
+                                ["imdb_id": "tt2", "title": "Sin año", "mediatype": "movie"]]
+        let movies = try await forYou(http, clock: clock).items(listID: "critics", kind: "movie")
+        XCTAssertEqual(movies.map(\.imdb), ["tt1", "tt2"], "lo que aún no se estrena no es «aprobado por la crítica»")
+    }
 }

@@ -213,7 +213,10 @@ public actor ForYou {
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
         if listID == Critics.listID, let http {
             let critics = Critics(http: http, trakt: trakt, kv: kv)
+            // La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, de 2028): esos no son «aprobados».
+            let year = Calendar.current.component(.year, from: clock())
             return try await remember("critics:\(kind)", ttl: Self.slowTTL) { try await critics.items(kind: kind) }
+                .filter { ($0.year ?? year) <= year }
                 .map { suggestion($0, .console(Critics.reason(kind: kind))) }
         }
         if let trakt, ["recs", "mine", "watchlist", Self.favoritesList, "trend", "popular"].contains(listID) || listID.hasPrefix("list:") {
