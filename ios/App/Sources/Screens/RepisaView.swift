@@ -249,9 +249,12 @@ struct RepisaCollectionView: View {
                 Text(verbatim: item.title).recipe(.cardTitle).lineLimit(1)
             }
             Spacer(minLength: 0)
-            Button { onOpenTitle(route(item)) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold) }
+            // «Ver» la reproduce; tocar el resto del renglón abre su ficha (Fernando, 31 oct 2026).
+            Button { Task { await env.play(suggestion(item)) } } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold) }
                 .dsSolidPrimaryButton(shape: .capsule)   // en línea, dentro de un renglón: cápsula
         }
+        .contentShape(Rectangle())
+        .onTapGesture { onOpenTitle(route(item)) }
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
@@ -263,6 +266,8 @@ struct RepisaCollectionView: View {
         let seen = model.watched.contains(item.imdb)
         let others = model.others(item.imdb, besides: c.id)
         return VStack(alignment: .leading, spacing: DS.Space.s4) {
+            // El póster y el título abren su ficha (Fernando, 31 oct 2026: antes solo se podía ver o marcar como vista).
+            Button { picked = nil; onOpenTitle(route(item)) } label: {
             HStack(alignment: .top, spacing: DS.Space.s4) {
                 PosterView(url: item.poster, title: item.title).frame(width: DS.Filter.resultWidth)
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -272,10 +277,17 @@ struct RepisaCollectionView: View {
                         Text("También en \(Text(verbatim: others.map { Self.plainName($0) }.joined(separator: ", ")))").recipe(.footnote, color: DS.textMuted)
                     }
                     if seen, let stars = env.ratings.stars(item.imdb) { RatingStars(value: stars, size: DS.Rating.starInline) { _ in } .allowsHitTesting(false) }
+                    HStack(spacing: DS.Space.s1) { Text("Ver la ficha"); Image(systemName: "chevron.forward") }
+                        .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
                 }
+                Spacer(minLength: 0)
             }
+            .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("repisa-open-title")
             HStack(spacing: DS.Space.s3) {
-                Button { picked = nil; onOpenTitle(route(item)) } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
+                Button { picked = nil; Task { await env.play(suggestion(item)) } } label: { Label("Ver", systemImage: "play.fill").fontWeight(.semibold).frame(maxWidth: .infinity) }
                     .dsSolidPrimaryButton().controlSize(.large)
                 if !seen {
                     Button { askNext = suggestion(item); picked = nil } label: { Text("Ya la vi").frame(maxWidth: .infinity) }
@@ -300,24 +312,18 @@ struct RepisaCollectionView: View {
         Task { try? await env.titles.markWatched(s, at: date); env.collections.forgetWatched() }
     }
 
-    /// El momento: la película baja a su lugar en la repisa y el número sube. Sin chispas ni confeti. Tocar cierra.
+    /// El momento de ponerla en la repisa (`ShelfMoment`): cuántas llevas y lo que sigue en su década.
     private func moment(_ item: CanonCollection.Item, _ c: CanonCollection, _ model: RepisaModel) -> some View {
-        VStack(spacing: DS.Space.s3) {
-            Text("A tus colecciones").recipe(.footnote, color: DS.textMuted)
-            ShelfLedge { PosterView(url: item.poster, title: item.title).frame(width: DS.Repisa.momentPoster).transition(.move(edge: .top).combined(with: .opacity)) }
-            Text(verbatim: item.title).recipe(.title).multilineTextAlignment(.center)
-            ShelfEmblem(id: c.id, height: DS.Repisa.header)
-            Text("\(c.seen(model.watched)) de \(Strings.count(c.total, language: env.services.appSettings.uiLanguage))").recipe(.cardTitle).monospacedDigit().contentTransition(.numericText())
+        let group = c.groups().first { g in g.items.contains { $0.imdb == item.imdb } }
+        let missing = group.map { g in g.items.filter { !model.watched.contains($0.imdb) }.count } ?? 0
+        let next: Text? = group.map { g in
+            if missing == 0 { return Text("Completaste \(g.title)") }
+            return missing == 1 ? Text("Te falta 1 para completar \(g.title)") : Text("Te faltan \(missing) para completar \(g.title)")
         }
-        .padding(DS.Space.s8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DS.bg.opacity(DS.Repisa.momentVeil).ignoresSafeArea())
-        .contentShape(Rectangle())
-        .onTapGesture { placed = nil }
-        .sensoryFeedback(.success, trigger: placed?.id)
-        .task(id: item.id) { try? await Task.sleep(for: DS.Repisa.momentHold); if placed?.id == item.id { placed = nil } }
-        .accessibilityAddTraits(.isModal)
-        .accessibilityElement(children: .contain)   // cada pieza de adentro conserva su identificador
+        return ShelfMoment(poster: item.poster, backdrop: String(format: ForYou.metahubBackground, item.imdb), title: item.title, emblem: c.id,
+                           seen: c.seen(model.watched), total: max(c.total, c.items.count), next: next, completed: group != nil && missing == 0) {
+            if placed?.id == item.id { placed = nil }
+        }
         .accessibilityIdentifier("repisa-moment")
     }
 

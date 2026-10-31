@@ -251,3 +251,99 @@ struct CollectionsShowcase<Route: Hashable, AllRoute: Hashable>: View {
     }
 }
 
+
+/// El momento de «Ya la vi» en una colección (Fernando, 31 oct 2026: «que sea un momento más bonito, memorable»). Como un
+/// ritual corto, no un aviso: sobre su fondo desenfocado, el póster aparece en gris (como los que te faltan en la repisa),
+/// se revela a color con un destello que lo cruza, baja a su repisa con un rebote y un golpecito en la mano, la estatuilla se
+/// enciende y el número sube con su barra. Debajo, lo que sigue: cuántas faltan para completar su década (o «Completaste…»).
+/// Sin confeti. Con «Reducir movimiento», todo aparece de una vez. Tocar cierra; se va solo.
+struct ShelfMoment: View {
+    let poster: String
+    let backdrop: String
+    let title: String
+    let emblem: String
+    /// Cuántas llevas ya con esta y de cuántas.
+    let seen: Int
+    let total: Int
+    /// Lo que sigue: «Te faltan 3 para completar Los 2010» o «Completaste Los 2010».
+    let next: Text?
+    let completed: Bool
+    let onClose: () -> Void
+    @State private var step = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            PosterView(url: backdrop, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.wide)
+                .blur(radius: DS.Repisa.momentBlur).opacity(DS.Repisa.momentBackdrop)
+                .ignoresSafeArea().accessibilityHidden(true)
+            DS.bg.opacity(DS.Repisa.momentVeil).ignoresSafeArea()
+            VStack(spacing: DS.Space.s4) {
+                Text(completed ? "¡Década completa!" : "A tu repisa").recipe(.footnote, color: completed ? DS.warning : DS.textMuted).fontWeight(.semibold)
+                ShelfLedge {
+                    PosterView(url: poster, title: title).frame(width: DS.Repisa.momentPoster)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                        .saturation(step >= 1 ? 1 : 0)
+                        .brightness(step >= 1 ? 0 : DS.Repisa.unseenDim)
+                        .overlay { shine }
+                        .shadow(color: step >= 2 ? DS.scrimStrong : .clear, radius: DS.Space.s3, y: DS.Space.s2)
+                        .offset(y: step >= 2 ? 0 : -DS.Repisa.momentDrop)
+                        .scaleEffect(step >= 2 ? 1 : DS.Repisa.momentLift)
+                }
+                Text(verbatim: title).recipe(.title).multilineTextAlignment(.center).lineLimit(2)
+                HStack(spacing: DS.Space.s3) {
+                    ShelfEmblem(id: emblem, height: DS.Repisa.momentEmblem)
+                        .shadow(color: step >= 3 ? DS.warning.opacity(DS.Repisa.momentGlow) : .clear, radius: DS.Space.s4)
+                        .scaleEffect(step >= 3 ? 1 : DS.Repisa.momentEmblemStart)
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text(verbatim: "\(step >= 3 ? seen : max(seen - 1, 0)) de \(total)").recipe(.cardTitle).monospacedDigit()
+                            .contentTransition(.numericText(value: Double(step >= 3 ? seen : seen - 1)))
+                        Capsule().fill(DS.fillStrong)
+                            .overlay(alignment: .leading) {
+                                GeometryReader { geo in
+                                    Capsule().fill(DS.warning)
+                                        .frame(width: geo.size.width * CGFloat(step >= 3 ? seen : max(seen - 1, 0)) / CGFloat(max(total, 1)))
+                                }
+                            }
+                            .frame(width: DS.Repisa.momentBar, height: DS.Repisa.showcaseBar)
+                    }
+                }
+                if let next { next.recipe(.footnote, color: completed ? DS.warning : DS.textMuted).multilineTextAlignment(.center).opacity(step >= 3 ? 1 : 0) }
+            }
+            .padding(DS.Space.s8)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onClose)
+        .sensoryFeedback(.impact(weight: .light), trigger: step == 1)
+        .sensoryFeedback(.success, trigger: step == 3)
+        .task {
+            if reduceMotion { step = 3 } else {
+                // El ritual: aparece en gris, se revela, baja a la repisa, se enciende la estatuilla.
+                try? await Task.sleep(for: DS.Repisa.momentBeat)
+                withAnimation(.easeInOut(duration: DS.Repisa.momentReveal)) { step = 1 }
+                try? await Task.sleep(for: DS.Repisa.momentBeat * 2)
+                withAnimation(.spring(response: DS.Repisa.momentSpring, dampingFraction: DS.Repisa.momentBounce)) { step = 2 }
+                try? await Task.sleep(for: DS.Repisa.momentBeat)
+                withAnimation(.easeOut(duration: DS.Repisa.momentReveal)) { step = 3 }
+            }
+            try? await Task.sleep(for: DS.Repisa.momentHold)
+            onClose()
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityLabel(Text("\(title) a tu repisa: \(seen) de \(total)"))
+    }
+
+    /// El destello que cruza el póster al revelarse (de izquierda a derecha, una vez).
+    private var shine: some View {
+        GeometryReader { geo in
+            LinearGradient(colors: [.clear, DS.paper.opacity(DS.Repisa.momentShine), .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(width: geo.size.width * DS.Repisa.momentShineWidth)
+                .rotationEffect(.degrees(DS.Repisa.momentShineTilt))
+                .offset(x: step >= 1 ? geo.size.width * (1 + DS.Repisa.momentShineWidth) : -geo.size.width * DS.Repisa.momentShineWidth)
+                .animation(.easeInOut(duration: DS.Repisa.momentReveal * 1.4), value: step >= 1)
+        }
+        .clipped()
+        .allowsHitTesting(false)
+    }
+}

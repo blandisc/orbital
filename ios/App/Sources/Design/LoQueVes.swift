@@ -447,8 +447,8 @@ struct WatchingGenres: View {
     }
 }
 
-/// «Tus 5 estrellas» (Fernando, 31 oct 2026, opción R1): los pósters de lo que calificaste con 5, de lo más reciente a lo
-/// más viejo; tocar uno abre su ficha.
+/// El carrusel de «Cómo calificas»: los pósters de lo que calificaste con el número elegido, de lo más reciente a lo más
+/// viejo; tocar uno abre su ficha.
 struct WatchingFiveStars: View {
     struct Item: Identifiable { let id: String; let title: String; let kind: String; let poster: String }
     let items: [Item]

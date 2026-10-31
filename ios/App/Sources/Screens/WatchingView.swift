@@ -154,49 +154,33 @@ struct WatchingView: View {
     }
 
 
-    /// Cómo calificas (Fernando, 31 oct 2026, opción R1): primero «Tus 5 estrellas», los pósters de lo que más te gustó;
-    /// debajo cuántas de cada número de estrellas y tu promedio (tus calificaciones de Trakt).
+    /// Cómo calificas (Fernando, 31 oct 2026): solo la gráfica y, arriba, un carrusel con lo que calificaste con el número
+    /// elegido (al abrir, 5 estrellas). Tocar otra barra cambia el carrusel; «Ver todo», todo lo que calificaste.
     @ViewBuilder private var ratings: some View {
         let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
         let all = Array(mine.values)
         if !all.isEmpty {
+            let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
+            let star = pickedStars ?? 5
+            let items = ratedItems().filter { $0.stars == star }.map {
+                WatchingFiveStars.Item(id: $0.id, title: $0.title, kind: $0.kind, poster: String(format: ForYou.metahubPoster, $0.id))
+            }
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                // A la derecha, todo lo que calificaste (Fernando, 31 oct 2026).
                 DSSectionHead(title: Text("Cómo calificas"), action: { rated = RatedRoute(stars: 0) }, chevron: true, level: .section, symbol: "star")
-                VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                    let five = fiveStars(mine)
-                    if !five.isEmpty {
-                        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                            DSSectionHead(title: Text("Tus 5 estrellas"), count: five.count, eyebrow: Text("Lo que más te gustó"))
-                            WatchingFiveStars(items: five) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
-                                .accessibilityIdentifier("watching-five-stars")
-                        }
-                    }
-                    VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                        let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
-                        // Tocar una barra abre debajo el carrusel de lo que calificaste con ese número (Fernando, 31 oct 2026);
-                        // tocarla otra vez lo cierra.
-                        WatchingBars(values: counts, labels: (1...5).map { "\($0)★" }, highlighted: pickedStars.map { $0 - 1 }) { i in
-                            withAnimation(DS.Motion.base(false)) { pickedStars = pickedStars == i + 1 ? nil : i + 1 }
-                        }
-                        .accessibilityIdentifier("watching-rating-bars")
-                        if let star = pickedStars {
-                            let items = ratedItems().filter { $0.stars == star }.map {
-                                WatchingFiveStars.Item(id: $0.id, title: $0.title, kind: $0.kind, poster: String(format: ForYou.metahubPoster, $0.id))
-                            }
-                            (items.isEmpty ? Text("Nada con \(star) estrellas en tu historial") : Text("Con \(star) estrellas · \(items.count)"))
-                                .recipe(.footnote, color: DS.textMuted)
-                            if !items.isEmpty {
-                                WatchingFiveStars(items: items) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
-                                    .id(star)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                                    .accessibilityIdentifier("watching-rated-carousel")
-                            }
-                        }
-                        Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")
-                            .recipe(.footnote, color: DS.textMuted)
-                    }
+                (items.isEmpty ? Text("Nada con \(star) estrellas en tu historial") : Text("Con \(star) estrellas · \(items.count)"))
+                    .recipe(.footnote, color: DS.textMuted).contentTransition(.numericText())
+                if !items.isEmpty {
+                    WatchingFiveStars(items: items) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
+                        .id(star)
+                        .transition(.opacity)
+                        .accessibilityIdentifier("watching-rated-carousel")
                 }
+                WatchingBars(values: counts, labels: (1...5).map { "\($0)★" }, highlighted: star - 1) { i in
+                    withAnimation(DS.Motion.base(false)) { pickedStars = i + 1 }
+                }
+                .accessibilityIdentifier("watching-rating-bars")
+                Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")
+                    .recipe(.footnote, color: DS.textMuted)
             }
         }
     }
@@ -208,15 +192,6 @@ struct WatchingView: View {
         for play in env.watching.plays.sorted(by: { $0.at > $1.at }) where seen.insert(play.imdb).inserted {
             guard let trakt = mine[play.imdb] else { continue }
             out.append(.init(id: play.imdb, title: play.title, kind: play.kind, stars: Int(RatingScale.stars(trakt: trakt).rounded(.up))))
-        }
-        return out
-    }
-
-    /// Lo que calificaste con 5 y está en tu historial (de ahí salen su nombre y si es serie), de lo más reciente a lo más viejo.
-    private func fiveStars(_ mine: [String: Int]) -> [WatchingFiveStars.Item] {
-        var seen = Set<String>(), out: [WatchingFiveStars.Item] = []
-        for play in env.watching.plays.sorted(by: { $0.at > $1.at }) where (mine[play.imdb] ?? 0) >= DS.Watching.fiveStars && seen.insert(play.imdb).inserted {
-            out.append(.init(id: play.imdb, title: play.title, kind: play.kind, poster: String(format: ForYou.metahubPoster, play.imdb)))
         }
         return out
     }

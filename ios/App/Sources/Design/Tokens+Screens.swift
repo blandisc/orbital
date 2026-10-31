@@ -195,8 +195,8 @@ extension DS {
         /// Lo apagado de las rebanadas que no tocaste y el alto de cada renglón de la leyenda (se tocan).
         static let genreDim = 0.35, genreRow: CGFloat = 28
         static let genreColors = [DS.ListTint.series, DS.ListTint.trend, DS.ListTint.calendar, DS.ListTint.watching, DS.ListTint.spark]
-        /// «Tus 5 estrellas»: el ancho de cada póster y lo que cuenta como 5 (en Trakt, 9 y 10).
-        static let starPoster: CGFloat = 92, fiveStars = 9
+        /// El carrusel de «Cómo calificas»: el ancho de cada póster.
+        static let starPoster: CGFloat = 92
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
         /// La parte izquierda de la pantalla que regresa a la historia anterior (el resto avanza), como en Instagram.
@@ -225,9 +225,16 @@ extension DS {
         static let line = DS.overlay(0.22)   // ds-exception: la repisa, una línea fina que se lee en los dos modos
         static let lineFade = 0.12
         static let unseenDim: Double = -0.35, favoriteLine: CGFloat = 3
-        static let momentPoster: CGFloat = 150, nextPoster: CGFloat = 40, quickHeight: CGFloat = 290
+        static let momentPoster: CGFloat = 150, nextPoster: CGFloat = 40, quickHeight: CGFloat = 310
         /// El momento de ponerla en la repisa: el velo del fondo y cuánto se queda antes de irse solo.
-        static let momentVeil = 0.94, momentHold: Duration = .seconds(3)
+        static let momentVeil = 0.72, momentHold: Duration = .seconds(3)
+        /// El ritual de «Ya la vi» (`ShelfMoment`): el fondo desenfocado, de dónde baja el póster y su escala al bajar, el
+        /// destello (su brillo, ancho e inclinación), la estatuilla (tamaño, de qué escala parte, su brillo), la barra, y los
+        /// tiempos (cada paso, lo que tarda en revelarse y el resorte de la caída).
+        static let momentBlur: CGFloat = 30, momentBackdrop = 0.55, momentDrop: CGFloat = 60, momentLift: CGFloat = 1.06
+        static let momentShine = 0.55, momentShineWidth: CGFloat = 0.45, momentShineTilt: Double = 18
+        static let momentEmblem: CGFloat = 56, momentEmblemStart: CGFloat = 0.9, momentGlow = 0.6, momentBar: CGFloat = 120
+        static let momentBeat: Duration = .milliseconds(350), momentReveal = 0.7, momentSpring = 0.45, momentBounce = 0.6
     }
 
     /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`): el alto de un filtro en el cajón y de una opción
