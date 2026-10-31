@@ -382,45 +382,6 @@ struct FilterPanel<Content: View>: View {
     }
 }
 
-/// «Ver más filtros»: una fila con los íconos de Origen, Premios y Estudios en su color y cuántos tienen algo; al abrirla dice
-/// «Menos filtros». Es parte del cajón, no un enlace suelto.
-struct FilterMoreRow: View {
-    let expanded: Bool
-    /// Cuántos de los de «Ver más» tienen algo puesto.
-    let active: Int
-    let toggle: () -> Void
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-        Button(action: toggle) {
-            HStack(spacing: DS.Space.s3) {
-                HStack(spacing: -DS.Space.s1) {
-                    ForEach(FilterPage.more) { page in
-                        Image(systemName: page.symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(page.hue)
-                            .frame(width: DS.Filter.moreIcon, height: DS.Filter.moreIcon)
-                            .background(DS.surfaceRaised, in: Circle())
-                            .overlay(Circle().strokeBorder(DS.surface, lineWidth: DS.Size.hairline * 3))
-                    }
-                }
-                VStack(alignment: .leading, spacing: 0) {
-                    (expanded ? Text("Menos filtros") : Text("Más filtros")).recipe(.footnote, color: DS.text).fontWeight(.semibold)
-                    (active > 0 ? Text("\(active) con algo puesto") : Text("Origen, premios y estudios")).recipe(.caption, color: DS.textMuted)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.down").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-                    .rotationEffect(.degrees(expanded ? 180 : 0))
-            }
-            .padding(.horizontal, DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: DS.Filter.moreRow)
-            .background(DS.surface, in: shape)
-            .contentShape(shape)
-        }
-        .buttonStyle(.plain)
-        .pointerHover(.highlight)
-        .accessibilityLabel(expanded ? Text("Menos filtros") : Text("Más filtros: origen, premios y estudios"))
-    }
-}
-
 /// La puerta del filtro avanzado arriba de Buscar (Fernando, 31 oct 2026, entrada A «El cajón asoma»): su nombre, cuántos
 /// filtros llevas y cuántos títulos encontró la última vez, y los seis mosaicos del cajón en chiquito. Tocar un mosaico abre
 /// el cajón con ese filtro abierto; tocar arriba, el cajón sin nada abierto.
@@ -436,7 +397,9 @@ struct FilterDoor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .top, spacing: DS.Space.s2) {
+            // La flechita va pegada al título («Búsqueda avanzada ›») y la X sola a la derecha, lejos de ella (Fernando, 31 oct
+            // 2026: juntas parecían un mismo botón).
+            HStack(alignment: .center, spacing: DS.Space.s5) {
                 Button { open(nil) } label: {
                     HStack(spacing: DS.Space.s3) {
                         // Su propio ícono en un círculo azul: se distingue de un vistazo del campo de arriba, que busca por nombre.
@@ -444,11 +407,13 @@ struct FilterDoor: View {
                             .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
                             .background(DS.orbitalBlue, in: Circle())
                         VStack(alignment: .leading, spacing: DS.Space.s1) {
-                            Text("Búsqueda avanzada").recipe(.cardTitle)
+                            HStack(spacing: DS.Space.s1) {
+                                Text("Búsqueda avanzada").recipe(.cardTitle)
+                                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                            }
                             subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text).lineLimit(2)
                         }
                         Spacer(minLength: 0)
-                        Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                     }
                     .contentShape(Rectangle())
                 }

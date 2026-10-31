@@ -27,14 +27,6 @@ struct AdvancedFilterSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var open: FilterPage?
-    /// Abre con todo a la vista (Fernando, 31 oct 2026): los nueve filtros y el cajón en su altura máxima.
-    @State private var more = true
-    @State private var detent: PresentationDetent = .large
-    /// Lo que mide el cajón cerrado (formato, mosaicos, «Más filtros» y «Ver resultados»): la altura corta es esa, sin aire
-    /// muerto abajo.
-    @State private var fit: CGFloat = 0
-    /// Lo que miden «Ver resultados» y el margen de abajo del iPhone (aparte: dentro de la lista entran y salen de la medida).
-    @State private var actionsHeight: CGFloat = 0
 
     var body: some View {
         let model = env.advancedFilter
@@ -45,29 +37,12 @@ struct AdvancedFilterSheet: View {
             ScrollView {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         formatBar(model)
-                        grid(FilterPage.main, context, model)
-                        FilterMoreRow(expanded: more, active: FilterPage.more.filter { FilterText.value($0, context) != nil }.count) {
-                            withAnimation(DS.Motion.smooth(reduceMotion)) {
-                                more.toggle()
-                                if !more, let o = open, FilterPage.more.contains(o) { open = nil }
-                            }
-                        }
-                        .accessibilityIdentifier("filter-more")
-                        if more {
-                            grid(FilterPage.more, context, model)
-                                .transition(.opacity.combined(with: .offset(y: -DS.Space.s3)))
-                        }
+                        // Los nueve filtros siempre a la vista, con el cajón en su altura máxima (Fernando, 31 oct 2026): sin
+                        // «Más filtros / Menos filtros» ni la altura corta.
+                        grid(FilterPage.main + FilterPage.more, context, model)
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     .padding(.bottom, DS.Space.s2)
-                    // El cajón cerrado mide su contenido + la barra de arriba + «Ver resultados» + el margen de abajo del iPhone (cada
-                    // uno por su lado: la lista mete y saca esos márgenes de su propia medida y la hoja brincaba).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in
-                        let total = h + DS.Filter.sheetBar + actionsHeight + AppWindows.safeArea.bottom
-                        guard open == nil, !more, actionsHeight > 0, abs(total - fit) > 1 else { return }
-                        fit = total
-                        detent = shortDetent   // cerrado, siempre a su medida (la primera medida, al aparecer, sale de más)
-                    }
                 }
                 // Abrir un filtro no mueve la lista: el panel baja desde su mosaico y lo de abajo se recorre (Fernando, 31 oct 2026).
                 // Solo si el panel queda debajo de la orilla, la lista sube lo justo para que se vea entero.
@@ -83,7 +58,7 @@ struct AdvancedFilterSheet: View {
             }
 
             .safeAreaInset(edge: .bottom) {
-                actions(model).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionsHeight = $0 }
+                actions(model)
             }
             .navigationTitle(model.filter.isEmpty ? Text("Filtros") : Text("Filtros · \(model.filter.activeCount)"))
             .navigationBarTitleDisplayMode(.inline)
@@ -103,21 +78,9 @@ struct AdvancedFilterSheet: View {
             open = start
             if start == .length { model.refreshClock() }
         }
-        .presentationDetents([shortDetent, .large], selection: $detent)
-        .onChange(of: open) { detent = open != nil || more ? .large : shortDetent }
-        .onChange(of: more) { detent = open != nil || more ? .large : shortDetent }
+        .presentationDetents([.large])
         .accessibilityElement(children: .contain)   // cada pieza de adentro conserva su identificador
         .accessibilityIdentifier("advanced-filter")
-    }
-
-    /// La altura corta antes de medir: lo justo para el formato, los seis mosaicos y «Ver resultados» (en una pantalla baja,
-    /// la grande).
-    static var short: PresentationDetent { WindowMetrics.size.height < DS.Filter.shortScreen ? .large : .fraction(DS.Filter.shortFraction) }
-
-    /// Ya medido: lo que trae el cajón cerrado, sin aire muerto (si no cabe, la grande).
-    private var shortDetent: PresentationDetent {
-        guard fit > 0 else { return Self.short }
-        return fit >= WindowMetrics.size.height * DS.Filter.fitMax ? .large : .height(fit)
     }
 
     /// El formato de un toque y el ojo de «Ocultar lo que ya vi»; con «Series», cuáles series ahí mismo.

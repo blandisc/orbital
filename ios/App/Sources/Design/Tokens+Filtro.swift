@@ -47,12 +47,6 @@ extension DS {
         static let doorStroke = DS.orbitalBlue.opacity(0.35)   // ds-exception: su orilla, en el mismo azul
         /// Al cambiar de filtro: la pausa entre cerrar el de antes y abrir el nuevo, y cuándo se sube la lista para que se vea.
         static let switchPause: Duration = .milliseconds(180), revealAfter: Duration = .milliseconds(320)
-        /// El cajón cerrado mide lo que trae; si pasa de esta parte de la pantalla, abre grande.
-        static let fitMax: CGFloat = 0.92
-        /// La barra del cajón (el asa y «Filtros · Listo»).
-        static let sheetBar: CGFloat = 58
-        /// La fila «Más filtros»: su alto y el círculo de cada ícono.
-        static let moreRow: CGFloat = 60, moreIcon: CGFloat = 30
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
         /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
         static let awardIcon: CGFloat = 40, miniAwardIcon: CGFloat = 18, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64
@@ -65,7 +59,5 @@ extension DS {
         static let resultWidth: CGFloat = 104
         /// Las pestañas de texto de `DSKindFilter(tabs:)`: la marca turquesa bajo la elegida.
         static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3
-        /// La altura corta del cajón (parte de la pantalla) y desde qué alto de pantalla abre de una vez en grande.
-        static let shortFraction: CGFloat = 0.74, shortScreen: CGFloat = 700
     }
 }
