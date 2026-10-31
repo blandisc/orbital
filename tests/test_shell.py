@@ -530,3 +530,27 @@ def test_quiet_ui_gets_the_first_button_from_the_server_only_with_orbital_in_fro
     win2.fg = ORBITAL
     busy.forward_to_ui(0, 0x1000)
     assert published == []
+
+
+def test_a_video_left_without_orbital_is_closed_at_startup(monkeypatch):
+    """El servidor murió con un video abierto: mpv seguía a pantalla completa y Esc no hacía nada (S3-D6). Al arrancar se le
+    pide salir por su tubería; sin mpv, no pasa nada."""
+    from orbital import mpv
+
+    sent = []
+
+    class FakeMpv:
+        def __init__(self, pipe):
+            self.pipe = pipe
+
+        def command(self, *args):
+            sent.append(args)
+            return {"error": "success"} if self.pipe == "huerfano" else None
+
+    monkeypatch.setattr(mpv, "Mpv", FakeMpv)
+    shell, _, _ = make(None)
+    assert shell.close_orphan_player("huerfano") is True and sent == [("quit",)]
+    assert shell.close_orphan_player("vacia") is False  # nadie en la tubería: lo normal
+    shell.player.playing = True
+    sent.clear()
+    assert shell.close_orphan_player("huerfano") is False and sent == []  # ya es nuestro: no se toca

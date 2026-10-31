@@ -1460,6 +1460,8 @@ setInterval(() => {
 function cancelLaunch() {
   const title = ui.launch.title || state.launchingTitle;
   state.cancelled = state.launchingId ? { id: state.launchingId, until: Date.now() + 60_000 } : null;
+  // Su cierre no lleva aviso (ni «De vuelta…» ni «Guardé dónde ibas» de un tráiler o un canal): ya se dijo «Cancelé …».
+  state.quietClose = state.launchingId ? { id: state.launchingId, until: Date.now() + 60_000 } : null;
   state.launchingTitle = null;
   state.launchLockedUntil = 0;
   ui.launch.hide();
@@ -2114,9 +2116,13 @@ const EVENTS = {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     // Tampoco su «De vuelta de X» encima de «Abriendo Y» (Cerrar y abrir).
     const replaced = ui.launch.visible && event.id !== state.launchingId;
+    const quiet = !!event.cancelled || (state.quietClose?.id === event.id && Date.now() < state.quietClose.until);
+    if (quiet) state.quietClose = null;
     if (!replaced) { ui.launch.hide(); boot.land(); }
     if (replaced && !event.crashed) {
       // nada que decir: lo cerraste para abrir otra cosa
+    } else if (quiet) {
+      // lo cancelaste en la pantalla de carga: ya se dijo «Cancelé …» (antes salía además «De vuelta en Orbital»)
     } else if (event.crashed && event.low_memory) {
       // No abrió por falta de memoria (no por el juego): la causa real y Reiniciar a la mano.
       sound.play("error");
@@ -2154,7 +2160,9 @@ const padServer = { xinput: false, others: false };
 const XINPUT_ID = /xinput|xbox/i;
 const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinput = !!r.xinput; padServer.others = !!r.others; }).catch(() => {});
 const input = createInput({
-  onAction: (action, options) => { if (!videoInFront()) handleAction(action, options); },
+  // Con la pantalla de carga a la vista, el botón es de Orbital aunque mpv ya esté al frente (tráiler, canal): B cancela
+  // (antes se ignoraba y el tráiler o el canal se abrían igual; regresión S3-A6).
+  onAction: (action, options) => { if (!videoInFront() || ui.launch.visible) handleAction(action, options); },
   onModality: setModality,
   onTouch: () => { if (state.modality !== "touch") touchSince = performance.now(); }, // el aspecto cambia tras su clic
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).

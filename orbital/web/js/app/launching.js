@@ -5,13 +5,16 @@
 import { api } from "../core/api.js";
 import { rumble } from "../core/haptics.js";
 import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
-import { beforePlayMenu, switchMenu } from "../core/menus.js";
+import { beforePlayMenu, keepBothMenu, switchMenu as closeAndOpenMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
 const SLOW = Symbol("lento"); // el servidor no contestó a tiempo (sigue abriendo)
 
 export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused() }) {
+  // «¿Cerrar X?» o, si en Ajustes dijiste que abrir algo no cierra lo anterior, «¿Abrir Y también?» (no promete cerrar).
+  const switchMenu = (args) => (state.settings?.close_previous === false && args.running.title !== args.title
+    ? keepBothMenu(args) : closeAndOpenMenu(args));
   /** Sin internet, lo que lo necesita lo dice al instante (antes la pantalla de carga se quedaba y luego fallaba). */
   function offlineBlock(title) {
     if (state.online !== false) return false;

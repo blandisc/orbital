@@ -307,7 +307,10 @@ class KioskWindow:
         with self._lock:
             if self.exited_by_user or self._process is not proc:
                 return  # "Salir al escritorio" u otra ventana nueva: no es que la cerraste
-        if not self.keep_open:
+        # Alt+F4 o la X cierran Edge limpio (código 0). Si Edge tronó o lo mataron (otro código), no es que la cerraste:
+        # se reabre como en modo consola (antes Orbital entero se cerraba y la tele se quedaba en el escritorio; S3-D3).
+        crashed = proc.returncode not in (0, None)
+        if not self.keep_open and not crashed:
             log.info("Cerraste la ventana de Orbital: Orbital se cierra (no se reabre sola)")
             self._console_taskbar(hidden=False)
             if self.on_closed:
@@ -320,7 +323,10 @@ class KioskWindow:
                 log.warning("La ventana de Orbital se cerró %d veces en un minuto; no la reabro", self.MAX_REOPENS)
                 return
             self._reopens.append(now)
-        log.info("La ventana de Orbital se cerró sin \"Salir al escritorio\": la reabro")
+        if crashed:
+            log.warning("La ventana de Orbital se cerró sola (código %s): la reabro", proc.returncode)
+        else:
+            log.info("La ventana de Orbital se cerró sin \"Salir al escritorio\": la reabro")
         self.open()
 
     def _console_taskbar(self, hidden: bool) -> None:

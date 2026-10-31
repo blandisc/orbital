@@ -294,3 +294,29 @@ class _EndedEdge:
 
     def wait(self):
         return self.returncode
+
+
+class _EndedEdge:
+    def __init__(self, code):
+        self.returncode = code
+
+    def wait(self):
+        return self.returncode
+
+
+def test_closing_the_window_quits_but_a_crashed_edge_is_reopened(tmp_path, monkeypatch):
+    """S3-D3: Alt+F4 (Edge sale con 0) cierra Orbital, como siempre. Si Edge truena o lo matan (otro código), no lo
+    cerraste tú: se reabre (antes Orbital entero se cerraba y la tele se quedaba en el escritorio)."""
+    closed, opened = [], []
+    kiosk = KioskWindow("http://x", "edge", tmp_path / "perfil", keep_open=False, on_closed=lambda: closed.append(1),
+                        hide_taskbar=False)
+    kiosk.REOPEN_DELAY = 0
+    monkeypatch.setattr(kiosk, "open", lambda: opened.append(1) or True)
+    crashed = _EndedEdge(1)
+    kiosk._process = crashed
+    kiosk._watch(crashed)
+    assert opened == [1] and closed == []
+    by_user = _EndedEdge(0)
+    kiosk._process = by_user
+    kiosk._watch(by_user)
+    assert opened == [1] and closed == [1]

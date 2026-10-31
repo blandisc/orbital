@@ -582,3 +582,12 @@ test("«Otra portada» pide confirmar antes de descartar la de ahora (Cancelar p
   assert.equal(confirm.options[0].label, "Cancelar");
   assert.deepEqual(confirm.options[1].command, { type: "art", id: "emu:psp:1", kind: "cover", title: "Battlefront" });
 });
+
+test("con «Abrir algo nuevo cierra lo anterior: No» la hoja no promete cerrar nada", async () => {
+  const { keepBothMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = keepBothMenu({ running: { title: "Power Rangers" }, title: "Metal Slug", command: { type: "launch", id: "x" } });
+  assert.equal(menu.title, "¿Abrir Metal Slug también?");
+  assert.doesNotMatch(JSON.stringify(menu), /Cerrar|se perderá/);
+  assert.equal(menu.options[0].command.type, "resume"); // volver va primero
+  assert.deepEqual(menu.options[1].command, { type: "launch", id: "x", confirmed: true });
+});

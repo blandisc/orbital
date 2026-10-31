@@ -324,6 +324,20 @@ export function switchMenu({ running, title, command }) {
   };
 }
 
+/** Con «Abrir algo nuevo cierra lo anterior: No» lo de antes se queda abierto: la hoja no puede decir «Cerrar y abrir» ni
+ * «lo que no hayas guardado se perderá» (no se cierra nada; regresión S3-B7). Volver primero, como siempre. */
+export function keepBothMenu({ running, title, command }) {
+  return {
+    title: `¿Abrir ${title} también?`,
+    subtitle: `${running.title} se queda abierto (Ajustes › Jugar › «Abrir algo nuevo cierra lo anterior»: No).`,
+    options: [
+      { icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } },
+      { icon: "play", label: `Abrir ${title} también`, command: { ...command, confirmed: true } },
+    ],
+    cancel: { type: "close" },
+  };
+}
+
 /** Apagar: Suspender va primero (lo más común y lo más inofensivo si se pulsa A sin querer). */
 export function powerMenu() {
   return {

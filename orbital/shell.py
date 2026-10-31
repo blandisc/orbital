@@ -243,6 +243,23 @@ class ConsoleShell:
             self.win.resume(pids)
         self.pause_file.unlink(missing_ok=True)
 
+    def close_orphan_player(self, pipe: str | None = None) -> bool:
+        """Si el servidor murió con un video abierto, su mpv seguía a pantalla completa sin nadie que lo manejara (Esc ya no
+        hacía nada; regresión S3-D6). Al arrancar todavía no hay video nuestro: si la tubería de mpv responde, es ese huérfano
+        y se le pide salir por la misma tubería (su avance quedó guardado hasta el último minuto)."""
+        from .mpv import PIPE, Mpv
+
+        if self.player is not None and getattr(self.player, "playing", False):
+            return False  # ya es nuestro
+        try:
+            orphan = Mpv(pipe or PIPE)
+            if orphan.command("quit") is None:
+                return False
+        except OSError:
+            return False  # nadie la tiene: lo normal
+        log.info("Había un video abierto de antes, sin Orbital que lo manejara: lo cierro")
+        return True
+
     def target(self, hwnd: int) -> dict | None:
         """Qué se cerraría con Select+Start: el juego que lanzó Orbital, un emulador al frente o
         el juego de Steam en curso (Steam lo reporta y su ventana es la que está al frente)."""
@@ -516,6 +533,7 @@ class ConsoleShell:
         if sys.platform != "win32":
             return False
         self.recover_paused()
+        self.close_orphan_player()  # un video que quedó abierto sin Orbital (el servidor murió)
         self.unpin_orbital()
         if self.overlay is None:
             from .overlay import GameOverlay
