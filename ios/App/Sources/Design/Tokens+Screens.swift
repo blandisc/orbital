@@ -23,10 +23,10 @@ extension DS {
         static let zoomCurve = Animation.timingCurve(0.4, 0, 0.15, 1, duration: zoom)
         static let channels = [3, 7, 12]
         // La tele.
-        static let screen: CGFloat = 220, screenAspect: CGFloat = 4 / 3, screenRadius: CGFloat = 28, screenFrame: CGFloat = 3
-        static let tvRadius: CGFloat = 38, bezel: CGFloat = 18, tvGlow: CGFloat = 40
+        static let screen: CGFloat = 220, screenAspect: CGFloat = 4 / 3, screenRadius: CGFloat = 28, screenFrame: CGFloat = 3   // ds-exception: la tele de Los Simpson se dibuja como el aparato
+        static let tvRadius: CGFloat = 38, bezel: CGFloat = 18, tvGlow: CGFloat = 40   // ds-exception: la tele de Los Simpson se dibuja como el aparato
         static let knobSize: CGFloat = 24, knobMark: CGFloat = 3, knobTurn: Double = 45
-        static let grilleLines = 4, grilleLine: CGFloat = 3, grilleGap: CGFloat = 4
+        static let grilleLines = 4, grilleLine: CGFloat = 3, grilleGap: CGFloat = 4   // ds-exception: la tele de Los Simpson se dibuja como el aparato
         static let antennaWidth: CGFloat = 170, antennaHeight: CGFloat = 92, antennaLine: CGFloat = 3, antennaTip: CGFloat = 5
         static let antennaBase: CGFloat = 16, antennaWobble: Double = -4
         static let legSpan: CGFloat = 200, legWidth: CGFloat = 12, legHeight: CGFloat = 16
@@ -43,12 +43,12 @@ extension DS {
     /// Lo que va a la derecha del título de una sección («Ver todo ›», «Todo ⌄», «📅 Octubre», el switch Películas · Series):
     /// todo del mismo alto que el segmentado del sistema (32 pt a la vista) y con 44 pt para tocar, como pide Apple.
     enum HeaderControl {
-        static let height: CGFloat = 32, padding: CGFloat = 14, iconGap: CGFloat = 5
+        static let height: CGFloat = 32, padding = DS.Space.s3, iconGap = DS.Space.s1
     }
 
     /// El calendario de estrenos (Sale hoy › el mes): cada día pintado con el color del arte de lo que sale.
     enum ReleaseDays {
-        static let cell: CGFloat = 50, radius: CGFloat = 10, inset: CGFloat = 3, split: CGFloat = 1.5
+        static let cell: CGFloat = 50, radius = DS.Radius.md, inset = DS.Space.s1, split: CGFloat = 1.5
         /// Cuántas series se pintan por día (dos: la casilla partida a la mitad); más, con «+N».
         static let maxColors = 2
         static let pastOpacity: Double = 0.55
@@ -99,7 +99,7 @@ extension DS {
     enum TitleAction {
         /// El nombre en la barra, entre ‹ y los botones de la derecha: lo que ocupa ‹ y lo que ocupa cada botón de la cápsula
         /// (el nombre ya no se mete debajo de ellos; 31 oct 2026).
-        static let barTitleLeading: CGFloat = 72, barButton: CGFloat = 50, barGroupPadding: CGFloat = 28
+        static let barTitleLeading: CGFloat = 72, barButton: CGFloat = 50, barGroupPadding = DS.Space.s6
         /// Recogido el arte, en la barra va el logo de la serie o película (31 oct 2026): su alto (el ancho lo dan ‹ y los botones).
         static let barLogo: CGFloat = 36   // los logos traen ~25 % de margen vacío arriba y abajo: se ve de unos 20 pt
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
@@ -155,7 +155,7 @@ extension DS {
         /// Con «Reducir movimiento» la luna no gira: se queda a esta parte de la vuelta y late entre `pulseMin` y 1.
         static let restTurn = 0.75, pulseMin = 0.55
         /// Dentro del botón grande: qué tan adentro de su orilla corre la luna.
-        static let buttonInset: CGFloat = 5
+        static let buttonInset = DS.Space.s1
     }
 
     /// El corazón de la ficha (`FavoriteButton`, tus favoritos de Trakt): lleno en frambuesa (el color de las listas con
@@ -180,7 +180,7 @@ extension DS {
         static let genres = 3, chipFill = 0.18, ratingLogo: CGFloat = 16
         static let stampTilt: Double = 12, stampLine: CGFloat = 3, stampTracking: CGFloat = 1.5
         /// Los botones con su nombre debajo y el contador de guardadas.
-        static let actionLabelGap: CGFloat = 6, actionRow: CGFloat = 72, veilFrom = 0.35
+        static let actionLabelGap = DS.Space.s2, actionRow: CGFloat = 72, veilFrom = 0.35
     }
 
     /// Lo que ves y el Wrapped (`WatchingView`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): la portada
@@ -196,10 +196,10 @@ extension DS {
         static let streakShown = 3, dayFloor = 0.35
         /// El mapa de calor (`WatchingZoomMap`, opción B): al menos 53 semanas, cada cuadro y su separación, y el renglón de las
         /// letras de los meses.
-        static let yearWeeks = 53, heatCell: CGFloat = 16, heatGap: CGFloat = 3, yearLabel: CGFloat = 16
+        static let yearWeeks = 53, heatCell: CGFloat = 16, heatGap = DS.Space.s1, yearLabel: CGFloat = 16
         /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
         /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
-        static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8
+        static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8   // ds-exception: la rendija entre rebanadas de la dona
         /// Lo apagado de las rebanadas que no tocaste y el alto de cada renglón de la leyenda (se tocan).
         static let genreDim = 0.35, genreRow: CGFloat = 28
         static let genreColors = [DS.ListTint.series, DS.ListTint.trend, DS.ListTint.calendar, DS.ListTint.watching, DS.ListTint.spark]
@@ -246,7 +246,7 @@ extension DS {
     /// como las de Trakt), su tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
     enum Rating {
         static let filled = DS.warning, empty = DS.textMuted   // las vacías se leen también sobre el vidrio y el arte
-        static let star: CGFloat = 26, starInline: CGFloat = 17, gap: CGFloat = 4
+        static let star: CGFloat = 26, starInline: CGFloat = 17, gap = DS.Space.s1
         /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).
         static let dragStart: CGFloat = 8
         /// Las estrellas de un capítulo visto (bajo su texto, en la lista de la serie) y el alto que le suman al renglón.
@@ -274,9 +274,9 @@ extension DS {
     /// La ficha rica (como Infuse): caras del reparto, insignias de calidad, calificaciones, tráiler y logos.
     enum Rich {
         static let face: CGFloat = 72, faceColumn: CGFloat = 84
-        static let badgeStroke: CGFloat = 1, badgeRadius: CGFloat = 4
+        static let badgeStroke = DS.Stroke.regular, badgeRadius = DS.Radius.tag
         static let clipWidth: CGFloat = 240, trailerPlay: CGFloat = 44
-        static let logo: CGFloat = 36, logoRadius: CGFloat = 8
+        static let logo: CGFloat = 36, logoRadius = DS.Radius.logo(36)
         static let personPhoto: CGFloat = 120, bioLines = 5
     }
 
@@ -305,7 +305,7 @@ extension DS {
 
     /// «Tu año»: el mapa de calor (una columna por semana) y sus colores.
     enum YearMap {
-        static let cell: CGFloat = 9, gap: CGFloat = 3, radius: CGFloat = 2
+        static let cell: CGFloat = 9, gap: CGFloat = 3, radius: CGFloat = 2   // ds-exception: celdas de 9 pt de un mapa de 365 días
         /// El aro del día elegido y el póster de lo que viste ese día.
         static let ring: CGFloat = 1.5, dayPoster: CGFloat = 40
         /// Los colores de la app (Fernando, 30 oct 2026: el morado y el azul no estaban en ningún otro lado): series en turquesa,
@@ -315,7 +315,7 @@ extension DS {
 
     /// La barra de espacio de Descargas.
     enum Storage {
-        static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8
+        static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8   // ds-exception: la rendija entre tramos de la barra de espacio
         /// Por debajo de esta parte libre, el dato se pone en ámbar.
         static let lowFraction = 0.1
     }
@@ -366,7 +366,7 @@ extension DS {
         /// Los mosaicos de «Más filtros»: alto de un género y de una época, y a qué tamaño se baja su arte.
         static let genreTile: CGFloat = 60, eraTile: CGFloat = 80
         /// Elegir un mosaico: crece un poco (y su imagen se acerca), anillo con brillo; los demás pierden color.
-        static let chosenScale: CGFloat = 1.04, artZoom: CGFloat = 1.08, glowRadius: CGFloat = 10, glowOpacity: Double = 0.55
+        static let chosenScale: CGFloat = 1.04, artZoom: CGFloat = 1.08, glowRadius = DS.Glow.soft.radius, glowOpacity: Double = 0.55
         static let dimSaturation: Double = 0.4, labelShadow: CGFloat = 4, eraTracking: CGFloat = -0.5
     }
 
@@ -391,7 +391,7 @@ extension DS {
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, tus complementos, Rotten Tomatoes, tu Orbital).
         static let addon = Color(red: 0.13, green: 0.47, blue: 0.44), critics = Color(red: 0.78, green: 0.16, blue: 0.07), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
-        static let badgeRadius: CGFloat = 5
+        static let badgeRadius = DS.Radius.tag
         /// Un renglón de lista (`ListRow`, «Tuyo»): el ancho de sus pósters.
         static let stackPoster: CGFloat = 40
         /// «Porque viste»: el póster de lo que viste y los relacionados.
@@ -418,7 +418,7 @@ extension DS {
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
         /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
-        static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
+        static let reflection: CGFloat = 44, reflectionGap = DS.Space.s1, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
         /// Lo que la sección siguiente puede montarse sobre el reflejo de la última fila (su parte ya desvanecida): sin esto,
         /// entre una fila con reflejo y la siguiente quedaba el reflejo entero más el aire entre secciones (un hueco vacío).
         static let reflectionTail: CGFloat = 24
@@ -455,11 +455,11 @@ extension DS {
         /// Dos tarjetas y un pedazo de la tercera (como «Próximos estrenos»): en un iPhone de 375 pt las dos de 168 llenaban casi todo
         /// el ancho y dejaban 11 pt a la derecha contra 16 a la izquierda.
         static var width: CGFloat { min(maxWidth, (WindowMetrics.size.width - DS.Space.gutter - DS.Space.s3 - DS.Poster.peek) / 2) }
-        static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
+        static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius = DS.Radius.xxl
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
-        static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18
+        static let logo: CGFloat = 34, logoRadius = DS.Radius.logo(34), glow: CGFloat = 18
         /// La pastilla de una plataforma (el Top 10 de Inicio): el logo (en círculo), el aire alrededor y el borde de la elegida.
-        static let pillLogo: CGFloat = 26, pillInset: CGFloat = 5, pillStroke: CGFloat = 1.5
+        static let pillLogo: CGFloat = 26, pillInset = DS.Space.s1, pillStroke: CGFloat = 1.5
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44

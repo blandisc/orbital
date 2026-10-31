@@ -56,7 +56,7 @@ extension DS {
         static let seekBubbleSideMargin: CGFloat = 64
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
-        static let seekBubbleBottomInset: CGFloat = 120
+        static let seekBubbleBottomInset: CGFloat = 120   // ds-exception: sobre el video, arriba de la barra de avance
         /// La píldora «2×» en horizontal, dentro del área segura (igual que los controles): el borde de abajo
         /// queda un `s3` por encima de la hilera de tiempos y de la barra (`padding` de `controls` + `scrubHit`).
         static var fastForwardPillBottomInset: CGFloat {
@@ -83,7 +83,7 @@ extension DS {
         static let offlineExtraLanguages = 2
         /// La agarradera, montada en el borde de abajo del video (mitad dentro, mitad fuera): la franja que la toma (dentro del
         /// video, desde abajo, y un poco por fuera) y el aire entre el borde de abajo de la cápsula y el nombre del título.
-        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap: CGFloat = 12, handleWidth: CGFloat = 64, handleHeight: CGFloat = 22, handleBar: CGFloat = 36, handleBarHeight: CGFloat = 5, handleLift: CGFloat = 1.1   // la cápsula de vidrio, su rayita y cuánto crece al arrastrar
+        static let handleGrab: CGFloat = 40, handleBelow: CGFloat = 12, handleGap = DS.Space.s3, handleWidth: CGFloat = 64, handleHeight: CGFloat = 22, handleBar: CGFloat = 36, handleBarHeight: CGFloat = 5, handleLift: CGFloat = 1.1   // la cápsula de vidrio, su rayita y cuánto crece al arrastrar
         static let handleReach: CGFloat = 12
         /// Desde el borde del video hasta donde empiezan los controles: la mitad de la cápsula que cuelga por fuera más su aire
         /// (antes se contaba el aire desde el borde del video y la cápsula quedaba a 1 pt del nombre, 29 oct).
@@ -106,7 +106,7 @@ extension DS {
         static let lockScale: CGFloat = 0.9
         /// El aviso de pantalla bloqueada: el círculo al que se encoge el candado, y cuánto sube al irse.
         static let lockNoticeIcon: CGFloat = 36, lockNoticeRise: CGFloat = 28
-        static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
+        static let width: CGFloat = 420, radius = DS.Radius.xxl, rowRadius = DS.Radius.lg, icon: CGFloat = 32
         /// En horizontal, lo más que ocupa el panel de la derecha (parte del ancho), para que en iPhone chicos quede video.
         static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
@@ -178,7 +178,7 @@ extension DS {
         static let wheelBlackEdge = Color(red: 0.03, green: 0.03, blue: 0.03), labelBlack = Color(red: 0.8, green: 0.8, blue: 0.8)
         static let centerBlackTop = Color(red: 0.08, green: 0.08, blue: 0.09), centerBlackBottom = Color(red: 0.18, green: 0.18, blue: 0.19)
         // Medidas: margen a los lados, marco, esquinas, la barra de arriba, lo de abajo del video y la rueda.
-        static let inset: CGFloat = 12, bezel: CGFloat = 6, bezelRadius: CGFloat = 14, lcdRadius: CGFloat = 8
+        static let inset: CGFloat = 12, bezel: CGFloat = 6, bezelRadius: CGFloat = 14, lcdRadius: CGFloat = 8   // ds-exception: el iPod se dibuja como el aparato
         static let statusHeight: CGFloat = 26, infoHeight: CGFloat = 92, progressHeight: CGFloat = 10, line: CGFloat = 1
         /// La rueda nunca baja de este ancho (en veces el del teléfono): hasta ahí puede crecer el video.
         static let wheelMinShare: CGFloat = 0.52

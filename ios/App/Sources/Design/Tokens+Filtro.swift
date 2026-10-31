@@ -22,7 +22,7 @@ extension DS {
         static let tickYear: CGFloat = 8, tickFive: CGFloat = 14, tickDecade: CGFloat = 24, rulerBase: CGFloat = 16
         static let decadeButton: CGFloat = 40
         /// Qué tan lejos llega el brillo de la ventana de Época.
-        static let glowRadius: CGFloat = 10
+        static let glowRadius = DS.Glow.soft.radius
         /// El color de cada filtro (Fernando, 31 oct 2026, dirección A): solo en detalles (el ícono, un puntito cuando tiene
         /// algo y el control abierto); lo elegido sigue en blanco. Claros sobre oscuro y más intensos sobre el papel.
         static let coral = DS.adaptive(dark: "#ff7a6b", light: "#c9432f"), gold = DS.adaptive(dark: "#f4c24d", light: "#a86f00")

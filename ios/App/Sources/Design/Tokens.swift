@@ -148,7 +148,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     // MARK: Espacio y forma
     /// Los cuatro espacios de toda pantalla (Fernando, 31 oct 2026, decisión 2), medidos desde donde termina lo que se ve
     /// (el pie de un póster y su reflejo cuentan): del título a lo suyo, entre subsecciones, entre secciones y al pie.
-    /// Arriba de cada pantalla, `titleToContent`. `DesignTests` revisa que los contenedores usen estos.
+    /// Arriba de cada pantalla, `titleToContent`. `DesignRulesTests.testScreensKeepTheLayoutRhythm` revisa que el primer contenedor de cada pantalla los use.
     enum Layout {
         static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s10, screenBottom = Space.s14
         static let screenTop = Space.s3
@@ -293,11 +293,11 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
         /// El anillo, un poco más tenue que el planeta.
         /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
-        static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1
+        static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1   // ds-exception: en em de la palabra (la marca)
         /// De dónde cae la luna al aparecer (em) y lo chica que empieza.
         static let moonFromX: CGFloat = -0.9, moonFromY: CGFloat = -0.7, moonFromScale: CGFloat = 0.2
         /// «orbital»: interletrado apretado (em); la marca mide 1.7 veces la letra y va a media letra de ella.
-        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2
+        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2   // ds-exception: en em de la palabra (la marca)
         /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
         static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
         /// La letra de «orbital» (en la TV, Segoe UI Variable Display): SF Pro Rounded en negrita, del tamaño de la marca.

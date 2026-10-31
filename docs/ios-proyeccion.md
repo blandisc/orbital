@@ -63,14 +63,43 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 
 | Receta | Estilo | Uso |
 |---|---|---|
-| `display` / `title` | largeTitle / title, bold | Títulos grandes fuera de la barra |
-| `section` | title2 bold | Encabezado de sección o estante |
+| `display` | largeTitle bold | Títulos grandes fuera de la barra |
+| `title` | title bold | El título de una hoja (`DSSheetHeader`) |
+| `section` | title2 bold | **Subsección**: el título de una fila o estante (`DSSectionHead`, `Shelf`, `Rail`), con su porqué turquesa arriba si ayuda |
+| `groupLabel` | caption bold, en mayúsculas | **Sección**: `DSSectionHead(level: .section)` pinta `DSChapterLabel` (el rótulo con su línea), sola, sin porqué; dentro de una hoja o panel, `DSGroupLabel` |
+| `eyebrow` | footnote semibold, turquesa | El porqué arriba de una subsección o de una portada (≤ 38 letras, sin cifras) |
 | `cardTitle` | headline | Nombre en una pieza o renglón |
 | `body` | body | Texto de lectura |
 | `secondary` | subheadline | Datos de una ficha |
 | `footnote` / `caption` | footnote / caption | Pies, nombres bajo un póster |
-| `eyebrow` | footnote semibold | Rótulo sobre un título («Seguir viendo») |
+| `label` / `labelLarge` | footnote / subheadline semibold | Botones chicos, el valor de un control, datos que resaltan |
+| `badge` | caption bold | Placas («4K», «Nuevo») |
+| `stat` | largeTitle heavy, tabular | Las cifras grandes (Lo que ves, el porcentaje, las horas) |
 | `data` | footnote, números tabulares | `DataLine`: «T2 E5 · quedan 20 min · termina a las 23:21» |
+
+Encabezados en **dos niveles** (Fernando, 30 oct 2026): una sección agrupa varias cosas y va sola; una subsección es una
+fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una receta con `.weight`/`.fontWeight`:
+`DesignRulesTests` lo prohíbe (fuera del reproductor, el iPod, la marca y la tele de Los Simpson).
+
+### Piezas y tokens de la auditoría del 31 oct 2026 (`Design/Surfaces.swift`, `Tokens.swift`)
+
+- Cajas: `.dsCard(.row)` (renglón o caja, esquina `lg`) y `.dsCard(.card)` (tarjeta grande, `xl`), siempre continuas; en la
+  superficie (blanca en claro) o translúcidas (`translucent: true`) sobre arte o dentro de otra caja. `DSCard` les pone su aire.
+- Hojas sin barra: `DSSheetHeader(title:subtitle:close:)` dentro de `dsSheetContent()`; el ✕ es siempre `DSIconButton`.
+- `DSIconButton(size: .small/.regular/.large)`: el único círculo de vidrio. `dsPrimaryButton(size:)`, `dsSecondaryButton()`,
+  `dsGlassButton()`: los demás botones.
+- Esperas: `DSInlineProgress(text:)` junto a lo que lo pidió; `DSLoadingState` para un área; `DSEmptyState` vacío.
+- Lo elegido: `.dsSelectionRing(_:)` en el color del texto, del grueso `DS.Stroke.selected` (líneas: `DS.Stroke.hairline,
+  regular, selected, focus`).
+- `DSSeasonPicker`: las temporadas en cápsulas «T1, T2…», igual en la ficha, Mi media, la hoja de episodios y el reproductor.
+- `DSGroupLabel`: el rótulo de un grupo. `HeroSkeleton`: la portada mientras llega.
+- Opacidad: `DS.Opacity.disabled, dimmed, faint, pressed, selectedFill`. Movimiento: `DS.Motion.fade` (solo opacidad, también
+  con «Reducir movimiento»), `snap`, `reveal`, `appear(_:)` para tarjetas que entran. Sombras: `DS.Elevation.low/medium/high/
+  floating`; brillos de color: `.glow(color, .soft/.strong)`. Radios: `DS.Radius.tag` (placas) y `DS.Radius.logo(lado)`.
+- Ritmo: el primer contenedor de cada pantalla separa con `DS.Layout` (`titleToContent`, `betweenSubsections`,
+  `betweenSections`, `screenBottom`).
+- Los tokens de pieza (`Tokens+*.swift`) salen de la escala (`DS.Space`, `DS.Radius`); lo que no, con `ds-exception: motivo`.
+  `DesignRulesTests` vigila las 13 reglas y que no quede ningún token sin uso.
 
 ## 4. Piezas (catálogo)
 
@@ -120,7 +149,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |
 | `DSSegmented`, `DSChipRow`, `DSIconButton`, `DSNotice`, `DSProgress` | Controles nativos con los tokens de Orbital | Varias |
 | `DSSectionHead` | El encabezado de toda sección («Editorial»): título grande, «Ver todo» si abre la lista completa (o un dato corto) y una línea gris solo si ayuda; sin íconos | Todas las pantallas (también `Shelf` y las listas de Descargas) |
-| `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en ámbar) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
+| `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en turquesa) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
 | `posterCaptions` (entorno) | El nombre bajo el póster: sí en cuadrículas, no en las tiras de una sección | Tiras y cuadrículas |
 | `ProfileButton` | Tu avatar arriba a la derecha de cada pestaña: abre Ajustes | Inicio, Para ti, Buscar, Descargas |
 | `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
