@@ -24,6 +24,7 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
   const pageTitle = h("h2", { class: "settings__page-title" });
   const lead = h("p", { class: "settings__lead" });
   const list = h("div", { class: "settings__list", role: "menu" });
+  list.addEventListener("scroll", () => moreBelow(), { passive: true }); // con la rueda o el dedo también
   const helpText = h("span", { class: "settings__help-text" });
   const help = h("p", { class: "settings__help", "aria-live": "polite" }, svg(ICONS.info), helpText);
   const el = h("section", { class: "settings screen", hidden: true, "aria-label": "Ajustes" },
@@ -98,6 +99,12 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
     const node = list.children[row];
     if (zone === "list" && node) node.scrollIntoView({ block: "nearest", behavior: motion() });
     else if (zone === "rail") list.scrollTo({ top: 0, behavior: motion() });
+    requestAnimationFrame(moreBelow);
+  }
+
+  /** ¿Queda algo abajo? El último renglón a la vista se desvanece en vez de quedar partido. */
+  function moreBelow() {
+    list.classList.toggle("settings__list--more", list.scrollTop + list.clientHeight < list.scrollHeight - 2);
   }
 
   function move() { paint(); onMove?.(); } // primero se pinta: el pie (hints) lee la fila ya elegida

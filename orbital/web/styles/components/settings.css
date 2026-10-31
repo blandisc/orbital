@@ -11,6 +11,8 @@
 /* La lista se desplaza sola con el foco (y con la rueda o el dedo); sin barra a la vista. */
 .settings__list { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow-y: auto; scrollbar-width: none; padding-bottom: var(--space-4); }
 .settings__list > * { flex-shrink: 0; }
+/* Si hay más abajo, el último renglón se desvanece (settings.js · settings__list--more): antes quedaba partido a la mitad. */
+.settings__list--more { -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent); }
 .settings__row { cursor: pointer; }
 /* Con el riel abierto, la lámina es una vista previa: atenuada hasta entrar. */
 .settings[data-zone="rail"] .settings__list { opacity: var(--opacity-near); }

@@ -166,6 +166,8 @@
 .card--wide.card--has-art::before { content: ""; position: absolute; inset: 40% 0 0; border-radius: inherit; background: var(--gradient-art-base); pointer-events: none; z-index: var(--z-raised); }
 .card__logo { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   max-width: 58%; max-height: 38%; object-fit: contain; object-position: left bottom; filter: var(--shadow-drop-sm); }
+/* Con avance (A continuación): el logo y el nombre se suben arriba de la barra; antes el logo la tapaba. */
+.card--has-progress :is(.card__logo, .card__label) { bottom: calc(2 * var(--inset-poster) + var(--progress-height)); }
 
 /* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. */
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);

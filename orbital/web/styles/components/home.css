@@ -42,7 +42,7 @@
 .home__viewport--before { --fade-left: transparent; }
 .home__track { display: flex; align-items: flex-end; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* «A continuación»: tarjetas anchas (16:9) con su logo y su avance; la enfocada crece y dice su nombre debajo. */
-.home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: 3.8rem; /* el nombre de la enfocada y su dato (dos renglones) */ }
+.home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--caption-room); /* el nombre de la enfocada y su dato */ }
 .home__track--upnext .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
 /* Tus consolas: tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más). La enfocada crece hacia

@@ -47,6 +47,14 @@
   object-fit: contain; object-position: left bottom; filter: var(--shadow-logo);
   animation: fade-in var(--duration-slow) var(--ease-out);
 }
+/* Con letra grande el texto crece y el héroe no: el logo cede su aire y su alto mínimo (antes los nombres bajo los botones
+   redondos, «Episodios» y «Opciones», quedaban recortados abajo). */
+:is([data-text-size="large"], [data-text-size="xlarge"]) .hero__logo { margin: var(--space-2) 0; min-height: var(--pill-height); }
+:is([data-text-size="large"], [data-text-size="xlarge"]) .hero__row { margin-top: var(--space-3); }
+/* Con letra grande el texto crece y el héroe no: el logo cede su aire y su alto mínimo (antes los nombres bajo los botones
+   redondos, «Episodios» y «Opciones», quedaban recortados abajo). */
+:is([data-text-size="large"], [data-text-size="xlarge"]) .hero__logo { margin: var(--space-2) 0; min-height: var(--pill-height); }
+:is([data-text-size="large"], [data-text-size="xlarge"]) .hero__row { margin-top: var(--space-3); }
 .hero__description {
   max-width: 36rem; margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;

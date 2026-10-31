@@ -257,3 +257,55 @@ def test_search_with_results(page):
     page.keyboard.type("hol")
     page.locator(".search button.card").first.wait_for(timeout=5000)
     page.locator(".hints", has_text="Buscar").wait_for(timeout=5000)
+
+
+CLIPPED = (ROOT / "tests" / "smoke" / "clipped_text.js").read_text(encoding="utf-8")
+
+
+def _set_text_size(server, size: str) -> None:
+    body = json.dumps({"text_size": size}).encode()
+    urllib.request.urlopen(urllib.request.Request(f"{server}/api/settings", data=body, method="POST",
+                                                  headers={"Content-Type": "application/json"}), timeout=5)
+
+
+@pytest.mark.parametrize(("width", "height", "size"), [(1920, 1080, "normal"), (1280, 800, "xlarge")])
+def test_no_text_is_cut_in_half(server, width, height, size):
+    """Ningún texto queda partido a la mitad, arriba o abajo (Fernando, 31 oct 2026: «es el tipo de cosas que tú tienes que
+    detectar»): las secciones, la ficha de un juego y Ajustes, en la tele y en la Legion Go con la letra más grande.
+    clipped_text.js ignora lo que queda entero fuera (filas que se deslizan, line-clamp), lo tapado y lo que se desvanece."""
+    _set_text_size(server, size)
+    try:
+        with playwright.sync_playwright() as p:
+            browser = p.chromium.launch(channel=os.environ.get("ORBITAL_SMOKE_BROWSER") or None)
+            page = browser.new_page(viewport={"width": width, "height": height})
+            page.goto(server)
+            ready(page)
+            cuts: dict[str, list] = {}
+
+            def look(name: str) -> None:
+                page.wait_for_timeout(900)
+                found = page.evaluate(CLIPPED)
+                if found:
+                    cuts[name] = found
+
+            look("Inicio")
+            for name in ("Juegos", "Películas y series", "TV en vivo"):
+                page.keyboard.press("e")
+                look(name)
+            page.keyboard.press("q")  # de TV en vivo a Juegos
+            page.keyboard.press("q")
+            page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=8000)
+            page.keyboard.press("y")
+            page.locator(".sheet__item", has_text="Ver ficha").first.click()
+            look("La ficha de un juego")
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(500)
+            page.keyboard.press("m")
+            page.locator(".sheet__item", has_text="Ajustes").first.click()
+            for i in range(7):
+                look(f"Ajustes {i + 1}")
+                page.keyboard.press("ArrowDown")
+            browser.close()
+    finally:
+        _set_text_size(server, "normal")
+    assert not cuts, f"Texto partido: {json.dumps(cuts, ensure_ascii=False, indent=1)}"
