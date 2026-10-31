@@ -39,22 +39,30 @@ class SubtitleTrial:
     TRY_BACK = 8  # s que regresa al cambiar de subtítulo: la misma frase con el nuevo
     TRY_PRELOAD_WAIT = 1.0  # s sin moverte antes de bajar el siguiente de internet
     SUBS_OVER_PANEL = 46  # sub-pos (% del alto) con el panel X abierto: los subtítulos se ven encima del panel (desde 520)
+    SUBS_OVER_HUD = 83  # con la barra a la vista (desde 930 de 1080): suben encima de ella, como el Apple TV, y bajan al irse
 
     _try: dict | None = None
-    _subs_lifted: float | None = None  # el sub-pos de antes de abrir el panel X (None: no se movieron)
+    _subs_lifted: float | None = None  # el sub-pos de antes de subirlos (panel X o barra; None: no se movieron)
+    _lifted_to: float | None = None  # a dónde se subieron (SUBS_OVER_PANEL o SUBS_OVER_HUD)
     _keep_delay = False  # la sincronía se recuerda junto con los subtítulos (current_subtitle)
     subtitle_search = None  # (meta, url) -> [opción de subtítulo de internet] | None: todos los idiomas, con su copia
     good_release = None  # (meta) -> la copia buena de esta serie («…-NTb») | None
     on_good_release = None  # (meta, release): «Este va bien» en una serie
 
-    # --- los subtítulos suben mientras el panel X está abierto ------------------------------------------------------
-    def _lift_subs(self, on: bool) -> None:
-        if on and self._subs_lifted is None:
-            before = self.mpv.get("sub-pos")
-            ok = isinstance(before, (int, float)) and not isinstance(before, bool)
-            self._subs_lifted = float(before) if ok else 100.0
-            self.mpv.command("set_property", "sub-pos", self.SUBS_OVER_PANEL)
+    # --- los subtítulos suben mientras el panel X o la barra están a la vista ---------------------------------------
+    def _lift_subs(self, on: bool, to: float | None = None) -> None:
+        if on:
+            to = self.SUBS_OVER_PANEL if to is None else to
+            if self._subs_lifted is None:
+                before = self.mpv.get("sub-pos")
+                ok = isinstance(before, (int, float)) and not isinstance(before, bool)
+                self._subs_lifted = float(before) if ok else 100.0
+            elif self._lifted_to == to:
+                return  # ya están ahí (la barra se vuelve a pintar a cada segundo al adelantar)
+            self._lifted_to = to
+            self.mpv.command("set_property", "sub-pos", to)
         elif not on and self._subs_lifted is not None:
+            self._lifted_to = None
             before, self._subs_lifted = self._subs_lifted, None
             self.mpv.command("set_property", "sub-pos", int(before) if before == int(before) else before)
 

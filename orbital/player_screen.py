@@ -224,6 +224,8 @@ class PlayerScreen(SubtitleTrial):
         self._overlay(1, player_ui.hud_ass(hud))
         self._show_logo(player_ui.placed.get("logo") if logo else None, logo)
         self._hud_visible = True
+        if self.menu is None:
+            self._lift_subs(True, self.SUBS_OVER_HUD)  # encima de la barra mientras se ve
         if self._hud_timer:
             self._hud_timer.cancel()
         if hud.paused and seeking:  # en pausa, después de adelantar vuelve la vista de pausa
@@ -245,6 +247,8 @@ class PlayerScreen(SubtitleTrial):
             self._hud_timer.cancel()
         self._hud_visible = False
         self._overlay(1, None)
+        if self.menu is None:
+            self._lift_subs(False)  # la barra se fue: los subtítulos vuelven abajo
 
     def _hide_hud_if_playing(self) -> None:
         if not self._value("pause"):

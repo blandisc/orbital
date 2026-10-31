@@ -104,6 +104,18 @@ def test_seek_and_volume():
     assert "−10 s" in mpv.overlays[1]  # adelantando: la burbuja dice cuánto
 
 
+def test_subtitles_rise_over_the_bar_and_come_back_down():
+    """Con la barra a la vista, los subtítulos suben encima de ella (como el Apple TV) y al irse la barra, bajan."""
+    p, mpv = make_player()
+    p.show_hud()
+    assert ("set_property", "sub-pos", p.SUBS_OVER_HUD) in mpv.sent
+    sent = len(mpv.sent)
+    p.show_hud()  # la barra se vuelve a pintar (al adelantar): no se manda otra vez
+    assert ("set_property", "sub-pos", p.SUBS_OVER_HUD) not in mpv.sent[sent:]
+    p.hide_hud()
+    assert mpv.sent[-1] == ("set_property", "sub-pos", 100)
+
+
 def test_audio_menu_lists_tracks_and_switches():
     p, mpv = make_player()
     p.press("x")
