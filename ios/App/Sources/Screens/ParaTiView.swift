@@ -114,7 +114,12 @@ struct ParaTiView: View {
             if Demo.isOn, Demo.open == "match" { Task { try? await Task.sleep(for: .seconds(4)); matching = true } }   // el mazo «¿Qué vemos hoy?»
             if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
-            await m.load()
+            // De vuelta a la pestaña: primero termina el salto de la barra y luego, si hace falta, se refresca.
+            if !m.lists.isEmpty || !m.mosaic.isEmpty {
+                try? await Task.sleep(for: DS.Motion.tabSettle)
+                guard !Task.isCancelled else { return }
+            }
+            await m.loadIfStale()
         }
         .refreshable { await m.refresh() }
         .fullScreenCover(isPresented: $matching) {

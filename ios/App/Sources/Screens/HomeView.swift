@@ -32,6 +32,9 @@ struct HomeView: View {
     @Environment(\.openRemote) private var openRemote
     @Environment(\.scenePhase) private var scenePhase
 
+    /// Ya se vio una vez: al volver, la recarga espera a que termine el cambio de pestaña.
+    @State private var appeared = false
+
     init() {
         _home = State(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
         // El sondeo es de toda la app (arranca en RootView): aquí solo se ve.
@@ -175,7 +178,15 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
         .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
-        .task { await reload(ifStale: true) }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
+        .task {
+            // De vuelta a la pestaña: primero termina el salto de la barra (recargar a la par lo trababa) y luego se refresca.
+            if appeared {
+                try? await Task.sleep(for: DS.Motion.tabSettle)
+                guard !Task.isCancelled else { return }
+            }
+            appeared = true
+            await reload(ifStale: true)
+        }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload(ifStale: true) } } }   // al volver a la app

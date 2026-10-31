@@ -188,6 +188,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     // MARK: Movimiento (sin movimiento con «Reducir movimiento»)
     enum Motion {
+        /// Lo que tarda el salto de la barra de pestañas: lo que se recarga al volver a una pestaña espera esto.
+        static let tabSettle: Duration = .milliseconds(450)
         static func base(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.base) }
         static func enter(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.enter) }
         static func tint(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: DesignTokens.Motion.tint) }
