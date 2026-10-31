@@ -74,7 +74,7 @@ struct ReleaseTimeline: View {
                 .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: a.series.title)
                     .overlay(alignment: .topLeading) {
-                        if moment == .new { DSBadge(text: "Nuevo", tone: .fresh).padding(DS.Space.s2) }
+                        if moment == .new { DSCornerRibbon(text: "Nuevo") }
                     }
                     .overlay(alignment: .bottomLeading) {
                         if case .soon(let days) = moment, days >= 2 {

@@ -204,6 +204,12 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
     /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
     enum PlatformBadge { static let logo: CGFloat = 16, logoRadius: CGFloat = 4 }
+    /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
+    /// centro (en cada eje, desde la esquina), su giro y el interletrado del texto en mayúsculas.
+    enum Ribbon {
+        static let corner: CGFloat = 60, length: CGFloat = 104, center: CGFloat = 22
+        static let angle: Double = -45, tracking: CGFloat = 0.8, shine: Double = 0.28
+    }
 
     enum Brand {
         static let box: CGFloat = 32

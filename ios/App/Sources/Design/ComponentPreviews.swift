@@ -20,6 +20,7 @@ private struct CatalogSample: View {
                 }
                 HStack(spacing: DS.Space.s2) {
                     DSBadge(text: "Recomendada")
+                    PosterView(url: nil, title: "Nuevo").frame(width: DS.HomeTimeline.width).overlay(alignment: .topLeading) { DSCornerRibbon(text: "Nuevo") }
                     DSIconBadge(symbol: "bookmark.fill", label: "En tu lista")
                     DSRankBadge(rank: 1)
                 }

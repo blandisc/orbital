@@ -37,7 +37,7 @@ struct DSChipText: View {
 }
 
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
-/// puede ver hoy («Nuevo», la marca «HOY» de «Lo nuevo de lo tuyo»), una cápsula verde.
+/// puede ver hoy (la marca «HOY» de «Lo nuevo de lo tuyo»), una cápsula verde. «Nuevo» sobre un póster es `DSCornerRibbon`.
 struct DSBadge: View {
     enum Tone { case onArt, fresh }
     let text: LocalizedStringKey
@@ -53,6 +53,31 @@ struct DSBadge: View {
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.success, in: Capsule())
         }
+    }
+}
+
+/// Lo que acaba de salir, en la esquina de arriba a la izquierda de un póster: un listón en diagonal que cruza la esquina,
+/// verde con un brillo arriba y el texto en mayúsculas. Va en `.overlay(alignment: .topLeading)` del póster, sin padding:
+/// la caja recorta la banda y su orilla de afuera queda lejos de la curva del póster.
+struct DSCornerRibbon: View {
+    let text: LocalizedStringKey
+
+    var body: some View {
+        Text(text).textCase(.uppercase).font(DS.TextRecipe.caption.font.weight(.heavy)).tracking(DS.Ribbon.tracking)
+            .foregroundStyle(DS.onPrimary).lineLimit(1)
+            .padding(.vertical, DS.Space.s1 / 2)
+            .frame(width: DS.Ribbon.length)
+            .background {
+                DS.success.overlay(LinearGradient(colors: [DS.paper.opacity(DS.Ribbon.shine), .clear], startPoint: .top, endPoint: .center))
+            }
+            .overlay(alignment: .top) { Rectangle().fill(DS.paper.opacity(DS.Ribbon.shine)).frame(height: DS.Size.hairline) }
+            .shadow(DS.Elevation.low)
+            .rotationEffect(.degrees(DS.Ribbon.angle))
+            .position(x: DS.Ribbon.center, y: DS.Ribbon.center)
+            .frame(width: DS.Ribbon.corner, height: DS.Ribbon.corner)
+            .clipped()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(text))
     }
 }
 
