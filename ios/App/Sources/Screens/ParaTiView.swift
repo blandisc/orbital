@@ -56,7 +56,9 @@ struct ParaTiView: View {
             case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true })
             }
         }
-        .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
+        // El mismo aire bajo el título que Inicio. En listas va adentro de la lista: afuera la despegaba de la orilla y iOS
+        // ya no la pasaba detrás de la barra (el mosaico se cortaba en seco bajo el título).
+        .padding(.top, m.mode == .lists ? 0 : DS.Space.s3)
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti")

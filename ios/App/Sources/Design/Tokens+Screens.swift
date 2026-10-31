@@ -179,10 +179,8 @@ extension DS {
     /// la tarjeta de Para ti, sus esqueletos, lo apagado del collage, las barras, el cuadrito del mapa, los géneros y las
     /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
     enum Watching {
-        /// «Tu semana en grande»: su degradado (rosa, naranja y ámbar), las barras de lunes a domingo, lo tenue de los otros
-        /// días y el hueco de lo que falta de la semana.
-        static let weekGradient = [Color(red: 0.84, green: 0.20, blue: 0.40), Color(red: 0.92, green: 0.42, blue: 0.18), Color(red: 0.94, green: 0.60, blue: 0.18)]
-        static let weekBars: CGFloat = 72, weekBar: CGFloat = 10, weekBarGap: CGFloat = 6, dayDim = 0.6, track = 0.14
+        /// «Tu semana en grande»: las barras de lunes a domingo y lo tenue de los otros días.
+        static let weekBars: CGFloat = 72, weekBar: CGFloat = 10, weekBarGap: CGFloat = 6, dayDim = 0.5
         static let cardHeight: CGFloat = 170, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
@@ -216,6 +214,8 @@ extension DS {
         static let resultWidth: CGFloat = 104
         /// La puerta «Búsqueda avanzada» en Buscar: su ícono, el de cada filtro y cuántos por renglón.
         static let doorIcon: CGFloat = 44, doorChip: CGFloat = 40, doorColumns = 3
+        /// Las pestañas de texto de `DSKindFilter(tabs:)`: la marca turquesa bajo la elegida.
+        static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3
         /// La altura corta del cajón (parte de la pantalla) y desde qué alto de pantalla abre de una vez en grande.
         static let shortFraction: CGFloat = 0.74, shortScreen: CGFloat = 700
     }
@@ -364,7 +364,7 @@ extension DS {
     /// El arranque de una sección (`DSChapterHead`): el ícono (en línea y en franja), cuánto se aclara arriba su degradado, su
     /// brillo y la franja; y el color de cada parte de Para ti (Fernando, 30 oct 2026: «Lo que se ve hoy» y las colecciones).
     enum Chapter {
-        static let icon: CGFloat = 40, bandIcon: CGFloat = 52, lighten: Double = 0.35, glow: Double = 0.45, band: Double = 0.5
+        static let icon: CGFloat = 40, lighten: Double = 0.35
         static let now = Color(red: 1.0, green: 0.42, blue: 0.18), platforms = Color(red: 0.86, green: 0.30, blue: 0.62)
         static let studios = Color(red: 0.86, green: 0.30, blue: 0.30), seasons = Color(red: 0.20, green: 0.66, blue: 0.40)
         static let genres = Color(red: 0.44, green: 0.30, blue: 0.88), awards = Color(red: 0.86, green: 0.64, blue: 0.20)

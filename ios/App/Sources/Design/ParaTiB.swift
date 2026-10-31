@@ -90,14 +90,13 @@ struct MosaicCover: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Las orillas: arriba casi nada detrás del título grande y se enciende ya dentro de la portada; abajo se apaga hasta
-    /// perderse bajo los círculos.
+    /// Las orillas: arriba llega hasta la orilla de la pantalla (detrás del título y la barra, sin corte); abajo se apaga
+    /// hasta perderse bajo los círculos.
     private var fade: some View {
         let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
         return LinearGradient(stops: [
-            .init(color: .clear, location: 0),
-            .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: up / total),
-            .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverClearAt) / total),
+            .init(color: .black.opacity(DS.ParaTiB.coverUnderBar), location: 0),
+            .init(color: .black, location: up / total),
             .init(color: .black, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverBaseAt) / total),
             .init(color: .clear, location: 1),
         ], startPoint: .top, endPoint: .bottom)
@@ -107,6 +106,8 @@ struct MosaicCover: View {
     private var veil: some View {
         let up = DS.ParaTiB.coverBleedUp, total = up + DS.ParaTiB.coverHeight + DS.ParaTiB.coverBleedDown
         return LinearGradient(stops: [
+            .init(color: DS.bg.opacity(DS.ParaTiB.coverTitleVeil), location: 0),   // el título grande se lee encima
+            .init(color: .clear, location: up / total),
             .init(color: .clear, location: (up + DS.ParaTiB.coverHeight * DS.ParaTiB.coverClearAt) / total),
             .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: (up + DS.ParaTiB.coverHeight) / total),
             .init(color: DS.bg.opacity(DS.ParaTiB.coverBaseVeil), location: 1),

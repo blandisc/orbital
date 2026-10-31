@@ -39,8 +39,9 @@ extension DS {
         static let circle: CGFloat = 56, circleLabel: CGFloat = 84
         static let coverHeight: CGFloat = 300, coverWall: CGFloat = 620, coverColumns = 6, coverPosters = 36, coverTilt: Double = -10
         static let coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.8, coverBaseAt: Double = 0.6
-        /// Cuánto sube el muro detrás de la barra y cuánto baja bajo los círculos; qué tanto se ve detrás del título (casi nada).
-        static let coverBleedUp: CGFloat = 120, coverBleedDown: CGFloat = 72, coverUnderBar: Double = 0.3
+        /// Cuánto sube el muro (hasta la orilla de la pantalla, detrás del título y la barra: sin corte) y cuánto baja bajo los
+        /// círculos; qué tanto se ve hasta arriba y el velo que deja leer el título encima.
+        static let coverBleedUp: CGFloat = 260, coverBleedDown: CGFloat = 72, coverUnderBar: Double = 0.85, coverTitleVeil: Double = 0.55
         /// El vaivén del muro: un renglón sobre su diagonal, ida en 40 s y vuelta en otros 40; corre solo con la portada a la vista.
         static let coverDrift: CGFloat = 150, coverDriftX: CGFloat = 26, coverVisibleFrom: Double = 0.1
         static let coverDriftAnimation = Animation.easeInOut(duration: 40)

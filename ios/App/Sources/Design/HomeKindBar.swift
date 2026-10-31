@@ -15,7 +15,7 @@ struct HomeKindBar: View {
         DSKindFilter(kind: Binding(get: { kind }, set: { new in
             kind = new
             onPicked(new)
-        }), compact: true)   // con palabras: los tres íconos solos no se entendían
+        }), tabs: true)   // pestañas de texto: los íconos solos no se entendían y la cápsula gris no gustaba
         .accessibilityIdentifier("home-kind-filter")
         .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Space.gutter)

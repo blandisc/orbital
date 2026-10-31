@@ -5,9 +5,9 @@ import OrbitalCore
 // grande, las barras del periodo, el mapa día por día y los géneros. Los colores de película, serie y las dos son los del
 // mapa de «Tu año» (`DS.YearMap`).
 
-/// La puerta de «Lo que ves» arriba de Para ti, «Tu semana en grande» (Fernando, 30 oct 2026): sobre su degradado, tus horas
-/// de la semana en grande, qué viste y tu racha, y a la derecha las barras de lunes a domingo (hoy encendido, lo que falta de
-/// la semana como hueco). Toda la tarjeta abre la pantalla.
+/// La puerta de «Lo que ves» arriba de Para ti, «Tu semana en grande» (Fernando, 30 oct 2026), en el lenguaje de la app: la
+/// tarjeta de siempre (`DS.surface`), el porqué en turquesa, tus horas en blanco grande, qué viste y tu racha en gris, y a
+/// la derecha las barras de lunes a domingo en turquesa (hoy encendido, lo que falta de la semana como hueco).
 struct WatchingCard: View {
     /// nil: aún cargando (esqueleto).
     let stats: WatchingStats?
@@ -18,15 +18,14 @@ struct WatchingCard: View {
         Button(action: action) {
             HStack(alignment: .bottom, spacing: DS.Space.s4) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Label { Text("Lo que ves · Esta semana") } icon: { Image(systemName: "chart.bar.fill") }
-                        .recipe(.eyebrow, color: DS.paper)
+                    Eyebrow(text: Text("Lo que ves · Esta semana"), reason: true)
                     Spacer(minLength: DS.Space.s2)
                     if let stats {
-                        duration(stats).font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.paper)
+                        duration(stats).font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.text)
                             .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
-                        facts(stats).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
+                        facts(stats).recipe(.footnote, color: DS.textMuted).lineLimit(2)
                     } else {
-                        RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.onArtSecondary.opacity(DS.Watching.track))
+                        RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.fill)
                             .frame(width: DS.Watching.skeleton, height: DS.Watching.skeletonHeight)
                     }
                 }
@@ -35,10 +34,9 @@ struct WatchingCard: View {
             }
             .padding(DS.Space.s4)
             .frame(maxWidth: .infinity, minHeight: DS.Watching.cardHeight, alignment: .leading)
-            .background(LinearGradient(colors: DS.Watching.weekGradient, startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(alignment: .topTrailing) {
-                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.onArtSecondary)
+                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.textMuted)
                     .padding(DS.Space.s4).accessibilityHidden(true)
             }
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
@@ -78,14 +76,14 @@ struct WatchingCard: View {
                 let isToday = day == today, future = day > today
                 VStack(spacing: DS.Space.s1) {
                     ZStack(alignment: .bottom) {
-                        Capsule().fill(DS.paper.opacity(DS.Watching.track))
+                        Capsule().fill(DS.fill)
                         if !future {
-                            Capsule().fill(DS.paper.opacity(isToday ? 1 : DS.Watching.dayDim))
+                            Capsule().fill(DS.eyebrow.opacity(isToday ? 1 : DS.Watching.dayDim))
                                 .frame(height: max(DS.Watching.barMin, DS.Watching.weekBars * CGFloat(minutes) / CGFloat(most)))
                         }
                     }
                     .frame(width: DS.Watching.weekBar, height: DS.Watching.weekBars)
-                    Text(verbatim: Self.letter(day, calendar: calendar)).recipe(.caption, color: isToday ? DS.paper : DS.onArtSecondary)
+                    Text(verbatim: Self.letter(day, calendar: calendar)).recipe(.caption, color: isToday ? DS.text : DS.textMuted)
                 }
             }
         }
