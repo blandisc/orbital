@@ -71,8 +71,9 @@ final class TmdbDetailsGateTests: XCTestCase {
     /// B9: dos secciones esperan el mismo título y las dos se van → la petición se cancela (antes seguía 10 s).
     func testWhenEveryoneLeavesTheRequestIsCancelled() async {
         let gate = TmdbDetailsGate(limit: 2), probe = Probe()
-        let a = Task { try await gate.details("igual", Self.slow(probe)) }
-        let b = Task { try await gate.details("igual", Self.slow(probe)) }
+        let slow = Self.slow(probe)
+        let a = Task { try await gate.details("igual", slow) }
+        let b = Task { try await gate.details("igual", slow) }
         await Self.waitFor { await probe.started == 1 }
         a.cancel(); b.cancel()
         await Self.waitFor { await probe.cancelled == 1 }
