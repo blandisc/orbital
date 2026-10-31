@@ -39,29 +39,7 @@ struct DSKindFilter: View {
     var body: some View {
         Group {
             if tabs {
-                HStack(spacing: DS.Space.s5) {
-                    ForEach(options, id: \.0) { option in
-                        let on = kind == option.0
-                        Button { kind = option.0 } label: {
-                            VStack(spacing: DS.Space.s1) {
-                                HStack(spacing: DS.Space.s1) {
-                                    Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
-                                    Text(option.1).lineLimit(1)
-                                }
-                                .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))
-                                .foregroundStyle(on ? DS.text : DS.textMuted)
-                                Capsule().fill(on ? DS.eyebrow : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
-                            }
-                            .padding(.vertical, DS.Space.s1)   // sin alto mínimo: menos aire arriba bajo la barra (Fernando, 30 oct 2026)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(on ? .isSelected : [])
-                    }
-                }
-                .shadow(DS.Elevation.low)
-                .animation(DS.Motion.base(false), value: kind)
-                .sensoryFeedback(.selection, trigger: kind)
+                DSTextTabs(options: options.map { DSTextTabs.Option(id: $0.0, title: Text($0.1), symbol: KindGlyph.symbol($0.0)) }, selection: $kind)
             } else if icons {
                 Picker(selection: $kind) {
                     ForEach(options, id: \.0) { Image(systemName: KindGlyph.symbol($0.0)).accessibilityLabel(Text($0.1)).tag($0.0) }
@@ -130,5 +108,40 @@ struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
         .scrollPosition(id: $scrolled, anchor: .center)
         .onChange(of: current.id, initial: true) { _, id in scrolled = id }
         .sensoryFeedback(.selection, trigger: current)
+    }
+}
+
+/// Pestañas de texto, la misma pieza en toda la app (Todo · Películas · Series, Semana · Mes · Año · Siempre): la elegida en
+/// blanco y negrita con una marca turquesa debajo, las otras en gris; con ícono si lo traen. Sin cápsula (Fernando, 30 oct
+/// 2026). Se lee sobre el arte con su sombra.
+struct DSTextTabs<ID: Hashable>: View {
+    struct Option { let id: ID; let title: Text; var symbol: String? = nil }
+    let options: [Option]
+    @Binding var selection: ID
+
+    var body: some View {
+        HStack(spacing: DS.Space.s5) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                let on = selection == option.id
+                Button { selection = option.id } label: {
+                    VStack(spacing: DS.Space.s1) {
+                        HStack(spacing: DS.Space.s1) {
+                            if let symbol = option.symbol { Image(systemName: symbol).symbolVariant(on ? .fill : .none) }
+                            option.title.lineLimit(1)
+                        }
+                        .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))
+                        .foregroundStyle(on ? DS.text : DS.textMuted)
+                        Capsule().fill(on ? DS.eyebrow : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
+                    }
+                    .padding(.vertical, DS.Space.s1)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .shadow(DS.Elevation.low)
+        .animation(DS.Motion.base(false), value: selection)
+        .sensoryFeedback(.selection, trigger: selection)
     }
 }

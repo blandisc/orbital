@@ -5,82 +5,36 @@ import OrbitalCore
 // grande, las barras del periodo, el mapa día por día y los géneros. Los colores de película, serie y las dos son los del
 // mapa de «Tu año» (`DS.YearMap`).
 
-/// La puerta de «Lo que ves» arriba de Para ti, «Tu semana en su póster» (Fernando, 30 oct 2026, opción L1): de fondo el
-/// arte de lo que más viste esta semana, con su velo; encima el porqué en turquesa, tus horas en grande, «Sobre todo …» con
-/// tu racha y tus géneros de la semana. El día por día está adentro.
+/// La puerta de «Lo que ves» arriba de Para ti (Fernando, 30 oct 2026, opción E2): el mismo renglón de «Tuyo» (`ListRow`):
+/// lo que más viste esta semana en pila, «Lo que ves» y «4 h esta semana · sobre todo drama».
 struct WatchingCard: View {
-    /// nil: aún cargando (esqueleto).
+    /// nil: aún cargando.
     let stats: WatchingStats?
+    /// «Lo que ves» en el idioma de la app (lo pone quien la usa: el del sistema no siempre es el de la app).
+    let name: String
     /// Los géneros de la semana ya en el idioma de la app (los pone quien la usa).
     var genres: [String] = []
-    /// nil: solo la tarjeta (dentro de un `NavigationLink`, que recibe el toque; ver `CollectionsCard`).
+    /// nil: solo el renglón (dentro de un `NavigationLink`, que recibe el toque; ver `CollectionsCard`).
     var action: (() -> Void)?
 
     var body: some View {
-        if let action { Button(action: action) { card }.buttonStyle(.plain).accessibilityIdentifier("watching-card") }
-        else { card.accessibilityIdentifier("watching-card") }
+        if let action { Button(action: action) { row }.buttonStyle(.plain).accessibilityIdentifier("watching-card") }
+        else { row.accessibilityIdentifier("watching-card") }
     }
 
-    private var card: some View {
-        ZStack(alignment: .bottomLeading) {
-            if let top = stats?.top.first {
-                PosterView(url: String(format: ForYou.metahubBackground, top.imdb), title: top.title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-                    .accessibilityHidden(true)
-                ArtVeil(at: DS.Watching.veilFrom)
-            } else {
-                DS.surface
-            }
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Eyebrow(text: Text("Lo que ves · Esta semana"), reason: true)
-                if let stats {
-                    duration(stats).font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.paper)
-                        .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
-                    facts(stats).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
-                    if !genres.isEmpty {
-                        HStack(spacing: DS.Space.s1) {
-                            ForEach(genres.prefix(DS.Watching.genres), id: \.self) { g in
-                                Text(verbatim: g).recipe(.caption, color: DS.paper).fontWeight(.semibold).lineLimit(1)
-                                    .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
-                                    .background(DS.paper.opacity(DS.Watching.chipFill), in: Capsule())
-                            }
-                        }
-                        .padding(.top, DS.Space.s1)
-                    }
-                } else {
-                    RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.fill)
-                        .frame(width: DS.Watching.skeleton, height: DS.Watching.skeletonHeight)
-                }
-            }
-            .padding(DS.Space.s4)
-            .onArt()
-        }
-        .frame(maxWidth: .infinity, minHeight: DS.Watching.cardHeight, alignment: .leading)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(alignment: .topTrailing) {
-            Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(DS.onArtSecondary)
-                .padding(DS.Space.s4).accessibilityHidden(true)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+    private var row: some View {
+        ListRow(name: name, detail: detail, posters: (stats?.top ?? []).prefix(DS.ParaTiB.matchFan).map(\.poster))
+            .contentShape(Rectangle())
     }
 
-    /// «4 h 12 min», o solo minutos si no llega a una hora.
-    private func duration(_ s: WatchingStats) -> Text {
+    /// «4 h esta semana · sobre todo drama» (o «Aún nada esta semana»; mientras carga, «Esta semana»).
+    private var detail: Text {
+        guard let s = stats else { return Text("Esta semana") }
+        if s.isEmpty { return Text("Aún nada esta semana") }
         let h = s.minutes / 60, m = s.minutes % 60
-        return h == 0 ? Text("\(m) min") : m == 0 ? Text("\(h) h") : Text("\(h) h \(m) min")
-    }
-
-    /// «Sobre todo The Bear · 5 días seguidos» (o qué viste, si no hay racha).
-    private func facts(_ s: WatchingStats) -> Text {
-        var parts: [Text] = []
-        if let top = s.top.first { parts.append(Text("Sobre todo \(Text(verbatim: top.title).fontWeight(.bold).foregroundStyle(DS.paper))")) }
-        if s.currentStreak > 1 { parts.append(Text("\(s.currentStreak) días seguidos")) }
-        else {
-            if s.episodes > 0 { parts.append(s.episodes == 1 ? Text("1 episodio") : Text("\(s.episodes) episodios")) }
-            if s.movies > 0 { parts.append(s.movies == 1 ? Text("1 película") : Text("\(s.movies) películas")) }
-        }
-        if parts.isEmpty { return Text("Aún nada esta semana") }
-        return parts.dropFirst().reduce(parts[0]) { Text("\($0) · \($1)") }
+        let time = h == 0 ? Text("\(m) min esta semana") : Text("\(h) h esta semana")
+        guard let genre = genres.first else { return time }
+        return Text("\(time) · sobre todo \(genre.lowercased())")
     }
 }
 
@@ -195,7 +149,7 @@ struct WatchingGenres: View {
                     Text(verbatim: name(g.name)).recipe(.footnote).frame(width: DS.Watching.genreLabel, alignment: .leading).lineLimit(1)
                     GeometryReader { geo in
                         Capsule().fill(DS.fillStrong).overlay(alignment: .leading) {
-                            Capsule().fill(DS.YearMap.both).frame(width: geo.size.width * CGFloat(g.count) / CGFloat(total))
+                            Capsule().fill(DS.eyebrow).frame(width: geo.size.width * CGFloat(g.count) / CGFloat(total))
                         }
                     }
                     .frame(height: DS.Watching.genreBar)

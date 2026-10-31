@@ -15,7 +15,7 @@ struct WatchingCardLoader: View {
             let week = model.loaded ? model.stats(.week) : nil
             let language = env.services.appSettings.uiLanguage
             NavigationLink(value: WatchingRoute()) {
-                WatchingCard(stats: week, genres: (week?.genres ?? []).map { WatchingText.genre($0.name, language: language) })
+                WatchingCard(stats: week, name: Strings.tr("Lo que ves", language: language), genres: (week?.genres ?? []).map { WatchingText.genre($0.name, language: language) })
             }
                 .buttonStyle(.plain)
                 .task { await model.load() }
@@ -52,8 +52,11 @@ struct WatchingView: View {
         let language = env.services.appSettings.uiLanguage
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                DSSegmented(labeled: WatchingStats.Period.allCases.map { ($0, WatchingText.period($0)) },
-                            selection: Binding(get: { model.period }, set: { model.period = $0 }))
+                // La portada: el arte de lo que más viste en el periodo, de orilla a orilla, con tus horas encima (como la
+                // portada de Inicio). Fernando, 30 oct 2026: que no se viera genérica.
+                if model.loaded, !model.failed, !s.isEmpty { hero(s) }
+                DSTextTabs(options: WatchingStats.Period.allCases.map { .init(id: $0, title: WatchingText.period($0)) },
+                           selection: Binding(get: { model.period }, set: { model.period = $0 }))
                 .accessibilityIdentifier("watching-period")
 
                 if model.period != .all {
@@ -84,14 +87,62 @@ struct WatchingView: View {
         .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil } }
     }
 
+    /// La portada del periodo: el arte de lo que más viste, con su velo; el periodo en turquesa, tus horas en grande y una
+    /// línea con lo demás (títulos, películas, capítulos, racha).
+    private func hero(_ s: WatchingStats) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            if let top = s.top.first {
+                PosterView(url: String(format: ForYou.metahubBackground, top.imdb), title: top.title, aspect: nil, bleed: true, maxPoints: DS.Image.wide)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity).clipped().accessibilityHidden(true)
+            }
+            ArtVeil(at: DS.Watching.veilFrom, strength: .deep)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Eyebrow(text: periodPhrase(s.period), reason: true)
+                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.display.font.weight(.heavy)).foregroundStyle(DS.paper)
+                    .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
+                heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
+            }
+            .padding(DS.Space.gutter)
+            .onArt()
+        }
+        .frame(height: DS.Watching.heroHeight)
+        .padding(.horizontal, -DS.Space.gutter)   // de orilla a orilla
+    }
+
+    private func periodPhrase(_ p: WatchingStats.Period) -> Text {
+        switch p { case .week: Text("Esta semana"); case .month: Text("Este mes"); case .year: Text("Este año"); case .all: Text("Desde siempre") }
+    }
+
+    /// «6 títulos · 5 películas · 25 capítulos · 2 días seguidos» (lo que sea cero no se dice).
+    private func heroFacts(_ s: WatchingStats) -> Text {
+        var parts: [Text] = [s.titles == 1 ? Text("1 título") : Text("\(s.titles) títulos")]
+        if s.movies > 0 { parts.append(s.movies == 1 ? Text("1 película") : Text("\(s.movies) películas")) }
+        if s.episodes > 0 { parts.append(s.episodes == 1 ? Text("1 capítulo") : Text("\(s.episodes) capítulos")) }
+        if s.currentStreak > 1 { parts.append(Text("\(s.currentStreak) días seguidos")) }
+        else if s.longestStreak > 1 { parts.append(Text("tu mejor racha: \(s.longestStreak) días")) }
+        return parts.dropFirst().reduce(parts[0]) { Text("\($0) · \($1)") }
+    }
+
     @ViewBuilder private func content(_ s: WatchingStats, _ model: WatchingModel, _ language: String) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s2), GridItem(.flexible(), spacing: DS.Space.s2)], spacing: DS.Space.s2) {
-            WatchingStat(value: Text("\(s.hours) h"), label: Text("frente a la pantalla"))
-            WatchingStat(value: Text(verbatim: "\(s.titles)"), label: Text("títulos distintos"))
-            WatchingStat(value: Text(verbatim: "\(s.movies)"), label: Text("películas"))
-            WatchingStat(value: Text(verbatim: "\(s.episodes)"), label: Text("capítulos"))
-            WatchingStat(value: Text("\(s.longestStreak) días"), label: Text("tu mejor racha"))
-            WatchingStat(value: Text("\(s.currentStreak) días"), label: Text("racha de hoy"))
+        // Lo que más viste, como el Top 10 de la app: su número grande detrás del póster.
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: Text("Lo que más viste"), level: .section)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .bottom, spacing: DS.Space.s3) {
+                    ForEach(Array(s.top.prefix(DS.Watching.topCount).enumerated()), id: \.element.imdb) { i, t in
+                        Button { onOpenTitle(TitleRoute(kind: t.kind, metaID: t.imdb, title: t.title, poster: t.poster)) } label: {
+                            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                                RankedPosterCard(rank: i + 1, title: t.title, poster: t.poster)
+                                Text(t.kind == "movie" ? "\(t.minutes / 60) h" : "\(t.plays) capítulos · \(t.minutes / 60) h").recipe(.caption, color: DS.textMuted).lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, DS.Space.gutter)
+            }
+            .padding(.horizontal, -DS.Space.gutter)
+            .scrollClipDisabled()
         }
         section(Text("Día por día")) {
             WatchingDayGrid(start: s.start, end: s.end, days: s.days)
@@ -102,7 +153,7 @@ struct WatchingView: View {
         // «Tu año» vive aquí adentro: el mapa del año completo con lo que viste cada día.
         NavigationLink { YearView() } label: {
             HStack(spacing: DS.Space.s3) {
-                Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.YearMap.both)
+                Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.eyebrow)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Tu año, día por día").recipe(.cardTitle)
                     Text("El mapa de todo el año y lo que viste cada día").recipe(.footnote, color: DS.textMuted)
@@ -118,22 +169,6 @@ struct WatchingView: View {
         section(Text("Cuándo ves")) { WatchingBars(values: s.buckets.map(\.minutes), labels: s.buckets.map { label($0.start, s.period) }) }
         if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }
         ratings
-        section(Text("Lo que más viste")) {
-            ForEach(Array(s.top.prefix(5).enumerated()), id: \.element.imdb) { i, t in
-                Button { onOpenTitle(TitleRoute(kind: t.kind, metaID: t.imdb, title: t.title, poster: t.poster)) } label: {
-                    HStack(spacing: DS.Space.s3) {
-                        Text(verbatim: "\(i + 1)").recipe(.title, color: DS.textMuted).monospacedDigit().frame(width: DS.Space.s6)
-                        PosterView(url: t.poster, title: t.title).frame(width: DS.Repisa.nextPoster)
-                        VStack(alignment: .leading, spacing: DS.Space.s1) {
-                            Text(verbatim: t.title).recipe(.cardTitle).lineLimit(1)
-                            Text(t.kind == "movie" ? "\(t.minutes / 60) h" : "\(t.plays) capítulos · \(t.minutes / 60) h").recipe(.footnote, color: DS.textMuted)
-                        }
-                        Spacer(minLength: 0)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
     }
 
     /// Cómo calificas: cuántas de cada número de estrellas (tus calificaciones de Trakt).

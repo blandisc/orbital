@@ -180,7 +180,9 @@ extension DS {
     /// historias (cuánto dura cada una, el alto de sus barritas de avance y el póster grande).
     enum Watching {
         /// «Tu semana en su póster»: dónde empieza el velo, cuántos géneros y su relleno.
-        static let veilFrom = 0.2, genres = 3, chipFill = 0.18
+        static let veilFrom = 0.2
+        /// La portada de la pantalla (el arte de lo que más viste) y cuántos van en «Lo que más viste».
+        static let heroHeight: CGFloat = 300, topCount = 10
         static let cardHeight: CGFloat = 200, skeleton: CGFloat = 160, skeletonHeight: CGFloat = 34
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
@@ -287,7 +289,9 @@ extension DS {
         static let cell: CGFloat = 9, gap: CGFloat = 3, radius: CGFloat = 2
         /// El aro del día elegido y el póster de lo que viste ese día.
         static let ring: CGFloat = 1.5, dayPoster: CGFloat = 40
-        static let movies = Color(red: 0.24, green: 0.44, blue: 0.85), series = Color(red: 0.42, green: 0.29, blue: 0.77), both = Color(red: 0.69, green: 0.29, blue: 0.84)
+        /// Los colores de la app (Fernando, 30 oct 2026: el morado y el azul no estaban en ningún otro lado): series en turquesa,
+        /// películas en ámbar y las dos en el color del texto.
+        static let movies = DS.warning, series = DS.eyebrow, both = DS.text
     }
 
     /// La barra de espacio de Descargas.
