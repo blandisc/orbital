@@ -38,7 +38,7 @@ final class IPadLayoutUITests: XCTestCase {
             // En vertical son botones de la barra de arriba; en horizontal, renglones de la barra lateral.
             let tab = { (name: String) in self.app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", name)).firstMatch }
             XCTAssertTrue(tab("Inicio").waitForExistence(timeout: 30), "\(tag): falta la pestaña Inicio")
-            XCTAssertTrue(tab("Para ti").exists, "\(tag): falta la pestaña Para ti")
+            XCTAssertTrue(tab("Explorar").exists, "\(tag): falta la pestaña Explorar")
             shot("inicio-\(tag)")
             open(["-demo-tab", "1"], orientation)
             shot("parati-\(tag)")
@@ -92,7 +92,7 @@ final class IPadLayoutUITests: XCTestCase {
         open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)
         let close = app.buttons["remote-panel-close"]
         XCTAssertTrue(close.waitForExistence(timeout: 30), "en horizontal el control va en un panel con «Cerrar»")
-        let paraTi = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Para ti")).firstMatch
+        let paraTi = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Explorar")).firstMatch
         XCTAssertTrue(paraTi.isHittable, "con el panel abierto se sigue navegando")
         close.tap()
         XCTAssertFalse(close.waitForExistence(timeout: 3), "«Cerrar» cierra el panel")

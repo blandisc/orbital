@@ -9,7 +9,7 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandMenu("Ir") {
             Button("Inicio") { open(tab: 0) }.keyboardShortcut("1")
-            Button("Para ti") { open(tab: 1) }.keyboardShortcut("2")
+            Button("Explorar") { open(tab: 1) }.keyboardShortcut("2")
             Button("Descargas") { open(tab: AppEnvironment.downloadsTab) }.keyboardShortcut("3")
             Button("Buscar") { open(tab: 2); AppEnvironment.shared.ui.focusSearch = true }.keyboardShortcut("f")
             Divider()

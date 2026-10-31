@@ -9502,6 +9502,17 @@
         }
       }
     },
+    "Explorar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore"
+          }
+        }
+      }
+    },
     "Falta Real-Debrid": {
       "extractionState": "manual",
       "localizations": {

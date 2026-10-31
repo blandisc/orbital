@@ -256,7 +256,7 @@ struct MainTabs: View {
         })
         TabView(selection: selection) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
-            Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) {
+            Tab("Explorar", image: OrbitalIcon.spark.asset, value: 1) {   // antes «Para ti» (Fernando, 31 oct 2026)
                 NavigationStack(path: $paths[1]) {
                     // Colecciones (la repisa): la tarjeta de Para ti empuja `RepisaRoute`; un título abre su ficha en la misma pila.
                     ParaTiView()

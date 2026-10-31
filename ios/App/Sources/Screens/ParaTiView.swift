@@ -74,7 +74,7 @@ struct ParaTiView: View {
                         .accessibilityIdentifier("paraTi-back")
                 }
             } else {
-                ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Para ti")) }
+                ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Explorar")) }
                     .sharedBackgroundVisibility(.hidden)
             }
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
