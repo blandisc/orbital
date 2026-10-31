@@ -147,12 +147,7 @@ struct HomeView: View {
         }
         // Todo · Películas · Series para toda la página, bajo la barra.
         .safeAreaBar(edge: .top) {
-            HomeKindBar(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
-                        onPicked: { kind in
-                            // Abajo, como todos los avisos (bajo la franja tapaba el botón de la portada).
-                            let name = switch kind { case "movie": "Películas"; case "series": "Series"; default: "Todo" }
-                            env.notices.show(Notice(text: env.message(name), tone: .info, symbol: KindGlyph.symbol(kind)))
-                        })
+            HomeKindBar(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }))
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
