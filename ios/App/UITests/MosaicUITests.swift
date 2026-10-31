@@ -103,4 +103,31 @@ final class MosaicUITests: XCTestCase {
         sleep(8)
         XCTAssertGreaterThan(rise(of: p), 20, "quieto unos segundos, el mosaico sube solo")
     }
+
+    /// Elegida una pieza, su pie dice cómo abrir la ficha («Más › Ver la ficha», y tocar su nombre); «Ver en la TV» avisa al
+    /// tocar y confirma, y el aviso sale encima del pie (antes lo tapaba).
+    func testTheChosenTileOpensItsPageAndSendsToTheTV() {
+        launch()
+        guard let tile = tiles.allElementsBoundByIndex.dropFirst().first(where: \.isHittable) else { return XCTFail("ninguna pieza a la vista") }
+        tile.tap()
+        let caption = app.descendants(matching: .any).matching(identifier: "mosaic-caption-open").firstMatch
+        XCTAssertTrue(caption.waitForExistence(timeout: 5), "el pie de la elegida")
+        app.buttons["Más"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Ver la ficha"].waitForExistence(timeout: 5), "«Más» trae la ficha")
+        XCTAssertTrue(app.buttons["Ver en la TV"].exists)
+        app.buttons["Ver en la TV"].tap()
+        let sent = app.staticTexts["Ya está en tu Orbital"]
+        XCTAssertTrue(sent.waitForExistence(timeout: 8), "confirma que llegó a la TV")
+        shot("mosaico-aviso")
+        XCTAssertLessThan(sent.frame.maxY, caption.frame.minY, "el aviso va encima del pie, no sobre sus botones")
+        app.buttons["Más"].firstMatch.tap()
+        app.buttons["Ver la ficha"].tap()
+        XCTAssertTrue(mosaic.waitForNonExistence(timeout: 5), "abrió la ficha")
+        shot("mosaico-ficha")
+    }
+
+    private func shot(_ name: String) {
+        guard let dir = ProcessInfo.processInfo.environment["ORBITAL_SHOTS"] else { return }
+        try? app.windows.firstMatch.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+    }
 }

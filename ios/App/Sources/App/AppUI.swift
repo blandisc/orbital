@@ -12,6 +12,11 @@ final class AppUI {
     var pendingTitle: TitleRoute?
     var askFinished: PlayRequest?
     var handoff: AppEnvironment.TVHandoff?
+    /// Lo que se está mandando a tu Orbital (su `metaID`): el botón de la tele gira y no se manda dos veces.
+    var sendingToTV: String?
+    /// Lo que flota sobre la barra de pestañas en la pantalla de ahora (el pie del mosaico): los avisos suben eso para
+    /// no taparlo.
+    var noticeLift: CGFloat = 0
     var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false

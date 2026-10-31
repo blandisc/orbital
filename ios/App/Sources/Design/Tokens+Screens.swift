@@ -510,6 +510,11 @@ extension DS {
         static var isShortScreen: Bool { WindowMetrics.size.height < shortScreen }
         /// El alto de una tecla y del pad según el teléfono.
         static var keyHeightFitted: CGFloat { isShortScreen ? keyHeightShort : keyHeight }
+        /// Lo que mide el pad con su fila de teclas: el lugar mínimo que guardan los botones del reproductor (y los de en
+        /// vivo) para que el cambio al pad no cambie el alto de la hoja.
+        static var padModeHeight: CGFloat { padHeightFitted + DS.Space.s4 + keyHeightFitted }
+        /// El cambio entre los botones y el pad: lo que se va se encoge un poco y se desenfoca mientras lo otro crece.
+        static let morphScale: CGFloat = 0.94, morphBlur: CGFloat = 6
         /// En un SE la hoja estirada puede llegar arriba del todo (opaca) para que quepa el control completo.
         static var maxShareFitted: CGFloat { isShortScreen ? 1 : maxShare }
         static var padHeightFitted: CGFloat { isShortScreen ? padHeightShort : max(padHeight, WindowMetrics.size.height * padShare) }

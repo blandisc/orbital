@@ -27095,6 +27095,39 @@
           }
         }
       }
+    },
+    "Mandando a tu Orbital…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending to your Orbital…"
+          }
+        }
+      }
+    },
+    "Ya está en tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now on your Orbital"
+          }
+        }
+      }
+    },
+    "Control": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

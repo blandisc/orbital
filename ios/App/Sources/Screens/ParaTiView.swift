@@ -49,11 +49,15 @@ struct ParaTiView: View {
                         .padding(DS.Space.s4)
                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                         .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+                        // Los avisos («Ya está en tu Orbital») salen encima del pie, no sobre sus botones.
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { env.ui.noticeLift = $0 }
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .id(item.imdb)
                     }
                 }
-            case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true })
+                .onChange(of: focused == nil) { _, none in if none { env.ui.noticeLift = 0 } }
+                .onDisappear { env.ui.noticeLift = 0 }
+            case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true }).onAppear { env.ui.noticeLift = 0 }
             }
         }
         // El mismo aire bajo el título que Inicio. En listas va adentro de la lista: afuera la despegaba de la orilla y iOS

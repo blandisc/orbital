@@ -196,8 +196,12 @@ struct TitleView: View {
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             if env.services.orbital.isConfigured {
-                Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: { Image(systemName: "tv") }
-                    .disabled(model.continueVideoID == nil)
+                // Mientras va en camino, la ruedita en su lugar (y el aviso abajo): antes el toque no enseñaba nada.
+                Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: {
+                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv") }
+                }
+                    .disabled(model.continueVideoID == nil || env.isSendingToTV(model.metaID))
+                    .sensoryFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }
                     .accessibilityLabel(Text("Ver en la TV"))
             }
             // El corazón (tus favoritos de Trakt, aparte de «Guardar»): solo con Trakt conectado.

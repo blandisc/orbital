@@ -290,6 +290,7 @@ struct MosaicCaption<More: View>: View {
     let watch: () -> Void
     @Environment(\.colorScheme) private var scheme
     @ViewBuilder var more: () -> More
+    @State private var opened = 0
 
     var body: some View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
@@ -300,12 +301,17 @@ struct MosaicCaption<More: View>: View {
                 if !data.isEmpty { DataLine(parts: data) }
             }
             // Un toque, no un arrastre: arrastrar desde el pie sigue moviendo el mosaico de atrás.
-            .onTapGesture { open?() }
+            .onTapGesture { opened += 1; open?() }
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: opened)
             .accessibilityAddTraits(open == nil ? [] : .isButton)
             .accessibilityHint(open == nil ? Text(verbatim: "") : Text("Abre la ficha"))
             .accessibilityIdentifier("mosaic-caption-open")
             Spacer(minLength: DS.Space.s2)
-            DSMoreMenu { more() }
+            DSMoreMenu {
+                // La ficha también a la vista en «Más» (tocar el nombre la abre, pero no se adivinaba).
+                if let open { Button("Ver la ficha", systemImage: "info.circle", action: open) }
+                more()
+            }
             Button(action: watch) { Image(systemName: "play.fill") }   // como en toda la app (antes, una flecha en las series)
                 .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)
                 .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))

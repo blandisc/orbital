@@ -52,4 +52,33 @@ final class RemoteUITests: XCTestCase {
         button.tap()
         XCTAssertTrue(app.descendants(matching: .any)["Pad de la TV"].waitForExistence(timeout: 10), "abre el control completo")
     }
+
+    /// Reproduciendo en la TV, pasar de los botones al pad (y de regreso) es la misma hoja: no cambia de alto, solo se
+    /// reacomoda lo de adentro (antes uno se iba, el otro llegaba y la hoja brincaba).
+    func testSwitchingToThePadKeepsTheSameSheet() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-tv-horror", "-demo-open", "remote-full", "-demo-appearance", "dark", "-demo-no-idle"]
+        app.launch()
+        let toggle = app.buttons["remote-pad-button"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 20), "reproduciendo, el botón para moverte por la TV")
+        sleep(2)
+        let top = toggle.frame.minY
+        shot(app, "control-1-botones")
+        toggle.tap()
+        usleep(150_000); shot(app, "control-2-a-medias")
+        let pad = app.descendants(matching: .any)["Pad de la TV"]
+        XCTAssertTrue(pad.waitForExistence(timeout: 5), "llega el pad")
+        sleep(1); shot(app, "control-3-pad")
+        XCTAssertEqual(toggle.frame.minY, top, accuracy: 2, "la hoja se queda del mismo alto con el pad")
+        XCTAssertTrue(app.buttons["remote-back"].isHittable, "y sus teclas se tocan")
+        toggle.tap()
+        sleep(1)
+        XCTAssertEqual(toggle.frame.minY, top, accuracy: 2, "y al volver a los botones también")
+        XCTAssertFalse(pad.exists, "el pad se fue")
+    }
+
+    private func shot(_ app: XCUIApplication, _ name: String) {
+        guard let dir = ProcessInfo.processInfo.environment["ORBITAL_SHOTS"] else { return }
+        try? app.windows.firstMatch.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+    }
 }

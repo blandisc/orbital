@@ -19,12 +19,24 @@ extension AppEnvironment {
     }
 
 
+    /// «Ver en la TV»: el aviso sale al tocar («Mandando a tu Orbital…», con su toque suave), y cuando la consola lo
+    /// acepta se vuelve la confirmación, con el control a un toque. Un segundo toque mientras va en camino no manda otra.
     func playOnTV(kind: String, metaID: String, videoID: String?, title: String) async {
+        guard ui.sendingToTV != metaID else { return }
+        ui.sendingToTV = metaID
+        defer { if ui.sendingToTV == metaID { ui.sendingToTV = nil } }
+        let language = services.appSettings.uiLanguage
+        notices.show(Notice(text: Strings.message("Mandando a tu Orbital…", language: language), tone: .info, detail: title, symbol: "tv"))
         do {
             try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)
-            notify("En tu Orbital", detail: title, tone: .success)
+            notify("Ya está en tu Orbital", detail: title, tone: .success, actionTitle: "Control", actionSymbol: "appletvremote.gen4.fill") { [weak self] in
+                self?.ui.openRemote = true
+            }
         } catch { notifyOrbital(error) }
     }
+
+    /// Lo de `metaID` va en camino a tu Orbital (el botón de la tele enseña la ruedita).
+    func isSendingToTV(_ metaID: String) -> Bool { ui.sendingToTV == metaID }
 
     /// Del reproductor del iPhone a tu Orbital, en el mismo punto: la TV sigue donde ibas y la app enseña el aviso.
     func handOffToTV(_ request: PlayRequest, position: Double, choice: ResumeChoice? = nil) async {

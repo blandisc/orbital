@@ -91,7 +91,10 @@ struct RootView: View {
                     BannerView()
                 }
             }
-            .padding(.bottom, DS.Size.tabBarClearance)
+            // Encima de «Viendo en la TV» cuando está (antes lo tapaba justo al mandar algo a la TV) y de lo que la pantalla
+            // deje flotando abajo (el pie del mosaico).
+            .padding(.bottom, DS.Size.tabBarClearance + reminderLift() + ui.noticeLift)
+            .animation(DS.Motion.enter(reduceMotion), value: ui.noticeLift)
         }
         // Calificar lo que terminaste: pegada a la barra de pestañas (y encima de «Viendo en la TV» cuando está), solo cuando no
         // hay otro aviso.

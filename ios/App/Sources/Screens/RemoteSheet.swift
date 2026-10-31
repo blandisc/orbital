@@ -246,7 +246,7 @@ struct RemoteSheet: View {
                     // Reproduciendo o en vivo (la pausa ya está en sus teclas): el pad, para moverte por la TV cuando quieras.
                     DSIconButton(symbol: showsPad ? "play.rectangle" : "hand.point.up.left", label: showsPad ? (model.context == .live ? LocalizedStringKey("Volver a los canales") : LocalizedStringKey("Volver al reproductor")) : LocalizedStringKey("Moverte por la TV"),
                                  prominent: !showsPad) {
-                        withAnimation(DS.Motion.base(reduceMotion)) { showsPad.toggle() }
+                        withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad.toggle() }
                     }
                     .accessibilityIdentifier("remote-pad-button")
                 } else if !now.live {
@@ -337,22 +337,14 @@ struct RemoteSheet: View {
             // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
             // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).
             case .player:
-                if showsPad { padMode(model).transition(Self.reveal) }
-                else {
-                    VStack(spacing: DS.Space.s4) {
-                        if let now = model.now { playerDeck(model, now) }
-                        volume(model)
-                    }
-                    .transition(Self.reveal)
+                deckOrPad(model) {
+                    if let now = model.now { playerDeck(model, now) }
+                    volume(model)
                 }
             case .live:
-                if showsPad { padMode(model).transition(Self.reveal) }
-                else {
-                    VStack(spacing: DS.Space.s4) {
-                        liveDeck(model)
-                        volume(model)
-                    }
-                    .transition(Self.reveal)
+                deckOrPad(model) {
+                    liveDeck(model)
+                    volume(model)
                 }
             case .typing:
                 VStack(spacing: DS.Space.s4) {
@@ -375,6 +367,25 @@ struct RemoteSheet: View {
         .animation(DS.Motion.smooth(reduceMotion), value: showsPad)
         .animation(DS.Motion.smooth(reduceMotion), value: model.now == nil)
         .onChange(of: model.context) { _, _ in showsPad = false }   // otra pantalla en la TV: vuelve a lo suyo
+    }
+
+    /// Reproduciendo o en vivo: los botones y el pad ocupan el mismo lugar, del mismo alto, así la hoja no cambia de tamaño
+    /// y solo se reacomoda lo de adentro: los botones se apagan y se encogen hacia arriba mientras el pad crece desde ahí
+    /// (y al revés). Antes uno se iba, el otro llegaba y la hoja brincaba de alto un instante después.
+    private func deckOrPad<Deck: View>(_ model: TVNowModel, @ViewBuilder deck: () -> Deck) -> some View {
+        VStack(spacing: DS.Space.s4) { deck() }
+            .frame(minHeight: DS.Remote.padModeHeight, alignment: .top)
+            .opacity(showsPad ? 0 : 1)
+            .scaleEffect(showsPad ? DS.Remote.morphScale : 1, anchor: .top)
+            .blur(radius: showsPad && !reduceMotion ? DS.Remote.morphBlur : 0)
+            .allowsHitTesting(!showsPad)
+            .accessibilityHidden(showsPad)
+            .overlay(alignment: .top) {
+                if showsPad {
+                    VStack(spacing: DS.Space.s4) { padMode(model) }
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: DS.Remote.morphScale, anchor: .top)))
+                }
+            }
     }
 
     /// Cómo surge lo que cambia dentro del control: un fundido y un leve crecimiento desde arriba (y se va con un fundido).
@@ -464,7 +475,7 @@ struct RemoteSheet: View {
             trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .alt, legendKey: "alt")
             RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(verbatim: $0) } ?? (series ? Text("Episodios") : Text("Versión"))) {
                 Task { await model.press(.options) }
-                withAnimation(DS.Motion.base(reduceMotion)) { showsPad = true }
+                withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }
             }
             .accessibilityIdentifier("remote-options")
             RemoteKey(symbol: "xmark", title: Text("Salir")) { Task { await model.control("stop") } }
@@ -528,7 +539,7 @@ struct RemoteSheet: View {
             RemoteKey(symbol: "chevron.down", title: Text("Canal anterior")) { Task { await model.control("channel_down") } }
             RemoteKey(symbol: "list.bullet.rectangle", title: Text("Guía")) {
                 Task { await model.control("guide") }
-                withAnimation(DS.Motion.base(reduceMotion)) { showsPad = true }   // la guía se recorre con el pad
+                withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }   // la guía se recorre con el pad
             }
         }
     }
@@ -539,7 +550,7 @@ struct RemoteSheet: View {
         // Se vuelve con el botón de arriba a la derecha (el mismo que abre el pad).
         TouchPad(selectLabel: model.legend["select"]) { action in collapse(); Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
-            .frame(height: DS.Remote.padHeightFitted)
+            .frame(minHeight: DS.Remote.padHeightFitted, maxHeight: .infinity)   // llena el lugar de los botones (`deckOrPad`)
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)
             key(model, "house", nil, nil, Text("Inicio"), .home)
