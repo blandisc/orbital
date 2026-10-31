@@ -242,11 +242,16 @@ extension DS {
         static let rulerHeight: CGFloat = 64, rulerWindow: CGFloat = 46, handleWidth: CGFloat = 12, handleHeight: CGFloat = 30
         static let tickYear: CGFloat = 8, tickFive: CGFloat = 14, tickDecade: CGFloat = 24, rulerBase: CGFloat = 16
         static let decadeButton: CGFloat = 40
-        /// La ventana elegida: el blanco de lo elegido, tenue por dentro.
-        static let windowFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
-        /// El azul de Orbital en el cajón (31 oct 2026): el velo de lo elegido, su brillo y qué tan lejos llega.
-        static let blueFill = DS.orbitalBlue.opacity(0.16), blueGlow = DS.orbitalBlue.opacity(0.35)   // ds-exception: velo y brillo del azul de lo elegido
+        /// Qué tan lejos llega el brillo de la ventana de Época.
         static let glowRadius: CGFloat = 10
+        /// El color de cada filtro (Fernando, 31 oct 2026, dirección A): solo en detalles (el ícono, un puntito cuando tiene
+        /// algo y el control abierto); lo elegido sigue en blanco. Claros sobre oscuro y más intensos sobre el papel.
+        static let coral = DS.adaptive(dark: "#ff7a6b", light: "#c9432f"), gold = DS.adaptive(dark: "#f4c24d", light: "#a86f00")
+        static let lilac = DS.adaptive(dark: "#a99cff", light: "#5b4bd6"), mint = DS.adaptive(dark: "#7ee0a1", light: "#1f8a4c")
+        static let rose = DS.adaptive(dark: "#ff8fb1", light: "#c43c6c"), sky = DS.adaptive(dark: "#7cc4ff", light: "#1f6fb8")
+        /// El velo y el brillo dorados de la ventana de Época.
+        static let goldFill = gold.opacity(0.16), goldGlow = gold.opacity(0.35)   // ds-exception: velo y brillo del dorado de la regla
+        static let dot: CGFloat = 7
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme
         /// Un premio (su estatuilla), un estudio (su logo) y una bandera en el cajón.
         static let awardIcon: CGFloat = 40, miniAwardIcon: CGFloat = 18, studioLogoHeight: CGFloat = 24, logoTile: CGFloat = 64

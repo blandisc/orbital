@@ -20,7 +20,7 @@ struct FilterEditor: View {
             prompt.recipe(.footnote, color: DS.textMuted).fontWeight(.semibold)
             Spacer()
             if FilterText.value(page, context) != nil {
-                Button { clear() } label: { Text("Quitar").recipe(.footnote, color: DS.orbitalBlue).fontWeight(.semibold) }.buttonStyle(.borderless)
+                Button { clear() } label: { Text("Quitar").recipe(.footnote, color: page.hue).fontWeight(.semibold) }.buttonStyle(.borderless)
                     .accessibilityIdentifier("filter-clear-\(page.rawValue)")
             }
         }
@@ -100,10 +100,10 @@ struct FilterEditor: View {
             }
             YearRuler(years: Binding(get: { filter.years }, set: { y in edit { $0.years = y } }), first: AdvancedFilter.firstYear, last: filter.currentYear)
             HStack(spacing: DS.Space.s2) {
-                FilterChoice(symbol: "bolt", title: Text("Estrenos"), detail: Text("Este año y el pasado"), selected: filter.years == filter.releases) {
+                FilterChoice(symbol: "bolt", title: Text("Estrenos"), detail: Text("Este año y el pasado"), hue: DS.Filter.gold, selected: filter.years == filter.releases) {
                     edit { $0.years = $0.years == $0.releases ? nil : $0.releases }
                 }
-                FilterChoice(symbol: "film.stack", title: Text("Clásicos"), detail: Text("Antes de 1990"), selected: filter.years == AdvancedFilter.classics) {
+                FilterChoice(symbol: "film.stack", title: Text("Clásicos"), detail: Text("Antes de 1990"), hue: DS.Filter.gold, selected: filter.years == AdvancedFilter.classics) {
                     edit { $0.years = $0.years == AdvancedFilter.classics ? nil : AdvancedFilter.classics }
                 }
             }
@@ -111,11 +111,11 @@ struct FilterEditor: View {
                 Label { VStack(alignment: .leading, spacing: 0) {
                     Text("Repartido por décadas").recipe(.footnote, color: DS.text).fontWeight(.semibold)
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
-                } } icon: { Image(systemName: "dice").foregroundStyle(DS.orbitalBlue) }
+                } } icon: { Image(systemName: "dice").foregroundStyle(DS.Filter.gold) }
             }
             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Filter.choiceHeight * 0.75)
             .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .tint(DS.orbitalBlue)
+            .tint(DS.Filter.gold)
             .accessibilityIdentifier("filter-spread")
         }
     }
@@ -134,7 +134,7 @@ struct FilterEditor: View {
                 lengthChoice(.long, "tortoise", Text("Para echarse"), series ? Text("50 min o más") : Text("2 h 10 o más"))
             }
             FilterChoice(symbol: "moon.zzz", title: Text("Que acabe antes de las \(FilterText.clock(filter.endsBy, language: context.language))"),
-                         detail: Text("Caben \(Strings.duration(filter.minutesLeft))"), selected: filter.length == .before) {
+                         detail: Text("Caben \(Strings.duration(filter.minutesLeft))"), hue: DS.Filter.lilac, selected: filter.length == .before) {
                 model.refreshClock()
                 edit { $0.length = $0.length == .before ? .any : .before }
             }
@@ -143,7 +143,7 @@ struct FilterEditor: View {
                 Slider(value: Binding(get: { filter.endsBy < 12 ? filter.endsBy + 24 : filter.endsBy },
                                       set: { h in edit { $0.endsBy = h >= 24 ? h - 24 : h } }),
                        in: DS.Filter.endsByRange, step: DS.Filter.endsByStep) { Text("Hora a la que quieres terminar") }
-                    .tint(DS.orbitalBlue)
+                    .tint(DS.Filter.lilac)
                     .accessibilityValue(Text(verbatim: FilterText.clock(filter.endsBy, language: context.language)))
                     .accessibilityIdentifier("filter-ends-by-slider")
             }
@@ -151,7 +151,7 @@ struct FilterEditor: View {
     }
 
     private func lengthChoice(_ value: AdvancedFilter.Length, _ symbol: String, _ title: Text, _ detail: Text) -> some View {
-        FilterChoice(symbol: symbol, title: title, detail: detail, selected: filter.length == value) {
+        FilterChoice(symbol: symbol, title: title, detail: detail, hue: DS.Filter.lilac, selected: filter.length == value) {
             edit { $0.length = $0.length == value ? .any : value }
         }
     }
@@ -165,7 +165,7 @@ struct FilterEditor: View {
                 (filter.minRating.map { Text("\(FilterText.number($0)) o más") } ?? Text("Cualquiera")).recipe(.title).monospacedDigit()
             }
             Slider(value: value, in: 0...9, step: 0.5) { Text("Calificación mínima") }
-                .tint(DS.orbitalBlue)
+                .tint(DS.Filter.mint)
                 .accessibilityIdentifier("filter-rating")
         }
     }

@@ -1,0 +1,206 @@
+<title>Color en el cajón</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: tres direcciones lado a lado, cada una en su iPhone con el mismo estado; abajo el detalle de qué lleva color y la decisión. Oscuro como la app. */
+:root{color-scheme:dark;--bg:#0c0c0e;--surface:#18181c;--raised:#1e1e23;--line:#2a2a30;--text:#f5f4f0;--muted:#a3a3ab;--faint:#55555d;
+  --blue:#5fd6c6;--coral:#ff7a6b;--gold:#f4c24d;--lav:#a99cff;--mint:#7ee0a1;--rose:#ff8fb1;--sky:#7cc4ff;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.5 var(--ui);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1{font-size:clamp(28px,6vw,42px);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:clamp(22px,4vw,28px);margin:0;text-wrap:balance}
+h3{font-size:20px;margin:0}
+p{margin:0;max-width:66ch;color:var(--muted)} p b{color:var(--text);font-weight:600}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+section{display:flex;flex-direction:column;gap:16px}
+.dirs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;align-items:start}
+.dir{display:flex;flex-direction:column;gap:12px;min-width:0}
+.dir .tag{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dir.pick h3::after{content:"Recomendada";margin-left:8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--bg);background:var(--text);padding:2px 8px;border-radius:99px;vertical-align:3px}
+.dir ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.dir ul b{color:var(--text);font-weight:600}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.swatches i{width:12px;height:12px;border-radius:4px;display:inline-block}
+
+/* El iPhone con el cajón */
+.phone{position:relative;width:100%;max-width:330px;aspect-ratio:330/690;border-radius:40px;background:#08080a;box-shadow:0 0 0 7px #1b1b20,0 0 0 8px #34343c,0 24px 60px rgba(0,0,0,.6);overflow:hidden;font-size:12.5px;margin:0 auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:34px;background:rgba(30,30,35,.97);border-radius:26px 26px 0 0;padding:6px 12px 0;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.grab{width:34px;height:4px;border-radius:2px;background:var(--faint);margin:0 auto}
+.hd{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.hd b{font-size:14px}
+.fmt{display:flex;gap:6px;align-items:center}
+.tabs{flex:1;display:flex;gap:14px;font-weight:600;color:var(--muted);font-size:13px}
+.tabs span{position:relative;padding-bottom:5px}
+.tabs .on{color:var(--text)}
+.tabs .on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.5px;border-radius:2px;background:var(--mark,var(--text))}
+.eye{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--surface);color:var(--muted)}
+.eye svg{width:17px;height:17px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tile{position:relative;height:76px;border-radius:14px;background:var(--surface);padding:8px 10px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.tile b{font-size:12px;font-weight:600;position:relative}
+.tile small{font-size:11px;color:var(--muted);position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.on small{color:var(--text)}
+.tile .ic{position:absolute;left:10px;top:9px;width:22px;height:22px}
+.tile .art{position:absolute;inset:0;display:flex}
+.tile .art i{flex:1;background-size:cover;background-position:center}
+.tile .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(24,24,28,.2),rgba(24,24,28,.95) 80%)}
+.tile.open{background:var(--raised)}
+.panel{grid-column:1/-1;position:relative;background:var(--raised);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.panel::before{content:"";position:absolute;top:-6px;left:75%;width:12px;height:12px;margin-left:-6px;background:var(--raised);transform:rotate(45deg);border-radius:2px}
+.ph{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600}
+.big{font-size:22px;font-weight:700;line-height:1.1}
+.ruler{position:relative;height:48px;margin:0 6px}
+.ruler::before{content:"";position:absolute;left:0;right:0;bottom:12px;height:1px;background:rgba(245,244,240,.14)}
+.ruler .rk{position:absolute;bottom:12px;width:1px;height:6px;background:rgba(245,244,240,.22)}
+.ruler .rk.t10{height:18px;background:rgba(245,244,240,.6)}
+.ruler .win{position:absolute;bottom:4px;height:34px;left:78.9%;width:11.8%;border-radius:9px}
+.ruler .win::before,.ruler .win::after{content:"";position:absolute;top:50%;width:8px;height:22px;margin-top:-11px;border-radius:4px}
+.ruler .win::before{left:-4px}.ruler .win::after{right:-4px}
+.decs{display:flex;justify-content:space-between;margin:0 2px;font-size:11px;font-weight:700;color:var(--muted)}
+.decs span{padding:3px 5px;border-radius:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.chip{height:50px;border-radius:11px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600}
+.chip svg{width:17px;height:17px}
+.foot{margin-top:auto;padding:8px 0 14px;display:flex;gap:6px}
+.foot .clear{height:42px;padding:0 14px;border-radius:21px;background:rgba(245,244,240,.12);display:grid;place-items:center;font-weight:600}
+.foot .cta{flex:1;height:42px;border-radius:21px;background:var(--text);color:var(--bg);display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13.5px}
+.foot .cta em{font-style:normal;min-width:20px;height:20px;border-radius:10px;font-size:11px;display:grid;place-items:center;padding:0 5px}
+
+/* Detalle de cada dirección */
+.detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.card{background:var(--surface);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.card p{font-size:14px}
+.card .rec{color:var(--text);border-top:1px solid var(--line);padding-top:8px;font-size:14px}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.legend div{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.legend svg{width:20px;height:20px;flex:none}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-masks" viewBox="0 0 24 24"><path d="M4 5c3 1 6 1 9 0v6a4.5 4.5 0 01-9 0z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 9c2.4.8 4.6.8 7 0v5a3.5 3.5 0 01-6.6 1.6" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 019.5 5a7.5 7.5 0 109.5 9.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.5 5.2 5.6.7-4.1 3.9 1 5.6L12 16.5l-5 2.7 1-5.6-4.1-3.9 5.6-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-starf" viewBox="0 0 24 24"><path d="M12 3.8l2.5 5.2 5.6.7-4.1 3.9 1 5.6L12 16.5l-5 2.7 1-5.6-4.1-3.9 5.6-.7z" fill="currentColor"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.6L19.5 10l-5.7 1.6L12 17l-1.8-5.4L4.5 10l5.7-1.4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 9.2v5.6l4.6-2.8z" fill="currentColor"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M3 12s3.3-6 9-6 9 6 9 6-3.3 6-9 6-9-6-9-6z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 4v16M16 4v16M3.5 9h4.5M3.5 15h4.5M16 9h4.5M16 15h4.5" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 12h17M12 3.5c2.6 3 2.6 14 0 17M12 3.5c-2.6 3-2.6 14 0 17" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0zM8 6H5a3 3 0 003 4M16 6h3a3 3 0 01-3 4M12 13v4M8.5 20h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-studio" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:12px">
+  <span class="eyebrow">Orbital · iPhone · filtro avanzado · propuesta · 31 oct 2026</span>
+  <h1>Detalles de color en el cajón, sin pintarlo todo de azul</h1>
+  <p>Tres direcciones con el mismo cajón y el mismo estado: Crimen y Drama elegidos, Época abierta en los 2010, calificación de 7.5 y «Joyas ocultas». El azul de Orbital queda en pocos detalles. Lo demás lo ponen el filtro, el contenido o la luz de cine.</p>
+</header>
+
+<section>
+  <span class="eyebrow">1 · Tres direcciones</span>
+  <div class="dirs" id="dirs"></div>
+</section>
+
+<section>
+  <span class="eyebrow">2 · La recomendada, en detalle</span>
+  <h2>Cada filtro, su color</h2>
+  <p>El color sirve para encontrar: con el tiempo sabes que Época es dorada y Tiempo es lila sin leer. Lo elegido sigue en blanco (borde y texto); el color vive en el ícono, en un puntito y en el control abierto.</p>
+  <div class="legend">
+    <div><svg style="color:var(--coral)"><use href="#i-masks"/></svg>Género · coral</div>
+    <div><svg style="color:var(--gold)"><use href="#i-cal"/></svg>Época · dorado (vuelve la ventana dorada del prototipo)</div>
+    <div><svg style="color:var(--lav)"><use href="#i-moon"/></svg>Tiempo · lila de noche</div>
+    <div><svg style="color:var(--mint)"><use href="#i-star"/></svg>Calificación · verde</div>
+    <div><svg style="color:var(--rose)"><use href="#i-spark"/></svg>Qué tan conocida · rosa</div>
+    <div><svg style="color:var(--blue)"><use href="#i-play"/></svg>Dónde verla · el azul de Orbital</div>
+    <div><svg style="color:var(--sky)"><use href="#i-globe"/></svg>Origen · cielo</div>
+    <div><svg style="color:var(--gold)"><use href="#i-trophy"/></svg>Premios · dorado de estatuilla</div>
+    <div><svg style="color:var(--text)"><use href="#i-studio"/></svg>Estudios · blanco (el color lo ponen sus logos)</div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">3 · Para decidir</span>
+  <div class="detail">
+    <div class="card"><h3>A · Cada filtro, su color</h3><p>Ganas: el cajón se siente vivo y se recorre por color. Pierdes: siete colores nuevos que cuidar; hay que usarlos solo en detalles para que no se vuelva un arcoíris.</p></div>
+    <div class="card"><h3>B · El color lo pone el contenido</h3><p>Ganas: lo más elegante y lo más fácil de mantener; el arte de los géneros, los logos y las estatuillas dan el color. Pierdes: con pocos filtros puestos se ve casi gris.</p></div>
+    <div class="card"><h3>C · Luz de cine</h3><p>Ganas: una personalidad cálida de sala de cine, con dorado y focos. Pierdes: el dorado ya es el color de «advertencia» en la app; habría que separarlos.</p></div>
+    <div class="card"><p class="rec"><b>Recomiendo A</b>, con la contención de B: el color solo en íconos, puntitos y el control abierto; bordes y textos de lo elegido en blanco. Y la regla de Época regresa a su ventana dorada.</p></div>
+  </div>
+</section>
+</div>
+
+<script>
+(() => {
+const CRIME = "data:image/jpeg;base64,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", DRAMA = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAA8KADAAQAAAABAAAAhwAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAhwDwAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMABAQEBAQEBgQEBgkGBgYJDAkJCQkMDwwMDAwMDxIPDw8PDw8SEhISEhISEhUVFRUVFRkZGRkZHBwcHBwcHBwcHP/bAEMBBAUFBwcHDAcHDB0UEBQdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHf/dAAQAD//aAAwDAQACEQMRAD8A+PIuUT/dra8OnbrK/wC638qx4F/dJ7itrw8udZjH+y38jXpQ0aOfuekKDnNSlAcmnCOpViIBNd9zHkZCqAcingelSlDxilUAA8U7hyMZgnHpingYGaUDnb7VIMdDSuVyDME15L40H/E4/wC2S166AMcc+1eT+NRnVwf+mS/1rlxL9w1px945G3IV13dzXaeEx/xOovo3/oJri40yu7GcE13HhbH9sQFe4P8A6Ca8uD/exO237tnrOzafakxxk+tPxwM9KQ9T9a9255/IMPPXrSEHoPU0/oOabgjJqrk8hBg96Rqmk5Ykev8A9eom60XE4DDkA47VGcmpTycDoaiI7mncXIM6VEec5qVs4FMIz+Apk2Klyf8AR3A/un+VePYBwK9kn/1Ug/2T/I14+BkDPpXj5i9InoYKOrIGX5vwqoy/vavMvP4VXZf3nNeRF6notaFmIZUAdqW6H7h/pU8S/L8vtTbpcQyEdxXWnoc7ic7j9031qkavtxEfrVA04vQxmj//0Pj+DmFPYVueHQRrkI9Qw/8AHTWJb/6hPpW54fyNetQOpJH6GvQvomYxWtj1uCFi3I4q+sAI28ZIqNIbjAHY+lSpa3BG7OMirc0+p1RhZWsN+zBsDvUi2KEc/jUi210OvX+dOWG56D15FJVH3K9n/dIlsFJJHI6U4WCD5u3WrQjnUAnj+lXFVwhLHnHNT7R9ylSXYyRp+QWU/SvGfHsH2fWgp4/cqc/ia9p1HWrHSrKa8kcERLkKOpPYfjXzBrutXmtX0l7dvlm4A7KvYD6VnObkrMzqRjDbcYlzDGNpOa67wleWY1iEzSrGvI3NwPunFecZNSo7KeKxSinczVSWx9dCz3qGTlW5BHTFH2NgeBXhHhbx1qWiNHBMxuLMcGNj0H+ye38q+g9M1O01u0W/0474ycEEYIPoRXUqr7m0IxkUfsZAOfSmfZsEr7VtvHJzxggVAYWycDlqpVX3K9kuxktaknI6YH8hTTZ8D1rUaJnIVQelMaBxxjGKr2nmL2XkZa2mW4qL7IBnBpNVlnsrZp0H3etcDJ4oukA2r8zEj8jR7R9zOUIx3R3TWlRfZRuzkH2rhE8RahcDdH2zkelUD4mvoZMtzk4p+0fclqHY7+a2Oxx/sn+VeOBPlHHYV2Sa/e3CBlXgkg/5/GuaSPcin2FeZj6l4xOzCwTk7GayfMR7VAUHm1qPEQ/4VVaPEvNeUpHbKBPCgHGO1R3oAhce1X4VwoPqBUd9Fi2lPfbXYpaHO4nJsuYHx1rNYYrXKj7LIe4YVkt941rFnHUR/9H5BtcfZ1xWxokhj1yzkHUN/MEVjWg/0cVdsZfK1G3lPG1ga738JlB+8e8wSTggu3B/StYS4XJrzJNcZuA3TinXWtzrCzK3PSuZ0ps9aNamjuZfEVlC7IWGVPPNWrXXLS5kVVxuIrwt5mmaWV2+YjP51ZsryW3lWRSegqnh9NzFYz3tVofQfnROcjrwOfaob10FuxJ/hOMV5zFrjmMEnkVBd65M8LKHzuFZewqX3Or6zSsebeLL2Z5mj3kxlzwfauEY5NdT4ilDeWO7EtmuUNbz0djxr31CpVUmox1q8Yz5SuDweKxk7GkI3uSWsDStj1/SvrjwnZ2Vp4fs/saCMSxrI4Xu2OSc18waTbiU+WRkt0z617Zpeoy6dZRWYYkRjH5+lYxjKpJpdD06fJSScup6yxQ8Lj3pcQKCSR64rzuXXnjQktxWaPENzOxEOWPPA/D/ABrT2FS17mv1ilex6pKsAwcj8Kp3BhjHJG3ufpXlj65qKOfMVtuAefzqtL4nlljZHPWmsPUe0iXiqS3R1/iK6t5NNk8ohsg5xXibKAuT93dj8wa3ZL9pUZAx2nPFYk8e/GOm7NdMaThpc86tXVSzSK1u7wKY8Yy3OfaqE7bpyzHaMkZ78VpvE3O0dB/Ssq43l8kDljgfjVW1MHLSxtWUpjh29RnP5ipoEzEp9hVe3Plw+5ArStxmBCf7orysx0imetl6u2ihKg8z/gJqk6HzgK1pl/ef8BP86osmZvwryIyPUlAvQRfKG6cCoNSTFrL/ALtalugZMnkY7VV1SLFrK2P4a7IyOeUNDhJOLV/cisduta8wP2c+gb+lZDdc1209jyKp/9L4+s+Yfxp5YCZDnpUdjjyOexpWz5qE8da9D7KMPtM1IpMLw3PHSrAYsxVjk/nWKrlRg9SOMfWrAlZP4ccdK1UkZtM0CVUOc9v6imiTgdMntUCOz5GMlh+vtTCpjYE9QeB+VJyVylB2NJbpgeehPal+0hjtY+1Z0Ssznfj8elVZpYYwdjZY569KpSBx03M3WbuK5dURceXkbs9fwrD2Z6VcmQZ61AirnmuKpdu5rFLYakRLAVehRt+33rQsbdZnAYfMv61JdxiKfgdK4JVLvlPRp0bR5jbsICqHyuZCML9a6pdQUxMHbZLDtjc9i5HIH9a4uW68qzSWI4YsB78DNSac5lO8/MsQz9WbqaWFbjr1bOrFOLSitkjslaa6MsRYAYOPzFXrKGewDOyhgT61gY1CFHukiYxbh8w6c+vfvVKfXLpxtVhjNevL3k43PLg+RqTTTOmn1UyKU2jcxweelc1JDK7Fi3Dc1krduZCxbPNPN45HynpVQjCOyMqtWpP4maaR7GAzz/iKY6MCcN34rPS5Yyrk9CKha4lPOcYrTmRhZmqJijkSc7iR+ZrOcxtwT06UkcjSOgznLDn8a3o/Dd1PGJGk2556Vz1cRTpq82dNLD1KvwK5iidtmO1dFa4NtGT/AHRW9pvwv1/UIEmjKRRsARvzyDyD8oNdLH8N9agWO1aa38zbkDMnIHU/cxXzGZZnhJJRVRXXmfRZdga9OTc4PY82m4kH+6az2/1wrtNa8J61pStc3UI8lBy6nIGT74P6VxrL+/A71w0asKi5oO68j0K1OUdJKxuWifuwBwABVfWP+POb/dqxaE42jqMVU1kYtJsd1r0F0OaUfdZwc5AtCP8AaH8qxHxWncOREFz1OcVluc+1ejTPArH/0/j2yOYT9ae4w6t1PI/CmWP+qYe9Sy/eT6ivRS91HN9pkWNuDjoDineZwisT3B/OrBXOO9QOob603EalcswuxKn+7ViRlZwepyKLaNMg1Jfyx29uXX7x4H+NLk6srmMm/ugSIIuFXr9axZZtowOtEsvf1qgzEk1lKVtEFr6sUyE9aTNNzRmsm2WXbe7kgYMjEEV0tjcpd3KszAM2AQeK44cVZhk2sKysr81tTaE3blvodHrcQhvtg4yoOKuaRcQwIwnVnBHyhMZ3ds57etY11NJMsUkjbwo2574966jTbWJYFuFIIYZWs58zkuRanXS5Um5PQ66ES6Z4ZkQIGmly7MT2YAfoK5a+8P6rY2q31zDtibB4IOAehI7ZrSubi5lEkUkjGJT8q9uDitDUtfvb/T0sZVQLwrkZywXkfTp2q6dCtTa5bO71HVr0al+a6stDhVt5XZnC5yetIISh6duhrVeTyRsAx9az5JNxJBHI/LmutqSepwe5bQgTc0it7gn8DU9rYzX0xgiIDA857DuajQcYPvWhbXD2t28sGNzE8Hoc8gfnWdTn5Xybl0+TmXPsXNP0eaPV47ebBC4YkdCB/wDXr2jStNS7uIbJRnzCFx7d/wBK8p0y9lnme6mI8w/KAOMAdq9r+H5Mt3JfP92Fdq5/vN1/IV8pnE6kabnN7L8T67K40todWe42dhFHCqKMBRgD2HAqtc2if2lDx/yzYfmasRXyhRzWbdaiv9oIc/dGK/Hm222fVJO5n+INHivtPntHHEiFfxxwa+O7m2e3vXgkGHjYq31BxX2nd3qMhFfLfjmyFv4hknjGEuQHH16H/GvqOHa7jUlSez1OHH0701PsY1rhUD46gVT1nH2S47kLV+1IAwewFZutsfsk3+7X399UeHL4Gec3bBUTjk5rMbBrRvsbI+eef51ltXsU9j5etuf/1PjzT8bH+tTSg/Kf9qq2nn5HHuKuP0X/AHhXpL4TlfxG7/YszWZulcHA3Ffrz1rBOcnPBX0q+bm6EXkNIwj/ALueKg8tsbs8dPxrnh7RX53c66nsnb2cbEe8Ivoay9QnJCrnPetEqp6Vzt4+ZGA7cflW0paHOlqU2OTUdKaSuUsKKKKACnqwBplOFIaNuzUzIYR827p9a63T4GtrUxOc5O7HYV57E7xsGQlSO4rtNLvZruNkn5KDgjqf/r1VKylqaybcdDdeUnzunUfXkg5/WoWkG7B4wcYpzggvxuyc+/GOtQ7d3zYJ4JwB/P3rtRzSMy8csTzWYr78k5HFbEyszfOCcjp/KoIrQZwwGOM+/r+VZzKiisjEuFz2PX6VZSTE+R1BGB9KvnTrdgUhbaxx96mjTL1Z+YS6+o6EmsOdX1Oh05JXsUUJ59uTXpHhbxtDoNn9ia2aQb2curgZJx1BHYe9edSRFXbchTJztPan7cI2B14rmxeFp4mn7Oqro3wuJqYefPTep9AD4q6agGYJSMfwlT/hVhvGUV3MJYF3fKHA3qTivnlRjG7qfb1r2e0uvDw0+DT7SSRroIqgmJBkjrlh82PTk18HmGS4TD8rhF6n2OAzGvX5ua2hvz+NkGUa3kyRnqK4DxFrUesPEiwGNomzuJB4PbpV++gZSGC5VVO4+lc6YT9qIA9KzwuCoU5qcFqvM6K2IqSi4smtrdmUDGcgVh63E6W824dBXrnh/wAOy3sQlYhBwMmuV8d6RJplvNG4yrLww6GvXhXTmonn1Ie42eDXgDKnris0jArbulCohHoc/nWNJycE19HSd0fLVlqf/9X4009sbx9KuyEhMj1FZlk5Bf6VYllPl9OPWvQT905WveLzS3ATzZcIh6FiBn6Cqy6gzbhGQw6Gse5vVuGBkLMQMZ/+tUUMsMTE7jgj0rNzNEjfa9YKdyjgVzcrZOfWrcl1GylVPWqLEE8c1LlcdhlFFFZXGFFFFIAoo+tFMBwNaljei1kV+QR6Vk0oOKRak0ehRa1azOCxIZz19Sa2kQvzz+deTiQggjsa2Yb+VSFEhGDuHPr1FZ1HN7SsdNKVNfFC56YlnHIcspOevNX7fTdOkbblSR1G/p+Ga4O01OZnMTSEgMRnPbt+VRXcpjubW7tf3UzNh9vGcHrj3ril7RuzqM9FSpJXVNHr9joej3Unl9ZPdm5rtLTwZprRhmjzjjG4kjFeSW+rBpWZGwEOM9MMOoru7XxkQFTcN6AYbrkj1FeBiqtdfDJnu4anRlo4o7CPwT4dfiS1DDryTV2PwV4YQY+wxn86dYa3LqEixm0kjkcfKVUlSfcgcVpPLrsQy+kTfg6EfoTXmfWa7053950Sw1OL+FGefB/hrjNhEcdMg141odh/xXZsCPkt5JcjsFTOP6V6rqPi2DTJvI1KB7aTAPz524P+0BivO7fXtFsfFF74i+0wlbmPaED5IJxuPTvj0rWnKq1Lnu9NOoKMY/CrHeazpUAtJnjGCEP865SPRnS/Bl6AinyeJ49bmH2HLxKpDqrMOpGDjAyODx71uT6nbmbeqORxzsNYJyhoy+Vy1SOr09lhjCr8qgDFcr8QkjudAumb7yLuH14q3ZahHMCkTfMMcEYOPoax/GE2dDvQecp/UVrTXvxZnU+FnzZfIFji91z+prBlAya6bVkCrDj+KMH9TXMzqQeK+yoO8T5HEKzsf//W+JbV8MfpVqUhoz9KzYWwx+lWGfKkV2Rehi1rczCOSKTmntw5NLuIOffNYWKI6UU9iScmmUWAWikzRikAtJmjFJQAuM1rWltbtGWuATu4G04NZ0KF3AFadyHhjjaNsDkH61LbvZGsErXZTntWiJZMsn6j61Uq59pn/vVC5L/e5NNX6kyS6ENPVsHNGyk20xF2CXY2aueZcMRIiliv3c9vesjJz1xSb5B/EfzrGUOp0Rq2VmdFYanq2mv5kcavznEiBx+td7p3xL1u3GxLG3DDusZX9BXkPnSj+M/nR50o/jb86wqYWE9ZRRtTxcofC3Y98j+Jfjmbi1EcIPog/wDZjV+PxF8SNR+/qzQg9lKr/wCgivncXNwOkjf99Gni+vF+7NIPoxrjll6fw2XyO6GZJfEm/mfS1hoer3t2suu376jHg5jlLOvP1P5VoSeGdCMpQ2Kg+uK+Yo9a1eLhL2dfpIw/rSPrOrSHc97Ox95G/wAa4KmUVZO6qW9NDujnNOKt7M+oI7TTNKVhbQpEWHJArPl1W3VsFlr5oa/vX+/PIfq5P9ahM0x6u35mpWR63lO5bz6ytGB9Qw6rb8MGXI5HNZ3iXVYptJuk3ruZQAM5zyOlfNvmSf32/M1vJaWLwmQSyeYvOCeO1bLLI02nzfgYSzV1U0ofiaOsDfDbN6IBxXOT9a19QuFZIYgeVH/16xJWJJr1qKaikeTXkm2z/9f4XQ4NS7zUK0+t+hmQv2NJ6GlfoKTsKQDjg03pS0hoYAaBQaSpAXNSDa3DD8aip4600NFlEdeUq6iytC8cvIYZB9CKhj+6KvL9z8DTUVYq5j0cUGisxiUlLTaYhQ2DUZpx6ikpiEpKKKkAooooAKTpRRQAZpKKKAAGtISECswVe7VE0a0+osr7pd/U8ConbnNOb71RvSSKbP/Z";
+const ic = (id, color) => `<svg class="ic" style="color:${color}"><use href="#i-${id}"/></svg>`;
+const sv = (id, color, st="") => `<svg style="color:${color};${st}"><use href="#i-${id}"/></svg>`;
+let ticks = ""; for (let y = 1950; y <= 2026; y++) ticks += `<span class="rk ${y%10===0?"t10":""}" style="left:${(y-1950)/76*100}%"></span>`;
+
+const DIRS = [
+ {id:"a", pick:true, name:"A · Cada filtro, su color",
+  blurb:["Cada filtro tiene <b>su color</b> en el ícono y en un puntito cuando tiene algo.","El control abierto toma ese color: la <b>ventana dorada</b> de Época, el lila de Tiempo.","El azul de Orbital, en lo que es de Orbital: <b>Dónde verla</b>, la rayita del formato y el ojo."],
+  sw:[["coral","Género"],["gold","Época"],["lav","Tiempo"],["mint","Calificación"],["rose","Fama"],["blue","Dónde verla"]],
+  c:{genre:"var(--coral)",era:"var(--gold)",time:"var(--lav)",rate:"var(--mint)",fame:"var(--rose)",place:"var(--blue)"},
+  border:"var(--text)", dot:true, win:"var(--gold)", mark:"var(--blue)", eye:"var(--blue)", ctaBadge:["var(--bg)","var(--text)"]},
+ {id:"b", name:"B · El color lo pone el contenido",
+  blurb:["La interfaz queda en <b>blanco y gris</b>.","El color sale de lo que eliges: el <b>arte del género</b>, el logo de TMDB, las estatuillas, los logos de las plataformas.","El azul de Orbital solo en el <b>número de «Ver resultados»</b>."],
+  sw:[["text","Interfaz"],["blue","Un solo azul"]],
+  c:{genre:"var(--muted)",era:"var(--muted)",time:"var(--muted)",rate:"var(--muted)",fame:"var(--muted)",place:"var(--muted)"},
+  border:"var(--text)", dot:false, win:"var(--text)", mark:"var(--text)", eye:"var(--text)", ctaBadge:["var(--blue)","var(--bg)"], logos:true},
+ {id:"c", name:"C · Luz de cine",
+  blurb:["Una sola familia cálida: <b>dorado de marquesina</b>.","Lo elegido lleva una línea dorada arriba, como la luz de una sala.","El azul de Orbital solo en el <b>ojo</b> de «Ocultar lo que ya vi»."],
+  sw:[["gold","Dorado"],["coral","Brasa"],["blue","Un solo azul"]],
+  c:{genre:"var(--gold)",era:"var(--gold)",time:"var(--gold)",rate:"var(--gold)",fame:"var(--gold)",place:"var(--gold)"},
+  border:"rgba(244,194,77,.55)", dot:false, win:"var(--gold)", mark:"var(--gold)", eye:"var(--blue)", ctaBadge:["var(--gold)","var(--bg)"], marquee:true},
+];
+
+function tile(d, key, name, value, on, extra=""){
+  const color = d.c[key];
+  const style = on ? `box-shadow:inset 0 0 0 1.5px ${d.border}${d.marquee?",inset 0 2px 0 0 var(--gold)":""}` : "";
+  const dot = d.dot && on ? `<i style="position:absolute;right:10px;top:12px;width:7px;height:7px;border-radius:50%;background:${color}"></i>` : "";
+  return `<div class="tile ${on?"on":""} ${key==="era"?"open":""}" style="${style}">${extra || ic(icon(key), color)}${dot}<b>${name}</b><small>${value}</small></div>`;
+}
+const icon = k => ({genre:"masks",era:"cal",time:"moon",rate:"star",fame:"spark",place:"play"})[k];
+
+function phone(d){
+  const genreArt = `<span class="art"><i style="background-image:url(${CRIME})"></i><i style="background-image:url(${DRAMA})"></i></span>`;
+  const rateArt = d.logos ? `<span class="ic" style="width:auto;display:flex;gap:3px;align-items:center"><b style="font-size:10px;letter-spacing:.08em;color:#5fd6c6;font-weight:800">TMDB</b>${sv("starf","#f4c24d","width:12px;height:12px")}</span>` : "";
+  const winStyle = `background:${d.win==="var(--text)"?"rgba(245,244,240,.12)":"rgba(244,194,77,.16)"};box-shadow:inset 0 0 0 2px ${d.win}${d.win!=="var(--text)"?",0 0 18px rgba(244,194,77,.3)":""}`;
+  const decOn = d.win === "var(--text)" ? "background:var(--text);color:var(--bg)" : "background:var(--gold);color:var(--bg)";
+  return `<div class="phone"><style>#p-${d.id} .ruler .win::before,#p-${d.id} .ruler .win::after{background:${d.win}}</style><div class="sheet" id="p-${d.id}">
+    <div class="grab"></div>
+    <div class="hd"><span></span><b>Filtros · 4</b><span style="font-size:13px">Listo</span></div>
+    <div class="fmt"><div class="tabs" style="--mark:${d.mark}"><span>Todo</span><span>Películas</span><span class="on">Series</span></div>
+      <span class="eye" style="background:${d.eye};color:var(--bg)">${sv("eye","currentColor")}</span></div>
+    <div class="grid">
+      ${tile(d,"genre","Género","Crimen, Drama",true, d.logos || d.dot || d.marquee ? genreArt : genreArt)}
+      ${tile(d,"era","Época","Los 2010",true)}
+      <div class="panel">
+        <div class="ph"><span>Arrastra la ventana o toca una década</span><span style="color:${d.dot?"var(--gold)":d.marquee?"var(--gold)":"var(--text)"}">Quitar</span></div>
+        <div class="big">Los 2010</div>
+        <div class="ruler">${ticks}<span class="win" style="${winStyle}"></span></div>
+        <div class="decs">${["’50","’60","’70","’80","’90","’00","’10","’20"].map(t => `<span style="${t==="’10"?decOn:""}">${t}</span>`).join("")}</div>
+        <div class="row2"><div class="chip">${sv("bolt", d.dot||d.marquee ? "var(--gold)" : "var(--muted)")}Estrenos</div><div class="chip">${sv("film", d.dot||d.marquee ? "var(--gold)" : "var(--muted)")}Clásicos</div></div>
+      </div>
+      ${tile(d,"time","Tiempo","Cualquiera",false)}
+      ${tile(d,"rate","Calificación","7.5 o más",true, rateArt)}
+      ${tile(d,"fame","Qué tan conocida","Joyas ocultas",true)}
+      ${tile(d,"place","Dónde verla","Cualquiera",false)}
+    </div>
+    <div class="foot"><span class="clear">Limpiar</span><span class="cta">Ver resultados <em style="background:${d.ctaBadge[0]};color:${d.ctaBadge[1]}">4</em></span></div>
+  </div></div>`;
+}
+
+document.getElementById("dirs").innerHTML = DIRS.map(d => `<div class="dir ${d.pick?"pick":""}">
+  <div class="tag"><h3>${d.name}</h3></div>
+  ${phone(d)}
+  <div class="swatches">${d.sw.map(s => `<span><i style="background:var(--${s[0]})"></i>${s[1]}</span>`).join("")}</div>
+  <ul>${d.blurb.map(b => `<li>${b}</li>`).join("")}</ul>
+</div>`).join("");
+})();
+</script>

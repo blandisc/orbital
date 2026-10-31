@@ -25,7 +25,7 @@ struct FilterResultsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Space.s2) {
                         ForEach(squares(language), id: \.id) { s in
-                            FilterSummarySquare(symbol: s.symbol, title: s.title, edit: { edit(s.page) }, remove: s.remove)
+                            FilterSummarySquare(symbol: s.symbol, title: s.title, hue: s.hue, edit: { edit(s.page) }, remove: s.remove)
                                 .accessibilityIdentifier("filter-square-\(s.id)")
                         }
                         FilterSummarySquare(symbol: "plus", title: Text("Filtro"), edit: { edit(nil) }).accessibilityIdentifier("filter-edit")
@@ -103,7 +103,7 @@ struct FilterResultsView: View {
         return Text(verbatim: parts.joined(separator: " · "))
     }
 
-    private struct Square { let id: String; let page: FilterPage?; let symbol: String; let title: Text; let remove: () -> Void }
+    private struct Square { let id: String; let page: FilterPage?; let symbol: String; let title: Text; let remove: () -> Void; var hue: Color { page?.hue ?? DS.text } }
 
     /// Lo puesto, un cuadrito por filtro, con cómo quitarlo.
     private func squares(_ language: String) -> [Square] {

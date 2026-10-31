@@ -53,7 +53,7 @@ struct AdvancedFilterSheet: View {
                                 if !more, let o = open, FilterPage.more.contains(o) { open = nil }
                             }
                         } label: {
-                            Label(more ? "Ver menos" : "Ver más filtros", systemImage: more ? "chevron.up" : "chevron.down").recipe(.footnote, color: DS.orbitalBlue).fontWeight(.semibold)
+                            Label(more ? "Ver menos" : "Ver más filtros", systemImage: more ? "chevron.up" : "chevron.down").recipe(.footnote, color: DS.text).fontWeight(.semibold)
                         }
                         .buttonStyle(.borderless)
                         .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
