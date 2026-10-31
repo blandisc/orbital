@@ -41,7 +41,7 @@ struct WatchedWhenSheet: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
                 HStack(spacing: DS.Space.s3) {
                     if let poster {
                         PosterView(url: poster, title: "", maxPoints: DS.Watched.poster)
@@ -95,7 +95,7 @@ struct WatchedWhenSheet: View {
                         .accessibilityIdentifier("watched-unknown")
                 }
             }
-        .dsSheetContent()
+        .dsSheetContent(bottom: false)   // abajo ya está el margen del iPhone: sin aire extra (Fernando, 31 oct 2026)
         .animation(DS.Motion.base(reduceMotion), value: calendar)
         .animation(DS.Motion.base(reduceMotion), value: asking)
         .accessibilityElement(children: .contain)   // cada opción conserva su identificador

@@ -387,8 +387,9 @@ extension View {
     /// Receta: el aire de una hoja con encabezado propio (sin barra de navegación): `DS.Space.sheetTop` arriba, para que el
     /// título no se pegue al asa, y el margen de siempre a los lados y abajo. `sides: false` si su contenido llega a las
     /// orillas (un carrusel) y pone su propio margen. DesignTests lo exige en toda hoja sin barra.
-    func dsSheetContent(sides: Bool = true) -> some View {
-        padding(.horizontal, sides ? DS.Space.gutter : 0).padding(.top, DS.Space.sheetTop).padding(.bottom, DS.Space.s4)
+    /// `bottom: false` si la hoja mide justo lo que trae (`fittedSheet`): el margen de abajo del iPhone ya separa lo último.
+    func dsSheetContent(sides: Bool = true, bottom: Bool = true) -> some View {
+        padding(.horizontal, sides ? DS.Space.gutter : 0).padding(.top, DS.Space.sheetTop).padding(.bottom, bottom ? DS.Space.s4 : 0)
     }
 }
 

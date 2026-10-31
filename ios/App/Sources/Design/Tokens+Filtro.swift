@@ -4,7 +4,7 @@ import SwiftUI
 extension DS {
     /// «¿Cuándo la viste?» (`WatchedWhenSheet`): el póster de arriba, el ancho del ícono de cada opción y su alto.
     enum Watched {
-        static let poster: CGFloat = 56, icon: CGFloat = 26, row: CGFloat = 52
+        static let poster: CGFloat = 64, icon: CGFloat = 28, row: CGFloat = 60
     }
 
     /// El filtro avanzado (`FilterTile`, `FilterChoice`, `FameQuadrant`, `YearRuler`): el alto de un filtro en el cajón y de
