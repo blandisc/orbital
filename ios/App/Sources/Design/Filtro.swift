@@ -261,7 +261,7 @@ struct FilterTile: View {
                 .animation(DS.Motion.fade, value: art)
             }
             .clipShape(shape)
-            .overlay(shape.strokeBorder(on || open ? DS.text : .clear, lineWidth: open ? DS.Size.hairline * 4 : DS.Size.hairline * 2))
+            .dsSelectionRing(on || open, in: shape)
             .overlay(alignment: .topTrailing) {
                 if on { Circle().fill(page.hue).frame(width: DS.Filter.dot, height: DS.Filter.dot).padding(mini ? DS.Space.s2 : DS.Space.s3).accessibilityHidden(true) }
             }
@@ -282,9 +282,9 @@ struct GenreMosaic: View {
     let images: [String]
     var body: some View {
         let rows: [[String]] = images.count <= 3 ? [images] : [Array(images.prefix(images.count / 2)), Array(images.dropFirst(images.count / 2))]
-        VStack(spacing: DS.Size.hairline * 2) {
+        VStack(spacing: DS.Stroke.regular) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack(spacing: DS.Size.hairline * 2) {
+                HStack(spacing: DS.Stroke.regular) {
                     ForEach(row, id: \.self) { name in
                         Color.clear.overlay { Image(name).resizable().scaledToFill() }.clipped()
                     }
@@ -308,11 +308,11 @@ struct MiniRuler: View {
             let windowWidth = max(x(years.upperBound + 1) - x(years.lowerBound), DS.Filter.miniWindow)
             ZStack(alignment: .leading) {
                 ForEach(Array(stride(from: first, through: last, by: 10)), id: \.self) { d in
-                    Rectangle().fill(DS.Filter.tickMid).frame(width: DS.Size.hairline * 2, height: geo.size.height / 2).offset(x: x(d))
+                    Rectangle().fill(DS.Filter.tickMid).frame(width: DS.Stroke.regular, height: geo.size.height / 2).offset(x: x(d))
                 }
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .fill(DS.Filter.goldFill)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.gold, lineWidth: DS.Size.hairline * 3))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.gold, lineWidth: DS.Stroke.selected))
                     // Siempre visible y dentro de la regla (los años muy recientes, como Estrenos, quedaban fuera de la orilla).
                     .frame(width: windowWidth, height: geo.size.height)
                     .offset(x: min(x(years.lowerBound), geo.size.width - windowWidth))
@@ -326,14 +326,14 @@ struct MiniRuler: View {
 struct MiniQuadrant: View {
     let selected: AdvancedFilter.Fame
     var body: some View {
-        Grid(horizontalSpacing: DS.Size.hairline * 4, verticalSpacing: DS.Size.hairline * 4) {
+        Grid(horizontalSpacing: DS.Stroke.selected, verticalSpacing: DS.Stroke.selected) {
             GridRow { cell(.gems); cell(.classics) }
             GridRow { cell(.niche); cell(.blockbusters) }
         }
         .aspectRatio(DS.Poster.aspect * 2, contentMode: .fit)
     }
     private func cell(_ fame: AdvancedFilter.Fame) -> some View {
-        RoundedRectangle(cornerRadius: DS.Size.hairline * 6, style: .continuous).fill(selected == fame ? DS.Filter.rose : DS.fillStrong)
+        RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(selected == fame ? DS.Filter.rose : DS.fillStrong)
     }
 }
 
@@ -348,7 +348,7 @@ struct StudioLogo: View {
             if UIImage(named: "studio-\(id)") != nil {
                 Image("studio-\(id)").renderingMode(.original).resizable().scaledToFit()
                     .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-                    .background(DS.paper, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                    .background(DS.paper, in: RoundedRectangle(cornerRadius: DS.Radius.tag, style: .continuous))   // ds-exception: la plaquita de papel fijo hace que el logo a color se lea igual en los dos modos
             } else {
                 Text(verbatim: name).recipe(.badge, color: DS.text).lineLimit(1)
             }
@@ -368,10 +368,10 @@ struct FilterPanel<Content: View>: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) { content() }
             .padding(DS.Space.s3)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(DS.surfaceRaised, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .background(DS.surfaceRaised, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))   // ds-exception: el panel y su flechita van en la superficie elevada (dsCard no tiene ese nivel)
             .overlay(alignment: .topLeading) {
                 GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: DS.Size.hairline * 6, style: .continuous).fill(DS.surfaceRaised)
+                    RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(DS.surfaceRaised)
                         .frame(width: DS.Filter.notch, height: DS.Filter.notch)
                         .rotationEffect(.degrees(45))
                         .offset(x: geo.size.width * notch - DS.Filter.notch / 2, y: -DS.Filter.notch / 2)
@@ -420,9 +420,7 @@ struct FilterDoor: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("browse-filters")
                 if !context.filter.isEmpty {
-                    Button(action: clear) { Image(systemName: "xmark").font(DS.TextRecipe.label.font) }
-                        .buttonStyle(.glass).buttonBorderShape(.circle)
-                        .accessibilityLabel(Text("Limpiar la búsqueda avanzada"))
+                    DSIconButton(symbol: "xmark", label: "Limpiar la búsqueda avanzada", size: .regular, action: clear)
                         .accessibilityIdentifier("browse-filters-clear")
                 }
             }
@@ -470,7 +468,7 @@ struct FilterSummarySquare: View {
             .padding(.horizontal, DS.Space.s1)
             .frame(width: DS.Filter.summarySquare, height: DS.Filter.summarySquare)
             .background(remove == nil ? .clear : DS.surfaceRaised, in: shape)
-            .overlay(shape.strokeBorder(remove == nil ? DS.hairline : DS.fillStrong, lineWidth: DS.Size.hairline * 2))
+            .overlay(shape.strokeBorder(remove == nil ? DS.hairline : DS.fillStrong, lineWidth: DS.Stroke.regular))
             .contentShape(shape)
         }
         .buttonStyle(.plain)
@@ -505,7 +503,7 @@ struct FilterChoice: View {
             .padding(.vertical, DS.Space.s3)   // aire parejo arriba y abajo (el detalle ya no toca la orilla)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.choiceHeight)
             .background(selected ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
+            .dsSelectionRing(selected, radius: DS.Radius.lg)
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -532,7 +530,7 @@ struct FilterLogoChoice<Logo: View>: View {
             .padding(.vertical, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
             .background(selected ? DS.Filter.selectedFill : DS.surface, in: shape)
-            .overlay(shape.strokeBorder(selected ? DS.text : .clear, lineWidth: DS.Size.hairline * 2))
+            .dsSelectionRing(selected, in: shape)
             .contentShape(shape)
         }
         .buttonStyle(.plain)

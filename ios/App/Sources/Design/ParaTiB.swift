@@ -47,11 +47,14 @@ struct MosaicCover: View {
                 // El ícono del mosaico abajo a la derecha, negro sobre blanco (Fernando, 31 oct 2026: en vez de «Pasear por
                 // el mosaico»).
                 Button(action: onWalk) {
+                    // El ícono no crece más que su círculo: con letra de accesibilidad máxima se salía de él y de la orilla
+                    // derecha. Lo que dice va en la etiqueta para VoiceOver.
                     Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.cardTitle.font)
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .foregroundStyle(DS.backdropDeep)
                         .frame(width: DS.ParaTiB.walkButton, height: DS.ParaTiB.walkButton)
-                        .background(DS.paper, in: Circle())
-                        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+                        .background(DS.paper, in: Circle())   // ds-exception: sobre el arte de la portada
+                        .shadow(DS.Elevation.high)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("Pasear por el mosaico"))

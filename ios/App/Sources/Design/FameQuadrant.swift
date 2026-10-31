@@ -11,7 +11,7 @@ struct FameQuadrant: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             Label("Mejor calificada", systemImage: "arrow.up").recipe(.caption, color: DS.textMuted)
-            Grid(horizontalSpacing: DS.Size.hairline * 2, verticalSpacing: DS.Size.hairline * 2) {
+            Grid(horizontalSpacing: DS.Stroke.regular, verticalSpacing: DS.Stroke.regular) {
                 GridRow {
                     cell(.gems, "sparkles", Text("Joyas ocultas"), Text("Muy buenas, poco vistas"))
                     cell(.classics, "crown", Text("Las de siempre"), Text("Muy buenas y famosas"))
