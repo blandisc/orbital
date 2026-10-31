@@ -4,7 +4,7 @@
  *
  *   Arriba, lo tuyo en el orden del Inicio del iPhone (Fernando, 31 oct 2026): Destacados → (Seguir viendo, de main.js) →
  *   Lo nuevo de lo tuyo → Porque viste X → Top 10 en Netflix → Mi lista. Abajo, las listas (en la TV se quedan aquí):
- *   Mi media → lo general con su sello (Recomendadas, En tendencia, Lo más popular) →
+ *   lo general con su sello (Recomendadas, En tendencia, Lo más popular) →
  *   Nuevo en tus plataformas → Tus plataformas → Premios → Estudios → Lo mejor del género → Temporadas →
  *   Por año → Próximos estrenos →
  *   Listas de Trakt → Listas de Stremio → (Por género y los lanzadores, al final: la tele no tiene la pestaña Buscar).
@@ -17,7 +17,7 @@ const CENTERED = new Set(["platforms", "awards", "studios", "genre-top", "season
 /** Los grupos de «Ir a…» (☰), en orden; LT/RT pasan de uno a otro. */
 export const GROUPS = [
   { id: "spotlight", label: "Destacados" }, { id: "nuevo", label: "Lo nuevo de lo tuyo" }, { id: "because", label: "Porque viste" },
-  { id: "top10", label: "Top 10" }, { id: "milista", label: "Mi lista" }, { id: "onedrive", label: "Mi media" }, { id: "general", label: "Recomendadas y populares" },
+  { id: "top10", label: "Top 10" }, { id: "milista", label: "Mi lista" }, { id: "general", label: "Recomendadas y populares" },
   { id: "fresh", label: "Nuevo en tus plataformas" }, { id: "platforms", label: "Tus plataformas" }, { id: "awards", label: "Premios" },
   { id: "studios", label: "Estudios" }, { id: "genre-top", label: "Lo mejor del género" }, { id: "seasons", label: "Temporadas" },
   { id: "years", label: "Por año" }, { id: "estrenos", label: "Próximos estrenos" },
@@ -112,7 +112,7 @@ export function miMediaItem(t, now = Date.now() / 1000) {
   subtitle: kind === "series" ? `${t.episodes} ${t.episodes === 1 ? "episodio" : "episodios"} tuyos` : String(t.year || "Película") };
 }
 
-export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null, miMedia = null } = {}) {
+export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null } = {}) {
   const byId = Object.fromEntries(lists.filter((l) => l?.id).map((l) => [l.id, l]));
   const rows = [];
   // El rótulo de cada título no repite el nombre de su fila (en «En tendencia», cada tarjeta decía «En tendencia»).
@@ -153,14 +153,7 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   // Mi lista: tu watchlist de Trakt (sin Trakt, Mi lista de Stremio), como el iPhone (decisión del 31 oct 2026).
   const pending = byId.watchlist ? ["watchlist", "trakt"] : byId.mylist ? ["mylist", "stremio"] : null;
   if (pending) plain(`mi-lista`, "Mi lista", itemsOf(itemsById, byId[pending[0]], filter), { seal: pending[1], group: "milista" });
-  // Mi media (tu carpeta de OneDrive, como el iPhone): su tarjeta abre la biblioteca entera; al lado, lo último que subiste.
-  const mine = (miMedia?.titles || []).filter((t) => filter === "all" || t.kind === filter);
-  if (mine.length) {
-    const items = mine.map((t) => miMediaItem(t));
-    const library = card("collection:mimedia", "Mi media", { type: "list", name: "Mi media", source: "orbital", count: mine.length,
-      posters: items.slice(0, 2).map(posterOf), list: { id: "mimedia", title: "Mi media" } }, heroOf(items[0], "Tu OneDrive"));
-    rows.push({ id: "curated:onedrive", title: "Mi media", seal: "orbital", group: "onedrive", items: [library, ...items.slice(0, 12)] });
-  }
+  // Sin «Mi media» (tu carpeta de OneDrive): Fernando, 31 oct 2026, no va en Películas y series.
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {
     if (byId[id]) plain(id, byId[id].title, itemsOf(itemsById, byId[id], filter), { seal, group: "general" });
   }
