@@ -156,7 +156,7 @@ struct YearView: View {
                 if plays.isEmpty {
                     Text("Ese día no viste nada.").recipe(.footnote)
                 } else {
-                    ForEach(groups(plays), id: \.imdb) { g in
+                    ForEach(WatchingDay.groups(plays), id: \.imdb) { g in
                         TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
                             HStack(spacing: DS.Space.s3) {
                                 PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: g.title).frame(width: DS.YearMap.dayPoster)
@@ -175,26 +175,6 @@ struct YearView: View {
             }
             .padding(.top, DS.Space.s2)
             .animation(nil, value: selectedDay)
-        }
-    }
-
-    /// Los títulos de un día, cada uno una vez: «Película · 2 h 20 min» o «T1 E3 «Nombre», T1 E4».
-    private func groups(_ plays: [TraktPlay]) -> [(imdb: String, kind: String, title: String, detail: String)] {
-        var order: [String] = [], byTitle: [String: [TraktPlay]] = [:]
-        for p in plays { if byTitle[p.imdb] == nil { order.append(p.imdb) }; byTitle[p.imdb, default: []].append(p) }
-        return order.compactMap { id in
-            guard let list = byTitle[id], let first = list.first else { return nil }
-            let detail: String
-            if first.kind == "movie" {
-                let m = first.minutes
-                detail = m > 0 ? (m >= 60 ? "\(m / 60) h \(m % 60) min" : "\(m) min") : ""
-            } else {
-                detail = list.map { p in
-                    guard let s = p.season, let e = p.episode else { return p.episodeTitle ?? "" }
-                    return "T\(s) E\(e)" + (p.episodeTitle.map { " «\($0)»" } ?? "")
-                }.joined(separator: ", ")
-            }
-            return (id, first.kind, first.title, detail)
         }
     }
 

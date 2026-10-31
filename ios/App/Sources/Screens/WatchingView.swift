@@ -138,16 +138,9 @@ struct WatchingView: View {
             .padding(.horizontal, -DS.Space.gutter)
             .scrollClipDisabled()
         }
+        // Un solo mapa con zoom: año → mes → día (Fernando, 31 oct 2026, Z1). «Tu año» vive aquí adentro.
         section(Text("Día por día")) {
-            WatchingDayGrid(start: s.start, end: s.end, minutes: s.minutesByDay)
-            // «Tu año» vive aquí adentro: un enlace, no una tarjeta con ícono.
-            NavigationLink { YearView() } label: {
-                HStack(spacing: DS.Space.s1) { Text("Todo el año"); Image(systemName: "chevron.forward") }
-                    .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
-                    .frame(minHeight: DS.Size.touchTarget)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("watching-year")
+            WatchingZoomMap(plays: model.plays, startLevel: model.period == .week || model.period == .month ? .month : .year, locale: env.uiLocale)
         }
         // «Cuándo ves», fuera (Fernando, 31 oct 2026): repetía lo del calendario.
         if !s.genres.isEmpty { section(Text("Tus géneros")) { WatchingGenres(genres: s.genres) { WatchingText.genre($0, language: language) } } }

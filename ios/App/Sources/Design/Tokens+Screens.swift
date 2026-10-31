@@ -184,6 +184,9 @@ extension DS {
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
         /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
         static let streakShown = 3, dayFloor = 0.35
+        /// El mapa con zoom (`WatchingZoomMap`): de qué tamaño entra lo que se abre, los meses por renglón, el alto de un mes
+        /// y lo apagado de un mes que aún no llega.
+        static let zoomScale: CGFloat = 0.92, monthColumns = 4, monthTile: CGFloat = 64, futureMonth = 0.4
         /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
         /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
         static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8

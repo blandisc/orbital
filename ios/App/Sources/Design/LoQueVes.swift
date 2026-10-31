@@ -73,6 +73,8 @@ struct WatchingDayGrid: View {
     let start: Date
     let end: Date
     let minutes: [Date: Int]
+    /// Tocar un día (en el mapa de «Día por día» abre lo que viste ese día); nil: solo se ve.
+    var onDay: ((Date) -> Void)?
     var calendar: Calendar = {
         var c = Calendar.current
         c.firstWeekday = 2   // la semana empieza en lunes, como en los calendarios en español
@@ -106,11 +108,17 @@ struct WatchingDayGrid: View {
                                 }
                             }
                             .aspectRatio(1, contentMode: .fit)   // ds-exception: cuadros cuadrados (un día)
+                            .contentShape(Rectangle())
+                            .onTapGesture { if inside, let onDay { onDay(calendar.startOfDay(for: day)) } }
+                            .accessibilityHidden(!inside || onDay == nil)
+                            .accessibilityLabel(Text(day, format: .dateTime.day().month(.wide)))
+                            .accessibilityAddTraits(.isButton)
                         }
                     }
                 }
             }
-            .accessibilityHidden(true)
+            .accessibilityElement(children: onDay == nil ? .ignore : .contain)
+            .accessibilityHidden(onDay == nil)
         } else {
             longGrid(first: first, weeks: weeks, most: most)
         }
@@ -144,6 +152,213 @@ struct WatchingDayGrid: View {
     private func fill(_ watched: Int, _ most: Int) -> Color {
         guard watched > 0 else { return DS.fill }
         return DS.orbitalBlue.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
+    }
+}
+
+/// «Día por día» con zoom (Fernando, 31 oct 2026, opción Z1): un solo mapa que va del año al mes y al día. Arriba, las
+/// migas («2026 › Octubre › 15») para subir; en el año, los doce meses (más intensos según cuánto viste); en el mes, el
+/// calendario; en el día, lo que viste ese día. «Tu año» vive aquí adentro.
+struct WatchingZoomMap: View {
+    enum Level: Equatable { case year, month, day }
+    let plays: [TraktPlay]
+    /// Dónde abre: el mes de hoy (semana, mes) o el año (año, siempre).
+    let startLevel: Level
+    let locale: Locale
+    @State private var level: Level = .month
+    @State private var focus = Date()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let calendar: Calendar = {
+        var c = Calendar.current
+        c.firstWeekday = 2
+        return c
+    }()
+
+    var body: some View {
+        let byDay = Dictionary(grouping: plays) { calendar.startOfDay(for: $0.at) }
+        let minutes = byDay.mapValues { $0.reduce(0) { $0 + $1.minutes } }
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            crumbs(byDay)
+            Group {
+                switch level {
+                case .year: year(minutes)
+                case .month: month(minutes)
+                case .day: day(byDay)
+                }
+            }
+            .id(level)
+            .transition(.scale(scale: DS.Watching.zoomScale).combined(with: .opacity))
+        }
+        .animation(DS.Motion.base(reduceMotion), value: level)
+        .animation(DS.Motion.base(reduceMotion), value: focus)
+        .sensoryFeedback(.selection, trigger: level)
+        .onAppear {
+            level = startLevel; focus = Date()
+            #if DEBUG
+            if Demo.isOn, Demo.zoom == "year" { level = .year }
+            if Demo.isOn, Demo.zoom == "day", let last = plays.map(\.at).max() { focus = calendar.startOfDay(for: last); level = .day }
+            #endif
+        }
+        .onChange(of: startLevel) { _, new in level = new; focus = Date() }
+    }
+
+    /// «2026 › Octubre › 15»: lo de arriba se toca para subir; a la derecha, flechas para ir al año, mes o día de al lado.
+    private func crumbs(_ byDay: [Date: [TraktPlay]]) -> some View {
+        HStack(spacing: DS.Space.s1) {
+            crumb(Text(verbatim: "\(calendar.component(.year, from: focus))"), current: level == .year) { level = .year }
+            if level != .year {
+                Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                crumb(Text(verbatim: monthName(focus)), current: level == .month) { level = .month }
+            }
+            if level == .day {
+                Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                crumb(Text(verbatim: "\(calendar.component(.day, from: focus))"), current: true) {}
+            }
+            Spacer(minLength: DS.Space.s2)
+            Button { step(-1, byDay) } label: { Image(systemName: "chevron.left") }
+                .accessibilityLabel(Text("Anterior")).disabled(!canStep(-1, byDay))
+            Button { step(1, byDay) } label: { Image(systemName: "chevron.right") }
+                .accessibilityLabel(Text("Siguiente")).disabled(!canStep(1, byDay))
+        }
+        .buttonStyle(.glass).buttonBorderShape(.circle)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("watching-crumbs")
+    }
+
+    private func crumb(_ title: Text, current: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            title.font(DS.TextRecipe.cardTitle.font).foregroundStyle(current ? DS.text : DS.textMuted).lineLimit(1)
+                .frame(minHeight: DS.Size.touchTarget)
+        }
+        .buttonStyle(.plain)
+        .allowsHitTesting(!current)
+        .accessibilityAddTraits(current ? .isSelected : [])
+    }
+
+    /// El año: los doce meses en cuadros, con sus horas.
+    private func year(_ minutes: [Date: Int]) -> some View {
+        let y = calendar.component(.year, from: focus)
+        let months: [(Date, Int)] = (1...12).compactMap { m in
+            guard let start = calendar.date(from: DateComponents(year: y, month: m, day: 1)),
+                  let interval = calendar.dateInterval(of: .month, for: start) else { return nil }
+            return (start, minutes.filter { interval.contains($0.key) }.values.reduce(0, +))
+        }
+        let most = max(months.map(\.1).max() ?? 0, 1)
+        let now = Date()
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.YearMap.gap), count: DS.Watching.monthColumns), spacing: DS.YearMap.gap) {
+            ForEach(months, id: \.0) { start, watched in
+                let future = start > now
+                Button { focus = start; level = .month } label: {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: start.formatted(.dateTime.month(.abbreviated).locale(locale)).capitalized(with: locale))
+                            .recipe(.footnote, color: watched > 0 ? DS.paper : DS.textMuted).fontWeight(.semibold)
+                        Spacer(minLength: 0)
+                        if watched > 0 {
+                            Text(verbatim: watched >= 60 ? "\(watched / 60) h" : "\(watched) min").recipe(.caption, color: DS.paper).monospacedDigit()
+                        }
+                    }
+                    .padding(DS.Space.s2)
+                    .frame(maxWidth: .infinity, minHeight: DS.Watching.monthTile, alignment: .leading)
+                    .background(fill(watched, most), in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(future)
+                .opacity(future ? DS.Watching.futureMonth : 1)
+            }
+        }
+    }
+
+    /// El mes: el calendario; tocar un día abre lo que viste.
+    private func month(_ minutes: [Date: Int]) -> some View {
+        let interval = calendar.dateInterval(of: .month, for: focus) ?? DateInterval(start: focus, duration: 0)
+        let end = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
+        return WatchingDayGrid(start: interval.start, end: end, minutes: minutes, onDay: { d in focus = d; level = .day }, calendar: calendar)
+    }
+
+    /// El día: cada título una vez, con sus episodios.
+    @ViewBuilder private func day(_ byDay: [Date: [TraktPlay]]) -> some View {
+        let plays = byDay[calendar.startOfDay(for: focus)] ?? []
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Text(verbatim: YearView.dayTitle(focus, locale)).recipe(.footnote, color: DS.textMuted)
+            if plays.isEmpty {
+                Text("Ese día no viste nada.").recipe(.footnote)
+            } else {
+                ForEach(WatchingDay.groups(plays), id: \.imdb) { g in
+                    TitleNavigationLink(route: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
+                        HStack(spacing: DS.Space.s3) {
+                            PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: g.title).frame(width: DS.YearMap.dayPoster)
+                            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                                Text(verbatim: g.title).recipe(.cardTitle).lineLimit(1)
+                                Text(verbatim: g.detail).recipe(.footnote).lineLimit(2)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right").foregroundStyle(DS.textMuted)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    /// Las flechas: el año o el mes de al lado; en el día, el día anterior o siguiente con algo visto.
+    private func step(_ by: Int, _ byDay: [Date: [TraktPlay]]) {
+        switch level {
+        case .year: focus = calendar.date(byAdding: .year, value: by, to: focus) ?? focus
+        case .month: focus = calendar.date(byAdding: .month, value: by, to: focus) ?? focus
+        case .day: if let next = nextDay(by, byDay) { focus = next }
+        }
+    }
+
+    private func canStep(_ by: Int, _ byDay: [Date: [TraktPlay]]) -> Bool {
+        let now = Date()
+        switch level {
+        case .year:
+            let y = calendar.component(.year, from: focus) + by
+            return y <= calendar.component(.year, from: now) && (by > 0 || byDay.keys.contains { calendar.component(.year, from: $0) <= y })
+        case .month:
+            guard let d = calendar.date(byAdding: .month, value: by, to: focus), let i = calendar.dateInterval(of: .month, for: d) else { return false }
+            return i.start <= now && (by > 0 || byDay.keys.contains { $0 < i.end })
+        case .day: return nextDay(by, byDay) != nil
+        }
+    }
+
+    private func nextDay(_ by: Int, _ byDay: [Date: [TraktPlay]]) -> Date? {
+        let today = calendar.startOfDay(for: focus)
+        let days = byDay.keys.sorted()
+        return by > 0 ? days.first { $0 > today } : days.last { $0 < today }
+    }
+
+    private func monthName(_ d: Date) -> String {
+        let text = d.formatted(.dateTime.month(.wide).locale(locale))
+        return text.prefix(1).uppercased(with: locale) + text.dropFirst()
+    }
+
+    private func fill(_ watched: Int, _ most: Int) -> Color {
+        guard watched > 0 else { return DS.fill }
+        return DS.orbitalBlue.opacity(DS.Watching.dayFloor + (1 - DS.Watching.dayFloor) * Double(watched) / Double(most))
+    }
+}
+
+/// Lo que viste en un día, cada título una vez: «2 h 20 min» o «T1 E3 «Nombre», T1 E4» (lo usan «Tu año» y el mapa).
+enum WatchingDay {
+    static func groups(_ plays: [TraktPlay]) -> [(imdb: String, kind: String, title: String, detail: String)] {
+        var order: [String] = [], byTitle: [String: [TraktPlay]] = [:]
+        for p in plays { if byTitle[p.imdb] == nil { order.append(p.imdb) }; byTitle[p.imdb, default: []].append(p) }
+        return order.compactMap { id in
+            guard let list = byTitle[id], let first = list.first else { return nil }
+            let detail: String
+            if first.kind == "movie" {
+                let m = first.minutes
+                detail = m > 0 ? (m >= 60 ? "\(m / 60) h \(m % 60) min" : "\(m) min") : ""
+            } else {
+                detail = list.map { p in
+                    guard let s = p.season, let e = p.episode else { return p.episodeTitle ?? "" }
+                    return "T\(s) E\(e)" + (p.episodeTitle.map { " «\($0)»" } ?? "")
+                }.joined(separator: ", ")
+            }
+            return (id, first.kind, first.title, detail)
+        }
     }
 }
 

@@ -137,6 +137,8 @@ enum Demo {
     static var mode: String? { value(after: "-demo-mode") }
     /// `-demo-section seasons`: en Para ti › Listas, baja hasta ese grupo de colecciones (el nombre del caso de `CollectionSection`).
     static var section: String? { value(after: "-demo-section") }
+    /// `-demo-zoom year|day`: el mapa de «Día por día» abre en el año o en un día (capturas).
+    static var zoom: String? { value(after: "-demo-zoom") }
     /// `-demo-collection genre:accion` o `season:halloween`: en Para ti › Listas, abre esa lista (con `-demo-tmdb`).
     static var collection: String? { value(after: "-demo-collection") }
     /// `-demo-lang en`: idioma de la app.
