@@ -97,10 +97,16 @@ public final class AdvancedFilterModel: ObservableModel {
             if page == 0 { total = count }
             page += 1
             if rows.isEmpty { exhausted = true; return }
-            let found = await ForYou.suggestions(rows, reason: .popular, tmdb: services.tmdb)
-            let have = Set(results.map(\.imdb))
+            // Cada título sale en cuanto llega su detalle (en orden), no cuando llegan los veinte (o los cientos de «Repartido
+            // por décadas»): antes la pantalla esperaba a la última ficha para enseñar la primera.
+            var have = Set(results.map(\.imdb))
             let hidden = asked.hideWatched ? watched : []
-            results += found.filter { !have.contains($0.imdb) && !hidden.contains($0.imdb) }
+            _ = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: services.tmdb) { [weak self] batch in
+                guard let self, asked == self.filter else { return false }   // cambiaste el filtro: lo demás ya no sirve
+                let fresh = batch.filter { !hidden.contains($0.imdb) && have.insert($0.imdb).inserted }
+                if !fresh.isEmpty { self.results += fresh }
+                return true
+            }
         } catch {
             failed = results.isEmpty
         }

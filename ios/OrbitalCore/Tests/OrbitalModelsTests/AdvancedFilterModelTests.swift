@@ -37,6 +37,25 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(rig.http.calls.count, asked, "el mismo filtro no vuelve a pedir")
     }
 
+    /// Los resultados salen de a poco y en orden (cada uno en cuanto llega su ficha); el que no tiene IMDb se salta, y si
+    /// quien recibe dice «basta» (cambió el filtro), no se entrega nada más.
+    func testLosResultadosLleganEnOrdenYSePuedenCortar() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        rig.http.prefix["\(tmdb)/movie/2?"] = ["id": 2, "title": "Sin IMDb"]
+        let rows = (1...3).map { TmdbRow(kind: "movie", id: $0) }
+        var got: [String] = []
+        let finished = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: rig.services.tmdb) { batch in
+            got += batch.map(\.imdb); return true
+        }
+        XCTAssertTrue(finished)
+        XCTAssertEqual(got, ["tt0000001", "tt0000003"])
+        var calls = 0
+        let stopped = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: rig.services.tmdb) { _ in calls += 1; return false }
+        XCTAssertFalse(stopped)
+        XCTAssertEqual(calls, 1, "al decir basta, ya no llega nada")
+    }
+
     func testLoElegidoYElNumeroSeRecuerdanAlVolverAAbrir() async throws {
         let rig = try ServicesRig(tmdbKey: "K")
         stockTMDB(rig)
