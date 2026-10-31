@@ -1,4 +1,5 @@
-import { h } from "../core/dom.js";
+import { h, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 
 /**
@@ -69,12 +70,26 @@ export function Progress(fraction, { className = null, label = "Avance" } = {}) 
     h("span", { class: "progress__fill", style: { width: `${pct}%` } }));
 }
 
-/** Título de una zona con su dato y algo opcional a la derecha. */
-export const SectionHead = (title, { meta = null, end = null, className = null } = {}) =>
-  h("div", { class: ["section-head", className] },
+/**
+ * El encabezado de una zona, en dos niveles como el iPhone (DSSectionHead):
+ *  · `level: "section"` (una sección: agrupa varias cosas): el rótulo — ícono en el azul de Orbital, el nombre en mayúsculas
+ *    chicas y una línea fina hasta la orilla; un dato o algo más, a la derecha.
+ *  · por omisión, una subsección (una fila, un estante, una columna): el título blanco y, arriba, su porqué en turquesa solo
+ *    si dice algo que el título no (`reason`).
+ */
+export function SectionHead(title, { level = "subsection", icon = null, reason = null, meta = null, end = null, className = null } = {}) {
+  if (level === "section") {
+    return h("div", { class: ["section-head", "section-head--section", className] },
+      icon && ICONS[icon] && h("span", { class: "section-head__icon", "aria-hidden": "true" }, svg(ICONS[icon])),
+      h("h2", { class: "section-head__label" }, title),
+      h("span", { class: "section-head__rule", "aria-hidden": "true" }),
+      (meta || end) && h("span", { class: "section-head__end" }, meta, end));
+  }
+  return h("div", { class: ["section-head", reason && "section-head--reason", className] },
+    reason && h("p", { class: "section-head__reason" }, reason),
     h("h2", { class: "section-head__title" }, title),
-    meta && h("span", { class: "section-head__meta" }, meta),
     end && h("span", { class: "section-head__end" }, end));
+}
 
 /** Botón del mando + qué hace: «A Continuar». `glyph` puede traer dos («LB RB»). El pie de
  * controles (hints.js) y cualquier leyenda se arman con esta misma pieza. */

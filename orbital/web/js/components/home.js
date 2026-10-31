@@ -108,8 +108,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       queued.length > 0 && upcoming,
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
+    // Una sección (agrupa tus consolas): el rótulo con su ícono y su línea, y el dato a la derecha (como el iPhone).
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
-      meta: `${model.consoles.length} sistema${model.consoles.length === 1 ? "" : "s"} · ${model.games} juegos`,
+      level: "section", icon: "gamepad", meta: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
     }));
     model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
     renderConsoles();

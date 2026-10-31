@@ -56,7 +56,7 @@ export function createYear({ load, onPick, onMove, onClose }) {
     mount(stats, [[`${r.hours} h`, "vistas"], [`${r.longest_streak} ${r.longest_streak === 1 ? "día" : "días"}`, "racha más larga"],
       [r.top_genre ? genreNames([r.top_genre])[0] : "—", "tu género"]].map(([value, label]) =>
       h("div", { class: "year__stat tile" }, h("strong", { class: "year__value" }, value), h("span", { class: "year__label" }, label))));
-    mount(mapHead, SectionHead("Día por día", { meta: `${r.movies} ${r.movies === 1 ? "película" : "películas"} · ${r.episodes} episodios` }));
+    mount(mapHead, SectionHead("Día por día", { level: "section", icon: "calendar", meta: `${r.movies} ${r.movies === 1 ? "película" : "películas"} · ${r.episodes} episodios` }));
     mount(map, days.map((d, i) => h("span", { class: ["year__cell", d.kind && `year__cell--${d.kind}`], "data-i": i, role: "gridcell" })));
     // Al abrir: el último día con algo visto (como el iPhone).
     const seen = days.map((d, i) => (d.kind && d.kind !== "out" ? i : -1)).filter((i) => i >= 0);
