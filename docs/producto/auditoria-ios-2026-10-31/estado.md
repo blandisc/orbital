@@ -12,7 +12,21 @@
   en Debug; C3 `Tmdb.url`/`Trakt.url` sin «!» (URLSafetyTests); C4 `NotificationTokens`; C8 `DebouncedWrite`.
 - T `YearRulerLogic` y `CoverWall` en OrbitalModels; 38 pruebas para siete modelos; arreglado: premios sin clave de TMDB daba 0.
 
-**Estabilidad:** ver la sección de cierre al final de este archivo.
+**Estabilidad: terminado.** Commits 987e925d, cc1749e3, b1247e5a, 10978552, ba2af6fb, 214ec152, cb110385.
+- R1 el cierre era `TitleView` armado sin `AppEnvironment` al abrir la ficha desde la fila sin menú: la ficha y la barra
+  (`ProfileButton`, `AppMark`) leen el entorno como opcional y la fila «Sugerencias para ti» tiene su menú
+  (ToolbarEnvironmentTests; `ChaosRegressionUITests` con 10 escenarios confiables, banda `-demo-free-tabs`).
+- R2 letra XXXL: Inicio, Buscar, Descargas y ficha (testLetraMaximaSinSalirseDeLaPantalla). PENDIENTE: el botón «Pasear
+  por el mosaico» de Explorar (Design/ParaTiB.swift) se sale por la derecha (fallo esperado no estricto en la prueba).
+- R4 pruebas viejas al día (la del Wrapped se salta con motivo). A1 ruff, prueba de NYT y RemoteSheet bajo el tope
+  (`RemoteStatusCard`): CI de macOS verde en cb110385.
+- D1 filtros activos con `DS.primary`/`DS.onPrimary`. D2 «Hoy» con `DesignTokens.PhoneRole.success/onSuccess` (solo
+  iPhone, fuera de design/tokens.json), ≥4.5:1 en claro, oscuro y aumentar contraste.
+- Para después: el «No me interesa» de Inicio vive en HomeView (pasarlo a HomeModel); en inglés «Cargando» se traduce
+  «Charging» (scripts/ios_strings.py:620; revisar si es la batería del control o un error); la CI de Windows falla en la
+  prueba de humo de la TV (`DemoTrakt` sin `public_list_items`), que es del lado de la TV.
+
+Página con el antes y el después: https://claude.ai/artifact/NUSkqvxm26CctNuUHHkFRR
 
 ## Tanda 2 · Rendimiento y arquitectura: PENDIENTE (otra sesión)
 A2 reloj del reproductor aparte y `didSet` que comparan; A3 marco de los pósters y valores del entorno en iPad/Mac;
