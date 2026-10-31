@@ -214,8 +214,8 @@ extension DS {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64, eraTile: CGFloat = 72
         static let selectedFill = DS.brandMoon.opacity(0.18)   // ds-exception: el velo de la selección (turquesa al 18 %)
         static let resultWidth: CGFloat = 104
-        /// El ícono de la puerta «Búsqueda avanzada» en Buscar.
-        static let doorIcon: CGFloat = 44
+        /// La puerta «Búsqueda avanzada» en Buscar: su ícono, el de cada filtro y cuántos por renglón.
+        static let doorIcon: CGFloat = 44, doorChip: CGFloat = 40, doorColumns = 3
         /// La altura corta del cajón (parte de la pantalla) y desde qué alto de pantalla abre de una vez en grande.
         static let shortFraction: CGFloat = 0.74, shortScreen: CGFloat = 700
     }

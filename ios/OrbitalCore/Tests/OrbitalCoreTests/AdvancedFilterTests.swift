@@ -15,6 +15,28 @@ final class AdvancedFilterTests: XCTestCase {
         XCTAssertNil(p["with_genres"])
     }
 
+    func testDondeVerlaYElOrden() {
+        var f = AdvancedFilter()
+        f.providers = [337, 8]; f.region = "MX"; f.sort = .newest; f.today = "2026-10-30"
+        XCTAssertEqual(f.activeCount, 1, "las plataformas cuentan; el orden no")
+        let m = dict(f.params(kind: "movie"))
+        XCTAssertEqual(m["with_watch_providers"], "8|337")
+        XCTAssertEqual(m["watch_region"], "MX")
+        XCTAssertEqual(m["with_watch_monetization_types"], "flatrate")
+        XCTAssertEqual(m["sort_by"], "primary_release_date.desc")
+        XCTAssertEqual(m["primary_release_date.lte"], "2026-10-30", "lo más nuevo, sin lo que aún no se estrena")
+        f.sort = .rating
+        XCTAssertEqual(dict(f.params(kind: "series"))["sort_by"], "vote_average.desc")
+        XCTAssertEqual(dict(f.params(kind: "series"))["vote_count.gte"], "100", "mejor calificadas, pero con un piso de votos")
+    }
+
+    func testSeGuardaYSeRecupera() throws {
+        var f = AdvancedFilter()
+        f.genres = ["terror"]; f.years = 1980...1989; f.providers = [8]; f.hideWatched = false; f.sort = .rating
+        let back = try JSONDecoder().decode(AdvancedFilter.self, from: JSONEncoder().encode(f))
+        XCTAssertEqual(back, f)
+    }
+
     func testGeneroEpocaYTiempoEnPeliculasYSeries() {
         var f = AdvancedFilter()
         f.genres = ["terror", "comedia"]; f.excluded = ["animacion"]

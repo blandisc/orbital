@@ -71,6 +71,9 @@ public actor ForYou {
     }
 
     // MARK: listas disponibles
+    /// Tu país para «dónde verla» (MX, US…).
+    public nonisolated var watchRegion: String { region() }
+
     public func platforms() async -> [String: PlatformInfo] {
         guard let tmdb, tmdb.configured else { return [:] }
         return (try? await remember("tmdb:platforms", ttl: Self.slowTTL) { try await tmdb.platforms(region: self.region()) }) ?? [:]
@@ -395,11 +398,13 @@ public actor ForYou {
             return out
         }
         var seen = Set<String>()
-        return details.compactMap { d -> Suggestion? in
+        return details.enumerated().compactMap { i, d -> Suggestion? in
             guard let d, let imdb = d.imdb, !d.title.isEmpty, seen.insert(imdb).inserted else { return nil }
-            return Suggestion(kind: d.kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
-                              poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
-                              logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
+            var s = Suggestion(kind: d.kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
+                               poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
+                               logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
+            s.tmdbRating = rows[i].voteAverage > 0 ? rows[i].voteAverage : nil
+            return s
         }
     }
 

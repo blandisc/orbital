@@ -33,36 +33,86 @@ struct FilterTile: View {
     }
 }
 
-/// La puerta del filtro avanzado arriba de Buscar: se ve siempre (en la barra, iOS la mandaba al «…» y no aparecía). Dice
-/// lo que ya elegiste («3 filtros · Terror, Los 80») o qué se puede filtrar.
+/// La puerta del filtro avanzado arriba de Buscar (Fernando, 30 oct 2026: que se vea todo lo que puedes elegir): arriba el
+/// nombre y lo que ya elegiste; abajo cada filtro con su ícono a color (Género, Calificación, Época…). Tocar uno abre el
+/// cajón justo en ese filtro; tocar arriba, el cajón completo.
 struct FilterDoor: View {
+    struct Option: Identifiable {
+        let id: String
+        let symbol: String
+        let title: Text
+        let tint: Color
+    }
+    let options: [Option]
     let active: Int
     let summary: Text?
-    let action: () -> Void
+    /// nil: el cajón completo; si no, el id de la opción tocada.
+    let open: (String?) -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: DS.Space.s3) {
-                Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.section.font).foregroundStyle(DS.backdropDeep)
-                    .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
-                    .background(DS.brandMoon, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Búsqueda avanzada").recipe(.cardTitle)
-                    if active > 0, let summary {
-                        Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.brandMoon).lineLimit(1)
-                    } else {
-                        Text("Género, época, calificación, duración y más").recipe(.footnote, color: DS.textMuted).lineLimit(1)
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Button { open(nil) } label: {
+                HStack(spacing: DS.Space.s3) {
+                    Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.section.font).foregroundStyle(DS.backdropDeep)
+                        .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
+                        .background(DS.brandMoon, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text("Búsqueda avanzada").recipe(.section)
+                        if active > 0, let summary {
+                            Text("\(active) \(active == 1 ? "filtro" : "filtros") · \(summary)").recipe(.footnote, color: DS.brandMoon).lineLimit(1)
+                        } else {
+                            Text("Encuentra qué ver sin saber el nombre").recipe(.footnote, color: DS.textMuted).lineLimit(1)
+                        }
                     }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
                 }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.forward").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                .contentShape(Rectangle())
             }
-            .padding(DS.Space.s3)
-            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("browse-filters")
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.Filter.doorColumns), spacing: DS.Space.s2) {
+                ForEach(options) { option in
+                    Button { open(option.id) } label: {
+                        VStack(spacing: DS.Space.s2) {
+                            Image(systemName: option.symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.paper)
+                                .frame(width: DS.Filter.doorChip, height: DS.Filter.doorChip)
+                                .background(LinearGradient(colors: [option.tint.mix(with: DS.paper, by: DS.Chapter.lighten), option.tint],
+                                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                                            in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                            option.title.recipe(.caption, color: DS.text).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Space.s3)
+                        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("browse-filter-\(option.id)")
+                }
+            }
+        }
+        .padding(DS.Space.s4)
+        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+    }
+}
+
+/// Un filtro puesto, arriba de los resultados: su nombre y una ✕ que lo quita ahí mismo.
+struct ActiveFilterChip: View {
+    let title: Text
+    let remove: () -> Void
+    var body: some View {
+        Button(action: remove) {
+            HStack(spacing: DS.Space.s1) {
+                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.textMuted)
+            }
+            .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
+            .background(DS.Filter.selectedFill, in: Capsule())
+            .overlay(Capsule().strokeBorder(DS.brandMoon, lineWidth: DS.Size.hairline * 2))
         }
         .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Quitar \(title)"))
     }
 }
 

@@ -30,6 +30,8 @@ struct BrowseView: View {
     @State private var query = ""
     /// El filtro avanzado (el cajón) y el título que abrió desde sus resultados.
     @State private var showFilter = false
+    /// El filtro que tocaste en la puerta (el cajón abre ahí); nil, el cajón completo.
+    @State private var filterStart: FilterPage?
     @State private var openTitle: TitleRoute?
     /// El campo abierto (con el teclado). Un segundo toque en la lupa cae en el campo y lo abre (iOS); si iOS avisa que
     /// tocaste «Buscar» otra vez (RootView), también se abre desde aquí.
@@ -137,7 +139,7 @@ struct BrowseView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
-        .advancedFilter(isPresented: $showFilter) { openTitle = $0 }
+        .advancedFilter(isPresented: $showFilter, start: filterStart) { openTitle = $0 }
         .openingTitles(item: $openTitle)
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -152,6 +154,9 @@ struct BrowseView: View {
         .task {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
+            if Demo.isOn, let open = Demo.open, open.hasPrefix("filter") {   // `-demo-open filter` (o filter-genre…): el cajón
+                Task { try? await Task.sleep(for: .seconds(3)); filterStart = FilterPage(door: open == "filter" ? nil : String(open.dropFirst(7))); showFilter = true }   // Demo: espera a que cargue Buscar
+            }
             #endif
             async let warm: Void = env.services.cinemeta.warmUp()   // la conexión con Cinemeta lista antes de la primera letra
             if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
@@ -228,9 +233,19 @@ struct BrowseView: View {
         let parts = [FilterText.format(f), FilterText.genres(f), FilterText.years(f), FilterText.length(f), FilterText.rating(f),
                      FilterText.fame(f), FilterText.countries(f), FilterText.studios(f)].compactMap { $0 }.prefix(2)
         let summary = parts.dropFirst().reduce(parts.first) { sum, next in sum.map { Text("\($0), \(next)") } }
-        return FilterDoor(active: f.activeCount, summary: summary) { showFilter = true }
-            .padding(.horizontal, DS.Space.gutter)
-            .accessibilityIdentifier("browse-filters")
+        let options: [FilterDoor.Option] = [
+            .init(id: "genre", symbol: "theatermasks.fill", title: Text("Género"), tint: DS.Chapter.genres),
+            .init(id: "rating", symbol: "star.fill", title: Text("Calificación"), tint: DS.Chapter.awards),
+            .init(id: "era", symbol: "calendar", title: Text("Época"), tint: DS.Chapter.years),
+            .init(id: "length", symbol: "clock.fill", title: Text("Duración"), tint: DS.Chapter.now),
+            .init(id: "where", symbol: "play.tv.fill", title: Text("Dónde verla"), tint: DS.Chapter.platforms),
+            .init(id: "fame", symbol: "sparkles", title: Text("Qué tan conocida"), tint: DS.Chapter.seasons),
+        ]
+        return FilterDoor(options: options, active: f.activeCount, summary: summary) { id in
+            filterStart = FilterPage(door: id)
+            showFilter = true
+        }
+        .padding(.horizontal, DS.Space.gutter)
     }
 
     /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.

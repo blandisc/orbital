@@ -3,14 +3,16 @@ import Foundation
 /// El filtro avanzado de Buscar (docs/producto/muvy-busqueda-premios/prototipo-filtro.html): seis principales (formato,
 /// género, época, tiempo, calificación y qué tan conocida) y, en «Ver más», origen y estudios. Todo se traduce a una sola
 /// búsqueda de TMDB (/discover) por tipo; sin conteos en vivo: los resultados salen al tocar «Ver resultados».
-public struct AdvancedFilter: Sendable, Equatable, Hashable {
-    public enum Format: String, Sendable, CaseIterable { case all, movie, series }
+public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
+    public enum Format: String, Sendable, CaseIterable, Codable { case all, movie, series }
+    /// En qué orden salen: lo más popular, lo mejor calificado o lo más nuevo.
+    public enum Sort: String, Sendable, CaseIterable, Codable { case popular, rating, newest }
     /// Solo con «Series»: en emisión o terminadas.
-    public enum SeriesStatus: String, Sendable, CaseIterable { case any, airing, ended }
+    public enum SeriesStatus: String, Sendable, CaseIterable, Codable { case any, airing, ended }
     /// El tiempo que tienes: corta, normal o larga (en series, lo que dura un capítulo).
-    public enum Length: String, Sendable, CaseIterable { case any, short, regular, long }
+    public enum Length: String, Sendable, CaseIterable, Codable { case any, short, regular, long }
     /// «Qué tan conocida»: el cuadro fama × calificación.
-    public enum Fame: String, Sendable, CaseIterable { case any, gems, classics, niche, blockbusters }
+    public enum Fame: String, Sendable, CaseIterable, Codable { case any, gems, classics, niche, blockbusters }
 
     public var format: Format = .all
     public var seriesStatus: SeriesStatus = .any
@@ -26,10 +28,23 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable {
     /// Países de origen (ISO 3166, «MX») y estudios (ids de TMDB).
     public var countries: Set<String> = []
     public var studios: Set<Int> = []
+    /// Dónde verla: plataformas de TMDB (ids de proveedor) en tu país (`region`); vacío: en cualquiera.
+    public var providers: Set<Int> = []
+    public var region = "MX"
+    /// Lo que ya viste (de Trakt) no sale; encendido de entrada.
+    public var hideWatched = true
+    public var sort: Sort = .popular
+    /// Hoy, «2026-10-30»: «Más nuevas» no trae lo que aún no se estrena.
+    public var today = AdvancedFilter.day(Date())
     /// El año de hoy: con «desde este año» el piso de votos baja (lo recién estrenado aún tiene pocos).
     public var currentYear = Calendar.current.component(.year, from: Date())
 
     public init() {}
+
+    static func day(_ date: Date) -> String {
+        let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
 
     /// Los géneros elegidos que TMDB no tiene para series (Terror, Romance, Suspenso, Aventura): solo filtran películas.
     public var moviesOnlyGenres: [TmdbGenre] { Tmdb.genres.filter { genres.contains($0.slug) && $0.tv == nil } }
@@ -37,7 +52,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable {
     /// Cuántos filtros están puestos (el «Ver resultados · 3» y el punto en la puerta).
     public var activeCount: Int {
         [format != .all, seriesStatus != .any && format == .series, !genres.isEmpty || !excluded.isEmpty, years != nil,
-         length != .any, minRating != nil, fame != .any, !countries.isEmpty, !studios.isEmpty].filter { $0 }.count
+         length != .any, minRating != nil, fame != .any, !countries.isEmpty, !studios.isEmpty, !providers.isEmpty].filter { $0 }.count
     }
     public var isEmpty: Bool { activeCount == 0 }
 
@@ -94,18 +109,31 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable {
         // Qué tan conocida y la calificación: el piso de votos evita lo que nadie ha visto (salvo «Para pocos»).
         var rating = minRating
         var votes: (min: Int?, max: Int?) = ((years?.lowerBound ?? 0) >= currentYear ? 30 : 100, nil)
-        var sort = "popularity.desc"
+        var order = "popularity.desc"
         switch fame {
         case .any: break
-        case .gems: rating = max(rating ?? 0, 7.2); votes = (150, 2500); sort = "vote_average.desc"
-        case .classics: rating = max(rating ?? 0, 7.5); votes = (series ? 2000 : 8000, nil); sort = "vote_average.desc"
-        case .niche: votes = (20, 300); sort = "vote_average.desc"
-        case .blockbusters: votes = (3000, nil); sort = series ? "popularity.desc" : "revenue.desc"
+        case .gems: rating = max(rating ?? 0, 7.2); votes = (150, 2500); order = "vote_average.desc"
+        case .classics: rating = max(rating ?? 0, 7.5); votes = (series ? 2000 : 8000, nil); order = "vote_average.desc"
+        case .niche: votes = (20, 300); order = "vote_average.desc"
+        case .blockbusters: votes = (3000, nil); order = series ? "popularity.desc" : "revenue.desc"
+        }
+        if !providers.isEmpty {
+            p.append(("with_watch_providers", providers.sorted().map(String.init).joined(separator: "|")))
+            p.append(("watch_region", region))
+            p.append(("with_watch_monetization_types", "flatrate"))
+        }
+        // El orden que elegiste manda sobre el de «Qué tan conocida» (el piso de votos se queda: no sale lo que nadie vio).
+        switch sort {
+        case .popular: break
+        case .rating: order = "vote_average.desc"
+        case .newest:
+            order = series ? "first_air_date.desc" : "primary_release_date.desc"
+            p.append((series ? "first_air_date.lte" : "primary_release_date.lte", today))
         }
         if let rating { p.append(("vote_average.gte", String(format: "%.1f", rating))) }
         if let v = votes.min { p.append(("vote_count.gte", String(v))) }
         if let v = votes.max { p.append(("vote_count.lte", String(v))) }
-        p.append(("sort_by", sort))
+        p.append(("sort_by", order))
         p.append(("include_adult", "false"))
         return p
     }

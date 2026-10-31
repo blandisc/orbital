@@ -33,6 +33,8 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var movement: Int?
     /// Entró a la lista en esta foto (semana o día).
     public var isNew = false
+    /// La calificación de TMDB (0 a 10), si la búsqueda la trae (el filtro avanzado).
+    public var tmdbRating: Double?
     public var id: String { imdb }
 
     public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,

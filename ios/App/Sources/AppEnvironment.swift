@@ -38,7 +38,7 @@ final class AppEnvironment {
     /// Colecciones (la repisa): una para toda la app, con lo visto de `collections` (el mismo caché).
     @ObservationIgnored lazy var repisa = RepisaModel(services, watched: { [unowned self] in await self.collections.watchedIDs() })
     /// El filtro avanzado: uno para toda la app (lo que elegiste se queda al volver a abrir el cajón).
-    @ObservationIgnored lazy var advancedFilter = AdvancedFilterModel(services)
+    @ObservationIgnored lazy var advancedFilter = AdvancedFilterModel(services, watched: { [unowned self] in await self.collections.watchedIDs() })
     /// Tus calificaciones y el recordatorio de calificar (como en Trakt): uno para toda la app (la ficha y la pastilla ven lo mismo).
     @ObservationIgnored lazy var ratings = RatingsModel(services)
     /// Ver, guardar, quitar, favoritos y marcar como vista desde un póster: la lógica en `TitleActions` (OrbitalModels, con pruebas).
