@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 import OrbitalCore
 
 // Piezas de «Lo que ves» (docs/producto/muvy-busqueda-premios/prototipo-wrapped.html): la tarjeta de Para ti, un dato
@@ -146,27 +147,75 @@ struct WatchingDayGrid: View {
     }
 }
 
-/// Los géneros como barras horizontales con su parte del total.
+/// Los géneros como una dona (Fernando, 31 oct 2026): cada uno de su color (los de las listas, `DS.Watching.genreColors`),
+/// el principal en el centro y al lado su nombre y su parte del total. Lo que no cabe en cinco va junto en «Otros».
 struct WatchingGenres: View {
     let genres: [(name: String, count: Int)]
     let name: (String) -> String
 
+    private struct Slice: Identifiable { let id: String; let label: Text; let count: Int; let color: Color }
+
     var body: some View {
         let total = max(1, genres.reduce(0) { $0 + $1.count })
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            ForEach(genres.prefix(5), id: \.name) { g in
-                HStack(spacing: DS.Space.s3) {
-                    Text(verbatim: name(g.name)).recipe(.footnote).frame(width: DS.Watching.genreLabel, alignment: .leading).lineLimit(1)
-                    GeometryReader { geo in
-                        Capsule().fill(DS.fillStrong).overlay(alignment: .leading) {
-                            Capsule().fill(DS.text.opacity(DS.Watching.genreFill)).frame(width: geo.size.width * CGFloat(g.count) / CGFloat(total))
-                        }
+        let shown = genres.prefix(DS.Watching.genreColors.count)
+        let rest = genres.dropFirst(shown.count).reduce(0) { $0 + $1.count }
+        let slices = shown.enumerated().map { i, g in Slice(id: g.name, label: Text(verbatim: name(g.name)), count: g.count, color: DS.Watching.genreColors[i]) }
+            + (rest > 0 ? [Slice(id: "_rest", label: Text("Otros"), count: rest, color: DS.fillStrong)] : [])
+        HStack(spacing: DS.Space.s5) {
+            Chart(slices) { s in
+                SectorMark(angle: .value("count", s.count), innerRadius: .ratio(DS.Watching.donutHole), angularInset: DS.Watching.donutGap)
+                    .foregroundStyle(s.color).cornerRadius(DS.Radius.xs)
+            }
+            .chartLegend(.hidden)
+            .frame(width: DS.Watching.donut, height: DS.Watching.donut)
+            .overlay {
+                if let first = slices.first {
+                    VStack(spacing: 0) {
+                        Text(verbatim: "\(first.count * 100 / total) %").font(DS.TextRecipe.title.font.weight(.heavy)).foregroundStyle(first.color)
+                            .monospacedDigit()
+                        first.label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                     }
-                    .frame(height: DS.Watching.genreBar)
-                    Text(verbatim: "\(g.count * 100 / total) %").recipe(.caption, color: DS.textMuted).monospacedDigit()
-                        .frame(width: DS.Watching.percentColumn, alignment: .trailing)   // columna fija: las barras terminan parejas
+                    .frame(width: DS.Watching.donut * DS.Watching.donutHole * DS.Watching.donutLabel)
+                }
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                ForEach(slices) { s in
+                    HStack(spacing: DS.Space.s2) {
+                        Circle().fill(s.color).frame(width: DS.Watching.genreDot, height: DS.Watching.genreDot)
+                        s.label.recipe(.footnote).lineLimit(1)
+                        Spacer(minLength: DS.Space.s1)
+                        Text(verbatim: "\(s.count * 100 / total) %").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                    }
                 }
             }
         }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// «Tus 5 estrellas» (Fernando, 31 oct 2026, opción R1): los pósters de lo que calificaste con 5, de lo más reciente a lo
+/// más viejo; tocar uno abre su ficha.
+struct WatchingFiveStars: View {
+    struct Item: Identifiable { let id: String; let title: String; let kind: String; let poster: String }
+    let items: [Item]
+    let open: (Item) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Space.s2) {
+                ForEach(items) { item in
+                    Button { open(item) } label: {
+                        PosterView(url: item.poster, title: item.title)
+                            .frame(width: DS.Watching.starPoster)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(verbatim: item.title))
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter)
+        }
+        .padding(.horizontal, -DS.Space.gutter)
+        .scrollClipDisabled()
     }
 }

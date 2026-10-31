@@ -156,17 +156,34 @@ struct WatchingView: View {
     }
 
 
-    /// Cómo calificas: cuántas de cada número de estrellas (tus calificaciones de Trakt).
+    /// Cómo calificas (Fernando, 31 oct 2026, opción R1): primero «Tus 5 estrellas», los pósters de lo que más te gustó;
+    /// debajo cuántas de cada número de estrellas y tu promedio (tus calificaciones de Trakt).
     @ViewBuilder private var ratings: some View {
-        let all = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }.values
+        let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
+        let all = Array(mine.values)
         if !all.isEmpty {
             section(Text("Cómo calificas")) {
+                let five = fiveStars(mine)
+                if !five.isEmpty {
+                    DSSectionHead(title: Text("Tus 5 estrellas"), count: five.count, eyebrow: Text("Lo que más te gustó"))
+                    WatchingFiveStars(items: five) { onOpenTitle(TitleRoute(kind: $0.kind, metaID: $0.id, title: $0.title, poster: $0.poster)) }
+                        .accessibilityIdentifier("watching-five-stars")
+                }
                 let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
                 WatchingBars(values: counts, labels: (1...5).map { "\($0)★" })
                 Text("Tu promedio: \(String(format: "%.1f", all.map { RatingScale.stars(trakt: $0) }.reduce(0, +) / Double(all.count))) estrellas")
                     .recipe(.footnote, color: DS.textMuted)
             }
         }
+    }
+
+    /// Lo que calificaste con 5 y está en tu historial (de ahí salen su nombre y si es serie), de lo más reciente a lo más viejo.
+    private func fiveStars(_ mine: [String: Int]) -> [WatchingFiveStars.Item] {
+        var seen = Set<String>(), out: [WatchingFiveStars.Item] = []
+        for play in env.watching.plays.sorted(by: { $0.at > $1.at }) where (mine[play.imdb] ?? 0) >= DS.Watching.fiveStars && seen.insert(play.imdb).inserted {
+            out.append(.init(id: play.imdb, title: play.title, kind: play.kind, poster: String(format: ForYou.metahubPoster, play.imdb)))
+        }
+        return out
     }
 
     private func section(_ title: Text, @ViewBuilder _ content: () -> some View) -> some View {

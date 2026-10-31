@@ -182,10 +182,14 @@ extension DS {
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3, cell: CGFloat = 12
-        /// La racha que se dice en la portada (desde 3 días); el piso del azul del calendario (`DS.orbitalBlue`); el
-        /// relleno de las barras de géneros y la columna fija de sus porcentajes.
-        static let streakShown = 3, dayFloor = 0.35, genreFill = 0.8, percentColumn: CGFloat = 40
-        static let genreLabel: CGFloat = 96, genreBar: CGFloat = 10
+        /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
+        static let streakShown = 3, dayFloor = 0.35
+        /// La dona de géneros: su tamaño, el hueco (proporción), la separación entre rebanadas, el ancho del texto del centro
+        /// (parte del hueco), el punto de la leyenda y un color por género (los de las listas, de brillo parecido).
+        static let donut: CGFloat = 132, donutHole = 0.62, donutGap: CGFloat = 1.5, donutLabel: CGFloat = 0.9, genreDot: CGFloat = 8
+        static let genreColors = [DS.ListTint.series, DS.ListTint.trend, DS.ListTint.calendar, DS.ListTint.watching, DS.ListTint.spark]
+        /// «Tus 5 estrellas»: el ancho de cada póster y lo que cuenta como 5 (en Trakt, 9 y 10).
+        static let starPoster: CGFloat = 92, fiveStars = 9
         static let story: Duration = .milliseconds(6500), storyBar: CGFloat = 3, storyPoster: CGFloat = 180, storyNumber: CGFloat = 96
         static let holdToPause = 0.2, barTrack = 0.3, backdropOpacity = 0.45, wrongOpacity = 0.35
         /// La parte izquierda de la pantalla que regresa a la historia anterior (el resto avanza), como en Instagram.
