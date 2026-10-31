@@ -32,6 +32,8 @@ struct BrowseView: View {
     @State private var showFilter = false
     /// El filtro que tocaste en la puerta (el cajón abre ahí); nil, el cajón completo.
     @State private var filterStart: FilterPage?
+    /// Los resultados del filtro, en su propia pantalla (se abren al tocar «Ver resultados»).
+    @State private var showResults = false
     @State private var openTitle: TitleRoute?
     /// El campo abierto (con el teclado). Un segundo toque en la lupa cae en el campo y lo abre (iOS); si iOS avisa que
     /// tocaste «Buscar» otra vez (RootView), también se abre desde aquí.
@@ -139,7 +141,13 @@ struct BrowseView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
-        .advancedFilter(isPresented: $showFilter, start: filterStart) { openTitle = $0 }
+        .advancedFilter(isPresented: $showFilter, start: filterStart) { showResults = true }
+        .navigationDestination(isPresented: $showResults) {
+            FilterResultsView(model: env.advancedFilter) { page in
+                filterStart = page
+                showFilter = true
+            }
+        }
         .openingTitles(item: $openTitle)
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -154,7 +162,15 @@ struct BrowseView: View {
         .task {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
-            if Demo.isOn, let open = Demo.open, open.hasPrefix("filter") {   // `-demo-open filter` (o filter-genre…): el cajón
+            // `-demo-filter series|awards`: un filtro ya puesto, para capturar los mosaicos encendidos.
+            if Demo.isOn, let sample = Demo.value(after: "-demo-filter") {
+                var f = AdvancedFilter()
+                if sample == "awards" { f.awards = ["oscar", "palm"]; f.years = 1990...1999; f.format = .movie }
+                else { f.format = .series; f.seriesStatus = .airing; f.genres = ["crimen", "drama"]; f.years = 2010...2019; f.minRating = 7.5; f.fame = .gems; f.countries = ["KR", "JP"]; f.length = .before }
+                env.advancedFilter.filter = f
+            }
+            if Demo.isOn, Demo.open == "filter-results" { showResults = true }   // `-demo-open filter-results`: los resultados
+            else if Demo.isOn, let open = Demo.open, open.hasPrefix("filter") {   // `-demo-open filter` (o filter-genre…): el cajón
                 Task { try? await Task.sleep(for: .seconds(3)); filterStart = FilterPage(door: open == "filter" ? nil : String(open.dropFirst(7))); showFilter = true }   // Demo: espera a que cargue Buscar
             }
             #endif
@@ -225,24 +241,13 @@ struct BrowseView: View {
         explore
     }
 
-    /// La puerta del filtro avanzado, arriba de todo (en la barra, iOS la escondía en el «…»): dice lo que ya elegiste.
+    /// La puerta del filtro avanzado, arriba de todo (entrada A, Fernando, 31 oct 2026): los mosaicos del cajón en chiquito.
     private var filterDoor: some View {
         let model = env.advancedFilter
         let _ = model.track()
-        let f = model.filter
-        let parts = [FilterText.format(f), FilterText.genres(f), FilterText.years(f), FilterText.length(f), FilterText.rating(f),
-                     FilterText.fame(f), FilterText.countries(f), FilterText.studios(f)].compactMap { $0 }.prefix(2)
-        let summary = parts.dropFirst().reduce(parts.first) { sum, next in sum.map { Text("\($0), \(next)") } }
-        let options: [FilterDoor.Option] = [
-            .init(id: "genre", symbol: "theatermasks", title: Text("Género")),
-            .init(id: "rating", symbol: "star", title: Text("Calificación")),
-            .init(id: "era", symbol: "calendar", title: Text("Época")),
-            .init(id: "length", symbol: "clock", title: Text("Duración")),
-            .init(id: "where", symbol: "play.tv", title: Text("Dónde verla")),
-            .init(id: "fame", symbol: "sparkles", title: Text("Qué tan conocida")),
-        ]
-        return FilterDoor(options: options, active: f.activeCount, summary: summary) { id in
-            filterStart = FilterPage(door: id)
+        let context = FilterContext(filter: model.filter, platforms: model.platforms, language: env.services.appSettings.uiLanguage)
+        return FilterDoor(context: context, total: model.total) { page in
+            filterStart = page
             showFilter = true
         }
         .padding(.horizontal, DS.Space.gutter)

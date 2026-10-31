@@ -9,6 +9,7 @@ public final class AdvancedFilterModel: ObservableModel {
         didSet {
             guard filter != oldValue else { return }
             services.kv.set(Self.savedKey, data: try? JSONEncoder().encode(filter))
+            if total != nil, filter.withoutClock != oldValue.withoutClock { total = nil }   // ya es otra búsqueda: el número viejo no aplica
             changed()
         }
     }
@@ -16,6 +17,14 @@ public final class AdvancedFilterModel: ObservableModel {
     public struct Platform: Sendable, Equatable, Identifiable { public var brand: String; public var name: String; public var id: Int; public var logo: String? }
     public private(set) var platforms: [Platform] = [] { didSet { changed() } }
     static let savedKey = "advanced-filter"
+    static let totalKey = "advanced-filter.total"
+    /// Cuántos títulos encontró la última búsqueda con este mismo filtro (la puerta de Buscar lo dice); nil: aún no se busca.
+    public private(set) var total: Int? {
+        didSet {
+            services.kv.set(Self.totalKey, data: total.map { Data(String($0).utf8) })
+            changed()
+        }
+    }
     private let watchedSource: (@MainActor () async -> Set<String>)?
     private var watched: Set<String> = []
     public private(set) var results: [Suggestion] = [] { didSet { changed() } }
@@ -36,6 +45,7 @@ public final class AdvancedFilterModel: ObservableModel {
             saved.today = fresh.today; saved.currentYear = fresh.currentYear   // lo guardado no trae el día de hoy viejo
             filter = saved
         }
+        total = services.kv.data(Self.totalKey).flatMap { Int(String(decoding: $0, as: UTF8.self)) }
     }
 
     /// Las plataformas que hay en tu país (una vez; ForYou las recuerda). También pone tu país en el filtro.
@@ -74,8 +84,16 @@ public final class AdvancedFilterModel: ObservableModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            let rows = try await services.tmdb.discover(asked, page: page + 1)
+            // Premios: sus ganadores, que vienen con la app (una sola «página»).
+            if !asked.awards.isEmpty {
+                let hidden = asked.hideWatched ? watched : []
+                results = asked.awardWinners(hiding: hidden)
+                total = results.count; page = 1; exhausted = true
+                return
+            }
+            let (rows, count) = try await services.tmdb.discoverCounting(asked, page: page + 1)
             guard asked == filter else { return }   // cambiaste el filtro mientras llegaba: se descarta
+            if page == 0 { total = count }
             page += 1
             if rows.isEmpty { exhausted = true; return }
             let found = await ForYou.suggestions(rows, reason: .popular, tmdb: services.tmdb)
@@ -91,6 +109,9 @@ public final class AdvancedFilterModel: ObservableModel {
     public func clear() {
         var fresh = AdvancedFilter()
         fresh.region = filter.region; fresh.hideWatched = filter.hideWatched; fresh.sort = filter.sort   // tus preferencias se quedan
-        filter = fresh; results = []; searched = nil
+        filter = fresh; results = []; searched = nil; total = nil
     }
+
+    /// La hora de ahora en el filtro (al elegir «Que acabe antes de las…»), para que la cuenta de lo que cabe sea de hoy.
+    public func refreshClock() { filter.nowMinute = AdvancedFilter.minuteOfDay(Date()) }
 }

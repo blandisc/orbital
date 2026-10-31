@@ -110,4 +110,61 @@ final class AdvancedFilterTests: XCTestCase {
         f.currentYear = 2026; f.years = 2026...2026
         XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.gte"], "30", "lo de este año aún tiene pocos votos")
     }
+
+    func testQueAcabeAntesDeUnaHora() {
+        var f = AdvancedFilter()
+        f.length = .before; f.endsBy = 23.5; f.nowMinute = 21 * 60
+        XCTAssertEqual(f.minutesLeft, 150)
+        XCTAssertEqual(dict(f.params(kind: "movie"))["with_runtime.lte"], "150")
+        f.endsBy = 1; f.nowMinute = 23 * 60
+        XCTAssertEqual(f.minutesLeft, 120, "la 1 am después de las 11 pm es la de mañana")
+        f.nowMinute = 99
+        XCTAssertNotEqual(f, f.withoutClock)
+        XCTAssertEqual(f.withoutClock, { var g = f; g.nowMinute = 5; return g.withoutClock }(), "la hora no cambia la búsqueda")
+    }
+
+    func testRepartidoPorDecadas() async throws {
+        var f = AdvancedFilter()
+        f.currentYear = 2026; f.years = 1985...2004
+        XCTAssertEqual(f.decades, [1985...1989, 1990...1999, 2000...2004])
+        f.years = nil
+        XCTAssertEqual(f.decades.first, 1950...1959)
+        XCTAssertEqual(f.decades.last, 2020...2026)
+        f.spread = true; f.format = .movie; f.years = 1990...2009
+        XCTAssertEqual(f.activeCount, 2)
+        let http = FakeHTTP()
+        let tmdb = Tmdb(http: http, key: "K")
+        http.prefix["https://api.themoviedb.org/3/discover/movie"] = ["results": .array([["id": .int(7)]]), "total_results": .int(40)]
+        let found = try await tmdb.discoverCounting(f)
+        XCTAssertEqual(found.rows.count, 2, "una búsqueda por década")
+        XCTAssertEqual(found.total, 80)
+        XCTAssertEqual(dict(f.params(kind: "movie", years: 1990...1999))["primary_release_date.lte"], "1999-12-31")
+    }
+
+    func testPremiosSonSusGanadores() {
+        var f = AdvancedFilter()
+        f.awards = ["oscar"]
+        XCTAssertEqual(f.activeCount, 1)
+        let all = f.awardWinners()
+        XCTAssertFalse(all.isEmpty)
+        XCTAssertTrue(all.allSatisfy { $0.kind == "movie" })
+        f.years = 2010...2019
+        XCTAssertTrue(f.awardWinners().allSatisfy { (2010...2019).contains($0.year ?? 0) })
+        f.format = .series
+        XCTAssertTrue(f.awardWinners().isEmpty, "el Óscar no tiene series")
+        f.format = .all; f.awards = ["emmy"]; f.years = nil
+        XCTAssertTrue(f.awardWinners().allSatisfy { $0.kind == "series" })
+        let first = f.awardWinners()[0].imdb
+        XCTAssertFalse(f.awardWinners(hiding: [first]).contains { $0.imdb == first }, "lo que ya viste no sale")
+    }
+
+    func testLoGuardadoDeAntesSeLeeIgual() throws {
+        let old = #"{"format":"movie","seriesStatus":"any","genres":["terror"],"excluded":[],"length":"short","fame":"any","countries":[],"studios":[],"providers":[],"region":"MX","hideWatched":true,"sort":"popular"}"#
+        let f = try JSONDecoder().decode(AdvancedFilter.self, from: Data(old.utf8))
+        XCTAssertEqual(f.format, .movie); XCTAssertEqual(f.genres, ["terror"]); XCTAssertEqual(f.length, .short)
+        XCTAssertTrue(f.awards.isEmpty); XCTAssertFalse(f.spread)
+        var g = f; g.awards = ["palm"]; g.spread = true; g.years = 1990...1999
+        let back = try JSONDecoder().decode(AdvancedFilter.self, from: JSONEncoder().encode(g))
+        XCTAssertEqual(back.withoutClock, g.withoutClock)
+    }
 }
