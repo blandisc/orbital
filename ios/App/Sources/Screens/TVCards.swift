@@ -15,6 +15,8 @@ struct NowPlayingCard: View {
     var framed = true
     /// Los sustos de la película (si hay mapa): marcados en la barra de avance.
     var scares: [JumpScare] = []
+    /// En el control: el póster y el nombre viajan a su lugar en el control estirado (el mismo espacio de nombres).
+    var morph: Namespace.ID? = nil
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tap = 0
 
@@ -24,6 +26,7 @@ struct NowPlayingCard: View {
                 .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
+                    .remoteMorph("poster", in: morph)
                 info
                 Spacer(minLength: 0)
             }
@@ -43,6 +46,7 @@ struct NowPlayingCard: View {
                 }
             }
             Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
+                .remoteMorph("title", in: morph)
             if now.live {
                 if let category = now.category, !category.isEmpty {
                     Text(category).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
@@ -188,3 +192,11 @@ struct FromTVCard: View {
     }
 }
 
+
+extension View {
+    /// Una pieza que el control tiene en sus dos alturas (póster, nombre, la voz): al estirarlo o encogerlo se desliza a su
+    /// nuevo lugar en vez de desaparecer y volver a aparecer. Sin espacio de nombres, nada.
+    @ViewBuilder func remoteMorph(_ id: String, in namespace: Namespace.ID?) -> some View {
+        if let namespace { matchedGeometryEffect(id: id, in: namespace) } else { self }
+    }
+}

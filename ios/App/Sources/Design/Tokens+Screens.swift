@@ -169,6 +169,8 @@ extension DS {
     /// del arrastre y qué tan rápido aparece), cómo se ven las de atrás, el giro, cuánto hay que arrastrar para que vuele y el
     /// alto de un ánimo.
     enum Match {
+        /// Cuántas cartas de las que siguen se piden de antemano.
+        static let prefetch = 6
         static let hintFrom = 0.15, hintRamp = 3.0
         static let behindShrink: CGFloat = 0.05, behindDrop: CGFloat = 14, tiltDivisor = 22.0
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220)
@@ -185,6 +187,8 @@ extension DS {
     /// de la pantalla, las barras, el cuadrito del mapa, los géneros y las historias (cuánto dura cada una, el alto de sus
     /// barritas de avance y el póster grande).
     enum Watching {
+        /// De qué escala parte el detalle de un día del mapa al asomarse.
+        static let dayFrom: CGFloat = 0.97
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3
@@ -228,14 +232,14 @@ extension DS {
         static let unseenDim: Double = -0.35, favoriteLine: CGFloat = 3
         static let momentPoster: CGFloat = 150, nextPoster: CGFloat = 40, quickHeight: CGFloat = 310
         /// El momento de ponerla en la repisa: el velo del fondo y cuánto se queda antes de irse solo.
-        static let momentVeil = 0.72, momentHold: Duration = .seconds(3)
+        static let momentVeil = 0.72, momentHold: Duration = .seconds(2.4)
         /// El ritual de «Ya la vi» (`ShelfMoment`): el fondo desenfocado, de dónde baja el póster y su escala al bajar, el
         /// destello (su brillo, ancho e inclinación), la estatuilla (tamaño, de qué escala parte, su brillo), la barra, y los
         /// tiempos (cada paso, lo que tarda en revelarse y el resorte de la caída).
         static let momentBlur: CGFloat = 30, momentBackdrop = 0.55, momentDrop: CGFloat = 60, momentLift: CGFloat = 1.06
         static let momentShine = 0.55, momentShineWidth: CGFloat = 0.45, momentShineTilt: Double = 18
         static let momentEmblem: CGFloat = 56, momentEmblemStart: CGFloat = 0.9, momentGlow = 0.6, momentBar: CGFloat = 120
-        static let momentBeat: Duration = .milliseconds(350), momentReveal = 0.7, momentSpring = 0.45, momentBounce = 0.6
+        static let momentBeat: Duration = .milliseconds(200), momentReveal = 0.4, momentSpring = 0.32, momentBounce = 0.6   // más cortos (Fernando, 31 oct 2026): de ~1,4 s a ~0,8 s hasta «Completaste»
     }
 
     /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,
@@ -565,5 +569,7 @@ extension DS {
         static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
         static let buffer = CGFloat(DesignTokens.Mosaic.bufferHeight)
         static let focusedRowRatio = DesignTokens.Mosaic.focusedRowRatio
+        /// Cuánto hay que deslizar de lado para regresar a Explorar.
+        static let swipeBack: CGFloat = 80
     }
 }

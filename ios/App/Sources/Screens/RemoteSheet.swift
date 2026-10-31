@@ -48,6 +48,8 @@ struct RemoteSheet: View {
     @State private var showsScares = false
     /// En el reproductor o la TV en vivo, el pad va plegado (lo de arriba es lo que se usa); se abre a mano.
     @State private var showsPad = false
+    /// El póster, el nombre y la voz son los mismos en las dos alturas: viajan de un lugar al otro (`remoteMorph`).
+    @Namespace private var morph
     @Environment(AppEnvironment.self) private var env
 
     var body: some View {
@@ -67,7 +69,9 @@ struct RemoteSheet: View {
                         if !large { measuredCompact = min(height + DS.Space.sheetTop + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
                     }
                 // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
-                if large { full(model).transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Space.s6)), removal: .opacity)) }
+                // Lo completo se funde en su lugar (la voz, que ya estaba, se desliza a su sitio: `remoteMorph`). Antes subía
+                // desde abajo mientras lo de arriba cambiaba de forma, y parecía que todo desaparecía y volvía.
+                if large { full(model).transition(.opacity) }
                 else {
                     Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
                         .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
@@ -237,8 +241,10 @@ struct RemoteSheet: View {
             // Estirada: lo que se ve en la TV en un renglón (póster, nombre y pausa); el resto del alto es para el control.
             HStack(spacing: DS.Space.s3) {
                 PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Size.thumbSmall)
+                    .remoteMorph("poster", in: morph)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
+                        .remoteMorph("title", in: morph)
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
                 }
                 Spacer(minLength: DS.Space.s2)
@@ -255,13 +261,14 @@ struct RemoteSheet: View {
                     }
                 }
             }
+            .transition(.opacity)   // lo que no viaja (la pausa, «En la TV») se funde en su lugar
         } else if let now = model.now {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 NowPlayingCard(now: now, fetchedAt: model.fetchedAt, busy: model.busy,
                                onAction: { action, delta in Task { await model.control(action, delta: delta) } },
-                               onContinueHere: { onContinueHere(now) }, framed: false, scares: model.scares ?? [])
+                               onContinueHere: { onContinueHere(now) }, framed: false, scares: model.scares ?? [], morph: morph)
                 // La voz, a la vista en la hoja corta (antes solo al estirarla).
-                voice(model)
+                voice(model).remoteMorph("voice", in: morph)
                 // Una película con mapa de sustos: un toque lo abre aquí mismo (la línea de tiempo, el siguiente y el aviso).
                 if let scares = model.scares {
                     if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(Self.reveal) }
@@ -275,6 +282,7 @@ struct RemoteSheet: View {
                     .accessibilityIdentifier("remote-scares")
                 }
             }
+            .transition(.opacity)
         } else if model.tokenProblem {
             // La TV ya no reconoce este iPhone (cambió su token): sin esto el control quedaba muerto sin decir por qué.
             VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -332,7 +340,7 @@ struct RemoteSheet: View {
     @ViewBuilder private func full(_ model: TVNowModel) -> some View {
         VStack(spacing: DS.Space.s4) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
-            voice(model)
+            voice(model).remoteMorph("voice", in: morph)
             switch model.context {
             // Reproduciendo o en vivo, el pad no se suma abajo (no cabía y repetía pausa, ±10, volumen, pistas y salir):
             // reemplaza lo de arriba cuando hace falta moverse por un panel de la TV (episodios, fuentes, la guía).

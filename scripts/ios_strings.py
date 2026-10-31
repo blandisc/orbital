@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Pedidos del 31 oct (tarde): «No recomendar por esta», búsqueda avanzada, géneros nuevos.
+    "Regresar a Explorar": "Back to Explore", "Limpiar la búsqueda avanzada": "Clear advanced search", "Sin escribir nombres: encuentra por género, época, calificación, premios y más": "No names needed: find by genre, era, rating, awards and more", "%@ o %@": "%@ or %@", "Salen las que tengan cualquiera de estos géneros, no solo las que tengan todos.": "Shows titles with any of these genres, not only those with all of them.", "Historia": "History", "Bélica": "War", "Western": "Western", "Musical": "Musical", "No recomendar por esta": "Don't recommend based on this", "Ya no recomiendo por esta": "No more picks based on this",
     "Lo mínimo que quieres": "The minimum you want", "o más · TMDB": "or more · TMDB",
     "Mejor calificada": "Better rated", "Ocultar lo que ya viste": "Hide what you've watched", "Toca una esquina del cuadro": "Tap a corner of the grid",
     # Pulido del 31 oct: el cajón del filtro, el mazo con «Tu match perfecto» y el menú de la temporada.
