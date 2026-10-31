@@ -40,7 +40,6 @@
 /* Inicio, Juegos y Para ti (main.js · slideView): la misma entrada de lado que las filas. */
 .view--from-right { animation: section-in-right var(--duration-enter) var(--ease-out); }
 .view--from-left { animation: section-in-left var(--duration-enter) var(--ease-out); }
-.shelf__empty { max-width: 32rem; padding-top: var(--space-2); color: var(--color-text-muted); line-height: var(--leading-relaxed); }
 
 /* Destacados (carrusel): un punto por pieza junto al título; el actual, alargado (como PageDots del iPhone). */
 .shelf__dots { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: var(--space-3); }
@@ -68,7 +67,7 @@
 .shelf__stage-art > .art-fit { position: absolute; inset: 0; } /* el nuevo título entra encima del anterior */
 /* Una sombra de abajo y de lado: el logo y los puntos se leen sobre cualquier arte. */
 .shelf__stage::after { content: ""; position: absolute; inset: 0; z-index: var(--z-behind); border-radius: inherit;
-  background: linear-gradient(0deg, var(--color-scrim), transparent 60%), linear-gradient(90deg, var(--color-scrim), transparent 70%); }
+  background: var(--veil-corner); }
 /* El título de lo que viste: su logo (el mismo recortado que usa el héroe) o, sin él, su nombre en grande y en negrita. */
 .shelf__stage-logo { align-self: flex-start; max-width: 70%; max-height: 5rem; width: auto; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .shelf__stage-logo[hidden] { display: none; }

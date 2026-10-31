@@ -151,8 +151,14 @@
   --assistant-accent: #3cc8f4; /* Alexa: el anillo azul cuando acaba de escucharte */
   --system-default: var(--palette-ink-300);
 
-  --gradient-tile-shade: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%,
+  /* Los velos bajo un texto sobre el arte (Veil, como ArtVeil del iPhone): uno por lado, y nunca un degradado a mano. */
+  --veil-bottom: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%,
     color-mix(in oklab, var(--palette-ink-1000) 50%, transparent) 45%, transparent 78%);
+  --veil-leading: linear-gradient(90deg, color-mix(in oklab, var(--color-art-shade) 88%, transparent) 0%,
+    color-mix(in oklab, var(--color-art-shade) 55%, transparent) 42%, transparent 78%);
+  --veil-top: linear-gradient(180deg, color-mix(in oklab, var(--palette-ink-1000) 70%, transparent) 0%, transparent 40%);
+  --veil-bottom-soft: linear-gradient(0deg, var(--color-scrim) 30%, transparent); /* la mitad de abajo de una tarjeta chica */
+  --veil-corner: linear-gradient(0deg, var(--color-scrim), transparent 60%), linear-gradient(90deg, var(--color-scrim), transparent 70%);
   --shadow-card: 0 .5rem 1.4rem rgba(0, 0, 0, .35);
   --shadow-lifted: 0 1.1rem 2.4rem rgba(0, 0, 0, .55);
   --shadow-overlay: 0 1.5rem 4rem rgba(0, 0, 0, .55);

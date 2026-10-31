@@ -6,7 +6,7 @@
 .tile--feature { min-height: 0; background: var(--color-surface); container-type: size; isolation: isolate; }
 /* Esquinas limpias: el arte (que se acerca al enfocar) y su sombra curvan igual que la tarjeta, y la orilla fina va encima.
    Antes, en Edge, la capa del arte a veces se salía del recorte redondeado y dejaba una sombra en las esquinas. */
-.tile--feature > .tile__art, .tile--feature > .tile__shade { border-radius: inherit; }
+.tile--feature > .tile__art { border-radius: inherit; }
 .tile--feature-video > .tile__art { --art-fit-y: 25%; --art-fit-pad: var(--inset-feature); } /* película o serie, ancha y bajita: el recorte se toma arriba
    (donde van las caras), como la ficha; del centro salía la barbilla. Los juegos no: su arte va pensado al centro. */
 .tile--feature::after {
@@ -34,11 +34,6 @@
 .tile--feature.tile--focused .tile--feature__logo, .tile--feature.tile--focused .tile--feature__title { transform: var(--pop-transform); }
 .tile--feature.tile--focused > .tile__art { transform: var(--pop-zoom); }
 .tile--feature.tile--focused .tile__case-box { transform: var(--pop-transform); }
-.tile--feature__shade {
-  background:
-    linear-gradient(90deg, color-mix(in oklab, var(--color-art-shade) 88%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 55%, transparent) 42%, transparent 78%),
-    var(--gradient-tile-shade);
-}
 .tile--feature__body {
   position: absolute; inset: auto 0 0 0; z-index: var(--z-raised); max-height: 100%;
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3);

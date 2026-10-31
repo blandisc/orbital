@@ -4,7 +4,7 @@ import { keepInView } from "./browse.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
-import { Chip, CornerRibbon, Pill } from "./ui.js";
+import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -43,7 +43,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   const tabsEl = h("div", { class: "list-screen__tabs", role: "tablist" });
   const grid = h("div", { class: ["card-grid", "list-screen__grid"], role: "group" });
   const viewport = h("div", { class: "list-screen__viewport" }, grid);
-  const status = h("p", { class: "list-screen__status" });
+  const status = h("div", { class: "list-screen__status" });
   const about = h("div", { hidden: true }); // una persona: su foto y su biografía (PersonHead)
   const el = h("section", { class: "list-screen screen", hidden: true, "aria-label": "Lista" },
     h("header", { class: "list-screen__head" }, media, h("span", { class: "list-screen__heading" }, title, meta), chips),
@@ -128,11 +128,12 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
 
   function paintGrid() {
     const items = loaded.get(tab);
-    status.hidden = !!items?.length && !!shown.length;
-    if (!items) status.textContent = "Cargando…";
-    else if (!items.length) status.textContent = "Esta lista está vacía por ahora.";
-    else if (!shown.length) status.textContent = "Nada con esos filtros. Cámbialos con ☰.";
-    mount(grid, shown.map((item, i) => {
+    // Cargando: la forma de la cuadrícula (esqueleto); vacía o sin nada con esos filtros: su estado vacío.
+    status.hidden = !items || (!!items.length && !!shown.length);
+    if (items && !items.length) mount(status, EmptyState({ icon: "list", title: "Esta lista está vacía por ahora" }));
+    else if (items && !shown.length) mount(status, EmptyState({ icon: "list", title: "Nada con esos filtros", text: "Cámbialos con ☰." }));
+    if (!items) mount(grid, PosterSkeletons(12));
+    else mount(grid, shown.map((item, i) => {
       const options = { caption: true, onPress: () => { zone = "grid"; index = i; paintFocus(); onPick?.(item); } };
       const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
       built.card.dataset.focusId = `item:${i}`;

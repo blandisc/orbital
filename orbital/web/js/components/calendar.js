@@ -1,6 +1,6 @@
 import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
 import { sized } from "../core/images.js";
-import { ScreenHead } from "./ui.js";
+import { EmptyState, ScreenHead } from "./ui.js";
 
 // Del tamaño en que se ven (core/images.js): una casilla del mes (~1/7 de la pantalla) y el póster chico de la lista.
 const CELL_PX = 240;
@@ -87,7 +87,7 @@ export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange
     h("span", { class: "calendar__show-text" },
       h("strong", { class: "calendar__show-title" }, s.title),
       h("span", { class: "calendar__show-meta" }, [s.episode_label, s.time, s.network].filter(Boolean).join(" · ")))))
-      : h("p", { class: "calendar__empty" }, c.iso < today ? "Ese día no salió nada de lo que sigues." : "Ese día no sale nada de lo que sigues."));
+      : EmptyState({ icon: "calendar", title: "Nada este día", text: c.iso < today ? "Ese día no salió nada de lo que sigues." : "Ese día no sale nada de lo que sigues." }));
   }
 
   function paint() {

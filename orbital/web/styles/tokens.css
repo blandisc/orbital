@@ -206,6 +206,9 @@
   --ribbon-length: 8rem; /* su largo, de orilla a orilla en diagonal */
   --ribbon-center: 1.7rem; /* qué tan adentro de la esquina pasa su centro */
   --tab-mark: .14rem; /* la rayita bajo la pestaña de texto elegida (DSTextTabs) */
+  /* Los espacios de una pantalla (DS.Layout del iPhone, design/tokens.json › layout). En la TV solo existe el del título a lo
+     suyo: entre filas y secciones manda el alto fijo de cada fila (la pantalla es la medida, no hay pila que crezca). */
+  --layout-title-to-content: var(--space-3);
   --icon-xl: 1.8rem;
   /* Grosor del trazo de un ícono (viewBox 24): fino por omisión; más grueso en lo chico (una palomita, la marca de una plataforma). */
   --stroke-fine: 1.75;

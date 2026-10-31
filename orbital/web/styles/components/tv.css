@@ -70,8 +70,5 @@
 /* Sin canales (buscando, sin Internet…): el mensaje al centro, sin tapar las píldoras. */
 .tv__notice { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .tv__notice:empty { display: none; }
-.tv__message {
-  display: grid; justify-items: center; gap: var(--space-2); max-width: 34rem; padding: 0 var(--space-6); text-align: center;
-  color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); animation: fade-in var(--duration-enter) var(--ease-out);
-}
-.tv__message-title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
+/* Sin canales: el estado vacío (EmptyState), al centro de la vista. */
+.tv__message { justify-items: center; padding-inline: var(--space-6); text-align: center; animation: fade-in var(--duration-enter) var(--ease-out); }

@@ -6,7 +6,7 @@ import { sized } from "../core/images.js";
 import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
 import { ArtFit } from "./art-fit.js";
 import { Button } from "./button.js";
-import { Badge, PlatformMark, Progress } from "./ui.js";
+import { Badge, PlatformMark, Progress, Veil } from "./ui.js";
 
 /**
  * Tiles del sistema de diseño: piezas grandes y enfocables de las pantallas nuevas (Inicio y las
@@ -108,7 +108,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
   return tile(focusId, ["tile--feature", isWatchable(item) && "tile--feature-video", boxed && "tile--feature-case", !boxed && item.extra?.placeholder_hero && "tile--placeholder",
     !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     boxed ? caseArt(item) : featureArt(item),
-    h("span", { class: "tile__shade tile--feature__shade" }),
+    Veil("leading", "bottom"),
     platform(item, ["tile__platform--pill", "tile--feature__store"]),
     h("div", { class: "tile--feature__body" },
       eyebrow && eyebrowOf(item, runningId) && h("span", { class: "tile--feature__eyebrow" }, eyebrowOf(item, runningId)),

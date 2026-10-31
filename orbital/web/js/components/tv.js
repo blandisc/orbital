@@ -8,7 +8,7 @@ import { clock } from "../core/format.js";
 import { sized } from "../core/images.js";
 import { airingLine, ALL, nextLine, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay } from "./browse.js";
-import { Badge, Chip } from "./ui.js";
+import { Badge, Chip, EmptyState } from "./ui.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
 const TYPE_MS = 1300; // tecleando un número: lo que se espera al siguiente dígito antes de sintonizar
@@ -113,7 +113,7 @@ export function createTv({ onFocus, onPick }) {
     renderCats();
     mount(grid, channels.map(tile));
     const empty = emptyState(data, { loading, error });
-    mount(notice, empty && h("div", { class: "tv__message" }, h("strong", { class: "tv__message-title" }, empty.title), empty.text));
+    mount(notice, empty && EmptyState({ icon: "tv", title: empty.title, text: empty.text, className: "tv__message" }));
     main.hidden = cats.hidden = !!empty;
     if (focusId.startsWith("cat:")) focusId = `cat:${list.findIndex((c) => c.id === category)}`;
     else {

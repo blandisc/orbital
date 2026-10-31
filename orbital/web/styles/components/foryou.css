@@ -6,7 +6,8 @@
 
 .foryou__notice { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .foryou__notice:empty { display: none; }
-.foryou__message { max-width: 34rem; padding: 0 var(--space-6); text-align: center; color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }
+/* El estado vacío de Explorar (EmptyState) y «Buscando qué recomendarte…», al centro. */
+.foryou__message { justify-items: center; max-width: 34rem; padding: 0 var(--space-6); text-align: center; color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }
 .foryou__message--waiting { animation: fade-in var(--duration-enter) var(--ease-out); }
 
 /* Protector de pantalla (main.js · saver): el mosaico a pantalla completa y solo la hora; nada de botones ni leyendas. */

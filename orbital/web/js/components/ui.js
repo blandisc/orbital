@@ -19,6 +19,26 @@ export const PlatformMark = (src, fallback = null) => (src ? h("img", { class: "
 export const Badge = (text, { className = null, large = false, plate = false } = {}) =>
   h("span", { class: ["badge", large && "badge--lg", plate && "badge--plate", className] }, text);
 
+/**
+ * El velo bajo un texto que va sobre el arte (como ArtVeil del iPhone): una sola receta por lado, nunca un degradado a
+ * mano. `sides`: "bottom" (de abajo), "leading" (del lado del texto), "top"; juntos se suman. Va dentro de la pieza (posición
+ * relativa) y debajo de su texto.
+ */
+export const Veil = (...sides) => h("span", { class: ["veil", ...sides.map((s) => `veil--${s}`)], "aria-hidden": "true" });
+
+/** Algo que no tiene nada (como DSEmptyState): su ícono, un título y una línea que dice qué hacer. Sin botones propios:
+ *  lo que se puede hacer va en el pie o en ☰. */
+export const EmptyState = ({ icon = null, title, text = null, className = null }) =>
+  h("div", { class: ["empty-state", className], role: "status" },
+    icon && ICONS[icon] && h("span", { class: "empty-state__icon", "aria-hidden": "true" }, svg(ICONS[icon])),
+    h("strong", { class: "empty-state__title" }, title),
+    text && h("p", { class: "empty-state__text" }, text));
+
+/** Lo que todavía carga, con la forma de lo que va a llegar (como FeedSkeleton): N casillas del tamaño de un póster. Quietas:
+ *  nada se anima mientras se espera (Orbital no gasta). */
+export const PosterSkeletons = (count = 8, { className = null } = {}) =>
+  Array.from({ length: count }, () => h("span", { class: ["skeleton", "skeleton--poster", className], "aria-hidden": "true" }));
+
 /** «Nuevo» sobre un póster: el listón en diagonal de la esquina (como DSCornerRibbon del iPhone). Va dentro de la pieza
  *  que lo lleva (posición relativa); «HOY» sigue siendo una insignia. */
 export const CornerRibbon = (text = "Nuevo", { className = null } = {}) =>

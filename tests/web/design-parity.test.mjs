@@ -106,6 +106,22 @@ test("espacios, radios y duraciones: los mismos números", () => {
   }
 });
 
+test("los espacios de una pantalla valen lo mismo (DS.Layout), o la TV dice por qué no los usa", () => {
+  const swiftDS = read("ios", "App", "Sources", "Design", "Tokens.swift");
+  const layout = swiftDS.match(/enum Layout \{([\s\S]*?)\n    \}/)?.[1] ?? "";
+  const iosValue = (name) => {
+    const space = layout.match(new RegExp(`\\b${name} = Space\\.s(\\d+)`))?.[1];
+    assert.ok(space, `DS.Layout no tiene «${name}»`);
+    return TOKENS.space[space];
+  };
+  for (const [name, spec] of entries(TOKENS.layout)) {
+    assert.equal(iosValue(spec.ios), spec.value, `iPhone DS.Layout.${spec.ios}`);
+    // La TV la define como un espacio de la escala (var(--space-N)): su valor es el de ese espacio.
+    if (spec.tv) assert.equal(rem(tv[spec.tv]?.match(/var\((--space-\d+)\)/)?.[1] ?? spec.tv), spec.value, `TV ${spec.tv}`);
+    else assert.ok(spec.porque, `${name}: si la TV no lo usa, di por qué`);
+  }
+});
+
 test("un aviso dura lo mismo en la TV y en el iPhone", () => {
   // El iPhone lo llama Timing.banner (segundos); la TV, --duration-notice (los errores duran más solo en la TV: se leen
   // desde el sillón).
