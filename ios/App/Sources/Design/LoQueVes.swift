@@ -133,7 +133,7 @@ struct WatchingZoomMap: View {
                             let chosen = day.map { calendar.isDate($0, inSameDayAs: date) } ?? false
                             RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                                 .fill(inside ? fill(minutes[date] ?? 0, most) : .clear)
-                                .overlay { if chosen { RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).strokeBorder(DS.text, lineWidth: DS.YearMap.ring) } }
+                                .dsSelectionRing(chosen, radius: DS.Radius.xs)
                                 .frame(width: DS.Watching.heatCell, height: DS.Watching.heatCell)
                                 .contentShape(Rectangle())
                                 .onTapGesture { if inside { day = chosen ? nil : date } }
@@ -167,9 +167,7 @@ struct WatchingZoomMap: View {
             HStack {
                 Text(verbatim: YearView.dayTitle(day, locale)).recipe(.cardTitle)
                 Spacer()
-                Button { self.day = nil } label: { Image(systemName: "xmark") }
-                    .buttonStyle(.glass).buttonBorderShape(.circle)
-                    .accessibilityLabel(Text("Cerrar el día"))
+                DSIconButton(symbol: "xmark", label: "Cerrar el día", size: .regular) { self.day = nil }
             }
             if plays.isEmpty {
                 Text("Ese día no viste nada.").recipe(.footnote)
@@ -247,7 +245,7 @@ struct WatchingGenres: View {
             Chart(slices) { s in
                 SectorMark(angle: .value("count", s.count), innerRadius: .ratio(DS.Watching.donutHole), angularInset: DS.Watching.donutGap)
                     .foregroundStyle(s.color).cornerRadius(DS.Radius.xs)
-                    .opacity(current == nil || current?.id == s.id ? 1 : DS.Watching.genreDim)
+                    .opacity(current == nil || current?.id == s.id ? 1 : DS.Opacity.faint)
             }
             .chartLegend(.hidden)
             .chartAngleSelection(value: $angle)

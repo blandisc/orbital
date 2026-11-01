@@ -40,13 +40,13 @@ struct StudioEmblem: View {
                     switch phase {
                     // El logo en blanco (como la TV: brightness(0) invert(1)), sin cápsula.
                     case .success(let image): image.resizable().scaledToFit().brightness(-1).colorInvert()
-                    default: nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())
+                    default: nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())   // ds-exception: va sobre el arte de la tarjeta del estudio (cápsula clara fija, letra oscura)
                     }
                 }
                 .frame(width: DS.Collections.studioLogoWidth, height: DS.Collections.studioLogoHeight)
             } else {
                 // Sin logo, el nombre en cápsula.
-                nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())
+                nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())   // ds-exception: va sobre el arte de la tarjeta del estudio
             }
         }
         .shadow(DS.Elevation.high.drop(0))
@@ -74,7 +74,7 @@ struct CollectionIconEmblem: View {
                 .frame(width: size, height: size)
                 // Un resplandor del color del fondo detrás: se lee aunque caiga sobre los pósters.
                 .background { Circle().fill(DS.bg).opacity(DS.Collections.iconBackdrop).blur(radius: DS.Collections.glow).scaleEffect(DS.Collections.iconBackdropScale) }
-                .shadow(color: glow ?? .clear, radius: DS.Collections.glow)
+                .glow(glow ?? .clear, .strong)
             if glow == nil {
                 Text(verbatim: name).recipe(.badge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
@@ -141,7 +141,7 @@ struct Reflection: ViewModifier {
     var weight: Color?
     func body(content: Content) -> some View {
         content
-            .shadow(color: (weight ?? .clear).opacity(DS.Collections.weightTint), radius: DS.Collections.weight, y: DS.Collections.weightY)
+            .shadow(DS.Elevation.floating.color((weight ?? .clear).opacity(DS.Collections.weightTint)))
             // La copia volteada va encima del mismo tamaño que el original (un `overlay` le da su ancho y alto): antes se le daban
             // 44 pt de alto y un póster, que guarda su proporción, se encogía a lo ancho (el reflejo «estrecho»). Su borde de
             // arriba se pega al de abajo del original y solo se ve una franja que se desvanece.

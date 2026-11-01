@@ -45,24 +45,10 @@ struct EpisodePickerSheet: View {
 
     private func episodes(_ seasons: [Season]) -> [Episode] { seasons.first { $0.season == season }?.episodes ?? [] }
 
+    /// Las temporadas en cápsulas «T1, T2…» (la misma pieza que la ficha y Mi media).
     private func seasonPicker(_ seasons: [Season]) -> some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: DS.Space.s2) {
-                ForEach(seasons) { s in
-                    Button { season = s.season } label: {
-                        Text("T\(s.season)").font(DS.TextRecipe.label.font)
-                            .foregroundStyle(s.season == season ? DS.onPrimary : DS.text)
-                            .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
-                            .background(s.season == season ? DS.primary : DS.fill, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Temporada \(s.season)"))
-                    .accessibilityAddTraits(s.season == season ? .isSelected : [])
-                }
-            }
+        DSSeasonPicker(seasons: seasons.map(\.season), selection: Binding(get: { season ?? seasons.first?.season ?? 1 }, set: { season = $0 }))
             .padding(.vertical, DS.Space.s2)
-        }
-        .scrollIndicators(.hidden)
     }
 
     private func row(_ seasons: [Season], _ episode: Episode) -> some View {
@@ -82,7 +68,7 @@ struct EpisodePickerSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .listRowBackground(current ? DS.live.opacity(DesignTokens.Opacity.fill) : Color.clear)
+        .listRowBackground(current ? DS.live.opacity(DS.Opacity.selectedFill) : Color.clear)
         .accessibilityHint(Text("Ponerlo en la TV"))
         .accessibilityIdentifier("episode-\(episode.id)")
     }

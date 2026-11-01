@@ -55,26 +55,26 @@ struct RemoteSheet: View {
     var body: some View {
         let model = tvNow.model
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 if let close {
-                    HStack {
-                        Text("Control de la TV").recipe(.section)
-                        Spacer(minLength: DS.Space.s2)
-                        DSIconButton(symbol: "xmark", label: "Cerrar", action: close).accessibilityIdentifier("remote-panel-close")
+                    DSSheetHeader(title: Text("Control de la TV")) {
+                        DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close).accessibilityIdentifier("remote-panel-close")
                     }
                 }
-                header(model)
-                    // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                        if !large { measuredCompact = min(height + DS.Space.sheetTop + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
+                VStack(alignment: .leading, spacing: DS.Space.s5) {
+                    header(model)
+                        // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                            if !large { measuredCompact = min(height + DS.Space.sheetTop + DS.Space.s10, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() }
+                        }
+                    // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
+                    // Lo completo se funde en su lugar (la voz, que ya estaba, se desliza a su sitio: `remoteMorph`). Antes subía
+                    // desde abajo mientras lo de arriba cambiaba de forma, y parecía que todo desaparecía y volvía.
+                    if large { full(model).transition(.opacity) }
+                    else {
+                        Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
+                            .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
                     }
-                // Lo completo aparece y se va con un fundido y un leve desplazamiento (antes subía entero desde abajo).
-                // Lo completo se funde en su lugar (la voz, que ya estaba, se desliza a su sitio: `remoteMorph`). Antes subía
-                // desde abajo mientras lo de arriba cambiaba de forma, y parecía que todo desaparecía y volvía.
-                if large { full(model).transition(.opacity) }
-                else {
-                    Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
-                        .recipe(.caption, color: DS.textFaint).frame(maxWidth: .infinity)
                 }
             }
             .dsSheetContent()

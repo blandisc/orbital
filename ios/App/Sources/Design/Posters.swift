@@ -114,7 +114,7 @@ struct PosterCard: View {
     var progress: Double?
     var width: CGFloat = DS.Poster.railWidth
 
-    var body: some View { bodyContent.pointerHover(.lift) }
+    var body: some View { bodyContent.pointerHover(.lift, radius: DS.Radius.md) }   // el realce sigue la esquina del póster (D14)
     @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .topLeading) {
             PosterView(url: poster, title: title)

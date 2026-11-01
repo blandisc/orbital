@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMotion
+import os
 
 // El cielo de fondo (docs/producto/muvy-busqueda-premios/propuesta.html § Cielo): Crepúsculo de noche, Bruma lunar de día.
 // Va detrás de todas las pantallas (`Backdrop`); las tarjetas son vidrio encima.
@@ -22,8 +23,10 @@ struct SkyField: View {
         #endif
         return systemReduceMotion
     }
-    /// Solo se mueve con la app al frente (fuera de ella no gasta batería).
-    private var moving: Bool { !still && scenePhase == .active }
+    /// Solo se mueve con la app al frente y en pantalla: las otras pestañas y la pantalla debajo de una ficha también tienen
+    /// su cielo, y seguían pintando estrellas (y leyendo el giroscopio) sin que se vieran.
+    private var moving: Bool { !still && scenePhase == .active && onScreen }
+    @State private var onScreen = false
 
     var body: some View {
         let dark = scheme == .dark
@@ -33,7 +36,7 @@ struct SkyField: View {
                                startPoint: .top, endPoint: .bottom)
             }
             SkyBand().opacity(dark ? DS.Sky.bandOpacity : DS.Sky.bandOpacityLight)
-            TimelineView(SkySchedule(paused: !moving)) { context in
+            TimelineView(SkySchedule(paused: !moving, pace: tilt.pace)) { context in
                 let time = still ? 0 : context.date.timeIntervalSinceReferenceDate
                 Canvas { g, size in
                     SkyPainter(dark: dark, time: time, tilt: moving ? tilt.offset : .zero).paint(&g, size: size)
@@ -44,21 +47,25 @@ struct SkyField: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onChange(of: moving, initial: true) { _, on in on ? tilt.start() : tilt.stop() }
-        .onDisappear { tilt.stop() }
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false; tilt.stop() }
     }
 }
 
-/// Cada cuánto se pinta: el cielo es lento (pocos cuadros) y solo la estrella fugaz va fluida, el segundo que dura.
+/// Cada cuánto se pinta: quieto, muy pocos cuadros (las estrellas se deslizan décimas de punto por cuadro y no se nota);
+/// al inclinar el teléfono, más, para que las capas sigan tu mano; la estrella fugaz va fluida el segundo que dura. A 12
+/// cuadros siempre, el cielo solo costaba ~15 % de CPU con Inicio quieto (auditoría del 31 oct 2026, R3).
 private struct SkySchedule: TimelineSchedule {
     let paused: Bool
+    let pace: SkyPace
 
     func entries(from start: Date, mode: Mode) -> AnyIterator<Date> {
         var next = start
         return AnyIterator {
             guard !paused else { return nil }
             let now = next
-            let calm = mode == .lowFrequency || !SkyPainter.shooting(at: now.timeIntervalSinceReferenceDate)
-            next = now.addingTimeInterval(calm ? DS.Sky.frame : DS.Sky.shootFrame)
+            let shooting = mode != .lowFrequency && SkyPainter.shooting(at: now.timeIntervalSinceReferenceDate)
+            next = now.addingTimeInterval(shooting ? DS.Sky.shootFrame : pace.tilting ? DS.Sky.frame : DS.Sky.calmFrame)
             return now
         }
     }
@@ -184,6 +191,8 @@ private struct SkyRandom {
 @MainActor
 final class SkyTilt {
     private(set) var offset: CGPoint = .zero
+    /// Si el teléfono se está inclinando (lo lee el horario del cielo para pintar más seguido).
+    nonisolated let pace = SkyPace()
     /// Se crea al empezar, no al armar la vista (SwiftUI arma `SkyField` muchas veces y Apple pide uno solo a la vez).
     private var motion: CMMotionManager?
     private var rest: CGPoint?
@@ -201,6 +210,7 @@ final class SkyTilt {
             self.rest = rest
             func clamp(_ v: CGFloat) -> CGFloat { max(-1, min(1, v * DS.Sky.tiltGain)) }
             let target = CGPoint(x: clamp(now.x - rest.x), y: clamp(now.y - rest.y))
+            self.pace.tilting = max(abs(target.x - self.offset.x), abs(target.y - self.offset.y)) > DS.Sky.tiltStill
             self.offset = CGPoint(x: self.offset.x + (target.x - self.offset.x) * DS.Sky.tiltEase,
                                   y: self.offset.y + (target.y - self.offset.y) * DS.Sky.tiltEase)
         }
@@ -208,6 +218,16 @@ final class SkyTilt {
 
     func stop() {
         motion?.stopDeviceMotionUpdates()
-        rest = nil; offset = .zero
+        rest = nil; offset = .zero; pace.tilting = false
+    }
+}
+
+/// Si las capas se están moviendo con tu mano. Lo escribe el sensor en el hilo principal y lo lee el horario del cielo, que
+/// SwiftUI puede pedir desde otro hilo: por eso va tras un candado.
+final class SkyPace: Sendable {
+    private let state = OSAllocatedUnfairLock(initialState: false)
+    var tilting: Bool {
+        get { state.withLock { $0 } }
+        set { state.withLock { $0 = newValue } }
     }
 }

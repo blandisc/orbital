@@ -17,7 +17,7 @@ struct FilterResultsView: View {
         let _ = model.track()
         let language = env.services.appSettings.uiLanguage
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 if let total = model.total {
                     Text("\(Strings.count(total, language: language)) títulos").recipe(.section).padding(.horizontal, DS.Space.gutter)
                         .accessibilityIdentifier("filter-total")

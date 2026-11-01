@@ -25,6 +25,8 @@ struct RootView: View {
     /// La entrada de la app: solo al arrancar en frío (cada arranque arma una raíz nueva). En modo demo, solo con
     /// `-demo-splash` (las capturas no la esperan).
     @State private var splashing: Bool
+    /// Si al volver a la app hay que pedir otra vez lo de la red (no al bajar el Centro de control ni cada pocos segundos).
+    @State private var foreground = ForegroundRefresh()
     /// Ya se armó la raíz una vez en este arranque (la entrada no se repite).
     @MainActor private static var launched = false
 
@@ -142,7 +144,15 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { await env.ratings.refresh() }; Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) } }
+            if phase == .background { foreground.wentToBackground() }
+            if phase == .active {
+                let decision = foreground.becameActive(at: Date())
+                if decision != .skip {
+                    Task { await env.ratings.refresh() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }
+                    Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) }
+                }
+                if decision == .refresh { Task { await env.services.syncLibrary() } }   // al abrir ya la pide el arranque
+            }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif
@@ -164,7 +174,17 @@ struct RootView: View {
 
 extension EnvironmentValues {
     /// Abre el control de tu Orbital (el botón de la barra de Inicio); nil sin tu Orbital conectada.
-    @Entry var openRemote: (() -> Void)? = nil
+    @Entry var openRemote: RemoteOpener? = nil
+}
+
+/// El botón del control: siempre igual a otro (como `TitlePanelOpener`), para que Inicio no se vuelva a pintar entera cada
+/// vez que la raíz cambia de pestaña o regresa de una ficha.
+struct RemoteOpener: Equatable {
+    /// Lo único que cambia lo que hace: si el control abre como panel o como hoja.
+    let wide: Bool
+    let open: () -> Void
+    func callAsFunction() { open() }
+    static func == (a: Self, b: Self) -> Bool { a.wide == b.wide }
 }
 
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
@@ -204,9 +224,9 @@ struct MainTabs: View {
 
     /// Abrir el control (si hay TV configurada); aparte para que el compilador no se ahogue con el cuerpo. Como panel, el
     /// mismo botón lo cierra.
-    private var openRemoteAction: (() -> Void)? {
+    private var openRemoteAction: RemoteOpener? {
         guard tvNow.model.isConfigured else { return nil }
-        return {
+        return RemoteOpener(wide: remoteAsPanel || sizeClass == .regular) {
             if remoteAsPanel && showRemote { showRemote = false; return }
             if remoteAsPanel { panelTitle = nil }   // un solo panel a la derecha: el control reemplaza a la ficha
             remoteLarge = tvNow.model.now == nil || sizeClass == .regular; showRemote = true

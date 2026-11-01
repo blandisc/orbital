@@ -48,7 +48,7 @@ struct PlayerLockNotice: View {
                     Button(action: unlock) {
                         Text("Desbloquear").font(DS.TextRecipe.footnote.font.weight(.semibold))
                     }
-                    .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
+                    .dsPrimaryButton(size: .small)
                     .accessibilityIdentifier("player-unlock")
                 }
             }
@@ -86,7 +86,7 @@ struct UpNextCard: View {
                         if case .success(let image) = phase { image.resizable().scaledToFill() } else { DS.fill }
                     }
                     .frame(width: DS.PlayerPanel.upNextThumb, height: DS.PlayerPanel.upNextThumb / DS.Poster.stillAspect)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius / 2, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -174,7 +174,7 @@ struct PanelChip: View {
 /// Un rótulo de grupo dentro del panel («Tu idioma», «Otros», «Tamaño»).
 struct PanelGroupTitle: View {
     let title: LocalizedStringKey
-    var body: some View { Text(title).recipe(.caption, color: DS.textMuted).textCase(.uppercase).padding(.top, DS.Space.s2) }
+    var body: some View { DSGroupLabel(title: Text(title)).padding(.top, DS.Space.s2) }
 }
 
 /// Chips que se acomodan en renglones (los subtítulos de un idioma, las velocidades).
@@ -275,17 +275,17 @@ struct Toast: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let actionTitle, let action {
-                Button { action(); dismiss() } label: {
+                let button = Button { action(); dismiss() } label: {
                     HStack(spacing: DS.Space.s1) {
                         if let actionSymbol { Image(systemName: actionSymbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
                         Text(actionTitle).fontWeight(.semibold)
                     }
-                    .font(DS.TextRecipe.footnote.font).foregroundStyle(prominent ? DS.bg : DS.text)
-                    .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Toast.actionHeight)
-                    .background(prominent ? DS.solidPrimary : DS.fillStrong, in: Capsule())
-                    .contentShape(Capsule())
+                    .font(DS.TextRecipe.footnote.font)
                 }
-                .buttonStyle(.plain)
+                Group {
+                    // El principal sólido o el secundario de siempre (antes una cápsula pintada a mano, D9).
+                    if prominent { button.dsSolidPrimaryButton(shape: .capsule) } else { button.dsSecondaryButton() }
+                }
                 .fixedSize()
             }
         }

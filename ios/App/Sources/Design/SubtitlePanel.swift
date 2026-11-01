@@ -304,7 +304,7 @@ struct SubtitleDock: View {
         }
         .padding(.horizontal, DS.Space.s3)
         .padding(.bottom, open == id ? DS.Space.s3 : 0)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+        .dsCard(.row, translucent: true)
     }
 
     /// «Versión · Inglés · 1080p · 12.3 GB ›»: abre la página de versiones (por idioma o todas).
@@ -319,7 +319,7 @@ struct SubtitleDock: View {
                 }
                 .padding(.horizontal, DS.Space.s3)
                 .frame(minHeight: DS.Size.touchTarget)
-                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+                .dsCard(.row, translucent: true)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -451,16 +451,8 @@ struct SubtitleDock: View {
     }
 
     private func answer(_ title: Text, primary: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            title.font(DS.TextRecipe.label.font).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                .foregroundStyle(primary ? DS.solidPrimary : DS.onSolidPrimary)
-                .padding(.horizontal, DS.Space.s3)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                .background(primary ? DS.onSolidPrimary : .clear, in: Capsule())
-                .overlay(Capsule().strokeBorder(primary ? .clear : DS.onSolidPrimary.opacity(DesignTokens.Opacity.disabled)))
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
+        Button(action: action) { title.font(DS.TextRecipe.label.font).lineLimit(1).frame(maxWidth: .infinity) }
+            .dsOnSolidButton(primary: primary)
     }
 
     private var triedLine: some View {
@@ -475,46 +467,33 @@ struct SubtitleDock: View {
     private var doneButton: some View {
         // Chico: es una salida, no la acción del panel (antes, del tamaño de un botón principal, pesaba más que lo que cierra).
         Button(action: done) { Text("Listo").font(DS.TextRecipe.label.font) }
-            .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
+            .dsPrimaryButton(size: .small)
             .accessibilityIdentifier("subtitle-dock-done")
     }
 
     private func pill(_ title: Text, selected: Bool, unavailable: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        // Cada cápsula mide lo de su nombre (antes todas iguales: «Apagados» quedaba justo o se encogía); lo que sobra se
+        // reparte. La elegida, el principal; las demás, el secundario (antes cápsulas pintadas a mano, D9).
+        let button = Button(action: action) {
             title.font(DS.TextRecipe.label.font).lineLimit(1).fixedSize()
                 .strikethrough(unavailable && !selected)
                 .foregroundStyle(selected ? DS.onPrimary : unavailable ? DS.textFaint : DS.text)
-                // Cada cápsula mide lo de su nombre más aire a los lados (antes todas iguales: «Apagados» quedaba justo o se
-                // encogía); lo que sobra se reparte.
-                .padding(.horizontal, DS.Space.s3)
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                .background(selected ? DS.primary : DS.fill, in: Capsule())
-                .contentShape(Capsule())
+                .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
+        return Group {
+            if selected { button.dsPrimaryButton(size: .large) } else { button.dsSecondaryButton().controlSize(.large) }
+        }
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityValue(unavailable ? Text("No disponible sin conexión") : Text(verbatim: ""))
     }
 
     private func capsule(_ title: Text, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            title.font(DS.TextRecipe.label.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-                .padding(.horizontal, DS.Space.s3)
-                .frame(minHeight: DS.Size.touchTarget)
-                .background(DS.fillStrong, in: Capsule())
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(label))
+        Button(action: action) { title.font(DS.TextRecipe.label.font).lineLimit(1).fixedSize() }
+            .dsSecondaryButton().controlSize(.large)
+            .accessibilityLabel(Text(label))
     }
 
     private func stepButton(_ symbol: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .background(DS.fillStrong, in: Circle())
-        }
-        .buttonStyle(.plain).disabled(!enabled).opacity(enabled ? 1 : DesignTokens.Opacity.faint)
-        .accessibilityLabel(Text(label))
+        DSIconButton(symbol: symbol, label: label, action: action).disabled(!enabled)
     }
 }

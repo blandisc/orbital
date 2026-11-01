@@ -40,6 +40,22 @@ extension View {
     /// El botón de vidrio sin tinte (Reintentar, Conectar, una acción junto a un aviso): el secundario sobre arte o sobre una
     /// superficie de vidrio. Antes cada pantalla escribía `.buttonStyle(.glass)`.
     func dsGlassButton() -> some View { buttonStyle(.glass) }
+
+    /// Los botones dentro de un aviso pintado en el papel sólido (`DS.solidPrimary`: «¿Van a tiempo los subtítulos?»): el
+    /// principal, lleno del color de la letra del aviso; el otro, con su relleno tenue. En cápsula y a tamaño de dedo. Antes
+    /// cada aviso los pintaba a mano (D9).
+    func dsOnSolidButton(primary: Bool) -> some View { modifier(OnSolidButton(primary: primary)) }
+}
+
+private struct OnSolidButton: ViewModifier {
+    let primary: Bool
+    func body(content: Content) -> some View {
+        Group {
+            if primary { content.buttonStyle(.borderedProminent).tint(DS.onSolidPrimary).foregroundStyle(DS.solidPrimary) }
+            else { content.buttonStyle(.bordered).tint(DS.onSolidPrimary) }
+        }
+        .buttonBorderShape(.capsule).controlSize(.large)
+    }
 }
 
 /// Botones sólidos (sin vidrio) donde el vidrio no se lleva bien (lo que se gira o se deforma en 3D).

@@ -57,9 +57,9 @@ struct ParaTiView: View {
                         .id(item.imdb)
                     }
                 }
-                .onChange(of: focused == nil) { _, none in if none { env.ui.noticeLift = 0 } }
-                .onDisappear { env.ui.noticeLift = 0 }
-            case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true }).onAppear { env.ui.noticeLift = 0 }
+                .onChange(of: focused == nil) { _, none in if none, env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+                .onDisappear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+            case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true }).onAppear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
             }
         }
         // El mismo aire bajo el título que Inicio. En listas va adentro de la lista: afuera la despegaba de la orilla y iOS

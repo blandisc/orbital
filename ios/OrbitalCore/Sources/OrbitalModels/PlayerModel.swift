@@ -26,9 +26,9 @@ public final class PlayerModel: ObservableModel {
         /// La descarga del iPhone no se puede leer.
         case localFile
     }
-    public private(set) var failure: Failure? { didSet { changed() } }
+    public private(set) var failure: Failure? { didSet { if oldValue != failure { changed() } } }
 
-    public internal(set) var phase: Phase = .idle { didSet { changed() } }
+    public internal(set) var phase: Phase = .idle { didSet { if oldValue != phase { changed() } } }
     /// La búsqueda de versiones de verdad (para la órbita de «Buscando la mejor versión»): a qué complementos se les
     /// pregunta, cuántas trajo cada uno y cuántas quedaron para elegir. nil si no se buscó (tu descarga, la que elegiste).
     public struct SourceSearch: Sendable, Equatable {
@@ -46,27 +46,36 @@ public final class PlayerModel: ObservableModel {
             }
         }
     }
-    public private(set) var search: SourceSearch? { didSet { changed() } }
-    public internal(set) var snapshot = EngineSnapshot() { didSet { changed() } }
+    public private(set) var search: SourceSearch? { didSet { if oldValue != search { changed() } } }
+    /// Lo que dice el motor. La posición cambia cuatro veces por segundo: va al reloj aparte (`time`) y solo lo demás (estado,
+    /// pistas, capítulos, duración) avisa a la pantalla entera (auditoría del 31 oct 2026, A2).
+    public internal(set) var snapshot = EngineSnapshot() {
+        didSet {
+            time.update(position: snapshot.position, duration: snapshot.duration)
+            if !snapshot.sameExceptPosition(oldValue) { changed() }
+        }
+    }
+    /// La posición y la duración, para lo único que se mueve con el video: la barra de avance y sus tiempos.
+    public let time = PlayerTime()
     /// Un episodio descargado que viste hasta el final y del que el reproductor pasó solo al siguiente (para «Borrar al
     /// terminar de verlo»: el último lo atiende quien cierra el reproductor).
     public var onFinishedLocal: (@MainActor (PlayRequest) -> Void)?
     public internal(set) var request: PlayRequest? { didSet { changed() } }
-    public internal(set) var source: Source? { didSet { changed() } }
-    public internal(set) var sourceChoices: [Source] = [] { didSet { changed() } }
-    public internal(set) var upNext: UpNext? { didSet { changed() } }
-    public internal(set) var skipIntroTo: Double? { didSet { changed() } }
+    public internal(set) var source: Source? { didSet { if oldValue != source { changed() } } }
+    public internal(set) var sourceChoices: [Source] = [] { didSet { if oldValue != sourceChoices { changed() } } }
+    public internal(set) var upNext: UpNext? { didSet { if oldValue != upNext { changed() } } }
+    public internal(set) var skipIntroTo: Double? { didSet { if oldValue != skipIntroTo { changed() } } }
     /// Qué se salta con el botón: la intro o el resumen («Anteriormente en…»).
     public enum SkipKind: Sendable, Equatable { case intro, recap }
-    public internal(set) var skipKind: SkipKind = .intro { didSet { changed() } }
+    public internal(set) var skipKind: SkipKind = .intro { didSet { if oldValue != skipKind { changed() } } }
     /// Las marcas de la comunidad (IntroDB) del video que suena: intro, resumen y créditos.
-    public internal(set) var segments: SkipSegments? { didSet { changed() } }
+    public internal(set) var segments: SkipSegments? { didSet { if oldValue != segments { changed() } } }
     var segmentsFor: String?
-    public internal(set) var stillWatchingPrompt = false { didSet { changed() } }
-    public internal(set) var notice: PlayerNotice? { didSet { changed() } }
+    public internal(set) var stillWatchingPrompt = false { didSet { if oldValue != stillWatchingPrompt { changed() } } }
+    public internal(set) var notice: PlayerNotice? { didSet { if oldValue != notice { changed() } } }
     /// Sincronía de los subtítulos (s): positivo los atrasa, negativo los adelanta (como Infuse). Se recuerda por versión
     /// (`SubtitleOffsets`): al volver a esa versión de ese título, se pone sola.
-    public internal(set) var subtitleDelay: Double = 0 { didSet { changed() } }
+    public internal(set) var subtitleDelay: Double = 0 { didSet { if oldValue != subtitleDelay { changed() } } }
     public static let subtitleStep = 0.5, subtitleMaxDelay = 30.0
     public func nudgeSubtitles(by seconds: Double) { setSubtitleDelay(subtitleDelay + seconds) }
     public func resetSubtitleDelay() { setSubtitleDelay(0) }
@@ -83,7 +92,7 @@ public final class PlayerModel: ObservableModel {
         return file.isEmpty ? versionID : "\(file)|\(versionID)"
     }
     /// El ajuste que se puso solo al volver a una versión (para decir «Usamos tu ajuste de +1.5 s»).
-    public internal(set) var restoredDelay: Double? { didSet { changed() } }
+    public internal(set) var restoredDelay: Double? { didSet { if oldValue != restoredDelay { changed() } } }
     public var subtitleOffsets: SubtitleOffsets?
     /// La versión a la que ya se le puso su ajuste (las que pone el arranque solo, sin pasar por `apply`, también).
     var offsetVersionID: String?
@@ -97,9 +106,9 @@ public final class PlayerModel: ObservableModel {
     }
 
     /// Las versiones que ya probaste en este video (para no volver a las que no iban).
-    public internal(set) var triedVersionIDs: Set<String> = [] { didSet { changed() } }
+    public internal(set) var triedVersionIDs: Set<String> = [] { didSet { if oldValue != triedVersionIDs { changed() } } }
     /// Elegiste otra versión: se pregunta un momento «¿Va a tiempo?».
-    public internal(set) var askInSync = false { didSet { changed() } }
+    public internal(set) var askInSync = false { didSet { if oldValue != askInSync { changed() } } }
     public func confirmInSync() { askInSync = false; restoredDelay = nil }
     /// «Probar otra»: la siguiente del mismo idioma que no hayas probado (y se vuelve a preguntar).
     public func tryAnotherVersion() async {
@@ -110,9 +119,9 @@ public final class PlayerModel: ObservableModel {
         await selectVersion(next)
     }
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
-    public internal(set) var rate: Float = 1 { didSet { changed() } }
+    public internal(set) var rate: Float = 1 { didSet { if oldValue != rate { changed() } } }
     public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
-    public internal(set) var attempts = 0 { didSet { changed() } }
+    public internal(set) var attempts = 0 { didSet { if oldValue != attempts { changed() } } }
 
     let engine: PlayerEngine
     let finder: StreamFinder
@@ -450,30 +459,30 @@ public final class PlayerModel: ObservableModel {
     // MARK: pistas
 
     /// «Buscar en internet» (Subtítulos del reproductor): todo lo que hay en OpenSubtitles y tus complementos, por idioma.
-    public internal(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
+    public internal(set) var foundSubtitles: [SubtitleOption]? { didSet { if oldValue != foundSubtitles { changed() } } }
     /// Los sustos de la película que suena (Where's The Jump), marcados en la barra; nil: no hay mapa.
-    public internal(set) var scares: [JumpScare]? { didSet { changed() } }
+    public internal(set) var scares: [JumpScare]? { didSet { if oldValue != scares { changed() } } }
 
-    public internal(set) var searchingSubtitles = false { didSet { changed() } }
+    public internal(set) var searchingSubtitles = false { didSet { if oldValue != searchingSubtitles { changed() } } }
 
     var searchTask: Task<Void, Never>?
 
     /// No se encontró nada en la última búsqueda (o no había red).
-    public internal(set) var subtitleSearchFailed = false { didSet { changed() } }
+    public internal(set) var subtitleSearchFailed = false { didSet { if oldValue != subtitleSearchFailed { changed() } } }
     /// La última búsqueda no llegó a internet (modo avión, sin señal): solo hay los del video y los guardados con la descarga.
     public internal(set) var subtitlesOffline = false { didSet { if oldValue != subtitlesOffline { changed() } } }
 
     /// Los que ya se sumaron (no se suma dos veces el mismo).
-    public internal(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
+    public internal(set) var addedSubtitleURLs: Set<URL> = [] { didSet { if oldValue != addedSubtitleURLs { changed() } } }
 
     // MARK: versiones de subtítulos («Subtítulos» del panel)
     /// Las elecciones de «Este va bien» por serie (las pone quien arma el reproductor).
     public var subtitlePicks: SubtitlePicks?
     /// Los subtítulos de internet ya sumados al video → su pista en el motor.
-    public internal(set) var addedTracks: [URL: Int] = [:] { didSet { changed() } }
-    var pendingSubtitleURL: URL? { didSet { changed() } }
+    public internal(set) var addedTracks: [URL: Int] = [:] { didSet { if oldValue != addedTracks { changed() } } }
+    var pendingSubtitleURL: URL? { didSet { if oldValue != pendingSubtitleURL { changed() } } }
     /// La tira para probar versiones sobre el video (el idioma que se está probando); nil: no se ve.
-    public internal(set) var tryingSubtitles: String? { didSet { changed() } }
+    public internal(set) var tryingSubtitles: String? { didSet { if oldValue != tryingSubtitles { changed() } } }
 
     /// La versión que tenías antes de apagarlos (para prenderlos otra vez igual).
     var versionBeforeOff: SubtitleVersion?
@@ -500,7 +509,7 @@ public final class PlayerModel: ObservableModel {
     public internal(set) var localizedMeta: JSON?
 
     /// El siguiente episodio y su «T5 E3», calculados al abrir (para el botón «Siguiente» de los controles).
-    public private(set) var nextUp: (videoID: String, label: String)? { didSet { changed() } }
+    public private(set) var nextUp: (videoID: String, label: String)? { didSet { if oldValue?.videoID != nextUp?.videoID || oldValue?.label != nextUp?.label { changed() } } }
 
     // MARK: cierre
     /// Cierra el reproductor y guarda dónde te quedaste. Se puede llamar varias veces: solo la primera hace algo.
@@ -522,7 +531,7 @@ public final class PlayerModel: ObservableModel {
 
     // MARK: volver de segundo plano
     /// Volviendo de segundo plano: «Reconectando…» en vez de una pantalla negra, hasta que el video vuelve a avanzar.
-    public internal(set) var reconnecting = false { didSet { changed() } }
+    public internal(set) var reconnecting = false { didSet { if oldValue != reconnecting { changed() } } }
     var backgrounded = false
     var foregroundPending = false
     var backgroundPosition = 0.0

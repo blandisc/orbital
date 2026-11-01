@@ -921,7 +921,9 @@ class ForYou:
 
         entries = self.cache.get(f"critics:{service}:{name}", SLOW_TTL, load, stale=True)
         why = "Certified Fresh" if kind == "movie" else "Fresh en Rotten Tomatoes"
-        return [video_item(e, why, in_list=True) for e in entries or []]
+        # La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, de 2028): esos no son «aprobados».
+        this_year = datetime.now().year
+        return [video_item(e, why, in_list=True) for e in entries or [] if (e.get("year") or this_year) <= this_year]
 
     def _list_heading(self, list_id: str) -> dict:
         if list_id.startswith("genre:"):

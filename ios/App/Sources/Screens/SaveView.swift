@@ -20,20 +20,9 @@ struct SaveView: View {
     var body: some View {
         let m = observer.model
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                header(m).padding(.bottom, DS.Space.s2)
-                if m.traktAvailable {
-                    PanelGroupTitle(title: "Tus listas de Trakt")
-                    lists(m, reserved: reserved ?? reservedRows(m))
-                    PanelGroupTitle(title: "Principales").padding(.top, DS.Space.s2)
-                }
-                ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
-                    CheckRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),
-                             color: SaveDestinationName.tint(destination), checked: m.isSaved(in: destination)) { Task { await m.toggle(destination) } }
-                        .accessibilityIdentifier("save-fixed-\(destination.rawValue)")
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if index == 0 { rowHeight = $0 } }
-                }
-                if let message = m.message { DSNotice(verbatim: env.message(message), tone: .error) }
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                header(m)
+                VStack(alignment: .leading, spacing: DS.Space.s2) { rows(m) }
             }
             .dsSheetContent()
         }
@@ -48,23 +37,36 @@ struct SaveView: View {
         } message: { Text("Se crea en Trakt (privada) y este título entra en ella.") }
     }
 
+    /// Tus listas de Trakt y las fijas, renglón tras renglón.
+    @ViewBuilder private func rows(_ m: TitleModel) -> some View {
+        if m.traktAvailable {
+            PanelGroupTitle(title: "Tus listas de Trakt")
+            lists(m, reserved: reserved ?? reservedRows(m))
+            PanelGroupTitle(title: "Principales").padding(.top, DS.Space.s2)
+        }
+        ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
+            CheckRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),
+                     color: SaveDestinationName.tint(destination), checked: m.isSaved(in: destination)) { Task { await m.toggle(destination) } }
+                .accessibilityIdentifier("save-fixed-\(destination.rawValue)")
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if index == 0 { rowHeight = $0 } }
+        }
+        if let message = m.message { DSNotice(verbatim: env.message(message), tone: .error) }
+    }
+
     private func reservedRows(_ m: TitleModel) -> Int {
         SaveSheetPlan.reservedRows(loaded: m.lists?.count, cached: m.expectedListCount, fallback: DS.SaveSheet.fallbackRows, cap: DS.SaveSheet.visibleRows)
     }
 
     /// El título y, a la derecha (debajo con letra grande), «Nueva lista…»: siempre en el mismo lugar, aunque carguen las listas.
     private func header(_ m: TitleModel) -> some View {
-        let title = VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text("Guardar en…").recipe(.title).accessibilityAddTraits(.isHeader)
-            Text(verbatim: m.title).recipe(.footnote).lineLimit(1)
-        }
+        let title = Text("Guardar en…"), subtitle = Text(verbatim: m.title)
         let newList = Button { naming = true } label: { Label("Nueva lista…", systemImage: "plus").frame(minHeight: DS.Size.touchTarget) }
             .dsGlassButton().accessibilityIdentifier("save-new-list")
         return Group {
             if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: DS.Space.s2) { title; if m.traktAvailable { newList } }
+                VStack(alignment: .leading, spacing: DS.Space.s2) { DSSheetHeader(title: title, subtitle: subtitle); if m.traktAvailable { newList } }
             } else {
-                HStack(alignment: .center, spacing: DS.Space.s3) { title; Spacer(minLength: DS.Space.s2); if m.traktAvailable { newList } }
+                DSSheetHeader(title: title, subtitle: subtitle) { if m.traktAvailable { newList } }
             }
         }
     }
@@ -75,7 +77,7 @@ struct SaveView: View {
         let rows = SaveSheetPlan.rows(lists: m.lists, expected: reserved)
         let height = CGFloat(reserved) * rowHeight + CGFloat(max(0, reserved - 1)) * DS.Space.s2
         return ScrollView {
-            VStack(spacing: DS.Space.s2) {
+            VStack(spacing: DS.Space.s2) {   // ds-exception: renglones de una lista con alto fijo, no secciones de pantalla
                 ForEach(rows) { row in
                     switch row {
                     case .list(let list):

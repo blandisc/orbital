@@ -64,7 +64,7 @@ struct CollectionGridView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 header
                 if route.kind == .year {
                     DSKindFilter(kind: $kind, includeAll: false).padding(.horizontal, DS.Space.gutter)
@@ -83,7 +83,7 @@ struct CollectionGridView: View {
                     }
                 }
             }
-            .padding(.bottom, DS.Space.s14)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(title).navigationBarTitleDisplayMode(.inline)

@@ -388,8 +388,7 @@ struct DownloadSubtitlesSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Subtítulos").recipe(.title)
-            Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)").recipe(.footnote).lineLimit(1)
+            DSSheetHeader(title: Text("Subtítulos"), subtitle: Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)"))
             if let found {
                 if found.isEmpty {
                     DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)
@@ -409,7 +408,7 @@ struct DownloadSubtitlesSheet: View {
                     .id("\(saved.sorted { $0.key < $1.key })-\(saving ?? "")")   // que se redibuje al guardar (ver `FlowChips`)
                 }
             } else {
-                HStack(spacing: DS.Space.s2) { ProgressView(); Text("Buscando subtítulos…").recipe(.footnote) }
+                DSInlineProgress(text: Text("Buscando subtítulos…"))
             }
         }
         .padding(DS.Space.s5)
@@ -457,7 +456,7 @@ extension View {
     /// Cada renglón que se desliza para borrar es su propia tarjeta redondeada (con aire entre una y otra): al deslizar se
     /// mueve completa, con sus esquinas (con el fondo de la sección, la orilla quedaba recta, como tapada).
     func downloadCard() -> some View {
-        listRowBackground(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(DS.surface))
+        listRowBackground(Color.clear.dsCard(.card))
             .listRowSeparator(.hidden)
             .listSectionSpacing(DS.Layout.betweenSections)
     }

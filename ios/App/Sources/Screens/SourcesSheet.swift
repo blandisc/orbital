@@ -59,12 +59,7 @@ struct SourcesSheet: View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Versión").recipe(.title)
-                    (showsAll ? Text("Todas, por calidad · toca una") : Text("Por idioma y calidad · toca una")).recipe(.footnote)
-                }
-                Spacer()
+            DSSheetHeader(title: Text("Versión"), subtitle: showsAll ? Text("Todas, por calidad · toca una") : Text("Por idioma y calidad · toca una")) {
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
                 Button { showsGlossary = true } label: { Image(systemName: "info.circle").font(DS.TextRecipe.section.font) }
                     .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget, alignment: .trailing)   // el ícono al ras del margen, el toque sigue de 44
@@ -81,7 +76,7 @@ struct SourcesSheet: View {
                 .accessibilityIdentifier("sources-scope")
             }
             ScrollView {
-                VStack(spacing: DS.Space.s2) {
+                VStack(spacing: DS.Space.s2) {   // ds-exception: renglones de la lista de versiones, no secciones de pantalla
                     if model.isLoading { DSLoadingState() }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     if showsAll {
@@ -167,12 +162,10 @@ struct VersionCard: View {
     @ViewBuilder private var bodyContent: some View {
         let language = Streams.versionLanguageName(row.code, in: uiLanguage)
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    (Text("\(Text.flag(row.code))\(Text(verbatim: "\(language) · \(option.quality)"))")).recipe(.title)
-                    let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
-                    VersionCard.withSpeed(facts, option.speed).recipe(.secondary)
-                }
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
+                DSSheetHeader(title: Text("\(Text.flag(row.code))\(Text(verbatim: "\(language) · \(option.quality)"))"),
+                              subtitle: VersionCard.withSpeed(facts, option.speed))
                 if option.otherTitle {
                     DSNotice(text: "¿Otro título? El nombre dice otro año: puede ser otra película.", tone: .warn)
                 }
@@ -248,7 +241,7 @@ struct VersionCard: View {
             else { Color.clear.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).accessibilityHidden(true) }
         }
         .padding(DS.Space.s2)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .dsCard(.row, translucent: true)
     }
 }
 
@@ -275,8 +268,8 @@ struct SourcesGlossary: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Qué significa cada etiqueta").recipe(.title)
+        VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+            DSSheetHeader(title: Text("Qué significa cada etiqueta"))
             ForEach(shown, id: \.0) { symbol, title, detail in
                 HStack(alignment: .top, spacing: DS.Space.s3) {
                     Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.touchTarget)

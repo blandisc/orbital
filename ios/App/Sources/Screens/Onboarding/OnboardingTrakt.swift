@@ -24,7 +24,7 @@ struct OnboardingTrakt: View {
                 case .linking(let code, let url):
                     GuideCode(code: code)
                     Text("Entra a trakt.tv/activate y escribe este código.").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
-                    HStack(spacing: DS.Space.s2) { ProgressView(); Text("Esperando a que lo apruebes…").foregroundStyle(DS.textMuted) }
+                    DSInlineProgress(text: Text("Esperando a que lo apruebes…"))
                     if let link = URL(string: url) { Button("Abrir Trakt", systemImage: "arrow.up.right") { openURL(link) }.dsGlassButton() }
                 case .linked(let name):
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Conectado como \(name)"))
@@ -32,7 +32,7 @@ struct OnboardingTrakt: View {
                     DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error)
                     Button("Reintentar") { Task { await settings.model.linkTrakt() } }.dsGlassButton()
                 case .unlinked:
-                    ProgressView()
+                    DSLoadingState()
                 case .off:
                     DSNotice(text: "Esta copia de la app no trae la aplicación de Trakt: conéctalo después en Ajustes.", tone: .warn)
                 }
@@ -59,7 +59,7 @@ struct OnboardingTraktDone: View {
             if let brought = model.brought {
                 Text("Trajimos \(String(brought.watched)) vistos y \(String(brought.listed)) en tu lista.").font(DS.TextRecipe.body.font).foregroundStyle(DS.textMuted)
             } else {
-                HStack(spacing: DS.Space.s2) { ProgressView(); Text("Trayendo lo tuyo…").foregroundStyle(DS.textMuted) }
+                DSInlineProgress(text: Text("Trayendo lo tuyo…"))
             }
         }
         .task { await model.traktLinked() }

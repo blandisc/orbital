@@ -30,7 +30,7 @@ struct OneDriveSettings: View {
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
                         Text("Escribe este código en \(url.replacingOccurrences(of: "https://", with: "")):").recipe(.footnote)
                         Text(verbatim: code).font(DS.TextRecipe.display.font).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
-                        HStack { ProgressView(); Text("Esperando…").recipe(.footnote) }
+                        DSInlineProgress(text: Text("Esperando…"))
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Label("Orbital solo lee: nunca cambia ni borra nada", systemImage: "lock")
@@ -83,7 +83,7 @@ struct OneDriveSettings: View {
                         }
                         if let error = model.scanError { DSNotice(verbatim: env.message(error), tone: .warn) }
                         Button { Task { await model.rescan() } } label: {
-                            HStack { Text("Revisar ahora"); if model.scanning { Spacer(); ProgressView() } }
+                            HStack { Text("Revisar ahora"); if model.scanning { Spacer(); ProgressView() } }   // ds-exception: la ruedita va dentro del botón que la pidió
                         }
                         .disabled(model.scanning)
                     } header: { Text("Lo que encontré") } footer: {

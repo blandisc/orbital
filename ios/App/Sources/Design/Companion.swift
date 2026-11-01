@@ -158,7 +158,7 @@ struct NotesPanel: View {
                 .lineLimit(DS.Companion.noteLines, reservesSpace: true)
                 .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
                 .padding(DS.Space.s2)
-                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .dsCard(.row, translucent: true)
         }
     }
 }

@@ -36,7 +36,7 @@ extension PlayerScreen {
                             DSTextTabs(options: [.init(id: false, title: Text("Audio y subtítulos")), .init(id: true, title: Text("Versión"))],
                                        selection: Binding(get: { dockState.dockPage == .version }, set: { v in withAnimation(DS.Motion.base(reduceMotion)) { dockState.dockPage = v ? .version : .media } }))
                             Button { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media } } label: { Text("Listo").font(DS.TextRecipe.label.font) }
-                                .dsPrimaryButton().controlSize(.small)
+                                .dsPrimaryButton(size: .small)
                         } }
                         dock.contentShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous))
                     }
@@ -445,12 +445,17 @@ extension PlayerScreen {
         .ignoresSafeArea(edges: landscape ? .all : [])
     }
 
+    /// La barra lee la posición en su propia vista (`PlayerTimeReader`): el avance se repinta solo, no todo el reproductor.
     func scrubber(_ model: PlayerModel) -> some View {
+        PlayerTimeReader(time: model.time) { position in scrubber(model, position: position) }
+    }
+
+    private func scrubber(_ model: PlayerModel, position: Double) -> some View {
         let duration = max(model.snapshot.duration, 1)
         // Buscar arrastrando (gesto de pantalla completa) mueve el pulgar igual que arrastrar el slider a mano.
         // Mientras el video llega a donde soltaste (una descarga tarda en buscar), el pulgar se queda ahí: antes regresaba al
         // punto viejo y parecía que no te hacía caso.
-        let shown = scrubbing ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+        let shown = scrubbing ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek ?? position
         // Los sustos (Where's The Jump) van sobre la misma línea, como los capítulos de YouTube (antes, en una franja aparte
         // encima, y no se entendía qué eran); en Ajustes › Reproductor se quitan.
         let scares = scareMarks ? model.scares ?? [] : []
@@ -515,5 +520,17 @@ extension PlayerScreen {
     func clock(_ seconds: Double) -> String {
         let s = Int(seconds), h = s / 3600, m = (s % 3600) / 60, sec = s % 60
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%d:%02d", m, sec)
+    }
+}
+
+/// Lee la posición del video (`PlayerTime`, cuatro veces por segundo) en una vista aparte: solo lo de adentro se vuelve a
+/// pintar con cada avance, no la pantalla entera del reproductor (auditoría del 31 oct 2026, A2).
+struct PlayerTimeReader<Content: View>: View {
+    let time: PlayerTime
+    @ViewBuilder let content: (Double) -> Content
+
+    var body: some View {
+        let _ = time.track()
+        content(time.position)
     }
 }

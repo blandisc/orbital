@@ -179,7 +179,7 @@ struct FilterEditor: View {
                         Text(verbatim: "\(v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : FilterText.number(v))+").recipe(.label, color: on ? DS.text : DS.textMuted).monospacedDigit()
                             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                             .background(on ? DS.Filter.mintFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Size.hairline * 2))
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

@@ -54,7 +54,7 @@ struct DSKindFilter: View {
                         .background(on ? DS.fillStrong : .clear, in: Capsule())
                         .contentShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plain)   // ds-exception: un segmento del control (no un botón suelto); el fondo marca el elegido
                     .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
@@ -79,41 +79,6 @@ struct DSKindFilter: View {
         let movies: LocalizedStringKey = counts.map { "Películas \($0.movies)" } ?? "Películas"
         let series: LocalizedStringKey = counts.map { "Series \($0.series)" } ?? "Series"
         return (includeAll ? [("", "Todo")] : []) + [("movie", movies), ("series", series)]
-    }
-}
-
-/// Filtros deslizables (Todo · Trakt · Netflix…): botones nativos en cápsula; el elegido va resaltado.
-struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
-    let items: [Item]
-    let label: (Item) -> Label
-    @Binding var selection: Item
-    /// El valor actual como dato de la vista (ver `DSSegmented`).
-    private let current: Item
-    /// Hasta dónde está deslizada la tira: el elegido queda a la vista (la temporada 7 de 9 no se esconde a la derecha).
-    @State private var scrolled: Item.ID?
-
-    init(items: [Item], @ViewBuilder label: @escaping (Item) -> Label, selection: Binding<Item>) {
-        self.items = items; self.label = label; _selection = selection; current = selection.wrappedValue
-    }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Space.s2) {
-                ForEach(items) { item in
-                    Group {
-                        if current == item { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.borderedProminent).foregroundStyle(DS.onPrimary) }
-                        else { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.bordered) }
-                    }
-                    .buttonBorderShape(.capsule).controlSize(.small)
-                    .accessibilityAddTraits(current == item ? .isSelected : [])
-                }
-            }
-            .scrollTargetLayout()
-            .padding(.horizontal, DS.Space.gutter)
-        }
-        .scrollPosition(id: $scrolled, anchor: .center)
-        .onChange(of: current.id, initial: true) { _, id in scrolled = id }
-        .sensoryFeedback(.selection, trigger: current)
     }
 }
 

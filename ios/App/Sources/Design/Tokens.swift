@@ -148,7 +148,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     // MARK: Espacio y forma
     /// Los cuatro espacios de toda pantalla (Fernando, 31 oct 2026, decisión 2), medidos desde donde termina lo que se ve
     /// (el pie de un póster y su reflejo cuentan): del título a lo suyo, entre subsecciones, entre secciones y al pie.
-    /// Arriba de cada pantalla, `titleToContent`. `DesignTests` revisa que los contenedores usen estos.
+    /// Arriba de cada pantalla, `titleToContent`. `DesignRulesTests.testScreensKeepTheLayoutRhythm` revisa que el primer contenedor de cada pantalla los use.
     enum Layout {
         static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s10, screenBottom = Space.s14
         static let screenTop = Space.s3
@@ -164,6 +164,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital».
         static let sheetTop = s6
     }
+
+    /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca).
+    enum Sheet { static let maxShare: CGFloat = 0.86 }
 
     enum Radius {
         static let xs = CGFloat(DesignTokens.Radius.xs), sm = CGFloat(DesignTokens.Radius.sm), md = CGFloat(DesignTokens.Radius.md)
@@ -293,11 +296,11 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
         /// El anillo, un poco más tenue que el planeta.
         /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
-        static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1
+        static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1   // ds-exception: en em de la palabra (la marca)
         /// De dónde cae la luna al aparecer (em) y lo chica que empieza.
         static let moonFromX: CGFloat = -0.9, moonFromY: CGFloat = -0.7, moonFromScale: CGFloat = 0.2
         /// «orbital»: interletrado apretado (em); la marca mide 1.7 veces la letra y va a media letra de ella.
-        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2
+        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2   // ds-exception: en em de la palabra (la marca)
         /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
         static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
         /// La letra de «orbital» (en la TV, Segoe UI Variable Display): SF Pro Rounded en negrita, del tamaño de la marca.
@@ -309,7 +312,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Cuánto se desvanece la orilla de una tira horizontal que no cabe (`edgeFade`).
         static let edgeFade: CGFloat = 28
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
-        static let pageDotStretch: CGFloat = 2.6, pageDotSpring: Double = 0.38, pageDotDamping: Double = 0.62
+        static let pageDotStretch: CGFloat = 2.6
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
         /// La marca de Inicio. Con 32 (a la par del título grande de Para ti, Descargas y Buscar) la barra no cabía en un iPhone de
         /// 375 pt y el perfil se iba al «···»: en un teléfono angosto va sin el planeta y a `headerWordmarkCompact`.
@@ -356,8 +359,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let iconColumn: CGFloat = 24
         /// El alto de un mosaico con arte (géneros de Explora).
         static let artTileHeight: CGFloat = 96
-        /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.
-        static let seasonChipsMax = 4
         /// Cuántos pósters de lo popular se piden al abrir la app (los del Top 10 de Buscar).
         static let searchPrefetch = 10
         /// El mejor resultado de Buscar, en grande.
@@ -386,7 +387,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.
     enum Backdrop {
         /// Cuánto se mezcla el color del arte con el fondo de cada modo, y hasta dónde llega antes de fundirse con el fondo.
-        static let darkMix = DesignTokens.Projection.darkMix, lightMix = DesignTokens.Projection.lightMix, fadeTo = DesignTokens.Projection.fadeTo
+        static let lightMix = DesignTokens.Projection.lightMix, fadeTo = DesignTokens.Projection.fadeTo
         static let tintFloor = DesignTokens.Backdrop.tintFloor
         /// Dónde empieza el velo sobre el arte, dónde llega a medio y (al pie) a fondo.
         static let scrimStart = DesignTokens.Backdrop.scrimStart, scrimMid = DesignTokens.Backdrop.scrimMid
@@ -418,7 +419,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     enum Poster {
         static let aspect = DesignTokens.Aspect.poster
-        static let heroAspect = DesignTokens.Aspect.hero, stillAspect = DesignTokens.Aspect.still
+        static let stillAspect = DesignTokens.Aspect.still
         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
         static var railWidth: CGFloat { WindowMetrics.size.width >= gridWideWidth ? railWidthWide : railWidthCompact }
@@ -451,9 +452,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Una tarjeta de «Próximos estrenos»: dos y un pedazo (`peek`) de la tercera, en cualquier ancho (con un ancho fijo, en un
         /// iPhone de 375 pt las dos llenaban la pantalla y parecía una cuadrícula que terminaba a 5 pt del borde).
         static let peek: CGFloat = 28
-        /// En una ventana ancha no pasa de `airingMax` (ahí caben más de dos y un pedazo).
-        static var airingWidth: CGFloat { min(airingMax, (WindowMetrics.size.width - DS.Space.gutter - DS.Space.s3 - peek) / 2) }
-        static let airingMax: CGFloat = 300
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static var stillWidth: CGFloat { WindowMetrics.size.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
         static let stillWidthCompact: CGFloat = 220, stillWidthWide: CGFloat = 280

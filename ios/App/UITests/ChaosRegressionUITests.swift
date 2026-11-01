@@ -356,16 +356,7 @@ final class ChaosRegressionUITests: XCTestCase {
             sleep(1)
             shot("xxxl-\(screen.name)")
             alive("letra máxima: \(screen.name)")
-            let found = offscreen()
-            if screen.name == "explorar" {
-                // Pendiente (31 oct 2026): el botón «Pasear por el mosaico» de la portada (Design/ParaTiB.swift) se sale por
-                // la derecha con esta letra. No estricto: cuando se arregle, esta prueba sigue pasando.
-                XCTExpectFailure("el botón del mosaico de la portada de Explorar se sale con letra máxima", strict: false) {
-                    XCTAssertEqual(found, [], "con letra máxima se sale de la pantalla: \(screen.name)")
-                }
-            } else {
-                XCTAssertEqual(found, [], "con letra máxima se sale de la pantalla: \(screen.name)")
-            }
+            XCTAssertEqual(offscreen(), [], "con letra máxima se sale de la pantalla: \(screen.name)")
             app.terminate()
         }
     }

@@ -13,7 +13,7 @@ struct QualityBadges: View {
                 Text(verbatim: item.uppercased()).font(DS.TextRecipe.badge.font).monospaced()
                     .foregroundStyle(DS.text).lineLimit(1)
                     .padding(.horizontal, DS.Space.s1)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Rich.badgeRadius, style: .continuous).stroke(DS.textMuted, lineWidth: DS.Rich.badgeStroke))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.tag, style: .continuous).stroke(DS.textMuted, lineWidth: DS.Rich.badgeStroke))
             }
         }
         .accessibilityElement(children: .combine)

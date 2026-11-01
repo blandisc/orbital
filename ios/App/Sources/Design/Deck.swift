@@ -29,7 +29,7 @@ struct AvatarPicker: View {
             ForEach(AvatarImage.all, id: \.self) { id in
                 Button { selection = id } label: {
                     AvatarImage(id: id, size: DS.Avatar.picker)
-                        .overlay(Circle().stroke(selection == id ? DS.accent : .clear, lineWidth: DS.Avatar.ring).padding(-DS.Avatar.ring * 2))
+                        .padding(DS.Space.s2).dsSelectionRing(selection == id, in: Circle()).padding(-DS.Space.s2)   // el anillo, separado del avatar
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text(verbatim: id))
@@ -64,8 +64,9 @@ struct AppIconPicker: View {
                 Image(preview).resizable().scaledToFit()
                     .frame(width: DS.Avatar.picker, height: DS.Avatar.picker)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Avatar.picker * DS.Avatar.iconCorner, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: DS.Avatar.picker * DS.Avatar.iconCorner, style: .continuous)
-                        .stroke(current == name ? DS.accent : .clear, lineWidth: DS.Avatar.ring).padding(-DS.Avatar.ring * 2))
+                    .padding(DS.Space.s2)
+                    .dsSelectionRing(current == name, radius: DS.Avatar.picker * DS.Avatar.iconCorner + DS.Space.s2)   // el anillo, separado del ícono
+                    .padding(-DS.Space.s2)
                 label.recipe(.caption, color: current == name ? DS.text : DS.textMuted)
             }
         }

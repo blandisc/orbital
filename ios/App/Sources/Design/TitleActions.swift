@@ -74,10 +74,7 @@ struct DownloadVersionSheet: View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             HStack(spacing: DS.Space.s3) {
                 Image(systemName: "checkmark.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.good)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Ya la tienes").recipe(.section)
-                    Text("Puedes guardar varias versiones del mismo título.").recipe(.footnote)
-                }
+                DSSheetHeader(title: Text("Ya la tienes"), subtitle: Text("Puedes guardar varias versiones del mismo título."))
             }
             HStack(spacing: DS.Space.s2) {
                 version(Text("La que tienes"), current)

@@ -66,14 +66,16 @@ public final class SettingsModel: ObservableModel {
         let before = settings
         services.settings.update(change)
         settings = services.appSettings
-        services.settingsDidChange()
         if before.traktClientID != settings.traktClientID {
             // También en el Keychain: pegada a mano (sin consola) sobrevive a borrar la app, como la que trae tu Orbital.
             services.secrets.set(SecretKey.traktClientID, settings.traktClientID.isEmpty ? nil : settings.traktClientID)
         }
+        // Un solo aviso a la app: rearmar los servicios ya avisa (antes eran dos pasadas seguidas, B7).
         if before.traktClientID != settings.traktClientID || before.uiLanguage != settings.uiLanguage || before.region != settings.region {
             services.reconfigure()
             trakt = computeTraktState()
+        } else {
+            services.settingsDidChange()
         }
     }
 

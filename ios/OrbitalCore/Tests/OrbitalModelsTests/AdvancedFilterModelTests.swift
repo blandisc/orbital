@@ -37,6 +37,19 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(rig.http.calls.count, asked, "el mismo filtro no vuelve a pedir")
     }
 
+    /// Si lo de la primera página ya lo viste, pide las que siguen (antes paraba ahí y la cuadrícula quedaba casi vacía).
+    func testSiYaVisteTodaLaPaginaPideLasQueSiguen() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        let model = AdvancedFilterModel(rig.services, watched: { ["tt0000001", "tt0000002", "tt0000003"] })
+        model.filter = movies()
+        await model.search()
+        let pages = rig.http.calls.filter { $0.hasPrefix("\(tmdb)/discover/movie") }.count
+        XCTAssertGreaterThan(pages, 1, "siguió buscando títulos que no has visto")
+        XCTAssertLessThanOrEqual(pages, 5, "pero con tope")
+        XCTAssertFalse(model.isLoading)
+    }
+
     /// Los resultados salen de a poco y en orden (cada uno en cuanto llega su ficha); el que no tiene IMDb se salta, y si
     /// quien recibe dice «basta» (cambió el filtro), no se entrega nada más.
     func testLosResultadosLleganEnOrdenYSePuedenCortar() async throws {

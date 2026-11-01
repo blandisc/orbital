@@ -360,7 +360,7 @@ struct SettingsView: View {
                     Text("Conectada a \(env.services.orbital.base?.host ?? "")")
                 } icon: { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
                 Button { Task { await model.checkOrbital() } } label: {
-                    HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }
+                    HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }   // ds-exception: la ruedita va dentro del botón que la pidió
                 }
                 if let problem = model.orbitalCheck, !problem.isEmpty { Text(verbatim: env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
                 if !model.importedFromOrbital.isEmpty {
@@ -403,7 +403,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                     Text(code).font(DS.TextRecipe.display.font).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
-                    HStack { ProgressView(); Text("Esperando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+                    DSInlineProgress(text: Text("Esperando…"))
                 }
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }
             case .linked(let name):

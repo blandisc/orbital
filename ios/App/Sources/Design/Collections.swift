@@ -42,7 +42,7 @@ struct AwardEmblem: View {
     var body: some View {
         Image("Awards/" + id).resizable().scaledToFit()
             .frame(height: DS.Collections.emblem)
-            .shadow(color: DS.Collections.tint(id), radius: DS.Collections.glow)
+            .glow(DS.Collections.tint(id), .strong)
             .accessibilityHidden(true)
     }
 }
@@ -106,9 +106,9 @@ struct DSChapterLabel: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             if let symbol { Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
-            label.textCase(.uppercase).font(DS.TextRecipe.badge.font).tracking(DS.Chapter.tracking)
-                .accessibilityAddTraits(.isHeader)
-                .foregroundStyle(DS.textMuted).lineLimit(1).fixedSize()
+            // Sin `fixedSize`: con letra de accesibilidad el rótulo en mayúsculas era más ancho que la pantalla y ensanchaba toda
+            // la página (Explorar). Gana el lugar a la línea y, si no cabe, baja a un segundo renglón.
+            DSGroupLabel(title: label).lineLimit(2).fixedSize(horizontal: false, vertical: true).layoutPriority(1)
             Rectangle().fill(DS.hairline).frame(height: DS.Size.hairline)
         }
     }
@@ -152,11 +152,11 @@ struct SourceBadge: View {
 
     private var label: some View {
         source.name.textCase(.uppercase)
-            .font(DS.TextRecipe.badge.font).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
+            .font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
             .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («COMPLE / MENTO»)
-            .background(source.color, in: RoundedRectangle(cornerRadius: DS.Collections.badgeRadius, style: .continuous))
+            .background(source.color, in: RoundedRectangle(cornerRadius: DS.Radius.tag, style: .continuous))
             .accessibilityLabel(Text("De \(source.name)"))
     }
 }
@@ -223,7 +223,7 @@ struct BecauseCard<Related: View>: View {
         }
         .padding(DS.Space.s3)
         .modifier(BecauseBackdrop(poster: artBackdrop ? current?.poster : nil))
-        .animation(reduceMotion ? nil : .snappy(duration: DS.Collections.deckSettle), value: selected)
+        .animation(DS.Motion.snap(reduceMotion), value: selected)
         .sensoryFeedback(.selection, trigger: selected)
     }
 
@@ -256,12 +256,9 @@ struct BecauseCard<Related: View>: View {
                 Spacer(minLength: DS.Space.s2)
                 if seeds.count > 1 {
                     HStack(spacing: DS.Space.s2) {
-                        Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left").font(.system(size: DS.Collections.deckNavGlyph, weight: .semibold)).frame(width: DS.Collections.deckNav, height: DS.Collections.deckNav) }   // ds-exception: la flecha se mide con su círculo, no con Dynamic Type
-                            .accessibilityLabel(Text("Anterior"))
-                        Button { choose(seeds[(index + 1) % seeds.count].id) } label: { Image(systemName: "chevron.right").font(.system(size: DS.Collections.deckNavGlyph, weight: .semibold)).frame(width: DS.Collections.deckNav, height: DS.Collections.deckNav) }   // ds-exception: la flecha se mide con su círculo, no con Dynamic Type
-                            .accessibilityLabel(Text("Siguiente"))
+                        DSIconButton(symbol: "chevron.left", label: "Anterior") { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) }
+                        DSIconButton(symbol: "chevron.right", label: "Siguiente") { choose(seeds[(index + 1) % seeds.count].id) }
                     }
-                    .buttonStyle(.glass).buttonBorderShape(.circle)
                 }
             }
             .frame(minHeight: DS.Collections.deckHeight, alignment: .topLeading)
@@ -336,7 +333,7 @@ struct BecauseDeck: View {
                 // Se avienta si pasó el umbral o si el dedo iba rápido (como en una pila de cartas real).
                 let thrown = abs(value.translation.width) > DS.Collections.deckThrow || abs(value.predictedEndTranslation.width) > DS.Collections.deckThrow * 3
                 if thrown { fly(value.translation.width < 0 ? -1 : 1) }
-                else { withAnimation(reduceMotion ? nil : .snappy(duration: DS.Collections.deckSettle)) { drag = 0 } }
+                else { withAnimation(DS.Motion.snap(reduceMotion)) { drag = 0 } }
             })
         .onTapGesture { fly(-1) }
         .accessibilityElement()
@@ -349,10 +346,10 @@ struct BecauseDeck: View {
     /// La carta de arriba sale volando hacia ese lado y las de abajo suben (−1: a la izquierda, pasa a la siguiente).
     private func fly(_ direction: CGFloat) {
         guard !reduceMotion else { step(direction < 0 ? 1 : -1); return }
-        withAnimation(.easeIn(duration: DS.Collections.deckFly)) { drag = direction * DS.Collections.deckFlyDistance }
+        withAnimation(DS.Motion.base(reduceMotion)) { drag = direction * DS.Collections.deckFlyDistance }
         Task { @MainActor in
-            try? await Task.sleep(for: .seconds(DS.Collections.deckFly))
-            withAnimation(.snappy(duration: DS.Collections.deckSettle)) {
+            try? await Task.sleep(for: .seconds(DS.Collections.deckFly))   // lo que dura `DS.Motion.base`
+            withAnimation(DS.Motion.snap(reduceMotion)) {
                 drag = 0
                 step(direction < 0 ? 1 : -1)
             }

@@ -33,7 +33,7 @@ struct NowPlayingCard: View {
             controls
         }
         .padding(framed ? DS.Space.s3 : 0)
-        .background(framed ? DS.fill : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .background { if framed { Color.clear.dsCard(.row, translucent: true) } }
         .accessibilityElement(children: .contain)
     }
 
@@ -155,9 +155,8 @@ struct FromTVCard: View {
                     HStack(alignment: .firstTextBaseline) {
                         Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
                         Spacer(minLength: DS.Space.s2)
-                        Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.label.font) }
-                            .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
-                            .accessibilityLabel(Text("Quitar"))
+                        DSIconButton(symbol: "xmark", label: "Quitar", size: .small, action: onDismiss)
+                            .font(DS.TextRecipe.label.font)
                     }
                     Spacer(minLength: DS.Space.s2)
                     TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: item.title)
@@ -172,7 +171,7 @@ struct FromTVCard: View {
                 .onArt()
             }
             .frame(minHeight: DS.Poster.fromTVHeight)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DSCardLevel.card.radius, style: .continuous))   // la esquina de la tarjeta grande (D4)
         }
         .accessibilityElement(children: .contain)
     }

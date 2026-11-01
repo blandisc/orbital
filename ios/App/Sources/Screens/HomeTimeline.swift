@@ -88,7 +88,7 @@ struct ReleaseTimeline: View {
                                 .background(ArtVeil(at: 0))
                         }
                     }
-                    .opacity(soon ? DS.HomeTimeline.soonOpacity : 1)
+                    .opacity(soon ? DS.Opacity.dimmed : 1)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: a.series.title).recipe(.label).lineLimit(1)
                     Text(verbatim: episode).recipe(.caption, color: DS.textMuted).lineLimit(1)

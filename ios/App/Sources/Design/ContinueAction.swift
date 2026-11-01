@@ -52,7 +52,7 @@ struct ContinueAction: View {
     private var label: some View {
         Group {
             if loading {
-                HStack(spacing: DS.Space.s2) { ProgressView().tint(DS.onSolidPrimary); title }
+                HStack(spacing: DS.Space.s2) { ProgressView().tint(DS.onSolidPrimary); title }   // ds-exception: la ruedita va dentro del botón principal, con su título grande (DSInlineProgress es chica y gris)
             } else if let symbol {
                 Label { title } icon: { Image(systemName: symbol) }
             } else { title }

@@ -27,19 +27,19 @@ public final class Services: ObservableModel {
     private let flushGate = FlushGate()
     public let stremio: StremioAPI
 
-    public private(set) var registry: AddonRegistry { didSet { changed() } }
+    public private(set) var registry: AddonRegistry { didSet { notify() } }
     /// Tus complementos en el teléfono (en tu orden, con apagado) y tu Real-Debrid. Mientras la lista no esté armada, los
     /// complementos siguen saliendo de tu cuenta de Stremio, como antes.
     public let addonList: AddonList
     public let debrid: DebridAccount
     /// Los avisos de vencimiento de Real-Debrid que ya se programaron.
     public let debridReminders: DebridReminderBook
-    public private(set) var finder: StreamFinder { didSet { changed() } }
+    public private(set) var finder: StreamFinder { didSet { notify() } }
     /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
     public let oneDrive: OneDrive
     public let oneDriveLibrary: OneDriveLibrary
-    public private(set) var cinemeta: Cinemeta { didSet { changed() } }
-    public private(set) var localizer: Localizer { didSet { changed() } }
+    public private(set) var cinemeta: Cinemeta { didSet { notify() } }
+    public private(set) var localizer: Localizer { didSet { notify() } }
     /// El póster sin texto de cada título, para los marcos altos (`TallArt`); la clave de TMDB se lee en cada consulta.
     public let tallArt: TallArt
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
@@ -60,15 +60,15 @@ public final class Services: ObservableModel {
         return (found?.isEmpty ?? true) ? nil : found
     }
     /// TMDB directo (la ficha rica: elenco, saga, «Más como esto»…); sin clave, `configured` es false.
-    public private(set) var tmdb: Tmdb { didSet { changed() } }
-    public private(set) var trakt: Trakt? { didSet { changed() } }
-    public private(set) var forYou: ForYou { didSet { changed() } }
+    public private(set) var tmdb: Tmdb { didSet { notify() } }
+    public private(set) var trakt: Trakt? { didSet { notify() } }
+    public private(set) var forYou: ForYou { didSet { notify() } }
     /// «Para ti» de tu Orbital (la consola), cuando está conectada; `ParaTiModel` decide si la usa.
-    public private(set) var forYouRemote: RemoteForYou { didSet { changed() } }
-    public private(set) var watch: WatchService { didSet { changed() } }
+    public private(set) var forYouRemote: RemoteForYou { didSet { notify() } }
+    public private(set) var watch: WatchService { didSet { notify() } }
     /// Trae de Trakt lo que cambió en tus otros aparatos (`/sync/last_activities`) y lo junta con lo del teléfono.
     public private(set) var sync: LibrarySync
-    public private(set) var downloads: Downloads { didSet { changed() } }
+    public private(set) var downloads: Downloads { didSet { notify() } }
     /// «Para ti» de tu Orbital en vez de calcularlo en el iPhone. Apagado: el iPhone lo calcula él mismo (Trakt, el Top 10 de
     /// Netflix, las tendencias de JustWatch, TMDB) y no depende de que la consola conteste; la consola solo se entera de lo
     /// que marcas «No me interesa». Encendido solo en la demostración (`-demo-console`) y en las pruebas de esa ruta.
@@ -102,11 +102,23 @@ public final class Services: ObservableModel {
                                     upcoming: upcoming.isEmpty ? nil : upcoming))
     }
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
-    public private(set) var generation = 0 { didSet { changed() } }
+    public private(set) var generation = 0 { didSet { notify() } }
 
     /// Un ajuste cambió (apariencia, idioma, cómo se ve Inicio…): quien escucha a los servicios (la app entera) se vuelve a
     /// pintar. Antes nadie se enteraba y el modo oscuro o el carrusel no cambiaban hasta reabrir la app.
     public func settingsDidChange() { changed() }
+
+    /// Mientras `reconfigure()` rearma cinco servicios, los avisos se juntan en uno solo al final: antes cada pieza avisaba y
+    /// la app entera se volvía a pintar hasta seis veces seguidas (auditoría del 31 oct 2026, B7).
+    private var holding = false
+    private var held = false
+    private func notify() { if holding { held = true } else { changed() } }
+    private func batched(_ work: () -> Void) {
+        holding = true
+        work()
+        holding = false
+        if held { held = false; changed() }
+    }
 
     /// Carpeta de lo que se guarda para enseñarlo al instante al abrir (stale-while-revalidate). nil = sin disco (pruebas).
     let cacheRoot: URL?
@@ -357,7 +369,9 @@ public final class Services: ObservableModel {
     public var appSettings: AppSettings { settings.value }
 
     /// Tras cambiar una clave (TMDB, Trakt): se rearman las piezas que dependen de ellas.
-    public func reconfigure() {
+    public func reconfigure() { batched(rebuild) }
+
+    private func rebuild() {
         let s = settings.value
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let settings = settings, secrets = secrets

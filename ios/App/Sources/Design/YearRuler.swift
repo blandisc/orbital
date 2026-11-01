@@ -21,11 +21,11 @@ struct YearRuler: View {
             GeometryReader { geo in
                 let width = geo.size.width
                 ZStack(alignment: .bottomLeading) {
-                    Rectangle().fill(DS.Filter.tickFaint).frame(height: DS.Size.hairline * 2).padding(.bottom, DS.Filter.rulerBase)
+                    Rectangle().fill(DS.Filter.tickFaint).frame(height: DS.Stroke.regular).padding(.bottom, DS.Filter.rulerBase)
                     ForEach(first...last, id: \.self) { y in
                         Rectangle()
                             .fill(y % 10 == 0 ? DS.Filter.tickStrong : y % 5 == 0 ? DS.Filter.tickMid : DS.Filter.tickFaint)
-                            .frame(width: DS.Size.hairline * 2, height: y % 10 == 0 ? DS.Filter.tickDecade : y % 5 == 0 ? DS.Filter.tickFive : DS.Filter.tickYear)
+                            .frame(width: DS.Stroke.regular, height: y % 10 == 0 ? DS.Filter.tickDecade : y % 5 == 0 ? DS.Filter.tickFive : DS.Filter.tickYear)
                             .offset(x: x(y, width), y: -DS.Filter.rulerBase)
                     }
                     if let years { window(years, width) }
@@ -53,13 +53,13 @@ struct YearRuler: View {
         let left = x(max(r.lowerBound, first), width), right = x(min(r.upperBound, last), width)   // «Clásicos» empieza antes de la regla
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
         return shape.fill(DS.Filter.goldFill)
-            .overlay(shape.strokeBorder(DS.Filter.gold, lineWidth: DS.Size.hairline * 4))
+            .overlay(shape.strokeBorder(DS.Filter.gold, lineWidth: DS.Stroke.selected))
             .overlay(alignment: .leading) { handle.offset(x: -DS.Filter.handleWidth / 2) }
             .overlay(alignment: .trailing) { handle.offset(x: DS.Filter.handleWidth / 2) }
             // Con uno o dos años la ventana tiene un ancho mínimo (las orillas no se enciman) y no se sale de la regla.
             .frame(width: max(right - left, DS.Filter.windowMin), height: DS.Filter.rulerWindow)
             .offset(x: min(left, width - max(right - left, DS.Filter.windowMin)), y: -DS.Space.s1)
-            .shadow(color: DS.Filter.goldGlow, radius: DS.Filter.glowRadius)
+            .glow(DS.Filter.goldGlow)
             .animation(drag == nil ? DS.Motion.base(reduceMotion) : nil, value: r)
     }
 

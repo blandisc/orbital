@@ -32,11 +32,12 @@ def test_with_a_key_it_uses_the_api_and_without_it_the_public_json(monkeypatch):
 def test_critics_shelf_in_para_ti(net, make_foryou, monkeypatch):  # noqa: F811
     monkeypatch.setattr(mdblist, "http_json", net)
     net.on("GET", r"mdblist\.com/lists/tbotcotw/recent-certified-fresh/json",
-           (200, [{"imdb_id": "tt5", "title": "Fresca", "mediatype": "movie", "release_year": 2026}]))
+           (200, [{"imdb_id": "tt19850008", "title": "The Batman: Part II", "mediatype": "movie", "release_year": 2999},
+                  {"imdb_id": "tt5", "title": "Fresca", "mediatype": "movie", "release_year": 2026}]))
     net.on("GET", r"/users/truckclancy/lists/rotten-tomatoes-certified-fresh-tv-shows-ranked-by-tomatometer-score/items",
            (200, [{"type": "show", "show": show("Severance", "tt11280740")}]))
     fy = make_foryou()
     entry = next(e for e in fy.lists() if e["id"] == "critics")
     assert entry["source"] == "Rotten Tomatoes" and entry["split"] is True
-    assert [i["title"] for i in fy.list_items("critics", "movie")] == ["Fresca"]
+    assert [i["title"] for i in fy.list_items("critics", "movie")] == ["Fresca"]  # sin lo que aún no se estrena
     assert [i["title"] for i in fy.list_items("critics", "series")] == ["Severance"]

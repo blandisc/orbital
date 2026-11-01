@@ -63,14 +63,14 @@ struct RepisaView: View {
         let model = env.repisa
         let _ = model.track()
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 (model.seenTotal == 0 ? Text("Empieza tus colecciones: lo que veas del canon se pinta aquí") : Text("\(model.seenTotal) del canon en tus colecciones"))
                     .recipe(.secondary, color: DS.textMuted)
                 shelf(Text("Premios"), symbol: "trophy", model.collections.filter { $0.family == .award }, model)
                 shelf(Text("Listas famosas"), symbol: "list.star", model.collections.filter { $0.family == .list }, model)
             }
             .padding(.horizontal, DS.Space.gutter)
-            .padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(Text("Colecciones"))
@@ -129,7 +129,7 @@ struct RepisaCollectionView: View {
         let _ = env.ratings.track()
         if let c = model.collection(id) {
             ScrollView {
-                VStack(alignment: .leading, spacing: DS.Space.s5) {
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     header(c, model)
                     if c.items.isEmpty {
                         // La lista no llegó (sin red o MDBList caído) y no había copia: «Reintentar», no cargar para siempre.
@@ -150,7 +150,7 @@ struct RepisaCollectionView: View {
                     }
                 }
                 .padding(.horizontal, DS.Space.gutter)
-                .padding(.bottom, DS.Space.s14)
+                .padding(.bottom, DS.Layout.screenBottom)
             }
             .background(Backdrop())
             .navigationTitle(CanonNames.title(c.id))

@@ -13,7 +13,7 @@ struct DownloadSpeedTestView: View {
             Section {
                 ForEach(test.rows) { row in
                     LabeledContent {
-                        if row.running { ProgressView() }
+                        if row.running { DSInlineProgress(text: Text("Midiendo…")) }
                         else if let rate = row.bytesPerSecond { Text(verbatim: DownloadSpeedTest.format(rate)).monospacedDigit().foregroundStyle(DS.text) }
                         else if let failed = row.failed { Text(LocalizedStringKey(failed)).foregroundStyle(DS.warning) }
                         else { Text(verbatim: "—") }

@@ -18,10 +18,10 @@ struct ShelfEmblem: View {
             // Las 100 mejores del NYT: una claqueta y una tele de oro (Grok Imagine, 31 oct 2026; `Assets/Shelf`).
             case "nyt-movies", "nyt-series":
                 Image("shelf-" + id).resizable().scaledToFit()
-                    .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+                    .shadow(DS.Elevation.high)
             default:
                 Image("Awards/" + id).resizable().scaledToFit()
-                    .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+                    .shadow(DS.Elevation.high)
             }
         }
         .frame(height: height, alignment: .bottom)
@@ -50,7 +50,7 @@ private struct CriterionEmblem: View {
             // El estuche, negro mate, con su «C» y el canto claro.
             RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                 .fill(DS.Repisa.objectFill)
-                .overlay(alignment: .leading) { DS.paper.opacity(DS.Repisa.sheen).frame(width: DS.Size.hairline * 2) }
+                .overlay(alignment: .leading) { DS.paper.opacity(DS.Repisa.sheen).frame(width: DS.Stroke.regular) }
                 .overlay {
                     Text(verbatim: "C").font(.system(size: box * DS.Repisa.caseLetter, weight: .black, design: .serif))   // ds-exception: la letra crece con el estuche
                         .foregroundStyle(DS.paper)
@@ -58,7 +58,7 @@ private struct CriterionEmblem: View {
                 .frame(width: box * DS.Repisa.caseWidth, height: box)
         }
         .frame(width: box * (DS.Repisa.caseWidth + DS.Repisa.discOut), alignment: .leading)
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+        .shadow(DS.Elevation.high)
     }
 }
 
@@ -82,7 +82,7 @@ private struct IMDbEmblem: View {
                 .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .strokeBorder(LinearGradient(colors: [DS.warning, DS.warning.opacity(DS.Repisa.sheen)], startPoint: .top, endPoint: .bottom), lineWidth: DS.Repisa.frame))
         )
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+        .shadow(DS.Elevation.high)
     }
 }
 
@@ -98,7 +98,7 @@ struct ShelfLedge<Content: View>: View {
                 LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: DS.Repisa.line, location: DS.Repisa.lineFade),
                                        .init(color: DS.Repisa.line, location: 1 - DS.Repisa.lineFade), .init(color: .clear, location: 1)],
                                startPoint: .leading, endPoint: .trailing)
-                    .frame(height: DS.Size.hairline * 2)
+                    .frame(height: DS.Stroke.regular)
                     .padding(.horizontal, -DS.Space.gutter)
             }
     }
@@ -123,10 +123,10 @@ struct CanonPoster: View {
                 .overlay(alignment: .topLeading) {
                     if let rank {
                         Text(verbatim: "\(rank)").font(DS.TextRecipe.badge.font).foregroundStyle(DS.paper)
-                            .shadow(color: DS.scrimStrong, radius: DS.Space.s1).padding(DS.Space.s1)
+                            .shadow(DS.Elevation.low.color(DS.scrimStrong)).padding(DS.Space.s1)
                     }
                 }
-                .shadow(color: seen ? DS.scrimStrong : .clear, radius: DS.Space.s2, y: DS.Space.s1)
+                .shadow(DS.Elevation.high.color(seen ? DS.scrimStrong : .clear))
                 .animation(DS.Motion.fade, value: seen)
             Text(verbatim: label).font(DS.TextRecipe.badge.font).monospacedDigit()
                 .foregroundStyle(seen ? DS.textMuted : DS.textFaint).lineLimit(1)
@@ -231,14 +231,14 @@ struct ShelfMoment: View {
                         .saturation(step >= 1 ? 1 : 0)
                         .brightness(step >= 1 ? 0 : DS.Repisa.unseenDim)
                         .overlay { shine }
-                        .shadow(color: step >= 2 ? DS.scrimStrong : .clear, radius: DS.Space.s3, y: DS.Space.s2)
+                        .shadow(DS.Elevation.floating.color(step >= 2 ? DS.scrimStrong : .clear))
                         .offset(y: step >= 2 ? 0 : -DS.Repisa.momentDrop)
                         .scaleEffect(step >= 2 ? 1 : DS.Repisa.momentLift)
                 }
                 Text(verbatim: title).recipe(.title).multilineTextAlignment(.center).lineLimit(2)
                 HStack(spacing: DS.Space.s3) {
                     ShelfEmblem(id: emblem, height: DS.Repisa.momentEmblem)
-                        .shadow(color: step >= 3 ? DS.warning.opacity(DS.Repisa.momentGlow) : .clear, radius: DS.Space.s4)
+                        .glow(step >= 3 ? DS.warning.opacity(DS.Repisa.momentGlow) : .clear, .strong)
                         .scaleEffect(step >= 3 ? 1 : DS.Repisa.momentEmblemStart)
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text(verbatim: "\(step >= 3 ? seen : max(seen - 1, 0)) de \(total)").recipe(.cardTitle).monospacedDigit()
@@ -265,11 +265,11 @@ struct ShelfMoment: View {
             if reduceMotion { step = 3 } else {
                 // El ritual: aparece en gris, se revela, baja a la repisa, se enciende la estatuilla.
                 try? await Task.sleep(for: DS.Repisa.momentBeat)
-                withAnimation(.easeInOut(duration: DS.Repisa.momentReveal)) { step = 1 }
+                withAnimation(DS.Motion.reveal(reduceMotion)) { step = 1 }
                 try? await Task.sleep(for: DS.Repisa.momentBeat * 2)
-                withAnimation(.spring(response: DS.Repisa.momentSpring, dampingFraction: DS.Repisa.momentBounce)) { step = 2 }
+                withAnimation(DS.Motion.spring(reduceMotion)) { step = 2 }
                 try? await Task.sleep(for: DS.Repisa.momentBeat)
-                withAnimation(.easeOut(duration: DS.Repisa.momentReveal)) { step = 3 }
+                withAnimation(DS.Motion.reveal(reduceMotion)) { step = 3 }
             }
             try? await Task.sleep(for: DS.Repisa.momentHold)
             onClose()
@@ -286,7 +286,7 @@ struct ShelfMoment: View {
                 .frame(width: geo.size.width * DS.Repisa.momentShineWidth)
                 .rotationEffect(.degrees(DS.Repisa.momentShineTilt))
                 .offset(x: step >= 1 ? geo.size.width * (1 + DS.Repisa.momentShineWidth) : -geo.size.width * DS.Repisa.momentShineWidth)
-                .animation(.easeInOut(duration: DS.Repisa.momentReveal * 1.4), value: step >= 1)
+                .animation(DS.Motion.reveal(reduceMotion), value: step >= 1)
         }
         .clipped()
         .allowsHitTesting(false)

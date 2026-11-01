@@ -133,7 +133,7 @@ struct RemoteKey: View {
                         .accessibilityHidden(true)
                 }
             }
-            .opacity(idle ? DesignTokens.Opacity.disabled : 1)
+            .opacity(idle ? DS.Opacity.disabled : 1)
         }
         .buttonStyle(.plain)
         .foregroundStyle(DS.text)
@@ -197,7 +197,7 @@ struct VolumeControl: View {
                     Capsule().fill(muted ? DS.textFaint : DS.text).frame(width: geo.size.width * CGFloat(level ?? 0) / 100)
                 }
                 // La barra se desliza al nuevo nivel en vez de brincar.
-                .animation(reduceMotion ? nil : .snappy(duration: DS.Remote.volumeGlide), value: level)
+                .animation(DS.Motion.snap(reduceMotion), value: level)
             }
             .frame(height: DS.Remote.volumeBar)
             .accessibilityHidden(true)

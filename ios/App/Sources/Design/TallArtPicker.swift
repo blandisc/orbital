@@ -9,14 +9,20 @@ struct TallArtKey: Hashable, Sendable {
 }
 
 /// Cómo se pregunta por el póster sin texto: lo pone la raíz (`RootView`); sin él (previsualizaciones, el widget) va el fondo.
-struct TallArtLookup: Sendable {
+/// Igual mientras sea el mismo `TallArt`: la raíz lo arma en cada pasada y, sin esto, cada cambio de pestaña o regreso de
+/// una ficha volvía a pintar todos los pósters de las cuatro pestañas.
+struct TallArtLookup: Sendable, Equatable {
     var known: @Sendable (TallArtKey) -> TallArt.Answer
     var fetch: @Sendable (TallArtKey) async -> String?
+    private let source: ObjectIdentifier
 
     init(_ art: TallArt) {
+        source = ObjectIdentifier(art)
         known = { art.known(imdb: $0.imdb, kind: $0.kind) }
         fetch = { await art.poster(imdb: $0.imdb, kind: $0.kind) }
     }
+
+    static func == (a: Self, b: Self) -> Bool { a.source == b.source }
 }
 
 extension EnvironmentValues {

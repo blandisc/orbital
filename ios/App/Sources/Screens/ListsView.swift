@@ -103,10 +103,10 @@ struct ListsView: View {
         ScrollView {
             // Un `VStack` (no perezoso): son pocos grupos y así el índice puede saltar a cualquiera; lo pesado de adentro
             // (las tiras) sí es perezoso.
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 // Para ti B (docs/producto/inicio-benchmark/para-ti/): el mosaico como portada, un círculo por cada parte y
                 // «¿Qué vemos hoy?». El destacado, «Porque viste» y los estrenos viven en Inicio.
-                VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                     // Los del mosaico primero y luego los de los estantes, sin repetir: la lista solo crece mientras carga (antes
                     // pasaba de los estantes a 3 del mosaico y luego a 48, y el muro se revolvía dos veces al abrir).
                     let walls = Self.distinct((model.mosaic + generalShelves.flatMap { model.items(for: $0) }).map(\.poster))

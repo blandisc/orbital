@@ -20,7 +20,7 @@ struct LoginView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s6) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     // La marca de la TV: el anillo se dibuja y la luna cae en su lugar, como al arrancar Orbital.
                     OrbitalWordmark(size: DS.Size.wordmark, animated: true).foregroundStyle(DS.text)
@@ -39,7 +39,7 @@ struct LoginView: View {
                 }
                 if case .failed(let message) = observer.model.state { DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error) }
                 Button(action: signIn) {
-                    HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Conectar") }.frame(maxWidth: .infinity)
+                    HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Conectar") }.frame(maxWidth: .infinity)   // ds-exception: la ruedita va dentro del botón que la pidió
                 }
                 .dsPrimaryButton().controlSize(.large)
                 .disabled(observer.model.state == .signingIn || email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)

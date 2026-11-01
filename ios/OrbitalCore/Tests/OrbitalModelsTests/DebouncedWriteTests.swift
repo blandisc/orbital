@@ -9,7 +9,9 @@ final class DebouncedWriteTests: XCTestCase {
         let writer = DebouncedWrite<String>(delay: .milliseconds(50))
         for text in ["h", "ho", "hol", "hola"] { writer.schedule(text) { saved.append($0) } }
         XCTAssertEqual(saved, [], "nada mientras tecleas")
-        try await Task.sleep(for: .milliseconds(200))
+        // Hasta 2 s: con la máquina ocupada (la CI, varias compilaciones) 200 ms fijos a veces no alcanzaban.
+        for _ in 0..<40 where saved.isEmpty { try await Task.sleep(for: .milliseconds(50)) }
+        try await Task.sleep(for: .milliseconds(100))   // y que no llegue un segundo guardado
         XCTAssertEqual(saved, ["hola"])
     }
 

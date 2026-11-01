@@ -8,7 +8,9 @@ import OrbitalCore
 @MainActor
 public final class BecauseModel: ObservableModel {
     /// El título de arriba y sus relacionadas (nil sin Trakt o sin nada visto con relacionados).
-    public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
+    public private(set) var because: (seed: TraktEntry, items: [Suggestion])? {
+        didSet { if oldValue?.seed != because?.seed || oldValue?.items != because?.items { changed() } }   // volver a Inicio lo vuelve a pedir: sin cambios, no se repinta
+    }
     /// Lo último que viste: las cartas del mazo.
     public private(set) var seeds: [TraktEntry] = [] { didSet { if seeds != oldValue { changed() } } }
     /// El título arriba del mazo: cambia en cuanto lo eliges (sus relacionadas llegan en `because`).

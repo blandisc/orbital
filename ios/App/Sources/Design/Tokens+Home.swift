@@ -22,7 +22,6 @@ extension DS {
     enum HomeTimeline {
         static let width: CGFloat = 112, labelRow: CGFloat = 18, dot: CGFloat = 7
         static let markLine: CGFloat = 2
-        static let soonOpacity: Double = 0.62
         /// Dónde queda HOY al abrir (de 0 a 1 en el ancho): lo de antes a la izquierda y un poco de lo que viene.
         static let todayAnchor: CGFloat = 0.62
     }
@@ -35,7 +34,8 @@ extension DS {
         static let veilStart: Double = 0.4
         static let tick: TimeInterval = 30
         static let drift: Double = 14, driftScale: CGFloat = 1.1
-        static let driftAnimation = Animation.easeInOut(duration: drift)
+        /// El acercamiento a 30 cuadros (no a los 120 de la pantalla) y desde qué parte visible cuenta como «se ve».
+        static let driftFrame: TimeInterval = 1.0 / 30, visibleShare = 0.01
         static let searchDelay: Duration = .milliseconds(350)
         static let gridColumns = 4, resultPoster: CGFloat = 44
     }

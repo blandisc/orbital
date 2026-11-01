@@ -54,7 +54,7 @@ struct HomeView: View {
         let picks = model.forYouPicks.filter { fits($0.kind) && !dismissedPicks.contains($0.imdb) }
         let pending = model.traktPending.filter { fits($0.kind) }
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if model.offline {
                     // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
                     DegradedNotice(state: .offline) { Task { await model.refresh() } }
@@ -67,7 +67,7 @@ struct HomeView: View {
                                   onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
                                   onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
                         .padding(.horizontal, DS.Space.gutter)
-                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                        .transition(DS.Motion.appear(reduceMotion))
                 }
                 // Lo que la TV mandó con «Enviar al iPhone»: una tarjeta pequeña, bajo «Viendo en la TV».
                 ForEach(inbox.model.fromTV) { item in
@@ -76,7 +76,7 @@ struct HomeView: View {
                                onDownload: { Task { await inbox.model.downloadFromCard(item) } },
                                onDismiss: { inbox.model.dismiss(item) })
                         .padding(.horizontal, DS.Space.gutter)
-                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                        .transition(DS.Motion.appear(reduceMotion))
                 }
                 // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
                 if !model.spotlight.isEmpty {
@@ -99,7 +99,7 @@ struct HomeView: View {
                     continueRail(model, items: continuing).perfTag("home.rail")
                         // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
                         // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                        .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Editorial.sectionGap + heroOverlap) : DS.Layout.betweenSubsections - DS.Editorial.sectionGap))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
+                        .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
                 } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
@@ -163,7 +163,7 @@ struct HomeView: View {
             // Sin accesorio (iOS 26.0) el botón se queda siempre: era la única entrada al control con algo sonando.
             if let openRemote, tvNow.model.now == nil || !Self.hasTabAccessory {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: openRemote) { Image(systemName: "av.remote") }
+                    Button { openRemote() } label: { Image(systemName: "av.remote") }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                 }
             }
@@ -212,7 +212,7 @@ struct HomeView: View {
                     TitleLink(route: s.route, width: width)
                 }
             }
-                .padding(.bottom, DS.Space.s14)
+                .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(route.id == "watchlist" ? Text("Mi lista") : Text("Sugerencias para ti"))
@@ -222,6 +222,9 @@ struct HomeView: View {
     /// Lo tuyo y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo). Lo pendiente por subir
     /// se sube solo y ya no se anuncia bajo el título («N cambios por subir»: no se quería ahí).
     private func reload(ifStale: Bool = false) async {
+        // De vuelta de una ficha o de otra pestaña, con lo de hace menos de un minuto: nada que pedir (antes «Por lo que
+        // viste» y el tono se volvían a pedir siempre y repintaban Inicio entera justo al regresar).
+        if ifStale, !home.model.isStale() { return }
         async let related: Void = because.model.load()   // a la par (Trakt lo guarda: volver a pedirlo es barato)
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         Perf.mark("home.done")
@@ -465,7 +468,7 @@ struct HomeView: View {
                             .accessibilityIdentifier("top-\(s.brand)")
                         }
                     }
-                    .padding(.vertical, DS.PlatformFan.pillStroke)   // el borde de la elegida no se recorta
+                    .padding(.vertical, DS.Stroke.selected)   // el anillo de la elegida no se recorta
                     .scrollTargetLayout()
                 }
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
@@ -521,7 +524,7 @@ struct HomeView: View {
                     .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
                 }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(Text("Seguir viendo")).navigationBarTitleDisplayMode(.inline)

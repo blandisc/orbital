@@ -18,7 +18,7 @@ struct ListGridView: View {
     var body: some View {
         ScrollView {
             if let plan = model.shelves.first(where: { $0.id == shelfID }) {
-                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                     HStack(spacing: DS.Space.s3) {
                         if plan.style != .plain, let logo = plan.list.logo { DSPlatformLogo(url: logo) }
                         if let meta = shelfMeta(plan) { meta.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(2) }
@@ -37,7 +37,7 @@ struct ListGridView: View {
                                      loading: model.isLoading(shelf: plan)) { s, width in poster(s, plan, width: width) }
                     }
                 }
-                .padding(.bottom, DS.Space.s14)
+                .padding(.bottom, DS.Layout.screenBottom)
                 .navigationTitle(shelfTitle(plan))
             }
         }
@@ -74,7 +74,7 @@ struct PlatformRankingsView: View {
     var body: some View {
         let tint = DS.PlatformTint.color(hub.brand)
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 HStack(spacing: DS.Space.s4) {
                     PlatformLogoTile(url: hub.logo, name: hub.name, size: DS.PlatformFan.headerLogo, radius: DS.Radius.lg, tint: tint,
                                      glow: DS.PlatformFan.headerGlow)
@@ -110,7 +110,7 @@ struct PlatformRankingsView: View {
                 if let current { grid(current, tint: tint) }
             }
             .padding(.vertical, DS.Space.s4)
-            .padding(.bottom, DS.Space.s14)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(Text(verbatim: hub.name)).navigationBarTitleDisplayMode(.inline)

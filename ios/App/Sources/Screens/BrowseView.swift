@@ -67,11 +67,11 @@ struct BrowseView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
-            .padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         // Solo el desplazamiento de verdad: el rebote al final de la página (que se pasa y regresa) no cuenta como subir.
         .onScrollGeometryChange(for: ScrollSpot.self) { g in
@@ -343,7 +343,7 @@ struct GenreView: View {
                           detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
             .padding(.top, DS.Space.s3)
-            .padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
@@ -374,7 +374,7 @@ struct PopularGridView: View {
                 TitleLink(route: s.route, width: width, detail: yearAndKind(year: s.year.map(String.init) ?? "", kind: s.kind))
             }
             .padding(.top, DS.Space.s3)
-            .padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle("Lo más popular hoy").navigationBarTitleDisplayMode(.inline)

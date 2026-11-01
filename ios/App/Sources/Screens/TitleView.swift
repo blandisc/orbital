@@ -31,7 +31,6 @@ struct TitleView: View {
     @State private var viewport: CGSize = .zero
     @State private var belowHero: CGFloat = 0
     /// Cuánto has deslizado (0 arriba) y el alto de la barra de arriba: el arte se recoge y lo que sube se desvanece.
-    @State private var scrolled: CGFloat = 0
     @State var topInset: CGFloat = 0
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var fromHere = false; var id: String { "\(videoID)-\(purpose)" } }
@@ -49,39 +48,11 @@ struct TitleView: View {
         #endif
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in scrolled = y }
-        // Lo que sube por debajo de la barra de arriba se desvanece (deja ver el fondo del color del arte) en vez de chocar con
-        // el reloj y los botones. Arriba del todo no hay desvanecido: el arte llega hasta la orilla.
-        .mask {
-            VStack(spacing: 0) {
-                // Toda la barra de arriba desvanecida (nada se trasluce detrás del nombre ni de los botones) y, debajo, la
-                // transición suave hacia el contenido.
-                let total = max(topInset + DS.TitleAction.topFade, 1), kept = 1 - fade
-                LinearGradient(stops: [.init(color: .black.opacity(kept), location: 0),
-                                       .init(color: .black.opacity(kept), location: topInset / total),
-                                       .init(color: .black, location: 1)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: total)
-                Color.black   // ds-exception: es una máscara, solo cuenta qué tan opaca es (no se ve el color)
-            }
-            .ignoresSafeArea()
-        }
-        // Recogido el arte, el logo (o el nombre) en la barra, entre ‹ y los botones: sigues sabiendo qué es. Se
-        // dibuja aquí y no como elemento de la barra (en la barra transparente de la ficha el sistema no lo enseñaba).
-        .overlay(alignment: .top) {
-            let shown = Double(min(1, max(0, (scrolled - heroHeight * DS.TitleAction.titleFrom) / max(heroHeight * DS.TitleAction.titleSpan, 1))))
-            // Entre ‹ y la cápsula de botones (que es más ancha que ‹): el nombre a la izquierda, sin meterse debajo.
-            let buttons = (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)
-            // El logo de la serie o película (si no hay, su nombre), del alto de la barra.
-            BarLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, DS.TitleAction.barTitleLeading)
-                .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons))
-                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
-                .offset(y: -DS.Size.touchTarget - DS.Space.s2)
-                .opacity(shown)
-                .allowsHitTesting(false)
-                .accessibilityHidden(shown < 1)
-        }
+        // Lo de arriba que sigue al desplazamiento va aparte (`TitleScrollChrome`): antes cada cuadro del desplazamiento
+        // volvía a pintar toda la ficha (capítulos, detalles), y regresar con el gesto se trababa.
+        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: model.info.logo ?? Artwork.logoURL(metaID: model.metaID),
+                                    title: model.title,
+                                    buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
@@ -135,19 +106,19 @@ struct TitleView: View {
     /// iPad y la Mac la ficha se abre en el panel de la derecha (`TitlePanel`), a la medida del iPhone.
     private func oneColumnLayout(_ model: TitleModel) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo; el ritmo lo lleva el stack de adentro
                 // Al deslizar, el arte se recoge (`BleedArt(collapse:)`): ver `hero`.
                 hero(model)
                     .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
-                VStack(alignment: .leading, spacing: DS.Space.s6) {
-                    VStack(alignment: .leading, spacing: DS.Space.s6) {
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         facts(model)
                         actions(model)
                     }
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
                     readingSections(model)
                 }
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
+                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
                 // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin
                 // reparto ni saga): si no, en unas fichas se recogía y en otras no.
@@ -197,8 +168,6 @@ struct TitleView: View {
         return min(cap, max(DS.TitleAction.heroAspect, width / room))
     }
 
-    /// Qué tan desvanecido va lo de arriba (0 con el arte a la vista, 1 ya recogido).
-    private var fade: Double { Double(min(1, max(0, scrolled / max(heroHeight * DS.TitleAction.fadeAt, 1)))) }
     private var heroHeight: CGFloat { contentWidth > 0 ? contentWidth / heroAspect : 0 }
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
     var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
@@ -209,7 +178,7 @@ struct TitleView: View {
             if env.services.orbital.isConfigured {
                 // Mientras va en camino, la ruedita en su lugar (y el aviso abajo): antes el toque no enseñaba nada.
                 Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: {
-                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv") }
+                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv") }   // ds-exception: la ruedita va dentro del botón que la pidió
                 }
                     .disabled(model.continueVideoID == nil || env.isSendingToTV(model.metaID))
                     .sensoryFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }
@@ -365,33 +334,37 @@ struct TitleView: View {
     }
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
-        // Un solo bloque de controles, simétrico: la temporada a la izquierda y la versión de la serie a la derecha, las dos
-        // cápsulas iguales (antes temporada, versión y avance eran tres renglones con alineaciones y tamaños distintos); abajo,
-        // el avance de la temporada de orilla a orilla.
+        // Un solo bloque de controles: las temporadas en cápsulas «T1, T2…» de orilla a orilla (la misma pieza que Mi media y la
+        // hoja de episodios) y, debajo a la derecha, la versión de la serie; abajo, el avance de la temporada.
         let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
-        HStack(spacing: DS.Space.s2) {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
             if model.seasons.count > 1 {
-                let chips = model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) }
-                let selection = Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) })
-                DSOptionMenu(items: chips, label: { $0.isSpecials ? Text("Especiales") : Text("Temporada \($0.season)") }, selection: selection, compact: true)
-            } else if let only = model.seasons.first {
-                Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.labelLarge, color: DS.text)
+                DSSeasonPicker(seasons: model.seasons.map(\.season),
+                               selection: Binding(get: { model.selectedSeason }, set: { model.select(season: $0) }), inset: DS.Space.gutter)
+                    .padding(.horizontal, -DS.Space.gutter)
             }
-            Spacer(minLength: DS.Space.s2)
-            // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
-            if let next = model.continueVideoID {
-                Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
-                    HStack(spacing: DS.Space.s2) {
-                        Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
-                        // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
-                        Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
-                            .recipe(.labelLarge, color: DS.text).lineLimit(1)
-                        Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+            if model.seasons.count == 1 || model.continueVideoID != nil {
+                HStack(spacing: DS.Space.s2) {
+                    if model.seasons.count == 1, let only = model.seasons.first {
+                        Text(only.isSpecials ? "Especiales" : "Temporada \(only.season)").recipe(.labelLarge, color: DS.text)
+                    }
+                    Spacer(minLength: DS.Space.s2)
+                    // La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
+                    if let next = model.continueVideoID {
+                        Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
+                            HStack(spacing: DS.Space.s2) {
+                                Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+                                // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
+                                Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
+                                    .recipe(.labelLarge, color: DS.text).lineLimit(1)
+                                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+                            }
+                        }
+                        .dsSecondaryButton()
+                        .accessibilityLabel(Text("Versión de la serie"))
+                        .accessibilityIdentifier("series-version")
                     }
                 }
-                .dsSecondaryButton()
-                .accessibilityLabel(Text("Versión de la serie"))
-                .accessibilityIdentifier("series-version")
             }
         }
         // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt), con su barra.
@@ -508,7 +481,7 @@ struct TitleView: View {
     /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), la saga y
     /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
     @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
-        VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+        VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
             if let trailer = x.trailer {
                 section(title: "Tráiler y extras", meta: Text("Para verla antes de verla")) {
                     VideoClipCard(clip: trailer)
@@ -575,22 +548,4 @@ struct TitleView: View {
 
     // MARK: acciones
 
-}
-
-/// El logo chico de la barra de la ficha (de alto fijo, sin pasarse de su espacio); sin logo, el nombre.
-private struct BarLogo: View {
-    let url: String?
-    let title: String
-    var body: some View {
-        Group {
-            if let u = url.flatMap(URL.init(string:)) {
-                RemoteImage(url: u, maxPoints: DS.TitleAction.barLogo * 8) { phase in
-                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { name }
-                }
-            } else { name }
-        }
-        .frame(height: DS.TitleAction.barLogo, alignment: .leading)
-        .accessibilityLabel(Text(verbatim: title))
-    }
-    private var name: some View { Text(verbatim: title).recipe(.labelLarge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
 }

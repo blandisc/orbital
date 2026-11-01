@@ -11,14 +11,21 @@ struct YearView: View {
         return text.prefix(1).uppercased(with: locale) + text.dropFirst()
     }
     @Environment(AppEnvironment.self) private var env
-    @State private var review: YearInReview?
-    @State private var loading = true
+    /// El año lo trae el modelo (antes, esta vista le pedía a Para ti directo).
+    @State private var observer: ModelObserver<YearReviewModel> = {
+        #if DEBUG
+        if Demo.isOn { return ModelObserver(YearReviewModel(AppEnvironment.shared.services, preset: Demo.yearInReview)) }
+        #endif
+        return ModelObserver(YearReviewModel(AppEnvironment.shared.services))
+    }()
+    private var review: YearInReview? { observer.model.review }
+    private var loading: Bool { observer.model.loading }
     /// El día que tocaste en el mapa (al abrir: el último con algo visto).
     @State private var selectedDay: Date?
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if let r = review {
                     HStack(spacing: DS.Space.s3) {
                         stat(Text(verbatim: "\(r.hours) h"), Text("vistas"))
@@ -56,17 +63,13 @@ struct YearView: View {
                     DSEmptyState(symbol: "calendar", title: Text("Conecta Trakt"), message: Text("Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año."))
                 }
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Space.s14)
+            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
         }
         .background(Backdrop())
         .navigationTitle(Text("Tu \(String(review?.year ?? Calendar.current.component(.year, from: Date())))")).navigationBarTitleDisplayMode(.inline)
         .task {
-            #if DEBUG
-            if Demo.isOn { review = Demo.yearInReview; loading = false; selectedDay = review?.plays.keys.max(); return }
-            #endif
-            review = await env.services.forYou.yearInReview()
-            loading = false
-            selectedDay = review?.plays.keys.max()
+            await observer.model.load()
+            if selectedDay == nil { selectedDay = observer.model.lastDay }
         }
     }
 
@@ -147,12 +150,9 @@ struct YearView: View {
                 HStack {
                     Text(verbatim: Self.dayTitle(day, env.uiLocale)).recipe(.cardTitle)   // en el idioma de la app
                     Spacer()
-                    Button { step(r, forward: false) } label: { Image(systemName: "chevron.left") }
-                        .accessibilityLabel(Text("Día anterior con algo visto"))
-                    Button { step(r, forward: true) } label: { Image(systemName: "chevron.right") }
-                        .accessibilityLabel(Text("Día siguiente con algo visto"))
+                    DSIconButton(symbol: "chevron.left", label: "Día anterior con algo visto", size: .regular) { step(r, forward: false) }
+                    DSIconButton(symbol: "chevron.right", label: "Día siguiente con algo visto", size: .regular) { step(r, forward: true) }
                 }
-                .buttonStyle(.glass).buttonBorderShape(.circle)
                 if plays.isEmpty {
                     Text("Ese día no viste nada.").recipe(.footnote)
                 } else {

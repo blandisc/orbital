@@ -4,13 +4,6 @@ import OrbitalModels
 
 /// Los renglones de episodios de la ficha: la ficha de temporada y cada episodio.
 
-/// Una temporada en la tira de filtros.
-struct SeasonChip: Hashable, Identifiable {
-    var season: Int
-    var isSpecials: Bool
-    var id: Int { season }
-}
-
 struct EpisodeRowView: View {
     let row: EpisodeRow
     let play: () -> Void
@@ -67,7 +60,7 @@ struct EpisodeRowView: View {
                     .accessibilityIdentifier("episode-rating")
             }
         }
-        .opacity(row.airs == nil ? 1 : DesignTokens.Opacity.faint)
+        .opacity(row.airs == nil ? 1 : DS.Opacity.dimmed)
         .contextMenu { if row.airs == nil { actions(download: true) } }
     }
 

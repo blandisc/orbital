@@ -68,14 +68,23 @@ public final class AdvancedFilterModel: ObservableModel {
         await more()
     }
 
-    /// La siguiente página (al llegar al final de la cuadrícula). Si una página no trae nada nuevo (todo ya estaba), pide la
-    /// que sigue, hasta tres, para que la cuadrícula crezca y el «llegué al final» vuelva a dispararse.
+    /// Cuántos títulos nuevos trae cada «más» como mínimo: una pantalla llena.
+    static let fillTarget = 20
+    /// Al llegar al final de la cuadrícula mientras aún cargaba: se pide otra vez al terminar.
+    private var wantsMore = false
+
+    /// Las páginas que sigan hasta juntar una pantalla de títulos nuevos (hasta cinco). Antes paraba con uno solo: con
+    /// «Sin lo que ya vi» la primera página quedaba en tres o cuatro y, si el último ya se veía, nunca pedía la segunda.
     public func more() async {
-        for _ in 0..<3 {
+        guard !isLoading else { wantsMore = true; return }
+        repeat {
+            wantsMore = false
             let before = results.count
-            await nextPage()
-            if results.count > before || exhausted || failed || isLoading { return }
-        }
+            for _ in 0..<5 {
+                await nextPage()
+                if results.count - before >= Self.fillTarget || exhausted || failed { break }
+            }
+        } while wantsMore && !exhausted && !failed
     }
 
     private func nextPage() async {

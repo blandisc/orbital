@@ -44,7 +44,7 @@ struct DecideView: View {
                 }
         }
         .presentationDetents(path.isEmpty ? [.height(quickHeight)] : [.large])
-        .fittedFormSizing(idealHeight: path.isEmpty ? quickHeight : WindowMetrics.size.height * DS.Remote.maxShare)
+        .fittedFormSizing(idealHeight: path.isEmpty ? quickHeight : WindowMetrics.size.height * DS.Sheet.maxShare)
         .presentationDragIndicator(.visible)
         .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
         .task {
@@ -64,13 +64,13 @@ struct DecideView: View {
     // MARK: la hoja corta
     private func root(_ m: DecideModel) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 header(m)
                 proposal(m)
                 filterRow(m)
             }
             .dsSheetContent()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in quickHeight = min(h, WindowMetrics.size.height * DS.Remote.maxShare) }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in quickHeight = min(h, WindowMetrics.size.height * DS.Sheet.maxShare) }
         }
         .scrollBounceBehavior(.basedOnSize)
     }
@@ -80,7 +80,7 @@ struct DecideView: View {
         let count = m.count()
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("Decide por mí").recipe(.title)
+                DSSheetHeader(title: Text("Decide por mí"))
                 Text(verbatim: optionsLine(m, count))
                     .recipe(.footnote).monospacedDigit().contentTransition(.numericText())
                     .accessibilityIdentifier("decide-count")
@@ -115,7 +115,7 @@ struct DecideView: View {
                             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                                 .strokeBorder(chosen ? DS.accent : .clear, lineWidth: DS.Decide.chosenStroke))
                             .scaleEffect(chosen ? 1 : DS.Decide.otherScale)
-                            .opacity(chosen ? 1 : DS.Decide.otherOpacity)
+                            .opacity(chosen ? 1 : DS.Opacity.dimmed)
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
@@ -164,7 +164,9 @@ struct DecideView: View {
                 // Lo que se espera (rara vez: los siguientes ya están listos) se ve en el botón, no encima de los carteles.
                 Button { Task { await m.next() } } label: {
                     HStack(spacing: DS.Space.s2) {
-                        if m.isLoading { ProgressView().controlSize(.small) } else { Image(systemName: "shuffle") }
+                        if m.isLoading {
+                            ProgressView().controlSize(.small)   // ds-exception: la ruedita va dentro del botón que la pidió
+                        } else { Image(systemName: "shuffle") }
                         Text("Barajar").lineLimit(1)
                     }
                     .foregroundStyle(DS.text).frame(maxWidth: .infinity)
@@ -185,7 +187,7 @@ struct DecideView: View {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
                 }
             }
-            .overlay { ProgressView() }
+            .overlay { DSLoadingState() }
         }
     }
 
@@ -383,7 +385,7 @@ struct DecideMoreFilters: View {
         let count = m.count()
         let unknown = count == 0 ? m.unknownCount() : 0
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 PanelGroupTitle(title: "Géneros")
                 Text("Elige uno o varios · el número es cuántas hay").recipe(.caption, color: DS.textFaint)
                 // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
@@ -449,7 +451,7 @@ struct DecideMoreFilters: View {
                 Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
             }
             .padding(DS.Space.s3)
-            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .dsCard(.row, translucent: true)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -544,7 +546,7 @@ struct DecideListPicker: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-            } header: { Text(title).recipe(.badge, color: DS.textMuted) }
+            } header: { DSGroupLabel(title: Text(title)) }
         }
     }
 

@@ -152,21 +152,23 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         }
         if !countries.isEmpty { p.append(("with_origin_country", countries.sorted().joined(separator: "|"))) }
         if !series, !studios.isEmpty { p.append(("with_companies", studios.sorted().map(String.init).joined(separator: "|"))) }
-        // Qué tan conocida y la calificación: el piso de votos evita lo que nadie ha visto (salvo «Para pocos»).
+        // Qué tan conocida y la calificación: el piso de votos evita lo que nadie ha visto (salvo «Para pocos»). Es bajo
+        // (25) para no dejar fuera lo de México y las series chicas; «Mejor calificadas» pide 100 para que no gane una
+        // con tres votos de 10.
         var rating = minRating
-        var votes: (min: Int?, max: Int?) = ((years?.lowerBound ?? 0) >= currentYear ? 30 : 100, nil)
+        var votes: (min: Int?, max: Int?) = ((years?.lowerBound ?? 0) >= currentYear ? 30 : sort == .rating ? 100 : 25, nil)
         var order = "popularity.desc"
         switch fame {
         case .any: break
-        case .gems: rating = max(rating ?? 0, 7.2); votes = (150, 2500); order = "vote_average.desc"
-        case .classics: rating = max(rating ?? 0, 7.5); votes = (series ? 2000 : 8000, nil); order = "vote_average.desc"
+        case .gems: rating = max(rating ?? 0, 7.0); votes = (150, 2500); order = "vote_average.desc"
+        case .classics: rating = max(rating ?? 0, 7.5); votes = (series ? 800 : 3000, nil); order = "vote_average.desc"
         case .niche: votes = (20, 300); order = "vote_average.desc"
         case .blockbusters: votes = (3000, nil); order = series ? "popularity.desc" : "revenue.desc"
         }
         if !providers.isEmpty {
             p.append(("with_watch_providers", providers.sorted().map(String.init).joined(separator: "|")))
             p.append(("watch_region", region))
-            p.append(("with_watch_monetization_types", "flatrate"))
+            p.append(("with_watch_monetization_types", "flatrate|free|ads"))   // también lo gratis (ViX, Pluto TV)
         }
         // El orden que elegiste manda sobre el de «Qué tan conocida» (el piso de votos se queda: no sale lo que nadie vio).
         switch sort {

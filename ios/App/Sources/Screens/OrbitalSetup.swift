@@ -60,7 +60,7 @@ struct OrbitalSetupView: View {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 GuideNumberedStep(number: 1, text: Text("En la TV abre Ajustes › Cuentas › iPhone. Aparece un código.")) { EmptyView() }
                 GuideNumberedStep(number: 2, text: Text("Toca «Escanear el código» y apúntale.")) { EmptyView() }
-                if model.connecting { HStack(spacing: DS.Space.s2) { ProgressView(); Text("Conectando…").foregroundStyle(DS.textMuted) } }
+                if model.connecting { DSInlineProgress(text: Text("Conectando…")) }
                 if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .error) }
                 if byHand {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {

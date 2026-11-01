@@ -39,8 +39,8 @@ struct CalendarDayCell: View {
             }
         }
         .frame(height: DS.ReleaseDays.cell)
-        .opacity(art.isEmpty && !isSelected ? DesignTokens.Opacity.faint : (isPast ? DS.ReleaseDays.pastOpacity : 1))
-        .overlay(shape.strokeBorder(isSelected ? DS.accent : .clear, lineWidth: DS.SettingsLook.optionRing))
+        .opacity(art.isEmpty && !isSelected ? DS.Opacity.dimmed : (isPast ? DS.Opacity.dimmed : 1))
+        .dsSelectionRing(isSelected, in: shape)
         .contentShape(shape)
     }
 }

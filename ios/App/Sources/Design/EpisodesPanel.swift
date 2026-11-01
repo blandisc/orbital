@@ -25,27 +25,12 @@ struct EpisodesPanel: View {
                 Text("Episodios").recipe(.cardTitle, color: DS.text)
                 Spacer()
                 Button(action: done) { Text("Listo").font(DS.TextRecipe.label.font) }
-                    .buttonStyle(.glassProminent).controlSize(.small).tint(DS.primary).foregroundStyle(DS.onPrimary)
+                    .dsPrimaryButton(size: .small)
                     .accessibilityIdentifier("episodes-done")
             }
             if seasons.count > 1 {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: DS.Space.s2) {
-                            ForEach(seasons) { s in
-                                PanelChip(title: Text("T\(s.season)"), selected: s.season == shown) { season = s.season }
-                                    .id(s.season)
-                                    .accessibilityLabel(Text("Temporada \(s.season)"))
-                            }
-                        }
-                    }
-                    // Solo a los lados: de su alto exacto y sin rebote vertical (antes se podía jalar arriba y abajo).
-                    .fixedSize(horizontal: false, vertical: true)
-                    .scrollBounceBehavior(.basedOnSize, axes: .vertical)
-                    // Los episodios llegan después de abrir (se leen aparte): al llegar, a la temporada que suena.
-                    .edgeFade()   // si no caben, las orillas se desvanecen en vez de cortarse
-                    .onChange(of: seasons.count, initial: true) { proxy.scrollTo(shown, anchor: .center) }
-                }
+                // La misma pieza de temporadas de la ficha, Mi media y la hoja de episodios, en su versión sobre el video (D8).
+                DSSeasonPicker(seasons: seasons.map(\.season), selection: Binding { shown ?? 0 } set: { season = $0 }, onVideo: true)
             }
             ScrollViewReader { proxy in
                 ScrollView {
@@ -86,7 +71,7 @@ struct EpisodesPanel: View {
         }
         .buttonStyle(.plain)
         .disabled(!available)
-        .opacity(available ? 1 : DS.PlayerPanel.unavailableOpacity)
+        .opacity(available ? 1 : DS.Opacity.disabled)
         .accessibilityLabel(Text("Temporada \(Int(season)), episodio \(Int(ep.episode)), \(ep.title)"))
         .accessibilityValue(now ? Text("Viendo") : upcoming ? Text("Siguiente") : Text(verbatim: ""))
         .accessibilityAddTraits(now ? .isSelected : [])

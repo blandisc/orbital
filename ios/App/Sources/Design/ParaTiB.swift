@@ -47,11 +47,14 @@ struct MosaicCover: View {
                 // El ícono del mosaico abajo a la derecha, negro sobre blanco (Fernando, 31 oct 2026: en vez de «Pasear por
                 // el mosaico»).
                 Button(action: onWalk) {
+                    // El ícono no crece más que su círculo: con letra de accesibilidad máxima se salía de él y de la orilla
+                    // derecha. Lo que dice va en la etiqueta para VoiceOver.
                     Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.cardTitle.font)
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .foregroundStyle(DS.backdropDeep)
                         .frame(width: DS.ParaTiB.walkButton, height: DS.ParaTiB.walkButton)
-                        .background(DS.paper, in: Circle())
-                        .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
+                        .background(DS.paper, in: Circle())   // ds-exception: sobre el arte de la portada
+                        .shadow(DS.Elevation.high)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("Pasear por el mosaico"))
@@ -159,18 +162,25 @@ struct MosaicCover: View {
 struct MatchTeaser: View {
     let posters: [String]
     let onOpen: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
+        // Con letra de accesibilidad, el abanico arriba y el texto debajo: al lado, «¿Qué vemos» no cabía y ensanchaba toda
+        // la página de Explorar (el botón del mosaico quedaba fuera de la orilla; ChaosRegressionUITests, letra máxima).
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s4))
+                                                  : AnyLayout(HStackLayout(spacing: DS.Space.s4))
         Button(action: onOpen) {
-            HStack(spacing: DS.Space.s4) {
+            layout {
                 PosterFan(posters: posters, width: DS.ParaTiB.deckPoster)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
                     Text("¿Qué vemos hoy?").recipe(.section)
                     Text("A la derecha la guardas, a la izquierda no.").recipe(.footnote, color: DS.textMuted)
                 }
+                .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Space.s4)
             .dsCard(.card)
             .contentShape(Rectangle())
@@ -331,9 +341,28 @@ private final class DriftView: UIView {
     }
 
     /// Al volver a la ventana (otra pestaña, la app al frente) la animación sigue ahí; si iOS la quitó, se vuelve a poner.
+    /// El controlador del muro se cuelga del de la pantalla (como pide UIKit): así recibe el tamaño de letra, la apariencia y
+    /// los cambios de la ventana por la vía normal (auditoría del 31 oct 2026, B8).
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        if window != nil, host.parent == nil, let parent = owningController {
+            parent.addChild(host)
+            host.didMove(toParent: parent)
+        } else if window == nil, host.parent != nil {
+            host.willMove(toParent: nil)
+            host.removeFromParent()
+        }
         sync()
+    }
+
+    /// El controlador más cercano hacia arriba (el de SwiftUI que pinta esta pantalla).
+    private var owningController: UIViewController? {
+        var next = superview?.next
+        while let responder = next {
+            if let controller = responder as? UIViewController { return controller }
+            next = responder.next
+        }
+        return nil
     }
 
     func set(enabled: Bool, running: Bool) {

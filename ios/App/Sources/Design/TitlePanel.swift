@@ -5,7 +5,10 @@ import OrbitalCore
 
 /// Abrir una ficha en el panel de la derecha, sobre lo que estabas viendo (como el iPhone, que la empuja a pantalla completa).
 /// Solo existe con ancho regular (iPad, Mac): lo pone `MainTabs`. En el iPhone es `nil` y todo navega como siempre.
-struct TitlePanelOpener {
+/// Siempre igual a otro: la raíz lo arma en cada pasada (cambiar de pestaña, regresar de una ficha) y, como el cierre solo
+/// toca su estado guardado, cambiarlo por uno nuevo no cambia nada; sin esto, todo lo que lo lee se volvía a pintar.
+struct TitlePanelOpener: Equatable {
+    static func == (_: Self, _: Self) -> Bool { true }
     /// La ficha y, si se sabe, el marco del póster que se tocó (en la ventana): de ahí sale el zoom hacia el panel.
     let open: (TitleRoute, CGRect?) -> Void
     func callAsFunction(_ route: TitleRoute, from frame: CGRect? = nil) { open(route, frame) }
@@ -20,18 +23,24 @@ struct TitleNavigationLink<Label: View>: View {
     let route: TitleRoute
     @ViewBuilder var label: () -> Label
     @Environment(\.titlePanel) private var panel
-    /// Dónde está el póster en la ventana: el zoom hacia el panel sale de aquí.
-    @State private var frame: CGRect?
+    /// Dónde está el póster en la ventana: el zoom hacia el panel sale de aquí. En una caja que SwiftUI no observa: cambia en
+    /// cada cuadro al desplazar y, guardado como estado, volvía a pintar cada póster en cada cuadro (auditoría, A3).
+    @State private var frame = FrameBox()
 
     var body: some View {
         if let panel {
-            Button { panel(route, from: frame) } label: { label() }
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
+            Button { panel(route, from: frame.rect) } label: { label() }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame.rect = $0 }
                 .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
         } else {
             NavigationLink(value: route) { label() }.accessibilityIdentifier("title-link")
         }
     }
+}
+
+/// Un marco que se guarda sin avisar a SwiftUI (solo se lee al tocar).
+@MainActor private final class FrameBox {
+    var rect: CGRect?
 }
 
 /// Abre la ficha de un estado (`openTitle`): en el panel si lo hay; si no, como destino de la navegación.
@@ -104,7 +113,7 @@ private struct PosterFlightLayer: ViewModifier {
                     PosterView(url: flight.poster, title: flight.title, aspect: nil)
                         .frame(width: rect.width, height: rect.height)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                        .shadow(color: DS.scrimStrong, radius: DS.PlayerPanel.liftShadow)
+                        .shadow(DS.Elevation.floating.drop(0))
                         .position(x: rect.midX, y: rect.midY)
                         .opacity(flight.fading ? 0 : 1)
                 }
@@ -137,7 +146,7 @@ func launchPosterFlight(_ flight: Binding<PosterFlight?>, route: TitleRoute, fro
     flight.wrappedValue = PosterFlight(poster: route.poster, title: route.title, from: from)
     Task { @MainActor in
         await Task.yield()   // un cuadro en el lugar del póster, para que el resorte tenga de dónde salir
-        withAnimation(.spring(duration: DesignTokens.Motion.slow, bounce: DS.TitleAction.flightBounce)) { flight.wrappedValue?.landed = true }
+        withAnimation(DS.Motion.spring(reduceMotion)) { flight.wrappedValue?.landed = true }
         try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))
         withAnimation(DS.Motion.fade) { flight.wrappedValue?.fading = true }
         try? await Task.sleep(for: .seconds(DesignTokens.Motion.base))

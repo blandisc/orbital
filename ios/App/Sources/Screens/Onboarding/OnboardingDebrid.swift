@@ -77,7 +77,7 @@ struct DebridKeyField: View {
             }
             switch debrid.check {
             case .idle: if !debrid.token.isEmpty { Button("Comprobar") { Task { await debrid.verify() } }.dsGlassButton() }
-            case .checking: ProgressView()
+            case .checking: DSInlineProgress(text: Text("Comprobando…"))
             case .ok(let status):
                 GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text(verbatim: "\(status.username) · Premium"),
                            detail: DebridWords.text(status))
@@ -136,7 +136,7 @@ struct OnboardingAddons: View {
                   message: Text("Los complementos son buscadores: encuentran versiones de cada película y Real-Debrid te las entrega."),
                   step: step, next: next) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                Text("Ya dejamos listos estos").font(DS.TextRecipe.eyebrow.font).foregroundStyle(DS.textMuted).textCase(.uppercase)
+                DSGroupLabel(title: Text("Ya dejamos listos estos"))
                 ForEach(model.items) { addon in
                     Toggle(isOn: Binding(get: { addon.enabled }, set: { on in Task { await model.setEnabled(addon.id, on) } })) {
                         let what = AddonsModel.summary(addon)

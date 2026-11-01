@@ -27,7 +27,7 @@ struct MatchCard: View {
                         ForEach(genres.prefix(DS.Match.genres), id: \.self) { g in
                             Text(verbatim: g).recipe(.badge, color: DS.paper).lineLimit(1)
                                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
-                                .background(DS.paper.opacity(DS.Match.chipFill), in: Capsule())
+                                .background(DS.paper.opacity(DS.Match.chipFill), in: Capsule())   // ds-exception: sobre el arte de la carta
                         }
                     }
                 }
@@ -62,7 +62,7 @@ struct MatchCard: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
-        .shadow(color: DS.scrimStrong, radius: DS.Space.s4, y: DS.Space.s2)
+        .shadow(DS.Elevation.floating)
         .accessibilityElement(children: .combine)
     }
 

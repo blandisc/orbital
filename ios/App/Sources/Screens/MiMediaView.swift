@@ -19,7 +19,7 @@ struct MiMediaView<Top: View>: View {
     var body: some View {
         let model = observer.model
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 top()
                 if model.needsFolder {
                     DSEmptyState(symbol: "folder", title: Text("Elige la carpeta de tus películas"),
@@ -122,7 +122,7 @@ struct MiMediaView<Top: View>: View {
         NavigationLink(value: MiMediaTitleRoute(id: t.id)) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: t.poster, title: model.name(t))
-                    .overlay(alignment: .topLeading) { if model.isNew(t) { DSBadge(text: "Nuevo").padding(DS.Space.s2) } }   // placa sólida como en Inicio: se lee sobre cualquier póster
+                    .overlay(alignment: .topLeading) { if model.isNew(t) { DSCornerRibbon(text: "Nuevo") } }   // el listón de Inicio: se lee sobre cualquier póster
                     .overlay(alignment: .bottomTrailing) {
                         if model.onPhoneCount(t) > 0 {
                             Image(systemName: "arrow.down.circle.fill").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.good, DS.backdropDeep)
@@ -184,7 +184,7 @@ struct MiMediaTitleView: View {
         Group {
             if let t = model.all.first(where: { $0.id == id }) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: DS.Space.s5) {
+                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         hero(t, name: model.name(t))
                         actions(t, model)
                         if t.kind == "series" { episodes(t, model) } else { versions(t, model) }
@@ -308,15 +308,9 @@ struct MiMediaTitleView: View {
     private func episodes(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if seasons.count > 1 {
-                let chips = seasons.map { SeasonChip(season: $0.season, isSpecials: $0.season == 0) }
-                let selection = Binding(get: { SeasonChip(season: season, isSpecials: season == 0) }, set: { season = $0.season })
-                let label = { (s: SeasonChip) in s.isSpecials ? Text("Especiales") : Text("Temporada \(s.season)") }
-                // Como la ficha: hasta 4 temporadas como filtros a la vista; con más, un menú.
-                if chips.count <= DS.Size.seasonChipsMax {
-                    DSChipRow(items: chips, label: label, selection: selection).padding(.horizontal, -DS.Space.gutter)
-                } else {
-                    DSOptionMenu(items: chips, label: label, selection: selection)
-                }
+                // Como la ficha: las temporadas en cápsulas «T1, T2…», que se deslizan si no caben.
+                DSSeasonPicker(seasons: seasons.map(\.season), selection: $season, inset: DS.Space.gutter)
+                    .padding(.horizontal, -DS.Space.gutter)
             }
             if seasons.isEmpty { DSLoadingState() }
             ForEach(seasons.first(where: { $0.season == season })?.rows ?? []) { row in episodeRow(t, row, model) }
@@ -359,7 +353,7 @@ struct MiMediaTitleView: View {
             }
         }
         .padding(.vertical, DS.Space.s2)
-        .opacity(row.missing ? DesignTokens.Opacity.disabled : 1)
+        .opacity(row.missing ? DS.Opacity.disabled : 1)
     }
 
     private func fixRow(_ t: OneDriveLibrary.Title) -> some View {
