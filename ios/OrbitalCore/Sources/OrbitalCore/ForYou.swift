@@ -427,7 +427,7 @@ public actor ForYou {
     public static func streamSuggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb,
                                          deliver: @MainActor ([Suggestion]) -> Bool) async -> Bool {
         await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-            for (i, row) in rows.enumerated() { group.addTask { (i, try? await tmdb.details(kind: row.kind, tmdbID: row.id)) } }
+            for (i, row) in rows.enumerated() { group.addTask { (i, await detailsRetrying(row, tmdb: tmdb)) } }
             var slots = [Suggestion??](repeating: nil, count: rows.count)   // nil: en camino; .some(nil): no sirve
             var next = 0
             for await (i, d) in group {
@@ -440,10 +440,18 @@ public actor ForYou {
         }
     }
 
+    /// La ficha de una fila; si no contesta (TMDB tarda o dice «espera»), una vez más. Antes el título se perdía sin avisar y
+    /// la búsqueda avanzada salía con huecos.
+    static func detailsRetrying(_ row: TmdbRow, tmdb: Tmdb) async -> TmdbDetails? {
+        if let d = try? await tmdb.details(kind: row.kind, tmdbID: row.id) { return d }
+        guard !Task.isCancelled else { return nil }
+        return try? await tmdb.details(kind: row.kind, tmdbID: row.id)
+    }
+
     /// Filas de TMDB de películas y series juntas → sugerencias, en su orden (cada una con su IMDb; un título repetido, una vez).
     public static func suggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
         let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-            for (i, row) in rows.enumerated() { group.addTask { (i, try? await tmdb.details(kind: row.kind, tmdbID: row.id)) } }
+            for (i, row) in rows.enumerated() { group.addTask { (i, await detailsRetrying(row, tmdb: tmdb)) } }
             var out = [TmdbDetails?](repeating: nil, count: rows.count)
             for await (i, d) in group { out[i] = d }
             return out

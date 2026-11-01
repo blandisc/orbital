@@ -1692,7 +1692,8 @@ class ForYou:
             found = self.platforms().get(platform)
             if not found:
                 return None
-            params.update(with_watch_providers=found["id"], watch_region=self.region, with_watch_monetization_types="flatrate")
+            params.update(with_watch_providers=found["id"], watch_region=self.region,
+                          with_watch_monetization_types="flatrate|free|ads")  # también lo gratis (ViX, Pluto TV), como el iPhone
         country = f.get("country")
         if country in self.FILTER_COUNTRIES:
             params["with_origin_country"] = country

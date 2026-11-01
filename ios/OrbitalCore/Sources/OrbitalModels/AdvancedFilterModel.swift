@@ -102,7 +102,7 @@ public final class AdvancedFilterModel: ObservableModel {
                 return
             }
             let (rows, count) = try await services.tmdb.discoverCounting(asked, page: page + 1)
-            guard asked == filter else { return }   // cambiaste el filtro mientras llegaba: se descarta
+            guard asked.withoutClock == filter.withoutClock else { return }   // cambiaste el filtro mientras llegaba: se descarta
             if page == 0 { total = count }
             page += 1
             if rows.isEmpty { exhausted = true; return }
@@ -111,7 +111,7 @@ public final class AdvancedFilterModel: ObservableModel {
             var have = Set(results.map(\.imdb))
             let hidden = asked.hideWatched ? watched : []
             _ = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: services.tmdb) { [weak self] batch in
-                guard let self, asked == self.filter else { return false }   // cambiaste el filtro: lo demás ya no sirve
+                guard let self, asked.withoutClock == self.filter.withoutClock else { return false }   // cambiaste el filtro: lo demás ya no sirve
                 let fresh = batch.filter { !hidden.contains($0.imdb) && have.insert($0.imdb).inserted }
                 if !fresh.isEmpty { self.results += fresh }
                 return true

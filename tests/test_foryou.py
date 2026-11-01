@@ -1190,6 +1190,7 @@ def test_advanced_filter_asks_tmdb_with_every_choice(make_foryou, net, monkeypat
     assert p["with_genres"] == 27 and p["primary_release_date.gte"] == "1990-01-01" and p["primary_release_date.lte"] == "1999-12-31"
     assert p["vote_average.gte"] == 7 and p["vote_count.gte"] == 100 and p["vote_count.lte"] == 1000
     assert p["with_watch_providers"] == 8 and p["with_origin_country"] == "KR"
+    assert p["with_watch_monetization_types"] == "flatrate|free|ads"  # también lo gratis, como el iPhone
     assert fy.filter_params("series", {"genre": "terror"}) is None  # Terror no tiene género de serie en TMDB
     assert fy.filter_params("series", {"decade": "old"})["first_air_date.lte"] == "1979-12-31"
     net.on("GET", r"/discover/movie", (200, {"results": [{"id": 1}], "total_results": 340}))
