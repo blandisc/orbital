@@ -484,6 +484,20 @@ final class ScreenModelsTests: XCTestCase {
         subscription.cancel()
     }
 
+    /// Cambiar el idioma rearma los servicios (TMDB, Trakt, Para ti…) y la app se vuelve a pintar una sola vez (B7: antes,
+    /// cada pieza rearmada avisaba por su lado, hasta siete pasadas seguidas).
+    @MainActor func testCambiarElIdiomaAvisaUnaSolaVez() throws {
+        let rig = try ServicesRig()
+        let model = SettingsModel(rig.services)
+        var told = 0
+        let subscription = rig.services.onChange { told += 1 }
+        let generation = rig.services.generation
+        model.update { $0.uiLanguage = "en" }
+        XCTAssertEqual(told, 1)
+        XCTAssertEqual(rig.services.generation, generation + 1, "sí se rearmó")
+        subscription.cancel()
+    }
+
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
         let rig = try ServicesRig()
         let model = SettingsModel(rig.services)
