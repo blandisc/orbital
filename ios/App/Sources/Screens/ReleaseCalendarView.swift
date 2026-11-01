@@ -80,7 +80,10 @@ struct ReleaseCalendarView: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             Text(verbatim: sentence(model.selected.formatted(Date.FormatStyle(locale: env.uiLocale).weekday(.wide).day().month(.wide))))
                 .recipe(.cardTitle)
-            if airings.isEmpty && !model.loading { Text("Ese día no sale nada de lo que sigues.").recipe(.footnote) }
+            // Sin Trakt o sin red no se sabe si ese día sale algo: se dice por qué (antes, «no sale nada»).
+            if let problem = model.problem, airings.isEmpty, !model.loading {
+                DegradedNotice(state: problem) { Task { await model.load() } }
+            } else if airings.isEmpty && !model.loading { Text("Ese día no sale nada de lo que sigues.").recipe(.footnote) }
             ForEach(airings) { a in
                 Button { open(a.series.route) } label: {
                     HStack(spacing: DS.Space.s3) {
