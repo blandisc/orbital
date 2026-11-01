@@ -52,6 +52,24 @@ struct TitleScrollChrome: ViewModifier {
     }
 }
 
+/// Al abrir una ficha, el arte crece con el zoom desde el póster y lo de abajo (datos, botones, sinopsis) sube un poco con un
+/// fundido, un instante después: se lee como una tarjeta que se abre y no como una pantalla que aparece de golpe. Una vez
+/// (regresar de una persona o de la saga no lo repite). Con «Reducir movimiento», solo el fundido.
+struct TitleEntrance: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : DS.Space.s5)
+            .onAppear {
+                guard !shown else { return }
+                withAnimation((DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade).delay(DesignTokens.Motion.base / 2)) { shown = true }
+            }
+    }
+}
+
 /// El logo chico de la barra de la ficha (de alto fijo, sin pasarse de su espacio); sin logo, el nombre.
 private struct BarLogo: View {
     let url: String?

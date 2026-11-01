@@ -118,6 +118,7 @@ struct TitleView: View {
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
                     readingSections(model)
                 }
+                .modifier(TitleEntrance())   // el arte llega con el zoom; lo de abajo entra detrás de él
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
                 // Siempre se puede recoger el arte hasta que el nombre suba a la barra, aunque haya poco abajo (una película sin

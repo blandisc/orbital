@@ -71,19 +71,19 @@ private struct SkySchedule: TimelineSchedule {
     }
 }
 
-/// La franja de luz: una banda ancha y desenfocada en diagonal (el desenfoque lo hace la tarjeta gráfica una vez; no se
-/// vuelve a calcular en cada cuadro).
+/// La franja de luz: una banda ancha y suave en diagonal. Es un degradado elíptico del tamaño que tenía la banda ya
+/// desenfocada: se ve igual y no pide desenfoque (el de 56 pt se volvía a calcular al animar la barra de pestañas y el zoom
+/// de la ficha, con dos pantallas a la vez).
 private struct SkyBand: View {
     var body: some View {
         GeometryReader { geo in
             let (a, b) = (CGPoint(x: DS.Sky.bandFrom.x * geo.size.width, y: DS.Sky.bandFrom.y * geo.size.height),
                           CGPoint(x: DS.Sky.bandTo.x * geo.size.width, y: DS.Sky.bandTo.y * geo.size.height))
-            Capsule()
-                .fill(LinearGradient(colors: [.clear, DS.Sky.band, .clear], startPoint: .leading, endPoint: .trailing))
-                .frame(width: hypot(b.x - a.x, b.y - a.y), height: geo.size.width * DS.Sky.bandWidth)
+            Rectangle()
+                .fill(EllipticalGradient(colors: [DS.Sky.band, .clear]))
+                .frame(width: hypot(b.x - a.x, b.y - a.y), height: geo.size.width * DS.Sky.bandWidth + DS.Sky.bandBlur * 2)
                 .rotationEffect(.radians(atan2(b.y - a.y, b.x - a.x)))
                 .position(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
-                .blur(radius: DS.Sky.bandBlur)
         }
     }
 }

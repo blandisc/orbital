@@ -173,6 +173,9 @@ extension View {
                     LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom)
                         .frame(height: DS.Collections.reflection)
                 }
+                // Volteado, desenfocado y recortado en una sola imagen: al desplazar la fila (y al animar la barra o el zoom)
+                // se mueve esa imagen, sin volver a desenfocar el póster entero en cada cuadro.
+                .drawingGroup()
                 .alignmentGuide(.bottom) { d in d[.top] - DS.Collections.reflectionGap }
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)

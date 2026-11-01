@@ -470,3 +470,10 @@ extension View {
         shadow(color: elevation.color, radius: elevation.radius, y: elevation.y)
     }
 }
+
+extension MatchedTransitionSourceConfiguration {
+    /// La misma sombra en el origen de un zoom (el póster del que sale la ficha).
+    func shadow(_ elevation: DS.Elevation) -> some MatchedTransitionSourceConfiguration {
+        shadow(color: elevation.color, radius: elevation.radius, y: elevation.y)
+    }
+}

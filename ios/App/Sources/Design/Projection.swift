@@ -208,11 +208,23 @@ extension View {
 
 // MARK: Póster → ficha con la transición de zoom nativa
 
-private struct TitleZoomKey: EnvironmentKey { static let defaultValue: Namespace.ID? = nil }
+/// El espacio del zoom de una pantalla y cuál póster se tocó de cada título. Un mismo título puede estar en varias filas
+/// (Top 10, Mi lista, Sugerencias): con el título como único nombre, el zoom salía (y regresaba) a veces de otro póster.
+/// Cada póster tiene su propio nombre (`TitleZoomID`) y el que se toca se anota aquí: la ficha sale de ese y vuelve a ese.
+/// Es una caja que SwiftUI no observa: anotar un toque no repinta nada.
+@MainActor final class TitleZoomTaps {
+    var last: [TitleRoute: TitleZoomID] = [:]
+}
+
+struct TitleZoomID: Hashable { let route: TitleRoute; let slot: UUID }
+
+struct TitleZoomSpace: Sendable { let namespace: Namespace.ID; let taps: TitleZoomTaps }
+
+private struct TitleZoomKey: EnvironmentKey { static let defaultValue: TitleZoomSpace? = nil }
 
 extension EnvironmentValues {
     /// El espacio de la transición de zoom de la pantalla (lo pone `titleDestinations()`).
-    var titleZoom: Namespace.ID? {
+    var titleZoom: TitleZoomSpace? {
         get { self[TitleZoomKey.self] }
         set { self[TitleZoomKey.self] = newValue }
     }
@@ -221,12 +233,14 @@ extension EnvironmentValues {
 /// La receta de cada pantalla que abre fichas: la navegación a `TitleRoute` y el zoom desde el póster que se tocó.
 private struct TitleDestinations: ViewModifier {
     @Namespace private var zoom
+    @State private var taps = TitleZoomTaps()
 
     func body(content: Content) -> some View {
         content
-            .environment(\.titleZoom, zoom)
+            .environment(\.titleZoom, TitleZoomSpace(namespace: zoom, taps: taps))
             .navigationDestination(for: TitleRoute.self) { route in
-                TitleView(route: route).navigationTransition(.zoom(sourceID: route, in: zoom))
+                // Del póster que tocaste; si se abrió sin tocar uno (la portada, Siri), el sistema la sube desde abajo.
+                TitleView(route: route).navigationTransition(.zoom(sourceID: AnyHashable(taps.last[route] ?? TitleZoomID(route: route, slot: UUID())), in: zoom))
             }
             .navigationDestination(for: TmdbRoute.self) { TmdbTitleView(title: $0.title) }   // recomendaciones, saga, filmografía
             .navigationDestination(for: PersonRoute.self) { PersonView(route: $0) }
@@ -236,9 +250,21 @@ private struct TitleDestinations: ViewModifier {
 private struct TitleZoomSource: ViewModifier {
     let route: TitleRoute
     @Environment(\.titleZoom) private var zoom
+    /// El nombre de este póster en el zoom: uno por póster en pantalla, aunque el título se repita en otra fila.
+    @State private var slot = UUID()
 
     func body(content: Content) -> some View {
-        if let zoom { content.matchedTransitionSource(id: route, in: zoom) } else { content }
+        if let zoom {
+            let id = TitleZoomID(route: route, slot: slot)
+            content
+                // Con la esquina y la sombra del póster: el zoom crece desde la tarjeta y regresa a ella, no desde un
+                // rectángulo de esquinas rectas.
+                .matchedTransitionSource(id: AnyHashable(id), in: zoom.namespace) { source in
+                    source.clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                        .shadow(DS.Elevation.floating)
+                }
+                .simultaneousGesture(TapGesture().onEnded { zoom.taps.last[route] = id })
+        } else { content }
     }
 }
 

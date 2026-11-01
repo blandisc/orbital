@@ -24,6 +24,7 @@ extension DS {
         static let twinkle: ClosedRange<Double> = 6...11, twinkleDepth = 0.35
         /// La franja de luz: de dónde a dónde cruza (de 0 a 1 en la pantalla), qué tan ancha, desenfocada y tenue.
         static let bandFrom = CGPoint(x: -0.1, y: 0.68), bandTo = CGPoint(x: 1.1, y: 0.12)
+        /// `bandBlur`: cuánto se extiende la luz fuera de la banda (antes era el radio del desenfoque; hoy, un degradado).
         static let bandWidth: CGFloat = 0.36, bandBlur: CGFloat = 56, bandOpacity = 0.08, bandOpacityLight = 0.5
         /// Hasta dónde llega el tono del cielo antes de fundirse con el fondo, y cuánto se ven las estrellas de día.
         static let duskFade = 0.7, lightStars = 0.5
