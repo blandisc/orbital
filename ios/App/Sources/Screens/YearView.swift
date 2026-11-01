@@ -11,8 +11,15 @@ struct YearView: View {
         return text.prefix(1).uppercased(with: locale) + text.dropFirst()
     }
     @Environment(AppEnvironment.self) private var env
-    @State private var review: YearInReview?
-    @State private var loading = true
+    /// El año lo trae el modelo (antes, esta vista le pedía a Para ti directo).
+    @State private var observer: ModelObserver<YearReviewModel> = {
+        #if DEBUG
+        if Demo.isOn { return ModelObserver(YearReviewModel(AppEnvironment.shared.services, preset: Demo.yearInReview)) }
+        #endif
+        return ModelObserver(YearReviewModel(AppEnvironment.shared.services))
+    }()
+    private var review: YearInReview? { observer.model.review }
+    private var loading: Bool { observer.model.loading }
     /// El día que tocaste en el mapa (al abrir: el último con algo visto).
     @State private var selectedDay: Date?
 
@@ -61,12 +68,8 @@ struct YearView: View {
         .background(Backdrop())
         .navigationTitle(Text("Tu \(String(review?.year ?? Calendar.current.component(.year, from: Date())))")).navigationBarTitleDisplayMode(.inline)
         .task {
-            #if DEBUG
-            if Demo.isOn { review = Demo.yearInReview; loading = false; selectedDay = review?.plays.keys.max(); return }
-            #endif
-            review = await env.services.forYou.yearInReview()
-            loading = false
-            selectedDay = review?.plays.keys.max()
+            await observer.model.load()
+            if selectedDay == nil { selectedDay = observer.model.lastDay }
         }
     }
 

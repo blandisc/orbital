@@ -28,9 +28,10 @@ struct TmdbTitleView: View {
 /// conocido primero, en la cuadrícula de pósters de la app. El nombre sube a la barra solo al deslizar (arriba ya está grande).
 struct PersonView: View {
     let route: PersonRoute
-    @Environment(AppEnvironment.self) private var env
-    @State private var person: PersonDetails?
-    @State private var failed = false
+    /// La persona la trae el modelo (antes, esta vista le pedía a TMDB directo).
+    @State private var observer: ModelObserver<PersonModel>
+    private var person: PersonDetails? { observer.model.person }
+    private var failed: Bool { observer.model.failed }
     @State private var expanded = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var scrolledDown = false
@@ -38,6 +39,11 @@ struct PersonView: View {
     @State private var bioCut = false
     @State private var bioFull: CGFloat = 0
     @State private var bioShown: CGFloat = 0
+
+    init(route: PersonRoute) {
+        self.route = route
+        _observer = State(wrappedValue: ModelObserver(PersonModel(AppEnvironment.shared.services, id: route.id)))
+    }
 
     var body: some View {
         ScrollView {
@@ -68,10 +74,7 @@ struct PersonView: View {
         .background(Backdrop())
         // El nombre en la barra solo cuando el grande ya se fue (o si no hay nada más que mostrar).
         .navigationTitle(scrolledDown || failed ? Text(verbatim: route.name) : Text(verbatim: "")).navigationBarTitleDisplayMode(.inline)
-        .task {
-            guard person == nil else { return }
-            do { person = try await env.services.tmdb.person(route.id) } catch { failed = true }
-        }
+        .task { await observer.model.load() }
     }
 
     /// La biografía en unos renglones, con «Más ⌄» a la vista para leerla completa (antes solo se desplegaba al tocar el texto).
