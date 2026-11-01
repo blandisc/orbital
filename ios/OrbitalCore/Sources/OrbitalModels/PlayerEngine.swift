@@ -24,6 +24,29 @@ public struct EngineSnapshot: Sendable, Equatable {
     }
 }
 
+extension EngineSnapshot {
+    /// Igual salvo la posición (lo que cambia cuatro veces por segundo mientras suena).
+    func sameExceptPosition(_ other: EngineSnapshot) -> Bool {
+        var a = self
+        a.position = other.position
+        return a == other
+    }
+}
+
+/// La posición y la duración del video, aparte del `PlayerModel`: solo lo que se mueve con el video (la barra de avance y sus
+/// tiempos, la pantalla del iPod) se vuelve a pintar cuatro veces por segundo, no la pantalla entera del reproductor.
+@MainActor
+public final class PlayerTime: ObservableModel {
+    public private(set) var position: Double = 0
+    public private(set) var duration: Double = 0
+
+    func update(position: Double, duration: Double) {
+        guard position != self.position || duration != self.duration else { return }
+        self.position = position; self.duration = duration
+        changed()
+    }
+}
+
 /// El reproductor de video. El motor principal es AetherEngine; SwiftVLC es el repuesto; Infuse es otra vía
 /// (`Infuse`), que no es un motor porque no informa mientras se reproduce.
 public protocol PlayerEngine: AnyObject, Sendable {

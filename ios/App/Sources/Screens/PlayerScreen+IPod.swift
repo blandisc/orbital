@@ -10,7 +10,7 @@ extension PlayerScreen {
     func ipodChrome(_ model: PlayerModel, face: IPodFace) -> some View {
         GeometryReader { geo in
             let layout = IPodLayout(in: geo.size, aspect: portraitAspect)
-            let shown = wheelTarget ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
+            let held = wheelTarget ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek
             let state = model.snapshot.state
             ZStack(alignment: .topLeading) {
                 HStack(spacing: DS.Space.s3) {
@@ -26,9 +26,11 @@ extension PlayerScreen {
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
                 .frame(width: geo.size.width)
-                IPodScreen(face: face, status: state == .playing ? "Reproduciendo" : state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa",
-                           playing: state == .playing, title: current.displayTitle, detail: ipodDetail(model),
-                           position: shown, duration: model.snapshot.duration)
+                PlayerTimeReader(time: model.time) { position in
+                    IPodScreen(face: face, status: state == .playing ? "Reproduciendo" : state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa",
+                               playing: state == .playing, title: current.displayTitle, detail: ipodDetail(model),
+                               position: held ?? position, duration: model.snapshot.duration)
+                }
                     .frame(width: layout.screen.width, height: layout.screen.height)
                     .offset(x: layout.screen.minX, y: layout.screen.minY)
                     .allowsHitTesting(false)

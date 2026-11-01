@@ -430,8 +430,13 @@ struct PlayerScreen: View {
                               switchTo: index, switchTitle: tr("Cambiar")))
         }
         // El video ya llegó (o pasó un momento): el pulgar vuelve a seguir el avance real.
-        .onChange(of: model.snapshot.position) { _, position in
-            if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
+        // (Lo lee una vista aparte: un `onChange` aquí volvería a pintar todo el reproductor con cada avance.)
+        .background {
+            PlayerTimeReader(time: model.time) { position in
+                Color.clear.onChange(of: position) { _, position in
+                    if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
+                }
+            }
         }
         .task(id: current.videoID) {
             // Otro episodio de la misma serie: la proporción se conserva hasta que el motor mida la nueva (antes se borraba y un 4:3
