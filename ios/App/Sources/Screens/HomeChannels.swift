@@ -10,7 +10,11 @@ struct HomeChannels: View {
     let model: ChannelsModel
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var choosing = false
+    /// Si la fila se ve en Inicio: abajo de la portada no se ve al abrir, y el acercamiento de cada tarjeta gastaba ~18 % de
+    /// CPU sin que nadie lo viera (auditoría del 31 oct 2026, R3).
+    @State private var onScreen = false
 
     var body: some View {
         let _ = model.track()
@@ -38,6 +42,7 @@ struct HomeChannels: View {
                 .scrollTargetBehavior(.viewAligned)
             }
         }
+        .onScrollVisibilityChange(threshold: DS.HomeChannels.visibleShare) { onScreen = $0 }
         .task { await model.load() }
         // Las imágenes de lo que va al aire en todos los canales, de antemano: los de la derecha ya no llegan vacíos al
         // deslizar (la tira es perezosa y cada tarjeta pedía su imagen hasta que aparecía).
@@ -75,9 +80,7 @@ struct HomeChannels: View {
                         // aparecía despacio, fundiéndose desde adentro (31 oct 2026).
                         .transaction { $0.animation = nil }
                         // El «cachito»: la imagen del capítulo se acerca despacio, como si estuviera pasando.
-                        .phaseAnimator(reduceMotion ? [false] : [false, true]) { view, near in
-                            view.scaleEffect(near ? DS.HomeChannels.driftScale : 1)
-                        } animation: { _ in DS.HomeChannels.driftAnimation }
+                        .modifier(ChannelDrift(running: !reduceMotion && onScreen && scenePhase == .active))
                     ArtVeil(at: DS.HomeChannels.veilStart)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(verbatim: label(air.episode)).recipe(.badge, color: DS.onArtSecondary)
@@ -215,5 +218,31 @@ struct ChannelsSheet: View {
                 }
             }
         }
+    }
+}
+
+/// El acercamiento lento de la imagen del capítulo: de 1 a `driftScale` y de regreso, con entrada y salida suaves, en vueltas
+/// de `drift` segundos. Lo pinta un reloj a 30 cuadros (antes un `phaseAnimator`, que va a 120 en ProMotion: el paso es de
+/// décimas de punto y no se nota) y solo mientras la tarjeta se ve; quieta, vuelve a su tamaño.
+private struct ChannelDrift: ViewModifier {
+    let running: Bool
+    @State private var visible = false
+    @State private var start = Date()
+
+    func body(content: Content) -> some View {
+        let on = running && visible
+        TimelineView(.animation(minimumInterval: DS.HomeChannels.driftFrame, paused: !on)) { context in
+            content.scaleEffect(on ? Self.scale(after: context.date.timeIntervalSince(start)) : 1)
+        }
+        .onScrollVisibilityChange(threshold: DS.HomeChannels.visibleShare) { visible = $0 }
+        .onChange(of: on) { _, now in if now { start = Date() } }
+    }
+
+    /// Ida y vuelta: sube en `drift` segundos y baja en otros tantos (como un `easeInOut` que se repite).
+    static func scale(after elapsed: TimeInterval) -> CGFloat {
+        let lap = DS.HomeChannels.drift
+        let t = elapsed.truncatingRemainder(dividingBy: lap * 2) / lap
+        let p = t <= 1 ? t : 2 - t
+        return 1 + (DS.HomeChannels.driftScale - 1) * CGFloat(0.5 - 0.5 * cos(.pi * p))
     }
 }

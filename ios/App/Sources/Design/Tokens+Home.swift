@@ -34,7 +34,8 @@ extension DS {
         static let veilStart: Double = 0.4
         static let tick: TimeInterval = 30
         static let drift: Double = 14, driftScale: CGFloat = 1.1
-        static let driftAnimation = Animation.easeInOut(duration: drift)
+        /// El acercamiento a 30 cuadros (no a los 120 de la pantalla) y desde qué parte visible cuenta como «se ve».
+        static let driftFrame: TimeInterval = 1.0 / 30, visibleShare = 0.01
         static let searchDelay: Duration = .milliseconds(350)
         static let gridColumns = 4, resultPoster: CGFloat = 44
     }

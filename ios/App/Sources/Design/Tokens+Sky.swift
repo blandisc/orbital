@@ -31,8 +31,10 @@ extension DS {
         static let shootEvery: TimeInterval = 60, shootFor: TimeInterval = 0.8, shootLength: CGFloat = 80
         static let shootOpacity = 0.6, shootWidth: CGFloat = 1
         static let seed: UInt64 = 0x0B17A1
-        /// Cuadros por segundo: el cielo es lento (12); solo la fugaz va fluida (30).
-        static let frame: TimeInterval = 1.0 / 12, shootFrame: TimeInterval = 1.0 / 30
+        /// Cuadros por segundo: quieto, 6 (la capa de cerca avanza 0.15 pt por cuadro); al inclinar el teléfono, 12; la
+        /// fugaz, 30. `tiltStill`: cuánto le falta a la inclinación para alcanzar tu mano (de -1 a 1) y contar como quieta.
+        static let calmFrame: TimeInterval = 1.0 / 6, frame: TimeInterval = 1.0 / 12, shootFrame: TimeInterval = 1.0 / 30
+        static let tiltStill: CGFloat = 0.02
         /// El sensor: cada cuánto lee, qué tan rápido el reposo sigue a tu mano, cuánto se nota y qué tan suave.
         static let motionInterval: TimeInterval = 1.0 / 20, restFollow: CGFloat = 0.01, tiltGain: CGFloat = 3, tiltEase: CGFloat = 0.25
     }
