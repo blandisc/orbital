@@ -1455,7 +1455,9 @@ class ForYou:
             item = self.catalog.get(key.removeprefix("game:"))
             appid = item.steam_appid if item else None
             text = self.cache.get(f"steam:{appid}", SLOW_TTL, lambda: rawg_api.steam_description(appid)) if appid else ""
-            return {"overview": text}
+            # Su logo de Steam, si es oscuro, se pinta blanco (Cult of the Lamb: rojo oscuro sobre su arte rojo no se leía).
+            dark = self.logo_dark(f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/logo.png") if appid else None
+            return {"overview": text, "logo_dark": dark}
         raise KeyError(key)
 
     def _video_details(self, imdb: str, kind: str) -> dict:

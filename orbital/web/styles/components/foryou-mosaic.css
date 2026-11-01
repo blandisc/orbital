@@ -27,7 +27,9 @@
 .foryou-mosaic--drifting .foryou-mosaic__tile { transition: opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out); }
 .foryou-mosaic__tile::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--veil-bottom); opacity: var(--opacity-soft); }
 .foryou-mosaic__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity var(--duration-tint) var(--ease-out), transform var(--duration-alive) linear; }
-.foryou-mosaic__art--wide { opacity: 0; }
+/* El recorte del fondo ancho se toma de arriba (donde van las caras), como la ficha: la pieza enfocada es casi cuadrada y
+   del centro salían la barbilla y el logo encima de la cara (Spider-Man en la tele, 31 oct 2026). */
+.foryou-mosaic__art--wide { opacity: 0; --art-fit-y: 22%; }
 .foryou-mosaic__tile--land .foryou-mosaic__art--poster { opacity: 0; }
 .foryou-mosaic__tile--land .foryou-mosaic__art--wide { opacity: 1; }
 .foryou-mosaic__tile--alive .foryou-mosaic__art--wide { transform: scale(1.09); }
