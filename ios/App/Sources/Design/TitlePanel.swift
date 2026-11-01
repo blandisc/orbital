@@ -23,18 +23,24 @@ struct TitleNavigationLink<Label: View>: View {
     let route: TitleRoute
     @ViewBuilder var label: () -> Label
     @Environment(\.titlePanel) private var panel
-    /// Dónde está el póster en la ventana: el zoom hacia el panel sale de aquí.
-    @State private var frame: CGRect?
+    /// Dónde está el póster en la ventana: el zoom hacia el panel sale de aquí. En una caja que SwiftUI no observa: cambia en
+    /// cada cuadro al desplazar y, guardado como estado, volvía a pintar cada póster en cada cuadro (auditoría, A3).
+    @State private var frame = FrameBox()
 
     var body: some View {
         if let panel {
-            Button { panel(route, from: frame) } label: { label() }
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
+            Button { panel(route, from: frame.rect) } label: { label() }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame.rect = $0 }
                 .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
         } else {
             NavigationLink(value: route) { label() }.accessibilityIdentifier("title-link")
         }
     }
+}
+
+/// Un marco que se guarda sin avisar a SwiftUI (solo se lee al tocar).
+@MainActor private final class FrameBox {
+    var rect: CGRect?
 }
 
 /// Abre la ficha de un estado (`openTitle`): en el panel si lo hay; si no, como destino de la navegación.
