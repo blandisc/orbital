@@ -166,7 +166,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     nonisolated(unsafe) private var timeObserver: Any?   // lo quita `deinit`, que no está aislado
     private var statusObservation: NSKeyValueObservation?
     private var controlObservation: NSKeyValueObservation?
-    private var endObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var endObserver: NSObjectProtocol?   // también lo quita `deinit` (C4: antes quedaba colgado)
     private var audioGroup: AVMediaSelectionGroup?
     private var legibleGroup: AVMediaSelectionGroup?
     private var chapters: [Chapter] = []
@@ -198,7 +198,10 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
         controlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.publish() } }
     }
 
-    deinit { if let timeObserver { player.removeTimeObserver(timeObserver) } }
+    deinit {
+        if let timeObserver { player.removeTimeObserver(timeObserver) }
+        if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
+    }
 
     func load(url: URL, startAt: Double) async throws {
         ended = false; chapters = []
