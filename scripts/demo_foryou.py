@@ -265,7 +265,24 @@ class DemoTmdb:
         brand = list(self.PLATFORMS)[provider_id - 1]
         return [{"id": n, "key": k} for n, k in enumerate(self.PLATFORMS[brand]) if (k in S) == (kind == "series")]
 
-    def details(self, kind, tmdb_id):  # solo la calificación (la ficha); lo demás el demo lo responde en _platform
+    FILTER_BASE = 100_000  # los ids del filtro avanzado (aparte de los de las plataformas)
+
+    def discover_page(self, kind, **params):
+        """El filtro avanzado: el catálogo de mentiras de ese formato, por década si la pides, y un total creíble."""
+        pool = [e for e in (S if kind == "series" else M).values()]
+        since = params.get("primary_release_date.gte") or params.get("first_air_date.gte")
+        until = params.get("primary_release_date.lte") or params.get("first_air_date.lte")
+        pool = [e for e in pool if (not since or (e["year"] or 0) >= int(since[:4])) and (not until or (e["year"] or 0) <= int(until[:4]))]
+        rows = [{"id": self.FILTER_BASE + i} for i, e in enumerate((S if kind == "series" else M).values()) if e in pool]
+        return rows, len(rows) * 37
+
+    def details(self, kind, tmdb_id):  # la calificación (la ficha) y, para el filtro avanzado, el título entero
+        if tmdb_id >= self.FILTER_BASE:
+            entries = list((S if kind == "series" else M).values())
+            e = entries[(tmdb_id - self.FILTER_BASE) % len(entries)]
+            return {"kind": kind, "imdb": e["imdb"], "title": e["title"], "year": e["year"], "rating": 7.5, "overview": "", "seasons": None,
+                    "poster": f"https://images.metahub.space/poster/medium/{e['imdb']}/img",
+                    "backdrop": f"https://images.metahub.space/background/medium/{e['imdb']}/img"}
         return {"rating": round(6.8 + (tmdb_id % 22) / 10, 1)}
 
     _cinemeta = cinemeta_api.Cinemeta()

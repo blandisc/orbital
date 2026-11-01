@@ -1041,7 +1041,11 @@ class PlayerScreen(SubtitleTrial):
         segment, current = self.segment, self.current
         if segment is not None and current is not None:
             finished = bool(segment.duration) and segment.position >= segment.duration * .9
+            # Qué era (película o serie, su IMDb): al terminarla, la interfaz ofrece calificarla (como el iPhone). Un tráiler o
+            # un canal no se califican.
+            rateable = not segment.live and not segment.meta.get("clip") and not segment.meta.get("synthetic")
             self.last_end = {"title": current.title, "finished": finished, "kind": segment.meta.get("kind"),
+                             **({"meta_id": segment.meta.get("meta_id")} if rateable and segment.meta.get("meta_id") else {}),
                              **({"live": True} if segment.live else {})}
         self.mpv.command("quit")
 

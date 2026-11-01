@@ -206,7 +206,7 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     assert page.locator(".status-bar__tab--active").inner_text() == "TV en vivo"
     assert page.locator(".tv__cat").count() > 1  # las categorías, siempre a la vista
     assert page.locator(".tv__cat--on").inner_text().startswith("Todos")
-    assert page.locator(".tv__tile").count() == 42 and page.locator(".tv__tile.tile--focused").count() == 1
+    assert page.locator(".tv__tile").count() == 47 and page.locator(".tv__tile.tile--focused").count() == 1  # 42 de la lista y los 5 de «Tus canales» (las de arranque)
     # Los canales de Orbital (una serie al aire todo el día) van primero, con «24/7» en vez de número.
     assert "Los Simpson 24/7" in page.locator(".tv__tile").first.inner_text() and "24/7" in page.locator(".tv__number").first.inner_text()
     # Un canal que ya falló una vez sale atenuado y con su aviso; los que nadie ha revisado, normales.
@@ -218,6 +218,10 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     # La página no se ensancha.
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     page.keyboard.press("PageDown")  # la categoría siguiente (AvPág / RT); Q y E (LB RB) son las secciones
+    page.wait_for_timeout(400)
+    assert page.locator(".tv__cat--on").inner_text().startswith("Tus canales")  # tus series al aire (las de arranque)
+    assert page.locator(".tv__tile").count() == 5
+    page.keyboard.press("PageDown")
     page.wait_for_timeout(400)
     assert page.locator(".tv__cat--on").inner_text().startswith("Orbital 24/7")
     assert page.locator(".tv__tile").count() == 2
@@ -308,6 +312,13 @@ def test_no_text_is_cut_in_half(server, width, height, size):
             look("¿Qué vemos hoy?")
             page.keyboard.press("Escape")
             page.wait_for_timeout(500)
+            for screen, ready_sel in (("Filtro avanzado", ".filter__row"), ("Colecciones", ".showcase__item, .showcase .empty-state")):
+                page.keyboard.press("m")
+                page.locator(".sheet__item", has_text=screen).first.click()
+                page.locator(ready_sel).first.wait_for(timeout=10000)
+                look(screen)
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(500)
             page.keyboard.press("m")
             page.locator(".sheet__item", has_text="Ajustes").first.click()
             for i in range(7):

@@ -306,6 +306,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   options.push({ icon: "bookmark", label: "¿Qué vemos hoy?", hint: "Encuentra tu match perfecto", command: { type: "match" } });
   options.push({ icon: "chart", label: "Lo que ves", hint: "Tus números según Trakt", command: { type: "year" } });
   options.push({ icon: "trophy", label: "Colecciones", hint: "Los premios y las listas famosas", command: { type: "collections" } });
+  options.push({ icon: "search", label: "Filtro avanzado", hint: "Género, época, calificación, dónde verla…", command: { type: "filter" } });
   options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });

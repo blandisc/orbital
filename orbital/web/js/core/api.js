@@ -108,6 +108,7 @@ export const api = {
   stremioLogout: () => post("/api/stremio/logout"),
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
+  forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),
   forYouCollections: () => request("/api/foryou/collections"), // Colecciones: los premios y las listas famosas
   matchDeck: (mood = null) => request(`/api/foryou/match${mood ? `?mood=${encodeURIComponent(mood)}` : ""}`),
   match: (kind, id, add = true) => post("/api/foryou/match", { kind, id, add }),

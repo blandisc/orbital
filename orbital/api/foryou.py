@@ -148,6 +148,18 @@ def router(d: Deps) -> APIRouter:
         except SERVICE_ERRORS:
             raise HTTPException(502, failed)
 
+    @r.get("/filter")
+    def filter_titles(kind: str = "movie", genre: str = "", decade: str = "", rating: str = "", fame: str = "",
+                      platform: str = "", country: str = "", count: bool = False) -> dict:
+        """El filtro avanzado (como el del iPhone): cuántos hay y, si no es solo contar, los primeros 20."""
+        f = {"genre": genre[:30], "decade": decade[:6], "rating": rating[:2], "fame": fame[:10], "platform": platform[:20], "country": country[:2]}
+        try:
+            return foryou.filtered(kind, f, count_only=count)
+        except tmdb.TmdbError as exc:
+            raise HTTPException(409 if "clave" in str(exc) else 502, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude buscar con tu filtro. Revisa tu conexión e inténtalo de nuevo.")
+
     @r.get("/collections")
     def collections() -> dict:
         """Colecciones: los premios y las listas famosas, con cuántas ya viste de cada una."""

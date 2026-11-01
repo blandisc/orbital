@@ -1179,3 +1179,20 @@ def test_collections_count_what_you_watched(make_foryou, net, monkeypatch):
     got = {c["id"]: (c["seen"], c["total"]) for c in fy.collections()}
     assert got == {"award:oscar": (1, 2), "canon:criterion": (1, 2)}
     assert [i["meta_id"] for i in fy.list_items("canon:criterion", None)] == ["tt7", "tt8"]
+
+
+def test_advanced_filter_asks_tmdb_with_every_choice(make_foryou, net, monkeypatch):
+    """El filtro avanzado (como el del iPhone): género, década, calificación, fama, plataforma y país van a /discover; un
+    género que no existe en series no pide nada; sin clave de TMDB lo dice."""
+    fy = make_foryou(tmdb_key="k")
+    monkeypatch.setattr(fy, "platforms", lambda: {"netflix": {"id": 8}})
+    p = fy.filter_params("movie", {"genre": "terror", "decade": "1990", "rating": "7", "fame": "hidden", "platform": "netflix", "country": "KR"})
+    assert p["with_genres"] == 27 and p["primary_release_date.gte"] == "1990-01-01" and p["primary_release_date.lte"] == "1999-12-31"
+    assert p["vote_average.gte"] == 7 and p["vote_count.gte"] == 100 and p["vote_count.lte"] == 1000
+    assert p["with_watch_providers"] == 8 and p["with_origin_country"] == "KR"
+    assert fy.filter_params("series", {"genre": "terror"}) is None  # Terror no tiene género de serie en TMDB
+    assert fy.filter_params("series", {"decade": "old"})["first_air_date.lte"] == "1979-12-31"
+    net.on("GET", r"/discover/movie", (200, {"results": [{"id": 1}], "total_results": 340}))
+    assert fy.filtered("movie", {"genre": "comedia"}, count_only=True) == {"total": 340}
+    with pytest.raises(tmdb.TmdbError):
+        make_foryou().filtered("movie", {}, count_only=True)

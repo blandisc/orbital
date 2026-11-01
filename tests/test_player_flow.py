@@ -245,7 +245,7 @@ def test_knows_how_it_ended_before_closing():
     p.press("b")
     p._quit_hold, p.remote._repeats["b"] = 0.0, 9  # B mantenido hasta llenarse
     p.press("b")  # sale en los créditos
-    assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series"}
+    assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series", "meta_id": "s"}  # con su IMDb: se ofrece calificarla
 
 
 def test_more_lists_the_season_and_restarts():

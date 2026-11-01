@@ -743,6 +743,8 @@ class ForYou:
         if not self.trakt.linked:
             return "none"
         list_id = self.trakt.named_list(self.MATCH_LIST, create=True)
+        if not list_id:
+            raise trakt_api.TraktError("Trakt no creó «Tu match perfecto»")
         self.trakt.set_list_item(list_id, kind, imdb, add)
         self.cache.clear(f"trakt:list:{list_id}")
         self.cache.clear("trakt:lists")
@@ -1652,6 +1654,59 @@ class ForYou:
             pool = [i for i in pool if decide_api.matches(i["genres"], mood, set())]
         day = int((now if now is not None else time.time()) // 86400)
         return sorted(pool, key=lambda i: decide_api.fnv_order(day, i["meta_id"]))
+
+    # --- Filtro avanzado (como el del iPhone, ola 3) ------------------------------------------------------------------
+    FILTER_COUNTRIES = ("MX", "US", "GB", "KR", "JP", "ES", "FR")
+    FILTER_DECADES = ("2020", "2010", "2000", "1990", "1980", "old")
+
+    def filter_params(self, kind: str, f: dict) -> dict | None:
+        """Lo que pide TMDB para un filtro: {género, década, calificación, fama, plataforma, país}. None si no puede haber
+        nada (un género que no existe en series, una plataforma que no está en tu país)."""
+        params: dict = {"sort_by": "popularity.desc"}
+        genre = tmdb_api.GENRE_BY_SLUG.get(f.get("genre") or "")
+        if genre:
+            gid = genre.tv if kind == "series" else genre.movie
+            if not gid:
+                return None
+            params["with_genres"] = gid
+        date_field = "first_air_date" if kind == "series" else "primary_release_date"
+        decade = f.get("decade")
+        if decade == "old":
+            params[f"{date_field}.lte"] = "1979-12-31"
+        elif decade in self.FILTER_DECADES:
+            params[f"{date_field}.gte"], params[f"{date_field}.lte"] = f"{decade}-01-01", f"{int(decade) + 9}-12-31"
+        rating = f.get("rating")
+        if rating in ("6", "7", "8"):
+            params["vote_average.gte"], params["vote_count.gte"] = int(rating), 50
+        fame = f.get("fame")
+        if fame == "known":
+            params["vote_count.gte"] = max(params.get("vote_count.gte", 0), 1000)
+        elif fame == "hidden":
+            params["vote_count.gte"], params["vote_count.lte"] = max(params.get("vote_count.gte", 0), 100), 1000
+        platform = f.get("platform")
+        if platform:
+            found = self.platforms().get(platform)
+            if not found:
+                return None
+            params.update(with_watch_providers=found["id"], watch_region=self.region, with_watch_monetization_types="flatrate")
+        country = f.get("country")
+        if country in self.FILTER_COUNTRIES:
+            params["with_origin_country"] = country
+        return params
+
+    def filtered(self, kind: str, f: dict, count_only: bool = False) -> dict:
+        """El filtro avanzado: {total, items} (sin items si solo cuenta). Sin clave de TMDB: TmdbError en palabras."""
+        if not self.tmdb.configured:
+            raise tmdb_api.TmdbError("El filtro avanzado usa TMDB: agrega su clave en Ajustes › Cuentas.")
+        kind = "series" if kind == "series" else "movie"
+        params = self.filter_params(kind, f)
+        if params is None:
+            return {"total": 0, "items": []}
+        key = "filter:" + kind + ":" + json.dumps(params, sort_keys=True)
+        rows, total = self.cache.get(key, RECS_TTL, lambda: self.tmdb.discover_page(kind, **params))
+        if count_only:
+            return {"total": total}
+        return {"total": total, "items": self._tmdb_items(rows, kind, "Con tu filtro", limit=20)}
 
     # --- Colecciones (como la repisa del iPhone) --------------------------------------------------------------------
     def _canon(self, canon_id: str) -> list[dict]:

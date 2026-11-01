@@ -253,6 +253,13 @@ class Tmdb:
                          **{"vote_count.gte": 50}, page=1)
         return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
 
+    def discover_page(self, kind: str, **params) -> tuple[list[dict], int]:
+        """Una página de /discover y cuántos hay en total (el filtro avanzado: «Ver 340 títulos»)."""
+        data = self._get(f"/discover/{KINDS[kind]}", page=1, **params)
+        rows = [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
+        total = data.get("total_results")
+        return rows, total if isinstance(total, int) else len(rows)
+
     def _discover(self, kind: str, **params) -> list[dict]:
         data = self._get(f"/discover/{KINDS[kind]}", page=1, **params)
         return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]

@@ -48,6 +48,7 @@ import { libraryCommands } from "./app/library-commands.js";
 import { yoursCommands } from "./app/yours-commands.js";
 import { createMatchDeck } from "./components/match-deck.js";
 import { createShowcase } from "./components/showcase.js";
+import { createFilterPanel } from "./components/filter-panel.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
@@ -263,6 +264,13 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  // El filtro avanzado (como el del iPhone): formato, género, época, calificación, fama, dónde verla y país.
+  filter: createFilterPanel({
+    count: (f) => api.forYouFilter(f, true),
+    onResults: (f, label) => openFilterResults(f, label),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   year: createYear({
     load: () => api.forYouYear(),
     onPick: (item) => openTitle(item),
@@ -300,7 +308,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.decide.el, ui.match.el, ui.showcase.el, ui.gamePage.el, ui.listScreen.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.decide.el, ui.match.el, ui.showcase.el, ui.filter.el, ui.gamePage.el, ui.listScreen.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -371,7 +379,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.filter, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -1426,6 +1434,21 @@ function downloadMenu(item) {
 /** «¿Qué vemos hoy?»: el mazo a pantalla completa. */
 const traktLinked = () => !!state.settings?.trakt?.linked;
 
+/** El filtro avanzado, a pantalla completa. */
+function openFilter() {
+  sound.play("open");
+  ui.filter.open({ glyphs: glyphs() });
+  renderHints();
+}
+
+/** Los resultados del filtro: en cuadrícula, como una lista (A abre la ficha). */
+function openFilterResults(f, label) {
+  sound.play("open");
+  ui.listScreen.open({ id: "filter", title: "Con tu filtro", meta: label, source: "orbital", media: {},
+    tabs: [{ id: "all", label: "", load: () => api.forYouFilter(f, false).then((res) => (res.items || []).map(curatedItem)) }] });
+  renderHints();
+}
+
 /** Colecciones: la vitrina a pantalla completa. */
 function openShowcase() {
   sound.play("open");
@@ -1756,7 +1779,7 @@ let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
   const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
-  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, setUnseeded }) };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
   return commandTable;
 }
 
@@ -2269,7 +2292,12 @@ const EVENTS = {
     } else {
       // Con su portada y el tiempo jugado en su propio renglón (antes una sola frase larga).
       const { heading, message } = closedSummary(event);
-      ui.toast.show(message, { heading, image: findItem(event.id)?.image });
+      // Terminaste una película o un episodio (con Trakt): «Calificar» en el aviso, con Y o tocándolo (como el iPhone).
+      const rate = event.finished && event.meta_id && traktLinked() && ["movie", "series"].includes(event.kind)
+        ? offerVoiceAction({ kind: "undo", label: "Calificar", button: "options",
+          run: () => runCommand({ type: "rate", kind: event.kind, id: event.meta_id, title: String(event.title || "").split(" · ")[0] }) })
+        : {};
+      ui.toast.show(message, { heading, image: findItem(event.id)?.image, ...rate });
     }
     loadLibrary({ keepId: event.id });
     pollStatus();
