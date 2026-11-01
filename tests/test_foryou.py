@@ -1148,3 +1148,19 @@ def test_when_did_you_watch_it(make_foryou, net):
     assert bodies[2] == {"shows": [{"ids": {"imdb": "tt2"}, "watched_at": "2026-01-01T00:00:00.000Z"}]}  # la serie completa
     with pytest.raises(trakt.TraktAuthError):
         make_foryou().mark_watched("movie", "tt1", None, "now")
+
+
+def test_match_deck_is_shuffled_per_day_without_what_you_watched(make_foryou, monkeypatch):
+    """El mazo de hoy: sin lo visto ni repetidos, del ánimo pedido, en el orden del iPhone (FNV de «día:imdb»)."""
+    from orbital import decide
+
+    fy = make_foryou()
+    pool = [{"meta_id": f"tt{i}", "kind": "movie", "title": str(i), "genres": ["comedy" if i % 2 else "horror"]} for i in range(1, 9)]
+    monkeypatch.setattr(fy, "_decide_pool", lambda: pool + pool[:2])
+    monkeypatch.setattr(fy, "watched_ids", lambda: ["tt1"])
+    deck = fy.match_deck(now=86400 * 20000)
+    ids = [c["meta_id"] for c in deck]
+    assert "tt1" not in ids and len(ids) == len(set(ids)) == 7
+    assert ids == sorted(ids, key=lambda i: decide.fnv_order(20000, i))
+    assert ids != [c["meta_id"] for c in fy.match_deck(now=86400 * 20001)]  # mañana, otro orden
+    assert all("comedy" in c["genres"] for c in fy.match_deck("light", now=86400 * 20000))

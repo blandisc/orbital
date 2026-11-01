@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { haptics, rumble } from "./core/haptics.js";
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
-import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -45,6 +45,8 @@ import { createLaunching } from "./app/launching.js";
 import { systemCommands } from "./app/system-commands.js";
 import { accountCommands } from "./app/account-commands.js";
 import { libraryCommands } from "./app/library-commands.js";
+import { yoursCommands } from "./app/yours-commands.js";
+import { createMatchDeck } from "./components/match-deck.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
@@ -137,6 +139,9 @@ const ui = {
     onDownload: (body, job) => downloadTitle(body, job),
     onVersions: (play, versions) => openMenu(versionsMenu(play, versions)),
     onFix: (title) => fixTitle(title),
+    hasTrakt: () => traktLinked(),
+    onRate: (about) => runCommand({ type: "rate", ...about }),
+    onWatched: (about) => runCommand({ type: "watched", ...about }),
     downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
@@ -206,7 +211,7 @@ const ui = {
   listScreen: createListScreen({
     onMove: () => sound.play("move"),
     onPick: (item) => openListItem(item),
-    onMore: (item) => openMenu(item.file ? looseMenu(item) : gameMenu(item, { running: state.running, phone: state.phone })),
+    onMore: (item) => openMenu(item.file ? looseMenu(item) : gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() })),
     onSort: (screen) => openMenu(listSortMenu(screen)),
     onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
@@ -238,6 +243,17 @@ const ui = {
     onShow: (item) => ui.backdrop.show(item.hero || item.image || null),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { delete document.body.dataset.gamePage; sound.play("back"); restoreBackdrop(); renderHints(); },
+  }),
+  // «¿Qué vemos hoy?» (como el iPhone): el mazo de tus propuestas de hoy.
+  match: createMatchDeck({
+    load: (mood) => api.matchDeck(mood),
+    save: (card, add, where = null) => saveMatch(card, add, where),
+    onOpen: (card) => openTitle(card),
+    onPlay: (card) => (card.kind === "movie" ? watch({ kind: "movie", id: card.meta_id, title: card.title, item: card }) : openTitle(card)),
+    onSaved: (card, where, err) => (err ? (sound.play("error"), ui.toast.show(err.message, { error: true }))
+      : ui.toast.show(where === "match" ? "Guardada en Tu match perfecto" : "Guardada en Mi lista", { tone: "success", detail: card.title })),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
   }),
   year: createYear({
     load: () => api.forYouYear(),
@@ -276,7 +292,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.gamePage.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.match.el, ui.gamePage.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -347,7 +363,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -394,6 +410,7 @@ function renderHints() {
     return ui.hints.render(tvHints(g, ui.tv.current, {
       empty: ui.tv.empty, categories: ui.tv.categories, atStart: ui.tv.atStart, onAir: ui.tv.onAir,
       running: state.running?.managed && state.running.live ? state.running : null,
+      mine: String(ui.tv.current?.channel?.id || "").startsWith("mine:"),
     }));
   }
   if (inGames() && !ui.sheet.isOpen) {
@@ -656,7 +673,12 @@ function handleTv(action, { repeat = false } = {}) {
   switch (action) {
     case "select": return tvActivate(ui.tv.current);
     case "alt": return tvRefresh();
-    case "options": sound.play("error"); return rumble("edge");
+    case "options": { // Y en uno de «Tus canales»: ver la serie o quitarlo (con Trakt); en los demás, nada
+      const channel = ui.tv.current?.channel;
+      const mine = channel?.categories?.includes("Tus canales") && String(channel.id).startsWith("mine:") ? channel.id.slice(5) : null;
+      if (!mine) { sound.play("error"); return rumble("edge"); }
+      return openMenu(mineChannelMenu(channel.name, mine, traktLinked()));
+    }
     case "prevsection": return stepSection(-1); // LB/RB: siempre la sección de al lado
     case "nextsection": return stepSection(1);
     case "search": return openSearch();
@@ -708,7 +730,7 @@ function openGamePage(item) {
 
 function gamePageAction(action, item) {
   if (!item) return;
-  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, page: true }));
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked(), page: true }));
   if (action === "alt") {
     const alt = alternativeRunner(item);
     return alt ? launch(item, alt.id) : rumble("edge");
@@ -728,7 +750,7 @@ function gamesActivate(target, action = "select") {
   // A en una consola: la elige y baja a sus juegos (si ya era la elegida, solo baja).
   if (target.kind === "rail") { if (!ui.games.switchTo(target.console.id)) handleGames("down"); sound.play("open"); return renderHints(); }
   const item = target.item;
-  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
   if (action === "alt") {
     const alt = alternativeRunner(item);
     if (alt) return launch(item, alt.id);
@@ -819,7 +841,7 @@ function homeActivate(target, action = "select") {
     return goToSection("games", 1);
   }
   const item = target.item;
-  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
   if (action === "alt") {
     if (isWatchable(item)) return openTitle(item);
     const alt = alternativeRunner(item);
@@ -1375,6 +1397,26 @@ function downloadMenu(item) {
 }
 
 /** «¿Qué vemos?»: tres propuestas que caben en tu tiempo (como el 🎲 del iPhone). */
+/** «¿Qué vemos hoy?»: el mazo a pantalla completa. */
+const traktLinked = () => !!state.settings?.trakt?.linked;
+
+function openMatch() {
+  sound.play("open");
+  ui.match.open({ glyphs: glyphs() });
+  renderHints();
+}
+
+/** Guardar (o sacar) una carta del mazo: en «Tu match perfecto» de Trakt; sin Trakt, en Mi lista (tu biblioteca de Stremio). */
+async function saveMatch(card, add, where = null) {
+  const kind = card.kind === "series" ? "series" : "movie";
+  if (where !== "mylist") {
+    const res = await api.match(kind, card.meta_id, add);
+    if (res.where === "match") return "match";
+  }
+  await api.setInLibrary(kind, card.meta_id, add);
+  return "mylist";
+}
+
 function openDecide() {
   sound.play("open");
   ui.decide.open();
@@ -1671,7 +1713,7 @@ let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
   const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
-  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps) };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch }) };
   return commandTable;
 }
 
@@ -1965,7 +2007,7 @@ function handleRows(action, { repeat = false } = {}) {
     case "options":
       if (item?.source === "genre" || item?.source === "collection") { sound.play("error"); return rumble("edge"); } // una lista no tiene opciones
       if (item?.download) return openMenu(downloadMenu(item));
-      return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
+      return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
     case "menu":
       if (state.section === "media") return openMenu(mediaMenu());
       return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));

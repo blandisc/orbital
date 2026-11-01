@@ -148,6 +148,14 @@ def router(d: Deps) -> APIRouter:
         except SERVICE_ERRORS:
             raise HTTPException(502, failed)
 
+    @r.get("/match")
+    def match_deck(mood: str = "") -> dict:
+        """El mazo de hoy de «¿Qué vemos hoy?» (sin lo visto; del ánimo, si lo eliges)."""
+        try:
+            return {"cards": foryou.match_deck(mood or None)[:80], "trakt": foryou.trakt.linked}
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude armar el mazo. Revisa tu conexión e inténtalo de nuevo.")
+
     @r.post("/match")
     def match(body: MatchRequest) -> dict:
         """«Guardar» en «¿Qué vemos hoy?»: a «Tu match perfecto» de Trakt; «none» sin Trakt (la interfaz usa Mi lista)."""

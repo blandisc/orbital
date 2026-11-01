@@ -45,7 +45,7 @@ export function downloadAction(job) {
 export const episodesLed = (details, kind = "movie") =>
   !!details && !details.error && (details.kind || kind) === "series" && (details.seasons || []).some((s) => s.episodes?.length);
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null } = {}) {
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -60,6 +60,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
       ? { id: "mylist", icon: "check", label: "Guardada", active: true }
       : { id: "mylist", icon: "plus", label: "Guardar" });
     if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
+    out.push(...yours(trakt, "series"));
     if (phone) {
       out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" },
         { id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
@@ -103,6 +104,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
   if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
+  out.push(...yours(trakt, details.kind || kind));
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
   if (playable) out.push({ id: "sources", icon: "list", label: "Versión", short: "Versión" });
   if (restart) out.push(restart);
@@ -112,6 +114,10 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   if (own) out.push({ id: "fix", icon: "search", label: `¿No es esta ${(details.kind || kind) === "series" ? "serie" : "película"}? Corregir ficha`, short: "Corregir ficha" });
   return out;
 }
+
+/** Con Trakt, lo tuyo con el título (como el iPhone): calificar con estrellas y «¿Cuándo la viste?». */
+const yours = (trakt, kind) => (trakt ? [{ id: "rate", icon: "star", label: "Calificar" },
+  { id: "watched", icon: "check", label: kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", short: "Vista" }] : []);
 
 const RELEASE_FORMAT = { day: "numeric", month: "short" };
 

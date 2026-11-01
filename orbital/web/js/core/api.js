@@ -107,6 +107,12 @@ export const api = {
   stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),
   setSettings: (changes) => post("/api/settings", changes),
+  // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
+  matchDeck: (mood = null) => request(`/api/foryou/match${mood ? `?mood=${encodeURIComponent(mood)}` : ""}`),
+  match: (kind, id, add = true) => post("/api/foryou/match", { kind, id, add }),
+  myRating: (kind, id) => request(`/api/foryou/rating?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`),
+  rate: (kind, id, stars) => post("/api/foryou/rating", { kind, id, stars }),
+  markWatched: ({ kind, id, video_id = null, when = "now" }) => post("/api/foryou/watched", { kind, id, video_id, when }),
   consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
@@ -164,6 +170,7 @@ export const api = {
   onedriveListing: (path = "") => request(`/api/onedrive/listing?path=${encodeURIComponent(path)}`, { timeout: 20000 }),
   // «TV en vivo»
   tv: () => request("/api/tv"),
+  tvMine: (id, title, add) => post("/api/tv/mine", { id, title, add }), // «Tus canales» (tu lista de Trakt)
   tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),
   tvRefresh: () => post("/api/tv/refresh"),
   // La app del iPhone

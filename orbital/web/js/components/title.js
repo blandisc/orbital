@@ -29,7 +29,8 @@ const touching = () => document.body.dataset.input === "touch";
 const EPISODE_PX = 360;
 
 export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
-  onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
+  onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {},
+  hasTrakt = () => false, onRate = () => {}, onWatched = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -227,7 +228,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
-  const SECONDARY_ORDER = ["restart", "mylist", "trailer", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
+  const SECONDARY_ORDER = ["restart", "mylist", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
   const SECONDARY_SHOWN = 4;
 
   function arrange(all) {
@@ -241,7 +242,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = arrange(titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays }));
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt() }));
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
@@ -461,6 +462,10 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     else if (button.id === "mylist") save();
     else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
+    else if (button.id === "rate" || button.id === "watched") {
+      const about = { kind: kindOf(), id: details?.id || item.meta_id, title: details?.title || item.title };
+      (button.id === "rate" ? onRate : onWatched)(about);
+    }
     else if (button.id === "download") download();
     else if (button.id === "versions") { const t = target(); if (t && own) onVersions({ ...t, own: true }, own.versions); }
     else if (button.id === "fix") onFix({ kind: kindOf(), imdb: details?.id || item.meta_id, title: details?.title || item.title });

@@ -1623,6 +1623,21 @@ class ForYou:
                         "fits": decide_api.fits(minutes, time_choice)})  # ¿cabe en el tiempo? (si no, es de las más cortas)
         return {"time": time_choice, "mood": mood, "kind": kind, "picks": out}
 
+    def match_deck(self, mood: str | None = None, now: float | None = None) -> list[dict]:
+        """«¿Qué vemos hoy?» (como el iPhone): tus propuestas sin repetir y sin lo que ya viste, del ánimo elegido, en un orden
+        revuelto que cambia cada día (el mismo que el iPhone). Lo que descartas lo recuerda la interfaz (un mes)."""
+        mood = mood if mood in decide_api.MOODS else None
+        watched = set(self.watched_ids())
+        seen: set[str] = set()
+        pool = [i for i in self._decide_pool() if i.get("meta_id") and i["meta_id"] not in watched
+                and not (i["meta_id"] in seen or seen.add(i["meta_id"]))]
+        if mood:
+            details = self._decide_details([i for i in pool if not i.get("genres")])
+            pool = [{**i, "genres": i.get("genres") or details.get(i["meta_id"], {}).get("genres") or []} for i in pool]
+            pool = [i for i in pool if decide_api.matches(i["genres"], mood, set())]
+        day = int((now if now is not None else time.time()) // 86400)
+        return sorted(pool, key=lambda i: decide_api.fnv_order(day, i["meta_id"]))
+
     def skip_today(self, imdb: str) -> None:
         """«Hoy no»: esa no vuelve a proponerse en 24 horas."""
         if re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):

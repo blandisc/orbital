@@ -67,6 +67,9 @@ class DemoTrakt:
     def __init__(self) -> None:
         self.linked = False
         self._linking_since = 0.0
+        self._mine: dict[str, dict] = {}  # las listas que se crean aquí («Tu match perfecto», «Tus canales»)
+        self._ratings: dict[str, int] = {}
+        self.history: list[tuple[dict, object]] = []
 
     def device_code(self):
         self._linking_since = time.time()
@@ -96,9 +99,52 @@ class DemoTrakt:
 
     def lists(self):
         # Un nombre largo de verdad (como las listas que la gente copia en Trakt): no debe cortarse feo.
-        return [{"id": "1", "name": "The 25 Best Sci-Fi Movies of the 21st Century (So Far)"}]
+        return [{"id": "1", "name": "The 25 Best Sci-Fi Movies of the 21st Century (So Far)"}] +             [{"id": i, "name": row["name"]} for i, row in self._mine.items()]
+
+    def named_list(self, name, create=False):
+        found = next((row["id"] for row in self.lists() if row["name"].casefold() == name.casefold()), None)
+        return found or (self.create_list(name) if create else None)
+
+    def create_list(self, name):
+        list_id = str(100 + len(self._mine))
+        self._mine[list_id] = {"name": name, "items": []}
+        return list_id
+
+    def set_list_item(self, list_id, kind, imdb, add):
+        items = self._mine.setdefault(list_id, {"name": list_id, "items": []})["items"]
+        if add and imdb not in items:
+            items.append(imdb)
+        elif not add and imdb in items:
+            items.remove(imdb)
+
+    def set_rating(self, kind, imdb, rating):
+        if rating is None:
+            self._ratings.pop(imdb, None)
+        else:
+            self._ratings[imdb] = rating
+
+    def my_rating(self, kind, imdb):
+        return self._ratings.get(imdb)
+
+    def add_history(self, target, watched_at=None):
+        self.history.append((target, watched_at))
+
+    def public_list_items(self, user, slug):
+        return []
+
+    def show_progress(self, imdb):  # la ficha de una serie: dónde vas (aquí, en ninguna)
+        return None
+
+    def __getattr__(self, name):
+        """Lo que la demostración no imita (la ficha y las filas lo piden con Trakt conectado): vacío, nunca un error 500."""
+        if name.startswith("_"):
+            raise AttributeError(name)
+        return lambda *args, **kwargs: []
 
     def list_items(self, list_id):
+        if list_id in self._mine:
+            known = {e["imdb"]: e for e in [*S.values(), *M.values()]}
+            return [known.get(i, _s(i, i, 2020, 10)) for i in self._mine[list_id]["items"]]
         return [_m("tt1136608", "District 9", 2009, 112), M["arrival"], M["inter"], M["inception"], M["dune1"], M["br"], S["dark"]]
 
     def trending(self, kind, limit=30):

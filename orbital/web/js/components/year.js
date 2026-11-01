@@ -5,7 +5,7 @@ import { Card } from "./card.js";
 import { ScreenHead, SectionHead } from "./ui.js";
 
 /**
- * «Tu año» (como YearView del iPhone): lo que viste desde el 1 de enero según Trakt — horas, racha más larga y tu
+ * «Lo que ves» (antes «Tu año»; como YearView del iPhone): lo que viste desde el 1 de enero según Trakt — horas, racha más larga y tu
  * género; el mapa día por día (películas, series o las dos), con lo que viste el día enfocado; y lo que más viste.
  *   Mapa: ←/→ semana · ↑/↓ día · ↓ desde el domingo baja a «Lo que más viste» · A ver la ficha · B cerrar
  *
@@ -29,7 +29,7 @@ export function createYear({ load, onPick, onMove, onClose }) {
   const topHead = h("div");
   const topRow = h("div", { class: "year__top", role: "group" });
   const status = h("p", { class: "year__status", role: "status" });
-  const el = h("section", { class: "year screen", hidden: true, "aria-label": "Tu año" },
+  const el = h("section", { class: "year screen", hidden: true, "aria-label": "Lo que ves" },
     head, status, stats, h("div", { class: "year__panel" }, mapHead, map, legend, day), topHead, topRow);
 
   let review = null;
@@ -52,11 +52,11 @@ export function createYear({ load, onPick, onMove, onClose }) {
       const key = iso(d);
       days.push({ date: new Date(d), iso: key, kind: d < first ? "out" : r.days[key] || null });
     }
-    mount(head, ScreenHead({ eyebrow: "Según tu historial de Trakt", title: `Tu ${year}` }));
+    mount(head, ScreenHead({ eyebrow: `Tu ${year}, según Trakt`, title: "Lo que ves" }));
     mount(stats, [[`${r.hours} h`, "vistas"], [`${r.longest_streak} ${r.longest_streak === 1 ? "día" : "días"}`, "racha más larga"],
       [r.top_genre ? genreNames([r.top_genre])[0] : "—", "tu género"]].map(([value, label]) =>
       h("div", { class: "year__stat tile" }, h("strong", { class: "year__value" }, value), h("span", { class: "year__label" }, label))));
-    mount(mapHead, SectionHead("Día por día", { level: "section", icon: "calendar", meta: `${r.movies} ${r.movies === 1 ? "película" : "películas"} · ${r.episodes} episodios` }));
+    mount(mapHead, SectionHead("Tu año, día por día", { level: "section", icon: "calendar", meta: `${r.movies} ${r.movies === 1 ? "película" : "películas"} · ${r.episodes} episodios` }));
     mount(map, days.map((d, i) => h("span", { class: ["year__cell", d.kind && `year__cell--${d.kind}`], "data-i": i, role: "gridcell" })));
     // Al abrir: el último día con algo visto (como el iPhone).
     const seen = days.map((d, i) => (d.kind && d.kind !== "out" ? i : -1)).filter((i) => i >= 0);
@@ -102,7 +102,7 @@ export function createYear({ load, onPick, onMove, onClose }) {
     zone = "map";
     topIndex = 0;
     [stats, mapHead, map, day, topHead, topRow].forEach((n) => mount(n));
-    mount(head, ScreenHead({ eyebrow: "Según tu historial de Trakt", title: `Tu ${new Date().getFullYear()}` }));
+    mount(head, ScreenHead({ eyebrow: `Tu ${new Date().getFullYear()}, según Trakt`, title: "Lo que ves" }));
     status.hidden = false;
     status.textContent = "Leyendo tu historial…";
     el.classList.remove("year--empty");

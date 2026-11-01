@@ -2,11 +2,15 @@
    enfocado en vivo (miniatura sin sonido) y abajo los canales de la categoría. La base de cada casilla es .tile (ui.css).
    El fondo es el espacio vivo del Inicio: aquí no hay arte que enseñar, los logos están en cada canal. */
 
-.tv { grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ position: relative; min-height: 0; min-width: 0; display: grid; grid-template-columns: var(--tv-rail-width) minmax(0, 1fr);
+.tv { grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ position: relative; min-height: 0; min-width: 0; display: grid; grid-template-columns: var(--tv-rail-width) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
   gap: var(--space-8); padding: var(--space-4) var(--page-gutter) var(--space-2); }
 
 /* Las categorías: una lista vertical con cuántos canales tiene cada una; la elegida, marcada aunque el foco esté en los canales. */
-.tv__cats { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow: hidden; padding: var(--space-2); margin: calc(-1 * var(--space-2)); }
+.tv__cats { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow-y: auto; scrollbar-width: none; padding: var(--space-2); margin: calc(-1 * var(--space-2)); }
+.tv__cats > * { flex-shrink: 0; }
+/* Si no caben (con «Tus canales», en la Legion Go con letra grande), la lista se recorre con el foco y la última que asoma se
+   desvanece (tv.js · tv__cats--more): antes quedaba partida y detrás del pie. */
+.tv__cats--more { -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent); }
 .tv__cat { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg); color: var(--color-text-muted); font-size: var(--type-body); text-align: left;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }

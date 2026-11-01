@@ -9,7 +9,19 @@ import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
  * Opciones de lo enfocado (Y). Solo lo que no hace otro botón: A abre, X es la alternativa (otro
  * emulador o la ficha). Sin «Cancelar»: B cierra cualquier hoja.
  */
-export function gameMenu(item, { running = null, phone = false, page = false } = {}) {
+/** Y en uno de «Tus canales» (TV en vivo): ver la serie o, con Trakt, quitarlo de tu lista. */
+export function mineChannelMenu(name, imdb, trakt = false) {
+  return {
+    title: name,
+    options: [
+      { icon: "info", label: "Ver la serie", command: { type: "title-ref", ref: { kind: "series", meta_id: imdb, title: name } } },
+      trakt ? { icon: "minus", label: "Quitar de Tus canales", danger: true, command: { type: "tv-mine", id: imdb, title: name, add: false } }
+        : { icon: "info", label: "Para elegir tus canales, conecta Trakt", hint: "Ajustes › Cuentas", command: { type: "close" } },
+    ],
+  };
+}
+
+export function gameMenu(item, { running = null, phone = false, page = false, trakt = false } = {}) {
   if (!item) return null;
   const isOpen = running?.id === item.id;
   if (item.source === "search") {
@@ -32,6 +44,14 @@ export function gameMenu(item, { running = null, phone = false, page = false } =
   if (isGame(item) && !page) options.push({ icon: "info", label: "Ver ficha", command: { type: "game-page", id: item.id } });
   // Una película o serie: elegir otro póster o fondo (de TMDB) cuando el de siempre no te gusta.
   const metaId = item.extra?.meta_id || item.meta_id;
+  // Con Trakt, lo tuyo con el título (como el iPhone) y, una serie, a «Tus canales» (TV en vivo).
+  if (trakt && isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
+    const kind = item.extra?.kind || item.kind || (String(item.id || "").startsWith("cinemeta:series:") ? "series" : "movie");
+    const about = { kind, id: metaId, title: item.title };
+    options.push({ icon: "star", label: "Calificar", command: { type: "rate", ...about } },
+      { icon: "check", label: kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", command: { type: "watched", ...about } });
+    if (kind === "series") options.push({ icon: "tv", label: "Agregar a Tus canales", hint: "Al aire todo el día en TV en vivo", command: { type: "tv-mine", id: metaId, title: item.title, add: true } });
+  }
   if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
     options.push({ icon: "cover", label: "Cambiar el arte", command: { type: "media-art", kind: item.extra?.kind || item.kind || "movie", metaId, title: item.title } });
   }
@@ -281,7 +301,8 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲) y «Tu año» (bajo tu perfil).
   options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
   options.push({ icon: "spark", label: "Decide por mí", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
-  options.push({ icon: "chart", label: "Tu año", hint: "Lo que viste según Trakt", command: { type: "year" } });
+  options.push({ icon: "bookmark", label: "¿Qué vemos hoy?", hint: "Encuentra tu match perfecto", command: { type: "match" } });
+  options.push({ icon: "chart", label: "Lo que ves", hint: "Tus números según Trakt", command: { type: "year" } });
   options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });

@@ -133,6 +133,10 @@ export function createTv({ onFocus, onPick }) {
       else node.removeAttribute("aria-current");
     }
     el.dataset.zone = focusId.startsWith("cat:") ? "cats" : "channels";
+    // La categoría enfocada (o la elegida), a la vista dentro de su lista; si quedan más abajo, la última se desvanece.
+    const cat = cats.querySelector(focusId.startsWith("cat:") ? `[data-focus-id="${focusId}"]` : ".tv__cat--on");
+    cat?.scrollIntoView({ block: "nearest" });
+    cats.classList.toggle("tv__cats--more", cats.scrollTop + cats.clientHeight < cats.scrollHeight - 2);
     const target = targets.get(focusId);
     if (target?.kind === "channel") memory[category] = target.channel.id;
     keepInView(grid, viewport, focusId);
@@ -149,7 +153,8 @@ export function createTv({ onFocus, onPick }) {
     const live = channel.id === playing;
     if (channel.synthetic) { // un canal de Orbital: qué episodio va y a qué hora termina
       mount(nowText,
-        h("span", { class: ["tv__now-eyebrow", live && "tv__now-eyebrow--live"] }, live ? "Al aire en grande" : "Canal de Orbital · Español latino"),
+        h("span", { class: ["tv__now-eyebrow", live && "tv__now-eyebrow--live"] }, live ? "Al aire en grande"
+          : channel.categories?.includes("Tus canales") ? "Tu canal · Español latino" : "Canal de Orbital · Español latino"),
         h("h2", { class: "tv__now-title" }, channel.name),
         h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || channel.tagline || "Al aire todo el día"),
         nextLine(channel, clock) && h("span", { class: "tv__now-meta" }, nextLine(channel, clock)),

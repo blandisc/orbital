@@ -57,6 +57,18 @@ def matches(genres: list[str], mood: str | None, picked: set[str]) -> bool:
     return True
 
 
+def fnv_order(day: int, imdb: str) -> int:
+    """El orden revuelto del mazo «¿Qué vemos hoy?», el mismo que el iPhone (MatchDeckModel.hash: FNV-1a de «día:imdb» con su
+    mezcla final): el mismo orden si vuelves a abrirlo hoy, y otro mañana."""
+    x = 14_695_981_039_346_656_037
+    for byte in f"{day}:{imdb}".encode():
+        x = ((x ^ byte) * 1_099_511_628_211) & 0xFFFF_FFFF_FFFF_FFFF
+    x ^= x >> 33
+    x = (x * 0xFF51_AFD7_ED55_8CCD) & 0xFFFF_FFFF_FFFF_FFFF
+    x ^= x >> 33
+    return x
+
+
 def runtime_minutes(text) -> int | None:
     """«2h 49min», «169 min», «45» → minutos (None si no se entiende)."""
     if isinstance(text, (int, float)):
