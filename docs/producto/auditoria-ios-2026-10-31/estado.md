@@ -28,14 +28,51 @@
 
 Página con el antes y el después: https://claude.ai/artifact/NUSkqvxm26CctNuUHHkFRR
 
-## Tanda 2 · Rendimiento y arquitectura: PENDIENTE (otra sesión)
-A2 reloj del reproductor aparte y `didSet` que comparan; A3 marco de los pósters y valores del entorno en iPad/Mac;
-B1 PlayerScreen en subvistas con estado propio (también TitleView, SettingsView, PlayerModel); B2 vistas que llaman
-servicios directo → modelos; B7 un solo aviso al cambiar ajustes; B8 CoreDrift (`addChild`, `rootView` solo si cambia el
-orden); C5 tareas al volver a la app; C6 `visibleShelves`/`platformHubs`; C7 `phaseAnimator` de HomeChannels;
-R3 Inicio quieto 14–19 % de CPU; C4 `endObserver` de AVPlayerEngine (PlayerEngines.swift).
-Detalles de núcleo para después: ReleaseCalendarModel sin estado de error (sin red se ve como «sin estrenos»);
-CollectionsModel vuelve a preguntar por logos de estudio que no existen.
+## Tanda 2 · Rendimiento y arquitectura: TERMINADA salvo B1 y parte de B2 (31 oct)
+
+Commits 0ec0af48 … 6abd316f (13). `swift test` completo verde en cada tema; la app compila en Debug y Release; CI de GitHub
+verde en main. Lo que se ve no cambió (comprobado en «Orbital QA»: Inicio, Canales, reproductor, Explorar, «Tu año»).
+
+**Cifras de CPU** («Orbital QA», iOS 26.3, app en reposo 20 s, sin -demo-no-idle, medido con `ps`):
+- Inicio quieto: antes 17.8 % y 18.1 % → después 6.5 % y 6.1 %. Memoria igual (~415–440 MB).
+- Inicio con Canales a la vista: 16.5 % → 13.3 % (el simulador va a 60 Hz; en un iPhone ProMotion la ganancia es mayor).
+- Diagnóstico: con el cielo quieto y sin el acercamiento de los canales, Inicio gasta 0.2 %; el acercamiento costaba ~18 % aun
+  fuera de pantalla y el cielo ~15 % a 12 cuadros (proporcional: a 6 cuadros, 7 %).
+
+**Hecho.**
+- R3 + C7 (0ec0af48): el acercamiento de cada canal solo corre si la tarjeta y la fila se ven y la app está al frente, a 30
+  cuadros (TimelineView en vez de `phaseAnimator`); el cielo pinta 6 cuadros quieto y 12 al inclinar el teléfono
+  (`SkyPace`, `DS.Sky.calmFrame`). Sin prueba unitaria (es dibujo); medido antes y después.
+- A2 (9e0a96d5): `PlayerTime` (posición y duración) aparte del `PlayerModel`; el `snapshot` solo avisa a la pantalla si cambió
+  algo más que la posición; la barra, sus tiempos, la pantalla del iPod y el «ya llegó» leen el reloj en `PlayerTimeReader`.
+  Los `didSet` de PlayerModel comparan antes de avisar (menos `request`, que no es Equatable). PlayerTimeTests.
+- A3 (a408ccd1): el marco del póster en `FrameBox`, que SwiftUI no observa. Lo demás de A3 ya estaba en 5cae2625.
+  No se probó en el simulador del iPad (cambio chico: el marco solo se lee al tocar).
+- C5 (322934a7): `ForegroundRefresh`: al abrir, todo menos la biblioteca; de regreso de segundo plano, todo si pasaron 2 min;
+  con el Centro de control, nada. ForegroundRefreshTests.
+- C6 (0832c92b): `visibleShelves` y `platformHubs` guardados en ParaTiModel hasta que cambie de lo que salen. ShelfPlanTests.
+- B7 (fe1d7f48): `reconfigure()` junta sus avisos en uno; `SettingsModel.update` avisa una vez (antes 7 al cambiar el idioma).
+  ScreenModelsTests.testCambiarElIdiomaAvisaUnaSolaVez.
+- B8 (8aad3437): el controlador de cada columna del muro se cuelga con `addChild` al entrar a la ventana; `rootView` ya solo
+  cambiaba con el orden.
+- C4 (35b19d0c): `AVPlayerEngine` quita `endObserver` en `deinit`.
+- B2, primera parte (3a998414): `PersonModel` (PersonView ya no llama a TMDB) y `YearReviewModel` (YearView ya no llama a
+  Para ti). PersonModelTests, YearReviewModelTests.
+- Núcleo (ab9470eb): ReleaseCalendarModel guarda el problema (`Degraded`) y el día enseña el aviso del modo degradado con
+  «Reintentar» en vez de «no sale nada». ReleaseCalendarModelTests.
+- Núcleo (6abd316f): CollectionsModel recuerda los estudios sin logo (si TMDB no contestó, sí reintenta). CollectionsModelTests.
+- 9278d3ea: DebouncedWriteTests falló una vez con la Mac ocupada (200 ms fijos); ahora espera hasta 2 s.
+
+**No hecho (por qué).**
+- B1 (PlayerScreen, TitleView, SettingsView y PlayerModel en subvistas con estado propio): no alcanzó. Es reestructurar
+  ~2,400 líneas del reproductor con 43 `@State` y gestos encadenados; hacerlo con prisa arriesga romper gestos y el candado.
+  A2 ya quitó lo que más costaba (repintar todo cuatro veces por segundo). Propuesta para la siguiente sesión, por
+  responsabilidad: capa de gestos (`PlayerScreen+Gestos` + `PlayerDragState`), controles (`+Controles` + barra), panel de
+  subtítulos/audio (`+Panel` + `PlayerDockState`) y el iPod, cada una con sus entradas estrechas y su estado.
+- B2, el resto: PlayerScreen (+Controles 169/317/323) y DecideView:272 siguen llamando servicios; `DownloadsModel` se arma en
+  AppEnvironment y en PlayerScreen+CicloDeVida; ~60 `AppEnvironment.shared` en vistas (casi todos para armar su modelo en
+  `init`, que es el patrón de la app). Lo del reproductor conviene hacerlo junto con B1.
+- B7, la otra mitad: `AppEnvironment.services` registra lectura en cada vista; con un solo aviso por ajuste ya no se nota.
 
 ## Tanda 3 · Sistema de diseño: TERMINADA (31 oct)
 

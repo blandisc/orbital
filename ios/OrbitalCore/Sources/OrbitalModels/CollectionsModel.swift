@@ -20,7 +20,7 @@ public final class CollectionsModel: ObservableModel {
     public let studios: [(id: Int, name: String)] = Tmdb.studios
     public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { changed() } }
     /// El logo de cada estudio (TMDB), si lo tiene; se guarda en el iPhone (no cambia).
-    public private(set) var studioLogos: [Int: String] = [:] { didSet { changed() } }
+    public private(set) var studioLogos: [Int: String] = [:] { didSet { if oldValue != studioLogos { changed() } } }
     public var tmdbReady: Bool { services.tmdb.configured }
     /// «Temporadas»: la de hoy primero (o la siguiente en llegar) y las demás en el orden en que llegan; lo de cada una se pide al verla.
     public var seasons: [TmdbSeason] { Tmdb.orderedSeasons(today: services.now()) }
@@ -93,15 +93,21 @@ public final class CollectionsModel: ObservableModel {
     }
 
     /// Solo el logo de un estudio (el filtro avanzado los enseña sin pedir sus películas); una vez, luego de la caché.
+    /// TMDB contestó que no tiene logo: se recuerda (guardado vacío) y no se vuelve a preguntar en cada pasada (antes, cada
+    /// vez que se pintaba el estudio; auditoría del 31 oct 2026). Si no contestó, sí se vuelve a intentar.
     public func loadStudioLogo(_ id: Int) async {
-        guard studioLogos[id] == nil else { return }
+        guard studioLogos[id] == nil, !studiosWithoutLogo.contains(id) else { return }
         let key = "studio-logo.\(id)"
-        if let saved = services.kv.data(key).flatMap({ String(data: $0, encoding: .utf8) }) { studioLogos[id] = saved }
-        else if services.tmdb.configured, let logo = try? await services.tmdb.companyLogo(id) {
-            studioLogos[id] = logo
-            services.kv.set(key, data: logo.data(using: .utf8))
+        if let saved = services.kv.data(key).flatMap({ String(data: $0, encoding: .utf8) }) {
+            if saved.isEmpty { studiosWithoutLogo.insert(id) } else { studioLogos[id] = saved }
+        } else if services.tmdb.configured {
+            let answer: String?
+            do { answer = try await services.tmdb.companyLogo(id) } catch { return }   // no contestó: se intenta otra vez luego
+            if let answer { studioLogos[id] = answer } else { studiosWithoutLogo.insert(id) }
+            services.kv.set(key, data: (answer ?? "").data(using: .utf8))
         }
     }
+    private var studiosWithoutLogo = Set<Int>()
 
     /// Lo de una temporada (una vez; luego de la caché).
     public func loadSeason(_ slug: String) async {

@@ -47,6 +47,7 @@ final class ReleaseCalendarModelTests: XCTestCase {
         XCTAssertEqual(model.airings(on: day("2025-10-20", cal).addingTimeInterval(3600)).map(\.series.imdb), ["tt0903747"], "cualquier hora del día cuenta")
         XCTAssertTrue(model.airings(on: day("2025-10-09", cal)).isEmpty)
         XCTAssertEqual(model.days.count, 2)
+        XCTAssertNil(model.problem)
     }
 
     func testLaCuadriculaEmpiezaElDiaDeLaSemanaQueToca() throws {
@@ -69,6 +70,20 @@ final class ReleaseCalendarModelTests: XCTestCase {
         XCTAssertFalse(model.loading)
         XCTAssertTrue(model.days.isEmpty)
         XCTAssertTrue(model.airings(on: model.today).isEmpty)
+        XCTAssertEqual(model.problem, .offline, "se dice que no hay internet (antes parecía un mes sin estrenos)")
+    }
+
+    func testTraktCaidoSeDiceYAlVolverSeQuita() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.statuses["\(calendarAPI)2025-09-30/18?extended=full"] = 503
+        let model = ReleaseCalendarModel(rig.services, calendar: utc())
+        await model.load()
+        XCTAssertEqual(model.problem, .down(.trakt))
+        rig.http.statuses["\(calendarAPI)2025-09-30/18?extended=full"] = nil
+        rig.http.json["\(calendarAPI)2025-09-30/18?extended=full"] = []
+        rig.http.json["\(calendarAPI)2025-10-16/17?extended=full"] = []
+        await model.load()
+        XCTAssertNil(model.problem, "llegó todo: sin aviso")
     }
 
     func testSinTraktNoSePideNada() async throws {

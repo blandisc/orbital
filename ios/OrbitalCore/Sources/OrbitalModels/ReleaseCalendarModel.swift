@@ -9,6 +9,9 @@ public final class ReleaseCalendarModel: ObservableModel {
     public private(set) var days: [Date: [Airing]] = [:] { didSet { changed() } }
     public private(set) var loading = false { didSet { changed() } }
     public var selected: Date { didSet { changed() } }
+    /// Trakt no contestó (o no hay red): el mes no está completo y se dice, en vez de enseñarlo como «no sale nada»
+    /// (auditoría del 31 oct 2026). nil si llegó todo.
+    public private(set) var problem: Degraded? { didSet { if oldValue != problem { changed() } } }
 
     private let services: Services
     private let calendar: Calendar
@@ -41,15 +44,21 @@ public final class ReleaseCalendarModel: ObservableModel {
         defer { loading = false }
         let count = calendar.range(of: .day, in: .month, for: month)?.count ?? 30
         let skip = calendar.dateComponents([.day], from: today, to: month).day ?? 0
-        let forYou = services.forYou
-        async let first = try? forYou.calendar(skip: skip, days: Self.half, calendar: calendar)
-        async let second = try? forYou.calendar(skip: skip + Self.half, days: count - Self.half, calendar: calendar)
-        let firstHalf: [Airing]? = await first   // cada espera en su línea (compilador de la CI, 31 oct 2026)
-        let secondHalf: [Airing]? = await second
-        let all: [Airing] = (firstHalf ?? []) + (secondHalf ?? [])
+        let forYou = services.forYou, calendar = calendar
+        async let first = Self.half(forYou, skip: skip, days: Self.half, calendar: calendar)
+        async let second = Self.half(forYou, skip: skip + Self.half, days: count - Self.half, calendar: calendar)
+        let firstHalf: Result<[Airing], Error> = await first   // cada espera en su línea (compilador de la CI, 31 oct 2026)
+        let secondHalf: Result<[Airing], Error> = await second
+        let failure: Error? = [firstHalf, secondHalf].lazy.compactMap { if case .failure(let e) = $0 { e } else { nil } }.first
+        problem = failure.map { Degraded.classify($0, service: .trakt, online: services.isOnline()) }
+        let all: [Airing] = ((try? firstHalf.get()) ?? []) + ((try? secondHalf.get()) ?? [])
         var grouped: [Date: [Airing]] = [:]
         for a in all { grouped[a.day, default: []].append(a) }
         days = grouped
+    }
+
+    private nonisolated static func half(_ forYou: ForYou, skip: Int, days: Int, calendar: Calendar) async -> Result<[Airing], Error> {
+        do { return .success(try await forYou.calendar(skip: skip, days: days, calendar: calendar)) } catch { return .failure(error) }
     }
 
     /// Otro mes (−1 el anterior, +1 el siguiente): se elige su primer día (o hoy, si es este mes).
