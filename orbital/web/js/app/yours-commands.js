@@ -31,8 +31,13 @@ export function otherDayMenu(base, now = Date.now()) {
   };
 }
 
-export function yoursCommands({ api, nested, openMenu, openMatch, renderHints, sound, ui }) {
+export function yoursCommands({ api, nested, openMenu, openMatch, renderHints, setUnseeded, sound, ui }) {
   return {
+    "unseed": async (command) => {
+      ui.sheet.close();
+      setUnseeded(command.id, command.title, true);
+      return renderHints();
+    },
     "rate": async (command, context) => {
       const { stars } = await api.myRating(command.kind, command.id).catch(() => ({ stars: null }));
       const options = STARS.map(([n, words]) => ({ icon: "star", label: words, value: `${stars === n ? "✓ " : ""}${starText(n)}`,

@@ -38,3 +38,14 @@ test("lo descartado en el mazo vuelve al mes", () => {
   const now = 100 * 86_400_000;
   assert.deepEqual(Object.keys(freshDiscards({ tt1: now - 29 * 86_400_000, tt2: now - 31 * 86_400_000 }, now)), ["tt1"]);
 });
+
+test("No recomendar por esta: sale de las semillas y, si era la del día, entra la siguiente", async () => {
+  const { becauseSeed } = await import("../../orbital/web/js/core/media-plan.js");
+  const because = { seed: { meta_id: "tt1", title: "A" }, seeds: [{ meta_id: "tt1", title: "A" }, { meta_id: "tt2", title: "B" }] };
+  assert.equal(becauseSeed(because).seed.meta_id, "tt1");
+  const after = becauseSeed(because, null, ["tt1"]);
+  assert.equal(after.seed.meta_id, "tt2");
+  assert.equal(after.listId, "because:tt2");
+  assert.deepEqual(after.seeds.map((s) => s.meta_id), ["tt2"]);
+  assert.equal(becauseSeed(because, null, ["tt1", "tt2"]).seed, null); // sin semillas: sin la fila
+});

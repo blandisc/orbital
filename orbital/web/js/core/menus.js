@@ -44,6 +44,8 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   if (isGame(item) && !page) options.push({ icon: "info", label: "Ver ficha", command: { type: "game-page", id: item.id } });
   // Una película o serie: elegir otro póster o fondo (de TMDB) cuando el de siempre no te gusta.
   const metaId = item.extra?.meta_id || item.meta_id;
+  // Uno de tus títulos en «Porque viste»: que ya no recomiende por él (como el iPhone; se deshace en el aviso).
+  if (item.seed) options.push({ icon: "hide", label: "No recomendar por esta", command: { type: "unseed", id: item.seed, title: item.title } });
   // Con Trakt, lo tuyo con el título (como el iPhone) y, una serie, a «Tus canales» (TV en vivo).
   if (trakt && isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
     const kind = item.extra?.kind || item.kind || (String(item.id || "").startsWith("cinemeta:series:") ? "series" : "movie");

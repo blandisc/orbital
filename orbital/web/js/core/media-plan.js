@@ -86,10 +86,13 @@ const heroOf = (first, eyebrow) => ({ image: first?.hero || first?.image, hero: 
  * Cada fila lleva `group` (Ir a…, LT/RT) y, si es de tarjetas, `cards`; las generales, su `seal`.
  */
 /** «Porque viste»: el título de hoy, o el que elegiste con X (si es de tus últimos cinco), y la lista de sus parecidos. */
-export function becauseSeed(because, chosen = null) {
-  const seeds = because?.seeds?.length ? because.seeds : because?.seed ? [because.seed] : [];
-  const picked = chosen && chosen !== because?.seed?.meta_id ? seeds.find((s) => s.meta_id === chosen) : null;
-  return picked ? { seed: picked, listId: `because:${picked.meta_id}`, seeds } : { seed: because?.seed || null, listId: "because", seeds };
+export function becauseSeed(because, chosen = null, unseeded = []) {
+  // «No recomendar por esta» (como el iPhone): esas ya no son semilla; si era la del día, toma su lugar la siguiente.
+  const all = because?.seeds?.length ? because.seeds : because?.seed ? [because.seed] : [];
+  const seeds = all.filter((s) => !unseeded.includes(s.meta_id));
+  const base = because?.seed && !unseeded.includes(because.seed.meta_id) ? because.seed : null;
+  const picked = (chosen && chosen !== base?.meta_id ? seeds.find((s) => s.meta_id === chosen) : null) ?? (!base ? seeds[0] ?? null : null);
+  return picked ? { seed: picked, listId: `because:${picked.meta_id}`, seeds } : { seed: base, listId: "because", seeds };
 }
 
 /** Un estreno de «Lo nuevo de lo tuyo» como póster: su día y su episodio debajo; lo que ya salió, con el listón «Nuevo»; lo
@@ -112,7 +115,7 @@ export function miMediaItem(t, now = Date.now() / 1000) {
   subtitle: kind === "series" ? `${t.episodes} ${t.episodes === 1 ? "episodio" : "episodios"} tuyos` : String(t.year || "Película") };
 }
 
-export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null } = {}) {
+export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null, unseeded = [] } = {}) {
   const byId = Object.fromEntries(lists.filter((l) => l?.id).map((l) => [l.id, l]));
   const rows = [];
   // El rótulo de cada título no repite el nombre de su fila (en «En tendencia», cada tarjeta decía «En tendencia»).
@@ -126,11 +129,11 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
     .map(({ _order, _day, ...i }) => i);
   if (latest.length) rows.push({ id: "curated:nuevo", title: "Lo nuevo de lo tuyo", seal: "trakt", group: "nuevo", items: latest.slice(0, 20) });
   const because = byId.because;
-  if (because?.seed) {
+  if (because?.seed && becauseSeed(because, becauseChoice, unseeded).seed) {
     // «Escenario» (la tele, no el mazo del iPhone): una sola fila. A la izquierda, fijo, lo que viste en grande y tus
     // últimos títulos en miniatura (moverte por ellos cambia la sugerencia; cada día otro de los primeros cinco); a la
     // derecha, lo que Trakt relaciona con el elegido, en su orden.
-    const { seed: s, listId, seeds } = becauseSeed(because, becauseChoice);
+    const { seed: s, listId, seeds } = becauseSeed(because, becauseChoice, unseeded);
     const related = itemsOf(itemsById, { ...because, id: listId }, filter).filter((i) => i.meta_id !== s.meta_id);
     const thumbs = (seeds.length ? seeds : [s]).map((x) => ({
       ...curatedItem({ meta_id: x.meta_id, kind: x.kind, title: x.title, image: x.image, why: "Viste hace poco",

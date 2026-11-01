@@ -1025,6 +1025,24 @@ const paintMediaKinds = () => ui.hero.setKinds(state.section === "media" ? [["al
 // «Porque viste»: el que elegiste con X se queda hasta mañana (luego vuelve el del día, que ya es otro).
 const today = () => new Date().toLocaleDateString("sv");
 const becauseChoice = () => { const c = storage.get("orbital.because", null); return c?.day === today() ? c.imdb : null; };
+/** «No recomendar por esta» (como el iPhone, foryou-unseeded): los títulos que ya no son semilla de «Porque viste». */
+const unseeded = () => storage.get("foryou-unseeded", []);
+
+/** Saca (o regresa, con «Deshacer») un título de las semillas de «Porque viste»; si era el del día, entra el siguiente. */
+function setUnseeded(imdb, title, off = true) {
+  const now = unseeded().filter((id) => id !== imdb);
+  storage.set("foryou-unseeded", off ? [...now, imdb] : now);
+  const because = mediaLists.find((l) => l.id === "because");
+  const { seed, listId } = becauseSeed(because, becauseChoice(), unseeded());
+  sound.play("select");
+  // «Deshacer» con Y mientras se ve el aviso (o tocándolo), como ocultar un juego.
+  if (off) ui.toast.show("Ya no recomiendo por esta", { detail: title,
+    ...offerVoiceAction({ kind: "undo", label: "Deshacer", button: "options", run: () => setUnseeded(imdb, title, false) }) });
+  if (seed && listId !== "because" && !mediaItems[keyOf(listId, null)]) {
+    fetchList(listId, null).then((items) => { mediaItems[keyOf(listId, null)] = items; refreshBecauseRow(); });
+  }
+  return refreshBecauseRow();
+}
 
 /** «Porque viste»: al enfocar otro de tus títulos en la fila de arriba, las sugerencias de abajo pasan a ser las suyas
  * (un momento después de pararte: recorrer la fila no pide nada por cada uno). */
@@ -1042,7 +1060,7 @@ function chooseBecause(imdb) {
 
 /** Solo la fila de «Porque viste»: rehacer toda la biblioteca por cada título que recorrías era lo que volvía lento el carrusel. */
 function refreshBecauseRow() {
-  const next = mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() })
+  const next = mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() })
     .find((row) => row.id === "curated:because");
   const at = state.rows?.findIndex((row) => row.id === "curated:because") ?? -1;
   if (!next || at < 0 || state.section !== "media") return buildCuration();
@@ -1109,7 +1127,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
+  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -1713,7 +1731,7 @@ let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
   const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
-  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch }) };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, setUnseeded }) };
   return commandTable;
 }
 
@@ -1856,6 +1874,7 @@ async function runVoiceAction() {
   state.voiceAction = null;
   ui.toast.dismiss();
   if (!voiceAction) return;
+  if (voiceAction.kind === "undo") return voiceAction.run();
   if (voiceAction.kind === "guide") return runCommand({ type: "alexa-menu" });
   // «No era eso»: cierra lo que abrió (como B en la pantalla de carga: no cuenta como jugado) y busca lo que oyó.
   sound.play("back");
