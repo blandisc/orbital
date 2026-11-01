@@ -341,9 +341,28 @@ private final class DriftView: UIView {
     }
 
     /// Al volver a la ventana (otra pestaña, la app al frente) la animación sigue ahí; si iOS la quitó, se vuelve a poner.
+    /// El controlador del muro se cuelga del de la pantalla (como pide UIKit): así recibe el tamaño de letra, la apariencia y
+    /// los cambios de la ventana por la vía normal (auditoría del 31 oct 2026, B8).
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        if window != nil, host.parent == nil, let parent = owningController {
+            parent.addChild(host)
+            host.didMove(toParent: parent)
+        } else if window == nil, host.parent != nil {
+            host.willMove(toParent: nil)
+            host.removeFromParent()
+        }
         sync()
+    }
+
+    /// El controlador más cercano hacia arriba (el de SwiftUI que pinta esta pantalla).
+    private var owningController: UIViewController? {
+        var next = superview?.next
+        while let responder = next {
+            if let controller = responder as? UIViewController { return controller }
+            next = responder.next
+        }
+        return nil
     }
 
     func set(enabled: Bool, running: Bool) {
