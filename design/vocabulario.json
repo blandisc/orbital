@@ -16,7 +16,7 @@
     { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando", "Donde te quedaste"] },
     { "texto": "Para ti", "en": [], "evitar": ["Para Ti", "Para tí"], "nota": "Ya no es el nombre de una sección (es «Explorar», 31 oct 2026). Se vale en frases («Sugerencias para ti») y como lo que dices a la voz." },
     { "texto": "Explorar", "en": ["tv", "ios"], "nota": "La sección de descubrir (antes «Para ti») en los dos (Fernando, 31 oct 2026). La voz entiende las dos." },
-    { "texto": "Colecciones", "en": ["tv", "ios"], "evitar": ["tu repisa", "Tu repisa"], "nota": "Los premios y las listas del canon (Criterion, IMDb Top 250, New York Times).", "pendiente": { "tv": "Ola 3: la vitrina de Colecciones.", "ios": "Un texto dice «… del canon en tu repisa»." } },
+    { "texto": "Colecciones", "en": ["tv", "ios"], "evitar": ["tu repisa", "Tu repisa"], "nota": "Los premios y las listas del canon (Criterion, IMDb Top 250, New York Times).", "pendiente": { "ios": "Un texto dice «… del canon en tu repisa»." } },
     { "texto": "Lo que ves", "en": ["tv", "ios"], "nota": "Tus números (horas, rachas, día por día, cómo calificas). «Tu año, día por día» es una vista adentro, no la entrada." },
     { "texto": "Decide por mí", "en": ["tv", "ios"], "evitar": ["¿Qué vemos?"], "nota": "El sorteo de una propuesta.", "pendiente": { "ios": "Quedan dos textos con «¿Qué vemos?»." } },
     { "texto": "¿Qué vemos hoy?", "en": ["tv", "ios"], "evitar": ["Tinder"], "nota": "El mazo «Encuentra tu match perfecto»: Paso · Ver ya · Guardar (en «Tu match perfecto» de Trakt; sin Trakt, en Mi lista)." },

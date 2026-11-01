@@ -1164,3 +1164,18 @@ def test_match_deck_is_shuffled_per_day_without_what_you_watched(make_foryou, mo
     assert ids == sorted(ids, key=lambda i: decide.fnv_order(20000, i))
     assert ids != [c["meta_id"] for c in fy.match_deck(now=86400 * 20001)]  # mañana, otro orden
     assert all("comedy" in c["genres"] for c in fy.match_deck("light", now=86400 * 20000))
+
+
+def test_collections_count_what_you_watched(make_foryou, net, monkeypatch):
+    """Colecciones (la repisa del iPhone): cada premio y cada lista famosa con cuántas ya viste; una lista que no llega no sale."""
+    from orbital import foryou as foryou_mod
+
+    monkeypatch.setattr(foryou_mod, "load_awards", lambda: [{"id": "oscar", "title": "Óscar", "kind": "movie", "tint": "gold",
+                                                            "winners": [{"imdb": "tt1", "title": "A", "award_year": 2020}, {"imdb": "tt2", "title": "B", "award_year": 2021}]}])
+    fy = make_foryou(linked=True)
+    monkeypatch.setattr(fy, "watched_ids", lambda: ["tt1", "tt7"])
+    monkeypatch.setattr(fy.mdblist, "list_items", lambda ref, limit=60: [{"imdb": "tt7", "kind": "movie", "title": "C"}, {"imdb": "tt8", "kind": "movie", "title": "D"}] if "criterion" in ref else (_ for _ in ()).throw(foryou_mod.mdblist_api.MdbListError("no")))
+    net.on("GET", r"/users/me/lists$", (200, []))
+    got = {c["id"]: (c["seen"], c["total"]) for c in fy.collections()}
+    assert got == {"award:oscar": (1, 2), "canon:criterion": (1, 2)}
+    assert [i["meta_id"] for i in fy.list_items("canon:criterion", None)] == ["tt7", "tt8"]

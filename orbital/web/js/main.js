@@ -47,6 +47,7 @@ import { accountCommands } from "./app/account-commands.js";
 import { libraryCommands } from "./app/library-commands.js";
 import { yoursCommands } from "./app/yours-commands.js";
 import { createMatchDeck } from "./components/match-deck.js";
+import { createShowcase } from "./components/showcase.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
@@ -255,6 +256,13 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  // Colecciones (como la repisa del iPhone): los premios y las listas famosas, con cuánto llevas.
+  showcase: createShowcase({
+    load: () => api.forYouCollections(),
+    onOpen: (c) => openShowcaseItem(c),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   year: createYear({
     load: () => api.forYouYear(),
     onPick: (item) => openTitle(item),
@@ -292,7 +300,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.match.el, ui.gamePage.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.decide.el, ui.match.el, ui.showcase.el, ui.gamePage.el, ui.listScreen.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -363,7 +371,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -1418,6 +1426,23 @@ function downloadMenu(item) {
 /** «¿Qué vemos hoy?»: el mazo a pantalla completa. */
 const traktLinked = () => !!state.settings?.trakt?.linked;
 
+/** Colecciones: la vitrina a pantalla completa. */
+function openShowcase() {
+  sound.play("open");
+  ui.showcase.open();
+  renderHints();
+}
+
+/** Una de Colecciones abierta: sus títulos en cuadrícula, con cuánto llevas arriba (un premio, con su metal). */
+function openShowcaseItem(c) {
+  const cached = (id) => (mediaItems[keyOf(id, null)] ? Promise.resolve(mediaItems[keyOf(id, null)]) : fetchList(id, null));
+  sound.play("open");
+  ui.listScreen.open({ id: c.id, title: c.title, meta: [c.meta, c.total ? `${c.seen} de ${c.total} vistas` : ""].filter(Boolean).join(" · "),
+    source: "orbital", media: {}, metal: c.family === "award" ? c.tint || "gold" : null,
+    tabs: [{ id: "all", label: "", ranked: c.family === "list", load: () => cached(c.id).then((items) => items.map(curatedItem)) }] });
+  renderHints();
+}
+
 function openMatch() {
   sound.play("open");
   ui.match.open({ glyphs: glyphs() });
@@ -1731,7 +1756,7 @@ let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
   const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
-  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, setUnseeded }) };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, setUnseeded }) };
   return commandTable;
 }
 

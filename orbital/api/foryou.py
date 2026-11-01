@@ -148,6 +148,11 @@ def router(d: Deps) -> APIRouter:
         except SERVICE_ERRORS:
             raise HTTPException(502, failed)
 
+    @r.get("/collections")
+    def collections() -> dict:
+        """Colecciones: los premios y las listas famosas, con cuántas ya viste de cada una."""
+        return {"collections": foryou.collections(), "trakt": foryou.trakt.linked}
+
     @r.get("/match")
     def match_deck(mood: str = "") -> dict:
         """El mazo de hoy de «¿Qué vemos hoy?» (sin lo visto; del ánimo, si lo eliges)."""

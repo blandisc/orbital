@@ -88,7 +88,7 @@ FRESH_BRANDS = ("netflix", "disney", "hbo")  # «Nuevo en tus plataformas» las 
 FRESH_SERIES_DAYS, FRESH_MOVIE_DAYS = 14, 90
 FIRST_YEAR = 1980  # «Por año», del actual hacia atrás
 # Lo que solo arma la TV (el iPhone calcula los suyos): no viaja por el túnel (server._foryou_public_routes).
-TV_ONLY_PREFIXES = ("because", "fresh", "award:", "studio:", "year:", "genre:", "season:")
+TV_ONLY_PREFIXES = ("because", "fresh", "canon:", "award:", "studio:", "year:", "genre:", "season:")
 
 
 def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
@@ -104,6 +104,18 @@ def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
         if isinstance(a, dict) and a.get("id") and a.get("kind") in ("movie", "series") and winners:
             awards.append({**a, "tint": a.get("tint") if a.get("tint") in AWARD_TINTS else "gold", "winners": winners})
     return awards
+
+
+# Colecciones (como la repisa del iPhone, Canon.lists): las listas famosas, además de los premios. «nyt-movies» es una de TUS
+# listas de Trakt (la que se llama como la del New York Times de películas), como en el iPhone.
+CANON = (
+    ("criterion", "Colección Criterion", "pizzadeath/the-criterion-collection", 1000),
+    ("top250", "Top 250 de IMDb", "georgenilas/imdb-top-250", 250),
+    ("nyt-movies", "NYT · Películas", "", 100),
+    ("nyt-series", "NYT · Series", "amything/the-100-best-tv-shows-of-the-21st-century-according-to-the-new-york-times", 100),
+)
+CANON_TTL = 7 * 86400  # s: las listas famosas cambian poco (el iPhone las guarda una semana)
+AWARD_ORDER = ("oscar", "palm", "ariel", "globe", "bafta", "emmy")  # el orden de la repisa del iPhone (Canon.awardOrder)
 
 
 KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",),
@@ -1020,6 +1032,9 @@ class ForYou:
             return [video_item(e, why) for e in self._related(seed)]
         if list_id == "fresh":
             return self.cache.get(f"tmdb:fresh:{kind}", POPULAR_TTL, lambda: self._fresh(kind))
+        if list_id.startswith("canon:"):
+            return [video_item({"imdb": e["imdb"], "kind": e["kind"], "title": e["title"], "year": e.get("year")}, f"N.º {n} de la lista")
+                    for n, e in enumerate(self._canon(list_id.removeprefix("canon:")), start=1)]
         if list_id.startswith("award:"):
             award = next((a for a in load_awards() if a["id"] == list_id.removeprefix("award:")), None)
             if not award:
@@ -1637,6 +1652,51 @@ class ForYou:
             pool = [i for i in pool if decide_api.matches(i["genres"], mood, set())]
         day = int((now if now is not None else time.time()) // 86400)
         return sorted(pool, key=lambda i: decide_api.fnv_order(day, i["meta_id"]))
+
+    # --- Colecciones (como la repisa del iPhone) --------------------------------------------------------------------
+    def _canon(self, canon_id: str) -> list[dict]:
+        """Los títulos de una lista famosa, en su orden (una semana guardada). KeyError si no existe."""
+        found = next((c for c in CANON if c[0] == canon_id), None)
+        if found is None:
+            raise KeyError(canon_id)
+        _, _, ref, total = found
+        if ref:
+            return self.cache.get(f"canon:{canon_id}", CANON_TTL, lambda: self.mdblist.list_items(ref, limit=total))
+
+        def mine() -> list[dict]:  # la tuya de Trakt, por su nombre (como el iPhone: «York» o «NYT», y de películas)
+            if not self.trakt.linked:
+                return []
+
+            def fits(name: str) -> bool:
+                low = name.casefold()
+                return any(w in low for w in ("york", "nyt")) and not any(w in low for w in ("tv", "serie", "show"))
+
+            row = next((r for r in self.trakt.lists() if fits(r["name"])), None)
+            return [e for e in self.trakt.list_items(row["id"]) if e.get("kind") == "movie"] if row else []
+
+        return self.cache.get(f"canon:{canon_id}", CANON_TTL, mine)
+
+    def collections(self) -> list[dict]:
+        """La vitrina de Colecciones: cada premio y cada lista famosa con cuántas ya viste (lo que no se pudo leer no sale)."""
+        watched = set(self.watched_ids()) if self.trakt.linked else set()
+        awards = {a["id"]: a for a in load_awards()}
+        out = []
+        for award_id in [*AWARD_ORDER, *(a for a in awards if a not in AWARD_ORDER)]:
+            a = awards.get(award_id)
+            if a:
+                ids = {w["imdb"] for w in a["winners"]}
+                out.append({"id": f"award:{award_id}", "title": a["title"], "meta": a.get("category") or "", "family": "award",
+                            "tint": a["tint"], "kind": a["kind"], "total": len(ids), "seen": len(ids & watched)})
+        for canon_id, title, _, _total in CANON:
+            try:
+                items = self._canon(canon_id)
+            except SERVICE_ERRORS:
+                continue
+            if items:
+                ids = {e["imdb"] for e in items}
+                out.append({"id": f"canon:{canon_id}", "title": title, "meta": "", "family": "list", "total": len(ids),
+                            "seen": len(ids & watched)})
+        return out
 
     def skip_today(self, imdb: str) -> None:
         """«Hoy no»: esa no vuelve a proponerse en 24 horas."""

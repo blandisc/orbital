@@ -31,8 +31,12 @@ export function otherDayMenu(base, now = Date.now()) {
   };
 }
 
-export function yoursCommands({ api, nested, openMenu, openMatch, renderHints, setUnseeded, sound, ui }) {
+export function yoursCommands({ api, nested, openMenu, openMatch, openShowcase, renderHints, setUnseeded, sound, ui }) {
   return {
+    "collections": async () => {
+      ui.sheet.close();
+      return openShowcase();
+    },
     "unseed": async (command) => {
       ui.sheet.close();
       setUnseeded(command.id, command.title, true);
