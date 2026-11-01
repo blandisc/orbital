@@ -76,6 +76,25 @@ final class CollectionsModelTests: XCTestCase {
         XCTAssertEqual(again.studioLogos[studio], logo)
     }
 
+    /// Un estudio sin logo en TMDB no se vuelve a preguntar (ni en esta sesión ni en la siguiente); sin respuesta, sí.
+    func testUnEstudioSinLogoNoSeVuelveAPreguntar() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        let studio = try XCTUnwrap(Tmdb.studios.first).id
+        let url = "https://api.themoviedb.org/3/company/\(studio)?"
+        rig.http.offline = true
+        let model = CollectionsModel(rig.services)
+        await model.loadStudioLogo(studio)
+        rig.http.offline = false
+        rig.http.prefix[url] = ["id": .int(studio), "logo_path": .null]
+        await model.loadStudioLogo(studio)
+        let asked = rig.http.calls.filter { $0.hasPrefix(url) }.count
+        XCTAssertEqual(asked, 1, "sin red no se recordó nada: se volvió a preguntar")
+        await model.loadStudioLogo(studio)
+        await CollectionsModel(rig.services).loadStudioLogo(studio)
+        XCTAssertEqual(rig.http.calls.filter { $0.hasPrefix(url) }.count, asked, "ya se sabe que no tiene logo")
+        XCTAssertNil(model.studioLogos[studio])
+    }
+
     func testLoQueYaVisteSePideUnaVezHastaQueVesAlgo() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         rig.http.json["https://api.trakt.tv/sync/watched/movies"] = [["movie": ["title": "Dune", "ids": ["imdb": "tt1160419"]]]]
