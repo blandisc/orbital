@@ -25,6 +25,8 @@ struct RootView: View {
     /// La entrada de la app: solo al arrancar en frío (cada arranque arma una raíz nueva). En modo demo, solo con
     /// `-demo-splash` (las capturas no la esperan).
     @State private var splashing: Bool
+    /// Si al volver a la app hay que pedir otra vez lo de la red (no al bajar el Centro de control ni cada pocos segundos).
+    @State private var foreground = ForegroundRefresh()
     /// Ya se armó la raíz una vez en este arranque (la entrada no se repite).
     @MainActor private static var launched = false
 
@@ -142,7 +144,15 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { await env.ratings.refresh() }; Task { await env.services.syncLibrary() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }; Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) } }
+            if phase == .background { foreground.wentToBackground() }
+            if phase == .active {
+                let decision = foreground.becameActive(at: Date())
+                if decision != .skip {
+                    Task { await env.ratings.refresh() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }
+                    Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) }
+                }
+                if decision == .refresh { Task { await env.services.syncLibrary() } }   // al abrir ya la pide el arranque
+            }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
             #endif
