@@ -78,6 +78,18 @@ final class ShelfPlanTests: XCTestCase {
         return rig
     }
 
+    /// `visibleShelves` y `platformHubs` se guardan (C6): leídos antes de cargar, no se quedan con lo viejo.
+    func testLosEstantesVisiblesGuardadosSeRenuevanAlCargar() async throws {
+        let rig = try consoleRig()
+        let model = ParaTiModel(rig.services)
+        XCTAssertEqual(model.visibleShelves.map(\.id), [], "antes de cargar no hay estantes")
+        XCTAssertEqual(model.platformHubs.count, 0)
+        await model.load()
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["watchlist", "chart:netflix"], "se vuelve a calcular con lo que llegó")
+        XCTAssertEqual(model.platformHubs.map(\.brand), PlatformPlanner.hubs(model.lists).map(\.brand))
+        XCTAssertFalse(model.platformHubs.isEmpty, "Netflix trae su ranking")
+    }
+
     func testKindSelectorOnlyReloadsTheShelvesThatSplit() async throws {
         let rig = try consoleRig()
         let model = ParaTiModel(rig.services)

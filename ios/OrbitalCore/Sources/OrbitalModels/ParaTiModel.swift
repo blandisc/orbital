@@ -21,17 +21,17 @@ public final class ParaTiModel: ObservableModel {
     /// Abre en Listas (lo que más se usa); el mosaico, con el botón de arriba.
     public var mode: Mode = .lists { didSet { if mode != oldValue { changed() } } }
     public private(set) var mosaic: [Suggestion] = [] { didSet { if mosaic != oldValue { changed() } } }
-    public private(set) var lists: [ForYouList] = [] { didSet { if lists != oldValue { changed() } } }
+    public private(set) var lists: [ForYouList] = [] { didSet { if lists != oldValue { hubsMemo = nil; changed() } } }
     /// Los estantes del feed de Listas, en su orden (`ShelfPlanner`). Los vacíos se descartan al terminar de cargar.
-    public private(set) var shelves: [ShelfPlan] = [] { didSet { if shelves != oldValue { changed() } } }
+    public private(set) var shelves: [ShelfPlan] = [] { didSet { if shelves != oldValue { visibleMemo = nil; changed() } } }
     /// «Todo», «Series» o «Películas» (`all`, `series`, `movie`): los estantes con `split` enseñan eso; «Todo» alterna ambos.
-    public private(set) var kind = "all" { didSet { if kind != oldValue { changed() } } }
+    public private(set) var kind = "all" { didSet { if kind != oldValue { visibleMemo = nil; changed() } } }
     /// Las listas que aún se están pidiendo (su estante enseña esqueletos, no un hueco).
-    public private(set) var loadingKeys = Set<String>() { didSet { if loadingKeys != oldValue { changed() } } }
-    public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { if railItems != oldValue { changed() } } }
+    public private(set) var loadingKeys = Set<String>() { didSet { if loadingKeys != oldValue { visibleMemo = nil; changed() } } }
+    public private(set) var railItems: [String: [Suggestion]] = [:] { didSet { if railItems != oldValue { visibleMemo = nil; changed() } } }
     public private(set) var watchlistKeys = Set<String>() { didSet { if watchlistKeys != oldValue { changed() } } }
     public private(set) var traktLinked = false { didSet { if traktLinked != oldValue { changed() } } }
-    public private(set) var isLoading = false { didSet { if isLoading != oldValue { changed() } } }
+    public private(set) var isLoading = false { didSet { if isLoading != oldValue { visibleMemo = nil; changed() } } }
     /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
     public private(set) var airings: [Airing] = [] { didSet { if airings != oldValue { changed() } } }
     /// «Porque viste X» para «Decide por mí»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin
@@ -112,11 +112,18 @@ public final class ParaTiModel: ObservableModel {
 
     /// Los estantes que se pintan: con algo dentro, o todavía cargando (con esqueleto). Vacío o fallido: no se pinta.
     public var visibleShelves: [ShelfPlan] {
+        if let visibleMemo { return visibleMemo }
         let shown = shelves.filter { isLoading(shelf: $0) || !items(for: $0).isEmpty }
         // El respaldo de una marca se esconde si su lista con puesto sí trajo algo (o aún carga): la misma plataforma, una vez.
         let covered = Set(shown.filter { !$0.isFallback && $0.style == .top10 }.compactMap(\.list.brand))
-        return shown.filter { !$0.isFallback || !covered.contains($0.list.brand ?? "") }
+        let visible = shown.filter { !$0.isFallback || !covered.contains($0.list.brand ?? "") }
+        visibleMemo = visible
+        return visible
     }
+    /// `visibleShelves` y `platformHubs` guardados hasta que cambie de lo que salen (estantes, lo cargado, el tipo, las
+    /// listas): Para ti los leía varias veces en cada pasada y los volvía a calcular todos (auditoría del 31 oct 2026, C6).
+    private var visibleMemo: [ShelfPlan]?
+    private var hubsMemo: [PlatformHub]?
     /// Ninguna fuente dio estantes: el feed cae a lo que está en tendencia y a la invitación a conectar fuentes.
     public var feedIsEmpty: Bool { !isLoading && visibleShelves.isEmpty }
     /// Mostrar «Conecta Trakt o tu Orbital»: no hay ninguna fuente tuya (solo lo que está en tendencia).
@@ -421,8 +428,13 @@ public final class ParaTiModel: ObservableModel {
 
     // MARK: tus plataformas
     /// Las plataformas con sus rankings (la fila en abanico de «Tus plataformas» y su página).
-    public var platformHubs: [PlatformHub] { PlatformPlanner.hubs(lists) }
-    public private(set) var rankingItems: [String: [Suggestion]] = [:] { didSet { changed() } }
+    public var platformHubs: [PlatformHub] {
+        if let hubsMemo { return hubsMemo }
+        let hubs = PlatformPlanner.hubs(lists)
+        hubsMemo = hubs
+        return hubs
+    }
+    public private(set) var rankingItems: [String: [Suggestion]] = [:] { didSet { if rankingItems != oldValue { changed() } } }
     private var rankingLoading: Set<String> = []
 
     /// Un ranking ya cargado: lo pedido en la página o, si es del tipo que enseñan los estantes, lo de su estante.
