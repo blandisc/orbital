@@ -32,13 +32,28 @@ struct ListFilter: Equatable {
         return found.isEmpty ? nil : found.reduce(0, +) / Double(found.count)
     }
 
+    /// ¿Pasa este título? Lo mismo para una lista y para una colección de la repisa (que no trae `Suggestion`).
+    func keeps(kind itemKind: String, genres: [String], rating: Double?, year: Int?, watched isWatched: Bool) -> Bool {
+        (kind == nil || itemKind == kind)
+            && (genre == nil || genres.contains { $0.lowercased() == genre })
+            && (minRating == nil || (rating ?? 0) >= minRating!)
+            && (decade == nil || year.map { $0 / 10 * 10 == decade } == true)
+            && (!hideWatched || !isWatched)
+    }
+
+    /// Los géneros más comunes de lo que hay (los del menú), con su nombre de Trakt en minúsculas.
+    static func commonGenres(_ all: [[String]]) -> [String] {
+        var counts: [String: Int] = [:]
+        for genres in all { for g in genres { counts[g.lowercased(), default: 0] += 1 } }
+        return counts.sorted { $0.value > $1.value }.prefix(12).map(\.key)
+    }
+
+    /// Las décadas que hay, de la más nueva a la más vieja.
+    static func decades(_ years: [Int?]) -> [Int] { Array(Set(years.compactMap { $0.map { $0 / 10 * 10 } })).sorted(by: >) }
+
     func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:]) -> [Suggestion] {
         let kept = items.filter { s in
-            (kind == nil || s.kind == kind)
-                && (genre == nil || s.genres.contains { $0.lowercased() == genre })
-                && (minRating == nil || (Self.rating(s, imdb: imdb) ?? 0) >= minRating!)
-                && (decade == nil || s.year.map { $0 / 10 * 10 == decade } == true)
-                && (!hideWatched || !watched.contains(s.imdb))
+            keeps(kind: s.kind, genres: s.genres, rating: Self.rating(s, imdb: imdb), year: s.year, watched: watched.contains(s.imdb))
         }
         switch sort {
         case .added: return kept
@@ -82,8 +97,6 @@ struct SortableGrid<Cell: View>: View {
     @State private var rating = false
     /// «Ocultar lo que ya vi» solo con Trakt (lo visto sale de ahí).
     private let hideWatchedAvailable: Bool
-    @Environment(\.locale) private var locale
-    private var language: String { locale.language.languageCode?.identifier ?? "es" }
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
@@ -100,7 +113,7 @@ struct SortableGrid<Cell: View>: View {
     var body: some View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            if filter.isActive { activeChips }
+            if filter.isActive { ListFilterChips(filter: $filter) }
             if items.isEmpty {
                 // Mientras llega, la ruedita al centro; ya llegada y sin nada, el vacío de la app (no una pantalla en blanco).
                 if loading { DSLoadingState() }
@@ -111,7 +124,12 @@ struct SortableGrid<Cell: View>: View {
                 DSPosterGrid(items: shown) { s, width in cell(s, width) }
             }
         }
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ListFilterMenu(sort: $sort, filter: $filter, sorts: sorts, genres: genres, decades: decades, showsKindFilter: showsKindFilter,
+                               hideWatchedAvailable: hideWatchedAvailable, loading: rating)
+            }
+        }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
         // También cuando llega la lista: si entraste con el orden de IMDb guardado, la lista todavía venía vacía.
@@ -126,18 +144,9 @@ struct SortableGrid<Cell: View>: View {
     /// IMDb se pide solo si el orden o la calificación mínima la usan.
     private var needsIMDb: Bool { sort == .best || sort == .imdb || filter.minRating != nil }
 
-    /// Las décadas que hay en la lista, de la más nueva a la más vieja.
-    private var decades: [Int] { Array(Set(items.compactMap { $0.year.map { $0 / 10 * 10 } })).sorted(by: >) }
+    private var decades: [Int] { ListFilter.decades(items.map(\.year)) }
 
-    private func decadeName(_ d: Int) -> Text { Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s") }
-
-    private func ratingName(_ r: Double) -> Text { Text("De \(Int(r)) para arriba") }
-
-    private var genres: [String] {
-        var counts: [String: Int] = [:]
-        for s in items { for g in s.genres { counts[g.lowercased(), default: 0] += 1 } }
-        return counts.sorted { $0.value > $1.value }.prefix(12).map(\.key)
-    }
+    private var genres: [String] { ListFilter.commonGenres(items.map(\.genres)) }
 
     /// Los órdenes que tienen sentido aquí: IMDb si se puede pedir; Trakt si la lista trae su calificación.
     private var sorts: [ListSort] {
@@ -152,17 +161,35 @@ struct SortableGrid<Cell: View>: View {
             }
         }
     }
+}
 
-    private var menu: some View {
+/// El botón de ordenar y filtrar de una lista abierta (arriba a la derecha): el mismo en todo «Ver todo» y en las colecciones
+/// de la repisa. Sin órdenes (`sorts` vacío), solo filtra.
+struct ListFilterMenu: View {
+    @Binding var sort: ListSort
+    @Binding var filter: ListFilter
+    var sorts: [ListSort]
+    var genres: [String]
+    var decades: [Int]
+    var showsKindFilter = true
+    var hideWatchedAvailable = true
+    /// Mientras llegan las calificaciones o los géneros: la ruedita en el botón.
+    var loading = false
+    @Environment(\.locale) private var locale
+    private var language: String { locale.language.languageCode?.identifier ?? "es" }
+
+    var body: some View {
         Menu {
             // Elegir otra vez el orden activo lo quita (la lista vuelve a ir como llega).
-            Menu {
-                ForEach(sorts, id: \.self) { option in
-                    Button { sort = sort == option ? .added : option } label: {
-                        if sort == option { Label(option.label, systemImage: "checkmark") } else { Text(option.label) }
+            if !sorts.isEmpty {
+                Menu {
+                    ForEach(sorts, id: \.self) { option in
+                        Button { sort = sort == option ? .added : option } label: {
+                            if sort == option { Label(option.label, systemImage: "checkmark") } else { Text(option.label) }
+                        }
                     }
-                }
-            } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
+                } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
+            }
             if showsKindFilter {
                 Picker(selection: $filter.kind) {
                     Label("Todo", systemImage: KindGlyph.all).tag(String?.none)
@@ -193,14 +220,29 @@ struct SortableGrid<Cell: View>: View {
             if hideWatchedAvailable { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
         } label: {
             // Mientras llegan las calificaciones de IMDb, la ruedita va en el botón (la cuadrícula no se mueve).
-            if rating { ProgressView() }   // ds-exception: la ruedita ocupa el lugar del ícono del menú (la cuadrícula no se mueve)
+            if loading { ProgressView() }   // ds-exception: la ruedita ocupa el lugar del ícono del menú (la cuadrícula no se mueve)
             else { Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle") }
         }
         .accessibilityLabel(Text("Ordenar y filtrar"))
         .accessibilityIdentifier("list-controls")
     }
 
-    private var activeChips: some View {
+    private func decadeName(_ d: Int) -> Text { ListFilterChips.decadeName(d) }
+    private func ratingName(_ r: Double) -> Text { ListFilterChips.ratingName(r) }
+}
+
+/// Lo filtrado en cápsulas que se quitan con ✕ (bajo el título de la lista o de la colección).
+struct ListFilterChips: View {
+    @Binding var filter: ListFilter
+    @Environment(\.locale) private var locale
+    private var language: String { locale.language.languageCode?.identifier ?? "es" }
+
+    static func decadeName(_ d: Int) -> Text { Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s") }
+    static func ratingName(_ r: Double) -> Text { Text("De \(Int(r)) para arriba") }
+    private func decadeName(_ d: Int) -> Text { Self.decadeName(d) }
+    private func ratingName(_ r: Double) -> Text { Self.ratingName(r) }
+
+    var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
                 if let kind = filter.kind { chip(Text("\(Text(Image(systemName: KindGlyph.symbol(kind))))\(Text(verbatim: " "))\((kind == "movie" ? Text("Películas") : Text("Series")))")) { filter.kind = nil } }

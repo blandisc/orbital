@@ -33,6 +33,7 @@ Cómo se mantiene:
 | «No recomendar por esta»: dejar picado el mazo de «Por lo que viste» | Ya | Ya (ola 2: Opciones en uno de tus títulos de «Porque viste»; Y deshace). Se recuerda en cada aparato, como el iPhone |
 | El país de lo popular (Top 10 de Netflix y JustWatch) es el del teléfono hasta que elijas otro | Ya | Distinto a propósito: la TV usa el país de su `config.yaml` |
 | El arcoíris del azul de Orbital (misma luz e intensidad, `design/tokens.json` › rainbow) como acento: categorías de TV en vivo y filtros | Pendiente: los colores de sus filtros con esta familia (sesión del iPhone) | Ya (categorías de TV en vivo y el filtro avanzado) |
+| Una colección de Colecciones se filtra como una lista (series o películas, género, calificación, década, sin lo que ya vi), con el mismo menú y sus cápsulas (Fernando, 31 oct, noche) | Ya | **Pendiente (sesión de la TV)**: el mismo filtro en la colección abierta desde ☰ › Colecciones |
 
 ## Textos pendientes (`design/vocabulario.json`)
 

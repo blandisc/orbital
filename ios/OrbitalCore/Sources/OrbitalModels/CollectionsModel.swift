@@ -129,15 +129,16 @@ public final class CollectionsModel: ObservableModel {
         var seen = Set<String>()
         let missing = ids.filter { imdbCache[$0.imdb] == nil && seen.insert($0.imdb).inserted }
         let cinemeta = services.cinemeta
-        let found = await withTaskGroup(of: (String, Double?).self) { group in
-            var next = 0, out: [(String, Double?)] = []
+        let found = await withTaskGroup(of: (String, Double?, [String]).self) { group in
+            var next = 0, out: [(String, Double?, [String])] = []
             func add() {
                 guard next < missing.count, !Task.isCancelled else { return }
                 let item = missing[next]
                 next += 1
                 group.addTask {
                     let meta = try? await cinemeta.meta(kind: item.kind, id: item.imdb)
-                    return (item.imdb, (meta?["imdbRating"]?.string).flatMap(Double.init) ?? meta?["imdbRating"]?.doubleValue)
+                    let genres = (meta?["genres"]?.array ?? meta?["genre"]?.array ?? []).compactMap(\.string)
+                    return (item.imdb, (meta?["imdbRating"]?.string).flatMap(Double.init) ?? meta?["imdbRating"]?.doubleValue, genres)
                 }
             }
             for _ in 0..<Self.ratingConcurrency { add() }
@@ -145,9 +146,21 @@ public final class CollectionsModel: ObservableModel {
             return out
         }
         // Lo que no llegó por cancelación se vuelve a pedir la próxima vez (no se guarda como «sin calificación»).
-        for (id, rating) in found where rating != nil || !Task.isCancelled { imdbCache[id] = rating ?? 0 }
+        for (id, rating, genres) in found where rating != nil || !Task.isCancelled {
+            imdbCache[id] = rating ?? 0
+            if !genres.isEmpty { genreCache[id] = genres }
+        }
         return imdbCache.filter { $0.value > 0 }
     }
+
+    /// La calificación de IMDb y los géneros de cada título (los dos salen de la misma ficha de Cinemeta): lo que filtra una
+    /// colección de la repisa, cuyos títulos no traen ni uno ni otro.
+    public func imdbFacts(_ ids: [(kind: String, imdb: String)]) async -> (ratings: [String: Double], genres: [String: [String]]) {
+        let ratings = await imdbRatings(ids)
+        return (ratings, genreCache)
+    }
+
+    private var genreCache: [String: [String]] = [:]
 
     static let ratingConcurrency = 16
 

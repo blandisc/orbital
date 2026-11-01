@@ -122,6 +122,12 @@ struct RepisaCollectionView: View {
     @State private var asking: Suggestion?
     /// La que espera a que la ficha rápida termine de cerrarse (dos hojas a la vez, iOS no muestra la segunda).
     @State private var askNext: Suggestion?
+    /// El mismo filtro que las listas (series o películas, género, calificación, década, sin lo que ya viste).
+    @State private var filter = ListFilter()
+    /// La calificación de IMDb y los géneros de cada título (de Cinemeta): los de la colección no los traen.
+    @State private var ratings: [String: Double] = [:]
+    @State private var genres: [String: [String]] = [:]
+    @State private var loadingFacts = false
 
     var body: some View {
         let model = env.repisa
@@ -131,12 +137,17 @@ struct RepisaCollectionView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     header(c, model)
+                    if filter.isActive { ListFilterChips(filter: $filter).padding(.horizontal, -DS.Space.gutter) }
                     if c.items.isEmpty {
                         // La lista no llegó (sin red o MDBList caído) y no había copia: «Reintentar», no cargar para siempre.
                         if model.failedLists.contains(c.id) { DSErrorState(offline: !env.isOnline) { Task { await model.load() } } }
                         else { DSLoadingState() }
                     }
-                    ForEach(c.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
+                    let shown = filtered(c, model)
+                    if !c.items.isEmpty, shown.items.isEmpty {
+                        DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Quita alguno de arriba para ver más."))
+                    }
+                    ForEach(shown.groups(newestFirst: newestFirst || c.grouping == .rank), id: \.title) { group in
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(verbatim: group.title).recipe(.cardTitle)
@@ -155,6 +166,22 @@ struct RepisaCollectionView: View {
             .background(Backdrop())
             .navigationTitle(CanonNames.title(c.id))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // Sin «Ordenar»: la repisa ya va por década (o por lugar) y tiene su botón de más recientes o antiguas.
+                    ListFilterMenu(sort: .constant(.added), filter: $filter, sorts: [], genres: ListFilter.commonGenres(c.items.map { genres[$0.imdb] ?? [] }),
+                                   decades: ListFilter.decades(c.items.map(\.year)), showsKindFilter: Set(c.items.map(\.kind)).count > 1,
+                                   loading: loadingFacts)
+                }
+            }
+            // Calificaciones y géneros, una vez que llegan los títulos (se recuerdan: volver a la colección no los pide).
+            .task(id: c.items.count) {
+                guard !c.items.isEmpty else { return }
+                loadingFacts = true
+                defer { loadingFacts = false }
+                let facts = await env.collections.imdbFacts(c.items.map { ($0.kind, $0.imdb) })
+                ratings = facts.ratings; genres = facts.genres
+            }
             .safeAreaInset(edge: .bottom) { if let next = c.next(model.watched) { nextBar(next, c) } }
             .sheet(item: $picked, onDismiss: { asking = askNext; askNext = nil }) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
             .askingWhenWatched($asking) { s, date in place(s, at: date, model) }
@@ -162,6 +189,16 @@ struct RepisaCollectionView: View {
             .task { if !model.loaded { await model.load() } }   // entrando directo a una colección (sin pasar por la repisa)
             .animation(DS.Motion.enter(reduceMotion), value: placed?.id)
         }
+    }
+
+    /// La colección con solo lo que pasa el filtro (el encabezado sigue contando la colección entera).
+    private func filtered(_ c: CanonCollection, _ model: RepisaModel) -> CanonCollection {
+        guard filter.isActive else { return c }
+        var shown = c
+        shown.items = c.items.filter {
+            filter.keeps(kind: $0.kind, genres: genres[$0.imdb] ?? [], rating: ratings[$0.imdb], year: $0.year, watched: model.watched.contains($0.imdb))
+        }
+        return shown
     }
 
     /// Qué es, de dónde y cuánto llevas (Fernando, 31 oct 2026, decisión 6A): «Óscar a Mejor película», «Todas las

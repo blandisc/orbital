@@ -122,4 +122,14 @@ final class CollectionsModelTests: XCTestCase {
         XCTAssertEqual(again, ratings)
         XCTAssertEqual(rig.http.calls.count, asked, "lo ya pedido no se vuelve a pedir")
     }
+
+    /// Una colección de la repisa se filtra como una lista: sus géneros llegan con la calificación, de la misma ficha.
+    func testLosGenerosLleganConLaCalificacion() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://v3-cinemeta.strem.io/meta/movie/tt0000001.json"] = ["meta": ["id": "tt0000001", "type": "movie", "name": "Uno", "imdbRating": "7.8", "genres": ["Drama", "Sci-Fi"]]]
+        let model = CollectionsModel(rig.services)
+        let facts = await model.imdbFacts([("movie", "tt0000001")])
+        XCTAssertEqual(facts.ratings, ["tt0000001": 7.8])
+        XCTAssertEqual(facts.genres, ["tt0000001": ["Drama", "Sci-Fi"]])
+    }
 }
