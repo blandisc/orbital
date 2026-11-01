@@ -5,13 +5,16 @@
 import { api } from "../core/api.js";
 import { rumble } from "../core/haptics.js";
 import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
-import { beforePlayMenu, switchMenu } from "../core/menus.js";
+import { beforePlayMenu, keepBothMenu, switchMenu as closeAndOpenMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
 const SLOW = Symbol("lento"); // el servidor no contestó a tiempo (sigue abriendo)
 
 export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused() }) {
+  // «¿Cerrar X?» o, si en Ajustes dijiste que abrir algo no cierra lo anterior, «¿Abrir Y también?» (no promete cerrar).
+  const switchMenu = (args) => (state.settings?.close_previous === false && args.running.title !== args.title
+    ? keepBothMenu(args) : closeAndOpenMenu(args));
   /** Sin internet, lo que lo necesita lo dice al instante (antes la pantalla de carga se quedaba y luego fallaba). */
   function offlineBlock(title) {
     if (state.online !== false) return false;
@@ -20,6 +23,11 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     ui.toast.show("Sin internet", { error: true, detail: `${title || "Esto"} necesita conexión · Tus juegos siguen aquí` });
     return true;
   }
+
+  /** El arte de lo que está abierto y de lo que se quiere abrir, para la tarjeta de «¿Cerrar…?» (horizontal si hay). */
+  const artOf = (item) => item?.hero || item?.image || null;
+  const findItem = (id) => (state.allRows || []).flatMap((row) => row.items || []).find((i) => i.id === id);
+  const swapArt = (running, next) => ({ from: artOf(findItem(running?.id)), to: artOf(next) });
 
   // Un lanzamiento esperando al servidor (el primer arranque puede tardar más que el candado de 3 s
   // y la pantalla de carga de 8 s): otro A no abre una segunda copia del emulador.
@@ -31,7 +39,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
    */
   function watch(play, { confirmed = false } = {}) {
     const running = !confirmed && gameInTheWay(state.running, "media:player");
-    if (running) return openMenu(switchMenu({ running, title: play.title, command: { type: "watch", play } }));
+    if (running) return openMenu(switchMenu({ running, title: play.title, command: { type: "watch", play }, art: swapArt(running, play.item) }));
     return playStremio(play);
   }
 
@@ -98,7 +106,9 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
    */
   function trailer(play, { confirmed = false } = {}) {
     const running = !confirmed && gameInTheWay(state.running, "media:player");
-    if (running) return openMenu(switchMenu({ running, title: `Tráiler de ${play.title}`, command: { type: "trailer", play } }));
+    if (running) {
+      return openMenu(switchMenu({ running, title: `Tráiler de ${play.title}`, command: { type: "trailer", play }, art: swapArt(running, play.item) }));
+    }
     return playTrailer(play);
   }
 
@@ -141,7 +151,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (!channel) return;
     if (offlineBlock(channel.name)) return;
     const running = !confirmed && gameInTheWay(state.running, "media:player");
-    if (running) return openMenu(switchMenu({ running, title: channel.name, command: { type: "tv", channel, category } }));
+    if (running) return openMenu(switchMenu({ running, title: channel.name, command: { type: "tv", channel, category }, art: swapArt(running, null) }));
     if (!takeLaunchLock(state)) return;
     sound.play("open");
     rumble("launch");
@@ -200,7 +210,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     const watchExtra = item.extra;
     if (item.source === "stremio" && watchExtra?.video_id && ["movie", "series"].includes(watchExtra.kind)) {
       if (!confirmed && gameInTheWay(state.running, "media:player")) {
-        return openMenu(switchMenu({ running: state.running, title: item.title,
+        return openMenu(switchMenu({ running: state.running, title: item.title, art: swapArt(state.running, item),
           command: { type: "watch", play: { kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item } } }));
       }
       return playStremio({ kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item });
@@ -209,8 +219,13 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (needsInternet(item) && offlineBlock(item.title)) return; // la nube, una app web, instalar de Steam
     if (!runner && item.id === state.running?.id) return resumeRunning(); // sigue abierto: se continúa
     const inTheWay = !confirmed && gameInTheWay(state.running, item.id);
-    if (inTheWay) return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner } }));
-    if (!roomChecked && item.system) { // Antes de jugar algo pesado con poca memoria: ofrecer cerrar lo que estorba
+    if (inTheWay) {
+      return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner }, art: swapArt(inTheWay, item) }));
+    }
+    // Antes de jugar algo pesado con poca memoria: ofrecer cerrar lo que estorba. No tras «Cerrar y abrir»: el juego que se
+    // cierra libera su memoria, y el menú de memoria soltaba el «ya confirmaste» y volvía a preguntar «¿Cerrar…?» (el
+    // anterior nunca se cerraba).
+    if (!roomChecked && !confirmed && item.system) {
       const room = await api.beforePlay(item.id).catch(() => null);
       if (room?.apps?.length) return openMenu(beforePlayMenu(item, room, runner));
     }

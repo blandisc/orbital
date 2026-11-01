@@ -109,6 +109,8 @@
   --color-backdrop-deep: var(--palette-ink-950);
   /* La sombra sobre el arte: degradados que dejan leer el texto encima, contorno de un ícono sobre luz. */
   --color-art-shade: var(--palette-ink-1000);
+  /* El negro del cambio de resolución: el mismo de la tele sin señal. */
+  --color-veil: var(--palette-ink-1000);
   /* Superficies con relieve: la hoja lateral y la casilla de una consola, un poco más claras arriba. */
   --gradient-sheet: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--color-surface) 40%);
   --gradient-console-tile: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);

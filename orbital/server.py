@@ -188,6 +188,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             catalog.watch.player.before_open = dwm_release.release_if_full
             # Y al volver de un juego (los emuladores Vulkan le dejan memoria a DWM): mientras la tele regresa a 4K.
             catalog.sessions.release_video_memory = lambda: dwm_release.release_if_full("al volver de un juego")
+            # Al cambiar de resolución la tele se desconecta unos segundos: la interfaz se funde a negro antes y regresa después.
+            from . import display
+
+            display.resolution.notify = lambda phase: catalog.sessions.events.publish({"type": "display", "phase": phase})
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)

@@ -40,6 +40,7 @@ class Deps:
             if running.get("id") == "media:player":
                 holds = getattr(self.shell, "video_holds_screen", None)
                 running["front"] = bool(holds and holds())  # el mando es del video: la interfaz no le hace caso
+                running["pip"] = bool(getattr(getattr(self.shell, "player", None), "pip", False))  # en pequeño, en la esquina
             live = self.catalog.tv.playing() if running.get("id") == "media:player" else None
             if live:
                 running["live"] = live  # qué canal de TV está al aire (la sección lo marca y A vuelve a él)

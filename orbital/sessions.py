@@ -118,6 +118,9 @@ class Sessions:
         self._last_launch: dict | None = None
         # Lo último que se anotó como abierto y cómo estaba antes: cancelar en la pantalla de carga lo deshace.
         self._launch_undo: tuple[str, dict | None, float] | None = None
+        # Lo que cancelaste en la pantalla de carga (hasta que abres otra cosa): al cerrarse no es «De vuelta de…» ni va a la
+        # bandeja del iPhone como partida jugada.
+        self._cancelled_id: str | None = None
         # Un lanzamiento a la vez: A dos veces seguidas (o mando + Alexa) abría dos emuladores.
         self._launch_lock = threading.RLock()
         # Cuándo pediste ir a Orbital (Home, Legion L): el vigilante del foco deja de regresar el juego.
@@ -232,12 +235,14 @@ class Sessions:
 
     def _record_launch(self, item_id: str) -> None:
         self._launch_undo = (item_id, self.state.record_launch(item_id), time.monotonic())
+        self._cancelled_id = None
 
     def forget_launch(self) -> bool:
         """B en la pantalla de carga: lo que cancelaste no cuenta como jugado (ni «Jugaste hace 2 min» ni sube al Inicio)."""
         undo, self._launch_undo = self._launch_undo, None
         if undo is None or time.monotonic() - undo[2] > LAUNCH_UNDO_WINDOW:
             return False
+        self._cancelled_id = undo[0]
         self.state.undo_launch(undo[0], undo[1])
         log.info("Cancelado al abrir: %s no cuenta como jugado", undo[0])
         return True
@@ -438,7 +443,7 @@ class Sessions:
         """Un emulador que se cerró solo en los primeros segundos se abre otra vez (una sola). La
         pantalla de carga sigue; si vuelve a tronar, se avisa como siempre."""
         last = self._last_launch
-        if (not last or last["id"] != item_id or last["retried"] or seconds >= QUICK_EXIT
+        if (not last or last["id"] != item_id or last["retried"] or seconds >= QUICK_EXIT or self._cancelled_id == item_id
                 or self.launcher.last_stopped_by_user or getattr(self.launcher, "last_was_already_open", False)):
             return False
         last["retried"] = True
@@ -488,7 +493,11 @@ class Sessions:
         item = self.store.get(item_id)
         # De dónde es, para decir qué revisar si no abrió: Steam, GeForce NOW o un emulador.
         kind = "steam" if item_id.startswith("steam:") else item.source if item and item.source == "geforcenow" else "emulator"
+        cancelled = self._cancelled_id == item_id
+        self._cancelled_id = None
         event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed, "kind": kind}
+        if cancelled:  # B en la pantalla de carga: la interfaz ya dijo «Cancelé…»
+            event["cancelled"] = True
         if crashed:
             # Con la memoria casi llena los emuladores truenan al arrancar aunque el juego esté bien:
             # decirlo (antes: "revisa ROM, firmware, claves", que mandaba a buscar donde no era).
@@ -500,7 +509,7 @@ class Sessions:
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
             event.update(title=end["title"], finished=end["finished"], **({"live": True} if end.get("live") else {}))
         self.events.publish(event)
-        if not item_id.startswith(("media:", "app:")):  # un juego: su resumen en la bandeja del iPhone (modo acompañante)
+        if not cancelled and not item_id.startswith(("media:", "app:")):  # un juego: su resumen en la bandeja del iPhone
             try:
                 companion.note_played(self.state, item_id, event["title"], seconds,
                                       total_seconds=float(self.state.history(item_id).get("playtime") or 0),

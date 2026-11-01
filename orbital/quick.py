@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ctypes
 import logging
+import subprocess
 import sys
 import threading
 import uuid
@@ -151,9 +152,25 @@ def set_brightness(level: int) -> int | None:
     plugged = status is None or status["plugged"]
     # Solo el del modo actual (enchufada o batería); el otro se queda como estaba.
     new = _Brightness(1, level, current.dc) if plugged else _Brightness(2, current.ac, level)
-    if not _lcd(IOCTL_SET, inp=new):
-        return None
+    if _lcd(IOCTL_SET, inp=new) and brightness() == level:
+        return level
+    # En la Legion Go el IOCTL dice «listo» y no cambia nada (regresión S2, 2026-10-30: el brillo se quedaba en 26): el camino
+    # de Windows (WMI, el mismo del deslizador de Configuración), que además guarda el nivel en el plan de energía.
+    _wmi_brightness(level)
     return brightness()
+
+
+def _wmi_brightness(level: int) -> bool:
+    """WmiSetBrightness por PowerShell (sin ventana): ~1 s, solo cuando el IOCTL no sirvió."""
+    script = ("$m = Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightnessMethods -ErrorAction Stop; "
+              f"Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{{Timeout=1; Brightness=[byte]{int(level)}}}")
+    try:
+        done = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], capture_output=True, timeout=10,
+                              creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        log.debug("No pude poner el brillo por WMI: %s", exc)
+        return False
+    return done.returncode == 0
 
 
 # --------------------------------------------------------------------------------- energía

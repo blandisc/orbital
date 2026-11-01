@@ -50,6 +50,26 @@ test("con otro juego abierto, primero pregunta", async () => {
   assert.equal(calls.menus.length, 1);
 });
 
+test("«¿Cerrar…?» lleva el arte de los dos: lo abierto apagado y lo que se abre", async () => {
+  const { state, calls, flows } = setup();
+  state.allRows = [{ items: [{ id: "eden:mario", title: "Mario", hero: "/mario.jpg" }] }];
+  state.running = { id: "eden:mario", title: "Mario", managed: true };
+  await flows.launch({ ...hades, hero: "/hades.jpg" });
+  assert.deepEqual(calls.menus[0].swap, { from: { title: "Mario", art: "/mario.jpg", tag: "Se cierra" },
+    to: { title: "Hades", art: "/hades.jpg", tag: "Se abre" } });
+});
+
+test("«Cerrar y abrir» con poca memoria abre directo (antes «Antes de jugar» volvía a preguntar «¿Cerrar…?»)", async () => {
+  let asked = 0;
+  const { state, calls, flows } = setup({ beforePlay: async () => { asked++; return { free_mb: 900, apps: [{ exe: "claude.exe", name: "Claude", mb: 1100 }] }; } });
+  state.running = { id: "eden:mario", title: "Mario", managed: true };
+  const zelda = { id: "emu:switch:1", title: "Zelda", source: "switch", subtitle: "Switch", system: "switch" };
+  await flows.launch(zelda, null, { confirmed: true });
+  assert.equal(asked, 0); // el juego que se cierra libera su memoria
+  assert.deepEqual(calls.menus, []);
+  assert.deepEqual(calls.launched, [{ id: "emu:switch:1", runner: null, keep: false }]);
+});
+
 test("el mismo juego abierto: se continúa en vez de abrir otra copia", async () => {
   let resumed = 0;
   const { state, calls, flows } = setup({ resume: async () => { resumed++; return { ok: true }; } });

@@ -25,7 +25,7 @@ PROTECTED = {
     "conhost.exe", "runtimebroker.exe", "searchhost.exe", "startmenuexperiencehost.exe", "shellexperiencehost.exe",
     "textinputhost.exe", "audiodg.exe", "spoolsv.exe", "msmpeng.exe", "nissrv.exe", "securityhealthservice.exe",
     "memory compression", "wudfhost.exe", "taskhostw.exe", "lockapp.exe", "applicationframehost.exe",
-    "python.exe", "pythonw.exe", "legionspace.exe", "msedge.exe", "msedgewebview2.exe", "gamebar.exe",
+    "python.exe", "pythonw.exe", "legionspace.exe", "legionsettingmenu.exe", "msedge.exe", "msedgewebview2.exe", "gamebar.exe",
     "gamebarftserver.exe", "widgets.exe", "phoneexperiencehost.exe", "systemsettings.exe",
 }
 # Apps que viven en la bandeja (sin ventana visible) y es seguro cerrar.

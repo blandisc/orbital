@@ -14,4 +14,5 @@
 /* «Menú», abajo a la derecha, solo sin nada encima (con una vista encima va «Atrás»). */
 .touch-back--menu { top: auto; bottom: var(--space-5); }
 [data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
-[data-input="touch"]:not([data-overlay="true"]) .touch-back--menu { display: inline-flex; }
+[data-input="touch"]:not([data-overlay="true"]) .touch-back--menu,
+[data-input="touch"][data-overlay-menu="true"] .touch-back--menu { display: inline-flex; }

@@ -69,3 +69,27 @@ def test_voice_pause_goes_to_music_when_no_movie(library, monkeypatch):
     assert voice.handle_text("pausa la música").speech == "Música en pausa."
     assert voice.handle_text("siguiente canción").speech == "Siguiente canción."
     assert done == ["pause", "next"]
+
+
+def test_brightness_falls_back_to_wmi_when_the_ioctl_does_nothing(monkeypatch):
+    """En la Legion Go el IOCTL dice «listo» y el brillo no cambia: entonces va por WMI (como el deslizador de Windows)."""
+    import importlib
+
+    quick = importlib.reload(importlib.import_module("orbital.quick"))  # el de verdad, sin el doble de conftest
+    level = {"now": 26}
+    calls = []
+    monkeypatch.setattr(quick, "WIN", True)
+    monkeypatch.setattr(quick, "battery", lambda: {"plugged": True})
+
+    def lcd(code, inp=None, out=None):
+        if out is not None:
+            out.ac = out.dc = level["now"]
+        return True  # el IOCTL siempre «funciona»… y no cambia nada
+
+    monkeypatch.setattr(quick, "_lcd", lcd)
+    monkeypatch.setattr(quick, "_wmi_brightness", lambda value: calls.append(value) or level.update(now=value) or True)
+    assert quick.set_brightness(56) == 56 and calls == [56]
+    level["now"] = 30
+    monkeypatch.setattr(quick, "_lcd", lambda code, inp=None, out=None: (level.update(now=inp.ac) if inp else
+                                                                        (setattr(out, "ac", level["now"]), setattr(out, "dc", 0))) or True)
+    assert quick.set_brightness(40) == 40 and calls == [56]  # si el IOCTL sí sirve, no se llama a PowerShell

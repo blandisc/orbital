@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -38,6 +38,7 @@ import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
 import { createTouchBack } from "./components/touch-back.js";
+import { createDisplayVeil } from "./components/display-veil.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
 import { systemCommands } from "./app/system-commands.js";
@@ -46,8 +47,8 @@ import { libraryCommands } from "./app/library-commands.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
-import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
+import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, pickArt, spotlightRow } from "./core/curation.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, unkeyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
@@ -81,6 +82,7 @@ const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "to
 // ---------------------------------------------------------------- componentes
 const ui = {
   backdrop: createBackdrop(),
+  veil: createDisplayVeil(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
   home: createHome({
@@ -190,6 +192,11 @@ const ui = {
       ui.toast.show(`Arte nuevo para ${target.title}`, { tone: "success" });
       loadLibrary();
       if (target.metaId) ui.title.artPicked(target.metaId, which, url); // la ficha abierta debajo toma tu elección ya
+      // Y los estantes de Películas y series (Recomendadas, En tendencia…): ya cargados, no se vuelven a pedir y seguían con
+      // el póster de siempre (regresión S2). El servidor ya lo aplica a lo que pidan después (foryou._with_art).
+      const touched = target.metaId ? pickArt(mediaItems, target.metaId, which, url) : [];
+      if (touched.length && url) buildCuration();
+      else if (touched.length) fetchMany(touched.map(unkeyOf)).then(buildCuration); // «El de siempre»: se vuelven a pedir
     },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -233,6 +240,7 @@ const ui = {
   calendar: createCalendar({
     load: (month) => api.forYouCalendar(month),
     onPick: (item) => openTitle(item),
+    onEdge: () => { sound.play("error"); rumble("edge"); ui.toast.show("El calendario llega hasta dos años"); },
     onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
@@ -259,7 +267,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el, ui.veil.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -367,6 +375,9 @@ function renderHints() {
   if (state.undoHide && !canUndoHide()) { state.undoHide = null; ui.toast.dismiss(); }
   const overlay = topOverlay();
   document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
+  // Con el dedo, «Menú» también sobre las vistas que lo usan (una lista: Ordenar y filtrar; la ficha y Fuentes: ☰): antes solo
+  // salía «Atrás» y «Filtrar» no tenía camino táctil (regla de las cuatro superficies).
+  document.body.dataset.overlayMenu = !ui.sheet.isOpen && [ui.listScreen, ui.title, ui.sources].includes(overlay) ? "true" : "false";
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
   if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(ui.foryou.hints(g));
   if (inTv() && !ui.sheet.isOpen) {
@@ -1451,6 +1462,8 @@ setInterval(() => {
 function cancelLaunch() {
   const title = ui.launch.title || state.launchingTitle;
   state.cancelled = state.launchingId ? { id: state.launchingId, until: Date.now() + 60_000 } : null;
+  // Su cierre no lleva aviso (ni «De vuelta…» ni «Guardé dónde ibas» de un tráiler o un canal): ya se dijo «Cancelé …».
+  state.quietClose = state.launchingId ? { id: state.launchingId, until: Date.now() + 60_000 } : null;
   state.launchingTitle = null;
   state.launchLockedUntil = 0;
   ui.launch.hide();
@@ -1460,6 +1473,12 @@ function cancelLaunch() {
 }
 
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
+/** Un video en pequeño ocupa la esquina de abajo a la derecha, encima de todo: el menú lateral le deja ese lugar abajo
+ * (antes Ajustes, Apagar y Salir al escritorio quedaban detrás del video y se elegían sin verlos). */
+function markPip() {
+  document.body.dataset.pip = state.running?.pip ? "true" : "false";
+}
+
 function applyStatus(running) {
   if (running && state.cancelled && running.id === state.cancelled.id && Date.now() < state.cancelled.until) {
     state.cancelled = null; // lo que cancelaste terminó de arrancar: se cierra
@@ -1467,6 +1486,7 @@ function applyStatus(running) {
   }
   const changed = running?.id !== state.running?.id;
   state.running = running;
+  markPip();
   ui.status.setRunning(running);
   ui.tv.setPlaying(running?.live ?? null); // qué canal de TV está al aire (o ninguno)
   if (inTv()) renderHints();
@@ -1607,7 +1627,7 @@ const nested = (context) => (context ? { stack: [...context.stack, { menu: conte
 let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
-  const deps = { alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps) };
   return commandTable;
 }
@@ -1970,6 +1990,8 @@ const EVENTS = {
     });
   },
   "launch-ready": (event) => ui.launch.reveal(),
+  // la tele cambia de resolución (se desconecta unos segundos): a negro antes y de vuelta cuando regresa
+  display: (event) => (event.phase === "start" ? ui.veil.cover() : ui.veil.settle()),
   // Xenia cambia de programa (Black Ops II: campaña ↔ Zombies): su pantalla de carga mientras se relanza
   switching: (event) => {
     ui.launch.show(findItem(event.id) || { title: event.title }, event.detail || "");
@@ -2081,7 +2103,8 @@ const EVENTS = {
   },
   // Home con un video: se fue a la esquina; cómo regresarlo
   pip: (event) => {
-    if (state.running?.front) state.running = { ...state.running, front: false };
+    if (state.running) state.running = { ...state.running, front: false, pip: true };
+    markPip();
     return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
   },
   // llegaron los logos de los estudios: la fila de Estudios los enseña
@@ -2097,9 +2120,13 @@ const EVENTS = {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     // Tampoco su «De vuelta de X» encima de «Abriendo Y» (Cerrar y abrir).
     const replaced = ui.launch.visible && event.id !== state.launchingId;
+    const quiet = !!event.cancelled || (state.quietClose?.id === event.id && Date.now() < state.quietClose.until);
+    if (quiet) state.quietClose = null;
     if (!replaced) { ui.launch.hide(); boot.land(); }
     if (replaced && !event.crashed) {
       // nada que decir: lo cerraste para abrir otra cosa
+    } else if (quiet) {
+      // lo cancelaste en la pantalla de carga: ya se dijo «Cancelé …» (antes salía además «De vuelta en Orbital»)
     } else if (event.crashed && event.low_memory) {
       // No abrió por falta de memoria (no por el juego): la causa real y Reiniciar a la mano.
       sound.play("error");
@@ -2137,7 +2164,9 @@ const padServer = { xinput: false, others: false };
 const XINPUT_ID = /xinput|xbox/i;
 const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinput = !!r.xinput; padServer.others = !!r.others; }).catch(() => {});
 const input = createInput({
-  onAction: (action, options) => { if (!videoInFront()) handleAction(action, options); },
+  // Con la pantalla de carga a la vista, el botón es de Orbital aunque mpv ya esté al frente (tráiler, canal): B cancela
+  // (antes se ignoraba y el tráiler o el canal se abrían igual; regresión S3-A6).
+  onAction: (action, options) => { if (!videoInFront() || ui.launch.visible) handleAction(action, options); },
   onModality: setModality,
   onTouch: () => { if (state.modality !== "touch") touchSince = performance.now(); }, // el aspecto cambia tras su clic
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).

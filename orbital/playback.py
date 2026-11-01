@@ -257,6 +257,9 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o
         # salir). idle: si una fuente falla, mpv no se cierra; Orbital carga otra en la misma ventana.
         "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=no",
+        # Sin «arrastrar la ventana»: con él (el de fábrica), mpv suelta el botón del ratón en cuanto se mueve, aun en
+        # pantalla completa, y arrastrar la bolita de la barra solo buscaba donde la tocaste (orbital-mouse.lua).
+        "--window-dragging=no",
         *([f"--input-conf={bindings}"] if bindings else []),
         *([f"--script={script}"] if bindings and (script := Path(bindings).with_name(MOUSE_SCRIPT_NAME)).is_file() else []),
         f"--title={title}", f"--force-media-title={title}",

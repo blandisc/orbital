@@ -93,3 +93,21 @@ test("lo que dura un video: «169 min» de Cinemeta se dice «2 h 49 min»", asy
   assert.equal(runtime("2h 10min"), "2h 10min"); // otro formato: se deja como viene
   assert.equal(runtime(""), null);
 });
+
+test("¿Qué vemos? dice cuánto dura: «42 min por episodio», no «2520 por episodio»", async () => {
+  // runtime() espera el texto de Cinemeta («42 min»); con segundos devolvía el número tal cual (visto en la tele).
+  const { pickFacts } = await import("../../orbital/web/js/components/decide.js");
+  assert.equal(pickFacts({ kind: "series", minutes: 42, why: "Porque viste Fargo" }), "Porque viste Fargo · 42 min por episodio");
+  assert.equal(pickFacts({ kind: "movie", minutes: 107, imdb_rating: "7.1" }), "1 h 47 min · IMDb 7.1");
+  assert.equal(pickFacts({ kind: "series" }), "Serie");
+});
+
+test("¿Qué vemos? no dice que caben si no caben", async () => {
+  const { decideLead } = await import("../../orbital/web/js/components/decide.js");
+  const fit = { fits: true }, long = { fits: false };
+  assert.equal(decideLead([fit, fit, fit], "media hora"), "Tres de tus sugerencias que caben en media hora.");
+  assert.equal(decideLead([long, long, long], "media hora"), "Nada de lo tuyo cabe en media hora: estas son las más cortas.");
+  assert.equal(decideLead([fit, long, long], "media hora"), "Una cabe en media hora; las otras, las más cortas.");
+  assert.equal(decideLead([fit, fit, long], "una hora"), "Dos caben en una hora; la otra es la más corta.");
+  assert.equal(decideLead([{}, {}], "media hora"), "Dos de tus sugerencias que caben en media hora."); // un Orbital sin «fits»
+});

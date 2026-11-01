@@ -1,11 +1,12 @@
-import { h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { Flag, Flags } from "./flag.js";
 
 /**
  * Menú lateral navegable con mando (entra desde la derecha). Recibe un menú como datos
- * ({ title, subtitle?, options, cancel? }) y emite el `command` de la opción elegida.
+ * ({ title, subtitle?, swap?, options, cancel? }) y emite el `command` de la opción elegida. `swap` ({ from, to }, cada uno
+ * { title, art?, tag }): lo que se cierra y lo que se abre, con su arte, encima de las opciones («¿Cerrar Hades?»).
  *
  * Los submenús se apilan (☰ → Apagado → ¿Apagar?): B regresa un nivel, como en Xbox y Steam
  * Deck, en vez de cerrar todo. Solo en el primer nivel B ejecuta el `cancel` del menú.
@@ -17,8 +18,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const back = h("div", { class: "sheet__back", "aria-hidden": "true" });
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
   const subtitle = h("div", { class: "sheet__subtitle" });
+  const swap = h("div", { class: "sheet__swap", hidden: true });
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
-  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, list);
+  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, swap, list);
   const el = h("div", { class: ["side-panel", "sheet"], hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
   let menu = null;
   let index = 0;
@@ -49,12 +51,18 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const below = (option) => !!option.hint && (longHint(option.hint) || option.value !== undefined);
 
   function render() {
-    back.textContent = stack.length ? stack.map((s) => s.menu.crumb || s.menu.title).join(" › ") : "";
-    back.hidden = !stack.length;
+    // La ruta (Orbital › Ajustes) y, si la hoja es un paso de varios, en cuál vas («Guía 2 de 5»): antes ese dato solo salía
+    // si abrías algo desde ahí, así que la guía abierta desde «Cómo se usa» no decía en qué paso ibas.
+    const trail = [...stack.map((s) => s.menu.crumb || s.menu.title), menu.progress].filter(Boolean);
+    back.textContent = trail.join(" › ");
+    back.hidden = !trail.length;
     title.textContent = menu.title;
-    title.classList.toggle("sheet__title--question", !!menu.subtitle);
+    title.classList.toggle("sheet__title--question", !!(menu.subtitle || menu.swap));
     subtitle.textContent = menu.subtitle || "";
     subtitle.hidden = !menu.subtitle;
+    swap.hidden = !menu.swap;
+    mount(swap, menu.swap ? [swapCard(menu.swap.from, "from"), h("span", { class: "sheet__swap-arrow", "aria-hidden": "true" }, svg(ICONS.chevron)),
+      swapCard(menu.swap.to, "to")] : []);
     mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h("button", {
       class: ["sheet__item", i === index && "sheet__item--focused", option.danger && "sheet__item--danger",
         option.value !== undefined && "sheet__item--setting",
@@ -62,7 +70,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
         option.command?.type === "close" && "sheet__item--dismiss"],
       type: "button",
       role: "menuitem",
-      onClick: (event) => tapReady(event) && !busy() && choose(i),
+      onClick: (event) => tapReady(event) && !busy() && press(i),
     }, // Una cuenta o servicio lleva su logotipo real (Stremio, Trakt, TMDB); lo demás, su ícono.
     h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark"] },
       option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
@@ -78,6 +86,15 @@ export function createSheet({ onCommand, onMove, onClose }) {
           h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "right") }, svg(ICONS.chevron))]
         : option.value),
     option.hint && !below(option) && h("small", { class: "sheet__hint" }, option.hint))));
+  }
+
+  /** Una mitad de la tarjeta de cambio: el arte (o su inicial, si no tiene) y debajo qué le pasa y cómo se llama. */
+  function swapCard({ title: name, art, tag }, side) {
+    return h("div", { class: ["sheet__swap-card", `sheet__swap-card--${side}`] },
+      h("div", { class: "sheet__swap-art", style: { backgroundImage: cssUrl(art) } },
+        !art && h("span", { class: "sheet__swap-initial" }, (name || "?").trim().charAt(0))),
+      h("small", { class: "sheet__swap-tag" }, tag),
+      h("span", { class: "sheet__swap-name" }, name));
   }
 
   function tapChev(event, i, side) {
@@ -153,6 +170,18 @@ export function createSheet({ onCommand, onMove, onClose }) {
     const command = menu?.cancel;
     close();
     if (command) onCommand(command);
+  }
+
+  /** Un clic o un toque: primero el foco va ahí (y se ve entero); luego hace lo suyo. Una fila de solo lectura («stay»: las
+   * frases de «Lo que puedes decir») no hace nada más, y antes ni el foco se movía: a medio ver, parecía que el clic no servía. */
+  function press(i) {
+    if (i !== index) {
+      index = i;
+      [...list.children].forEach((item, n) => item.classList.toggle("sheet__item--focused", n === index));
+      reveal();
+      onMove?.();
+    }
+    choose(i);
   }
 
   function choose(i = index, command = menu?.options[i]?.command) {

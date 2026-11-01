@@ -9,6 +9,10 @@ riesgo (si el emulador ya abrió a 4K, se ve un cuarto de su imagen, como con zo
 Se baja ANTES de abrir el emulador (crea su imagen del tamaño de la pantalla y no la rehace) y se regresa al terminar. Se elige la resolución con la misma proporción de la pantalla (la tele
 16:9 → 1920×1080; la de la Legion, 16:10 → 1920×1200) y su misma frecuencia si existe. El cambio es temporal para Windows
 (CDS_FULLSCREEN): si Orbital se cierra de golpe, Windows regresa solo a la de siempre.
+
+Cada cambio desconecta la tele unos segundos (vuelve a sincronizar la señal) y la interfaz se reacomoda al tamaño nuevo: se
+veía un corte seco y Orbital trabada. Ahora, con `notify`, la interfaz se funde a negro ANTES del cambio («start»), el
+parpadeo pasa con todo en negro y, tras el cambio («end»), espera a que la tele regrese y se funde de vuelta (display-veil).
 """
 
 from __future__ import annotations
@@ -17,6 +21,8 @@ import ctypes
 import logging
 import sys
 import threading
+import time
+from collections.abc import Callable
 from ctypes import wintypes
 
 log = logging.getLogger(__name__)
@@ -28,6 +34,7 @@ ENUM_CURRENT_SETTINGS = -1
 CDS_FULLSCREEN = 0x4
 DM_PELSWIDTH, DM_PELSHEIGHT, DM_DISPLAYFREQUENCY = 0x80000, 0x100000, 0x400000
 DISP_CHANGE_SUCCESSFUL = 0
+VEIL_IN = 0.3  # s: lo que tarda la interfaz en fundirse a negro antes de que la tele parpadee
 
 
 class _DevMode(ctypes.Structure):
@@ -96,10 +103,30 @@ def _apply(mode: Mode | None) -> bool:
 class GameResolution:
     """Baja la resolución al abrir un juego y la regresa al terminar (una sola vez cada cosa, aunque se pida dos)."""
 
-    def __init__(self, read=current, modes=available, apply=_apply) -> None:
-        self.read, self.modes, self.apply = read, modes, apply
+    def __init__(self, read=current, modes=available, apply=_apply, sleep=time.sleep) -> None:
+        self.read, self.modes, self.apply, self.sleep = read, modes, apply, sleep
         self.lowered: Mode | None = None  # la resolución de antes, mientras se juega más bajo
+        # Avisa a la interfaz «start» antes de cambiar y «end» después (el servidor lo conecta: solo en la Orbital de verdad).
+        self.notify: Callable[[str], None] | None = None
         self._lock = threading.Lock()
+
+    def _switch(self, mode: Mode | None) -> bool:
+        """El cambio, con la interfaz en negro mientras la tele parpadea."""
+        notify = self.notify
+        if notify is None:
+            return self.apply(mode)
+        try:
+            notify("start")
+            self.sleep(VEIL_IN)
+        except Exception:  # noqa: BLE001 - la transición nunca impide el cambio
+            log.debug("No pude avisar del cambio de resolución", exc_info=True)
+        try:
+            return self.apply(mode)
+        finally:
+            try:
+                notify("end")
+            except Exception:  # noqa: BLE001
+                log.debug("No pude avisar del fin del cambio de resolución", exc_info=True)
 
     def for_game(self) -> bool:
         with self._lock:
@@ -109,7 +136,7 @@ class GameResolution:
             target = game_mode_for(now, self.modes()) if now else None
             if target is None:
                 return False
-            if not self.apply(target):
+            if not self._switch(target):
                 log.warning("No pude cambiar la resolución a %dx%d para jugar", target[0], target[1])
                 return False
             self.lowered = now
@@ -121,7 +148,7 @@ class GameResolution:
             if self.lowered is None:
                 return False
             before, self.lowered = self.lowered, None
-            ok = self.apply(None)
+            ok = self._switch(None)
         log.info("Resolución de vuelta a %dx%d%s", before[0], before[1], "" if ok else " (Windows no la cambió)")
         return ok
 

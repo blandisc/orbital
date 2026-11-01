@@ -86,3 +86,16 @@ export function nextAiring(items, today = new Date()) {
   if (!next) return null;
   return { title: next.title, episode: next.episode_label || null, when: [next.day_label, next.time].filter(Boolean).join(" · "), meta_id: next.meta_id };
 }
+
+/** Elegiste otro póster o fondo para un título: los estantes ya cargados (`lists`: lista → títulos) lo toman en su lugar.
+ * `url` null = «El de siempre»: no se sabe cuál era, así que esos estantes se vuelven a pedir. Devuelve qué listas lo traían. */
+export function pickArt(lists, metaId, which, url) {
+  const field = which === "background" ? "hero" : "image";
+  const touched = [];
+  for (const [key, items] of Object.entries(lists)) {
+    if (!items.some((i) => i.meta_id === metaId)) continue;
+    touched.push(key);
+    if (url) lists[key] = items.map((i) => (i.meta_id === metaId ? { ...i, [field]: url } : i));
+  }
+  return touched;
+}

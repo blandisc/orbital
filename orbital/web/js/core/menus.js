@@ -88,8 +88,23 @@ export function artMenu(item) {
     options: [
       { icon: "grid", label: "Elegir portada o fondo", hint: "Todas las que encontré, con el control",
         command: { type: "game-art-picker", id: item.id, title: item.title } },
-      { icon: "cover", label: "Otra portada", command: { type: "art", id: item.id, kind: "cover", title: item.title } },
-      { icon: "wide", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } },
+      // Descartan la de ahora para siempre: piden confirmar (un toque que cayó aquí al redibujarse la hoja la tiró).
+      { icon: "cover", label: "Otra portada", hint: "Descarta la de ahora", command: { type: "art-confirm", id: item.id, kind: "cover", title: item.title } },
+      { icon: "wide", label: "Otro fondo", hint: "Descarta el de ahora", command: { type: "art-confirm", id: item.id, kind: "hero", title: item.title } },
+    ],
+  };
+}
+
+/** ¿Descartar la imagen de ahora? Cancelar primero: buscar otra la tira para siempre. */
+export function artConfirmMenu(command) {
+  const cover = command.kind === "cover";
+  return {
+    title: cover ? "¿Buscar otra portada?" : "¿Buscar otro fondo?",
+    subtitle: `${cover ? "La portada" : "El fondo"} de ahora se descarta y no vuelve. Para escoger entre todas: «Elegir portada o fondo».`,
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: cover ? "cover" : "wide", label: cover ? "Buscar otra portada" : "Buscar otro fondo", danger: true,
+        command: { type: "art", id: command.id, kind: command.kind, title: command.title } },
     ],
   };
 }
@@ -291,19 +306,35 @@ export function stopMenu({ title, runner }) {
 
 /**
  * Abrir otra cosa con un juego abierto: se cierra el anterior (no se queda congelado para siempre).
- * Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde).
+ * Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde). Arriba, lo que se
+ * cierra y lo que se abre con su arte (`art`: { from, to }), para decidir sin leer.
  */
-export function switchMenu({ running, title, command }) {
+export function switchMenu({ running, title, command, art = {} }) {
   // Lo que quieres abrir ya es lo que está abierto: solo volver a él (antes «¿Cerrar X? Para abrir X»).
   if (running.title === title) {
     return { title: `${title} ya está abierto`, options: [{ icon: "play", label: `Volver a ${title}`, command: { type: "resume" } }], cancel: { type: "close" } };
   }
   return {
     title: `¿Cerrar ${running.title}?`,
-    subtitle: `Para abrir ${title}. Lo que no hayas guardado se perderá.`,
+    swap: { from: { title: running.title, art: art.from, tag: "Se cierra" }, to: { title, art: art.to, tag: "Se abre" } },
+    options: [
+      { icon: "play", label: `Volver a ${running.title}`, hint: "Sigue donde lo dejaste", command: { type: "resume" } },
+      { icon: "stop", label: `Cerrar y abrir ${title}`, hint: "Lo que no hayas guardado se perderá", danger: true,
+        command: { ...command, confirmed: true } },
+    ],
+    cancel: { type: "close" },
+  };
+}
+
+/** Con «Abrir algo nuevo cierra lo anterior: No» lo de antes se queda abierto: la hoja no puede decir «Cerrar y abrir» ni
+ * «lo que no hayas guardado se perderá» (no se cierra nada; regresión S3-B7). Volver primero, como siempre. */
+export function keepBothMenu({ running, title, command }) {
+  return {
+    title: `¿Abrir ${title} también?`,
+    subtitle: `${running.title} se queda abierto (Ajustes › Jugar › «Abrir algo nuevo cierra lo anterior»: No).`,
     options: [
       { icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } },
-      { icon: "stop", label: `Cerrar y abrir ${title}`, danger: true, command: { ...command, confirmed: true } },
+      { icon: "play", label: `Abrir ${title} también`, command: { ...command, confirmed: true } },
     ],
     cancel: { type: "close" },
   };
@@ -1250,7 +1281,8 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
   const current = steps[step];
   const last = step === steps.length - 1;
   return {
-    title: current.title, crumb: `Guía ${step + 1} de ${steps.length}`, subtitle: current.text,
+    title: current.title, crumb: `Guía ${step + 1} de ${steps.length}`, progress: `Guía ${step + 1} de ${steps.length}`,
+    subtitle: current.text,
     options: [
       last ? { icon: "check", label: "¡Listo!", command: { type: "close" } }
         : { icon: "play", label: "Siguiente", command: { type: "tour", step: step + 1 } },

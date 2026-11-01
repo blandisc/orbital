@@ -32,3 +32,15 @@ def test_lowers_once_and_restores_once():
 def test_if_windows_refuses_nothing_is_remembered():
     res = display.GameResolution(read=lambda: (3840, 2160, 60), modes=lambda: TV, apply=lambda m: False)
     assert not res.for_game() and res.lowered is None and not res.restore()
+
+
+def test_the_ui_goes_black_before_the_tv_flickers_and_comes_back_after():
+    seen = []
+    res = display.GameResolution(read=lambda: (3840, 2160, 60), modes=lambda: TV, apply=lambda m: seen.append(("apply", m)) or True,
+                                 sleep=lambda s: seen.append(("wait", s)))
+    res.notify = lambda phase: seen.append(phase)
+    assert res.for_game()
+    assert seen == ["start", ("wait", display.VEIL_IN), ("apply", (1920, 1080, 60)), "end"]
+    seen.clear()
+    res.notify = lambda phase: (_ for _ in ()).throw(RuntimeError("sin interfaz"))  # sin quién escuche: igual cambia
+    assert res.restore() and seen[-1] == ("apply", None)

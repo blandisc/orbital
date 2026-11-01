@@ -99,6 +99,9 @@ def choose(pool: list[dict], *, time: str, mood: str | None = None, kind: str | 
         (picked if fits(item.get("runtime") or d.get("minutes"), time) else closest).append(item)
         if len(picked) >= count:
             break
+    # Las que no caben, de la más corta a la más larga (sin duración, al final): antes salían al azar y con «media hora»
+    # aparecían películas de casi dos horas mientras el texto decía que cabían (regresión S2, 2026-10-30).
+    closest.sort(key=lambda i: i.get("runtime") or details.get(i["meta_id"], {}).get("minutes") or 10_000)
     return (picked + closest)[:count]
 
 

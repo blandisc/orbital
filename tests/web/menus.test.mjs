@@ -145,6 +145,8 @@ test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", ()
   assert.deepEqual(menu.options.map((o) => o.command), [{ type: "resume" },
     { type: "launch", id: "steam:1", runner: null, confirmed: true }]);
   assert.equal(menu.options[1].danger, true);
+  assert.deepEqual([menu.swap.from.tag, menu.swap.to.title], ["Se cierra", "Hades"]); // la tarjeta: lo que se cierra → lo que se abre
+  assert.match(menu.options[1].hint, /no hayas guardado/);
 });
 
 test("tu consola: dos renglones, y Stremio se conecta ahí mismo", () => {
@@ -567,4 +569,27 @@ test("Ajustes › Tele y voz: la tele, dónde hablarle con su última orden, la 
   assert.ok(!bare.options.some((o) => o.label.startsWith("Probar")));
   assert.match(bare.options.find((o) => o.label === "La tele no se prende sola").help, /orbital tv setup/);
   assert.equal(bare.options.find((o) => o.label === "Alexa").value, "Sin configurar");
+});
+
+test("cada paso de la guía dice en cuál vas, aunque se abra desde «Cómo se usa»", () => {
+  assert.equal(tourMenu(0).progress, "Guía 1 de 5");
+  assert.equal(tourMenu(4).progress, "Guía 5 de 5");
+});
+
+test("«Otra portada» pide confirmar antes de descartar la de ahora (Cancelar primero)", async () => {
+  const { artMenu, artConfirmMenu } = await import("../../orbital/web/js/core/menus.js");
+  const other = artMenu({ id: "emu:psp:1", title: "Battlefront" }).options.find((o) => o.label === "Otra portada");
+  assert.equal(other.command.type, "art-confirm");
+  const confirm = artConfirmMenu(other.command);
+  assert.equal(confirm.options[0].label, "Cancelar");
+  assert.deepEqual(confirm.options[1].command, { type: "art", id: "emu:psp:1", kind: "cover", title: "Battlefront" });
+});
+
+test("con «Abrir algo nuevo cierra lo anterior: No» la hoja no promete cerrar nada", async () => {
+  const { keepBothMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = keepBothMenu({ running: { title: "Power Rangers" }, title: "Metal Slug", command: { type: "launch", id: "x" } });
+  assert.equal(menu.title, "¿Abrir Metal Slug también?");
+  assert.doesNotMatch(JSON.stringify(menu), /Cerrar|se perderá/);
+  assert.equal(menu.options[0].command.type, "resume"); // volver va primero
+  assert.deepEqual(menu.options[1].command, { type: "launch", id: "x", confirmed: true });
 });

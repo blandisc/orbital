@@ -5,7 +5,11 @@
   min-height: var(--menu-row-height); padding: 0 var(--page-gutter) calc(var(--space-2) + var(--safe-y));
   color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-none);
   position: relative; z-index: var(--z-hints);
+  /* Va encima de los paneles para que su leyenda se vea, pero el renglón vacío no se queda con los clics: la última opción de
+     un menú lateral, a medio ver detrás del pie, no respondía al mouse ni al dedo (regresión S2). Solo cada pista los toma. */
+  pointer-events: none;
 }
+.hints > * { pointer-events: auto; }
 .hints__item { display: inline-flex; align-items: center; gap: .6rem; white-space: nowrap; animation: fade-in var(--duration-base) var(--ease-out); }
 .hints__item .glyph + .glyph { margin-left: calc(-1 * var(--space-1)); } /* «LB RB»: un par, juntos */
 .hints__item .key-hint__label { padding-top: .05em; } /* alineado al centro óptico del ícono */

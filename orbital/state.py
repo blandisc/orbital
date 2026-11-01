@@ -28,7 +28,19 @@ SETTING_TYPES = {"audio": str, "dub": str, "subtitles": str, "quality": str, "te
                  "eden_build": str}
 
 
+def _device_ok(device) -> bool:
+    """Un aparato de companion_devices: {name, kind, seen} (ver companion.remember_device)."""
+    seen = device.get("seen") if isinstance(device, dict) else None
+    return (isinstance(device, dict) and isinstance(device.get("name", ""), str) and isinstance(device.get("kind", ""), str)
+            and isinstance(seen, (int, float)) and not isinstance(seen, bool) and math.isfinite(seen))
+
+
 def _setting_ok(key, value) -> bool:
+    if key == "companion_devices":
+        # Un diccionario (aparato → {name, kind, seen}): la regla de abajo solo deja valores simples y lo tiraba al cargar,
+        # así que cada reinicio de Orbital borraba el iPhone de Ajustes › Cuentas (auditoría de la regresión, 2026-10-30).
+        return isinstance(value, dict) and len(value) <= 20 and all(isinstance(k, str) and _device_ok(v)
+                                                                     for k, v in value.items())
     kind = SETTING_TYPES.get(key)
     if kind == _NUMBER:
         return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and 0 <= value <= 10_000

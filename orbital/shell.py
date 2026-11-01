@@ -31,7 +31,13 @@ EMULATOR_EXES = {n for k in KNOWN for n in k.exe_names if n.endswith(".exe")} | 
     "stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe", "mpv.exe",
 }
 PLAYER_EXE = "mpv.exe"  # el reproductor de Orbital: se maneja por su tubería, no con teclas
-LEGION_SPACE = "legionspace.exe"
+LEGION_SPACE = "legionspace.exe"  # Legion Space hasta la 1.3
+# Desde la 1.4 (se actualizó sola el 2026-10-26) ya no hay legionspace.exe: Legion L y Legion R abren ventanas de
+# LegionSettingMenu.exe. Legion L es «LegionSettingMenu» (a pantalla completa); Legion R, el panel «LegionSettingMidMenu»
+# (los ajustes rápidos: ese no se toca).
+LEGION_MENU = "legionsettingmenu.exe"
+LEGION_EXES = {LEGION_SPACE, LEGION_MENU}
+LEGION_R_TITLE = "LegionSettingMidMenu"
 # Pausa universal al ir a Orbital: solo emuladores (los juegos en línea perderían la conexión y
 # congelar Stremio dejaría su ventana trabada).
 NO_PAUSE = {"stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe", PLAYER_EXE}  # congelar la nube = desconectarte
@@ -43,7 +49,7 @@ REMOTE_APPS = {"stremio-shell-ng.exe", "stremio.exe"}
 # ahí lleva a Orbital, pero Orbital nunca "regresa" a ellas como si fueran un juego.
 SHELL_EXES = {"explorer.exe", "searchhost.exe", "startmenuexperiencehost.exe", "shellexperiencehost.exe",
               "textinputhost.exe", "lockapp.exe", "applicationframehost.exe"}
-NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-de.exe", LEGION_SPACE,
+NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-de.exe", *LEGION_EXES,
                         "claude.exe", "discord.exe", "python.exe", "pythonw.exe"}
 APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio", "steamwebhelper": "Steam",
              "steam": "Steam", "es-de": "ES-DE", "discord": "Discord", "explorer": "Explorador", "eden": "Eden",
@@ -243,6 +249,23 @@ class ConsoleShell:
             self.win.resume(pids)
         self.pause_file.unlink(missing_ok=True)
 
+    def close_orphan_player(self, pipe: str | None = None) -> bool:
+        """Si el servidor murió con un video abierto, su mpv seguía a pantalla completa sin nadie que lo manejara (Esc ya no
+        hacía nada; regresión S3-D6). Al arrancar todavía no hay video nuestro: si la tubería de mpv responde, es ese huérfano
+        y se le pide salir por la misma tubería (su avance quedó guardado hasta el último minuto)."""
+        from .mpv import PIPE, Mpv
+
+        if self.player is not None and getattr(self.player, "playing", False):
+            return False  # ya es nuestro
+        try:
+            orphan = Mpv(pipe or PIPE)
+            if orphan.command("quit") is None:
+                return False
+        except OSError:
+            return False  # nadie la tiene: lo normal
+        log.info("Había un video abierto de antes, sin Orbital que lo manejara: lo cierro")
+        return True
+
     def target(self, hwnd: int) -> dict | None:
         """Qué se cerraría con Select+Start: el juego que lanzó Orbital, un emulador al frente o
         el juego de Steam en curso (Steam lo reporta y su ventana es la que está al frente)."""
@@ -385,7 +408,7 @@ class ConsoleShell:
             return False  # un juego, un video o una app de Orbital: Home y Legion L ya saben volver
         fg = self.win.foreground()
         exe = self.win.exe_name(self.win.pid_of(fg)) if fg else ""
-        if not fg or self.is_orbital(fg) or exe in (LEGION_SPACE, PLAYER_EXE) or exe in REMOTE_APPS or self.win.is_fullscreen(fg):
+        if not fg or self.is_orbital(fg) or exe in LEGION_EXES or exe == PLAYER_EXE or exe in REMOTE_APPS or self.win.is_fullscreen(fg):
             return False  # Stremio y el reproductor usan el mando a través de Orbital (A pausa)
         self._woke_at = now
         log.info("Botón del mando con otra ventana al frente y nada abierto: Orbital al frente")
@@ -467,9 +490,19 @@ class ConsoleShell:
         if hwnd not in {w["id"] for w in self.open_windows()}:
             return False
         self.remember(hwnd)
+        if self.player and getattr(self.player, "pip", False) and self.win.exe_name(self.win.pid_of(hwnd)) == PLAYER_EXE:
+            # El video en pequeño: elegirlo en «Ventanas abiertas» es querer verlo, como Home (antes quedaba en la esquina).
+            self.player.exit_pip()
         return self.win.focus(hwnd)
 
     # --------------------------------------------------------------- Legion L
+    def is_legion_l(self, hwnd: int) -> bool:
+        """¿Es la ventana que abre Legion L? (la 1.3 de Legion Space o la 1.4; nunca los ajustes rápidos de Legion R)"""
+        if not hwnd:
+            return False
+        exe = self.win.exe_name(self.win.pid_of(hwnd))
+        return exe == LEGION_SPACE or (exe == LEGION_MENU and self.win.title(hwnd) != LEGION_R_TITLE)
+
     def check_legion(self, fg: int, previous: int, now: float | None = None) -> None:
         """Legion L abre Legion Space (no se puede reasignar): Orbital lo esconde al instante y lo usa
         como botón propio, tomando como punto de partida la ventana de antes (`previous`).
@@ -479,8 +512,9 @@ class ConsoleShell:
             es la confirmación; tras el primero, Orbital avisa "Toca otra vez para cerrar…").
         """
         now = time.monotonic() if now is None else now
-        if self.win.exe_name(self.win.pid_of(fg)) != LEGION_SPACE:
+        if not self.is_legion_l(fg):
             return
+        log.info("Legion L (%s)", self.win.title(fg) or "Legion Space")  # por si otra versión cambia de ventana
         self.win.minimize(fg)
         left = self._legion_left
         if left and now - self._legion_last < LEGION_DOUBLE_PRESS:
@@ -513,6 +547,7 @@ class ConsoleShell:
         if sys.platform != "win32":
             return False
         self.recover_paused()
+        self.close_orphan_player()  # un video que quedó abierto sin Orbital (el servidor murió)
         self.unpin_orbital()
         if self.overlay is None:
             from .overlay import GameOverlay
@@ -711,7 +746,7 @@ class ConsoleShell:
                 fg = self.win.foreground()
                 if fg == last:
                     continue
-                if self.win.exe_name(self.win.pid_of(last)) != LEGION_SPACE:
+                if not self.is_legion_l(last):
                     previous = last  # lo que había antes de Legion Space
                 last = fg
                 if self.paused and self.win.pid_of(fg) in self.paused:

@@ -20,8 +20,10 @@ const DAY_NAMES = ["domingo", "lunes", "martes", "miércoles", "jueves", "vierne
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const monthKey = (d) => iso(d).slice(0, 7);
 const sentence = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+export const MAX_MONTHS = 24; // lo más lejos que contesta el servidor (api/foryou.py, /calendar)
+export const monthsFromNow = (d, now = new Date()) => (d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth();
 
-export function createCalendar({ load, onPick, onMove, onClose, onChange = () => {} }) {
+export function createCalendar({ load, onPick, onMove, onClose, onEdge, onChange = () => {} }) {
   const head = h("div", { class: "calendar__head" });
   const weekdays = h("div", { class: "calendar__weekdays", "aria-hidden": "true" }, WEEKDAYS.map((d) => h("span", {}, d)));
   const grid = h("div", { class: "calendar__grid", role: "grid" });
@@ -159,8 +161,11 @@ export function createCalendar({ load, onPick, onMove, onClose, onChange = () =>
     if (action === "back") { close(); return true; }
     if (action === "prevsection" || action === "nextsection") {
       const day = cells[at]?.date.getDate() || 1;
+      const next = new Date(month.getFullYear(), month.getMonth() + (action === "nextsection" ? 1 : -1), 1);
+      // Hasta dos años antes o después (el servidor no da más): en el tope se queda en ese mes, sin «Mes inválido».
+      if (Math.abs(monthsFromNow(next)) > MAX_MONTHS) return onEdge?.(), true;
       onMove?.();
-      show(new Date(month.getFullYear(), month.getMonth() + (action === "nextsection" ? 1 : -1), 1), day);
+      show(next, day);
       return true;
     }
     const moves = { left: -1, right: 1, up: -7, down: 7 };

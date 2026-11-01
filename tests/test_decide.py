@@ -127,3 +127,12 @@ def test_a_dark_logo_comes_back_white_and_a_colored_one_untouched():
     assert dark.getpixel((8, 5)) == (255, 255, 255, 255) and dark.getpixel((0, 0))[3] == 0
     red = png((220, 30, 30, 255))
     assert whiten_if_dark(red) == red
+
+
+def test_when_nothing_fits_the_shortest_come_first():
+    """«Media hora» sin nada que quepa: antes salían al azar (películas de 107 y 113 min) y el texto decía que cabían."""
+    pool = [{"meta_id": f"tt{n}", "kind": "movie", "runtime": minutes, "genres": ["Drama"]}
+            for n, minutes in ((1, 113), (2, 44), (3, 107), (4, 61), (5, None))]
+    picks = decide.choose(pool, time="short", rng=random.Random(7))
+    assert [p["runtime"] for p in picks] == [44, 61, 107]
+    assert not any(decide.fits(p["runtime"], "short") for p in picks)

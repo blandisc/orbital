@@ -189,6 +189,19 @@ def test_legion_l_twice_closes_the_game():
     assert win.minimized == [LEGION, LEGION]  # Legion Space nunca se queda
 
 
+def test_legion_l_with_legion_space_1_4():
+    # Desde la 1.4 no hay legionspace.exe: Legion L abre «LegionSettingMenu» y Legion R «LegionSettingMidMenu».
+    shell, win, _ = make(MANAGED)
+    win.windows[LEGION] = ("LegionSettingMenu", 40, "legionsettingmenu.exe")
+    win.windows[6] = ("LegionSettingMidMenu", 40, "legionsettingmenu.exe")
+    win.fg = 6
+    shell.check_legion(6, previous=GAME, now=100)
+    assert win.minimized == [] and win.fg == 6 and not win.suspended  # Legion R: sus ajustes rápidos, sin tocar
+    win.fg = LEGION
+    shell.check_legion(LEGION, previous=GAME, now=110)
+    assert win.minimized == [LEGION] and win.fg == ORBITAL and win.suspended == {20}
+
+
 def test_legion_l_twice_but_slow_is_just_two_taps():
     shell, win, _ = make(MANAGED)
     win.fg = LEGION
@@ -204,6 +217,16 @@ def test_open_windows_hides_orbital_and_only_focuses_listed():
     assert "Edge" not in names and names[:2] == ["Eden", "Notepad"]  # Orbital (Edge) no aparece
     assert shell.focus_window(DESKTOP_APP) and win.fg == DESKTOP_APP
     assert not shell.focus_window(12345)  # un identificador que no está en la lista: nunca
+
+
+def test_picking_the_small_video_in_open_windows_brings_it_back_full_screen():
+    """«Ventanas abiertas › Reproductor» traía mpv al frente pero lo dejaba en la esquina."""
+    shell, win, _ = make(None)
+    win.windows[DESKTOP_APP] = ("VisionQuest · T1 E1", 30, "mpv.exe")
+    shell.player.pip = True
+    shell.player.exit_pip = lambda: setattr(shell.player, "pip", False)
+    assert shell.focus_window(DESKTOP_APP) and win.fg == DESKTOP_APP
+    assert shell.player.pip is False
 
 
 def test_hold_closes_steam_game_in_front(monkeypatch):
@@ -520,3 +543,27 @@ def test_quiet_ui_gets_the_first_button_from_the_server_only_with_orbital_in_fro
     win2.fg = ORBITAL
     busy.forward_to_ui(0, 0x1000)
     assert published == []
+
+
+def test_a_video_left_without_orbital_is_closed_at_startup(monkeypatch):
+    """El servidor murió con un video abierto: mpv seguía a pantalla completa y Esc no hacía nada (S3-D6). Al arrancar se le
+    pide salir por su tubería; sin mpv, no pasa nada."""
+    from orbital import mpv
+
+    sent = []
+
+    class FakeMpv:
+        def __init__(self, pipe):
+            self.pipe = pipe
+
+        def command(self, *args):
+            sent.append(args)
+            return {"error": "success"} if self.pipe == "huerfano" else None
+
+    monkeypatch.setattr(mpv, "Mpv", FakeMpv)
+    shell, _, _ = make(None)
+    assert shell.close_orphan_player("huerfano") is True and sent == [("quit",)]
+    assert shell.close_orphan_player("vacia") is False  # nadie en la tubería: lo normal
+    shell.player.playing = True
+    sent.clear()
+    assert shell.close_orphan_player("huerfano") is False and sent == []  # ya es nuestro: no se toca
