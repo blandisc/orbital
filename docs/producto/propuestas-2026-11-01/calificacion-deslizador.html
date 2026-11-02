@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calificación con deslizador · propuesta</title>
+<style>
+  :root{--bg:#0c0c0e;--card:#18181c;--card2:#1e1e23;--line:#2a2a30;--muted:#a3a3ab;--dim:#6b6b73;--text:#f5f4f0;--teal:#5fd6c6;--mint:#6fdba4;
+    --lb:#00e054;--lbo:#ff8000;--lbb:#40bcf4;--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sys);line-height:1.45}
+  main{max-width:1180px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-size:34px;margin:0 0 6px} h2{font-size:24px;margin:52px 0 6px} .why{color:var(--teal);font-size:14px;font-weight:600;margin:0 0 4px}
+  .lead{color:var(--muted);font-size:17px;max-width:820px}
+  .row{display:flex;flex-wrap:wrap;gap:28px;margin-top:20px;align-items:flex-start}
+  .col{flex:1 1 330px;min-width:320px}
+  .col h3{font-size:16px;margin:0 0 4px} .col h3 .tag{font-size:11px;font-weight:800;color:#06201c;background:var(--teal);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+  .col p{color:var(--muted);font-size:13px;margin:0 0 10px} .col ul{color:var(--muted);font-size:13px;padding-left:18px} .col li{margin:4px 0}
+  .pros b{color:var(--mint)} .cons b{color:#f0574d}
+  .phone{border-radius:38px;background:#000;padding:10px;border:1px solid #222;box-shadow:0 16px 40px rgba(0,0,0,.5);max-width:360px}
+  .screen{border-radius:29px;background:#16161a;padding:16px 14px 18px}
+  .eyebrow{color:var(--muted);font-size:13px;margin-bottom:8px}
+  .sum{background:var(--card2);border-radius:16px;padding:12px 14px;margin-bottom:12px} .sum .t{font-size:12px;color:var(--muted)} .sum .v{font-size:18px;font-weight:800;margin-top:2px;min-height:26px}
+  .sum .v .x{color:var(--dim);font-weight:700}
+  .src{background:var(--card);border-radius:16px;padding:14px 12px 12px;margin-bottom:10px;border:1px solid transparent;transition:border-color .2s,opacity .2s}
+  .src.on{border-color:var(--mint)} .src.lb.on{border-color:var(--lb)} .src.off{opacity:.4;pointer-events:none}
+  .hd{display:flex;align-items:center;gap:8px} .hd b{font-size:15px} .hd .who{color:var(--muted);font-size:12px;margin-left:auto}
+  .logo-t{font-weight:900;font-size:11px;letter-spacing:.08em;color:#06202a;background:linear-gradient(90deg,#90cea1,#01b4e4);border-radius:5px;padding:2px 5px}
+  .dots{display:inline-flex;gap:3px}.dots i{width:7px;height:7px;border-radius:50%;display:block}
+  .scale{color:var(--dim);font-size:11px;margin:2px 0 6px}
+  .big{display:flex;align-items:baseline;gap:8px;justify-content:center;margin:6px 0 2px} .big .w{font-size:22px;font-weight:800} .big .n{font-size:15px;font-weight:700;color:var(--mint)} .lb .big .n{color:var(--lb)}
+  .big .w.none{color:var(--dim)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:4px 0 0}
+  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--fill,var(--mint)) var(--p,0%),var(--line) var(--p,0%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;margin-top:-10px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+  input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)} input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--fill,var(--mint))}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:0}
+  .ticks{position:relative;height:30px;margin:2px 13px 0}
+  .ticks span{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--dim);text-align:center;line-height:1.2;white-space:nowrap;cursor:pointer}
+  .ticks span b{display:block;color:var(--muted);font-size:11px} .ticks span.at b{color:var(--text)}
+  .ticks span::before{content:"";display:block;width:2px;height:6px;background:var(--line);margin:0 auto 3px}
+  .note{font-size:12px;color:var(--muted);background:rgba(64,188,244,.08);border-radius:10px;padding:8px 10px;margin-top:8px}
+  .seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;gap:3px;margin:8px 0 4px}
+  .seg span{flex:1;text-align:center;padding:7px 4px;border-radius:9px;font-size:12px;color:var(--muted);cursor:pointer} .seg span.on{background:var(--card2);color:var(--text);font-weight:700}
+  .fmt{display:flex;gap:6px;margin-bottom:10px} .fmt span{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--card);color:var(--muted);cursor:pointer} .fmt span.on{background:var(--teal);color:#06201c;font-weight:700}
+  .ask{background:var(--card);border-radius:16px;padding:16px 20px;margin-top:18px;color:var(--muted)} .ask b{color:var(--text)}
+</style>
+</head>
+<body>
+<main>
+  <p class="why">Búsqueda avanzada · Calificación · 2 nov 2026</p>
+  <h1>La calificación con deslizador</h1>
+  <p class="lead">Las mismas dos opiniones (el público y los cinéfilos), pero en vez de cuatro botones, un deslizador en cada una. Al moverlo, la palabra grande cambia sola (Buena, Muy buena, Excelente) y debajo va el número exacto. Las marcas debajo del deslizador van parejas y dicen dónde empieza cada palabra (tocarlas lleva ahí); entre una y otra, el número fino. <b>Muévelos: funcionan.</b></p>
+
+  <h2>Tres formas</h2>
+  <div class="row">
+
+    <div class="col"><h3>A · Un deslizador por opinión <span class="tag">Recomendada</span></h3>
+      <p>Cada una con su escala de siempre. Lo más claro: ves de quién es cada número.</p>
+      <div class="fmt" data-for="a"><span class="on" data-f="all">Todo</span><span data-f="series">Series</span></div>
+      <div class="phone"><div class="screen" id="a">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v" data-sum></div></div>
+        <div class="src" data-src="tmdb"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos en TMDB</div>
+          <div class="big"><span class="w"></span><span class="n"></span></div>
+          <input type="range" min="0" max="4" step="0.02" value="0">
+          <div class="ticks"></div></div>
+        <div class="src lb" data-src="lb"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">de ★5 · solo películas</span></div><div class="scale">Letterboxd · califican más duro</div>
+          <div class="big"><span class="w"></span><span class="n"></span></div>
+          <input type="range" min="0" max="4" step="0.02" value="0" style="--fill:var(--lb)">
+          <div class="ticks"></div><div class="note" hidden>Letterboxd no califica series.</div></div>
+      </div></div>
+      <ul class="pros"><li><b>+</b> Se ve de quién es cada número y en su escala.</li><li><b>+</b> Lo fino (7.8, ★3.9) sin botón aparte.</li></ul>
+      <ul class="cons"><li><b>−</b> Dos controles en la pantalla.</li></ul>
+    </div>
+
+    <div class="col"><h3>B · Un solo deslizador</h3>
+      <p>Un «qué tan buena» y abajo eliges según quién. El número cambia de escala al cambiar.</p>
+      <div class="fmt" data-for="b"><span class="on" data-f="all">Todo</span><span data-f="series">Series</span></div>
+      <div class="phone"><div class="screen" id="b">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v" data-sum></div></div>
+        <div class="src on" data-src="one"><div class="hd"><b>Qué tan buena</b><span class="who" data-who>según el público</span></div>
+          <div class="seg" data-seg><span class="on" data-s="tmdb">El público</span><span data-s="lb">Los cinéfilos</span><span data-s="both">Los dos</span></div>
+          <div class="big"><span class="w"></span><span class="n"></span></div>
+          <input type="range" min="0" max="3" step="0.05" value="0">
+          <div class="ticks"></div><div class="note" hidden>Con series solo cuenta el público: Letterboxd no califica series.</div></div>
+      </div></div>
+      <ul class="pros"><li><b>+</b> Un solo control: lo más simple.</li></ul>
+      <ul class="cons"><li><b>−</b> «Los dos» esconde que cada uno tiene su número.</li><li><b>−</b> Al cambiar de opinión, el número salta.</li></ul>
+    </div>
+
+    <div class="col"><h3>C · Las dos en estrellas</h3>
+      <p>Las dos en la misma escala de 5 estrellas (el público ÷ 2), una arriba de la otra.</p>
+      <div class="fmt" data-for="c"><span class="on" data-f="all">Todo</span><span data-f="series">Series</span></div>
+      <div class="phone"><div class="screen" id="c">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v" data-sum></div></div>
+        <div class="src" data-src="tmdb5"><div class="hd"><b>El público</b><span class="who">TMDB · en ★5</span></div>
+          <div class="big"><span class="w"></span><span class="n"></span></div>
+          <input type="range" min="0" max="4" step="0.02" value="0"><div class="ticks"></div></div>
+        <div class="src lb" data-src="lb"><div class="hd"><b>Los cinéfilos</b><span class="who">Letterboxd · ★5</span></div>
+          <div class="big"><span class="w"></span><span class="n"></span></div>
+          <input type="range" min="0" max="4" step="0.02" value="0" style="--fill:var(--lb)"><div class="ticks"></div><div class="note" hidden>Letterboxd no califica series.</div></div>
+      </div></div>
+      <ul class="pros"><li><b>+</b> Una sola escala para los ojos.</li></ul>
+      <ul class="cons"><li><b>−</b> «★3.8 del público» no es lo que TMDB dice (7.6): confunde con lo que ves en la ficha.</li></ul>
+    </div>
+  </div>
+
+  <h2>Lo que necesito que decidas</h2>
+  <div class="ask"><ol>
+    <li><b>¿A, B o C?</b> Recomiendo A: cada opinión con su escala, y el deslizador hace lo de «Ajustar el número» sin un botón aparte.</li>
+    <li>¿Que el deslizador <b>se pegue a las palabras</b> (Buena, Muy buena, Excelente) al soltarlo cerca, o libre?</li>
+  </ol></div>
+</main>
+<script>
+const SCALES={
+  tmdb:{stops:[7,7.5,8],max:9,fmt:v=>(Number.isInteger(v)?v:v.toFixed(1))+"+",whose:"del público"},
+  lb:{stops:[3.5,3.8,4.2],max:5,fmt:v=>"★"+(Number.isInteger(v)?v:v.toFixed(1))+"+",whose:"de los cinéfilos"},
+  tmdb5:{stops:[3.5,3.75,4],max:4.5,fmt:v=>"★"+v.toFixed(1)+"+",whose:"del público"}
+};
+const WORDS=["Buena","Muy buena","Excelente"];
+function word(v,stops){let i=-1;stops.forEach((s,k)=>{if(v>=s-0.001)i=k});return i}
+function paintRange(r){const p=(r.value-r.min)/(r.max-r.min)*100;r.style.setProperty('--p',p+'%')}
+// Las marcas van parejas: 0 = sin mínimo, 1 = Buena, 2 = Muy buena, 3 = Excelente, 4 = lo más alto; entre marcas, el número fino.
+function toValue(x,sc){const pts=[0].concat(sc.stops,[sc.max]);if(x<=0)return 0;if(x<1)return +(sc.stops[0]-(1-x)*1).toFixed(1);
+  const k=Math.min(Math.floor(x),3),f=x-k;return +(pts[k]+(pts[k+1]-pts[k])*f).toFixed(1)}
+function ticksFor(box,range,stops,label){
+  const t=box.querySelector('.ticks');t.innerHTML='';
+  const all=[{x:0,w:"Sin mínimo",n:""}].concat(stops.map((s,i)=>({x:i+1,w:WORDS[i],n:label(s)})));
+  all.forEach(o=>{const sp=document.createElement('span');sp.style.left=(o.x/4*100)+'%';sp.innerHTML=`<b>${o.w}</b>${o.n}`;
+    sp.onclick=()=>{range.value=o.x;range.dispatchEvent(new Event('input'))};t.appendChild(sp)});
+}
+// A y C: un deslizador por opinión
+function setupPair(id,keys){
+  const scr=document.getElementById(id); let series=false;
+  const srcs=keys.map(k=>({k,box:scr.querySelector(`[data-src="${k}"]`)}));
+  const sum=scr.querySelector('[data-sum]');
+  srcs.forEach(s=>{const r=s.box.querySelector('input'),sc=SCALES[s.k];s.r=r;ticksFor(s.box,r,sc.stops,sc.fmt);
+    r.addEventListener('input',()=>update());});
+  function update(){
+    const vals=srcs.map(s=>{const sc=SCALES[s.k],v=toValue(parseFloat(s.r.value),sc),off=series&&s.k==='lb';const on=v>0&&!off;
+      paintRange(s.r);s.box.classList.toggle('on',on);s.box.classList.toggle('off',off);
+      const note=s.box.querySelector('.note');if(note)note.hidden=!off;
+      const i=word(v,sc.stops),w=s.box.querySelector('.w'),n=s.box.querySelector('.n');
+      if(v<=0){w.textContent='Sin mínimo';w.classList.add('none');n.textContent=''}else{w.textContent=i>=0?WORDS[i]:'Cualquiera de';w.classList.remove('none');if(i<0)w.textContent='Al menos';n.textContent=sc.fmt(v)}
+      s.box.querySelectorAll('.ticks span').forEach((sp,k)=>sp.classList.toggle('at',k===0?v<=0:(k-1)===i&&v>0));
+      return on?{v,sc,i}:null});
+    const on=vals.filter(Boolean);
+    if(!on.length)sum.innerHTML='<span class="x">Sin mínimo</span>';
+    else if(on.length===1){const o=on[0];sum.innerHTML=(o.i>=0?WORDS[o.i]+' ':'')+`<span class="x">· ${o.sc.fmt(o.v)} ${o.sc.whose}</span>`}
+    else sum.innerHTML=`${on[0].sc.fmt(on[0].v)} <span class="x">y</span> ${on[1].sc.fmt(on[1].v)}`;
+  }
+  document.querySelector(`[data-for="${id}"]`).querySelectorAll('span').forEach(b=>b.onclick=()=>{series=b.dataset.f==='series';
+    b.parentNode.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===b));update()});
+  // un estado de entrada para que se vea vivo
+  srcs[0].r.value=2; update();
+}
+setupPair('a',['tmdb','lb']); setupPair('c',['tmdb5','lb']);
+// B: un solo deslizador
+(function(){
+  const scr=document.getElementById('b'),box=scr.querySelector('[data-src="one"]'),r=box.querySelector('input'),sum=scr.querySelector('[data-sum]');
+  let who='tmdb',series=false;
+  // 0 = sin mínimo, 1 = Buena, 2 = Muy buena, 3 = Excelente (con medios pasos entre)
+  const map=(x,st)=>x<=0?0:x<1?st[0]*x:x<2?st[0]+(st[1]-st[0])*(x-1):x<3?st[1]+(st[2]-st[1])*(x-2):st[2];
+  const t=box.querySelector('.ticks');['Sin mínimo','Buena','Muy buena','Excelente'].forEach((w,k)=>{const sp=document.createElement('span');sp.style.left=(k/3*100)+'%';sp.innerHTML=`<b>${w}</b>`;sp.onclick=()=>{r.value=k;upd()};t.appendChild(sp)});
+  function upd(){paintRange(r);const x=parseFloat(r.value),i=Math.floor(x+0.001)-1,eff=series?'tmdb':who;
+    const w=box.querySelector('.w'),n=box.querySelector('.n');box.querySelector('.note').hidden=!(series&&who!=='tmdb');
+    box.querySelector('[data-who]').textContent=eff==='both'?'según los dos':eff==='lb'?'según los cinéfilos':'según el público';
+    if(x<=0){w.textContent='Sin mínimo';w.classList.add('none');n.textContent='';sum.innerHTML='<span class="x">Sin mínimo</span>';return}
+    w.classList.remove('none');w.textContent=i>=0?WORDS[Math.min(i,2)]:'Al menos';
+    const a=SCALES.tmdb.fmt(+map(x,SCALES.tmdb.stops).toFixed(1)),b=SCALES.lb.fmt(+map(x,SCALES.lb.stops).toFixed(1));
+    n.textContent=eff==='both'?`${a} y ${b}`:eff==='lb'?b:a;
+    sum.innerHTML=(i>=0?WORDS[Math.min(i,2)]+' ':'')+`<span class="x">· ${n.textContent}</span>`;
+    t.querySelectorAll('span').forEach((sp,k)=>sp.classList.toggle('at',k===Math.floor(x+0.001)));}
+  r.addEventListener('input',upd);
+  box.querySelectorAll('[data-s]').forEach(s=>s.onclick=()=>{who=s.dataset.s;box.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===s));upd()});
+  document.querySelector('[data-for="b"]').querySelectorAll('span').forEach(b=>b.onclick=()=>{series=b.dataset.f==='series';b.parentNode.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===b));upd()});
+  r.value=2;upd();
+})();
+</script>
+</body>
+</html>
