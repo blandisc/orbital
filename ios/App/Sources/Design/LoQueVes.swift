@@ -261,8 +261,10 @@ struct WatchingGenres: View {
                         let frame = geo[plot]
                         // Al centro exacto de la dona: el porcentaje pegado a su número y el nombre debajo.
                         VStack(spacing: 0) {
-                            Text(verbatim: "\(current.count * 100 / total)%").font(DS.TextRecipe.stat.font).foregroundStyle(current.color)
-                                .monospacedDigit().contentTransition(.numericText())
+                            // En un renglón: el % más chico, pegado a la cifra, y si no cabe se encoge (con «38%» el % caía abajo).
+                            Text("\(Text(verbatim: "\(current.count * 100 / total)"))\(Text(verbatim: "%").font(DS.TextRecipe.cardTitle.font))")
+                                .font(DS.TextRecipe.stat.font).foregroundStyle(current.color)
+                                .monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                             current.label.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                         }
                         .frame(width: frame.width * DS.Watching.donutHole * DS.Watching.donutLabel)
