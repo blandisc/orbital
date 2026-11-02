@@ -99,22 +99,44 @@ struct DSGroupLabel: View {
     }
 }
 
-/// Las temporadas de una serie en cápsulas «T1, T2…» (decisión de Fernando, 31 oct 2026): la misma pieza en la ficha, Mi
-/// media, la hoja de episodios y el panel del reproductor. Botones nativos en cápsula, la elegida resaltada; si no caben, se
-/// deslizan y la elegida queda a la vista. `0` son los especiales.
+/// Las temporadas de una serie en una lista desplegable nativa («Temporada 3 ⌃⌄»), decisión de Fernando (1 nov 2026): en la
+/// ficha, Mi media y la hoja de episodios. Las cápsulas «T1, T2…» quedan solo en el reproductor (`DSSeasonPicker`). Un
+/// `Menu` con `Picker` (la elegida con su ✓), en la cápsula de los secundarios. `0` son los especiales.
+struct DSSeasonMenu: View {
+    let seasons: [Int]
+    @Binding var selection: Int
+
+    var body: some View {
+        Menu {
+            Picker(selection: $selection) {
+                ForEach(seasons, id: \.self) { Self.name($0).tag($0) }
+            } label: { EmptyView() }
+        } label: {
+            HStack(spacing: DS.Space.s2) {
+                Self.name(selection).recipe(.labelLarge, color: DS.text).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+            }
+        }
+        .dsSecondaryButton()
+        .sensoryFeedback(.selection, trigger: selection)
+        .accessibilityIdentifier("season-menu")
+    }
+
+    static func name(_ season: Int) -> Text { season == 0 ? Text("Especiales") : Text("Temporada \(season)") }
+}
+
+/// Las temporadas en cápsulas «T1, T2…», solo en el panel de episodios del reproductor (sobre el video, siempre la versión
+/// oscura). En la ficha, Mi media y la hoja de episodios va `DSSeasonMenu` (Fernando, 1 nov 2026). Botones nativos en
+/// cápsula, la elegida resaltada; si no caben, se deslizan y la elegida queda a la vista. `0` son los especiales.
 struct DSSeasonPicker: View {
     let seasons: [Int]
     @Binding var selection: Int
-    /// El margen a los lados del contenido (la ficha y Mi media van de orilla a orilla con el margen de la pantalla).
-    var inset: CGFloat = 0
-    /// Sobre el video (el panel del reproductor): siempre la versión oscura.
-    var onVideo = false
     /// El valor actual como dato de la vista (ver `DSSegmented`).
     private let current: Int
     @State private var scrolled: Int?
 
-    init(seasons: [Int], selection: Binding<Int>, inset: CGFloat = 0, onVideo: Bool = false) {
-        self.seasons = seasons; _selection = selection; self.inset = inset; self.onVideo = onVideo; current = selection.wrappedValue
+    init(seasons: [Int], selection: Binding<Int>) {
+        self.seasons = seasons; _selection = selection; current = selection.wrappedValue
     }
 
     var body: some View {
@@ -139,16 +161,13 @@ struct DSSeasonPicker: View {
             }
             .scrollTargetLayout()
         }
-        .contentMargins(.horizontal, inset, for: .scrollContent)
         .fixedSize(horizontal: false, vertical: true)
         .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         .scrollPosition(id: $scrolled, anchor: .center)
         .onChange(of: current, initial: true) { _, season in scrolled = season }
         .sensoryFeedback(.selection, trigger: current)
-        .environment(\.colorScheme, onVideo ? .dark : colorScheme)
+        .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("season-picker")
     }
-
-    @Environment(\.colorScheme) private var colorScheme
 }

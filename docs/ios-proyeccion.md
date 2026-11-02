@@ -91,7 +91,8 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 - Esperas: `DSInlineProgress(text:)` junto a lo que lo pidió; `DSLoadingState` para un área; `DSEmptyState` vacío.
 - Lo elegido: `.dsSelectionRing(_:)` en el color del texto, del grueso `DS.Stroke.selected` (líneas: `DS.Stroke.hairline,
   regular, selected, focus`).
-- `DSSeasonPicker`: las temporadas en cápsulas «T1, T2…», igual en la ficha, Mi media, la hoja de episodios y el reproductor.
+- `DSSeasonMenu`: las temporadas en una lista desplegable nativa («Temporada 3 ⌃⌄») en la ficha, Mi media y la hoja de
+  episodios. `DSSeasonPicker`: las cápsulas «T1, T2…», solo en el panel de episodios del reproductor (Fernando, 1 nov 2026).
 - `DSGroupLabel`: el rótulo de un grupo. `HeroSkeleton`: la portada mientras llega.
 - Opacidad: `DS.Opacity.disabled, dimmed, faint, pressed, selectedFill`. Movimiento: `DS.Motion.fade` (solo opacidad, también
   con «Reducir movimiento»), `snap`, `reveal`, `appear(_:)` para tarjetas que entran. Sombras: `DS.Elevation.low/medium/high/
@@ -133,7 +134,7 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | `PageDots` | Puntos de un carrusel | Inicio |
 | `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto (sin cambio, nada: un «=» suelto parecía un error) | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
-| `DSOptionMenu` | Menú nativo para elegir entre muchas opciones; `compact`, del alto de un control para ir en un renglón junto a otra cápsula | Ficha › temporada (compacto, a la izquierda; la versión de la serie, la cápsula gemela a la derecha) |
+| `DSSeasonMenu` | Menú nativo con las temporadas, en la cápsula de los secundarios | Ficha › temporada (a la izquierda; la versión de la serie, la cápsula gemela a la derecha), Mi media, hoja de episodios |
 | `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
 | `VoiceCommandBar`, `VoiceChoices` | La voz del control: el micrófono con lo que oyó, la respuesta y lo que entendió; y, si tu Orbital no supo cuál, las opciones para tocar (`VoiceAssistant.choose`) | `RemoteSheet` |
 | `GuideSteps`, `GuidePage`, `GuidePiece`, `GuideNumberedStep`, `GuideCode`, `AddonLabel`, `GuideArt` (`Design/Guide.swift`, tokens `DS.Guide`) | La guía de la primera vez y la hoja de «Usar con tu Orbital»: rayitas de paso, página con su botón abajo, pieza con ícono y etiqueta, paso numerado, el código de Trakt, un complemento y la ilustración de una página del tutorial (ícono grande en su recuadro) | Guía, Ajustes › Orbital en la TV |

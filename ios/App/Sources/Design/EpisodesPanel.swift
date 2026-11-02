@@ -29,8 +29,8 @@ struct EpisodesPanel: View {
                     .accessibilityIdentifier("episodes-done")
             }
             if seasons.count > 1 {
-                // La misma pieza de temporadas de la ficha, Mi media y la hoja de episodios, en su versión sobre el video (D8).
-                DSSeasonPicker(seasons: seasons.map(\.season), selection: Binding { shown ?? 0 } set: { season = $0 }, onVideo: true)
+                // Las cápsulas «T1, T2…» van solo aquí, sobre el video; la ficha usa la lista desplegable (Fernando, 1 nov 2026).
+                DSSeasonPicker(seasons: seasons.map(\.season), selection: Binding { shown ?? 0 } set: { season = $0 })
             }
             ScrollViewReader { proxy in
                 ScrollView {

@@ -308,9 +308,8 @@ struct MiMediaTitleView: View {
     private func episodes(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if seasons.count > 1 {
-                // Como la ficha: las temporadas en cápsulas «T1, T2…», que se deslizan si no caben.
-                DSSeasonPicker(seasons: seasons.map(\.season), selection: $season, inset: DS.Space.gutter)
-                    .padding(.horizontal, -DS.Space.gutter)
+                // Como la ficha: las temporadas en la lista desplegable.
+                DSSeasonMenu(seasons: seasons.map(\.season), selection: $season)
             }
             if seasons.isEmpty { DSLoadingState() }
             ForEach(seasons.first(where: { $0.season == season })?.rows ?? []) { row in episodeRow(t, row, model) }

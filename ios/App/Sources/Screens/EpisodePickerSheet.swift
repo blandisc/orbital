@@ -45,9 +45,9 @@ struct EpisodePickerSheet: View {
 
     private func episodes(_ seasons: [Season]) -> [Episode] { seasons.first { $0.season == season }?.episodes ?? [] }
 
-    /// Las temporadas en cápsulas «T1, T2…» (la misma pieza que la ficha y Mi media).
+    /// Las temporadas en la lista desplegable (la misma pieza que la ficha y Mi media).
     private func seasonPicker(_ seasons: [Season]) -> some View {
-        DSSeasonPicker(seasons: seasons.map(\.season), selection: Binding(get: { season ?? seasons.first?.season ?? 1 }, set: { season = $0 }))
+        DSSeasonMenu(seasons: seasons.map(\.season), selection: Binding(get: { season ?? seasons.first?.season ?? 1 }, set: { season = $0 }))
             .padding(.vertical, DS.Space.s2)
     }
 
