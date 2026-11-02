@@ -106,10 +106,10 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
     queue.forEach((item) => { const src = item.hero || item.image; if (src) new Image().src = src; });
 
-    // Una fila más, con el mismo título que «A continuación» (en el iPhone el rótulo en mayúsculas agrupa varias filas) y,
-    // a la derecha, cuántos juegos hay.
+    // Una sección, como en el iPhone (Fernando, 1 nov 2026): el rótulo con su ícono y su línea marca que de aquí para abajo
+    // son tus juegos y no lo que sigue viendo; a la derecha, cuántos juegos hay.
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
-      end: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
+      level: "section", icon: "gamepad", meta: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
     }));
     model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
     mount(consolesTrack, model.consoles.map((c, i) => ConsoleTile(c, {

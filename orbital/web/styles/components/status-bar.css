@@ -163,15 +163,20 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .wifi--weak .wifi__arc--2, .wifi--weak .wifi__arc--3, .wifi--fair .wifi__arc--3 { stroke: var(--color-text-faint); }
 
 /* Batería: pila con su nivel; al cargar, el rayo va dentro (antes, un rayo verde al lado). */
-.battery { display: inline-flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums; }
+/* En su cápsula de cristal, como «Buscar»: se lee sobre cualquier fondo (sobre un arte claro, la pila gris se perdía). */
+.battery {
+  display: inline-flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums;
+  padding: .35rem .8rem .35rem .7rem; border-radius: var(--radius-pill);
+  background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+}
 .battery__body {
   position: relative; display: grid; place-items: center; width: 1.85rem; height: .95rem;
-  border: 1.5px solid var(--color-text-muted); border-radius: var(--radius-xs);
+  border: 1.5px solid var(--color-text); border-radius: var(--radius-xs);
 }
-.battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 var(--radius-2xs) var(--radius-2xs) 0; }
-.battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; width: calc(var(--battery-level, 0%) - 4px); background: var(--color-text-muted); border-radius: var(--radius-2xs); transition: width var(--duration-slow) var(--ease-out); }
+.battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text); border-radius: 0 var(--radius-2xs) var(--radius-2xs) 0; }
+.battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; width: calc(var(--battery-level, 0%) - 4px); background: var(--color-text); border-radius: var(--radius-2xs); transition: width var(--duration-slow) var(--ease-out); }
 .battery__body .icon--fill { position: relative; width: var(--icon-xs); height: var(--icon-xs); color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
-.battery__percent { color: var(--color-text-muted); }
+.battery__percent { color: var(--color-text); }
 .battery--low { color: var(--color-danger); }
 .battery--low .battery__percent { color: var(--color-danger); }
 .battery--low .battery__body { border-color: var(--color-danger); }

@@ -109,8 +109,12 @@
   --color-pad-x: var(--palette-pad-blue);
   --color-pad-y: var(--palette-pad-yellow);
   /* Íconos de botón (glyph.css): disco/tecla oscuros con un aro fino, iguales en toda la app. */
-  --glyph-bg: var(--palette-ink-850);
-  --glyph-key-top: var(--palette-ink-700);
+  /* Los glifos del mando y las teclas (LB, RB, LT, RT, A…) son de cristal, como los botones (Fernando, 1 nov 2026): la misma
+     luz que baja, un filo claro arriba y, debajo, un oscuro apenas para leerse sobre un arte claro. Sobre algo blanco (el
+     botón principal, el foco invertido) el disco va sólido (--glyph-bg-solid): el cristal ahí no se vería. */
+  --glyph-bg: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .06)), rgba(24, 24, 28, .42);
+  --glyph-bg-solid: var(--palette-ink-850);
+  --edge-glyph: inset 0 1px 0 rgba(255, 255, 255, .32);
   --glyph-ring: rgba(255, 255, 255, .16);
 
   /* El fondo toma el tono del juego, muy oscurecido, y solo arriba: como el iPhone (Backdrop), la luz del arte entra desde
