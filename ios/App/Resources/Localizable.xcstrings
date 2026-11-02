@@ -4096,6 +4096,17 @@
         "en": {
           "stringUnit": {
             "state": "translated",
+            "value": "Loading"
+          }
+        }
+      }
+    },
+    "Cargando la batería": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
             "value": "Charging"
           }
         }

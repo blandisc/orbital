@@ -79,7 +79,7 @@ struct ConsoleStatePanel: View {
                         HStack {
                             Text(verbatim: "\(percent) %").recipe(.section)
                             Spacer()
-                            if s.plugged { Text("Cargando").recipe(.caption) }
+                            if s.plugged { Text("Cargando la batería").recipe(.caption) }   // su propia clave: «Cargando» a secas es una carga (Loading)
                             else if let minutes = s.minutesLeft {
                                 Text(verbatim: String(format: Strings.tr("%@ de batería", language: language), Strings.duration(minutes))).recipe(.caption)
                             }
