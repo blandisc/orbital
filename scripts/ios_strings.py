@@ -19,6 +19,18 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Widgets del 1 nov: «Lo nuevo de lo tuyo», «Seguir viendo» con «Aquí» y «En la TV», el mosaico, el Simpson del día y «Viendo en la TV».
+    "Lo que ya salió de tus series y lo que viene.": "What's out from your shows and what's coming.", "Madrugada": "Overnight",
+    "Cuando salga algo de tus series, aparece aquí.": "When something from your shows comes out, it shows up here.",
+    "Nuevo · ya se puede ver": "New · ready to watch", "%@ %@": "%@ %@", "Nada esta semana": "Nothing this week", "hoy": "today",
+    "día": "day", "días": "days", "%@ %@ · %@ %@": "%@ %@ · %@ %@", "Nada nuevo esta semana": "Nothing new this week",
+    "Un Simpson del día": "Simpsons of the day", "Un episodio distinto cada día. Tócalo y lo pone.": "A different episode every day. Tap to play it.",
+    "Episodio del día": "Episode of the day", "Mosaico de una lista": "List mosaic",
+    "Los pósters de la lista que elijas, como el muro de Explorar.": "The posters of the list you pick, like the Explore wall.",
+    "Abre Explorar una vez y aquí salen tus listas.": "Open Explore once and your lists show up here.",
+    "Sigue viendo donde ibas, aquí o en la TV.": "Keep watching where you left off, here or on the TV.", "Mandando…": "Sending…",
+    "La TV no contesta": "The TV isn't answering", "Abrir en Orbital": "Open in Orbital", "Enlace": "Link", "Tipo": "Type", "Episodio": "Episode",
+    "Elegir lista": "Choose list", "La lista de Explorar que enseña el mosaico.": "The Explore list the mosaic shows.", "Lista": "List",
     # Pedidos del 31 oct (tarde): «No recomendar por esta», búsqueda avanzada, géneros nuevos.
     "Regresar a Explorar": "Back to Explore", "Limpiar la búsqueda avanzada": "Clear advanced search", "Sin escribir nombres: encuentra por género, época, calificación, premios y más": "No names needed: find by genre, era, rating, awards and more", "%@ o %@": "%@ or %@", "Salen las que tengan cualquiera de estos géneros, no solo las que tengan todos.": "Shows titles with any of these genres, not only those with all of them.", "Historia": "History", "Bélica": "War", "Western": "Western", "Musical": "Musical", "No recomendar por esta": "Don't recommend based on this", "Ya no recomiendo por esta": "No more picks based on this",
     "Lo mínimo que quieres": "The minimum you want", "o más · TMDB": "or more · TMDB",

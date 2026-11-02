@@ -35,7 +35,6 @@ struct SimpsonsProvider: TimelineProvider {
     /// El idioma de la app (el que dejó en el snapshot de «Lo siguiente para ti»).
     private static var language: String { WidgetStore.load()?.language ?? "es" }
 
-    static let sample = SimpsonsOfTheDay.Day(day: Date(), season: 6, episode: 12, title: "Homer the Great", videoID: "tt0096697:6:12", still: "")
 }
 
 struct SimpsonsWidget: Widget {
@@ -98,9 +97,14 @@ struct SimpsonsDayView: View {
         Text(verbatim: (day?.title).flatMap { $0.isEmpty ? nil : $0 } ?? "Los Simpson")
             .font(DS.font(.md, weight: .heavy)).lineLimit(lines).minimumScaleFactor(DS.Widget.labelShrink)
         if let day {
-            Text(verbatim: entry.language == "en" ? "S\(day.season) · E\(day.episode)" : "T\(day.season) · E\(day.episode)")
+            Text(verbatim: episodeLabel(day))
                 .font(DS.font(.xs, weight: .semibold)).monospacedDigit()
         }
+    }
+
+    /// «T6 · E12» (en inglés, «S6 · E12»).
+    private func episodeLabel(_ day: SimpsonsOfTheDay.Day) -> String {
+        (entry.language == "en" ? "S" : "T") + "\(day.season) · E\(day.episode)"
     }
 
     private func pill(_ title: Text, symbol: Image, solid: Bool) -> some View {

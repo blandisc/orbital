@@ -321,19 +321,3 @@ private struct ReleasesInline: View {
         }
     }
 }
-
-// MARK: Muestra
-
-extension WidgetSnapshot {
-    /// Para la galería de widgets y la vista previa: ayer, hoy (ya salió), hoy más tarde, mañana y el viernes.
-    static func sampleReleases(now: Date = Date()) -> [UpcomingEpisode] {
-        let calendar = Calendar.current, today = calendar.startOfDay(for: now)
-        func at(_ days: Int, hour: Int) -> Date { calendar.date(byAdding: .hour, value: hour, to: calendar.date(byAdding: .day, value: days, to: today) ?? today) ?? today }
-        func episode(_ title: String, _ label: String, _ days: Int, _ hour: Int) -> UpcomingEpisode {
-            let aired = at(days, hour: hour)
-            return UpcomingEpisode(title: title, episodeLabel: label, date: calendar.startOfDay(for: aired), aired: aired, atDawn: false)
-        }
-        return [episode("Slow Horses", "T5 E2", -1, 20), episode("Andor", "T2 E7", 0, 0), episode("The Bear", "T4 E3", 0, 21),
-                episode("Severance", "T3 E1", 1, 20), episode("Shōgun", "T2 E4", 4, 21)]
-    }
-}
