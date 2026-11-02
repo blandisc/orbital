@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calificación del filtro avanzado · propuesta</title>
+<style>
+  :root{--bg:#0c0c0e;--card:#18181c;--card2:#1e1e23;--line:#2a2a30;--muted:#a3a3ab;--dim:#6b6b73;--text:#f5f4f0;--teal:#5fd6c6;--mint:#6fdba4;
+    --tmdb:#01b4e4;--lb:#00e054;--lbo:#ff8000;--lbb:#40bcf4;--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sys);line-height:1.45}
+  main{max-width:1180px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-size:34px;margin:0 0 6px} h2{font-size:24px;margin:56px 0 6px} .why{color:var(--teal);font-size:14px;font-weight:600;margin:0 0 4px}
+  .lead{color:var(--muted);font-size:17px;max-width:820px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:26px;margin-top:22px}
+  .state h3{font-size:15px;margin:0 0 4px} .state p{color:var(--muted);font-size:13px;margin:0 0 10px;min-height:38px}
+  .phone{border-radius:38px;background:#000;padding:10px;border:1px solid #222;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+  .screen{border-radius:29px;background:#16161a;padding:16px 14px 18px;min-height:560px}
+  .eyebrow{color:var(--muted);font-size:13px;margin-bottom:8px}
+  .sum{background:var(--card2);border-radius:16px;padding:12px 14px;margin-bottom:12px}
+  .sum .t{font-size:12px;color:var(--muted)} .sum .v{font-size:19px;font-weight:800;margin-top:2px}
+  .sum .v .x{color:var(--dim);font-weight:700}
+  .src{background:var(--card);border-radius:16px;padding:12px;margin-bottom:10px;border:1px solid transparent}
+  .src.on{border-color:var(--mint)} .src.off{opacity:.45}
+  .hd{display:flex;align-items:center;gap:8px;margin-bottom:2px} .hd b{font-size:15px} .hd .who{color:var(--muted);font-size:12px;margin-left:auto}
+  .logo-t{font-weight:900;font-size:11px;letter-spacing:.08em;color:#06202a;background:linear-gradient(90deg,#90cea1,#01b4e4);border-radius:5px;padding:2px 5px}
+  .dots{display:inline-flex;gap:3px}.dots i{width:7px;height:7px;border-radius:50%;display:block}
+  .scale{color:var(--dim);font-size:11px;margin:2px 0 8px}
+  .lv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .lv span{background:var(--bg);border-radius:11px;padding:8px 2px;text-align:center;font-size:12px;color:var(--muted);border:2px solid transparent;line-height:1.25}
+  .lv span b{display:block;font-size:13px;color:var(--text)} .lv span small{display:block;font-size:11px;color:var(--dim)}
+  .lv span.sel{border-color:var(--mint);background:rgba(111,219,164,.12)} .lv span.sel small{color:var(--mint)}
+  .lb .lv span.sel{border-color:var(--lb);background:rgba(0,224,84,.10)} .lb .lv span.sel small{color:var(--lb)}
+  .ex{font-size:11px;color:var(--dim);margin-top:8px}
+  .fine{margin-top:8px;font-size:12px;color:var(--teal)}
+  .slider{height:6px;border-radius:3px;background:var(--line);margin:10px 0 4px;position:relative} .slider i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--mint)}
+  .slider em{position:absolute;top:-7px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .note{font-size:12px;color:var(--muted);background:rgba(64,188,244,.08);border-radius:10px;padding:8px 10px;margin-top:8px}
+  .tile{background:var(--card);border-radius:16px;padding:14px;text-align:center;width:150px}
+  .tile .ic{color:var(--mint);font-size:22px} .tile b{display:block;font-size:15px;margin-top:4px} .tile span{font-size:12px;color:var(--muted)}
+  .tiles{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+  .ask{background:var(--card);border-radius:16px;padding:16px 20px;margin-top:18px;color:var(--muted)} .ask b{color:var(--text)}
+  ul.why2{color:var(--muted);font-size:14px} ul.why2 li{margin:6px 0} ul.why2 b{color:var(--text)}
+</style>
+</head>
+<body>
+<main>
+  <p class="why">Búsqueda avanzada · Calificación · 1 nov 2026</p>
+  <h1>La calificación, con sentido</h1>
+  <p class="lead">Dos opiniones distintas, cada una con su escala, pero que se leen igual: <b>qué tan buena</b> la quieres en palabras, y debajo el número de cada una. Arriba, un resumen de lo que elegiste. «Cualquiera» deja de existir: se dice <b>«Sin mínimo»</b>, que es lo que significaba.</p>
+  <ul class="why2">
+    <li><b>El público (TMDB):</b> millones de votos, de 10. Buena = 7, Muy buena = 7.5, Excelente = 8.</li>
+    <li><b>Los cinéfilos (Letterboxd):</b> gente que ve mucho cine y califica más duro, de 5 estrellas. Buena = ★3.5, Muy buena = ★3.8, Excelente = ★4.2. Las mismas palabras quieren decir lo mismo en los dos.</li>
+    <li>Cada uno trae <b>un ejemplo conocido</b> para darle escala (Dune: Part Two tiene 8.1 y ★4.4).</li>
+    <li>Los dos se pueden usar a la vez: tienen que cumplir <b>ambos</b>.</li>
+  </ul>
+
+  <h2>Los estados</h2>
+  <div class="grid">
+
+    <div class="state"><h3>1 · Sin mínimo (al abrir)</h3><p>Nada elegido: el resumen lo dice y los dos están en «Sin mínimo».</p>
+      <div class="phone"><div class="screen">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v"><span class="x">Sin mínimo</span></div></div>
+        <div class="src"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos</div>
+          <div class="lv"><span class="sel">Sin<small>mínimo</small></span><span><b>Buena</b><small>7+</small></span><span><b>Muy buena</b><small>7.5+</small></span><span><b>Excelente</b><small>8+</small></span></div>
+          <div class="ex">Dune: Part Two tiene 8.1</div></div>
+        <div class="src lb"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">de ★5 · solo películas</span></div><div class="scale">Letterboxd · califican más duro</div>
+          <div class="lv"><span class="sel">Sin<small>mínimo</small></span><span><b>Buena</b><small>★3.5+</small></span><span><b>Muy buena</b><small>★3.8+</small></span><span><b>Excelente</b><small>★4.2+</small></span></div>
+          <div class="ex">Dune: Part Two tiene ★4.4</div></div>
+      </div></div></div>
+
+    <div class="state"><h3>2 · Solo el público</h3><p>Eliges «Muy buena» en TMDB: el resumen lo dice en palabras y en número.</p>
+      <div class="phone"><div class="screen">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v">Muy buena <span class="x">· 7.5+ del público</span></div></div>
+        <div class="src on"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos</div>
+          <div class="lv"><span>Sin<small>mínimo</small></span><span><b>Buena</b><small>7+</small></span><span class="sel"><b>Muy buena</b><small>7.5+</small></span><span><b>Excelente</b><small>8+</small></span></div>
+          <div class="fine">Ajustar el número ›</div></div>
+        <div class="src lb"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">de ★5 · solo películas</span></div><div class="scale">Letterboxd · califican más duro</div>
+          <div class="lv"><span class="sel">Sin<small>mínimo</small></span><span><b>Buena</b><small>★3.5+</small></span><span><b>Muy buena</b><small>★3.8+</small></span><span><b>Excelente</b><small>★4.2+</small></span></div></div>
+      </div></div></div>
+
+    <div class="state"><h3>3 · Solo los cinéfilos</h3><p>Eliges «Excelente» en Letterboxd: se avisa que con eso salen solo películas.</p>
+      <div class="phone"><div class="screen">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v">Excelente <span class="x">· ★4.2+ de los cinéfilos</span></div></div>
+        <div class="src"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos</div>
+          <div class="lv"><span class="sel">Sin<small>mínimo</small></span><span><b>Buena</b><small>7+</small></span><span><b>Muy buena</b><small>7.5+</small></span><span><b>Excelente</b><small>8+</small></span></div></div>
+        <div class="src lb on"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">de ★5 · solo películas</span></div><div class="scale">Letterboxd · califican más duro</div>
+          <div class="lv"><span>Sin<small>mínimo</small></span><span><b>Buena</b><small>★3.5+</small></span><span><b>Muy buena</b><small>★3.8+</small></span><span class="sel"><b>Excelente</b><small>★4.2+</small></span></div>
+          <div class="note">Con los cinéfilos salen solo películas: Letterboxd no califica series.</div></div>
+      </div></div></div>
+
+    <div class="state"><h3>4 · Los dos</h3><p>Buena para el público y Muy buena para los cinéfilos: tiene que cumplir ambas.</p>
+      <div class="phone"><div class="screen">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación · las dos</div><div class="v">7+ <span class="x">y</span> ★3.8+</div></div>
+        <div class="src on"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos</div>
+          <div class="lv"><span>Sin<small>mínimo</small></span><span class="sel"><b>Buena</b><small>7+</small></span><span><b>Muy buena</b><small>7.5+</small></span><span><b>Excelente</b><small>8+</small></span></div></div>
+        <div class="src lb on"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">de ★5 · solo películas</span></div><div class="scale">Letterboxd · califican más duro</div>
+          <div class="lv"><span>Sin<small>mínimo</small></span><span><b>Buena</b><small>★3.5+</small></span><span class="sel"><b>Muy buena</b><small>★3.8+</small></span><span><b>Excelente</b><small>★4.2+</small></span></div></div>
+      </div></div></div>
+
+    <div class="state"><h3>5 · Con «Series» elegido</h3><p>Los cinéfilos se apagan y dicen por qué; no se pueden elegir.</p>
+      <div class="phone"><div class="screen">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v">Excelente <span class="x">· 8+ del público</span></div></div>
+        <div class="src on"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos</div>
+          <div class="lv"><span>Sin<small>mínimo</small></span><span><b>Buena</b><small>7+</small></span><span><b>Muy buena</b><small>7.5+</small></span><span class="sel"><b>Excelente</b><small>8+</small></span></div></div>
+        <div class="src lb off"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">solo películas</span></div><div class="scale">Letterboxd no califica series</div>
+          <div class="lv"><span class="sel">Sin<small>mínimo</small></span><span><b>Buena</b><small>★3.5+</small></span><span><b>Muy buena</b><small>★3.8+</small></span><span><b>Excelente</b><small>★4.2+</small></span></div></div>
+      </div></div></div>
+
+    <div class="state"><h3>6 · Ajustar el número</h3><p>Para lo fino: «Ajustar el número» abre el deslizador; la palabra se acomoda sola.</p>
+      <div class="phone"><div class="screen">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="sum"><div class="t">Calificación</div><div class="v">Muy buena <span class="x">· 7.8+ del público</span></div></div>
+        <div class="src on"><div class="hd"><span class="logo-t">TMDB</span><b>El público</b><span class="who">de 10</span></div><div class="scale">Millones de votos</div>
+          <div class="lv"><span>Sin<small>mínimo</small></span><span><b>Buena</b><small>7+</small></span><span class="sel"><b>Muy buena</b><small>7.8+</small></span><span><b>Excelente</b><small>8+</small></span></div>
+          <div class="slider"><i style="width:78%"></i><em style="left:calc(78% - 10px)"></em></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim)"><span>Sin mínimo</span><span style="color:var(--text);font-weight:700">7.8</span><span>10</span></div>
+          <div class="fine">Listo ›</div></div>
+        <div class="src lb"><div class="hd"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="who">de ★5 · solo películas</span></div><div class="scale">Letterboxd · califican más duro</div>
+          <div class="lv"><span class="sel">Sin<small>mínimo</small></span><span><b>Buena</b><small>★3.5+</small></span><span><b>Muy buena</b><small>★3.8+</small></span><span><b>Excelente</b><small>★4.2+</small></span></div></div>
+      </div></div></div>
+  </div>
+
+  <h2>Y en el cuadro de «Calificación» del filtro</h2>
+  <p class="lead">El mosaico del cajón y el de los resultados dicen lo elegido en corto:</p>
+  <div class="tiles">
+    <div class="tile"><div class="ic">☆</div><b>Calificación</b><span>Sin mínimo</span></div>
+    <div class="tile"><div class="ic">★</div><b>Calificación</b><span>Muy buena · 7.5+</span></div>
+    <div class="tile"><div class="ic">★</div><b>Calificación</b><span>Excelente · ★4.2+</span></div>
+    <div class="tile"><div class="ic">★</div><b>Calificación</b><span>7+ y ★3.8+</span></div>
+  </div>
+
+  <h2>Lo que necesito que decidas</h2>
+  <div class="ask"><ol>
+    <li><b>¿Te gustan las palabras</b> (Buena · Muy buena · Excelente) con el número debajo, en las dos?</li>
+    <li><b>¿Los números de Letterboxd</b> (★3.5 · ★3.8 · ★4.2) te hacen sentido, o los prefieres de media en media (★3.5 · ★4 · ★4.5)?</li>
+    <li><b>«Ajustar el número»</b> escondido hasta que lo pidas, ¿sí o lo quitamos?</li>
+  </ol></div>
+</main>
+</body>
+</html>
