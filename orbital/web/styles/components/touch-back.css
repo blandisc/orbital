@@ -15,3 +15,7 @@
 [data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
 [data-input="touch"]:not([data-overlay="true"]) .touch-back--menu,
 [data-input="touch"][data-overlay-menu="true"] .touch-back--menu { display: inline-flex; }
+/* Con una hoja del lado abierta, «Atrás» entra en su esquina (la hoja empieza donde él: antes quedaba montado en su borde). */
+body:has(.side-panel:not([hidden]):not(.side-panel--bottom)) .touch-back:not(.touch-back--menu) {
+  top: calc(var(--space-5) + var(--safe-y, 0px) + var(--space-4)); right: calc(var(--page-gutter) + var(--space-4));
+}

@@ -1170,7 +1170,9 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
                actions: list[tuple[str, str]] | None = None) -> str:
     """Tarjeta abajo a la derecha: «Siguiente episodio» con la cuenta atrás en un anillo, o «¿Sigues viendo?»."""
     targets["card"] = []
-    w, h = 660, (206 if TOUCH else 176)
+    # Sin renglón de arriba («¿Sigues viendo?» sin nombre del episodio), la tarjeta es más baja: antes quedaba un hueco.
+    short = 0 if eyebrow or seconds is not None else 32
+    w, h = 660, (206 if TOUCH else 176) - short
     x, y = W - MARGIN - w, 870 - h
     lines = [rrect(x, y, w, h, 20, PANEL, "18")]
     tx = x + 32
@@ -1183,7 +1185,7 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     room = x + w - 32 - tx
     if eyebrow:
         lines.append(text(tx, y + 30, esc(fit(eyebrow, 22, room, "semi")), 22, MUTED, weight="semi"))
-    lines.append(text(tx, y + 62, esc(fit(title, 30, room, "bold")), 30, weight="bold"))
+    lines.append(text(tx, y + 62 - short, esc(fit(title, 30, room, "bold")), 30, weight="bold"))
     if TOUCH:  # botones que se tocan: «Seguir viendo», «Salir»… (la acción: la tecla que harían)
         touch = [(label.removeprefix("Mantén: ").capitalize(), key.lower()) for key, label in actions or []]
         lines.append(pills(touch, y + h - 84, left=tx, layer="card", h=64))

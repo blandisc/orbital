@@ -411,3 +411,43 @@ def test_every_side_sheet_speaks_with_one_title_size(page):
         page.wait_for_timeout(500)
     assert not any(question for _, question in sizes.values()), sizes
     assert len({size for size, _ in sizes.values()}) == 1, sizes
+
+
+def test_special_situations_look_like_the_rest(page, server):
+    """Las pantallas que solo salen en situaciones especiales (Fernando, 2 nov): sin internet, buscar algo que no existe y
+    con un juego abierto. Nada partido ni encimado, y un aviso largo se parte en título y detalle (no con «…»)."""
+    def offline(route):
+        res = route.fetch()
+        route.fulfill(response=res, body=json.dumps({**res.json(), "online": False}), content_type="application/json")
+    page.route("**/api/system", offline)
+    page.reload()  # el estado de la red se pide al arrancar
+    ready(page)
+    cuts = {}
+
+    def look(name):
+        page.wait_for_timeout(900)
+        found = page.evaluate(CLIPPED) + page.evaluate(OVERLAPS)
+        if found:
+            cuts[name] = found
+
+    page.keyboard.press("e")
+    page.keyboard.press("e")
+    page.locator(".toast__detail").first.wait_for(timeout=8000)
+    look("Sin internet")
+    assert not page.locator(".toast__title").first.inner_text().endswith("…")
+    page.keyboard.press("s")
+    page.wait_for_timeout(500)
+    page.keyboard.type("zqxjvw")
+    page.locator(".search__empty").wait_for(timeout=8000)
+    look("Buscar sin resultados")
+    page.keyboard.press("Escape")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    page.goto(f"{server}/?seccion=games")  # directo a Juegos (sin internet sigue)
+    ready(page)
+    page.locator('.games button.card[aria-label="Hollow Knight"]:visible').first.wait_for(timeout=8000)
+    page.keyboard.press("Enter")
+    page.locator(".launch").wait_for(timeout=5000)
+    look("Abriendo un juego")
+    _stop(server)
+    assert not cuts, f"Texto partido: {json.dumps(cuts, ensure_ascii=False, indent=1)}"

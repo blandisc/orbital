@@ -7,7 +7,7 @@ import { dictationBase, dictationProblem } from "../core/keyboard.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
-import { Pill } from "./ui.js";
+import { EmptyState, Pill } from "./ui.js";
 
 /**
  * Buscar juegos, películas y series con el mando, sin sufrir con títulos largos:
@@ -194,7 +194,9 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
         if (mine !== token) return;
         pending = "";
         showResults([...local, ...data.results.filter((r) => !picking || (r.kind || r.extra?.kind) === picking.kind || !picking.kind)]);
-        setHint(items.length ? count(items.length) : `Nada con «${q}». Prueba con otra palabra o menos letras.`);
+        setHint(items.length ? count(items.length) : "");
+        // Sin nada: el vacío del sistema (EmptyState) donde irían los resultados, no una frase chica a la derecha.
+        if (!items.length) mount(results, EmptyState({ icon: "search", title: `Nada con «${q}»`, text: "Prueba con otra palabra o menos letras.", className: "search__empty" }));
       } catch {
         if (mine !== token) return;
         pending = "";

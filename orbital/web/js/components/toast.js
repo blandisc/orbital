@@ -42,7 +42,15 @@ export function toneOf({ tone = "", error = false, voice = false, message = "" }
 export function linesOf(message, detail = "") {
   if (detail) return { title: message, detail };
   const cut = message.indexOf(" · ");
-  return cut > 0 ? { title: message.slice(0, cut), detail: message.slice(cut + 3) } : { title: message, detail: "" };
+  if (cut > 0) return { title: message.slice(0, cut), detail: message.slice(cut + 3) };
+  // Una frase larga con «Algo: lo demás» se parte ahí: el título en un renglón y el resto debajo (antes «Sin internet: ves lo
+  // último que se guardó; para ver algo necesitas conexión (o desca…» se cortaba con puntos suspensivos).
+  const colon = message.indexOf(": ");
+  if (message.length > 48 && colon > 0 && colon < 40) {
+    const rest = message.slice(colon + 2);
+    return { title: message.slice(0, colon), detail: rest.charAt(0).toUpperCase() + rest.slice(1) };
+  }
+  return { title: message, detail: "" };
 }
 
 export function createToast() {

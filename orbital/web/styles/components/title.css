@@ -111,14 +111,15 @@
 .title__avail-none { color: var(--color-text-muted); }
 
 .title__status { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
-/* Error al cargar: una píldora con su ícono y la franja roja (como los avisos), legible sobre el arte. */
+/* Error al cargar: como el aviso de error (toast--error): vidrio fuerte con un filo rojo y su ícono en rojo. Antes, una franja roja a la
+   izquierda: la única tarjeta de Orbital con esa franja. */
 .title__status--error {
   display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
   padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
-  background: var(--color-glass-strong); box-shadow: var(--shadow-overlay), var(--edge-glass), inset .3rem 0 0 var(--color-danger); backdrop-filter: var(--filter-glass);
+  background: var(--color-glass-strong); box-shadow: var(--shadow-overlay), inset 0 0 0 1px color-mix(in oklab, var(--color-danger) 45%, transparent); backdrop-filter: var(--filter-glass);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
-.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-danger); }
+.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: color-mix(in oklab, var(--color-danger) 18%, transparent); color: var(--color-danger); }
 .title__status-icon .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
 .title__status-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }

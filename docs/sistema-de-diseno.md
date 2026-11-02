@@ -116,6 +116,18 @@ Cada una corrigió algo que se veía distinto en una pantalla poco común; las q
 | Un texto que viene de afuera se dice en español y sin ruido: los cargos de TMDB («Producer» → «Producción», «Self» → «Como sí mismo»), el nombre de una captura sin lo que pone Windows | `tmdb.py · role_es`, `menus.js · captureName` | `test_tmdb.py`, `menus.test.mjs` |
 | Un pie no repite lo que ya dice su grupo (en «Películas», el año; no «Película · 2021») | `search.js` | — |
 
+| Un aviso largo con «Algo: lo demás» se parte en título y detalle; nunca termina en «…» | `toast.js · linesOf` | smoke · `test_special_situations_look_like_the_rest` |
+| Un vacío (no hay resultados, no hay nada todavía) es el `EmptyState` del sistema donde iría el contenido, no una frase chica a un lado | `search.js` (y las demás pantallas) | smoke · `test_special_situations_look_like_the_rest` |
+| Un error es vidrio fuerte con un filo rojo y su ícono en rojo (`toast--error`, `title__status--error`); ninguna tarjeta lleva franja de color a un lado | `toast.css`, `title.css` | — |
+| Con el dedo, «Atrás» entra en la esquina de la hoja abierta, no montado en su borde | `touch-back.css` | — |
+| El reproductor (mpv): una tarjeta sin renglón de arriba se acorta; sus capas se revisan pintándolas con el mpv de Orbital sobre un cuadro de prueba | `player_ui.upnext_ass` | — |
+
+Las situaciones especiales que se revisaron a mano el 2 nov: el arranque y «Tu consola» de la primera vez, sin internet (Inicio,
+Películas y series, TV en vivo), sin Stremio, la pantalla de carga con y sin arte, un juego abierto (el Inicio, el menú, sus opciones
+y el aviso al volver), el protector, Buscar sin resultados, Explorar y Películas y series sin poder cargar, con el dedo, conectar
+Trakt y Stremio, Actualizar Orbital, y el reproductor (reproduciendo, en pausa, adelantando, audio y subtítulos, volumen, avisos,
+«Saltar intro», «¿Sigues viendo?», «¿Salir?» y con el dedo).
+
 Las pantallas que recorre la prueba de texto partido: las cinco secciones, la ficha de un juego, el mazo, Decide por mí, el Filtro
 avanzado, Colecciones, Panel rápido, Jugadores, Buscar con resultados y las siete categorías de Ajustes, en la tele y en la Legion Go
 con la letra más grande.
