@@ -101,6 +101,25 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Entre botones de una fila | `--space-3` (`.button-row`) | Nunca se parte ni se corta |
 | Alturas | `--control-height` (botón), `--pill-height` (píldora), `--menu-row-height` (opción), `--touch-target` (el dedo) | — |
 
+### Reglas que salieron de recorrer todas las pantallas (2 nov 2026)
+
+Cada una corrigió algo que se veía distinto en una pantalla poco común; las que se pueden revisar solas tienen su prueba.
+
+| Regla | Dónde vive | Prueba |
+|---|---|---|
+| Una hoja del lado dice su título con un solo tamaño (`--type-heading`); el grande (`sheet__title--question`) es solo para una pregunta, un título que empieza con «¿». Un texto abajo no lo vuelve pregunta | `sheet.js` | smoke · `test_every_side_sheet_speaks_with_one_title_size` |
+| El origen de algo (Trakt, Letterboxd, Stremio, Orbital) es su logo en sus colores, a la altura de la letra, centrado con ella; nunca una placa de color con su nombre | `collection-card.js · SourceBadge`, `.source-logo` | — |
+| Lo que crece al enfocarse tiene su aire arriba y a los lados dentro de su caja: nunca se monta en el título de su fila ni se le corta la sombra | `home.css`, `title.css`, `game-page.css` | smoke · `test_no_text_is_cut_in_half` |
+| Una cuadrícula que se desliza desvanece lo que quedó arriba (`is-above`, `browse.js · keepInView`) y lo que sigue abajo se funde; nada se corta en seco a media fila | `browse.css`, `list-screen.css`, `sources.css` | — |
+| Un botón del mando en la esquina de una pieza solo si es corto (A, X, Y); el de teclado («Enter») lo dice el pie | `match-deck.js`, `button.css` | — |
+| Un aviso no se encima con una hoja abierta: se corre a su izquierda, con su margen | `toast.css` | — |
+| Un texto que viene de afuera se dice en español y sin ruido: los cargos de TMDB («Producer» → «Producción», «Self» → «Como sí mismo»), el nombre de una captura sin lo que pone Windows | `tmdb.py · role_es`, `menus.js · captureName` | `test_tmdb.py`, `menus.test.mjs` |
+| Un pie no repite lo que ya dice su grupo (en «Películas», el año; no «Película · 2021») | `search.js` | — |
+
+Las pantallas que recorre la prueba de texto partido: las cinco secciones, la ficha de un juego, el mazo, Decide por mí, el Filtro
+avanzado, Colecciones, Panel rápido, Jugadores, Buscar con resultados y las siete categorías de Ajustes, en la tele y en la Legion Go
+con la letra más grande.
+
 ### Piezas del lenguaje
 
 | Pieza | Archivo | Para qué |

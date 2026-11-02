@@ -55,7 +55,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
     back.textContent = trail.join(" › ");
     back.hidden = !trail.length;
     title.textContent = menu.title;
-    title.classList.toggle("sheet__title--question", !!menu.subtitle);
+    // El título grande es solo para una pregunta («¿Cerrar Mario Party?»). Antes, cualquier hoja con texto abajo («Jugadores»,
+    // «Diagnóstico») salía enorme y las demás chicas: tres tamaños para lo mismo.
+    title.classList.toggle("sheet__title--question", /^¿/.test(String(menu.title || "")));
     subtitle.textContent = menu.subtitle || "";
     subtitle.hidden = !menu.subtitle;
     mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h("button", {

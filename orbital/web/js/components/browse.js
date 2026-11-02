@@ -66,6 +66,9 @@ export function keepInView(grid, viewport, focusId) {
   if (top < next) next = top; // el borde de arriba de la enfocada siempre gana
   grid.dataset.shift = String(Math.max(0, next));
   grid.style.transform = `translateY(${-Math.max(0, next)}px)`;
+  // Lo que ya quedó arriba se desvanece: su nombre y su año asomaban sobre la fila de arriba del todo (en una persona, bajo su
+  // biografía). El relleno de arriba es para que la enfocada crezca, no para enseñar el renglón anterior.
+  for (const card of grid.children) card.classList.toggle("is-above", card.offsetTop < next - 1);
 }
 
 /** Cambio de sección: el contenido nuevo aparece con un fundido corto (nada cruza la pantalla). */

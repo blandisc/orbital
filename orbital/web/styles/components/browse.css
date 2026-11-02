@@ -31,3 +31,5 @@
 
 /* Cambio de consola o de categoría (replay): un fundido corto de lo que cambió, sin nada que cruce la pantalla. */
 .browse__main--switch { animation: fade-in var(--duration-base) var(--ease-out); }
+/* Una cuadrícula desplazada (keepInView): lo que quedó arriba se desvanece (su pie asomaba sobre la fila de arriba del todo). */
+.is-above { opacity: 0; transition: opacity var(--duration-base) var(--ease-out); }

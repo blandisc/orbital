@@ -122,7 +122,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     const sets = [];
     items.forEach((item, i) => {
       if (!sets.length || sets.at(-1).group !== groupOf(item)) sets.push({ group: groupOf(item), cards: [] });
-      const card = Card(item, { caption: true, onPress: () => { zone = "results"; resultIndex = i; open(); } });
+      // En «Películas» y «Series» el pie no repite lo que ya dice el grupo: solo el año (antes «Película …» recortado).
+      const group = groupOf(item);
+      const shown = group === "movie" || group === "series"
+        ? { ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") } : item;
+      const card = Card(shown, { caption: true, onPress: () => { zone = "results"; resultIndex = i; open(); } });
       focusables.push(card);
       sets.at(-1).cards.push(card);
     });

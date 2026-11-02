@@ -33,7 +33,8 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
 /* Los demás de su consola: una fila que se desliza; la enfocada crece y dice su nombre. */
 .game-page__row { display: flex; flex-direction: column; gap: var(--layout-title-to-content); min-width: 0; }
 .game-page__row-title { font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
-.game-page__viewport { overflow: hidden; padding: var(--space-4) var(--space-4) var(--caption-room); margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0; }
+/* Arriba se queda el aire de lo que crece la enfocada (12 %): antes el margen negativo lo devolvía y la portada se montaba en «Más de…». */
+.game-page__viewport { overflow: hidden; padding: var(--space-5) var(--space-4) var(--caption-room); margin: 0 calc(-1 * var(--space-4)); }
 .game-page__track {
   --card-height: 9rem; --card-focus-scale: 1.12;
   display: flex; align-items: flex-end; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out);

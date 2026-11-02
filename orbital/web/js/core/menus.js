@@ -540,6 +540,15 @@ export function closeAppConfirmMenu({ exe, name }) {
   };
 }
 
+/** El nombre de una captura sin lo que pone Windows: «Orbital - [InPrivate] - Microsoft Edge 10_11_2026 7_47_43 PM» → «Orbital»;
+ * «Hades 2026-10-11 19-47-43» → «Hades». La fecha va debajo, bien dicha. */
+export function captureName(raw) {
+  const name = String(raw || "").replace(/\.[a-z0-9]{2,4}$/i, "")
+    .replace(/\s+\d{1,4}[_-]\d{1,2}[_-]\d{1,4}(\s+\d{1,2}[_-]\d{2}([_-]\d{2})?(\s*[AP]M)?)?$/i, "")
+    .replace(/\s+-\s+\[InPrivate\]/i, "").replace(/\s+-\s+(Microsoft\s*Edge|Google Chrome|Mozilla Firefox)$/i, "").trim();
+  return name || "Captura";
+}
+
 /** Capturas y clips, lo más reciente primero. */
 export function capturesMenu(items) {
   if (!items.length) {
@@ -549,7 +558,7 @@ export function capturesMenu(items) {
   return {
     title: "Capturas", crumb: "Capturas",
     options: items.map((item, i) => ({
-      icon: item.kind === "video" ? "play" : "windows", label: item.name,
+      icon: item.kind === "video" ? "play" : "camera", label: captureName(item.name),
       hint: Number.isFinite(item.time) ? new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "",
       command: { type: "view-capture", index: i },
     })),

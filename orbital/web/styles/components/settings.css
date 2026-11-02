@@ -1,6 +1,6 @@
 /* Ajustes a pantalla completa (js/components/settings.js): el riel de categorías a la izquierda y la lámina de la elegida.
    Las filas son las de una hoja (sheet.css); aquí, la composición, la ayuda al pie y lo que cambia con el foco. */
-.settings { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-4); background: var(--color-bg); }
+.settings { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-6); background: var(--color-bg); } /* el vidrio del riel sobresale arriba (rail.css): con space-4 tocaba la «j» de «Ajustes» */
 .settings__title { font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); }
 .settings__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-10); min-height: 0; }
 /* El riel de Juegos, en su columna (allá flota sobre la cuadrícula). Abierto, empuja la lámina en vez de taparla. */

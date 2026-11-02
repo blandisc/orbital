@@ -98,17 +98,11 @@
 .award-wordmark--bronze { --metal: var(--color-award-bronze); }
 .collection__foot .award-wordmark { font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-tight); }
 
-/* El sello de origen (SourceBadge): el nombre del servicio en mayúsculas sobre su color. */
-.source-badge {
-  display: inline-flex; align-items: center; padding: .1rem .45rem; border-radius: var(--radius-xs);
-  color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--tracking-label); /* ≥ 18,7 px en negrita cuenta como letra grande: 3:1 le basta sobre el color del servicio */
-  line-height: var(--leading-normal); white-space: nowrap;
-}
-/* Trakt y Letterboxd: su logo en sus colores, a la altura de la letra del título (shelf, listas, colecciones). */
+/* El sello de origen (SourceBadge): el logo del servicio en sus colores, a la altura de la letra (shelf, listas, colecciones). */
 .source-logo { display: inline-block; flex: none; width: auto; height: 1.1em; vertical-align: -.15em; }
 .source-logo--letterboxd { height: .9em; vertical-align: -.05em; }
-.source-badge--stremio { background: var(--color-source-stremio); }
-.source-badge--orbital { background: var(--color-source-orbital); }
+.source-logo--orbital { width: 1.1em; color: var(--color-orbital); }
+.source-logo--orbital svg { display: block; width: 100%; height: 100%; }
 
 /* Fila centrada (Tus plataformas, Premios, Estudios, Por año): la enfocada al centro y al frente; las de los lados, más
    chicas y apagadas (como el carrusel centrado del iPhone), y debajo el reflejo de la fila actual. */

@@ -595,3 +595,9 @@ test("con «Abrir algo nuevo cierra lo anterior: No» la hoja no promete cerrar 
   assert.equal(menu.options[0].command.type, "resume"); // volver va primero
   assert.deepEqual(menu.options[1].command, { type: "launch", id: "x", confirmed: true });
 });
+test("una captura dice el nombre de lo capturado, sin lo que pone Windows", async () => {
+  const { captureName } = await import("../../orbital/web/js/core/menus.js");
+  assert.equal(captureName("Orbital - [InPrivate] - Microsoft Edge 10_11_2026 7_47_43 PM"), "Orbital");
+  assert.equal(captureName("Hades 2026-10-11 19-47-43.png"), "Hades");
+  assert.equal(captureName(""), "Captura");
+});

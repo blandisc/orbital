@@ -319,6 +319,29 @@ def test_no_text_is_cut_in_half(server, width, height, size):
                 look(screen)
                 page.keyboard.press("Escape")
                 page.wait_for_timeout(500)
+            # Las pantallas menos comunes también (Fernando, 2 nov: «pantallas secundarias, no tan comunes»): Decide por mí,
+            # Buscar con resultados y las hojas del menú.
+            page.keyboard.press("m")
+            page.locator(".sheet__item", has_text="Decide por mí").first.click()
+            page.wait_for_timeout(1500)
+            look("Decide por mí")
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(500)
+            for sheet in ("Panel rápido", "Jugadores"):
+                page.keyboard.press("m")
+                page.locator(".sheet__item", has_text=sheet).first.click()
+                look(sheet)
+                page.keyboard.press("Escape")
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(500)
+            page.keyboard.press("s")
+            page.wait_for_timeout(600)
+            page.keyboard.type("hades")
+            page.wait_for_timeout(1500)
+            look("Buscar con resultados")
+            page.keyboard.press("Escape")
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(500)
             page.keyboard.press("m")
             page.locator(".sheet__item", has_text="Ajustes").first.click()
             for i in range(7):
@@ -370,3 +393,21 @@ def test_moving_feels_instant(page):
     median = lat[len(lat) // 2]
     assert median < (200 if ci else 100), f"de apretar a verlo: mediana {median:.0f} ms ({[round(x) for x in lat]})"
     assert slow < (.35 if ci else .1), f"{slow:.0%} de los cuadros tardaron más de dos"
+
+
+def test_every_side_sheet_speaks_with_one_title_size(page):
+    """Las hojas del lado dicen su título con un solo tamaño; el grande es solo para una pregunta («¿Cerrar…?»). Antes, la que
+    traía un texto abajo («Jugadores», «Diagnóstico») salía enorme y las demás chicas: tres tamaños para lo mismo."""
+    ready(page)
+    sizes = {}
+    for sheet in ("Panel rápido", "Jugadores", "Cómo se usa", "Lo que puedes decir", "Apagar"):
+        page.keyboard.press("m")
+        page.locator(".sheet__item", has_text=sheet).first.click()
+        page.wait_for_timeout(500)
+        title = page.locator(".sheet__title").first
+        sizes[sheet] = (title.evaluate("e => getComputedStyle(e).fontSize"), title.evaluate("e => e.classList.contains('sheet__title--question')"))
+        page.keyboard.press("Escape")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(500)
+    assert not any(question for _, question in sizes.values()), sizes
+    assert len({size for size, _ in sizes.values()}) == 1, sizes

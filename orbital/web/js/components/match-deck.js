@@ -134,7 +134,8 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
         kinds.length > 0 && h("span", { class: "match__genres" }, kinds.map((g) => h("span", { class: "match__genre" }, g)))),
       // «Ver ya»: el ▶ de la carta, con el botón que lo hace (A).
       h("button", { class: "match__play", type: "button", tabindex: "-1", "aria-label": "Ver ya", onClick: (event) => { event.stopPropagation(); play(); } },
-        svg(ICONS.play), glyphs.select && Glyph(glyphs.select, { small: true })),
+        // En la esquina solo cabe un botón corto (A); «Enter» del teclado tapaba el ▶ (el pie ya lo dice).
+        svg(ICONS.play), glyphs.select && String(glyphs.select).length <= 2 && Glyph(glyphs.select, { small: true })),
       h("span", { class: "match__tint", "aria-hidden": "true" }),
       h("span", { class: "match__stamp", "aria-hidden": "true" }));
   }

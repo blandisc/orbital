@@ -182,6 +182,40 @@ def match_platforms(rows) -> dict[str, dict]:
 MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 ROLE_NAMES = {"Creator": "Creación", "Director": "Dirección", "Screenplay": "Guion", "Writer": "Guion", "Novel": "Novela"}
 
+# Lo que hizo alguien en la filmografía de una persona: TMDB lo da en inglés aunque se le pida en español («Producer»,
+# «Thanks», «Self»). Los cargos de siempre por su nombre; los demás, por su departamento.
+CREW_JOBS = {
+    **ROLE_NAMES, "Producer": "Producción", "Executive Producer": "Producción ejecutiva", "Co-Producer": "Coproducción",
+    "Associate Producer": "Producción asociada", "Co-Executive Producer": "Coproducción ejecutiva",
+    "Consulting Producer": "Producción consultora", "Creative Producer": "Producción creativa", "Story": "Historia",
+    "Teleplay": "Guion", "Characters": "Personajes", "Author": "Autoría", "Editor": "Edición",
+    "Director of Photography": "Fotografía", "Original Music Composer": "Música", "Music": "Música", "Casting": "Casting",
+    "Production Design": "Diseño de producción", "Costume Design": "Vestuario", "Thanks": "Agradecimientos",
+    "Second Unit Director": "Dirección de segunda unidad", "Assistant Director": "Asistencia de dirección",
+    "Animation": "Animación", "Stunts": "Dobles de riesgo", "Visual Effects": "Efectos visuales", "Sound": "Sonido",
+}
+DEPARTMENTS = {
+    "Production": "Producción", "Writing": "Guion", "Directing": "Dirección", "Editing": "Edición", "Camera": "Fotografía",
+    "Sound": "Sonido", "Art": "Arte", "Costume & Make-Up": "Vestuario y maquillaje", "Visual Effects": "Efectos visuales",
+    "Lighting": "Iluminación", "Crew": "Equipo", "Acting": "Actuación",
+}
+_SELF = {"self", "himself", "herself", "themselves", "themself", "yo mismo", "él mismo", "ella misma"}
+
+
+def role_es(credit: dict, cast: bool) -> str | None:
+    """El papel o el cargo de alguien en un título, en español: «Producción», «Agradecimientos», «Como sí mismo», «Bart (voz)»."""
+    if cast:
+        role = str(credit.get("character") or "").strip()
+        if not role:
+            return None
+        bare = re.sub(r"\s*\((voice|uncredited|archive footage)\)", "", role, flags=re.I).strip()
+        if bare.lower() in _SELF or bare.lower().startswith(("self ", "himself ", "herself ")):
+            return "Como sí mismo"
+        return (role.replace("(voice)", "(voz)").replace("(uncredited)", "(sin crédito)")
+                .replace("(archive footage)", "(material de archivo)"))
+    job = str(credit.get("job") or "").strip()
+    return CREW_JOBS.get(job) or DEPARTMENTS.get(str(credit.get("department") or "")) or job or None
+
 
 def born_text(birthday, deathday=None) -> str | None:
     """«12 de marzo de 1971» (y «† 2016» si murió); None si TMDB no lo sabe."""
@@ -449,8 +483,8 @@ class Tmdb:
         if not bio:
             bio = str(self._get(f"/person/{int(person_id)}", language="en-US").get("biography") or "").strip()
         credits = raw.get("combined_credits") if isinstance(raw.get("combined_credits"), dict) else {}
-        rows = [(c, c.get("character")) for c in credits.get("cast") or [] if isinstance(c, dict)]
-        rows += [(c, c.get("job")) for c in credits.get("crew") or [] if isinstance(c, dict)]
+        rows = [(c, role_es(c, True)) for c in credits.get("cast") or [] if isinstance(c, dict)]
+        rows += [(c, role_es(c, False)) for c in credits.get("crew") or [] if isinstance(c, dict)]
         rows.sort(key=lambda pair: -float(pair[0].get("popularity") or 0))
         found, seen = [], set()
         for c, role in rows:

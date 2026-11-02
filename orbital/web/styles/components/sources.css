@@ -23,7 +23,9 @@
 .sources__retry { margin-top: var(--space-4); }
 .sources__list {
   display: flex; flex-direction: column; gap: var(--space-3); min-height: 0;
-  overflow-y: auto; scrollbar-width: none; padding: var(--space-2); margin: calc(-1 * var(--space-2));
+  overflow-y: auto; scrollbar-width: none; padding: var(--space-2) var(--space-2) var(--space-10); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-10)); /* abajo, lo que cabe bajo el fundido: la última fila se alcanza entera */
+  /* Lo que sigue abajo se funde (antes la cuadrícula se cortaba en seco a media fila). */
+  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);
 }
 
 /* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
