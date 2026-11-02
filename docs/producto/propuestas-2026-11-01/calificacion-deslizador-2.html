@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calificación con deslizador · versión pulida</title>
+<style>
+  :root{--bg:#0c0c0e;--sheet:#141418;--muted:#a3a3ab;--dim:#62626a;--line:#2a2a30;--text:#f5f4f0;--teal:#5fd6c6;
+    --lima:oklch(.804 .11 110);--lb:#00e054;--lbo:#ff8000;--lbb:#40bcf4;--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sys);line-height:1.45}
+  main{max-width:1160px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-size:34px;margin:0 0 6px} h2{font-size:24px;margin:52px 0 6px} .why{color:var(--teal);font-size:14px;font-weight:600;margin:0 0 4px}
+  .lead{color:var(--muted);font-size:17px;max-width:820px}
+  .row{display:flex;flex-wrap:wrap;gap:30px;margin-top:22px;align-items:flex-start}
+  .phone{width:360px;flex:0 0 360px;border-radius:40px;background:#000;padding:10px;border:1px solid #222;box-shadow:0 18px 44px rgba(0,0,0,.5)}
+  .screen{border-radius:31px;background:var(--sheet);padding:18px 18px 22px}
+  .cap{color:var(--dim);font-size:12px;text-align:center;margin-top:10px}
+  .notes{flex:1 1 320px;min-width:300px;color:var(--muted);font-size:14px} .notes h3{color:var(--text);font-size:16px;margin:0 0 6px} .notes li{margin:6px 0} .notes b{color:var(--text)}
+
+  /* lo de adentro: ligero, sin cajas */
+  .eyebrow{color:var(--muted);font-size:13px}
+  .summary{font-size:22px;font-weight:800;margin:4px 0 18px;min-height:30px;letter-spacing:-.01em}
+  .summary .x{color:var(--dim);font-weight:700}
+  .who{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .who b{font-size:15px} .who .s{margin-left:auto;color:var(--dim);font-size:12px}
+  .tmdb{font-weight:900;font-size:10px;letter-spacing:.1em;color:#06202a;background:linear-gradient(90deg,#90cea1,#01b4e4);border-radius:4px;padding:2px 5px}
+  .dots{display:inline-flex;gap:3px}.dots i{width:7px;height:7px;border-radius:50%;display:block}
+  .hint{color:var(--dim);font-size:12px;margin-bottom:6px}
+  .val{display:flex;align-items:baseline;gap:8px;height:30px}
+  .val .w{font-size:20px;font-weight:800} .val .w.none{color:var(--dim);font-weight:700}
+  .val .n{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+  hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+
+  /* el público: una regla */
+  .ruler{position:relative;height:66px;margin:6px 4px 0;touch-action:none;cursor:pointer}
+  .ruler .track{position:absolute;left:0;right:0;top:26px;height:4px;border-radius:2px;background:var(--line)}
+  .ruler .fill{position:absolute;left:0;top:26px;height:4px;border-radius:2px;background:var(--lima);box-shadow:0 0 12px oklch(.804 .11 110 / .45)}
+  .ruler .tick{position:absolute;top:34px;width:1px;height:6px;background:var(--dim)} .ruler .tick.big{height:10px;background:var(--muted)}
+  .ruler .num{position:absolute;top:46px;transform:translateX(-50%);font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .ruler .mark{position:absolute;top:18px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--sheet);border:2px solid var(--muted)}
+  .ruler .mark.on{border-color:var(--lima);background:var(--lima)}
+  .ruler .thumb{position:absolute;top:8px;transform:translateX(-50%);min-width:44px;height:26px;border-radius:13px;background:#fff;color:#111;font-weight:800;font-size:13px;
+    display:flex;align-items:center;justify-content:center;padding:0 8px;box-shadow:0 4px 14px rgba(0,0,0,.5);font-variant-numeric:tabular-nums}
+  .ruler .thumb.none{color:#777}
+
+  /* los cinéfilos: cinco estrellas que se llenan */
+  .stars{position:relative;display:flex;gap:6px;margin:6px 0 0;touch-action:none;cursor:pointer;width:max-content}
+  .star{position:relative;width:46px;height:46px}
+  .star svg{position:absolute;inset:0;width:46px;height:46px}
+  .star .clip{position:absolute;left:0;top:0;bottom:0;width:0;overflow:hidden}.star .clip svg{width:46px;height:46px}
+  .stars .marks{position:absolute;left:0;right:0;top:54px;height:10px}
+  .stars .marks span{position:absolute;width:6px;height:6px;margin-left:-3px;border-radius:50%;border:1.5px solid var(--dim)}
+  .stars .marks span.on{border-color:var(--lb);background:var(--lb)}
+  .lbwrap{padding-bottom:22px}
+  .off{opacity:.38;pointer-events:none}
+  .note{font-size:12px;color:var(--muted);margin-top:6px}
+  .ask{background:#18181c;border-radius:16px;padding:16px 20px;margin-top:18px;color:var(--muted)} .ask b{color:var(--text)}
+</style>
+</head>
+<body>
+<main>
+  <p class="why">Búsqueda avanzada · Calificación · 2 nov 2026 · versión pulida de la A</p>
+  <h1>Dos deslizadores, cada uno con su forma</h1>
+  <p class="lead">La misma función (un mínimo del público y uno de los cinéfilos), pero más ligera: sin cajas, una línea fina entre los dos y cada uno hablando su idioma. <b>El público es una regla</b> de 5 a 9 con el número en la perilla. <b>Los cinéfilos son cinco estrellas</b> que se llenan al arrastrar el dedo (de décima en décima). Los puntitos y las palabras dicen dónde empieza Buena, Muy buena y Excelente; arriba, el resumen. <b>Arrastra o toca: funciona.</b></p>
+
+  <div class="row">
+    <div>
+      <div class="phone"><div class="screen" id="live">
+        <div class="eyebrow">Lo mínimo que quieres</div>
+        <div class="summary" data-sum></div>
+        <div data-tmdb>
+          <div class="who"><span class="tmdb">TMDB</span><b>El público</b><span class="s">de 10</span></div>
+          <div class="hint">Millones de votos</div>
+          <div class="val"><span class="w"></span><span class="n" style="color:var(--lima)"></span></div>
+          <div class="ruler"></div>
+        </div>
+        <hr>
+        <div data-lb class="lbwrap">
+          <div class="who"><span class="dots"><i style="background:var(--lbo)"></i><i style="background:var(--lb)"></i><i style="background:var(--lbb)"></i></span><b>Los cinéfilos</b><span class="s">de ★5 · solo películas</span></div>
+          <div class="hint" data-lbhint>Letterboxd · califican más duro</div>
+          <div class="val"><span class="w"></span><span class="n" style="color:var(--lb)"></span></div>
+          <div class="stars"></div>
+        </div>
+      </div></div>
+      <div class="cap"><label><input type="checkbox" id="series"> Con «Series» elegido</label></div>
+    </div>
+    <div class="notes">
+      <h3>Qué cambió respecto a la A</h3>
+      <ul>
+        <li><b>Sin cajas:</b> las dos opiniones viven en la hoja, separadas por una línea fina. Se siente más ligera.</li>
+        <li><b>El público, una regla:</b> marcas del 5 al 9 y el número dentro de la perilla blanca («7.5»). La parte llena brilla en el lima de Calificación (el arcoíris).</li>
+        <li><b>Los cinéfilos, estrellas:</b> cinco estrellas que se llenan en el verde de Letterboxd, como calificas ahí. «★3.8» se ve: tres llenas y la cuarta casi.</li>
+        <li><b>Las palabras como marcas:</b> un puntito en la regla y otro bajo las estrellas donde empieza cada nivel; se encienden los que ya alcanzas y la palabra grande dice cuál es.</li>
+        <li><b>A la izquierda del todo, «Sin mínimo»:</b> la perilla dice «—» y la palabra grande va en gris.</li>
+        <li><b>Arriba, el resumen</b> en grande: «Muy buena · 7.5+ del público», «7+ y ★3.8+».</li>
+        <li><b>Con «Series»</b> las estrellas se apagan y dicen por qué.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ask"><ol>
+    <li><b>¿Así?</b> Si te late, la construyo tal cual (y quito los cuatro botones de hoy).</li>
+    <li>¿Que la perilla <b>se pegue</b> a Buena, Muy buena y Excelente al soltarla cerca, o libre (de décima en décima)?</li>
+  </ol></div>
+</main>
+<script>
+const WORDS=['Buena','Muy buena','Excelente'];
+const T={min:5,max:9,stops:[7,7.5,8]}, L={max:5,stops:[3.5,3.8,4.2]};
+let tv=7.5, lv=0, series=false;
+const fmt=v=>Number.isInteger(v)?String(v):v.toFixed(1);
+const level=(v,st)=>{let i=-1;st.forEach((s,k)=>{if(v>=s-0.001)i=k});return i};
+const STAR='<path d="M23 3.5l5.9 12 13.2 1.9-9.6 9.3 2.3 13.1L23 33.6l-11.8 6.2 2.3-13.1-9.6-9.3 13.2-1.9z"/>';
+// la regla
+const ruler=document.querySelector('.ruler');
+ruler.innerHTML='<div class="track"></div><div class="fill"></div>'+
+  Array.from({length:9},(_,k)=>{const v=5+k*0.5,big=Number.isInteger(v);return `<div class="tick ${big?'big':''}" style="left:${(v-5)/4*100}%"></div>`+(big?`<div class="num" style="left:${(v-5)/4*100}%">${v}</div>`:'')}).join('')+
+  T.stops.map((s,i)=>`<div class="mark" data-i="${i}" style="left:${(s-5)/4*100}%"></div>`).join('')+'<div class="thumb"></div>';
+function rulerAt(x){const r=ruler.getBoundingClientRect();let p=(x-r.left)/r.width;p=Math.max(0,Math.min(1,p));let v=5+p*4;v=Math.round(v*10)/10;tv=v<=5.05?0:v;paint()}
+drag(ruler,rulerAt);
+// las estrellas
+const stars=document.querySelector('.stars');
+stars.innerHTML=Array.from({length:5},()=>`<div class="star"><svg viewBox="0 0 46 46" fill="#2a2a30">${STAR}</svg><div class="clip"><svg viewBox="0 0 46 46" fill="var(--lb)">${STAR}</svg></div></div>`).join('')+
+  '<div class="marks">'+L.stops.map((s,i)=>`<span data-i="${i}" style="left:${s/5*100}%" title="${WORDS[i]}"></span>`).join('')+'</div>';
+function starsAt(x){const r=stars.getBoundingClientRect();let p=(x-r.left)/r.width;p=Math.max(0,Math.min(1,p));let v=Math.round(p*5*10)/10;lv=v<0.3?0:v;paint()}
+drag(stars,starsAt);
+function drag(el,f){let on=false;el.addEventListener('pointerdown',e=>{on=true;el.setPointerCapture(e.pointerId);f(e.clientX)});el.addEventListener('pointermove',e=>{if(on)f(e.clientX)});el.addEventListener('pointerup',()=>on=false)}
+document.getElementById('series').onchange=e=>{series=e.target.checked;paint()};
+function paint(){
+  const scr=document.getElementById('live'),tb=scr.querySelector('[data-tmdb]'),lb=scr.querySelector('[data-lb]');
+  // el público
+  const ti=level(tv,T.stops),tp=tv?(tv-5)/4*100:0;
+  ruler.querySelector('.fill').style.width=tp+'%'; const th=ruler.querySelector('.thumb'); th.style.left=tp+'%'; th.textContent=tv?fmt(tv):'—'; th.classList.toggle('none',!tv);
+  ruler.querySelectorAll('.mark').forEach(m=>m.classList.toggle('on',tv&&+m.dataset.i<=ti));
+  tb.querySelector('.w').textContent=tv?(ti>=0?WORDS[ti]:'Al menos'):'Sin mínimo'; tb.querySelector('.w').classList.toggle('none',!tv); tb.querySelector('.n').textContent=tv?fmt(tv)+'+':'';
+  // los cinéfilos
+  const lvv=series?0:lv, li=level(lvv,L.stops);
+  stars.querySelectorAll('.star').forEach((s,k)=>s.querySelector('.clip').style.width=Math.max(0,Math.min(1,lvv-k))*100+'%');
+  stars.querySelectorAll('.marks span').forEach(m=>m.classList.toggle('on',lvv&&+m.dataset.i<=li));
+  lb.querySelector('.w').textContent=lvv?(li>=0?WORDS[li]:'Al menos'):'Sin mínimo'; lb.querySelector('.w').classList.toggle('none',!lvv); lb.querySelector('.n').textContent=lvv?'★'+fmt(lvv)+'+':'';
+  lb.classList.toggle('off',series); scr.querySelector('[data-lbhint]').textContent=series?'Letterboxd no califica series':'Letterboxd · califican más duro';
+  // el resumen
+  const sum=scr.querySelector('[data-sum]');
+  if(!tv&&!lvv) sum.innerHTML='<span class="x">Sin mínimo</span>';
+  else if(tv&&lvv) sum.innerHTML=`${fmt(tv)}+ <span class="x">y</span> ★${fmt(lvv)}+`;
+  else if(tv) sum.innerHTML=(ti>=0?WORDS[ti]+' ':'')+`<span class="x">· ${fmt(tv)}+ del público</span>`;
+  else sum.innerHTML=(li>=0?WORDS[li]+' ':'')+`<span class="x">· ★${fmt(lvv)}+ de los cinéfilos</span>`;
+}
+lv=3.8; paint();
+</script>
+</body>
+</html>
