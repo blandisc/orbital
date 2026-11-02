@@ -118,9 +118,9 @@
   --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000)); /* el mismo tono que el iPhone (Projection) */
   --fade-backdrop: linear-gradient(180deg, transparent 0%, transparent 34%, color-mix(in oklab, var(--color-backdrop-deep) 82%, transparent) 58%, var(--color-backdrop-deep) 76%);
   --color-scrim: color-mix(in oklab, var(--palette-ink-1000) 62%, transparent);
-  /* Sobre el arte de orilla a orilla: un velo arriba para la barra y la hora, y uno oscuro a la izquierda para el destacado. */
+  /* Sobre el arte de orilla a orilla: un velo arriba para la barra, la hora y la batería (también sobre un arte claro, como The Invite), y uno oscuro a la izquierda para el destacado. */
   --scrim-hero:
-    linear-gradient(180deg, color-mix(in oklab, var(--color-backdrop-deep) 55%, transparent) 0%, transparent 16%),
+    linear-gradient(180deg, color-mix(in oklab, var(--color-backdrop-deep) 78%, transparent) 0%, color-mix(in oklab, var(--color-backdrop-deep) 40%, transparent) 10%, transparent 20%),
     linear-gradient(90deg, color-mix(in oklab, var(--color-backdrop-deep) 88%, transparent) 0%, color-mix(in oklab, var(--color-backdrop-deep) 55%, transparent) 30%, transparent 58%);
   --gradient-card: linear-gradient(160deg, var(--palette-ink-800), var(--palette-ink-900));
 
