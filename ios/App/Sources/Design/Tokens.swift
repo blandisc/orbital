@@ -400,6 +400,24 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// La cuenta regresiva («1:12:24») tiene ancho fijo: un `Text(timerInterval:)` sin él se estira a todo lo que puede (en
         /// la isla compacta salía enorme y en medio). En la compacta, en vez de texto, un anillo chico que se llena solo.
         static let timerWidth: CGFloat = 64, compactRing: CGFloat = 18
+        /// «Lo nuevo de lo tuyo» mediano: cuántos pósters caben (y de ellos, cuántos de lo que ya salió) y su ancho.
+        static let releasesShown = 5, releasesOut = 2
+        static let releasePoster: CGFloat = 50
+        /// Lo más que se encoge un rótulo corto antes de cortarse («Madrugada», «Miércoles»).
+        static let labelShrink: CGFloat = 0.8
+        /// «Aquí» y «En la TV»: el alto (y, solo el ícono, el ancho) de cada botón.
+        static let button: CGFloat = 30
+        /// «Viendo en la TV»: el ancho de cada botón (−10 s, pausa, +10 s).
+        static let tvKey: CGFloat = 64
+        /// «Un Simpson del día»: el ancho de la tele en el mediano, su proporción (con la antena), cuánto del ancho es pantalla,
+        /// el marco y la esquina del mueble (fracciones del ancho) y la antena (alto, fracción del ancho; abertura en grados).
+        static let simpsonsTV: CGFloat = 150, simpsonsTVAspect: CGFloat = 1.2, simpsonsScreenShare: CGFloat = 0.66
+        static let simpsonsGap: CGFloat = 0.06, simpsonsBodyRadius: CGFloat = 0.12   // ds-exception: la tele de Los Simpson se dibuja como el aparato
+        static let simpsonsAntenna: CGFloat = 0.22, simpsonsAntennaAngle: Double = 28
+        /// «Mosaico de una lista»: columnas y pósters por columna del muro (mediano y grande), cuánto más ancho que el widget es
+        /// el muro (inclinado no deja huecos en las esquinas), cuánto baja una columna sí y una no, y dónde empieza el velo.
+        static let listColumnsMedium = 7, listRowsMedium = 3, listColumnsLarge = 6, listRowsLarge = 5
+        static let listWallOverscan: CGFloat = 1.25, listStagger: CGFloat = 0.5, listVeilStart = 0.45
     }
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.

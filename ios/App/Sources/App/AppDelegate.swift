@@ -13,6 +13,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
         OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
         OpenSimpsonsIntent.open = { AppEnvironment.shared.ui.openSimpsons = true }   // «Un Simpson al azar» del Centro de control
+        // Los botones de los widgets: «Aquí» abre el enlace (reproducir donde ibas) y «En la TV» lo manda a tu Orbital sin abrir la app.
+        OpenWidgetLinkIntent.open = { url in Task { await AppEnvironment.shared.handle(url: url) } }
+        PlayOnTVIntent.send = { kind, metaID, videoID, name in
+            guard ThisDevice.talksToOrbital else { return false }
+            do { try await AppEnvironment.shared.services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: name); return true }
+            catch { return false }
+        }
         // Que el Centro de control vuelva a pintar nuestros botones con el ícono de esta versión (su galería guardaba los viejos).
         ControlCenter.shared.reloadAllControls()
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage, tv: AppEnvironment.shared.services.orbitalOn)

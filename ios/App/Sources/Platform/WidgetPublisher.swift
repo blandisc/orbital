@@ -31,12 +31,18 @@ enum WidgetPublisher {
                 if result.items[index].tint == nil { result.items[index].tint = wide.tint }
                 result.items[index].logoFile = await image(item.logo, as: .logo, id: item.metaID, reuse: old.flatMap { $0.logo == item.logo ? ($0.logoFile, nil) : nil }).file
             }
+            // Los pósters de «Lo nuevo de lo tuyo» (la línea del widget de estrenos).
+            for index in (result.upcoming ?? []).indices {
+                guard !Task.isCancelled, let airing = result.upcoming?[index], let metaID = airing.metaID else { continue }
+                let old = previous?.upcoming?.first { $0.metaID == metaID && $0.poster == airing.poster }
+                result.upcoming?[index].imageFile = await image(airing.poster, as: .poster, id: "air_" + metaID, reuse: old.map { ($0.imageFile, nil) }).file
+            }
             guard !Task.isCancelled else { return }
             // Nada que escribir ni recargar si lo que se ve es lo mismo.
             if let previous, previous.items == result.items, previous.language == result.language, previous.upcoming == result.upcoming { return }
-            let kept = result.items.flatMap { [$0.imageFile, $0.wideFile, $0.logoFile] }.compactMap { $0 }
+            let kept = (result.items.flatMap { [$0.imageFile, $0.wideFile, $0.logoFile] } + (result.upcoming ?? []).map(\.imageFile)).compactMap { $0 }
             clean(keeping: Set(kept))
-            if WidgetStore.save(result) { WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.kind) }
+            if WidgetStore.save(result) { WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.kind); WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.releasesKind) }
         }
     }
 

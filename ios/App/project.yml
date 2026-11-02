@@ -133,6 +133,7 @@ targets:
       - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
       - path: Sources/Design/Tokens+Player.swift
       - path: Sources/Design/Tokens+Screens.swift   # `Brand.swift` usa DS.Splash
+      - path: Sources/Design/Tokens+Home.swift      # «Lo nuevo de lo tuyo» usa los de la línea de Inicio (DS.HomeTimeline)
       - path: Sources/Design/Brand.swift      # la marca de Orbital (widget sin pendientes)
       - path: Sources/Platform/WindowMetrics.swift   # el tamaño de ventana que leen los tokens
     dependencies:

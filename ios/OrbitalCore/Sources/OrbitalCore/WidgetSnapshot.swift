@@ -43,14 +43,35 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         public var link: URL? { videoID == nil ? WidgetLink.title(kind: kind, id: metaID) : WidgetLink.play(kind: kind, id: metaID, video: videoID) }
     }
 
-    /// Lo que viene en el calendario (aún vacío: lo llena el calendario cuando exista, CEN-22). El widget mediano lo enseñará
-    /// como «Próximo estreno» en el segundo renglón.
+    /// Un estreno de «Lo nuevo de lo tuyo» (la línea de Inicio): lo que ya salió de tus series en los últimos días y lo que
+    /// viene. El widget «Lo nuevo de lo tuyo» pinta la línea con la marca HOY; el mediano de «Lo siguiente para ti», el próximo.
+    /// Los campos opcionales llegaron después (1 nov 2026): un snapshot viejo se sigue leyendo.
     public struct UpcomingEpisode: Codable, Equatable, Sendable {
         public var title: String
         /// «T3 E4».
         public var episodeLabel: String
+        /// El día (a medianoche, en la hora de aquí).
         public var date: Date
-        public init(title: String, episodeLabel: String, date: Date) { self.title = title; self.episodeLabel = episodeLabel; self.date = date }
+        /// La serie (para abrir su ficha) y su póster: el remoto y el reducido junto al snapshot.
+        public var metaID: String?
+        public var poster: String?
+        public var imageFile: String?
+        /// La hora exacta en que sale (nil en un snapshot viejo: cuenta el día).
+        public var aired: Date?
+        /// Sale antes de las 6 de la mañana (lo de streaming): «Desde la madrugada» en vez de la hora.
+        public var atDawn: Bool?
+        public init(title: String, episodeLabel: String, date: Date, metaID: String? = nil, poster: String? = nil, imageFile: String? = nil,
+                    aired: Date? = nil, atDawn: Bool? = nil) {
+            self.title = title; self.episodeLabel = episodeLabel; self.date = date; self.metaID = metaID; self.poster = poster
+            self.imageFile = imageFile; self.aired = aired; self.atDawn = atDawn
+        }
+        public var id: String { "\(metaID ?? title):\(Int(date.timeIntervalSince1970))" }
+        /// Cuándo sale: la hora exacta o, si no se sabe, el día.
+        public var airs: Date { aired ?? date }
+        /// Ya se puede ver a esa hora.
+        public func isOut(at now: Date) -> Bool { airs <= now }
+        /// Tocarlo abre la ficha de la serie.
+        public var link: URL? { metaID.flatMap { WidgetLink.title(kind: "series", id: $0) } }
     }
 
     public var generatedAt: Date

@@ -91,13 +91,15 @@ public final class Services: ObservableModel {
     public var onSiriTitles: (@MainActor ([[String]]) -> Void)?
     private var widgetContinue: [HomeItem] = []
     private var widgetAirings: [Airing] = []
-    /// Arma y publica el snapshot del widget con lo último que se sabe de «Seguir viendo» (Inicio) y de «Próximos estrenos»
-    /// (Inicio o Para ti): cada quien pasa solo lo suyo y se conserva lo otro.
-    public func publishWidget(continueWatching: [HomeItem]? = nil, airings: [Airing]? = nil) {
+    private var widgetRecent: [Airing] = []
+    /// Arma y publica el snapshot del widget con lo último que se sabe de «Seguir viendo» (Inicio), de «Próximos estrenos»
+    /// (Inicio o Para ti) y de lo que ya salió (`recent`, Inicio): cada quien pasa solo lo suyo y se conserva lo otro.
+    public func publishWidget(continueWatching: [HomeItem]? = nil, airings: [Airing]? = nil, recent: [Airing]? = nil) {
         if let continueWatching { widgetContinue = continueWatching }
         if let airings { widgetAirings = airings }
+        if let recent { widgetRecent = recent }
         guard let publish = onWidgetSnapshot else { return }
-        let upcoming = WidgetSnapshot.upcoming(from: widgetAirings, episode: episodeLabel)
+        let upcoming = WidgetSnapshot.timeline(recent: widgetRecent, upcoming: widgetAirings, now: now(), episode: episodeLabel)
         publish(WidgetSnapshot.make(continueWatching: widgetContinue, labels: widgetLabels, language: appSettings.uiLanguage,
                                     upcoming: upcoming.isEmpty ? nil : upcoming))
     }

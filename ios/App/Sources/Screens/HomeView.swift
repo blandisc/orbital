@@ -147,10 +147,14 @@ struct HomeView: View {
             if Demo.isOn, Demo.open?.hasPrefix("simpsons") == true {   // `-demo-open simpsons`: la ruleta sola
                 await env.simpsons.prefetch(); rollingSimpsons = true; return
             }
+            if Demo.isOn, Demo.widget != nil {   // la galería de widgets: también «Un Simpson del día»
+                await SimpsonsWidgetPublisher.publishIfNeeded(env.simpsons, seasons: env.services.appSettings.simpsonsSeasons)
+            }
             #endif
             // La ficha de Los Simpson (~650 KB) fuera del arranque: primero Inicio y sus imágenes; si tocas la dona antes, la pide ella.
             try? await Task.sleep(for: .seconds(DS.Simpsons.prefetchDelay))
             await env.simpsons.prefetch()
+            await SimpsonsWidgetPublisher.publishIfNeeded(env.simpsons, seasons: env.services.appSettings.simpsonsSeasons)   // el widget «Un Simpson del día»
         }
         // Todo · Películas · Series para toda la página, bajo la barra.
         .safeAreaBar(edge: .top) {

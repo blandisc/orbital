@@ -54,6 +54,24 @@ final class WidgetSnapshotModelTests: XCTestCase {
         XCTAssertNil(published.last?.upcoming)
         rig.services.publishWidget(airings: airings)
         XCTAssertEqual(published.last?.items.map(\.metaID), ["x"], "se conserva «Seguir viendo»")
-        XCTAssertEqual(published.last?.upcoming?.count, 2)
+        XCTAssertEqual(published.last?.upcoming?.map(\.title), ["Severance", "Andor", "Fallout"], "lo que ya salió también va (es «Lo nuevo de lo tuyo»)")
+        XCTAssertEqual(published.last?.upcoming?.first?.metaID, "a", "con la serie para abrir su ficha")
+    }
+
+    /// La línea del widget: lo último que salió (hasta 3) y lo que viene (hasta 6), en orden de hora y sin repetir.
+    func testTimelineKeepsTheLastThreeOutAndTheNextSix() {
+        let now = Date(timeIntervalSince1970: 1_760_000_000)
+        func airing(_ id: String, hours: Double) -> Airing {
+            let date = now.addingTimeInterval(hours * 3600)
+            return Airing(series: Suggestion(kind: "series", imdb: id, title: id, poster: "p\(id)", wide: "", reason: .popular), season: 1, first: 1, last: 1,
+                          count: 1, episodeTitle: "", aired: date, day: Calendar.current.startOfDay(for: date), network: "", atDawn: false)
+        }
+        let recent = (1...5).map { airing("r\($0)", hours: -Double($0) * 24) }
+        let upcoming = (1...8).map { airing("u\($0)", hours: Double($0) * 5) } + [airing("r1", hours: -24)]
+        let line = WidgetSnapshot.timeline(recent: recent, upcoming: upcoming, now: now)
+        XCTAssertEqual(line.map(\.metaID), ["r3", "r2", "r1", "u1", "u2", "u3", "u4", "u5", "u6"])
+        XCTAssertEqual(line.filter { $0.isOut(at: now) }.count, 3)
+        XCTAssertEqual(line.first?.poster, "pr3")
+        XCTAssertEqual(line.first?.link, WidgetLink.title(kind: "series", id: "r3"))
     }
 }

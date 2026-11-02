@@ -8,7 +8,11 @@ import OrbitalCore
 struct OrbitalWidgets: WidgetBundle {
     var body: some Widget {
         NextUpWidget()
+        ReleasesWidget()   // «Lo nuevo de lo tuyo»: lo que ya salió de tus series y lo que viene
+        SimpsonsWidget()   // «Un Simpson del día»
+        ListMosaicWidget()   // «Mosaico de una lista»: la lista de Explorar que elijas
         DownloadLiveActivity()
+        TVLiveActivity()   // «Viendo en la TV»: lo que pone tu Orbital, con pausa y ±10 s
         RemoteControlButton()   // el control de tu Orbital en el Centro de control (mismo kind de antes: el que ya estaba puesto revive)
         SimpsonsControlButton()   // «Un Simpson al azar» en el Centro de control
     }

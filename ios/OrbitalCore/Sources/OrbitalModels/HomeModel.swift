@@ -192,7 +192,8 @@ public final class HomeModel: ObservableModel {
         }
         if !Task.isCancelled { saveLists() }
         offline = !services.isOnline()
-        publishWidget(airings: Task.isCancelled ? nil : fetchedAirings)   // los estrenos también van al widget mediano
+        // Los estrenos también van a los widgets: lo que viene y lo que ya salió («Lo nuevo de lo tuyo»).
+        publishWidget(airings: Task.isCancelled ? nil : fetchedAirings, recent: Task.isCancelled ? nil : recentAirings)
     }
 
     private var fetchedAirings: [Airing]?
@@ -349,8 +350,8 @@ public final class HomeModel: ObservableModel {
     }
 
     /// Lo que verá el widget «Lo siguiente para ti»: «Seguir viendo» tal como quedó (también la copia de la última vez, sin red).
-    private func publishWidget(airings: [Airing]? = nil) {
-        services.publishWidget(continueWatching: continueWatching, airings: airings)
+    private func publishWidget(airings: [Airing]? = nil, recent: [Airing]? = nil) {
+        services.publishWidget(continueWatching: continueWatching, airings: airings, recent: recent)
         // Siri: «Seguir viendo» y tu lista (antes solo «Seguir viendo»: «pon Los Simpson» fallaba si no estaba ahí).
         services.onSiriTitles?((continueWatching + myList).map { [$0.originalTitle, $0.title] })
     }

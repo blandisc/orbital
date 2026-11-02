@@ -121,6 +121,14 @@ struct ParaTiView: View {
             await m.loadIfStale()
         }
         .refreshable { await m.refresh() }
+        // El widget «Mosaico de una lista»: tus listas de Explorar con sus pósters (cuando cambian los estantes que se ven).
+        .task(id: m.visibleShelves.map { "\($0.id):\(m.items(for: $0).count)" }) {
+            let lists = m.visibleShelves.map { plan in
+                WidgetLists.List(id: plan.id, title: shelfName(plan), posters: m.items(for: plan).filter { !$0.poster.isEmpty }
+                    .map { WidgetLists.Poster(kind: $0.kind, metaID: $0.imdb, title: $0.title, poster: $0.poster) })
+            }
+            if lists.contains(where: { !$0.posters.isEmpty }) { WidgetListsPublisher.publish(lists) }
+        }
         .fullScreenCover(isPresented: $matching) {
             let pool = m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }
             MatchDeckScreen(pool: pool, onOpenTitle: { openTitle = $0 },

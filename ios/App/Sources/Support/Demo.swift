@@ -126,7 +126,20 @@ enum Demo {
                   status: english ? "20 min left" : "quedan 20 min", progress: 0.55, poster: poster("tt0386676"), wide: wide("tt0386676"), logo: Artwork.logoURL(metaID: "tt0386676")),
             .init(kind: "series", metaID: "tt0903747", videoID: "tt0903747:2:1", title: "Breaking Bad", status: english ? "Next up: S2 · E1" : "Sigue: T2 · E1", poster: poster("tt0903747"), wide: wide("tt0903747"), logo: Artwork.logoURL(metaID: "tt0903747")),
             .init(kind: "movie", metaID: "tt0816692", videoID: "tt0816692", title: "Interstellar", status: english ? "1 h 12 min left" : "quedan 1 h 12 min", progress: 0.3, poster: poster("tt0816692"), wide: wide("tt0816692"), logo: Artwork.logoURL(metaID: "tt0816692")),
-        ])
+        ], upcoming: demoReleases(english: english))
+    }
+
+    /// «Lo nuevo de lo tuyo» de ejemplo, alrededor de hoy: ayer, hoy en la madrugada (ya salió), hoy a las 21:00, mañana y el viernes.
+    private static func demoReleases(english: Bool) -> [WidgetSnapshot.UpcomingEpisode] {
+        let calendar = Calendar.current, today = calendar.startOfDay(for: Date())
+        func at(_ days: Int, _ hour: Int) -> Date { today.addingTimeInterval(Double(days) * 86_400 + Double(hour) * 3_600) }
+        func episode(_ id: String, _ title: String, _ season: Int, _ number: Int, _ days: Int, _ hour: Int) -> WidgetSnapshot.UpcomingEpisode {
+            let aired = at(days, hour)
+            return .init(title: title, episodeLabel: english ? "S\(season) E\(number)" : "T\(season) E\(number)", date: calendar.startOfDay(for: aired), metaID: id,
+                         poster: "https://images.metahub.space/poster/medium/\(id)/img", aired: aired, atDawn: hour < 6)
+        }
+        return [episode("tt5875444", "Slow Horses", 5, 2, -1, 20), episode("tt9253284", "Andor", 2, 7, 0, 2), episode("tt14452776", "The Bear", 4, 3, 0, 21),
+                episode("tt11280740", "Severance", 3, 1, 1, 20), episode("tt2788316", "Shōgun", 2, 4, 4, 21)]
     }
 
     /// `-demo-airings`: Trakt «conectado» con un calendario de mentira (Próximos estrenos) para ver el estante en Listas.

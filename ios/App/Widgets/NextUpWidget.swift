@@ -47,8 +47,8 @@ struct NextUpWidget: Widget {
                 .environment(\.locale, Locale(identifier: entry.snapshot.language))
         }
         .configurationDisplayName("Lo siguiente para ti")
-        .description("Sigue viendo donde ibas.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        .description("Sigue viendo donde ibas, aquí o en la TV.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular])
     }
 }
 
@@ -59,6 +59,7 @@ struct NextUpView: View {
     var body: some View {
         switch family {
         case .systemMedium: MediumView(snapshot: entry.snapshot, date: entry.date)
+        case .systemLarge: LargeView(snapshot: entry.snapshot, date: entry.date)
         case .accessoryRectangular: LockView(snapshot: entry.snapshot)
         default: SmallView(snapshot: entry.snapshot)
         }
@@ -104,7 +105,7 @@ private struct Art: View {
             tintedBackground(artTone(item))
             if let image = (wide ? item.wideFile.flatMap(load) : nil) ?? poster(item) {
                 // La imagen solo rellena el espacio que le toca (no lo agranda): si no, empuja el texto fuera del widget.
-                Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().scaledToFill() }.clipped()
+                Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() }.clipped()
             }
         }
     }
@@ -122,16 +123,19 @@ private func bottomScrim(wide: Bool = false) -> some View {
 /// barra de avance. Letra clara con sombra sobre el velo, como el destacado de Inicio.
 private struct Caption: View {
     var item: WidgetSnapshot.Item
+    /// Los botones «Aquí» y «En la TV» debajo: con nombre (`.labeled`) o solo el ícono (`.icons`, el chico).
+    var actions: WatchActions.Style? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             if let logo = item.logoFile.flatMap(load) {
-                Image(uiImage: logo).resizable().scaledToFit().frame(maxHeight: DS.Widget.logoHeight, alignment: .leading)
+                Image(uiImage: logo).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFit().frame(maxHeight: DS.Widget.logoHeight, alignment: .leading)
                     .accessibilityLabel(item.title)
             } else {
                 Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
             }
             if !item.detail.isEmpty { Text(item.detail).font(DS.font(.xs, weight: .medium)).foregroundStyle(DS.text).lineLimit(2) }
             if let progress = item.progress { ProgressLine(fraction: progress) }
+            if let actions { WatchActions(item: item, style: actions).padding(.top, DS.Space.s1) }
         }
         .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
         .environment(\.colorScheme, .dark)   // va sobre el velo del arte: letra clara también con la pantalla de inicio en claro
@@ -160,7 +164,7 @@ private struct SmallView: View {
         if let item = snapshot.items.first {
             VStack(alignment: .leading) {
                 Spacer(minLength: 0)
-                Caption(item: item)
+                Caption(item: item, actions: .icons)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .widgetURL(item.link)
@@ -183,7 +187,7 @@ private struct MediumView: View {
                     ZStack(alignment: .bottomLeading) {
                         Art(item: first, wide: true)
                         bottomScrim(wide: true)
-                        Caption(item: first).padding(DS.Space.s2)
+                        Caption(item: first, actions: .icons).padding(DS.Space.s2)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 }
@@ -201,11 +205,91 @@ private struct MediumView: View {
 
     /// Dos renglones: los siguientes de «Seguir viendo»; con calendario, el segundo es el «Próximo estreno».
     @ViewBuilder private func rows(_ rest: [WidgetSnapshot.Item]) -> some View {
-        if let next = snapshot.upcoming?.first {
+        if let next = snapshot.upcoming?.first(where: { !$0.isOut(at: date) }) {
             if let one = rest.first { Row(item: one) }
             UpcomingRow(episode: next, language: snapshot.language, date: date)
         } else {
             ForEach(rest.prefix(2)) { Row(item: $0) }
+        }
+    }
+}
+
+/// «Aquí» (abre el reproductor donde ibas) y «En la TV» (lo manda a tu Orbital sin abrir la app). Tras tocar «En la TV», el botón
+/// dice lo que pasó unos minutos: «Mandando…», «En tu Orbital» o «La TV no contesta».
+struct WatchActions: View {
+    enum Style { case labeled, icons }
+    var item: WidgetSnapshot.Item
+    var style: Style
+
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            if let link = item.link {
+                Button(intent: OpenWidgetLinkIntent(link: link)) {
+                    pill(Text("Aquí"), symbol: "play.fill", solid: true)
+                }
+                .accessibilityLabel(Text("Ver aquí"))
+            }
+            Button(intent: PlayOnTVIntent(kind: item.kind, metaID: item.metaID, videoID: item.videoID, name: item.title)) {
+                tvPill
+            }
+            .accessibilityLabel(Text("Ver en la TV"))
+        }
+        .buttonStyle(.plain)
+        .environment(\.colorScheme, .dark)
+    }
+
+    @ViewBuilder private var tvPill: some View {
+        switch WidgetTVStatus.current(for: item.metaID) {
+        case .sending: pill(Text("Mandando…"), symbol: "tv", solid: false, wide: true)
+        case .sent: pill(Text("En tu Orbital"), symbol: "checkmark", solid: false, wide: true)
+        case .failed: pill(Text("La TV no contesta"), symbol: "exclamationmark.triangle.fill", solid: false, wide: true)
+        case nil: pill(Text("En la TV"), symbol: "tv", solid: false)
+        }
+    }
+
+    /// Una cápsula: papel con letra oscura («Aquí») o vidrio claro («En la TV»). Con íconos solo, el círculo; el estado de la TV
+    /// (`wide`) siempre lleva su texto para que se entienda qué pasó.
+    private func pill(_ title: Text, symbol: String, solid: Bool, wide: Bool = false) -> some View {
+        let showsTitle = style == .labeled || wide
+        return HStack(spacing: DS.Space.s1) {
+            Image(systemName: symbol).font(DS.font(.xs, weight: .bold))
+            if showsTitle { title.font(DS.font(.xs, weight: .semibold)).lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink) }
+        }
+        .foregroundStyle(solid ? DS.backdropDeep : DS.paper)
+        .padding(.horizontal, showsTitle ? DS.Space.s3 : 0)
+        .frame(minWidth: DS.Widget.button, minHeight: DS.Widget.button)
+        .background(Capsule().fill(solid ? DS.paper : DS.fillStrong))
+    }
+}
+
+/// Grande: el de ahora a lo ancho con «Aquí» y «En la TV» con nombre; abajo los otros dos de «Seguir viendo» o el próximo
+/// estreno.
+private struct LargeView: View {
+    var snapshot: WidgetSnapshot
+    var date: Date
+
+    var body: some View {
+        if let first = snapshot.items.first {
+            VStack(spacing: DS.Space.s3) {
+                ZStack(alignment: .bottomLeading) {
+                    Art(item: first, wide: true)
+                    bottomScrim(wide: true)
+                    Caption(item: first, actions: .labeled).padding(DS.Space.s3)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                .frame(maxHeight: .infinity)
+                .widgetURL(first.link)
+                VStack(spacing: DS.Space.s2) {
+                    ForEach(snapshot.items.dropFirst().prefix(2)) { Row(item: $0) }
+                    if let next = snapshot.upcoming?.first(where: { !$0.isOut(at: date) }), snapshot.items.count < 3 {
+                        UpcomingRow(episode: next, language: snapshot.language, date: date)
+                    }
+                }
+            }
+            .environment(\.colorScheme, .dark)
+            .containerBackground(for: .widget) { tintedBackground(artTone(first)).environment(\.colorScheme, .dark) }
+        } else {
+            EmptyState()
         }
     }
 }
@@ -217,7 +301,7 @@ private struct Row: View {
         Link(destination: item.link ?? URL(fileURLWithPath: "/")) {
             HStack(spacing: DS.Space.s2) {
                 ZStack {
-                    if let image = poster(item) { Image(uiImage: image).resizable().scaledToFill() } else { artTone(item) }
+                    if let image = poster(item) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() } else { artTone(item) }
                 }
                 .frame(width: DS.Widget.thumbWidth).aspectRatio(DS.Poster.aspect, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))

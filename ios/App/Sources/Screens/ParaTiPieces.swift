@@ -118,6 +118,29 @@ struct ShelfPoster: View {
     }
 }
 
+/// El nombre de un estante como texto (el widget «Mosaico de una lista» lo guarda): las mismas reglas que `shelfTitle`.
+@MainActor func shelfName(_ plan: ShelfPlan) -> String {
+    let english = AppEnvironment.shared.services.appSettings.uiLanguage == "en"
+    let brand = plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.list.brand
+    func known() -> String? {
+        if plan.id.hasPrefix("chart:") { return brand.map { String(localized: "Top 10 en \($0)") } }
+        if plan.id.hasPrefix("jw:") { return brand.map { String(localized: "Tendencias en \($0)") } }
+        switch plan.id {
+        case "mine": return String(localized: "Tus series")
+        case "watchlist": return String(localized: "Mi lista")
+        case ForYou.favoritesList: return String(localized: "Favoritos")
+        case "recs": return String(localized: "Recomendadas")
+        case "trend": return String(localized: "En tendencia")
+        case "popular": return String(localized: "Lo más popular")
+        case "critics": return String(localized: "Aprobadas por la crítica")
+        default: return nil
+        }
+    }
+    if english || ["watchlist", ForYou.favoritesList].contains(plan.id), let name = known() { return name }
+    if !plan.title.isEmpty { return plan.title }
+    return known() ?? brand ?? plan.id
+}
+
 @MainActor func shelfMeta(_ plan: ShelfPlan) -> Text? {
     let english = AppEnvironment.shared.services.appSettings.uiLanguage == "en"
     if !plan.list.meta.isEmpty, !english { return Text(verbatim: plan.list.meta) }

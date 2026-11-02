@@ -223,6 +223,14 @@ public enum DesignTokens {
         public static let scrimStart = 0.25, scrimStartWide = 0.05
         /// Alto del logo del título y radio de la sombra del texto sobre el arte (contraste del dato, como en el destacado de Inicio).
         public static let logoHeight = 28.0, textShadowRadius = 3.0
+        /// «Un Simpson del día»: la imagen del episodio (más grande que un póster: llena el mediano) y cuántos días por delante
+        /// debe haber armados antes de volver a armar la semana.
+        public static let simpsonsImagePixels = 600.0, simpsonsAheadDays = 3
+        /// «Mosaico de una lista»: los pósters del muro son chicos (hasta 24 por lista).
+        public static let listImagePixels = 220.0
+        /// «Viendo en la TV»: cuánto salta cada botón (lo mismo que el control: 10 s) y cuántos segundos de diferencia con lo
+        /// esperado justifican mandar otra actualización.
+        public static let tvSkip = 10.0, tvDrift = 5.0
     }
     /// El mosaico de «Para ti» (como `foryou-mosaic.js` en la TV): cuánto se ensancha la columna enfocada,
     /// cuánto se espera quieto antes del ambiente o de «cobrar vida», y a qué ritmo sube sola cada columna.

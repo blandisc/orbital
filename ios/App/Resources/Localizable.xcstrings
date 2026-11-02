@@ -23,6 +23,28 @@
         }
       }
     },
+    "%@ %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@"
+          }
+        }
+      }
+    },
+    "%@ %@ · %@ %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ · %@ %@"
+          }
+        }
+      }
+    },
     "%@ GB libres": {
       "extractionState": "manual",
       "localizations": {
@@ -1068,6 +1090,17 @@
         }
       }
     },
+    "Abre Explorar una vez y aquí salen tus listas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Explore once and your lists show up here."
+          }
+        }
+      }
+    },
     "Abre Orbital y toca «Seguir aquí».": {
       "extractionState": "manual",
       "localizations": {
@@ -1359,6 +1392,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open in Infuse"
+          }
+        }
+      }
+    },
+    "Abrir en Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Orbital"
           }
         }
       }
@@ -6056,6 +6100,17 @@
         }
       }
     },
+    "Cuando salga algo de tus series, aparece aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When something from your shows comes out, it shows up here."
+          }
+        }
+      }
+    },
     "Cuando salió cada episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -8443,6 +8498,17 @@
         }
       }
     },
+    "Elegir lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose list"
+          }
+        }
+      }
+    },
     "Elegir otra versión": {
       "extractionState": "manual",
       "localizations": {
@@ -9460,6 +9526,17 @@
         }
       }
     },
+    "Enlace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link"
+          }
+        }
+      }
+    },
     "Entendí: «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -9537,6 +9614,17 @@
         }
       }
     },
+    "Episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episode"
+          }
+        }
+      }
+    },
     "Episodio %@": {
       "extractionState": "manual",
       "localizations": {
@@ -9566,6 +9654,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Previous episode"
+          }
+        }
+      }
+    },
+    "Episodio del día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episode of the day"
           }
         }
       }
@@ -11624,6 +11723,17 @@
         }
       }
     },
+    "La TV no contesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV isn't answering"
+          }
+        }
+      }
+    },
     "La TV te mandó «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -11785,6 +11895,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The source asked to wait a bit. Trying again."
+          }
+        }
+      }
+    },
+    "La lista de Explorar que enseña el mosaico.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Explore list the mosaic shows."
           }
         }
       }
@@ -12465,6 +12586,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clear advanced search"
+          }
+        }
+      }
+    },
+    "Lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List"
           }
         }
       }
@@ -13457,6 +13589,17 @@
         }
       }
     },
+    "Lo que ya salió de tus series y lo que viene.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's out from your shows and what's coming."
+          }
+        }
+      }
+    },
     "Lo siguiente para ti": {
       "extractionState": "manual",
       "localizations": {
@@ -13720,6 +13863,17 @@
         }
       }
     },
+    "Los pósters de la lista que elijas, como el muro de Explorar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The posters of the list you pick, like the Explore wall."
+          }
+        }
+      }
+    },
     "Los siguientes %@": {
       "extractionState": "manual",
       "localizations": {
@@ -13771,6 +13925,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "MY LIST"
+          }
+        }
+      }
+    },
+    "Madrugada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overnight"
           }
         }
       }
@@ -13869,6 +14034,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sending to your Orbital…"
+          }
+        }
+      }
+    },
+    "Mandando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending…"
           }
         }
       }
@@ -14781,6 +14957,17 @@
         }
       }
     },
+    "Mosaico de una lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List mosaic"
+          }
+        }
+      }
+    },
     "Mostrar": {
       "extractionState": "manual",
       "localizations": {
@@ -15418,6 +15605,17 @@
         }
       }
     },
+    "Nada esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing this week"
+          }
+        }
+      }
+    },
     "Nada este día": {
       "extractionState": "manual",
       "localizations": {
@@ -15436,6 +15634,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing says it and the original language is unknown: we assume English."
+          }
+        }
+      }
+    },
+    "Nada nuevo esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing new this week"
           }
         }
       }
@@ -17007,6 +17216,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "New on your platforms"
+          }
+        }
+      }
+    },
+    "Nuevo · ya se puede ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New · ready to watch"
           }
         }
       }
@@ -21533,6 +21753,17 @@
         }
       }
     },
+    "Sigue viendo donde ibas, aquí o en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep watching where you left off, here or on the TV."
+          }
+        }
+      }
+    },
     "Sigue viendo donde ibas.": {
       "extractionState": "manual",
       "localizations": {
@@ -23343,6 +23574,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Has spoilers · Read"
+          }
+        }
+      }
+    },
+    "Tipo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
           }
         }
       }
@@ -26965,6 +27207,17 @@
         }
       }
     },
+    "Un Simpson del día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simpsons of the day"
+          }
+        }
+      }
+    },
     "Un año": {
       "extractionState": "manual",
       "localizations": {
@@ -26972,6 +27225,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "One year"
+          }
+        }
+      }
+    },
+    "Un episodio distinto cada día. Tócalo y lo pone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A different episode every day. Tap to play it."
           }
         }
       }
@@ -28592,6 +28856,28 @@
         }
       }
     },
+    "día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "day"
+          }
+        }
+      }
+    },
+    "días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days"
+          }
+        }
+      }
+    },
     "días seguidos hasta hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -28753,6 +29039,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "hours in front of the screen"
+          }
+        }
+      }
+    },
+    "hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "today"
           }
         }
       }

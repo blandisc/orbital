@@ -57,6 +57,8 @@ final class AppEnvironment {
     @ObservationIgnored private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
+    /// «Viendo en la TV» en la pantalla bloqueada y la isla.
+    private let tvActivity = TVLiveActivityController()
     @ObservationIgnored private var traktObserver: NSObjectProtocol?
     /// La actividad en vivo de las descargas: en segundo plano su barra avanza sola con lo estimado.
     func setDownloadsBackgrounded(_ value: Bool) async {
@@ -212,6 +214,8 @@ final class AppEnvironment {
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)
         tvNow.inbox = inbox
+        tvActivity.language = { [services] in services.appSettings.uiLanguage }
+        tvActivity.follow(tvNow)
         catalog = CatalogModel(services)
         inbox.onEvent = { [weak self] event in self?.announce(event) }
         // Trakt cerró la sesión: se avisa una vez, con un botón a Ajustes (antes se desconectaba en silencio).

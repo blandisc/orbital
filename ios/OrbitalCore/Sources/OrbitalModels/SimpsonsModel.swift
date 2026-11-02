@@ -103,6 +103,23 @@ public final class SimpsonsModel: ObservableModel {
         return found.isEmpty ? Array(1...Self.knownSeasons) : found.sorted()
     }
 
+    /// «Un Simpson del día» para `days` días desde `from`: el episodio de cada día de las temporadas de Ajustes. nil si Cinemeta
+    /// no contesta.
+    public func week(from: Date, days: Int = 7, calendar: Calendar = .current) async -> SimpsonsOfTheDay? {
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: Self.seriesID, persist: true) else { return nil }
+        let seasons = services.appSettings.simpsonsSeasons
+        let pool = await Task.detached(priority: .utility) { Self.pool(meta, seasons: Set(seasons)) }.value
+        guard !pool.isEmpty else { return nil }
+        let today = calendar.startOfDay(for: from)
+        let out = (0..<days).compactMap { offset -> SimpsonsOfTheDay.Day? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return nil }
+            let (season, episode) = pool[SimpsonsOfTheDay.index(for: day, count: pool.count, calendar: calendar)]
+            return SimpsonsOfTheDay.Day(day: day, season: season, episode: episode.episode, title: episode.hasTitle ? episode.title : "",
+                                        videoID: episode.id, still: Self.still(season: season, episode: episode.episode))
+        }
+        return SimpsonsOfTheDay(days: out, seasons: seasons.sorted())
+    }
+
     /// Cambiaron las temporadas en Ajustes: el que ya estaba listo se descarta (podía ser de otra temporada).
     public func seasonsChanged() { next = nil }
 }
