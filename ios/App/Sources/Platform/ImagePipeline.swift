@@ -20,8 +20,12 @@ import OrbitalCore
 final class ImagePipeline: @unchecked Sendable {
     static let shared = ImagePipeline()
 
-    /// Lo que cabe en memoria ya reducido y en disco tal como llegó de la red.
-    private static let memoryBytes = 96 * 1024 * 1024, diskBytes = 384 * 1024 * 1024, urlMemoryBytes = 8 * 1024 * 1024
+    /// Lo que cabe en memoria ya reducido y en disco tal como llegó de la red. La memoria va con la del teléfono (1/32, entre
+    /// 96 y 256 MB): con 96 fijos, los fondos grandes de Inicio sacaban los ~100 pósters del muro de Explorar y cada cambio de
+    /// pestaña los volvía a leer y preparar (Fernando, 1 nov 2026: «Explorar cambia lento, como que recarga las imágenes»).
+    /// Con aviso de memoria se vacía igual.
+    private static let memoryBytes = min(256, max(96, Int(ProcessInfo.processInfo.physicalMemory / 1_048_576 / 32))) * 1024 * 1024
+    private static let diskBytes = 384 * 1024 * 1024, urlMemoryBytes = 8 * 1024 * 1024
     /// Descargas a la vez (HTTP/2 las lleva por una sola conexión) y decodificaciones a la vez (más compite por CPU con el desplazamiento).
     private static let maxDownloads = 12, maxDecodes = 4
     /// Los tamaños se redondean hacia arriba a este paso de píxeles: dos piezas casi iguales comparten imagen.

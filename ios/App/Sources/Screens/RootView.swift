@@ -391,6 +391,18 @@ struct MainTabs: View {
             #if DEBUG
             // `-demo-open control-simpsons`: como si tocaras «Un Simpson al azar» en el Centro de control (con `-demo-free-tabs`).
             if Demo.isOn, Demo.open == "control-simpsons" { try? await Task.sleep(for: .seconds(2)); OpenSimpsonsIntent.open?() }
+            // `-demo-tab-cycle N -perf -demo-free-tabs`: de Inicio a Explorar N veces, midiendo cada cambio (ver `Perf.cycle`).
+            if Demo.isOn, let n = Demo.value(after: "-demo-tab-cycle").flatMap(Int.init) {
+                try? await Task.sleep(for: .seconds(10))   // Demo: que termine de arrancar
+                for i in 1...max(1, n) {
+                    tab = 0
+                    try? await Task.sleep(for: .seconds(3))   // Demo: que Inicio se asiente
+                    Perf.begin("xtab"); Perf.cycle("xtab", i); HitchMeter.measure("xtab", seconds: 2)
+                    tab = Demo.value(after: "-demo-tab-cycle-to").flatMap(Int.init) ?? 1   // a otra pestaña, para comparar
+                    try? await Task.sleep(for: .seconds(4))   // Demo: lo que tarda en asentarse Explorar
+                }
+                Perf.cycle("done", n)
+            }
             #endif
         }
         #if DEBUG

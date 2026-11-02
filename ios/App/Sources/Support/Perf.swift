@@ -43,6 +43,22 @@ enum Perf {
         else { try? Data(line.utf8).write(to: log) }
     }
 
+    /// El inicio de una vuelta de medición («ORBITAL-CYCLE xtab 3 51234»): las peticiones que empiezan después son de esa vuelta.
+    @MainActor static func cycle(_ scope: String, _ n: Int) {
+        guard isOn else { return }
+        let line = "ORBITAL-CYCLE \(scope) \(n) \(now())\n"
+        if let handle = try? FileHandle(forWritingTo: log) { handle.seekToEndOfFile(); handle.write(Data(line.utf8)); try? handle.close() }
+        else { try? Data(line.utf8).write(to: log) }
+    }
+
+    /// Una línea suelta en la bitácora de medidas (el tirón más largo de una vuelta).
+    @MainActor static func record(_ name: String, _ ms: Int) {
+        guard isOn else { return }
+        let line = "ORBITAL-PERF \(name) \(ms)\n"
+        if let handle = try? FileHandle(forWritingTo: log) { handle.seekToEndOfFile(); handle.write(Data(line.utf8)); try? handle.close() }
+        else { try? Data(line.utf8).write(to: log) }
+    }
+
     /// Las peticiones, en un archivo aparte: «ORBITAL-NET api 812 940 5321 200 GET https://…/ruta?token=…».
     static let netLog = FileManager.default.temporaryDirectory.appendingPathComponent("orbital-net.log")
     private static let netLock = NSLock()
@@ -94,5 +110,42 @@ extension View {
     /// Marca cuándo aparecen los datos (al pintarse) y la primera imagen de esta vista.
     func perfTag(_ tag: String) -> some View {
         environment(\.perfTag, Perf.isOn ? tag : nil).onAppear { Perf.mark(tag + ".shown") }
+    }
+}
+
+
+/// El cuadro que más tardó (ms) durante un rato (con `-perf`): lo que se siente como un tirón al cambiar de pestaña. A 60 Hz
+/// un cuadro dura ~17 ms; uno de 100 ms ya se nota.
+@MainActor final class HitchMeter: NSObject {
+    private static var current: HitchMeter?
+    private let scope: String, until: CFTimeInterval
+    private var link: CADisplayLink?, last: CFTimeInterval = 0, worst: CFTimeInterval = 0, lost: CFTimeInterval = 0
+
+    private init(scope: String, seconds: Double) {
+        self.scope = scope; until = CACurrentMediaTime() + seconds
+        super.init()
+    }
+
+    static func measure(_ scope: String, seconds: Double) {
+        guard Perf.isOn else { return }
+        let meter = HitchMeter(scope: scope, seconds: seconds)
+        current = meter
+        let link = CADisplayLink(target: meter, selector: #selector(tick(_:)))
+        link.add(to: .main, forMode: .common)
+        meter.link = link
+    }
+
+    @objc private func tick(_ link: CADisplayLink) {
+        if last > 0 {
+            let gap = link.timestamp - last
+            worst = max(worst, gap)
+            lost += max(0, gap - link.duration * 1.5)   // lo que se atrasó más allá de un cuadro y medio
+        }
+        last = link.timestamp
+        guard link.timestamp >= until else { return }
+        link.invalidate()
+        Perf.record(scope + ".hitch", Int(worst * 1000))
+        Perf.record(scope + ".lost", Int(lost * 1000))
+        if HitchMeter.current === self { HitchMeter.current = nil }
     }
 }

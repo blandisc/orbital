@@ -81,6 +81,7 @@ struct ListsView: View {
 
     var body: some View {
         ScrollViewReader { proxy in scroller(proxy).task { await demoScroll(proxy) } }
+            .onAppear { Perf.mark("xtab.appear") }   // con `-perf`: de tocar Explorar a verla
             .alert("Nueva lista", isPresented: $naming) {
                 TextField("Nombre", text: $newListName)
                 Button("Crear") { createList() }
@@ -120,9 +121,10 @@ struct ListsView: View {
 
     private func scroller(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
-            // Un `VStack` (no perezoso): son pocos grupos y así el índice puede saltar a cualquiera; lo pesado de adentro
-            // (las tiras) sí es perezoso.
-            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+            // Perezoso (Fernando, 1 nov 2026: «Explorar cambia lento»): al volver a la pestaña solo se acomoda lo que se ve;
+            // antes un `VStack` volvía a acomodar todos los grupos (plataformas, colecciones, años, listas) en cada cambio.
+            // El índice de arriba sigue saltando a cualquiera (cada grupo tiene su `id`).
+            LazyVStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 // Para ti B (docs/producto/inicio-benchmark/para-ti/): el mosaico como portada, un círculo por cada parte y
                 // «¿Qué vemos hoy?». El destacado, «Porque viste» y los estrenos viven en Inicio.
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {

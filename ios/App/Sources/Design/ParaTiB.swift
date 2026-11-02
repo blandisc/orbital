@@ -346,16 +346,25 @@ private final class DriftView: UIView {
     /// Al volver a la ventana (otra pestaña, la app al frente) la animación sigue ahí; si iOS la quitó, se vuelve a poner.
     /// El controlador del muro se cuelga del de la pantalla (como pide UIKit): así recibe el tamaño de letra, la apariencia y
     /// los cambios de la ventana por la vía normal (auditoría del 31 oct 2026, B8).
+    /// Se cuelga una vez y se queda colgado mientras el muro exista: antes se descolgaba al salir de la ventana y se volvía a
+    /// colgar al volver, y cada cambio de pestaña acomodaba otra vez las ocho columnas (~200 pósters) en el hilo principal
+    /// (Fernando, 1 nov 2026: «Explorar cambia lento»). Se descuelga al irse el muro (`deinit`).
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        if window != nil, host.parent == nil, let parent = owningController {
+        if window != nil, let parent = owningController, host.parent !== parent {
+            if host.parent != nil { host.willMove(toParent: nil); host.removeFromParent() }
             parent.addChild(host)
             host.didMove(toParent: parent)
-        } else if window == nil, host.parent != nil {
+        }
+        sync()
+    }
+
+    deinit {
+        MainActor.assumeIsolated { [host] in
+            guard host.parent != nil else { return }
             host.willMove(toParent: nil)
             host.removeFromParent()
         }
-        sync()
     }
 
     /// El controlador más cercano hacia arriba (el de SwiftUI que pinta esta pantalla).
