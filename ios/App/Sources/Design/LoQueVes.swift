@@ -13,8 +13,12 @@ struct WatchingCard: View {
     let stats: WatchingStats?
     /// «Lo que ves» en el idioma de la app (lo pone quien la usa: el del sistema no siempre es el de la app).
     let name: String
-    /// Los géneros de la semana ya en el idioma de la app (los pone quien la usa).
+    /// Los géneros del periodo ya en el idioma de la app (los pone quien la usa).
     var genres: [String] = []
+    /// El periodo que cuenta: el primero con algo (si la semana va vacía, el mes; si no, el año…).
+    var period: WatchingStats.Period = .week
+    /// Lo último que viste, para cuando no hay nada en ningún periodo cargado.
+    var lastTitle: String?
     /// nil: solo el renglón (dentro de un `NavigationLink`, que recibe el toque; ver `CollectionsShowcase`).
     var action: (() -> Void)?
 
@@ -28,14 +32,20 @@ struct WatchingCard: View {
             .contentShape(Rectangle())
     }
 
-    /// «4 h esta semana · sobre todo drama» (o «Aún nada esta semana»; mientras carga, «Esta semana»).
+    /// «12 h este mes · sobre todo drama»: del primer periodo con algo (nunca vacía: el domingo la semana empieza en cero).
+    /// Sin nada contado, lo último que viste; mientras carga, «Lo que viste».
     private var detail: Text {
-        guard let s = stats else { return Text("Esta semana") }
-        if s.isEmpty { return Text("Aún nada esta semana") }
+        guard let s = stats else { return Text("Lo que viste") }
+        if s.isEmpty { return lastTitle.map { Text("Lo último: \($0)") } ?? Text("Aún no hay nada") }
         let h = s.minutes / 60, m = s.minutes % 60
-        let time = h == 0 ? Text("\(m) min esta semana") : Text("\(h) h esta semana")
+        let amount = h == 0 ? Text("\(m) min") : Text("\(h) h")
+        let time = Text("\(amount) \(WatchingCard.phrase(period))")
         guard let genre = genres.first else { return time }
         return Text("\(time) · sobre todo \(genre.lowercased())")
+    }
+
+    static func phrase(_ p: WatchingStats.Period) -> Text {
+        switch p { case .week: Text("esta semana"); case .month: Text("este mes"); case .year: Text("este año"); case .all: Text("desde siempre") }
     }
 }
 

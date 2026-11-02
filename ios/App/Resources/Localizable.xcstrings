@@ -2828,6 +2828,17 @@
         }
       }
     },
+    "Aún nada %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing yet %@"
+          }
+        }
+      }
+    },
     "Aún nada esta semana": {
       "extractionState": "manual",
       "localizations": {
@@ -2835,6 +2846,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing yet this week"
+          }
+        }
+      }
+    },
+    "Aún no hay nada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing yet"
           }
         }
       }
@@ -7753,6 +7775,17 @@
         }
       }
     },
+    "El año empezó el %@ y todavía no ves nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The year started on %@ and you haven't watched anything yet."
+          }
+        }
+      }
+    },
     "El borde avanza": {
       "extractionState": "manual",
       "localizations": {
@@ -8173,6 +8206,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The whole year's map and what you watched each day"
+          }
+        }
+      }
+    },
+    "El mes empezó el %@ y todavía no ves nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The month started on %@ and you haven't watched anything yet."
           }
         }
       }
@@ -12027,6 +12071,17 @@
         }
       }
     },
+    "La semana empezó el %@ y todavía no ves nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The week started on %@ and you haven't watched anything yet."
+          }
+        }
+      }
+    },
     "La sigues otra vez": {
       "extractionState": "manual",
       "localizations": {
@@ -13494,6 +13549,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last watched"
+          }
+        }
+      }
+    },
+    "Lo último que viste fue %@, el %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last thing you watched was %@, on %@."
+          }
+        }
+      }
+    },
+    "Lo último: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last: %@"
           }
         }
       }
@@ -28436,6 +28513,17 @@
         }
       }
     },
+    "desde siempre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "all time"
+          }
+        }
+      }
+    },
     "días seguidos hasta hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -28513,6 +28601,17 @@
         }
       }
     },
+    "esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this week"
+          }
+        }
+      }
+    },
     "esta vez": {
       "extractionState": "manual",
       "localizations": {
@@ -28520,6 +28619,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "this time"
+          }
+        }
+      }
+    },
+    "este año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this year"
+          }
+        }
+      }
+    },
+    "este mes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this month"
           }
         }
       }
