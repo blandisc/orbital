@@ -768,10 +768,10 @@ def test_the_awards_are_the_iphones_and_each_opens_its_winners(make_foryou):
     oscar = rows["award:oscar"]
     assert oscar["title"] == "Óscar" and oscar["meta"] == "Mejor película" and oscar["statue"] == "/img/awards/oscar.png"
     assert oscar["tint"] == "gold" and rows["award:emmy"]["tint"] == "silver" and rows["award:ariel"]["tint"] == "bronze"
-    assert sum(r["count"] for r in awards) == 152
+    assert sum(r["count"] for r in awards) == 154
     winners = make_foryou(trakt_keys=False).list_items("award:oscar")
-    assert winners[0]["meta_id"] == "tt28607951" and winners[0]["title"] == "Anora" and winners[0]["award_year"] == 2025
-    assert winners[0]["why"] == "Óscar 2025" and winners[0]["kind"] == "movie"
+    assert winners[0]["meta_id"] == "tt30144839" and winners[0]["title"] == "One Battle After Another" and winners[0]["award_year"] == 2026
+    assert winners[0]["why"] == "Óscar 2026" and winners[0]["kind"] == "movie"
     assert make_foryou(trakt_keys=False).list_items("award:emmy")[0]["kind"] == "series"
     with pytest.raises(KeyError):
         make_foryou(trakt_keys=False).list_items("award:razzie")

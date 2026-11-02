@@ -9,6 +9,12 @@
    "tint": "gold",
    "winners": [
     {
+     "imdb": "tt30144839",
+     "title": "One Battle After Another",
+     "year": 2025,
+     "award_year": 2026
+    },
+    {
      "imdb": "tt28607951",
      "title": "Anora",
      "year": 2024,
@@ -173,6 +179,12 @@
    "category": "Mejor serie de drama",
    "tint": "silver",
    "winners": [
+    {
+     "imdb": "tt31938062",
+     "title": "The Pitt",
+     "year": 2025,
+     "award_year": 2026
+    },
     {
      "imdb": "tt31938062",
      "title": "The Pitt",

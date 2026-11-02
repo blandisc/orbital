@@ -2,6 +2,7 @@
 public enum Awards {
     public static let all: [AwardCollection] = [
         AwardCollection(id: "oscar", kind: "movie", winners: [
+            .init(imdb: "tt30144839", title: "One Battle After Another", year: 2025, awardYear: 2026),
             .init(imdb: "tt28607951", title: "Anora", year: 2024, awardYear: 2025),
             .init(imdb: "tt15398776", title: "Oppenheimer", year: 2023, awardYear: 2024),
             .init(imdb: "tt6710474", title: "Everything Everywhere All at Once", year: 2022, awardYear: 2023),
@@ -30,6 +31,7 @@ public enum Awards {
             .init(imdb: "tt0169547", title: "American Beauty", year: 1999, awardYear: 2000),
         ]),
         AwardCollection(id: "emmy", kind: "series", winners: [
+            .init(imdb: "tt31938062", title: "The Pitt", year: 2025, awardYear: 2026),
             .init(imdb: "tt31938062", title: "The Pitt", year: 2025, awardYear: 2025),
             .init(imdb: "tt2788316", title: "Shōgun", year: 2024, awardYear: 2024),
             .init(imdb: "tt7660850", title: "Succession", year: 2018, awardYear: 2023),
