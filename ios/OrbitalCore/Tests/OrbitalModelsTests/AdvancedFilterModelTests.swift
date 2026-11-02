@@ -32,6 +32,9 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(model.results.map(\.imdb), ["tt0000001", "tt0000003"], "lo que ya viste no sale")
         XCTAssertEqual(model.results.first?.tmdbRating, 8.1)
         XCTAssertEqual(model.total, 3, "el número que dice la puerta de Buscar")
+        XCTAssertEqual(model.count, FilterCount(movies: 3, series: 0))
+        let again = AdvancedFilterModel(rig.services, watched: { [] })
+        XCTAssertEqual(again.count, model.count, "se recuerda al cerrar la app, con el desglose")
         let asked = rig.http.calls.count
         await model.search()
         XCTAssertEqual(rig.http.calls.count, asked, "el mismo filtro no vuelve a pedir")
@@ -189,5 +192,19 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(model.total, 1)
         XCTAssertEqual(model.results.map(\.imdb), ["tt0000007"])
         XCTAssertFalse(rig.http.calls.contains { $0.contains("letterboxd.com") }, "en series no se pregunta a Letterboxd")
+    }
+
+    /// «Todo»: el número se parte en películas y series, cada uno con lo que dice TMDB de su búsqueda.
+    func testElNumeroSeParteEnPeliculasYSeries() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        rig.http.prefix["\(tmdb)/discover/tv"] = ["results": [], "total_results": 380]
+        rig.http.prefix["\(tmdb)/discover/movie"] = ["results": [["id": 1]], "total_results": 860]
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        var f = AdvancedFilter(); f.genres = ["comedia"]
+        model.filter = f
+        await model.search()
+        XCTAssertEqual(model.count, FilterCount(movies: 860, series: 380))
+        XCTAssertEqual(model.total, 1240)
     }
 }

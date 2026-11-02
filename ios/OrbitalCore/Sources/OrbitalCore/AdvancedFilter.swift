@@ -300,9 +300,9 @@ extension Tmdb {
         try await discoverCounting(filter, page: page).rows
     }
 
-    /// Lo mismo, con cuántos títulos hay en total (la suma de lo que TMDB dice de cada búsqueda). Con «Repartido por
-    /// décadas» hay una búsqueda por década y tipo, y se intercalan: una de cada década, luego la siguiente.
-    public func discoverCounting(_ filter: AdvancedFilter, page: Int = 1) async throws -> (rows: [TmdbRow], total: Int) {
+    /// Lo mismo, con cuántos títulos hay (la suma de lo que TMDB dice de cada búsqueda), en total y por tipo. Con «Repartido
+    /// por décadas» hay una búsqueda por década y tipo, y se intercalan: una de cada década, luego la siguiente.
+    public func discoverCounting(_ filter: AdvancedFilter, page: Int = 1) async throws -> (rows: [TmdbRow], total: Int, count: FilterCount) {
         let spans: [ClosedRange<Int>?] = filter.spread ? filter.decades.map { Optional($0) } : [filter.years]
         let asks = spans.flatMap { span in filter.kinds.map { (kind: $0, years: span) } }
         let lists = try await withThrowingTaskGroup(of: (Int, [TmdbRow], Int).self) { group in
@@ -324,6 +324,20 @@ extension Tmdb {
         var out: [TmdbRow] = []
         for i in 0..<(lists.map(\.rows.count).max() ?? 0) { for list in lists where i < list.rows.count { out.append(list.rows[i]) } }
         if filter.sort == .rating { out.sort { $0.voteAverage > $1.voteAverage } }
-        return (out, lists.reduce(0) { $0 + $1.total })
+        var count = FilterCount()
+        for (i, list) in lists.enumerated() { if asks[i].kind == "movie" { count.movies += list.total } else { count.series += list.total } }
+        return (out, count.total, count)
+    }
+}
+
+/// Cuántos títulos encontró el filtro avanzado, películas y series por separado («1 240 títulos · 860 películas · 380
+/// series»). Es lo que dice TMDB antes de quitar lo que ya viste (y lo que no cabe en tu tiempo o tus estrellas).
+public struct FilterCount: Sendable, Equatable, Codable {
+    public var movies = 0, series = 0
+    public var total: Int { movies + series }
+    public init(movies: Int = 0, series: Int = 0) { self.movies = movies; self.series = series }
+    /// Los resultados ya hechos (premios): cuántas películas y cuántas series.
+    public init(_ items: [Suggestion]) {
+        self.init(movies: items.filter { $0.kind == "movie" }.count, series: items.filter { $0.kind != "movie" }.count)
     }
 }

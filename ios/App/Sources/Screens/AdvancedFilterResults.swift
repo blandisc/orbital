@@ -18,9 +18,10 @@ struct FilterResultsView: View {
         let language = env.services.appSettings.uiLanguage
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                if let total = model.total {
-                    Text("\(Strings.count(total, language: language)) títulos").recipe(.section).padding(.horizontal, DS.Space.gutter)
-                        .accessibilityIdentifier("filter-total")
+                if let count = model.count {
+                    // Opción A (Fernando, 2 nov 2026): la cifra al frente y, debajo, cuántas películas y cuántas series.
+                    ResultCountHeader(count: count, beforeWatched: model.filter.hideWatched && model.filter.awards.isEmpty, language: language)
+                        .padding(.horizontal, DS.Space.gutter)
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Space.s2) {
