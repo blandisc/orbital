@@ -34,6 +34,8 @@ struct RatingsRow: View {
     let imdb: String?
     let tmdb: Double?
     let trakt: Double?
+    /// El promedio de Letterboxd (0.5–5), si la película está ahí.
+    var letterboxd: Double?
     /// Al centro (la ficha).
     var centered = false
 
@@ -56,6 +58,13 @@ struct RatingsRow: View {
         if let imdb, (Double(imdb) ?? 0) > 0 { rating(.imdb, Text(verbatim: imdb)) }
         if let tmdb, tmdb > 0 { rating(.tmdb, Text(verbatim: "\(Int((tmdb * 10).rounded()))\u{00A0}%")) }
         if let trakt, trakt > 0 { rating(.trakt, Text(verbatim: "\(Int((trakt * 10).rounded()))\u{00A0}%")) }
+        if let letterboxd, letterboxd > 0 {
+            HStack(spacing: DS.Space.s2) {
+                LetterboxdMark().accessibilityHidden(false).accessibilityLabel(Text(verbatim: "Letterboxd"))
+                Text(verbatim: String(format: "%.1f", letterboxd)).font(DS.TextRecipe.label.font).monospacedDigit().foregroundStyle(DS.textMuted)
+                    .lineLimit(1).fixedSize()
+            }
+        }
     }
 
     private func rating(_ service: RatingMark.Service, _ value: Text) -> some View {

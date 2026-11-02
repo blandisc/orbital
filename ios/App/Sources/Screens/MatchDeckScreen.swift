@@ -40,7 +40,7 @@ struct MatchDeckScreen: View {
                 if !model.loaded {
                     skeleton   // mientras llega lo visto: la forma de la carta, no una pantalla en blanco
                 } else if model.cards.isEmpty {
-                    emptyState(model).frame(maxHeight: .infinity)
+                    emptyState(model).frame(maxHeight: .infinity).overlay(alignment: .bottom) { deckNotices }   // la última que guardaste
                 } else {
                     MatchDeck(cards: model.cards,
                               genres: { Vocabulary.genres($0.genres, language: env.services.appSettings.uiLanguage) },
@@ -49,6 +49,7 @@ struct MatchDeckScreen: View {
                               onDiscard: { model.discard($0) },
                               onOpen: { s in dismiss(); onOpenTitle(s.route) })
                         .frame(maxHeight: .infinity)
+                        .overlay(alignment: .bottom) { deckNotices }
                     actions(model)
                 }
             } else {
@@ -57,9 +58,8 @@ struct MatchDeckScreen: View {
         }
         .padding(DS.Space.gutter)
         .background(Backdrop())
-        // «Guardada en Tu match perfecto · Deshacer» al momento: el mazo tapa la raíz, que es donde van los avisos, y antes
-        // salía hasta cerrarlo. Arriba, para no tapar los botones de abajo.
-        .overlay(alignment: .top) { BannerView().padding(.top, DS.Space.s2) }
+        // «Guardada en Tu match perfecto · Deshacer» al momento (el mazo tapa la raíz, que es donde van los avisos, y antes
+        // salía hasta cerrarlo); va abajo, encima de Paso · Ver ya · Guardar (`deckNotices`).
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
         .onAppear { env.ui.coverShowsNotices = true }
         .onDisappear { env.ui.coverShowsNotices = false }
@@ -107,6 +107,11 @@ struct MatchDeckScreen: View {
     }
 
     /// Paso · Ver ya · Guardar, cada uno con su nombre debajo; Paso y Guardar hacen salir volando la carta.
+    /// Los avisos del mazo, abajo, justo encima de los botones: al alcance del pulgar. Se quitan deslizándolos hacia arriba.
+    private var deckNotices: some View {
+        BannerView().padding(.horizontal, -DS.Space.gutter).padding(.bottom, DS.Space.s2)
+    }
+
     private func actions(_ model: MatchDeckModel) -> some View {
         HStack(alignment: .top, spacing: DS.Space.s6) {
             action(Text("Paso"), id: "match-discard") {

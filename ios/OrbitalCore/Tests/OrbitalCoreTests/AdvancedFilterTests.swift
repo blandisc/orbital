@@ -182,4 +182,22 @@ final class AdvancedFilterTests: XCTestCase {
         let back = try JSONDecoder().decode(AdvancedFilter.self, from: JSONEncoder().encode(g))
         XCTAssertEqual(back.withoutClock, g.withoutClock)
     }
+
+    /// Letterboxd califica películas: ordenar o pedir un mínimo ahí deja solo películas y pide a TMDB las mejor calificadas.
+    func testLetterboxdSoloPeliculas() throws {
+        var f = AdvancedFilter()
+        f.minLetterboxd = 4
+        XCTAssertEqual(f.kinds, ["movie"])
+        XCTAssertTrue(f.usesLetterboxd)
+        XCTAssertEqual(f.activeCount, 1)
+        f.minLetterboxd = nil; f.sort = .letterboxd
+        XCTAssertEqual(f.kinds, ["movie"])
+        XCTAssertEqual(dict(f.params(kind: "movie"))["sort_by"], "vote_average.desc")
+        f.format = .series
+        XCTAssertEqual(f.kinds, [], "series en Letterboxd: no hay")
+        f.minLetterboxd = 3.5
+        let back = try JSONDecoder().decode(AdvancedFilter.self, from: JSONEncoder().encode(f))
+        XCTAssertEqual(back.minLetterboxd, 3.5)
+        XCTAssertEqual(back.sort, .letterboxd)
+    }
 }

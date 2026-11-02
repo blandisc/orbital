@@ -135,6 +135,65 @@ public struct Letterboxd: Sendable {
         return LetterboxdMatch(imdb: imdb, kind: kind, tmdbID: tmdb)
     }
 
+    // MARK: lo que dice Letterboxd de una película (su promedio y sus reseñas populares)
+
+    /// Cuánto se recuerda lo de una película (su promedio cambia poco).
+    public static let infoTTL: TimeInterval = 3 * 24 * 3600
+
+    /// El promedio de Letterboxd (0.5–5) y sus reseñas populares de una película, por su IMDb (Letterboxd tiene una
+    /// dirección que lleva de IMDb a su página). nil si Letterboxd no la tiene (casi todas las series) o no contestó.
+    public func info(imdb: String, now: Date = Date()) async -> LetterboxdFilmInfo? {
+        guard imdb.range(of: #"^tt\d+$"#, options: .regularExpression) != nil else { return nil }
+        let key = "lb-info.\(imdb)"
+        if let saved = kv.data(key), let info = try? JSONDecoder().decode(LetterboxdFilmInfo.self, from: saved), now.timeIntervalSince(info.fetchedAt) < Self.infoTTL {
+            return info.missing ? nil : info
+        }
+        do {
+            var info = Self.parseFilmInfo(try await page("/imdb/\(imdb)/")) ?? LetterboxdFilmInfo(missing: true)
+            info.fetchedAt = now
+            kv.set(key, data: try? JSONEncoder().encode(info))
+            return info.missing ? nil : info
+        } catch LetterboxdError.notFound {
+            kv.set(key, data: try? JSONEncoder().encode(LetterboxdFilmInfo(missing: true, fetchedAt: now)))   // que no la tiene, también se recuerda
+            return nil
+        } catch { return nil }
+    }
+
+    /// El promedio de muchas películas a la vez (para ordenar o filtrar), de pocas en pocas.
+    public func averages(_ imdbs: [String], concurrency: Int = 4) async -> [String: Double] {
+        let wanted = Array(Set(imdbs))
+        return await withTaskGroup(of: (String, Double?).self) { group in
+            var next = 0, out: [String: Double] = [:]
+            func add() { guard next < wanted.count, !Task.isCancelled else { return }; let id = wanted[next]; next += 1; group.addTask { (id, await self.info(imdb: id)?.average) } }
+            for _ in 0..<concurrency { add() }
+            for await (id, avg) in group { if let avg { out[id] = avg }; add() }
+            return out
+        }
+    }
+
+    static func parseFilmInfo(_ html: String) -> LetterboxdFilmInfo? {
+        guard html.contains("data-tmdb-id") || html.contains("twitter:data2") else { return nil }
+        var info = LetterboxdFilmInfo()
+        info.slug = firstMatch(#"<meta property="og:url" content="https://letterboxd\.com/film/([^/"]+)/""#, in: html)?.last
+        info.average = firstMatch(#"name="twitter:data2" content="([\d.]+) out of 5""#, in: html)?.last.flatMap { Double($0) }
+        info.reviews = html.components(separatedBy: "<article class=\"production-viewing").dropFirst().prefix(8).compactMap { raw in
+            let block = raw.components(separatedBy: "</article>").first ?? raw
+            guard let author = firstMatch(#"<strong class="displayname">([^<]+)</strong>"#, in: block)?.last.map(decodeEntities) else { return nil }
+            let body = block.components(separatedBy: "js-review-body").dropFirst().first ?? ""
+            let text = allMatches(#"<p>(.*?)</p>"#, in: body.components(separatedBy: "viewing-actions").first ?? body).map {
+                decodeEntities($0[1].replacingOccurrences(of: "<br />", with: "\n").replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }.filter { !$0.isEmpty }.joined(separator: "\n\n")
+            guard !text.isEmpty else { return nil }
+            let stars = firstMatch(#"aria-label="([★½]+)""#, in: block)?.last
+            let rating = stars.map { Double($0.filter { $0 == "★" }.count) + ($0.contains("½") ? 0.5 : 0) }
+            let likes = firstMatch(#"data-count="(\d+)""#, in: block)?.last.flatMap { Int($0) }
+            return LetterboxdPublicReview(author: author.trimmingCharacters(in: .whitespaces), rating: rating, text: text,
+                                          likes: likes, spoiler: block.contains("This review may contain spoilers"))
+        }
+        return info
+    }
+
     // MARK: texto
 
     static func tag(_ name: String, in text: String) -> String? {
@@ -226,4 +285,25 @@ public struct LetterboxdFilm: Sendable, Codable, Equatable {
 public struct LetterboxdMatch: Sendable, Codable, Equatable {
     public var imdb: String, kind: String, tmdbID: Int?
     public init(imdb: String, kind: String, tmdbID: Int?) { self.imdb = imdb; self.kind = kind; self.tmdbID = tmdbID }
+}
+
+/// Lo que dice Letterboxd de una película: su promedio (0.5–5) y sus reseñas populares. `missing`: Letterboxd no la tiene.
+public struct LetterboxdFilmInfo: Sendable, Codable, Equatable {
+    public var slug: String?
+    public var average: Double?
+    public var reviews: [LetterboxdPublicReview] = []
+    public var missing = false
+    public var fetchedAt = Date.distantPast
+    public init(slug: String? = nil, average: Double? = nil, reviews: [LetterboxdPublicReview] = [], missing: Bool = false, fetchedAt: Date = .distantPast) {
+        self.slug = slug; self.average = average; self.reviews = reviews; self.missing = missing; self.fetchedAt = fetchedAt
+    }
+}
+
+/// Una reseña popular de alguien en Letterboxd.
+public struct LetterboxdPublicReview: Sendable, Codable, Equatable, Identifiable {
+    public var author: String, rating: Double?, text: String, likes: Int?, spoiler: Bool
+    public var id: String { author + String(text.prefix(24)) }
+    public init(author: String, rating: Double?, text: String, likes: Int?, spoiler: Bool) {
+        self.author = author; self.rating = rating; self.text = text; self.likes = likes; self.spoiler = spoiler
+    }
 }

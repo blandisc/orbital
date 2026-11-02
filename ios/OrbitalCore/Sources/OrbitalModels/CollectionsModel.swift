@@ -164,6 +164,14 @@ public final class CollectionsModel: ObservableModel {
 
     static let ratingConcurrency = 16
 
+    /// El promedio de Letterboxd de cada película (0.5–5), para «Mejor calificadas en Letterboxd»: de su página, de pocas en
+    /// pocas y recordado unos días. Las que Letterboxd no tiene no salen.
+    public func letterboxdRatings(_ imdbs: [String]) async -> [String: Double] {
+        await Letterboxd(http: services.http, kv: services.kv).averages(Array(imdbs.prefix(Self.letterboxdLimit)))
+    }
+    /// Cuántas películas de una lista se preguntan a Letterboxd (cada una es una página la primera vez).
+    static let letterboxdLimit = 150
+
     private var imdbCache: [String: Double] = [:]
 
     /// Lo que ya viste (Trakt), para «Ocultar lo que ya vi»; se pide una vez.

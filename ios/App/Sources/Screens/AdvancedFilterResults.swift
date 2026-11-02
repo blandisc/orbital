@@ -67,6 +67,7 @@ struct FilterResultsView: View {
                     Picker(selection: Binding(get: { model.filter.sort }, set: { model.filter.sort = $0 })) {
                         Label("Más populares", systemImage: "flame").tag(AdvancedFilter.Sort.popular)
                         Label("Mejor calificadas", systemImage: "star").tag(AdvancedFilter.Sort.rating)
+                        Label("Mejor calificadas en Letterboxd", systemImage: "star.bubble").tag(AdvancedFilter.Sort.letterboxd)
                         Label("Más nuevas", systemImage: "calendar").tag(AdvancedFilter.Sort.newest)
                     } label: { EmptyView() }
                 } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
@@ -82,9 +83,10 @@ struct FilterResultsView: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             PosterView(url: s.poster, title: s.title)
                 .overlay(alignment: .bottomLeading) {
-                    if let r = s.tmdbRating {
-                        Label { Text(verbatim: FilterText.number(r)) } icon: { Image(systemName: "star.fill") }
-                            .recipe(.badge, color: DS.paper)
+                    // Con Letterboxd, su promedio (en su verde); si no, el de TMDB.
+                    if let r = s.letterboxdRating ?? s.tmdbRating {
+                        Label { Text(verbatim: FilterText.number((r * 10).rounded() / 10)) } icon: { Image(systemName: "star.fill") }
+                            .recipe(.badge, color: s.letterboxdRating != nil ? DS.Letterboxd.leaf : DS.paper)
                             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1 / 2)
                             .background(DS.badgeBackground, in: Capsule())
                             .padding(DS.Space.s1)
@@ -130,7 +132,7 @@ struct FilterResultsView: View {
         case .genre: model.filter.genres = []; model.filter.excluded = []
         case .era: model.filter.years = nil; model.filter.spread = false
         case .length: model.filter.length = .any
-        case .rating: model.filter.minRating = nil
+        case .rating: model.filter.minRating = nil; model.filter.minLetterboxd = nil
         case .fame: model.filter.fame = .any
         case .place: model.filter.providers = []
         case .origin: model.filter.countries = []

@@ -110,11 +110,22 @@ public final class AdvancedFilterModel: ObservableModel {
             // por décadas»): antes la pantalla esperaba a la última ficha para enseñar la primera.
             var have = Set(results.map(\.imdb))
             let hidden = asked.hideWatched ? watched : []
+            // Con Letterboxd, la página se junta, se pregunta a Letterboxd y entra ya filtrada y en orden (si saliera de a uno,
+            // los que no pasan aparecerían y se irían).
+            var held: [Suggestion] = []
             _ = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: services.tmdb) { [weak self] batch in
                 guard let self, asked.withoutClock == self.filter.withoutClock else { return false }   // cambiaste el filtro: lo demás ya no sirve
                 let fresh = batch.filter { !hidden.contains($0.imdb) && asked.fits(kind: $0.kind, runtime: $0.runtime) && have.insert($0.imdb).inserted }
-                if !fresh.isEmpty { self.results += fresh }
+                if asked.usesLetterboxd { held += fresh } else if !fresh.isEmpty { self.results += fresh }
                 return true
+            }
+            if asked.usesLetterboxd, !held.isEmpty {
+                let averages = await Letterboxd(http: services.http, kv: services.kv).averages(held.map(\.imdb))
+                guard asked.withoutClock == filter.withoutClock else { return }
+                let rated = held.map { s in var s = s; s.letterboxdRating = averages[s.imdb]; return s }
+                    .filter { s in asked.minLetterboxd.map { min in (s.letterboxdRating ?? 0) >= min } ?? true }
+                // Cada página en orden de Letterboxd, abajo de lo que ya ves (reordenar todo movería lo que estás viendo).
+                results += asked.sort == .letterboxd ? rated.sorted { ($0.letterboxdRating ?? 0) > ($1.letterboxdRating ?? 0) } : rated
             }
         } catch {
             failed = results.isEmpty

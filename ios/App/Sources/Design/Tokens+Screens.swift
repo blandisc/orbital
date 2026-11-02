@@ -288,8 +288,8 @@ extension DS {
         static let edge: CGFloat = 3
         /// El punto de cada color del logo.
         static let dot: CGFloat = 6
-        /// Cuántas reseñas enseña «Lo que ves» (las demás, en Letterboxd).
-        static let shown = 20
+        /// Cuántas reseñas enseña «Lo que ves» (las demás, en Letterboxd) y cuántas de otros la ficha.
+        static let shown = 20, publicShown = 3
         /// El póster de una reseña.
         static let poster: CGFloat = 58
     }

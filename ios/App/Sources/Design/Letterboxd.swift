@@ -99,3 +99,44 @@ enum LetterboxdWords {
         return e.rewatch ? Text("Vista el \(when) · otra vez") : Text("Vista el \(when)")
     }
 }
+
+/// «Reseñas en Letterboxd» de la ficha: las populares (quién, sus estrellas, cuántos «me gusta» y el texto). Las que traen
+/// spoilers van tapadas hasta que las tocas. Abajo, todas en Letterboxd.
+struct LetterboxdPublicReviews: View {
+    let reviews: [LetterboxdPublicReview]
+    let link: URL?
+    @State private var revealed: Set<String> = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(spacing: DS.Space.s2) {
+                LetterboxdMark()
+                DSSectionHead(title: Text("Reseñas en Letterboxd"), level: .subsection)
+            }
+            ForEach(reviews.prefix(DS.Letterboxd.publicShown)) { r in
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    HStack(spacing: DS.Space.s2) {
+                        Text(verbatim: r.author).recipe(.label)
+                        LetterboxdStars(rating: r.rating)
+                        if let likes = r.likes {
+                            Label { Text(likes, format: .number.notation(.compactName)) } icon: { Image(systemName: "heart") }
+                                .recipe(.caption, color: DS.textMuted)
+                        }
+                    }
+                    if r.spoiler && !revealed.contains(r.id) {
+                        Button { revealed.insert(r.id) } label: { Label("Tiene spoilers · Leer", systemImage: "eye.slash").recipe(.footnote, color: DS.textMuted) }
+                            .buttonStyle(.plain)
+                    } else {
+                        Text(verbatim: r.text).recipe(.footnote, color: DS.textMuted).lineLimit(4)
+                    }
+                }
+                .padding(DS.Space.s3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .dsCard(.row)
+            }
+            if let link { Link(destination: link) { Label("Ver más en Letterboxd", systemImage: "arrow.up.right").recipe(.label) } }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("letterboxd-public-reviews")
+    }
+}

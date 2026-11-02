@@ -7,7 +7,7 @@ import Foundation
 public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     public enum Format: String, Sendable, CaseIterable, Codable { case all, movie, series }
     /// En qué orden salen: lo más popular, lo mejor calificado o lo más nuevo.
-    public enum Sort: String, Sendable, CaseIterable, Codable { case popular, rating, newest }
+    public enum Sort: String, Sendable, CaseIterable, Codable { case popular, rating, newest, letterboxd }
     /// Solo con «Series»: en emisión o terminadas.
     public enum SeriesStatus: String, Sendable, CaseIterable, Codable { case any, airing, ended }
     /// El tiempo que tienes: corta, normal o larga (en series, lo que dura un capítulo), o que acabe antes de una hora.
@@ -31,6 +31,8 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     public var spread = false
     /// Calificación mínima, 0–10 (la de TMDB; nil: cualquiera).
     public var minRating: Double?
+    /// Calificación mínima en Letterboxd, 0.5–5 (nil: cualquiera). Letterboxd es de películas: con ella solo salen películas.
+    public var minLetterboxd: Double?
     public var fame: Fame = .any
     /// Países de origen (ISO 3166, «MX») y estudios (ids de TMDB).
     public var countries: Set<String> = []
@@ -81,7 +83,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     /// Cuántos filtros están puestos (el «Ver resultados · 3» y el punto en la puerta).
     public var activeCount: Int {
         [format != .all, seriesStatus != .any && format == .series, !genres.isEmpty || !excluded.isEmpty, years != nil || spread,
-         length != .any, minRating != nil, fame != .any, !countries.isEmpty, !studios.isEmpty, !providers.isEmpty, !awards.isEmpty].filter { $0 }.count
+         length != .any, minRating != nil || minLetterboxd != nil, fame != .any, !countries.isEmpty, !studios.isEmpty, !providers.isEmpty, !awards.isEmpty].filter { $0 }.count
     }
     public var isEmpty: Bool { activeCount == 0 }
 
@@ -90,6 +92,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         // Si todos los géneros que elegiste no existen en series (Terror, Romance…), no se buscan series: antes «Series +
         // Terror» pedía las series sin género y salían todas.
         let onlyMovieGenres = !genres.isEmpty && moviesOnlyGenres.count == genres.count
+        if usesLetterboxd { return format == .series ? [] : ["movie"] }   // Letterboxd no califica series
         switch format {
         case .movie: return ["movie"]
         case .series: return onlyMovieGenres ? [] : ["series"]
@@ -112,6 +115,9 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         let range = runtime(series: true)
         return (range.min.map { minutes >= $0 } ?? true) && (range.max.map { minutes <= $0 } ?? true)
     }
+
+    /// Se ordena o se filtra por Letterboxd: cada resultado se pregunta ahí (de pocos en pocos) antes de enseñarse.
+    public var usesLetterboxd: Bool { minLetterboxd != nil || sort == .letterboxd }
 
     /// Lo menos que dura una película (sin esto «Corta» traía cortometrajes de 5 minutos).
     static let featureMinutes = 60
@@ -208,7 +214,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         // El orden que elegiste manda sobre el de «Qué tan conocida».
         switch sort {
         case .popular: break
-        case .rating: order = "vote_average.desc"; votes.min = max(votes.min ?? 0, floor(300, 200))
+        case .rating, .letterboxd: order = "vote_average.desc"; votes.min = max(votes.min ?? 0, floor(300, 200))   // Letterboxd ordena después
         case .newest: order = series ? "first_air_date.desc" : "primary_release_date.desc"
         }
         if let rating { p.append(("vote_average.gte", String(format: "%.1f", rating))) }
@@ -222,7 +228,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
 
 extension AdvancedFilter {
     private enum Keys: String, CodingKey {
-        case format, seriesStatus, genres, excluded, years, length, endsBy, spread, minRating, fame, countries, studios, awards,
+        case format, seriesStatus, genres, excluded, years, length, endsBy, spread, minRating, minLetterboxd, fame, countries, studios, awards,
              providers, region, hideWatched, sort
     }
 
@@ -239,6 +245,7 @@ extension AdvancedFilter {
         endsBy = try c.decodeIfPresent(Double.self, forKey: .endsBy) ?? endsBy
         spread = try c.decodeIfPresent(Bool.self, forKey: .spread) ?? spread
         minRating = try c.decodeIfPresent(Double.self, forKey: .minRating)
+        minLetterboxd = try c.decodeIfPresent(Double.self, forKey: .minLetterboxd)
         fame = (try? c.decodeIfPresent(Fame.self, forKey: .fame)) ?? fame
         countries = try c.decodeIfPresent(Set<String>.self, forKey: .countries) ?? countries
         studios = try c.decodeIfPresent(Set<Int>.self, forKey: .studios) ?? studios
@@ -255,7 +262,7 @@ extension AdvancedFilter {
         try c.encode(format, forKey: .format); try c.encode(seriesStatus, forKey: .seriesStatus)
         try c.encode(genres, forKey: .genres); try c.encode(excluded, forKey: .excluded); try c.encodeIfPresent(years, forKey: .years)
         try c.encode(length, forKey: .length); try c.encode(endsBy, forKey: .endsBy); try c.encode(spread, forKey: .spread)
-        try c.encodeIfPresent(minRating, forKey: .minRating); try c.encode(fame, forKey: .fame)
+        try c.encodeIfPresent(minRating, forKey: .minRating); try c.encodeIfPresent(minLetterboxd, forKey: .minLetterboxd); try c.encode(fame, forKey: .fame)
         try c.encode(countries, forKey: .countries); try c.encode(studios, forKey: .studios); try c.encode(awards, forKey: .awards)
         try c.encode(providers, forKey: .providers); try c.encode(region, forKey: .region)
         try c.encode(hideWatched, forKey: .hideWatched); try c.encode(sort, forKey: .sort)

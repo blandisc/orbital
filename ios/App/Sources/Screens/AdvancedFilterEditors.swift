@@ -42,7 +42,7 @@ struct FilterEditor: View {
             case .genre: f.genres = []; f.excluded = []
             case .era: f.years = nil; f.spread = false
             case .length: f.length = .any
-            case .rating: f.minRating = nil
+            case .rating: f.minRating = nil; f.minLetterboxd = nil
             case .fame: f.fame = .any
             case .place: f.providers = []
             case .origin: f.countries = []
@@ -198,7 +198,38 @@ struct FilterEditor: View {
                 Spacer()
                 Text(verbatim: "9").recipe(.caption, color: DS.textMuted)
             }
+            letterboxdRating
         }
+    }
+
+    /// También en Letterboxd (de 5 estrellas): solo películas (Letterboxd no califica series); cada resultado se pregunta ahí.
+    private var letterboxdRating: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            HStack(spacing: DS.Space.s2) {
+                LetterboxdMark()
+                Text("En Letterboxd").recipe(.label)
+                Spacer()
+                Text("Solo películas").recipe(.caption, color: DS.textMuted)
+            }
+            HStack(spacing: DS.Space.s2) {
+                ForEach(DS.Filter.letterboxdPresets, id: \.self) { v in
+                    let on = filter.minLetterboxd == v
+                    Button { edit { $0.minLetterboxd = $0.minLetterboxd == v ? nil : v } } label: {
+                        Text(verbatim: "\(FilterText.number(v)) ★").recipe(.label, color: on ? DS.text : DS.textMuted).monospacedDigit()
+                            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                            .background(on ? DS.Filter.mintFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(.selection, trigger: on)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                    .accessibilityLabel(Text("\(FilterText.number(v)) estrellas o más en Letterboxd"))
+                    .accessibilityIdentifier("filter-letterboxd-\(FilterText.number(v))")
+                }
+            }
+        }
+        .padding(.top, DS.Space.s3)
     }
 
     @ViewBuilder private var places: some View {

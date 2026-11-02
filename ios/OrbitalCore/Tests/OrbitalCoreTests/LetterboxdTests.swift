@@ -113,4 +113,43 @@ final class LetterboxdTests: XCTestCase {
         XCTAssertEqual(items.map(\.imdb), ["tt34819091", "tt0245574"])
         XCTAssertEqual(items.last?.title, "Y tu mamá también")
     }
+
+    /// Lo que dice Letterboxd de una película (su página real, recortada): el promedio y sus reseñas populares, con quién,
+    /// sus estrellas, cuántos «me gusta» y si trae spoilers.
+    func testElPromedioYLasReseñasPopulares() throws {
+        let html = #"""
+        <meta property="og:url" content="https://letterboxd.com/film/dune-part-two/" /><meta name="twitter:data2" content="4.37 out of 5" />
+        <body data-tmdb-id="693134">
+        <article class="production-viewing -viewing js-production-viewing" data-person="clairersc"> <strong class="displayname">claire</strong>
+        <span class="inline-symbol inline-rating"><svg aria-label="★★★★"> <title>★★★★</title></svg></span>
+        <p class="body-text -prose js-spoiler-container"><em>This review may contain spoilers.</em></p>
+        <div class="body-text -prose -reset js-review-body js-collapsible-text" hidden> <p>damn it sucks when your boyfriend thinks he&#8217;s jesus</p> </div>
+        <div class="viewing-actions"><p class="like-link-target" data-count="66624"></p></div></article>
+        <article class="production-viewing -viewing" data-person="b"> <strong class="displayname">Bryan</strong>
+        <svg aria-label="★★★★½"></svg> <div class="body-text js-review-body"> <p>Need a friend like Stilgar</p> </div>
+        <div class="viewing-actions"><p data-count="42829"></p></div></article>
+        """#
+        let info = try XCTUnwrap(Letterboxd.parseFilmInfo(html))
+        XCTAssertEqual(info.slug, "dune-part-two")
+        XCTAssertEqual(info.average, 4.37)
+        XCTAssertEqual(info.reviews.map(\.author), ["claire", "Bryan"])
+        XCTAssertEqual(info.reviews.first?.text, "damn it sucks when your boyfriend thinks he’s jesus")
+        XCTAssertEqual(info.reviews.first?.rating, 4)
+        XCTAssertEqual(info.reviews.first?.likes, 66624)
+        XCTAssertTrue(info.reviews.first?.spoiler == true)
+        XCTAssertEqual(info.reviews.last?.rating, 4.5)
+        XCTAssertFalse(info.reviews.last?.spoiler == true)
+    }
+
+    func testLoQueLetterboxdNoTieneSeRecuerda() async {
+        let http = FakeHTTP(), kv = InMemoryKeyValueStore()
+        http.statuses["https://letterboxd.com/imdb/tt0903747/"] = 404
+        let lb = Letterboxd(http: http, kv: kv)
+        let first = await lb.info(imdb: "tt0903747")
+        XCTAssertNil(first)
+        let calls = http.calls.count
+        let again = await lb.info(imdb: "tt0903747")
+        XCTAssertNil(again)
+        XCTAssertEqual(http.calls.count, calls, "una serie que Letterboxd no tiene no se vuelve a preguntar en días")
+    }
 }

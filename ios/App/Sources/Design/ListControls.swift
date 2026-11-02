@@ -4,10 +4,10 @@ import OrbitalModels
 
 /// Cómo se ordena una lista abierta.
 enum ListSort: String, CaseIterable {
-    case added, best, imdb, trakt, newest, oldest, title, shortest
+    case added, best, imdb, trakt, letterboxd, newest, oldest, title, shortest
     var label: LocalizedStringKey {
         switch self {
-        case .added: "Como viene la lista"; case .best: "Mejor calificadas (IMDb y Trakt)"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .added: "Como viene la lista"; case .best: "Mejor calificadas (IMDb y Trakt)"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"; case .letterboxd: "Mejor calificadas en Letterboxd"
         case .shortest: "Más cortas primero"
         case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
         }
@@ -51,7 +51,7 @@ struct ListFilter: Equatable {
     /// Las décadas que hay, de la más nueva a la más vieja.
     static func decades(_ years: [Int?]) -> [Int] { Array(Set(years.compactMap { $0.map { $0 / 10 * 10 } })).sorted(by: >) }
 
-    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:]) -> [Suggestion] {
+    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:], letterboxd: [String: Double] = [:]) -> [Suggestion] {
         let kept = items.filter { s in
             keeps(kind: s.kind, genres: s.genres, rating: Self.rating(s, imdb: imdb), year: s.year, watched: watched.contains(s.imdb))
         }
@@ -61,6 +61,7 @@ struct ListFilter: Equatable {
         case .shortest: return kept.sorted { ($0.runtime ?? Int.max) < ($1.runtime ?? Int.max) }
         case .imdb: return kept.sorted { (imdb[$0.imdb] ?? 0) > (imdb[$1.imdb] ?? 0) }
         case .trakt: return kept.sorted { ($0.traktRating ?? 0) > ($1.traktRating ?? 0) }
+        case .letterboxd: return kept.sorted { (letterboxd[$0.imdb] ?? 0) > (letterboxd[$1.imdb] ?? 0) }   // las series (sin Letterboxd), al final
         case .newest: return kept.sorted { ($0.year ?? 0) > ($1.year ?? 0) }
         case .oldest: return kept.sorted { ($0.year ?? Int.max) < ($1.year ?? Int.max) }
         case .title: return kept.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
@@ -94,6 +95,9 @@ struct SortableGrid<Cell: View>: View {
     @State private var filter = ListFilter()
     @State private var seen: Set<String> = []
     @State private var imdb: [String: Double] = [:]
+    /// Los promedios de Letterboxd (se piden al elegir ese orden; solo películas).
+    @State private var letterboxd: [String: Double] = [:]
+    private let letterboxdRatings: ([Suggestion]) async -> [String: Double]
     @State private var rating = false
     /// «Ocultar lo que ya vi» solo con Trakt (lo visto sale de ahí).
     private let hideWatchedAvailable: Bool
@@ -107,11 +111,12 @@ struct SortableGrid<Cell: View>: View {
         self.showsKindFilter = showsKindFilter; self.loading = loading
         self.watched = watched ?? { await shared.watchedIDs() }
         self.imdbRatings = imdbRatings ?? { items in await shared.imdbRatings(items.map { ($0.kind, $0.imdb) }) }
+        self.letterboxdRatings = { items in await shared.letterboxdRatings(items.filter { $0.kind == "movie" }.map(\.imdb)) }
         _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
     }
 
     var body: some View {
-        let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb)
+        let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if filter.isActive { ListFilterChips(filter: $filter) }
             if items.isEmpty {
@@ -139,6 +144,12 @@ struct SortableGrid<Cell: View>: View {
             defer { rating = false }
             imdb = await imdbRatings(items)
         }
+        .task(id: sort == .letterboxd ? items.count : -1) {
+            guard sort == .letterboxd, !items.isEmpty else { return }
+            rating = true
+            defer { rating = false }
+            letterboxd = await letterboxdRatings(items)
+        }
     }
 
     /// IMDb se pide solo si el orden o la calificación mínima la usan.
@@ -154,6 +165,7 @@ struct SortableGrid<Cell: View>: View {
             switch s {
             case .imdb: imdbRatings != nil
             case .trakt: items.contains { $0.traktRating != nil }
+            case .letterboxd: items.contains { $0.kind == "movie" }   // Letterboxd califica películas
             case .shortest: items.contains { $0.runtime != nil }
             // Como la TV: sin «Como viene» (sin orden elegido, la lista va como llega) ni «más viejas».
             case .added, .oldest: false

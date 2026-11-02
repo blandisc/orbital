@@ -159,4 +159,20 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertFalse(model.results.isEmpty)
         XCTAssertFalse(rig.http.calls.contains { $0.contains("themoviedb") })
     }
+
+    /// Con «Calificación en Letterboxd», cada película se pregunta ahí: las que no llegan no salen y la página va en su orden.
+    func testConLetterboxdSePreguntaYSeOrdena() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        func page(_ avg: String) -> Data { Data(#"<meta property="og:url" content="https://letterboxd.com/film/x/" /><meta name="twitter:data2" content="\#(avg) out of 5" /><body data-tmdb-id="1">"#.utf8) }
+        rig.http.raw["https://letterboxd.com/imdb/tt0000001/"] = page("3.2")
+        rig.http.raw["https://letterboxd.com/imdb/tt0000002/"] = page("4.6")
+        rig.http.raw["https://letterboxd.com/imdb/tt0000003/"] = page("4.1")
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        var f = movies(); f.minLetterboxd = 4; f.sort = .letterboxd
+        model.filter = f
+        await model.search()
+        XCTAssertEqual(model.results.map(\.imdb), ["tt0000002", "tt0000003"], "sin la de 3.2 y en orden de Letterboxd")
+        XCTAssertEqual(model.results.first?.letterboxdRating, 4.6)
+    }
 }

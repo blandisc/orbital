@@ -295,8 +295,8 @@ struct Toast: View {
         .overlay { if prominent { Capsule().strokeBorder(Self.color(tone).opacity(DS.Toast.toneStroke), lineWidth: DS.Toast.strokeWidth) } }
         .contentShape(Capsule())
         .onTapGesture(perform: dismiss)
-        // Deslizar hacia abajo lo quita (el que te necesita no se va solo).
-        .gesture(DragGesture(minimumDistance: DS.Toast.swipe).onEnded { if $0.translation.height > 0 { dismiss() } })
+        // Deslizarlo hacia arriba o hacia abajo lo quita (el que te necesita no se va solo).
+        .gesture(DragGesture(minimumDistance: DS.Toast.swipe).onEnded { if abs($0.translation.height) >= DS.Toast.swipe { dismiss() } })
         .frame(maxWidth: DS.Toast.maxWidth)
         .padding(.horizontal, DS.Space.gutter)   // el mismo margen que la barra de arriba del reproductor y que las pantallas
         // Con VoiceOver se anuncia y no se va solo (si no, la salida desaparecía antes de poder llegar a ella).

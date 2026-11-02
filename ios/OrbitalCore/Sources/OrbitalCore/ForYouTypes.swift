@@ -35,6 +35,8 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var isNew = false
     /// La calificación de TMDB (0 a 10), si la búsqueda la trae (el filtro avanzado).
     public var tmdbRating: Double?
+    /// El promedio de Letterboxd (0.5–5), si se pidió (el filtro avanzado al ordenar o filtrar por Letterboxd).
+    public var letterboxdRating: Double?
     public var id: String { imdb }
 
     public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,

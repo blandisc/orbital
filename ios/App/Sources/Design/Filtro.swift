@@ -119,7 +119,11 @@ enum FilterText {
         case .before: Text("Antes de las \(clock(f.endsBy, language: language))")
         }
     }
-    static func rating(_ f: AdvancedFilter) -> Text? { f.minRating.map { Text("\(number($0)) o más") } }
+    static func rating(_ f: AdvancedFilter) -> Text? {
+        let tmdb = f.minRating.map { Text("\(number($0)) o más") }
+        let lb = f.minLetterboxd.map { Text("\(number($0)) ★ en Letterboxd") }
+        switch (tmdb, lb) { case let (t?, l?): return Text("\(t) · \(l)"); case let (t?, nil): return t; case let (nil, l?): return l; default: return nil }
+    }
     static func fame(_ f: AdvancedFilter) -> Text? {
         switch f.fame { case .any: nil; case .gems: Text("Joyas ocultas"); case .classics: Text("Las de siempre"); case .niche: Text("Para pocos"); case .blockbusters: Text("Taquilleras") }
     }
@@ -174,12 +178,12 @@ struct FilterArt: View {
             switch page {
             case .era where f.years != nil || f.spread:
                 MiniRuler(years: f.years ?? AdvancedFilter.firstYear...f.currentYear, last: f.currentYear)
-            case .rating where f.minRating != nil:
+            case .rating where f.minRating != nil || f.minLetterboxd != nil:
                 // El número manda (en el verde de Calificación); el logo de TMDB, chico, dice de dónde sale.
                 // Centrado, como los demás: la estrella y el número; de dónde sale lo dice el renglón de abajo («o más» y el logo de TMDB).
                 HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
                     Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
-                    Text(verbatim: FilterText.number(f.minRating ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
+                    Text(verbatim: FilterText.number(f.minRating ?? f.minLetterboxd ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
                 }
             case .fame:
                 MiniQuadrant(selected: f.fame)

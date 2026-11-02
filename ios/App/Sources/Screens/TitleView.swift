@@ -14,6 +14,8 @@ struct TitleView: View {
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme
     @Environment(\.openURL) private var openURL
+    /// Lo que dice Letterboxd de la película (su promedio y sus reseñas populares); las series casi nunca están.
+    @State var letterboxdInfo: LetterboxdFilmInfo?
     @State private var observer: ModelObserver<TitleModel>
     @State var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
@@ -59,6 +61,10 @@ struct TitleView: View {
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
+        .task(id: model.metaID) {   // Letterboxd es de películas: las series no se preguntan
+            guard route.kind == "movie" else { return }
+            letterboxdInfo = await Letterboxd(http: env.services.http, kv: env.services.kv).info(imdb: model.metaID)
+        }
         .task { await model.loadConsoleDetails() }
         .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
@@ -147,6 +153,9 @@ struct TitleView: View {
         yourRating(model)
         // Tu reseña en Letterboxd (si la conectaste y la reseñaste o calificaste).
         if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
+        if let info = letterboxdInfo, !info.reviews.isEmpty {
+            LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
+        }
         if model.kind == "series" { episodes(model) }
         // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
         // «Reparto · Dirección · Guion»).
