@@ -54,7 +54,17 @@ Cómo se mantiene:
 - **Ola 3 · lo tuyo** (hecha, 31 oct): calificar, «¿Cuándo la viste?» (en la TV, «Otro día…» ofrece días comunes en lugar del calendario: distinto a propósito), Lo que ves, Colecciones, filtro avanzado.
 - **Rediseño estilo Apple TV** (31 oct): el lenguaje de la TV (docs/sistema-de-diseno.md § 0) en todas sus pantallas y el reproductor; ver la tabla «Revisión por pantalla».
 - **Lo que le toca al iPhone** (su sesión): «Tus canales» en la lista de Trakt, los textos de arriba y el arcoíris en sus filtros.
-- **Pedidos de Fernando para la TV (1 nov):** hecho: en pausa, más aire entre «En pausa» y el título, y los subtítulos se quedan en su lugar; el protector vuelve a moverse; el Inicio refinado (vidrio sutil) y el selector de consolas que se desliza. Pendiente: el filtro en una colección abierta (ver la tabla de arriba) y, en Juegos, cómo tratar la segunda fila (tres opciones en maqueta, por decidir).
+- **Pedidos de Fernando para la TV (1 nov):** hecho: en pausa, más aire entre «En pausa» y el título, y los subtítulos se quedan en su lugar; el protector vuelve a moverse; el Inicio refinado (vidrio sutil) y el selector de consolas que se desliza. Juegos, la segunda fila: «el arte se queda» (hecho). Pendiente: el filtro en una colección abierta (ver la tabla de arriba).
+
+- **Plan replanteado (1 nov, Fernando: «homogeneizar lo visual, la experiencia y las funciones»)**, maqueta y detalle en
+  https://claude.ai/artifact/61nWawWCfd3nPPuLxvSyjW:
+  - **Ola 4 · la ficha:** las partes y los nombres del iPhone («Tu calificación», «Quién sale y quién la hizo», «Si te gusta
+    esta», «Los datos de la ficha», «Cuando salió cada episodio»); abrirla desde el póster.
+  - **Ola 5 · funciones:** filtrar una colección, Próximas temporadas, Lo que ves completo (mapa del año, dona, cómo
+    calificas, tu semana) y Letterboxd para leer.
+  - **Ola 6 · piezas:** el rótulo de parte grande en Películas y series, un solo encabezado de hojas y menús, Opciones con
+    las mismas entradas que el iPhone y la tabla espejo al día.
+  - Por decidir con Fernando: «Crear una lista» en la TV.
 
 ## Distinto a propósito
 
