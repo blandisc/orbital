@@ -622,7 +622,7 @@ class Trakt:
         """Los IMDb de lo que ya viste (películas y series), para «Ocultar lo que ya vi» en una lista."""
         found: list[str] = []
         for kind, key in (("movies", "movie"), ("shows", "show")):
-            rows = self._get(f"/sync/watched/{kind}", **({"extended": "full"} if kind == "shows" else {}))
+            rows = self._get(f"/sync/watched/{kind}", extended="full") if kind == "shows" else self._get(f"/sync/watched/{kind}")
             for row in rows if isinstance(rows, list) else []:
                 if kind == "shows" and not show_completed(row):
                     continue  # una serie a la mitad no cuenta como vista (como el iPhone)
@@ -819,10 +819,11 @@ def show_completed(row: object) -> bool:
     """¿Viste todos los capítulos que han salido de una serie (sin los especiales)? Sin el dato, cuenta como vista."""
     if not isinstance(row, dict):
         return True
-    show = row.get("show") if isinstance(row.get("show"), dict) else {}
-    aired = show.get("aired_episodes")
+    show = row.get("show")
+    aired = show.get("aired_episodes") if isinstance(show, dict) else None
     if not isinstance(aired, int) or aired <= 0:
         return True
-    seasons = row.get("seasons") if isinstance(row.get("seasons"), list) else []
+    seasons = row.get("seasons")
+    seasons = seasons if isinstance(seasons, list) else []
     seen = sum(len(s.get("episodes") or []) for s in seasons if isinstance(s, dict) and (s.get("number") or 0) > 0)
     return seen >= aired

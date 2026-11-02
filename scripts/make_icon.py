@@ -74,7 +74,8 @@ def mark(ink, moons, moon_fill, *, scale=1.0, planet_w=PLANET_W, ring=(RING_OUT,
         if glow:
             # El brillo, menor en las lunas chicas para que no se junten.
             out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r * (2.6 if i == 0 else 1.9):.1f}" fill="url(#glow{tag})"/>')
-        out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" fill="{moon_fill}"{"" if i == 0 else " fill-opacity=\".85\""}/>')
+        faded = "" if i == 0 else ' fill-opacity=".85"'  # sin barra invertida dentro del f-string (Python 3.11, la CI)
+        out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" fill="{moon_fill}"{faded}/>')
     out.append("</g>")
     return "".join(out)
 
@@ -138,7 +139,8 @@ def render(art, path, size=1024):
     """Pinta el SVG a `size` px con fondo transparente."""
     with tempfile.TemporaryDirectory() as tmp:
         page = pathlib.Path(tmp) / "icon.html"
-        page.write_text(f"<html><body style='margin:0;background:transparent'>{art.replace('width=\"1024\" height=\"1024\"', f'width=\"{size}\" height=\"{size}\"')}</body></html>")
+        sized_art = art.replace('width="1024" height="1024"', f'width="{size}" height="{size}"')
+        page.write_text(f"<html><body style='margin:0;background:transparent'>{sized_art}</body></html>")
         shot = pathlib.Path(tmp) / "icon.png"
         subprocess.run([chrome(), "--headless", "--hide-scrollbars", "--default-background-color=00000000",
                         f"--window-size={size},{size}", f"--screenshot={shot}", page.as_uri()], check=True, capture_output=True)
