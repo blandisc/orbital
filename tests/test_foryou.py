@@ -1253,3 +1253,26 @@ def test_the_title_page_gets_letterboxd_with_your_review_from_the_diary(make_for
     assert x["average"] == 3.89 and len(x["reviews"]) == 2
     assert x["mine"] == {"rating": 4.5, "liked": True, "rewatch": True, "watched": "2026-10-30", "review": "Arena & especias.\nOtra vez."}
     assert fy.title_letterboxd("series", "tt1160419")["average"] is None  # las series casi nunca están: ni se pregunta
+
+
+def test_a_list_that_comes_empty_or_half_is_shown_but_not_kept():
+    """Una lista vacía o con la mayoría de sus fichas caídas se enseña pero no se guarda: se vuelve a pedir (como el iPhone)."""
+    from orbital import foryou as fy
+    cache = fy.Cache(clock=lambda: 1000.0)
+    calls = []
+
+    def empty():
+        calls.append(1)
+        return []
+    assert cache.get("tmdb:x", 60, empty, whole=True) == [] and cache.get("tmdb:x", 60, empty, whole=True) == []
+    assert len(calls) == 2  # no se guardó
+
+    def half():
+        calls.append(1)
+        fy._mark_partial(10, 6)
+        return [{"id": 1}]
+    assert cache.get("tmdb:y", 60, half, whole=True) == [{"id": 1}]
+    cache.get("tmdb:y", 60, half, whole=True)
+    assert len(calls) == 4  # a medias: tampoco
+    assert cache.get("tmdb:z", 60, lambda: {"items": [1]}, whole=True) == {"items": [1]}
+    assert cache.get("tmdb:z", 60, lambda: {"items": []}, whole=True) == {"items": [1]}  # entera: se guarda

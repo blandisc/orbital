@@ -183,3 +183,12 @@ def test_old_snapshots_are_pruned(tmp_path):
     snaps.annotate("jw:disney", "movie", [{"imdb": "tt1", "rank": 1}], today=date(2026, 6, 1))
     days = {d for (d,) in sqlite3.connect(db).execute("SELECT day FROM chart_snapshot")}
     assert days == {"2026-06-01"}
+
+
+def test_netflix_entries_list_a_series_once_in_its_best_rank(monkeypatch):
+    """Dos temporadas de la misma serie llevan al mismo IMDb: sale una vez, en su mejor puesto (como el iPhone)."""
+    rows = [{"title": "Wednesday: Season 2", "rank": 1}, {"title": "Otra", "rank": 2}, {"title": "Wednesday: Season 1", "rank": 3}]
+    monkeypatch.setattr(charts, "fetch_netflix_top10", lambda region, kind, open_url=None: rows)
+    monkeypatch.setattr(charts, "resolve_imdb", lambda title, kind, **kw: "tt1" if title.startswith("Wednesday") else "tt2")
+    entries = charts.netflix_entries("MX", "series")
+    assert [(e["imdb"], e["rank"]) for e in entries] == [("tt1", 1), ("tt2", 2)]

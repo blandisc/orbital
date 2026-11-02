@@ -28,6 +28,12 @@ class LetterboxdError(Exception):
     pass
 
 
+def is_challenge(html: str) -> bool:
+    """La pantalla de «comprobando que eres humano» de Cloudflare (a veces llega con 200): no es la página que se pidió."""
+    head = html[:4000]
+    return "challenge-platform" in head or "cf-chl" in head or "<title>Just a moment" in head
+
+
 class LetterboxdNotFound(LetterboxdError):
     def __init__(self) -> None:
         super().__init__("No encontré ese usuario en Letterboxd")
@@ -160,11 +166,14 @@ class Letterboxd:
         request = urllib.request.Request(SITE + path, headers={"User-Agent": AGENT, "Accept-Language": "en"})
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:  # noqa: S310 - solo letterboxd.com
-                return response.read().decode("utf-8", "replace")
+                html = response.read().decode("utf-8", "replace")
         except urllib.error.HTTPError as exc:
             if exc.code == 404:
                 raise LetterboxdNotFound() from exc
             raise LetterboxdError(f"Letterboxd no contestó ({exc.code})") from exc
+        if is_challenge(html):
+            raise LetterboxdError("Letterboxd pidió comprobar que no eres un robot")
+        return html
 
     def diary(self, user: str | None = None) -> list[dict]:
         return parse_diary(self.page(f"/{user or self.user}/rss/"))
@@ -200,6 +209,10 @@ class Letterboxd:
         if not re.fullmatch(r"tt\d{1,12}", imdb or ""):
             return None
         try:
-            return parse_film_info(self.page(f"/imdb/{imdb}/"))
+            html = self.page(f"/imdb/{imdb}/")
         except LetterboxdNotFound:
-            return None
+            return None  # lo dijo Letterboxd: no la tiene (eso sí se recuerda)
+        info = parse_film_info(html)
+        if info is None:  # una página que no es la de la película: no se recuerda como «no la tiene»
+            raise LetterboxdError("Letterboxd no trajo la página de la película")
+        return info

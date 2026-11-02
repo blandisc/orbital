@@ -17,6 +17,10 @@
 }
 /* El logo de la plataforma en el título del estante, a la altura del texto (va en lugar de su nombre). */
 .shelf__logo { height: 1.15em; width: auto; max-width: 6em; border-radius: var(--radius-sm); align-self: center; object-fit: contain; }
+/* El logo de Trakt o Letterboxd junto al título: la fila se alinea por la línea de base y una imagen se apoya en ella con su
+   borde de abajo (sobresalía hacia arriba). Baja lo justo para quedar al centro de las letras. */
+.shelf__heading .source-logo { position: relative; top: .24em; }
+.shelf__heading .source-logo--letterboxd { top: .1em; }
 .shelf__count {
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
   font-variant-numeric: tabular-nums; letter-spacing: normal; /* no hereda el apretado del título */

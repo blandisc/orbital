@@ -223,7 +223,15 @@ def netflix_entries(region: str, kind: str, *, open_url: Callable[[str], Any] | 
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         resolved = list(pool.map(resolve, rows))
-    return [r for r in resolved if r]
+    # Dos temporadas de la misma serie («Wednesday: Season 2» y «Season 1») llevan al mismo IMDb: sale una vez, en su
+    # mejor puesto (vienen en orden), como el iPhone.
+    seen: set[str] = set()
+    out = []
+    for r in resolved:
+        if r and r["imdb"] not in seen:
+            seen.add(r["imdb"])
+            out.append(r)
+    return out
 
 
 # ---------------------------------------------------------------- JustWatch

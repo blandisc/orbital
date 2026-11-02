@@ -1,5 +1,7 @@
 """Letterboxd, solo leer (como el iPhone): el diario, tus listas, de película a IMDb y lo que dice de una película."""
 
+import pytest
+
 from orbital.library import letterboxd as lb
 
 DIARY = """<rss><channel>
@@ -53,3 +55,18 @@ def test_a_film_page_gives_its_imdb_average_and_popular_reviews_with_spoilers_ma
     assert (jay["author"], jay["rating"], jay["text"], jay["likes"], jay["spoiler"]) == ("Jay", 4.5, "La arena épica.", 1520, False)
     assert (ana["author"], ana["spoiler"]) == ("Ana", True)
 
+
+
+def test_cloudflare_check_is_an_error_not_a_missing_film(monkeypatch):
+    """La pantalla de «comprobando que eres humano» no es «Letterboxd no la tiene»: no se recuerda (como el iPhone)."""
+    assert lb.is_challenge('<html><head><title>Just a moment...</title></head>')
+    assert not lb.is_challenge(FILM)
+    client = lb.Letterboxd("fer")
+    monkeypatch.setattr(client, "page", lambda path: "<html><body>otra cosa</body></html>")
+    with pytest.raises(lb.LetterboxdError):
+        client.info("tt1160419")
+
+    def missing(path):
+        raise lb.LetterboxdNotFound()
+    monkeypatch.setattr(client, "page", missing)
+    assert client.info("tt1160419") is None  # esto sí lo dijo Letterboxd

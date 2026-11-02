@@ -148,6 +148,23 @@ def fold(text: str) -> str:
 
 
 # ---------------------------------------------------------------- caché
+# Una lista armada con fichas de TMDB que se cayeron en su mayoría está «a medias» (Cache.get(whole=True) no la guarda).
+_build = threading.local()
+
+
+def _mark_partial(asked: int, failed: int) -> None:
+    """Más de la mitad de las fichas pedidas no llegó (TMDB lento o caído): lo que se arme ahora no se guarda."""
+    if asked and failed * 2 > asked:
+        _build.partial = True
+
+
+def _has_items(value: Any) -> bool:
+    """Una lista con algo, o un paquete ({items: […]}) con algo."""
+    if isinstance(value, dict):
+        return bool(value.get("items"))
+    return bool(value)
+
+
 class Cache:
     """Lo que se trajo de internet, con fecha. Si al renovar falla la red se queda lo de antes; dos
     peticiones a la vez por lo mismo esperan a una sola descarga."""
@@ -208,9 +225,13 @@ class Cache:
         except OSError as exc:
             log.info("Para ti: no pude guardar lo traído: %s", exc)
 
-    def get(self, key: str, ttl: float, load: Callable[[], Any], *, stale: bool = False) -> Any:
+    def get(self, key: str, ttl: float, load: Callable[[], Any], *, stale: bool = False, whole: bool = False) -> Any:
         """`stale`: si ya venció, devuelve lo de antes al instante y lo renueva en segundo plano (el iPhone y la TV
-        no esperan 30 s al Top 10 de Netflix: con caché fría el iPhone se rendía y no enseñaba ni Top 10 ni Disney)."""
+        no esperan 30 s al Top 10 de Netflix: con caché fría el iPhone se rendía y no enseñaba ni Top 10 ni Disney).
+        `whole`: una lista que llega vacía o a medias (la mayoría de sus fichas cayeron: TMDB lento) se enseña pero no se
+        guarda, y se vuelve a pedir la próxima vez (antes se quedaba horas como si fuera la buena; como el iPhone)."""
+        if whole:
+            return self._whole(key, ttl, load)
         with self._lock:
             hit = self._data.get(key)
             lock = self._locks.setdefault(key, threading.Lock())
@@ -235,6 +256,29 @@ class Cache:
                 self._data[key] = (self.clock(), value)
             self._schedule_save()
             return value
+
+    def _whole(self, key: str, ttl: float, load: Callable[[], Any]) -> Any:
+        with self._lock:
+            hit = self._data.get(key)
+        if hit and self.clock() - hit[0] < ttl:
+            return hit[1]
+        outer = getattr(_build, "partial", False)
+        _build.partial = False
+        try:
+            value = load()
+        except SERVICE_ERRORS:
+            if hit:
+                return hit[1]
+            raise
+        finally:
+            partial = _build.partial
+            _build.partial = outer or partial
+        if partial or not _has_items(value):
+            return hit[1] if hit and _has_items(hit[1]) else value  # lo bueno de antes gana a lo incompleto de ahora
+        with self._lock:
+            self._data[key] = (self.clock(), value)
+        self._schedule_save()
+        return value
 
     def _refresh(self, key: str, load: Callable[[], Any], lock: threading.Lock) -> None:
         try:
@@ -1119,7 +1163,7 @@ class ForYou:
         if list_id == "popular":
             return [video_item(e, "Popular") for e in self.cache.get(f"trakt:popular:{kind}", POPULAR_TTL, lambda: t.popular(kind))]
         if list_id in tmdb_api.PLATFORMS:
-            return self.cache.get(f"tmdb:{list_id}:{kind}", POPULAR_TTL, lambda: self._platform(list_id, kind))
+            return self.cache.get(f"tmdb:{list_id}:{kind}", POPULAR_TTL, lambda: self._platform(list_id, kind), whole=True)
         if list_id == "chart:netflix":
             entries = self.cache.get(f"charts:netflix:{kind}", SLOW_TTL, stale=True, load=lambda: charts_api.netflix_entries(
                 self.region, kind, tmdb=self.tmdb if self.tmdb.configured else None, cinemeta=self.catalog.cinemeta))
@@ -1144,7 +1188,7 @@ class ForYou:
             why = f"Porque viste {seed['title']}" if len(seed["title"]) <= 18 else "Porque viste algo parecido"
             return [video_item(e, why) for e in self._related(seed)]
         if list_id == "fresh":
-            return self.cache.get(f"tmdb:fresh:{kind}", POPULAR_TTL, lambda: self._fresh(kind))
+            return self.cache.get(f"tmdb:fresh:{kind}", POPULAR_TTL, lambda: self._fresh(kind), whole=True)
         if list_id.startswith("canon:"):
             return [video_item({"imdb": e["imdb"], "kind": e["kind"], "title": e["title"], "year": e.get("year")}, f"N.º {n} de la lista")
                     for n, e in enumerate(self._canon(list_id.removeprefix("canon:")), start=1)]
@@ -1160,19 +1204,19 @@ class ForYou:
             name = next((n for i, n in tmdb_api.STUDIOS if str(i) == sid), None)
             if not name or not self.tmdb.configured:
                 raise KeyError(list_id)
-            return self.cache.get(f"tmdb:studio:{sid}", SLOW_TTL, lambda: self._studio(int(sid), name))
+            return self.cache.get(f"tmdb:studio:{sid}", SLOW_TTL, lambda: self._studio(int(sid), name), whole=True)
         if list_id.startswith("genre:"):
             slug = list_id.removeprefix("genre:")
             if slug not in tmdb_api.GENRE_BY_SLUG or not self.tmdb.configured:
                 raise KeyError(list_id)
             year = self._today().year
-            bundle = self.cache.get(f"tmdb:genre:{slug}:{year}", SLOW_TTL, lambda: self._genre_bundle(slug, year))
+            bundle = self.cache.get(f"tmdb:genre:{slug}:{year}", SLOW_TTL, lambda: self._genre_bundle(slug, year), whole=True)
             return bundle["items"]
         if list_id.startswith("season:"):
             slug = list_id.removeprefix("season:")
             if slug not in tmdb_api.SEASON_BY_SLUG or not self.tmdb.configured:
                 raise KeyError(list_id)
-            bundle = self.cache.get(f"tmdb:season:{slug}", SLOW_TTL, lambda: self._season_bundle(slug))
+            bundle = self.cache.get(f"tmdb:season:{slug}", SLOW_TTL, lambda: self._season_bundle(slug), whole=True)
             return bundle["items"]
         if list_id.startswith("year:"):
             year = list_id.removeprefix("year:")
@@ -1192,6 +1236,7 @@ class ForYou:
         rows = self.tmdb.discover(kind, platform["id"], self.region)[:20]
         with ThreadPoolExecutor(max_workers=6) as pool:
             details = list(pool.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows))
+        _mark_partial(len(details), sum(1 for d in details if d is None))
         name = tmdb_api.PLATFORMS[brand][0]
         return [video_item(d, f"En {name}", title=d["title"], poster=d["poster"], wide=d["backdrop"],
                            overview=d["overview"], seasons=d.get("seasons"))
@@ -1201,6 +1246,7 @@ class ForYou:
         """Filas de TMDB (discover) → video_item con su IMDb (la ficha y el reproductor lo necesitan)."""
         with ThreadPoolExecutor(max_workers=6) as pool:
             details = list(pool.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows[:limit]))
+        _mark_partial(len(details), sum(1 for d in details if d is None))
         return [video_item(d, why, title=d["title"], poster=d["poster"], wide=d["backdrop"], overview=d["overview"],
                            seasons=d.get("seasons"))
                 for d in details if d and d.get("imdb") and d.get("title")]
@@ -1251,8 +1297,12 @@ class ForYou:
         """Filas de discover ({kind, id}) → video_item con IMDb. Un Top pone el puesto 1…n."""
         picked = [r for r in rows if r.get("kind") in ("movie", "series") and isinstance(r.get("id"), int)][:20]
 
+        failed: list[int] = []
+
         def one(row: dict) -> dict | None:
             detail = self._safe(lambda: self.tmdb.details(row["kind"], int(row["id"])))
+            if detail is None:
+                failed.append(1)
             if not detail or not detail.get("imdb") or not detail.get("title"):
                 return None
             return video_item(detail, why, title=detail["title"], poster=detail.get("poster"), wide=detail.get("backdrop"),
@@ -1260,6 +1310,7 @@ class ForYou:
 
         with ThreadPoolExecutor(max_workers=6) as pool:
             items = [item for item in pool.map(one, picked) if item][:limit]
+        _mark_partial(len(picked), len(failed))
         if ranked:
             for n, item in enumerate(items, start=1):
                 item["rank"] = n
