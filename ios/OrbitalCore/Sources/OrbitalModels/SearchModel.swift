@@ -38,7 +38,7 @@ public final class SearchModel: ObservableModel {
         error = nil   // un error de la búsqueda anterior no tapa lo que está cargando
         defer { if ticket == latest { isSearching = false } }
         do {
-            let found = try await find(query) { [weak self] partial in
+            let (found, complete) = try await find(query) { [weak self] partial in
                 guard let self, ticket == self.latest else { return }
                 let known = await self.knownNames(partial)
                 guard ticket == self.latest else { return }
@@ -55,8 +55,9 @@ public final class SearchModel: ObservableModel {
             let names = await movieNames.merging(seriesNames) { a, _ in a }
             let localized = found.map { r in Result(kind: r.kind, metaID: r.metaID, title: names[r.metaID] ?? r.title, originalTitle: r.title,
                                                     poster: r.poster, year: r.year) }
-            // Solo se recuerda si la traducción terminó (cancelada por otra letra, se habrían guardado los nombres en inglés).
-            if !Task.isCancelled { remember(results: localized, for: key) }
+            // Solo se recuerda si contestaron todos y la traducción terminó (antes una búsqueda a medias, o vacía porque algo
+            // falló, se quedaba guardada toda la sesión; cancelada por otra letra, se habrían guardado los nombres en inglés).
+            if complete, !Task.isCancelled { remember(results: localized, for: key) }
             guard ticket == latest else { return }
             if localized != results { results = localized }
         } catch {
@@ -66,30 +67,28 @@ public final class SearchModel: ObservableModel {
         }
     }
 
-    /// Una pieza de la búsqueda: lo que contestó Trakt (nil = falló), un tipo de Cinemeta (nil = falló dos veces), o
-    /// la señal de que Trakt tarda y ya toca preguntarle también a Cinemeta.
+    /// Una pieza de la búsqueda: lo que contestó Trakt (nil = falló), un tipo de Cinemeta (nil = falló dos veces), o la
+    /// señal de que Cinemeta tarda y ya se puede enseñar lo de Trakt solo.
     private enum Piece: Sendable { case trakt([SearchResult]?), kind(String, [JSON]?), hedge }
 
-    /// Trakt primero (películas y series juntas, por relevancia). Cinemeta es el respaldo: se le pregunta si Trakt falla,
-    /// no encuentra nada (Cinemeta perdona errores: «ofice» encuentra The Office) o no ha contestado en `hedgeDelay`. Lo que
-    /// llegue primero se ve; Trakt, en cuanto llega con algo, toma su lugar. Solo si todo falla se dice que no se pudo.
-    private func find(_ query: String, show: @escaping @MainActor ([SearchResult]) async -> Void) async throws -> [SearchResult] {
+    /// Cinemeta y Trakt a la vez (Fernando, 2 nov 2026: desde que Trakt iba primero salían menos y menos conocidas, porque
+    /// Trakt ordena por parecido del texto y, si traía algo, lo de Cinemeta se tiraba). Manda el orden de Cinemeta (lo más
+    /// conocido primero, lo exacto arriba) y Trakt suma lo que Cinemeta no trajo. Lo de Trakt solo se enseña antes si
+    /// Cinemeta tarda `hedgeDelay`. `complete`: contestaron todos (si no, la búsqueda no se recuerda). Solo si nadie
+    /// contesta se dice que no se pudo.
+    private func find(_ query: String, show: @escaping @MainActor ([SearchResult]) async -> Void) async throws -> (results: [SearchResult], complete: Bool) {
         let cinemeta = services.cinemeta, trakt = services.trakt.flatMap { $0.configured ? $0 : nil }
         var parts: [String: [JSON]] = [:], failed = Set<String>(), fromTrakt: [SearchResult]?, traktSettled = trakt == nil
-        var askedCinemeta = false, shown: [SearchResult] = []
+        var waited = false, shown: [SearchResult] = []
         await withTaskGroup(of: Piece.self) { group in
-            func askCinemeta() {
-                guard !askedCinemeta else { return }
-                askedCinemeta = true
-                for kind in ["movie", "series"] {
-                    group.addTask {
-                        for attempt in 0..<2 {
-                            if attempt > 0 { try? await Task.sleep(nanoseconds: Self.retryDelay) }
-                            if Task.isCancelled { break }
-                            if let found = try? await cinemeta.search(kind, query: query) { return .kind(kind, found) }
-                        }
-                        return .kind(kind, nil)
+            for kind in ["movie", "series"] {
+                group.addTask {
+                    for attempt in 0..<2 {
+                        if attempt > 0 { try? await Task.sleep(nanoseconds: Self.retryDelay) }
+                        if Task.isCancelled { break }
+                        if let found = try? await cinemeta.search(kind, query: query) { return .kind(kind, found) }
                     }
+                    return .kind(kind, nil)
                 }
             }
             if let trakt {
@@ -99,28 +98,31 @@ public final class SearchModel: ObservableModel {
                                                            poster: String(format: ForYou.metahubPoster, $0.imdb), year: $0.year.map(String.init) ?? "") })
                 }
                 group.addTask { try? await Task.sleep(nanoseconds: Self.hedgeDelay); return .hedge }
-            } else { askCinemeta() }
+            }
             for await piece in group {
                 switch piece {
-                case .trakt(let found):
-                    traktSettled = true
-                    fromTrakt = found
-                    if found?.isEmpty ?? true { askCinemeta() }
-                case .hedge: if !traktSettled { askCinemeta() }
+                case .trakt(let found): traktSettled = true; fromTrakt = found
+                case .hedge: waited = true
                 case .kind(let kind, let found?): parts[kind] = found
                 case .kind(let kind, nil): failed.insert(kind)
                 }
+                let cinemetaSettled = parts.count + failed.count == 2
                 let fromCinemeta = parts.isEmpty ? [] : CinemetaParsing.searchResults(query: query, movies: parts["movie"] ?? [], series: parts["series"] ?? [], limit: Self.resultLimit)
-                let now = (fromTrakt ?? []).isEmpty ? fromCinemeta : fromTrakt ?? []
+                // Lo de Trakt entra cuando ya está Cinemeta (o tardó): así no salta el orden al llegar.
+                let now = Self.merged(cinemeta: fromCinemeta, trakt: cinemetaSettled || waited ? fromTrakt ?? [] : [])
                 if !now.isEmpty, now != shown { shown = now; await show(now) }
-                // Listo cuando Trakt trajo algo, o cuando ya contestó y Cinemeta también (los dos tipos).
-                let cinemetaSettled = askedCinemeta && parts.count + failed.count == 2
-                if traktSettled && (!(fromTrakt ?? []).isEmpty || cinemetaSettled) { group.cancelAll(); break }
+                if traktSettled && cinemetaSettled { group.cancelAll(); break }
             }
         }
         if Task.isCancelled { throw CancellationError() }
         if shown.isEmpty && fromTrakt == nil && parts.isEmpty { throw SearchFailure() }
-        return shown
+        return (shown, failed.isEmpty && (trakt == nil || fromTrakt != nil))
+    }
+
+    /// Lo de Cinemeta en su orden y, después, lo que solo trajo Trakt (en el suyo), sin repetir.
+    nonisolated static func merged(cinemeta: [SearchResult], trakt: [SearchResult]) -> [SearchResult] {
+        var seen = Set(cinemeta.map(\.metaID))
+        return cinemeta + trakt.filter { seen.insert($0.metaID).inserted }
     }
 
     /// Ni Trakt ni Cinemeta contestaron.
@@ -137,12 +139,12 @@ public final class SearchModel: ObservableModel {
     }
 
     static let retryDelay: UInt64 = 600_000_000
-    /// Todo lo que contesta Cinemeta (hasta 100 por tipo). Antes eran 18 en total, alternando tipos: el filtro decía
-    /// siempre «Películas 9 · Series 9» aunque hubiera más de uno y menos del otro.
+    /// Todo lo que contesta Cinemeta (hoy, hasta 20 por tipo) más lo de Trakt. Antes eran 18 en total, alternando tipos:
+    /// el filtro decía siempre «Películas 9 · Series 9» aunque hubiera más de uno y menos del otro.
     static let resultLimit = 200
     /// Cuántos resultados se le piden a Trakt (películas y series juntas).
     static let traktLimit = 50
-    /// Si Trakt no ha contestado en este tiempo, también se le pregunta a Cinemeta.
+    /// Si Cinemeta no ha contestado en este tiempo, se enseña lo de Trakt solo (y Cinemeta, al llegar, pone su orden).
     static let hedgeDelay: UInt64 = 1_200_000_000
 
     /// Lo buscado en esta sesión (las últimas `memoryLimit` búsquedas), por texto en minúsculas.

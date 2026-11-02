@@ -82,8 +82,8 @@ public final class CatalogModel: ObservableModel {
     /// Lo más popular hoy, películas y series alternadas (la lista con puesto de Buscar).
     public var popular: [CatalogItem] { Self.interleave(movies, series) }
 
-    /// Lo más visto ahora de un género, películas y series alternadas: `update` recibe primero lo de Trakt (se ve ya) y
-    /// luego lo mismo en tu idioma.
+    /// Lo más popular de un género (TMDB; sin su clave, lo más visto ahora en Trakt), películas y series alternadas:
+    /// `update` recibe primero lo que llegó (se ve ya) y luego lo mismo en tu idioma.
     public func genre(_ name: String, update: @MainActor ([CatalogItem]) -> Void) async {
         async let m = genreMetas("movie", name), s = genreMetas("series", name)
         let (movieMetas, seriesMetas) = await (m, s)
@@ -104,8 +104,10 @@ public final class CatalogModel: ObservableModel {
         return Self.metas(found)
     }
 
-    /// Un género: «En tendencia» y, si sale corto, lo popular de los últimos años (sin repetir).
+    /// Un género: de TMDB (`tmdbGenre`) y, si no se puede, de Trakt: «En tendencia» y, si sale corto, lo popular de los
+    /// últimos años (sin repetir).
     private func genreMetas(_ kind: String, _ name: String) async -> [JSON] {
+        if let fromTMDB = await tmdbGenre(kind, name) { return fromTMDB }
         guard let trakt = services.trakt, trakt.configured else { return [] }
         let slug = Self.traktGenre(name)
         var found = (try? await trakt.trending(kind: kind, limit: Self.genreLimit, genres: slug)) ?? []
@@ -116,6 +118,32 @@ public final class CatalogModel: ObservableModel {
             found += recent.filter { !seen.contains($0.imdb) }
         }
         return Self.metas(Array(found.prefix(Self.genreLimit)))
+    }
+
+    /// Los géneros de «Explora» en el filtro avanzado (`Tmdb.filterGenres`). Biografía y Deporte no son géneros de TMDB: se
+    /// quedan en Trakt.
+    static let tmdbGenres = ["Action": "accion", "Adventure": "aventura", "Comedy": "comedia", "Drama": "drama", "Sci-Fi": "ciencia-ficcion",
+                             "Fantasy": "fantasia", "Horror": "terror", "Thriller": "suspenso", "Mystery": "misterio", "Crime": "crimen",
+                             "Romance": "romance", "Animation": "animacion", "Family": "familia", "Musical": "musical", "Documentary": "documental",
+                             "History": "historia", "War": "belica", "Western": "western"]
+
+    /// «Por género» desde TMDB (Fernando, 2 nov 2026): lo más popular del género, de cualquier año y con piso de votos, como
+    /// el catálogo de Stremio de antes; desde Trakt eran solo lo visto esta semana y lo popular de los últimos 3 años, sin
+    /// clásicos. Es el mismo motor del filtro avanzado. nil: sin clave de TMDB, un género que TMDB no tiene (o no tiene en
+    /// series, como Terror) o TMDB no contestó: se queda Trakt.
+    private func tmdbGenre(_ kind: String, _ name: String) async -> [JSON]? {
+        guard services.tmdb.configured, let slug = Self.tmdbGenres[name] else { return nil }
+        var filter = AdvancedFilter()
+        filter.format = kind == "movie" ? .movie : .series
+        filter.genres = [slug]
+        guard !filter.kinds.isEmpty, let rows = try? await services.tmdb.discover(filter) else { return nil }
+        let found = await ForYou.suggestions(Array(rows.prefix(Self.genreLimit)), reason: .popular, tmdb: services.tmdb)
+        guard !found.isEmpty else { return nil }
+        return found.map { s in
+            var meta: [String: JSON] = ["id": .string(s.imdb), "name": .string(s.title), "poster": .string(s.poster)]
+            if let year = s.year { meta["releaseInfo"] = .string(String(year)) }
+            return .object(meta)
+        }
     }
 
     /// Lo de Trakt con la forma de una ficha de catálogo (para traducirlo igual que todo): id, nombre y año; el póster, de metahub.
