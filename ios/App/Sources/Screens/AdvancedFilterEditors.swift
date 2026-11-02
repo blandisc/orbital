@@ -248,7 +248,8 @@ struct FilterEditor: View {
                 Spacer()
                 Text(verbatim: "5").recipe(.caption, color: DS.textMuted)
             }
-            Text("Solo películas: Letterboxd no califica series.").recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
+            (filter.format == .series ? Text("Con «Series» no cuenta: Letterboxd solo califica películas.") : Text("Solo películas: Letterboxd no califica series."))
+                .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
         }
     }
 

@@ -121,7 +121,7 @@ enum FilterText {
     }
     static func rating(_ f: AdvancedFilter) -> Text? {
         let tmdb = f.minRating.map { Text("\(number($0)) o más") }
-        let lb = f.minLetterboxd.map { Text("\(number($0)) ★ en Letterboxd") }
+        let lb = f.format == .series ? nil : f.minLetterboxd.map { Text("\(number($0)) ★ en Letterboxd") }   // en series no cuenta
         switch (tmdb, lb) { case let (t?, l?): return Text("\(t) · \(l)"); case let (t?, nil): return t; case let (nil, l?): return l; default: return nil }
     }
     static func fame(_ f: AdvancedFilter) -> Text? {

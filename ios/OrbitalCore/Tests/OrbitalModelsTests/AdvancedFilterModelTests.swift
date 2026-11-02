@@ -175,4 +175,19 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(model.results.map(\.imdb), ["tt0000002", "tt0000003"], "sin la de 3.2 y en orden de Letterboxd")
         XCTAssertEqual(model.results.first?.letterboxdRating, 4.6)
     }
+
+    /// «Series» con Letterboxd puesto (de antes, o el orden «Mejor calificadas en Letterboxd», que se queda al limpiar) sí
+    /// busca: antes no pedía nada y salía «Nada con esos filtros» (Fernando, 1 nov 2026: Animación, 7 o más, cero).
+    func testSeriesConLetterboxdSiBusca() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        rig.http.prefix["\(tmdb)/discover/tv"] = ["results": [["id": 7, "vote_average": .double(8.4)]], "total_results": 1]
+        rig.http.prefix["\(tmdb)/tv/7?"] = ["id": 7, "name": "Una serie", "external_ids": ["imdb_id": "tt0000007"], "first_air_date": "2019-01-01"]
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        var f = AdvancedFilter(); f.format = .series; f.genres = ["animacion"]; f.minRating = 7; f.minLetterboxd = 2; f.sort = .letterboxd
+        model.filter = f
+        await model.search()
+        XCTAssertEqual(model.total, 1)
+        XCTAssertEqual(model.results.map(\.imdb), ["tt0000007"])
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("letterboxd.com") }, "en series no se pregunta a Letterboxd")
+    }
 }
