@@ -129,8 +129,8 @@ public final class CollectionsModel: ObservableModel {
         var seen = Set<String>()
         let missing = ids.filter { imdbCache[$0.imdb] == nil && seen.insert($0.imdb).inserted }
         let cinemeta = services.cinemeta
-        let found = await withTaskGroup(of: (String, Double?, [String]).self) { group in
-            var next = 0, out: [(String, Double?, [String])] = []
+        let found = await withTaskGroup(of: (String, Double?, [String], Bool).self) { group in
+            var next = 0, out: [(String, Double?, [String], Bool)] = []
             func add() {
                 guard next < missing.count, !Task.isCancelled else { return }
                 let item = missing[next]
@@ -138,15 +138,16 @@ public final class CollectionsModel: ObservableModel {
                 group.addTask {
                     let meta = try? await cinemeta.meta(kind: item.kind, id: item.imdb)
                     let genres = (meta?["genres"]?.array ?? meta?["genre"]?.array ?? []).compactMap(\.string)
-                    return (item.imdb, (meta?["imdbRating"]?.string).flatMap(Double.init) ?? meta?["imdbRating"]?.doubleValue, genres)
+                    return (item.imdb, (meta?["imdbRating"]?.string).flatMap(Double.init) ?? meta?["imdbRating"]?.doubleValue, genres, meta != nil)
                 }
             }
             for _ in 0..<Self.ratingConcurrency { add() }
             for await r in group { out.append(r); add() }
             return out
         }
-        // Lo que no llegó por cancelación se vuelve a pedir la próxima vez (no se guarda como «sin calificación»).
-        for (id, rating, genres) in found where rating != nil || !Task.isCancelled {
+        // Solo se guarda lo que Cinemeta contestó: lo que falló (o no llegó por cancelación) se vuelve a pedir la próxima vez.
+        // Antes un fallo quedaba como «sin calificación» toda la sesión y el título se iba al final o desaparecía con «7 o más».
+        for (id, rating, genres, answered) in found where answered {
             imdbCache[id] = rating ?? 0
             if !genres.isEmpty { genreCache[id] = genres }
         }
@@ -170,7 +171,7 @@ public final class CollectionsModel: ObservableModel {
         await Letterboxd(http: services.http, kv: services.kv).averages(Array(imdbs.prefix(Self.letterboxdLimit)))
     }
     /// Cuántas películas de una lista se preguntan a Letterboxd (cada una es una página la primera vez).
-    static let letterboxdLimit = 150
+    public static let letterboxdLimit = 150
 
     private var imdbCache: [String: Double] = [:]
 

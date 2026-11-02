@@ -185,8 +185,10 @@ public actor Charts {
             for await (i, imdb) in group { out[i] = imdb }
             return out
         }
+        // Dos temporadas de la misma serie en el Top 10 son el mismo título: sale una vez, en su mejor puesto (antes, dos veces).
+        var seen = Set<String>()
         return marked.enumerated().compactMap { i, item in
-            guard let imdb = found[i], imdb.hasPrefix("tt") else { return nil }
+            guard let imdb = found[i], imdb.hasPrefix("tt"), seen.insert(imdb).inserted else { return nil }
             return ChartEntry(imdb: imdb, title: Self.showTitle(item.row.title), rank: item.row.rank, weeks: item.row.weeks,
                               movement: item.movement, isNew: item.isNew)
         }

@@ -88,12 +88,10 @@ struct MatchDeckScreen: View {
             .accessibilityLabel(Text("Cargando"))
     }
 
-    /// Sin cartas: si nunca hubo propuestas lo dice así; si las recorriste o el ánimo no tiene, lo dice distinto.
+    /// Sin cartas: si nunca hubo propuestas lo dice así; si ya las recorriste, lo dice distinto.
     @ViewBuilder private func emptyState(_ model: MatchDeckModel) -> some View {
         if pool.isEmpty {
             DSEmptyState(symbol: "rectangle.stack", title: Text("Aún no hay propuestas"), message: Text("Cuando Para ti cargue sus listas, aquí salen."))
-        } else if model.mood != nil, model.saved.isEmpty {
-            DSEmptyState(symbol: "face.smiling", title: Text("Nada de este ánimo"), message: Text("Prueba con otro o con todos."))
         } else {
             DSEmptyState(symbol: "rectangle.stack", title: Text("Ya viste todo el mazo"),
                          message: model.saved.isEmpty ? Text("Vuelve mañana: el mazo cambia cada día.") : (model.savesToTrakt ? Text("Guardaste \(model.saved.count). Están en tu lista de Trakt «Tu match perfecto».") : Text("Guardaste \(model.saved.count). Están en Mi lista.")))

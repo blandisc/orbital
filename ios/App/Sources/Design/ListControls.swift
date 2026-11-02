@@ -119,6 +119,12 @@ struct SortableGrid<Cell: View>: View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if filter.isActive { ListFilterChips(filter: $filter) }
+            // Letterboxd se pregunta película por película: en una lista larga solo las primeras; se dice (antes una muy bien
+            // calificada que estaba abajo nunca subía, sin saber por qué).
+            let movies = items.filter { $0.kind == "movie" }.count
+            if sort == .letterboxd, movies > CollectionsModel.letterboxdLimit {
+                Text("Se ordenaron \(CollectionsModel.letterboxdLimit) de \(movies) por Letterboxd").recipe(.caption, color: DS.textMuted)
+            }
             if items.isEmpty {
                 // Mientras llega, la ruedita al centro; ya llegada y sin nada, el vacío de la app (no una pantalla en blanco).
                 if loading { DSLoadingState() }

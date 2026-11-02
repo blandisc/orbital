@@ -11,29 +11,17 @@ final class MatchDeckModelTests: XCTestCase {
         return x
     }
 
-    func testSinVistoNiDescartadoYPorAnimo() {
+    func testSinVistoNiDescartado() {
         let pool = [s("tt1", ["comedy"]), s("tt2", ["horror"]), s("tt3", ["comedy"]), s("tt1", ["comedy"]), s("tt4", ["drama"])]
-        let all = MatchDeckModel.deck(pool, watched: ["tt3"], discarded: ["tt4"], mood: nil, day: 1)
+        let all = MatchDeckModel.deck(pool, watched: ["tt3"], discarded: ["tt4"], day: 1)
         XCTAssertEqual(Set(all.map(\.imdb)), ["tt1", "tt2"], "sin repetir, sin lo visto ni lo descartado")
-        XCTAssertEqual(MatchDeckModel.deck(pool, watched: [], discarded: [], mood: .intense, day: 1).map(\.imdb), ["tt2"])
     }
 
     func testElOrdenEsElMismoEnElDiaYCambiaAlOtro() {
         let pool = (1...12).map { s("tt\($0)", ["drama"]) }
-        let a = MatchDeckModel.deck(pool, watched: [], discarded: [], mood: nil, day: 100).map(\.imdb)
-        XCTAssertEqual(a, MatchDeckModel.deck(pool, watched: [], discarded: [], mood: nil, day: 100).map(\.imdb))
-        XCTAssertNotEqual(a, MatchDeckModel.deck(pool, watched: [], discarded: [], mood: nil, day: 101).map(\.imdb))
-    }
-
-    func testLoGuardadoNoVuelveAlCambiarDeAnimo() async throws {
-        let rig = try ServicesRig()
-        let pool = [s("tt1", ["comedy"]), s("tt2", ["comedy"])]
-        let model = MatchDeckModel(rig.services, pool: pool, watched: { [] })
-        await model.load()
-        await model.save(pool[0])
-        model.mood = .light
-        model.mood = nil
-        XCTAssertEqual(model.cards.map(\.imdb), ["tt2"])
+        let a = MatchDeckModel.deck(pool, watched: [], discarded: [], day: 100).map(\.imdb)
+        XCTAssertEqual(a, MatchDeckModel.deck(pool, watched: [], discarded: [], day: 100).map(\.imdb))
+        XCTAssertNotEqual(a, MatchDeckModel.deck(pool, watched: [], discarded: [], day: 101).map(\.imdb))
     }
 
     /// Al volver a abrir el mazo (otro día o el mismo), lo que guardaste no sale otra vez, ni lo que ya está en Mi lista.

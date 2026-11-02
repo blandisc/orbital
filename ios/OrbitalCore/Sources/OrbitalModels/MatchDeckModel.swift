@@ -8,7 +8,6 @@ import OrbitalCore
 public final class MatchDeckModel: ObservableModel {
     public private(set) var cards: [Suggestion] = [] { didSet { changed() } }
     public private(set) var loaded = false { didSet { changed() } }
-    public var mood: DecideModel.Mood? { didSet { if mood != oldValue { rebuild() } } }
     /// Lo que guardaste en esta vuelta (el «Guardaste 3» del final).
     public private(set) var saved: [Suggestion] = [] { didSet { changed() } }
 
@@ -38,13 +37,13 @@ public final class MatchDeckModel: ObservableModel {
         loaded = true
     }
 
-    /// El mazo de hoy: sin repetir, sin lo visto ni lo descartado, del ánimo elegido, en un orden revuelto que cambia cada día.
-    public nonisolated static func deck(_ pool: [Suggestion], watched: Set<String>, discarded: Set<String>, mood: DecideModel.Mood?, day: Int) -> [Suggestion] {
+    /// El mazo de hoy: sin repetir, sin lo visto ni lo descartado, de todo (sin ánimos: Fernando, 1 nov 2026), en un orden
+    /// revuelto que cambia cada día.
+    public nonisolated static func deck(_ pool: [Suggestion], watched: Set<String>, discarded: Set<String>, day: Int) -> [Suggestion] {
         var seen = Set<String>()
         let fresh = pool.filter { !$0.imdb.isEmpty && !watched.contains($0.imdb) && !discarded.contains($0.imdb) && seen.insert($0.imdb).inserted }
-        let fit = mood.map { m in fresh.filter { DecideModel.matches($0.genres, m) } } ?? fresh
         // Revuelto fijo por día (el mismo orden si vuelves a abrirlo hoy).
-        return fit.sorted { hash("\(day):\($0.imdb)") < hash("\(day):\($1.imdb)") }
+        return fresh.sorted { hash("\(day):\($0.imdb)") < hash("\(day):\($1.imdb)") }
     }
 
     nonisolated static func hash(_ s: String) -> UInt64 {
@@ -55,10 +54,10 @@ public final class MatchDeckModel: ObservableModel {
 
     private func rebuild() {
         let day = Int(clock().timeIntervalSince1970 / 86400)
-        // Lo que ya guardaste en esta vuelta tampoco vuelve al cambiar de ánimo.
+        // Lo que ya guardaste en esta vuelta tampoco vuelve.
         // Tampoco lo que ya está en Mi lista (guardado desde una ficha o desde otro aparato).
         let inList = Set(services.library.all.filter(\.inList).map(\.metaID))
-        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), mood: mood, day: day)
+        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
     }
 
     /// Guardar la de arriba (derecha o ＋).

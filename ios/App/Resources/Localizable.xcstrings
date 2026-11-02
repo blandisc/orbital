@@ -21193,6 +21193,17 @@
         }
       }
     },
+    "Se ordenaron %@ de %@ por Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorted %@ of %@ by Letterboxd"
+          }
+        }
+      }
+    },
     "Se paga por adelantado, por días.": {
       "extractionState": "manual",
       "localizations": {

@@ -34,19 +34,24 @@ extension ForYou {
 
     private func shelf(_ list: LetterboxdList) -> ForYouList {
         ForYouList(id: "lb:\(list.slug)", title: list.name, group: .mine, splitsKinds: false, source: Self.letterboxdSource,
-                   meta: list.count.map { "\($0)" } ?? "")
+                   // Solo se cruzan las primeras `letterboxdShelfLimit`: si la lista es más larga, se dice («120 de 300»).
+                   meta: list.count.map { $0 > Self.letterboxdShelfLimit ? "\(Self.letterboxdShelfLimit) de \($0)" : "\($0)" } ?? "")
     }
 
     /// Las películas de una lista, ya con su IMDb y en su orden.
     func letterboxdItems(slug: String) async throws -> [Suggestion] {
         guard let http else { return [] }
         let letterboxd = Letterboxd(http: http, kv: kv)
-        let films: [LetterboxdFilm]
-        if let saved = archiveLists.first(where: { $0.list.slug == slug }) {
-            films = saved.films
-        } else if let user = letterboxdUser {
-            films = try await remember("letterboxd:list:\(user):\(slug)", ttl: Self.recsTTL) { try await letterboxd.listFilms(user: user, slug: slug) }
-        } else { return [] }
+        // La de tu perfil (en vivo) gana a la de tu archivo: antes, si la lista venía en el archivo, se quedaba esa copia aunque
+        // la hubieras cambiado. El archivo es el respaldo (las privadas, o si Letterboxd no contesta).
+        var films: [LetterboxdFilm] = []
+        var liveError: Error?
+        if let user = letterboxdUser {
+            do { films = try await remember("letterboxd:list:\(user):\(slug)", ttl: Self.recsTTL) { try await letterboxd.listFilms(user: user, slug: slug) } }
+            catch { liveError = error }
+        }
+        if films.isEmpty, let saved = archiveLists.first(where: { $0.list.slug == slug }) { films = saved.films }
+        if films.isEmpty, let liveError { throw liveError }
         let wanted = Array(films.filter { !$0.slug.isEmpty }.prefix(Self.letterboxdShelfLimit))
         let reason = SuggestionReason.inList(Self.letterboxdSource)
         let matches = await withTaskGroup(of: (Int, LetterboxdMatch?).self) { group in
