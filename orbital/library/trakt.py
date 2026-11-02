@@ -649,6 +649,7 @@ class Trakt:
         """«Tu año»: cada cosa que viste entre dos fechas (ISO 8601), como el iPhone (Trakt.plays): {at (segundos), kind,
         imdb, title, minutes, genres, season, episode, episode_title}. Son varias páginas de 250."""
         found: list[dict] = []
+        page_size = 0
         for page in range(1, max(1, max_pages) + 1):
             rows = self._get("/sync/history", start_at=since, end_at=until, extended="full", limit=self.HISTORY_PAGE, page=page)
             rows = rows if isinstance(rows, list) else []
@@ -656,8 +657,11 @@ class Trakt:
                 play = history_play(row)
                 if play:
                     found.append(play)
-            if len(rows) < self.HISTORY_PAGE:
+            # La última trae menos que la primera (o nada): si Trakt pone su propio tope por página, «menos de 250» cortaba
+            # en la primera (como el iPhone).
+            if not rows or len(rows) < page_size:
                 break
+            page_size = page_size or len(rows)
         return found
 
     def last_watched(self) -> dict | None:

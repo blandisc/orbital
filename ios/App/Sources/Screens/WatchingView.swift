@@ -11,15 +11,19 @@ struct WatchingCardLoader: View {
     var body: some View {
         let model = env.watching
         let _ = model.track()
-        if model.linked, !model.failed {   // sin historial (falló), la tarjeta no ocupa lugar en Para ti
-            let week = model.loaded ? model.stats(.week) : nil
-            let language = env.services.appSettings.uiLanguage
-            NavigationLink(value: WatchingRoute()) {
-                WatchingCard(stats: week, name: Strings.tr("Lo que ves", language: language), genres: (week?.genres ?? []).map { WatchingText.genre($0.name, language: language) })
-            }
+        // Con Trakt la tarjeta siempre está (antes, una sola falla, sin red al abrir, la quitaba hasta reiniciar la app y no
+        // había cómo entrar); su carga va afuera para que se reintente al volver a Explorar.
+        Group {
+            if model.linked {
+                let week = model.loaded && !model.failed ? model.stats(.week) : nil
+                let language = env.services.appSettings.uiLanguage
+                NavigationLink(value: WatchingRoute()) {
+                    WatchingCard(stats: week, name: Strings.tr("Lo que ves", language: language), genres: (week?.genres ?? []).map { WatchingText.genre($0.name, language: language) })
+                }
                 .buttonStyle(.plain)
-                .task { await model.load() }
+            }
         }
+        .task { await model.load() }
     }
 }
 

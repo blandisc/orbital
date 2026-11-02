@@ -369,11 +369,15 @@ public actor Trakt {
     public func plays(since: Date, until: Date, maxPages: Int = 20) async throws -> [TraktPlay] {
         let f = ISO8601DateFormatter()
         var out: [TraktPlay] = []
+        var pageSize: Int?
         for page in 1...max(1, maxPages) {
             let rows = try await get("/sync/history", [("start_at", f.string(from: since)), ("end_at", f.string(from: until)),
                                                        ("extended", "full"), ("limit", String(Self.historyPage)), ("page", String(page))])?.array ?? []
             out += rows.compactMap(TraktParsing.play)
-            if rows.count < Self.historyPage { break }
+            // La última es la que trae menos que la primera (o nada). Antes, «menos de 250 = la última»: si Trakt pone su propio
+            // tope por página (menos de lo que se pide), se quedaba en la primera y «Lo que ves» contaba solo lo reciente.
+            if rows.isEmpty || rows.count < (pageSize ?? 0) { break }
+            pageSize = pageSize ?? rows.count
         }
         return out
     }

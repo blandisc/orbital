@@ -75,9 +75,13 @@ public final class WatchingModel: ObservableModel {
             // Ya está guardado: solo lo nuevo desde la última vista.
             let from = plays.map(\.at).max() ?? needed
             if let new = try? await trakt.plays(since: from.addingTimeInterval(1), until: now, maxPages: 5) { merge(new) } else { ok = false }
-        } else if let found = try? await trakt.plays(since: needed, until: now, maxPages: full ? 20 : 2) {
-            plays = found; since = needed
+        } else if let found = try? await trakt.plays(since: needed, until: now, maxPages: full ? 40 : 4) {
+            // Se junta con lo que ya hay (no se reemplaza): si la semana de la tarjeta llegaba después de los diez años,
+            // los borraba y guardaba solo la semana.
+            merge(found); since = min(since ?? needed, needed)
         } else { ok = false }
+        // Saliste antes de que llegara (cambiar de sección cancela): no es una falla; se vuelve a pedir al regresar.
+        if Task.isCancelled { loaded = true; return }
         // Con algo guardado se muestra eso (aunque no llegara lo nuevo); sin nada, es un error de verdad.
         failed = !ok && plays.isEmpty
         guard ok else { loaded = true; return }
