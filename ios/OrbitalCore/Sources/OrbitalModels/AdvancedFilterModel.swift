@@ -1,8 +1,8 @@
 import Foundation
 import OrbitalCore
 
-/// El cajón del filtro avanzado: lo que eliges (sin pedir nada mientras eliges: sin conteos en vivo) y, al tocar «Ver
-/// resultados», la búsqueda en TMDB por páginas. Lo elegido se recuerda aunque cierres la app; lo que ya viste no sale.
+/// El cajón del filtro avanzado: lo que eliges (con cuántos saldrían en el botón, `preview`) y, al tocar «Ver resultados»,
+/// la búsqueda en TMDB por páginas. Lo elegido se recuerda aunque cierres la app; lo que ya viste no sale.
 @MainActor
 public final class AdvancedFilterModel: ObservableModel {
     public var filter = AdvancedFilter() {
@@ -10,6 +10,7 @@ public final class AdvancedFilterModel: ObservableModel {
             guard filter != oldValue else { return }
             services.kv.set(Self.savedKey, data: try? JSONEncoder().encode(filter))
             if count != nil, filter.withoutClock != oldValue.withoutClock { count = nil }   // ya es otra búsqueda: el número viejo no aplica
+            schedulePreview()
             changed()
         }
     }
@@ -50,6 +51,50 @@ public final class AdvancedFilterModel: ObservableModel {
             filter = saved
         }
         count = services.kv.data(Self.countKey).flatMap { try? JSONDecoder().decode(FilterCount.self, from: $0) }
+    }
+
+    /// Cuántos saldrían con el filtro de ahora, para el botón «Ver 1 240 resultados» del cajón (Fernando, 2 nov 2026): lo
+    /// que dice TMDB de la primera página de cada búsqueda (el mismo número de arriba de los resultados). `upTo`: es un
+    /// máximo, porque después se quitan las que no llegan a tus estrellas de Letterboxd o las series que no caben en tu
+    /// tiempo. nil: aún no se sabe, sin clave de TMDB o TMDB no contestó (el botón dice «Ver resultados»).
+    public struct Preview: Equatable, Sendable {
+        public var count: FilterCount
+        public var upTo: Bool
+    }
+    public private(set) var preview: Preview? { didSet { if preview != oldValue { changed() } } }
+    /// Lo ya contado en esta sesión, por filtro (volver a uno que ya tenías no pregunta otra vez).
+    private var previews: [AdvancedFilter: FilterCount] = [:]
+    var previewTask: Task<Void, Never>?
+    /// Cuánto se espera sin cambios antes de preguntar (mover el deslizador no manda una pregunta por paso).
+    static var previewDelay: Duration = .milliseconds(500)
+
+    /// Cuenta lo de ahora: al instante si ya se contó o son premios; si no, tras `previewDelay` sin cambios (lo anterior se
+    /// cancela). Mientras llega, el botón se queda con el número de antes.
+    public func schedulePreview() {
+        previewTask?.cancel()
+        let asked = filter
+        let upTo = asked.minLetterboxd != nil && asked.usesLetterboxd || asked.length != .any && asked.kinds.contains("series")
+        if !asked.awards.isEmpty {
+            previewTask = Task { [weak self] in
+                guard let self else { return }
+                if asked.hideWatched, self.watched.isEmpty, let source = self.watchedSource { self.watched = await source() }
+                guard !Task.isCancelled, asked == self.filter else { return }
+                self.preview = Preview(count: FilterCount(asked.awardWinners(hiding: asked.hideWatched ? self.watched : [])), upTo: false)
+            }
+            return
+        }
+        guard available else { preview = nil; return }
+        if asked.kinds.isEmpty { preview = Preview(count: FilterCount(), upTo: false); return }   // «Series + Terror»: TMDB no tiene
+        if let known = previews[asked] { preview = Preview(count: known, upTo: upTo); return }
+        let tmdb = services.tmdb
+        previewTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.previewDelay)
+            guard !Task.isCancelled else { return }
+            let found = try? await tmdb.discoverCounting(asked).count
+            guard let self, !Task.isCancelled, asked == self.filter else { return }
+            if let found { self.previews[asked] = found; if self.previews.count > 40 { self.previews.removeAll() } }
+            self.preview = found.map { Preview(count: $0, upTo: upTo) }
+        }
     }
 
     /// Las plataformas que hay en tu país (una vez; ForYou las recuerda). También pone tu país en el filtro.

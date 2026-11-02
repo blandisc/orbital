@@ -223,4 +223,66 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertTrue(model.failed)
         XCTAssertTrue(model.results.isEmpty)
     }
+
+    // MARK: el número del botón «Ver resultados»
+
+    /// Al cambiar el filtro, tras la espera, el botón sabe cuántos saldrían (lo de TMDB, por tipo); otro cambio cancela la
+    /// pregunta vieja, y volver a un filtro ya contado no pregunta otra vez.
+    func testElBotonCuentaTrasLaEsperaYCancelaLoViejo() async throws {
+        AdvancedFilterModel.previewDelay = .milliseconds(30)
+        defer { AdvancedFilterModel.previewDelay = .milliseconds(500) }
+        let rig = try ServicesRig(tmdbKey: "K")
+        rig.http.prefix["\(tmdb)/discover/movie"] = ["results": [], "total_results": 860]
+        rig.http.prefix["\(tmdb)/discover/tv"] = ["results": [], "total_results": 380]
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        model.filter.genres = ["drama"]
+        model.filter.genres = ["comedia"]   // antes de que pase la espera: el de Drama no se pregunta
+        await model.previewTask?.value
+        XCTAssertEqual(model.preview, .init(count: FilterCount(movies: 860, series: 380), upTo: false))
+        XCTAssertFalse(rig.http.calls.contains { $0.contains("with_genres=18") }, "lo viejo se canceló")
+        let asked = rig.http.calls.count
+        model.filter.genres = ["drama"]; model.previewTask?.cancel()
+        model.filter.genres = ["comedia"]
+        XCTAssertEqual(model.preview?.count.total, 1240, "ya contado: al instante")
+        XCTAssertEqual(rig.http.calls.count, asked, "sin preguntar otra vez")
+    }
+
+    /// Con Letterboxd o con duración en series, es un máximo («Ver hasta…»); con cero, «Nada con estos filtros».
+    func testHastaConLetterboxdYCeroEsNada() async throws {
+        AdvancedFilterModel.previewDelay = .milliseconds(1)
+        defer { AdvancedFilterModel.previewDelay = .milliseconds(500) }
+        let rig = try ServicesRig(tmdbKey: "K")
+        rig.http.prefix["\(tmdb)/discover/movie"] = ["results": [], "total_results": 12]
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        model.filter.minLetterboxd = 4
+        await model.previewTask?.value
+        XCTAssertEqual(model.preview, .init(count: FilterCount(movies: 12, series: 0), upTo: true))
+        model.filter.minLetterboxd = nil; model.filter.format = .series; model.filter.genres = ["terror"]
+        await model.previewTask?.value
+        XCTAssertEqual(model.preview?.count.total, 0, "Series + Terror: TMDB no tiene, sin preguntar")
+    }
+
+    /// Premios sin clave de TMDB: se cuentan de los ganadores que trae la app. Sin clave y sin premios: sin número.
+    func testPremiosSinClaveSeCuentanYSinPremiosNoHayNumero() async throws {
+        let rig = try ServicesRig()
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        model.filter.genres = ["drama"]
+        XCTAssertNil(model.preview, "sin clave de TMDB no hay de dónde contar")
+        model.filter.awards = ["oscar"]
+        await model.previewTask?.value
+        XCTAssertEqual(model.preview?.count.total, model.filter.awardWinners().count)
+        XCTAssertGreaterThan(model.preview?.count.total ?? 0, 0)
+    }
+
+    /// Si TMDB no contesta, el botón no inventa un número.
+    func testSinRespuestaNoHayNumero() async throws {
+        AdvancedFilterModel.previewDelay = .milliseconds(1)
+        defer { AdvancedFilterModel.previewDelay = .milliseconds(500) }
+        let rig = try ServicesRig(tmdbKey: "K")
+        rig.http.offline = true
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        model.filter.genres = ["drama"]
+        await model.previewTask?.value
+        XCTAssertNil(model.preview)
+    }
 }

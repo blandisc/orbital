@@ -27547,6 +27547,17 @@
         }
       }
     },
+    "Ver %@ resultados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See %@ results"
+          }
+        }
+      }
+    },
     "Ver %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -27554,6 +27565,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "See %lld"
+          }
+        }
+      }
+    },
+    "Ver 1 resultado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See 1 result"
           }
         }
       }
@@ -27664,6 +27686,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "View details"
+          }
+        }
+      }
+    },
+    "Ver hasta %@ resultados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See up to %@ results"
+          }
+        }
+      }
+    },
+    "Ver hasta 1 resultado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See up to 1 result"
           }
         }
       }

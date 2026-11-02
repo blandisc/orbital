@@ -155,6 +155,22 @@ struct AdvancedFilterSheet: View {
 
     private static func panelID(_ page: FilterPage) -> String { "panel-" + page.rawValue }
 
+    /// «Ver 1 240 resultados» (Fernando, 2 nov 2026), «Ver hasta 860 resultados» si después se quitan las que no llegan a tus
+    /// estrellas de Letterboxd o las series que no caben en tu tiempo, «Nada con estos filtros» con cero, y «Ver resultados»
+    /// mientras no se sabe (sin clave de TMDB o sin respuesta).
+    private func resultsLabel(_ preview: AdvancedFilterModel.Preview?) -> Text {
+        guard let preview else { return Text("Ver resultados") }
+        let n = preview.count.total
+        if n == 0 { return Text("Nada con estos filtros") }
+        let number = Strings.count(n, language: env.services.appSettings.uiLanguage)
+        switch (preview.upTo, n == 1) {
+        case (false, true): return Text("Ver 1 resultado")
+        case (false, false): return Text("Ver \(number) resultados")
+        case (true, true): return Text("Ver hasta 1 resultado")
+        case (true, false): return Text("Ver hasta \(number) resultados")
+        }
+    }
+
     private func actions(_ model: AdvancedFilterModel) -> some View {
         HStack(spacing: DS.Space.s3) {
             if !model.filter.isEmpty {
@@ -163,10 +179,13 @@ struct AdvancedFilterSheet: View {
                     .accessibilityIdentifier("filter-clear")
             }
             Button(action: onResults) {
-                Text("Ver resultados").frame(maxWidth: .infinity)   // sin número: no se sabe cuántos van a salir
+                resultsLabel(model.preview).frame(maxWidth: .infinity)
+                    .contentTransition(.numericText()).animation(DS.Motion.base(reduceMotion), value: model.preview)
             }
             .dsSolidPrimaryButton().controlSize(.large)   // el principal sólido de la app: se lee siempre
+            .disabled(model.preview?.count.total == 0)
             .accessibilityIdentifier("filter-results")
+            .task { model.schedulePreview() }
         }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.vertical, DS.Space.s2)
