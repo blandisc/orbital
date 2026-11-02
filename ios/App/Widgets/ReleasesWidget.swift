@@ -186,11 +186,13 @@ private struct ReleasesLine: View {
         let when = ReleaseWhen(airing: airing, now: entry.date, language: entry.language)
         return Link(destination: airing.link ?? URL(fileURLWithPath: "/")) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
+                // El rótulo puede usar el aire entre pósters («Mañana» no cabía en el ancho del póster y se cortaba).
                 HStack(spacing: DS.Space.s1) {
                     ReleaseDot(out: when.isOut)
                     when.label.font(DS.font(.xs, weight: .semibold)).foregroundStyle(when.isOut ? DS.text : DS.textMuted).lineLimit(1)
-                        .minimumScaleFactor(DS.Widget.labelShrink)
                 }
+                .fixedSize()
+                .frame(width: DS.Widget.releasePoster, alignment: .leading)
                 ReleasePoster(airing: airing).opacity(when.isOut ? 1 : DS.Opacity.dimmed)
                 Text(verbatim: airing.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
                     .minimumScaleFactor(DS.Widget.labelShrink)
@@ -218,12 +220,12 @@ private struct ReleasesSpotlight: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 HStack(spacing: DS.Space.s1) {
                     ReleaseDot(out: when.isOut, onArt: true)
-                    (when.isNew ? Text("Nuevo · ya se puede ver") : Text("\(when.day) · \(when.hour)")).font(DS.font(.xs, weight: .semibold)).lineLimit(1)
+                    (when.isNew ? Text("Nuevo") : Text("\(when.day) · \(when.hour)")).font(DS.font(.xs, weight: .semibold)).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 Text(verbatim: airing.title).font(DS.font(.md, weight: .bold)).lineLimit(2)
                 Text(verbatim: airing.episodeLabel).font(DS.font(.xs, weight: .medium)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
-                if !when.isOut { countdown(airing, when).font(DS.font(.lg, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink) }
+                (when.isOut ? Text("Ya salió") : countdown(airing, when)).font(DS.font(.lg, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(DS.Widget.labelShrink)
             }
             .foregroundStyle(DS.text)
             .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)

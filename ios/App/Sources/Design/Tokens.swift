@@ -264,13 +264,12 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let slot: CGFloat = 50
     }
 
-    /// El arte con cuerpo (`Tiltable`) y el póster que se hunde (`PosterPress`): cuánto hay que mantener antes de inclinar,
-    /// cuánto movimiento llega al tope, el tope en grados, la perspectiva, lo que se encoge agarrado, el brillo (opacidad y lo
-    /// que recorre) y el hundido del póster al tocarlo (97 %, como la TV).
+    /// El arte con cuerpo (`Tiltable`): cuánto hay que mantener antes de inclinar, cuánto movimiento llega al tope, el tope en
+    /// grados, la perspectiva, lo que se encoge agarrado y el brillo (opacidad y lo que recorre). Sin hundido en los pósters:
+    /// en iOS 27 un estilo de botón propio retenía el dedo y la fila no se deslizaba (HomePicksUITests, 2 nov 2026).
     enum Tilt {
         static let hold: Double = 0.25, reach: CGFloat = 140, maxDegrees: Double = 9, perspective: CGFloat = 0.5, held: CGFloat = 0.98
         static let shine: Double = 0.28, shineTravel: CGFloat = 160
-        static let pressed: CGFloat = 0.97
     }
 
     // MARK: Movimiento (sin movimiento con «Reducir movimiento»)

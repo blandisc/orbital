@@ -39,18 +39,6 @@ private struct Tiltable: ViewModifier {
     private func clamp(_ v: CGFloat) -> CGFloat { min(1, max(-1, v)) }
 }
 
-/// Un póster que se toca se hunde un poco mientras el dedo está encima (como la TV con la A): la respuesta llega antes que la
-/// ficha. Es el estilo de botón de Apple sin nada más que eso (la etiqueta tal cual, como `.plain`), porque solo un estilo sabe
-/// cuándo se está presionando sin agregar un gesto: un gesto encima de cada póster le ganaba al deslizar la fila.
-struct PosterPress: ButtonStyle {   // ds-exception: el hundido del póster al tocarlo (solo escala; la etiqueta queda como .plain)
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? DS.Tilt.pressed : 1)
-            .animation(DS.Motion.snap(reduceMotion), value: configuration.isPressed)
-    }
-}
-
 extension View {
     /// Mantener y mover inclina el arte con un brillo (`Tiltable`).
     func tiltable() -> some View { modifier(Tiltable()) }

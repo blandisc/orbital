@@ -44,7 +44,6 @@ struct TitleNavigationLink<Label: View>: View {
             }
         }
         .environment(\.titleZoomSlot, slot)
-        .buttonStyle(PosterPress())   // el póster se hunde mientras lo tocas (la respuesta llega antes que la ficha)
         .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
     }
 }

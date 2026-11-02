@@ -222,7 +222,7 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | Selección (carrusel, temporadas, Mi lista) | `sensoryFeedback(.selection)` |
 | Tarjeta → reproductor | Zoom nativo desde la tarjeta de «Seguir viendo» o el arte de la ficha; al cerrar regresa a ella (`PlayerZoom.swift`) |
 | El arte respira | La ficha y la portada se acercan 3 % en 16 s, un solo tramo (`BleedArt.breathes`, `DS.TitleHero.breathe*`); quieto con «Reducir movimiento», bajo consumo y `-demo-no-idle` |
-| Póster con cuerpo | Se hunde al 97 % al tocarlo (`PosterPress`, el único estilo de botón propio: `ds-exception`); en la ficha, mantener y mover inclina el arte con un brillo (`tiltable()`). No va en la portada: su gesto le ganaba al deslizar la fila de abajo |
+| Póster con cuerpo | En la ficha, mantener y mover inclina el arte con un brillo (`tiltable()`). Sin hundido al tocar ni inclinación en la portada: en iOS 27 un estilo de botón propio, y en iOS 26 el gesto de la portada, le ganaban al deslizar las filas (HomePicksUITests) |
 | Entradas | Las filas de Inicio y los estantes de Explorar entran escalonados la primera vez de la sesión (`entrance(_:order:)`) |
 | Palomita de «Visto» | Se dibuja al marcar, con toque de «listo» (`WatchedMark`) |
 | Calificar | Las estrellas se llenan en onda con un toque por estrella (`RatingStars`) |

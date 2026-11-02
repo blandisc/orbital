@@ -37,10 +37,11 @@ final class WidgetGalleryUITests: XCTestCase {
         search.typeText("Orbital")
         sleep(2)
         shot("busqueda")
-        // iOS 26 lo enseña como celda; iOS 27, como botón: lo primero que diga «Orbital» y no sea el campo de búsqueda.
-        let orbital = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Orbital' AND elementType != %d", XCUIElement.ElementType.searchField.rawValue)).firstMatch
-        XCTAssertTrue(orbital.waitForExistence(timeout: 6), "Orbital no salió en la búsqueda de widgets")
-        orbital.tap()
+        // El primer resultado bajo el buscador es Orbital (lo único que coincide). Se toca por su lugar: en iOS 27 el renglón no
+        // se deja encontrar por su nombre (con «contiene» o «igual» se tocaba Contactos, de la lista sin filtrar).
+        XCTAssertTrue(springboard.staticTexts["Orbital"].firstMatch.waitForExistence(timeout: 6), "Orbital no salió en la búsqueda de widgets")
+        let first = search.frame.maxY + 40
+        springboard.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: springboard.frame.width / 2, dy: first)).tap()
         sleep(3)
         for page in 0..<14 {
             shot("galeria-\(page)")
