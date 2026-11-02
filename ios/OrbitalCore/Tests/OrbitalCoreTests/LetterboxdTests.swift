@@ -73,6 +73,24 @@ final class LetterboxdTests: XCTestCase {
         XCTAssertEqual(http.calls.count, calls, "lo recordado no se vuelve a pedir")
     }
 
+    /// Una página que no se puede leer (la verificación de Cloudflare) no se recuerda como «no la tiene»; el «Not found» de
+    /// Letterboxd sí.
+    func testUnaPaginaIlegibleNoSeGuardaComoQueNoLaTiene() async {
+        let http = FakeHTTP()
+        let kv = InMemoryKeyValueStore()
+        let lb = Letterboxd(http: http, kv: kv)
+        http.raw["https://letterboxd.com/imdb/tt0114709/"] = Data("<html><title>Just a moment...</title></html>".utf8)
+        let first = await lb.info(imdb: "tt0114709")
+        XCTAssertNil(first)
+        XCTAssertNil(kv.data("lb-info.tt0114709"), "no se guardó")
+        http.raw["https://letterboxd.com/imdb/tt0114709/"] = Data(#"<meta property="og:url" content="https://letterboxd.com/film/toy-story/" /><meta name="twitter:data2" content="4.11 out of 5" /><body data-tmdb-id="862">"#.utf8)
+        let second = await lb.info(imdb: "tt0114709")
+        XCTAssertEqual(second?.average, 4.11, "al volver a pedir, sí llega")
+        http.raw["https://letterboxd.com/imdb/tt9999999/"] = Data("<h1>IMDb ID Not found</h1>".utf8)
+        _ = await lb.info(imdb: "tt9999999")
+        XCTAssertNotNil(kv.data("lb-info.tt9999999"), "lo que Letterboxd dice que no tiene, sí se recuerda")
+    }
+
     func testElArchivoDeExportacionJuntaDiarioReseñasYCalificaciones() throws {
         let archive = try LetterboxdArchive.read(files: [("letterboxd-fer-2026.zip", try XCTUnwrap(Data(base64Encoded: Self.zip)))])
         let dune = try XCTUnwrap(archive.entries.first { $0.title == "Dune: Part Two" })

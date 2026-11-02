@@ -944,6 +944,19 @@ def test_genre_top_asks_for_this_years_best_rated_in_spanish(net):
     assert out["rows"][0]["vote_average"] >= out["rows"][-1]["vote_average"]
 
 
+def test_genre_top_and_seasons_never_ask_for_unreleased(net):
+    """Ni el Top del género ni las temporadas piden lo que aún no se estrena, en ningún paso (como el iPhone)."""
+    from datetime import date
+    client = tmdb.Tmdb("k")
+    net.on("GET", r"/discover/", lambda url, _: _discover_page(0))
+    client.genre_top(27, 10765, 2026)
+    client.season_titles(3335)
+    urls = [url for _, url, _ in net.calls if "/discover/" in url]
+    today = date.today().isoformat()
+    assert len(urls) > 4
+    assert all((f"primary_release_date.lte={today}" in u) if "/discover/movie" in u else (f"first_air_date.lte={today}" in u) for u in urls)
+
+
 def test_genre_top_lowers_the_vote_floor_then_uses_popularity_then_last_year(net):
     client = tmdb.Tmdb("k")
 

@@ -89,6 +89,17 @@ final class TmdbCollectionsTests: XCTestCase {
 
     // MARK: lo mejor del género
 
+    /// Ni el Top del género ni las temporadas piden lo que aún no se estrena (en ningún paso).
+    func testNuncaLoQueAunNoSeEstrena() async throws {
+        let today = AdvancedFilter.day(Date())
+        let http = RoutedTMDB { path, _ in path.hasPrefix("/discover/") ? rows(0) : nil }
+        _ = try await Tmdb(http: http, key: "K").genreTop(movie: 27, tv: 10765, year: 2026)
+        _ = try await Tmdb(http: http, key: "K").seasonTitles(keywordID: 3335)
+        let asked = http.calls.filter { $0.path.hasPrefix("/discover/") }.map { $0.query[$0.path.hasSuffix("/movie") ? "primary_release_date.lte" : "first_air_date.lte"] }
+        XCTAssertGreaterThan(asked.count, 4)
+        XCTAssertTrue(asked.allSatisfy { $0 == today }, "todos los pasos llevan la fecha de hoy")
+    }
+
     func testGenreTopUsesVotesWithTheHighFloorWhenThereAreTen() async throws {
         let http = RoutedTMDB { path, q in
             guard path.hasPrefix("/discover/") else { return nil }
@@ -160,6 +171,20 @@ final class TmdbCollectionsTests: XCTestCase {
         XCTAssertEqual(http.calls.count, calls)
     }
 
+    /// Un Top del género que llegó a medias (casi todas las fichas fallaron) se enseña, pero no se guarda: se vuelve a pedir.
+    func testGenreChartAMediasNoSeGuarda() async {
+        let http = RoutedTMDB { path, q in
+            if path.hasPrefix("/discover/") { return rows(8, from: path.hasSuffix("/tv") ? 50 : 1) }
+            return path.hasSuffix("/1") || path.hasSuffix("/2") ? details(path) : nil   // solo dos fichas contestan
+        }
+        let forYou = ForYou(trakt: nil, tmdb: Tmdb(http: http, key: "K"), region: { "MX" }, kv: InMemoryKeyValueStore())
+        let first = await forYou.genreChart(slug: "comedia")
+        XCTAssertEqual(first?.items.count, 2, "lo que llegó se enseña")
+        let calls = http.calls.count
+        _ = await forYou.genreChart(slug: "comedia")
+        XCTAssertGreaterThan(http.calls.count, calls, "a medias no se guardó: se vuelve a pedir")
+    }
+
     // MARK: temporadas: palabra clave y títulos
 
     func testKeywordPrefersTheExactNameInEnglishAndTriesTheNextQuery() async throws {
@@ -215,3 +240,4 @@ final class TmdbCollectionsTests: XCTestCase {
         XCTAssertTrue(none.isEmpty)
     }
 }
+

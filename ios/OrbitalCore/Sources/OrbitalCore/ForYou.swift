@@ -46,13 +46,32 @@ public actor ForYou {
 
     func remember<T: Sendable>(_ key: String, ttl: TimeInterval, _ load: @escaping @Sendable () async throws -> T) async throws -> T {
         if let hit = cache[key], clock() < hit.expires, let value = hit.value as? T { return value }
-        if let running = inflight[key], let value = try await running.value as? T { return value }
+        if let running = inflight[key] {
+            do { if let value = try await running.value as? T { return value } } catch let partial as Partial { if let value = partial.value as? T { return value }; throw partial }
+        }
         let task = Task<any Sendable, any Error> { try await load() }
         inflight[key] = task
         defer { if inflight[key] == task { inflight[key] = nil } }
-        guard let value = try await task.value as? T else { throw CancellationError() }
+        let value: T
+        do {
+            guard let found = try await task.value as? T else { throw CancellationError() }
+            value = found
+        } catch let partial as Partial {
+            guard let shown = partial.value as? T else { throw partial }
+            return shown   // se enseña, pero no se guarda: la próxima vez se vuelve a pedir
+        }
         cache[key] = (clock().addingTimeInterval(ttl), value)
         return value
+    }
+
+    /// Lo que llegó vacío o a medias (más de la mitad de las fichas falló): se enseña, pero `remember` no lo guarda. Antes
+    /// una lista vacía o recortada se quedaba horas como si fuera la de verdad.
+    struct Partial: Error { let value: any Sendable }
+
+    /// Las sugerencias tal cual si llegaron bien; si no llegó ninguna o se perdió más de la mitad de las `asked`, `Partial`.
+    static func kept(_ items: [Suggestion], of asked: Int) throws -> [Suggestion] {
+        if items.isEmpty || items.count * 2 < asked { throw Partial(value: items) }
+        return items
     }
 
     public func clearCache() { cache.removeAll(); inflight.removeAll() }
@@ -319,26 +338,7 @@ public actor ForYou {
         guard let tmdb, let info = await platforms()[platform.brand] else { return [] }
         return try await remember("tmdb:\(platform.brand):\(kind)", ttl: Self.popularTTL) {
             let rows = try await tmdb.discover(kind: kind, providerID: info.id, region: self.region()).prefix(20)
-            return await Self.suggestions(Array(rows), kind: kind, reason: .onPlatform(platform.name), tmdb: tmdb)
-        }
-    }
-
-    /// Filas de TMDB → sugerencias (cada una necesita su IMDb: se piden sus detalles a la vez; la que falla se salta).
-    static func suggestions(_ rows: [JSON], kind: String, reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
-        let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-            for (i, row) in rows.enumerated() {
-                guard let id = row["id"]?.intValue else { continue }
-                group.addTask { (i, try? await tmdb.details(kind: kind, tmdbID: id)) }
-            }
-            var out = [TmdbDetails?](repeating: nil, count: rows.count)
-            for await (i, d) in group { out[i] = d }
-            return out
-        }
-        return details.compactMap { d -> Suggestion? in
-            guard let d, let imdb = d.imdb, !d.title.isEmpty else { return nil }
-            return Suggestion(kind: kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
-                              poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
-                              logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
+            return try Self.kept(await Self.suggestions(Array(rows), kind: kind, reason: .onPlatform(platform.name), tmdb: tmdb), of: rows.count)
         }
     }
 
@@ -366,7 +366,7 @@ public actor ForYou {
             for i in 0..<(lists.map(\.count).max() ?? 0) {
                 for list in lists where i < list.count && seen.insert(list[i].imdb).inserted { mixed.append(list[i]) }
             }
-            return mixed
+            return try Self.kept(mixed, of: 0)   // vacío (TMDB no contestó): no se guarda
         }) ?? []
     }
 
@@ -377,7 +377,7 @@ public actor ForYou {
         guard let tmdb, tmdb.configured else { return [] }
         return (try? await remember("tmdb:studio:\(companyID)", ttl: Self.slowTTL) {
             let rows = try await tmdb.studio(companyID: companyID).prefix(20)
-            return await Self.suggestions(Array(rows), kind: "movie", reason: .console(name), tmdb: tmdb)
+            return try Self.kept(await Self.suggestions(Array(rows), kind: "movie", reason: .console(name), tmdb: tmdb), of: rows.count)
         }) ?? []
     }
 
@@ -388,9 +388,12 @@ public actor ForYou {
         let year = Calendar.current.component(.year, from: clock())
         return try? await remember("tmdb:genre:\(slug):\(year)", ttl: Self.slowTTL) {
             let chart = try await tmdb.genreTop(movie: genre.movie, tv: genre.tv, year: year)
-            var items = Array(await Self.suggestions(chart.rows, reason: .console(genre.title), tmdb: tmdb).prefix(Self.genreTopCount))
+            let found = await Self.suggestions(chart.rows, reason: .console(genre.title), tmdb: tmdb)
+            var items = Array(found.prefix(Self.genreTopCount))
             for i in items.indices { items[i].rank = i + 1 }   // el puesto después de saltar los que no tienen IMDb (1…n seguidos)
-            return GenreChart(items: items, asked: year, year: chart.year, basis: chart.basis)
+            let result = GenreChart(items: items, asked: year, year: chart.year, basis: chart.basis)
+            if found.isEmpty || found.count * 2 < chart.rows.count { throw Partial(value: result) }   // a medias: no se guarda
+            return result
         }
     }
 
@@ -405,66 +408,14 @@ public actor ForYou {
             let saved = kv.data("tmdb-keyword.\(slug)").flatMap { String(data: $0, encoding: .utf8) }.flatMap { Int($0) }
             var keyword = saved
             if keyword == nil { keyword = try await tmdb.keywordID(season.queries) }
-            guard let keyword else { return [Suggestion]() }
+            guard let keyword else { throw Partial(value: [Suggestion]()) }   // sin palabra clave: no se guarda el vacío
             if saved == nil { kv.set("tmdb-keyword.\(slug)", data: String(keyword).data(using: .utf8)) }
             let rows = try await tmdb.seasonTitles(keywordID: keyword)
-            return Array(await Self.suggestions(rows, reason: .console(season.title), tmdb: tmdb).prefix(Self.seasonCount))
+            return Array(try Self.kept(await Self.suggestions(rows, reason: .console(season.title), tmdb: tmdb), of: rows.count).prefix(Self.seasonCount))
         }) ?? []
     }
 
     static let seasonCount = 20
-
-    /// Una fila de TMDB ya con sus detalles → sugerencia (nil sin IMDb o sin nombre).
-    public static func suggestion(_ d: TmdbDetails, row: TmdbRow, reason: SuggestionReason) -> Suggestion? {
-        guard let imdb = d.imdb, !d.title.isEmpty else { return nil }
-        var s = Suggestion(kind: d.kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
-                           poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
-                           logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
-        s.tmdbRating = row.voteAverage > 0 ? row.voteAverage : nil
-        return s
-    }
-
-    /// Como `suggestions`, pero entrega en orden lo que ya está listo mientras llegan los demás (`deliver`, con los nuevos de
-    /// cada vez): la primera fila sale en cuanto llega su detalle, no al llegar el de la última. Devuelve false si `deliver`
-    /// pidió parar (cambió el filtro).
-    public static func streamSuggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb,
-                                         deliver: @MainActor ([Suggestion]) -> Bool) async -> Bool {
-        await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-            for (i, row) in rows.enumerated() { group.addTask { (i, await detailsRetrying(row, tmdb: tmdb)) } }
-            var slots = [Suggestion??](repeating: nil, count: rows.count)   // nil: en camino; .some(nil): no sirve
-            var next = 0
-            for await (i, d) in group {
-                slots[i] = .some(d.flatMap { suggestion($0, row: rows[i], reason: reason) })
-                var batch: [Suggestion] = []
-                while next < slots.count, let ready = slots[next] { if let ready { batch.append(ready) }; next += 1 }
-                if !batch.isEmpty, await !deliver(batch) { group.cancelAll(); return false }
-            }
-            return true
-        }
-    }
-
-    /// La ficha de una fila; si no contesta (TMDB tarda o dice «espera»), una vez más. Antes el título se perdía sin avisar y
-    /// la búsqueda avanzada salía con huecos.
-    static func detailsRetrying(_ row: TmdbRow, tmdb: Tmdb) async -> TmdbDetails? {
-        if let d = try? await tmdb.details(kind: row.kind, tmdbID: row.id) { return d }
-        guard !Task.isCancelled else { return nil }
-        return try? await tmdb.details(kind: row.kind, tmdbID: row.id)
-    }
-
-    /// Filas de TMDB de películas y series juntas → sugerencias, en su orden (cada una con su IMDb; un título repetido, una vez).
-    public static func suggestions(_ rows: [TmdbRow], reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
-        let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-            for (i, row) in rows.enumerated() { group.addTask { (i, await detailsRetrying(row, tmdb: tmdb)) } }
-            var out = [TmdbDetails?](repeating: nil, count: rows.count)
-            for await (i, d) in group { out[i] = d }
-            return out
-        }
-        var seen = Set<String>()
-        return details.enumerated().compactMap { i, d -> Suggestion? in
-            guard let d, let s = suggestion(d, row: rows[i], reason: reason), seen.insert(s.imdb).inserted else { return nil }
-            return s
-        }
-    }
 
     // MARK: próximos estrenos
     /// Lo que sale hoy y los próximos 14 días de las series que sigues en Trakt, con la hora de aquí. Sin Trakt: nada.

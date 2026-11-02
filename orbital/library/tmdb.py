@@ -287,12 +287,17 @@ class Tmdb:
         """Películas y series de un género en un año, juntas, de mejor a peor según `sort`."""
         extra = {"sort_by": sort, **({"vote_count.gte": floor} if floor else {})}
         found: list[dict] = []
+        # Nunca lo que aún no se estrena (como el iPhone y el filtro avanzado): con pocos votos, el paso por popularidad traía
+        # los estrenos de diciembre que todavía no salen.
+        today = date.today().isoformat()
         if movie_genre:
-            for row in self._discover("movie", with_genres=int(movie_genre), primary_release_year=int(year), **extra):
+            for row in self._discover("movie", with_genres=int(movie_genre), primary_release_year=int(year),
+                                      **{"primary_release_date.lte": today}, **extra):
                 found.append({"kind": "movie", "id": row["id"], "vote_average": float(row.get("vote_average") or 0),
                               "popularity": float(row.get("popularity") or 0)})
         if tv_genre:
-            for row in self._discover("series", with_genres=int(tv_genre), first_air_date_year=int(year), **extra):
+            for row in self._discover("series", with_genres=int(tv_genre), first_air_date_year=int(year),
+                                      **{"first_air_date.lte": today}, **extra):
                 found.append({"kind": "series", "id": row["id"], "vote_average": float(row.get("vote_average") or 0),
                               "popularity": float(row.get("popularity") or 0)})
         seen: set[tuple[str, int]] = set()
@@ -348,7 +353,8 @@ class Tmdb:
             extra = {"with_keywords": int(keyword_id), "sort_by": "popularity.desc", **({"vote_count.gte": floor} if floor else {})}
             found = []
             for kind in ("movie", "series"):
-                for row in self._discover(kind, **extra):
+                released = {"primary_release_date.lte" if kind == "movie" else "first_air_date.lte": date.today().isoformat()}
+                for row in self._discover(kind, **extra, **released):  # nunca lo que aún no se estrena
                     found.append({"kind": kind, "id": row["id"], "vote_average": float(row.get("vote_average") or 0),
                                   "popularity": float(row.get("popularity") or 0)})
             seen: set[tuple[str, int]] = set()

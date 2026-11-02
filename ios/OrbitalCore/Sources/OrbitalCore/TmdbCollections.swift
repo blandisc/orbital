@@ -135,8 +135,11 @@ extension Tmdb {
         var extra = [("sort_by", sort)]
         if floor > 0 { extra.append(("vote_count.gte", String(floor))) }
         var found: [TmdbRow] = []
-        if let movie, movie > 0 { found += try await discoverRows("movie", [("with_genres", String(movie)), ("primary_release_year", String(year))] + extra) }
-        if let tv, tv > 0 { found += try await discoverRows("series", [("with_genres", String(tv)), ("first_air_date_year", String(year))] + extra) }
+        // Nunca lo que aún no se estrena (como el filtro avanzado): con pocos votos, el paso por popularidad traía los estrenos
+        // de diciembre que todavía no salen.
+        let today = AdvancedFilter.day(Date())
+        if let movie, movie > 0 { found += try await discoverRows("movie", [("with_genres", String(movie)), ("primary_release_year", String(year)), ("primary_release_date.lte", today)] + extra) }
+        if let tv, tv > 0 { found += try await discoverRows("series", [("with_genres", String(tv)), ("first_air_date_year", String(year)), ("first_air_date.lte", today)] + extra) }
         return Tmdb.rank(found, byVotes: sort.hasPrefix("vote"))
     }
 
@@ -176,7 +179,8 @@ extension Tmdb {
             var extra = [("with_keywords", String(keywordID)), ("sort_by", "popularity.desc")]
             if floor > 0 { extra.append(("vote_count.gte", String(floor))) }
             var found: [TmdbRow] = []
-            for kind in ["movie", "series"] { found += try await discoverRows(kind, extra) }
+            let today = AdvancedFilter.day(Date())   // nunca lo que aún no se estrena (sin piso de votos se colaba)
+            for kind in ["movie", "series"] { found += try await discoverRows(kind, extra + [(kind == "movie" ? "primary_release_date.lte" : "first_air_date.lte", today)]) }
             rows = Tmdb.rank(found, byVotes: false)
             if rows.count >= 10 || floor == 0 { return Array(rows.prefix(20)) }
         }

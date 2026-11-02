@@ -149,7 +149,11 @@ public struct Letterboxd: Sendable {
             return info.missing ? nil : info
         }
         do {
-            var info = Self.parseFilmInfo(try await page("/imdb/\(imdb)/")) ?? LetterboxdFilmInfo(missing: true)
+            let html = try await page("/imdb/\(imdb)/")
+            // Solo se recuerda que no la tiene si Letterboxd lo dice («IMDb ID Not found», que llega con 200). Una página que no se
+            // puede leer (la verificación de Cloudflare, o un cambio de su HTML) no se guarda: antes la película desaparecía de los
+            // filtros y de sus reseñas por tres días.
+            guard var info = Self.parseFilmInfo(html) ?? (Self.saysNotFound(html) ? LetterboxdFilmInfo(missing: true) : nil) else { return nil }
             info.fetchedAt = now
             kv.set(key, data: try? JSONEncoder().encode(info))
             return info.missing ? nil : info
@@ -170,6 +174,9 @@ public struct Letterboxd: Sendable {
             return out
         }
     }
+
+    /// La página de Letterboxd que dice que no tiene esa película («IMDb ID Not found»).
+    static func saysNotFound(_ html: String) -> Bool { html.range(of: "not found", options: .caseInsensitive) != nil && !html.contains("data-tmdb-id") }
 
     static func parseFilmInfo(_ html: String) -> LetterboxdFilmInfo? {
         guard html.contains("data-tmdb-id") || html.contains("twitter:data2") else { return nil }
