@@ -548,12 +548,14 @@ def paused_ass(hud: Hud) -> str:
     title_h = hud.logo[1] + 28 if hud.logo else 92 * len(title_lines)
     meta = " · ".join(p for p in (hud.detail, hud.facts) if p)
     about = wrap(hud.description, 26, min(1000, width), 3)
-    height = 54 + title_h + (52 if meta else 0) + 40 * len(about) + 30 + 62
+    # Bajo «En pausa», aire: con logo, una línea más (pegados, el ícono de pausa y el logo se leían como una sola pieza).
+    after_pause = 78 if hud.logo else 54
+    height = after_pause + title_h + (52 if meta else 0) + 40 * len(about) + 30 + 62
     y = max(110, BAR_Y - 56 - height)
     # «‖ En pausa»: el ícono dibujado (dos barras) y la palabra, sin mayúsculas.
     lines += [rrect(MARGIN, y + 5, 6, 22, 2, TEXT), rrect(MARGIN + 12, y + 5, 6, 22, 2, TEXT),
               text(MARGIN + 30, y, "En pausa", 26, weight="semi")]
-    y += 54
+    y += after_pause
     if hud.logo:
         placed["logo"] = (MARGIN, y - 10, *hud.logo)
         y += title_h

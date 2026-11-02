@@ -576,7 +576,12 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
   return {
     el, setPool, handle, wake, start, stop, removeItem, setLogoDark, relayout: () => pool.length && paint(),
     /** Con el protector de pantalla, la deriva sigue a pasos (SAVER_REST_MS); sin él, se detiene a los AMBIENT_MS. */
-    saver: (on) => { saver = !!on; },
+    // Si ya estabas en Explorar, el mosaico llevaba rato en ambiente y quieto (pasados los AMBIENT_MS): sin esto, el protector
+    // salía congelado (Fernando, 1 nov 2026: «el salvapantallas ya no se mueve»). Con él, la deriva vuelve a dar pasos.
+    saver: (on) => {
+      saver = !!on;
+      if (saver && running && mode === "ambient" && !frame) { el.classList.add("foryou-mosaic--drifting"); glide(0); }
+    },
     get current() { return current(); },
     get ambient() { return mode === "ambient"; },
     get empty() { return !pool.length; },

@@ -116,6 +116,17 @@ def test_subtitles_rise_over_the_bar_and_come_back_down():
     assert mpv.sent[-1] == ("set_property", "sub-pos", 100)
 
 
+def test_subtitles_stay_put_when_paused():
+    """En pausa los subtítulos no suben: el velo de la pausa los tapa y el brinco solo distraía."""
+    p, mpv = make_player()
+    p.show_hud()
+    p.show_hud(paused=True)
+    assert mpv.sent[-1] == ("set_property", "sub-pos", 100)
+    sent = len(mpv.sent)
+    p.show_hud(paused=True)
+    assert ("set_property", "sub-pos", p.SUBS_OVER_HUD) not in mpv.sent[sent:]
+
+
 def test_audio_menu_lists_tracks_and_switches():
     p, mpv = make_player()
     p.press("x")

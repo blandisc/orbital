@@ -225,7 +225,9 @@ class PlayerScreen(SubtitleTrial):
         self._show_logo(player_ui.placed.get("logo") if logo else None, logo)
         self._hud_visible = True
         if self.menu is None:
-            self._lift_subs(True, self.SUBS_OVER_HUD)  # encima de la barra mientras se ve
+            # Reproduciendo, encima de la barra mientras se ve. En pausa se quedan en su lugar: el velo y el bloque de la
+            # pausa los tapan de todos modos y verlos brincar arriba solo distraía (Fernando).
+            self._lift_subs(not hud.paused or bool(seeking), self.SUBS_OVER_HUD)
         if self._hud_timer:
             self._hud_timer.cancel()
         if hud.paused and seeking:  # en pausa, después de adelantar vuelve la vista de pausa
