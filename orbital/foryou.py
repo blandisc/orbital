@@ -949,9 +949,23 @@ class ForYou:
 
         entries = self.cache.get(f"critics:{service}:{name}", SLOW_TTL, load, stale=True)
         why = "Certified Fresh" if kind == "movie" else "Fresh en Rotten Tomatoes"
-        # La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, de 2028): esos no son «aprobados».
+        # La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, Dune: Part Three): esos no son «aprobados».
+        # Lo de años que vienen, por su año; lo de este año, por su fecha exacta en Cinemeta (como el iPhone). Sin fecha, se queda.
         this_year = datetime.now().year
-        return [video_item(e, why, in_list=True) for e in entries or [] if (e.get("year") or this_year) <= this_year]
+        return [video_item(e, why, in_list=True) for e in entries or []
+                if (e.get("year") or this_year) <= this_year and not (e.get("year") == this_year and self._not_out_yet(e))]
+
+    def _not_out_yet(self, entry: dict) -> bool:
+        """¿Su fecha de estreno (Cinemeta) es después de hoy? Se recuerda un día."""
+        imdb = entry.get("imdb") or ""
+
+        def load() -> str:
+            try:
+                return str(self.catalog.cinemeta.meta("movie", imdb, localized=False).get("released") or "")
+            except Exception:  # noqa: BLE001 - sin fecha, se queda
+                return ""
+        released = self.cache.get(f"released:{imdb}", SLOW_TTL, load) if imdb.startswith("tt") else ""
+        return bool(released) and released[:10] > datetime.now().date().isoformat()
 
     def _list_heading(self, list_id: str) -> dict:
         if list_id.startswith("genre:"):

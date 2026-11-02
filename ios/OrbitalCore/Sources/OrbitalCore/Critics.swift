@@ -40,6 +40,32 @@ public struct Critics: Sendable {
         }
     }
 
+    /// Sin lo que aún no se estrena (Fernando, 1 nov 2026: salía Dune: Part Three, que sale el 18 de diciembre). Lo de años
+    /// que vienen se quita por su año; lo de este año, por su fecha exacta en Cinemeta (pocas, a la vez). Sin fecha, se queda.
+    public func releasedOnly(_ entries: [TraktEntry], now: Date, calendar: Calendar = .current) async -> [TraktEntry] {
+        let year = calendar.component(.year, from: now)
+        let current = entries.filter { $0.year == year }.map(\.imdb)
+        let dates = await withTaskGroup(of: (String, Date?).self) { group in
+            for imdb in current { group.addTask { (imdb, await self.releaseDate(imdb)) } }
+            var out: [String: Date] = [:]
+            for await (id, d) in group { if let d { out[id] = d } }
+            return out
+        }
+        return entries.filter { e in
+            if let y = e.year, y > year { return false }
+            if let d = dates[e.imdb], d > now { return false }
+            return true
+        }
+    }
+
+    private func releaseDate(_ imdb: String) async -> Date? {
+        guard let url = URL(string: "https://v3-cinemeta.strem.io/meta/movie/\(imdb).json"),
+              let response = try? await http.send(HTTPRequest(url: url, timeout: 8)), response.status == 200,
+              let text = JSON.parse(response.data)?["meta"]?["released"]?.string else { return nil }
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+    }
+
     private func moviesFromMDBList() async throws -> [TraktEntry] {
         guard let url = URL(string: "https://mdblist.com/lists/\(Self.movies.user)/\(Self.movies.slug)/json") else { return [] }
         let response = try await http.send(HTTPRequest(url: url, headers: ["User-Agent": "Orbital"], timeout: 12))

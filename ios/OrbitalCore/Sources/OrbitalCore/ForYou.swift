@@ -217,10 +217,9 @@ public actor ForYou {
         if listID.hasPrefix("lb:") { return try await letterboxdItems(slug: String(listID.dropFirst(3))) }
         if listID == Critics.listID, let http {
             let critics = Critics(http: http, trakt: trakt, kv: kv)
-            // La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, de 2028): esos no son «aprobados».
-            let year = Calendar.current.component(.year, from: clock())
-            return try await remember("critics:\(kind)", ttl: Self.slowTTL) { try await critics.items(kind: kind) }
-                .filter { ($0.year ?? year) <= year }
+            // La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, Dune: Part Three): esos no son «aprobados».
+            let now = clock()
+            return try await remember("critics:\(kind)", ttl: Self.slowTTL) { await critics.releasedOnly(try await critics.items(kind: kind), now: now) }
                 .map { suggestion($0, .console(Critics.reason(kind: kind))) }
         }
         if let trakt, ["recs", "mine", "watchlist", Self.favoritesList, "trend", "popular"].contains(listID) || listID.hasPrefix("list:") {
