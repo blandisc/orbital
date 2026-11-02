@@ -147,7 +147,17 @@
 }
 .title__action--primary { flex: 0 1 auto; min-width: 0; }
 .title__action--primary > span { flex: none; white-space: nowrap; } /* «Continuar T12 E8» entero, siempre */
-.title__action--primary > small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* lo que cede es la versión */
+/* La versión, junto al botón (opción C, 2 nov): una cápsula de vidrio con Y. Dice cómo va a sonar y verse; con Y o un toque, se
+   cambia. Si no cabe, cede ella (se recorta), nunca «Continuar». */
+.title__version {
+  display: inline-flex; align-items: center; gap: var(--space-2); flex: 0 1 auto; min-width: 0; min-height: var(--control-height);
+  padding: 0 var(--space-5); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  color: var(--color-text); text-shadow: none; white-space: nowrap;
+  font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.title__version > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.title__version:hover { background: var(--color-glass-hover); }
 .title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
 .title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }

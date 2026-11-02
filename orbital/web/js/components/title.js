@@ -358,14 +358,28 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
-    mount(actions, buttons.map((b, i) => h("button", {
+    mount(actions, buttons.flatMap((b, i) => [h("button", {
       class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", b.active && "title__action--on",
         zone === "actions" && i === action && "title__action--focused"],
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
       onClick: () => { zone = "actions"; action = i; run(b); },
     }, b.primary
-      ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint)]
-      : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)])));
+      ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label)]
+      : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)]),
+    // El botón dice solo «Continuar» o «Ver» (Fernando, 2 nov, opción C); a su lado, cómo va a sonar y verse, en una cápsula
+    // de vidrio que con Y (o tocándola) abre las versiones.
+    b.primary && b.hint && h("button", { class: "title__version", type: "button", "aria-label": `Versión: ${b.hint}`, onClick: () => sources() },
+      glyphs.options && Glyph(glyphs.options, { small: true }), h("span", {}, versionShort(b.hint)))]).filter(Boolean));
+  }
+
+  /** «Inglés · 1080p · Subtítulos en inglés» → «Inglés · 1080p · CC»; con otro idioma de subtítulos, «CC español». */
+  function versionShort(line) {
+    const parts = String(line).split(" · ");
+    const audio = (parts[0] || "").toLowerCase();
+    return parts.map((p) => {
+      const sub = /^Subtítulos en (.+)$/i.exec(p);
+      return sub ? (sub[1].toLowerCase() === audio ? "CC" : `CC ${sub[1]}`) : p;
+    }).join(" · ");
   }
 
   function renderTabs() {
