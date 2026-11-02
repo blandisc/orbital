@@ -478,7 +478,7 @@ struct PlayerScreen: View {
             Button("Mejor no", role: .cancel) { dockState.slowPick = nil }
         } message: { Text("Empieza a bajarla y puede tardar minutos u horas. Si manda su aviso de «descargando», vuelves a la que ves en el mismo punto.") }
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
-            Button("Seguir") { Task { await model.confirmStillWatching() } }
+            Button("Seguir viendo") { Task { await model.confirmStillWatching() } }   // «Seguir» a secas es seguir una serie (Follow)
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
         // Con «Audio y subtítulos» abierto la tarjeta de «Siguiente» no se ve: su cuenta se detiene (no cambia de episodio a escondidas).
