@@ -97,8 +97,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     mount(upnextHead, queue.length > 0 && SectionHead("A continuación", { end: upcoming, className: "home__upnext-head" }));
     mount(upnextTrack, queue.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
-      // Solo la enfocada dice su nombre (debajo); el logo del título va sobre el arte.
-      const card = Card(item, { wide: true, caption: "focus", onPress: pick(`card:${i}`) });
+      // Sin nombre debajo: lo enfocado ya lo dice arriba, en grande (como la fila de arriba del Apple TV). El logo va sobre su escena.
+      const card = Card(item, { wide: true, onPress: pick(`card:${i}`) });
       card.dataset.focusId = `card:${i}`;
       return card;
     }));
@@ -106,9 +106,10 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
     queue.forEach((item) => { const src = item.hero || item.image; if (src) new Image().src = src; });
 
-    // Una sección (agrupa tus consolas): el rótulo con su ícono y su línea, y el dato a la derecha (como el iPhone).
+    // Una fila más, con el mismo título que «A continuación» (en el iPhone el rótulo en mayúsculas agrupa varias filas) y,
+    // a la derecha, cuántos juegos hay.
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
-      level: "section", icon: "gamepad", meta: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
+      end: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
     }));
     model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
     mount(consolesTrack, model.consoles.map((c, i) => ConsoleTile(c, {
@@ -163,11 +164,18 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     return el.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
   };
 
-  /** Alto de lo de arriba: la pantalla menos «A continuación» y el título de Tus consolas (que asoma abajo). */
+  /** Alto de lo de arriba: la pantalla menos «A continuación» y lo que asoma de Tus consolas (su título y la orilla de arriba
+   * de las consolas, que se desvanece: así se ve que hay más abajo sin decirlo, como «Seguir viendo» en el iPhone). */
   function fit() {
     if (el.hidden || !el.clientHeight) return;
     const gap = parseFloat(getComputedStyle(scroller).rowGap) || 0;
-    const below = (upnext.hidden ? 0 : upnext.offsetHeight + gap) + (consoles.hidden ? 0 : consolesHead.offsetHeight + gap);
+    // --home-peek viene en rem; lo que asoma se cuenta desde la orilla de arriba de las consolas (su título, el aire y lo que
+    // crece la enfocada van antes).
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const peek = (parseFloat(getComputedStyle(el).getPropertyValue("--home-peek")) || 0) * rem;
+    const tile = consolesTrack.firstElementChild;
+    const lead = tile ? tile.getBoundingClientRect().top - consoles.getBoundingClientRect().top : consolesHead.offsetHeight;
+    const below = (upnext.hidden ? 0 : upnext.offsetHeight + gap) + (consoles.hidden ? 0 : lead + gap + peek);
     hero.style.height = `${Math.max(0, room() - below)}px`;
     scrollToFocus();
   }

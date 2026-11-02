@@ -1,8 +1,8 @@
-/* Backdrop: el arte del juego, compuesto a la derecha y fundido hacia su color (--art-tint).
-   Las máscaras (no velos oscuros) dejan el arte limpio donde se ve y el fondo tranquilo detrás
-   del texto y de las filas. */
+/* Backdrop: el arte de lo enfocado de orilla a orilla arriba (como el Apple TV y la portada del iPhone), fundido hacia abajo.
+   El color del arte tiñe solo la parte de arriba y a media pantalla ya es grafito (--fade-backdrop): las filas descansan sobre
+   un fondo tranquilo. */
 .backdrop {
-  position: fixed; inset: 0; z-index: var(--z-behind); background-color: var(--color-tinted-bg); overflow: hidden;
+  position: fixed; inset: 0; z-index: var(--z-behind); background-color: var(--color-tinted-bg); background-image: var(--fade-backdrop); overflow: hidden;
   transition: background-color var(--duration-tint) var(--ease-out); /* el color del juego entra como luz */
 }
 .backdrop__layer {
@@ -12,13 +12,14 @@
 .backdrop__layer--visible { opacity: 1; }
 .backdrop__layer--pixel .backdrop__art { image-rendering: pixelated; }
 
-/* Fanart: lado derecho, fundido por la izquierda y por abajo; deriva lenta. */
+/* Fanart: de orilla a orilla, un poco apagado a la izquierda (ahí va el destacado; el velo --scrim-hero hace el resto) y
+   fundido por abajo, donde empiezan las filas. Sobra 3 rem a la derecha para el paralaje. */
 .backdrop__art {
-  position: absolute; inset: 0 0 0 22%;
+  position: absolute; inset: 0 -3rem 0 0;
   background-size: cover; background-position: center 28%;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 42%), linear-gradient(0deg, transparent 30%, var(--mask-solid) 72%);
+  -webkit-mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 55%, transparent) 0%, var(--mask-solid) 48%), linear-gradient(0deg, transparent 24%, var(--mask-solid) 60%);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 42%), linear-gradient(0deg, transparent 30%, var(--mask-solid) 72%);
+  mask-image: linear-gradient(90deg, color-mix(in srgb, var(--mask-solid) 55%, transparent) 0%, var(--mask-solid) 48%), linear-gradient(0deg, transparent 24%, var(--mask-solid) 60%);
   mask-composite: intersect;
   /* Paralaje: el arte se desplaza un poco según avanzas en la fila (--parallax de 0 a 1).
      Sin la deriva continua de antes: repintaba una capa enmascarada a pantalla completa sin parar. */
@@ -65,7 +66,7 @@ body:is([data-view="home"], [data-view="games"], [data-view="foryou"], [data-vie
    Ahora el fondo solo se mueve cuando tú te mueves. */
 .backdrop__glow {
   position: absolute; left: 0; top: 0; width: 80vmax; height: 80vmax; margin: -40vmax 0 0 -40vmax; border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in oklab, var(--art-accent) 16%, transparent) 0%, color-mix(in oklab, var(--art-tint) 60%, transparent) 30%, transparent 64%);
+  background: radial-gradient(circle, color-mix(in oklab, var(--art-accent) 10%, transparent) 0%, color-mix(in oklab, var(--art-tint) 34%, transparent) 30%, transparent 64%);
   will-change: transform;
 }
 .backdrop__glow--follow {

@@ -68,7 +68,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   const card = h("button", {
     // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.
     // caption "focus": el nombre solo bajo la enfocada, como el Apple TV (Juegos, «A continuación»).
-    class: ["card", wide && "card--wide", caption === "focus" && "card--name-on-focus", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named",
+    class: ["card", wide && "card--wide", caption === "focus" && "card--name-on-focus", item.image || (wide && item.hero) ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named",
       standIn && "card--stand-in", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,
@@ -83,10 +83,11 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     card.style.setProperty("--glow", systemColor(systemOf(item)));
     card.append(h("span", { class: "card__stand-in", "aria-hidden": "true" },
       h("img", { class: "card__stand-in-photo", src: `img/consoles/${SYSTEMS[systemOf(item)].photo}`, alt: "", decoding: "async" })));
-  } else if (item.image && wide) {
-    // Ancha (Destacados): siempre 16:9. Si su imagen es un póster (no había fondo ancho), va entero sobre su copia
-    // desenfocada (ArtFit), no recortado a una franja del centro. Del tamaño en que se ve (~500 px).
-    card.append(ArtFit(sized(item.image, 520), { ratio: WIDE_RATIO, className: "card__image",
+  } else if ((item.hero || item.image) && wide) {
+    // Ancha (Destacados, «A continuación»): siempre 16:9 y, si hay, su escena (el mismo fondo ancho que lo enfocado pone
+    // arriba): una sola imagen limpia con su logo, como el Apple TV y las tarjetas del iPhone. Sin escena, el póster va
+    // entero sobre su copia desenfocada (ArtFit), no recortado a una franja del centro. Del tamaño en que se ve (~500 px).
+    card.append(ArtFit(sized(item.hero || item.image, 520), { ratio: WIDE_RATIO, className: "card__image",
       onReady: ({ instant, el }) => el.classList.add("card__image--loaded", ...(instant ? ["card__image--instant"] : [])),
       onError: () => { card.classList.replace("card--has-art", "card--no-art"); card.prepend(fallback()); } }));
   } else if (item.image) {

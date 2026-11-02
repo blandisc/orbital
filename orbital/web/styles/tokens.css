@@ -98,7 +98,7 @@
   --tracking-digits: .12em; /* cifras y puntos que se leen uno a uno: los de una contraseña, el número tecleado de un canal */
   --tracking-rank: -.08em; /* la cifra grande del Top 10: el «10» no se abre de más */
   --blur-case: 32px; /* el fondo del estuche: la portada de una caja, tan desenfocada que solo queda su color */
-  --blur-glass: 14px; /* vidrio: lo que flota sobre el arte (íconos del mosaico, el selector, Atrás táctil) */
+  --blur-glass: 22px; /* vidrio: lo que flota sobre el arte (íconos del mosaico, el selector, Atrás táctil) */
 
   /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
   --duration-none: 0s; /* movimiento reducido: sin transición */

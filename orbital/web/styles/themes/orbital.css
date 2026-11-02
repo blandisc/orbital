@@ -32,11 +32,18 @@
   /* Vidrio (lenguaje Apple TV, Fernando, 31 oct 2026): lo que flota sobre el arte —la barra de secciones, el selector de
      consolas, los botones secundarios, los menús— es vidrio oscuro con un filo claro por dentro. El color lo pone la luz de
      atrás; «Jugar» y los demás principales van siempre en blanco (--color-primary), nunca del color del arte. */
-  --color-glass: rgba(60, 60, 67, .42);
-  --color-glass-hover: rgba(90, 90, 98, .5);
-  --color-glass-strong: rgba(36, 36, 42, .78); /* un menú o una hoja: más tapado, para leer encima de cualquier cosa */
-  --edge-glass: inset 0 0 0 1px rgba(255, 255, 255, .16);
-  --filter-glass: blur(var(--blur-glass)) saturate(1.6);
+  /* Liquid Glass «sutil» (Fernando, 31 oct 2026; el `.glassEffect(.regular)` del iPhone): casi transparente, una luz blanca
+     que baja de arriba sobre un fondo apenas oscuro (se lee encima de un arte claro), el filo de arriba más brillante que el de
+     abajo y una sombra suave que lo despega. Todo quieto: no cuesta nada en reposo. */
+  --color-glass: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05)), rgba(28, 28, 32, .3);
+  --color-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .09)), rgba(28, 28, 32, .3);
+  /* Lo elegido dentro de un vidrio (la sección de la barra): un vidrio más claro, con su propio filo. */
+  --color-glass-selected: linear-gradient(180deg, rgba(255, 255, 255, .32), rgba(255, 255, 255, .16));
+  --edge-glass-selected: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 0 0 1px rgba(255, 255, 255, .14);
+  /* Un menú o una hoja: más tapado, para leer encima de cualquier cosa. */
+  --color-glass-strong: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(30, 30, 36, .74);
+  --edge-glass: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .1), inset 0 -1px 0 rgba(255, 255, 255, .04), 0 .5rem 1.4rem rgba(0, 0, 0, .22);
+  --filter-glass: blur(var(--blur-glass)) saturate(1.8);
   /* Foco invertido (teclas, chips, pestañas, opciones de menú): fondo claro, texto oscuro. */
   --inverse-bg: var(--color-primary);
   --inverse-fg: var(--color-on-primary);
@@ -106,12 +113,15 @@
   --glyph-key-top: var(--palette-ink-700);
   --glyph-ring: rgba(255, 255, 255, .16);
 
-  /* El fondo toma el tono del juego, muy oscurecido. */
-  --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000));
+  /* El fondo toma el tono del juego, muy oscurecido, y solo arriba: como el iPhone (Backdrop), la luz del arte entra desde
+     arriba y a media pantalla ya es el grafito de siempre (--fade-backdrop). Antes teñía toda la pantalla de un café lodoso. */
+  --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000)); /* el mismo tono que el iPhone (Projection) */
+  --fade-backdrop: linear-gradient(180deg, transparent 0%, transparent 34%, color-mix(in oklab, var(--color-backdrop-deep) 82%, transparent) 58%, var(--color-backdrop-deep) 76%);
   --color-scrim: color-mix(in oklab, var(--palette-ink-1000) 62%, transparent);
+  /* Sobre el arte de orilla a orilla: un velo arriba para la barra y la hora, y uno oscuro a la izquierda para el destacado. */
   --scrim-hero:
-    linear-gradient(180deg, color-mix(in oklab, var(--color-tinted-bg) 92%, transparent) 0%, color-mix(in oklab, var(--color-tinted-bg) 55%, transparent) 14%, transparent 30%),
-    linear-gradient(90deg, color-mix(in oklab, var(--color-tinted-bg) 85%, transparent) 0%, transparent 55%);
+    linear-gradient(180deg, color-mix(in oklab, var(--color-backdrop-deep) 55%, transparent) 0%, transparent 16%),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-backdrop-deep) 88%, transparent) 0%, color-mix(in oklab, var(--color-backdrop-deep) 55%, transparent) 30%, transparent 58%);
   --gradient-card: linear-gradient(160deg, var(--palette-ink-800), var(--palette-ink-900));
 
   /* Sobre el arte: placas oscuras para números, insignias y «Abierto»; sombras de texto y logos. */
