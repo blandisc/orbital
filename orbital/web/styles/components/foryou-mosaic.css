@@ -72,7 +72,7 @@
 .foryou-mosaic__logo { max-width: min(100%, 16rem); max-height: 4.4rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .foryou-mosaic__logo--dark { filter: var(--filter-logo-light); }
 .foryou-mosaic__name {
-  max-width: 100%; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); text-shadow: var(--shadow-text);
+  max-width: 100%; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); text-shadow: var(--shadow-text);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; padding-bottom: .12em;
 }
-.foryou-mosaic__fact { max-width: 100%; font-size: var(--type-secondary); opacity: var(--opacity-text); text-shadow: var(--shadow-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.foryou-mosaic__fact { max-width: 100%; font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); opacity: var(--opacity-text); text-shadow: var(--shadow-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

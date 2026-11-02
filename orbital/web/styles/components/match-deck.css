@@ -3,13 +3,13 @@
 .match { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: var(--space-5); }
 .match__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-5); padding-right: var(--touch-back-room); }
 .match__titles { display: grid; gap: var(--space-1); }
-.match__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
-.match__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
+.match__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); }
+.match__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
 /* Cuántas guardaste en esta vuelta. */
 .match__saved {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-4);
   border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
-  font-size: var(--type-secondary); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
+  font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); font-variant-numeric: tabular-nums;
 }
 .match__saved[hidden] { display: none; }
 .match__saved .icon { width: var(--icon-sm); height: var(--icon-sm); color: var(--color-orbital); }
@@ -31,12 +31,12 @@
 .match__poster { height: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
 .match__card--next .match__poster { height: 100%; }
 .match__info { display: grid; gap: var(--space-2); min-width: 0; max-width: 24rem; padding-bottom: var(--space-2); }
-.match__why { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
+.match__why { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); }
 .match__name {
-  font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); line-height: var(--leading-title);
+  font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); line-height: var(--leading-title);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-.match__facts { color: var(--color-text-muted); font-size: var(--type-secondary); }
+.match__facts { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 
 /* Paso · Ver ya · Guardar: al centro, con su nombre debajo. */
 .match__actions { display: flex; justify-content: center; align-items: flex-start; gap: var(--space-8); min-height: var(--control-height); }

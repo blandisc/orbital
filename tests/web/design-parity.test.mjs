@@ -158,11 +158,24 @@ test("el mosaico espera lo mismo antes de subir solo", () => {
   assert.equal(Math.round(swiftEnum("Mosaic").idleSeconds * 1000), TOKENS.mosaic.idleMs, "iPhone Mosaic.idleSeconds");
 });
 
-test("las recetas de texto se llaman igual en los dos lados", () => {
+test("las recetas de texto son las mismas en los dos lados: nombre, tamaño y grosor (las de solo la TV, con su porqué)", () => {
   const kebab = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+  // Los grosores se llaman igual y valen lo mismo (Font.Weight del iPhone ↔ --weight-<nombre> de la TV).
+  for (const [name, value] of entries(TOKENS.weight)) assert.equal(Number(tv[`--weight-${name}`]), value, `TV --weight-${name}`);
+  for (const [recipe, spec] of entries(TOKENS.typeTvOnly)) {
+    assert.ok(spec.porque, `${recipe}: una receta solo de la TV dice por qué`);
+    assert.equal(tv[`--type-${recipe}`], `var(${spec.tv})`, `TV --type-${recipe}`);
+    assert.equal(tv[`--type-${recipe}-weight`], `var(--weight-${spec.peso})`, `TV --type-${recipe}-weight`);
+  }
+  // Toda receta de la TV está en tokens.json (en type o en typeTvOnly): nada se inventa en un solo lado sin decirlo.
+  const known = new Set([...Object.keys(TOKENS.type), ...Object.keys(TOKENS.typeTvOnly)].filter((k) => k !== "_").map(kebab));
+  const tvRecipes = Object.keys(tv).filter((k) => /^--type-[a-z-]+$/.test(k) && !k.endsWith("-weight")).map((k) => k.slice("--type-".length));
+  assert.deepEqual(tvRecipes.filter((r) => !known.has(r)), [], "recetas de la TV que no están en design/tokens.json");
   for (const [recipe, spec] of entries(TOKENS.type)) {
     assert.equal(tv[`--type-${kebab(recipe)}`], `var(${spec.tv})`, `TV --type-${kebab(recipe)}`);
-    const line = SWIFT_DS.match(new RegExp(`case \\.${recipe}: ([^\\n]+)`))?.[1];
+    assert.equal(tv[`--type-${kebab(recipe)}-weight`], `var(--weight-${spec.peso})`, `TV --type-${kebab(recipe)}-weight`);
+    // «case .badge, .groupLabel:» también cuenta (dos recetas con la misma letra).
+    const line = SWIFT_DS.match(new RegExp(`case [^:\\n]*\\.${recipe}\\b[^:\\n]*: ([^\\n]+)`))?.[1];
     assert.ok(line, `el iPhone no tiene la receta .${recipe}`);
     assert.ok(line.includes(`.system(.${spec.ios},`), `iPhone .${recipe}: ${spec.ios} (es ${line.trim()})`);
     const weight = line.match(/\.weight\(\.(\w+)\)/)?.[1] ?? (spec.ios === "headline" ? "semibold" : "regular");

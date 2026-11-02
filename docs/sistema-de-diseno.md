@@ -140,9 +140,40 @@ texto) y **`design/vocabulario.json`** (lo que las dos apps dicen igual: «Mi li
 archivos: cambiar un valor o un texto en un solo lado falla CI. Las diferencias a propósito (la superficie, ink-900 aquí
 e ink-850 en el iPhone) van en el JSON con su `porque`.
 
-**Recetas de texto** (`--type-*`, los nombres del iPhone): `display` (3xl, negrita), `title` (2xl, negrita), `section`
-(lg, negrita), `card-title` (md, medium), `body` (md), `secondary` (sm), `footnote` (xs), `caption` (2xs), `eyebrow` (sm,
-medium) y `data` (xs, números tabulares); solo en la TV, `heading` (xl: un encabezado de zona) y `hero` (el título del héroe). **Un componente usa la receta, nunca el tamaño de la escala** (`--text-*` es del CSS de tokens; la prueba lo vigila).
+**Recetas de texto: las mismas del iPhone** (`DS.TextRecipe` ↔ `--type-<receta>` + `--type-<receta>-weight`; la fuente de
+verdad es `design/tokens.json` › `type`). Cada receta es un tamaño y un grosor que van siempre juntos: un componente pone
+`font-size: var(--type-X); font-weight: var(--type-X-weight)` y nada más. **Torcer una receta con otro grosor no se vale: si
+hace falta otro, es otra receta** (como hizo el iPhone con `label`, `labelLarge`, `badge`…). Los grosores se llaman como en el
+iPhone: `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `--weight-heavy` 800.
+
+| Receta | iPhone | TV | Grosor | Para qué |
+|---|---|---|---|---|
+| `display` | largeTitle | 3xl | bold | El título de una pantalla grande |
+| `title` | title | 2xl | bold | El título de una pantalla o de un destacado |
+| `section` | title2 | lg | bold | El título de una fila o subsección |
+| `card-title` | headline | md | semibold | El nombre en una tarjeta, una opción de menú |
+| `body` | body | md | regular | El texto de lectura |
+| `secondary` | subheadline | sm | regular | Lo que acompaña: datos, sinopsis corta |
+| `footnote` | footnote | xs | regular | Notas, créditos, la leyenda |
+| `caption` | caption | 2xs | regular | Lo más chico: pie de tarjeta |
+| `eyebrow` | footnote | sm | semibold | El porqué en turquesa, sobre un título |
+| `data` | footnote | xs | regular | Números (siempre `tabular-nums`) |
+| `label` | footnote | xs | semibold | Un rótulo o botón chico |
+| `label-large` | subheadline | sm | semibold | El valor de un control, un nombre en un renglón |
+| `badge` | caption | 2xs | bold | Una placa («4K», «Nuevo») y los glifos del mando |
+| `group-label` | caption | sm | bold | El rótulo de una sección, en mayúsculas (un paso más grande en la TV: se lee de lejos) |
+| `stat` | largeTitle | 2xl | heavy | Una cifra grande (siempre `tabular-nums`) |
+| `heading` | — | xl | bold | Solo la TV: un encabezado de zona entre `section` y `title` |
+| `hero` | — | display | bold | Solo la TV: el título del destacado a pantalla completa |
+
+**Un componente usa la receta, nunca el tamaño de la escala** (`--text-*` es de los tokens). Las pruebas lo vigilan:
+`design-system.test.mjs` (cada tamaño con el grosor de su receta; `data` y `stat`, tabulares) y `design-parity.test.mjs`
+(misma receta, mismo estilo de Dynamic Type y mismo grosor en los dos lados; una receta solo de la TV dice por qué).
+
+**Espacios de una pantalla, los del iPhone (`DS.Layout`):** del título a lo suyo `--layout-title-to-content` (12), entre
+subsecciones `--layout-between-subsections` (24), entre secciones `--layout-between-sections` (40). En la TV se usan donde se
+apilan partes (lo de abajo de la ficha, Cambiar el arte, TV en vivo); entre las filas de alto fijo de Inicio, Juegos y
+Películas y series manda el alto de cada fila, y al pie va el pie de pistas (`--hints-room`) en lugar del 56 del iPhone.
 
 **Jerarquía de encabezados (iPhone, 30 oct 2026; regla A del 31 oct):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
 Una sección es el **rótulo**: ícono en el azul de Orbital, el nombre en mayúsculas chicas y una línea fina hasta la orilla

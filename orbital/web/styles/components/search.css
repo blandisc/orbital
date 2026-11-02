@@ -20,7 +20,7 @@
 .search__field {
   display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0;
   padding-bottom: var(--space-3); border-bottom: 2px solid var(--color-hairline);
-  font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
+  font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-tight);
   transition: border-color var(--duration-base) var(--ease-out);
 }
 .search__field .icon { width: var(--icon-xl); height: var(--icon-xl); color: var(--color-text-muted); flex: none; }
@@ -45,7 +45,7 @@
   animation: search-sweep var(--duration-launch-sweep) var(--ease-sweep) infinite;
 }
 @keyframes search-sweep { from { background-position: -70% 0; } to { background-position: 170% 0; } }
-.search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); }
+.search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 
 /* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
 .search__results {
@@ -75,7 +75,7 @@
 /* Con el dedo: sin pie de controles, el teclado ocupa ese lugar y todo el ancho, con teclas que se aciertan sin mirar. */
 [data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.5rem, 6.4vh); --card-height: min(11rem, 15vh); } /* teclas más altas: la portada cede (si no, el teclado tapaba el pie del resultado) */
 [data-input="touch"] .search .keyboard { width: min(72rem, 100%); }
-[data-input="touch"] .search .keyboard__key { font-size: var(--type-heading); }
+[data-input="touch"] .search .keyboard__key { font-size: var(--type-heading); font-weight: var(--type-heading-weight); }
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
@@ -83,7 +83,7 @@
 .search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
 .search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
-  flex: none; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title);
+  flex: none; color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Los títulos de los resultados, legibles desde el sillón (antes en letra de pie de foto). */
 .search { --caption-size: var(--type-secondary); }

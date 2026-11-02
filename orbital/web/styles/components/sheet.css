@@ -16,20 +16,20 @@
 /* Título: el nombre del menú (o del juego), grande y en minúsculas; nada de mayúsculas espaciadas. */
 .sheet__title {
   padding: 0 var(--space-2) var(--space-6);
-  font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
+  font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight);
   line-height: var(--leading-title); text-wrap: balance;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 /* Pregunta ("¿Cerrar Mario Party?"): el título es el protagonista. */
-.sheet__title--question { padding-bottom: var(--space-2); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
-.sheet__subtitle { padding: 0 var(--space-2) var(--space-6); color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); white-space: pre-line; }
-.sheet__back { padding: 0 var(--space-2) var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); }
+.sheet__title--question { padding-bottom: var(--space-2); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
+.sheet__subtitle { padding: 0 var(--space-2) var(--space-6); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); white-space: pre-line; }
+.sheet__back { padding: 0 var(--space-2) var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 
 .sheet__items { display: flex; flex-direction: column; gap: var(--space-1); }
 .sheet__item {
   display: flex; align-items: center; gap: var(--space-4);
   width: 100%; min-height: var(--menu-row-height); padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg);
-  font-size: var(--type-card-title); font-weight: var(--weight-medium); text-align: left; color: var(--color-text);
+  font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); text-align: left; color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 .sheet__item:hover { background: var(--color-glass); }
@@ -46,7 +46,7 @@
 .sheet__icon .icon, .sheet__icon svg { width: var(--icon-md); height: var(--icon-md); }
 .sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
 .sheet__label { min-width: 0; line-height: var(--leading-snug); }
-.sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sheet__text .sheet__hint--below { margin: 0; padding: 0; white-space: normal; overflow-wrap: anywhere; line-height: var(--leading-normal); text-align: left; }
 /* Ajustes: el valor en una píldora con flechas suaves (A o ◀/▶ lo cambian). */
 .sheet__item--setting { align-items: flex-start; }
@@ -55,7 +55,7 @@
 .sheet__item--setting:not(:has(.sheet__hint--below)) { align-items: center; }
 .sheet__item--setting:not(:has(.sheet__hint--below)) :is(.sheet__icon, .sheet__value) { margin-top: 0; }
 /* El valor nunca aplasta el nombre: a lo más 55 % y, si es largo, en varias líneas (alineado a la derecha). */
-.sheet__value { flex: 0 1 auto; max-width: 55%; margin-left: auto; padding-left: var(--space-3); font-weight: var(--weight-medium); text-align: right; text-wrap: balance; color: var(--color-text-muted); align-self: center; } /* parte solo entre palabras: «Start+Select+Home» entero */
+.sheet__value { flex: 0 1 auto; max-width: 55%; margin-left: auto; padding-left: var(--space-3); font-weight: var(--weight-semibold); text-align: right; text-wrap: balance; color: var(--color-text-muted); align-self: center; } /* parte solo entre palabras: «Start+Select+Home» entero */
 /* Un estado que ya está bien (✓ Conectada, ✓ Guardada): su color, para verlo de un vistazo. */
 .sheet__value--ok { color: var(--color-ok); }
 .sheet__item--focused .sheet__value--ok { color: inherit; }
@@ -80,7 +80,7 @@
 .sheet__item--danger.sheet__item--focused .sheet__icon { background: var(--on-color-fill); color: inherit; }
 
 /* Encabezado de sección dentro de una hoja (Atajos: «En un juego», «En Orbital»…): no se enfoca. */
-.sheet__heading { padding: var(--space-5) var(--space-3) var(--space-1); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); }
+.sheet__heading { padding: var(--space-5) var(--space-3) var(--space-1); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .sheet__heading:first-child { padding-top: 0; }
 
 @media (max-width: 760px) { .sheet__panel { width: 100vw; border-left: 0; } }

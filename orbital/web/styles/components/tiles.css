@@ -5,15 +5,15 @@
 /* --- Destacado (FeatureHero): sobre el arte a pantalla completa, como el Apple TV. Su porqué en turquesa, el logo, el dato,
    el avance y la fila de botones (blanco el principal; los demás, vidrio). Lo pone abajo a la izquierda quien lo usa. */
 .feature-hero { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 52%); }
-.feature-hero__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); text-shadow: var(--shadow-text-strong); }
+.feature-hero__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); text-shadow: var(--shadow-text-strong); }
 .feature-hero__logo { max-width: min(100%, 26rem); max-height: 7rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .feature-hero__title {
-  max-width: 100%; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); line-height: var(--leading-tight);
+  max-width: 100%; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-tight);
   letter-spacing: var(--tracking-display); text-shadow: var(--shadow-text); text-wrap: balance;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail);
 }
 .feature-hero__detail {
-  display: flex; align-items: center; gap: var(--space-2); max-width: 100%; color: var(--color-on-art-secondary); font-size: var(--type-body);
+  display: flex; align-items: center; gap: var(--space-2); max-width: 100%; color: var(--color-on-art-secondary); font-size: var(--type-body); font-weight: var(--type-body-weight);
   text-shadow: var(--shadow-text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-normal);
 }
 .feature-hero__detail svg, .feature-hero__detail img { flex: none; width: var(--icon-md); height: var(--icon-md); }
@@ -52,7 +52,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
 .tile--console__text { min-width: 0; }
-.tile--console__count { min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile--console__count { min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); line-height: var(--leading-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile--console__fresh { position: absolute; top: var(--space-2); right: var(--space-2); z-index: var(--z-raised); max-width: calc(100% - 2 * var(--space-2)); }
 
 /* Al borde del Inicio: lo enfocado se empuja un poco hacia donde ya no hay nada (como las filas). */

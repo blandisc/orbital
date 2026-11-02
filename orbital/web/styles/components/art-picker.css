@@ -9,12 +9,12 @@
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
 .art-picker__box .screen-head { justify-self: center; align-self: center; }
-.art-picker__lead { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); }
+.art-picker__lead { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 /* Si las dos filas no caben (pantalla baja, letra grande), el cuerpo se desplaza (la casilla enfocada se mantiene a la vista). */
-.art-picker__body { display: grid; gap: var(--space-6); min-height: 0; overflow-y: auto; scrollbar-width: none; }
-.art-picker__status { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); }
+.art-picker__body { display: grid; gap: var(--layout-between-subsections); min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.art-picker__status { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .art-picker__status--error { color: var(--color-danger); }
-.art-picker__label { margin: 0 0 var(--space-3); font-size: var(--type-section); font-weight: var(--weight-bold); }
+.art-picker__label { margin: 0 0 var(--space-3); font-size: var(--type-section); font-weight: var(--type-section-weight); }
 /* Una fila que se recorre de lado (sin barra): la enfocada siempre a la vista (scrollIntoView). */
 .art-picker__track { display: flex; gap: var(--space-4); overflow-x: auto; scrollbar-width: none; padding: var(--space-2); }
 .art-picker__tile {
@@ -23,7 +23,7 @@
 }
 .art-picker__tile--wide { aspect-ratio: 16 / 9; }
 .art-picker__image { width: 100%; height: 100%; object-fit: cover; }
-.art-picker__original { padding: var(--space-3); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); text-align: center; }
+.art-picker__original { padding: var(--space-3); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); text-align: center; }
 /* El que tiene ahora: el borde del acento y la etiqueta «Ahora». */
 .art-picker__tile--current { box-shadow: inset 0 0 0 3px var(--color-accent); }
 .art-picker__option { margin: 0; display: grid; gap: var(--space-2); justify-items: center; flex: none; }
@@ -31,6 +31,6 @@
 .art-picker__badge {
   position: absolute; top: var(--space-2); left: var(--space-2); padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-on-primary);
-  font-size: var(--type-caption); font-weight: var(--weight-bold);
+  font-size: var(--type-badge); font-weight: var(--type-badge-weight);
 }
-.art-picker__source { min-height: 1.2em; color: var(--color-text-muted); font-size: var(--type-caption); }
+.art-picker__source { min-height: 1.2em; color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); }

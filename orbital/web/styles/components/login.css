@@ -17,8 +17,8 @@
 .login__form { display: grid; gap: var(--space-3); width: min(40rem, 100%); }
 /* Los campos y, a la derecha, el QR para escribir desde el celular (si hay túnel). */
 .login__body { display: flex; align-items: center; justify-content: center; gap: var(--space-8); width: 100%; min-width: 0; }
-.login__phone { display: grid; justify-items: center; gap: var(--space-2); margin: 0; width: 9rem; text-align: center; color: var(--color-text-muted); font-size: var(--type-footnote); }
-.login__phone strong { display: block; color: var(--color-text); font-size: var(--type-secondary); font-weight: var(--weight-medium); }
+.login__phone { display: grid; justify-items: center; gap: var(--space-2); margin: 0; width: 9rem; text-align: center; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
+.login__phone strong { display: block; color: var(--color-text); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .login__phone-qr { display: block; width: 7rem; height: 7rem; border-radius: var(--radius-md); animation: rise-in var(--duration-enter) var(--ease-out); }
 @media (max-height: 820px) { .login__phone-qr { width: 5.5rem; height: 5.5rem; } }
 .login__field {
@@ -27,12 +27,12 @@
   transition: box-shadow var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
 .login__field--focused { background: var(--color-glass-hover); box-shadow: var(--focus-lift); transform: scale(var(--inverse-scale)); }
-.login__label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--weight-medium); }
-.login__value { min-height: 1.6em; font-size: var(--type-section); font-weight: var(--weight-medium); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.login__label { color: var(--color-text-muted); font-size: var(--type-label); font-weight: var(--type-label-weight); }
+.login__value { min-height: 1.6em; font-size: var(--type-section); font-weight: var(--type-section-weight); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .login__field--secret .login__value { letter-spacing: var(--tracking-digits); }
 /* El cursor de escribir: el único parpadeo permitido (es lo que dice «aquí se escribe»). */
 .login__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: text-bottom; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 /* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
-.login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--type-secondary); text-align: center; text-wrap: balance; }
+.login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: center; text-wrap: balance; }
 
 @media (max-height: 640px) { .login { gap: var(--space-3); } .login__head .screen-head__lead { display: none; } }
