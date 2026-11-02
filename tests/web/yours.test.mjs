@@ -7,7 +7,7 @@ import { titleActions } from "../../orbital/web/js/core/watch.js";
 
 test("¿Cuándo la viste?: las opciones del iPhone, y la serie entera dice «cada episodio»", () => {
   const movie = watchedMenu({ kind: "movie", id: "tt1", title: "Coco" });
-  assert.equal(movie.title, "¿Cuándo viste Coco?");
+  assert.deepEqual([movie.title, movie.subtitle], ["¿Cuándo la viste?", "Coco"]);
   assert.deepEqual(movie.options.map((o) => o.label), ["Ahora mismo", "El día que salió", "Otro día…", "No sé cuándo"]);
   assert.deepEqual(movie.options.map((o) => o.command.when ?? o.command.type), ["now", "released", "watched-other", "unknown"]);
   const series = watchedMenu({ kind: "series", id: "tt2", title: "Los Simpson" });

@@ -244,15 +244,15 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Papel | Pieza de la TV | Estado | Nota |
 |---|---|---|---|
 | Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono en `--color-orbital`, mayúsculas chicas y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
-| Arranque de una parte grande | — | Pendiente · ola 1 | Los grupos de Películas y series (Plataformas, Estudios, Premios, Años…). |
-| Renglón de lista | `sheet__item` | Pendiente · ola 3 | Las listas de lo tuyo. |
+| Arranque de una parte grande | El rótulo de sección de cada grupo (`shelf__heading--section`) | Distinto a propósito: con el mando, un renglón menos (el título grande lo pone el destacado de arriba, que cambia con el foco) | Los grupos de Películas y series (Plataformas, Estudios, Premios, Temporadas, Años…). |
+| Renglón de lista | Tarjetas de lista en fila (`collection-card`) y `sheet__item` en las hojas | Distinto a propósito: con el mando, tus listas son tarjetas en una fila (Listas de Trakt, de Stremio) | En las hojas (☰, Opciones, Guardar en…), el renglón es `sheet__item`. |
 | Porqué | `SectionHead(title, { reason })` y `--color-reason` | Igual | Solo cuando el porqué dice algo que el título no; un dato nunca va en turquesa. |
-| Botón principal | `Button({ art: true })` | Igual | Sólido en el color del arte, texto oscuro. |
-| Botón secundario | `Button` (ghost, relleno tenue) | Distinto a propósito: con el mando el foco invierte el botón y un borde fino no se ve a tres metros | — |
+| Botón principal | `Button({ variant: "primary" })` y `title__action--primary` | Igual | En blanco, como el iPhone (dsSolidPrimaryButton): «Jugar», «Ver», «Continuar»; nunca del color del arte. |
+| Botón secundario | `Button` y los redondos, de vidrio (`--color-glass` con su filo) | Igual | El vidrio del iPhone (`.glassEffect(.regular)`), en su versión sutil; enfocado, se invierte (con el mando, el foco se ve a tres metros). |
 | Botón de ícono | `Button({ icon })` (`button--round`) y los redondos de la ficha (`title__action--icon`) | Igual | Uno sólido y los demás redondos: Opciones, Ficha y Episodios en el destacado de Inicio, el de Películas y series y la ficha de Juegos, con el glifo en su orilla y su nombre debajo. |
 | Selector | `Pill({ tone: "tab" })` (pestañas de texto), `Segmented`, `Pill` (cápsulas) | Igual | Cambiar lo que ves: pestañas de texto (los filtros de una consola, Series · Películas de una lista, las temporadas de la ficha); ajustar un valor: `Segmented` (Ajustes); elegir: cápsulas (¿Qué vemos?, búsquedas recientes). Lo elegido en blanco; el foco, invertido. Los mosaicos llegan con el mazo (ola 2). |
-| Búsqueda avanzada | «Ordenar y filtrar» de `list-screen` | Pendiente · ola 3 | En la TV vive en Películas y series y en ☰ (Fernando, 31 oct 2026). |
-| Marcar como vista | «Marcar como vista», sin fecha | Pendiente · ola 3 | La hoja «¿Cuándo la viste?». |
+| Búsqueda avanzada | `filter-panel` (☰ › Filtro avanzado) y «Ordenar y filtrar» de `list-screen` | Igual | En la TV vive en ☰ (Fernando, 31 oct 2026); filas con ‹ › en lugar de mosaicos (distinto a propósito: el mando). Las listas y colecciones: tipo, género, calificación, década y lo visto. |
+| Marcar como vista | La hoja «¿Cuándo la viste?» (Opciones › Marcar como vista) | Igual | «Otro día…» ofrece días comunes en lugar del calendario (distinto a propósito: el mando). |
 | Vacío | `EmptyState({ icon, title, text })` (`ui.js`) | Igual | Juegos sin favoritos o sin juegos, un día sin estrenos, TV en vivo sin canales, Explorar sin sugerencias o sin conexión, una lista vacía o sin nada con sus filtros. |
 | Tarjeta | `--color-surface` (ink-900) y `--radius-*` | Distinto a propósito: la superficie es ink-900 en la TV (lo explica `design/tokens.json`) | — |
 | Hoja con encabezado propio | `sheet`, `side-panel` | Igual | — |

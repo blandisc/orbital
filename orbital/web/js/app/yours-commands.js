@@ -11,7 +11,8 @@ export function watchedMenu({ kind, id, videoId = null, title, episode = null })
   const base = { type: "watched-set", kind, id, video_id: videoId, title: what };
   const wholeSeries = kind === "series" && !videoId;
   return {
-    title: `¿Cuándo viste ${what}?`,
+    title: "¿Cuándo la viste?", // como la hoja del iPhone: la pregunta y, debajo, qué
+    subtitle: what,
     options: [
       { icon: "check", label: "Ahora mismo", command: { ...base, when: "now" } },
       { icon: "calendar", label: wholeSeries ? "Cuando salió cada episodio" : "El día que salió", command: { ...base, when: "released" } },

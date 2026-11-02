@@ -20,7 +20,7 @@
     { "texto": "Lo que ves", "en": ["ios"], "nota": "Tus números (horas, rachas, día por día, cómo calificas). «Tu año, día por día» es una vista adentro, no la entrada." },
     { "texto": "Decide por mí", "en": ["tv", "ios"], "evitar": ["¿Qué vemos?"], "nota": "El sorteo de una propuesta.", "pendiente": { "ios": "Quedan dos textos con «¿Qué vemos?»." } },
     { "texto": "¿Qué vemos hoy?", "en": ["tv", "ios"], "evitar": ["Tinder"], "nota": "El mazo «Encuentra tu match perfecto»: Paso · Ver ya · Guardar (en «Tu match perfecto» de Trakt; sin Trakt, en Mi lista)." },
-    { "texto": "¿Cuándo la viste?", "en": ["tv", "ios"], "nota": "La hoja de marcar como vista con su fecha para Trakt.", "pendiente": { "tv": "Ola 3: la hoja." } },
+    { "texto": "¿Cuándo la viste?", "en": ["tv", "ios"], "nota": "La hoja de marcar como vista con su fecha para Trakt." },
     { "texto": "Top 10 en", "en": ["tv", "ios"] },
     { "texto": "En vivo", "en": ["tv", "ios"], "evitar": ["En Vivo", "EN VIVO"] },
     { "texto": "Nuevo", "en": ["tv", "ios"] }
