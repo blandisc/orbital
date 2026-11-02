@@ -100,6 +100,19 @@ final class OrbitalRemoteTests: XCTestCase {
         catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, "No hay nada en la TV ahora mismo") }
     }
 
+    /// Un 404 con motivo («no hay de dónde verlo») se dice tal cual; solo la ruta que no existe es «versión anterior».
+    func testA404WithAReasonIsNotAnOldVersion() async {
+        let http = FakeHTTP()
+        http.statuses["https://tv.example/api/companion/player"] = 404
+        http.json["https://tv.example/api/companion/player"] = ["detail": "No encontré de dónde verlo"]
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        do { _ = try await remote.control(action: "toggle"); XCTFail() }
+        catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, "No encontré de dónde verlo") }
+        http.json["https://tv.example/api/companion/player"] = ["detail": "Not Found"]
+        do { _ = try await remote.control(action: "toggle"); XCTFail() }
+        catch { XCTAssertTrue((error as? OrbitalRemote.Failure)?.description.contains("versión anterior") == true) }
+    }
+
     func testAClosedGameArrivesAsASessionSummary() async throws {
         let http = FakeHTTP()
         http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([

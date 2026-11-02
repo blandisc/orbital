@@ -259,8 +259,8 @@ def router(d: Deps) -> APIRouter:
                 return {"ok": True, "reveal": catalog.revealing, **chosen}
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))
-        except LookupError as exc:
-            raise HTTPException(404, str(exc))
+        except LookupError as exc:  # no halló de dónde verlo esta vez: 409 (un 404 el iPhone lo leía como «versión anterior»)
+            raise HTTPException(409, str(exc))
         except ValueError as exc:
             raise HTTPException(409, stremio_message(exc))
         except OSError as exc:  # el reproductor no abrió (falta, sin permiso…)

@@ -524,6 +524,10 @@ public struct OrbitalRemote: Sendable {
         case 404 where path == "api/companion/input" || path == "api/companion/text" || path == "api/voice/hints":
             throw Failure.outdated
         case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"):
+            // Solo es «versión anterior» si la ruta no existe (FastAPI dice «Not Found»). La consola también contestaba 404
+            // cuando en ese momento no halló de dónde verlo, y el iPhone decía que había que actualizarla (a veces sí
+            // mandaba y a veces no): ese motivo se dice tal cual.
+            if let detail = JSON.parse(response.data)?["detail"]?.string, detail != "Not Found" { throw Failure.refused(detail) }
             throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
         default:
             let detail = JSON.parse(response.data)?["detail"]?.string
