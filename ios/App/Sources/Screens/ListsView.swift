@@ -190,6 +190,11 @@ struct ListsView: View {
         .scrollEdgeEffectHidden(atTop, for: .top)
         // Brincar a una sección: un menú en la barra (marca en cuál estás).
         .toolbar {
+            // El dado de «Decide por mí» a la vista otra vez (Fernando, 1 nov 2026: escondido en el índice no se encontraba).
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: onDecide) { Image(systemName: "dice") }
+                    .accessibilityLabel(Text("Decide por mí")).accessibilityIdentifier("paraTi-decide")
+            }
             ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
@@ -273,9 +278,6 @@ struct ListsView: View {
     /// Ir a una sección (el filtro Todo · Películas · Series va arriba de la lista, el mismo de toda la app).
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
         Menu {
-            // En Listas el dado no cabe junto al logo: «Decide por mí» vive aquí.
-            Button("Decide por mí", systemImage: "dice", action: onDecide)
-            Divider()
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section

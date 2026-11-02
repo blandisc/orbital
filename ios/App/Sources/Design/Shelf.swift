@@ -108,8 +108,9 @@ struct RankedPosterCard: View {
         // El «10», del mismo tamaño que las demás: sus cifras más juntas y el póster le tapa un poco más el cero (como Netflix).
         // El «1» es angosto: el póster casi lo tapaba; con él, apenas se encima.
         HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : rank == 1 ? -DS.Space.s1 : -DS.Space.s5) {
-            // Solo la cifra, sin brillo ni fondo detrás (Fernando, 1 nov 2026: sobre algo claro se veía una mancha).
+            // La cifra con su halo (Fernando, 1 nov 2026: el halo sí; la mancha negra de detrás era la sombra del zoom).
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
+                .glow(tint ?? .clear)
                 .tracking(DS.Size.rankTracking)
                 .lineLimit(1).fixedSize()
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)

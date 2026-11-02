@@ -83,8 +83,7 @@ struct ParaTiView: View {
                     .sharedBackgroundVisibility(.hidden)
             }
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
-            // En Listas y en un iPhone angosto no cabían los cuatro botones junto al título («Para…»): «Decide por mí» pasa al índice.
-            // Con el logo a la izquierda, en Listas no caben cuatro (iOS mandaba el menú y el perfil a un «…»): ahí el dado no va.
+            // En Listas el dado lo pone `ListsView` (junto a su índice y el perfil: tres, como aquí).
             if m.mode == .mosaic {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
