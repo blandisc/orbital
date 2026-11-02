@@ -52,6 +52,7 @@ Cómo se mantiene:
 - **Ola 3 · lo tuyo** (hecha, 31 oct): calificar, «¿Cuándo la viste?» (en la TV, «Otro día…» ofrece días comunes en lugar del calendario: distinto a propósito), Lo que ves, Colecciones, filtro avanzado.
 - **Rediseño estilo Apple TV** (31 oct): el lenguaje de la TV (docs/sistema-de-diseno.md § 0) en todas sus pantallas y el reproductor; ver la tabla «Revisión por pantalla».
 - **Lo que le toca al iPhone** (su sesión): «Tus canales» en la lista de Trakt, los textos de arriba y el arcoíris en sus filtros.
+- **Pedido de Fernando para la sesión de la TV (1 nov):** en la pantalla de pausa del reproductor de escritorio, el ícono de pausa deja un poco más de espacio abajo, donde va el título de la película (hoy quedan muy juntos). También pendiente: el filtro en una colección abierta (ver la tabla de arriba).
 
 ## Distinto a propósito
 
