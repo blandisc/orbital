@@ -2,132 +2,111 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Búsqueda avanzada › Calificación (Fernando, 2 nov 2026; propuesta en docs/producto/propuestas-2026-11-01/calificacion.html):
-/// dos opiniones que hablan igual. Arriba, un resumen de lo elegido; debajo, «El público» (TMDB, de 10) y «Los cinéfilos»
-/// (Letterboxd, de 5 estrellas, solo películas), cada una con Sin mínimo · Buena · Muy buena · Excelente y su número y
-/// «Ajustar el número» para lo fino. Con «Series», los cinéfilos se apagan y dicen por qué.
+/// Búsqueda avanzada › Calificación (Fernando, 2 nov 2026; propuesta en
+/// docs/producto/propuestas-2026-11-01/calificacion-deslizador-2.html): dos opiniones, cada una con su deslizador y en su
+/// idioma, sin cajas y separadas por una línea fina. Arriba, lo elegido en grande; luego «El público» (TMDB, de 10: una
+/// regla del 5 al 9) y «Los cinéfilos» (Letterboxd, de 5 estrellas que se llenan; solo películas). Cada una dice su nivel
+/// (Buena, Muy buena, Excelente) y su número. Con «Series», las estrellas se apagan y dicen por qué.
 struct FilterRatingEditor: View {
     let model: AdvancedFilterModel
     let hue: Color
-    @State private var fineTMDB = false
-    @State private var fineLetterboxd = false
 
     private var filter: AdvancedFilter { model.filter }
+    private var tmdb: Binding<Double?> { Binding(get: { model.filter.minRating }, set: { v in edit { $0.minRating = v } }) }
+    private var letterboxd: Binding<Double?> { Binding(get: { model.filter.minLetterboxd }, set: { v in edit { $0.minLetterboxd = v } }) }
     private func edit(_ change: (inout AdvancedFilter) -> Void) { var f = model.filter; change(&f); model.filter = f }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
             summary
-            source(title: Text("El público"), scale: Text("de 10"), detail: Text("Millones de votos en TMDB"), mark: AnyView(tmdbMark),
-                   value: filter.minRating, presets: RatingLevels.tmdb, prefix: "",
-                   range: 1...9, fine: $fineTMDB, enabled: true, id: "tmdb") { v in edit { $0.minRating = v } }
-            source(title: Text("Los cinéfilos"), scale: Text("de ★5 · solo películas"), detail: Text("Letterboxd · califican más duro"),
-                   mark: AnyView(LetterboxdMark()), value: filter.minLetterboxd, presets: RatingLevels.letterboxd, prefix: "★",
-                   range: 0.5...5, fine: $fineLetterboxd,
-                   enabled: filter.format != .series, id: "letterboxd") { v in edit { $0.minLetterboxd = v } }
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                header(mark: AnyView(tmdbMark), title: Text("El público"), scale: Text("de 10"), detail: Text("Millones de votos en TMDB"))
+                level(filter.minRating, RatingSlider.tmdb, prefix: "", color: hue)
+                RatingRulerSlider(value: tmdb, scale: .tmdb, hue: hue, label: Text("El público"))
+                    .accessibilityIdentifier("filter-tmdb-slider")
+            }
+            Divider().overlay(DS.hairline)
+            letterboxdSection
         }
     }
 
-    /// Lo elegido en una línea: «Sin mínimo», «Muy buena · 7.5+ del público», «Excelente · ★4.2+ de los cinéfilos» o, con las
+    private var letterboxdSection: some View {
+        let enabled = filter.format != .series
+        return VStack(alignment: .leading, spacing: DS.Space.s2) {
+            header(mark: AnyView(LetterboxdMark()), title: Text("Los cinéfilos"), scale: Text("de ★5 · solo películas"),
+                   detail: enabled ? Text("Letterboxd · califican más duro") : Text("Letterboxd no califica series"))
+            level(enabled ? filter.minLetterboxd : nil, RatingSlider.letterboxd, prefix: "★", color: DS.Letterboxd.leaf)
+            RatingStarSlider(value: letterboxd, scale: .letterboxd, hue: DS.Letterboxd.leaf, label: Text("Los cinéfilos"))
+                .accessibilityIdentifier("filter-letterboxd-slider")
+        }
+        .opacity(enabled ? 1 : DS.Opacity.faint)
+        .disabled(!enabled)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Lo elegido en grande: «Sin mínimo», «Muy buena · 7.5+ del público», «Excelente · ★4.2+ de los cinéfilos» o, con las
     /// dos, «7+ y ★3.8+».
     private var summary: some View {
+        // Sin rótulo propio: el panel ya dice «Lo mínimo que quieres» arriba.
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text(filter.minRating != nil && filter.minLetterboxd != nil ? "Calificación · las dos" : "Calificación").recipe(.caption, color: DS.textMuted)
-            summaryLine.recipe(.cardTitle)
-            .contentTransition(.numericText())
-            .animation(DS.Motion.fade, value: filter.minRating)
-            .animation(DS.Motion.fade, value: filter.minLetterboxd)
+            summaryLine.recipe(.section).monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(DS.Motion.fade, value: filter.minRating)
+                .animation(DS.Motion.fade, value: filter.minLetterboxd)
         }
-        .padding(DS.Space.s3)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .dsCard()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("filter-rating-summary")
     }
 
     private var summaryLine: Text {
-        switch (filter.minRating, filter.minLetterboxd) {
-        case (nil, nil): Text("Sin mínimo").foregroundStyle(DS.textMuted)
-        case let (t?, nil): line(t, RatingLevels.tmdb, prefix: "", whose: Text("del público"))
-        case let (nil, l?): line(l, RatingLevels.letterboxd, prefix: "★", whose: Text("de los cinéfilos"))
-        case let (t?, l?): Text("\(Text(verbatim: RatingLevels.short(t) + "+")) y \(Text(verbatim: "★" + RatingLevels.short(l) + "+"))")
+        let lb = filter.format == .series ? nil : filter.minLetterboxd
+        switch (filter.minRating, lb) {
+        case (nil, nil): return Text("Sin mínimo").foregroundStyle(DS.textMuted)
+        case let (t?, nil): return line(t, RatingSlider.tmdb, prefix: "", whose: Text("del público"))
+        case let (nil, l?): return line(l, RatingSlider.letterboxd, prefix: "★", whose: Text("de los cinéfilos"))
+        case let (t?, l?):
+            let and = Text("y").foregroundStyle(DS.textMuted)
+            return Text("\(Text(verbatim: RatingLevels.short(t) + "+")) \(and) \(Text(verbatim: "★" + RatingLevels.short(l) + "+"))")
         }
     }
 
-    private func line(_ value: Double, _ presets: [Double], prefix: String, whose: Text) -> Text {
+    private func line(_ value: Double, _ scale: RatingSlider, prefix: String, whose: Text) -> Text {
         let number = Text(verbatim: prefix + RatingLevels.short(value) + "+")
-        guard let word = RatingLevels.word(value, in: presets) else { return Text("\(number) \(whose)") }
-        return Text("\(word) \(Text("· \(number) \(whose)").foregroundStyle(DS.textMuted))")
+        guard let level = scale.level(value) else { return Text("\(number) \(whose)") }
+        return Text("\(RatingLevels.name(level)) \(Text("· \(number) \(whose)").foregroundStyle(DS.textMuted))")
     }
 
     private var tmdbMark: some View {
         Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))
     }
 
-    /// Una opinión: su encabezado, los cuatro niveles con su número, un ejemplo y, si lo pides, el deslizador.
-    private func source(title: Text, scale: Text, detail: Text, mark: AnyView, value: Double?, presets: [Double], prefix: String,
-                        range: ClosedRange<Double>, fine: Binding<Bool>, enabled: Bool, id: String,
-                        set: @escaping (Double?) -> Void) -> some View {
-        let level = value.flatMap { RatingLevels.level($0, in: presets) }
-        return VStack(alignment: .leading, spacing: DS.Space.s2) {
+    /// El encabezado de una opinión: su marca, quién es, su escala y de dónde sale.
+    private func header(mark: AnyView, title: Text, scale: Text, detail: Text) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
             HStack(spacing: DS.Space.s2) {
                 mark
                 title.recipe(.labelLarge)
                 Spacer()
                 scale.recipe(.caption, color: DS.textMuted)
             }
-            (enabled ? detail : Text("Letterboxd no califica series")).recipe(.caption, color: DS.textMuted)
-            HStack(spacing: DS.Space.s2) {
-                chip(Text("Sin"), Text("mínimo"), on: value == nil) { set(nil) }
-                    .accessibilityLabel(Text("Sin mínimo")).accessibilityIdentifier("filter-\(id)-none")
-                ForEach(presets.indices, id: \.self) { i in
-                    // El número del nivel elegido es el tuyo si lo ajustaste («7.8+» en Muy buena).
-                    let shown = level == i ? value! : presets[i]
-                    chip(RatingLevels.name(i), Text(verbatim: prefix + RatingLevels.short(shown) + "+"), on: level == i) { set(presets[i]) }
-                        .accessibilityIdentifier("filter-\(id)-\(i)")
-                }
-            }
-            if fine.wrappedValue, enabled {
-                let binding = Binding(get: { value ?? range.lowerBound }, set: { v in set((v * 10).rounded() / 10) })
-                Slider(value: binding, in: range, step: 0.1) { title }
-                    .tint(hue)
-                    .accessibilityIdentifier("filter-\(id)-slider")
-            }
-            HStack {
-                Spacer()
-                if enabled {
-                    Button { fine.wrappedValue.toggle() } label: {
-                        (fine.wrappedValue ? Text("Listo") : Text("Ajustar el número")).recipe(.caption, color: hue)
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityIdentifier("filter-\(id)-fine")
-                }
-            }
+            detail.recipe(.caption, color: DS.textMuted)
         }
-        .padding(DS.Space.s3)
-        .dsCard()
-        .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(value != nil && enabled ? hue : .clear, lineWidth: DS.Stroke.regular))
-        .opacity(enabled ? 1 : DS.Opacity.faint)
-        .disabled(!enabled)
-        .animation(DS.Motion.fade, value: fine.wrappedValue)
-        .accessibilityElement(children: .contain)
     }
 
-    /// Un nivel: la palabra arriba y su número abajo (o «Sin / mínimo»).
-    private func chip(_ top: Text, _ bottom: Text, on: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 0) {
-                top.recipe(.label, color: on ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                bottom.recipe(.caption, color: on ? hue : DS.textMuted).monospacedDigit().lineLimit(1)
+    /// El nivel en palabra y su número («Muy buena 7.5+»); sin mínimo, en gris.
+    private func level(_ value: Double?, _ scale: RatingSlider, prefix: String, color: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+            if let value {
+                (scale.level(value).map(RatingLevels.name) ?? Text("Al menos")).recipe(.cardTitle)
+                Text(verbatim: prefix + RatingLevels.short(value) + "+").recipe(.label, color: color).monospacedDigit()
+                    .contentTransition(.numericText())
+            } else {
+                Text("Sin mínimo").recipe(.cardTitle, color: DS.textMuted)
             }
-            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-            .dsCard(fill: on ? DS.Filter.limeFill : nil)
-            .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(on ? hue : .clear, lineWidth: DS.Stroke.regular))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: on)
-        .accessibilityAddTraits(on ? .isSelected : [])
+        .animation(DS.Motion.fade, value: value)
+        .accessibilityHidden(true)
     }
 }
 
@@ -138,8 +117,7 @@ enum RatingLevels {
     static func name(_ level: Int) -> Text {
         switch level { case 0: Text("Buena"); case 1: Text("Muy buena"); default: Text("Excelente") }
     }
-    static let tmdb: [Double] = [7, 7.5, 8]
-    static let letterboxd: [Double] = [3.5, 3.8, 4.2]
+    static let tmdb = RatingSlider.tmdb.stops, letterboxd = RatingSlider.letterboxd.stops
 
     /// La palabra del nivel más alto que alcanza el valor (nil por debajo de «Buena»).
     static func level(_ value: Double, in presets: [Double]) -> Int? { presets.lastIndex { value >= $0 - 0.001 } }

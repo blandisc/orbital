@@ -238,10 +238,13 @@ struct FilterTile: View {
                 // Sobre el arte de los géneros el texto va en papel (se lee igual en claro y en oscuro).
                 page.title.recipe(mini ? .badge : .label, color: art.isEmpty ? DS.text : DS.paper).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 if page == .rating, value != nil {
-                    // «o más» y el logo de TMDB (de dónde sale la calificación), en vez de la palabra.
+                    // De dónde sale el número de arriba (el logo de TMDB o el de Letterboxd) y, con las dos, las estrellas.
+                    let f = context.filter, stars = f.format == .series ? nil : f.minLetterboxd
                     HStack(spacing: DS.Space.s1) {
-                        Text("o más").recipe(.caption, color: DS.text)
-                        Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))
+                        if f.minRating != nil {
+                            Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))
+                        } else { LetterboxdMark() }
+                        if f.minRating != nil, let stars { Text(verbatim: "· ★" + RatingLevels.short(stars)).recipe(.caption, color: DS.Letterboxd.leaf).monospacedDigit() } else { Text("o más").recipe(.caption, color: DS.text) }
                     }
                 } else {
                     tileValue(value).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)

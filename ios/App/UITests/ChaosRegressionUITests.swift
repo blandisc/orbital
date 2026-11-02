@@ -269,8 +269,8 @@ final class ChaosRegressionUITests: XCTestCase {
         }
         if app.buttons["filter-rating"].exists {
             app.buttons["filter-rating"].tap(); sleep(1)
-            let top = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'filter-rating-'")).allElementsBoundByIndex.last
-            top?.tap()
+            let slider = any("filter-tmdb-slider")   // el deslizador del público, hasta Excelente
+            if slider.waitForExistence(timeout: 3) { for _ in 0..<3 { slider.increment() } }
         }
         let genres = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'browse-filter-genre' OR identifier == 'filter-genre'"))
         if genres.firstMatch.exists {

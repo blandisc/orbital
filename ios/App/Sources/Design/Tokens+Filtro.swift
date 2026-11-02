@@ -39,6 +39,11 @@ extension DS {
         static let tmdbMark: CGFloat = 11
         /// Calificación: el velo lima del nivel elegido (los niveles, en `RatingLevels`).
         static let limeFill = lime.opacity(0.18)   // ds-exception: el velo del atajo elegido, en el lima de Calificación
+        /// Los deslizadores de Calificación (`RatingRulerSlider`, `RatingStarSlider`): el alto de la regla, dónde va su línea (y su
+        /// grosor), dónde empiezan las rayitas y sus números, la perilla, y el tamaño de cada estrella y su hueco.
+        static let ratingRuler: CGFloat = 60, trackY: CGFloat = 18, track: CGFloat = 4, tickY: CGFloat = 32, rulerNumberY: CGFloat = 50
+        static let thumbWidth: CGFloat = 44, thumbHeight: CGFloat = 26, star: CGFloat = 40
+        static let starGap = DS.Space.s2
         /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte azul y su orilla (otra cosa que buscar por nombre).
         static let doorIcon: CGFloat = 36
         static let doorFill = DS.orbitalBlue.opacity(0.1)   // ds-exception: el tinte de la búsqueda avanzada, apenas azul

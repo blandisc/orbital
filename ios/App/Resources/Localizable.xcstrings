@@ -386,6 +386,17 @@
         }
       }
     },
+    "%@, %@ o más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@ or higher"
+          }
+        }
+      }
+    },
     "%@. El servicio no contesta ahora; intenta en un rato.": {
       "extractionState": "manual",
       "localizations": {
@@ -1856,17 +1867,6 @@
         }
       }
     },
-    "Ajustar el número": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fine-tune the number"
-          }
-        }
-      }
-    },
     "Ajustar tiempo": {
       "extractionState": "manual",
       "localizations": {
@@ -1929,6 +1929,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instant"
+          }
+        }
+      }
+    },
+    "Al menos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least"
           }
         }
       }
@@ -3934,17 +3945,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimum Letterboxd rating"
-          }
-        }
-      }
-    },
-    "Calificación · las dos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rating · both"
           }
         }
       }
@@ -7641,28 +7641,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drama"
-          }
-        }
-      }
-    },
-    "Dune: Part Two tiene 8.1": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dune: Part Two has 8.1"
-          }
-        }
-      }
-    },
-    "Dune: Part Two tiene ★4.4": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dune: Part Two has ★4.4"
           }
         }
       }
@@ -21903,17 +21881,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mute"
-          }
-        }
-      }
-    },
-    "Sin": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No"
           }
         }
       }
