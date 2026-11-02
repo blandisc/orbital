@@ -1,5 +1,4 @@
-import { h, mount, svg } from "../core/dom.js";
-import { ICONS } from "../core/icons.js";
+import { h, mount } from "../core/dom.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome } from "../core/home.js";
 import { settler } from "../core/motion.js";
@@ -71,7 +70,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
   const topId = () => (targets.has("card:0") ? "card:0" : "feature");
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, nextUp = null, offline = false } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, offline = false } = {}) {
     options = { runningId, glyphs, airing: airing || {} };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
@@ -91,10 +90,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     if (!queue.length) {
       targets.set("feature", { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     }
-    // A la derecha del título, el próximo estreno de tus series (como el widget del iPhone): «Severance T2 E7 · Hoy · 8:00 p. m.».
-    const upcoming = nextUp && h("span", { class: "home__next" }, svg(ICONS.calendar),
-      h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
-    mount(upnextHead, queue.length > 0 && SectionHead("A continuación", { end: upcoming, className: "home__upnext-head" }));
+    // Sin el próximo estreno a la derecha (Fernando, 2 nov: quitarlo; los estrenos viven en Para ti y en el calendario).
+    mount(upnextHead, queue.length > 0 && SectionHead("A continuación", { className: "home__upnext-head" }));
     mount(upnextTrack, queue.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
       // Sin nombre debajo: lo enfocado ya lo dice arriba, en grande (como la fila de arriba del Apple TV). El logo va sobre su escena.

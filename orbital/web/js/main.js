@@ -52,7 +52,7 @@ import { createFilterPanel } from "./components/filter-panel.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
-import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, pickArt, spotlightRow } from "./core/curation.js";
+import { curatedItem, GENRE_SHELVES, genreRows, pickArt, spotlightRow } from "./core/curation.js";
 import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, unkeyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
@@ -803,7 +803,7 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
-  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing, nextUp: state.nextUp,
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing,
     offline: state.online === false });
 }
 
@@ -812,13 +812,6 @@ let airingAt = 0;
 function loadAiring() {
   if (Date.now() - airingAt < 30 * 60_000) return;
   airingAt = Date.now();
-  // El próximo estreno de tus series (como el widget del iPhone): en Inicio, junto a «Seguir viendo».
-  api.forYouList("estrenos").then((res) => {
-    const next = nextAiring(res?.items);
-    if (JSON.stringify(next) === JSON.stringify(state.nextUp ?? null)) return;
-    state.nextUp = next;
-    if (inHome()) renderHome();
-  }).catch(() => {});
   api.forYouToday().then((res) => {
     const airing = res?.airing && typeof res.airing === "object" ? res.airing : {};
     if (JSON.stringify(airing) === JSON.stringify(state.airing || {})) return;
