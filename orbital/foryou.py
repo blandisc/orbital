@@ -1787,16 +1787,6 @@ class ForYou:
         if re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
             self.catalog.state.skip_today(imdb)
 
-    # --- Tu año (como el iPhone) ------------------------------------------------------------------
-    def year_review(self, now: datetime | None = None) -> dict | None:
-        """Lo que viste desde el 1 de enero (historial de Trakt; se recuerda una hora: son varias páginas). Sin Trakt: None."""
-        if not self.trakt.linked:
-            return None
-        now = now or datetime.now().astimezone()
-        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-        plays = self.cache.get(f"trakt:year:{now.year}", RECS_TTL, lambda: self.trakt.plays(start.isoformat(), now.isoformat()))
-        return decide_api.year_review(plays, now.year, now.tzinfo)
-
     # --- «No me interesa» ----------------------------------------------------------------------
     def dismiss(self, key: str) -> None:
         if not re.fullmatch(r"(video:tt[0-9]+|rawg:[0-9]+|game:.{1,300})", key or ""):

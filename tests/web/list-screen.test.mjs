@@ -20,7 +20,7 @@ test("la ficha se monta después de la lista: A en un póster la deja encima", (
   assert.ok(list >= 0 && title > list,
     `la ficha debe ir después de la lista en el DOM (ahora: ${order.join(" → ")})`);
   assert.ok(sources > title, "«Elegir versión» va encima de la ficha");
-  for (const overlay of ["decide", "year", "calendar"]) {
+  for (const overlay of ["decide", "calendar"]) {
     const at = order.indexOf(overlay);
     assert.ok(at >= 0 && title > at, `la ficha debe ir después de ${overlay}`);
   }

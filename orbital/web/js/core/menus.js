@@ -300,11 +300,10 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   if (hiddenCount) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
-  // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲) y «Tu año» (bajo tu perfil).
+  // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲). «Lo que ves» es solo del iPhone (Fernando, 1 nov 2026).
   options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
   options.push({ icon: "spark", label: "Decide por mí", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
   options.push({ icon: "bookmark", label: "¿Qué vemos hoy?", hint: "Encuentra tu match perfecto", command: { type: "match" } });
-  options.push({ icon: "chart", label: "Lo que ves", hint: "Tus números según Trakt", command: { type: "year" } });
   options.push({ icon: "trophy", label: "Colecciones", hint: "Los premios y las listas famosas", command: { type: "collections" } });
   options.push({ icon: "search", label: "Filtro avanzado", hint: "Género, época, calificación, dónde verla…", command: { type: "filter" } });
   options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });

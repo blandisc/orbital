@@ -27,16 +27,16 @@ Cómo se mantiene:
 | Un botón sólido y redondos con su nombre debajo | — | Ya (ola 1: `Button({ icon })`) |
 | Pie de tres pistas y ☰ | — | Ya (ola 1: `capHints`; «Atrás» y «Volver a…» se dejan de dibujar primero, y «Volver a…» está en ☰ con «Home en el mando») |
 | Calificar: estrellas en la ficha y aviso al terminar | Ya | Ya (ola 3: en la ficha, en Opciones y en el aviso al terminar, con Y) |
-| «Lo que ves» reemplaza a «Tu año» | Ya | Ya (ola 3: la entrada y el título; «Tu año, día por día» es la vista de adentro) |
+| «Lo que ves» reemplaza a «Tu año» | Ya | Distinto a propósito: solo en el iPhone (Fernando, 1 nov 2026: «no la pongas en escritorio»; la TV ya no la tiene) |
 | Entrega: una rama por ola, con capturas de antes y después de las cuatro superficies | — | — |
 | «Por género»: 20 géneros con el mismo arte (Grok Imagine) en Buscar, la TV y el filtro avanzado (31 oct, tarde) | Ya (20) | Ya (19: «Musical» no está en el catálogo de Stremio, distinto a propósito) |
 | «No recomendar por esta»: dejar picado el mazo de «Por lo que viste» | Ya | Ya (ola 2: Opciones en uno de tus títulos de «Porque viste»; Y deshace). Se recuerda en cada aparato, como el iPhone |
 | El país de lo popular (Top 10 de Netflix y JustWatch) es el del teléfono hasta que elijas otro | Ya | Distinto a propósito: la TV usa el país de su `config.yaml` |
 | El arcoíris del azul de Orbital (misma luz e intensidad, `design/tokens.json` › rainbow) como acento: categorías de TV en vivo y filtros | Pendiente: los colores de sus filtros con esta familia (sesión del iPhone) | Ya (categorías de TV en vivo y el filtro avanzado) |
-| Una colección de Colecciones se filtra como una lista (series o películas, género, calificación, década, sin lo que ya vi), con el mismo menú y sus cápsulas (Fernando, 31 oct, noche) | Ya | **Pendiente (sesión de la TV)**: el mismo filtro en la colección abierta desde ☰ › Colecciones |
-| «Crear una lista» al final de Tus listas: una lista nueva (privada) en tu Trakt (1 nov) | Ya | **Pendiente (sesión de la TV)**: con mando, escribir el nombre es incómodo; quizá solo desde el iPhone (por decidir con Fernando) |
+| Una colección de Colecciones se filtra como una lista (series o películas, género, calificación, década, sin lo que ya vi), con el mismo menú y sus cápsulas (Fernando, 31 oct, noche) | Ya | Ya (ola 5: ☰ › Ordenar y filtrar en toda lista y colección, con Calificación y Década) |
+| «Crear una lista» al final de Tus listas: una lista nueva (privada) en tu Trakt (1 nov) | Ya | Distinto a propósito: solo en el iPhone (Fernando, 1 nov 2026; con el mando, escribir el nombre es incómodo) |
 | Temporadas (1 nov): en la ficha de la serie, lista desplegable; las cápsulas «T1, T2…» solo en el reproductor | Ya (tanda 6 de la auditoría iOS) | **Pendiente (sesión de la TV)**: la ficha de la TV las enseña en pestañas «T1…» (`title.js`); con mando, decidir con Fernando si pasa a una lista o se queda distinto a propósito |
-| Letterboxd (solo leer, 1 nov): tu usuario y tu archivo en Ajustes › Cuentas, «Tus reseñas» en Lo que ves, tu reseña en la ficha, «Pasarlas a Trakt» y tus listas de Letterboxd en Tus listas (docs/producto/letterboxd/propuesta.html) | Ya | **Pendiente (sesión de la TV)**: tus reseñas en Lo que ves y en la ficha, y tus listas en Películas y series; se conecta solo desde el iPhone |
+| Letterboxd (solo leer, 1 nov): tu usuario y tu archivo en Ajustes › Cuentas, tu reseña en la ficha, «Pasarlas a Trakt» y tus listas de Letterboxd en Tus listas (docs/producto/letterboxd/propuesta.html) | Ya | **Pendiente (sesión de la TV)**: tu reseña en la ficha y tus listas en Películas y series; se conecta solo desde el iPhone |
 
 ## Textos pendientes (`design/vocabulario.json`)
 
@@ -52,7 +52,7 @@ Cómo se mantiene:
 - **Ola 0 · el mecanismo** (este registro, el vocabulario con pendientes, la tabla espejo y sus pruebas).
 - **Ola 1 · el lenguaje** (rama `claude/tv-ola-1-lenguaje`): hecho Explorar, rótulos de sección y porqué, botones redondos, pie de tres pistas, «Nuevo» como listón y pestañas de texto. **Ola 1b** (rama `claude/tv-ola-1b-piezas`): `Veil`, `EmptyState`, el esqueleto de carga y el espacio del título a lo suyo (`--layout-title-to-content`); los otros tres espacios no aplican a la TV (filas de alto fijo; `design/tokens.json` › layout dice por qué). Por decidir: dónde va el acento arcoíris del azul de Orbital.
 - **Ola 2 · los lugares** (hecha, 31 oct): Películas y series como el Inicio del iPhone, el mazo, Decide por mí, Mi lista, Tus canales, «No recomendar por esta».
-- **Ola 3 · lo tuyo** (hecha, 31 oct): calificar, «¿Cuándo la viste?» (en la TV, «Otro día…» ofrece días comunes en lugar del calendario: distinto a propósito), Lo que ves, Colecciones, filtro avanzado.
+- **Ola 3 · lo tuyo** (hecha, 31 oct): calificar, «¿Cuándo la viste?» (en la TV, «Otro día…» ofrece días comunes en lugar del calendario: distinto a propósito), Lo que ves, Colecciones, filtro avanzado. «Lo que ves» salió de la TV el 1 nov (Fernando): solo en el iPhone.
 - **Rediseño estilo Apple TV** (31 oct): el lenguaje de la TV (docs/sistema-de-diseno.md § 0) en todas sus pantallas y el reproductor; ver la tabla «Revisión por pantalla».
 - **Lo que le toca al iPhone** (su sesión): «Tus canales» en la lista de Trakt, los textos de arriba y el arcoíris en sus filtros.
 - **Pedidos de Fernando para la TV (1 nov):** hecho: en pausa, más aire entre «En pausa» y el título, y los subtítulos se quedan en su lugar; el protector vuelve a moverse; el Inicio refinado (vidrio sutil) y el selector de consolas que se desliza. Juegos, la segunda fila: «el arte se queda» (hecho). Pendiente: el filtro en una colección abierta (ver la tabla de arriba).
@@ -61,11 +61,10 @@ Cómo se mantiene:
   https://claude.ai/artifact/61nWawWCfd3nPPuLxvSyjW:
   - **Ola 4 · la ficha:** las partes y los nombres del iPhone («Tu calificación», «Quién sale y quién la hizo», «Si te gusta
     esta», «Los datos de la ficha», «Cuando salió cada episodio»); abrirla desde el póster.
-  - **Ola 5 · funciones:** filtrar una colección, Próximas temporadas, Lo que ves completo (mapa del año, dona, cómo
-    calificas, tu semana) y Letterboxd para leer.
+  - **Ola 5 · funciones:** filtrar una colección, Próximas temporadas y Letterboxd para leer (sin «Lo que ves»: solo en el iPhone).
   - **Ola 6 · piezas:** el rótulo de parte grande en Películas y series, un solo encabezado de hojas y menús, Opciones con
     las mismas entradas que el iPhone y la tabla espejo al día.
-  - Por decidir con Fernando: «Crear una lista» en la TV.
+  - «Crear una lista»: solo en el iPhone (Fernando, 1 nov).
 
 ## Distinto a propósito
 

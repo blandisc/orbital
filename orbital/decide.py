@@ -1,19 +1,15 @@
-"""«¿Qué vemos?» y «Tu año», como el iPhone (DecideModel y YearInReview), con lo que ya trae Para ti.
+"""«¿Qué vemos?», como el iPhone (DecideModel), con lo que ya trae Para ti.
 
 ¿Qué vemos?: tres propuestas de tus sugerencias que no hayas visto ni apartado hoy, que quepan en el tiempo que tienes
 (la hora lo propone: muy noche, poco; viernes en la noche y el fin de semana, dos horas o más) y en el ánimo o los géneros
 que elijas. Lo que no trae su género o duración se le pregunta a Cinemeta (se recuerda).
-
-Tu año: lo que viste desde el 1 de enero según tu historial de Trakt — horas, racha más larga, tu género, el mapa día por día
-(películas, series o las dos) y lo que más viste.
 """
 
 from __future__ import annotations
 
 import random
 import re
-from collections import Counter
-from datetime import date, datetime, timedelta
+from datetime import datetime
 
 TIMES = ("short", "hour", "long")
 MOODS = {
@@ -117,41 +113,3 @@ def choose(pool: list[dict], *, time: str, mood: str | None = None, kind: str | 
     return (picked + closest)[:count]
 
 
-# --- Tu año ---------------------------------------------------------------------------------------------------------
-def year_review(plays: list[dict], year: int, tz=None) -> dict:
-    """Lo que muestra «Tu año» (como YearInReview del iPhone). Cada día: «movies», «series» o «both»."""
-    days: dict[str, str] = {}
-    by_day: dict[str, list[dict]] = {}
-    minutes = movies = episodes = 0
-    genres: Counter = Counter()
-    counts: dict[str, dict] = {}
-    for p in sorted(plays, key=lambda p: p["at"]):
-        when = datetime.fromtimestamp(p["at"], tz).astimezone(tz)
-        if when.year != year:
-            continue
-        day = when.date().isoformat()
-        kind = "movies" if p["kind"] == "movie" else "series"
-        days[day] = kind if days.get(day) in (None, kind) else "both"
-        by_day.setdefault(day, []).append({"kind": p["kind"], "imdb": p["imdb"], "title": p["title"], "time": when.strftime("%H:%M"),
-                                          "season": p.get("season"), "episode": p.get("episode"),
-                                          "episode_title": p.get("episode_title")})
-        minutes += int(p.get("minutes") or 0)
-        if p["kind"] == "movie":
-            movies += 1
-        else:
-            episodes += 1
-        for g in p.get("genres") or []:
-            genres[g] += 1
-        top = counts.setdefault(p["imdb"], {"imdb": p["imdb"], "kind": p["kind"], "title": p["title"], "plays": 0})
-        top["plays"] += 1
-    longest = run = 0
-    previous: date | None = None
-    for day in sorted(days):
-        d = date.fromisoformat(day)
-        run = run + 1 if previous and d - previous == timedelta(days=1) else 1
-        longest = max(longest, run)
-        previous = d
-    top_genre = min(genres.items(), key=lambda kv: (-kv[1], kv[0]))[0] if genres else None
-    ranked = sorted(counts.values(), key=lambda t: (-t["plays"], t["title"]))[:10]
-    return {"year": year, "hours": round(minutes / 60), "movies": movies, "episodes": episodes, "longest_streak": longest,
-            "top_genre": top_genre, "days": days, "plays": by_day, "top": ranked}

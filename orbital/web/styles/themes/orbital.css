@@ -52,6 +52,7 @@
   --color-favorite: var(--palette-amber-300);
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
+  --color-rating: var(--color-warning); /* las estrellas de una calificación: el ámbar del iPhone (DS.Rating.filled) */
   --color-live: var(--palette-teal-300);
   --color-ok: var(--palette-teal-300); /* un estado que ya está bien: «✓ Conectada», «✓ Guardada» */
   /* El arcoíris del azul de Orbital (Fernando, 31 oct 2026): el turquesa de la luna (oklch .804 .110 183) girado por el círculo
@@ -93,10 +94,6 @@
   --color-award-silver: #c7c2b8;
   --color-award-bronze: #b87342;
   /* Tu año: el mapa día por día, los colores del iPhone (DS.YearMap): películas, series y las dos el mismo día. */
-  --color-year-movies: #3d70d9;
-  --color-year-series: #6b4ac4;
-  --color-year-both: #b04ad6;
-  --color-year-empty: rgba(255, 255, 255, .07);
   --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores (y cada género) */
   /* Temporadas: el halo de cada una (los tonos de la propuesta del iPhone, más claros para que se vean en la TV). */
   --color-season-halloween: #e8742a;

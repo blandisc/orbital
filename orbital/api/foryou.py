@@ -278,18 +278,6 @@ def router(d: Deps) -> APIRouter:
         except SERVICE_ERRORS:
             raise HTTPException(502, "No pude leer tu calendario de Trakt. Revisa tu conexión e inténtalo de nuevo.")
 
-    @r.get("/year")
-    def year() -> dict:
-        """«Tu año»: lo que viste este año según Trakt (horas, racha, tu género, el mapa y lo que más viste)."""
-        try:
-            review = foryou.year_review()
-        except trakt.TraktAuthError as exc:
-            raise HTTPException(409, str(exc))
-        except SERVICE_ERRORS:
-            raise HTTPException(502, "No pude leer tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
-        if review is None:
-            raise HTTPException(409, "Conecta Trakt (Ajustes › Cuentas) para ver tu año.")
-        return review
 
     @r.get("/watched")
     def watched() -> dict:

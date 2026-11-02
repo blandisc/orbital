@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from datetime import UTC, datetime
+from datetime import datetime
 
 from orbital import decide
 from orbital.library import tmdb, trakt
@@ -44,24 +44,6 @@ def test_runtime_text():
     assert decide.runtime_minutes("45") == 45
     assert decide.runtime_minutes("") is None
 
-
-def test_your_year_hours_streak_genre_map_and_top():
-    utc = UTC
-    at = lambda m, d, h=20: datetime(2026, m, d, h, tzinfo=utc).timestamp()  # noqa: E731
-    plays = [
-        {"at": at(1, 3), "kind": "movie", "imdb": "tt1", "title": "Dune", "minutes": 166, "genres": ["science-fiction"]},
-        {"at": at(1, 4), "kind": "series", "imdb": "tt2", "title": "Severance", "minutes": 50, "genres": ["drama"], "season": 1, "episode": 1},
-        {"at": at(1, 4, 22), "kind": "movie", "imdb": "tt3", "title": "Up", "minutes": 96, "genres": ["animation"]},
-        {"at": at(1, 5), "kind": "series", "imdb": "tt2", "title": "Severance", "minutes": 54, "genres": ["drama"], "season": 1, "episode": 2},
-        {"at": at(3, 1), "kind": "series", "imdb": "tt2", "title": "Severance", "minutes": 50, "genres": ["drama"], "season": 1, "episode": 3},
-        {"at": datetime(2025, 12, 31, 20, tzinfo=utc).timestamp(), "kind": "movie", "imdb": "tt9", "title": "Viejo", "minutes": 100, "genres": []},
-    ]
-    r = decide.year_review(plays, 2026, utc)
-    assert (r["hours"], r["movies"], r["episodes"], r["longest_streak"]) == (7, 2, 3, 3)
-    assert r["top_genre"] == "drama"
-    assert r["days"] == {"2026-01-03": "movies", "2026-01-04": "both", "2026-01-05": "series", "2026-03-01": "series"}
-    assert [t["title"] for t in r["top"]][:1] == ["Severance"] and r["top"][0]["plays"] == 3
-    assert [p["title"] for p in r["plays"]["2026-01-04"]] == ["Severance", "Up"]
 
 
 def test_a_person_from_tmdb_most_known_first_with_posters_only(monkeypatch):

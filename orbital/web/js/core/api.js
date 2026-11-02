@@ -135,7 +135,6 @@ export const api = {
   forYouTmdbImdb: (kind, id) => request(`/api/foryou/tmdb-imdb?kind=${kind}&id=${Number(id)}`),
   forYouDecide: ({ time = "", mood = "", kind = "" } = {}) => request(`/api/foryou/decide?time=${time}&mood=${mood}&kind=${kind}`, { timeout: 20000 }),
   forYouDecideSkip: (imdb) => post("/api/foryou/decide/skip", { key: imdb }),
-  forYouYear: () => request("/api/foryou/year", { timeout: 30000 }),
   forYouCalendar: (month) => request(`/api/foryou/calendar?month=${encodeURIComponent(month)}`, { timeout: 20000 }),
   // Descargas para ver sin internet.
   downloads: () => request("/api/downloads"),

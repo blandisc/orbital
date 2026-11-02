@@ -68,7 +68,7 @@ Nada baja de `caption` (se lee a 3 m). Un componente usa la receta, nunca `--tex
 | Papel | Token | Regla |
 |---|---|---|
 | Fondo | `--color-bg`, `--color-tinted-bg` (el tono del arte) | Grafito; el color lo pone lo enfocado |
-| Superficie | `--color-surface`, `--color-surface-raised` | Paneles de una pantalla completa (Ajustes, Tu año); sobre el arte, vidrio |
+| Superficie | `--color-surface`, `--color-surface-raised` | Paneles de una pantalla completa (Ajustes, el calendario); sobre el arte, vidrio |
 | Vidrio | `--color-glass`, `--color-glass-hover`, `--color-glass-selected`, `--color-glass-strong`, `--edge-glass`, `--edge-glass-hairline`, `--edge-glass-selected` | Ver la receta |
 | Texto | `--color-text`, `--color-text-muted`, `--color-text-faint`, `--color-on-art-secondary` | El tenue (50 %) se lee (≥ 4,5:1); sobre el arte, `on-art-secondary` con su sombra |
 | Principal | `--color-primary` / `--color-on-primary` | Blanco con letra negra; también el foco invertido |
@@ -121,7 +121,7 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | Menús, panel rápido, Opciones, confirmaciones | Menú flotante de vidrio |
 | Elegir versión | Menú flotante de vidrio, abajo |
 | Ajustes | Por las piezas: filas con foco invertido, `Segmented` en cápsula |
-| Tu año · calendario · ¿Qué vemos? · listas | Por las piezas: casillas y pósters que se levantan |
+| Calendario · ¿Qué vemos? · listas | Por las piezas: casillas y pósters que se levantan |
 | Cambiar el arte | Por las piezas: casillas que se levantan |
 | Pantalla de carga · arranque · avisos | Sin cambio (ya eran del lenguaje) |
 | Reproductor (`player_ui.py`) | Botones en cápsula: el primero en blanco, los demás de vidrio (`GLASS_ALPHA`, `GLASS_EDGE_ALPHA`); píldoras táctiles de vidrio |
@@ -131,7 +131,7 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | Capa | Archivo | Qué hay |
 |---|---|---|
 | Paleta | `palette.json` + `tokens.css` (`--palette-*`) | Los colores crudos. **Una sola paleta** para la interfaz y el reproductor (`player_ui.py` la lee del JSON). Una prueba verifica que coinciden. |
-| Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`, desde `--radius-2xs` para lo diminuto: el cursor, la batería, las casillas de Tu año), letra (`--text-*`, `--weight-*`, `--tracking-*`, interlineado `--leading-*`), opacidad por lo que significa (`--opacity-*`: `off`, `away`, `near`, `faint`, `text`, y `solid` casi entero, `soft` lo que acompaña sin mandar, `dim` lo lejano, `grain` el grano del fondo), vidrio (`--blur-glass`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*` —también `--tile-channel-width`, el canal de TV en vivo—, `--key-height`, `--sheet-width`, y las alturas de control `--pill-height`, `--control-height`, `--control-sm`, `--menu-row-height` y `--touch-target`; íconos `--icon-*` y trazo `--stroke-*`…). |
+| Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`, desde `--radius-2xs` para lo diminuto: el cursor, la batería, las casillas del calendario), letra (`--text-*`, `--weight-*`, `--tracking-*`, interlineado `--leading-*`), opacidad por lo que significa (`--opacity-*`: `off`, `away`, `near`, `faint`, `text`, y `solid` casi entero, `soft` lo que acompaña sin mandar, `dim` lo lejano, `grain` el grano del fondo), vidrio (`--blur-glass`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*` —también `--tile-channel-width`, el canal de TV en vivo—, `--key-height`, `--sheet-width`, y las alturas de control `--pill-height`, `--control-height`, `--control-sm`, `--menu-row-height` y `--touch-target`; íconos `--icon-*` y trazo `--stroke-*`…). |
 | Semánticos | `themes/orbital.css` | Lo que usan los componentes: `--color-*`, el borde fino por dentro (`--edge-hairline`, `--edge-strong`), `--shadow-*` (cajas) y `--shadow-drop*` (siluetas), el foco (`--focus-lift`, `--focus-shine`), el vidrio (`--color-glass*`, `--edge-glass`, `--filter-glass`), foco invertido (`--inverse-bg/fg/scale`), sobre el arte (`--color-badge-bg`, `--gradient-tile-shade`), dentro de algo claro (`--on-light-*`) o de color (`--on-color-fill`), máscaras (`--mask-solid`), fondo de ambiente (`--color-backdrop-deep`), sombra sobre el arte (`--color-art-shade`), relieves (`--gradient-console-tile`, `--gradient-launch-planet`), `--color-star`, `--color-video-bg`, `--assistant-accent`, el grafito neutro del arte (`--art-*-neutral`) y el color de cada consola (`--system-*`). |
 
 **Compartido con el iPhone: `design/tokens.json`** (paleta, papeles, espacios, radios, duraciones, opacidades, recetas de
@@ -203,7 +203,7 @@ nombres viejos.
 | Mi lista | tu watchlist, Tu watchlist | lo que dejaste pendiente (tu watchlist de Trakt) |
 | Favoritos | — | lo que marcaste con el corazón |
 | Tus series | lo que sigues (como título) | las series que estás viendo |
-| Lo que ves | Tu año (como entrada) | tus números; «Tu año, día por día» es una vista adentro |
+| Lo que ves | Tu año (como entrada) | tus números (solo en el iPhone) |
 | Colecciones | tu repisa | los premios y listas del canon |
 | Decide por mí | ¿Qué vemos? | el sorteo de una propuesta |
 | ¿Qué vemos hoy? | Tinder | el mazo «Encuentra tu match perfecto» |
@@ -245,7 +245,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 |---|---|---|---|
 | Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono en `--color-orbital`, mayúsculas chicas y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
 | Arranque de una parte grande | — | Pendiente · ola 1 | Los grupos de Películas y series (Plataformas, Estudios, Premios, Años…). |
-| Renglón de lista | `sheet__item` | Pendiente · ola 3 | Las listas de lo tuyo y la entrada de «Lo que ves». |
+| Renglón de lista | `sheet__item` | Pendiente · ola 3 | Las listas de lo tuyo. |
 | Porqué | `SectionHead(title, { reason })` y `--color-reason` | Igual | Solo cuando el porqué dice algo que el título no; un dato nunca va en turquesa. |
 | Botón principal | `Button({ art: true })` | Igual | Sólido en el color del arte, texto oscuro. |
 | Botón secundario | `Button` (ghost, relleno tenue) | Distinto a propósito: con el mando el foco invierte el botón y un borde fino no se ve a tres metros | — |
@@ -370,7 +370,6 @@ letras que bajan: g, p, j, y).
 | `showcase` | Colecciones (☰), como la vitrina y la repisa del iPhone: los premios y las listas famosas (Criterion, Top 250 de IMDb, NYT) en tarjetas, cada una con «12 de 96» y su barra (lo visto, de Trakt). A abre su lista (`list-screen`). |
 | `filter-panel` | El filtro avanzado (☰), como el del iPhone: una fila por filtro (formato, género, época, calificación, fama, dónde verla, país), cada uno con su color del arcoíris del azul de Orbital solo en su ícono (formato y «Dónde verla», en el azul de Orbital); ←→ o A cambian el valor, abajo «Ver N títulos» (cuenta TMDB al dejar de moverte) abre los resultados en `list-screen`; X borra. Con el dedo, tocar la fila o ‹ ›. |
 | `calendar` | Próximos estrenos en vista calendario (la tarjeta «Próximos estrenos»), como «Sale hoy › el mes» del iPhone: el mes en una cuadrícula de lunes a domingo; cada día con el arte de lo que sale (dos el mismo día: la casilla partida; más: «+N»), hoy con el número en blanco y lo ya pasado atenuado. A la derecha, lo que sale el día enfocado (póster, episodio, hora y dónde). Cruceta día, LB/RB mes, A abre la serie (con varias, baja a la lista), B vuelve. Marco `.screen`. |
-| `year` | «Tu año» (☰), como YearView del iPhone: horas, racha más larga y tu género en `.tile`; el mapa día por día (semanas en columnas, colores `--color-year-*` del iPhone) con lo que viste el día enfocado (←→ semana, ↑↓ día, LT/RT un mes); y «Lo que más viste» en portadas. Marco `.screen`. |
 | `art-picker` | Cambiar el arte de una película o serie (Opciones › «Cambiar el arte»): dos filas, Póster y Fondo, con lo que tiene TMDB (primero en español); la primera casilla es «El de siempre» y la elegida lleva el borde del acento. La cruceta recorre, A elige (se ve ya en la biblioteca, Para ti y la ficha) y B cierra. |
 | `home` | Inicio, como el Apple TV (§ 0): arriba lo que te toca sobre su arte (`FeatureHero`), abajo «A continuación» (tarjetas anchas; enfocar una la pone arriba) y Tus consolas; al bajar a ellas el Inicio se desliza. |
 | `games` | Juegos en dos pisos (§ 0): debajo de la barra, tus consolas en un `GlassSwitch` (LT/RT, o ↑ y A); el juego enfocado a pantalla con su porqué, logo, datos y botones; abajo sus juegos con filtros (`browse`). Al bajar de la primera fila, las barras y el juego se van. |

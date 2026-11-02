@@ -272,4 +272,4 @@
 /* Tu calificación (Trakt), junto a las de los servicios: tus estrellas en su color. */
 .title__rating--mine { gap: var(--space-2); }
 .title__rating-label { color: var(--color-on-art-secondary); }
-.title__rating-stars { color: var(--color-star); letter-spacing: var(--tracking-label); }
+.title__rating-stars { color: var(--color-rating); letter-spacing: var(--tracking-label); }

@@ -33,7 +33,6 @@ import { createPhoneLink } from "./components/phone-link.js";
 import { createArtPicker } from "./components/art-picker.js";
 import { createListScreen, decadeName, ratingName, SORTS } from "./components/list-screen.js";
 import { createDecide } from "./components/decide.js";
-import { createYear } from "./components/year.js";
 import { createSettings } from "./components/settings.js";
 import { createCalendar } from "./components/calendar.js";
 import { createTv } from "./components/tv.js";
@@ -271,12 +270,6 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
-  year: createYear({
-    load: () => api.forYouYear(),
-    onPick: (item) => openTitle(item),
-    onMove: () => { sound.play("move"); renderHints(); },
-    onClose: () => { sound.play("back"); renderHints(); },
-  }),
   // Próximos estrenos en vista calendario (como «Sale hoy › el mes» del iPhone).
   calendar: createCalendar({
     load: (month) => api.forYouCalendar(month),
@@ -308,7 +301,7 @@ ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la 
 // Misma capa (--z-overlay): lo que va después queda encima. La ficha (y «Versión») van
 // después de la lista abierta, ¿Qué vemos?, Tu año y el calendario: A en un póster las deja a la vista.
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.decide.el, ui.match.el, ui.showcase.el, ui.filter.el, ui.gamePage.el, ui.listScreen.el, ui.year.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.settings.el, ui.search.el, ui.decide.el, ui.match.el, ui.showcase.el, ui.filter.el, ui.gamePage.el, ui.listScreen.el, ui.calendar.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 markFocus(document.body); // «lo enfocado lleva aria-current», en todas las piezas
 
@@ -379,7 +372,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.filter, ui.gamePage, ui.year, ui.calendar, ui.search, ui.settings];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.filter, ui.gamePage, ui.calendar, ui.search, ui.settings];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -1837,11 +1830,6 @@ async function runCommand(command, context = null) {
       case "decide":
         ui.sheet.close();
         return openDecide();
-      case "year":
-        ui.sheet.close();
-        sound.play("open");
-        ui.year.open();
-        return renderHints();
       case "art-menu":
         return openMenu(artMenu(command.item), nested(context));
       case "section":
