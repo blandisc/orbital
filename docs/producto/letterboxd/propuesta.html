@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Letterboxd en Orbital · cómo se materializa</title>
+<style>
+  :root{
+    --bg:#0c0c0e; --card:#18181c; --card2:#1e1e23; --line:#2a2a30; --muted:#a3a3ab; --text:#f5f4f0; --dim:#55555d;
+    --teal:#5fd6c6; --amber:#f4c24d; --red:#f0574d;
+    --lb-orange:#ff8000; --lb-green:#00e054; --lb-blue:#40bcf4;
+    --sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sys);line-height:1.45}
+  main{max-width:1120px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:34px;margin:0 0 6px;letter-spacing:-.01em}
+  h2{font-size:24px;margin:56px 0 6px}
+  h3{font-size:17px;margin:0 0 6px}
+  .lead{color:var(--muted);font-size:17px;max-width:760px}
+  .why{color:var(--teal);font-size:14px;font-weight:600;margin:0 0 4px}
+  .dots{display:inline-flex;gap:4px;vertical-align:middle;margin-right:8px}
+  .dots i{width:12px;height:12px;border-radius:50%;display:block}
+  .row{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;margin-top:22px}
+  .note{flex:1 1 300px;min-width:280px}
+  .note p{color:var(--muted);margin:6px 0 12px}
+  .note ul{color:var(--muted);padding-left:18px;margin:6px 0}
+  .note li{margin:4px 0}
+  .tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--card2);color:var(--muted);margin-right:6px}
+  .tag.ok{color:var(--lb-green)} .tag.wait{color:var(--amber)} .tag.no{color:var(--red)}
+
+  /* teléfono */
+  .phone{width:300px;flex:0 0 300px;border-radius:44px;background:#000;padding:12px;box-shadow:0 20px 50px rgba(0,0,0,.5);border:1px solid #222}
+  .screen{border-radius:34px;background:linear-gradient(180deg,#141a1e 0%,#0c0c0e 45%);height:600px;overflow:hidden;position:relative;padding:14px 16px}
+  .status{display:flex;justify-content:space-between;font-size:13px;font-weight:600;padding:4px 10px 12px}
+  .navt{display:flex;align-items:center;gap:10px;font-size:15px;margin-bottom:12px}
+  .navt .back{color:var(--teal);font-size:22px;line-height:1}
+  .big{font-size:26px;font-weight:800;margin:4px 0 12px}
+  .group{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:14px}
+  .cell{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:15px}
+  .cell:last-child{border-bottom:0}
+  .cell .sub{color:var(--muted);font-size:12px}
+  .cell .grow{flex:1}
+  .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:14px;font-weight:800}
+  .field{background:var(--card2);border-radius:10px;padding:10px 12px;color:var(--muted);font-size:15px;margin:10px 0}
+  .btn{display:block;text-align:center;border-radius:999px;padding:12px;font-weight:700;font-size:15px}
+  .btn.primary{background:var(--teal);color:#06201c}
+  .btn.ghost{background:var(--card2);color:var(--text)}
+  .cap{color:var(--muted);font-size:12px;margin:6px 4px 14px}
+  .eyebrow{color:var(--teal);font-size:12px;font-weight:700}
+  .sect{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:14px 0 10px}
+  .sect::after{content:"";flex:1;height:1px;background:var(--line)}
+  .review{display:flex;gap:12px;margin-bottom:14px}
+  .poster{width:58px;height:87px;border-radius:8px;flex:0 0 58px;background:linear-gradient(160deg,#3a4a5a,#11161b);position:relative;overflow:hidden}
+  .poster b{position:absolute;left:6px;bottom:6px;font-size:9px;font-weight:800;letter-spacing:.05em;color:#fff;opacity:.85}
+  .stars{color:var(--lb-green);font-size:13px;letter-spacing:1px}
+  .heart{color:var(--lb-orange);font-size:12px;margin-left:4px}
+  .rtext{color:var(--muted);font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px}
+  .date{color:var(--dim);font-size:11px}
+  .toast{position:absolute;left:14px;right:14px;bottom:96px;background:rgba(40,40,46,.92);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .toast .act{color:var(--teal);font-weight:700;margin-left:auto}
+  .tabbar{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:31px;background:rgba(30,30,35,.97);display:flex;justify-content:space-around;align-items:center;color:var(--muted);font-size:11px}
+  .tabbar .on{color:var(--text)}
+  .hero{height:190px;margin:-14px -16px 12px;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,#0c0c0e),linear-gradient(135deg,#5a3a24,#1b2730);position:relative}
+  .hero .logo{position:absolute;left:16px;bottom:14px;font:800 28px Georgia,serif;letter-spacing:.06em}
+  .lbcard{background:var(--card);border-radius:14px;padding:12px 14px;margin:12px 0;border-left:3px solid var(--lb-green)}
+  .stat{display:flex;gap:10px;margin:8px 0 14px}
+  .stat div{flex:1;background:var(--card);border-radius:12px;padding:10px}
+  .stat b{display:block;font-size:20px}
+  .stat span{color:var(--muted);font-size:11px}
+
+  /* flujo */
+  .flow{display:grid;grid-template-columns:1fr 70px 1fr 70px 1fr;align-items:center;gap:0;margin-top:22px}
+  .node{background:var(--card);border-radius:16px;padding:16px;min-height:130px}
+  .node h3{display:flex;align-items:center;gap:8px}
+  .node p{color:var(--muted);font-size:13px;margin:6px 0 0}
+  .arrow{text-align:center;color:var(--muted);font-size:12px}
+  .arrow span{display:block;font-size:26px;color:var(--teal)}
+  .arrow.no span{color:var(--red)}
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:14px}
+  th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  td.k{font-weight:700;width:170px}
+  .ask{background:var(--card);border-radius:16px;padding:18px 20px;margin-top:16px}
+  .ask ol{margin:8px 0 0;padding-left:20px;color:var(--muted)}
+  .ask li{margin:8px 0}
+  .ask li b{color:var(--text)}
+  @media (max-width:760px){.flow{grid-template-columns:1fr}.arrow span{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<main>
+  <p class="why"><span class="dots"><i style="background:var(--lb-orange)"></i><i style="background:var(--lb-green)"></i><i style="background:var(--lb-blue)"></i></span>Propuesta · 1 nov 2026</p>
+  <h1>Letterboxd en Orbital</h1>
+  <p class="lead">Lo que escribes y calificas en Letterboxd aparece en Orbital: en «Lo que ves» y en la ficha de cada película. Se conecta solo con tu usuario (sin contraseña) y, si quieres, una vez con tu archivo completo. Orbital lee de Letterboxd; nunca escribe ahí.</p>
+
+  <!-- 1. Conectar -->
+  <h2>1 · Se conecta en Ajustes › Cuentas</h2>
+  <p class="lead">Junto a Trakt. Escribes tu usuario y listo: Orbital revisa que exista y te dice cuántas películas encontró.</p>
+  <div class="row">
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="navt"><span class="back">‹</span> Ajustes</div>
+      <div class="big">Cuentas</div>
+      <div class="group">
+        <div class="cell"><div class="ico" style="background:#ed1c24">T</div><div class="grow">Trakt<div class="sub">Conectado · fernando</div></div><span class="sub">✓</span></div>
+        <div class="cell"><div class="ico" style="background:#14181c"><span class="dots" style="margin:0"><i style="background:var(--lb-orange);width:6px;height:6px"></i><i style="background:var(--lb-green);width:6px;height:6px"></i><i style="background:var(--lb-blue);width:6px;height:6px"></i></span></div><div class="grow">Letterboxd<div class="sub">Sin conectar</div></div><span class="sub">›</span></div>
+      </div>
+      <div class="sect">Letterboxd</div>
+      <div class="field">Tu usuario · <span style="color:var(--text)">fernandoig</span></div>
+      <a class="btn primary">Conectar</a>
+      <p class="cap">Solo tu usuario: Letterboxd publica tu diario. No pide contraseña y no cambia nada en tu cuenta.</p>
+      <div class="group">
+        <div class="cell"><div class="grow">Traer todo tu historial<div class="sub">Sube el archivo que bajas de Letterboxd › Ajustes › Datos. Una vez.</div></div><span class="sub">›</span></div>
+      </div>
+    </div></div>
+    <div class="note">
+      <h3>Qué pasa al conectar</h3>
+      <ul>
+        <li><b>Con tu usuario</b>, Orbital lee tus últimas ~50 entradas del diario: película, día que la viste, estrellas, corazón y reseña. Cada vez que abres la app se agrega lo nuevo.</li>
+        <li><b>Con el archivo</b> (opcional, una sola vez) entra todo lo de antes: diario completo, calificaciones, reseñas y tu watchlist de Letterboxd.</li>
+        <li>Ya probé que el diario público de Letterboxd contesta y trae el código de TMDB de cada película: se cruza directo con lo que ya usa Orbital.</li>
+      </ul>
+      <p><span class="tag ok">Se puede hoy</span><span class="tag">Sin permiso de nadie</span></p>
+    </div>
+  </div>
+
+  <!-- 2. Lo que ves -->
+  <h2>2 · Se ve en «Lo que ves» › Tus reseñas</h2>
+  <p class="lead">Una sección nueva al final de «Lo que ves», con lo último que escribiste. No es una fila más en Explorar.</p>
+  <div class="row">
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="navt"><span class="back">‹</span> Explorar</div>
+      <div class="big">Lo que ves</div>
+      <div class="stat"><div><b>12</b><span>películas este mes</span></div><div><b>3.8</b><span>tu promedio en Letterboxd</span></div></div>
+      <div class="sect">Tus reseñas</div>
+      <div class="review"><div class="poster"><b>THE INVITE</b></div><div><div style="font-weight:700;font-size:14px">The Invite <span class="date">2026</span></div><div><span class="stars">★★★★</span><span class="heart">♥</span></div><div class="rtext">Una cena que se va torciendo con una tensión que no suelta. Seyfried está enorme.</div><div class="date">Vista el 1 nov</div></div></div>
+      <div class="review"><div class="poster" style="background:linear-gradient(160deg,#6a5020,#1a1a12)"><b>PRIMETIME</b></div><div><div style="font-weight:700;font-size:14px">Primetime <span class="date">2026</span></div><div><span class="stars">★★★½</span></div><div class="rtext">Sin reseña · solo estrellas.</div><div class="date">Vista el 30 oct</div></div></div>
+      <div class="review"><div class="poster" style="background:linear-gradient(160deg,#20405a,#0f141a)"><b>DUNE</b></div><div><div style="font-weight:700;font-size:14px">Dune: Part Two <span class="date">2024</span></div><div><span class="stars">★★★★★</span><span class="heart">♥</span></div><div class="rtext">La vi otra vez en la tele. Sigue siendo la mejor del año.</div><div class="date">Vista el 27 oct · otra vez</div></div></div>
+      <div class="tabbar"><span>Inicio</span><span class="on">Explorar</span><span>Descargas</span><span>Buscar</span></div>
+    </div></div>
+    <div class="note">
+      <h3>Cómo se comporta</h3>
+      <ul>
+        <li>Cada reseña abre la ficha de la película (y desde ahí, Ver).</li>
+        <li>Las estrellas van en el verde de Letterboxd, para que se note de dónde vienen; las de Trakt siguen como hoy.</li>
+        <li>Las que dicen <i>«otra vez»</i> son las que Letterboxd marca como repetidas.</li>
+        <li>«Tu promedio en Letterboxd» se suma a las cifras de arriba solo si conectaste.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 3. Ficha + aviso -->
+  <h2>3 · En la ficha y un aviso para ponerte al día con Trakt</h2>
+  <div class="row">
+    <div class="phone"><div class="screen">
+      <div class="hero"><div class="logo">THE INVITE</div></div>
+      <div style="color:var(--muted);font-size:12px">Película · 2026 · 1 h 45 min</div>
+      <div style="display:flex;gap:8px;margin:12px 0"><a class="btn primary" style="flex:1">▶ Ver</a><a class="btn ghost" style="flex:0 0 52px">＋</a></div>
+      <div class="lbcard">
+        <div class="eyebrow" style="color:var(--lb-green)">Tu reseña en Letterboxd</div>
+        <div style="margin:4px 0"><span class="stars">★★★★</span><span class="heart">♥</span> <span class="date">· 1 nov</span></div>
+        <div class="rtext" style="-webkit-line-clamp:3">Una cena que se va torciendo con una tensión que no suelta. Seyfried está enorme.</div>
+      </div>
+      <div class="toast"><span style="color:var(--lb-green)">●</span><span>Viste 3 en Letterboxd que no están en Trakt</span><span class="act">Pasarlas</span></div>
+      <div class="tabbar"><span>Inicio</span><span class="on">Explorar</span><span>Descargas</span><span>Buscar</span></div>
+    </div></div>
+    <div class="note">
+      <h3>La ficha</h3>
+      <p>Si la reseñaste, sale tu reseña debajo de los botones. Si no, no ocupa lugar.</p>
+      <h3>«Pasarlas» a Trakt</h3>
+      <p>Trakt sigue siendo lo que alimenta tus recomendaciones, «Seguir viendo» y «Lo que ves». Si viste algo y solo lo anotaste en Letterboxd, el aviso ofrece pasarlo a Trakt con su fecha y tus estrellas. Solo con tu toque; nunca solo.</p>
+      <ul>
+        <li>Las estrellas pasan a la escala de Trakt (★★★★ = 8 de 10), la misma que ya usa «Calificar».</li>
+        <li>Lo que ya está en Trakt no se repite.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 4. Flujo -->
+  <h2>4 · Por dónde va cada cosa</h2>
+  <div class="flow">
+    <div class="node"><h3><span class="dots"><i style="background:var(--lb-orange)"></i><i style="background:var(--lb-green)"></i><i style="background:var(--lb-blue)"></i></span>Letterboxd</h3><p>Tu diario público (lo nuevo, cada vez que abres) y tu archivo de exportación (todo, una vez).</p></div>
+    <div class="arrow"><span>→</span>Orbital lee</div>
+    <div class="node"><h3>Orbital</h3><p>Lo guarda en el iPhone. Lo enseña en «Lo que ves» y en la ficha. La TV lo ve igual (lo manda el iPhone a tu Orbital).</p></div>
+    <div class="arrow"><span>→</span>solo si tocas «Pasarlas»</div>
+    <div class="node"><h3>Trakt</h3><p>Vistas y calificaciones que no tenía. De ahí salen tus recomendaciones, como hoy.</p></div>
+  </div>
+  <div class="flow" style="margin-top:10px">
+    <div></div><div></div>
+    <div class="node" style="min-height:0"><p style="margin:0"><b style="color:var(--red)">No va:</b> Orbital no escribe en Letterboxd. Para eso hace falta la API oficial (fase 3).</p></div>
+    <div></div><div></div>
+  </div>
+
+  <!-- 5. Fases -->
+  <h2>5 · En tres fases</h2>
+  <table>
+    <tr><th>Fase</th><th>Qué se ve</th><th>Qué hace falta</th><th>Estado</th></tr>
+    <tr><td class="k">1 · Tu usuario</td><td>Conectar en Cuentas, «Tus reseñas» en Lo que ves, tu reseña en la ficha.</td><td>Nada: el diario es público.</td><td><span class="tag ok">Lista para hacer</span></td></tr>
+    <tr><td class="k">2 · Tu archivo</td><td>Todo tu historial y tu watchlist de Letterboxd; el aviso «Pasarlas a Trakt».</td><td>Que bajes tu archivo una vez en letterboxd.com › Ajustes › Datos.</td><td><span class="tag ok">Lista para hacer</span></td></tr>
+    <tr><td class="k">3 · La API oficial</td><td>Marcar vista y calificar en Letterboxd desde Orbital (al terminar una película).</td><td>Que Letterboxd nos dé acceso: se pide por correo (lo mandarías tú) y puede tardar o no aprobarse.</td><td><span class="tag wait">Depende de Letterboxd</span></td></tr>
+  </table>
+
+  <h2>Lo que necesito que decidas</h2>
+  <div class="ask">
+    <ol>
+      <li><b>¿Fases 1 y 2 juntas?</b> Mi recomendación: sí. La 1 sola enseña solo lo reciente; con el archivo, «Lo que ves» queda completo desde el primer día.</li>
+      <li><b>¿El aviso «Pasarlas a Trakt»?</b> Recomiendo que sí, siempre con tu toque. Sin él, lo que solo anotas en Letterboxd no mejora tus recomendaciones.</li>
+      <li><b>¿Pedimos la API oficial (fase 3)?</b> Es lo único que deja escribir en Letterboxd. Si te interesa, te dejo el correo redactado para que lo mandes tú.</li>
+    </ol>
+  </div>
+</main>
+</body>
+</html>
