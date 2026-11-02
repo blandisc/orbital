@@ -507,6 +507,15 @@ public final class ParaTiModel: ObservableModel {
         if let current = because { because = (current.seed, current.items.filter { $0.imdb != s.imdb }) }
     }
 
+    /// «Crear una lista» al final de Tus listas: una lista nueva (privada) en tu Trakt, que sale ya en Tus listas (se
+    /// vuelven a pedir). Devuelve el motivo si no se pudo.
+    public func createTraktList(named name: String) async -> String? {
+        guard let trakt = services.trakt, trakt.linked else { return "Conecta Trakt para crear listas" }
+        do { _ = try await trakt.createList(name: name) } catch { return "No pude crear la lista: \(error)" }
+        await refresh()
+        return nil
+    }
+
     /// El botón «Actualizar»: limpia la caché (de la consola o local, según de dónde viniera) y vuelve a cargar.
     public func refresh() async {
         switch source {

@@ -84,4 +84,19 @@ final class SaveRulesTests: XCTestCase {
         XCTAssertEqual(rig.services.traktOutbox.cachedLists.map(\.name), ["Recientes", "Viejas"], "se recuerdan en ese orden (sin red, igual)")
         XCTAssertEqual(title.expectedListCount, 2)
     }
+
+    /// «Crear una lista» al final de Tus listas: va a Trakt, privada, con el nombre sin espacios de más.
+    @MainActor
+    func testCrearUnaListaDesdeTusListas() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.json["https://api.trakt.tv/users/me/lists"] = ["name": "Para el domingo", "ids": ["trakt": 42]]
+        let model = ParaTiModel(rig.services)
+        let problem = await model.createTraktList(named: "  Para el domingo ")
+        XCTAssertNil(problem)
+        let sent = try XCTUnwrap(JSON.parse(try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/users/me/lists").first)))
+        XCTAssertEqual(sent["name"]?.string, "Para el domingo")
+        XCTAssertEqual(sent["privacy"]?.string, "private")
+        let nameless = await model.createTraktList(named: "   ")
+        XCTAssertNotNil(nameless, "sin nombre no se crea")
+    }
 }

@@ -27,6 +27,9 @@ struct ListsView: View {
     /// estantes y pósters) justo cuando Para ti debía aparecer (Fernando, 31 oct 2026: tardaba ~5 s en verse).
     @State private var restReady = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// «Crear una lista»: el nombre que se escribe.
+    @State private var naming = false
+    @State private var newListName = ""
     private var model: ParaTiModel { observer.model }
 
     /// Lo general: todo lo que no es una lista tuya ni una plataforma.
@@ -77,6 +80,21 @@ struct ListsView: View {
 
     var body: some View {
         ScrollViewReader { proxy in scroller(proxy).task { await demoScroll(proxy) } }
+            .alert("Nueva lista", isPresented: $naming) {
+                TextField("Nombre", text: $newListName)
+                Button("Crear") { createList() }
+                    .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button("Cancelar", role: .cancel) { newListName = "" }
+            } message: { Text("Se crea en Trakt (privada). Agrégale títulos desde su ficha, con «Guardar en…».") }
+    }
+
+    private func createList() {
+        let name = newListName.trimmingCharacters(in: .whitespacesAndNewlines)
+        newListName = ""
+        Task {
+            if let problem = await model.createTraktList(named: name) { env.notify(problem, tone: .error) }
+            else { env.notify("Lista creada en Trakt", detail: name, tone: .success) }
+        }
     }
 
     /// Modo demostración (`-demo-shelf id`): baja hasta ese estante al abrir, para las capturas. `-demo-section seasons|genres`
@@ -217,8 +235,10 @@ struct ListsView: View {
                             .modifier(SectionSpy(section: .yourYear, active: $activeSection))
                     }
                     // Las listas: las tuyas de Trakt y las de tus complementos, con el mismo rótulo.
-                    if !traktLists.isEmpty {
-                        listRows(label: CollectionSection.trakt.title, symbol: CollectionSection.trakt.symbol, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection))
+                    if !traktLists.isEmpty || collections.model.traktLinked {
+                        listRows(label: CollectionSection.trakt.title, symbol: CollectionSection.trakt.symbol, cards: traktLists,
+                                 create: collections.model.traktLinked ? { naming = true } : nil)
+                            .modifier(SectionSpy(section: .trakt, active: $activeSection))
                     }
                     if !addonCards.isEmpty {
                         listRows(label: CollectionSection.addons.title, symbol: CollectionSection.addons.symbol, cards: addonCards)
@@ -279,7 +299,7 @@ struct ListsView: View {
     private func isShown(_ section: CollectionSection) -> Bool {
         switch section {
         case .forYou: true
-        case .trakt: !traktLists.isEmpty
+        case .trakt: !traktLists.isEmpty || collections.model.traktLinked
         case .addons: !addonCards.isEmpty
         case .platforms: !model.platformHubs.isEmpty
         case .awards: !collections.model.awards.isEmpty
@@ -368,7 +388,7 @@ struct ListsView: View {
 
     /// Un grupo de listas en renglones que abren la lista completa: «Tuyo» (Mi lista, Favoritos, Tus series y tus listas de
     /// Trakt) y «De tus complementos».
-    private func listRows(label: Text, symbol: String, cards: [ListCardItem]) -> some View {
+    private func listRows(label: Text, symbol: String, cards: [ListCardItem], create: (() -> Void)? = nil) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: label, symbol: symbol)
             VStack(spacing: DS.Space.s2) {
@@ -378,6 +398,13 @@ struct ListsView: View {
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("list-\(c.id)")
                     }
+                }
+                // Al final de tus listas: una nueva en Trakt.
+                if let create {
+                    Button(action: create) { Label("Crear una lista", systemImage: "plus") }
+                        .dsSecondaryButton()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("list-create")
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
