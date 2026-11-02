@@ -1,5 +1,7 @@
 /** Comandos de tu biblioteca: preferencias, arte, ordenar y filtrar una lista, Mi lista, descargas y tu carpeta.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
+import { decadeName, MIN_RATINGS, ratingName } from "../components/list-screen.js";
+
 export function libraryCommands({ api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
   return {
     "prefs": async (command, context) => {
@@ -55,6 +57,27 @@ export function libraryCommands({ api, artConfirmMenu, fixTitle, folderMenu, gen
     },
     "list-genre": async (command, context) => {
       return ui.listScreen.sorter.setGenre(command.value, command.label || null);
+    },
+    "list-rating-menu": async (command, context) => {
+      const current = ui.listScreen.sorter.settings.minRating;
+      return openMenu({ title: "Calificación", options: [
+        { icon: "star", label: "Cualquiera", value: current == null ? "✓" : "", command: { type: "list-rating", value: null } },
+        ...MIN_RATINGS.map((r) => ({ icon: "star", label: ratingName(r), hint: "IMDb y Trakt", value: current === r ? "✓" : "",
+          command: { type: "list-rating", value: r } }))] }, nested(context));
+    },
+    "list-rating": async (command, context) => {
+      return ui.listScreen.sorter.setMinRating(command.value);
+    },
+    "list-decade-menu": async (command, context) => {
+      const s = ui.listScreen.sorter;
+      const current = s.settings.decade;
+      return openMenu({ title: "Década", options: [
+        { icon: "calendar", label: "Todas", value: current == null ? "✓" : "", command: { type: "list-decade", value: null } },
+        ...s.decades().map((d) => ({ icon: "calendar", label: decadeName(d), value: current === d ? "✓" : "", command: { type: "list-decade", value: d } }))] },
+      nested(context));
+    },
+    "list-decade": async (command, context) => {
+      return ui.listScreen.sorter.setDecade(command.value);
     },
     // elegir otro póster o fondo de una película o serie
     "media-art": async (command, context) => {

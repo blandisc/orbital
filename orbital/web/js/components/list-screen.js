@@ -18,12 +18,19 @@ import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons } from "./ui.js";
  * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose()
  */
 // Sin «Como viene»: si no eliges orden, la lista va como llega (elegir otra vez el que está puesto lo quita).
+// Los mismos órdenes que el iPhone (ListSort), con sus nombres.
 export const SORTS = [
+  { id: "best", label: "Mejor calificadas (IMDb y Trakt)" },
   { id: "imdb", label: "Mejor calificadas en IMDb" },
   { id: "trakt", label: "Mejor calificadas en Trakt" },
   { id: "year", label: "Año (lo más nuevo primero)" },
+  { id: "oldest", label: "Año: más viejas" },
   { id: "az", label: "A–Z" },
 ];
+/** La calificación mínima del filtro (como el iPhone: «De 7 para arriba») y el nombre de una década («90s», «2010s»). */
+export const MIN_RATINGS = [6, 7, 8];
+export const ratingName = (r) => `De ${r} para arriba`;
+export const decadeName = (d) => (d >= 2000 ? `${d}s` : `${String(d % 100).padStart(2, "0")}s`);
 const KIND_LABEL = { series: "Series", movie: "Películas" };
 const sortKey = (id) => `orbital.list.sort.${id}`;
 
@@ -56,7 +63,17 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   let zone = "grid"; // "tabs" | "grid"
   let index = 0;
   let attempt = 0;
-  let settings = { sort: "default", kind: "all", genre: null, hideWatched: false };
+  let settings = { sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
+  /** La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt), como el iPhone. */
+  const score = (i) => {
+    const found = [imdb[i.meta_id], i.rating].filter((v) => v > 0);
+    return found.length ? found.reduce((a, b) => a + b, 0) / found.length : null;
+  };
+  /** Las de IMDb (Cinemeta), cuando un orden o un filtro las necesita. */
+  async function needImdb() {
+    const ids = (loaded.get(tab) || []).filter((i) => imdb[i.meta_id] == null).map((i) => ({ kind: i.kind, meta_id: i.meta_id }));
+    if (ids.length) Object.assign(imdb, await ratings?.(ids).catch(() => ({})) ?? {});
+  }
   let imdb = {}; // IMDb → calificación (se pide al ordenar por IMDb)
   let seen = null; // lo que ya viste (Trakt), al pedir «Ocultar lo que ya vi»
   let cancelExit = () => {};
@@ -103,10 +120,14 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   function arrange(items) {
     let out = items.filter((i) => (settings.kind === "all" || i.kind === settings.kind)
       && (!settings.genre || (i.genres || []).includes(settings.genre))
+      && (settings.minRating == null || (score(i) ?? 0) >= settings.minRating)
+      && (settings.decade == null || Math.floor((Number(i.year) || 0) / 10) * 10 === settings.decade)
       && (!settings.hideWatched || !seen?.has(i.meta_id)));
     if (ranked()) return out;
     const by = {
+      best: (a, b) => (score(b) ?? 0) - (score(a) ?? 0),
       imdb: (a, b) => (imdb[b.meta_id] ?? 0) - (imdb[a.meta_id] ?? 0),
+      oldest: (a, b) => (Number(a.year) || Infinity) - (Number(b.year) || Infinity),
       trakt: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
       year: (a, b) => (b.year ?? 0) - (a.year ?? 0),
       az: (a, b) => String(a.title).localeCompare(String(b.title), "es"),
@@ -119,6 +140,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     settings.sort !== "default" && !ranked() && SORTS.find((s) => s.id === settings.sort)?.label,
     settings.kind !== "all" && KIND_LABEL[settings.kind],
     settings.genre && settings.genreLabel,
+    settings.minRating != null && ratingName(settings.minRating),
+    settings.decade != null && decadeName(settings.decade),
       settings.hideWatched && "Sin lo que ya viste",
   ].filter(Boolean);
 
@@ -196,7 +219,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     index = 0;
     zone = "grid";
     loaded.clear();
-    settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, hideWatched: false };
+    settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
     paintHead();
     el.hidden = false;
     load(0);
@@ -257,19 +280,28 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       for (const i of loaded.get(tab) || []) (i.genres || []).forEach((g) => all.add(g));
       return [...all].sort();
     },
+    /** Las décadas que hay en lo cargado, de la más nueva a la más vieja (el filtro sale si hay más de una). */
+    decades() {
+      const all = new Set((loaded.get(tab) || []).map((i) => Number(i.year)).filter((y) => y > 0).map((y) => Math.floor(y / 10) * 10));
+      return [...all].sort((a, b) => b - a);
+    },
     /** Sus pestañas ya son Series · Películas (entonces el filtro de tipo sobra). */
     get kindTabs() { return !!list?.tabs.some((t) => t.id === "series" || t.id === "movie"); },
     async setSort(id) {
       settings.sort = chooseSort(list.id, settings.sort, id);
-      if (id === "imdb") {
-        const ids = (loaded.get(tab) || []).filter((i) => imdb[i.meta_id] == null).map((i) => ({ kind: i.kind, meta_id: i.meta_id }));
-        if (ids.length) Object.assign(imdb, await ratings?.(ids).catch(() => ({})) ?? {});
-      }
+      if (id === "imdb" || id === "best") await needImdb();
       index = 0;
       refresh();
     },
     setKind(kind) { settings.kind = kind; index = 0; refresh(); },
     setGenre(genre, label) { settings.genre = genre; settings.genreLabel = label; index = 0; refresh(); },
+    async setMinRating(value) {
+      settings.minRating = value;
+      if (value != null) await needImdb();
+      index = 0;
+      refresh();
+    },
+    setDecade(decade) { settings.decade = decade; index = 0; refresh(); },
     async setHideWatched(on) {
       settings.hideWatched = on;
       if (on && !seen) seen = new Set(await watched?.().catch(() => []) ?? []);

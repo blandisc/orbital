@@ -31,7 +31,7 @@ import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createArtPicker } from "./components/art-picker.js";
-import { createListScreen, SORTS } from "./components/list-screen.js";
+import { createListScreen, decadeName, ratingName, SORTS } from "./components/list-screen.js";
 import { createDecide } from "./components/decide.js";
 import { createYear } from "./components/year.js";
 import { createSettings } from "./components/settings.js";
@@ -1559,6 +1559,9 @@ function listSortMenu(s) {
     options.push(...MEDIA_FILTERS.map(([k, label]) => ({ icon: "trailer", label, value: check(st.kind === k), command: { type: "list-kind", value: k } })));
   }
   if (s.genres().length) options.push({ icon: "spark", label: "Género", value: st.genreLabel || "Todos", command: { type: "list-genre-menu" } });
+  // Calificación y década, como el iPhone (ListFilterMenu): en toda lista y colección.
+  options.push({ icon: "star", label: "Calificación", value: st.minRating != null ? ratingName(st.minRating) : "Cualquiera", command: { type: "list-rating-menu" } });
+  if (s.decades().length > 1) options.push({ icon: "calendar", label: "Década", value: st.decade != null ? decadeName(st.decade) : "Todas", command: { type: "list-decade-menu" } });
   options.push({ icon: "show", label: "Ocultar lo que ya vi", hint: "Según Trakt", value: check(st.hideWatched), command: { type: "list-watched" } });
   if (s.id === "mimedia") { // Mi media: tu OneDrive tal cual y volver a revisar la carpeta
     options.push({ heading: true, label: "Tu OneDrive" },
