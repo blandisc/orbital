@@ -1,9 +1,9 @@
 import Foundation
 import OrbitalCore
 
-/// «Ya está para ver»: el aviso de un estreno de lo que sigues en Trakt, pero no a la hora en que sale sino cuando ya tiene
-/// fuente (salir no siempre es poderse ver). Se revisa de vez en cuando (al abrir la app y en segundo plano): de lo que
-/// salió en las últimas horas y aún no se avisó, se pregunta por fuentes; lo que ya tiene, se avisa una sola vez.
+/// «Ya salió»: el aviso de un estreno de lo que sigues en Trakt en cuanto sale, tenga o no ya de dónde verse (Fernando,
+/// 1 nov 2026: antes se esperaba a que Real-Debrid lo tuviera y los avisos llegaban tarde o no llegaban). Se revisa de vez
+/// en cuando (al abrir la app y en segundo plano): lo que salió en las últimas horas y aún no se avisó, se avisa una vez.
 @MainActor
 public final class ReleaseAlerts {
     public struct Alert: Sendable, Equatable, Identifiable {
@@ -37,31 +37,22 @@ public final class ReleaseAlerts {
     }
 
     static let sentKey = "release-alerts-sent"
-    /// Hasta cuánto después de salir se sigue buscando fuente (luego ya no es un estreno).
+    /// Hasta cuánto después de salir se avisa (luego ya no es un estreno).
     public nonisolated static let window: TimeInterval = 36 * 3600
     /// Lo que se recuerda de lo ya avisado (lo más reciente).
     static let memory = 200
     /// El horario silencioso: de las 23 a las 8, el aviso espera a las 8.
     public nonisolated static let quietFrom = 23, quietUntil = 8
-    /// Lo más que se espera por las fuentes de cada episodio. Se preguntan todos a la vez: antes iban de uno en uno y un
-    /// episodio sin fuentes todavía esperaba a cada complemento hasta 15-30 s; con dos así se acababan los ~30 s que da iOS en
-    /// segundo plano, iOS cortaba la revisión y el que sí tenía fuente nunca se avisaba.
-    public nonisolated static let findBudget: TimeInterval = 10
     /// Lo más que se espera la ficha de cada serie (el nombre y la imagen de cada episodio). Sin ella el aviso sale igual.
     public nonisolated static let metaBudget: TimeInterval = 4
 
-    /// Lo que pasó en la última revisión (para la bitácora): qué faltaba avisar, qué ya tenía fuente, qué no contestó a
-    /// tiempo y cuándo sale lo siguiente de tu calendario.
+    /// Lo que pasó en la última revisión (para la bitácora): qué faltaba avisar y cuándo sale lo siguiente de tu calendario.
     public struct Report: Sendable, Equatable {
         public var pending: [String] = []
-        public var found: [String] = []
-        public var timedOut: [String] = []
         public var nextAiring: Date?
         public var seconds: Double = 0
     }
     public private(set) var report = Report()
-    /// El tope por episodio de esta revisión (las pruebas lo bajan).
-    var budget = ReleaseAlerts.findBudget
 
     private let services: Services
     public init(_ services: Services) { self.services = services }
@@ -81,7 +72,7 @@ public final class ReleaseAlerts {
         return hour >= quietFrom ? calendar.date(byAdding: .day, value: 1, to: morning) : morning
     }
 
-    /// Lo que ya se puede ver y no se ha avisado. Sin el aviso encendido o sin Trakt, nada.
+    /// Lo que ya salió y no se ha avisado. Sin el aviso encendido o sin Trakt, nada.
     public func due() async -> [Alert] {
         report = Report()
         guard services.appSettings.releaseAlerts else { return [] }
@@ -91,33 +82,14 @@ public final class ReleaseAlerts {
         report.nextAiring = airings.map(\.aired).filter { $0 > now }.min()
         let pending = Self.pending(airings, sent: sent(), now: now)
         report.pending = pending.map(\.id)
-        // Todos a la vez, cada uno con su tope: la revisión entera cabe en el tiempo que da iOS.
-        let finder = services.finder
-        let budget = self.budget
-        let asks = pending.map { item in
-            (item, services.titlePrefs.languages(for: item.airing.series.imdb, settings: services.appSettings).prefs)
+        let out = pending.map { airing, episode, id in
+            Alert(id: id, metaID: airing.series.imdb, show: airing.series.title, season: airing.season, episode: episode,
+                  episodeTitle: episode == airing.first ? airing.episodeTitle : "", poster: airing.series.poster, art: airing.series.wide,
+                  quality: nil, instant: false, minutes: airing.series.runtime)
         }
-        let answers = await withTaskGroup(of: (Int, Source?, Bool).self) { group in
-            for (i, ask) in asks.enumerated() {
-                group.addTask { let (best, late) = await Self.firstSource(finder, id: ask.0.id, prefs: ask.1, budget: budget); return (i, best, late) }
-            }
-            var out: [(Int, Source?, Bool)] = []
-            for await answer in group { out.append(answer) }
-            return out.sorted { $0.0 < $1.0 }
-        }
-        var out: [Alert] = []
-        for (i, best, late) in answers {
-            let (airing, episode, id) = pending[i]
-            if late { report.timedOut.append(id) }
-            guard let best else { continue }
-            report.found.append(id)
-            out.append(Alert(id: id, metaID: airing.series.imdb, show: airing.series.title, season: airing.season, episode: episode,
-                             episodeTitle: episode == airing.first ? airing.episodeTitle : "", poster: airing.series.poster, art: airing.series.wide,
-                             quality: best.resolution.isEmpty ? nil : best.resolution, instant: best.cached, minutes: airing.series.runtime))
-        }
-        out = await withEpisodeDetails(out)
+        let detailed = await withEpisodeDetails(out)
         report.seconds = Date().timeIntervalSince(started)
-        return out
+        return detailed
     }
 
     /// El nombre y la imagen de cada episodio: el calendario de Trakt trae un solo nombre por estreno (el del primero, si salen
@@ -149,25 +121,6 @@ public final class ReleaseAlerts {
             Task {
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 if once.claim() { job.cancel(); done.resume(returning: nil) }
-            }
-        }
-    }
-
-    /// La mejor fuente de un episodio, o nada si en `budget` segundos no llegó ninguna (`late`: se acabó el tiempo). Lo que
-    /// gane primero contesta y a lo otro ya no se le espera: la búsqueda corre en su propia tarea, que no se detiene al
-    /// cancelarla, y un grupo de tareas se quedaba esperándola hasta el final.
-    nonisolated static func firstSource(_ finder: StreamFinder, id: String, prefs: Preferences, budget: TimeInterval) async -> (Source?, late: Bool) {
-        await withCheckedContinuation { (done: CheckedContinuation<(Source?, late: Bool), Never>) in
-            let once = Once()
-            let lookup = Task {
-                // Solo una que se vea al instante (ya en la caché de Real-Debrid): un enlace sin caché también es http, pero
-                // al tocar el aviso el episodio todavía no se podía ver (un enlace directo, sin Real-Debrid, sí vale). Sin ninguna así, no se avisa y se vuelve a revisar luego.
-                let best = (try? await finder.find(kind: "series", videoID: id, prefs: prefs, fresh: true))?.first(where: { $0.cached || !$0.debrid })
-                if once.claim() { done.resume(returning: (best, false)) }
-            }
-            Task {
-                try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000))
-                if once.claim() { lookup.cancel(); done.resume(returning: (nil, true)) }
             }
         }
     }

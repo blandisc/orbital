@@ -1,72 +1,6 @@
 {
   "sourceLanguage": "es",
   "strings": {
-    "Comprobando…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Checking…"
-          }
-        }
-      }
-    },
-    "Te escucho": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listening"
-          }
-        }
-      }
-    },
-    "Preguntándole a tu Orbital": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Asking your Orbital"
-          }
-        }
-      }
-    },
-    "✓ En la TV": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✓ On the TV"
-          }
-        }
-      }
-    },
-    "Top": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Top"
-          }
-        }
-      }
-    },
-    "Paso": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pass"
-          }
-        }
-      }
-    },
     " y ": {
       "extractionState": "manual",
       "localizations": {
@@ -96,6 +30,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ GB free"
+          }
+        }
+      }
+    },
+    "%@ a tu repisa: %@ de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ on your shelf: %@ of %@"
+          }
+        }
+      }
+    },
+    "%@ con algo puesto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in use"
           }
         }
       }
@@ -195,6 +151,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ free of %@"
+          }
+        }
+      }
+    },
+    "%@ o %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ or %@"
           }
         }
       }
@@ -375,6 +342,17 @@
         }
       }
     },
+    "%lld con algo puesto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld in use"
+          }
+        }
+      }
+    },
     "%lld de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -529,6 +507,28 @@
         }
       }
     },
+    "%lld guardadas en Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld saved to My List"
+          }
+        }
+      }
+    },
+    "%lld guardadas en Tu match perfecto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld saved to Your perfect match"
+          }
+        }
+      }
+    },
     "%lld h": {
       "extractionState": "manual",
       "localizations": {
@@ -591,6 +591,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min"
+          }
+        }
+      }
+    },
+    "%lld min esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min this week"
           }
         }
       }
@@ -800,6 +811,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "+%lld more in %@"
+          }
+        }
+      }
+    },
+    "1 episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 episode"
           }
         }
       }
@@ -1669,6 +1691,17 @@
         }
       }
     },
+    "Ahora mismo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right now"
+          }
+        }
+      }
+    },
     "Ahora no": {
       "extractionState": "manual",
       "localizations": {
@@ -1830,6 +1863,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Before 1980"
+          }
+        }
+      }
+    },
+    "Antes de 1990": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before 1990"
+          }
+        }
+      }
+    },
+    "Antes de las %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends by %@"
           }
         }
       }
@@ -2356,6 +2411,17 @@
         }
       }
     },
+    "Ariel a Mejor película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ariel for Best Picture"
+          }
+        }
+      }
+    },
     "Arrastra el video para subirlo o bajarlo": {
       "extractionState": "manual",
       "localizations": {
@@ -2374,6 +2440,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drag up or down"
+          }
+        }
+      }
+    },
+    "Arrastra la ventana o toca una década": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Drag the window or tap a decade"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Drag the window or tap a decade"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Drag the window or click a decade"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Drag the window or tap a decade"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Arrastra la ventana o toca una década"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Arrastra la ventana o toca una década"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Arrastra la ventana o haz clic en una década"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Arrastra la ventana o toca una década"
+                }
+              }
+            }
           }
         }
       }
@@ -2407,6 +2538,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Up"
+          }
+        }
+      }
+    },
+    "Arriba lo mejor calificado; a la derecha, lo más famoso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best rated at the top; most famous to the right"
           }
         }
       }
@@ -2675,6 +2817,17 @@
         }
       }
     },
+    "Aún nada esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing yet this week"
+          }
+        }
+      }
+    },
     "Aún no hay propuestas": {
       "extractionState": "manual",
       "localizations": {
@@ -2682,6 +2835,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No suggestions yet"
+          }
+        }
+      }
+    },
+    "Aún no llegan tus plataformas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your services haven't loaded yet."
           }
         }
       }
@@ -2715,6 +2879,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "A–Z"
+          }
+        }
+      }
+    },
+    "BAFTA a Mejor película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BAFTA for Best Film"
           }
         }
       }
@@ -2890,6 +3065,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download season"
+          }
+        }
+      }
+    },
+    "Bajar tu archivo de Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download your Letterboxd export"
           }
         }
       }
@@ -3367,6 +3553,28 @@
         }
       }
     },
+    "Bélica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "War"
+          }
+        }
+      }
+    },
+    "Búsqueda avanzada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced search"
+          }
+        }
+      }
+    },
     "Búsquedas recientes": {
       "extractionState": "manual",
       "localizations": {
@@ -3385,6 +3593,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "CH %@"
+          }
+        }
+      }
+    },
+    "Caben %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ fits"
           }
         }
       }
@@ -3614,6 +3833,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rating"
+          }
+        }
+      }
+    },
+    "Calificación en Trakt: %lld por ciento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt rating: %lld percent"
           }
         }
       }
@@ -3970,6 +4200,17 @@
         }
       }
     },
+    "Cerrar el día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close the day"
+          }
+        }
+      }
+    },
     "Cerrar el juego": {
       "extractionState": "manual",
       "localizations": {
@@ -4201,6 +4442,28 @@
         }
       }
     },
+    "Clásicos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classics"
+          }
+        }
+      }
+    },
+    "Clásicos y cine de autor restaurados por Criterion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classics and arthouse films restored by Criterion"
+          }
+        }
+      }
+    },
     "Coincide con tu copia": {
       "extractionState": "manual",
       "localizations": {
@@ -4376,6 +4639,17 @@
         }
       }
     },
+    "Completaste %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You completed %@"
+          }
+        }
+      }
+    },
     "Compresión eficiente: se ve igual y ocupa menos.": {
       "extractionState": "manual",
       "localizations": {
@@ -4398,6 +4672,17 @@
         }
       }
     },
+    "Comprobando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        }
+      }
+    },
     "Con": {
       "extractionState": "manual",
       "localizations": {
@@ -4416,6 +4701,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "With %@"
+          }
+        }
+      }
+    },
+    "Con %@ estrellas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With %@ stars"
+          }
+        }
+      }
+    },
+    "Con %@ estrellas · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With %@ stars · %lld"
           }
         }
       }
@@ -4508,6 +4815,17 @@
         }
       }
     },
+    "Con el día que las viste y tus estrellas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the day you watched them and your stars"
+          }
+        }
+      }
+    },
     "Con ella Orbital puede pedir videos a tu cuenta.": {
       "extractionState": "manual",
       "localizations": {
@@ -4537,6 +4855,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "With the app open it downloads at full speed; with the app closed iOS slows it down a lot. To download fast, keep Orbital open: when you leave, it keeps going on its own, slower."
+          }
+        }
+      }
+    },
+    "Con la misma fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the same date"
+          }
+        }
+      }
+    },
+    "Con premios cuentan el formato, la época y lo que ya viste.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With awards, only format, era and what you've watched apply."
           }
         }
       }
@@ -4809,6 +5149,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Conecta Trakt para crear listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt to create lists"
           }
         }
       }
@@ -5450,6 +5801,17 @@
         }
       }
     },
+    "Cortita": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short"
+          }
+        }
+      }
+    },
     "Coverflow": {
       "extractionState": "manual",
       "localizations": {
@@ -5516,6 +5878,17 @@
         }
       }
     },
+    "Crear una lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a list"
+          }
+        }
+      }
+    },
     "Crimen": {
       "extractionState": "manual",
       "localizations": {
@@ -5523,6 +5896,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Crime"
+          }
+        }
+      }
+    },
+    "Cualquier año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any year"
           }
         }
       }
@@ -5589,6 +5973,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "When there are several"
+          }
+        }
+      }
+    },
+    "Cuando sale un estreno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a new episode comes out"
+          }
+        }
+      }
+    },
+    "Cuando salió cada episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When each episode aired"
           }
         }
       }
@@ -5813,6 +6219,17 @@
         }
       }
     },
+    "De 1950 a hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From 1950 to today"
+          }
+        }
+      }
+    },
     "De Mi media": {
       "extractionState": "manual",
       "localizations": {
@@ -5941,6 +6358,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "For the shows you follow on Trakt. It tells you once it can be watched on Real-Debrid, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; each episode gets its own notification."
+          }
+        }
+      }
+    },
+    "De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the shows you follow on Trakt. It tells you as soon as an episode comes out, even if Real-Debrid doesn't have it yet, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; each episode gets its own notification."
           }
         }
       }
@@ -6547,6 +6975,17 @@
         }
       }
     },
+    "Desconectar Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect Letterboxd"
+          }
+        }
+      }
+    },
     "Desconectar OneDrive": {
       "extractionState": "manual",
       "localizations": {
@@ -6642,6 +7081,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Overnight"
+          }
+        }
+      }
+    },
+    "Desde siempre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All time"
           }
         }
       }
@@ -7182,6 +7632,17 @@
         }
       }
     },
+    "Dónde verla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where to watch"
+          }
+        }
+      }
+    },
     "Dónde verlo": {
       "extractionState": "manual",
       "localizations": {
@@ -7266,6 +7727,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "The code expired. Try again."
+          }
+        }
+      }
+    },
+    "El día que la viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The day you watched it"
+          }
+        }
+      }
+    },
+    "El día que salió": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The day it aired"
+          }
+        }
+      }
+    },
+    "El día que se estrenó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The day it came out"
           }
         }
       }
@@ -7396,6 +7890,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "El episodio anterior tampoco lo has visto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't watched the previous episode either."
           }
         }
       }
@@ -7848,6 +8353,17 @@
         }
       }
     },
+    "Elige en el calendario": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick it on the calendar"
+          }
+        }
+      }
+    },
     "Elige la carpeta de tus películas": {
       "extractionState": "manual",
       "localizations": {
@@ -7964,6 +8480,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Emmy"
+          }
+        }
+      }
+    },
+    "Emmy a Mejor serie de drama": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emmy for Outstanding Drama Series"
           }
         }
       }
@@ -8085,6 +8612,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "On %@"
+          }
+        }
+      }
+    },
+    "En Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On Letterboxd"
+          }
+        }
+      }
+    },
+    "En Letterboxd › Ajustes › Datos › Exportar. Trae tu diario completo, tus calificaciones, tus reseñas y tus listas (también las privadas).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On Letterboxd › Settings › Data › Export. It brings your full diary, ratings, reviews and lists (private ones too)."
           }
         }
       }
@@ -9074,6 +9623,17 @@
         }
       }
     },
+    "Escribe tu usuario de Letterboxd (como aparece en tu perfil)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type your Letterboxd username (as it appears on your profile)"
+          }
+        }
+      }
+    },
     "Escribir en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -9426,6 +9986,39 @@
         }
       }
     },
+    "Este año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year"
+          }
+        }
+      }
+    },
+    "Este año y el pasado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year and last"
+          }
+        }
+      }
+    },
+    "Este mes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This month"
+          }
+        }
+      }
+    },
     "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": {
       "extractionState": "manual",
       "localizations": {
@@ -9744,6 +10337,17 @@
         }
       }
     },
+    "Filtro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
+          }
+        }
+      }
+    },
     "Filtros": {
       "extractionState": "manual",
       "localizations": {
@@ -9762,6 +10366,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search filters"
+          }
+        }
+      }
+    },
+    "Filtros · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters · %lld"
           }
         }
       }
@@ -9876,6 +10491,17 @@
         }
       }
     },
+    "Globo de Oro a Mejor película dramática": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Golden Globe for Best Motion Picture – Drama"
+          }
+        }
+      }
+    },
     "Globos de Oro": {
       "extractionState": "manual",
       "localizations": {
@@ -9982,6 +10608,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Saved to My list"
+          }
+        }
+      }
+    },
+    "Guardada en Tu match perfecto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved to Your perfect match"
           }
         }
       }
@@ -10161,6 +10798,17 @@
         }
       }
     },
+    "Guardaste %lld. Están en tu lista de Trakt «Tu match perfecto».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You saved %lld. They're in your Trakt list “Your perfect match”."
+          }
+        }
+      }
+    },
     "Guardaste %lld. Están en tu lista.": {
       "extractionState": "manual",
       "localizations": {
@@ -10227,6 +10875,17 @@
         }
       }
     },
+    "Género, época, calificación, premios y más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genre, era, rating, awards and more"
+          }
+        }
+      }
+    },
     "Géneros": {
       "extractionState": "manual",
       "localizations": {
@@ -10245,17 +10904,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "HDR · DV"
-          }
-        }
-      }
-    },
-    "HOY": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TODAY"
           }
         }
       }
@@ -10446,6 +11094,17 @@
         }
       }
     },
+    "Historia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
     "Hola": {
       "extractionState": "manual",
       "localizations": {
@@ -10464,6 +11123,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hi, %@"
+          }
+        }
+      }
+    },
+    "Hora a la que quieres terminar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time you want to finish by"
           }
         }
       }
@@ -10519,6 +11189,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No ranking for this service today."
+          }
+        }
+      }
+    },
+    "Hoy, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today, %@"
           }
         }
       }
@@ -10732,6 +11413,17 @@
         }
       }
     },
+    "Intenta de nuevo en un momento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again in a moment"
+          }
+        }
+      }
+    },
     "Intenta de nuevo en un momento.": {
       "extractionState": "manual",
       "localizations": {
@@ -10860,6 +11552,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The previous one didn't respond. Same spot."
+          }
+        }
+      }
+    },
+    "La calificación de TMDB, de 0 a 10": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TMDB rating, 0 to 10"
           }
         }
       }
@@ -11335,6 +12038,17 @@
         }
       }
     },
+    "La vi otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I watched it again"
+          }
+        }
+      }
+    },
     "Larga": {
       "extractionState": "manual",
       "localizations": {
@@ -11342,6 +12056,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Long"
+          }
+        }
+      }
+    },
+    "Las 100 mejores películas del siglo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 100 best movies of the century"
+          }
+        }
+      }
+    },
+    "Las 100 mejores series del siglo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 100 best shows of the century"
           }
         }
       }
@@ -11423,6 +12159,17 @@
         }
       }
     },
+    "Las mejor calificadas por el público de IMDb": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The highest rated by IMDb users"
+          }
+        }
+      }
+    },
     "Las más populares de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -11467,6 +12214,17 @@
         }
       }
     },
+    "Latinoamérica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latin America"
+          }
+        }
+      }
+    },
     "Le dé play": {
       "extractionState": "manual",
       "localizations": {
@@ -11485,6 +12243,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld %% left: plug it in before it shuts down."
+          }
+        }
+      }
+    },
+    "Letterboxd conectado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letterboxd connected"
+          }
+        }
+      }
+    },
+    "Letterboxd no contestó. Intenta de nuevo en un momento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letterboxd didn't answer. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Letterboxd · tus reseñas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letterboxd · your reviews"
           }
         }
       }
@@ -11540,6 +12331,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clear"
+          }
+        }
+      }
+    },
+    "Limpiar la búsqueda avanzada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear advanced search"
+          }
+        }
+      }
+    },
+    "Lista creada en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List created on Trakt"
           }
         }
       }
@@ -11639,6 +12452,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done"
+          }
+        }
+      }
+    },
+    "Listo · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done · %@"
           }
         }
       }
@@ -12050,6 +12874,17 @@
         }
       }
     },
+    "Lo mínimo que quieres": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The minimum you want"
+          }
+        }
+      }
+    },
     "Lo nuevo de lo tuyo": {
       "extractionState": "manual",
       "localizations": {
@@ -12090,6 +12925,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "What Trakt relates to what you watched last"
+          }
+        }
+      }
+    },
+    "Lo que calificaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you rated"
+          }
+        }
+      }
+    },
+    "Lo que califiques en Trakt aparece aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you rate on Trakt shows up here."
           }
         }
       }
@@ -12356,6 +13213,17 @@
         }
       }
     },
+    "Lo que se ve hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's on today"
+          }
+        }
+      }
+    },
     "Lo que sea": {
       "extractionState": "manual",
       "localizations": {
@@ -12586,6 +13454,28 @@
         }
       }
     },
+    "Los %@ episodios anteriores tampoco los has visto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't watched the %@ previous episodes either."
+          }
+        }
+      }
+    },
+    "Los %lld episodios anteriores tampoco los has visto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't watched the %lld previous episodes either."
+          }
+        }
+      }
+    },
     "Los Simpson": {
       "extractionState": "manual",
       "localizations": {
@@ -12718,6 +13608,17 @@
         }
       }
     },
+    "MI LISTA": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MY LIST"
+          }
+        }
+      }
+    },
     "Malcolm": {
       "extractionState": "manual",
       "localizations": {
@@ -12801,6 +13702,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Send a command to your Orbital, like to Alexa: “play The Office”, “pause”, “open Zelda”."
+          }
+        }
+      }
+    },
+    "Mandando a tu Orbital…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending to your Orbital…"
           }
         }
       }
@@ -13164,6 +14076,17 @@
         }
       }
     },
+    "Marcar la temporada como vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark season as watched"
+          }
+        }
+      }
+    },
     "Marcar los sustos en la barra": {
       "extractionState": "manual",
       "localizations": {
@@ -13208,6 +14131,17 @@
         }
       }
     },
+    "Me salté los otros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I skipped the others"
+          }
+        }
+      }
+    },
     "Mediano": {
       "extractionState": "manual",
       "localizations": {
@@ -13215,6 +14149,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Medium"
+          }
+        }
+      }
+    },
+    "Mejor calificada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Better rated"
+          }
+        }
+      }
+    },
+    "Mejor calificadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top rated"
           }
         }
       }
@@ -13237,6 +14193,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Top rated on IMDb"
+          }
+        }
+      }
+    },
+    "Mejor calificadas en Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest rated on Letterboxd"
           }
         }
       }
@@ -13336,6 +14303,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Less known"
+          }
+        }
+      }
+    },
+    "Menos filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewer filters"
           }
         }
       }
@@ -13691,6 +14669,17 @@
         }
       }
     },
+    "Musical": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musical"
+          }
+        }
+      }
+    },
     "Muy buenas y famosas": {
       "extractionState": "manual",
       "localizations": {
@@ -13910,6 +14899,17 @@
         }
       }
     },
+    "Más filtros: origen, premios y estudios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More filters: origin, awards and studios"
+          }
+        }
+      }
+    },
     "Más frases, por tema": {
       "extractionState": "manual",
       "localizations": {
@@ -13965,6 +14965,17 @@
         }
       }
     },
+    "Más nuevas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Newest"
+          }
+        }
+      }
+    },
     "Más opciones": {
       "extractionState": "manual",
       "localizations": {
@@ -13972,6 +14983,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More options"
+          }
+        }
+      }
+    },
+    "Más populares": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular"
           }
         }
       }
@@ -14031,6 +15053,28 @@
         }
       }
     },
+    "NYT · Películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NYT · Movies"
+          }
+        }
+      }
+    },
+    "NYT · Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NYT · Shows"
+          }
+        }
+      }
+    },
     "Nada con %@": {
       "extractionState": "manual",
       "localizations": {
@@ -14038,6 +15082,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing with %@"
+          }
+        }
+      }
+    },
+    "Nada con %@ estrellas en tu historial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing with %@ stars in your history"
+          }
+        }
+      }
+    },
+    "Nada con esa calificación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing with that rating"
           }
         }
       }
@@ -15306,6 +16372,17 @@
         }
       }
     },
+    "No pude leer tu diario de Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't read your Letterboxd diary"
+          }
+        }
+      }
+    },
     "No pude marcar «%@» como vista": {
       "extractionState": "manual",
       "localizations": {
@@ -15471,6 +16548,28 @@
         }
       }
     },
+    "No quiero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not this"
+          }
+        }
+      }
+    },
+    "No recomendar por esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't recommend based on this"
+          }
+        }
+      }
+    },
     "No respondió": {
       "extractionState": "manual",
       "localizations": {
@@ -15555,6 +16654,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "It doesn't renew itself: Orbital warns you before it runs out."
+          }
+        }
+      }
+    },
+    "No sé cuándo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I don't know when"
           }
         }
       }
@@ -15668,6 +16778,17 @@
         }
       }
     },
+    "Not Found": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Found"
+          }
+        }
+      }
+    },
     "Novela": {
       "extractionState": "manual",
       "localizations": {
@@ -15752,6 +16873,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hide what I've watched"
+          }
+        }
+      }
+    },
+    "Ocultar lo que ya viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide what you've watched"
           }
         }
       }
@@ -15965,6 +17097,17 @@
         }
       }
     },
+    "Origen, premios y estudios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origin, awards and studios"
+          }
+        }
+      }
+    },
     "Original": {
       "extractionState": "manual",
       "localizations": {
@@ -16020,6 +17163,17 @@
         }
       }
     },
+    "Otra vista en tu historial, ahora mismo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another play in your history, right now"
+          }
+        }
+      }
+    },
     "Otras": {
       "extractionState": "manual",
       "localizations": {
@@ -16060,6 +17214,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Another"
+          }
+        }
+      }
+    },
+    "Otro día…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another day…"
           }
         }
       }
@@ -16152,6 +17317,17 @@
         }
       }
     },
+    "Palma de Oro de Cannes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannes Palme d'Or"
+          }
+        }
+      }
+    },
     "Pantalla bloqueada": {
       "extractionState": "manual",
       "localizations": {
@@ -16203,6 +17379,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To connect Trakt you need a Trakt API application (trakt.tv/oauth/applications). Paste its identifier here."
+          }
+        }
+      }
+    },
+    "Para echarse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Long one"
           }
         }
       }
@@ -16382,6 +17569,17 @@
         }
       }
     },
+    "Pasarlas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add them"
+          }
+        }
+      }
+    },
     "Pasear por el mosaico": {
       "extractionState": "manual",
       "localizations": {
@@ -16389,6 +17587,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wander the mosaic"
+          }
+        }
+      }
+    },
+    "Paso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pass"
           }
         }
       }
@@ -17173,6 +18382,17 @@
         }
       }
     },
+    "Preguntándole a tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asking your Orbital"
+          }
+        }
+      }
+    },
     "Preguntándole a tu Orbital…": {
       "extractionState": "manual",
       "localizations": {
@@ -17257,6 +18477,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "First episode"
+          }
+        }
+      }
+    },
+    "Primero la región, luego el país": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Region first, then country"
           }
         }
       }
@@ -17602,6 +18833,17 @@
         }
       }
     },
+    "Que acabe antes de las %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends before %@"
+          }
+        }
+      }
+    },
     "Quedan %lld min": {
       "extractionState": "manual",
       "localizations": {
@@ -17631,6 +18873,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "I want something"
+          }
+        }
+      }
+    },
+    "Quita alguno de arriba para ver más opciones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove one above to see more options."
+          }
+        }
+      }
+    },
+    "Quita alguno de arriba para ver más.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove one above to see more."
           }
         }
       }
@@ -17807,6 +19071,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove from your watchlist"
+          }
+        }
+      }
+    },
+    "Quitar de vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from watched"
           }
         }
       }
@@ -18405,6 +19680,17 @@
         }
       }
     },
+    "Regresar a Explorar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to Explore"
+          }
+        }
+      }
+    },
     "Regrésale": {
       "extractionState": "manual",
       "localizations": {
@@ -18478,6 +19764,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Renew it so you don't run out of sources. It doesn't renew on its own."
+          }
+        }
+      }
+    },
+    "Repartido por décadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spread across decades"
           }
         }
       }
@@ -18566,6 +19863,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Player"
+          }
+        }
+      }
+    },
+    "Reseñas en Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviews on Letterboxd"
           }
         }
       }
@@ -18986,6 +20294,17 @@
         }
       }
     },
+    "Salen las que tengan cualquiera de estos géneros, no solo las que tengan todos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows titles with any of these genres, not only those with all of them."
+          }
+        }
+      }
+    },
     "Salir": {
       "extractionState": "manual",
       "localizations": {
@@ -19004,6 +20323,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leave the video"
+          }
+        }
+      }
+    },
+    "Salió un estreno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new episode is out"
           }
         }
       }
@@ -19070,6 +20400,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sci-Fi"
+          }
+        }
+      }
+    },
+    "Se borra de este iPhone lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What came from Letterboxd is removed from this iPad. Your Letterboxd account doesn't change."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What came from Letterboxd is removed from this iPhone. Your Letterboxd account doesn't change."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What came from Letterboxd is removed from this Mac. Your Letterboxd account doesn't change."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What came from Letterboxd is removed from this iPhone. Your Letterboxd account doesn't change."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra de este iPad lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia."
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra de este iPhone lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra de esta Mac lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra de este iPhone lo que se trajo de Letterboxd. Tu cuenta de Letterboxd no cambia."
+                }
+              }
+            }
           }
         }
       }
@@ -19172,6 +20567,17 @@
         }
       }
     },
+    "Se crea en Trakt (privada). Agrégale títulos desde su ficha, con «Guardar en…».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's created on Trakt (private). Add titles from their page with “Save to…”."
+          }
+        }
+      }
+    },
     "Se cumplió tu tiempo": {
       "extractionState": "manual",
       "localizations": {
@@ -19212,6 +20618,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“Watch on TV”, the remote and voice are hidden. What you watched stays: it travels through Trakt."
+          }
+        }
+      }
+    },
+    "Se guarda en tu historial de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved to your Trakt history"
           }
         }
       }
@@ -19507,6 +20924,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "According to (any one):"
+          }
+        }
+      }
+    },
+    "Según The New York Times, votadas por más de 500 creadores": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "According to The New York Times, voted by more than 500 creators"
           }
         }
       }
@@ -20268,6 +21696,17 @@
         }
       }
     },
+    "Sin escribir nombres: encuentra por género, época, calificación, premios y más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No names needed: find by genre, era, rating, awards and more"
+          }
+        }
+      }
+    },
     "Sin ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -20411,6 +21850,17 @@
         }
       }
     },
+    "Sin vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unwatched"
+          }
+        }
+      }
+    },
     "Sin «pídele a mi consola», Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
@@ -20542,6 +21992,17 @@
         }
       }
     },
+    "Solo este": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just this one"
+          }
+        }
+      }
+    },
     "Solo este episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -20549,6 +22010,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Just this episode"
+          }
+        }
+      }
+    },
+    "Solo la temporada %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just season %@"
+          }
+        }
+      }
+    },
+    "Solo la temporada %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just season %lld"
           }
         }
       }
@@ -20571,6 +22054,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "It only looks at the folder you choose next"
+          }
+        }
+      }
+    },
+    "Solo películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies only"
+          }
+        }
+      }
+    },
+    "Solo se lee: tus reseñas salen en Lo que ves y en cada ficha, y tus listas en Explorar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read only: your reviews show up in What you watch and on each title, and your lists in Explore."
           }
         }
       }
@@ -20615,6 +22120,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Forced subtitles only"
+          }
+        }
+      }
+    },
+    "Solo tu usuario: Letterboxd publica tu diario. No pide contraseña y no cambia nada en tu cuenta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just your username: Letterboxd publishes your diary. No password, and nothing changes in your account."
           }
         }
       }
@@ -20905,6 +22421,17 @@
         }
       }
     },
+    "Sus ganadores": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their winners"
+          }
+        }
+      }
+    },
     "Sus pistas: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -21026,6 +22553,17 @@
         }
       }
     },
+    "Sí, márcalos también": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, mark them too"
+          }
+        }
+      }
+    },
     "Sí, va bien": {
       "extractionState": "manual",
       "localizations": {
@@ -21044,6 +22582,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Louder"
+          }
+        }
+      }
+    },
+    "T%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S%@"
           }
         }
       }
@@ -21257,6 +22806,17 @@
         }
       }
     },
+    "Te escucho": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm listening"
+          }
+        }
+      }
+    },
     "Te escucho…": {
       "extractionState": "manual",
       "localizations": {
@@ -21275,6 +22835,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not seen yet"
+          }
+        }
+      }
+    },
+    "Te gustó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You liked it"
           }
         }
       }
@@ -21517,6 +23088,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Times from Where's The Jump"
+          }
+        }
+      }
+    },
+    "Tiene spoilers · Leer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Has spoilers · Read"
           }
         }
       }
@@ -21846,6 +23428,71 @@
         }
       }
     },
+    "Toca los que quieras": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the ones you want"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the ones you want"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click the ones you want"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap the ones you want"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca los que quieras"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca los que quieras"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en los que quieras"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca los que quieras"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Toca otra vez para confirmar": {
       "extractionState": "manual",
       "localizations": {
@@ -22106,6 +23753,71 @@
         }
       }
     },
+    "Toca para elegir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to choose"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to choose"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click to choose"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to choose"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para elegir"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para elegir"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic para elegir"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para elegir"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Toca para quitar": {
       "extractionState": "manual",
       "localizations": {
@@ -22359,6 +24071,71 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Toca una década; toca otra para hacer un rango."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca una esquina del cuadro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a corner of the grid"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a corner of the grid"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click a corner of the grid"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a corner of the grid"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una esquina del cuadro"
+                }
+              },
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una esquina del cuadro"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en una esquina del cuadro"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca una esquina del cuadro"
                 }
               }
             }
@@ -22756,6 +24533,17 @@
         }
       }
     },
+    "Toda la serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The whole series"
+          }
+        }
+      }
+    },
     "Todas": {
       "extractionState": "manual",
       "localizations": {
@@ -22796,6 +24584,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "All sources"
+          }
+        }
+      }
+    },
+    "Todas las ganadoras": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every winner"
+          }
+        }
+      }
+    },
+    "Todas las ganadoras desde %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every winner since %@"
           }
         }
       }
@@ -23205,6 +25015,17 @@
         }
       }
     },
+    "Traer todo tu historial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring in your whole history"
+          }
+        }
+      }
+    },
     "Traje de tu Orbital: %@. No hay que escribirlo aquí.": {
       "extractionState": "manual",
       "localizations": {
@@ -23326,6 +25147,17 @@
         }
       }
     },
+    "Trakt no las aceptó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt didn't accept them"
+          }
+        }
+      }
+    },
     "Trakt respondió HTTP %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -23355,6 +25187,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt: %@"
+          }
+        }
+      }
+    },
+    "Trakt: dirección inválida para %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt: invalid address for %@"
           }
         }
       }
@@ -23764,6 +25607,28 @@
         }
       }
     },
+    "Tu archivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your export"
+          }
+        }
+      }
+    },
+    "Tu archivo, una vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your export, once"
+          }
+        }
+      }
+    },
     "Tu avance en la nube, en todos tus aparatos.": {
       "extractionState": "manual",
       "localizations": {
@@ -23924,6 +25789,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your account is free: you need Premium to watch."
+          }
+        }
+      }
+    },
+    "Tu historial de Letterboxd ya está en Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Letterboxd history is now in Orbital"
           }
         }
       }
@@ -24275,6 +26151,17 @@
         }
       }
     },
+    "Tu match perfecto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your perfect match"
+          }
+        }
+      }
+    },
     "Tu mes": {
       "extractionState": "manual",
       "localizations": {
@@ -24308,6 +26195,17 @@
         }
       }
     },
+    "Tu promedio en Letterboxd: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Letterboxd average: %@"
+          }
+        }
+      }
+    },
     "Tu promedio: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -24326,6 +26224,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your average: %@ stars"
+          }
+        }
+      }
+    },
+    "Tu reseña en Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Letterboxd review"
           }
         }
       }
@@ -24392,6 +26301,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your session ended. Reconnect the account in Settings."
+          }
+        }
+      }
+    },
+    "Tu usuario": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your username"
           }
         }
       }
@@ -24669,6 +26589,28 @@
         }
       }
     },
+    "Tus plataformas en tu país": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your services in your country"
+          }
+        }
+      }
+    },
+    "Tus reseñas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your reviews"
+          }
+        }
+      }
+    },
     "Tus series": {
       "extractionState": "manual",
       "localizations": {
@@ -24790,6 +26732,17 @@
         }
       }
     },
+    "Un año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One year"
+          }
+        }
+      }
+    },
     "Un estreno ya está para ver": {
       "extractionState": "manual",
       "localizations": {
@@ -24808,6 +26761,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "One moment"
+          }
+        }
+      }
+    },
+    "Una de cada década, de 1950 a hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One from each decade, 1950 to today"
+          }
+        }
+      }
+    },
+    "Una de cada época, no solo lo reciente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One from each era, not just recent ones"
           }
         }
       }
@@ -25306,6 +27281,28 @@
         }
       }
     },
+    "Ver más en Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See more on Letterboxd"
+          }
+        }
+      }
+    },
+    "Ver más filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More filters"
+          }
+        }
+      }
+    },
     "Ver qué puedes hacer": {
       "extractionState": "manual",
       "localizations": {
@@ -25350,6 +27347,17 @@
         }
       }
     },
+    "Ver todas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all"
+          }
+        }
+      }
+    },
     "Ver todas las versiones": {
       "extractionState": "manual",
       "localizations": {
@@ -25379,6 +27387,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "See your Wrapped"
+          }
+        }
+      }
+    },
+    "Ver tu perfil": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See your profile"
           }
         }
       }
@@ -25555,6 +27574,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comes inside the file"
+          }
+        }
+      }
+    },
+    "Vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched"
+          }
+        }
+      }
+    },
+    "Vista el %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched on %@"
+          }
+        }
+      }
+    },
+    "Vista el %@ · otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched on %@ · again"
+          }
+        }
+      }
+    },
+    "Vista, sin fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched, no date"
+          }
+        }
+      }
+    },
+    "Viste %lld en Letterboxd que no están en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You watched %lld on Letterboxd that aren't on Trakt"
+          }
+        }
+      }
+    },
+    "Viste 1 en Letterboxd que no está en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You watched 1 on Letterboxd that isn't on Trakt"
           }
         }
       }
@@ -25757,6 +27842,17 @@
         }
       }
     },
+    "Western": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Western"
+          }
+        }
+      }
+    },
     "X-Orbital-Device": {
       "extractionState": "manual",
       "localizations": {
@@ -25889,6 +27985,17 @@
         }
       }
     },
+    "Ya está en tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's on your Orbital"
+          }
+        }
+      }
+    },
     "Ya está en tu Real-Debrid: empieza sin esperar.": {
       "extractionState": "manual",
       "localizations": {
@@ -25966,6 +28073,28 @@
         }
       }
     },
+    "Ya la vi toda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've watched it all"
+          }
+        }
+      }
+    },
+    "Ya la viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've watched it"
+          }
+        }
+      }
+    },
     "Ya la viste: son las pistas de audio del archivo.": {
       "extractionState": "manual",
       "localizations": {
@@ -26010,6 +28139,17 @@
         }
       }
     },
+    "Ya no recomiendo por esta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No more picks based on this"
+          }
+        }
+      }
+    },
     "Ya probaste:": {
       "extractionState": "manual",
       "localizations": {
@@ -26028,6 +28168,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You can watch whatever you want."
+          }
+        }
+      }
+    },
+    "Ya salió": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out now"
           }
         }
       }
@@ -26358,6 +28509,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "more"
+          }
+        }
+      }
+    },
+    "o más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or more"
+          }
+        }
+      }
+    },
+    "o más · TMDB": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or more · TMDB"
           }
         }
       }
@@ -26724,6 +28897,17 @@
         }
       }
     },
+    "¿Cuándo la viste?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When did you watch it?"
+          }
+        }
+      }
+    },
     "¿Cuánto quieres jugar?": {
       "extractionState": "manual",
       "localizations": {
@@ -26735,6 +28919,17 @@
         }
       }
     },
+    "¿Cuánto tiempo tienes?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How much time do you have?"
+          }
+        }
+      }
+    },
     "¿Dejar de usar tu Orbital?": {
       "extractionState": "manual",
       "localizations": {
@@ -26742,6 +28937,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stop using your Orbital?"
+          }
+        }
+      }
+    },
+    "¿Desconectar Letterboxd?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect Letterboxd?"
           }
         }
       }
@@ -26965,6 +29171,17 @@
         }
       }
     },
+    "¿También los anteriores?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The earlier ones too?"
+          }
+        }
+      }
+    },
     "¿Terminaste de verlo?": {
       "extractionState": "manual",
       "localizations": {
@@ -27129,6 +29346,17 @@
         }
       }
     },
+    "Óscar a Mejor película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oscar for Best Picture"
+          }
+        }
+      }
+    },
     "Último scrobble": {
       "extractionState": "manual",
       "localizations": {
@@ -27169,39 +29397,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "− Earlier"
-          }
-        }
-      }
-    },
-    "Mandando a tu Orbital…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sending to your Orbital…"
-          }
-        }
-      }
-    },
-    "Ya está en tu Orbital": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Now on your Orbital"
-          }
-        }
-      }
-    },
-    "Control": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remote"
           }
         }
       }

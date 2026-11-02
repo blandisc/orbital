@@ -295,11 +295,11 @@ struct SettingsView: View {
         .listRowBackground(DS.surface)
     }
 
-    /// «Ya está para ver»: un aviso cuando un episodio de lo que sigues en Trakt ya tiene fuente (no a la hora en que sale).
+    /// «Ya salió»: un aviso en cuanto sale un episodio de lo que sigues en Trakt (tenga o no ya fuente en Real-Debrid).
     @ViewBuilder private func alerts(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            Toggle("Cuando un estreno ya está para ver", isOn: Binding(get: { s.releaseAlerts }, set: { v in
+            Toggle("Cuando sale un estreno", isOn: Binding(get: { s.releaseAlerts }, set: { v in
                 model.update { $0.releaseAlerts = v }
                 guard v else { return }
                 Task {
@@ -312,7 +312,7 @@ struct SettingsView: View {
             .tint(DS.switchOn)
             .accessibilityIdentifier("release-alerts")
         } footer: {
-            Text("De las series que sigues en Trakt. Te avisa cuando ya se puede ver en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")
+            Text("De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")
         }
         .listRowBackground(DS.surface)
         // Lo que cuenta es tu sesión de Trakt en el iPhone. Antes se pedía el Client ID de Ajustes, que quedó vacío desde que

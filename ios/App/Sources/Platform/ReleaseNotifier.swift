@@ -5,7 +5,7 @@ import OrbitalModels
 import UIKit
 @preconcurrency import UserNotifications
 
-/// El aviso «Ya está para ver» en iOS: uno por episodio, siempre (antes tres o más se juntaban en una lista sin botones de cada
+/// El aviso «Ya salió» en iOS (en cuanto sale, tenga o no fuente): uno por episodio, siempre (antes tres o más se juntaban en una lista sin botones de cada
 /// uno, 30 oct). La serie arriba, el episodio y su nombre debajo, y la imagen del episodio (o el fondo de la serie, o su póster)
 /// que se ve en grande al mantenerlo presionado; sus tres botones: Ver, Ver en la TV y Descargar. Los de una misma serie se
 /// apilan juntos. Se revisa al abrir la app y en segundo plano (mejor esfuerzo de iOS).
@@ -47,7 +47,7 @@ enum ReleaseNotifier {
     static let nextAiringKey = "release-next-airing"
 
     /// La bitácora de las revisiones (`Library/Application Support/release-checks.txt`, se lee desde la Mac con `devicectl … copy
-    /// from`): cuándo y desde dónde se revisó, qué faltaba avisar, qué ya tenía fuente, qué no contestó a tiempo y qué se avisó.
+    /// from`): cuándo y desde dónde se revisó, qué faltaba avisar y qué se avisó.
     static let logFile = AppFiles.support.appendingPathComponent("release-checks.txt")
     @MainActor private static func log(_ origin: String, _ parts: [String]) {
         let state = switch UIApplication.shared.applicationState { case .active: "abierta"; case .inactive: "inactiva"; default: "fuera" }
@@ -65,7 +65,7 @@ enum ReleaseNotifier {
             UNNotificationAction(identifier: Action.download, title: Strings.tr("Descargar", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "arrow.down.circle")),
         ].filter { tv || $0.identifier != Action.tv }
         let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
-                                             hiddenPreviewsBodyPlaceholder: Strings.tr("Un estreno ya está para ver", language: language), options: [])
+                                             hiddenPreviewsBodyPlaceholder: Strings.tr("Salió un estreno", language: language), options: [])
         UNUserNotificationCenter.current().getNotificationCategories { existing in
             UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category && $0.identifier != oldGroupCategory }.union([release]))
         }
@@ -76,7 +76,7 @@ enum ReleaseNotifier {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
-    /// Revisa y avisa lo que ya se puede ver. `origin`: quién la pidió (para la bitácora).
+    /// Revisa y avisa lo que ya salió. `origin`: quién la pidió (para la bitácora).
     @MainActor static func check(origin: String = "app") async {
         let env = AppEnvironment.shared
         guard env.services.appSettings.releaseAlerts else { return }
@@ -89,14 +89,13 @@ enum ReleaseNotifier {
         let due = await alerts.due()
         let report = alerts.report
         if let next = report.nextAiring { UserDefaults.standard.set(next, forKey: nextAiringKey) } else { UserDefaults.standard.removeObject(forKey: nextAiringKey) }
-        // Aunque iOS ya esté por cortar, lo que tiene fuente se avisa (sin la imagen, que es lo que tarda).
+        // Aunque iOS ya esté por cortar, lo que salió se avisa (sin la imagen, que es lo que tarda).
         let cut = Task.isCancelled
         if !due.isEmpty {
             await post(due, language: env.services.appSettings.uiLanguage, images: !cut)
             alerts.markSent(due.map(\.id))
         }
-        log(origin, [String(format: "%.1fs", report.seconds), "pendientes=\(report.pending)", "con-fuente=\(report.found)",
-                     "sin-respuesta=\(report.timedOut)", "avisados=\(due.map(\.id))", cut ? "iOS-cortó" : "",
+        log(origin, [String(format: "%.1fs", report.seconds), "pendientes=\(report.pending)", "avisados=\(due.map(\.id))", cut ? "iOS-cortó" : "",
                      report.nextAiring.map { "siguiente=\(ISO8601DateFormatter().string(from: $0))" } ?? ""].filter { !$0.isEmpty })
     }
 
@@ -116,9 +115,9 @@ enum ReleaseNotifier {
             content.title = alert.show
             let episode = Strings.episode(season: alert.season, episode: alert.episode, language: language)
             content.subtitle = alert.episodeTitle.isEmpty ? episode : "\(episode) · \(alert.episodeTitle)"
-            // «Al instante» ya no: todo lo que se avisa se ve al instante (sin eso no se avisa), y era jerga.
-            let facts = [alert.quality, alert.minutes.map { "\($0) min" }].compactMap { $0 }
-            content.body = ([Strings.tr("Ya está para ver", language: language)] + facts).joined(separator: " · ")
+            // En cuanto sale (Fernando, 1 nov 2026): «Ya salió», aunque Real-Debrid todavía no lo tenga.
+            let facts = [alert.minutes.map { "\($0) min" }].compactMap { $0 }
+            content.body = ([Strings.tr("Ya salió", language: language)] + facts).joined(separator: " · ")
             content.threadIdentifier = thread(alert.metaID)
             content.summaryArgument = alert.show
             content.categoryIdentifier = category
