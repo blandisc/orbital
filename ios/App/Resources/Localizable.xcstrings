@@ -1834,6 +1834,17 @@
         }
       }
     },
+    "Ajustar el número": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-tune the number"
+          }
+        }
+      }
+    },
     "Ajustar tiempo": {
       "extractionState": "manual",
       "localizations": {
@@ -3377,6 +3388,17 @@
         }
       }
     },
+    "Buena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good"
+          }
+        }
+      }
+    },
     "Buenas noches": {
       "extractionState": "manual",
       "localizations": {
@@ -3998,6 +4020,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimum Letterboxd rating"
+          }
+        }
+      }
+    },
+    "Calificación · las dos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rating · both"
           }
         }
       }
@@ -7709,6 +7742,28 @@
         }
       }
     },
+    "Dune: Part Two tiene 8.1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dune: Part Two has 8.1"
+          }
+        }
+      }
+    },
+    "Dune: Part Two tiene ★4.4": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dune: Part Two has ★4.4"
+          }
+        }
+      }
+    },
     "Duración": {
       "extractionState": "manual",
       "localizations": {
@@ -8360,6 +8415,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The file name says the language:"
+          }
+        }
+      }
+    },
+    "El público": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audience"
           }
         }
       }
@@ -10355,6 +10421,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Studios"
+          }
+        }
+      }
+    },
+    "Excelente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excellent"
           }
         }
       }
@@ -12489,6 +12566,17 @@
         }
       }
     },
+    "Letterboxd no califica series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letterboxd doesn't rate shows"
+          }
+        }
+      }
+    },
     "Letterboxd no contestó. Intenta de nuevo en un momento.": {
       "extractionState": "manual",
       "localizations": {
@@ -12496,6 +12584,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Letterboxd didn't answer. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Letterboxd · califican más duro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letterboxd · tougher raters"
           }
         }
       }
@@ -13751,6 +13850,17 @@
         }
       }
     },
+    "Los cinéfilos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cinephiles"
+          }
+        }
+      }
+    },
     "Los complementos son buscadores: encuentran versiones de cada película y Real-Debrid te las entrega.": {
       "extractionState": "manual",
       "localizations": {
@@ -14768,6 +14878,17 @@
         }
       }
     },
+    "Millones de votos en TMDB": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Millions of votes on TMDB"
+          }
+        }
+      }
+    },
     "Mini pósters": {
       "extractionState": "manual",
       "localizations": {
@@ -14929,6 +15050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Musical"
+          }
+        }
+      }
+    },
+    "Muy buena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Very good"
           }
         }
       }
@@ -21758,6 +21890,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mute"
+          }
+        }
+      }
+    },
+    "Sin": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
           }
         }
       }
@@ -28601,6 +28744,17 @@
         }
       }
     },
+    "de los cinéfilos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from cinephiles"
+          }
+        }
+      }
+    },
     "de «%@»": {
       "extractionState": "manual",
       "localizations": {
@@ -28608,6 +28762,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "from “%@”"
+          }
+        }
+      }
+    },
+    "del público": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from the audience"
           }
         }
       }

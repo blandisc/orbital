@@ -57,7 +57,7 @@ struct FilterEditor: View {
         case .genre: genre
         case .era: era
         case .length: length
-        case .rating: rating
+        case .rating: FilterRatingEditor(model: model, hue: page.hue)
         case .fame: FameQuadrant(selected: filter.fame) { fame in edit { $0.fame = fame } }
         case .place: places
         case .origin: origin
@@ -157,105 +157,6 @@ struct FilterEditor: View {
         FilterChoice(symbol: symbol, title: title, detail: detail, hue: DS.Filter.lilac, selected: filter.length == value) {
             edit { $0.length = $0.length == value ? .any : value }
         }
-    }
-
-    /// Una sola calificación (Fernando, 31 oct 2026): la de TMDB, que es de donde salen los resultados. El número grande al
-    /// centro, atajos de un toque (6+, 7+, 7.5+, 8+) y el deslizador para lo fino; abajo, de dónde sale.
-    private var rating: some View {
-        let value = Binding(get: { filter.minRating ?? 0 }, set: { v in edit { $0.minRating = v < 1 ? nil : v } })
-        return VStack(spacing: DS.Space.s3) {
-            HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                Image(systemName: "star.fill").font(DS.TextRecipe.section.font).foregroundStyle(page.hue).accessibilityHidden(true)
-                (filter.minRating.map { Text(verbatim: FilterText.number($0)) } ?? Text("Cualquiera")).recipe(.title, color: filter.minRating == nil ? DS.textMuted : DS.text)
-                    .monospacedDigit().contentTransition(.numericText())
-                if filter.minRating != nil { Text("o más").recipe(.footnote, color: DS.textMuted) }
-            }
-            .frame(maxWidth: .infinity)
-            .animation(DS.Motion.fade, value: filter.minRating)
-            HStack(spacing: DS.Space.s2) {
-                ForEach(DS.Filter.ratingPresets, id: \.self) { v in
-                    let on = filter.minRating == v
-                    Button { edit { $0.minRating = $0.minRating == v ? nil : v } } label: {
-                        Text(verbatim: "\(v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : FilterText.number(v))+").recipe(.label, color: on ? DS.text : DS.textMuted).monospacedDigit()
-                            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                            .dsCard(fill: on ? DS.Filter.mintFill : nil)
-                            .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .sensoryFeedback(.selection, trigger: on)
-                    .accessibilityAddTraits(on ? .isSelected : [])
-                    .accessibilityIdentifier("filter-rating-\(FilterText.number(v))")
-                }
-            }
-            Slider(value: value, in: 0...9, step: 0.5) { Text("Calificación mínima") }
-                .tint(page.hue)
-                .accessibilityIdentifier("filter-rating")
-            HStack {
-                Text("Cualquiera").recipe(.caption, color: DS.textMuted)
-                Spacer()
-                Image("rating-tmdb").resizable().scaledToFit().frame(height: DS.Filter.tmdbMark).accessibilityLabel(Text(verbatim: "TMDB"))
-                Spacer()
-                Text(verbatim: "9").recipe(.caption, color: DS.textMuted)
-            }
-            letterboxdRating
-        }
-    }
-
-    /// También en Letterboxd, igual que la de TMDB (Fernando, 1 nov 2026) pero en su escala de 5 estrellas: las estrellas
-    /// grandes al centro, atajos de un toque y el deslizador de media en media. Solo películas (Letterboxd no califica series):
-    /// cada resultado se pregunta ahí.
-    private var letterboxdRating: some View {
-        let value = Binding(get: { filter.minLetterboxd ?? 0 }, set: { v in edit { $0.minLetterboxd = v < 0.5 ? nil : v } })
-        return VStack(spacing: DS.Space.s3) {
-            Divider().padding(.vertical, DS.Space.s2)
-            HStack(alignment: .center, spacing: DS.Space.s2) {
-                LetterboxdMark()
-                (filter.minLetterboxd.map { Text(verbatim: Self.stars($0)) } ?? Text("Cualquiera"))
-                    .recipe(.title, color: filter.minLetterboxd == nil ? DS.textMuted : DS.Letterboxd.leaf)
-                    .contentTransition(.numericText())
-                if filter.minLetterboxd != nil { Text("o más").recipe(.footnote, color: DS.textMuted) }
-            }
-            .frame(maxWidth: .infinity)
-            .animation(DS.Motion.fade, value: filter.minLetterboxd)
-            .accessibilityElement(children: .combine)
-            HStack(spacing: DS.Space.s2) {
-                ForEach(DS.Filter.letterboxdPresets, id: \.self) { v in
-                    let on = filter.minLetterboxd == v
-                    Button { edit { $0.minLetterboxd = $0.minLetterboxd == v ? nil : v } } label: {
-                        Text(verbatim: Self.stars(v)).recipe(.label, color: on ? DS.Letterboxd.leaf : DS.textMuted)
-                            .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                            .dsCard(fill: on ? DS.Filter.mintFill : nil)
-                            .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .sensoryFeedback(.selection, trigger: on)
-                    .accessibilityAddTraits(on ? .isSelected : [])
-                    .accessibilityLabel(Text("\(FilterText.number(v)) estrellas o más en Letterboxd"))
-                    .accessibilityIdentifier("filter-letterboxd-\(FilterText.number(v))")
-                }
-            }
-            Slider(value: value, in: 0...5, step: 0.5) { Text("Calificación mínima en Letterboxd") }
-                .tint(page.hue)
-                .accessibilityIdentifier("filter-letterboxd")
-            HStack {
-                Text("Cualquiera").recipe(.caption, color: DS.textMuted)
-                Spacer()
-                HStack(spacing: DS.Space.s1) { LetterboxdMark(); Text(verbatim: "Letterboxd").recipe(.caption, color: DS.textMuted) }
-                    .accessibilityElement(children: .combine)
-                Spacer()
-                Text(verbatim: "5").recipe(.caption, color: DS.textMuted)
-            }
-            (filter.format == .series ? Text("Con «Series» no cuenta: Letterboxd solo califica películas.") : Text("Solo películas: Letterboxd no califica series."))
-                .recipe(.caption, color: DS.textMuted).frame(maxWidth: .infinity)
-        }
-    }
-
-    /// «★★★★½»: las estrellas de Letterboxd (de media en media).
-    static func stars(_ value: Double) -> String {
-        String(repeating: "★", count: Int(value)) + (value.truncatingRemainder(dividingBy: 1) >= 0.5 ? "½" : "")
     }
 
     @ViewBuilder private var places: some View {

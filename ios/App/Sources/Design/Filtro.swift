@@ -119,11 +119,8 @@ enum FilterText {
         case .before: Text("Antes de las \(clock(f.endsBy, language: language))")
         }
     }
-    static func rating(_ f: AdvancedFilter) -> Text? {
-        let tmdb = f.minRating.map { Text("\(number($0)) o más") }
-        let lb = f.format == .series ? nil : f.minLetterboxd.map { Text("\(number($0)) ★ en Letterboxd") }   // en series no cuenta
-        switch (tmdb, lb) { case let (t?, l?): return Text("\(t) · \(l)"); case let (t?, nil): return t; case let (nil, l?): return l; default: return nil }
-    }
+    /// «Muy buena · 7.5+», «Excelente · ★4.2+» o, con las dos, «7+ y ★3.8+» (`RatingLevels`).
+    static func rating(_ f: AdvancedFilter) -> Text? { RatingLevels.summary(f) }
     static func fame(_ f: AdvancedFilter) -> Text? {
         switch f.fame { case .any: nil; case .gems: Text("Joyas ocultas"); case .classics: Text("Las de siempre"); case .niche: Text("Para pocos"); case .blockbusters: Text("Taquilleras") }
     }

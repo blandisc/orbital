@@ -36,10 +36,7 @@ extension DS {
         static let roseFill = rose.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el rosa de este filtro
         /// El logo de TMDB en el mosaico de Calificación (chico: el número manda).
         static let tmdbMark: CGFloat = 11
-        /// Calificación: los atajos de un toque y el velo verde del elegido.
-        static let ratingPresets: [Double] = [6, 7, 7.5, 8]
-        /// Los atajos de Letterboxd (de 5 estrellas).
-        static let letterboxdPresets: [Double] = [3, 3.5, 4, 4.5]
+        /// Calificación: el velo verde del nivel elegido (los niveles, en `RatingLevels`).
         static let mintFill = mint.opacity(0.18)   // ds-exception: el velo del atajo elegido, en el verde de Calificación
         /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte azul y su orilla (otra cosa que buscar por nombre).
         static let doorIcon: CGFloat = 36
