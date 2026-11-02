@@ -52,10 +52,22 @@ struct FilterResultsView: View {
             .padding(.bottom, DS.Space.s4)
         }
         .overlay {
-            if !model.available {
+            // Los premios vienen con la app: sin la clave de TMDB sí cargan, y el aviso de la clave ya no los tapa.
+            if !model.available, model.filter.awards.isEmpty {
                 DSEmptyState(symbol: "key", title: Text("Falta la clave de TMDB"), message: Text("Agrégala en Ajustes › Avanzado para buscar con filtros."))
+            } else if model.letterboxdDown, model.results.isEmpty {
+                DSEmptyState(symbol: "wifi.slash", title: Text("Letterboxd no contestó. Intenta de nuevo en un momento."), message: Text("Quita las estrellas de Letterboxd para ver los resultados de TMDB."))
             } else if model.failed {
                 DSEmptyState(symbol: "wifi.slash", title: Text("No se pudo cargar"), message: Text("Revisa tu conexión e intenta de nuevo."))
+            } else if let nothing = model.filter.nothing {
+                // No se buscó nada, y se dice por qué (antes, «Nada con esos filtros»).
+                switch nothing {
+                case .noMovieFits:
+                    DSEmptyState(symbol: "clock", title: Text("No cabe ninguna película antes de esa hora"), message: Text("Elige una hora más tarde o busca series."))
+                case .seriesGenres(let titles):
+                    DSEmptyState(symbol: "line.3.horizontal.decrease", title: Text("TMDB no tiene \(ListFormatter.localizedString(byJoining: titles)) en series"),
+                                 message: Text("Busca películas o elige otro género."))
+                }
             } else if model.results.isEmpty, !model.isLoading {
                 DSEmptyState(symbol: "line.3.horizontal.decrease", title: Text("Nada con esos filtros"), message: Text("Quita alguno de arriba para ver más opciones."))
             }
@@ -121,6 +133,10 @@ struct FilterResultsView: View {
         for page in FilterPage.main + FilterPage.more {
             guard let t = FilterText.value(page, context) else { continue }
             out.append(Square(id: page.rawValue, page: page, symbol: page.symbol, title: t) { remove(page) })
+        }
+        // «Mejor calificadas en Letterboxd» con «Todo» deja solo películas: se ve, y tocarlo regresa a «Más populares».
+        if f.sort == .letterboxd, f.format == .all {
+            out.append(Square(id: "letterboxd-sort", page: nil, symbol: "film", title: Text("Solo películas: Letterboxd")) { model.filter.sort = .popular })
         }
         if f.hideWatched {
             out.append(Square(id: "hide-watched", page: nil, symbol: "eye.slash", title: Text("Sin vistas")) { model.filter.hideWatched = false })

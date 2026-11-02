@@ -171,7 +171,9 @@ public struct Tmdb: Sendable {
             kind: kind, tmdbID: raw["id"]?.intValue, imdb: imdb.flatMap { $0.hasPrefix("tt") ? $0 : nil },
             title: (raw["title"]?.nonEmptyString ?? raw["name"]?.nonEmptyString ?? "").trimmingCharacters(in: .whitespaces),
             year: year(raw["release_date"]?.string ?? raw["first_air_date"]?.string), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-            runtime: positive(raw["runtime"]), seasons: raw["number_of_seasons"]?.intValue, episodes: raw["number_of_episodes"]?.intValue,
+            // Una serie no trae `runtime`: lo que dura un capítulo viene en `episode_run_time` o en el último que salió (antes
+            // siempre quedaba sin duración y «Series · Corta» dejaba pasar dramas de una hora).
+            runtime: positive(raw["runtime"]) ?? positive(raw["episode_run_time"]?.array?.first) ?? positive(raw["last_episode_to_air"]?["runtime"]), seasons: raw["number_of_seasons"]?.intValue, episodes: raw["number_of_episodes"]?.intValue,
             poster: Tmdb.image(raw["poster_path"]), backdrop: Tmdb.image(raw["backdrop_path"], size: "w1280"))
     }
 

@@ -32,6 +32,8 @@ public final class AdvancedFilterModel: ObservableModel {
     public private(set) var results: [Suggestion] = [] { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var failed = false { didSet { changed() } }
+    /// Letterboxd no contestó (ninguna película trajo su promedio): los resultados lo dicen en vez de «Nada con esos filtros».
+    public private(set) var letterboxdDown = false { didSet { changed() } }
     /// Ya no hay más páginas.
     public private(set) var exhausted = false
     private var page = 0
@@ -65,7 +67,7 @@ public final class AdvancedFilterModel: ObservableModel {
     /// Busca desde la primera página con el filtro de ahora (si es el mismo de la última vez, no vuelve a pedir).
     public func search() async {
         guard searched != filter || results.isEmpty else { return }
-        searched = filter; page = 0; exhausted = false; results = []; failed = false
+        searched = filter; page = 0; exhausted = false; results = []; failed = false; letterboxdDown = false
         if filter.hideWatched, let watchedSource { watched = await watchedSource() }
         await more()
     }
@@ -124,6 +126,9 @@ public final class AdvancedFilterModel: ObservableModel {
             if asked.usesLetterboxd, !held.isEmpty {
                 let averages = await Letterboxd(http: services.http, kv: services.kv).averages(held.map(\.imdb))
                 guard asked.withoutClock == filter.withoutClock else { return }
+                // Ni una con su promedio: Letterboxd no contestó (o pidió verificación). Se dice, en vez de tirarlas todas
+                // como si fueran de 0 estrellas y decir «Nada con esos filtros».
+                if averages.isEmpty { letterboxdDown = true; failed = results.isEmpty; return }
                 let rated = held.map { s in var s = s; s.letterboxdRating = averages[s.imdb]; return s }
                     .filter { s in asked.minLetterboxd.map { min in (s.letterboxdRating ?? 0) >= min } ?? true }
                 // Cada página en orden de Letterboxd, abajo de lo que ya ves (reordenar todo movería lo que estás viendo).
@@ -137,7 +142,9 @@ public final class AdvancedFilterModel: ObservableModel {
     /// Quitar todo (el «Limpiar» del cajón).
     public func clear() {
         var fresh = AdvancedFilter()
-        fresh.region = filter.region; fresh.hideWatched = filter.hideWatched; fresh.sort = filter.sort   // tus preferencias se quedan
+        fresh.region = filter.region; fresh.hideWatched = filter.hideWatched   // tus preferencias se quedan
+        // El orden también, salvo el de Letterboxd: ese deja solo películas y, escondido, parecía que faltaban las series.
+        fresh.sort = filter.sort == .letterboxd ? .popular : filter.sort
         filter = fresh; results = []; searched = nil; count = nil
     }
 

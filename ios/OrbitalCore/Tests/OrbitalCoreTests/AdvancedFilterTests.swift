@@ -99,7 +99,46 @@ final class AdvancedFilterTests: XCTestCase {
         f.countries = ["MX", "ES"]; f.studios = [41077, 3]
         XCTAssertEqual(dict(f.params(kind: "movie"))["with_origin_country"], "ES|MX")
         XCTAssertEqual(dict(f.params(kind: "movie"))["with_companies"], "3|41077")
-        XCTAssertNil(dict(f.params(kind: "series"))["with_companies"])
+        XCTAssertEqual(dict(f.params(kind: "series"))["with_companies"], "3|41077", "las series también por estudio (antes salían de cualquiera)")
+    }
+
+    /// «Que acabe antes de las…» con menos de una hora: no se piden películas; con «Películas», no se busca y se dice por qué.
+    func testAntesDeLasSinTiempoParaUnaPelicula() {
+        var f = AdvancedFilter()
+        f.length = .before; f.endsBy = 23.5; f.nowMinute = 22 * 60 + 50
+        XCTAssertTrue(f.noMovieFits)
+        XCTAssertEqual(f.kinds, ["series"])
+        f.format = .movie
+        XCTAssertEqual(f.kinds, [])
+        XCTAssertEqual(f.nothing, .noMovieFits)
+        f.nowMinute = 20 * 60
+        XCTAssertFalse(f.noMovieFits)
+        XCTAssertEqual(f.kinds, ["movie"])
+    }
+
+    /// En series, Acción y Aventura son un solo género: pedir uno y quitar el otro ya no deja cero series.
+    func testParejaDeGenerosEnSeries() {
+        var f = AdvancedFilter()
+        f.genres = ["accion"]; f.excluded = ["aventura"]
+        let p = dict(f.params(kind: "series"))
+        XCTAssertEqual(p["with_genres"], "10759")
+        XCTAssertFalse((p["without_genres"] ?? "").split(separator: ",").contains("10759"))
+        XCTAssertEqual(dict(f.params(kind: "movie"))["without_genres"], "12", "en películas sí se quita Aventura")
+    }
+
+    /// «Series + Terror»: no se busca y los resultados dicen que TMDB no tiene Terror en series.
+    func testSeriesConGeneroSoloDePeliculasDiceElPorque() {
+        var f = AdvancedFilter()
+        f.format = .series; f.genres = ["terror"]
+        XCTAssertEqual(f.nothing, .seriesGenres(["Terror"]))
+    }
+
+    /// «Repartido por décadas» desde 1900: empieza en 1900 (antes se brincaba hasta 1950).
+    func testRepartidoDesdeAntesDe1950() {
+        var f = AdvancedFilter()
+        f.years = AdvancedFilter.classics; f.spread = true
+        XCTAssertEqual(f.decades.first, 1900...1909)
+        XCTAssertEqual(f.decades.last, 1980...1989)
     }
 
     func testDiscoverIntercalaPeliculasYSeries() async throws {
@@ -202,5 +241,19 @@ final class AdvancedFilterTests: XCTestCase {
         let back = try JSONDecoder().decode(AdvancedFilter.self, from: JSONEncoder().encode(f))
         XCTAssertEqual(back.minLetterboxd, 3.5)
         XCTAssertEqual(back.sort, .letterboxd)
+    }
+}
+
+/// La ficha de una serie trae lo que dura un capítulo (TMDB no manda `runtime` en series).
+final class TmdbSeriesRuntimeTests: XCTestCase {
+    func testLaSerieTraeLaDuracionDelCapitulo() async throws {
+        let http = FakeHTTP()
+        let tmdb = Tmdb(http: http, key: "K")
+        http.prefix["https://api.themoviedb.org/3/tv/7?"] = ["id": 7, "name": "Una", "external_ids": ["imdb_id": "tt7"], "episode_run_time": .array([.int(48)])]
+        http.prefix["https://api.themoviedb.org/3/tv/8?"] = ["id": 8, "name": "Otra", "external_ids": ["imdb_id": "tt8"], "episode_run_time": .array([]), "last_episode_to_air": ["runtime": 22]]
+        let a = try await tmdb.details(kind: "series", tmdbID: 7)
+        let b = try await tmdb.details(kind: "series", tmdbID: 8)
+        XCTAssertEqual(a.runtime, 48)
+        XCTAssertEqual(b.runtime, 22, "si no hay, la del último capítulo")
     }
 }

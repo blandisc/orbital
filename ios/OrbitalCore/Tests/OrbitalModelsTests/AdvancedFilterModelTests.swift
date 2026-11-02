@@ -106,6 +106,9 @@ final class AdvancedFilterModelTests: XCTestCase {
         XCTAssertEqual(model.filter.region, "ES", "tu país se queda")
         XCTAssertFalse(model.filter.hideWatched, "y si ocultas lo visto")
         XCTAssertEqual(model.filter.sort, .rating, "y el orden")
+        model.filter.sort = .letterboxd
+        model.clear()
+        XCTAssertEqual(model.filter.sort, .popular, "salvo el de Letterboxd, que escondía las series")
         XCTAssertTrue(model.results.isEmpty)
         XCTAssertNil(model.total)
     }
@@ -206,5 +209,18 @@ final class AdvancedFilterModelTests: XCTestCase {
         await model.search()
         XCTAssertEqual(model.count, FilterCount(movies: 860, series: 380))
         XCTAssertEqual(model.total, 1240)
+    }
+
+    /// Si Letterboxd no contesta, se dice: antes se tiraban todas como de 0 estrellas y salía «Nada con esos filtros».
+    func testLetterboxdQueNoContestaSeDice() async throws {
+        let rig = try ServicesRig(tmdbKey: "K")
+        stockTMDB(rig)
+        let model = AdvancedFilterModel(rig.services, watched: { [] })
+        var f = movies(); f.minLetterboxd = 3
+        model.filter = f
+        await model.search()
+        XCTAssertTrue(model.letterboxdDown)
+        XCTAssertTrue(model.failed)
+        XCTAssertTrue(model.results.isEmpty)
     }
 }

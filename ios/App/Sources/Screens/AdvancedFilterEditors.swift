@@ -137,7 +137,7 @@ struct FilterEditor: View {
                 lengthChoice(.long, "tortoise", Text("Para echarse"), series ? Text("50 min o más") : Text("2 h 10 o más"))
             }
             FilterChoice(symbol: "moon.zzz", title: Text("Que acabe antes de las \(FilterText.clock(filter.endsBy, language: context.language))"),
-                         detail: Text("Caben \(Strings.duration(filter.minutesLeft))"), hue: DS.Filter.lilac, selected: filter.length == .before) {
+                         detail: filter.noMovieFits ? Text("Caben \(Strings.duration(filter.minutesLeft)): solo series") : Text("Caben \(Strings.duration(filter.minutesLeft))"), hue: DS.Filter.lilac, selected: filter.length == .before) {
                 model.refreshClock()
                 edit { $0.length = $0.length == .before ? .any : .before }
             }

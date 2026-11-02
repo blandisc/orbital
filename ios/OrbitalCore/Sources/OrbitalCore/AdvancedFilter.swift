@@ -87,11 +87,14 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     }
     public var isEmpty: Bool { activeCount == 0 }
 
-    /// Qué tipos se buscan: los dos, o solo uno. Estudios y «Taquilleras» son de películas.
+    /// Qué tipos se buscan: los dos, o solo uno. «Taquilleras» son de películas.
     public var kinds: [String] {
         // Si todos los géneros que elegiste no existen en series (Terror, Romance…), no se buscan series: antes «Series +
         // Terror» pedía las series sin género y salían todas.
         let onlyMovieGenres = !genres.isEmpty && moviesOnlyGenres.count == genres.count
+        // «Que acabe antes de las…» con menos de una hora: no cabe ninguna película (antes se pedían películas de 60 minutos
+        // o más y de 40 o menos a la vez, y salía «Nada con esos filtros» sin decir por qué).
+        if noMovieFits { return format == .movie || usesLetterboxd || fame == .blockbusters || onlyMovieGenres ? [] : ["series"] }
         if usesLetterboxd { return ["movie"] }   // Letterboxd no califica series
         switch format {
         case .movie: return ["movie"]
@@ -100,6 +103,23 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
             // Taquilleras son películas.
             return fame == .blockbusters || onlyMovieGenres ? ["movie"] : ["movie", "series"]
         }
+    }
+
+    /// Con «Que acabe antes de las…», ya no cabe ninguna película (falta menos de una hora).
+    public var noMovieFits: Bool { length == .before && minutesLeft < Self.featureMinutes }
+
+    /// Por qué no se busca nada (los resultados lo dicen en vez de «Nada con esos filtros»).
+    public enum Nothing: Equatable, Sendable {
+        /// «Series» con géneros que TMDB no tiene en series (Terror, Romance…).
+        case seriesGenres([String])
+        /// No cabe ninguna película antes de esa hora.
+        case noMovieFits
+    }
+    public var nothing: Nothing? {
+        guard kinds.isEmpty, awards.isEmpty else { return nil }
+        if noMovieFits { return .noMovieFits }
+        let titles = moviesOnlyGenres.map(\.title)
+        return titles.isEmpty ? nil : .seriesGenres(titles)
     }
 
     /// Los minutos de cada largo (en series se mide el capítulo).
@@ -143,8 +163,10 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
 
     /// Las décadas de «Repartido por décadas»: las del rango (o de 1950 a hoy), cada una recortada al rango.
     public var decades: [ClosedRange<Int>] {
+        // Con años elegidos se empieza en el primero aunque sea antes de 1950 (antes «Clásicos», 1900–1989, se brincaba lo
+        // de antes de 1950); sin años, de 1950 a hoy.
         let range = years ?? Self.firstYear...currentYear
-        let lo = max(range.lowerBound, Self.firstYear), hi = range.upperBound
+        let lo = range.lowerBound, hi = range.upperBound
         guard lo <= hi else { return [range] }
         return stride(from: lo / 10 * 10, through: hi, by: 10).map { max($0, lo)...min($0 + 9, hi) }
     }
@@ -165,6 +187,9 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         let wanted = Tmdb.filterGenres.filter { genres.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
         var unwanted = Tmdb.filterGenres.filter { excluded.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
         if series {
+            // En series Acción y Aventura son un solo género (10759), y Ciencia ficción y Fantasía otro (10765): quitar uno de la
+            // pareja quitaba también el que pediste y salían cero series.
+            unwanted.removeAll { wanted.contains($0) }
             unwanted += Self.tvFiller
             if !genres.contains("familia"), !genres.contains("animacion") { unwanted.append(Self.tvKids) }
         }
@@ -190,7 +215,8 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
             }
         }
         if !countries.isEmpty { p.append(("with_origin_country", countries.sorted().joined(separator: "|"))) }
-        if !series, !studios.isEmpty { p.append(("with_companies", studios.sorted().map(String.init).joined(separator: "|"))) }
+        // También en series (TMDB las filtra igual por productora): antes con «Todo» o «Series» salían series de cualquier estudio.
+        if !studios.isEmpty { p.append(("with_companies", studios.sorted().map(String.init).joined(separator: "|"))) }
         // El piso de votos es lo que separa lo que la gente ve de las rarezas: con 25 salían títulos de moda en otro país y
         // con «Mejor calificadas» ganaban especiales con tres votos de 10. Lo popular pide 100 (series 50); lo mejor calificado,
         // 300 (series 200), como el «Top Rated» de TMDB. De un país chico o recién estrenado, mucho menos.
