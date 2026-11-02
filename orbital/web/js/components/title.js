@@ -298,8 +298,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
-  const SECONDARY_ORDER = ["restart", "mylist", "trailer", "rate", "watched", "follow", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
-  const SECONDARY_SHOWN = 4;
+  const SECONDARY_ORDER = ["restart", "mylist", "follow", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
+  const SECONDARY_SHOWN = 5; // una serie con Trakt: Guardar, Tráiler, Calificar, Vista y la campana, todos a la vista
 
   function arrange(all) {
     const primary = all.filter((b) => b.primary);
