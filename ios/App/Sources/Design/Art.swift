@@ -31,9 +31,13 @@ struct BleedArt<Content: View>: View {
     /// Cuánto se subió el arte por encima de su lugar (la ficha lo sube detrás de la barra): en reposo no cuenta como
     /// desplazado (si no, al abrir ya se veía corrido hacia abajo y con el logo desvanecido).
     var raised: CGFloat = 0
+    /// El arte respira: si te quedas, se acerca un poco muy despacio y se queda (un solo tramo, como la TV). Quieto con
+    /// «Reducir movimiento» y en modo de bajo consumo.
+    var breathes = true
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breath: CGFloat = 1
 
     var body: some View {
         // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se
@@ -70,7 +74,18 @@ struct BleedArt<Content: View>: View {
     private var art: some View {
         TallArtPicker(key: tall, wide: url, tallBox: aspect.map { Double($0) < ArtFit.tallBelow } ?? false) { art, wide in
             PosterView(url: art, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed, fallback: wide ?? fallback)
+                .scaleEffect(breath)
         }
+            .task(id: url) {
+                breath = 1
+                guard breathes, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+                #if DEBUG
+                if Demo.noIdle { return }   // las pruebas de interfaz esperan a que la app esté quieta
+                #endif
+                try? await Task.sleep(for: .seconds(DS.TitleHero.breatheDelay))   // primero que se asiente lo que acaba de abrir
+                guard !Task.isCancelled else { return }
+                withAnimation(DS.Motion.breathe) { breath = DS.TitleHero.breatheScale }
+            }
             // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
             .overlay(ArtVeil(at: DS.Backdrop.scrimStart))
             .overlay(alignment: .top) {

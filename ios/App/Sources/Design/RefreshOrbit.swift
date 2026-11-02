@@ -37,18 +37,49 @@ struct RefreshOrbit: View {
     }
 }
 
+/// Cuánto se jala y si está actualizando: lo lleva la lista (`orbitalRefreshable`) y lo pinta su hueco (`RefreshOrbitSlot`).
+@MainActor @Observable final class RefreshPull {
+    /// 0…1 hacia el umbral, y los puntos jalados.
+    var pull: CGFloat = 0
+    var distance: CGFloat = 0
+    var refreshing = false
+}
+
+/// El hueco de la luna, detrás del contenido de la lista (no alrededor de la lista: una capa encima o detrás de ella le impedía
+/// a iOS esconder la barra de búsqueda al desplazar). Mientras jalas, la luna va al centro del espacio que se abre arriba; mientras
+/// actualiza, el contenido baja un poco y la luna gira en ese hueco.
+private struct RefreshOrbitHost: ViewModifier {
+    @Environment(RefreshPull.self) private var state: RefreshPull?
+
+    func body(content: Content) -> some View {
+        let refreshing = state?.refreshing ?? false
+        content
+            .padding(.top, refreshing ? DS.Refresh.slot : 0)
+            // Detrás del contenido (una capa encima, aunque vacía, se comía el arrastre de las filas de Inicio).
+            .background(alignment: .top) {
+                if let state, state.pull > 0 || refreshing {
+                    RefreshOrbit(pull: state.pull, refreshing: refreshing)
+                        .offset(y: refreshing ? DS.Space.s2 : -(state.distance + DS.Refresh.mark) / 2)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+}
+
 private struct OrbitalRefreshable: ViewModifier {
     let action: @Sendable () async -> Void
-    @State private var pull: CGFloat = 0
+    @State private var state = RefreshPull()
     @State private var armed = false
-    @State private var refreshing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
+            .environment(state)
             // Cuánto se jala por encima del inicio (en puntos), sin contar la barra de arriba.
             .onScrollGeometryChange(for: CGFloat.self) { geo in max(0, -(geo.contentOffset.y + geo.contentInsets.top)) } action: { _, distance in
-                pull = min(1, distance / DS.Refresh.threshold)
-                if distance >= DS.Refresh.threshold, !refreshing { armed = true }
+                state.distance = distance
+                state.pull = min(1, distance / DS.Refresh.threshold)
+                if distance >= DS.Refresh.threshold, !state.refreshing { armed = true }
             }
             // Se actualiza al soltar (no en cuanto llega al umbral, como el sistema): da tiempo de arrepentirse.
             .onScrollPhaseChange { _, phase in
@@ -56,27 +87,24 @@ private struct OrbitalRefreshable: ViewModifier {
                 armed = false
                 start()
             }
-            .overlay(alignment: .top) {
-                RefreshOrbit(pull: pull, refreshing: refreshing)
-                    .padding(.top, DS.Space.s2)
-                    .opacity(pull > 0 || refreshing ? 1 : 0)
-                    .allowsHitTesting(false)
-            }
             .sensoryFeedback(.impact(flexibility: .soft), trigger: armed) { old, new in !old && new }   // llegaste al umbral
             .accessibilityAction(named: Text("Actualizar")) { start() }
     }
 
     private func start() {
-        guard !refreshing else { return }
-        refreshing = true
+        guard !state.refreshing else { return }
+        withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { state.refreshing = true }
         Task {
             await action()
-            withAnimation(DS.Motion.fade) { refreshing = false }
+            withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { state.refreshing = false }
         }
     }
 }
 
 extension View {
-    /// Tirar para actualizar con la marca de Orbital (`RefreshOrbit`), en lugar de `.refreshable`.
+    /// Tirar para actualizar con la marca de Orbital (`RefreshOrbit`), en lugar de `.refreshable`, en la lista. Su contenido
+    /// lleva `.refreshOrbitHost()`, donde se pinta la luna.
     func orbitalRefreshable(_ action: @escaping @Sendable () async -> Void) -> some View { modifier(OrbitalRefreshable(action: action)) }
+    /// Donde se pinta la luna de `orbitalRefreshable`: el contenido de la lista (lo de adentro del `ScrollView`).
+    func refreshOrbitHost() -> some View { modifier(RefreshOrbitHost()) }
 }

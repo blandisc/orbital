@@ -69,6 +69,7 @@ struct RepisaView: View {
                 shelf(Text("Premios"), symbol: "trophy", model.collections.filter { $0.family == .award }, model)
                 shelf(Text("Listas famosas"), symbol: "list.star", model.collections.filter { $0.family == .list }, model)
             }
+            .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.horizontal, DS.Space.gutter)
             .padding(.bottom, DS.Layout.screenBottom)
         }

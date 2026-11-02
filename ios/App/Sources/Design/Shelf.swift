@@ -38,6 +38,7 @@ struct Shelf<Content: View>: View {
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .edgeBump()   // al final de la fila, un golpe suave en la mano
         }
     }
 

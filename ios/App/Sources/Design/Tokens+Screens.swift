@@ -73,6 +73,8 @@ extension DS {
     /// poco atrás, se encoge apenas, se oscurece hacia el color del fondo con un degradado que sube desde abajo, se difumina
     /// al final y se desvanece; el logo y la frase se van antes (no se quedan detrás de los datos).
     enum TitleHero {
+        /// El arte que respira (ficha y portada de Inicio): espera esto y se acerca a esta escala (3 %, como la TV).
+        static let breatheDelay: Double = 1.5, breatheScale: CGFloat = 1.03
         /// El velo de arriba de la ficha (el arte llega sólido hasta arriba): cubre el reloj y la barra.
         static let topVeil: CGFloat = 150
         /// Parallax (parte del desplazamiento que se queda atrás), cuánto se encoge y el desenfoque máximo (desde qué progreso).
@@ -252,6 +254,8 @@ extension DS {
         static let star: CGFloat = 26, starInline: CGFloat = 17, gap = DS.Space.s1
         /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).
         static let dragStart: CGFloat = 8
+        /// La onda al calificar: cada estrella empieza esto después de la anterior, crece a esta escala y su toque es así de suave.
+        static let waveStep: Double = 0.06, wavePop: CGFloat = 1.3, waveIntensity: Double = 0.6
         /// Las estrellas de un capítulo visto (bajo su texto, en la lista de la serie) y el alto que le suman al renglón.
         static let starEpisode: CGFloat = 15, episodeRow: CGFloat = 22
         /// Cuánto se queda el recordatorio a la vista antes de irse solo (vuelve la próxima vez que abras la app).

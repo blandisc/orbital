@@ -260,6 +260,17 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     enum Refresh {
         static let mark: CGFloat = 34, moon: CGFloat = 6, orbit: CGFloat = 0.5, orbitSquash: CGFloat = 0.4
         static let lap: Double = 1.1, threshold: CGFloat = 80, startScale: CGFloat = 0.6
+        /// El hueco que se abre arriba mientras actualiza (la marca y su aire).
+        static let slot: CGFloat = 50
+    }
+
+    /// El arte con cuerpo (`Tiltable`) y el póster que se hunde (`PosterPress`): cuánto hay que mantener antes de inclinar,
+    /// cuánto movimiento llega al tope, el tope en grados, la perspectiva, lo que se encoge agarrado, el brillo (opacidad y lo
+    /// que recorre) y el hundido del póster al tocarlo (97 %, como la TV).
+    enum Tilt {
+        static let hold: Double = 0.25, reach: CGFloat = 140, maxDegrees: Double = 9, perspective: CGFloat = 0.5, held: CGFloat = 0.98
+        static let shine: Double = 0.28, shineTravel: CGFloat = 160
+        static let pressed: CGFloat = 0.97
     }
 
     // MARK: Movimiento (sin movimiento con «Reducir movimiento»)
@@ -278,8 +289,14 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
         static let fade: Animation = .easeInOut(duration: DesignTokens.Motion.base)
+        /// El arte que respira: parejo y muy lento (16 s, como la TV), para que no se note que se mueve, solo que está vivo.
+        static let breathe: Animation = .linear(duration: 16)
         /// Lo que se va de una fila (lo que terminaste de ver) se encoge a esto mientras se desvanece.
         static let leaveScale: CGFloat = 0.85
+        /// Los estantes que llegan: suben esto, cada uno este tiempo después del anterior, y a partir del quinto ya no esperan más.
+        static let entranceRise: CGFloat = 16, entranceStep: Double = 0.06, entranceMax = 4
+        /// Cuánto hay que empujar más allá de la orilla de una fila para el golpe en la mano, y qué tan fuerte.
+        static let edgeOverscroll: CGFloat = 24, edgeIntensity: Double = 0.7
         /// Avance parejo, sin acelerar ni frenar: un anillo de progreso que se llena.
         static let steady: Animation = .linear(duration: DesignTokens.Motion.slow)
         /// Un salto corto y firme, sin rebote: algo que se acomoda en su lugar (una carta que vuelve, un riel que se reordena).

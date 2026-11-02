@@ -70,6 +70,7 @@ struct BrowseView: View {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
+            .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Layout.screenBottom)
         }

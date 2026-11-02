@@ -220,6 +220,14 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | Color del arte | Fundido de 0.7 s al cambiar lo que está al frente (las duraciones son las de la TV: 140 · 220 · 320 · 520 · 700 ms) |
 | Empezar a ver | Toque háptico suave |
 | Selección (carrusel, temporadas, Mi lista) | `sensoryFeedback(.selection)` |
+| Tarjeta → reproductor | Zoom nativo desde la tarjeta de «Seguir viendo» o el arte de la ficha; al cerrar regresa a ella (`PlayerZoom.swift`) |
+| El arte respira | La ficha y la portada se acercan 3 % en 16 s, un solo tramo (`BleedArt.breathes`, `DS.TitleHero.breathe*`); quieto con «Reducir movimiento», bajo consumo y `-demo-no-idle` |
+| Póster con cuerpo | Se hunde al 97 % al tocarlo (`PosterPress`, el único estilo de botón propio: `ds-exception`); en la ficha, mantener y mover inclina el arte con un brillo (`tiltable()`). No va en la portada: su gesto le ganaba al deslizar la fila de abajo |
+| Entradas | Las filas de Inicio y los estantes de Explorar entran escalonados la primera vez de la sesión (`entrance(_:order:)`) |
+| Palomita de «Visto» | Se dibuja al marcar, con toque de «listo» (`WatchedMark`) |
+| Calificar | Las estrellas se llenan en onda con un toque por estrella (`RatingStars`) |
+| Tirar para actualizar | La luna de Orbital (`orbitalRefreshable` en la lista y `refreshOrbitHost()` en su contenido; nunca una capa alrededor de la lista: le quita a iOS esconder la barra de búsqueda) |
+| Orilla de una fila | Golpe suave al empujar más allá del final (`edgeBump()`) |
 
 Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos; la ficha solo se oscurece y se desvanece (sin parallax, encogerse, difuminado, degradado que sube ni estirarse).
 

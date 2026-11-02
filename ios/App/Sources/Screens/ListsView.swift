@@ -152,7 +152,9 @@ struct ListsView: View {
                     }
                     if walls.isEmpty, model.shelves.isEmpty, model.isLoading { HeroSkeleton() }   // la primera vez, mientras llega
                     VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                    ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
+                    ForEach(Array(generalShelves.enumerated()), id: \.element.id) { i, plan in
+                        shelf(plan).entrance("shelf:" + plan.id, order: i).id(plan.id).perfTag("paraTi.shelf")   // entran escalonados
+                    }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
                         // En panorámicas (otro formato: se reconoce sin leerla), con la plataforma en la esquina.
@@ -178,6 +180,7 @@ struct ListsView: View {
                 // Cada colección es una sección: 40 entre rótulos, medido desde el reflejo (decisión 2, 31 oct 2026).
                 if restReady { rest }
             }
+            .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Layout.screenTop)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
             .padding(.bottom, DS.Layout.screenBottom)   // aire bajo la última fila: la barra de pestañas no la tapa
         }

@@ -106,6 +106,7 @@ struct HomeView: View {
                 // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
                 if kind != "movie", !model.timeline.isEmpty {
                     ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
+                        .entrance("home:timeline", order: 0)   // las filas de abajo entran escalonadas
                 }
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
@@ -113,14 +114,16 @@ struct HomeView: View {
                         // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
                         ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
                     }
+                    .entrance("home:picks", order: 1)
                 }
-                HomeBecause(model: because.model, kind: kind)
-                if kind != "movie" { HomeChannels(model: channels.model) }   // solo series
+                HomeBecause(model: because.model, kind: kind).entrance("home:because", order: 2)
+                if kind != "movie" { HomeChannels(model: channels.model).entrance("home:channels", order: 3) }   // solo series
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
-                if model.hasAnyTop { topTen(model) }
-                if !pending.isEmpty { watchlist(model, items: pending) }
+                if model.hasAnyTop { topTen(model).entrance("home:top", order: 4) }
+                if !pending.isEmpty { watchlist(model, items: pending).entrance("home:watchlist", order: 5) }
                 // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
             }
+            .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
@@ -294,7 +297,7 @@ struct HomeView: View {
         return ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                    hero(s).containerRelativeFrame(.horizontal).id(i)
+                    hero(s).containerRelativeFrame(.horizontal).id(i)   // mantener y mover: la portada se inclina
                 }
             }
             .scrollTargetLayout()
@@ -412,6 +415,7 @@ struct HomeView: View {
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .scrollClipDisabled()
+            .edgeBump()
         }
     }
 

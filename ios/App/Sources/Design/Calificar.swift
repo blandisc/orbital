@@ -12,16 +12,19 @@ struct RatingStars: View {
     @State private var dragging: Double?
     /// La dirección del arrastre se decide una vez, al empezar: de lado mueve las estrellas; vertical es el scroll hasta soltar.
     @State private var sideways: Bool?
+    /// Al calificar con un toque, las estrellas se llenan en onda hasta la que tocaste (cada una crece un instante, una tras
+    /// otra) con un toque en la mano por estrella. Al arrastrar no: ahí cada paso ya vibra.
+    @State private var wave = 0
+    @State private var tick = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let shown = dragging ?? value ?? 0
         HStack(spacing: DS.Rating.gap) {
-            ForEach(1...5, id: \.self) { i in
-                Image(systemName: Self.symbol(for: i, shown))
-                    .font(.system(size: size))   // ds-exception: el tamaño de la estrella sale del token DS.Rating
-                    .foregroundStyle(shown >= Double(i) - 0.5 ? DS.Rating.filled : DS.Rating.empty)
-            }
+            ForEach(1...5, id: \.self) { i in star(i, shown: shown) }
         }
+        .onChange(of: value) { old, new in startWave(from: old, to: new) }
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: DS.Rating.waveIntensity), trigger: tick)
         .contentShape(Rectangle())
         .overlay {
             GeometryReader { geo in
@@ -43,6 +46,37 @@ struct RatingStars: View {
             }
         }
         .accessibilityIdentifier("rating-stars")
+    }
+
+    /// Calificaste más alto con un toque: la onda y un toque en la mano por estrella (con «Reducir movimiento», uno solo).
+    private func startWave(from old: Double?, to new: Double?) {
+        guard dragging == nil, let new, new > (old ?? 0) else { return }
+        if reduceMotion { tick += 1; return }
+        wave += 1
+        let stars = Int(new.rounded(.up))
+        let step = Duration.seconds(DS.Rating.waveStep)
+        Task { @MainActor in
+            for _ in 0..<stars {
+                tick += 1
+                try? await Task.sleep(for: step)
+            }
+        }
+    }
+
+    /// Una estrella; en la onda, la llena crece un instante, `i` pasos después de la primera.
+    private func star(_ i: Int, shown: Double) -> some View {
+        let filled = shown >= Double(i) - 0.5
+        let wait = Double(i - 1) * DS.Rating.waveStep
+        return Image(systemName: Self.symbol(for: i, shown))
+            .font(.system(size: size))   // ds-exception: el tamaño de la estrella sale del token DS.Rating
+            .foregroundStyle(filled ? DS.Rating.filled : DS.Rating.empty)
+            .keyframeAnimator(initialValue: CGFloat(1), trigger: wave) { view, scale in
+                view.scaleEffect(filled ? scale : 1)
+            } keyframes: { _ in
+                LinearKeyframe(CGFloat(1), duration: wait)
+                SpringKeyframe(DS.Rating.wavePop, duration: DesignTokens.Motion.fast)
+                SpringKeyframe(CGFloat(1), duration: DesignTokens.Motion.slow)
+            }
     }
 
     private func at(_ x: CGFloat, _ width: CGFloat) -> Double { RatingScale.snap(Double(x / max(1, width)) * 5) }

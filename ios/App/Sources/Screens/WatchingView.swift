@@ -87,6 +87,7 @@ struct WatchingView: View {
                     letterboxdSection
                 }
             }
+            .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.horizontal, DS.Space.gutter)
             .padding(.bottom, DS.Layout.screenBottom)
         }
