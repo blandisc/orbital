@@ -230,6 +230,9 @@
   --control-height: 3rem; /* un botón, un aviso, la barra de arriba */
   /* Lo que ocupa debajo de una portada enfocada su nombre y su dato (dos renglones de footnote, card.css · .card__caption), y
      crece con ella al enfocarse. Lo deja libre la fila que los enseña (Inicio, la página de un juego). */
+  --match-card-height: 40rem; /* la carta del mazo: un póster grande (2:3), lo más alta que quepa */
+  --match-stamp-line: 3px; /* el borde del sello (DS.Match.stampLine) */
+  --match-stamp-tilt: 12deg; /* el giro del sello y de la carta al salir (DS.Match.stampTilt) */
   --caption-room: calc((.65rem + 2.8 * var(--type-footnote)) * 1.15);
   --status-room: calc(var(--space-5) + var(--safe-y) + var(--control-height)); /* lo que ocupa la barra de arriba con su margen */
   --control-sm: 2.75rem; /* una pestaña de la barra de arriba, una tecla del riel */
@@ -279,6 +282,7 @@
   --opacity-solid: .9;
   --opacity-soft: .55;
   --opacity-dim: .35;
+  --opacity-match-tint: .45; /* el tinte de la carta del mazo al decidir (DS.Match.tintMax) */
   --opacity-grain: .035;
   --tile-gap: 1.1rem;
   /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro

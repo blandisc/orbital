@@ -478,6 +478,7 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
 | rótulo de sección | `ui.css` (`.section-head__label`) | El rótulo de una sección (ícono, nombre y línea) va en mayúsculas chicas, igual que `DSChapterLabel` del iPhone (Fernando, 31 oct 2026): es lo que separa una sección de sus filas. Solo el rótulo; nada más lleva mayúsculas espaciadas. |
+| sello del mazo | `match-deck.css` (`.match__stamp`) | El sello que asoma al decidir en «¿Qué vemos hoy?» (PASO, GUARDAR, ★ PARA HOY) va en mayúsculas, como el de `MatchCard` del iPhone y el de Tinder. |
 | listón «Nuevo» | `ui.css` (`.corner-ribbon__band`) | El listón en diagonal de la esquina de un póster dice NUEVO en mayúsculas, como `DSCornerRibbon` del iPhone. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)

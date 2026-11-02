@@ -10,6 +10,7 @@
  *   Listas de Trakt → Listas de Stremio → (Por género y los lanzadores, al final: la tele no tiene la pestaña Buscar).
  */
 import { curatedItem } from "./curation.js";
+import { tonightPick } from "./tonight.js";
 
 /** Las filas de tarjetas que se centran (como el carrusel centrado del iPhone). */
 const CENTERED = new Set(["platforms", "awards", "studios", "genre-top", "seasons", "years"]);
@@ -155,7 +156,10 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   }
   // Mi lista: tu watchlist de Trakt (sin Trakt, Mi lista de Stremio), como el iPhone (decisión del 31 oct 2026).
   const pending = byId.watchlist ? ["watchlist", "trakt"] : byId.mylist ? ["mylist", "stremio"] : null;
-  if (pending) plain(`mi-lista`, "Mi lista", itemsOf(itemsById, byId[pending[0]], filter), { seal: pending[1], group: "milista" });
+  // «Para hoy» (el mazo): la que elegiste hoy va primera en Mi lista hasta que cambie el día.
+  const tonight = tonightPick();
+  const firstTonight = (items) => (tonight ? [...items].sort((a, b) => (b.meta_id === tonight) - (a.meta_id === tonight)) : items);
+  if (pending) plain(`mi-lista`, "Mi lista", firstTonight(itemsOf(itemsById, byId[pending[0]], filter)), { seal: pending[1], group: "milista" });
   // Sin «Mi media» (tu carpeta de OneDrive): Fernando, 31 oct 2026, no va en Películas y series.
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {
     if (byId[id]) plain(id, byId[id].title, itemsOf(itemsById, byId[id], filter), { seal, group: "general" });

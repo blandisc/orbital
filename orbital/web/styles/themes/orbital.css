@@ -52,7 +52,12 @@
   --color-favorite: var(--palette-amber-300);
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
-  --color-rating: var(--color-warning); /* las estrellas de una calificación: el ámbar del iPhone (DS.Rating.filled) */
+  --color-rating: var(--color-warning);
+  /* El mazo «¿Qué vemos hoy?», como Tinder (DS.Match del iPhone, 1 nov 2026): Paso en rojo, Guardar en verde y «Para hoy» en el
+     azul de Orbital; la carta se tiñe de ese color al decidir. */
+  --color-match-pass: var(--color-danger);
+  --color-match-keep: var(--color-success);
+  --color-match-tonight: var(--color-orbital); /* las estrellas de una calificación: el ámbar del iPhone (DS.Rating.filled) */
   --color-live: var(--palette-teal-300);
   --color-ok: var(--palette-teal-300); /* un estado que ya está bien: «✓ Conectada», «✓ Guardada» */
   /* El arcoíris del azul de Orbital (Fernando, 31 oct 2026): el turquesa de la luna (oklch .804 .110 183) girado por el círculo
@@ -65,7 +70,8 @@
   --rainbow-cielo: oklch(.804 .110 225);
   --rainbow-lavanda: oklch(.804 .110 270);
   --rainbow-rosa: oklch(.804 .110 320);
-  --color-new: var(--palette-pad-green); /* lo que ya se puede ver: el listón «Nuevo» (en el iPhone, DS.success, el verde del sistema) */
+  --color-success: var(--palette-pad-green); /* lo que salió bien o ya se puede (DS.success, el verde del sistema) */
+  --color-new: var(--color-success); /* lo que ya se puede ver: el listón «Nuevo» (en el iPhone, DS.success, el verde del sistema) */
   --color-brand-moon: var(--palette-teal-300); /* la luna de «orbital»: el único color fijo de la marca (la luna del logotipo) */
   --color-orbital: var(--color-brand-moon); /* «el azul de Orbital» (el de la luna): el ícono del rótulo de una sección, lo que es de Orbital (como DS.orbitalBlue) */
   --color-reason: var(--palette-teal-300); /* el porqué de una fila o un título, arriba de él; solo porqués, nunca un dato (DS.eyebrow del iPhone) */
