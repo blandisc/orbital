@@ -32,6 +32,15 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => { fitBar(bar, filters); fitConsoles(); }).observe(main);
   // Con el dedo, como en el celular: las portadas se desplazan bajo el dedo; tocar enfoca y volver a tocar abre.
   dragScroll(viewport, grid, { extra: 48 });
+  // Al bajar, lo de arriba se encoge y la cuadrícula gana alto: se vuelve a acomodar con lo justo de desplazamiento (si no, se
+  // quedaba el de antes y la fila de arriba salía recortada en una franja, como aplastada).
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(() => {
+      if (!focusId.startsWith("game:")) return;
+      grid.dataset.shift = "0";
+      keepInView(grid, viewport, focusId);
+    }).observe(viewport);
+  }
   const el = h("section", { class: "games", hidden: true, "aria-label": "Juegos" }, main);
 
   let rows = [];

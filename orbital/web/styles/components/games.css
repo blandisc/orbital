@@ -31,6 +31,17 @@
 /* Sus juegos: filtros y la cuadrícula. Solo el enfocado dice su nombre, debajo (Card · caption "focus"). */
 .games__shelf { display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; --card-height: 10rem; --card-focus-scale: 1.1; }
 
-/* Al bajar: el juego y las consolas se recogen (y la barra de arriba se va, status-bar.css); quedan los juegos. */
-.games--away .games__main { grid-template-rows: 0fr 0fr minmax(0, 1fr); margin-top: calc(-1 * var(--status-room)); }
-.games--away .games__consoles, .games--away .games__hero { opacity: 0; }
+/* Al bajar (Fernando, 1 nov 2026, «el arte se queda»): las consolas y la barra de arriba se van (status-bar.css), pero el
+   juego enfocado sigue: su arte de fondo y, arriba, una línea con su logo chico, sus datos y sus botones. Así la segunda fila
+   tiene el mismo protagonismo que la primera y se siguen viendo todos los juegos. */
+.games--away .games__main { grid-template-rows: 0fr auto minmax(0, 1fr); margin-top: calc(-1 * var(--status-room)); }
+.games--away .games__consoles { opacity: 0; }
+.games--away .games__hero {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-5); row-gap: var(--space-2); align-items: center;
+  max-width: none; padding: var(--space-4) 0 var(--space-3);
+}
+.games--away .games__reason { display: none; }
+.games--away :is(.games__logo, .games__title) { grid-row: 1 / span 2; }
+.games--away .games__logo { max-width: 16rem; max-height: 4.2rem; }
+.games--away .games__title { font-size: var(--type-section); -webkit-line-clamp: 1; }
+.games--away .games__actions { margin-top: 0; }
