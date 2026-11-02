@@ -92,7 +92,7 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         // Si todos los géneros que elegiste no existen en series (Terror, Romance…), no se buscan series: antes «Series +
         // Terror» pedía las series sin género y salían todas.
         let onlyMovieGenres = !genres.isEmpty && moviesOnlyGenres.count == genres.count
-        if usesLetterboxd { return format == .series ? [] : ["movie"] }   // Letterboxd no califica series
+        if usesLetterboxd { return ["movie"] }   // Letterboxd no califica series
         switch format {
         case .movie: return ["movie"]
         case .series: return onlyMovieGenres ? [] : ["series"]
@@ -116,8 +116,11 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         return (range.min.map { minutes >= $0 } ?? true) && (range.max.map { minutes <= $0 } ?? true)
     }
 
-    /// Se ordena o se filtra por Letterboxd: cada resultado se pregunta ahí (de pocos en pocos) antes de enseñarse.
-    public var usesLetterboxd: Bool { minLetterboxd != nil || sort == .letterboxd }
+    /// Se ordena o se filtra por Letterboxd: cada resultado se pregunta ahí (de pocos en pocos) antes de enseñarse. Con
+    /// «Series» no cuenta (Letterboxd solo califica películas): antes «Series» con Letterboxd no buscaba nada y salía
+    /// «Nada con esos filtros» aunque hubiera cientos (Fernando, 1 nov 2026). Ahí manda la calificación de TMDB y
+    /// «Mejor calificadas en Letterboxd» ordena como «Mejor calificadas».
+    public var usesLetterboxd: Bool { format != .series && (minLetterboxd != nil || sort == .letterboxd) }
 
     /// Lo menos que dura una película (sin esto «Corta» traía cortometrajes de 5 minutos).
     static let featureMinutes = 60
