@@ -10,15 +10,15 @@
 .list-screen__logo--mono { filter: brightness(0) invert(1); } /* el logo de un estudio, en blanco */
 .list-screen__heading { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .list-screen__title.award-wordmark { font-weight: var(--weight-regular); letter-spacing: var(--tracking-award); } /* el nombre de un premio, como en su tarjeta */
-.list-screen__title { margin: 0; font-size: var(--type-display); font-weight: var(--weight-bold); line-height: var(--leading-none); letter-spacing: var(--tracking-display); text-wrap: balance; }
-.list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); }
+.list-screen__title { margin: 0; font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-none); letter-spacing: var(--tracking-display); text-wrap: balance; }
+.list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .list-screen__chips { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); align-self: center; }
 .list-screen__chip {
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass);
-  box-shadow: var(--edge-hairline); font-size: var(--type-secondary); font-weight: var(--weight-medium);
+  box-shadow: var(--edge-hairline); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
 }
 .list-screen__tabs { display: flex; gap: var(--space-2); }
-.list-screen__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); }
+.list-screen__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .list-screen__viewport {
   flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 3.2rem var(--space-4) var(--space-4); margin: 0 calc(-1 * var(--space-4)); /* arriba, lugar para la enfocada (crece) */
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);

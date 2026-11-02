@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comparación · No sé qué ver (Decide por mí) y el filtro avanzado</title>
+<style>
+  :root{--bg:#0c0c0e;--surface:#18181c;--raised:#1e1e23;--line:#2a2a30;--paper:#f5f4f0;--muted:#a3a3ab;--faint:#55555d;--mint:#5fd6c6;
+        --coral:#f08a6c;--gold:#e9c46a;--lilac:#b39ddb;--rose:#ef8fb4;--blue:#4a8ae8;--sky:#7cc4f0;--green:#5cbf6d}
+  *{box-sizing:border-box;margin:0}
+  body{background:#070708;color:var(--paper);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;padding:32px 18px 56px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.01em}
+  h2{font-size:19px;font-weight:700;margin:44px 0 6px}
+  .sub{color:var(--muted);margin-top:6px;max-width:760px}
+  .tldr{background:var(--surface);border-radius:16px;padding:18px 20px;margin-top:22px}
+  .tldr li{margin:6px 0 0 18px}.tldr b{color:var(--paper)}
+  .row{display:flex;flex-wrap:wrap;gap:26px;margin-top:18px}
+  .col{width:320px}
+  .cap{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .cap b{color:var(--paper)}
+  .phone{background:var(--bg);border:1px solid var(--line);border-radius:36px;padding:50px 16px 18px;height:600px;overflow:hidden;position:relative}
+  .nav{position:absolute;top:16px;left:0;right:0;text-align:center;font-weight:600;font-size:15.5px}
+  .nav i{position:absolute;right:18px;font-style:normal;color:var(--muted)} .nav s{position:absolute;left:18px;text-decoration:none;color:var(--muted)}
+  .note{color:var(--muted);font-size:13.5px;margin-top:10px}.note b{color:var(--paper)}
+  .num{font-variant-numeric:tabular-nums}
+  .big{font-size:36px;font-weight:800;letter-spacing:-.02em;line-height:1}.big small{font-size:16px;font-weight:600;color:var(--muted);margin-left:6px;letter-spacing:0}
+  .split{display:flex;gap:14px;margin-top:7px;color:var(--muted);font-size:13.5px;font-weight:600}.split b{color:var(--paper)}
+  .faint{color:var(--faint);font-size:12px;margin-top:5px}
+  .squares{display:flex;gap:7px;margin:12px 0 14px;overflow:hidden}
+  .sq{flex:0 0 auto;min-width:70px;height:62px;border-radius:14px;background:var(--surface);display:flex;flex-direction:column;justify-content:space-between;padding:8px 10px;font-size:11.5px;font-weight:600}
+  .sq .g{font-size:15px;line-height:1}
+  .sq.plus{font-size:22px;font-weight:400;justify-content:center;align-items:center;min-width:56px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .p{aspect-ratio:2/3;border-radius:10px;background:linear-gradient(160deg,#2a2a30,#18181c)}
+  .p:nth-child(3n+2){background:linear-gradient(160deg,#3a2f28,#1e1e23)}.p:nth-child(3n){background:linear-gradient(160deg,#23303a,#18181c)}
+  .scope{display:flex;background:var(--surface);border-radius:11px;padding:3px;margin-bottom:12px}
+  .scope div{flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .scope div.on{background:var(--raised);color:var(--paper)}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tile{background:var(--surface);border-radius:14px;padding:10px 11px;height:70px;display:flex;flex-direction:column;justify-content:space-between}
+  .tile .t{font-size:12px;color:var(--muted);font-weight:600}.tile .v{font-size:13.5px;font-weight:700}
+  .tile.on{outline:1.5px solid currentColor}
+  .new{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--mint);margin-left:5px}
+  .btn{display:block;text-align:center;border-radius:14px;padding:12px;font-weight:700;font-size:14.5px}
+  .btn.primary{background:var(--paper);color:#070708}.btn.glass{background:var(--raised);color:var(--paper)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:absolute;left:16px;right:16px;bottom:18px}
+  .trio{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:8px;align-items:end}
+  .trio .p:nth-child(2){outline:2px solid var(--paper)}
+  .title{font-size:17px;font-weight:700;margin-top:12px}.facts{font-size:13px;color:var(--paper);opacity:.8;font-weight:600;margin-top:3px}
+  .pitch{font-size:12.5px;color:var(--muted);margin-top:5px}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+  td:first-child{font-weight:700;white-space:nowrap}
+  .y{color:var(--green)}.n{color:var(--faint)}.add{color:var(--mint);font-weight:700}
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+  .opt{background:var(--surface);border-radius:16px;padding:16px 18px}.opt h3{font-size:15.5px;margin-bottom:6px}
+  .opt p{color:var(--muted);font-size:13.5px;margin-top:5px}.opt p b{color:var(--paper)}
+  .rec{color:var(--mint);font-size:11.5px;font-weight:800;letter-spacing:.06em;margin-left:6px}
+  ol.steps li{margin:7px 0 0 20px;color:var(--muted)} ol.steps b{color:var(--paper)}
+</style></head><body><div class="wrap">
+
+<h1>No sé qué ver y el filtro avanzado: comparación</h1>
+<p class="sub">2 nov 2026. «No sé qué ver» es <b>Decide por mí</b> (el dado en Para ti y en Listas). Hoy son dos pantallas con filtros distintos, cada una con su forma. Una elige entre tus listas, la otra busca en todo el catálogo. La idea: el mismo cajón, las mismas piezas y los mismos nombres. Cambia solo <b>dónde busca</b> y <b>cómo te lo enseña</b>.</p>
+
+<div class="tldr"><b>En corto</b><ul>
+  <li><b>Un solo cajón de filtros</b> para las dos, con los cuadritos de color del filtro avanzado. Decide por mí deja sus cápsulas «Todo ⌄».</li>
+  <li><b>«Dónde buscar» es el primer filtro:</b> <i>Todo el catálogo</i> (TMDB, lo que hoy hace el filtro avanzado) o <i>Tus listas</i> (lo que hoy hace Decide por mí, con «De qué listas»).</li>
+  <li><b>Dos formas de ver lo mismo:</b> la cuadrícula con el número arriba (opción A), o <b>«Decide por mí»</b>, que de eso mismo te propone tres.</li>
+  <li>Decide por mí gana <b>Época, Qué tan conocida, Dónde verla, Letterboxd, Origen, Premios, Estudios y Quitar géneros</b>. El filtro avanzado gana <b>Ánimo, De qué listas y la calificación de IMDb y Trakt</b>.</li>
+</ul></div>
+
+
+<h2>0 · Las dos, lado a lado (hoy)</h2>
+<table>
+  <tr><th></th><th>No sé qué ver (Decide por mí)</th><th>Filtro avanzado (Buscar)</th></tr>
+  <tr><td>Para qué</td><td>Ya tienes de dónde escoger y no te decides: te propone <b>tres</b> y eliges una.</td><td>Quieres encontrar algo nuevo con condiciones: te da <b>todo</b> lo que cumple, en cuadrícula.</td></tr>
+  <tr><td>Dónde busca</td><td><b>Tus listas</b>: Mi lista, Recomendadas, Porque viste, Nuevo en tus plataformas y tus listas de Trakt («De qué listas»).</td><td><b>Todo el catálogo</b> de TMDB (y los ganadores de premios que trae la app).</td></tr>
+  <tr><td>Cuántos trae</td><td>Lo de tus listas (decenas o cientos).</td><td>Miles, por páginas al bajar.</td></tr>
+  <tr><td>Cómo te lo enseña</td><td>Tres pósters, la elegida con su porqué («22 min · IMDb 8.2 · Ligera») y «Ver» o «Barajar».</td><td>Cuadrícula de pósters con calificación, año y duración, y arriba cuántos hay.</td></tr>
+  <tr><td>Cómo se ven los filtros</td><td>Cuatro cápsulas «Todo ⌄» (Tiempo, Ánimo, Calificación, Más filtros), con <b>conteo en vivo</b> en cada opción.</td><td>Un cajón con cuadritos de color (seis a la vista y tres en «Ver más»), y <b>sin conteo en vivo</b>: el número sale al tocar «Ver resultados».</td></tr>
+  <tr><td>Filtros que solo tiene ella</td><td>Ánimo · De qué listas · Calificación de IMDb y Trakt · «Nada con esto: quita X (quedan 6)»</td><td>Época con regla y «repartido» · Qué tan conocida · Dónde verla · Letterboxd · Origen · Premios · Estudios · Quitar géneros · «Que acabe antes de las…» · Orden</td></tr>
+  <tr><td>Filtros que tienen las dos</td><td colspan="2">Formato (películas / series) · Género · Época (en Decide, por décadas) · Tiempo · Calificación mínima · Sin las que ya viste</td></tr>
+  <tr><td>Lo mejor</td><td>Rápida, sin esperar a internet, y te saca de la duda.</td><td>Encuentra lo que no sabías que existía.</td></tr>
+  <tr><td>Lo que le falta</td><td>No sabe dónde se ve una película, si es conocida, de qué país es ni si ganó premios.</td><td>No conoce tus listas ni tu ánimo, y no te ayuda a decidir entre 1 240.</td></tr>
+  <tr><td>En la TV</td><td>Tiempo, Ánimo, Qué y Géneros.</td><td>El filtro de la «ola 3», sin Letterboxd.</td></tr>
+</table>
+
+<h2 style="margin-top:56px">La propuesta: un solo filtro</h2>
+<p class="sub">Lo de abajo es lo que propongo a partir de la comparación.</p>
+<h2>1 · Cómo se vería</h2>
+<div class="row">
+  <div class="col">
+    <div class="cap"><b>El cajón</b> · el mismo para las dos</div>
+    <div class="phone">
+      <div class="nav"><s>Limpiar</s>Filtros<i>✕</i></div>
+      <div class="scope"><div class="on">Todo el catálogo</div><div>Tus listas</div></div>
+      <div class="tiles">
+        <div class="tile" style="color:var(--coral)"><span class="t">Género</span><span class="v" style="color:var(--paper)">Comedia, Animación</span></div>
+        <div class="tile" style="color:var(--rose)"><span class="t">Ánimo<span class="new">NUEVO</span></span><span class="v" style="color:var(--muted)">Lo que sea</span></div>
+        <div class="tile"><span class="t">Época</span><span class="v" style="color:var(--muted)">Cualquiera</span></div>
+        <div class="tile"><span class="t">Tiempo</span><span class="v" style="color:var(--muted)">Una hora</span></div>
+        <div class="tile" style="color:var(--mint)"><span class="t">Calificación</span><span class="v" style="color:var(--paper)">7 o más · IMDb</span></div>
+        <div class="tile"><span class="t">Qué tan conocida</span><span class="v" style="color:var(--muted)">Cualquiera</span></div>
+        <div class="tile"><span class="t">Dónde verla</span><span class="v" style="color:var(--muted)">Donde sea</span></div>
+        <div class="tile"><span class="t">Ver más</span><span class="v" style="color:var(--muted)">Origen, premios, estudios</span></div>
+      </div>
+      <div class="two"><span class="btn glass">🎲 Decide por mí</span><span class="btn primary">Ver 1 240</span></div>
+    </div>
+    <p class="note">Arriba, <b>dónde buscar</b>. Con «Tus listas» aparece un cuadrito más, <b>De qué listas</b> (Mi lista, Recomendadas, tus listas de Trakt…). Abajo, los dos botones: <b>Ver</b> lleva a la cuadrícula y <b>Decide por mí</b> va directo a las tres propuestas.</p>
+  </div>
+
+  <div class="col">
+    <div class="cap"><b>Los resultados</b> · con el número A</div>
+    <div class="phone">
+      <div class="nav">Resultados<i>⇅</i></div>
+      <div class="big num">1 240<small>títulos</small></div>
+      <div class="split"><span>🎬 <b class="num">860</b> películas</span><span>📺 <b class="num">380</b> series</span></div>
+      <div class="faint">Antes de quitar las que ya viste</div>
+      <div class="squares">
+        <div class="sq" style="color:var(--coral)"><span class="g">☺</span><span style="color:var(--paper)">Comedia +1</span></div>
+        <div class="sq" style="color:var(--mint)"><span class="g">★</span><span style="color:var(--paper)">7 o más</span></div>
+        <div class="sq plus">＋</div>
+      </div>
+      <div class="grid"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div>
+      <div class="two" style="grid-template-columns:1fr"><span class="btn glass">🎲 Decide por mí entre estos</span></div>
+    </div>
+    <p class="note">Si ves muchos y no te decides, <b>«Decide por mí entre estos»</b> se queda con los mismos filtros y te propone tres.</p>
+  </div>
+
+  <div class="col">
+    <div class="cap"><b>Decide por mí</b> · estilizado</div>
+    <div class="phone">
+      <div class="nav"><s>‹</s>Decide por mí<i>⋯</i></div>
+      <div style="font-size:13px;color:var(--muted);font-weight:600"><b class="num" style="color:var(--paper)">38</b> opciones · de Mi lista y Recomendadas</div>
+      <div class="squares">
+        <div class="sq" style="color:var(--blue)"><span class="g">☰</span><span style="color:var(--paper)">2 listas</span></div>
+        <div class="sq" style="color:var(--lilac)"><span class="g">◷</span><span style="color:var(--paper)">Una hora</span></div>
+        <div class="sq" style="color:var(--rose)"><span class="g">☺</span><span style="color:var(--paper)">Ligera</span></div>
+        <div class="sq plus">＋</div>
+      </div>
+      <div class="trio"><div class="p"></div><div class="p"></div><div class="p"></div></div>
+      <div class="title">Abbott Elementary</div>
+      <div class="facts">22 min por episodio · IMDb 8.2 · Ligera</div>
+      <div class="pitch">Un equipo de maestros entregados en una escuela pública de Filadelfia.</div>
+      <div class="two"><span class="btn primary">▶ Ver la serie</span><span class="btn glass">Barajar</span></div>
+    </div>
+    <p class="note">Las cuatro cápsulas «Todo ⌄» se vuelven <b>los mismos cuadritos de color</b> del filtro avanzado, con «＋» para abrir el cajón. Arriba, cuántas opciones hay, con la misma forma del número. La serie se propone completa.</p>
+  </div>
+</div>
+
+<h2>2 · Qué filtro gana cada una</h2>
+<p class="sub">✓ ya lo tiene · <span class="add">＋</span> lo gana con esta propuesta. «Con tus listas» dice cómo se resuelve cuando el filtro corre sobre tus listas y no sobre TMDB.</p>
+<table>
+  <tr><th>Filtro</th><th>Filtro avanzado</th><th>Decide por mí</th><th>Cómo funciona con tus listas</th></tr>
+  <tr><td>Dónde buscar</td><td class="add">＋ Todo el catálogo / Tus listas</td><td class="add">＋ lo mismo</td><td>Es el filtro que une a las dos.</td></tr>
+  <tr><td>De qué listas</td><td class="add">＋ con «Tus listas»</td><td class="y">✓</td><td>Igual que hoy en Decide.</td></tr>
+  <tr><td>Formato (películas / series)</td><td class="y">✓</td><td class="y">✓ «Qué»</td><td>Igual.</td></tr>
+  <tr><td>Género</td><td class="y">✓ (y quitar géneros)</td><td class="y">✓ <span class="add">＋ quitar géneros</span></td><td>Con los géneros de Trakt que ya trae cada título.</td></tr>
+  <tr><td>Ánimo</td><td class="add">＋</td><td class="y">✓</td><td>En el catálogo, cada ánimo es un grupo de géneros (Ligera = Comedia, Animación, Familia…).</td></tr>
+  <tr><td>Época</td><td class="y">✓ (rango y «repartido»)</td><td class="y">✓ décadas → <span class="add">＋ la regla de años</span></td><td>Por el año del título.</td></tr>
+  <tr><td>Tiempo</td><td class="y">✓ (y «antes de las…»)</td><td class="y">✓ → <span class="add">＋ «antes de las…»</span></td><td>Por la duración (en series, la del capítulo).</td></tr>
+  <tr><td>Calificación</td><td class="y">✓ TMDB y Letterboxd → <span class="add">＋ IMDb y Trakt</span></td><td class="y">✓ IMDb, Trakt y TMDB → <span class="add">＋ Letterboxd</span></td><td>Las cuatro, con las mismas palabras («El público», «Los cinéfilos»).</td></tr>
+  <tr><td>Qué tan conocida</td><td class="y">✓</td><td class="add">＋</td><td>Por los votos de TMDB de cada título (se piden una vez y se guardan).</td></tr>
+  <tr><td>Dónde verla</td><td class="y">✓</td><td class="add">＋</td><td>Por las plataformas de cada título en tu país (TMDB, guardado una semana).</td></tr>
+  <tr><td>Origen · Estudios</td><td class="y">✓</td><td class="add">＋ (en «Ver más»)</td><td>Por la ficha de TMDB de cada título.</td></tr>
+  <tr><td>Premios</td><td class="y">✓</td><td class="add">＋ (en «Ver más»)</td><td>Cruzando con los ganadores que ya trae la app, sin pedir nada.</td></tr>
+  <tr><td>Sin las que ya vi</td><td class="y">✓</td><td class="y">✓</td><td>Igual.</td></tr>
+  <tr><td>Orden</td><td class="y">✓</td><td class="n">— (elige por ti)</td><td>Decide por mí no ordena: propone tres.</td></tr>
+</table>
+
+<h2>3 · Hasta dónde unirlas</h2>
+<div class="opts">
+  <div class="opt"><h3>A · Mismo cajón, dos puertas <span class="rec">RECOMENDADA</span></h3>
+    <p><b>Qué cambia:</b> un solo cajón y un solo motor. El filtro avanzado y Decide por mí quedan como dos maneras de ver el mismo resultado, con botones para pasar de una a otra.</p>
+    <p><b>Gana:</b> aprendes los filtros una vez; lo que pones en uno sirve en el otro; se acaba la duda de «¿esto dónde estaba?».</p>
+    <p><b>Pierde:</b> es el cambio más grande (tres tandas, abajo). Decide por mí se abre un poco más lento con filtros de catálogo (Dónde verla, Premios) mientras llegan las fichas.</p></div>
+  <div class="opt"><h3>B · Solo verse igual</h3>
+    <p><b>Qué cambia:</b> Decide por mí adopta los cuadritos y el número del filtro avanzado, y cada una suma los filtros de la otra. Siguen siendo dos cajones.</p>
+    <p><b>Gana:</b> sale en una tanda y no toca cómo busca cada una.</p>
+    <p><b>Pierde:</b> dos lugares con casi los mismos filtros. Lo que pones en uno no pasa al otro.</p></div>
+  <div class="opt"><h3>C · Decide por mí dentro de los resultados</h3>
+    <p><b>Qué cambia:</b> Decide por mí deja de ser pantalla aparte: es un botón en los resultados del filtro avanzado.</p>
+    <p><b>Gana:</b> lo más simple de explicar.</p>
+    <p><b>Pierde:</b> se pierde el atajo de «Para ti › Decide por mí» con tus listas a un toque, que es para lo que más lo usas.</p></div>
+</div>
+
+<h2>4 · Si vamos con A, en qué orden</h2>
+<ol class="steps">
+  <li><b>Tanda 1 · que se vean igual.</b> Decide por mí con los cuadritos de color, el «＋» y el número arriba. El filtro avanzado gana Ánimo y la calificación de IMDb y Trakt. Es lo que ya se nota en el día a día.</li>
+  <li><b>Tanda 2 · Decide por mí gana los filtros del catálogo:</b> Época con su regla, Qué tan conocida, Dónde verla, Letterboxd, Origen, Premios, Estudios y Quitar géneros, resueltos sobre tus listas con la ficha de TMDB de cada título (guardada).</li>
+  <li><b>Tanda 3 · un solo cajón:</b> «Dónde buscar» arriba, «De qué listas» en el filtro avanzado y los dos botones (Ver / Decide por mí). Los filtros puestos viajan de una pantalla a la otra.</li>
+</ol>
+<p class="sub" style="margin-top:14px"><b>La TV:</b> su Decide por mí tiene tiempo, ánimo, qué y géneros, y su filtro avanzado es el de «ola 3». Se lleva igual, tanda por tanda, con los mismos nombres. Va al registro de paridad.</p>
+
+</div></body></html>

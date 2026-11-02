@@ -206,6 +206,11 @@ def router(d: Deps) -> APIRouter:
                     "No pude guardar tu calificación en Trakt. Revisa tu conexión e inténtalo de nuevo.")
         return {"ok": True}
 
+    @r.get("/letterboxd")
+    def title_letterboxd(kind: str, id: str) -> dict:
+        """Letterboxd en la ficha: su promedio, sus reseñas populares y, con tu usuario, tu reseña."""
+        return foryou.title_letterboxd(kind, id[:20])
+
     @r.get("/follow")
     def following(id: str) -> dict:
         """¿Sigues esta serie? (la campana de la ficha)."""

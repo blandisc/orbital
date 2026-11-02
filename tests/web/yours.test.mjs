@@ -41,6 +41,14 @@ test("una serie con Trakt lleva la campana, como el iPhone: «Siguiendo» o «Se
   assert.equal(titleActions(series, { kind: "series", trakt: false, following: true }).some((a) => a.id === "follow"), false);
 });
 
+test("«Para hoy» vale solo el día que la elegiste (al otro día, Mi lista vuelve a su orden)", async () => {
+  const { tonightPick, today } = await import("../../orbital/web/js/core/tonight.js");
+  const day = new Date(2026, 10, 1, 21);
+  assert.equal(tonightPick({ meta_id: "tt1", day: today(day) }, day), "tt1");
+  assert.equal(tonightPick({ meta_id: "tt1", day: today(day) }, new Date(2026, 10, 2, 9)), null);
+  assert.equal(tonightPick(null, day), null);
+});
+
 test("lo descartado en el mazo vuelve al mes", () => {
   const now = 100 * 86_400_000;
   assert.deepEqual(Object.keys(freshDiscards({ tt1: now - 29 * 86_400_000, tt2: now - 31 * 86_400_000 }, now)), ["tt1"]);

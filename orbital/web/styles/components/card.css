@@ -71,7 +71,7 @@
 .card__chip {
   position: absolute; left: 0; top: calc(100% + .45rem);
   max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-  color: var(--color-text-muted); font-size: var(--type-data); font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: var(--color-text-muted); font-size: var(--type-data); font-weight: var(--type-data-weight); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 /* Pie con título y tipo (búsqueda): dos líneas, recortadas al ancho de la portada. */
 .card__caption {
@@ -81,7 +81,7 @@
 /* El nombre solo bajo la enfocada (Card · caption "focus", como el Apple TV): las demás son puro arte. */
 .card--name-on-focus .card__caption { opacity: 0; text-align: center; transition: opacity var(--duration-fast) var(--ease-out); }
 .card--name-on-focus.card--focused .card__caption { opacity: 1; }
-.card__caption strong { overflow: hidden; color: var(--color-text); font-weight: var(--weight-medium); text-overflow: ellipsis; white-space: nowrap; }
+.card__caption strong { overflow: hidden; color: var(--color-text); font-weight: var(--weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
 .card__caption span { color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* En la enfocada, el héroe ya dice "Jugado hace…" en grande. */
 .card--focused .card__chip, .card--dimmed .card__chip { opacity: 0; } /* filas inactivas: no asoman */
@@ -112,8 +112,8 @@
 .card--stand-in .card__title { font-family: var(--font-sans); font-size: min(var(--type-body), calc(var(--card-height) * .115)); /* la portada chica (Buscar) no parte palabras */ font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }
-.card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
+  font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }
+.card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
 /* Foco: el juego salta (resorte con rebote), se eleva y flota con su sombra, sin anillo (Apple TV), y proyecta un brillo de
    su propio color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .card--focused {
@@ -150,7 +150,7 @@
   position: absolute; left: var(--inset-poster); top: var(--inset-poster); z-index: var(--z-above);
   display: inline-flex; align-items: center; gap: .35rem; padding: .15rem .55rem .15rem .45rem;
   border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
-  font-size: var(--type-caption); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);
+  font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--tracking-label);
 }
 .card__live-dot { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-live); }
 
@@ -172,7 +172,7 @@
 
 /* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. */
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
-  font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
+  font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight);
   line-height: var(--leading-title); text-shadow: var(--shadow-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
 
 /* «Porque viste»: el título del que salen las sugerencias de abajo, con un aro del acento (como el iPhone) mientras

@@ -1225,3 +1225,18 @@ def test_advanced_filter_asks_tmdb_with_every_choice(make_foryou, net, monkeypat
     assert fy.filtered("movie", {"genre": "comedia"}, count_only=True) == {"total": 340}
     with pytest.raises(tmdb.TmdbError):
         make_foryou().filtered("movie", {}, count_only=True)
+
+
+def test_the_title_page_gets_letterboxd_with_your_review_from_the_diary(make_foryou, monkeypatch):
+    from test_letterboxd import DIARY, FILM
+
+    from orbital.library import letterboxd as lb
+
+    fy = make_foryou()
+    monkeypatch.setattr(fy.letterboxd, "user", "fer")
+    monkeypatch.setattr(fy.letterboxd, "info", lambda imdb: lb.parse_film_info(FILM))
+    monkeypatch.setattr(fy.letterboxd, "diary", lambda user=None: lb.parse_diary(DIARY))
+    x = fy.title_letterboxd("movie", "tt1160419")
+    assert x["average"] == 3.89 and len(x["reviews"]) == 2
+    assert x["mine"] == {"rating": 4.5, "liked": True, "rewatch": True, "watched": "2026-10-30", "review": "Arena & especias.\nOtra vez."}
+    assert fy.title_letterboxd("series", "tt1160419")["average"] is None  # las series casi nunca están: ni se pregunta

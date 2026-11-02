@@ -255,7 +255,7 @@ struct BrowseView: View {
         let model = env.advancedFilter
         let _ = model.track()
         let context = FilterContext(filter: model.filter, platforms: model.platforms, language: env.services.appSettings.uiLanguage)
-        return FilterDoor(context: context, total: model.total, open: { page in
+        return FilterDoor(context: context, count: model.count, open: { page in
             filterStart = page
             showFilter = true
         }, clear: { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } })

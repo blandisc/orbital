@@ -6,14 +6,14 @@
 .chip {
   display: inline-flex; align-items: center; gap: var(--space-1);
   padding: .14rem .55rem; border-radius: var(--radius-xs); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
-  font-size: var(--type-secondary); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
+  font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); font-variant-numeric: tabular-nums;
   white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
 /* Placa: sobre una imagen (un póster, el logo de un canal) el dato va en una placa oscura, legible sobre cualquier arte. Mide lo
    mismo sea Chip o Badge (píldora, letra xs en negrita): el número de un canal, la nota de un póster, el sube y baja. */
 .chip--plate {
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
-  border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-footnote); font-weight: var(--weight-bold);
+  border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-label); font-weight: var(--type-label-weight);
 }
 .chip--good { color: var(--color-live); }
 .chip--warn { color: var(--color-warning); }
@@ -22,7 +22,7 @@
 .badge {
   display: inline-flex; align-items: center; padding: .1rem .55rem; border-radius: var(--radius-pill);
   background: var(--inverse-bg); color: var(--inverse-fg);
-  font-size: var(--type-footnote); font-weight: var(--weight-bold);
+  font-size: var(--type-label); font-weight: var(--type-label-weight);
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .badge--plate { background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge); }
@@ -32,7 +32,7 @@
 .pill {
   flex: none; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-5);
   border-radius: var(--radius-pill); white-space: nowrap; color: var(--color-text-muted);
-  font-size: var(--type-secondary); font-weight: var(--weight-medium);
+  font-size: var(--type-label-large); font-weight: var(--type-label-large-weight);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
 .pill .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); }
@@ -85,7 +85,7 @@
 /* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila
    enfocada (foco invertido, fondo claro) se invierte con ella. Con el dedo, cada una del alto de un dedo. */
 .segmented { flex: none; display: inline-flex; gap: var(--space-1); margin-left: auto; padding: var(--space-1); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); }
-.segmented__item { min-height: calc(var(--pill-height) - var(--space-2)); padding: 0 var(--space-4); font-size: var(--type-secondary); font-weight: var(--weight-medium); cursor: pointer; }
+.segmented__item { min-height: calc(var(--pill-height) - var(--space-2)); padding: 0 var(--space-4); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); cursor: pointer; }
 .segmented__item:hover { color: var(--color-text); }
 .segmented__item.pill--on { background: var(--color-primary); color: var(--color-on-primary); }
 .sheet__item--focused .segmented { background: var(--on-light-fill-strong); }
@@ -128,15 +128,15 @@
 /* SectionHead, en dos niveles como el iPhone. Subsección: el título blanco y, si ayuda, su porqué arriba en turquesa. */
 .section-head { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
 .section-head--reason { flex-wrap: wrap; row-gap: var(--space-1); }
-.section-head__reason { flex-basis: 100%; margin: 0; color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.section-head__title { font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); white-space: nowrap; }
-.section-head__end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-variant-numeric: tabular-nums; }
+.section-head__reason { flex-basis: 100%; margin: 0; color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section-head__title { font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); white-space: nowrap; }
+.section-head__end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
 /* Sección: el rótulo (ícono en el azul de Orbital, nombre en mayúsculas chicas, línea fina hasta la orilla y el dato). */
 .section-head--section { align-items: center; gap: var(--space-2); }
-.section-head__icon { display: grid; place-items: center; flex: none; width: 1.15em; height: 1.15em; color: var(--color-orbital); font-size: var(--type-secondary); }
+.section-head__icon { display: grid; place-items: center; flex: none; width: 1.15em; height: 1.15em; color: var(--color-orbital); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .section-head__icon svg { width: 100%; height: 100%; }
 .section-head__label {
-  margin: 0; color: var(--color-text-muted); font-family: var(--font-sans); font-size: var(--type-secondary); font-weight: var(--weight-bold);
+  margin: 0; color: var(--color-text-muted); font-family: var(--font-sans); font-size: var(--type-group-label); font-weight: var(--type-group-label-weight);
   letter-spacing: var(--tracking-caps); text-transform: uppercase; white-space: nowrap; /* ds-exception: rótulo de sección */
 }
 .section-head__rule { flex: 1; min-width: var(--space-6); height: 0; border-top: 1px solid var(--color-hairline); margin-left: var(--space-2); }
@@ -163,7 +163,7 @@
 .platform-mark { flex: none; width: var(--icon-lg); height: var(--icon-lg); object-fit: contain; filter: var(--shadow-drop-sm); }
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
-.badge--lg { padding: .22rem var(--space-3); font-size: var(--type-secondary); }
+.badge--lg { padding: .22rem var(--space-3); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* «En Netflix» (PlatformBadge): la cápsula del color de la plataforma, su logo a la izquierda y el texto en blanco. */
 .badge--platform { gap: var(--space-1); padding-left: var(--space-1); color: var(--color-text); background: var(--platform-color); }
 .badge--platform-netflix { --platform-color: var(--platform-netflix); }
@@ -182,9 +182,9 @@
 }
 .screen--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 .screen-head { display: grid; gap: var(--space-2); justify-items: center; text-align: center; max-width: 46rem; }
-.screen-head__eyebrow { color: var(--color-accent); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
-.screen-head__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
-.screen-head__lead { color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }
+.screen-head__eyebrow { color: var(--color-accent); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); }
+.screen-head__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
+.screen-head__lead { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 
 /* El nombre de una plataforma dentro de un texto (mosaico: «N.º 1 en Prime Video»): con el color y el carácter de su marca;
    el resto del texto no cambia. Netflix, apretado y en negrita; Prime Video en minúsculas, como su logo; Apple TV+ con el
@@ -194,7 +194,7 @@
 .brand-name--prime { color: var(--brand-prime); text-transform: lowercase; }
 .brand-name--disney { color: var(--brand-disney); }
 .brand-name--hbo { color: var(--brand-hbo); }
-.brand-name--appletv { font-weight: var(--weight-medium); } /* Apple: el mismo color del texto, solo su peso */
+.brand-name--appletv { font-weight: var(--weight-semibold); } /* Apple: el mismo color del texto, solo su peso */
 .brand-name--paramount { color: var(--brand-paramount); }
 .brand-name--crunchyroll { color: var(--brand-crunchyroll); }
 [data-input="touch"] .pill { min-height: var(--touch-target); }
@@ -208,7 +208,7 @@
   position: absolute; top: var(--ribbon-center); right: calc(var(--ribbon-length) / -2 + var(--ribbon-center));
   width: var(--ribbon-length); transform: translateY(-50%) rotate(45deg); text-align: center;
   padding-block: var(--space-1); background: linear-gradient(var(--color-shine), transparent 60%), var(--color-new);
-  color: var(--color-on-primary); font-size: var(--type-caption); font-weight: var(--weight-bold);
+  color: var(--color-on-primary); font-size: var(--type-badge); font-weight: var(--type-badge-weight);
   letter-spacing: var(--tracking-caps); text-transform: uppercase; box-shadow: var(--shadow-badge); /* ds-exception: listón «Nuevo» */
 }
 
@@ -223,8 +223,8 @@
 .empty-state { display: grid; justify-items: start; gap: var(--space-2); max-width: 34rem; padding-block: var(--space-4); }
 .empty-state__icon { display: grid; place-items: center; width: var(--control-height); height: var(--control-height); margin-bottom: var(--space-1); border-radius: 50%; background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text-muted); }
 .empty-state__icon .icon { width: var(--icon-lg); height: var(--icon-lg); }
-.empty-state__title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
-.empty-state__text { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }
+.empty-state__title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight); }
+.empty-state__text { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 
 /* Skeleton: la forma de lo que llega, quieta (sin brillo que corra: Orbital no gasta mientras espera). */
 .skeleton { display: block; flex: none; border-radius: var(--card-radius); background: var(--color-fill); }

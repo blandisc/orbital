@@ -247,14 +247,17 @@ const ui = {
   }),
   // «¿Qué vemos hoy?» (como el iPhone): el mazo de tus propuestas de hoy.
   match: createMatchDeck({
-    load: (mood) => api.matchDeck(mood),
+    load: () => api.matchDeck(),
     save: (card, add, where = null) => saveMatch(card, add, where),
     onOpen: (card) => openTitle(card),
     onPlay: (card) => (card.kind === "movie" ? watch({ kind: "movie", id: card.meta_id, title: card.title, item: card }) : openTitle(card)),
-    onSaved: (card, where, err) => (err ? (sound.play("error"), ui.toast.show(err.message, { error: true }))
-      : ui.toast.show(where === "match" ? "Guardada en Tu match perfecto" : "Guardada en Mi lista", { tone: "success", detail: card.title })),
+    // «Para hoy» (★): guardada y primera en Mi lista hoy; el aviso ofrece verla ya (como el iPhone).
+    onSaved: (card, where, err, { tonight = false } = {}) => (err ? (sound.play("error"), ui.toast.show(err.message, { error: true }))
+      : tonight ? ui.toast.show("Para hoy", { tone: "success", detail: card.title, action: { label: "Ver ya", onPress: () => { ui.match.close(); ui.match.play(card); } } })
+        : ui.toast.show(where === "match" ? "Guardada en Tu match perfecto" : "Guardada en Mi lista", { tone: "success", detail: card.title })),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
+    onReady: () => renderHints(),
   }),
   // Colecciones (como la repisa del iPhone): los premios y las listas famosas, con cuánto llevas.
   showcase: createShowcase({

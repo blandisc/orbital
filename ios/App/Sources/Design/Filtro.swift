@@ -391,8 +391,8 @@ struct FilterPanel<Content: View>: View {
 /// el cajón con ese filtro abierto; tocar arriba, el cajón sin nada abierto.
 struct FilterDoor: View {
     let context: FilterContext
-    /// Cuántos títulos encontró la última búsqueda con este filtro (nil: aún no se busca).
-    let total: Int?
+    /// Cuántos títulos encontró la última búsqueda con este filtro, por tipo (nil: aún no se busca).
+    let count: FilterCount?
     /// nil: el cajón sin nada abierto; si no, el filtro tocado.
     let open: (FilterPage?) -> Void
     /// «Limpiar»: quita todos los filtros desde aquí, sin abrir el cajón.
@@ -446,8 +446,61 @@ struct FilterDoor: View {
         let n = context.filter.activeCount
         guard n > 0 else { return Text("Sin escribir nombres: encuentra por género, época, calificación, premios y más") }
         let filters = n == 1 ? Text("1 filtro") : Text("\(n) filtros")
-        guard let total else { return filters }
-        return Text("\(filters) · \(Strings.count(total, language: context.language)) títulos la última vez")
+        guard let count else { return filters }
+        return Text("\(filters) · \(ResultCountHeader.phrase(count, language: context.language)) la última vez")
+    }
+}
+
+/// Cuántos trae una búsqueda (opción A, Fernando 2 nov 2026): la cifra grande con «títulos» y, si hay de los dos, cuántas
+/// películas y cuántas series con su ícono. El número es el de TMDB: si se quitan las que ya viste, se dice que es de antes.
+struct ResultCountHeader: View {
+    let count: FilterCount
+    /// «Sin vistas» puesto: el número es de antes de quitarlas.
+    var beforeWatched = false
+    let language: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                Text(verbatim: Strings.count(count.total, language: language)).recipe(.stat).contentTransition(.numericText())
+                (count.total == 1 ? Text("título") : Text("títulos")).recipe(.labelLarge, color: DS.textMuted)
+            }
+            if count.movies > 0, count.series > 0 {
+                HStack(spacing: DS.Space.s4) {
+                    part("movie", count.movies)
+                    part("series", count.series)
+                }
+            }
+            if beforeWatched { Text("Antes de quitar las que ya viste").recipe(.caption, color: DS.textMuted) }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("filter-total")
+    }
+
+    /// «🎬 860 películas»: la cifra en blanco, la palabra en gris.
+    private func part(_ kind: String, _ n: Int) -> some View {
+        let number = Text(verbatim: Strings.count(n, language: language)).foregroundStyle(DS.text)
+        let title: Text = switch (kind, n) {
+        case ("movie", 1): Text("\(number) película")
+        case ("movie", _): Text("\(number) películas")
+        case (_, 1): Text("\(number) serie")
+        default: Text("\(number) series")
+        }
+        return Label { title } icon: { Image(systemName: KindGlyph.symbol(kind)) }.recipe(.label, color: DS.textMuted).monospacedDigit()
+    }
+
+    /// En una línea, para la puerta de Buscar: «860 películas y 380 series», «12 películas», «1 serie».
+    static func phrase(_ count: FilterCount, language: String) -> String {
+        func n(_ v: Int) -> String { Strings.count(v, language: language) }
+        func tr(_ key: String, _ v: Int) -> String { String(format: Strings.tr(key, language: language), n(v)) }
+        let movies = count.movies == 1 ? tr("%@ película", 1) : tr("%@ películas", count.movies)
+        let series = count.series == 1 ? tr("%@ serie", 1) : tr("%@ series", count.series)
+        switch (count.movies > 0, count.series > 0) {
+        case (true, true): return String(format: Strings.tr("%@ y %@", language: language), movies, series)
+        case (true, false): return movies
+        case (false, true): return series
+        case (false, false): return tr("%@ títulos", 0)
+        }
     }
 }
 

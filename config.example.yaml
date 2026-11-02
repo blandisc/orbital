@@ -54,6 +54,7 @@ para_ti:
   tmdb_key: ""
   rawg_key: ""
   mdblist_key: ""
+  letterboxd_user: ""   # tu usuario de Letterboxd: tu reseña en la ficha y tus listas (solo leer; también en Ajustes › Cuentas)
   # «Aprobadas por la crítica» (Rotten Tomatoes): «mdblist:usuario/lista» o «trakt:usuario/lista»; vacío = no sale.
   critics_movies: "mdblist:tbotcotw/recent-certified-fresh"
   critics_series: "trakt:truckclancy/rotten-tomatoes-certified-fresh-tv-shows-ranked-by-tomatometer-score"

@@ -10,11 +10,11 @@
   -webkit-mask-image: linear-gradient(90deg, var(--fade-start) 0, var(--mask-solid) 12%, var(--mask-solid) 86%, transparent);
   mask-image: linear-gradient(90deg, var(--fade-start) 0, var(--mask-solid) 12%, var(--mask-solid) 86%, transparent); }
 .browse__bar .browse__filters--scrolled { --fade-start: transparent; } /* recorrida: también se desvanece por la izquierda */
-.browse__count { flex: none; white-space: nowrap; margin-left: auto; color: var(--color-text-muted); font-size: var(--type-secondary); font-variant-numeric: tabular-nums; }
+.browse__count { flex: none; white-space: nowrap; margin-left: auto; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
 .browse__bar--compact .pill { padding: 0 var(--space-4); }
 .browse__bar--compact .browse__count { display: none; }
 .browse__bar--tight .browse__filters { gap: var(--space-2); }
-.browse__bar--tight .pill { padding: 0 var(--space-3); font-size: var(--type-footnote); }
+.browse__bar--tight .pill { padding: 0 var(--space-3); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 
 /* --- Portadas: aire generoso con los filtros y entre ellas; la enfocada crece sin cortarse arriba. --- */
 .browse__viewport {

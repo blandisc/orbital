@@ -146,10 +146,10 @@ struct DecideView: View {
                     Task { await env.play(s, from: start) }
                 } label: {
                     Group {
-                        // Como «Ver» de la ficha: «Ver T1 E1» o «Continuar T2 E5» (en un iPhone angosto se achica un poco, no se
-                        // esconde el capítulo).
-                        if let start, let season = start.season, let episode = start.episode {
-                            Label { start.isResume ? Text("Continuar T\(season) E\(episode)") : Text("Ver T\(season) E\(episode)") } icon: { Image(systemName: "play.fill") }
+                        // Una serie se propone completa, no un capítulo (Fernando, 2 nov 2026): «Ver la serie» o «Continuar la
+                        // serie», y arranca donde vas (el primero si no la has empezado).
+                        if s.kind == "series" {
+                            Label { start?.isResume == true ? Text("Continuar la serie") : Text("Ver la serie") } icon: { Image(systemName: "play.fill") }
                         } else {
                             Label("Ver", systemImage: "play.fill")
                         }
@@ -312,7 +312,9 @@ struct DecideView: View {
     /// «58 min · IMDb 8.4 · Ligero»: lo que se puede comprobar.
     private func why(_ s: Suggestion, _ m: DecideModel) -> String {
         var parts: [String] = []
-        if let minutes = m.minutes { parts.append("\(minutes) min") }
+        // En una serie, lo que dura un capítulo («42 min por episodio», como la TV): se propone la serie, no un capítulo.
+        if s.kind == "series" { parts.append(m.minutes.map { String(format: Strings.tr("%@ por episodio", language: language), "\($0) min") } ?? Strings.tr("Serie", language: language)) }
+        else if let minutes = m.minutes { parts.append("\(minutes) min") }
         if let r = m.imdbRating { parts.append(String(format: "IMDb %.1f", r)) }
         else if let r = s.traktRating { parts.append(String(format: "Trakt %.1f", r)) }
         if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }

@@ -153,6 +153,7 @@ final class AdvancedFilterTests: XCTestCase {
         let found = try await tmdb.discoverCounting(f)
         XCTAssertEqual(found.rows.count, 2, "una búsqueda por década")
         XCTAssertEqual(found.total, 80)
+        XCTAssertEqual(found.count, FilterCount(movies: 80, series: 0), "por tipo: solo películas")
         XCTAssertEqual(dict(f.params(kind: "movie", years: 1990...1999))["primary_release_date.lte"], "1999-12-31")
     }
 

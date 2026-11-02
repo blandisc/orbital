@@ -188,6 +188,28 @@
         }
       }
     },
+    "%@ película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ movie"
+          }
+        }
+      }
+    },
+    "%@ películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ movies"
+          }
+        }
+      }
+    },
     "%@ películas y %@ capítulos": {
       "extractionState": "manual",
       "localizations": {
@@ -195,6 +217,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ movies and %@ episodes"
+          }
+        }
+      }
+    },
+    "%@ por episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ per episode"
+          }
+        }
+      }
+    },
+    "%@ serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ show"
+          }
+        }
+      }
+    },
+    "%@ series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ shows"
           }
         }
       }
@@ -232,6 +287,28 @@
         }
       }
     },
+    "%@ títulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ titles"
+          }
+        }
+      }
+    },
+    "%@ y %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ and %@"
+          }
+        }
+      }
+    },
     "%@ y %lld más": {
       "extractionState": "manual",
       "localizations": {
@@ -250,6 +327,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · %@ la última vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ last time"
           }
         }
       }
@@ -1907,6 +1995,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Before the 90s"
+          }
+        }
+      }
+    },
+    "Antes de quitar las que ya viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before removing what you've watched"
           }
         }
       }
@@ -5545,6 +5644,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continue S%lld E%lld"
+          }
+        }
+      }
+    },
+    "Continuar la serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue the show"
           }
         }
       }
@@ -28949,6 +29059,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "your best streak"
+          }
+        }
+      }
+    },
+    "título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "title"
+          }
+        }
+      }
+    },
+    "títulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "titles"
           }
         }
       }

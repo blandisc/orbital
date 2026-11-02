@@ -192,6 +192,23 @@ const cssRules = () => COMPONENT_CSS.flatMap((file) => [...stripCssComments(read
   .map((m) => ({ file: file.slice(WEB.length + 1), sel: m[1].trim().replace(/\s+/g, " "), body: m[2] })));
 const rule = (r) => `${r.file} ${r.sel.slice(0, 90)}`;
 
+// Las recetas de texto (las del iPhone, DS.TextRecipe): una pieza usa el tamaño y el grosor de la misma receta, siempre juntos.
+// Torcer una receta con otro grosor es otra receta (como hizo el iPhone con label, labelLarge, badge…): no se vale a mano.
+test("recetas de texto: cada tamaño va con el grosor de su misma receta (y los números de «data» y «stat», tabulares)", () => {
+  const offenders = [];
+  for (const r of cssRules()) {
+    const size = r.body.match(/font-size:\s*var\(--type-([a-z-]+)\)/)?.[1];
+    const short = r.body.match(/font:\s*var\(--type-([a-z-]+)-weight\)\s+var\(--type-([a-z-]+)\)/);
+    if (short && short[1] !== short[2]) offenders.push(`${rule(r)}: font con dos recetas`);
+    if (/font:\s*var\(--weight-/.test(r.body)) offenders.push(`${rule(r)}: font con un grosor suelto (usa --type-<receta>-weight)`);
+    if (!size) continue;
+    const weight = r.body.match(/font-weight:\s*var\(--([a-z-]+)\)/)?.[1];
+    if (weight !== `type-${size}-weight`) offenders.push(`${rule(r)}: --type-${size} con ${weight ? `--${weight}` : "el grosor heredado"}`);
+    if ((size === "data" || size === "stat") && !/tabular-nums/.test(r.body)) offenders.push(`${rule(r)}: --type-${size} sin tabular-nums`);
+  }
+  assert.deepEqual(offenders, [], "font-size: var(--type-X); font-weight: var(--type-X-weight)");
+});
+
 test("vidrio: ningún control se pinta con el gris de antes (--color-fill), solo los esqueletos de carga", () => {
   const offenders = cssRules().filter((r) => /background[^;]*var\(--color-fill(-hover)?\)/.test(r.body) && !/skeleton|search__ghost|shimmer/.test(r.sel));
   assert.deepEqual(offenders.map(rule), [], "Un control: background: var(--color-glass) y su filo (--edge-glass, --edge-glass-hairline)");

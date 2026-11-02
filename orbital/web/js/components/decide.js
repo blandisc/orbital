@@ -28,12 +28,12 @@ export function decideLead(picks, time) {
   return `${fit === 1 ? "Una cabe" : "Dos caben"} en ${time}; ${picks.length - fit === 1 ? "la otra es la más corta" : "las otras, las más cortas"}.`;
 }
 
-/** La línea de datos de una propuesta: por qué · cuánto dura · IMDb · géneros · en qué episodio vas. */
+/** La línea de datos de una propuesta: por qué · cuánto dura · IMDb · géneros. Una serie se propone completa, sin el
+ * episodio en que vas (Fernando, 2 nov 2026; antes decía «Sigue T2 E5»). */
 export function pickFacts(p) {
   const minutes = p.minutes ? duration(p.minutes * 60) : ""; // «42 min» (runtime() espera el texto «42 min»: daba «2520»)
   return [p.why, p.kind === "series" ? (minutes ? `${minutes} por episodio` : "Serie") : minutes,
-    p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", "),
-    p.episode ? `Sigue ${p.episode}` : ""].filter(Boolean).join(" · ");
+    p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", ")].filter(Boolean).join(" · ");
 }
 
 export function createDecide({ load, skip, onPick, onMove, onClose, onChange = () => {} }) {

@@ -7,14 +7,14 @@
   background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
-.trakt-link__step { color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }
+.trakt-link__step { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 .trakt-link__step strong { color: var(--color-text); font-weight: var(--weight-bold); }
 .trakt-link__row { display: flex; align-items: center; justify-content: center; gap: var(--space-8); }
-.trakt-link__qr { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); }
+.trakt-link__qr { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .trakt-link__qr-image { display: block; width: 7.5rem; height: 7.5rem; border-radius: var(--radius-md); }
 .trakt-link__code {
   display: flex; gap: var(--space-3); min-height: 5.6rem; padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg);
-  background: var(--color-bg); font-family: var(--font-sans); font-size: var(--type-hero); font-weight: var(--weight-bold);
+  background: var(--color-bg); font-family: var(--font-sans); font-size: var(--type-hero); font-weight: var(--type-hero-weight);
   font-variant-numeric: tabular-nums; line-height: var(--leading-none);
 }
 .trakt-link__char { min-width: .8em; animation: rise-in var(--duration-enter) var(--ease-out) both; }
@@ -22,7 +22,7 @@
 .trakt-link__char:nth-child(4) { animation-delay: calc(var(--stagger) * 3); } .trakt-link__char:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
 .trakt-link__char:nth-child(n+6) { animation-delay: calc(var(--stagger) * 5); }
 .trakt-link__placeholder { color: var(--color-text-faint); }
-.trakt-link__status { display: inline-flex; align-items: center; gap: var(--space-3); min-height: 1.6em; color: var(--color-text-muted); font-size: var(--type-body); }
+.trakt-link__status { display: inline-flex; align-items: center; gap: var(--space-3); min-height: 1.6em; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 /* Esperando: un punto que respira (como «te escuché»), sin girar nada. */
 .trakt-link__status--waiting::before {
   content: ""; width: .7rem; height: .7rem; border-radius: 50%; background: var(--color-text-muted);
@@ -30,5 +30,5 @@
 }
 @keyframes trakt-breathe { from { opacity: .25; transform: scale(.8); } }
 .trakt-link__status--error { color: var(--color-danger); }
-.trakt-link__list { list-style: none; padding: 0; display: grid; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); text-align: left; }
+.trakt-link__list { list-style: none; padding: 0; display: grid; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); text-align: left; }
 .trakt-link__list li::before { content: "✓"; margin-right: var(--space-3); color: var(--color-text); }

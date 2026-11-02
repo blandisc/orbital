@@ -25,7 +25,7 @@
 }
 .hero__eyebrow {
   display: flex; align-items: center; gap: var(--space-2); min-height: 1.3rem;
-  color: var(--color-text-muted); font-weight: var(--weight-medium); font-size: var(--type-secondary);
+  color: var(--color-text-muted); font-weight: var(--type-label-large-weight); font-size: var(--type-label-large);
   transition: color var(--duration-tint) var(--ease-out);
 }
 .hero__eyebrow--reason { color: var(--color-reason); }
@@ -36,10 +36,10 @@
   /* Interlínea snug y solo .08em de relleno: la cola de g, p, j, y cabe, y con más relleno line-clamp dejaba asomar la tercera línea. */
   margin: var(--space-2) 0 var(--space-3);
   font-family: var(--font-sans); font-size: var(--type-hero); line-height: var(--leading-tight); text-wrap: balance;
-  font-weight: var(--weight-bold); letter-spacing: var(--tracking-display);
+  font-weight: var(--type-hero-weight); letter-spacing: var(--tracking-display);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0;
   text-shadow: var(--shadow-text); }
-.hero__title--long { font-size: var(--type-display); }
+.hero__title--long { font-size: var(--type-display); font-weight: var(--type-display-weight); }
 /* Logotipo del título (Stremio): ocupa el lugar del texto, alineado a la izquierda. */
 .hero__logo {
   display: block; width: auto; max-width: min(30rem, 100%); max-height: 7.5rem; margin: var(--space-3) 0 var(--space-4);
@@ -56,12 +56,12 @@
 :is([data-text-size="large"], [data-text-size="xlarge"]) .hero__logo { margin: var(--space-2) 0; min-height: var(--pill-height); }
 :is([data-text-size="large"], [data-text-size="xlarge"]) .hero__row { margin-top: var(--space-3); }
 .hero__description {
-  max-width: 36rem; margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed);
+  max-width: 36rem; margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .hero__facts {
   display: flex; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; max-width: 100%; align-items: center; gap: var(--space-2) var(--space-3);
-  min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-body);
+  min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight);
   font-variant-numeric: tabular-nums;
 }
 .hero__fact-sep { opacity: var(--opacity-faint); }
@@ -82,7 +82,7 @@
 /* Frase para Alexa: discreta, debajo de los botones; enseña la voz sin estorbar. */
 .hero__voice {
   display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4);
-  color: var(--color-text-muted); font-size: var(--type-secondary); font-style: italic;
+  color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-style: italic;
   animation: fade-in var(--duration-slow) var(--ease-out);
 }
 .hero__voice svg { flex: none; width: var(--icon-sm); height: var(--icon-sm); color: var(--color-accent); }
@@ -93,8 +93,8 @@
    y no hace falta compactar. Solo por debajo de 600 px, donde la letra ya no puede bajar de 12 px
    (antes 760 px: la TV al 300 % —720 px— se compactaba y quedaba un hueco abajo). */
 @media (max-height: 600px) {
-  .hero__title { -webkit-line-clamp: 1; font-size: var(--type-display); }
-  .hero__title--long { font-size: var(--type-title); }
+  .hero__title { -webkit-line-clamp: 1; font-size: var(--type-display); font-weight: var(--type-display-weight); }
+  .hero__title--long { font-size: var(--type-title); font-weight: var(--type-title-weight); }
   .hero__voice { display: none; }
   .hero__description { -webkit-line-clamp: 1; }
   .hero__row { margin-top: var(--space-3); }
@@ -105,7 +105,7 @@
 }
 @media (max-width: 760px) {
   .hero__content { max-width: 100%; }
-  .hero__title { font-size: var(--type-title); }
+  .hero__title { font-size: var(--type-title); font-weight: var(--type-title-weight); }
 }
 /* Todo · Películas · Series (pestañas de texto) arriba del porqué, como la franja del Inicio del iPhone. */
 .hero__kinds { display: flex; gap: var(--space-1); margin: 0 0 var(--space-3) calc(var(--space-3) * -1); }

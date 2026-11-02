@@ -34,6 +34,7 @@ from typing import Any
 
 from . import decide as decide_api
 from .library import charts as charts_api
+from .library import letterboxd as letterboxd_api
 from .library import mdblist as mdblist_api
 from .library import rawg as rawg_api
 from .library import stremio_api
@@ -88,7 +89,7 @@ FRESH_BRANDS = ("netflix", "disney", "hbo")  # «Nuevo en tus plataformas» las 
 FRESH_SERIES_DAYS, FRESH_MOVIE_DAYS = 14, 90
 FIRST_YEAR = 1980  # «Por año», del actual hacia atrás
 # Lo que solo arma la TV (el iPhone calcula los suyos): no viaja por el túnel (server._foryou_public_routes).
-TV_ONLY_PREFIXES = ("because", "fresh", "canon:", "award:", "studio:", "year:", "genre:", "season:")
+TV_ONLY_PREFIXES = ("because", "fresh", "canon:", "letterboxd:", "award:", "studio:", "year:", "genre:", "season:")
 
 
 def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
@@ -119,7 +120,9 @@ AWARD_ORDER = ("oscar", "palm", "ariel", "globe", "bafta", "emmy")  # el orden d
 
 
 KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",),
-        "steamgriddb": ("steamgriddb_key",), "mdblist": ("mdblist_key",)}  # esta no es de Para ti: más portadas para tus juegos (scraper.SteamGridDB)
+        "steamgriddb": ("steamgriddb_key",), "mdblist": ("mdblist_key",),
+        # Letterboxd no tiene clave: tu usuario (solo se lee lo público de tu perfil, como el iPhone).
+        "letterboxd": ("letterboxd_user",)}  # esta no es de Para ti: más portadas para tus juegos (scraper.SteamGridDB)
 KEY_PREFIX = "para_ti."
 
 
@@ -431,6 +434,7 @@ class ForYou:
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
         self.rawg = rawg_api.Rawg(self._key("rawg_key"))
         self.mdblist = mdblist_api.MdbList(self._key("mdblist_key"))
+        self.letterboxd = letterboxd_api.Letterboxd(self._key("letterboxd_user"))
 
     def set_keys(self, service: str, values: list[str]) -> None:
         """Guarda (o, vacías, quita) las claves de un servicio escritas en Ajustes › Cuentas. TMDB y
@@ -439,6 +443,15 @@ class ForYou:
         if not names or len(values) != len(names):
             raise ValueError("Servicio inválido")
         values = [str(v or "").strip() for v in values]
+        if service == "letterboxd" and values[0]:
+            user = letterboxd_api.clean_user(values[0])
+            if not user:
+                raise ValueError("Escribe tu usuario de Letterboxd: el de letterboxd.com/tu-usuario (letras, números y «_»).")
+            try:
+                letterboxd_api.Letterboxd(user).diary()
+            except letterboxd_api.LetterboxdNotFound as exc:
+                raise ValueError(f"No encontré «{user}» en Letterboxd.") from exc
+            values = [user]
         if any(len(v) > 400 or not re.fullmatch(r"[!-~]*", v) for v in values):
             raise ValueError("Esa clave tiene espacios o caracteres raros: cópiala otra vez.")
         if any(values[1:]) and not values[0]:  # Trakt: el Client Secret es opcional (las aplicaciones nuevas no tienen)
@@ -476,6 +489,7 @@ class ForYou:
                           "scrobble": self.catalog.watch.scrobbler.snapshot()},
                 "tmdb": self.tmdb.configured, "rawg": self.rawg.configured, "mdblist": bool(self.mdblist.key),
                 "steamgriddb": bool(self._key("steamgriddb_key")),
+                "letterboxd": self.letterboxd.user,  # tu usuario («Cuentas» lo enseña) o None
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
                 "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}
 
@@ -587,6 +601,10 @@ class ForYou:
                 own = []
             video += [{"id": f"list:{row['id']}", "title": row["name"], "icon": "list", "source": "Trakt", "meta": "Tu lista"}
                       for row in own[:8]]
+        # Tus listas de Letterboxd (como el iPhone, en Tus listas): solo leer.
+        video += [{"id": f"letterboxd:{row['slug']}", "title": row["name"], "icon": "list", "source": "Letterboxd",
+                   "meta": "Tu lista de Letterboxd", **({"count": row["count"]} if row.get("count") else {})}
+                  for row in self._letterboxd_lists()[:8]]
         if self.trakt.configured:
             video += [
                 {"id": "trend", "title": "En tendencia", "icon": "trend", "source": "Trakt", "meta": "Lo más visto esta semana", "split": True},
@@ -824,6 +842,53 @@ class ForYou:
             out["more"] = [video_item(e, "Más como esto") for e in related[:15]]
         return out
 
+    def title_letterboxd(self, kind: str, imdb: str) -> dict:
+        """Letterboxd en la ficha, como el iPhone: su promedio (0.5–5) y sus reseñas populares (de cualquier película, sin
+        cuenta) y, con tu usuario, tu reseña: tus estrellas, el ♥, cuándo la viste y lo que escribiste (de tu diario).
+        Las series casi nunca están. Se recuerda tres días (el diario, una hora)."""
+        out: dict = {"average": None, "reviews": [], "slug": None, "mine": None}
+        if kind != "movie" or not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            return out
+        try:
+            info = self.cache.get(f"letterboxd:info:{imdb}", 3 * SLOW_TTL, lambda: self.letterboxd.info(imdb) or {})
+        except (letterboxd_api.LetterboxdError, *SERVICE_ERRORS):
+            info = {}
+        out.update({k: info.get(k) for k in ("average", "slug")}, reviews=info.get("reviews") or [])
+        if self.letterboxd.configured:
+            try:
+                diary = self.cache.get("letterboxd:diary", RECS_TTL, self.letterboxd.diary)
+                tmdb = self.tmdb.find_id(imdb, "movie") if self.tmdb.configured else None
+                mine = next((e for e in diary if (tmdb and e.get("tmdb") == tmdb) or (info.get("slug") and e.get("slug") == info["slug"])), None)
+                if mine and (mine.get("rating") or mine.get("review") or mine.get("liked")):
+                    out["mine"] = {k: mine.get(k) for k in ("rating", "liked", "rewatch", "watched", "review")}
+            except (letterboxd_api.LetterboxdError, *SERVICE_ERRORS):
+                log.info("Ficha: no pude leer tu diario de Letterboxd")
+        return out
+
+    def _letterboxd_lists(self) -> list[dict]:
+        """Tus listas de Letterboxd (las públicas). Letterboxd a veces cierra esa página a las aplicaciones: entonces, ninguna."""
+        if not self.letterboxd.configured:
+            return []
+        try:
+            return self.cache.get("letterboxd:lists", MINE_TTL, self.letterboxd.lists, stale=True)
+        except (letterboxd_api.LetterboxdError, *SERVICE_ERRORS) as exc:
+            log.info("Para ti: no pude leer tus listas de Letterboxd: %s", exc)
+            return []
+
+    def _letterboxd_list(self, slug: str) -> list[dict]:
+        """Las películas de una de tus listas de Letterboxd, con su IMDb (cada película se resuelve una vez y se recuerda)."""
+        films = self.cache.get(f"letterboxd:list:{slug}", MINE_TTL, lambda: self.letterboxd.list_films(slug))
+
+        def one(f: dict) -> dict | None:
+            try:
+                found = self.cache.get(f"letterboxd:film:{f['slug']}", 30 * SLOW_TTL, lambda: self.letterboxd.resolve(f["slug"]) or {})
+            except (letterboxd_api.LetterboxdError, *SERVICE_ERRORS):
+                return None
+            return {"imdb": found["imdb"], "kind": found.get("kind") or "movie", "title": f["title"], "year": f.get("year")} if found.get("imdb") else None
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            return [e for e in pool.map(one, films[:200]) if e]
+
     def title_ratings(self, kind: str, imdb: str) -> dict:
         """Las calificaciones de la ficha, como el iPhone (RatingsRow): IMDb (de Cinemeta), TMDB y Trakt, en 0–10. Las que no
         se pueden saber (sin clave, sin red, sin votos) quedan en None; se recuerdan un día."""
@@ -1041,6 +1106,8 @@ class ForYou:
             return [video_item(e, "En Mi lista") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
         if list_id == TRAKT_FAVORITES:  # ya se guardan un rato en Trakt (y se preguntan con last_activities)
             return [video_item(e, "En tus favoritos") for e in t.favorites()]
+        if list_id.startswith("letterboxd:"):
+            return [video_item(e, "Tu lista de Letterboxd", in_list=True) for e in self._letterboxd_list(list_id.removeprefix("letterboxd:"))]
         if list_id.startswith("list:"):
             lid = list_id.removeprefix("list:")
             name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")

@@ -58,7 +58,7 @@
   /* El nombre de un premio (Óscar, Emmy…), como en su ceremonia: con remate, en mayúsculas espaciadas. */
   --font-award: "Didot", "Bodoni MT", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --tracking-award: .14em;
-  /* El logotipo «orbital» (status-bar, boot), con su luna como punto final; en SemiBold (`--weight-medium`), la única que trae. */
+  /* El logotipo «orbital» (status-bar, boot), con su luna como punto final; en SemiBold (`--weight-semibold`), la única que trae. */
   --font-brand: "Orbital Wordmark", var(--font-sans);
   --tracking-brand: -.03em;
   /* Legible a 3 m: a 1080p el texto secundario no baja de ~18 px ni el cuerpo de ~23 px.
@@ -75,21 +75,47 @@
   --text-display: calc(3.7rem * var(--text-scale));
   /* Recetas de texto: los mismos nombres que el iPhone (design/tokens.json → «type»), sobre esta escala.
      Una pieza nueva usa la receta; el peso va con ella (section y title en negrita, cardTitle y eyebrow medium). */
+  /* Las recetas de texto, las mismas del iPhone (DS.TextRecipe, design/tokens.json › type): cada una es un tamaño de la escala
+     y un grosor, y una pieza usa los dos juntos (su tamaño --type-<receta> y su grosor --type-<receta>-weight). La prueba de
+     design-system lo vigila: nada de torcer una receta con otro grosor; si hace falta otro, es otra receta. */
   --type-hero: var(--text-display); /* el título del héroe de Películas y series y Apps (solo la TV) */
+  --type-hero-weight: var(--weight-bold);
   --type-display: var(--text-3xl);
+  --type-display-weight: var(--weight-bold);
   --type-title: var(--text-2xl);
+  --type-title-weight: var(--weight-bold);
   --type-heading: var(--text-xl); /* un encabezado de zona (Inicio, hojas, el mosaico), entre section y title (solo la TV) */
+  --type-heading-weight: var(--weight-bold);
   --type-section: var(--text-lg);
+  --type-section-weight: var(--weight-bold);
   --type-card-title: var(--text-md);
+  --type-card-title-weight: var(--weight-semibold);
   --type-body: var(--text-md);
+  --type-body-weight: var(--weight-regular);
   --type-secondary: var(--text-sm);
+  --type-secondary-weight: var(--weight-regular);
   --type-footnote: var(--text-xs);
+  --type-footnote-weight: var(--weight-regular);
   --type-caption: var(--text-2xs);
+  --type-caption-weight: var(--weight-regular);
   --type-eyebrow: var(--text-sm);
-  --type-data: var(--text-xs);
+  --type-eyebrow-weight: var(--weight-semibold);
+  --type-data: var(--text-xs); /* números tabulares (tabular-nums), nunca una monoespaciada */
+  --type-data-weight: var(--weight-regular);
+  --type-label: var(--text-xs); /* un rótulo o botón chico, un dato que resalta */
+  --type-label-weight: var(--weight-semibold);
+  --type-label-large: var(--text-sm); /* el valor de un control, un nombre en un renglón */
+  --type-label-large-weight: var(--weight-semibold);
+  --type-badge: var(--text-2xs); /* una placa: «4K», «Nuevo», cifras en una placa */
+  --type-badge-weight: var(--weight-bold);
+  --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en mayúsculas (DSGroupLabel); en la TV, un paso más grande: se lee de lejos */
+  --type-group-label-weight: var(--weight-bold);
+  --type-stat: var(--text-2xl); /* una cifra grande, tabular: el número que tecleas en TV en vivo */
+  --type-stat-weight: var(--weight-heavy);
   --weight-regular: 400;
-  --weight-medium: 600;
+  --weight-semibold: 600;
   --weight-bold: 700;
+  --weight-heavy: 800; /* la cifra grande (stat), como el .heavy del iPhone */
   /* Interlineado: seis pasos. none = una línea suelta (reloj, glifos); tight = títulos grandes; snug = datos y títulos medianos;
      title = texto chico con «…» o line-clamp (el recorte corta en el renglón y con menos de ~1.3 se comía la cola de g, p, j, y);
      normal = textos cortos; relaxed = párrafos. Un título GRANDE con line-clamp no sube el interlineado: deja asomar la cola con
@@ -204,6 +230,11 @@
   --control-height: 3rem; /* un botón, un aviso, la barra de arriba */
   /* Lo que ocupa debajo de una portada enfocada su nombre y su dato (dos renglones de footnote, card.css · .card__caption), y
      crece con ella al enfocarse. Lo deja libre la fila que los enseña (Inicio, la página de un juego). */
+  --review-width: 30rem; /* una reseña de Letterboxd en la ficha */
+  --letterboxd-edge: 3px; /* el borde verde de tu reseña (DS.Letterboxd.edge) */
+  --match-card-height: 40rem; /* la carta del mazo: un póster grande (2:3), lo más alta que quepa */
+  --match-stamp-line: 3px; /* el borde del sello (DS.Match.stampLine) */
+  --match-stamp-tilt: 12deg; /* el giro del sello y de la carta al salir (DS.Match.stampTilt) */
   --caption-room: calc((.65rem + 2.8 * var(--type-footnote)) * 1.15);
   --status-room: calc(var(--space-5) + var(--safe-y) + var(--control-height)); /* lo que ocupa la barra de arriba con su margen */
   --control-sm: 2.75rem; /* una pestaña de la barra de arriba, una tecla del riel */
@@ -223,6 +254,8 @@
   /* Los espacios de una pantalla (DS.Layout del iPhone, design/tokens.json › layout). En la TV solo existe el del título a lo
      suyo: entre filas y secciones manda el alto fijo de cada fila (la pantalla es la medida, no hay pila que crezca). */
   --layout-title-to-content: var(--space-3);
+  --layout-between-subsections: var(--space-6); /* entre subsecciones de una pila (DS.Layout.betweenSubsections): las tandas de Cambiar el arte, TV en vivo */
+  --layout-between-sections: var(--space-10); /* entre secciones de una pila (DS.Layout.betweenSections): lo de abajo de la ficha */
   --icon-xl: 1.8rem;
   /* Grosor del trazo de un ícono (viewBox 24): fino por omisión; más grueso en lo chico (una palomita, la marca de una plataforma). */
   --stroke-fine: 1.75;
@@ -251,6 +284,7 @@
   --opacity-solid: .9;
   --opacity-soft: .55;
   --opacity-dim: .35;
+  --opacity-match-tint: .45; /* el tinte de la carta del mazo al decidir (DS.Match.tintMax) */
   --opacity-grain: .035;
   --tile-gap: 1.1rem;
   /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro

@@ -84,7 +84,7 @@
 /* La portada no llegó: la inicial del título en la tarjeta, que se vea a propósito. */
 .launch__cover--missing::after {
   content: attr(data-initial); position: absolute; inset: 0; display: grid; place-items: center;
-  color: var(--color-text-muted); font-size: var(--type-title); font-weight: var(--weight-bold);
+  color: var(--color-text-muted); font-size: var(--type-title); font-weight: var(--type-title-weight);
 }
 .launch__orbit {
   position: absolute; left: 50%; top: 50%;
@@ -135,14 +135,14 @@
 
 /* --- Qué está pasando -------------------------------------------------------------------------------------------- */
 .launch__text { display: grid; justify-items: center; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-2) backwards; transition: opacity var(--duration-base) var(--ease-in); }
-.launch__label { color: var(--color-accent); font-size: var(--type-body); font-weight: var(--weight-medium); }
+.launch__label { color: var(--color-accent); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); }
 /* La fase cambia con un fundido corto (no un salto de texto). */
 .launch__label--changed { animation: fade-in var(--duration-enter) var(--ease-out); }
-.launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance; }
-.launch__subtitle { color: var(--color-text-muted); font-size: var(--type-body); min-height: 1lh; }
-.launch__leave { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--type-secondary); }
+.launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance; }
+.launch__subtitle { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); min-height: 1lh; }
+.launch__leave { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* Tarda de más: lo dice (que no parezca colgada); B sigue a la mano. */
-.launch__note { margin-top: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary);
+.launch__note { margin-top: var(--space-4); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
   animation: fade-in var(--duration-enter) var(--ease-out); }
 /* Barra de carga: pista y un barrido de luz (no sabemos cuánto falta: no fingimos un porcentaje). */
 .launch__progress { position: relative; width: 16rem; height: 4px; margin-top: var(--space-6); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }

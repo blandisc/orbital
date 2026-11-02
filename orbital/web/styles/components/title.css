@@ -61,11 +61,11 @@
 .title__logo { max-width: min(100%, 32rem); max-height: 10rem; width: auto; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); margin-bottom: var(--space-2); }
 .title--series .title__logo { max-height: 7.5rem; }
 .title__name {
-  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance;
+  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; }
 
 /* Un renglón: qué es (Película · clasificación · año · géneros · duración) y, a su lado, las calificaciones. */
-.title__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); font-size: var(--type-body); font-variant-numeric: tabular-nums; }
+.title__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); font-size: var(--type-body); font-weight: var(--type-body-weight); font-variant-numeric: tabular-nums; }
 .title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); }
 .title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
 .title__sep { opacity: var(--opacity-faint); }
@@ -76,14 +76,15 @@
 .title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); }
 .title__rating-mark { display: block; height: 1.3rem; width: auto; }
 .title__rating-mark--trakt { height: 1.4rem; } /* el círculo se ve más chico que las cajas a la misma altura */
+.title__rating-mark--letterboxd { height: 1.1rem; } /* sus tres puntos, a lo ancho */
 
 /* Serie, con el foco en la fila: cuál episodio es («T2 · E3 · Su nombre»). Guarda su renglón aunque esté vacío. */
 .title__episode {
-  min-height: 1lh; font-size: var(--type-section); font-weight: var(--weight-bold); line-height: var(--leading-title);
+  min-height: 1lh; font-size: var(--type-section); font-weight: var(--type-section-weight); line-height: var(--leading-title);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .title__description {
-  max-width: 38rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); line-height: var(--leading-relaxed);
+  max-width: 38rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 /* En una serie, la sinopsis cambia con el episodio enfocado: siempre mide dos renglones (nada brinca, sin hueco de más). */
@@ -92,21 +93,21 @@
 .title .title__description.title__description--open { display: block; }
 .title__read {
   align-self: flex-start; display: inline-flex; align-items: center; margin-top: calc(-1 * var(--space-2)); padding: var(--space-1) var(--space-3);
-  margin-left: calc(-1 * var(--space-3)); border-radius: var(--radius-pill); color: var(--color-text); font-size: var(--type-secondary);
-  font-weight: var(--weight-bold); text-shadow: var(--shadow-text-strong); transform-origin: left center;
+  margin-left: calc(-1 * var(--space-3)); border-radius: var(--radius-pill); color: var(--color-text); font-size: var(--type-label-large);
+  font-weight: var(--type-label-large-weight); text-shadow: var(--shadow-text-strong); transform-origin: left center;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
 }
 .title__read--idle { visibility: hidden; } /* una serie le guarda su lugar */
 .title__read--focused { background: var(--inverse-bg); color: var(--inverse-fg); text-shadow: none; transform: scale(var(--inverse-scale)); }
 
 /* Lo que hay para ver, en un renglón tenue (antes eran chips): 4K · HDR · Inglés, Español · Al instante. */
-.title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); }
+.title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .title__avail-item + .title__avail-item::before { content: "·"; margin-right: var(--space-2); opacity: var(--opacity-faint); }
-.title__avail-item--good { color: var(--color-live); font-weight: var(--weight-medium); }
-.title__avail-item--warn { color: var(--color-warning); font-weight: var(--weight-medium); }
+.title__avail-item--good { color: var(--color-live); font-weight: var(--weight-semibold); }
+.title__avail-item--warn { color: var(--color-warning); font-weight: var(--weight-semibold); }
 .title__avail-none { color: var(--color-text-muted); }
 
-.title__status { color: var(--color-text-muted); font-size: var(--type-body); }
+.title__status { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 /* Error al cargar: una píldora con su ícono y la franja roja (como los avisos), legible sobre el arte. */
 .title__status--error {
   display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
@@ -120,7 +121,7 @@
 .title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }
 
 /* Dónde ibas: una barra corta y cuánto falta. */
-.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--type-secondary); }
+.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .title__progress-bar { flex: none; width: 9rem; }
 .title__progress-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
@@ -138,10 +139,10 @@
   margin-inline-end: var(--space-5); /* …y ese crecimiento (6 % de su ancho) cabe antes del redondo de «Guardar» */
   min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-5);
   background: var(--color-primary); color: var(--color-on-primary); /* el principal, siempre en blanco (como «Jugar») */
-  font-size: var(--type-section); font-weight: var(--weight-medium);
+  font-size: var(--type-section); font-weight: var(--type-section-weight);
 }
 .title__action--primary > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* «Continuar T12 E8» nunca parte el botón */
-.title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular); }
+.title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
 .title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }
 .title__action-tile {
@@ -150,7 +151,7 @@
 }
 .title__action-name {
   position: absolute; top: calc(100% + var(--space-2)); left: 50%; transform: translateX(-50%);
-  white-space: nowrap; color: var(--color-text); font-size: var(--type-footnote); font-weight: var(--weight-medium); text-shadow: var(--shadow-text-strong);
+  white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); text-shadow: var(--shadow-text-strong);
   opacity: 0; transition: opacity var(--duration-fast) var(--ease-out);
 }
 /* Prendido («Guardada»): el redondo con el color del arte, como en el iPhone. */
@@ -200,8 +201,8 @@
 .episode__check .icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: var(--stroke-bold); }
 .episode__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); --progress-width: auto; }
 .episode__text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; padding-inline: var(--space-1); }
-.episode__title { max-width: 100%; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); line-height: var(--leading-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.episode__date { color: var(--color-warning); font-size: var(--type-footnote); }
+.episode__title { max-width: 100%; color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.episode__date { color: var(--color-warning); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .episode--watched .episode__thumb { filter: saturate(.75); }
 .episode--upcoming { opacity: var(--opacity-away); }
 /* Foco: como las portadas (anillo y crece un poco); su nombre a todo color. */
@@ -222,10 +223,10 @@
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8));
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8));
 }
-.title__more-track { display: grid; gap: var(--space-8); transition: transform var(--duration-slow) var(--ease-out); }
+.title__more-track { display: grid; gap: var(--layout-between-sections); transition: transform var(--duration-slow) var(--ease-out); }
 .title__more-section { display: grid; gap: var(--layout-title-to-content); min-width: 0; }
-.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="details"]) .title__more { transform: none; }
-.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="details"]) :is(.title__info, .title__browser) {
+.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) .title__more { transform: none; }
+.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) :is(.title__info, .title__browser) {
   opacity: var(--opacity-off); transition: opacity var(--duration-base) var(--ease-out);
 }
 .title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
@@ -236,7 +237,7 @@
 /* Las caras, alineadas arriba: un nombre de dos renglones («Patricia Arquette») ya no sube su foto sobre las demás. */
 .title__more-row--cast { align-items: flex-start; }
 /* «Los datos de la ficha»: lo que es en gris y su valor en blanco, en dos columnas (el Grid del iPhone). */
-.title__details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0; font-size: var(--type-secondary); }
+.title__details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0; font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .title__details dt { color: var(--color-text-faint); }
 .title__details dd { margin: 0; color: var(--color-text); }
 .title__more-row--details { padding-top: 0; }
@@ -266,10 +267,33 @@
 [data-input="touch"] .title__action-name { position: static; transform: none; opacity: 1; max-width: 100%; white-space: normal; text-align: center; color: var(--color-text-muted); }
 
 /* Quién la hizo, bajo la sinopsis (el creditLine del iPhone): el nombre en blanco, lo que hizo en gris. */
-.title__credits { display: grid; gap: var(--space-1); max-width: 46rem; font-size: var(--type-secondary); color: var(--color-text); text-shadow: var(--shadow-text-strong); }
+.title__credits { display: grid; gap: var(--space-1); max-width: 46rem; font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); color: var(--color-text); text-shadow: var(--shadow-text-strong); }
 .title__credit { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .title__credit-label { color: var(--color-on-art-secondary); }
 /* Tu calificación (Trakt), junto a las de los servicios: tus estrellas en su color. */
 .title__rating--mine { gap: var(--space-2); }
 .title__rating-label { color: var(--color-on-art-secondary); }
 .title__rating-stars { color: var(--color-rating); letter-spacing: var(--tracking-label); }
+
+/* «Reseñas en Letterboxd» (como el iPhone): tarjetas de vidrio en fila, la tuya primero con el borde verde de Letterboxd; las
+   que traen spoilers, tapadas hasta que las abres. */
+.title__more-row--reviews { align-items: stretch; }
+.title__review {
+  flex: none; display: flex; flex-direction: column; gap: var(--space-2); width: var(--review-width); padding: var(--inset-card);
+  border-radius: var(--tile-radius); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+}
+.title__review--mine { box-shadow: inset var(--letterboxd-edge) 0 0 var(--color-letterboxd), var(--edge-glass-hairline); }
+.title__review--focused { background: var(--color-glass-selected); box-shadow: var(--focus-lift), var(--edge-glass-selected); transform: scale(1.02); }
+.title__review-head { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+.title__review-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
+.title__review--mine .title__review-author { color: var(--color-letterboxd); }
+.title__review-stars { flex: none; color: var(--color-rating); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--tracking-label); }
+.title__review-liked { flex: none; color: var(--color-source-trakt); }
+.title__review-likes { flex: none; margin-left: auto; color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); }
+.title__review-when { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); }
+.title__review-text {
+  margin: 0; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); line-height: var(--leading-normal);
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line;
+}
+.title__review-text--hidden { font-style: italic; }

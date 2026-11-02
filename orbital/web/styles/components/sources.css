@@ -13,12 +13,12 @@
 .sources__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 30rem); align-items: end; column-gap: var(--space-8); }
 .sources__head > .sources__heading, .sources__head > .sources__title { grid-column: 1; }
 .sources__head > .sources__subtitle { grid-column: 2; grid-row: 1 / span 2; }
-.sources__heading { color: var(--color-accent); font-size: var(--type-secondary); font-weight: var(--weight-medium); }
-.sources__title { margin: 0; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); line-height: var(--leading-snug); }
+.sources__heading { color: var(--color-accent); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
+.sources__title { margin: 0; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); line-height: var(--leading-snug); }
 .sources__title:empty { display: none; }
 .sources__scope { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.sources__subtitle { color: var(--color-text-muted); font-size: var(--type-secondary); line-height: var(--leading-relaxed); }
-.sources__status { color: var(--color-text-muted); font-size: var(--type-body); }
+.sources__subtitle { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); line-height: var(--leading-relaxed); }
+.sources__status { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .sources__status--problem { color: var(--color-warning); }
 .sources__retry { margin-top: var(--space-4); }
 .sources__list {
@@ -28,7 +28,7 @@
 
 /* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
 .sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); max-width: 64rem; }
-.sources__group-title { padding-inline: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); letter-spacing: var(--tracking-label); }
+.sources__group-title { padding-inline: var(--space-2); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); letter-spacing: var(--tracking-label); }
 
 .source {
   position: relative; flex-shrink: 0; /* sin esto, la lista aplastaba las tarjetas en vez de desplazarse */
@@ -41,14 +41,14 @@
 
 .source__res {
   display: grid; place-items: center; height: 3.4rem; border-radius: var(--radius-md);
-  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); font-family: var(--font-sans); font-size: var(--type-body);
-  font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums;
+  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); font-family: var(--font-sans); font-size: var(--type-card-title);
+  font-weight: var(--type-card-title-weight); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums;
 }
 .source__res--4k { color: var(--color-accent); }
 
 .source__main { display: grid; gap: var(--space-2); min-width: 0; }
 .source__chips { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
-.source__release { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); text-overflow: ellipsis; white-space: nowrap; }
+.source__release { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }
 
 
 /* Foco invertido, como el menú: inconfundible desde el sofá (antes, un borde de 2 px). */
@@ -63,8 +63,8 @@
    calidades a la derecha, solo las que hay. Cada calidad: la resolución grande, ¿arranca ya? y lo esencial. */
 .versions__row { display: grid; flex-shrink: 0; grid-template-columns: 12rem minmax(0, 72rem); align-items: center; column-gap: var(--space-5); }
 .versions__lang { display: grid; gap: var(--space-1); padding-inline: var(--space-2); min-width: 0; }
-.versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); }
-.versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); }
+.versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); }
+.versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .versions__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 
 .version {
@@ -73,12 +73,12 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .version:hover { background: var(--color-glass-hover); }
-.version__res { font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+.version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
-.version__state { font-size: var(--type-footnote); font-weight: var(--weight-medium); }
+.version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); }
 .version__state--good { color: var(--color-live); }
 .version__state--warn { color: var(--color-warning); }
-.version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); text-overflow: ellipsis; white-space: nowrap; }
+.version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }
 .version__badge { position: absolute; top: var(--space-3); right: var(--space-3); } /* arriba a la derecha: no empuja ni se corta */
 .version__other { justify-self: start; }
 
@@ -94,8 +94,8 @@
 /* Lo que trae la enfocada y cómo lo sabemos: una línea, para leer desde el sillón. */
 .sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-5) + var(--space-2)) var(--space-2); } /* bajo las calidades */
 .sources__why:empty { display: none; }
-.sources__why-langs { font-size: var(--type-secondary); font-weight: var(--weight-medium); }
-.sources__why-more { color: var(--color-text-muted); font-size: var(--type-footnote); }
+.sources__why-langs { font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
+.sources__why-more { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 
 @media (max-width: 760px) {
   .sources__head { grid-template-columns: minmax(0, 1fr); }

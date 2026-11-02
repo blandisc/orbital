@@ -10,6 +10,7 @@
  *   Listas de Trakt → Listas de Stremio → (Por género y los lanzadores, al final: la tele no tiene la pestaña Buscar).
  */
 import { curatedItem } from "./curation.js";
+import { tonightPick } from "./tonight.js";
 
 /** Las filas de tarjetas que se centran (como el carrusel centrado del iPhone). */
 const CENTERED = new Set(["platforms", "awards", "studios", "genre-top", "seasons", "years"]);
@@ -155,7 +156,10 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   }
   // Mi lista: tu watchlist de Trakt (sin Trakt, Mi lista de Stremio), como el iPhone (decisión del 31 oct 2026).
   const pending = byId.watchlist ? ["watchlist", "trakt"] : byId.mylist ? ["mylist", "stremio"] : null;
-  if (pending) plain(`mi-lista`, "Mi lista", itemsOf(itemsById, byId[pending[0]], filter), { seal: pending[1], group: "milista" });
+  // «Para hoy» (el mazo): la que elegiste hoy va primera en Mi lista hasta que cambie el día.
+  const tonight = tonightPick();
+  const firstTonight = (items) => (tonight ? [...items].sort((a, b) => (b.meta_id === tonight) - (a.meta_id === tonight)) : items);
+  if (pending) plain(`mi-lista`, "Mi lista", firstTonight(itemsOf(itemsById, byId[pending[0]], filter)), { seal: pending[1], group: "milista" });
   // Sin «Mi media» (tu carpeta de OneDrive): Fernando, 31 oct 2026, no va en Películas y series.
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {
     if (byId[id]) plain(id, byId[id].title, itemsOf(itemsById, byId[id], filter), { seal, group: "general" });
@@ -195,7 +199,7 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const listCard = (l, source) => {
     const got = itemsOf(itemsById, l);
     return got.length ? card(`collection:${l.id}`, l.title, { type: "list", name: l.title, source, count: got.length, posters: got.slice(0, 2).map(posterOf), list: l },
-      heroOf(got[0], source === "trakt" ? "Lista de Trakt" : "Lista de Stremio")) : null;
+      heroOf(got[0], { trakt: "Lista de Trakt", letterboxd: "Lista de Letterboxd" }[source] || "Lista de Stremio")) : null;
   };
   // Como el iPhone: Tu watchlist, tus favoritos (el corazón), Tus series y luego tus listas personales.
   const traktOrder = (l) => ({ watchlist: 0, "trakt-favorites": 1, mine: 2 })[l.id] ?? 3;
@@ -205,6 +209,9 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const upcoming = byId.estrenos && listCard(byId.estrenos, "trakt");
   if (upcoming) trakt.splice(Math.min(2, trakt.length), 0, upcoming);
   if (trakt.length) rows.push({ id: "curated:lists-trakt", title: "Listas de Trakt", group: "lists", cards: true, items: trakt });
+  // Tus listas de Letterboxd (como el iPhone, en Tus listas): solo leer.
+  const letterboxd = lists.filter((l) => l.id?.startsWith("letterboxd:")).map((l) => listCard(l, "letterboxd")).filter(Boolean);
+  if (letterboxd.length) rows.push({ id: "curated:lists-letterboxd", title: "Listas de Letterboxd", group: "lists", cards: true, items: letterboxd });
   const stremio = lists.filter((l) => l.id === "mylist" || l.id?.startsWith("addon:")).map((l) => listCard(l, "stremio")).filter(Boolean);
   if (stremio.length) rows.push({ id: "curated:lists-stremio", title: "Listas de Stremio", group: "lists", cards: true, items: stremio });
 
