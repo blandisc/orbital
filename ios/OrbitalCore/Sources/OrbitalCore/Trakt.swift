@@ -469,6 +469,17 @@ public actor Trakt {
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
     }
 
+    /// Dejar de seguir una serie (o volver a seguirla): Trakt la oculta de tu calendario y de tu progreso, así que no sale en
+    /// tus estrenos ni te avisa. Lo que viste no se toca.
+    public func setFollowing(imdb: String, following: Bool) async throws {
+        guard Self.isIMDb(imdb) else { throw TraktError.invalid("Título inválido") }
+        let body: JSON = ["shows": [["ids": ["imdb": .string(imdb)]]]]
+        for section in ["calendar", "progress_watched"] {
+            let (status, _) = try await write("/users/hidden/\(section)\(following ? "/remove" : "")", body)
+            guard status == 200 || status == 201 || status == 204 else { throw TraktError.http(status) }
+        }
+    }
+
     /// Una lista nueva (privada); devuelve su id.
     public func createList(name: String) async throws -> (id: String, name: String) {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -13,6 +13,29 @@ extension TitleView {
         .buttonStyle(.plain)
         .accessibilityIdentifier("title-watched")
     }
+
+    /// «Siguiendo» en la fila de una serie (con Trakt): tocarla deja de seguirla (no sale en tus estrenos ni te avisa), con
+    /// «Deshacer»; otra vez, la vuelves a seguir.
+    func followAction(_ model: TitleModel) -> some View {
+        let follow = AppEnvironment.shared.follow
+        let _ = follow.track()
+        let following = follow.isFollowing(model.metaID)
+        return Button {
+            Task {
+                if let problem = await follow.setFollowing(model.metaID, !following) { AppEnvironment.shared.notify(problem, tone: .error); return }
+                AppEnvironment.shared.notify(following ? "Ya no la sigues" : "La sigues otra vez",
+                                             detail: following ? "Sin avisos ni estrenos de \(model.title)" : model.title, tone: .info,
+                                             actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
+                    Task { _ = await follow.setFollowing(model.metaID, following) }
+                }
+            }
+        } label: {
+            ActionTileLabel(title: following ? Text("Siguiendo") : Text("Seguir"), symbol: following ? "bell.fill" : "bell.slash", active: following, tint: artAccent)
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: following)
+        .accessibilityIdentifier("title-follow")
+    }
 }
 
 /// La hoja «¿Cuándo la viste?» de la ficha: arma qué se marca (película, episodio, temporada o serie), su fecha de estreno

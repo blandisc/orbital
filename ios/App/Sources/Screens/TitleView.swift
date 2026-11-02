@@ -224,9 +224,10 @@ struct TitleView: View {
         VStack(spacing: DS.Space.s4) {
             continueAction(model)
             // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4) + (model.kind == "movie" ? 1 : 0)),
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4) + (model.kind == "movie" || AppEnvironment.shared.follow.available ? 1 : 0)),
                       spacing: DS.Space.s2) {
                 if model.kind == "movie" { watchedAction(model).frame(maxWidth: .infinity) }
+                else if AppEnvironment.shared.follow.available { followAction(model).frame(maxWidth: .infinity) }   // series: seguirla o no
                 saveAction(model).frame(maxWidth: .infinity)
                 downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {

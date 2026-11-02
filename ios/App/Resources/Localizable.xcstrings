@@ -6494,6 +6494,17 @@
         }
       }
     },
+    "Dejar de seguir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfollow"
+          }
+        }
+      }
+    },
     "Dejar la que tengo": {
       "extractionState": "manual",
       "localizations": {
@@ -11990,6 +12001,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The saga"
+          }
+        }
+      }
+    },
+    "La sigues otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Following again"
           }
         }
       }
@@ -21410,6 +21432,17 @@
         }
       }
     },
+    "Siguiendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Following"
+          }
+        }
+      }
+    },
     "Siguiente": {
       "extractionState": "manual",
       "localizations": {
@@ -21516,6 +21549,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No offset"
+          }
+        }
+      }
+    },
+    "Sin avisos ni estrenos de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No more alerts or new episodes from %@"
           }
         }
       }
@@ -25136,6 +25180,17 @@
         }
       }
     },
+    "Trakt no contestó. Intenta de nuevo en un momento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt didn't answer. Try again in a moment."
+          }
+        }
+      }
+    },
     "Trakt no devolvió una sesión": {
       "extractionState": "manual",
       "localizations": {
@@ -28135,6 +28190,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No longer in your folder"
+          }
+        }
+      }
+    },
+    "Ya no la sigues": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You no longer follow it"
           }
         }
       }

@@ -17,7 +17,7 @@ enum ReleaseNotifier {
     static let oldGroupCategory = "orbital.release.group"
     /// La pila de cada serie: «estrenos.tt…».
     static func thread(_ metaID: String) -> String { "estrenos.\(metaID)" }
-    enum Action { static let watch = "release.watch", tv = "release.tv", download = "release.download" }
+    enum Action { static let watch = "release.watch", tv = "release.tv", download = "release.download", unfollow = "release.unfollow" }
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: nil) { task in
@@ -63,6 +63,8 @@ enum ReleaseNotifier {
             UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver", language: language), options: [.foreground], icon: UNNotificationActionIcon(systemImageName: "play.fill")),
             UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "tv")),
             UNNotificationAction(identifier: Action.download, title: Strings.tr("Descargar", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "arrow.down.circle")),
+            // Una serie que ya no te interesa: desde el mismo aviso (sin abrir la app).
+            UNNotificationAction(identifier: Action.unfollow, title: Strings.tr("Dejar de seguir", language: language), options: [.destructive], icon: UNNotificationActionIcon(systemImageName: "bell.slash")),
         ].filter { tv || $0.identifier != Action.tv }
         let release = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
                                              hiddenPreviewsBodyPlaceholder: Strings.tr("Salió un estreno", language: language), options: [])
@@ -159,6 +161,12 @@ enum ReleaseNotifier {
         switch response.actionIdentifier {
         case Action.tv:
             await env.playOnTV(kind: kind, metaID: id, videoID: video, title: title)
+        case Action.unfollow:
+            _ = await env.follow.setFollowing(id, false)
+            // Los otros avisos de esa serie, fuera.
+            let center = UNUserNotificationCenter.current()
+            let delivered = await center.deliveredNotifications().filter { $0.request.content.threadIdentifier == thread(id) }.map(\.request.identifier)
+            center.removeDeliveredNotifications(withIdentifiers: delivered)
         case Action.download:
             _ = await env.services.queueDownload(kind: kind, metaID: id, videoID: video ?? id, title: title, originalTitle: title, subtitle: "",
                                                  poster: String(format: ForYou.metahubPoster, id))

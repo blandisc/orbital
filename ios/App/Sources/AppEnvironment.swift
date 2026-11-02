@@ -35,6 +35,8 @@ final class AppEnvironment {
         #endif
         return model
     }()
+    /// Las series que dejaste de seguir (sin avisos ni estrenos): una para toda la app.
+    @ObservationIgnored lazy var follow = FollowModel(services)
     /// Letterboxd (solo leer): tu diario, tus reseñas y lo de tu archivo, para Lo que ves y la ficha.
     @ObservationIgnored lazy var letterboxd = LetterboxdModel(services)
     /// Colecciones (la repisa): una para toda la app, con lo visto de `collections` (el mismo caché).

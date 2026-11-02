@@ -476,7 +476,7 @@ public actor ForYou {
         // Trakt va en hora universal: se pide desde un día antes para no perder lo de hoy.
         let start = Self.dayString(calendar.date(byAdding: .day, value: skip - 1, to: calendar.startOfDay(for: now))!, calendar: calendar)
         let rows = try await remember("trakt:calendar:\(start):\(days)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: days + 2) }
-        return Self.airings(rows, now: now, calendar: calendar, skip: skip, days: days).filter { !dismissed.contains($0.series.imdb) }
+        return Self.airings(rows, now: now, calendar: calendar, skip: skip, days: days).filter { !dismissed.contains($0.series.imdb) && !Self.unfollowed(kv).contains($0.series.imdb) }   // ni las que dejaste de seguir
     }
 
     static func dayString(_ date: Date, calendar: Calendar) -> String {

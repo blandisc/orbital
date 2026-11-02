@@ -65,3 +65,13 @@ extension ForYou {
         }
     }
 }
+
+/// Las series que dejaste de seguir (Fernando, 1 nov 2026): no salen en tus estrenos ni te avisan. Se guardan aquí (al momento)
+/// y en Trakt (oculta del calendario y del progreso).
+extension ForYou {
+    public static let unfollowedKey = "unfollowed-shows"
+    public static func unfollowed(_ kv: KeyValueStore) -> Set<String> {
+        Set(kv.data(unfollowedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [])
+    }
+    public static func setUnfollowed(_ ids: Set<String>, kv: KeyValueStore) { kv.set(unfollowedKey, data: try? JSONEncoder().encode(ids.sorted())) }
+}
