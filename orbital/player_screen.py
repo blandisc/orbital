@@ -128,7 +128,9 @@ class PlayerScreen(SubtitleTrial):
         self._want[prop] = (value, time.monotonic() + self.WANT_SECONDS)
 
     # --- interfaz encima del video (player_ui) -------------------------------------------------
-    def _overlay(self, overlay_id: int, ass: str | None) -> None:
+    def _overlay(self, overlay_id: int, ass: str | None, *, fading: bool = False) -> None:
+        if overlay_id == 1 and not fading:
+            self._fade_token = None  # lo que se pinta ahora manda: un fundido de la pausa que iba a medias ya no lo tapa
         self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
                                data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
         if overlay_id == 1 and not ass:  # se fue la barra (o la tapó un panel): el logo de la pausa, con ella
@@ -232,7 +234,6 @@ class PlayerScreen(SubtitleTrial):
         entering = hud.paused and not seeking and not self.__dict__.get("_pause_drawn") and bool(self.PAUSE_FADE)
         self._pause_drawn = bool(hud.paused)
         self._hud_seeking = seeking
-        self._fade_token = object()  # lo que se pinte ahora manda sobre un fundido que iba a medias
         if entering:
             self._fade_in(ass, where, logo)
         else:
@@ -259,14 +260,14 @@ class PlayerScreen(SubtitleTrial):
 
     def _fade_in(self, ass: str, where, logo) -> None:
         """La pausa aparece en pasos (más transparente a más opaca); el logo, que es una imagen encima, entra al final."""
-        token = self._fade_token
+        token = self._fade_token = object()
         self._show_logo(None)
-        self._overlay(1, player_ui.fade(ass, self.PAUSE_FADE[0]))
+        self._overlay(1, player_ui.fade(ass, self.PAUSE_FADE[0]), fading=True)
 
         def step(appear: float) -> None:
             if self.__dict__.get("_fade_token") is not token or not self._hud_visible or self.menu is not None:
                 return
-            self._overlay(1, player_ui.fade(ass, appear))
+            self._overlay(1, player_ui.fade(ass, appear), fading=True)
             if appear >= 1:
                 self._show_logo(where, logo)
         for i, appear in enumerate((*self.PAUSE_FADE[1:], 1.0), 1):

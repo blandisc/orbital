@@ -104,8 +104,9 @@
   color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--tracking-label); /* ≥ 18,7 px en negrita cuenta como letra grande: 3:1 le basta sobre el color del servicio */
   line-height: var(--leading-normal); white-space: nowrap;
 }
-.source-badge--trakt { background: var(--color-source-trakt); }
-.source-badge--letterboxd { background: var(--color-source-letterboxd); }
+/* Trakt y Letterboxd: su logo en sus colores, a la altura de la letra del título (shelf, listas, colecciones). */
+.source-logo { display: inline-block; flex: none; width: auto; height: 1.1em; vertical-align: -.15em; }
+.source-logo--letterboxd { height: .9em; vertical-align: -.05em; }
 .source-badge--stremio { background: var(--color-source-stremio); }
 .source-badge--orbital { background: var(--color-source-orbital); }
 

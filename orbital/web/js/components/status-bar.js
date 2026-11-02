@@ -205,7 +205,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
       const info = await navigator.getBattery();
       const update = () => {
         const pct = Math.round(info.level * 100);
-        battery.hidden = false;
+        battery.hidden = pct >= 95; // llena (o casi) no dice nada: sale cuando baja (Fernando, 2 nov)
         battery.classList.toggle("battery--low", pct <= 15 && !info.charging);
         battery.classList.toggle("battery--charging", info.charging);
         level.style.setProperty("--battery-level", `${pct}%`);

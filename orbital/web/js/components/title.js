@@ -255,23 +255,23 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     if (languages.length) rows.push(["Idiomas", languages.join(", ")]);
     if (x?.certification) rows.push(["Clasificación", x.certification]);
     if (x?.studios?.length) rows.push([series ? "Cadena" : "Estudio", x.studios.join(", ")]);
+    // Lo que antes iba arriba, bajo la sinopsis: quién la hizo y quién sale (y la sinopsis entera, primero).
+    const lead = (extras?.directors || []).slice(0, 2);
+    if (lead.length) rows.push([series ? "Creada por" : "Dirección", lead.join(", ")]);
+    const writer = series ? null : extras?.writers?.[0];
+    if (writer) rows.push(["Guion", writer]);
+    const cast = (extras?.cast || []).slice(0, 4);
+    if (cast.length) rows.push(["Con", cast.join(", ")]);
+    if (about) rows.unshift(["Sinopsis", about]);
     return rows;
   }
 
   /** «Dirección … · Guion …» (o «Creada por …») y «Con …»: el nombre en blanco, lo que hizo en gris. En una serie con
    * episodios no va (la fila de episodios ocupa ese lugar; quién la hizo está en Reparto y equipo). */
   function paintCredits() {
-    const series = kindOf() === "series";
-    const lead = (extras?.directors || []).slice(0, 2);
-    const writer = series ? null : extras?.writers?.[0];
-    const cast = (extras?.cast || []).slice(0, 3);
-    const label = (text) => h("span", { class: "title__credit-label" }, text);
-    const first = lead.length ? [label(series ? "Creada por" : "Dirección"), ` ${lead.join(", ")}`] : [];
-    if (lead.length && writer) first.push(label(" · Guion"), ` ${writer}`);
-    const lines = [first.length && h("p", { class: "title__credit" }, ...first),
-      cast.length && h("p", { class: "title__credit" }, label("Con"), ` ${cast.join(", ")}`)].filter(Boolean);
-    mount(credits, led() ? [] : lines);
-    credits.hidden = led() || !lines.length;
+    // Arriba ya no (Fernando, 2 nov: la ficha con menos): quién la hizo vive en «Detalles» (detailRows).
+    mount(credits);
+    credits.hidden = true;
   }
 
   /** Mi media: qué videos de este título están en tu carpeta y sus versiones (para la ficha, como el iPhone). */
@@ -454,21 +454,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   /** «Ver más» solo si la sinopsis del título se corta (en la fila de episodios, la de abajo es del episodio). En una
    * serie guarda su lugar aunque no se vea: al pasar de los botones a la fila nada brinca. */
   function paintAbout() {
-    if (zone !== "about") aboutOpen = false;
-    description.classList.toggle("title__description--open", aboutOpen);
-    readMore.textContent = aboutOpen ? "Ver menos" : "Ver más";
-    readMore.classList.toggle("title__read--focused", zone === "about");
-    readMore.toggleAttribute("aria-current", zone === "about");
-    const reserve = kindOf() === "series" && seasons().length > 0;
-    readMore.classList.toggle("title__read--reserved", reserve);
-    readMore.hidden = !reserve;
-    requestAnimationFrame(() => {
-      const cut = aboutOpen || description.scrollHeight > description.clientHeight + 1;
-      const shown = cut && zone !== "episodes" && !!about && description.textContent === about;
-      readMore.hidden = !(shown || reserve);
-      readMore.classList.toggle("title__read--idle", !shown);
-      if (!shown && zone === "about") { zone = "actions"; render(); onMove?.(); }
-    });
+    // Sin «Ver más» (Fernando, 2 nov): la sinopsis va en dos renglones y entera en «Detalles».
+    aboutOpen = false;
+    description.classList.remove("title__description--open");
+    readMore.hidden = true;
+    if (zone === "about") zone = "actions";
   }
 
   function toggleAbout() {
@@ -717,9 +707,6 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     plays = null;
     const t = canPrefetch() && target();
     if (!t) return;
-    // Mientras busca, el renglón ya ocupa su lugar (antes los chips llegaban tarde y el título brincaba).
-    mount(avail, h("span", { class: "title__avail-none" }, "Buscando versiones…"));
-    avail.hidden = false;
     try {
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
@@ -729,12 +716,15 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       plays = data?.recommended?.line ? { video_id: t.video_id, line: data.recommended.line } : null;
       renderActions(); // «Ver» dice cómo va a sonar
       // Un renglón de texto tenue (antes, cinco chips encima del arte): «4K · HDR · Inglés, Español · Al instante».
-      mount(avail, found.length ? found.map((c) => (c.warn ? h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, c.warn)
-        : h("span", { class: ["title__avail-item", c === "Al instante" && "title__avail-item--good"] }, c)))
-        : h("span", { class: "title__avail-none" }, "Sin versiones por ahora"));
+      // Solo lo que hay que saber: un aviso o que no hay versiones. Lo normal (calidad, idiomas) ya no ocupa un renglón.
+      const warns = found.filter((c) => c.warn);
+      mount(avail, !found.length ? h("span", { class: "title__avail-none" }, "Sin versiones por ahora")
+        : warns.map((c) => h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, c.warn)));
+      avail.hidden = found.length > 0 && !warns.length;
     } catch (err) {
       if (mine === token) {
         mount(avail, h("span", { class: "title__avail-none" }, err?.status === 404 ? "Sin versiones por ahora" : "No pude buscar versiones ahora"));
+        avail.hidden = false;
       }
     }
   }

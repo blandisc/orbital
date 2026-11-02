@@ -14,9 +14,11 @@ export function Button({ label, glyph, variant = "ghost", ariaLabel, onPress, yi
   if (round) {
     // El círculo y, debajo, su nombre: el botón mide lo que su nombre, así dos redondos seguidos nunca se enciman.
     return h("button", { class: "button button--round", type: "button", tabindex: "-1", "aria-label": ariaLabel || label, onClick: onPress },
+      // El botón del mando va pegado al círculo; el nombre, solo con el dedo (o si no tiene botón del mando): más limpio.
       h("span", { class: "button__disc" },
-        h("span", { class: "button__icon", "aria-hidden": "true" }, svg(ICONS[icon]))),
-      h("span", { class: "button__name" }, glyph && h("span", { class: "button__glyph" }, Glyph(glyph, { small: true })), label));
+        h("span", { class: "button__icon", "aria-hidden": "true" }, svg(ICONS[icon])),
+        glyph && h("span", { class: "button__glyph" }, Glyph(glyph, { small: true }))),
+      h("span", { class: "button__name" }, label));
   }
   return h("button", {
     // yields: en una fila apretada, este es el que se encoge (p. ej. «Con Ryujinx»); los demás quedan enteros.

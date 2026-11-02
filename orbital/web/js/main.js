@@ -563,7 +563,6 @@ function applySettings(settings) {
   root.dataset.motion = settings.reduce_motion ? "reduce" : "full";
   sound.enabled = settings.sounds !== false;
   haptics.enabled = settings.haptics !== false;
-  ui.hero.tips = settings.voice_tips !== false && !onTheDevice();
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
   ui.settings.update({ settings }); // Ajustes abierto: el valor nuevo se ve en su lugar
@@ -2453,7 +2452,6 @@ api.settings().then(applySettings).catch(() => {});
 api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {
   state.canExit = canExit;
   state.alexa = !!alexa;
-  ui.hero.alexa = alexa;
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   state.stremioLinked = !!linked;
   state.player = player || "stremio";

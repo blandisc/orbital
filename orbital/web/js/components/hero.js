@@ -2,7 +2,6 @@ import { h, mount, svg } from "../core/dom.js";
 import { bytes, duration, genres, lastPlayed, percent, runtime } from "../core/format.js";
 import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
-import { alexaTip } from "../core/hints.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
@@ -24,12 +23,9 @@ export function createHero({ onAction, onKind = null }) {
   const description = h("p", { class: "hero__description" });
   const actions = h("div", { class: "button-row hero__actions" });
   // Una frase para Alexa según lo enfocado (solo si Alexa está configurada).
-  const voice = h("p", { class: "hero__voice", hidden: true });
   // La frase va al lado de los botones, no debajo: debajo se salía del destacado y se cortaba.
-  const row = h("div", { class: "hero__row" }, actions, voice);
+  const row = h("div", { class: "hero__row" }, actions);
   const content = h("div", { class: "hero__content" }, kinds, eyebrow, logo, title, facts, description, row);
-  let alexa = false;
-  let tips = true; // Ajustes → Pantalla → Frases para Alexa
   const el = h("main", { class: "hero" }, content);
   let timer;
 
@@ -127,9 +123,6 @@ export function createHero({ onAction, onKind = null }) {
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       item.source !== "genre" && item.source !== "collection" && Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: () => onAction("options") }));
-    const tip = alexa && tips ? alexaTip(item, { runningId }) : null;
-    voice.hidden = !tip;
-    if (tip) mount(voice, svg(ICONS.assistant), h("span", {}, tip));
     fit();
   }
 
@@ -156,5 +149,5 @@ export function createHero({ onAction, onKind = null }) {
       onClick: (event) => { event.stopPropagation(); onKind?.(value); } })));
   }
 
-  return { el, update, setKinds, set alexa(on) { alexa = !!on; }, set tips(on) { tips = !!on; } };
+  return { el, update, setKinds };
 }

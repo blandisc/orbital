@@ -19,9 +19,6 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
-    # 2 nov: los textos como en la TV («Reintentar», «Colecciones»).
-    "A tus Colecciones": "To your Collections", "%@ a tus Colecciones: %@ de %@": "%1$@ to your Collections: %2$@ of %3$@",
-    "La versión dejó de responder. Al reintentar seguimos donde ibas, con otra si hace falta.": "The version stopped responding. Retrying picks up where you were, with another one if needed.",
     # Widgets del 1 nov: «Lo nuevo de lo tuyo», «Seguir viendo» con «Aquí» y «En la TV», el mosaico, el Simpson del día y «Viendo en la TV».
     "Lo que ya salió de tus series y lo que viene.": "What's out from your shows and what's coming.", "Madrugada": "Overnight",
     "Cuando salga algo de tus series, aparece aquí.": "When something from your shows comes out, it shows up here.",

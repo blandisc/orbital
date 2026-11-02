@@ -55,8 +55,11 @@ const SOURCE = {
   trakt: ["source-badge source-badge--trakt", "Trakt"], stremio: ["source-badge source-badge--stremio", "Stremio"],
   orbital: ["source-badge source-badge--orbital", "Orbital"], letterboxd: ["source-badge source-badge--letterboxd", "Letterboxd"],
 };
+const SOURCE_LOGO = { trakt: "img/ratings/trakt.svg", letterboxd: "img/ratings/letterboxd.svg" };
 export function SourceBadge(source) {
   const [cls, name] = SOURCE[source] ?? [];
+  // Con logo: el ícono en sus colores, sin placa (Fernando, 2 nov: dice de dónde viene sin gritar).
+  if (cls && SOURCE_LOGO[source]) return h("img", { class: `source-logo source-logo--${source}`, src: SOURCE_LOGO[source], alt: `De ${name}` });
   return cls ? h("span", { class: cls, "aria-label": `De ${name}` }, name.toUpperCase()) : null; // ds-exception: logotipo en mayúsculas
 }
 

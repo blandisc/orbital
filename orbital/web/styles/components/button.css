@@ -36,7 +36,12 @@
 .button--round:hover .button__disc { background: var(--color-glass-hover); }
 .button__icon { display: grid; place-items: center; width: var(--icon-lg); height: var(--icon-lg); }
 .button__icon svg { width: 100%; height: 100%; }
-.button__glyph { display: inline-flex; }
+/* Minimalista (Fernando, 2 nov): el redondo es su ícono y, en su esquina, el botón del mando que lo hace («X», «Y»); el
+   nombre ya no va siempre debajo. Con el dedo no hay botones del mando: ahí sí sale el nombre. Sin botón del mando, también. */
+.button--round .button__glyph { position: absolute; right: calc(-1 * var(--space-2)); bottom: calc(-1 * var(--space-1)); display: inline-flex; }
+.button--round:has(.button__glyph) .button__name { display: none; }
+[data-input="touch"] .button--round .button__glyph { display: none; }
+[data-input="touch"] .button--round .button__name { display: inline-flex; }
 /* Interlineado normal (no tight): con letra muy grande, el renglón apretado dejaba la palabra fuera de su caja y el héroe la recortaba. */
 .button__name { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking); line-height: var(--leading-normal); white-space: nowrap; }
 .button-row:has(.button--round) { align-items: flex-start; }

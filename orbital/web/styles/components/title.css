@@ -89,7 +89,7 @@
 }
 .title__description {
   max-width: 38rem; color: var(--color-text); opacity: var(--opacity-text); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed);
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; /* dos renglones: entera, en «Detalles» */
 }
 /* En una serie, la sinopsis cambia con el episodio enfocado: siempre mide dos renglones (nada brinca, sin hueco de más). */
 .title--series .title__description { min-height: 2lh; -webkit-line-clamp: 2; }
@@ -107,7 +107,6 @@
 /* Lo que hay para ver, en un renglón tenue (antes eran chips): 4K · HDR · Inglés, Español · Al instante. */
 .title__avail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .title__avail-item + .title__avail-item::before { content: "·"; margin-right: var(--space-2); opacity: var(--opacity-faint); }
-.title__avail-item--good { color: var(--color-live); font-weight: var(--weight-semibold); }
 .title__avail-item--warn { color: var(--color-warning); font-weight: var(--weight-semibold); }
 .title__avail-none { color: var(--color-text-muted); }
 
@@ -281,8 +280,6 @@
 
 /* Quién la hizo, bajo la sinopsis (el creditLine del iPhone): el nombre en blanco, lo que hizo en gris. */
 .title__credits { display: grid; gap: var(--space-1); max-width: 46rem; font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); color: var(--color-text); text-shadow: var(--shadow-text-strong); }
-.title__credit { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.title__credit-label { color: var(--color-on-art-secondary); }
 /* Tu calificación (Trakt), junto a las de los servicios: tus estrellas en su color. */
 .title__rating--mine { gap: var(--space-2); }
 .title__rating-label { color: var(--color-on-art-secondary); }
