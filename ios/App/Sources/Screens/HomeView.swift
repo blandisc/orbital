@@ -491,7 +491,7 @@ struct HomeView: View {
                         else { Text("Hoy no hay ranking de este servicio.").recipe(.footnote).frame(width: DS.Size.cardMax, alignment: .leading) }
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand)).titleZoomSource(s.route) }
+                        TitleNavigationLink(route: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand), zoom: s.route) }
                             .buttonStyle(.plain)
                     }
                 }

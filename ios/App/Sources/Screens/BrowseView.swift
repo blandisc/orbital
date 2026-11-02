@@ -294,7 +294,7 @@ struct BrowseView: View {
                     ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
                         let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
                         TitleNavigationLink(route: route) {
-                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent).titleZoomSource(route)
+                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent, zoom: route)
                         }
                         .buttonStyle(.plain)
                     }

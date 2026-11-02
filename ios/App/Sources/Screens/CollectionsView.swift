@@ -169,7 +169,7 @@ struct CollectionGridView: View {
             LazyVGrid(columns: DS.Poster.pairColumns(spacing: DS.Space.s3), spacing: DS.Space.s5) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                     TitleNavigationLink(route: s.route) {
-                        RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster).titleZoomSource(s.route)
+                        RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, zoom: s.route)
                     }
                     .buttonStyle(.plain)
                 }

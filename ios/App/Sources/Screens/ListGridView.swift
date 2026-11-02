@@ -124,8 +124,7 @@ struct PlatformRankingsView: View {
             if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
                 TitleNavigationLink(route: s.route) {
-                    RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint)
-                        .titleZoomSource(s.route)
+                    RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint, zoom: s.route)
                 }
                 .buttonStyle(.plain)
             }

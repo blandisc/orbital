@@ -92,6 +92,9 @@ struct RankedPosterCard: View {
     var isNew = false
     /// El color de la plataforma: la cifra toma un tono suyo y su brillo (la página de rankings). Sin él, gris.
     var tint: Color?
+    /// La ficha que abre: el zoom sale solo del póster. Puesto en toda la tarjeta, la sombra del zoom pintaba una mancha
+    /// negra detrás del número (Fernando, 1 nov 2026).
+    var zoom: TitleRoute?
 
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
@@ -105,13 +108,16 @@ struct RankedPosterCard: View {
         // El «10», del mismo tamaño que las demás: sus cifras más juntas y el póster le tapa un poco más el cero (como Netflix).
         // El «1» es angosto: el póster casi lo tapaba; con él, apenas se encima.
         HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : rank == 1 ? -DS.Space.s1 : -DS.Space.s5) {
+            // Solo la cifra, sin brillo ni fondo detrás (Fernando, 1 nov 2026: sobre algo claro se veía una mancha).
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
-                .glow(tint ?? .clear)
                 .tracking(DS.Size.rankTracking)
                 .lineLimit(1).fixedSize()
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)
-            PosterView(url: poster, title: title).frame(width: width)
+            Group {
+                if let zoom { PosterView(url: poster, title: title).frame(width: width).titleZoomSource(zoom) }
+                else { PosterView(url: poster, title: title).frame(width: width) }
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Puesto \(rank)")).accessibilityValue(Text(title))
