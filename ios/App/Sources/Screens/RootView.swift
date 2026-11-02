@@ -25,6 +25,8 @@ struct RootView: View {
     /// La entrada de la app: solo al arrancar en frío (cada arranque arma una raíz nueva). En modo demo, solo con
     /// `-demo-splash` (las capturas no la esperan).
     @State private var splashing: Bool
+    /// El zoom tarjeta → reproductor.
+    @Namespace private var playerZoom
     /// Si al volver a la app hay que pedir otra vez lo de la red (no al bajar el Centro de control ni cada pocos segundos).
     @State private var foreground = ForegroundRefresh()
     /// Ya se armó la raíz una vez en este arranque (la entrada no se repite).
@@ -69,9 +71,13 @@ struct RootView: View {
         let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
         // Se entra sin cuenta de Stremio: lo tuyo vive en el teléfono (y viaja por Trakt). Stremio se conecta en Ajustes, como respaldo.
         MainTabs().onAppear { Perf.mark("app.tabs") }
+        .environment(\.playerZoom, playerZoom)
         .background(DS.bg.ignoresSafeArea())
         .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
-        .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
+        // El reproductor crece desde la tarjeta que se tocó y, al cerrar, se encoge de vuelta a ella (con su avance al día).
+        .fullScreenCover(item: $env.playing, onDismiss: { ui.playerSource = nil }) { request in
+            PlayerScreen(request: request).playerZoom(from: ui.playerSource, in: playerZoom)
+        }
         // La guía de la primera vez (y la de Ajustes › «Cómo funciona Orbital»).
         .fullScreenCover(isPresented: Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 })) { OnboardingView { ui.showingGuide = false } }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
@@ -202,6 +208,7 @@ struct MainTabs: View {
     @State private var tab: Int
     /// Cuántas descargas siguen bajando o en pausa: el globito de la pestaña Descargas.
     @State private var pendingDownloads = 0
+    @State private var finishedDownloads = 0
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
     /// Ventana ancha (iPad, Mac): las hojas son tarjetas sin alturas que estirar, así que el control abre completo.
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -305,12 +312,18 @@ struct MainTabs: View {
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
         .task {
             let downloads = env.services.downloads
-            pendingDownloads = await downloads.all.filter { $0.state != .done }.count
+            let all = await downloads.all
+            pendingDownloads = all.filter { $0.state != .done }.count
+            finishedDownloads = all.filter { $0.state == .done }.count   // lo que ya estaba descargado no vibra al abrir
             for await items in downloads.makeUpdates() {
                 let count = items.filter { $0.state != .done }.count
                 if count != pendingDownloads { pendingDownloads = count }
+                let done = items.filter { $0.state == .done }.count
+                if done != finishedDownloads { finishedDownloads = done }
             }
         }
+        // Terminó una descarga: un toque de «listo» en la mano, estés en la pantalla que estés.
+        .sensoryFeedback(.success, trigger: finishedDownloads) { old, new in new > old }
         // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
         .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {

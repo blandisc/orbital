@@ -37,7 +37,8 @@ extension TitleView {
         guard var request = model.playRequest(videoID: videoID) else { return }
         request.sourceIndex = source?.index
         request.fromStart = fromStart
-        if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } } else { env.play(request) }
+        if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } }
+        else { env.ui.playerSource = PlayerZoomID(metaID: request.metaID, slot: "title"); env.play(request) }
     }
 
     func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {

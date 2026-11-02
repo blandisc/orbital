@@ -57,6 +57,9 @@ struct WatchingBars: View {
     var highlighted: Int? = nil
     /// Tocar una barra (en «Cómo calificas»: abre lo que calificaste con ese número); nil: solo se ve.
     var onTap: ((Int) -> Void)?
+    /// Las barras crecen desde abajo, una tras otra, cuando llegan sus números (al abrir o al cambiar de periodo).
+    @State private var grown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let top = max(values.max() ?? 0, 1)
@@ -66,7 +69,8 @@ struct WatchingBars: View {
                     GeometryReader { geo in
                         VStack { Spacer(minLength: 0)
                             RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill((highlighted.map { $0 == i } ?? (values[i] == top)) && values[i] > 0 ? DS.brandMoon : DS.fillStrong)
-                                .frame(height: max(DS.Watching.barMin, geo.size.height * CGFloat(values[i]) / CGFloat(top)))
+                                .frame(height: max(DS.Watching.barMin, geo.size.height * CGFloat(values[i]) / CGFloat(top) * (grown ? 1 : 0)))
+                                .animation(DS.Motion.enter(reduceMotion)?.delay(Double(i) * DS.Watching.barStagger), value: grown)
                         }
                     }
                     Text(verbatim: labels.indices.contains(i) ? labels[i] : "").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
@@ -77,6 +81,10 @@ struct WatchingBars: View {
             }
         }
         .frame(height: DS.Watching.barsHeight)
+        .onChange(of: values, initial: true) { _, _ in
+            grown = false
+            Task { @MainActor in grown = true }   // en el siguiente cuadro: así crecen desde abajo y no aparecen ya hechas
+        }
         .accessibilityElement(children: onTap == nil ? .ignore : .contain)
         .accessibilityLabel(Text("Minutos por periodo"))
     }
@@ -241,6 +249,9 @@ struct WatchingGenres: View {
     let name: (String) -> String
     @State private var picked: String?
     @State private var angle: Int?
+    /// La dona se arma al llegar (gira y crece desde el centro), al abrir y al cambiar de periodo.
+    @State private var built = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private struct Slice: Identifiable { let id: String; let label: Text; let count: Int; let color: Color }
 
@@ -283,6 +294,13 @@ struct WatchingGenres: View {
                 }
             }
             .frame(width: DS.Watching.donut, height: DS.Watching.donut)
+            .rotationEffect(.degrees(built || reduceMotion ? 0 : DS.Watching.donutTurn))
+            .scaleEffect(built || reduceMotion ? 1 : DS.Watching.donutStart)
+            .opacity(built ? 1 : 0)
+            .onChange(of: genres.map(\.name), initial: true) { _, _ in
+                built = false
+                Task { @MainActor in withAnimation(DS.Motion.enter(reduceMotion) ?? DS.Motion.fade) { built = true } }
+            }
             .sensoryFeedback(.selection, trigger: picked)
             .animation(DS.Motion.fade, value: picked)
             VStack(alignment: .leading, spacing: DS.Space.s1) {

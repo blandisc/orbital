@@ -76,7 +76,7 @@ struct RepisaView: View {
         .navigationTitle(Text("Colecciones"))
         .navigationDestination(for: String.self) { id in RepisaCollectionView(id: id, onOpenTitle: onOpenTitle) }
         .task { await model.load() }
-        .refreshable { await model.load() }
+        .orbitalRefreshable { await model.load() }
     }
 
     private func shelf(_ title: Text, symbol: String, _ items: [CanonCollection], _ model: RepisaModel) -> some View {

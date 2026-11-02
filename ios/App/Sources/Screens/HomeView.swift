@@ -127,7 +127,8 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         #if DEBUG
-        .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
+        .modifier(DemoScroll())
+        .orbitalRefreshable { await reload() }   // tirar para actualizar, con la luna de Orbital   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
         #endif
         .background(Backdrop(tint: tint.colors))
         // Sin título: arriba van el ícono y «Orbital» (el carácter de la app), también al bajar.
@@ -195,7 +196,6 @@ struct HomeView: View {
             appeared = true
             await reload(ifStale: true)
         }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
-        .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload(ifStale: true) } } }   // al volver a la app
     }
@@ -382,9 +382,13 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                     ForEach(items) { item in
-                        Button { Task { await env.play(item) } } label: {
+                        Button {
+                            env.ui.playerSource = PlayerZoomID(metaID: item.metaID, slot: "continue")
+                            Task { await env.play(item) }
+                        } label: {
                             StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item), progress: item.progress,
                                       fallback: item.background == nil ? nil : item.poster)
+                                .playerZoomSource(PlayerZoomID(metaID: item.metaID, slot: "continue"))
                         }
                         .buttonStyle(.plain)
                         // Al dejarlo picado se levanta con la esquina de la tarjeta (no un rectángulo) y, al soltar, regresa
@@ -397,9 +401,13 @@ struct HomeView: View {
                             }
                             Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } }
                         }
+                        // Lo que terminaste (o quitaste) se va encogiéndose y lo siguiente entra desde la derecha.
+                        .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                                                          removal: .scale(scale: DS.Motion.leaveScale).combined(with: .opacity)))
                     }
                 }
                 .scrollTargetLayout()
+                .animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade, value: items.map(\.id))
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)

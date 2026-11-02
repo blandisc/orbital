@@ -179,7 +179,7 @@ struct BrowseView: View {
             if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
             await warm
         }
-        .refreshable { await catalog.model.load() }
+        .orbitalRefreshable { await catalog.model.load() }
         .onAppear { Perf.mark("stab.appear") }   // con `-perf`: de tocar Buscar a verla (marca `stab.tap` en RootView)
         // ds-exception: el campo de búsqueda del sistema se dibuja vacío con letra de accesibilidad (el texto sí está):
         // se topa en el tamaño más grande que sí pinta.

@@ -97,7 +97,7 @@ struct WatchingView: View {
         .navigationTitle(Text("Lo que ves"))
         .onAppear { pickFirstWithData(model) }   // con lo guardado: sin parpadear en el periodo vacío
         .task { await model.load(full: true); pickFirstWithData(model) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
-        .refreshable { await model.load(full: true, force: true) }
+        .orbitalRefreshable { await model.load(full: true, force: true) }
         .onChange(of: env.watchedSomething) { Task { await model.load(full: true, force: true) } }   // terminaste de ver algo: al día
         .task(id: env.letterboxd.entries.count) {
             let letterboxd = env.letterboxd

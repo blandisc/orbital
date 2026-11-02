@@ -118,6 +118,7 @@ struct DSPlatformLogo: View {
 /// Cuánto llevas de un video.
 struct DSProgress: View {
     let fraction: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
@@ -127,6 +128,8 @@ struct DSProgress: View {
             }
         }
         .frame(height: DS.Space.s1).clipShape(Capsule())
+        // Al volver del reproductor, la barra corre hasta donde te quedaste (confirma que se guardó).
+        .animation(DS.Motion.smooth(reduceMotion), value: fraction)
         .accessibilityLabel(Text("Avance")).accessibilityValue(Text("\(Int(fraction * 100)) %"))
     }
 }

@@ -48,17 +48,37 @@ struct ReleaseTimeline: View {
                 }
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 .scrollTargetBehavior(.viewAligned)
-                .onAppear { proxy.scrollTo(Self.today, anchor: UnitPoint(x: DS.HomeTimeline.todayAnchor, y: UnitPoint.center.y)) }
+                .onAppear {
+                    let anchor = UnitPoint(x: DS.HomeTimeline.todayAnchor, y: UnitPoint.center.y)
+                    // La primera vez que se ve en esta sesión, la línea se desliza sola hasta HOY y la marca late una vez (te
+                    // ubica: lo de antes a la izquierda); las siguientes ya abre ahí, sin repetir el paseo.
+                    guard !Self.settled, !reduceMotion else { proxy.scrollTo(Self.today, anchor: anchor); return }
+                    Self.settled = true
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(DS.HomeTimeline.settleDelay))
+                        withAnimation(DS.Motion.smooth(reduceMotion)) { proxy.scrollTo(Self.today, anchor: anchor) }
+                        try? await Task.sleep(for: .seconds(DesignTokens.Motion.slow))
+                        pulse += 1
+                    }
+                }
             }
         }
     }
 
     private static let today = "hoy"
+    /// Ya se deslizó hasta HOY en esta sesión.
+    @MainActor private static var settled = false
+    @State private var pulse = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// La marca de hoy: una línea delgada con «Hoy» arriba.
     private var todayMark: some View {
         VStack(spacing: DS.Space.s1) {
             DSBadge(text: "Hoy", tone: .fresh)
+                .keyframeAnimator(initialValue: CGFloat(1), trigger: pulse) { badge, scale in badge.scaleEffect(scale) } keyframes: { _ in
+                    SpringKeyframe(DS.HomeTimeline.pulseScale, duration: DesignTokens.Motion.base)
+                    SpringKeyframe(1, duration: DesignTokens.Motion.slow)
+                }
             Capsule().fill(DS.success).frame(width: DS.HomeTimeline.markLine)
                 .frame(maxHeight: .infinity)
         }

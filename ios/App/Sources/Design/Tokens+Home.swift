@@ -24,6 +24,8 @@ extension DS {
         static let markLine: CGFloat = 2
         /// Dónde queda HOY al abrir (de 0 a 1 en el ancho): lo de antes a la izquierda y un poco de lo que viene.
         static let todayAnchor: CGFloat = 0.62
+        /// La primera vez: cuánto espera antes de deslizarse hasta HOY (que se vea el paseo) y cuánto crece la marca al latir.
+        static let settleDelay: Double = 0.4, pulseScale: CGFloat = 1.18
     }
 
     /// Canales: el ancho de cada canal, su logo, el velo, cada cuánto se recalcula, el acercamiento lento de la imagen del

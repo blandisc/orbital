@@ -57,15 +57,22 @@ struct RemoteImage<Content: View>: View {
         if let preview = Artwork.preview(url.absoluteString), pixels > CGFloat(preview.pixels), let quickURL = URL(string: preview.url) {
             async let full = ImagePipeline.shared.image(url, maxPixel: pixels)
             if let quick = await ImagePipeline.shared.image(quickURL, maxPixel: CGFloat(preview.pixels), urgent: true), !Task.isCancelled {
-                if loaded == nil { loaded = quick; if let perfTag { Perf.mark(perfTag + ".image") } }
+                if loaded == nil { arrive(quick); if let perfTag { Perf.mark(perfTag + ".image") } }
             }
             let image = await full
             if Task.isCancelled { return }
-            if let image { loaded = image; if let perfTag { Perf.mark(perfTag + ".sharp") } } else if loaded == nil { didFail = true }
+            if let image { arrive(image); if let perfTag { Perf.mark(perfTag + ".sharp") } } else if loaded == nil { didFail = true }
             return
         }
         let image = await ImagePipeline.shared.image(url, maxPixel: pixels)
         if Task.isCancelled { return }
-        if let image { loaded = image; if let perfTag { Perf.mark(perfTag + ".image") } } else { didFail = true }
+        if let image { arrive(image); if let perfTag { Perf.mark(perfTag + ".image") } } else { didFail = true }
+    }
+
+    /// Lo que llega de la red entra con un fundido corto (sobre el tono de la pieza, y la versión buena sobre la ligera: se
+    /// enfoca en vez de saltar). Lo que ya estaba en caché se pinta al instante, sin fundido: si no, la app se sentiría lenta.
+    /// Solo opacidad: se vale también con «Reducir movimiento».
+    private func arrive(_ image: UIImage) {
+        withAnimation(DS.Motion.fade) { loaded = image }
     }
 }

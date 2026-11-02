@@ -9,6 +9,8 @@ final class AppUI {
     /// «Viendo en la TV» va junto a la barra minimizada (al desplazar) y no encima de ella: la pastilla de calificar baja.
     var tvAccessoryInline = false
     var playing: PlayRequest?
+    /// La tarjeta de la que nace el reproductor (la pone quien toca «Ver»); se olvida al cerrarlo, ya que regresó a ella.
+    var playerSource: PlayerZoomID?
     var pendingTitle: TitleRoute?
     var askFinished: PlayRequest?
     var handoff: AppEnvironment.TVHandoff?

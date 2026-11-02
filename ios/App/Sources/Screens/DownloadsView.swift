@@ -7,6 +7,7 @@ import OrbitalModels
 /// inteligente. El espacio va en el subtítulo de la barra; el fondo toma el color de lo que se está bajando.
 struct DownloadsView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var observer: ModelObserver<DownloadsModel>
     @State private var tint = ArtTint()
     /// La descarga a la que se le buscan subtítulos.
@@ -138,6 +139,8 @@ struct DownloadsView: View {
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
+        // Lo que termina pasa de «Descargando» a su lugar en Series o Películas deslizándose, no de golpe.
+        .animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade, value: model.items.map { "\($0.id):\($0.state)" })
     }
 
     /// Lo que vino de tu OneDrive (Mi media), para distinguirlo de lo de Real-Debrid.

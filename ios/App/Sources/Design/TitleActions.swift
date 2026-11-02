@@ -47,6 +47,7 @@ struct ActionTileLabel: View {
                 Image(systemName: symbol).font((progress == nil ? DS.TextRecipe.cardTitle : DS.TextRecipe.caption).font.weight(.semibold))
                     .foregroundStyle(active ? tint : DS.text)
                     .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: active)   // «Vista», «Guardada»: se encienden con un salto, no solo cambian
             }
             .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
             title.font(DS.TextRecipe.badge.font).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)

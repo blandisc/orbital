@@ -250,6 +250,18 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static func travel(_ seconds: Double) -> Animation { .linear(duration: seconds) }
     }
 
+    /// La palomita de «Visto» (`WatchedMark`): su tamaño, el grosor del trazo y el aire de la palomita dentro del círculo.
+    enum WatchedMark {
+        static let size: CGFloat = 24, line: CGFloat = 2, checkInset = DS.Space.s2
+    }
+
+    /// Tirar para actualizar (`RefreshOrbit`): la marca, la luna, su órbita (fracción del tamaño, aplastada como el anillo),
+    /// lo que tarda una vuelta, cuánto hay que jalar y lo chica que empieza la marca.
+    enum Refresh {
+        static let mark: CGFloat = 34, moon: CGFloat = 6, orbit: CGFloat = 0.5, orbitSquash: CGFloat = 0.4
+        static let lap: Double = 1.1, threshold: CGFloat = 80, startScale: CGFloat = 0.6
+    }
+
     // MARK: Movimiento (sin movimiento con «Reducir movimiento»)
     enum Motion {
         /// Lo que tarda el salto de la barra de pestañas: lo que se recarga al volver a una pestaña espera esto.
@@ -266,6 +278,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
         static let fade: Animation = .easeInOut(duration: DesignTokens.Motion.base)
+        /// Lo que se va de una fila (lo que terminaste de ver) se encoge a esto mientras se desvanece.
+        static let leaveScale: CGFloat = 0.85
         /// Avance parejo, sin acelerar ni frenar: un anillo de progreso que se llena.
         static let steady: Animation = .linear(duration: DesignTokens.Motion.slow)
         /// Un salto corto y firme, sin rebote: algo que se acomoda en su lugar (una carta que vuelve, un riel que se reordena).

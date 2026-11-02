@@ -33,6 +33,7 @@ struct EpisodeRowView: View {
                             DS.scrim
                             Image(systemName: "eye.fill").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
                                 .frame(maxHeight: .infinity).accessibilityHidden(true)
+                                .transition(.opacity)
                         }
                     }
                     .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
@@ -82,10 +83,20 @@ struct EpisodeRowView: View {
         else if row.download == .done { Text("Descargado") }
     }
 
+    /// La palomita siempre está (invisible si no es vista): así, al marcar el episodio, se dibuja en su lugar en vez de aparecer
+    /// de golpe. Lo demás (descargado, bajando, «⋯») solo mientras no es visto.
     @ViewBuilder private var stateIcon: some View {
         if row.airs != nil { Image(systemName: "calendar").foregroundStyle(DS.textFaint).accessibilityLabel(Text("Todavía no sale")) }
-        else if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
-        else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
+        else {
+            ZStack(alignment: .trailing) {
+                WatchedMark(watched: row.watched)
+                if !row.watched { unwatchedIcon.transition(.opacity) }
+            }
+        }
+    }
+
+    @ViewBuilder private var unwatchedIcon: some View {
+        if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
         else if row.download == .downloading || row.download == .queued {
             // El mismo anillo que el círculo de Descargar de la ficha.
             DownloadRing(fraction: downloadFraction ?? 0, lineWidth: DS.TitleAction.ringSmallLine)

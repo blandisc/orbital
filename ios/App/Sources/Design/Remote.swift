@@ -15,6 +15,8 @@ struct TouchPad: View {
     @State private var moved = false
     @State private var touch: CGPoint?
     @State private var ticks = 0
+    /// La flecha que se acaba de mandar: se enciende un instante en su orilla (sabes a dónde fue sin mirar la TV).
+    @State private var flash: OrbitalRemote.InputAction?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -66,13 +68,18 @@ struct TouchPad: View {
     private func fire(_ action: OrbitalRemote.InputAction) {
         ticks += 1
         onAction(action)
+        flash = action
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(DesignTokens.Motion.fast))
+            if flash == action { withAnimation(DS.Motion.fade) { flash = nil } }
+        }
     }
 
     /// Las flechas apenas marcadas en las orillas y, al centro, qué hace tocar.
     private var hints: some View {
         ZStack {
-            VStack { chevron("chevron.up"); Spacer(); chevron("chevron.down") }
-            HStack { chevron("chevron.left"); Spacer(); chevron("chevron.right") }
+            VStack { chevron("chevron.up", .up); Spacer(); chevron("chevron.down", .down) }
+            HStack { chevron("chevron.left", .left); Spacer(); chevron("chevron.right", .right) }
             VStack(spacing: DS.Space.s1) {
                 // La A dice lo que va a pasar al tocar, como el pie de la TV; sin leyenda, la letra del mando.
                 Text(verbatim: selectLabel ?? "A").recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
@@ -91,8 +98,9 @@ struct TouchPad: View {
         .allowsHitTesting(false)
     }
 
-    private func chevron(_ name: String) -> some View {
-        Image(systemName: name).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.textFaint)
+    private func chevron(_ name: String, _ direction: OrbitalRemote.InputAction) -> some View {
+        Image(systemName: name).font(DS.TextRecipe.labelLarge.font).foregroundStyle(flash == direction ? DS.text : DS.textFaint)
+            .scaleEffect(flash == direction && !reduceMotion ? DS.Remote.arrowFlash : 1)
     }
 }
 
@@ -111,7 +119,10 @@ struct RemoteKey: View {
     @State private var held = 0
     /// Cuándo se disparó «mantener»: el toque que llega justo después (al soltar) no se manda; uno de verdad, luego, sí.
     @State private var heldAt: Date?
+    /// El dedo encima: la tecla se hunde un poco, como un botón de verdad.
+    @GestureState private var pressed = false
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
@@ -134,9 +145,12 @@ struct RemoteKey: View {
                 }
             }
             .opacity(idle ? DS.Opacity.disabled : 1)
+            .scaleEffect(pressed && !reduceMotion ? DS.Remote.keyPress : 1)
+            .animation(DS.Motion.snap(reduceMotion), value: pressed)
         }
         .buttonStyle(.plain)
         .foregroundStyle(DS.text)
+        .simultaneousGesture(DragGesture(minimumDistance: 0).updating($pressed) { _, state, _ in state = true })
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
         .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in
             guard let longPress else { return }

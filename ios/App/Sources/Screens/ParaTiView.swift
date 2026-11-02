@@ -120,7 +120,6 @@ struct ParaTiView: View {
             }
             await m.loadIfStale()
         }
-        .refreshable { await m.refresh() }
         // El widget «Mosaico de una lista»: tus listas de Explorar con sus pósters (cuando cambian los estantes que se ven).
         .task(id: m.visibleShelves.map { "\($0.id):\(m.items(for: $0).count)" }) {
             let lists = m.visibleShelves.map { plan in

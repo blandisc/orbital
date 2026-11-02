@@ -185,6 +185,7 @@ struct ListsView: View {
             atTop = top
             if !top { restReady = true }   // deslizaste: lo de abajo ya hace falta
         }
+        .orbitalRefreshable { [model] in await model.refresh() }   // tirar para actualizar, con la luna de Orbital
         // Lo de arriba ya se ve (o ya no va a llegar): entonces lo de abajo. Al volver del mosaico, de una vez.
         .onChange(of: !generalShelves.isEmpty || (!model.isLoading && !model.lists.isEmpty), initial: true) { _, ready in
             if ready { restReady = true }

@@ -25,6 +25,7 @@ extension TitleView {
             }
             .frame(maxWidth: .infinity)
         }
+        .playerZoomSource(PlayerZoomID(metaID: model.metaID, slot: "title"))   // «Ver» hace crecer el video desde el arte
         .padding(.top, -extra)
     }
 
