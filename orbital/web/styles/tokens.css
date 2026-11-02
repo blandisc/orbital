@@ -3,6 +3,13 @@
  * Valores crudos y sin significado. Los componentes NO los usan directamente:
  * usan los tokens semánticos que define cada tema (themes/*.css).
  */
+/* La letra de «orbital» (el logotipo, 1 nov 2026): Sora SemiBold, la misma en la TV y en el iPhone (no la del sistema, que
+   cambiaba según el aparato). Solo trae las letras de la palabra (fonts/, licencia OFL en Sora-OFL.txt). */
+@font-face {
+  font-family: "Orbital Wordmark"; src: url("../fonts/sora-wordmark.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: block;
+}
+
 :root {
   /* Paleta: grafitos neutros (la interfaz no tiene color propio; el color lo pone el juego) */
   --palette-ink-1000: #070708;
@@ -51,6 +58,9 @@
   /* El nombre de un premio (Óscar, Emmy…), como en su ceremonia: con remate, en mayúsculas espaciadas. */
   --font-award: "Didot", "Bodoni MT", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --tracking-award: .14em;
+  /* El logotipo «orbital» (status-bar, boot), con su luna como punto final; en SemiBold (`--weight-medium`), la única que trae. */
+  --font-brand: "Orbital Wordmark", var(--font-sans);
+  --tracking-brand: -.03em;
   /* Legible a 3 m: a 1080p el texto secundario no baja de ~18 px ni el cuerpo de ~23 px.
      --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño). */
   --text-scale: 1;

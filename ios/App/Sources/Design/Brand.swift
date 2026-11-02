@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// La marca de Orbital, la misma de la TV (icons.js · mark): un planeta de contorno y un solo anillo que lo cruza por delante,
-/// de abajo a la izquierda a arriba a la derecha. La luna no va aquí: es el punto de «orbital» (`OrbitalWordmark`) o, en el
+/// La marca de Orbital, la misma de la TV (icons.js · mark) y del ícono: un planeta de contorno y un solo anillo, una pincelada
+/// que lo cruza por delante de abajo a la izquierda a arriba a la derecha, gruesa al frente y en punta en las orillas. La luna no va aquí: es el punto de «orbital» (`OrbitalWordmark`) o, en el
 /// ícono de la app, un punto aparte arriba a la derecha.
 struct OrbitalMark: View {
     var size: CGFloat
@@ -13,9 +13,8 @@ struct OrbitalMark: View {
     var body: some View {
         let unit = size / DS.Brand.box
         ZStack {
-            MarkPlanet().stroke(lineWidth: DS.Brand.planetStroke * unit)
-            MarkRing().trim(from: 0, to: drawn || !animated || reduceMotion ? 1 : 0)
-                .stroke(style: StrokeStyle(lineWidth: DS.Brand.ringStroke * unit, lineCap: .round))   // sólido (antes semitransparente)
+            MarkPlanet()
+            MarkRing().mask { MarkRingSpine().trim(from: 0, to: drawn || !animated || reduceMotion ? 1 : 0).stroke(style: MarkRingSpine.reveal(unit)) }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
@@ -26,28 +25,52 @@ struct OrbitalMark: View {
     }
 }
 
-/// El planeta: un círculo centrado en la caja de 32.
+/// El planeta: el aro centrado en la caja de 32, con el hueco limpio donde le pasa el anillo por delante (se rellena).
 struct MarkPlanet: Shape {
     func path(in rect: CGRect) -> Path {
         let unit = rect.width / DS.Brand.box
         let r = DS.Brand.planetRadius * unit
+        let ring = MarkRing().path(in: rect)
+        let gap = ring.strokedPath(StrokeStyle(lineWidth: DS.Brand.ringGap * unit, lineJoin: .round)).union(ring)
         return Path(ellipseIn: CGRect(x: rect.midX - r, y: rect.midY - r, width: 2 * r, height: 2 * r))
+            .strokedPath(StrokeStyle(lineWidth: DS.Brand.planetStroke * unit)).subtracting(gap)
     }
 }
 
-/// El anillo: «M3.2 20.4 c3.8 3.1 21.2-2.4 26-8.8» de la TV.
+/// Del centro de la caja, inclinado como el anillo: (x, y) en unidades de la caja de 32.
+private func markPoint(_ rect: CGRect, _ x: CGFloat, _ y: CGFloat) -> CGPoint {
+    let unit = rect.width / DS.Brand.box, a = DS.Brand.ringTilt * .pi / 180
+    return CGPoint(x: rect.midX + (x * cos(a) - y * sin(a)) * unit, y: rect.midY + (x * sin(a) + y * cos(a)) * unit)
+}
+
+/// El anillo: la pincelada de la TV (icons.js · mark), dos curvas que se juntan en punta en las orillas y se separan al frente.
 struct MarkRing: Shape {
     func path(in rect: CGRect) -> Path {
-        let unit = rect.width / DS.Brand.box
-        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * unit, y: rect.minY + y * unit) }
+        let r = DS.Brand.ringRadius, c = 0.55 * r, outer = DS.Brand.ringOuter / 0.75, inner = DS.Brand.ringInner / 0.75
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { markPoint(rect, x, y) }
         var path = Path()
-        path.move(to: point(3.2, 20.4))
-        path.addCurve(to: point(29.2, 11.6), control1: point(7.0, 23.5), control2: point(24.4, 18.0))
+        path.move(to: p(-r, 0))
+        path.addCurve(to: p(r, 0), control1: p(-c, outer), control2: p(c, outer))
+        path.addCurve(to: p(-r, 0), control1: p(c, inner), control2: p(-c, inner))
+        path.closeSubpath()
         return path
     }
 }
 
-/// La marca con su nombre: el planeta, «orbital» en minúsculas y negrita, y la luna (turquesa, `DS.brandMoon`) como punto
+/// El trazo por el medio del anillo: al dibujarse (`trim`), descubre la pincelada de una punta a la otra.
+struct MarkRingSpine: Shape {
+    func path(in rect: CGRect) -> Path {
+        let r = DS.Brand.ringRadius, c = 0.55 * r, mid = (DS.Brand.ringOuter + DS.Brand.ringInner) / 2 / 0.75
+        var path = Path()
+        path.move(to: markPoint(rect, -r, 0))
+        path.addCurve(to: markPoint(rect, r, 0), control1: markPoint(rect, -c, mid), control2: markPoint(rect, c, mid))
+        return path
+    }
+
+    static func reveal(_ unit: CGFloat) -> StrokeStyle { StrokeStyle(lineWidth: DS.Brand.ringReveal * unit, lineCap: .round) }
+}
+
+/// La marca con su nombre: el planeta, «orbital» en minúsculas (Sora SemiBold, la de la TV), y la luna (turquesa, `DS.brandMoon`) como punto
 /// arriba a la derecha de la palabra. Al aparecer (`animated`), el anillo se dibuja y luego la luna cae en su lugar con un resorte corto; tocarla le da
 /// un saltito. Con «Reducir movimiento», quieta.
 struct OrbitalWordmark: View {
@@ -132,9 +155,8 @@ struct LaunchSplash: View {
         let mark = size * DS.Brand.markScale, unit = mark / DS.Brand.box
         return HStack(alignment: .center, spacing: size * DS.Brand.markGap) {
             ZStack {
-                MarkPlanet().stroke(lineWidth: DS.Brand.planetStroke * unit)
-                MarkRing().trim(from: 0, to: drawn ? 1 : 0)
-                    .stroke(style: StrokeStyle(lineWidth: DS.Brand.ringStroke * unit, lineCap: .round))
+                MarkPlanet()
+                MarkRing().mask { MarkRingSpine().trim(from: 0, to: drawn ? 1 : 0).stroke(style: MarkRingSpine.reveal(unit)) }
             }
             .frame(width: mark, height: mark)
             HStack(alignment: .firstTextBaseline, spacing: size * DS.Brand.moonGap) {

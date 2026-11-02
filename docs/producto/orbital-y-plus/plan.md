@@ -75,7 +75,9 @@ Ultra = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en
     hasta 100 personas. Cada versión dura 90 días: un script que suba una nueva cada mes. El TestFlight externo (liga
     pública) pasa por revisión de Apple y una app con Real-Debrid puede no pasar.
 19. La clave de TMDB incluida viaja en cada versión que subas (hoy vive solo en la Mac, `Secrets.xcconfig`).
-20. Ícono propio de Plus para que se distinga de Ultra en tu iPhone.
+20. ~~Ícono propio de Plus para que se distinga de Ultra en tu iPhone.~~ Hecho (1 nov 2026): cada versión se cuenta en lunas
+    (Orbital una, Plus dos, Ultra tres), clásico y Cielo nocturno, en `design/marca/`. La app de hoy ya lleva el de Ultra; al
+    crear el destino `OrbitalPlus` (y el de Orbital), `IPHONE` en `scripts/make_icon.py` o un juego de íconos por destino.
 
 **F · Comprobarlo.**
 21. Una persona que nunca usó Stremio instala Plus desde TestFlight, crea su Real-Debrid y ve algo, sin ayuda. Se graba
@@ -124,7 +126,7 @@ consola ni Stremio: no está escondido, no existe ahí (regla 2.5.19 de Apple).
 | Copia en Stremio, Simpson al azar, acompañante de juegos | No | Sí |
 | Cómo se instala | App Store | TestFlight interno (hasta 100 personas de tu equipo, cada versión dura 90 días) o desde Xcode |
 | Cuenta | `mx.iracheta.orbital` | `mx.iracheta.orbital.plus` (conviven en el mismo iPhone) |
-| Ícono | El de siempre | El de siempre con una marca (por ejemplo, la luna llena) |
+| Ícono | El planeta con una luna (`design/marca/orbital-*`) | Con dos lunas (`design/marca/plus-*`); Ultra, la tuya, con tres |
 
 Reglas: Orbital nunca menciona Plus ni Real-Debrid (nada de «Solo en Orbital Plus»: la maqueta de bibliotecas de la
 propuesta Muvy lo tenía y hay que quitarlo). Plus no se cobra.

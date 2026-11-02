@@ -12,10 +12,10 @@
   transform: translate(-50%, -50%) scale(var(--boot-brand-scale));
 }
 #boot .boot__mark { width: 2.05rem; height: 2.05rem; overflow: visible; }
-#boot .boot__ring { opacity: var(--opacity-near); stroke-dasharray: 1; animation: mark-draw var(--duration-brand-ring) var(--ease-brand-out) var(--delay-brand-ring) both; }
+#boot .boot__ring { stroke-dasharray: 1; animation: mark-draw var(--duration-brand-ring) var(--ease-brand-out) var(--delay-brand-ring) both; }
 #boot .boot__word {
-  display: inline-flex; align-items: flex-start; font-size: var(--type-section); font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-display); line-height: var(--leading-none); padding-bottom: .08em;
+  display: inline-flex; align-items: flex-start; font-family: var(--font-brand); font-size: var(--type-section); font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-brand); line-height: var(--leading-none); padding-bottom: .08em;
 }
 #boot .boot__word > span {
   display: inline-block;

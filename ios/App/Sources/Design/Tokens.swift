@@ -311,8 +311,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// inclinada `ringTilt` grados, de `ringRadius` de punta a centro; su orilla de abajo baja `ringOuter` y la de arriba
         /// `ringInner` (gruesa al frente, en punta en las orillas). `ringGap`: el hueco que le abre al planeta; `ringReveal`, el
         /// trazo que la descubre al dibujarse.
-        static let ringRadius: CGFloat = 14.51, ringOuter: CGFloat = 4.96, ringInner: CGFloat = 2.34, ringTilt: Double = -18.8
-        static let ringGap: CGFloat = 1.8, ringReveal: CGFloat = 5
+        static let ringRadius: CGFloat = 14.51, ringOuter: CGFloat = 4.96, ringInner: CGFloat = 2.34, ringTilt: Double = -18.8   // ds-exception: en unidades de la caja de 32 (el dibujo de la marca)
+        static let ringGap: CGFloat = 1.8, ringReveal: CGFloat = 5   // ds-exception: en unidades de la caja de 32 (el dibujo de la marca)
         /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
         static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1   // ds-exception: en em de la palabra (la marca)
         /// De dónde cae la luna al aparecer (em) y lo chica que empieza.

@@ -80,6 +80,7 @@ targets:
         OrbitalTraktClientID: $(ORBITAL_TRAKT_CLIENT_ID)   # lo lee Services.bundledTraktClientID
         OrbitalTMDBKey: $(ORBITAL_TMDB_KEY)   # lo lee Services.bundledTMDBKey (de Secrets.xcconfig)
         UILaunchScreen: {}
+        UIAppFonts: [Sora-SemiBold.ttf]   # la letra de «orbital» (DS.Brand.wordFont), la misma de la TV
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         # El iPad gira libre y comparte pantalla (Split View, Stage Manager): las cuatro, y la app se acomoda a su ventana.
         "UISupportedInterfaceOrientations~ipad": [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
