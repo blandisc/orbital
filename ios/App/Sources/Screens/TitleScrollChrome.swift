@@ -70,19 +70,33 @@ struct TitleEntrance: ViewModifier {
     }
 }
 
-/// El logo chico de la barra de la ficha (de alto fijo, sin pasarse de su espacio); sin logo, el nombre.
+/// El logo chico de la barra de la ficha; sin logo, el nombre. Va recortado de su margen transparente (los de metahub traen
+/// ~25 % vacío arriba y abajo) y cabe entero en su lugar: uno ancho se ajusta al espacio entre ‹ y los botones y uno alto
+/// al alto de la barra, sin cortarse ni quedar diminuto. Un logo oscuro se pinta claro (si no, no se lee sobre el arte).
 private struct BarLogo: View {
     let url: String?
     let title: String
+    @State private var trimmed: UIImage?
+    @State private var failed = false
+    @State private var dark = false
+
     var body: some View {
         Group {
             if let u = url.flatMap(URL.init(string:)) {
-                RemoteImage(url: u, maxPoints: DS.TitleAction.barLogo * 8) { phase in
-                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { name }
+                Group {
+                    if let trimmed { Image(uiImage: trimmed).resizable().scaledToFit().brightness(dark ? 1 : 0) }
+                    else if failed { name }
+                    else { Color.clear }
+                }
+                .task(id: u) {
+                    trimmed = LogoTrim.cached(u)
+                    if trimmed == nil { if let found = await LogoTrim.load(u) { trimmed = found } else { failed = true } }
+                    dark = await LogoTone.isDark(u)
                 }
             } else { name }
         }
-        .frame(height: DS.TitleAction.barLogo, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: DS.TitleAction.barLogo, alignment: .leading)
+        .frame(height: DS.TitleAction.barLogo)
         .accessibilityLabel(Text(verbatim: title))
     }
     private var name: some View { Text(verbatim: title).recipe(.labelLarge, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }

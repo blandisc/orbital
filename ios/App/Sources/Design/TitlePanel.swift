@@ -23,18 +23,28 @@ struct TitleNavigationLink<Label: View>: View {
     let route: TitleRoute
     @ViewBuilder var label: () -> Label
     @Environment(\.titlePanel) private var panel
+    @Environment(\.titleZoom) private var zoom
     /// Dónde está el póster en la ventana: el zoom hacia el panel sale de aquí. En una caja que SwiftUI no observa: cambia en
     /// cada cuadro al desplazar y, guardado como estado, volvía a pintar cada póster en cada cuadro (auditoría, A3).
     @State private var frame = FrameBox()
+    /// El nombre de este enlace en el zoom (`TitleZoomID`): viaja en la navegación, así la ficha sale de este póster aunque el
+    /// título se repita en otra fila. Antes se anotaba con un gesto de toque encima del póster, que a veces se comía el toque
+    /// y la ficha no abría (Mi lista en Inicio).
+    @State private var slot = UUID()
 
     var body: some View {
-        if let panel {
-            Button { panel(route, from: frame.rect) } label: { label() }
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame.rect = $0 }
-                .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
-        } else {
-            NavigationLink(value: route) { label() }.accessibilityIdentifier("title-link")
+        Group {
+            if let panel {
+                Button { panel(route, from: frame.rect) } label: { label() }
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame.rect = $0 }
+            } else if zoom != nil {
+                NavigationLink(value: TitleZoomID(route: route, slot: slot)) { label() }
+            } else {
+                NavigationLink(value: route) { label() }
+            }
         }
+        .environment(\.titleZoomSlot, slot)
+        .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
     }
 }
 

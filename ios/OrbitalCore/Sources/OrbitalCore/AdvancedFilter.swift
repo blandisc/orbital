@@ -87,29 +87,42 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
 
     /// Qué tipos se buscan: los dos, o solo uno. Estudios y «Taquilleras» son de películas.
     public var kinds: [String] {
+        // Si todos los géneros que elegiste no existen en series (Terror, Romance…), no se buscan series: antes «Series +
+        // Terror» pedía las series sin género y salían todas.
+        let onlyMovieGenres = !genres.isEmpty && moviesOnlyGenres.count == genres.count
         switch format {
         case .movie: return ["movie"]
-        case .series: return ["series"]
+        case .series: return onlyMovieGenres ? [] : ["series"]
         case .all:
-            // Taquilleras son películas; y si todos los géneros que elegiste no existen en series, también.
-            let onlyMovieGenres = !genres.isEmpty && moviesOnlyGenres.count == genres.count
+            // Taquilleras son películas.
             return fame == .blockbusters || onlyMovieGenres ? ["movie"] : ["movie", "series"]
         }
     }
 
     /// Los minutos de cada largo (en series se mide el capítulo).
     func runtime(series: Bool) -> (min: Int?, max: Int?) {
-        if length == .before { return (nil, max(minutesLeft, 20)) }
+        if length == .before { return (series ? nil : Self.featureMinutes, max(minutesLeft, 20)) }
         return Self.runtime(length, series: series)
     }
+
+    /// ¿Cabe en el tiempo que elegiste? Solo se revisa en series (con la duración del capítulo de su ficha): en películas
+    /// ya lo filtró TMDB. Sin duración conocida, sí (no se tira por falta de dato).
+    public func fits(kind: String, runtime minutes: Int?) -> Bool {
+        guard kind == "series", length != .any, let minutes else { return true }
+        let range = runtime(series: true)
+        return (range.min.map { minutes >= $0 } ?? true) && (range.max.map { minutes <= $0 } ?? true)
+    }
+
+    /// Lo menos que dura una película (sin esto «Corta» traía cortometrajes de 5 minutos).
+    static let featureMinutes = 60
 
     static func runtime(_ length: Length, series: Bool) -> (min: Int?, max: Int?) {
         switch (length, series) {
         case (.before, _): return (nil, nil)
         case (.any, _): return (nil, nil)
-        case (.short, false): return (nil, 95)
-        case (.regular, false): return (90, 130)
-        case (.long, false): return (130, nil)
+        case (.short, false): return (featureMinutes, 95)
+        case (.regular, false): return (96, 130)
+        case (.long, false): return (131, nil)
         case (.short, true): return (nil, 30)
         case (.regular, true): return (30, 50)
         case (.long, true): return (50, nil)
@@ -128,21 +141,38 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
     }
 
     /// Los parámetros de /discover para un tipo y unos años (una década, con «Repartido por décadas»).
+    /// Lo que TMDB llama series pero no lo son para ver aquí: noticieros, realities, telenovelas diarias y programas de
+    /// entrevistas (y lo infantil, salvo que pidas Familia o Animación). Antes llenaban «Series» de relleno.
+    static let tvFiller = [10763, 10764, 10766, 10767], tvKids = 10762
+
+    /// ¿Es de un país donde casi nadie vota en TMDB? (México, Corea… sí; Estados Unidos e Inglaterra, no.) Ahí los pisos de
+    /// votos bajan: con los de siempre una película mexicana muy vista no llegaba.
+    var smallMarket: Bool { !countries.isEmpty && !countries.isSubset(of: ["US", "GB"]) }
+
+    /// Los parámetros de /discover para un tipo y unos años (una década, con «Repartido por décadas»).
     public func params(kind: String, years: ClosedRange<Int>?) -> [(String, String)] {
         let series = kind == "series"
         var p: [(String, String)] = []
         let wanted = Tmdb.filterGenres.filter { genres.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
-        let unwanted = Tmdb.filterGenres.filter { excluded.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
+        var unwanted = Tmdb.filterGenres.filter { excluded.contains($0.slug) }.compactMap { series ? $0.tv : $0.movie }
+        if series {
+            unwanted += Self.tvFiller
+            if !genres.contains("familia"), !genres.contains("animacion") { unwanted.append(Self.tvKids) }
+        }
         if !wanted.isEmpty { p.append(("with_genres", Set(wanted).sorted().map(String.init).joined(separator: "|"))) }
         if !unwanted.isEmpty { p.append(("without_genres", Set(unwanted).sorted().map(String.init).joined(separator: ","))) }
-        if let years {
-            let field = series ? "first_air_date" : "primary_release_date"
-            p.append(("\(field).gte", "\(years.lowerBound)-01-01"))
-            p.append(("\(field).lte", "\(years.upperBound)-12-31"))
+        // Nunca lo que aún no se estrena (antes solo con «Más nuevas»): con o sin años, hasta hoy.
+        let field = series ? "first_air_date" : "primary_release_date"
+        if let years { p.append(("\(field).gte", "\(years.lowerBound)-01-01")) }
+        let end = years.map { "\($0.upperBound)-12-31" } ?? today
+        p.append(("\(field).lte", min(end, today)))
+        // En series TMDB mide el capítulo con un dato que casi ninguna trae: filtrar ahí dejaba fuera casi todo. El largo de
+        // una serie se revisa después, con su ficha (`AdvancedFilterModel`).
+        if !series {
+            let minutes = runtime(series: false)
+            if let m = minutes.min { p.append(("with_runtime.gte", String(m))) }
+            if let m = minutes.max { p.append(("with_runtime.lte", String(m))) }
         }
-        let minutes = runtime(series: series)
-        if let m = minutes.min { p.append(("with_runtime.gte", String(m))) }
-        if let m = minutes.max { p.append(("with_runtime.lte", String(m))) }
         if series, format == .series {
             switch seriesStatus {
             case .airing: p.append(("with_status", "0|2"))     // en emisión o en producción
@@ -152,31 +182,34 @@ public struct AdvancedFilter: Sendable, Equatable, Hashable, Codable {
         }
         if !countries.isEmpty { p.append(("with_origin_country", countries.sorted().joined(separator: "|"))) }
         if !series, !studios.isEmpty { p.append(("with_companies", studios.sorted().map(String.init).joined(separator: "|"))) }
-        // Qué tan conocida y la calificación: el piso de votos evita lo que nadie ha visto (salvo «Para pocos»). Es bajo
-        // (25) para no dejar fuera lo de México y las series chicas; «Mejor calificadas» pide 100 para que no gane una
-        // con tres votos de 10.
+        // El piso de votos es lo que separa lo que la gente ve de las rarezas: con 25 salían títulos de moda en otro país y
+        // con «Mejor calificadas» ganaban especiales con tres votos de 10. Lo popular pide 100 (series 50); lo mejor calificado,
+        // 300 (series 200), como el «Top Rated» de TMDB. De un país chico o recién estrenado, mucho menos.
+        let scale = smallMarket ? 0.2 : 1.0
+        let recent = (years?.lowerBound ?? 0) >= currentYear - 1
+        func floor(_ movie: Int, _ tv: Int) -> Int { max(10, Int((Double(series ? tv : movie) * scale * (recent ? 0.3 : 1)).rounded())) }
         var rating = minRating
-        var votes: (min: Int?, max: Int?) = ((years?.lowerBound ?? 0) >= currentYear ? 30 : sort == .rating ? 100 : 25, nil)
+        var votes: (min: Int?, max: Int?) = (sort == .rating ? floor(300, 200) : floor(100, 50), nil)
         var order = "popularity.desc"
+        // Cada «Qué tan conocida» va por popularidad dentro de su rango (antes por calificación, y el menú decía «Más
+        // populares»): así salen las joyas que sí se reconocen, no la de 9.8 que vieron 40 personas.
         switch fame {
         case .any: break
-        case .gems: rating = max(rating ?? 0, 7.0); votes = (150, 2500); order = "vote_average.desc"
-        case .classics: rating = max(rating ?? 0, 7.5); votes = (series ? 800 : 3000, nil); order = "vote_average.desc"
-        case .niche: votes = (20, 300); order = "vote_average.desc"
-        case .blockbusters: votes = (3000, nil); order = series ? "popularity.desc" : "revenue.desc"
+        case .gems: rating = max(rating ?? 0, 7.2); votes = (floor(300, 200), Int(3000 * scale))
+        case .classics: rating = max(rating ?? 0, 7.5); votes = (floor(3000, 800), nil)
+        case .niche: rating = max(rating ?? 0, 6.5); votes = (floor(50, 30), Int(500 * scale))
+        case .blockbusters: votes = (floor(3000, 1000), nil); order = series ? "popularity.desc" : "revenue.desc"
         }
         if !providers.isEmpty {
             p.append(("with_watch_providers", providers.sorted().map(String.init).joined(separator: "|")))
             p.append(("watch_region", region))
             p.append(("with_watch_monetization_types", "flatrate|free|ads"))   // también lo gratis (ViX, Pluto TV)
         }
-        // El orden que elegiste manda sobre el de «Qué tan conocida» (el piso de votos se queda: no sale lo que nadie vio).
+        // El orden que elegiste manda sobre el de «Qué tan conocida».
         switch sort {
         case .popular: break
-        case .rating: order = "vote_average.desc"
-        case .newest:
-            order = series ? "first_air_date.desc" : "primary_release_date.desc"
-            p.append((series ? "first_air_date.lte" : "primary_release_date.lte", today))
+        case .rating: order = "vote_average.desc"; votes.min = max(votes.min ?? 0, floor(300, 200))
+        case .newest: order = series ? "first_air_date.desc" : "primary_release_date.desc"
         }
         if let rating { p.append(("vote_average.gte", String(format: "%.1f", rating))) }
         if let v = votes.min { p.append(("vote_count.gte", String(v))) }
@@ -276,9 +309,11 @@ extension Tmdb {
             for try await (i, rows, total) in group { out[i] = (rows, total) }
             return out
         }
-        // Intercaladas: una y una, para que «Todo» no sean veinte películas y luego veinte series.
+        // Intercaladas: una y una, para que «Todo» no sean veinte películas y luego veinte series. Por calificación, juntas y
+        // en orden (intercaladas quedaba un 6.9 junto a un 8.8).
         var out: [TmdbRow] = []
         for i in 0..<(lists.map(\.rows.count).max() ?? 0) { for list in lists where i < list.rows.count { out.append(list.rows[i]) } }
+        if filter.sort == .rating { out.sort { $0.voteAverage > $1.voteAverage } }
         return (out, lists.reduce(0) { $0 + $1.total })
     }
 }

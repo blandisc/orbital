@@ -11,7 +11,11 @@ final class AdvancedFilterTests: XCTestCase {
         XCTAssertEqual(f.kinds, ["movie", "series"])
         let p = dict(f.params(kind: "movie"))
         XCTAssertEqual(p["sort_by"], "popularity.desc")
-        XCTAssertEqual(p["vote_count.gte"], "25", "bajo: lo de México y las series chicas tienen pocos votos")
+        XCTAssertEqual(p["vote_count.gte"], "100", "lo que la gente ve, no rarezas de moda en otro país")
+        XCTAssertEqual(p["primary_release_date.lte"], f.today, "nunca lo que aún no se estrena")
+        let tv = dict(f.params(kind: "series"))
+        XCTAssertEqual(tv["vote_count.gte"], "50")
+        XCTAssertEqual(tv["without_genres"], "10762,10763,10764,10766,10767", "sin noticieros, realities, telenovelas, entrevistas ni infantiles")
         XCTAssertNil(p["with_genres"])
     }
 
@@ -27,7 +31,10 @@ final class AdvancedFilterTests: XCTestCase {
         XCTAssertEqual(m["primary_release_date.lte"], "2026-10-30", "lo más nuevo, sin lo que aún no se estrena")
         f.sort = .rating
         XCTAssertEqual(dict(f.params(kind: "series"))["sort_by"], "vote_average.desc")
-        XCTAssertEqual(dict(f.params(kind: "series"))["vote_count.gte"], "100", "mejor calificadas, pero con un piso de votos")
+        XCTAssertEqual(dict(f.params(kind: "series"))["vote_count.gte"], "200", "mejor calificadas, con el piso del «Top Rated» de TMDB")
+        XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.gte"], "300")
+        f.countries = ["MX"]
+        XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.gte"], "60", "de un país donde se vota poco, el piso baja")
     }
 
     func testSeGuardaYSeRecupera() throws {
@@ -47,10 +54,15 @@ final class AdvancedFilterTests: XCTestCase {
         XCTAssertEqual(m["primary_release_date.gte"], "1990-01-01")
         XCTAssertEqual(m["primary_release_date.lte"], "1999-12-31")
         XCTAssertEqual(m["with_runtime.lte"], "95")
+        XCTAssertEqual(m["with_runtime.gte"], "60", "sin cortometrajes")
         let s = dict(f.params(kind: "series"))
         XCTAssertEqual(s["with_genres"], "35", "Terror no tiene género de series en TMDB")
         XCTAssertEqual(s["first_air_date.gte"], "1990-01-01")
-        XCTAssertEqual(s["with_runtime.lte"], "30", "en series se mide el capítulo")
+        XCTAssertNil(s["with_runtime.lte"], "en series TMDB casi no trae el largo del capítulo: se revisa con la ficha")
+        XCTAssertTrue(f.fits(kind: "series", runtime: 25))
+        XCTAssertFalse(f.fits(kind: "series", runtime: 55))
+        XCTAssertTrue(f.fits(kind: "series", runtime: nil), "sin dato, no se tira")
+        XCTAssertEqual(s["without_genres"], "16,10762,10763,10764,10766,10767")
         XCTAssertEqual(f.activeCount, 3)
     }
 
@@ -69,14 +81,14 @@ final class AdvancedFilterTests: XCTestCase {
         var f = AdvancedFilter()
         f.fame = .gems
         let g = dict(f.params(kind: "movie"))
-        XCTAssertEqual(g["vote_count.lte"], "2500")
-        XCTAssertEqual(g["vote_average.gte"], "7.0")
-        XCTAssertEqual(g["sort_by"], "vote_average.desc")
+        XCTAssertEqual(g["vote_count.lte"], "3000")
+        XCTAssertEqual(g["vote_average.gte"], "7.2")
+        XCTAssertEqual(g["sort_by"], "popularity.desc", "las joyas que sí se reconocen, no la de 9.8 con 40 votos")
         f.fame = .blockbusters
         XCTAssertEqual(f.kinds, ["movie"], "las taquilleras son películas")
         XCTAssertEqual(dict(f.params(kind: "movie"))["sort_by"], "revenue.desc")
         f.fame = .niche
-        XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.lte"], "300")
+        XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.lte"], "500")
         f.minRating = 8
         f.fame = .gems
         XCTAssertEqual(dict(f.params(kind: "movie"))["vote_average.gte"], "8.0", "gana la calificación más alta")
@@ -107,6 +119,9 @@ final class AdvancedFilterTests: XCTestCase {
         f.genres = ["terror", "comedia"]
         XCTAssertEqual(f.kinds, ["movie", "series"])
         XCTAssertEqual(f.moviesOnlyGenres.map(\.slug), ["terror"])
+        f.format = .series; f.genres = ["terror"]
+        XCTAssertEqual(f.kinds, [], "«Series + Terror» no trae todas las series: no hay")
+        f.format = .all
         f.currentYear = 2026; f.years = 2026...2026
         XCTAssertEqual(dict(f.params(kind: "movie"))["vote_count.gte"], "30", "lo de este año aún tiene pocos votos")
     }

@@ -98,3 +98,54 @@ extension View {
     /// Desvanece las orillas de un `ScrollView` horizontal que no cabe (ver `HorizontalEdgeFade`).
     func edgeFade() -> some View { modifier(HorizontalEdgeFade()) }
 }
+
+/// Un renglón que, si no cabe, de vez en cuando se recorre para leerse completo (como el nombre de la canción en Música):
+/// espera, avanza hasta el final, espera y regresa. Si cabe, es un texto normal. Con «Reducir movimiento» no se mueve: se
+/// corta con «…».
+struct MarqueeText: View {
+    let text: Text
+    var recipe: DS.TextRecipe = .body
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var full: CGFloat = 0
+    @State private var box: CGFloat = 0
+    @State private var shift: CGFloat = 0
+
+    private var overflow: CGFloat { max(0, full - box) }
+
+    var body: some View {
+        if reduceMotion {
+            text.recipe(recipe).lineLimit(1)
+        } else {
+            text.recipe(recipe).lineLimit(1).fixedSize()
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { full = $0 }
+                .offset(x: shift)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { box = $0 }
+                .mask {
+                    // Mientras no se ve entero, la orilla por donde sigue se desvanece (no un corte seco).
+                    LinearGradient(stops: [.init(color: .black.opacity(shift < 0 ? 0 : 1), location: 0),
+                                           .init(color: .black, location: overflow > 0 ? DS.Marquee.fade / max(box, 1) : 0),
+                                           .init(color: .black, location: overflow > 0 ? 1 - DS.Marquee.fade / max(box, 1) : 1),
+                                           .init(color: .black.opacity(overflow > 0 && shift > -overflow ? 0 : 1), location: 1)],
+                                   startPoint: .leading, endPoint: .trailing)
+                }
+                .task(id: overflow) { await run() }
+        }
+    }
+
+    private func run() async {
+        shift = 0
+        let distance = overflow
+        guard distance > 1 else { return }
+        let travel = Double(distance) / DS.Marquee.speed
+        while !Task.isCancelled {
+            try? await Task.sleep(for: DS.Marquee.rest)
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Marquee.travel(travel)) { shift = -distance }
+            try? await Task.sleep(for: .seconds(travel) + DS.Marquee.hold)
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Marquee.travel(travel)) { shift = 0 }
+            try? await Task.sleep(for: .seconds(travel))
+        }
+    }
+}

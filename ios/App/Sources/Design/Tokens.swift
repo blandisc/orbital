@@ -238,6 +238,18 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         }
     }
 
+    /// El texto que se recorre cuando no cabe (`MarqueeText`): espera, avanza despacio hasta el final, espera y regresa.
+    enum Marquee {
+        /// Lo que se queda quieto antes de avanzar y al llegar al final.
+        static let rest: Duration = .seconds(3), hold: Duration = .seconds(1.5)
+        /// Puntos por segundo: se lee mientras avanza.
+        static let speed: Double = 30
+        /// El desvanecido de las orillas mientras no se ve entero.
+        static let fade = Space.s3
+        /// El paso de ida o de regreso: parejo, sin acelerar (se va leyendo).
+        static func travel(_ seconds: Double) -> Animation { .linear(duration: seconds) }
+    }
+
     // MARK: Movimiento (sin movimiento con «Reducir movimiento»)
     enum Motion {
         /// Lo que tarda el salto de la barra de pestañas: lo que se recarga al volver a una pestaña espera esto.
@@ -354,7 +366,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// El alto del logo en la franja del mosaico.
         static let captionLogo: CGFloat = 34
         /// El arte redondo del accesorio «En la TV».
-        static let accessoryArt: CGFloat = 38   // alto del póster en el accesorio de abajo
+        static let accessoryArt: CGFloat = 32   // alto del póster en el accesorio de abajo (como el de Música)
         /// La columna del símbolo en los renglones de una guía («Lo que puedes decir»): alinea los textos.
         static let iconColumn: CGFloat = 24
         /// El alto de un mosaico con arte (géneros de Explora).

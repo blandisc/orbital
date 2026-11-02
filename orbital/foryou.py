@@ -1697,6 +1697,17 @@ class ForYou:
         country = f.get("country")
         if country in self.FILTER_COUNTRIES:
             params["with_origin_country"] = country
+        # Como el iPhone: nunca lo que aún no se estrena, sin relleno de TV (noticieros, realities, telenovelas, entrevistas;
+        # lo infantil salvo Familia o Animación) y con un piso de votos para que no salgan rarezas de moda en otro país
+        # (más bajo de un país donde se vota poco).
+        params.setdefault(f"{date_field}.lte", date.today().isoformat())
+        if params[f"{date_field}.lte"] > date.today().isoformat():
+            params[f"{date_field}.lte"] = date.today().isoformat()
+        if kind == "series":
+            filler = [10763, 10764, 10766, 10767] + ([] if f.get("genre") in ("familia", "animacion") else [10762])
+            params["without_genres"] = ",".join(str(g) for g in sorted(filler))
+        floor = (50 if kind == "series" else 100) // (5 if country and country not in ("US", "GB") else 1)
+        params["vote_count.gte"] = max(params.get("vote_count.gte", 0), floor) if fame != "hidden" else params["vote_count.gte"]
         return params
 
     def filtered(self, kind: str, f: dict, count_only: bool = False) -> dict:

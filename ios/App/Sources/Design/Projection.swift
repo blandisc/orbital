@@ -164,23 +164,39 @@ struct TVAccessory: View {
     let toggle: () -> Void
     /// Abre el control remoto completo (también con VoiceOver: es un botón).
     let openRemote: () -> Void
+    /// El año (o los años) de un título por su IMDb, para el segundo renglón: la TV no lo manda (lo busca la raíz).
+    var yearOf: (@MainActor (_ kind: String, _ imdb: String) async -> String?)?
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+    /// El año (o los años de una serie, «2019–2023»), de Cinemeta: la TV no lo manda.
+    @State private var year: String?
 
-    /// El arte y el nombre (lo que se toca para abrir el control remoto).
+    /// Abajo del nombre: el año de una película, el capítulo y los años de una serie, o «En vivo».
+    private var detail: Text {
+        if now.live { return Text("En vivo") }
+        let parts = [now.kind == "movie" || now.episodeLabel.isEmpty ? nil : now.episodeLabel, year].compactMap { $0 }
+        return parts.isEmpty ? Text("En la TV") : Text(verbatim: parts.joined(separator: " · "))
+    }
+
+    /// El arte y el nombre (lo que se toca para abrir el control remoto). Del tamaño del de Música: el arte chico, el nombre
+    /// en un renglón que se recorre si no cabe y, debajo, el año.
     private var info: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             // El póster como póster (vertical, esquinas suaves); el logo de un canal en vivo, cuadrado. Nunca en círculo.
             // Completo, con su propia forma: el arte de la TV no siempre es vertical y antes se recortaba.
             PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect, whole: true)
                 .frame(height: DS.Size.accessoryArt)
             VStack(alignment: .leading, spacing: 0) {
-                Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
-                if placement != .inline {
-                    Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
-                }
+                MarqueeText(text: Text(verbatim: now.live ? (now.channel ?? now.title) : now.title), recipe: .labelLarge)
+                if placement != .inline { detail.recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1) }
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .task(id: now.metaID) {
+            year = nil
+            guard !now.live, let id = now.metaID, id.hasPrefix("tt"), let yearOf else { return }
+            year = await yearOf(now.kind == "movie" ? "movie" : "series", id)
+        }
     }
 
     var body: some View {
@@ -208,40 +224,35 @@ extension View {
 
 // MARK: Póster → ficha con la transición de zoom nativa
 
-/// El espacio del zoom de una pantalla y cuál póster se tocó de cada título. Un mismo título puede estar en varias filas
-/// (Top 10, Mi lista, Sugerencias): con el título como único nombre, el zoom salía (y regresaba) a veces de otro póster.
-/// Cada póster tiene su propio nombre (`TitleZoomID`) y el que se toca se anota aquí: la ficha sale de ese y vuelve a ese.
-/// Es una caja que SwiftUI no observa: anotar un toque no repinta nada.
-@MainActor final class TitleZoomTaps {
-    var last: [TitleRoute: TitleZoomID] = [:]
-}
-
+/// El nombre de un póster en el zoom: el título y de cuál enlace sale. Un mismo título puede estar en varias filas (Top 10,
+/// Mi lista, Sugerencias): con el título como único nombre, el zoom salía (y regresaba) a veces de otro póster.
 struct TitleZoomID: Hashable { let route: TitleRoute; let slot: UUID }
 
-struct TitleZoomSpace: Sendable { let namespace: Namespace.ID; let taps: TitleZoomTaps }
-
-private struct TitleZoomKey: EnvironmentKey { static let defaultValue: TitleZoomSpace? = nil }
+private struct TitleZoomKey: EnvironmentKey { static let defaultValue: Namespace.ID? = nil }
 
 extension EnvironmentValues {
     /// El espacio de la transición de zoom de la pantalla (lo pone `titleDestinations()`).
-    var titleZoom: TitleZoomSpace? {
+    var titleZoom: Namespace.ID? {
         get { self[TitleZoomKey.self] }
         set { self[TitleZoomKey.self] = newValue }
     }
+    /// De cuál enlace es el póster de adentro (lo pone `TitleNavigationLink`).
+    @Entry var titleZoomSlot: UUID? = nil
 }
 
 /// La receta de cada pantalla que abre fichas: la navegación a `TitleRoute` y el zoom desde el póster que se tocó.
 private struct TitleDestinations: ViewModifier {
     @Namespace private var zoom
-    @State private var taps = TitleZoomTaps()
 
     func body(content: Content) -> some View {
         content
-            .environment(\.titleZoom, TitleZoomSpace(namespace: zoom, taps: taps))
-            .navigationDestination(for: TitleRoute.self) { route in
-                // Del póster que tocaste; si se abrió sin tocar uno (la portada, Siri), el sistema la sube desde abajo.
-                TitleView(route: route).navigationTransition(.zoom(sourceID: AnyHashable(taps.last[route] ?? TitleZoomID(route: route, slot: UUID())), in: zoom))
+            .environment(\.titleZoom, zoom)
+            // Desde un póster: el zoom sale de ese póster y regresa a él.
+            .navigationDestination(for: TitleZoomID.self) { z in
+                TitleView(route: z.route).navigationTransition(.zoom(sourceID: z, in: zoom))
             }
+            // Sin póster (la portada, Siri, un aviso): la ficha entra como siempre.
+            .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
             .navigationDestination(for: TmdbRoute.self) { TmdbTitleView(title: $0.title) }   // recomendaciones, saga, filmografía
             .navigationDestination(for: PersonRoute.self) { PersonView(route: $0) }
     }
@@ -250,20 +261,17 @@ private struct TitleDestinations: ViewModifier {
 private struct TitleZoomSource: ViewModifier {
     let route: TitleRoute
     @Environment(\.titleZoom) private var zoom
-    /// El nombre de este póster en el zoom: uno por póster en pantalla, aunque el título se repita en otra fila.
-    @State private var slot = UUID()
+    @Environment(\.titleZoomSlot) private var slot
 
     func body(content: Content) -> some View {
-        if let zoom {
-            let id = TitleZoomID(route: route, slot: slot)
+        if let zoom, let slot {
             content
                 // Con la esquina y la sombra del póster: el zoom crece desde la tarjeta y regresa a ella, no desde un
                 // rectángulo de esquinas rectas.
-                .matchedTransitionSource(id: AnyHashable(id), in: zoom.namespace) { source in
+                .matchedTransitionSource(id: TitleZoomID(route: route, slot: slot), in: zoom) { source in
                     source.clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                         .shadow(DS.Elevation.floating)
                 }
-                .simultaneousGesture(TapGesture().onEnded { zoom.taps.last[route] = id })
         } else { content }
     }
 }

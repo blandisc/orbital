@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
@@ -1192,6 +1193,11 @@ def test_advanced_filter_asks_tmdb_with_every_choice(make_foryou, net, monkeypat
     assert p["with_watch_providers"] == 8 and p["with_origin_country"] == "KR"
     assert p["with_watch_monetization_types"] == "flatrate|free|ads"  # también lo gratis, como el iPhone
     assert fy.filter_params("series", {"genre": "terror"}) is None  # Terror no tiene género de serie en TMDB
+    tv = fy.filter_params("series", {})
+    assert tv["without_genres"] == "10762,10763,10764,10766,10767"  # sin relleno de TV, como el iPhone
+    assert tv["vote_count.gte"] == 50 and fy.filter_params("movie", {})["vote_count.gte"] == 100
+    assert fy.filter_params("movie", {"country": "MX"})["vote_count.gte"] == 20  # de un país donde se vota poco, más bajo
+    assert fy.filter_params("movie", {})["primary_release_date.lte"] <= date.today().isoformat()
     assert fy.filter_params("series", {"decade": "old"})["first_air_date.lte"] == "1979-12-31"
     net.on("GET", r"/discover/movie", (200, {"results": [{"id": 1}], "total_results": 340}))
     assert fy.filtered("movie", {"genre": "comedia"}, count_only=True) == {"total": 340}

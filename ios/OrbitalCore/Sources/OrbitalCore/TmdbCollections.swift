@@ -51,7 +51,7 @@ public struct GenreChart: Sendable, Equatable {
 
 extension Tmdb {
     public static let genres: [TmdbGenre] = [
-        TmdbGenre("accion", "Acción", 28, 10759), TmdbGenre("aventura", "Aventura", 12, nil), TmdbGenre("animacion", "Animación", 16, 16),
+        TmdbGenre("accion", "Acción", 28, 10759), TmdbGenre("aventura", "Aventura", 12, 10759), TmdbGenre("animacion", "Animación", 16, 16),
         TmdbGenre("comedia", "Comedia", 35, 35), TmdbGenre("crimen", "Crimen", 80, 80), TmdbGenre("documental", "Documental", 99, 99),
         TmdbGenre("drama", "Drama", 18, 18), TmdbGenre("familia", "Familia", 10751, 10751), TmdbGenre("fantasia", "Fantasía", 14, 10765),
         TmdbGenre("terror", "Terror", 27, nil), TmdbGenre("misterio", "Misterio", 9648, 9648), TmdbGenre("romance", "Romance", 10749, nil),

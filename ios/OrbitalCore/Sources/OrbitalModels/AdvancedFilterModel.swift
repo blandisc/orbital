@@ -112,7 +112,7 @@ public final class AdvancedFilterModel: ObservableModel {
             let hidden = asked.hideWatched ? watched : []
             _ = await ForYou.streamSuggestions(rows, reason: .popular, tmdb: services.tmdb) { [weak self] batch in
                 guard let self, asked.withoutClock == self.filter.withoutClock else { return false }   // cambiaste el filtro: lo demás ya no sirve
-                let fresh = batch.filter { !hidden.contains($0.imdb) && have.insert($0.imdb).inserted }
+                let fresh = batch.filter { !hidden.contains($0.imdb) && asked.fits(kind: $0.kind, runtime: $0.runtime) && have.insert($0.imdb).inserted }
                 if !fresh.isEmpty { self.results += fresh }
                 return true
             }

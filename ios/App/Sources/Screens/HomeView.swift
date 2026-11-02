@@ -383,6 +383,9 @@ struct HomeView: View {
                                       fallback: item.background == nil ? nil : item.poster)
                         }
                         .buttonStyle(.plain)
+                        // Al dejarlo picado se levanta con la esquina de la tarjeta (no un rectángulo) y, al soltar, regresa
+                        // sin que la orilla de la fila lo corte (`scrollClipDisabled` abajo).
+                        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                         .contextMenu {
                             Button("Ver la ficha", systemImage: "info.circle") { openTitle = route(item) }
                             if env.services.orbital.isConfigured {
@@ -396,6 +399,7 @@ struct HomeView: View {
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
         }
     }
 

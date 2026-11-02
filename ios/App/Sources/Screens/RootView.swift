@@ -319,7 +319,12 @@ struct MainTabs: View {
                 if let game = tvNow.model.game {
                     GameAccessory(game: game) { showGame = true }
                 } else if let now = tvNow.model.now {
-                    TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = sizeClass == .regular; showRemote = true })
+                    TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = sizeClass == .regular; showRemote = true },
+                                yearOf: { kind, imdb in
+                                    let meta = try? await env.services.cinemeta.meta(kind: kind, id: imdb)
+                                    let found = (meta?["releaseInfo"]?.string ?? meta?["year"]?.string)?.trimmingCharacters(in: .whitespaces) ?? ""
+                                    return found.isEmpty ? nil : found
+                                })
                 }
             }
             .modifier(AccessoryPlacementReport())   // si va encima de la barra o a su lado (la pastilla de calificar se acomoda)
