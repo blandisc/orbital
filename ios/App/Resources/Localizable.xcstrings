@@ -12491,6 +12491,17 @@
         }
       }
     },
+    "Letterboxd · solo películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letterboxd · movies only"
+          }
+        }
+      }
+    },
     "Letterboxd · tus reseñas": {
       "extractionState": "manual",
       "localizations": {
@@ -15700,6 +15711,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Christmas"
+          }
+        }
+      }
+    },
+    "Necesita la clave de TMDB (Ajustes › Avanzado).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs the TMDB key (Settings › Advanced)."
           }
         }
       }

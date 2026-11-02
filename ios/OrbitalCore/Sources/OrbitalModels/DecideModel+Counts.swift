@@ -50,6 +50,9 @@ extension DecideModel {
         if kind != nil { out.append((.kind, count { $0.kind = nil })) }
         if !decades.isEmpty { out.append((.decades, count { $0.decades = [] })) }
         if minRating > 0 { out.append((.rating, count { $0.minRating = 0 })) }
+        if minLetterboxd > 0 { out.append((.letterboxd, count { $0.minLetterboxd = 0 })) }
+        if fame != .any { out.append((.fame, count { $0.fame = .any })) }
+        if !awards.isEmpty { out.append((.awards, count { $0.awards = [] })) }
         if timeChosen { for t in Time.allCases where t != time { out.append((.time(t), count(strictTime: true) { $0.time = t })) } }
         return Array(out.filter { $0.1 > 0 }.sorted { $0.1 > $1.1 }.prefix(2))
     }
@@ -63,13 +66,16 @@ extension DecideModel {
         case .rating: minRating = 0
         case .time(let t): time = t; timeChosen = true
         case .lists: sourceIDs = []
+        case .letterboxd: minLetterboxd = 0
+        case .fame: fame = .any
+        case .awards: awards = []
         }
         await apply()
     }
 
-    /// «Limpiar» en «Más filtros»: géneros, época, listas y lo visto (la calificación va aparte).
+    /// «Limpiar» en «Más filtros»: géneros, época, qué tan conocida, premios, listas y lo visto (la calificación va aparte).
     public func clearMoreFilters() async {
-        genres = []; decades = []; includeWatched = false; sourceIDs = []
+        genres = []; decades = []; includeWatched = false; sourceIDs = []; fame = .any; awards = []
         await apply()
     }
 
@@ -214,6 +220,18 @@ extension DecideModel {
         if !f.genres.isEmpty { ok = Self.matches(genreList ?? [], picked: f.genres) }
         else if let mood = f.mood { ok = Self.matches(genreList ?? [], mood) }
         if ok, !f.decades.isEmpty { ok = year.map { Self.inDecades($0, f.decades) } ?? false }
+        if ok, !f.awards.isEmpty { ok = f.awards.contains { Self.awardWinners[$0]?.contains(s.imdb) == true } }
+        if ok, f.minLetterboxd > 0, f.kind != "series" {
+            // Letterboxd califica películas: las series no salen (con «Series» no cuenta, arriba).
+            guard s.kind == "movie" else { return (false, Self.fits(s.runtime ?? d?.minutes, f.time)) }
+            guard d?.letterboxdChecked == true else { return nil }
+            ok = (d?.letterboxd ?? 0) >= f.minLetterboxd
+        }
+        if ok, f.fame != .any {
+            guard services.tmdb.configured else { return (false, Self.fits(s.runtime ?? d?.minutes, f.time)) }
+            guard d?.statsChecked == true else { return nil }
+            ok = f.fame.matches(average: d?.tmdbAverage ?? 0, votes: d?.tmdbVotes ?? 0, series: s.kind != "movie")
+        }
         if ok, f.minRating > 0 {
             // Basta con que una de las elegidas llegue; si ninguna se sabe y falta preguntar, aún no se decide.
             var known: [Double] = []
@@ -248,6 +266,7 @@ extension DecideModel {
     /// Al cerrar la hoja: lo que se preparaba en segundo plano ya no hace falta.
     public func stop() {
         dropUpcoming(); enriching?.cancel(); describingAll?.cancel(); describingAll = nil; ratingTMDB?.cancel(); ratingTMDB = nil
+        statsTMDB?.cancel(); statsTMDB = nil; ratingLetterboxd?.cancel(); ratingLetterboxd = nil
         resolving?.cancel(); resolving = nil
     }
 

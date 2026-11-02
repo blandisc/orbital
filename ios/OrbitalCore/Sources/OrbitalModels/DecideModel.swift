@@ -2,8 +2,8 @@ import Foundation
 import OrbitalCore
 
 /// «¿Qué vemos?» (Para ti › 🎲): tres carteles con su porqué y «Barajar»; debajo, filtros que se aplican al tocarlos (el
-/// tiempo, el ánimo, series o películas) y, aparte, «Más filtros» (géneros, época, de qué listas, bien calificada en
-/// IMDb, Trakt o TMDB, incluir lo visto). Cuenta cuántas opciones quedan y, si ninguna, qué filtro quitar.
+/// tiempo, el ánimo, series o películas, la calificación de IMDb, Trakt, TMDB o Letterboxd) y, aparte, «Más filtros»
+/// (géneros, época, qué tan conocida, premios, de qué listas, incluir lo visto). Cuenta cuántas opciones quedan y, si ninguna, qué filtro quitar.
 /// Siempre de tus sugerencias (o de las listas que elijas), que no hayas visto ni apartado hoy.
 @MainActor
 public final class DecideModel: ObservableModel {
@@ -32,10 +32,17 @@ public final class DecideModel: ObservableModel {
         public var minRating: Double
         public var ratingSources: Set<RatingSource>
         public var includeWatched: Bool
+        /// Estrellas mínimas en Letterboxd (0: sin mínimo). Solo califica películas: con un mínimo, las series no salen
+        /// (salvo con «Series», donde no cuenta), como en el filtro avanzado.
+        public var minLetterboxd: Double = 0
+        /// «Qué tan conocida» (los mismos rangos de votos de TMDB que el filtro avanzado).
+        public var fame: AdvancedFilter.Fame = .any
+        /// Ganadoras de estos premios (ids de `Awards.all`); vacío: cualquiera.
+        public var awards: Set<String> = []
     }
 
     /// Un filtro que se puede quitar (o aflojar) cuando nada cumple, y con cuántas quedarían.
-    public enum Relax: Hashable, Sendable { case genre(String), mood, kind, decades, rating, time(Time), lists }
+    public enum Relax: Hashable, Sendable { case genre(String), mood, kind, decades, rating, time(Time), lists, letterboxd, fame, awards }
 
     public internal(set) var pick: Suggestion? { didSet { changed() } }
     /// Las tres que se proponen a la vez (carteles lado a lado); `pick` es la elegida de ellas.
@@ -70,19 +77,27 @@ public final class DecideModel: ObservableModel {
     public var minRating: Double = 0 { didSet { changed() } }
     public var ratingSources: Set<RatingSource> = [.imdb, .trakt] { didSet { changed() } }
     public static let ratingSteps: [Double] = [0, 6, 7, 8]
+    /// Letterboxd (Fernando, 2 nov 2026: en Calificación), «Qué tan conocida» y Premios (en «Más filtros»): los del filtro
+    /// avanzado que le faltaban.
+    public var minLetterboxd: Double = 0 { didSet { changed() } }
+    public static let letterboxdSteps: [Double] = [0, 3, 3.5, 4]
+    public var fame: AdvancedFilter.Fame = .any { didSet { changed() } }
+    public var awards: Set<String> = [] { didSet { changed() } }
 
     public var filters: Filters {
-        Filters(time: time, mood: mood, kind: kind, genres: genres, decades: decades, minRating: minRating, ratingSources: ratingSources, includeWatched: includeWatched)
+        Filters(time: time, mood: mood, kind: kind, genres: genres, decades: decades, minRating: minRating, ratingSources: ratingSources, includeWatched: includeWatched,
+                minLetterboxd: minLetterboxd, fame: fame, awards: awards)
     }
 
     /// Cuántos filtros hay puestos (el tiempo solo si lo elegiste; las listas cuentan como uno).
     public var activeFilters: Int {
         (timeChosen ? 1 : 0) + (mood == nil ? 0 : 1) + (kind == nil ? 0 : 1) + genres.count + (decades.isEmpty ? 0 : 1)
-            + (minRating > 0 ? 1 : 0) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0)
+            + (minRating > 0 || minLetterboxd > 0 ? 1 : 0) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0)
+            + (fame == .any ? 0 : 1) + (awards.isEmpty ? 0 : 1)
     }
     /// Los de «Más filtros» (para «Más filtros · 2»); la calificación tiene su propia cápsula.
     public var moreFilters: Int {
-        genres.count + (decades.isEmpty ? 0 : 1) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0)
+        genres.count + (decades.isEmpty ? 0 : 1) + (sourceIDs.isEmpty ? 0 : 1) + (includeWatched ? 1 : 0) + (fame == .any ? 0 : 1) + (awards.isEmpty ? 0 : 1)
     }
 
     /// Los géneros que se ofrecen (su nombre en inglés, como los dan Trakt y Cinemeta).
@@ -98,6 +113,10 @@ public final class DecideModel: ObservableModel {
         var genres: [String]; var minutes: Int?; var rating: Double?; var year: Int?
         /// La de TMDB (se pide solo si la eliges); `tmdbChecked`: ya se preguntó (aunque TMDB no la tenga).
         var tmdbRating: Double?; var tmdbChecked: Bool?
+        /// Los votos y la calificación de TMDB sin piso («Qué tan conocida»); `statsChecked`: ya se preguntó.
+        var tmdbVotes: Int?; var tmdbAverage: Double?; var statsChecked: Bool?
+        /// El promedio de Letterboxd (solo películas); `letterboxdChecked`: ya se preguntó (aunque no lo tenga).
+        var letterboxd: Double?; var letterboxdChecked: Bool?
     }
     var details: [String: Detail] = [:]
     static let detailsKey = "decide-details", detailsLimit = 1500
@@ -213,7 +232,8 @@ public final class DecideModel: ObservableModel {
     /// Lo que eligiste, en una cadena: los siguientes ya buscados solo sirven si no cambió.
     var filtersKey: String {
         [time.rawValue, mood?.rawValue ?? "", kind ?? "", genres.sorted().joined(separator: ","), "\(includeWatched)", sourceIDs.sorted().joined(separator: ","),
-         decades.sorted().map(String.init).joined(separator: ","), "\(minRating)", ratingSources.map(\.rawValue).sorted().joined(separator: ",")].joined(separator: "|")
+         decades.sorted().map(String.init).joined(separator: ","), "\(minRating)", ratingSources.map(\.rawValue).sorted().joined(separator: ","),
+         "\(minLetterboxd)", fame.rawValue, awards.sorted().joined(separator: ",")].joined(separator: "|")
     }
 
     /// Nivel 1: la propuesta rápida (lo que sigues primero si cabe; si no, al azar entre lo tuyo).
@@ -275,6 +295,75 @@ public final class DecideModel: ObservableModel {
         }
     }
 
+    /// Los votos de TMDB de toda la lista («Qué tan conocida»), una consulta por título y guardados entre aperturas. La
+    /// misma consulta deja también la calificación de TMDB.
+    var statsTMDB: Task<Void, Never>?
+    public func fetchFameInBackground() {
+        let tmdb = services.tmdb
+        guard tmdb.configured, statsTMDB == nil else { return }
+        let missing = candidatesPool.filter { details[$0.imdb]?.statsChecked != true }
+        guard !missing.isEmpty else { return }
+        statsTMDB = Task(priority: .utility) { [weak self] in
+            for start in stride(from: 0, to: missing.count, by: Self.chunk) {
+                guard !Task.isCancelled else { break }
+                let chunk = Array(missing[start..<min(start + Self.chunk, missing.count)])
+                let found = await withTaskGroup(of: (String, (average: Double, votes: Int)?, Bool).self) { group in
+                    for s in chunk {
+                        group.addTask {
+                            do { return (s.imdb, try await tmdb.stats(imdb: s.imdb, kind: s.kind), true) } catch { return (s.imdb, nil, false) }
+                        }
+                    }
+                    var out: [(String, (average: Double, votes: Int)?, Bool)] = []
+                    for await r in group { out.append(r) }
+                    return out
+                }
+                guard let self else { return }
+                for (id, stats, answered) in found where answered {   // si TMDB falló, se vuelve a preguntar la próxima
+                    var d = self.details[id] ?? Detail(genres: [], minutes: nil, rating: nil, year: nil)
+                    d.tmdbVotes = stats?.votes ?? 0; d.tmdbAverage = stats?.average ?? 0; d.statsChecked = true
+                    if let stats, stats.votes >= Tmdb.minVotes, stats.average > 0 { d.tmdbRating = stats.average }
+                    d.tmdbChecked = true
+                    self.details[id] = d
+                }
+                self.saveDetails(); self.changed()
+            }
+            self?.statsTMDB = nil
+        }
+    }
+
+    /// El promedio de Letterboxd de las películas de la lista (de pocas en pocas; Letterboxd recuerda cada una).
+    var ratingLetterboxd: Task<Void, Never>?
+    public func fetchLetterboxdInBackground() {
+        guard ratingLetterboxd == nil else { return }
+        let missing = candidatesPool.filter { $0.kind == "movie" && details[$0.imdb]?.letterboxdChecked != true }
+        guard !missing.isEmpty else { return }
+        let letterboxd = Letterboxd(http: services.http, kv: services.kv)
+        ratingLetterboxd = Task(priority: .utility) { [weak self] in
+            for start in stride(from: 0, to: missing.count, by: Self.chunk) {
+                guard !Task.isCancelled else { break }
+                let chunk = Array(missing[start..<min(start + Self.chunk, missing.count)])
+                let averages = await letterboxd.averages(chunk.map(\.imdb))
+                guard let self else { return }
+                // Sin ninguna respuesta, Letterboxd no contestó: no se marca nada (se vuelve a preguntar después).
+                guard !averages.isEmpty else { break }
+                for s in chunk {
+                    var d = self.details[s.imdb] ?? Detail(genres: [], minutes: nil, rating: nil, year: nil)
+                    d.letterboxd = averages[s.imdb]; d.letterboxdChecked = true
+                    self.details[s.imdb] = d
+                }
+                self.saveDetails(); self.changed()
+            }
+            self?.ratingLetterboxd = nil
+        }
+    }
+
+    /// ¿Ya se sabe lo de Letterboxd (o la fama) de toda la lista? Hasta entonces los menús no dicen cuántas quedan.
+    public var letterboxdReady: Bool { !candidatesPool.contains { $0.kind == "movie" && details[$0.imdb]?.letterboxdChecked != true } }
+    public var fameReady: Bool { !candidatesPool.contains { details[$0.imdb]?.statsChecked != true } }
+
+    /// Los ganadores de cada premio, por IMDb (vienen con la app).
+    nonisolated static let awardWinners: [String: Set<String>] = Dictionary(uniqueKeysWithValues: Awards.all.map { ($0.id, Set($0.winners.map(\.imdb))) })
+
     /// Niveles 2 y 3: con lo que elegiste.
     public func decide() async { await apply() }
 
@@ -321,6 +410,8 @@ public final class DecideModel: ObservableModel {
         exhausted = false
         order = candidatesPool.shuffled()
         if filters.minRating > 0, filters.ratingSources.contains(.tmdb) { rateWithTMDBInBackground(order) }
+        if fame != .any { fetchFameInBackground() }
+        if minLetterboxd > 0 { fetchLetterboxdInBackground() }
         await next()
     }
 

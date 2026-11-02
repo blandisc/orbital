@@ -273,11 +273,36 @@ struct DecideView: View {
                     .disabled(source == .tmdb && !env.services.tmdb.configured)
                 }
             }
+            // Letterboxd, como en el filtro avanzado (Fernando, 2 nov 2026): solo películas. Cuántas quedan se dice cuando ya se
+            // sabe el promedio de todas (se pide al elegir un mínimo y se recuerda).
+            Section(Strings.tr("Letterboxd · solo películas", language: language)) {
+                ForEach(DecideModel.letterboxdSteps, id: \.self) { r in
+                    Button { m.minLetterboxd = r; Task { await m.apply() } } label: {
+                        let title = r == 0 ? Strings.tr("Cualquiera", language: language) : "\(Self.stars(r))+"
+                        if m.letterboxdReady { optionLabel(title, count: m.count { $0.minLetterboxd = r }, selected: m.minLetterboxd == r) }
+                        else if m.minLetterboxd == r { Label { Text(verbatim: title) } icon: { Image(systemName: "checkmark") } }
+                        else { Text(verbatim: title) }
+                    }
+                }
+            }
         } label: {
-            DSCapsuleLabel(title: m.minRating > 0 ? Text(verbatim: String(format: "%.0f+", m.minRating)) : Text("Calificación"), symbol: "star",
-                           selected: m.minRating > 0, stretch: true, trailing: "chevron.down")
+            DSCapsuleLabel(title: Text(verbatim: ratingTitle(m)), symbol: "star",
+                           selected: m.minRating > 0 || m.minLetterboxd > 0, stretch: true, trailing: "chevron.down")
         }
         .accessibilityIdentifier("decide-rating")
+    }
+
+    /// «7+», «3.5★» o «7+ · 3.5★»; sin mínimo, «Calificación».
+    private func ratingTitle(_ m: DecideModel) -> String {
+        var parts: [String] = []
+        if m.minRating > 0 { parts.append(String(format: "%.0f+", m.minRating)) }
+        if m.minLetterboxd > 0 { parts.append("\(FilterText.number(m.minLetterboxd))★") }
+        return parts.isEmpty ? Strings.tr("Calificación", language: language) : parts.joined(separator: " · ")
+    }
+
+    /// «★★★½»: las estrellas de Letterboxd.
+    static func stars(_ value: Double) -> String {
+        String(repeating: "★", count: Int(value)) + (value.truncatingRemainder(dividingBy: 1) >= 0.5 ? "½" : "")
     }
 
     private func ratingSourceName(_ s: DecideModel.RatingSource) -> String {
@@ -328,8 +353,16 @@ struct DecideView: View {
         if let k = m.kind { parts.append(kindName(k)) }
         if !m.decades.isEmpty { parts.append(m.decades.sorted(by: >).map { decadeName($0) }.joined(separator: ", ")) }
         if m.minRating > 0 { parts.append(String(format: "%.0f+", m.minRating)) }
+        if m.minLetterboxd > 0 { parts.append("\(FilterText.number(m.minLetterboxd))★ Letterboxd") }
+        if m.fame != .any { parts.append(Strings.tr(Self.fameKey(m.fame), language: language)) }
+        if !m.awards.isEmpty { parts.append(Strings.tr("Premios", language: language)) }
         if m.timeChosen || parts.isEmpty { parts.append(timeName(m.time)) }
         return parts.joined(separator: " + ")
+    }
+
+    /// El nombre de «Qué tan conocida» como clave de texto (para «Quitar Joyas ocultas»).
+    static func fameKey(_ f: AdvancedFilter.Fame) -> String {
+        switch f { case .gems: "Joyas ocultas"; case .classics: "Las de siempre"; case .niche: "Para pocos"; case .blockbusters: "Taquilleras"; case .any: "Cualquiera" }
     }
 
     private func relaxName(_ r: DecideModel.Relax, _ m: DecideModel) -> String {
@@ -342,6 +375,9 @@ struct DecideView: View {
         case .rating: return tr("Sin mínimo")
         case .time(let t): return String(format: tr("Con %@"), timeName(t))
         case .lists: return tr("De todo lo sugerido")
+        case .letterboxd: return String(format: tr("Quitar %@"), "Letterboxd")
+        case .fame: return String(format: tr("Quitar %@"), tr(Self.fameKey(m.fame)))
+        case .awards: return String(format: tr("Quitar %@"), tr("Premios"))
         }
     }
 
@@ -361,201 +397,5 @@ struct DecideView: View {
 
     private func moodLabel(_ m: DecideModel.Mood) -> String {
         switch m { case .light: "Ligero"; case .intense: "Intenso"; case .think: "Para pensar"; case .together: "En pareja" }
-    }
-}
-
-// MARK: - Más filtros
-/// «Más filtros»: géneros, época, de qué listas, bien calificada (según IMDb, Trakt o TMDB: basta una) y lo ya visto. Cuenta
-/// cuántas quedan mientras eliges; «Ver N» regresa y lo aplica.
-struct DecideMoreFilters: View {
-    let model: DecideModel
-    let openLists: () -> Void
-    let done: () -> Void
-    @State private var observer: ModelObserver<DecideModel>
-    @Environment(AppEnvironment.self) private var env
-
-    init(model: DecideModel, openLists: @escaping () -> Void, done: @escaping () -> Void) {
-        self.model = model; self.openLists = openLists; self.done = done
-        _observer = State(wrappedValue: ModelObserver(model))
-    }
-
-    private var language: String { env.services.appSettings.uiLanguage }
-
-    var body: some View {
-        let m = observer.model
-        let count = m.count()
-        let unknown = count == 0 ? m.unknownCount() : 0
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                PanelGroupTitle(title: "Géneros")
-                Text("Elige uno o varios · el número es cuántas hay").recipe(.caption, color: DS.textFaint)
-                // Mosaicos con el arte de tus sugerencias de cada género (el `id` con lo elegido: ver `FlowChips`).
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: 3), spacing: DS.Space.s2) {
-                    ForEach(DecideModel.genreChoices, id: \.self) { g in
-                        DecideTile(title: Text(verbatim: genreName(g, language: env.language)), image: DecideView.tileImage(genre: g), selected: m.genres.contains(g),
-                                   dimmed: !m.genres.isEmpty && !m.genres.contains(g), count: m.count { $0.genres = [g] },
-                                   height: DS.Decide.genreTile) {
-                            if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
-                        }
-                    }
-                }
-                .id(m.genres)   // que se redibuje al elegir (ver `FlowChips`)
-                .onChange(of: m.genres) { m.resolveUnknown() }
-                PanelGroupTitle(title: "Época")
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DecideModel.decadeChoices.count), spacing: DS.Space.s2) {
-                    ForEach(DecideModel.decadeChoices, id: \.self) { d in
-                        DecideTile(title: d == 1980 ? Text("Antes") : Text(verbatim: d >= 2000 ? "\(d)s" : "\(d % 100)s"), image: "decide-era-\(d)",
-                                   selected: m.decades.contains(d), dimmed: !m.decades.isEmpty && !m.decades.contains(d),
-                                   count: m.count { $0.decades = [d] }, height: DS.Decide.eraTile, era: true) {
-                            if m.decades.contains(d) { m.decades.remove(d) } else { m.decades.insert(d) }
-                        }
-                    }
-                }
-                .id(m.decades)
-                .onChange(of: m.decades) { m.resolveUnknown() }
-                if !m.sources.isEmpty { lists(m) }
-                Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
-                    .tint(DS.accent)
-            }
-            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4)
-        }
-        .safeAreaInset(edge: .bottom) {
-            Button { done() } label: {
-                Text(count > 0 ? String(format: Strings.tr("Ver %lld", language: language), count)
-                     : unknown > 0 ? Strings.tr("Buscando opciones…", language: language) : Strings.tr("Sin opciones con eso", language: language))
-                    .frame(maxWidth: .infinity)
-            }
-            .dsPrimaryButton().controlSize(.large)
-            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
-            .accessibilityIdentifier("decide-more-done")
-        }
-        .navigationTitle(Text("Más filtros")).navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Limpiar") { Task { await m.clearMoreFilters() } }.disabled(m.moreFilters == 0) } }
-        // Al volver (con «Ver», deslizando o con ‹), los carteles ya son de lo elegido.
-        .onDisappear { Task { await m.apply() } }
-    }
-
-    /// «De dónde»: un renglón con lo elegido (abre «De qué listas») y las usadas hace poco, a un toque.
-    @ViewBuilder private func lists(_ m: DecideModel) -> some View {
-        let chosen = m.sources.filter { m.sourceIDs.contains($0.id) }
-        PanelGroupTitle(title: "De dónde")
-        Button(action: openLists) {
-            HStack(spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(chosen.isEmpty ? Strings.tr("Todo lo sugerido", language: language)
-                         : String(format: Strings.tr(chosen.count == 1 ? "%lld lista" : "%lld listas", language: language), chosen.count))
-                        .recipe(.labelLarge, color: DS.text)
-                    if !chosen.isEmpty { Text(verbatim: chosen.map(\.name).joined(separator: " · ")).recipe(.caption).lineLimit(1) }
-                }
-                Spacer(minLength: DS.Space.s2)
-                Text(verbatim: String(format: Strings.tr("de %lld", language: language), m.sources.count)).recipe(.caption)
-                Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
-            }
-            .padding(DS.Space.s3)
-            .dsCard(.row, translucent: true)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("decide-lists")
-        let recent = m.recentSourceIDs.compactMap { id in m.sources.first { $0.id == id } }.prefix(3)
-        if !recent.isEmpty {
-            FlowChips {
-                PanelChip(title: Text("Todo lo sugerido"), selected: m.sourceIDs.isEmpty) { Task { await m.setSources([]) } }
-                ForEach(Array(recent)) { source in
-                    PanelChip(title: Text(verbatim: source.name), selected: m.sourceIDs == [source.id]) { Task { await m.setSources([source.id]) } }
-                }
-            }
-            .id(m.sourceIDs)
-        }
-    }
-
-}
-
-// MARK: - De qué listas
-/// Elegir de qué listas sale la propuesta, aunque sean muchas: buscar, por origen (Trakt, Orbital, Sugerencias), las
-/// elegidas arriba, las usadas hace poco y todas de la A a la Z. Varias a la vez; «Listo» las aplica.
-struct DecideListPicker: View {
-    let model: DecideModel
-    let done: () -> Void
-    @State private var selection: Set<String>
-    @State private var query = ""
-    @State private var origin: String?
-    @Environment(AppEnvironment.self) private var env
-
-    init(model: DecideModel, done: @escaping () -> Void) {
-        self.model = model; self.done = done
-        _selection = State(initialValue: model.sourceIDs)
-    }
-
-    private var language: String { env.services.appSettings.uiLanguage }
-
-    var body: some View {
-        let all = model.sources
-        let origins = Dictionary(grouping: all, by: \.origin).filter { !$0.key.isEmpty }.map { ($0.key, $0.value.count) }.sorted { $0.1 > $1.1 }
-        let matching = all.filter { s in
-            (origin == nil || s.origin == origin) && (query.isEmpty || s.name.localizedCaseInsensitiveContains(query))
-        }
-        let chosen = matching.filter { selection.contains($0.id) }
-        let recent = model.recentSourceIDs.compactMap { id in matching.first { $0.id == id && !selection.contains(id) } }
-        let rest = matching.filter { s in !selection.contains(s.id) && !recent.contains(where: { $0.id == s.id }) }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        List {
-            if origins.count > 1 {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Space.s2) {
-                        PanelChip(title: Text(verbatim: String(format: Strings.tr("Todas · %lld", language: language), all.count)), selected: origin == nil) { origin = nil }
-                        ForEach(origins, id: \.0) { name, count in
-                            PanelChip(title: Text(verbatim: "\(Strings.tr(name, language: language)) · \(count)"), selected: origin == name) { origin = name }
-                        }
-                    }
-                }
-                .listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: DS.Space.gutter, bottom: 0, trailing: DS.Space.gutter))
-            }
-            section("Elegidas", chosen)
-            section("Usadas hace poco", recent)
-            section("Todas, de la A a la Z", rest)
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: Text(verbatim: String(format: Strings.tr("Buscar entre tus %lld listas", language: language), all.count)))
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                let ids = selection
-                done()
-                Task { await model.setSources(ids) }
-            } label: {
-                Text(selection.isEmpty ? Strings.tr("Listo · todo lo sugerido", language: language)
-                     : String(format: Strings.tr(selection.count == 1 ? "Listo · %lld lista" : "Listo · %lld listas", language: language), selection.count))
-                    .frame(maxWidth: .infinity)
-            }
-            .dsPrimaryButton().controlSize(.large)
-            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
-            .accessibilityIdentifier("decide-lists-done")
-        }
-        .navigationTitle(Text("De qué listas")).navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Todas") { selection = [] }.disabled(selection.isEmpty) } }
-    }
-
-    @ViewBuilder private func section(_ title: LocalizedStringKey, _ sources: [DecideModel.Source]) -> some View {
-        if !sources.isEmpty {
-            Section {
-                ForEach(sources) { source in
-                    DecideListRow(name: source.name, detail: detail(source), posters: model.items(of: source).prefix(2).map(\.poster),
-                                  selected: selection.contains(source.id)) {
-                        if selection.contains(source.id) { selection.remove(source.id) } else { selection.insert(source.id) }
-                    }
-                    .listRowBackground(Color.clear)
-                }
-            } header: { DSGroupLabel(title: Text(title)) }
-        }
-    }
-
-    /// «Trakt · 23 títulos» (sin el número si aún no se abre).
-    private func detail(_ s: DecideModel.Source) -> String {
-        var parts: [String] = []
-        if !s.origin.isEmpty { parts.append(Strings.tr(s.origin, language: language)) }
-        if let n = model.itemCount(s) { parts.append(String(format: Strings.tr(n == 1 ? "%lld título" : "%lld títulos", language: language), n)) }
-        return parts.joined(separator: " · ")
     }
 }

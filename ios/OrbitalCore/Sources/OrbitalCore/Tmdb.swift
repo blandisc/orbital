@@ -212,6 +212,15 @@ public struct Tmdb: Sendable {
         return r
     }
 
+    /// La calificación y los votos de TMDB de un título (sin piso de votos): «Qué tan conocida» en Decide por mí. nil: TMDB
+    /// no lo tiene.
+    public func stats(imdb: String, kind: String) async throws -> (average: Double, votes: Int)? {
+        guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return nil }
+        let data = try await get("/find/\(imdb)", [("external_source", "imdb_id")])
+        guard let row = data[kind == "movie" ? "movie_results" : "tv_results"]?.array?.first else { return nil }
+        return (row["vote_average"]?.doubleValue ?? 0, row["vote_count"]?.intValue ?? 0)
+    }
+
     /// El idioma original y los nombres de un título (como `original` de la TV): para el audio de las versiones que no lo
     /// dicen y para notar las que traen otro título.
     public func original(imdb: String, kind: String) async throws -> (language: String?, titles: [String]) {
