@@ -174,7 +174,7 @@ const ui = {
     onWatch: (play) => watch(play),
     onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
-    onMore: (item) => openMenu(forYouMenu(item)),
+    onMore: (item) => openMenu(forYouMenu(item, { trakt: traktLinked() })),
     onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
@@ -1830,6 +1830,9 @@ async function runCommand(command, context = null) {
       case "decide":
         ui.sheet.close();
         return openDecide();
+      case "save-open": // «Guardar en…» desde Opciones (como el iPhone): la misma hoja que en la ficha
+        ui.sheet.close();
+        return openSave({ kind: command.kind, id: command.id, title: command.title, library: !!command.library });
       case "art-menu":
         return openMenu(artMenu(command.item), nested(context));
       case "section":

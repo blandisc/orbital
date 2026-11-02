@@ -42,16 +42,20 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   }
   // Un juego: su página (como la de producto del Apple TV), con la sinopsis y lo tuyo con él. Desde la página, no se repite.
   if (isGame(item) && !page) options.push({ icon: "info", label: "Ver ficha", command: { type: "game-page", id: item.id } });
-  // Una película o serie: elegir otro póster o fondo (de TMDB) cuando el de siempre no te gusta.
   const metaId = item.extra?.meta_id || item.meta_id;
-  // Uno de tus títulos en «Porque viste»: que ya no recomiende por él (como el iPhone; se deshace en el aviso).
-  if (item.seed) options.push({ icon: "hide", label: "No recomendar por esta", command: { type: "unseed", id: item.seed, title: item.title } });
+  const titled = isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "");
+  const kind = item.extra?.kind || item.kind || (String(item.id || "").startsWith("cinemeta:series:") ? "series" : "movie");
+  // En el orden del menú del iPhone (mantener presionado): Ver, Guardar, Marcar como vista, Calificar… y lo que quita, al final.
+  // «Guardar en…» abre la misma hoja que la ficha: Mi lista (tu watchlist de Trakt; sin Trakt, Stremio) y tus listas.
+  if (titled) {
+    options.push({ icon: "plus", label: "Guardar en…", hint: "Mi lista y tus listas", command: { type: "save-open", kind, id: metaId, title: item.title,
+      library: !!item.extra?.in_library } });
+  }
   // Con Trakt, lo tuyo con el título (como el iPhone) y, una serie, a «Tus canales» (TV en vivo).
-  if (trakt && isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
-    const kind = item.extra?.kind || item.kind || (String(item.id || "").startsWith("cinemeta:series:") ? "series" : "movie");
+  if (trakt && titled) {
     const about = { kind, id: metaId, title: item.title };
-    options.push({ icon: "star", label: "Calificar", command: { type: "rate", ...about } },
-      { icon: "check", label: kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", command: { type: "watched", ...about } });
+    options.push({ icon: "check", label: kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", command: { type: "watched", ...about } },
+      { icon: "star", label: "Calificar", command: { type: "rate", ...about } });
     if (kind === "series") options.push({ icon: "tv", label: "Agregar a Tus canales", hint: "Al aire todo el día en TV en vivo", command: { type: "tv-mine", id: metaId, title: item.title, add: true } });
   }
   if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
@@ -60,13 +64,7 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
-  // Mi lista (tu biblioteca de Stremio): + para añadir, ✓ si ya está (como en los servicios de streaming).
   const watch = item.source === "stremio" && item.extra?.meta_id ? item.extra : null;
-  if (watch) {
-    options.push(watch.in_library
-      ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
-      : { icon: "plus", label: "Guardar en Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
-  }
   // Un video de Seguir viendo se puede llevar al iPhone (el episodio que sigue): solo si hay uno conectado.
   if (phone && !isOpen && watch) {
     const metaId = watch.meta_id;
@@ -84,6 +82,8 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   const others = isOpen || !isGame(item) ? [] : (item.runners || []).filter((r) => r.id !== item.runner);
   if (others.length) options.push({ icon: "swap", label: "Cambiar emulador", hint: runnerName(item), command: { type: "runner-menu", item } });
   if (item.system && !isOpen) options.push({ icon: "cover", label: "Cambiar imagen", command: { type: "art-menu", item } });
+  // Uno de tus títulos en «Porque viste»: que ya no recomiende por él (como el iPhone; se deshace en el aviso).
+  if (item.seed) options.push({ icon: "hide", label: "No recomendar por esta", command: { type: "unseed", id: item.seed, title: item.title } });
   if (!isOpen && item.source !== "stremio") {
     options.push({ icon: "hide", label: "Ocultar", danger: true,
       command: { type: "prefs", id: item.id, title: item.title, prefs: { hidden: true } } }); // se puede deshacer unos segundos
@@ -1242,14 +1242,19 @@ export function traktAccountMenu() {
   };
 }
 
-/** Y en «Explorar»: ver la ficha (películas y series) o «No me interesa» (no vuelve a salir). */
-export function forYouMenu(item) {
+/** Y en «Explorar», como mantener presionado en el iPhone: ver la ficha, guardarla, marcarla como vista (con Trakt) o «No me
+ * interesa» (no vuelve a salir). */
+export function forYouMenu(item, { trakt = false } = {}) {
   const video = item?.kind === "movie" || item?.kind === "series";
+  const titled = video && /^tt\d+$/.test(item.meta_id || "");
+  const about = titled ? { kind: item.kind, id: item.meta_id, title: item.title } : null;
   return {
     title: item?.title || "Explorar",
     subtitle: item?.why || "",
     options: [
       video && { icon: "info", label: "Ver ficha", command: { type: "title-ref", ref: { ...item, kind: item.kind, meta_id: item.meta_id } } },
+      titled && { icon: "plus", label: "Guardar en…", hint: "Mi lista y tus listas", command: { type: "save-open", ...about, library: false } },
+      titled && trakt && { icon: "check", label: item.kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", command: { type: "watched", ...about } },
       { icon: "hide", label: "No me interesa", hint: "No te lo vuelvo a sugerir", command: { type: "foryou-dismiss", item } },
     ].filter(Boolean),
   };

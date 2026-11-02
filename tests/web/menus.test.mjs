@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { stepSetting } from "../../orbital/web/js/core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -201,14 +201,14 @@ test("diagnóstico: rutas largas recortadas a lo último", () => {
   assert.equal(menu.options.find((o) => o.label === "Reproductor").hint, "…\\orbital\\mpv\\mpv.exe");
 });
 
-test("Mi lista se maneja desde la tarjeta, sin abrir la ficha", () => {
+test("Guardar desde la tarjeta, sin abrir la ficha, como mantener presionado en el iPhone: «Guardar en…» y en su orden", () => {
   const item = { id: "stremio:tt1", title: "Dune", source: "stremio", category: "stremio", extra: { kind: "movie", meta_id: "tt1", in_library: true } };
-  const remove = gameMenu(item).options.find((o) => o.command.type === "mylist");
-  assert.equal(remove.label, "Quitar de Mi lista");
-  assert.deepEqual(remove.command, { type: "mylist", kind: "movie", metaId: "tt1", add: false, title: "Dune" });
-  const add = gameMenu({ ...item, extra: { ...item.extra, in_library: false } }).options.find((o) => o.command.type === "mylist");
-  assert.equal(add.label, "Guardar en Mi lista");
-  assert.equal(gameMenu({ id: "steam:1", title: "Hades", source: "steam", category: "steam" }).options.some((o) => o.command.type === "mylist"), false);
+  const menu = gameMenu(item, { trakt: true });
+  assert.deepEqual(menu.options.map((o) => o.label).slice(0, 4), ["Ver ficha", "Guardar en…", "Marcar como vista", "Calificar"]);
+  assert.deepEqual(menu.options[1].command, { type: "save-open", kind: "movie", id: "tt1", title: "Dune", library: true });
+  assert.equal(gameMenu({ id: "steam:1", title: "Hades", source: "steam", category: "steam" }).options.some((o) => o.command.type === "save-open"), false);
+  const explore = forYouMenu({ kind: "series", meta_id: "tt2", title: "Severance" }, { trakt: true });
+  assert.deepEqual(explore.options.map((o) => o.label), ["Ver ficha", "Guardar en…", "Marcar la serie como vista", "No me interesa"]);
 });
 
 test("panel rápido: ◀/▶ ajustan de 10 en 10 sin pasarse; sin batería ni Wi-Fi (ya están arriba)", () => {

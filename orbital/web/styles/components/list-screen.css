@@ -24,7 +24,8 @@
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);
 }
 /* Entre renglones, lugar para el nombre y el año que van bajo cada póster. */
-.list-screen__grid { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: calc(var(--space-8) * 2.4) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
+/* La enfocada crece 10 % (como en Juegos): con 20 % tapaba a su vecina, porque el espacio entre portadas es menor que lo que crecía. */
+.list-screen__grid { --card-focus-scale: 1.1; position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: calc(var(--space-8) * 2.4) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 /* El año del premio o el día del estreno, en una placa sobre el póster (como bajo el póster en el iPhone). */
 .list-screen__note {
   position: absolute; top: var(--inset-poster); left: var(--inset-poster); z-index: var(--z-raised);
