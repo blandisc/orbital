@@ -6,6 +6,14 @@ import OrbitalModels
 /// Lo que se hace con un título desde un póster o una tarjeta (Inicio, Para ti, «¿Qué vemos?», «Desde la TV»):
 /// ver, guardar, quitar, marcar como vista y descargar, con sus avisos y «Deshacer».
 extension AppEnvironment {
+    /// Tu reseña de Letterboxd de un título (para su ficha); nil sin Letterboxd o sin reseña ni estrellas. Quien la lee se
+    /// vuelve a pintar cuando llega.
+    func letterboxdReview(_ imdb: String) -> LetterboxdEntry? {
+        guard letterboxd.connected else { return nil }
+        letterboxd.track()
+        return letterboxd.entry(imdb: imdb)
+    }
+
     typealias SeriesStart = TitleActions.SeriesStart
     func videoID(for s: Suggestion) -> String { titles.videoID(for: s) }
     func seriesStart(_ s: Suggestion) async -> SeriesStart? { await titles.seriesStart(s) }

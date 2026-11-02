@@ -41,7 +41,8 @@ struct ListsView: View {
     /// Si un estante es una lista tuya, de dónde: tu watchlist, tus series y tus listas son de Trakt; los catálogos de tus
     /// complementos, de cada complemento.
     private func listSource(_ plan: ShelfPlan) -> ListSource? {
-        if ["watchlist", ForYou.favoritesList, "mine"].contains(plan.id) || plan.id.hasPrefix("list:") { return .trakt }
+        // Tus listas de Letterboxd van con las tuyas de Trakt, en «Tus listas».
+        if ["watchlist", ForYou.favoritesList, "mine"].contains(plan.id) || plan.id.hasPrefix("list:") || plan.id.hasPrefix("lb:") { return .trakt }
         if plan.id.hasPrefix("addon:") { return .addon }
         return nil
     }
@@ -417,7 +418,7 @@ struct ListsView: View {
         case "watchlist": Text("Lo que dejaste pendiente")
         case ForYou.favoritesList: Text("Lo que marcaste con el corazón")
         case "mine": Text("Las que estás viendo")
-        default: nil
+        default: c.id.hasPrefix("lb:") ? Text(verbatim: "Letterboxd") : nil
         }
         guard let count = c.count else { return what ?? Text(verbatim: "") }
         guard let what else { return Text("\(count) títulos") }

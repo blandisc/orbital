@@ -182,6 +182,17 @@ public struct Tmdb: Sendable {
         return try await details(kind: kind, tmdbID: id).imdb
     }
 
+    /// Una película por su título y año (lo que trae el archivo de Letterboxd) → su id de TMDB: la del año exacto, si no la
+    /// más popular de ese nombre.
+    public func searchMovieID(title: String, year: Int?) async throws -> Int? {
+        var params = [("query", title), ("include_adult", "false")]
+        if let year { params.append(("primary_release_year", String(year))) }
+        let data = try await get("/search/movie", params)
+        if let id = data["results"]?.array?.first?["id"]?.intValue { return id }
+        guard year != nil else { return nil }
+        return try await searchMovieID(title: title, year: nil)
+    }
+
     /// El id de TMDB de un título de IMDb (nil si TMDB no lo tiene).
     public func findID(imdb: String, kind: String) async throws -> Int? {
         guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return nil }

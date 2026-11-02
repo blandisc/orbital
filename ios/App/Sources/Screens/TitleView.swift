@@ -145,6 +145,8 @@ struct TitleView: View {
         synopsis(model)
         creditLine(model)
         yourRating(model)
+        // Tu reseña en Letterboxd (si la conectaste y la reseñaste o calificaste).
+        if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
         if model.kind == "series" { episodes(model) }
         // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
         // «Reparto · Dirección · Guion»).

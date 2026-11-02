@@ -51,6 +51,9 @@ struct WatchingView: View {
     @State private var rated: RatedRoute?
     /// La barra de «Cómo calificas» que tocaste (1…5): debajo, el carrusel de lo que calificaste con ese número.
     @State private var pickedStars: Int?
+    /// Lo que viste en Letterboxd y Trakt no tiene («Pasarlas a Trakt»).
+    @State private var notInTrakt: [LetterboxdEntry] = []
+    @State private var passing = false
 
     var body: some View {
         let model = env.watching
@@ -76,6 +79,7 @@ struct WatchingView: View {
                     else if model.failed { DSErrorState(offline: !env.isOnline) { Task { await model.load(full: true, force: true) } } }
                     else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
                     else { content(s, model, language) }
+                    letterboxdSection
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
@@ -89,6 +93,12 @@ struct WatchingView: View {
         .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
         .refreshable { await model.load(full: true, force: true) }
         .onChange(of: env.watchedSomething) { Task { await model.load(full: true, force: true) } }   // terminaste de ver algo: al día
+        .task(id: env.letterboxd.entries.count) {
+            let letterboxd = env.letterboxd
+            await letterboxd.load()
+            guard env.services.trakt?.linked == true else { notInTrakt = []; return }
+            notInTrakt = letterboxd.missingInTrakt(watched: await env.collections.watchedIDs())
+        }
         .navigationDestination(item: $rated) { r in WatchingRatedView(stars: r.stars, items: ratedItems(), onOpenTitle: onOpenTitle) }
         .fullScreenCover(item: $wrapped) { p in WrappedView(stats: model.stats(p), language: language) { wrapped = nil } }
     }
@@ -203,6 +213,61 @@ struct WatchingView: View {
         }
         return out
     }
+
+    /// «Tus reseñas» (Letterboxd): lo último que calificaste o reseñaste y, si viste algo que Trakt no tiene, el aviso para
+    /// pasarlo (con el día y tus estrellas). Solo con Letterboxd conectado.
+    @ViewBuilder private var letterboxdSection: some View {
+        let letterboxd = env.letterboxd
+        let _ = letterboxd.track()
+        if letterboxd.connected, !letterboxd.reviews.isEmpty {
+            section(Text("Tus reseñas"), symbol: "star.bubble") {
+                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                    if let average = letterboxd.averageRating {
+                        HStack(spacing: DS.Space.s2) {
+                            LetterboxdMark()
+                            Text("Tu promedio en Letterboxd: \(Text(average, format: .number.precision(.fractionLength(1))))").recipe(.footnote, color: DS.textMuted)
+                        }
+                    }
+                    if !notInTrakt.isEmpty { passCard }
+                    ForEach(letterboxd.reviews.prefix(DS.Letterboxd.shown)) { e in
+                        Button {
+                            if let imdb = e.imdb { onOpenTitle(TitleRoute(kind: e.kind, metaID: imdb, title: e.title, poster: String(format: ForYou.metahubPoster, imdb))) }
+                        } label: { LetterboxdReviewRow(entry: e, watched: watchedOn(e)) }
+                        .buttonStyle(.plain)
+                        .disabled(e.imdb == nil)
+                        .accessibilityIdentifier("letterboxd-row")
+                    }
+                }
+            }
+        }
+    }
+
+    /// «Viste 3 en Letterboxd que no están en Trakt · Pasarlas»: solo con tu toque.
+    private var passCard: some View {
+        HStack(spacing: DS.Space.s3) {
+            LetterboxdMark()
+            (notInTrakt.count == 1 ? Text("Viste 1 en Letterboxd que no está en Trakt") : Text("Viste \(notInTrakt.count) en Letterboxd que no están en Trakt"))
+                .recipe(.footnote).frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                passing = true
+                Task {
+                    let items = notInTrakt
+                    if let n = await env.letterboxd.passToTrakt(items) {
+                        notInTrakt = []
+                        env.collections.forgetWatched()
+                        env.notify(n == 1 ? "1 película pasó a Trakt" : "\(n) películas pasaron a Trakt", detail: "Con el día que las viste y tus estrellas", tone: .success)
+                    } else { env.notify("Trakt no las aceptó", detail: "Intenta de nuevo en un momento", tone: .error) }
+                    passing = false
+                }
+            } label: { if passing { ProgressView() } else { Text("Pasarlas") } }   // ds-exception: la ruedita en el lugar del botón mientras sube
+            .dsPrimaryButton(size: .small).buttonBorderShape(.capsule)
+            .disabled(passing)
+            .accessibilityIdentifier("letterboxd-pass")
+        }
+        .dsCard(.row)
+    }
+
+    private func watchedOn(_ e: LetterboxdEntry) -> Text? { LetterboxdWords.watched(e, language: env.services.appSettings.uiLanguage) }
 
     private func section(_ title: Text, symbol: String, @ViewBuilder _ content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) { DSSectionHead(title: title, level: .section, symbol: symbol); content() }

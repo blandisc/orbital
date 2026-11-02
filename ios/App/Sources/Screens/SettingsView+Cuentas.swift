@@ -31,6 +31,19 @@ extension SettingsView {
             }
         } header: { Text("Stremio · respaldo") } footer: { Text("Lo que ves también se guarda ahí, como copia.") }
         .listRowBackground(DS.surface)
+        Section {
+            NavigationLink { LetterboxdSettings() } label: {
+                SettingsRow(title: "Letterboxd", symbol: "star.bubble", tint: DS.Letterboxd.leaf, value: letterboxdValue)
+            }
+        } header: { Text("Letterboxd · tus reseñas") } footer: { Text("Solo se lee: tus reseñas salen en Lo que ves y en cada ficha, y tus listas en Explorar.") }
+        .listRowBackground(DS.surface)
+    }
+
+    private var letterboxdValue: Text {
+        let model = AppEnvironment.shared.letterboxd
+        let _ = model.track()
+        if let user = model.user { return Text(verbatim: "@\(user)") }
+        return model.importedAt != nil ? Text("Tu archivo") : Text("No conectado")
     }
 
     /// Real-Debrid: cómo está (días, vencimiento), «Renovar», «Cambiar clave» y «Quitar»; sin clave, el campo para pegarla.

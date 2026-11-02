@@ -281,6 +281,19 @@ extension DS {
     /// Las marcas de las calificaciones: los logos oficiales viven como vectores en `Assets.xcassets/Ratings` (IMDb, TMDB,
     /// Trakt), con sus colores de marca (ds-exception: logos de terceros, no se tiñen). Aquí, el rojo de Trakt que usan las
     /// colecciones y el alto común de los tres logos.
+    /// Letterboxd: sus tres puntos y el verde de sus estrellas (lo que viene de ahí se nota de dónde viene).
+    enum Letterboxd {
+        static let ember = Color(red: 1, green: 0.5, blue: 0), leaf = Color(red: 0, green: 0.88, blue: 0.33), sky = Color(red: 0.25, green: 0.74, blue: 0.96)
+        /// El borde de la tarjeta de tu reseña en la ficha.
+        static let edge: CGFloat = 3
+        /// El punto de cada color del logo.
+        static let dot: CGFloat = 6
+        /// Cuántas reseñas enseña «Lo que ves» (las demás, en Letterboxd).
+        static let shown = 20
+        /// El póster de una reseña.
+        static let poster: CGFloat = 58
+    }
+
     enum RatingBrand {
         static let trakt = Color(red: 0.93, green: 0.11, blue: 0.14)
         /// Los logos, chicos y un poco apagados: son un dato bajo el nombre, no un titular.

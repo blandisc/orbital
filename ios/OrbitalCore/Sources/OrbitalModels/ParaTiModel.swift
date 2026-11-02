@@ -187,7 +187,9 @@ public final class ParaTiModel: ObservableModel {
         async let fetchedMosaic = try? remote.mosaic()
         // Si la consola no contesta, se cae a la lógica local. Con sus listas basta para empezar: los estantes ya no esperan
         // al mosaico (antes sí, y el destacado tardaba lo que tardara el mosaico).
-        guard let newLists = await fetchedLists else { return false }
+        guard let consoleLists = await fetchedLists else { return false }
+        // Tus listas de Letterboxd las lee el iPhone (la consola no las conoce): van con las de la consola.
+        let newLists = consoleLists + (await forYou.letterboxdLists())
         async let fetchedKeys = try? remote.watchlistKeys()
         async let fetchedBecause = forYou.becauseYouWatched()
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
@@ -401,6 +403,7 @@ public final class ParaTiModel: ObservableModel {
         let remote: RemoteForYou, local: ForYou, source: Source
         /// nil: falló o no contestó (no es «vacío»). `retry`: con la consola, una segunda oportunidad.
         func items(listID: String, kind: String, retry: Bool = false) async -> [Suggestion]? {
+            if listID.hasPrefix("lb:") { return try? await local.items(listID: listID, kind: kind) }   // Letterboxd: siempre del iPhone
             switch source {
             case .console:
                 if let found = try? await remote.items(listID: listID, kind: kind) { return found }

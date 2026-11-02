@@ -20,9 +20,9 @@ public actor ForYou {
     private let charts: Charts?
     /// Tus complementos de Stremio (sus catálogos son estantes) y con qué pedir cada catálogo.
     private let addons: AddonRegistry?
-    private let http: HTTPClient?
+    let http: HTTPClient?
     private let region: @Sendable () -> String
-    private let kv: KeyValueStore
+    let kv: KeyValueStore
     private let clock: @Sendable () -> Date
     private var cache: [String: (expires: Date, value: Any)] = [:]
     /// Lo que ya se está pidiendo: otra llamada igual espera esa misma respuesta (el actor atiende otra llamada mientras
@@ -44,7 +44,7 @@ public actor ForYou {
     public var traktConfigured: Bool { trakt?.configured ?? false }
     public var tmdbConfigured: Bool { tmdb?.configured ?? false }
 
-    private func remember<T: Sendable>(_ key: String, ttl: TimeInterval, _ load: @escaping @Sendable () async throws -> T) async throws -> T {
+    func remember<T: Sendable>(_ key: String, ttl: TimeInterval, _ load: @escaping @Sendable () async throws -> T) async throws -> T {
         if let hit = cache[key], clock() < hit.expires, let value = hit.value as? T { return value }
         if let running = inflight[key], let value = try await running.value as? T { return value }
         let task = Task<any Sendable, any Error> { try await load() }
@@ -118,6 +118,9 @@ public actor ForYou {
                     ForYouList(id: "estrenos", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false)]
             let own = await ownLists
             out += own.prefix(8).map { ForYouList(id: "list:\($0.id)", title: $0.name, group: .mine, brand: nil, logo: nil, splitsKinds: false) }
+        }
+        if includeOwn { out += await letterboxdLists() }   // tus listas de Letterboxd, junto a las de Trakt (con o sin Trakt)
+        if linked {
             out.append(ForYouList(id: "recs", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true))
         }
         if let trakt, trakt.configured {
@@ -211,6 +214,7 @@ public actor ForYou {
     }
 
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
+        if listID.hasPrefix("lb:") { return try await letterboxdItems(slug: String(listID.dropFirst(3))) }
         if listID == Critics.listID, let http {
             let critics = Critics(http: http, trakt: trakt, kv: kv)
             // La lista de MDBList trae estrenos que aún no salen (The Batman: Part II, de 2028): esos no son «aprobados».
