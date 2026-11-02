@@ -36,6 +36,21 @@ final class MatchDeckModelTests: XCTestCase {
         XCTAssertEqual(model.cards.map(\.imdb), ["tt2"])
     }
 
+    /// Al volver a abrir el mazo (otro día o el mismo), lo que guardaste no sale otra vez, ni lo que ya está en Mi lista.
+    func testLoGuardadoNoVuelveAlAbrirOtraVez() async throws {
+        let rig = try ServicesRig()
+        let pool = [s("tt1", ["drama"]), s("tt2", ["drama"]), s("tt3", ["drama"])]
+        let first = MatchDeckModel(rig.services, pool: pool, watched: { [] })
+        await first.load()
+        let top = try XCTUnwrap(first.cards.first)
+        await first.save(top)
+        await rig.services.watch.setInLibrary(kind: "movie", metaID: "tt3", title: "tt3", poster: nil, add: true)
+        let again = MatchDeckModel(rig.services, pool: pool, watched: { [] })
+        await again.load()
+        XCTAssertFalse(again.cards.contains { $0.imdb == top.imdb }, "la que guardaste ya no sale")
+        XCTAssertFalse(again.cards.contains { $0.imdb == "tt3" }, "ni la que ya está en Mi lista")
+    }
+
     func testDeshacerRegresaLaCartaArribaYLaSacaDeLoGuardado() async throws {
         let rig = try ServicesRig()
         let pool = [s("tt1", ["drama"]), s("tt2", ["drama"])]
