@@ -34,6 +34,13 @@ test("la ficha con Trakt lleva Calificar y Marcar como vista", () => {
   assert.deepEqual(titleActions({ kind: "movie", resume: null }, { trakt: true }).map((a) => a.id), ["play", "mylist", "rate", "watched", "sources"]);
 });
 
+test("una serie con Trakt lleva la campana, como el iPhone: «Siguiendo» o «Seguir» (sin saber aún, no sale)", () => {
+  const series = { kind: "series", seasons: [{ season: 1, episodes: [{ id: "tt1:1:1", episode: 1 }] }] };
+  const bell = (following) => titleActions(series, { kind: "series", trakt: true, following }).find((a) => a.id === "follow");
+  assert.deepEqual([bell(true).label, bell(true).active, bell(false).label, bell(null)], ["Siguiendo", true, "Seguir", undefined]);
+  assert.equal(titleActions(series, { kind: "series", trakt: false, following: true }).some((a) => a.id === "follow"), false);
+});
+
 test("lo descartado en el mazo vuelve al mes", () => {
   const now = 100 * 86_400_000;
   assert.deepEqual(Object.keys(freshDiscards({ tt1: now - 29 * 86_400_000, tt2: now - 31 * 86_400_000 }, now)), ["tt1"]);

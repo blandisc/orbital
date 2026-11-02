@@ -47,6 +47,11 @@ class MatchRequest(BaseModel):
     add: bool = True
 
 
+class FollowRequest(BaseModel):
+    id: str
+    following: bool
+
+
 class RateRequest(BaseModel):
     kind: str
     id: str
@@ -199,6 +204,18 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(400, "Calificación inválida")
         _trakt_call(lambda: foryou.rate(body.kind, body.id[:20], body.stars),
                     "No pude guardar tu calificación en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True}
+
+    @r.get("/follow")
+    def following(id: str) -> dict:
+        """¿Sigues esta serie? (la campana de la ficha)."""
+        return {"following": id[:20] not in foryou.unfollowed()}
+
+    @r.post("/follow")
+    def follow(body: FollowRequest) -> dict:
+        """Seguir o dejar de seguir una serie, como el iPhone (Trakt la oculta de tu calendario y de tu progreso)."""
+        _trakt_call(lambda: foryou.set_following(body.id[:20], body.following),
+                    "No pude guardarlo en Trakt. Revisa tu conexión e inténtalo de nuevo.")
         return {"ok": True}
 
     @r.post("/watched")

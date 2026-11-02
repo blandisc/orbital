@@ -564,6 +564,15 @@ class Trakt:
         body[KINDS[kind]][0]["rating"] = int(rating)
         self._send("POST", "/sync/ratings", body)
 
+    def set_following(self, imdb: str, following: bool) -> None:
+        """Dejar de seguir una serie (o volver a seguirla), como el iPhone: Trakt la oculta de tu calendario y de tu progreso,
+        así que no sale en tus estrenos. Lo que viste no se toca."""
+        if not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            raise TraktError("Título inválido")
+        body = {"shows": [{"ids": {"imdb": imdb}}]}
+        for section in ("calendar", "progress_watched"):
+            self._send("POST", f"/users/hidden/{section}{'/remove' if following else ''}", body)
+
     def my_rating(self, kind: str, imdb: str) -> int | None:
         """Tu calificación de un título (1–10) o None si no lo has calificado."""
         rows = self._get(f"/sync/ratings/{KINDS[kind]}")

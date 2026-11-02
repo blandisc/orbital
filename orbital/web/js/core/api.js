@@ -114,6 +114,8 @@ export const api = {
   match: (kind, id, add = true) => post("/api/foryou/match", { kind, id, add }),
   myRating: (kind, id) => request(`/api/foryou/rating?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`),
   rate: (kind, id, stars) => post("/api/foryou/rating", { kind, id, stars }),
+  following: (id) => request(`/api/foryou/follow?id=${encodeURIComponent(id)}`),
+  setFollowing: (id, following) => post("/api/foryou/follow", { id, following }),
   markWatched: ({ kind, id, video_id = null, when = "now" }) => post("/api/foryou/watched", { kind, id, video_id, when }),
   consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>

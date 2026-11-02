@@ -765,6 +765,21 @@ class ForYou:
             raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para calificar.")
         self.trakt.set_rating(kind, imdb, None if stars is None else max(1, min(5, int(stars))) * 2)
 
+    def unfollowed(self) -> set[str]:
+        """Las series que dejaste de seguir desde aquí (se recuerdan al momento; Trakt también las oculta)."""
+        return set(self.catalog.state.settings().get("unfollowed_shows") or [])
+
+    def set_following(self, imdb: str, following: bool) -> None:
+        """Seguir o dejar de seguir una serie (la campana de la ficha, como el iPhone): la que dejas ya no sale en tus estrenos
+        («A continuación», Lo nuevo de lo tuyo, el calendario). Se guarda aquí al momento y en Trakt."""
+        if not self.trakt.linked:
+            raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para seguir o dejar de seguir una serie.")
+        self.trakt.set_following(imdb, following)
+        gone = self.unfollowed() - {imdb} if following else self.unfollowed() | {imdb}
+        self.catalog.state.set_setting("unfollowed_shows", sorted(gone) or None)
+        self.cache.clear("trakt:calendar")
+        self.publish({"type": "foryou-changed"})
+
     def mark_watched(self, kind: str, imdb: str, video_id: str | None, when: str | float) -> None:
         """«¿Cuándo la viste?»: marca vista una película, un episodio o, sin episodio, la serie completa. `when`: «now»,
         «released» (el día que salió), «unknown» (no sabes cuándo) o un momento (segundos)."""
@@ -1300,8 +1315,9 @@ class ForYou:
         """Los estrenos entre dos fechas (con la hora de aquí); varios de la misma serie el mismo día, en uno («E4–E6»)."""
         groups: dict[tuple, dict] = {}
         seen: set[tuple] = set()
+        gone = self.unfollowed()  # las que dejaste de seguir (Trakt tarda en ocultarlas de su calendario)
         for row in rows:
-            if (row["imdb"], row["season"], row["episode"]) in seen:  # las dos mitades se tocan en un día
+            if (row["imdb"], row["season"], row["episode"]) in seen or row["imdb"] in gone:  # las dos mitades se tocan en un día
                 continue
             seen.add((row["imdb"], row["season"], row["episode"]))
             when = datetime.fromtimestamp(row["aired"]).astimezone()

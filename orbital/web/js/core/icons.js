@@ -27,6 +27,9 @@ export const ICONS = {
   phoneDownload: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="10" height="19" rx="2.5"/><path d="M9 18.5h2M19 8v8M16.5 13.5 19 16l2.5-2.5"/></svg>',
   phoneSend: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M10.6 8.6v5.2l4.2-2.6z"/></svg>',
   account: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5"/></svg>',
+  // La campana de una serie (seguirla: sale en tus estrenos), como el bell del iPhone; tachada, la dejaste de seguir.
+  bell: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14zM10 20.5a2 2 0 0 0 4 0"/></svg>',
+  bellOff: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14zM10 20.5a2 2 0 0 0 4 0M4 4l16 16"/></svg>',
   // Cuántos juegan (los datos de un juego): dos personas, del mismo trazo que «account».
   players: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.25 19.5c.7-3.2 2.9-5 5.75-5s5.05 1.8 5.75 5"/><circle cx="16.75" cy="9.25" r="2.5"/><path d="M15.9 14.55c2.5-.2 4.3 1.4 4.85 4.45"/></svg>',
   wrench: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.6 3.8a4.8 4.8 0 0 0-5.3 6.3L3.9 15.5a1.9 1.9 0 0 0 2.7 2.7l5.4-5.4a4.8 4.8 0 0 0 6.3-5.3l-2.9 2.9-2.4-.4-.4-2.4z"/></svg>',

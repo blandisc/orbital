@@ -614,6 +614,26 @@ def test_the_month_calendar_includes_past_days_and_asks_trakt_in_two_halves(make
     assert len(asked) == 2 and "/2026-09-30/16" in asked[0][1] and "/2026-10-16/17" in asked[1][1]
 
 
+def test_unfollowing_a_series_hides_it_from_your_releases_like_the_iphone(make_foryou, net):
+    """Dejar de seguir (la campana de la ficha): Trakt la oculta del calendario y del progreso y ya no sale en tus estrenos."""
+    from datetime import datetime
+
+    net.on("POST", r"/users/hidden/", (201, {}))
+    fy = make_foryou(linked=True)
+    now = datetime(2026, 10, 15, 12, 0).astimezone()
+    utc = lambda local: local.astimezone(tz=__import__("datetime").timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")  # noqa: E731
+    row = lambda title, imdb: {"first_aired": utc(datetime(2026, 10, 16, 21, 0).astimezone()),  # noqa: E731
+                               "episode": {"season": 1, "number": 2, "title": ""}, "show": {**show(title, imdb), "network": "HBO"}}
+    net.on("GET", r"/calendars/my/shows/", (200, [row("Sigo", "tt1"), row("Ya no", "tt2")]))
+    fy.set_following("tt2", False)
+    hidden = [c[1] for c in net.calls if "/users/hidden/" in c[1]]
+    assert [h.rsplit("/users/hidden/", 1)[1] for h in hidden] == ["calendar", "progress_watched"]
+    assert [i["title"] for i in fy.calendar(now=now)] == ["Sigo"] and fy.unfollowed() == {"tt2"}
+    fy.set_following("tt2", True)
+    assert [h.rsplit("/users/hidden/", 1)[1] for h in [c[1] for c in net.calls if "/users/hidden/" in c[1]]][-2:] == ["calendar/remove", "progress_watched/remove"]
+    assert fy.unfollowed() == set()
+
+
 def test_airing_today_is_empty_without_trakt_or_network(make_foryou, net):
     fy = make_foryou(trakt_keys=False)
     assert fy.airing_today() == {}

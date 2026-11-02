@@ -86,6 +86,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let extras = null; // frase, clasificación, créditos, la saga, los datos y «Más como esto» (title-extras)
   let restore = null; // { zone: "cast", index }: el foco que dejaste al abrir una persona
   let rated = { ratings: null, mine: null }; // las calificaciones de los servicios y la tuya (Trakt)
+  let following = null; // una serie: ¿la sigues? (la campana, como el iPhone); null mientras no se sabe
   let own = null; // desde Mi media: { have: Set(video_id), versions: [...] } (tu carpeta de OneDrive)
   let season = 0;
   let index = 0;
@@ -297,7 +298,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
-  const SECONDARY_ORDER = ["restart", "mylist", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
+  const SECONDARY_ORDER = ["restart", "mylist", "trailer", "rate", "watched", "follow", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
   const SECONDARY_SHOWN = 4;
 
   function arrange(all) {
@@ -311,7 +312,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = arrange(titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt() }));
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt(), following }));
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
@@ -537,10 +538,28 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       (button.id === "rate" ? onRate : onWatched)(about);
     }
     else if (button.id === "download") download();
+    else if (button.id === "follow") follow();
     else if (button.id === "versions") { const t = target(); if (t && own) onVersions({ ...t, own: true }, own.versions); }
     else if (button.id === "fix") onFix({ kind: kindOf(), imdb: details?.id || item.meta_id, title: details?.title || item.title });
     else if (button.id === "retry") load();
     else if (button.id === "more-actions") { expanded = true; renderActions(); onChange(); }
+  }
+
+  /** La campana (como el iPhone): dejar de seguir la serie la saca de tus estrenos; volver a tocarla la sigue otra vez. */
+  async function follow() {
+    const id = details?.id || item?.meta_id;
+    const title = details?.title || item?.title;
+    const next = !following;
+    following = next;
+    renderActions();
+    try {
+      await api.setFollowing(id, next);
+      onNotice(next ? `Sigues ${title} otra vez: sale en tus estrenos` : `Dejaste de seguir ${title}: ya no sale en tus estrenos`);
+    } catch (err) {
+      following = !next;
+      renderActions();
+      onNotice(err?.message || "No pude guardarlo en Trakt", true);
+    }
   }
 
   /** Descargar para ver sin internet: la película, o el episodio enfocado (si no, el que sigue). */
@@ -599,6 +618,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       details = data;
       api.titleExtras(kind, id).then((x) => { if (mine === token) applyExtras(x); }).catch(() => {});
       showRatings({ imdb: Number(data.rating) || null }, mine);
+      if (hasTrakt() && kind === "series") api.following(id).then((r) => { if (mine === token) { following = r?.following !== false; renderActions(); } }).catch(() => {});
       if (hasTrakt()) api.myRating(kind, id).then((r) => { if (mine === token) { rated.mine = r?.stars || null; showRatings(rated.ratings, mine); } }).catch(() => {});
       api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {});
       fillInfo({ ...data, title: data.title || item.title, art: artOf(data), ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
@@ -703,6 +723,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     expanded = false;
     extras = null;
     rated = { ratings: null, mine: null };
+    following = null;
     for (const id of PANEL) { panel[id].items = []; panel[id].index = 0; mount(panel[id].row); panel[id].box.hidden = true; }
     track.style.transform = "";
     mount(credits);

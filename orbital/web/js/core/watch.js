@@ -45,7 +45,7 @@ export function downloadAction(job) {
 export const episodesLed = (details, kind = "movie") =>
   !!details && !details.error && (details.kind || kind) === "series" && (details.seasons || []).some((s) => s.episodes?.length);
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false } = {}) {
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false, following = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -61,6 +61,8 @@ export function titleActions(details, { kind = "movie", phone = false, download 
       : { id: "mylist", icon: "plus", label: "Guardar" });
     if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
     out.push(...yours(trakt, "series"));
+    // La campana, como el iPhone: «Siguiendo» (sale en tus estrenos) o «Seguir» (la dejaste de seguir).
+    if (trakt && following !== null) out.push(following ? { id: "follow", icon: "bell", label: "Siguiendo", active: true } : { id: "follow", icon: "bellOff", label: "Seguir" });
     if (phone) {
       out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" },
         { id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
