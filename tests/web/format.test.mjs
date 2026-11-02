@@ -100,6 +100,7 @@ test("¿Qué vemos? dice cuánto dura: «42 min por episodio», no «2520 por ep
   assert.equal(pickFacts({ kind: "series", minutes: 42, why: "Porque viste Fargo" }), "Porque viste Fargo · 42 min por episodio");
   assert.equal(pickFacts({ kind: "movie", minutes: 107, imdb_rating: "7.1" }), "1 h 47 min · IMDb 7.1");
   assert.equal(pickFacts({ kind: "series" }), "Serie");
+  assert.equal(pickFacts({ kind: "series", minutes: 42, episode: "T2 E5" }), "42 min por episodio", "la serie completa, sin el episodio en que vas");
 });
 
 test("¿Qué vemos? no dice que caben si no caben", async () => {

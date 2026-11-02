@@ -199,6 +199,17 @@
         }
       }
     },
+    "%@ por episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ per episode"
+          }
+        }
+      }
+    },
     "%@ sin ficha: revisa que su nombre diga el título (y el año).": {
       "extractionState": "manual",
       "localizations": {
@@ -5545,6 +5556,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continue S%lld E%lld"
+          }
+        }
+      }
+    },
+    "Continuar la serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue the show"
           }
         }
       }
