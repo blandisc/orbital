@@ -93,7 +93,7 @@ public enum Degraded: Equatable, Sendable {
     /// El texto del botón de la salida.
     public var actionTitle: String {
         switch action {
-        case .retry: "Intentar de nuevo"
+        case .retry: "Reintentar"
         case .settings: "Abrir Ajustes"
         case .downloads: "Tus descargas"
         }

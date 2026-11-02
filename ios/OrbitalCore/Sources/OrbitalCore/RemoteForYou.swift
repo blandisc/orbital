@@ -102,7 +102,7 @@ public actor RemoteForYou {
     private func reason(listID: String, why: String?) -> SuggestionReason {
         switch why {
         case "Sigues viéndola": return .watching
-        case "En tu watchlist", "En tu lista": return .inWatchlist   // «En tu lista» es el nombre de antes en la TV
+        case "En Mi lista", "En tu lista": return .inWatchlist   // «En tu lista» es el nombre de antes en la TV
         case "Recomendada": return .recommended
         case "En tendencia": return .trending
         case "Popular": return .popular
@@ -112,7 +112,7 @@ public actor RemoteForYou {
             if why.hasPrefix("En «"), why.hasSuffix("»") { return .inList(String(why.dropFirst(4).dropLast())) }
             if why == "En una de tus listas" { return .inList(listInfo[listID]?.title ?? "") }
             if why.hasPrefix("En ") { return .onPlatform(String(why.dropFirst(3))) }
-            return .console(why)   // «Seguir viendo», «Sale hoy», «En tu watchlist»…: tal cual, como en la TV
+            return .console(why)   // «Seguir viendo», «Sale hoy», «En Mi lista»…: tal cual, como en la TV
         }
         return .popular
     }

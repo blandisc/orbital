@@ -45,12 +45,7 @@ Cómo se mantiene:
 
 ## Textos pendientes (`design/vocabulario.json`)
 
-| Término | Lado | Qué falta | Ola |
-|---|---|---|---|
-| «Mi lista» | iPhone | Avisos y Ajustes con «tu watchlist» | sesión del iPhone |
-| «Decide por mí» | iPhone | Dos textos con «¿Qué vemos?» | sesión del iPhone |
-| «Colecciones» | iPhone | Un texto dice «… del canon en tu repisa» | sesión del iPhone |
-| «Reintentar» | iPhone | Dos textos con «Intentar de nuevo» | sesión del iPhone |
+Ninguno (2 nov): «Mi lista», «Decide por mí», «Colecciones» y «Reintentar» ya se dicen igual en las dos apps; las traducciones viejas con «tu watchlist», «tu repisa», «Intentar de nuevo» y «¿Qué vemos?» salieron del iPhone.
 
 ## Olas de la TV
 
@@ -59,7 +54,7 @@ Cómo se mantiene:
 - **Ola 2 · los lugares** (hecha, 31 oct): Películas y series como el Inicio del iPhone, el mazo, Decide por mí, Mi lista, Tus canales, «No recomendar por esta».
 - **Ola 3 · lo tuyo** (hecha, 31 oct): calificar, «¿Cuándo la viste?» (en la TV, «Otro día…» ofrece días comunes en lugar del calendario: distinto a propósito), Lo que ves, Colecciones, filtro avanzado. «Lo que ves» salió de la TV el 1 nov (Fernando): solo en el iPhone.
 - **Rediseño estilo Apple TV** (31 oct): el lenguaje de la TV (docs/sistema-de-diseno.md § 0) en todas sus pantallas y el reproductor; ver la tabla «Revisión por pantalla».
-- **Lo que le toca al iPhone** (su sesión): «Tus canales» en la lista de Trakt, los textos de arriba y el arcoíris en sus filtros.
+- **Lo que le toca al iPhone** (su sesión): «Tus canales» en la lista de Trakt y el arcoíris en sus filtros (por decidir con la comparación en https://claude.ai/artifact/DhegvqEaNMkrsCDWHU9gfS). Los textos, hechos el 2 nov.
 - **Pedidos de Fernando para la TV (1 nov):** hecho: en pausa, más aire entre «En pausa» y el título, y los subtítulos se quedan en su lugar; el protector vuelve a moverse; el Inicio refinado (vidrio sutil) y el selector de consolas que se desliza. Juegos, la segunda fila: «el arte se queda» (hecho). Pendiente: el filtro en una colección abierta (ver la tabla de arriba).
 
 - **Plan replanteado (1 nov, Fernando: «homogeneizar lo visual, la experiencia y las funciones»)**, maqueta y detalle en

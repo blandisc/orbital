@@ -99,7 +99,7 @@ struct PlayerFailureView: View {
         case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
             : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
         case .noneWorked: Text("Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.")
-        case .sourceDied: Text("La versión dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.")
+        case .sourceDied: Text("La versión dejó de responder. Al reintentar seguimos donde ibas, con otra si hace falta.")
         case .network: online ? Text("Hay internet, pero ninguno respondió. Suele ser momentáneo; intenta de nuevo en un rato.")
             : Text("Revisa tu conexión a internet e intenta de nuevo. Lo que descargaste sí se puede ver.")
         case .localFile: Text("El archivo descargado no se puede leer. Bórralo en Descargas y bájalo otra vez.")

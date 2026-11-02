@@ -59,7 +59,7 @@ final class IPadLayoutUITests: XCTestCase {
         open(["-demo-tab", "1", "-demo-open", "decide"], .portrait)
         // «Más filtros» va al pie de la tarjeta y sale siempre (con sugerencia o con «Nada con…» si un filtro guardado no deja opciones).
         let filters = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Más filtros'")).firstMatch
-        XCTAssertTrue(filters.waitForExistence(timeout: 40), "¿Qué vemos? no enseña «Más filtros»")
+        XCTAssertTrue(filters.waitForExistence(timeout: 40), "Decide por mí no enseña «Más filtros»")
         XCTAssertTrue(filters.isHittable, "la tarjeta queda cortada: «Más filtros» no se alcanza")
         shot("decidir-v")
         open(["-demo-tv-now", "-demo-open", "remote"], .landscapeLeft)

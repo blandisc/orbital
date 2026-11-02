@@ -224,7 +224,7 @@ struct ShelfMoment: View {
                 .ignoresSafeArea().accessibilityHidden(true)
             DS.bg.opacity(DS.Repisa.momentVeil).ignoresSafeArea()
             VStack(spacing: DS.Space.s4) {
-                Text(completed ? "¡Década completa!" : "A tu repisa").recipe(.label, color: completed ? DS.warning : DS.textMuted)
+                Text(completed ? "¡Década completa!" : "A tus Colecciones").recipe(.label, color: completed ? DS.warning : DS.textMuted)
                 ShelfLedge {
                     PosterView(url: poster, title: title).frame(width: DS.Repisa.momentPoster)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
@@ -276,7 +276,7 @@ struct ShelfMoment: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isModal)
-        .accessibilityLabel(Text("\(title) a tu repisa: \(seen) de \(total)"))
+        .accessibilityLabel(Text("\(title) a tus Colecciones: \(seen) de \(total)"))
     }
 
     /// El destello que cruza el póster al revelarse (de izquierda a derecha, una vez).

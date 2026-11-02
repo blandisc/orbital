@@ -244,7 +244,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             }
             let logo = { (id: String) in "https://images.metahub.space/logo/medium/\(id)/img" }
             let overview: JSON = [
-                "lists": [list("watchlist", "Tu watchlist", "Trakt", "Lo que dejaste pendiente", split: false),
+                "lists": [list("watchlist", "Mi lista", "Trakt", "Lo que dejaste pendiente", split: false),
                           list("mine", "Tus series", "Trakt", "Las que estás viendo", split: false),
                           list("chart:netflix", "Top 10 en Netflix", "Netflix", "Esta semana en México", split: true, brand: "netflix", logo: logo("tt1160419")),
                           list("jw:disney", "Tendencias en Disney+", "JustWatch", "Tendencia en JustWatch · México", split: true, brand: "disney", logo: logo("tt4154796")),
@@ -304,7 +304,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                                     ("tt1375666", "Inception", 2010, "movie")]
         switch list {
         case "chart:netflix": return top.enumerated().map { demoRow($1.0, $1.1, $1.2, $1.3, rank: $0 + 1, why: "N.º \($0 + 1) en Netflix") }
-        case "watchlist", "mine": return [top[1], top[0], top[4], top[2]].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tu watchlist") }
+        case "watchlist", "mine": return [top[1], top[0], top[4], top[2]].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En Mi lista") }
         case "jw:disney":
             return [("tt4154796", "Avengers: Endgame", 2019, "movie"), ("tt2250912", "Spider-Man: Homecoming", 2017, "movie"), ("tt3896198", "Guardianes de la Galaxia 2", 2017, "movie"),
                     ("tt2527338", "Star Wars: El ascenso de Skywalker", 2019, "movie"), ("tt0076759", "Star Wars", 1977, "movie"), ("tt1630029", "Avatar: El camino del agua", 2022, "movie")]

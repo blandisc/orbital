@@ -41,15 +41,15 @@ struct DSNotice: View {
 }
 
 /// Cuando algo no llegó: la causa de verdad (sin internet, un servicio que no contesta, algo sin conectar), qué sigue
-/// funcionando y la salida («Tus descargas», «Intentar de nuevo», «Abrir Ajustes»). Es el aviso del modo degradado
+/// funcionando y la salida («Tus descargas», «Reintentar», «Abrir Ajustes»). Es el aviso del modo degradado
 /// (`docs/producto/modo-degradado.md`); `DSNotice` queda para avisos de una línea sin salida.
 struct DSDegradedNotice: View {
     let state: Degraded
     /// El texto en el idioma de la app (`env.message`): la pieza no lee el estado de la app.
     let text: (String) -> String
-    /// La salida principal («Tus descargas», «Intentar de nuevo», «Abrir Ajustes»).
+    /// La salida principal («Tus descargas», «Reintentar», «Abrir Ajustes»).
     let act: () -> Void
-    /// «Intentar de nuevo» al lado, cuando la salida principal es otra; nil: no se ofrece.
+    /// «Reintentar» al lado, cuando la salida principal es otra; nil: no se ofrece.
     var retry: (() -> Void)?
 
     var body: some View {

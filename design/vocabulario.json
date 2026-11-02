@@ -8,17 +8,17 @@
     { "texto": "Versión", "en": ["tv", "ios"], "evitar": ["Elegir fuente", "Elegir Fuente", "Escoger fuente", "Buscar fuente", "Otra fuente"], "nota": "Lo que ves (latino 1080p). «Todas las fuentes» es solo la lista con los nombres técnicos." },
     { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] },
     { "texto": "Guardar", "en": ["tv", "ios"], "nota": "La acción de un título (botón «Guardar» / «Guardado»: Mi lista, tu watchlist o tus listas). «Mi lista» es el lugar, no el botón." },
-    { "texto": "Reintentar", "en": ["tv", "ios"], "evitar": ["Intentar de nuevo"], "nota": "El botón tras un error.", "pendiente": { "ios": "Quedan dos textos con «Intentar de nuevo»." } }
+    { "texto": "Reintentar", "en": ["tv", "ios"], "evitar": ["Intentar de nuevo"], "nota": "El botón tras un error." }
   ],
   "nombres": [
-    { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista", "Tu watchlist", "tu watchlist", "Tu Watchlist", "tu Watchlist"], "nota": "Lo que dejaste pendiente: tu watchlist de Trakt (sin Trakt, tu biblioteca de Stremio). Un solo nombre, siempre con M (glosario del iPhone, 31 oct 2026).", "pendiente": { "ios": "Quedan textos con «tu watchlist» (avisos y Ajustes)." } },
+    { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista", "Tu watchlist", "tu watchlist", "Tu Watchlist", "tu Watchlist"], "nota": "Lo que dejaste pendiente: tu watchlist de Trakt (sin Trakt, tu biblioteca de Stremio). Un solo nombre, siempre con M (glosario del iPhone, 31 oct 2026)." },
     { "texto": "En Mi lista", "en": ["tv", "ios"] },
     { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando", "Donde te quedaste"] },
     { "texto": "Para ti", "en": [], "evitar": ["Para Ti", "Para tí"], "nota": "Ya no es el nombre de una sección (es «Explorar», 31 oct 2026). Se vale en frases («Sugerencias para ti») y como lo que dices a la voz." },
     { "texto": "Explorar", "en": ["tv", "ios"], "nota": "La sección de descubrir (antes «Para ti») en los dos (Fernando, 31 oct 2026). La voz entiende las dos." },
-    { "texto": "Colecciones", "en": ["tv", "ios"], "evitar": ["tu repisa", "Tu repisa"], "nota": "Los premios y las listas del canon (Criterion, IMDb Top 250, New York Times).", "pendiente": { "ios": "Un texto dice «… del canon en tu repisa»." } },
+    { "texto": "Colecciones", "en": ["tv", "ios"], "evitar": ["tu repisa", "Tu repisa"], "nota": "Los premios y las listas del canon (Criterion, IMDb Top 250, New York Times)." },
     { "texto": "Lo que ves", "en": ["ios"], "nota": "Tus números (horas, rachas, día por día, cómo calificas). «Tu año, día por día» es una vista adentro, no la entrada." },
-    { "texto": "Decide por mí", "en": ["tv", "ios"], "evitar": ["¿Qué vemos?"], "nota": "El sorteo de una propuesta.", "pendiente": { "ios": "Quedan dos textos con «¿Qué vemos?»." } },
+    { "texto": "Decide por mí", "en": ["tv", "ios"], "evitar": ["¿Qué vemos?"], "nota": "El sorteo de una propuesta." },
     { "texto": "¿Qué vemos hoy?", "en": ["tv", "ios"], "evitar": ["Tinder"], "nota": "El mazo «Encuentra tu match perfecto»: Paso · Ver ya · Guardar (en «Tu match perfecto» de Trakt; sin Trakt, en Mi lista)." },
     { "texto": "¿Cuándo la viste?", "en": ["tv", "ios"], "nota": "La hoja de marcar como vista con su fecha para Trakt." },
     { "texto": "Top 10 en", "en": ["tv", "ios"] },
