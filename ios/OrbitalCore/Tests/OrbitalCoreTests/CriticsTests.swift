@@ -58,7 +58,13 @@ final class CriticsTests: XCTestCase {
         http.json[moviesURL] = [["imdb_id": "tt19850008", "title": "The Batman: Part II", "mediatype": "movie", "release_year": .int(year + 2)],
                                 ["imdb_id": "tt1", "title": "Uno", "mediatype": "movie", "release_year": .int(year)],
                                 ["imdb_id": "tt2", "title": "Sin año", "mediatype": "movie"]]
+        http.json["https://v3-cinemeta.strem.io/meta/movie/tt1.json"] = ["meta": ["id": "tt1", "released": .string(ISO8601DateFormatter().string(from: clock.now.addingTimeInterval(30 * 86400)))]]
+        http.json["https://v3-cinemeta.strem.io/meta/movie/tt3.json"] = ["meta": ["id": "tt3", "released": .string(ISO8601DateFormatter().string(from: clock.now.addingTimeInterval(-30 * 86400)))]]
+        http.json[moviesURL] = [["imdb_id": "tt19850008", "title": "The Batman: Part II", "mediatype": "movie", "release_year": .int(year + 2)],
+                                ["imdb_id": "tt1", "title": "Dune: Part Three", "mediatype": "movie", "release_year": .int(year)],
+                                ["imdb_id": "tt3", "title": "Ya salió", "mediatype": "movie", "release_year": .int(year)],
+                                ["imdb_id": "tt2", "title": "Sin año", "mediatype": "movie"]]
         let movies = try await forYou(http, clock: clock).items(listID: "critics", kind: "movie")
-        XCTAssertEqual(movies.map(\.imdb), ["tt1", "tt2"], "lo que aún no se estrena no es «aprobado por la crítica»")
+        XCTAssertEqual(movies.map(\.imdb), ["tt3", "tt2"], "ni lo de años que vienen ni lo de este año que sale después de hoy")
     }
 }
