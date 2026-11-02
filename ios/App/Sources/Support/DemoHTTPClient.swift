@@ -113,6 +113,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
         if url.host == "tv.demo.invalid", url.path == "/api/voice" || url.path == "/api/voice/hints" || url.path == "/api/ping" {
+            // `-demo-voice-fail hang`: tu Orbital no contesta (apagada, otra red) y la orden espera hasta vencerse.
+            if Demo.voiceFail == "hang", url.path == "/api/voice" {
+                try await Task.sleep(for: .seconds(request.timeout))   // Demo: la espera de la red sin respuesta
+                throw URLError(.timedOut)
+            }
             return Self.voiceDemo(path: url.path, body: request.body.flatMap(JSON.parse))
         }
         if url.host == "tv.demo.invalid" {
