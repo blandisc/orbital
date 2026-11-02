@@ -1,0 +1,243 @@
+<meta charset="utf-8">
+<title>Animaciones de Orbital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Sala oscura, como la app: grafito de Orbital, papel para el texto, turquesa para el porqué. Una columna de lectura:
+     primero lo que viene de la TV (tabla), luego las ideas nuevas con su demostración, al final el orden. */
+  :root{
+    --bg:#0c0c0e;--card:#131316;--card2:#18181c;--raise:#1e1e23;--line:#2a2a30;
+    --dim:#55555d;--muted:#a3a3ab;--soft:#cdcdd3;--text:#f5f4f0;
+    --teal:#5fd6c6;--amber:#f4c24d;--red:#f0574d;--green:#5cbf6d;--blue:#4a8ae8;
+    --sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    --round:"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sys);line-height:1.5;font-size:15px}
+  main{max-width:1080px;margin:0 auto;padding-block:36px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  h1{font-size:clamp(30px,6vw,44px);line-height:1.08;margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+  h2{font-size:clamp(24px,4.4vw,30px);margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+  h3{font-size:19px;margin:0;text-wrap:balance}
+  p{margin:0}
+  .lead{color:var(--muted);font-size:17px;max-width:66ch}
+  .why{color:var(--teal);font-size:14px;font-weight:600}
+  .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  section.part{margin-top:64px;display:grid;gap:14px}
+  .done{background:var(--card);border-radius:18px;padding:18px 20px;display:grid;gap:6px}
+  .done li{color:var(--muted);margin:4px 0} .done b{color:var(--text)}
+  .scrollx{overflow-x:auto;background:var(--card);border-radius:18px}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:760px}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--soft);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  td{color:var(--muted)} td b{color:var(--text)}
+  .st{font-weight:700;white-space:nowrap} .st.y{color:var(--green)} .st.p{color:var(--amber)} .st.n{color:var(--red)}
+  .prop{background:var(--card);border-radius:22px;padding:22px;display:grid;gap:16px;border:1px solid transparent}
+  .prop.top{border-color:var(--teal)}
+  .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+  .rank{font-variant-numeric:tabular-nums;color:var(--dim);font-weight:800}
+  .rec{color:var(--teal);font-size:13px;font-weight:700}
+  .tv{color:var(--muted);font-size:13px}
+  .stage{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+  .facts{flex:1 1 280px;display:grid;gap:12px;min-width:0}
+  .facts h4{margin:0 0 3px;font-size:13px;color:var(--soft)} .facts p{color:var(--muted);font-size:14px}
+  .gain h4{color:var(--green)} .lose h4{color:var(--red)}
+  .effort{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+  .dots{display:inline-flex;gap:4px} .dots i{width:9px;height:9px;border-radius:50%;background:var(--line)} .dots i.on{background:var(--soft)}
+  .phone{width:200px;height:360px;border-radius:34px;background:#000;padding:8px;flex:none;border:1px solid #222}
+  .scr{position:relative;width:100%;height:100%;border-radius:27px;overflow:hidden;background:var(--bg)}
+  .a1{background:linear-gradient(160deg,#3e5f86 0%,#1b2a3f 55%,#0d131c 100%)}
+  .a2{background:linear-gradient(160deg,#8a4b2c 0%,#3a2015 60%,#140b07 100%)}
+  .a3{background:linear-gradient(160deg,#4e5a3a 0%,#232a1a 60%,#0c0f08 100%)}
+  .a5{background:linear-gradient(160deg,#6b3e7a 0%,#2c1834 60%,#0f0812 100%)}
+  .a6{background:linear-gradient(160deg,#2f7d78 0%,#14403d 60%,#071514 100%)}
+  .a7{background:linear-gradient(160deg,#9b2f36 0%,#46141a 60%,#160608 100%)}
+
+  /* 1 · el arte respira */
+  .breathe .art{position:absolute;inset:0 0 45% 0;animation:br 8s ease-in-out infinite}
+  @keyframes br{0%{transform:scale(1)}80%{transform:scale(1.03)}100%{transform:scale(1.03)}}
+  .breathe .veil{position:absolute;inset:0 0 45% 0;background:linear-gradient(180deg,transparent 40%,var(--bg))}
+  .breathe .t{position:absolute;left:14px;top:46%;font-weight:900;font-size:18px}
+  .lines{position:absolute;left:14px;right:14px;top:62%;display:grid;gap:8px}
+  .lines i{display:block;height:8px;border-radius:4px;background:var(--raise)}
+
+  /* 2 · póster con cuerpo: se hunde y se inclina con brillo */
+  .tilt .p{position:absolute;left:40px;top:60px;width:110px;height:165px;border-radius:12px;animation:tl 5s ease-in-out infinite;transform-style:preserve-3d}
+  .tilt .p::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);background-size:250% 100%;animation:shine 5s ease-in-out infinite}
+  @keyframes tl{0%,10%{transform:perspective(500px) rotateY(0) rotateX(0) scale(1)}18%{transform:perspective(500px) scale(.96)}35%{transform:perspective(500px) rotateY(14deg) rotateX(-6deg) scale(1)}60%{transform:perspective(500px) rotateY(-12deg) rotateX(5deg)}80%,100%{transform:perspective(500px) rotateY(0) rotateX(0)}}
+  @keyframes shine{0%,18%{background-position:120% 0}35%{background-position:30% 0}60%{background-position:-20% 0}100%{background-position:120% 0}}
+  .tilt .finger{position:absolute;width:30px;height:30px;border-radius:50%;background:rgba(245,244,240,.4);left:80px;top:130px;animation:fg 5s ease-in-out infinite}
+  @keyframes fg{0%,10%{opacity:0}18%{opacity:1;transform:none}35%{transform:translate(30px,-20px)}60%{transform:translate(-30px,20px)}78%{opacity:1}85%,100%{opacity:0}}
+
+  /* 3 · estantes que entran escalonados */
+  .stagger .row{position:absolute;left:12px;right:12px;height:76px;display:flex;gap:8px;animation:st 5s cubic-bezier(.2,.8,.2,1) infinite;opacity:0}
+  .stagger .row i{width:50px;height:76px;border-radius:8px;flex:none}
+  .stagger .r1{top:44px}.stagger .r2{top:136px;animation-delay:.12s}.stagger .r3{top:228px;animation-delay:.24s}
+  @keyframes st{0%,8%{opacity:0;transform:translateY(16px)}24%,85%{opacity:1;transform:none}100%{opacity:0}}
+  .hdr{padding:14px 12px 6px;font-weight:800;font-size:16px}
+
+  /* 4 · calificar: las estrellas se llenan en onda */
+  .stars{display:flex;gap:8px;justify-content:center;margin-top:150px}
+  .stars b{font-size:28px;color:var(--line);animation:sf 4s infinite}
+  .stars b:nth-child(2){animation-delay:.08s}.stars b:nth-child(3){animation-delay:.16s}.stars b:nth-child(4){animation-delay:.24s}
+  @keyframes sf{0%,15%{color:var(--line);transform:scale(1)}22%{color:var(--amber);transform:scale(1.3)}30%,85%{color:var(--amber);transform:scale(1)}100%{color:var(--line)}}
+
+  /* 5 · fin del carrusel: rebote */
+  .edge .strip{position:absolute;top:120px;left:12px;display:flex;gap:8px;animation:ed 4s cubic-bezier(.3,.7,.2,1) infinite}
+  .edge .strip i{width:60px;height:90px;border-radius:9px;flex:none}
+  @keyframes ed{0%{transform:translateX(0)}40%{transform:translateX(-208px)}48%{transform:translateX(-226px)}58%,80%{transform:translateX(-208px)}100%{transform:translateX(0)}}
+  .edge .bump{position:absolute;right:6px;top:120px;width:4px;height:90px;border-radius:2px;background:var(--teal);opacity:0;animation:bp 4s infinite}
+  @keyframes bp{0%,44%{opacity:0}48%{opacity:.9}62%,100%{opacity:0}}
+
+  /* 6 · el número del Wrapped que se revela */
+  .reveal .num{position:absolute;left:0;right:0;top:120px;text-align:center;font-family:var(--round);font-size:64px;font-weight:900;letter-spacing:-.03em;animation:rv 5s cubic-bezier(.2,.8,.2,1) infinite}
+  .reveal .cap{position:absolute;left:0;right:0;top:200px;text-align:center;color:var(--muted);font-size:13px;animation:rc 5s infinite}
+  @keyframes rv{0%,8%{opacity:0;transform:scale(.6);filter:blur(10px)}30%,85%{opacity:1;transform:none;filter:none}100%{opacity:0}}
+  @keyframes rc{0%,25%{opacity:0;transform:translateY(8px)}38%,85%{opacity:1;transform:none}100%{opacity:0}}
+  .reveal .bars{position:absolute;left:16px;right:16px;top:14px;display:flex;gap:4px}
+  .reveal .bars i{flex:1;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+  .reveal .bars i:first-child::after{content:"";display:block;height:100%;background:var(--text);animation:pb 5s linear infinite}
+  @keyframes pb{from{width:0}to{width:100%}}
+
+  .ask{background:var(--card);border-radius:22px;padding:22px;border:1px solid var(--teal)}
+  .ask ol{margin:10px 0 0;padding-left:22px} .ask li{color:var(--muted);margin:10px 0} .ask b{color:var(--text)}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}.stagger .row{opacity:1}.stars b{color:var(--amber)}.reveal .num,.reveal .cap{opacity:1}}
+</style>
+
+<main>
+  <p class="eyebrow">Propuesta · 2 nov 2026 · iPhone</p>
+  <h1>Animaciones de Orbital</h1>
+  <p class="lead">Ya quedaron hechas las ocho interacciones de la propuesta anterior. Aquí van las animaciones que siguen. Primero, qué del pulido «Orbital premium» que ya tiene la TV aplica al iPhone. Después, ideas nuevas con su demostración y el orden en que las haría.</p>
+
+  <section class="part" aria-labelledby="hecho">
+    <p class="eyebrow" id="hecho">Ya hecho hoy (en GitHub)</p>
+    <div class="done">
+      <ul>
+        <li><b>Widgets:</b> Lo nuevo de lo tuyo (la línea de Inicio), Seguir viendo con «Aquí» y «En la TV» y tamaño grande, Mosaico de una lista (eliges la lista), Un Simpson del día y Viendo en la TV en la pantalla bloqueada y la isla.</li>
+        <li><b>Movimiento:</b> el reproductor nace de su tarjeta, la palomita de «Visto» se dibuja, Descargas se acomoda sola, los pósters llegan con un fundido, tirar para actualizar con la luna, Lo que ves se arma, el control se siente físico y «Lo nuevo de lo tuyo» se acomoda en HOY.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="part" aria-labelledby="tv">
+    <p class="eyebrow">Parte 1</p>
+    <h2 id="tv">Lo premium de la TV, en el iPhone</h2>
+    <p class="lead">Las 10 ideas que la TV ya tiene, una por una: qué tiene ya el iPhone, qué le falta y cómo se haría.</p>
+    <div class="scrollx">
+      <table>
+        <thead><tr><th>Idea de la TV</th><th>En el iPhone hoy</th><th>Qué falta y cómo</th><th>Orden</th></tr></thead>
+        <tbody>
+          <tr><td><b>1 · Continuidad</b> (la ficha sale de la tarjeta y regresa a ella)</td><td><span class="st y">Casi todo</span> · póster → ficha y ruleta con zoom nativo; desde hoy, también tarjeta → reproductor.</td><td>Faltan el mazo «¿Qué vemos hoy?» → ficha y un juego → su página. Es el mismo zoom (<code>matchedTransitionSource</code>).</td><td>2ª tanda</td></tr>
+          <tr><td><b>2 · Foco con cuerpo</b> (empujón, destello, se hunde, rebote en la orilla)</td><td><span class="st p">Parcial</span> · las teclas del control se hunden (hoy). Los pósters no responden al dedo hasta abrir.</td><td>Póster que se hunde al 97 % al tocar, inclinación con brillo en los pósters grandes (la portada, la ficha) y rebote con golpe al final de un carrusel. Ideas 2 y 5 de abajo.</td><td>1ª tanda</td></tr>
+          <tr><td><b>3 · Nada salta</b> (portadas que se enfocan, números que ruedan, espacio reservado)</td><td><span class="st y">Sí</span> · desde hoy las imágenes se enfocan; los números de la repisa y la dona ruedan; hay esqueletos.</td><td>Falta precargar el arte de la tarjeta vecina en los carruseles grandes (como la TV), con la fila de imágenes que ya existe.</td><td>2ª tanda</td></tr>
+          <tr><td><b>4 · Sonido y vibración como idioma</b></td><td><span class="st p">Parcial</span> · 58 vibraciones sueltas: 34 de selección, 15 de golpe, 8 de éxito, 1 de aviso.</td><td>Un solo mapa por papel (<code>DS.Haptic</code>: elegir, listo, orilla, error) y una prueba que prohíba las sueltas. Sin sonidos: en el iPhone estorban.</td><td>1ª tanda</td></tr>
+          <tr><td><b>5 · Coreografía con reglas</b></td><td><span class="st y">Sí</span> · <code>DS.Motion</code> con nombre y una prueba que ya prohíbe curvas a mano.</td><td>Falta la entrada escalonada de estantes (idea 3). La auditoría del 31 oct contó 7 resortes distintos: juntarlos en 3.</td><td>2ª tanda</td></tr>
+          <tr><td><b>6 · Tipografía de cerca</b></td><td><span class="st y">Casi</span> · SF Pro ajusta solo; hay 9 lugares con espaciado a mano.</td><td>Revisar esos 9 y dejar solo los de la marca («orbital») y los rótulos en mayúsculas.</td><td>Limpieza</td></tr>
+          <tr><td><b>7 · Fondo vivo pero quieto</b> (el arte se acerca 3 % en 16 s)</td><td><span class="st n">No</span> en la ficha · el mosaico sí «cobra vida».</td><td>La portada de Inicio y el arte de la ficha se acercan un 3 % en 16 s, una sola vez (idea 1). <code>scaleEffect</code> con una animación lineal; sin repetir, así no gasta.</td><td>1ª tanda</td></tr>
+          <tr><td><b>8 · Reproductor</b> (la pausa entra con fundido, barra continua, miniaturas)</td><td><span class="st p">Parcial</span> · controles con fundido; sin miniaturas al adelantar.</td><td>Miniaturas al arrastrar la barra: AVPlayer las saca baratas (<code>AVAssetImageGenerator</code>); con AetherEngine hay que ver si deja. Es la que más se nota al buscar una escena.</td><td>Aparte</td></tr>
+          <tr><td><b>9 · Velocidad como premium</b></td><td><span class="st y">Sí</span> · <code>-perf</code> mide tirones y tiempos.</td><td>Sumar una prueba que mida de tocar a ver la ficha con el zoom (tope 100 ms, como la TV).</td><td>2ª tanda</td></tr>
+          <tr><td><b>10 · Respeto</b> (Reducir movimiento = fundidos cortos)</td><td><span class="st p">Parcial</span> · 8 movimientos del sistema de diseño desaparecen de golpe con «Reducir movimiento».</td><td>Que esos 8 devuelvan <code>DS.Motion.fade</code> en vez de nada: lo que cambia se desvanece, no salta.</td><td>1ª tanda</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="part" aria-labelledby="nuevas">
+    <p class="eyebrow">Parte 2</p>
+    <h2 id="nuevas">Animaciones nuevas</h2>
+    <p class="lead">Seis ideas, en el orden en que las haría. Todas respetan «Reducir movimiento».</p>
+
+    <article class="prop top">
+      <div class="head"><span class="rank">1</span><h3>El arte respira</h3><span class="rec">Recomendada primero</span><span class="tv">TV: idea 7</span></div>
+      <p class="why">Si te quedas en una ficha o en la portada, el arte se acerca un 3 % muy despacio y se queda. Se siente vivo sin distraer.</p>
+      <div class="stage">
+        <div class="phone breathe" role="img" aria-label="El arte de la ficha se acerca muy despacio"><div class="scr"><div class="art a1"></div><div class="veil"></div><div class="t">SEVERANCE</div><div class="lines"><i style="width:70%"></i><i></i><i style="width:85%"></i></div></div></div>
+        <div class="facts">
+          <div class="gain"><h4>Qué ganas</h4><p>Lo que más se nota con lo que menos cuesta: la pantalla deja de ser una foto fija. Igual que la TV.</p></div>
+          <div class="lose"><h4>Qué cuesta</h4><p>Un solo tramo (no un ciclo), para no gastar batería. Se apaga al deslizar y con «Reducir movimiento».</p></div>
+          <p class="effort"><span class="dots"><i class="on"></i><i></i><i></i></span> Bajo</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="prop">
+      <div class="head"><span class="rank">2</span><h3>El póster tiene cuerpo</h3><span class="tv">TV: idea 2</span></div>
+      <p class="why">Al tocar, el póster se hunde un poco antes de abrir la ficha; en los grandes (la portada, la ficha), se inclina con el dedo y un brillo lo cruza.</p>
+      <div class="stage">
+        <div class="phone tilt" role="img" aria-label="El póster se hunde al tocarlo y se inclina siguiendo el dedo con un brillo"><div class="scr"><div class="p a5"></div><div class="finger"></div></div></div>
+        <div class="facts">
+          <div class="gain"><h4>Qué ganas</h4><p>Respuesta inmediata en el dedo: sabes que el toque llegó aunque la ficha tarde un poco. La inclinación da sensación de objeto.</p></div>
+          <div class="lose"><h4>Qué cuesta</h4><p>El hundido va en todos los pósters; la inclinación, solo en los grandes (en una fila se vería nervioso). Sin giroscopio: con el dedo basta y no gasta.</p></div>
+          <p class="effort"><span class="dots"><i class="on"></i><i class="on"></i><i></i></span> Medio</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="prop">
+      <div class="head"><span class="rank">3</span><h3>Los estantes entran escalonados</h3><span class="tv">TV: idea 5</span></div>
+      <p class="why">En Explorar e Inicio, al llegar los estantes, cada fila sube un poco después de la anterior en lugar de aparecer todas de golpe.</p>
+      <div class="stage">
+        <div class="phone stagger" role="img" aria-label="Tres filas de pósters aparecen una tras otra"><div class="scr"><div class="hdr">Explorar</div>
+          <div class="row r1"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+          <div class="row r2"><i class="a5"></i><i class="a6"></i><i class="a7"></i></div>
+          <div class="row r3"><i class="a2"></i><i class="a1"></i><i class="a6"></i></div></div></div>
+        <div class="facts">
+          <div class="gain"><h4>Qué ganas</h4><p>La pantalla se arma con orden; la vista sigue la entrada de arriba abajo.</p></div>
+          <div class="lose"><h4>Qué cuesta</h4><p>Solo la primera vez que llega cada estante; al volver a la pestaña ya están. Pocas décimas, para no hacerte esperar.</p></div>
+          <p class="effort"><span class="dots"><i class="on"></i><i></i><i></i></span> Bajo</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="prop">
+      <div class="head"><span class="rank">4</span><h3>Calificar se siente</h3></div>
+      <p class="why">Al calificar, las estrellas se llenan en onda hasta la que tocaste, con un toque por estrella. Es un momento tuyo con la película.</p>
+      <div class="stage">
+        <div class="phone" role="img" aria-label="Cuatro estrellas se llenan una tras otra"><div class="scr"><div class="stars"><b>★</b><b>★</b><b>★</b><b>★</b><b>☆</b></div></div></div>
+        <div class="facts">
+          <div class="gain"><h4>Qué ganas</h4><p>Calificar deja de ser llenar un formulario. Y como cuenta para Lo que ves y Letterboxd, conviene que dé gusto.</p></div>
+          <div class="lose"><h4>Qué cuesta</h4><p>Ya existe la pieza de estrellas (<code>RatingStars</code>): solo se le agrega la onda.</p></div>
+          <p class="effort"><span class="dots"><i class="on"></i><i></i><i></i></span> Bajo</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="prop">
+      <div class="head"><span class="rank">5</span><h3>El final del carrusel rebota</h3><span class="tv">TV: idea 2 (la orilla)</span></div>
+      <p class="why">Al llegar al último póster de una fila, la fila rebota con un golpe suave en la mano. Ya no hay que adivinar si hay más.</p>
+      <div class="stage">
+        <div class="phone edge" role="img" aria-label="Una fila de pósters llega al final y rebota"><div class="scr"><div class="hdr">Mi lista</div><div class="strip"><i class="a1"></i><i class="a2"></i><i class="a3"></i><i class="a5"></i><i class="a6"></i></div><div class="bump"></div></div></div>
+        <div class="facts">
+          <div class="gain"><h4>Qué ganas</h4><p>El mismo idioma que la TV con el mando: la orilla se siente.</p></div>
+          <div class="lose"><h4>Qué cuesta</h4><p>El rebote ya lo da iOS; falta el golpe en la mano, que solo debe sonar al llegar, no cada vez que rozas la orilla.</p></div>
+          <p class="effort"><span class="dots"><i class="on"></i><i></i><i></i></span> Bajo</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="prop">
+      <div class="head"><span class="rank">6</span><h3>Wrapped como historias</h3></div>
+      <p class="why">Tu resumen se cuenta en pantallas que avanzan solas (las rayitas arriba), cada número se revela saliendo de lo borroso y el último cierra con tu póster del año.</p>
+      <div class="stage">
+        <div class="phone reveal" role="img" aria-label="Un número grande aparece desde lo borroso con su texto debajo"><div class="scr"><div class="bars"><i></i><i></i><i></i><i></i></div><div class="num">312 h</div><div class="cap">viste este año</div></div></div>
+        <div class="facts">
+          <div class="gain"><h4>Qué ganas</h4><p>El momento para presumir. Es lo que la gente comparte.</p></div>
+          <div class="lose"><h4>Qué cuesta</h4><p>Es la más grande: guion de pantallas, tiempos y una imagen para compartir. Se aprovecha que «Lo que ves» ya calcula todo.</p></div>
+          <p class="effort"><span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i></span> Alto</p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="part" aria-labelledby="orden">
+    <h2 id="orden">Lo que te toca decidir</h2>
+    <div class="ask">
+      <p class="why">Mi recomendación: una tanda con el arte que respira, el póster con cuerpo, las vibraciones en un solo mapa y los fundidos de «Reducir movimiento». Juntas, hacen que todo se sienta de una pieza con la TV.</p>
+      <ol>
+        <li><b>¿Arranco con esa tanda?</b> (ideas 1 y 2 de aquí, más las filas 4 y 10 de la tabla).</li>
+        <li><b>La inclinación con el dedo:</b> ¿solo en la portada y la ficha (mi recomendación) o también al mantener presionado cualquier póster?</li>
+        <li><b>Miniaturas al adelantar en el reproductor:</b> ¿las investigo aparte? Dependen del motor de video.</li>
+        <li><b>Wrapped como historias:</b> ¿lo quieres para fin de año? Es el más grande y conviene empezarlo antes de diciembre.</li>
+      </ol>
+    </div>
+  </section>
+</main>
