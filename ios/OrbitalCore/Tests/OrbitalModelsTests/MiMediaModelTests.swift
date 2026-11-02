@@ -105,7 +105,7 @@ final class MiMediaModelTests: XCTestCase {
         connect(rig)
         stockFolder(rig)
         rig.http.json["https://api.trakt.tv/sync/watched/movies"] = [["movie": ["title": "Arrival", "ids": ["imdb": "tt2543164"]]]]
-        rig.http.json["https://api.trakt.tv/sync/watched/shows?extended=noseasons"] = []
+        rig.http.json["https://api.trakt.tv/sync/watched/shows?extended=full"] = []
         let model = MiMediaModel(rig.services)
         await model.load()
         XCTAssertEqual(model.all.count, 3, "la primera vez se revisa la carpeta")

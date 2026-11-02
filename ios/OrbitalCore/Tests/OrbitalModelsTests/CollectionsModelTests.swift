@@ -98,7 +98,7 @@ final class CollectionsModelTests: XCTestCase {
     func testLoQueYaVisteSePideUnaVezHastaQueVesAlgo() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         rig.http.json["https://api.trakt.tv/sync/watched/movies"] = [["movie": ["title": "Dune", "ids": ["imdb": "tt1160419"]]]]
-        rig.http.json["https://api.trakt.tv/sync/watched/shows?extended=noseasons"] = [["show": ["title": "The Office", "ids": ["imdb": "tt0386676"]]]]
+        rig.http.json["https://api.trakt.tv/sync/watched/shows?extended=full"] = [["show": ["title": "The Office", "ids": ["imdb": "tt0386676"]]]]
         let model = CollectionsModel(rig.services)
         let first = await model.watchedIDs()
         XCTAssertEqual(first, ["tt1160419", "tt0386676"])
@@ -131,5 +131,18 @@ final class CollectionsModelTests: XCTestCase {
         let facts = await model.imdbFacts([("movie", "tt0000001")])
         XCTAssertEqual(facts.ratings, ["tt0000001": 7.8])
         XCTAssertEqual(facts.genres, ["tt0000001": ["Drama", "Sci-Fi"]])
+    }
+
+    /// Una serie solo cuenta como vista si viste todos los capítulos que han salido (sin los especiales).
+    func testUnaSerieALaMitadNoCuentaComoVista() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.json["https://api.trakt.tv/sync/watched/movies"] = []
+        func season(_ n: Int, _ episodes: Int) -> JSON { ["number": .int(n), "episodes": .array((1...episodes).map { ["number": .int($0)] })] }
+        rig.http.json["https://api.trakt.tv/sync/watched/shows?extended=full"] = [
+            ["show": ["title": "Completa", "aired_episodes": 10, "ids": ["imdb": "tt1"]], "seasons": [season(1, 6), season(2, 4), season(0, 3)]],
+            ["show": ["title": "A la mitad", "aired_episodes": 20, "ids": ["imdb": "tt2"]], "seasons": [season(1, 10), season(0, 9)]],
+        ]
+        let watched = await CollectionsModel(rig.services).watchedIDs()
+        XCTAssertEqual(watched, ["tt1"], "los especiales no completan una serie a la mitad")
     }
 }

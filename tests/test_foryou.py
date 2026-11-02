@@ -846,8 +846,10 @@ def test_a_list_can_be_sorted_by_imdb_and_hide_what_you_watched(make_foryou, net
     fy.imdb_ratings([("movie", "tt1")])
     assert seen.count("tt1") == 1  # se recuerda
     net.on("GET", r"/sync/watched/movies", (200, [{"movie": {"ids": {"imdb": "tt9"}}}]))
-    net.on("GET", r"/sync/watched/shows", (200, [{"show": {"ids": {"imdb": "tt8"}}}, {"show": {"ids": {}}}]))
-    assert fy.watched_ids() == ["tt9", "tt8"]
+    net.on("GET", r"/sync/watched/shows", (200, [{"show": {"ids": {"imdb": "tt8"}}}, {"show": {"ids": {}}},
+                                                 {"show": {"ids": {"imdb": "tt7"}, "aired_episodes": 20},
+                                                  "seasons": [{"number": 1, "episodes": [{"number": 1}]}]}]))
+    assert fy.watched_ids() == ["tt9", "tt8"]  # tt7 va a la mitad: no cuenta como vista
     assert make_foryou().watched_ids() == []  # sin cuenta de Trakt, nada que ocultar
 
 
