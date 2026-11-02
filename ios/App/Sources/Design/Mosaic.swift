@@ -185,7 +185,12 @@ struct Mosaic: View {
 
     private var idleToken: String { "\(runtime.mode)-\(runtime.focus?.col ?? -1)-\(runtime.focus?.row ?? -1)-\(activity)" }
     private var aliveToken: String { "\(runtime.mode)-\(runtime.focus?.col ?? -1)-\(runtime.focus?.row ?? -1)" }
-    private var driftSpeeds: [Double] { (0..<max(1, runtime.columns.count)).map { c in DesignTokens.Mosaic.driftPattern[c % DesignTokens.Mosaic.driftPattern.count] } }
+    /// «Marea lenta» (Fernando, 1 nov 2026): todas casi a la misma velocidad, despacio, y una sube mientras la de al lado baja.
+    private var driftSpeeds: [Double] {
+        (0..<max(1, runtime.columns.count)).map { c in
+            DesignTokens.Mosaic.driftPattern[c % DesignTokens.Mosaic.driftPattern.count] * (DesignTokens.Mosaic.driftAlternates && c % 2 == 1 ? -1 : 1)
+        }
+    }
 
     private static func columnCount(width: CGFloat, horizontalSizeClass: UserInterfaceSizeClass?) -> Int {
         let landscape = width > DS.Poster.heroHeight * 2 || horizontalSizeClass == .regular

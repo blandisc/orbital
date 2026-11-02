@@ -240,8 +240,11 @@ public enum DesignTokens {
         /// Inercia al soltar el mosaico, como una lista de iOS: cuánto de la velocidad queda tras un segundo (0.998 por ms,
         /// la desaceleración normal de `UIScrollView`), cuándo se detiene (pt/s) y cada cuánto se mueve (s).
         public static let flingDecayPerSecond = 0.135, flingStopSpeed = 20.0, flingFrame = 1.0 / 120
-        /// Puntos por segundo de cada columna en el ambiente, en el mismo orden que `DRIFT` de la TV (se repite si hay más columnas).
-        public static let driftPattern: [Double] = [16, 12, 19, 14, 17, 13]
+        /// Puntos por segundo de cada columna en el ambiente («Marea lenta», Fernando, 1 nov 2026: antes 12 a 19 y dos
+        /// columnas se sentían apuradas): casi parejas y a la mitad. Se repite si hay más columnas.
+        public static let driftPattern: [Double] = [8, 9, 8.5, 9.5, 8, 9]
+        /// Una columna sube y la de al lado baja (las de turno impar): profundidad sin velocidad.
+        public static let driftAlternates = true
         /// Al abrir, las columnas van alineadas (se recorre parejo); al empezar el ambiente, las de turno impar suben
         /// esta cantidad de separaciones y desde ahí cada una sigue a su ritmo.
         public static let ambientLiftGaps = 5.0

@@ -54,7 +54,10 @@ extension DS {
         /// Cada columna del muro baja sola, a su ritmo (puntos por segundo, una por columna: ninguna va pareja con su vecina), y
         /// arranca en otra parte de su vuelta (`coverPhaseStep`). Corre solo con la portada a la vista (`coverVisibleFrom`). Lo
         /// mueve Core Animation (`CoreDrift`), no SwiftUI: por eso van en números y no como `Animation`.
-        static let coverPace: [Double] = [14, 8, 19, 11, 16, 7, 13, 10], coverPhaseStep = 0.37, coverVisibleFrom: Double = 0.1
+        /// «Marea lenta» (Fernando, 1 nov 2026: antes de 7 a 19 y dos columnas se sentían apuradas): casi parejas y despacio, y
+        /// una baja mientras la de al lado sube (`coverAlternates`). La diagonal del muro se queda.
+        static let coverPace: [Double] = [8, 9, 8.5, 9.5, 8, 9, 8.5, 9.5], coverPhaseStep = 0.37, coverVisibleFrom: Double = 0.1
+        static let coverAlternates = true
         static let deckPoster: CGFloat = 84, deckShift: CGFloat = 10, deckTurn: Double = 5, deckBehind: Double = 0.6
         /// Cuántos pósters lleva el abanico de «¿Qué vemos hoy?» (y cuántos de la portada se saltan para no repetirlos).
         static let matchFan = 3

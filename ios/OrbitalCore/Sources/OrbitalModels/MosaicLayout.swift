@@ -180,6 +180,35 @@ public struct MosaicGeometry: Sendable {
         return removed
     }
 
+    /// Para una columna que baja («Marea lenta»): agrega piezas arriba mientras no llenen el colchón de sobra sobre lo
+    /// visible. Devuelve cuántas agregó (la fila enfocada se corre esa cantidad).
+    @discardableResult
+    public func fillAbove(_ column: inout MosaicColumn, buffer: Double, pool: inout MosaicPool, visible: Set<String>, serial: inout Int) -> Int {
+        var added = 0
+        while let first = column.tiles.first, first.top - column.offset > -buffer, added < 400 {
+            guard let item = pool.next(excluding: visible, onScreen: visible) else { break }
+            serial += 1
+            let shape = uniform ? .poster : mosaicShape(key: item.imdb, heroWeak: item.wide.isEmpty)
+            var tile = MosaicTile(id: "\(item.imdb)-\(serial)", item: item, shape: shape)
+            tile.height = tileHeight(columnWidth: column.frame.width, shape: tile.shape, isFocusedColumn: false, isFocusedRow: false)
+            tile.top = first.top - gap - tile.height
+            column.tiles.insert(tile, at: 0)
+            added += 1
+        }
+        return added
+    }
+
+    /// Para una columna que baja: quita lo que quedó una pantalla debajo de lo visible (siempre deja al menos una).
+    @discardableResult
+    public func pruneBelow(_ column: inout MosaicColumn, viewportHeight: Double, buffer: Double) -> Int {
+        var removed = 0
+        while column.tiles.count > 1, let last = column.tiles.last, last.top > column.offset + viewportHeight * 2 + buffer {
+            column.tiles.removeLast()
+            removed += 1
+        }
+        return removed
+    }
+
     /// Agrega piezas al final de la columna mientras no llenen lo visible más el colchón de sobra.
     public func fill(
         _ column: inout MosaicColumn, viewportHeight: Double, buffer: Double, isFocusedColumn: Bool, focusedRow: Int?,

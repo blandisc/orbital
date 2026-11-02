@@ -206,9 +206,18 @@ final class MosaicRuntime {
         for c in columns.indices {
             let lift = pendingLift.indices.contains(c) ? min(pendingLift[c], DesignTokens.Mosaic.driftPerSecond * dt) : 0
             if lift > 0 { pendingLift[c] -= lift }
-            columns[c].offset += (speeds.indices.contains(c) ? speeds[c] : geometry.gap) * dt + lift
-            let removed = geometry.prune(&columns[c], viewportHeight: size.height)
-            if removed > 0, c == focus?.col, var f = focus { f.row = max(0, f.row - removed); focus = f }   // la misma pieza sigue enfocada
+            let speed = speeds.indices.contains(c) ? speeds[c] : geometry.gap
+            columns[c].offset += speed * dt + (speed < 0 ? -lift : lift)   // el escalón del arranque, hacia donde va
+            if speed < 0 {
+                // «Marea lenta»: esta columna baja. Llegan piezas arriba y se van las que quedan muy abajo.
+                let visible = visibleKeys()
+                let added = geometry.fillAbove(&columns[c], buffer: DesignTokens.Mosaic.bufferHeight, pool: &pool, visible: visible, serial: &serial)
+                if added > 0, c == focus?.col, var f = focus { f.row += added; focus = f }
+                geometry.pruneBelow(&columns[c], viewportHeight: size.height, buffer: DesignTokens.Mosaic.bufferHeight)
+            } else {
+                let removed = geometry.prune(&columns[c], viewportHeight: size.height)
+                if removed > 0, c == focus?.col, var f = focus { f.row = max(0, f.row - removed); focus = f }   // la misma pieza sigue enfocada
+            }
         }
         fillAll()
         commit()

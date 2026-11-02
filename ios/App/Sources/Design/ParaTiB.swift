@@ -94,6 +94,7 @@ struct MosaicCover: View {
                 CoreDrift(key: posters, content: AnyView(strip(posters).environment(\.perfTag, c == 0 ? perfTag : nil)),
                           contentHeight: Self.loop * 2, loop: Self.loop,
                           speed: DS.ParaTiB.coverPace[c % DS.ParaTiB.coverPace.count], phase: Double(c) * DS.ParaTiB.coverPhaseStep,
+                          rising: DS.ParaTiB.coverAlternates && c % 2 == 1,
                           enabled: !still, running: onScreen)
                     .frame(width: Self.columnWidth, height: DS.ParaTiB.coverWallHeight)
             }
@@ -297,11 +298,13 @@ private struct CoreDrift: UIViewRepresentable {
     let loop: CGFloat
     let speed: Double
     let phase: Double
+    /// Sube en vez de bajar («Marea lenta»: una columna baja y la de al lado sube).
+    var rising = false
     let enabled: Bool
     let running: Bool
 
     func makeUIView(context: Context) -> DriftView {
-        let view = DriftView(content, contentHeight: contentHeight, loop: loop, duration: Double(loop) / max(speed, 1), phase: phase)
+        let view = DriftView(content, contentHeight: contentHeight, loop: loop, duration: Double(loop) / max(speed, 1), phase: phase, rising: rising)
         view.key = key
         return view
     }
@@ -316,13 +319,13 @@ private struct CoreDrift: UIViewRepresentable {
 private final class DriftView: UIView {
     let host: UIHostingController<AnyView>
     var key: [String] = []
-    private let contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double
+    private let contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double, rising: Bool
     private var enabled = false, running = false
     private static let animationKey = "orbital.coverDrift"
 
-    init(_ content: AnyView, contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double) {
+    init(_ content: AnyView, contentHeight: CGFloat, loop: CGFloat, duration: Double, phase: Double, rising: Bool) {
         host = UIHostingController(rootView: content)
-        self.contentHeight = contentHeight; self.loop = loop; self.duration = duration; self.phase = phase
+        self.contentHeight = contentHeight; self.loop = loop; self.duration = duration; self.phase = phase; self.rising = rising
         host.safeAreaRegions = []   // el muro no se recorre por la barra ni la isla: va de orilla a orilla
         host.view.backgroundColor = .clear
         host.view.isUserInteractionEnabled = false
@@ -382,8 +385,8 @@ private final class DriftView: UIView {
         if layer.animation(forKey: Self.animationKey) == nil, window != nil {
             layer.transform = CATransform3DIdentity
             let fall = CABasicAnimation(keyPath: "transform.translation.y")
-            fall.fromValue = -loop
-            fall.toValue = 0
+            fall.fromValue = rising ? 0 : -loop
+            fall.toValue = rising ? -loop : 0
             fall.duration = duration
             fall.timeOffset = duration * phase
             fall.repeatCount = .infinity

@@ -79,6 +79,32 @@ final class MosaicLayoutTests: XCTestCase {
         assertContiguous(column.tiles, "después de podar y reacomodar")
     }
 
+    /// «Marea lenta»: una columna que baja recibe piezas arriba (pegadas a la primera, sin repetir lo visible) y suelta las
+    /// que quedan muy abajo.
+    func testUnaColumnaQueBajaLlenaArribaYPodaAbajo() {
+        let geo = MosaicGeometry(columnCount: 1, gap: 10, ring: 0, growRatio: 1)
+        var column = MosaicColumn(frame: MosaicColumnFrame(x: 0, width: 200), tiles: (0..<4).map { MosaicTile(id: "t\($0)", item: item("t\($0)"), shape: .poster) })
+        var columns = [column]
+        geo.layout(&columns, totalWidth: 200, focus: nil)
+        column = columns[0]
+        column.offset = -200   // bajó: arriba de la primera queda hueco
+        var pool = MosaicPool(items: (0..<6).map { item("p\($0)") })
+        var serial = 0
+        let added = geo.fillAbove(&column, buffer: 100, pool: &pool, visible: Set(column.tiles.map(\.item.imdb)), serial: &serial)
+        XCTAssertGreaterThan(added, 0)
+        XCTAssertLessThanOrEqual(column.tiles.first!.top - column.offset, -100 + 0.001 + column.tiles.first!.height, "el hueco de arriba se llenó")
+        for i in 1..<column.tiles.count {
+            XCTAssertEqual(column.tiles[i].top, column.tiles[i - 1].top + column.tiles[i - 1].height + geo.gap, accuracy: 0.001, "pegadas")
+        }
+        XCTAssertTrue(column.tiles.prefix(added).allSatisfy { $0.item.imdb.hasPrefix("p") }, "lo nuevo, de la reserva")
+        let before = column.tiles.count
+        column.offset = -2000
+        geo.fillAbove(&column, buffer: 100, pool: &pool, visible: [], serial: &serial)
+        let removed = geo.pruneBelow(&column, viewportHeight: 300, buffer: 100)
+        XCTAssertGreaterThan(removed, 0, "lo que quedó muy abajo se va")
+        XCTAssertGreaterThan(before + 1, 0)
+    }
+
     func testFillAppendsContiguousTilesWithoutRepeatingWhatIsVisible() {
         let geo = MosaicGeometry(columnCount: 1, gap: 10, ring: 0, growRatio: 1)
         var column = MosaicColumn(frame: MosaicColumnFrame(x: 0, width: 200))
