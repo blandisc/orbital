@@ -47,7 +47,9 @@ struct MatchDeckScreen: View {
                               command: $command,
                               onSave: { s in save(s, model) },
                               onDiscard: { model.discard($0) },
-                              onOpen: { s in dismiss(); onOpenTitle(s.route) })
+                              onTonight: { s in tonight(s, model) },
+                              onOpen: { s in dismiss(); onOpenTitle(s.route) },
+                              onPlay: { s in dismiss(); onPlay(s.route) })
                         .frame(maxHeight: .infinity)
                         .overlay(alignment: .bottom) { deckNotices }
                     actions(model)
@@ -106,7 +108,16 @@ struct MatchDeckScreen: View {
         }
     }
 
-    /// Paso · Ver ya · Guardar, cada uno con su nombre debajo; Paso y Guardar hacen salir volando la carta.
+    /// «Para hoy» (arriba o la ★): guardada y primero en Mi lista hoy; el aviso ofrece verla ya.
+    private func tonight(_ s: Suggestion, _ model: MatchDeckModel) {
+        Task { await model.saveForTonight(s) }
+        env.notify("Para hoy", detail: s.title, tone: .success, actionTitle: "Ver ya", actionSymbol: "play.fill") {
+            dismiss(); onPlay(s.route)
+        }
+    }
+
+    /// Paso · Para hoy · Guardar (✕ · ★ · ♥, como Tinder), cada uno con su nombre debajo y su color; los tres hacen salir
+    /// volando la carta. «Ver ya» es el ▶ de la carta.
     /// Los avisos del mazo, abajo, justo encima de los botones: al alcance del pulgar. Se quitan deslizándolos hacia arriba.
     private var deckNotices: some View {
         BannerView().padding(.horizontal, -DS.Space.gutter).padding(.bottom, DS.Space.s2)
@@ -116,15 +127,15 @@ struct MatchDeckScreen: View {
         HStack(alignment: .top, spacing: DS.Space.s6) {
             action(Text("Paso"), id: "match-discard") {
                 DSIconButton(symbol: "xmark", label: "Paso", size: .large) { command = .discard }
-                    .font(DS.TextRecipe.title.font)
+                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.Match.pass)
             }
-            action(Text("Ver ya"), id: "match-play") {
-                Button { if let s = model.cards.first { dismiss(); onPlay(s.route) } } label: { Image(systemName: "play.fill").font(DS.TextRecipe.title.font) }
-                    .dsSolidPrimaryButton(shape: .circle).controlSize(.large)
+            action(Text("Para hoy"), id: "match-tonight") {
+                DSIconButton(symbol: "star.fill", label: "Para hoy", size: .large) { command = .tonight }
+                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.Match.tonight)
             }
             action(Text("Guardar"), id: "match-save") {
-                DSIconButton(symbol: "bookmark.fill", label: "Guardar", size: .large) { command = .save }
-                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.brandMoon)
+                DSIconButton(symbol: "heart.fill", label: "Guardar", size: .large) { command = .save }
+                    .font(DS.TextRecipe.title.font).foregroundStyle(DS.Match.keep)
             }
         }
         .frame(maxWidth: .infinity)

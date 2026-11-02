@@ -5,13 +5,25 @@ import OrbitalCore
 // de cartas que se arrastran (derecha guarda, izquierda descarta) y los ánimos como mosaicos con ícono.
 
 /// Una carta: el póster grande y, encima, por qué te la propone, el nombre, año · duración · tipo y sus géneros; arriba a la
-/// derecha su calificación de Trakt. Al arrastrarla (o al tocar un botón) asoma un sello: «MI LISTA» o «PASO».
+/// derecha su calificación de Trakt y abajo a la derecha el ▶ de «Ver ya». Al arrastrarla (o al tocar un botón) se tiñe y
+/// asoma un sello, como Tinder: «PASO» en rojo (izquierda), «GUARDAR» en verde (derecha) y «PARA HOY» en azul (arriba).
 struct MatchCard: View {
     let suggestion: Suggestion
     /// Los géneros ya en el idioma de la app (los pone la pantalla).
     var genres: [String] = []
-    /// -1…1: cuánto se ha arrastrado a la izquierda o a la derecha (para el sello que asoma).
+    /// -1…1: cuánto se ha arrastrado a la izquierda o a la derecha.
     var lean: Double = 0
+    /// 0…1: cuánto se ha arrastrado hacia arriba («Para hoy»).
+    var rise: Double = 0
+    /// «Ver ya»: el ▶ de la carta (solo en la de arriba).
+    var onPlay: (() -> Void)?
+
+    /// Hacia dónde va y cuánto (lo que más se haya arrastrado manda).
+    private var pull: (color: Color, label: LocalizedStringKey, amount: Double, alignment: Alignment, tilt: Double)? {
+        if rise > abs(lean), rise > DS.Match.hintFrom { return (DS.Match.tonight, "★ Para hoy", rise, .bottom, 0) }
+        guard abs(lean) > DS.Match.hintFrom else { return nil }
+        return lean > 0 ? (DS.Match.keep, "Guardar", abs(lean), .topLeading, -DS.Match.stampTilt) : (DS.Match.pass, "Paso", abs(lean), .topTrailing, DS.Match.stampTilt)
+    }
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -47,18 +59,33 @@ struct MatchCard: View {
                 .accessibilityLabel(Text("Calificación en Trakt: \(Int((rating * 10).rounded())) por ciento"))
             }
         }
-        .overlay(alignment: lean > 0 ? .topLeading : .topTrailing) {
-            if abs(lean) > DS.Match.hintFrom {
-                Text(lean > 0 ? "Mi lista" : "Paso").dsCaps().font(DS.TextRecipe.section.font).tracking(DS.Match.stampTracking)
-                    .foregroundStyle(lean > 0 ? DS.brandMoon : DS.paper)
+        // El color de lo que va a pasar, desde la orilla hacia donde la llevas.
+        .overlay {
+            if let pull {
+                LinearGradient(colors: [pull.color.opacity(DS.Match.tintMax * min(1, pull.amount * DS.Match.hintRamp)), .clear],
+                               startPoint: pull.alignment == .bottom ? .top : (lean > 0 ? .trailing : .leading),
+                               endPoint: pull.alignment == .bottom ? .center : .center)
+                    .allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: pull?.alignment ?? .center) {
+            if let pull {
+                Text(pull.label).dsCaps().font(DS.TextRecipe.section.font).tracking(DS.Match.stampTracking)
+                    .foregroundStyle(pull.color)
                     .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                        .strokeBorder(lean > 0 ? DS.brandMoon : DS.paper, lineWidth: DS.Match.stampLine))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(pull.color, lineWidth: DS.Match.stampLine))
                     .background(DS.scrim, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-                    .rotationEffect(.degrees(lean > 0 ? -DS.Match.stampTilt : DS.Match.stampTilt))
-                    .padding(DS.Space.s5)
-                    .opacity(min(1, (abs(lean) - DS.Match.hintFrom) * DS.Match.hintRamp))
+                    .rotationEffect(.degrees(pull.tilt))
+                    .padding(pull.alignment == .bottom ? DS.Space.s8 : DS.Space.s5)
+                    .opacity(min(1, (pull.amount - DS.Match.hintFrom) * DS.Match.hintRamp))
                     .accessibilityHidden(true)
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if let onPlay {
+                DSIconButton(symbol: "play.fill", label: "Ver ya", size: .regular, action: onPlay)
+                    .padding(DS.Space.s3)
+                    .accessibilityIdentifier("match-play")
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
@@ -80,7 +107,7 @@ struct MatchCard: View {
 }
 
 /// Lo que pide un botón del mazo: la carta de arriba sale volando igual que al arrastrarla.
-enum MatchCommand: Equatable { case save, discard }
+enum MatchCommand: Equatable { case save, discard, tonight }
 
 /// El mazo: la de arriba se arrastra (pasado el umbral sale volando y avisa); detrás asoman las dos que siguen, más chicas.
 /// Los botones de abajo mandan `command` y la carta sale volando igual que al arrastrarla.
@@ -90,9 +117,14 @@ struct MatchDeck: View {
     @Binding var command: MatchCommand?
     let onSave: (Suggestion) -> Void
     let onDiscard: (Suggestion) -> Void
+    /// Hacia arriba o la ★: «Para hoy».
+    var onTonight: (Suggestion) -> Void = { _ in }
     let onOpen: (Suggestion) -> Void
+    /// El ▶ de la carta de arriba: «Ver ya».
+    var onPlay: ((Suggestion) -> Void)?
     @State private var drag: CGSize = .zero
     @State private var width: CGFloat = 0
+    @State private var height: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -100,7 +132,9 @@ struct MatchDeck: View {
             ZStack {
                 ForEach(Array(cards.prefix(3).enumerated().reversed()), id: \.element.imdb) { i, s in
                     let top = i == 0
-                    MatchCard(suggestion: s, genres: genres(s), lean: top ? Double(drag.width / (geo.size.width / 2)) : 0)
+                    MatchCard(suggestion: s, genres: genres(s), lean: top ? Double(drag.width / (geo.size.width / 2)) : 0,
+                              rise: top ? Double(max(0, -drag.height) / (geo.size.height / 2)) : 0,
+                              onPlay: top ? onPlay.map { play in { play(s) } } : nil)
                         // Un tamaño fijo dentro del mazo: el póster a sangre no la estira más allá de la pantalla.
                         .frame(width: geo.size.width, height: min(geo.size.height, geo.size.width * DS.Match.cardAspect))
                         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
@@ -113,40 +147,58 @@ struct MatchDeck: View {
                         .onTapGesture { if top { onOpen(s) } }
                         .accessibilityAction(named: Text("Guardar")) { onSave(s) }
                         .accessibilityAction(named: Text("Paso")) { onDiscard(s) }
+                        .accessibilityAction(named: Text("Para hoy")) { onTonight(s) }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: geo.size.width, initial: true) { _, w in width = w }
+            .onChange(of: geo.size, initial: true) { _, size in width = size.width; height = size.height }
         }
         .animation(DS.Motion.spring(reduceMotion), value: cards.first?.imdb)
         .onChange(of: command) { _, asked in
             guard let asked, let s = cards.first else { command = nil; return }
             command = nil
-            fly(right: asked == .save, s, width: width, from: .zero)
+            fly(asked == .tonight ? .up : asked == .save ? .right : .left, s, from: .zero)
         }
     }
+
+    private enum Direction { case left, right, up }
 
     private func swipe(width: CGFloat, _ s: Suggestion) -> some Gesture {
         DragGesture()
             .onChanged { drag = $0.translation }
             .onEnded { g in
-                let far = abs(g.translation.width) > width * DS.Match.threshold || abs(g.predictedEndTranslation.width) > width
+                let t = g.translation, p = g.predictedEndTranslation
+                // Hacia arriba manda si es más vertical que de lado (como el Súper de Tinder).
+                if -t.height > abs(t.width), -t.height > height * DS.Match.threshold || -p.height > height {
+                    fly(.up, s, from: t); return
+                }
+                let far = abs(t.width) > width * DS.Match.threshold || abs(p.width) > width
                 guard far else { withAnimation(DS.Motion.spring(reduceMotion)) { drag = .zero }; return }
-                fly(right: g.translation.width > 0, s, width: width, from: g.translation)
+                fly(t.width > 0 ? .right : .left, s, from: t)
             }
     }
 
-    /// La carta asoma su sello, sale volando de lado y entonces se guarda o se descarta.
-    private func fly(right: Bool, _ s: Suggestion, width: CGFloat, from: CGSize) {
+    /// La carta asoma su sello, sale volando hacia donde iba y entonces se guarda, se descarta o queda «Para hoy».
+    private func fly(_ direction: Direction, _ s: Suggestion, from: CGSize) {
         Task { @MainActor in
             if from == .zero {   // desde un botón: primero se inclina y enseña el sello, como al arrastrar
-                withAnimation(DS.Motion.base(reduceMotion)) { drag = CGSize(width: (right ? 1 : -1) * width * DS.Match.threshold, height: 0) }
+                let hint: CGSize = switch direction {
+                case .left: CGSize(width: -width * DS.Match.threshold, height: 0)
+                case .right: CGSize(width: width * DS.Match.threshold, height: 0)
+                case .up: CGSize(width: 0, height: -height * DS.Match.threshold)
+                }
+                withAnimation(DS.Motion.base(reduceMotion)) { drag = hint }
                 try? await Task.sleep(for: DS.Match.flyOut)
             }
-            withAnimation(DS.Motion.base(reduceMotion)) { drag = CGSize(width: right ? width * 2 : -width * 2, height: from.height) }
+            let away: CGSize = switch direction {
+            case .left: CGSize(width: -width * 2, height: from.height)
+            case .right: CGSize(width: width * 2, height: from.height)
+            case .up: CGSize(width: from.width, height: -height * 2)
+            }
+            withAnimation(DS.Motion.base(reduceMotion)) { drag = away }
             try? await Task.sleep(for: DS.Match.flyOut)
             drag = .zero
-            if right { onSave(s) } else { onDiscard(s) }
+            switch direction { case .right: onSave(s); case .left: onDiscard(s); case .up: onTonight(s) }
         }
     }
 }

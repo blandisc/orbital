@@ -63,9 +63,23 @@ public final class MatchDeckModel: ObservableModel {
         await keep(s, add: true)
     }
 
+    /// «Para hoy» (deslizar hacia arriba o la ★, como el Súper de Tinder): se guarda como las demás y además entra a Mi lista
+    /// con la marca «Para hoy», que en Inicio la pone primero ese día.
+    public func saveForTonight(_ s: Suggestion) async {
+        cards.removeAll { $0.imdb == s.imdb }
+        saved.append(s)
+        ParaHoy.mark(s.imdb, kv: services.kv, now: services.now())
+        await keep(s, add: true)
+        try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: true)
+    }
+
     /// «Deshacer» del aviso de guardar: sale de donde se guardó y la carta vuelve arriba del mazo.
     public func undo(_ s: Suggestion) async {
         guard saved.contains(where: { $0.imdb == s.imdb }) else { return }
+        if ParaHoy.ids(kv: services.kv, now: services.now()).contains(s.imdb) {   // era «Para hoy»: también sale de Mi lista
+            ParaHoy.unmark(s.imdb, kv: services.kv)
+            try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: false)
+        }
         saved.removeAll { $0.imdb == s.imdb }
         cards.removeAll { $0.imdb == s.imdb }
         cards.insert(s, at: 0)

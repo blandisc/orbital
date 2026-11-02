@@ -113,3 +113,19 @@ final class WatchingModelTests: XCTestCase {
         XCTAssertTrue(model.failedLists.isDisjoint(with: mdblist), "\(model.failedLists)")
     }
 }
+
+/// «Para hoy» (arriba o la ★): queda primero en Mi lista solo ese día.
+final class ParaHoyTests: XCTestCase {
+    func testParaHoyVaPrimeroSoloEseDia() {
+        let kv = InMemoryKeyValueStore()
+        let today = Date(timeIntervalSince1970: 1_760_000_000)
+        func s(_ id: String) -> Suggestion { Suggestion(kind: "movie", imdb: id, title: id, poster: "", wide: "", reason: .inList("Mi lista")) }
+        let list = [s("tt1"), s("tt2"), s("tt3")]
+        ParaHoy.mark("tt3", kv: kv, now: today)
+        ParaHoy.mark("tt2", kv: kv, now: today)
+        XCTAssertEqual(ParaHoy.first(list, kv: kv, now: today).map(\.imdb), ["tt2", "tt3", "tt1"], "lo último que marcaste, primero")
+        XCTAssertEqual(ParaHoy.first(list, kv: kv, now: today.addingTimeInterval(86_400)).map(\.imdb), ["tt1", "tt2", "tt3"], "al día siguiente, a su lugar")
+        ParaHoy.unmark("tt2", kv: kv)
+        XCTAssertEqual(ParaHoy.ids(kv: kv, now: today), ["tt3"])
+    }
+}

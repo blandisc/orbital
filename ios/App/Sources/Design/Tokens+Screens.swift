@@ -177,6 +177,10 @@ extension DS {
         static let stampTilt: Double = 12, stampLine: CGFloat = 3, stampTracking: CGFloat = 1.5
         /// Los botones con su nombre debajo y el contador de guardadas.
         static let actionLabelGap = DS.Space.s2, actionRow: CGFloat = 72, veilFrom = 0.35
+        /// Cada dirección con su color, como Tinder (Fernando, 1 nov 2026): Paso en rojo, Guardar en verde y «Para hoy» (arriba)
+        /// en el azul de Orbital. La carta se tiñe de ese color al arrastrarla, hasta `tintMax`.
+        static let pass = DS.danger, keep = DS.success, tonight = DS.orbitalBlue
+        static let tintMax = 0.45
     }
 
     /// Lo que ves y el Wrapped (`WatchingView`, `WatchingBars`, `WatchingDayGrid`, `WatchingGenres`, `WrappedView`): la portada

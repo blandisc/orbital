@@ -280,7 +280,7 @@ public final class HomeModel: ObservableModel {
         // Lo que Trakt ya tiene y el teléfono aún no (la primera sincronización), al final; lo que quitaste aquí, no.
         let waiting = services.traktOutbox.pending.filter { $0.target == TraktOutbox.watchlist && !$0.add }.map(\.imdb)
         let extra = myList.isEmpty && services.library.isEmpty ? watchlistDetails.filter { !ids.contains($0.imdb) && !waiting.contains($0.imdb) } : []
-        let next = (shown + extra).filter { hiddenPending[$0.imdb] == nil }
+        let next = ParaHoy.first((shown + extra).filter { hiddenPending[$0.imdb] == nil }, kv: services.kv, now: services.now())   // lo de «Para hoy», primero
         if next != traktPending { traktPending = next }
     }
 
