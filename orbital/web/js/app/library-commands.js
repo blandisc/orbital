@@ -87,7 +87,7 @@ export function libraryCommands({ api, artConfirmMenu, fixTitle, folderMenu, gen
     },
     "mylist": async (command, context) => {
       await api.setInLibrary(command.kind, command.metaId, command.add);
-      sound.play("select");
+      sound.play(command.add ? "success" : "select");
       ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`, { tone: "success" });
       return loadLibrary();
     },

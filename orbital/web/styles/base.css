@@ -58,6 +58,14 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   transition-duration: var(--duration-none) !important; animation-duration: var(--duration-none) !important; animation-iteration-count: 1 !important;
 }
 [data-motion="reduce"] { --card-focus-scale: 1.08; }
+/* Lo que solo se funde (no se mueve) sigue fundiéndose, corto: las pantallas que entran y salen y el fondo que cambia.
+   Sin esto, todo aparecía y desaparecía de golpe (Apple hace lo mismo: el movimiento se vuelve un fundido). */
+@media (prefers-reduced-motion: reduce) {
+  :is(.screen, .screen--leaving), .backdrop__layer { animation-duration: var(--duration-fast) !important; transition-duration: var(--duration-fast) !important; }
+}
+[data-motion="reduce"] :is(.screen, .screen--leaving), [data-motion="reduce"] .backdrop__layer {
+  animation-duration: var(--duration-fast) !important; transition-duration: var(--duration-fast) !important;
+}
 
 /* Tamaño del texto (Ajustes → Pantalla). */
 [data-text-size="large"] { --text-scale: 1.12; }

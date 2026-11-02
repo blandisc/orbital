@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -295,6 +296,22 @@ def side_gradient(x1: float, left_alpha: int, steps: int = 28) -> str:
         if a < 255:
             out.append(_shape(rrect_path(0, 0, i * step, H, 0), SHADE, f"{a:02X}", blur=3))
     return "\n".join(out)
+
+
+_ALPHA = re.compile(r"\\([13]a|alpha)&H([0-9A-Fa-f]{2})&")
+
+
+def fade(ass: str, appear: float) -> str:
+    """La misma capa a medio aparecer (`appear` de 0 a 1): cada transparencia se acerca a «nada» en lo que falta. Con esto la
+    pausa entra con un fundido en tres pasos en vez de aparecer de golpe (PlayerScreen.PAUSE_FADE)."""
+    if appear >= 1:
+        return ass
+    rest = 1 - max(0.0, appear)
+
+    def lighter(m: re.Match) -> str:
+        a = int(m.group(2), 16)
+        return f"\\{m.group(1)}&H{round(a + (255 - a) * rest):02X}&"
+    return _ALPHA.sub(lighter, ass)
 
 
 def text(x: float, y: float, value: str, size: int, color: str = TEXT, *, weight: str = "regular", align: int = 7,

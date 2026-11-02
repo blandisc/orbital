@@ -80,16 +80,22 @@
      design-system lo vigila: nada de torcer una receta con otro grosor; si hace falta otro, es otra receta. */
   --type-hero: var(--text-display); /* el título del héroe de Películas y series y Apps (solo la TV) */
   --type-hero-weight: var(--weight-bold);
+  --type-hero-tracking: -.03em; /* lo grande se aprieta y lo chico se abre (SF Pro lo hace solo en el iPhone) */
   --type-display: var(--text-3xl);
   --type-display-weight: var(--weight-bold);
+  --type-display-tracking: -.03em;
   --type-title: var(--text-2xl);
   --type-title-weight: var(--weight-bold);
+  --type-title-tracking: -.022em;
   --type-heading: var(--text-xl); /* un encabezado de zona (Inicio, hojas, el mosaico), entre section y title (solo la TV) */
   --type-heading-weight: var(--weight-bold);
+  --type-heading-tracking: -.018em;
   --type-section: var(--text-lg);
   --type-section-weight: var(--weight-bold);
+  --type-section-tracking: -.012em;
   --type-card-title: var(--text-md);
   --type-card-title-weight: var(--weight-semibold);
+  --type-card-title-tracking: -.006em;
   --type-body: var(--text-md);
   --type-body-weight: var(--weight-regular);
   --type-secondary: var(--text-sm);
@@ -98,18 +104,23 @@
   --type-footnote-weight: var(--weight-regular);
   --type-caption: var(--text-2xs);
   --type-caption-weight: var(--weight-regular);
+  --type-caption-tracking: .012em;
   --type-eyebrow: var(--text-sm);
   --type-eyebrow-weight: var(--weight-semibold);
+  --type-eyebrow-tracking: .01em;
   --type-data: var(--text-xs); /* números tabulares (tabular-nums), nunca una monoespaciada */
   --type-data-weight: var(--weight-regular);
   --type-label: var(--text-xs); /* un rótulo o botón chico, un dato que resalta */
   --type-label-weight: var(--weight-semibold);
+  --type-label-tracking: .012em;
   --type-label-large: var(--text-sm); /* el valor de un control, un nombre en un renglón */
   --type-label-large-weight: var(--weight-semibold);
   --type-badge: var(--text-2xs); /* una placa: «4K», «Nuevo», cifras en una placa */
   --type-badge-weight: var(--weight-bold);
+  --type-badge-tracking: .02em;
   --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en mayúsculas (DSGroupLabel); en la TV, un paso más grande: se lee de lejos */
   --type-group-label-weight: var(--weight-bold);
+  --type-group-label-tracking: var(--tracking-caps);
   --type-stat: var(--text-2xl); /* una cifra grande, tabular: el número que tecleas en TV en vivo */
   --type-stat-weight: var(--weight-heavy);
   --weight-regular: 400;
@@ -155,6 +166,12 @@
   --ease-launch: cubic-bezier(.7, 0, .84, 0); /* la portada sale disparada al abrir un juego */
   --ease-sweep: cubic-bezier(.45, 0, .55, 1); /* barrido de la barra de carga */
   --ease-float: cubic-bezier(.37, 0, .63, 1); /* vaivén suave de lo que flota (pantalla de carga) */
+  /* Los resortes con nombre del iPhone (DS.Motion), como curvas: el mismo nombre hace lo mismo en las dos apps. */
+  --duration-smooth: 440ms; /* DS.Motion.smooth: resorte sin rebote (0.32 s de respuesta); lo que viaja y cambia de forma */
+  --ease-smooth: linear(0, 0.031, 0.103, 0.195, 0.294, 0.391, 0.481, 0.563, 0.636, 0.698, 0.751, 0.796, 0.834, 0.865, 0.891, 0.912, 0.929, 0.943, 0.955, 0.964, 0.971, 0.977, 0.982, 0.986, 0.989, 0.991, 0.993, 0.994, 0.996, 0.996, 0.997, 0.998, 1);
+  --duration-snappy: 290ms; /* DS.Motion.snap: firme, con un rebote que casi no se ve; lo que se acomoda o se aprieta */
+  --ease-snappy: linear(0, 0.029, 0.101, 0.196, 0.301, 0.407, 0.507, 0.598, 0.678, 0.748, 0.806, 0.854, 0.893, 0.923, 0.947, 0.966, 0.979, 0.989, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1);
+  --duration-ken-burns: 16s; /* el fondo, quieto en un título, se acerca un 3 % y ahí se queda (un tramo, no un ciclo) */
   --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
   --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-enter-long: 640ms; /* la primera entrada de una pantalla */

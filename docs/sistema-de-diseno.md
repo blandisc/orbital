@@ -63,6 +63,13 @@ A 1080p, 1 rem ≈ 21,6 px (`--root-size`); «Tamaño del texto» multiplica tod
 
 Nada baja de `caption` (se lee a 3 m). Un componente usa la receta, nunca `--text-*` (prueba).
 
+**Aire entre letras (2 nov 2026, «tipografía de cerca»).** Cada receta que lo necesita trae el suyo, `--type-<receta>-tracking`:
+lo grande se aprieta (`hero` y `display` −0,03 em, `title` −0,022, `heading` −0,018, `section` −0,012, `card-title` −0,006) y lo
+chico se abre (`eyebrow` 0,01, `label` y `caption` 0,012, `badge` 0,02; `group-label`, `--tracking-caps`). `body`, `secondary`,
+`footnote`, `label-large` y `data` van sin ajuste. Una regla con una de esas recetas siempre lleva `letter-spacing` (prueba); puede
+pedir otro a propósito (la cifra del Top 10, `--tracking-rank`; un título largo, `--tracking-display`). En el iPhone lo hace SF Pro
+solo, por tamaño (su tracking óptico): por eso no hay token allá.
+
 ### Colores por papel (`themes/orbital.css`)
 
 | Papel | Token | Regla |
@@ -313,11 +320,38 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | `--duration-launch-*` | Pantalla de carga (cinemática, más lenta a propósito). |
 | `--delay-1/2/3` · `--stagger` | Escalonado: cada pieza entra un poco después. |
 | `--ease-out` · `--ease-in` · `--ease-spring` · `--ease-pop` · `--ease-launch` · `--ease-sweep` | Entradas · salidas · resorte corto · foco que salta · disparo · barrido. |
+| `--duration-smooth` · `--ease-smooth` | **Los resortes con nombre del iPhone** (2 nov 2026): `DS.Motion.smooth` (sin rebote) como curva `linear()`. Lo que viaja y cambia de forma: la ficha que se abre desde su tarjeta y vuelve a ella. |
+| `--duration-snappy` · `--ease-snappy` | `DS.Motion.snap` (firme, un rebote que casi no se ve): lo que se acomoda o se aprieta (el empujón del foco, el hundido de A). |
+| `--duration-ken-burns` | El fondo, quieto en un título 2,5 s, se acerca un 3 % en 16 s y ahí se queda (un tramo, no un ciclo). |
+
+**Lo que hace que se sienta premium** (propuesta del 2 nov 2026, https://claude.ai/artifact/DhegvqEaNMkrsCDWHU9gfS):
+
+- **Continuidad.** La ficha se abre desde la tarjeta (`title.js · flyIn`) y, al cerrar, su arte se encoge de vuelta a esa tarjeta
+  y el foco sigue ahí (`flyOut`, `title--returning`); desde una persona o Buscar se funde como siempre.
+- **Foco con cuerpo** (`core/feel.js`). Cada flecha deja `data-heading` en la raíz: la tarjeta que recibe el foco entra con un
+  empujón de ese lado que se asienta (`focus-lean`) y un destello la cruza una vez en esa dirección (`--focus-sweep`). A hunde lo
+  enfocado al 97 % y lo regresa (`.is-pressed`); con el dedo y el mouse, `:active`. En el borde, el rebote de siempre con su sonido.
+- **Nada salta.** Una portada llega desenfocada y se enfoca mientras aparece; las calificaciones de la ficha ruedan hasta su número
+  (`motion.js · rollNumber`) y su renglón se aparta desde que se abre (`title__ratings--waiting`); se precarga también el fondo de la
+  tarjeta de atrás.
+- **Fondo vivo pero quieto** (`backdrop.js · ALIVE_MS`, `backdrop__layer--alive`): ver la tabla de arriba. Sin ciclos: al terminar no
+  se mueve nada.
+- **Velocidad.** `tests/smoke/test_ui_smoke.py · test_moving_feels_instant` mide, recorriendo una fila de Juegos, cuánto pasa de
+  apretar a ver el foco (mediana menor a 100 ms) y cuántos cuadros tardan más de dos (menos del 10 %). Lo nuevo de movimiento pasa por
+  ahí: si cuesta cuadros, no entra.
+
+**Sonido y vibración: un idioma** (`core/sound.js`, `core/haptics.js`). Una sola familia de «clic de cristal», ordenada por tono:
+`move` (el más corto), `select`, `back`, `open`, `menu`, `edge` (el borde: un golpe sordo; antes sonaba el de error), `success`
+(lo logrado: guardar en Mi lista, calificar, marcar vista, un canal nuevo: dos notas que suben) y `error`. Elegir y lograr también se
+sienten en el mando (`select` → `tap`, apenas; `success` → un pulso largo); el borde y abrir un juego ya vibraban. Sonido y vibración
+se apagan por separado en Ajustes.
 
 **Capas**: toda capa nueva se funde en `--duration-base`, un panel lateral se desliza en `--duration-slow` y todo sale en `--duration-exit` (la ficha entra en `--duration-fast` a propósito: su arte aparece casi de inmediato).
 
 Todo respeta **movimiento reducido** (`prefers-reduced-motion` o Ajustes → Pantalla): `base.css` lleva
-todas las duraciones a `--duration-none` y detiene los bucles.
+todas las duraciones a `--duration-none` y detiene los bucles. **Lo que solo se funde sigue fundiéndose, corto**
+(`--duration-fast`): las pantallas que entran y salen y el fondo que cambia; sin eso todo aparecía de golpe. El viaje de la
+ficha, el empujón, el destello, el hundido, los números que ruedan y el fondo vivo no se encienden.
 
 ### Capas
 
@@ -502,6 +536,12 @@ y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CS
 | Tarjetas | «Saltar intro» (botón claro), «Siguiente episodio» (anillo de cuenta atrás), «¿Sigues viendo?» | A / B |
 
 El reproductor no usa ☰ (Start es de Orbital: con Home, salir del juego).
+
+**Movimiento en el reproductor** (2 nov 2026). La pausa entra con un fundido en tres pasos (`player_ui.fade`,
+`PlayerScreen.PAUSE_FADE`: cada transparencia se acerca a «nada» en lo que falta) y el logo, que es una imagen encima, entra al final.
+Reproduciendo, mientras se ve, la barra se vuelve a pintar cada medio segundo (`HUD_TICK`): antes se quedaba quieta los 4 s. Sin
+miniaturas al adelantar: pedirían abrir el video dos veces (otro mpv decodificando), y Orbital se queda ligera; al adelantar ya se ven
+la hora, cuánto salta y el capítulo.
 
 Ajustes → Tamaño del texto también llega al reproductor, **un poco menos que a la interfaz** a propósito (×1,08 y ×1,16 contra ×1,12 y ×1,25: sus tableros son más apretados y lo que se mide, como `fit` y `wrap`, crece igual para recortar bien). Su fuente es `Segoe UI` (la de libass) en vez de `--font-sans`.
 

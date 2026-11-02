@@ -169,7 +169,7 @@ test("las recetas de texto son las mismas en los dos lados: nombre, tamaño y gr
   }
   // Toda receta de la TV está en tokens.json (en type o en typeTvOnly): nada se inventa en un solo lado sin decirlo.
   const known = new Set([...Object.keys(TOKENS.type), ...Object.keys(TOKENS.typeTvOnly)].filter((k) => k !== "_").map(kebab));
-  const tvRecipes = Object.keys(tv).filter((k) => /^--type-[a-z-]+$/.test(k) && !k.endsWith("-weight")).map((k) => k.slice("--type-".length));
+  const tvRecipes = Object.keys(tv).filter((k) => /^--type-[a-z-]+$/.test(k) && !/-(weight|tracking)$/.test(k)).map((k) => k.slice("--type-".length));
   assert.deepEqual(tvRecipes.filter((r) => !known.has(r)), [], "recetas de la TV que no están en design/tokens.json");
   for (const [recipe, spec] of entries(TOKENS.type)) {
     assert.equal(tv[`--type-${kebab(recipe)}`], `var(${spec.tv})`, `TV --type-${kebab(recipe)}`);

@@ -65,7 +65,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
    y la píldora la persigue mientras crece; la que dejas lo pliega a la vez, así los íconos de en medio se deslizan. */
 .status-bar__tab {
   display: inline-flex; align-items: center; min-height: var(--control-sm); padding: 0 .78rem; border-radius: var(--radius-pill);
-  color: var(--color-text-muted); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); white-space: nowrap;
+  color: var(--color-text-muted); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap;
   transition: color var(--duration-base) var(--ease-out);
 }
 .status-bar__tab .icon { flex: none; width: var(--icon-lg); height: var(--icon-lg); stroke-width: var(--stroke-regular); }
@@ -123,7 +123,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 .status-bar--tight-4 .status-bar__wordmark { display: none; }
 .status-bar--tight-5 .status-bar__tabs .glyph { display: none; }
 .status-bar--tight-6 .status-bar__tab { font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
-.status-bar--tight-6 .status-bar__clock { font-size: var(--type-section); font-weight: var(--type-section-weight); }
+.status-bar--tight-6 .status-bar__clock { font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 .status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .status-bar__right > * { flex: none; }
 .status-bar__right > .status-bar__playing { flex: 0 1 auto; }
@@ -189,7 +189,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
   .status-bar { gap: var(--space-4); }
   .status-bar__wordmark, .status-bar .assistant { display: none; }
   .status-bar__right { gap: var(--space-4); }
-  .status-bar__clock { font-size: var(--type-section); font-weight: var(--type-section-weight); }
+  .status-bar__clock { font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 }
 @media (max-width: 760px) {
   .status-bar__tabs .glyph { display: none; }

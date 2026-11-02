@@ -6,7 +6,7 @@
   position: fixed; right: var(--page-gutter); top: calc(var(--space-5) + var(--safe-y, 0px)); z-index: var(--z-touch-back);
   display: none; align-items: center; gap: var(--space-2); min-height: var(--control-height); padding: 0 var(--space-5) 0 var(--space-4);
   border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
-  color: var(--color-text); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight);
+  color: var(--color-text); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking);
 }
 .touch-back svg { width: var(--icon-md); height: var(--icon-md); }
 [data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }

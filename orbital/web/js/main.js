@@ -12,6 +12,7 @@ import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceT
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
+import { feel } from "./core/feel.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
 import { createHero } from "./components/hero.js";
@@ -132,6 +133,7 @@ const ui = {
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   title: createTitle({
+    returnTo: () => openingFrom(), // al cerrar, el arte vuelve a la tarjeta de la que salió (continuidad)
     onPlay: (play) => watch(play),
     onTrailer: (play) => trailer(play),
     onSources: (play) => openSources(play),
@@ -177,7 +179,7 @@ const ui = {
     onMore: (item) => openMenu(forYouMenu(item, { trakt: traktLinked() })),
     onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
-    onEdge: () => { sound.play("error"); rumble("edge"); },
+    onEdge: () => { sound.play("edge"); rumble("edge"); },
     covered: () => !!topOverlay() || ui.sheet.isOpen || ui.launch.visible, // con una capa encima, el mosaico no entra en ambiente
   }),
   tv: createTv({
@@ -277,7 +279,7 @@ const ui = {
   calendar: createCalendar({
     load: (month) => api.forYouCalendar(month),
     onPick: (item) => openTitle(item),
-    onEdge: () => { sound.play("error"); rumble("edge"); ui.toast.show("El calendario llega hasta dos años"); },
+    onEdge: () => { sound.play("edge"); rumble("edge"); ui.toast.show("El calendario llega hasta dos años"); },
     onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
@@ -466,6 +468,7 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   // Al final de la fila: rebota y vibra solo en la pulsación, no en cada repetición al mantener.
   if (!moved && edge && !silent && !repeat) {
     ui.shelf.bump(edge);
+    sound.play("edge");
     rumble("edge");
   }
   state.focus = next;
@@ -505,7 +508,9 @@ const decoded = []; // las últimas imágenes precargadas, ya decodificadas
 const DECODED_KEEP = 16;
 function preloadAround(r, c) {
   const rows = state.rows || [];
-  [...(rows[r]?.items.slice(c + 1, c + 5) || []), ...(rows[r + 1]?.items.slice(0, 3) || [])].forEach(warmArt);
+  // Las de adelante, la de atrás (volver un paso también es instantáneo) y el principio de la fila de abajo.
+  [...(rows[r]?.items.slice(c + 1, c + 5) || []), ...(rows[r]?.items.slice(Math.max(0, c - 1), c) || []),
+    ...(rows[r + 1]?.items.slice(0, 3) || [])].forEach(warmArt);
 }
 
 /** El logo y el fondo de un título, descargados y decodificados de antemano (fuera del hilo principal): pintar un fondo
@@ -630,7 +635,7 @@ function handleForYou(action, { repeat = false } = {}) {
     else if (action === "pageleft" || action === "pageright" || action === "alt") sound.play("open");
     return renderHints();
   }
-  if (handled === "edge") { if (!repeat) rumble("edge"); return; }
+  if (handled === "edge") { if (!repeat) { sound.play("edge"); rumble("edge"); } return; }
   if (handled === "exit") return goToSection("home", 1);
   switch (action) {
     case "prevsection": return stepSection(-1);
@@ -2322,7 +2327,11 @@ const tellPad = (listening) => api.uiPad(listening).then((r) => { padServer.xinp
 const input = createInput({
   // Con la pantalla de carga a la vista, el botón es de Orbital aunque mpv ya esté al frente (tráiler, canal): B cancela
   // (antes se ignoraba y el tráiler o el canal se abrían igual; regresión S3-A6).
-  onAction: (action, options) => { if (!videoInFront() || ui.launch.visible) handleAction(action, options); },
+  onAction: (action, options) => {
+    if (videoInFront() && !ui.launch.visible) return;
+    feel(action, options); // hacia dónde vas y el hundido de A (core/feel.js)
+    handleAction(action, options);
+  },
   onModality: setModality,
   onTouch: () => { if (state.modality !== "touch") touchSince = performance.now(); }, // el aspecto cambia tras su clic
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).

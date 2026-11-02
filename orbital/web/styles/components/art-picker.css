@@ -14,7 +14,7 @@
 .art-picker__body { display: grid; gap: var(--layout-between-subsections); min-height: 0; overflow-y: auto; scrollbar-width: none; }
 .art-picker__status { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .art-picker__status--error { color: var(--color-danger); }
-.art-picker__label { margin: 0 0 var(--space-3); font-size: var(--type-section); font-weight: var(--type-section-weight); }
+.art-picker__label { margin: 0 0 var(--space-3); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 /* Una fila que se recorre de lado (sin barra): la enfocada siempre a la vista (scrollIntoView). */
 .art-picker__track { display: flex; gap: var(--space-4); overflow-x: auto; scrollbar-width: none; padding: var(--space-2); }
 .art-picker__tile {
@@ -31,6 +31,6 @@
 .art-picker__badge {
   position: absolute; top: var(--space-2); left: var(--space-2); padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-on-primary);
-  font-size: var(--type-badge); font-weight: var(--type-badge-weight);
+  font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking);
 }
-.art-picker__source { min-height: 1.2em; color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); }
+.art-picker__source { min-height: 1.2em; color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); }

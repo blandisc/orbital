@@ -58,7 +58,7 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
       await api.rate(command.kind, command.id, command.stars);
       ui.title.rated?.(command.id, command.stars); // la ficha abierta dice «Tu calificación» al instante
       ui.sheet.close();
-      sound.play("select");
+      sound.play(command.stars ? "success" : "select");
       ui.toast.show(command.stars ? `${command.title} · ${starText(command.stars)}` : `Quité tu calificación de ${command.title}`, { tone: "success" });
       return renderHints();
     },
@@ -67,7 +67,7 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
     "watched-set": async (command) => {
       await api.markWatched({ kind: command.kind, id: command.id, video_id: command.video_id, when: command.when });
       ui.sheet.close();
-      sound.play("select");
+      sound.play("success");
       ui.toast.show(`Marqué ${command.title} como vista`, { tone: "success" });
       return renderHints();
     },
@@ -75,7 +75,7 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
       await api.tvMine(command.id, command.title, command.add);
       ui.sheet.close();
       ui.tv.load?.(); // TV en vivo, al día (si está a la vista)
-      sound.play("select");
+      sound.play(command.add ? "success" : "select");
       ui.toast.show(command.add ? `${command.title} ya es uno de tus canales` : `Quité ${command.title} de Tus canales`, { tone: "success",
         detail: command.add ? "Está en TV en vivo › Tus canales" : "" });
       return renderHints();

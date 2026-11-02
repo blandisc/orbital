@@ -41,7 +41,7 @@
 .collection__name {
   font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
   text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); line-height: var(--leading-snug); }
+.collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); line-height: var(--leading-snug); }
 /* Un género o una temporada: su ícono a color (img/collections, los del iPhone) tal cual, sin placa: un resplandor oscuro
    detrás para leerse sobre los pósters (como el iPhone) y el de su halo; su nombre debajo. */
 .collection__emblem {

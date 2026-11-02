@@ -328,3 +328,45 @@ def test_no_text_is_cut_in_half(server, width, height, size):
     finally:
         _set_text_size(server, "normal")
     assert not cuts, f"Texto partido: {json.dumps(cuts, ensure_ascii=False, indent=1)}"
+
+
+PERF = """
+window.__perf = { lat: [], frames: [], on: true };
+let pending = null;
+addEventListener("keydown", () => { pending = performance.now(); }, true);
+new MutationObserver(() => {
+  if (pending === null) return;
+  const t0 = pending;
+  pending = null;
+  // Dos cuadros: el primero aplica el cambio y el segundo ya lo pintó (lo que se ve).
+  requestAnimationFrame(() => requestAnimationFrame(() => window.__perf.lat.push(performance.now() - t0)));
+}).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+let last = performance.now();
+requestAnimationFrame(function loop(t) { window.__perf.frames.push(t - last); last = t; if (window.__perf.on) requestAnimationFrame(loop); });
+"""
+
+
+def test_moving_feels_instant(page):
+    """Velocidad como premium (2 nov 2026): de apretar a ver el foco moverse, menos de 100 ms, y recorriendo una fila casi
+    ningún cuadro tarda más de dos cuadros. Lo nuevo de movimiento (el destello, el empujón, el fondo vivo) pasa por aquí: si
+    cuesta cuadros, no entra. En CI (máquinas compartidas y lentas) el margen es más ancho."""
+    ready(page)
+    page.keyboard.press("e")  # Juegos: filas de portadas, el fondo a pantalla y su color
+    page.locator('.games button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
+    page.wait_for_timeout(800)
+    page.evaluate(PERF)
+    for _ in range(12):
+        page.keyboard.press("ArrowRight")
+        page.wait_for_timeout(160)
+    for _ in range(12):
+        page.keyboard.press("ArrowLeft")
+        page.wait_for_timeout(160)
+    perf = page.evaluate("(() => { window.__perf.on = false; return window.__perf; })()")
+    lat = sorted(perf["lat"])
+    frames = perf["frames"][1:]
+    slow = sum(1 for f in frames if f > 34) / max(1, len(frames))
+    ci = bool(os.environ.get("CI"))
+    assert len(lat) >= 12, f"solo {len(lat)} movimientos medidos"  # al final de la fila, rebota: no hay cambio que medir
+    median = lat[len(lat) // 2]
+    assert median < (200 if ci else 100), f"de apretar a verlo: mediana {median:.0f} ms ({[round(x) for x in lat]})"
+    assert slow < (.35 if ci else .1), f"{slow:.0%} de los cuadros tardaron más de dos"

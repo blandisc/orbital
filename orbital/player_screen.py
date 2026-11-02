@@ -205,6 +205,12 @@ class PlayerScreen(SubtitleTrial):
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
             pip=bool(getattr(self, "pip_on_home", False)))
 
+    # La pausa entra con un fundido (lo que se ve en cada paso, y cada cuánto) y, reproduciendo, la barra avanza mientras
+    # se ve (antes se pintaba una vez y se quedaba quieta los 4 s). Las pruebas los apagan con () y 0.
+    PAUSE_FADE: tuple[float, ...] = (.35, .7)
+    PAUSE_FADE_STEP = .07
+    HUD_TICK = .5
+
     def show_hud(self, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> None:
         """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos.
         `seeking` («+30 s»): mientras adelantas, solo la barra y a dónde vas. `position`/`paused`: lo que
@@ -221,9 +227,20 @@ class PlayerScreen(SubtitleTrial):
         scale = self._px_per_unit() or 1.0
         if logo:
             hud.logo = (logo[1] / scale, logo[2] / scale)
-        self._overlay(1, player_ui.hud_ass(hud))
-        self._show_logo(player_ui.placed.get("logo") if logo else None, logo)
+        ass = player_ui.hud_ass(hud)
+        where = player_ui.placed.get("logo") if logo else None
+        entering = hud.paused and not seeking and not self.__dict__.get("_pause_drawn") and bool(self.PAUSE_FADE)
+        self._pause_drawn = bool(hud.paused)
+        self._hud_seeking = seeking
+        self._fade_token = object()  # lo que se pinte ahora manda sobre un fundido que iba a medias
+        if entering:
+            self._fade_in(ass, where, logo)
+        else:
+            self._overlay(1, ass)
+            self._show_logo(where, logo)
         self._hud_visible = True
+        if not hud.paused and not seeking and self.HUD_TICK:
+            self._schedule_tick()
         if self.menu is None:
             # Reproduciendo, encima de la barra mientras se ve. En pausa se quedan en su lugar: el velo y el bloque de la
             # pausa los tapan de todos modos y verlos brincar arriba solo distraía (Fernando).
@@ -240,6 +257,40 @@ class PlayerScreen(SubtitleTrial):
         self._hud_timer.daemon = True
         self._hud_timer.start()
 
+    def _fade_in(self, ass: str, where, logo) -> None:
+        """La pausa aparece en pasos (más transparente a más opaca); el logo, que es una imagen encima, entra al final."""
+        token = self._fade_token
+        self._show_logo(None)
+        self._overlay(1, player_ui.fade(ass, self.PAUSE_FADE[0]))
+
+        def step(appear: float) -> None:
+            if self.__dict__.get("_fade_token") is not token or not self._hud_visible or self.menu is not None:
+                return
+            self._overlay(1, player_ui.fade(ass, appear))
+            if appear >= 1:
+                self._show_logo(where, logo)
+        for i, appear in enumerate((*self.PAUSE_FADE[1:], 1.0), 1):
+            timer = threading.Timer(i * self.PAUSE_FADE_STEP, step, (appear,))
+            timer.daemon = True
+            timer.start()
+
+    def _schedule_tick(self) -> None:
+        old = self.__dict__.get("_tick_timer")
+        if old:
+            old.cancel()
+        self._tick_timer = threading.Timer(self.HUD_TICK, self._tick)
+        self._tick_timer.daemon = True
+        self._tick_timer.start()
+
+    def _tick(self) -> None:
+        """Reproduciendo con la barra a la vista: se vuelve a pintar con el tiempo de ahora (la barra avanza pareja)."""
+        current = self.current
+        if (current is None or not self._hud_visible or self.menu is not None or self.__dict__.get("_hud_seeking")
+                or self._value("pause") or getattr(self, "pip", False) or self._is_live()):
+            return
+        self._overlay(1, player_ui.hud_ass(self._hud(current)))
+        self._schedule_tick()
+
     def _refresh_paused(self) -> None:
         if self._value("pause") and self._hud_visible and self.menu is None:
             self.show_hud()
@@ -248,6 +299,8 @@ class PlayerScreen(SubtitleTrial):
         if self._hud_timer:
             self._hud_timer.cancel()
         self._hud_visible = False
+        self._pause_drawn = False
+        self._fade_token = None
         self._overlay(1, None)
         if self.menu is None:
             self._lift_subs(False)  # la barra se fue: los subtítulos vuelven abajo

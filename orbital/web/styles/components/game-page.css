@@ -9,7 +9,7 @@
 body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv) { visibility: hidden; }
 .game-page__top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-10); min-height: 0; }
 .game-page__body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 56%); }
-.game-page__reason { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); text-shadow: var(--shadow-text-strong); }
+.game-page__reason { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); text-shadow: var(--shadow-text-strong); }
 .game-page__logo { max-width: min(28rem, 100%); max-height: 8rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .game-page__title {
   font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-tight);
@@ -32,7 +32,7 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
 .game-page__stat-label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 /* Los demás de su consola: una fila que se desliza; la enfocada crece y dice su nombre. */
 .game-page__row { display: flex; flex-direction: column; gap: var(--layout-title-to-content); min-width: 0; }
-.game-page__row-title { font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); }
+.game-page__row-title { font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); }
 .game-page__viewport { overflow: hidden; padding: var(--space-4) var(--space-4) var(--caption-room); margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0; }
 .game-page__track {
   --card-height: 9rem; --card-focus-scale: 1.12;

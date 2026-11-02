@@ -10,7 +10,7 @@
   margin: 0; font-size: var(--type-title); font-weight: var(--type-title-weight); line-height: var(--leading-tight); letter-spacing: var(--tracking-display);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; padding-bottom: .15em;
 }
-.decide__why { margin: 0; color: var(--color-accent); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); }
+.decide__why { margin: 0; color: var(--color-accent); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
 .decide__overview {
   margin: 0; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); line-height: var(--leading-relaxed);
   display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;

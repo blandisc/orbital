@@ -84,7 +84,7 @@
 /* La portada no llegó: la inicial del título en la tarjeta, que se vea a propósito. */
 .launch__cover--missing::after {
   content: attr(data-initial); position: absolute; inset: 0; display: grid; place-items: center;
-  color: var(--color-text-muted); font-size: var(--type-title); font-weight: var(--type-title-weight);
+  color: var(--color-text-muted); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--type-title-tracking);
 }
 .launch__orbit {
   position: absolute; left: 50%; top: 50%;
@@ -135,7 +135,7 @@
 
 /* --- Qué está pasando -------------------------------------------------------------------------------------------- */
 .launch__text { display: grid; justify-items: center; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-2) backwards; transition: opacity var(--duration-base) var(--ease-in); }
-.launch__label { color: var(--color-accent); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); }
+.launch__label { color: var(--color-accent); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
 /* La fase cambia con un fundido corto (no un salto de texto). */
 .launch__label--changed { animation: fade-in var(--duration-enter) var(--ease-out); }
 .launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); text-wrap: balance; }

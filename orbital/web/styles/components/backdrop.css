@@ -26,6 +26,13 @@
   translate: calc(var(--parallax, 0) * -3rem) 0;
   transition: translate var(--duration-drift) var(--ease-out);
 }
+/* Vivo pero quieto: si te quedas en un título, su fondo se acerca un 3 % muy despacio y ahí se queda (backdrop.js ·
+   ALIVE_MS). Es un solo tramo, no un ciclo: al terminar no se mueve nada (la deriva sin fin de antes costaba GPU sin parar).
+   Al cambiar de título vuelve a su tamaño mientras está oculta. «Reducir movimiento» no lo enciende. */
+.backdrop__layer--alive .backdrop__art {
+  scale: 1.03;
+  transition: translate var(--duration-drift) var(--ease-out), scale var(--duration-ken-burns) var(--ease-float);
+}
 
 /* Solo portada: halo de color detrás (la misma imagen, muy desenfocada) y la caja nítida. */
 .backdrop__box { display: none; }

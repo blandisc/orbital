@@ -42,7 +42,7 @@
 .rail:not(.rail--open) .rail__heading:first-child { min-height: 0; }
 .rail__heading:first-child::before { opacity: 0; } /* el primer grupo no necesita raya que lo separe */
 .rail__heading-text {
-  padding-left: calc((var(--rail-width) - var(--rail-tile)) / 2); color: var(--color-text-muted); font-size: var(--type-label); font-weight: var(--type-label-weight);
+  padding-left: calc((var(--rail-width) - var(--rail-tile)) / 2); color: var(--color-text-muted); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
   white-space: nowrap; opacity: 0; transition: opacity var(--duration-fast) var(--ease-out);
 }
 .rail--open .rail__heading::before { opacity: 0; }
@@ -85,7 +85,7 @@
 }
 .rail--open .rail__label { opacity: 1; transform: none; transition-delay: var(--delay-1); }
 .rail__name {
-  color: var(--color-text-muted); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); line-height: var(--leading-title); padding-bottom: .1em;
+  color: var(--color-text-muted); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); line-height: var(--leading-title); padding-bottom: .1em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rail__meta { color: var(--color-text-faint); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

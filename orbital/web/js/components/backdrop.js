@@ -1,6 +1,6 @@
 import { dominantHue, paletteFor } from "../core/color.js";
 import { cssUrl, h } from "../core/dom.js";
-import { settler } from "../core/motion.js";
+import { reducedMotion, settler } from "../core/motion.js";
 
 const SAMPLE = 24; // px: basta para el tono y es instantáneo
 const palettes = new Map(); // url -> { tint, accent }
@@ -60,6 +60,7 @@ function applyPalette({ tint, accent }) {
  * la caja del juego, sobre un halo de su color. Fundido cruzado entre dos capas.
  */
 const STALE_MS = 600; // más que esto cargando: el fondo anterior ya no corresponde
+const ALIVE_MS = 2500; // quieto en un título este rato, su fondo empieza a acercarse (backdrop.css · backdrop__layer--alive)
 
 export function createBackdrop({ settle = 150 } = {}) {
   const makeLayer = () => {
@@ -79,8 +80,13 @@ export function createBackdrop({ settle = 150 } = {}) {
   let token = 0;
   const wait = settler({ quick: settle, held: settle * 2 });
 
+  let aliveTimer = 0;
   function swap(url, poster, pixel = false) {
     const back = layers[1 - front];
+    // La capa que entra viene de estar oculta: ahí se le quita el acercamiento (la que sale se funde tal como estaba).
+    back.el.classList.remove("backdrop__layer--alive");
+    clearTimeout(aliveTimer);
+    if (url && !poster && !reducedMotion()) aliveTimer = setTimeout(() => back.el.classList.add("backdrop__layer--alive"), ALIVE_MS);
     back.el.classList.toggle("backdrop__layer--pixel", !!pixel); // captura chica de un juego retro
     back.art.style.backgroundImage = cssUrl(url);
     if (poster && url) back.box.src = url;

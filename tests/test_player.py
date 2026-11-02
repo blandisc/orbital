@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from orbital import player, player_ui
@@ -1303,3 +1305,36 @@ def test_watch_now_in_the_credits_saves_the_episode_as_seen():
     p._play_next(ep, auto=False)  # «Ver ahora»
     p._close_segment(ep)
     assert saved == [(2640.0, 2640.0)]  # visto: se guarda al final, no a 4 min
+
+
+def test_the_pause_fades_in_and_the_logo_waits_for_the_end():
+    """En pausa todo entra con un fundido en pasos (no de golpe); el último paso es la pausa entera."""
+    p, mpv = make_player(pause=True)
+    p.PAUSE_FADE_STEP = .01
+    p.show_hud(paused=True)
+    first = mpv.overlays[1]
+    assert "En pausa" in first  # el texto ya está, pero más transparente
+    deadline = time.monotonic() + 2
+    while "\\1a&H70&" not in mpv.overlays[1] and time.monotonic() < deadline:  # el velo ya con su oscuridad entera
+        time.sleep(.01)
+    final = mpv.overlays[1]
+    assert final != first and player_ui.fade(final, .35) == first
+    p.show_hud(paused=True)  # ya en pausa, volver a pintarla no la funde otra vez
+    assert mpv.overlays[1] == final
+
+def test_fade_only_lightens_the_layer():
+    ass = player_ui.text(0, 0, "Hola", 20, alpha="40") + player_ui.rrect(0, 0, 10, 10, 2, "&HFFFFFF&", "00")
+    assert player_ui.fade(ass, 1) == ass
+    assert "\\1a&HFF&" in player_ui.fade(ass, 0) and "\\1a&H40&" not in player_ui.fade(ass, .5)
+
+
+def test_the_bar_moves_while_it_is_on_screen():
+    """Reproduciendo, la barra se vuelve a pintar con el tiempo de ahora mientras se ve (antes se quedaba quieta 4 s)."""
+    p, mpv = make_player()
+    p.HUD_TICK = .02
+    p.show_hud()
+    assert "10:00" in mpv.overlays[1]
+    mpv.props["time-pos"] = 605.0
+    time.sleep(.15)
+    assert "10:05" in mpv.overlays[1]
+    p.hide_hud()

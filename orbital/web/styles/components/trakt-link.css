@@ -14,7 +14,7 @@
 .trakt-link__qr-image { display: block; width: 7.5rem; height: 7.5rem; border-radius: var(--radius-md); }
 .trakt-link__code {
   display: flex; gap: var(--space-3); min-height: 5.6rem; padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg);
-  background: var(--color-bg); font-family: var(--font-sans); font-size: var(--type-hero); font-weight: var(--type-hero-weight);
+  background: var(--color-bg); font-family: var(--font-sans); font-size: var(--type-hero); font-weight: var(--type-hero-weight); letter-spacing: var(--type-hero-tracking);
   font-variant-numeric: tabular-nums; line-height: var(--leading-none);
 }
 .trakt-link__char { min-width: .8em; animation: rise-in var(--duration-enter) var(--ease-out) both; }

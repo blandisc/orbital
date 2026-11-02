@@ -209,6 +209,19 @@ test("recetas de texto: cada tamaño va con el grosor de su misma receta (y los 
   assert.deepEqual(offenders, [], "font-size: var(--type-X); font-weight: var(--type-X-weight)");
 });
 
+// Tipografía de cerca (2 nov 2026): las recetas con aire propio entre letras (--type-X-tracking: lo grande se aprieta, lo chico
+// se abre) lo llevan siempre; una pieza puede pedir otro (la cifra del Top 10, un código), pero nunca quedarse sin ninguno.
+test("recetas de texto: las que tienen su aire entre letras lo llevan", () => {
+  const tracked = [...read(TOKEN_FILES[0]).matchAll(/--type-([a-z-]+)-tracking:/g)].map((m) => m[1]);
+  assert.ok(tracked.length >= 8, `recetas con aire propio: ${tracked.join(", ")}`);
+  const offenders = [];
+  for (const r of cssRules()) {
+    const size = r.body.match(/font-size:\s*(?:min\([^;]*?)?var\(--type-([a-z-]+)\)/)?.[1];
+    if (tracked.includes(size) && !/letter-spacing:/.test(r.body)) offenders.push(`${rule(r)}: --type-${size} sin letter-spacing (var(--type-${size}-tracking))`);
+  }
+  assert.deepEqual(offenders, [], "Recetas sin su aire entre letras");
+});
+
 test("vidrio: ningún control se pinta con el gris de antes (--color-fill), solo los esqueletos de carga", () => {
   const offenders = cssRules().filter((r) => /background[^;]*var\(--color-fill(-hover)?\)/.test(r.body) && !/skeleton|search__ghost|shimmer/.test(r.sel));
   assert.deepEqual(offenders.map(rule), [], "Un control: background: var(--color-glass) y su filo (--edge-glass, --edge-glass-hairline)");

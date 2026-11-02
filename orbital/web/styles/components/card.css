@@ -18,10 +18,26 @@
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
   box-shadow: var(--edge-hairline); background: var(--focus-shine); opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
 }
-/* Enfocada, le cruza el brillo en diagonal (Apple TV): con el levantón, dice cuál es sin anillo. */
-.card--focused::after { opacity: 1; }
-.card__image { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; opacity: 0; transition: opacity var(--duration-base) var(--ease-out); }
-.card__image--loaded { opacity: 1; }
+/* Enfocada, le cruza el brillo en diagonal (Apple TV): con el levantón, dice cuál es sin anillo. Al llegar, además, un
+   destello la cruza una vez en la dirección en que ibas (core/feel.js pone data-heading), y entra con un leve empujón de ese
+   lado que se asienta con el resorte firme: el foco tiene cuerpo, no aparece. */
+.card--focused::after {
+  opacity: 1; background: var(--focus-sweep), var(--focus-shine); background-size: 300% 100%, 100% 100%; background-position: -50% 0, 0 0;
+  animation: focus-sweep var(--duration-enter) var(--ease-out);
+}
+[data-heading="left"] .card--focused::after { animation-name: focus-sweep-back; }
+@keyframes focus-sweep { from { background-position: 150% 0, 0 0; } }
+@keyframes focus-sweep-back { from { background-position: -150% 0, 0 0; } to { background-position: 150% 0, 0 0; } }
+.card--focused:not(.card--bump-left, .card--bump-right) { animation: focus-lean var(--duration-snappy) var(--ease-snappy); }
+[data-heading="left"] .card--focused:not(.card--bump-left, .card--bump-right) { animation-name: focus-lean-back; }
+@keyframes focus-lean { from { translate: -.3rem 0; } }
+@keyframes focus-lean-back { from { translate: .3rem 0; } }
+.card__image {
+  display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; opacity: 0; filter: blur(.35rem);
+  transition: opacity var(--duration-base) var(--ease-out), filter var(--duration-slow) var(--ease-out);
+}
+/* Llega desenfocada y se enfoca mientras aparece (no «salta» de la nada); cargada, sin filtro: no cuesta nada después. */
+.card__image--loaded { opacity: 1; filter: none; }
 .card__image--instant { transition: none; }
 .card__placeholder { position: absolute; inset: 0 0 30% 0; display: grid; place-items: center; }
 .card__placeholder svg { width: 42%; height: auto; fill: none; stroke: var(--color-text-muted); stroke-width: var(--stroke-regular); stroke-linejoin: round; opacity: var(--opacity-soft); }
@@ -113,7 +129,7 @@
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }
-.card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
+.card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
 /* Foco: el juego salta (resorte con rebote), se eleva y flota con su sombra, sin anillo (Apple TV), y proyecta un brillo de
    su propio color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .card--focused {

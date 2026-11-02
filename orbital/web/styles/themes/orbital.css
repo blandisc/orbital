@@ -200,4 +200,6 @@
      anillo. El brillo (--focus-shine) va encima del arte, en el ::after de la pieza. */
   --focus-lift: 0 1.2rem 2.6rem rgba(0, 0, 0, .6);
   --focus-shine: linear-gradient(120deg, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, .06) 30%, rgba(255, 255, 255, 0) 52%);
+  /* El destello que cruza una sola vez lo que acaba de recibir el foco, en la dirección en que ibas (card.css · focus-sweep). */
+  --focus-sweep: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, .2) 50%, rgba(255, 255, 255, 0) 62%);
 }

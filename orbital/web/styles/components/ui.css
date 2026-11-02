@@ -13,7 +13,7 @@
    mismo sea Chip o Badge (píldora, letra xs en negrita): el número de un canal, la nota de un póster, el sube y baja. */
 .chip--plate {
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
-  border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-label); font-weight: var(--type-label-weight);
+  border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
 }
 .chip--good { color: var(--color-live); }
 .chip--warn { color: var(--color-warning); }
@@ -22,7 +22,7 @@
 .badge {
   display: inline-flex; align-items: center; padding: .1rem .55rem; border-radius: var(--radius-pill);
   background: var(--inverse-bg); color: var(--inverse-fg);
-  font-size: var(--type-label); font-weight: var(--type-label-weight);
+  font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .badge--plate { background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge); }
@@ -128,7 +128,7 @@
 /* SectionHead, en dos niveles como el iPhone. Subsección: el título blanco y, si ayuda, su porqué arriba en turquesa. */
 .section-head { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
 .section-head--reason { flex-wrap: wrap; row-gap: var(--space-1); }
-.section-head__reason { flex-basis: 100%; margin: 0; color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section-head__reason { flex-basis: 100%; margin: 0; color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .section-head__title { font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); white-space: nowrap; }
 .section-head__end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
 /* Sección: el rótulo (ícono en el azul de Orbital, nombre en mayúsculas chicas, línea fina hasta la orilla y el dato). */
@@ -137,7 +137,7 @@
 .section-head__icon svg { width: 100%; height: 100%; }
 .section-head__label {
   margin: 0; color: var(--color-text-muted); font-family: var(--font-sans); font-size: var(--type-group-label); font-weight: var(--type-group-label-weight);
-  letter-spacing: var(--tracking-caps); text-transform: uppercase; white-space: nowrap; /* ds-exception: rótulo de sección */
+  letter-spacing: var(--type-group-label-tracking); text-transform: uppercase; white-space: nowrap; /* ds-exception: rótulo de sección */
 }
 .section-head__rule { flex: 1; min-width: var(--space-6); height: 0; border-top: 1px solid var(--color-hairline); margin-left: var(--space-2); }
 .section-head--section .section-head__end { margin-left: var(--space-2); }
@@ -181,8 +181,12 @@
   animation: fade-in var(--duration-base) var(--ease-out);
 }
 .screen--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
+/* A (core/feel.js) o el dedo y el mouse (:active): lo que aprietas se hunde al 97 % y regresa con el resorte firme. */
+.is-pressed { animation: press var(--duration-snappy) var(--ease-snappy); }
+:is(.card, .tile, .button, .pill, .chip):active { scale: .97; transition: scale var(--duration-instant) var(--ease-out); }
+@keyframes press { 35% { scale: .97; } }
 .screen-head { display: grid; gap: var(--space-2); justify-items: center; text-align: center; max-width: 46rem; }
-.screen-head__eyebrow { color: var(--color-accent); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); }
+.screen-head__eyebrow { color: var(--color-accent); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); }
 .screen-head__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
 .screen-head__lead { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 

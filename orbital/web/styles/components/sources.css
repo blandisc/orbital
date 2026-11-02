@@ -63,7 +63,7 @@
    calidades a la derecha, solo las que hay. Cada calidad: la resolución grande, ¿arranca ya? y lo esencial. */
 .versions__row { display: grid; flex-shrink: 0; grid-template-columns: 12rem minmax(0, 72rem); align-items: center; column-gap: var(--space-5); }
 .versions__lang { display: grid; gap: var(--space-1); padding-inline: var(--space-2); min-width: 0; }
-.versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); }
+.versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
 .versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .versions__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 
@@ -73,9 +73,9 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .version:hover { background: var(--color-glass-hover); }
-.version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); font-variant-numeric: tabular-nums; }
+.version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
-.version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); }
+.version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }
 .version__state--good { color: var(--color-live); }
 .version__state--warn { color: var(--color-warning); }
 .version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }

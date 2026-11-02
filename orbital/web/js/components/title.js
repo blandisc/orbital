@@ -9,7 +9,7 @@ import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
-import { flight, motion, reducedMotion } from "../core/motion.js";
+import { flight, motion, reducedMotion, rollNumber } from "../core/motion.js";
 import { tokenMs, tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress } from "../core/watch.js";
 
@@ -30,7 +30,7 @@ const EPISODE_PX = 360;
 
 export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {},
-  hasTrakt = () => false, onRate = () => {}, onWatched = () => {} }) {
+  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, returnTo = () => null }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -87,6 +87,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let restore = null; // { zone: "cast", index }: el foco que dejaste al abrir una persona
   let rated = { ratings: null, mine: null, letterboxd: null }; // las de los servicios, la tuya (Trakt) y el promedio de Letterboxd
   let revealed = new Set(); // las reseñas con spoilers que ya abriste (A)
+  let rolled = new Set(); // las calificaciones que ya rodaron hasta su número en esta ficha
   let following = null; // una serie: ¿la sigues? (la campana, como el iPhone); null mientras no se sabe
   let own = null; // desde Mi media: { have: Set(video_id), versions: [...] } (tu carpeta de OneDrive)
   let season = 0;
@@ -322,10 +323,17 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       r?.trakt && ["trakt", `${Math.round(r.trakt * 10)} %`, "Trakt"],
       rated.letterboxd && ["letterboxd", rated.letterboxd.toFixed(1), "Letterboxd"], // su promedio, de 5 (como el iPhone)
     ].filter(Boolean);
-    mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark(id),
-      h("span", { class: "title__rating-value" }, value))),
+    if (shown.length) ratings.classList.remove("title__ratings--waiting");
+    // Cada calificación rueda hasta su número la primera vez que llega (Letterboxd llega después: solo esa rueda entonces).
+    const roll = [];
+    mount(ratings, shown.map(([id, value, label]) => {
+      const number = h("span", { class: "title__rating-value" }, value);
+      if (!rolled.has(id)) { rolled.add(id); roll.push([number, value]); }
+      return h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark(id), number);
+    }),
     rated.mine > 0 && h("span", { class: "title__rating title__rating--mine", "aria-label": `Tu calificación: ${rated.mine} de 5` },
       h("span", { class: "title__rating-label" }, "Tu calificación"), h("span", { class: "title__rating-stars" }, "★".repeat(rated.mine))));
+    for (const [number, value] of roll) rollNumber(number, value, tokenMs("--duration-enter-long"));
   }
 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
@@ -664,7 +672,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       }
       if (hasTrakt() && kind === "series") api.following(id).then((r) => { if (mine === token) { following = r?.following !== false; renderActions(); } }).catch(() => {});
       if (hasTrakt()) api.myRating(kind, id).then((r) => { if (mine === token) { rated.mine = r?.stars || null; showRatings(rated.ratings, mine); } }).catch(() => {});
-      api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {});
+      const settled = () => { if (mine === token) ratings.classList.remove("title__ratings--waiting"); };
+      api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {}).finally(settled);
       fillInfo({ ...data, title: data.title || item.title, art: artOf(data), ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
       states = episodeStates(data, Date.now());
       prefetch(mine);
@@ -734,13 +743,16 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
    * Al abrir desde una tarjeta (como Game Glance): el arte se abre desde la tarjeta hasta toda la pantalla y el logo
    * viaja de la tarjeta a su lugar; lo demás llega a su sitio solo (title.css · title-settle). `from`: { rect, logoRect }.
    */
+  let cameFrom = false; // se abrió desde una tarjeta: al cerrar, vuelve a ella (flyOut)
+  // Cerrándose (fundido o de vuelta a su tarjeta): para las teclas y el pie ya no está abierta.
+  const leaving = () => el.classList.contains("screen--leaving") || el.classList.contains("title--returning");
   function flyIn(from) {
     if (!from?.rect || !backdrop.animate || reducedMotion()) return;
     const r = from.rect;
     backdrop.animate([
       { clipPath: `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round ${tokenPx("--card-radius")}px)`, opacity: 1 },
       { clipPath: "inset(0px 0px 0px 0px round 0px)" },
-    ], flight("--duration-enter"));
+    ], flight("--duration-enter", "--ease-smooth"));
     if (!from.logoRect) return;
     const go = () => {
       const to = logo.getBoundingClientRect();
@@ -756,9 +768,36 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     else logo.addEventListener("load", () => requestAnimationFrame(go), { once: true });
   }
 
+  /**
+   * Al cerrar, lo contrario de flyIn (continuidad): el arte se encoge de vuelta a la tarjeta de la que salió, donde sigue el
+   * foco; lo demás se funde antes (title.css · title--returning). Solo si se abrió desde una tarjeta: desde una persona o
+   * desde Buscar se funde como siempre. Devuelve con qué cancelarlo, o null si no hay a dónde volver.
+   */
+  function flyOut() {
+    const r = cameFrom && returnTo()?.rect;
+    if (!r?.width || !backdrop.animate || reducedMotion()) return null;
+    el.classList.add("title--returning");
+    const fly = backdrop.animate([
+      { clipPath: "inset(0px 0px 0px 0px round 0px)", opacity: 1 },
+      { opacity: 1, offset: .7 },
+      { clipPath: `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round ${tokenPx("--card-radius")}px)`, opacity: 0 },
+    ], { ...flight("--duration-smooth", "--ease-smooth"), fill: "forwards" });
+    let done = false;
+    const finish = (hide) => {
+      if (done) return;
+      done = true;
+      fly.cancel();
+      el.classList.remove("title--returning");
+      if (hide) el.hidden = true;
+    };
+    fly.finished.then(() => finish(true), () => {});
+    return () => finish(false);
+  }
+
   /** `info`: { kind, meta_id, title, hero, image, extra } (lo que ya se sabe, para pintar al instante). */
   function open(info, from = null, restoreFocus = null) {
     item = info;
+    cameFrom = !!from?.rect;
     restore = restoreFocus; // al volver de una persona: el reparto, con la misma cara enfocada (applyExtras)
     cancelExit();
     zone = "actions";
@@ -769,6 +808,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     rated = { ratings: null, mine: null, letterboxd: null };
     letterboxd = null;
     revealed = new Set();
+    rolled = new Set();
     following = null;
     for (const id of PANEL) { panel[id].items = []; panel[id].index = 0; mount(panel[id].row); panel[id].box.hidden = true; }
     track.style.transform = "";
@@ -782,6 +822,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     states = new Map();
     mount(backdrop); // el arte de la ficha anterior no se funde con este
     mount(ratings); // ni sus calificaciones (Fargo salía con las de Insidious mientras cargaba)
+    ratings.classList.add("title__ratings--waiting"); // su renglón se aparta desde ya: al llegar no empujan nada
     shownArt = null;
     fillInfo({ title: info.title, ...(info.extra || {}), art: artOf(null) }); // el fondo elegido aquí gana a lo de `extra`
     mount(tabs);
@@ -794,7 +835,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function close() {
     if (el.hidden) return;
     token++;
-    cancelExit = hideAfterExit(el, "screen--leaving", 300);
+    cancelExit = flyOut() || hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
   }
 
@@ -887,7 +928,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   }
 
   function handle(act) {
-    if (el.hidden || el.classList.contains("screen--leaving")) return false;
+    if (el.hidden || leaving()) return false;
     if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") { back(); return true; }
@@ -932,7 +973,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !leaving(); },
     get current() { return item; },
     /** Cambió dónde está guardado (desde «Guardar en…»): el botón dice «Guardar» o «Guardada» sin esperar a nadie. */
     saved(id, { library, elsewhere }) {

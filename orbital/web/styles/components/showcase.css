@@ -16,7 +16,7 @@
 .showcase__item[data-tint="silver"] .showcase__icon { color: var(--color-award-silver); }
 .showcase__item[data-tint="bronze"] .showcase__icon { color: var(--color-award-bronze); }
 .showcase__text { display: grid; gap: var(--space-1); min-width: 0; }
-.showcase__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }
+.showcase__name { font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }
 .showcase__meta { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--leading-title); }
 .showcase__count { color: var(--color-text-muted); font-size: var(--type-data); font-weight: var(--type-data-weight); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .showcase__progress { grid-column: 2 / 4; --progress-width: auto; }
