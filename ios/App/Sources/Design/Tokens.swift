@@ -266,6 +266,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
         static let fade: Animation = .easeInOut(duration: DesignTokens.Motion.base)
+        /// Avance parejo, sin acelerar ni frenar: un anillo de progreso que se llena.
+        static let steady: Animation = .linear(duration: DesignTokens.Motion.slow)
         /// Un salto corto y firme, sin rebote: algo que se acomoda en su lugar (una carta que vuelve, un riel que se reordena).
         static func snap(_ reduce: Bool) -> Animation? { reduce ? nil : .snappy(duration: DesignTokens.Motion.base) }
         /// Lo que se descubre despacio (el momento de la repisa, un número que aparece): sale y frena.
@@ -277,9 +279,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         }
         /// El aviso de pantalla bloqueada entra con un fundido (también con «Reducir movimiento»).
         static func lockNoticeIn() -> Animation { .easeOut(duration: DesignTokens.Motion.base) }
-        /// Se encoge al círculo del candado. Con «Reducir movimiento» no hay movimiento: solo el fundido de salida.
+        /// Lo que tarda en encogerse al círculo del candado.
         static let lockShrinkDuration = 0.3
-        static func lockShrink(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: lockShrinkDuration) }
         /// El candado sube y se desvanece. Con «Reducir movimiento» se desvanece en su sitio.
         static let lockRiseDuration = 0.4
         static func lockRise(_ reduce: Bool) -> Animation? { .easeOut(duration: reduce ? DesignTokens.Motion.base : lockRiseDuration) }
@@ -305,18 +306,23 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     enum Brand {
         static let box: CGFloat = 32
-        static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
-        /// El anillo, un poco más tenue que el planeta.
+        static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8
+        /// El anillo (la marca pulida del 1 nov 2026, la del ícono: scripts/make_icon.py): una pincelada centrada en el planeta e
+        /// inclinada `ringTilt` grados, de `ringRadius` de punta a centro; su orilla de abajo baja `ringOuter` y la de arriba
+        /// `ringInner` (gruesa al frente, en punta en las orillas). `ringGap`: el hueco que le abre al planeta; `ringReveal`, el
+        /// trazo que la descubre al dibujarse.
+        static let ringRadius: CGFloat = 14.51, ringOuter: CGFloat = 4.96, ringInner: CGFloat = 2.34, ringTilt: Double = -18.8
+        static let ringGap: CGFloat = 1.8, ringReveal: CGFloat = 5
         /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
         static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1   // ds-exception: en em de la palabra (la marca)
         /// De dónde cae la luna al aparecer (em) y lo chica que empieza.
         static let moonFromX: CGFloat = -0.9, moonFromY: CGFloat = -0.7, moonFromScale: CGFloat = 0.2
         /// «orbital»: interletrado apretado (em); la marca mide 1.7 veces la letra y va a media letra de ella.
-        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2   // ds-exception: en em de la palabra (la marca)
+        static let tracking: CGFloat = -0.03, markScale: CGFloat = 1.7, markGap: CGFloat = 0.2   // ds-exception: en em de la palabra (la marca)
         /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
         static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
-        /// La letra de «orbital» (en la TV, Segoe UI Variable Display): SF Pro Rounded en negrita, del tamaño de la marca.
-        static func wordFont(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
+        /// La letra de «orbital»: Sora SemiBold, la misma de la TV (--font-brand), del tamaño de la marca (Resources/Fonts).
+        static func wordFont(_ size: CGFloat) -> Font { .custom("Sora-SemiBold", fixedSize: size) }
     }
 
     /// Medidas fijas.

@@ -233,7 +233,7 @@ struct SeasonFeature: View {
         }
         .padding(DS.Space.s4)
         .background {
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(DS.surface)
+            Color.clear.dsCard(.card)
                 .overlay(LinearGradient(colors: [tint.opacity(DS.ParaTiB.seasonGlow), .clear], startPoint: .topTrailing, endPoint: .bottomLeading)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)))
         }

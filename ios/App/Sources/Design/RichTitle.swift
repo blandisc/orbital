@@ -10,7 +10,7 @@ struct QualityBadges: View {
     var body: some View {
         HStack(spacing: DS.Space.s1) {
             ForEach(items, id: \.self) { item in
-                Text(verbatim: item.uppercased()).font(DS.TextRecipe.badge.font).monospaced()
+                Text(verbatim: item.uppercased()).font(DS.TextRecipe.badge.font).monospaced()   // ds-exception: siglas técnicas (4K, HDR, DV), no texto que se traduce
                     .foregroundStyle(DS.text).lineLimit(1)
                     .padding(.horizontal, DS.Space.s1)
                     .overlay(RoundedRectangle(cornerRadius: DS.Radius.tag, style: .continuous).stroke(DS.textMuted, lineWidth: DS.Rich.badgeStroke))

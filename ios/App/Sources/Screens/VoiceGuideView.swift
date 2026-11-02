@@ -343,7 +343,7 @@ private struct PhraseCard: View {
         .padding(DS.Space.s3)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .frame(minHeight: DS.Size.touchTarget)
-        .background(style == .now ? DS.ListTint.calendar.opacity(DS.VoiceGuide.starterFill) : DS.surface, in: shape)
+        .dsCard(fill: style == .now ? DS.ListTint.calendar.opacity(DS.VoiceGuide.starterFill) : nil)
         .contentShape(shape)
     }
 }
@@ -416,7 +416,7 @@ private struct PhraseRow: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text(verbatim: "«\(say)»").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                 .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-                .background(DS.fill, in: UnevenRoundedRectangle(topLeadingRadius: DS.Radius.lg, bottomLeadingRadius: DS.Space.s1,
+                .background(DS.fill, in: UnevenRoundedRectangle(topLeadingRadius: DS.Radius.lg, bottomLeadingRadius: DS.Space.s1,   // ds-exception: globo de lo que dices, con su pico
                                                                  bottomTrailingRadius: DS.Radius.lg, topTrailingRadius: DS.Radius.lg, style: .continuous))
             if !noteEmpty { note.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).padding(.leading, DS.Space.s1) }
         }

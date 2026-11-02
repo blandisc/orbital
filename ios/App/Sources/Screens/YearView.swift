@@ -109,7 +109,7 @@ struct YearView: View {
                             .frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
                             .overlay {
                                 if let selectedDay, cal.isDate(day, inSameDayAs: selectedDay), offset >= 0 {
-                                    RoundedRectangle(cornerRadius: DS.YearMap.radius, style: .continuous).strokeBorder(DS.text, lineWidth: DS.YearMap.ring)
+                                    Color.clear.dsSelectionRing(true, radius: DS.YearMap.radius, width: DS.YearMap.ring)
                                         .padding(-DS.YearMap.ring)
                                 }
                             }

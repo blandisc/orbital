@@ -13,10 +13,14 @@ enum DSCardLevel {
 }
 
 extension View {
-    /// Receta: el fondo de una caja (`DSCardLevel`). Solo el fondo: el aire de adentro lo pone quien la usa.
-    func dsCard(_ level: DSCardLevel = .row, translucent: Bool = false) -> some View {
-        background(translucent ? DS.fill : DS.surface, in: RoundedRectangle(cornerRadius: level.radius, style: .continuous))
+    /// Receta: el fondo de una caja (`DSCardLevel`). Solo el fondo: el aire de adentro lo pone quien la usa. `fill` cambia el
+    /// relleno cuando la caja dice algo (elegida, la de ahora, la recomendada); sin él, el de siempre.
+    func dsCard(_ level: DSCardLevel = .row, translucent: Bool = false, fill: Color? = nil) -> some View {
+        background(fill ?? (translucent ? DS.fill : DS.surface), in: RoundedRectangle(cornerRadius: level.radius, style: .continuous))
     }
+
+    /// La única manera de escribir en mayúsculas (rótulos, sellos, listones): el texto se escribe normal y se traduce normal.
+    func dsCaps() -> some View { textCase(.uppercase) }
 
     /// Receta: el anillo de lo elegido (un avatar, una opción, una plataforma), en el color del texto y del grueso de lo
     /// elegido (`DS.Stroke.selected`); sin elegir, nada (el lugar no cambia). Por dentro de la forma: no la agranda.
@@ -94,7 +98,7 @@ struct DSGroupLabel: View {
     var color: Color = DS.textMuted
 
     var body: some View {
-        title.recipe(.groupLabel, color: color).textCase(.uppercase).tracking(DS.Chapter.tracking)
+        title.recipe(.groupLabel, color: color).dsCaps().tracking(DS.Chapter.tracking)
             .accessibilityAddTraits(.isHeader)
     }
 }

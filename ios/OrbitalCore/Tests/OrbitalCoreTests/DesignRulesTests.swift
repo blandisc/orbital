@@ -1,7 +1,7 @@
 import XCTest
 
-/// Las 13 reglas del sistema de diseño que salieron de la auditoría del 31 oct 2026 (docs/producto/auditoria-ios-2026-10-31/,
-/// sección D). Revisan `ios/App/Sources/Design/` y `Screens/` completas (con sus subcarpetas, como `Screens/Onboarding/`).
+/// Las reglas del sistema de diseño que salieron de la auditoría del 31 oct 2026 (docs/producto/auditoria-ios-2026-10-31/,
+/// sección D), más la de las temporadas (1 nov). Revisan `ios/App/Sources/Design/` y `Screens/` completas (con sus subcarpetas, como `Screens/Onboarding/`).
 /// Una excepción legítima se marca en su renglón con `ds-exception: <motivo>`; las que valen para un archivo entero
 /// (el reproductor sobre el video, la tele de Los Simpson, la marca, el iPod, el mosaico y el cielo) están en cada regla.
 final class DesignRulesTests: XCTestCase {
@@ -47,7 +47,7 @@ final class DesignRulesTests: XCTestCase {
     func isTokens(_ f: Source) -> Bool { f.name.hasPrefix("Tokens") }
     /// El reproductor dibuja sobre el video (siempre oscuro, sus propios controles): sus excepciones están documentadas.
     func isPlayer(_ f: Source) -> Bool {
-        ["PlayerScreen", "PlayerControls", "PlayerIndicators", "PlayerFailureView", "SubtitlePanel", "SubtitleSync", "IPod", "PlayerEngines"]
+        ["PlayerScreen", "PlayerControls", "PlayerIndicators", "PlayerFailureView", "SubtitlePanel", "SubtitleSync", "IPod", "PlayerEngines", "EpisodesPanel"]
             .contains { f.name.hasPrefix($0) }
     }
     /// Arte con reglas propias: la marca y la bienvenida, la tele de Los Simpson, el mosaico y el cielo.
@@ -133,7 +133,8 @@ final class DesignRulesTests: XCTestCase {
 
     func testButtonsAreNative() throws {
         let files = try sources()
-        let own = { (f: Source) in f.name == "Buttons.swift" || f.name == "Surfaces.swift" || self.isPlayer(f) || f.name.hasPrefix("Remote") || self.isArt(f) }
+        // Sin exentar los archivos del control (`Remote*`): ahí se escondían dos cápsulas a mano (tanda 4).
+        let own = { (f: Source) in f.name == "Buttons.swift" || f.name == "Surfaces.swift" || self.isPlayer(f) || self.isArt(f) }
         var problems = hits(#"\.buttonStyle\(\.glass\)"#, in: files, skip: own)
         problems += hits(#"buttonBorderShape\(\.circle\)"#, in: files, skip: own)
         // Un `.plain` que pinta su propia cápsula de color: eso es un botón nativo armado a mano.
@@ -150,10 +151,15 @@ final class DesignRulesTests: XCTestCase {
 
     // MARK: 6 · Una caja, una pieza
 
+    /// También con ternario (`selected ? … : DS.surface`), `fillStrong`, esquinas desparejas, una forma guardada (`in: shape`)
+    /// y la caja dibujada como forma (`RoundedRectangle(cornerRadius: DS.Radius.lg…).fill(DS.surface)`): antes solo veía la forma
+    /// literal y se le escapaban (tanda 4). El relleno que cambia (elegida, la de ahora) va en `.dsCard(fill:)`.
     func testBoxesUseDSCard() throws {
         let files = try sources()
-        let problems = hits(#"\.background\(DS\.(fill|surface|surfaceRaised), in: RoundedRectangle"#, in: files, skip: { $0.name == "Surfaces.swift" || self.isTokens($0) })
-        check(problems, "Caja armada a mano: .dsCard(.row / .card)")
+        let skip = { (f: Source) in f.name == "Surfaces.swift" || self.isTokens(f) || self.isPlayer(f) || self.isArt(f) }
+        var problems = hits(#"\.background\([^\n]*DS\.(fill|fillStrong|surface|surfaceRaised)\b[^\n]*, in: (RoundedRectangle|UnevenRoundedRectangle|shape)\b"#, in: files, skip: skip)
+        problems += hits(#"RoundedRectangle\(cornerRadius: DS\.Radius\.(lg|xl|xxl)[^)]*\)\.fill\(DS\.(fill|fillStrong|surface|surfaceRaised)\)"#, in: files, skip: skip)
+        check(problems, "Caja armada a mano: .dsCard(.row / .card, fill:)")
     }
 
     // MARK: 7 · RoundedRectangle siempre continua
@@ -169,8 +175,9 @@ final class DesignRulesTests: XCTestCase {
     func testMotionUsesTokens() throws {
         let files = try sources()
         var problems = hits(#"DS\.Motion\.\w+\(false\)"#, in: files)
-        problems += hits(#"(?<!Motion)\.(spring|snappy|bouncy|smooth|easeIn|easeOut|easeInOut|linear)\("#, in: files,
-                         skip: { self.isTokens($0) || self.isArt($0) })
+        // Con o sin paréntesis (`.linear,` se escapaba; tanda 4). `CAMediaTimingFunction(name: .linear)` es de Core Animation.
+        problems += hits(#"(?<![\w.]Motion)(?<![\w])\.(spring|snappy|bouncy|smooth|easeIn|easeOut|easeInOut|linear)\b"#, in: files,
+                         skip: { self.isTokens($0) || self.isArt($0) }, unless: #"CAMediaTimingFunction"#)
         check(problems, "Movimiento a mano: DS.Motion.fade (también con «Reducir movimiento»), .snap, .reveal, .appear o los de siempre")
     }
 
@@ -226,7 +233,11 @@ final class DesignRulesTests: XCTestCase {
         for file in files where file.lines.contains(where: { $0.contains(".dsSheetContent(") }) && !isPlayer(file) {
             problems += hits(#"\.recipe\(\.(title|section)\b"#, in: [file]).map { $0 + " (título de hoja: DSSheetHeader)" }
         }
-        problems += hits(#"Image\(systemName:\s*"xmark"\)"#, in: files, skip: { ["Buttons.swift", "Surfaces.swift"].contains($0.name) || self.isPlayer($0) || $0.name.hasPrefix("Remote") })
+        problems += hits(#"Image\(systemName:\s*"xmark"\)"#, in: files, skip: { ["Buttons.swift", "Surfaces.swift"].contains($0.name) || self.isPlayer($0) })
+        problems += hits(#"Button\("Cerrar",[^)]*systemImage:\s*"xmark""#, in: files).map { $0 + " (cerrar: DSIconButton)" }
+        // Las mayúsculas las pone una sola pieza (`dsCaps`, en Surfaces.swift), nunca el texto ni otra receta (D11).
+        problems += hits(#"\.textCase\(\.uppercase\)|Text\([^)]*\.uppercased\(\)"#, in: files, skip: { $0.name == "Surfaces.swift" })
+            .map { $0 + " (mayúsculas: .dsCaps())" }
         let acronyms = #"\b(IMDb|HDR|SDR|TMDB|IMDB|DTS|AAC|URL|PIN|VPN|API|MKV|HEVC|OK|DV|IPTV|UHD|FHD|LG|USB|QR|NYT|AFI|BAFTA|AI|HBO|ID|MB|GB|KB|FPS|DNS|IP)\b"#
         problems += hits(#"Text\("[^"\\]*[A-ZÁÉÍÓÚÑ]{3,}"#, in: files, unless: nil).filter { hit in
             // Las siglas sí van en mayúsculas.
@@ -246,7 +257,16 @@ final class DesignRulesTests: XCTestCase {
             return try files.compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" }.map { ($0.lastPathComponent, try String(contentsOf: $0, encoding: .utf8)) }
         }
         let corpus = all.map(\.1).joined(separator: "\n")
-        let decl = try NSRegularExpression(pattern: #"static (?:let|var|func)\s+(\w+)|,\s*(\w+)\s*(?::\s*[A-Za-z]+\s*)?=\s*(?![=])"#)
+        // Cada `Dueño.token` que aparece en el código, como palabra completa (`portraitTop` no cuenta por `portraitTopClearance`).
+        // Se junta una vez: buscar cada token en todo el código tardaba minutos.
+        let pair = try NSRegularExpression(pattern: #"\b(\w+)\.(?=(\w+)\b)"#)   // encimados: `DS.Radius.lg` da `DS.Radius` y `Radius.lg`
+        let corpusNS = corpus as NSString
+        var used = Set<String>()
+        for m in pair.matches(in: corpus, range: NSRange(location: 0, length: corpusNS.length)) {
+            used.insert(corpusNS.substring(with: m.range(at: 1)) + "." + corpusNS.substring(with: m.range(at: 2)))
+        }
+        // También las declaraciones con tipo genérico (`portraitCenterRange: ClosedRange<CGFloat> = …`).
+        let decl = try NSRegularExpression(pattern: #"static (?:let|var|func)\s+(\w+)|,\s*(\w+)\s*(?::\s*[A-Za-z]+(?:<[^>=]*>)?\s*)?=\s*(?![=])"#)
         var problems: [String] = []
         for (name, text) in all where name.hasPrefix("Tokens") {
             var scope: [String] = []
@@ -265,7 +285,7 @@ final class DesignRulesTests: XCTestCase {
                     guard range.location != NSNotFound else { continue }
                     let token = ns.substring(with: range)
                     // Usado como `Dueño.token`, o por su nombre en otro renglón del mismo archivo de tokens.
-                    let qualified = corpus.contains("\(owner).\(token)") ? 1 : 0
+                    let qualified = used.contains("\(owner).\(token)") ? 1 : 0
                     let bare = (try? NSRegularExpression(pattern: "(?<![\\w.])\(token)\\b"))
                         .map { $0.numberOfMatches(in: text, range: NSRange(text.startIndex..., in: text)) > 1 } ?? false
                     if qualified == 0 && !bare { problems.append("\(name):\(i + 1): \(owner).\(token)") }
@@ -273,5 +293,15 @@ final class DesignRulesTests: XCTestCase {
             }
         }
         check(problems, "Tokens sin uso (bórralos)")
+    }
+
+    // MARK: 14 · Temporadas
+
+    /// Decisión de Fernando (1 nov 2026): las cápsulas «T1, T2…» (`DSSeasonPicker`) van solo en el panel de episodios del
+    /// reproductor; en la ficha, Mi media y la hoja de episodios, la lista desplegable (`DSSeasonMenu`).
+    func testSeasonChipsOnlyInThePlayer() throws {
+        let files = try sources()
+        let problems = hits(#"DSSeasonPicker\("#, in: files, skip: { ["EpisodesPanel.swift", "Surfaces.swift"].contains($0.name) })
+        check(problems, "Cápsulas de temporada fuera del reproductor: usa DSSeasonMenu (lista desplegable)")
     }
 }

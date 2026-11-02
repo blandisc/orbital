@@ -113,13 +113,10 @@ extension DS {
         static let episodeThumb: CGFloat = 112
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
-        /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
+        /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando; < 0 es arriba, bajo el área segura).
         /// En el iPad de pie (ancho regular) el video abre a media pantalla: arriba dejaba ~600 pt de negro abajo.
         static let regularCenter = 0.5
-        static let portraitCenter: CGFloat = -1, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
-        /// Mientras no lo mueves (`portraitCenter` < 0), el video queda a esta distancia bajo el área segura: la misma en todos los
-        /// iPhone (antes era una fracción del alto y en un Pro Max quedaba cientos de puntos más abajo que en un SE).
-        static let portraitTop: CGFloat = 24
+        static let portraitCenter: CGFloat = -1
         /// El botón de reproducir, más grande que ±10 (lo que más se toca).
         static let playButton: CGFloat = 76, playGlyph: CGFloat = 30, sideButton: CGFloat = 56
         /// ±10: la flecha en círculo, sin fondo (el botón grande es el único con círculo); va en la orilla del video, donde sale la onda del doble toque.

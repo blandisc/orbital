@@ -463,7 +463,7 @@ struct FilterSummarySquare: View {
 
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
-        let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous)
         Button(action: edit) {
             VStack(spacing: DS.Space.s1) {
                 Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(remove == nil ? DS.textMuted : hue)
@@ -471,7 +471,7 @@ struct FilterSummarySquare: View {
             }
             .padding(.horizontal, DS.Space.s1)
             .frame(width: DS.Filter.summarySquare, height: DS.Filter.summarySquare)
-            .background(remove == nil ? .clear : DS.surfaceRaised, in: shape)
+            .dsCard(fill: remove == nil ? .clear : DS.surfaceRaised)
             .overlay(shape.strokeBorder(remove == nil ? DS.hairline : DS.fillStrong, lineWidth: DS.Stroke.regular))
             .contentShape(shape)
         }
@@ -506,7 +506,7 @@ struct FilterChoice: View {
             .padding(.horizontal, DS.Space.s2)
             .padding(.vertical, DS.Space.s3)   // aire parejo arriba y abajo (el detalle ya no toca la orilla)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.choiceHeight)
-            .background(selected ? DS.Filter.selectedFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .dsCard(fill: selected ? DS.Filter.selectedFill : nil)
             .dsSelectionRing(selected, radius: DS.Radius.lg)
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
@@ -524,7 +524,7 @@ struct FilterLogoChoice<Logo: View>: View {
     @ViewBuilder let logo: () -> Logo
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous)
         Button(action: action) {
             VStack(spacing: DS.Space.s1) {
                 logo().frame(height: DS.Filter.awardIcon)
@@ -533,7 +533,7 @@ struct FilterLogoChoice<Logo: View>: View {
             .padding(.horizontal, DS.Space.s2)
             .padding(.vertical, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.logoTile)
-            .background(selected ? DS.Filter.selectedFill : DS.surface, in: shape)
+            .dsCard(fill: selected ? DS.Filter.selectedFill : nil)
             .dsSelectionRing(selected, in: shape)
             .contentShape(shape)
         }

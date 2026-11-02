@@ -15,7 +15,7 @@ struct DownloadRing: View {
             Circle().trim(from: 0, to: max(0.02, min(1, fraction)))
                 .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .linear, value: fraction)
+                .animation(reduceMotion ? nil : DS.Motion.steady, value: fraction)
         }
         .accessibilityElement()
         .accessibilityLabel(Text("Descargando"))
@@ -53,7 +53,7 @@ struct ActionTileLabel: View {
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.tile)
-        .background(active ? tint.opacity(DesignTokens.Opacity.track) : DS.fill, in: shape)
+        .dsCard(translucent: true, fill: active ? tint.opacity(DesignTokens.Opacity.track) : nil)
         .overlay(shape.strokeBorder(active ? tint.opacity(DesignTokens.Opacity.faint) : DS.hairline, lineWidth: DS.Size.hairline))
         .contentShape(shape)
     }

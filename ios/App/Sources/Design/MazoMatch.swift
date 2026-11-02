@@ -49,7 +49,7 @@ struct MatchCard: View {
         }
         .overlay(alignment: lean > 0 ? .topLeading : .topTrailing) {
             if abs(lean) > DS.Match.hintFrom {
-                Text(lean > 0 ? "Mi lista" : "Paso").textCase(.uppercase).font(DS.TextRecipe.section.font).tracking(DS.Match.stampTracking)
+                Text(lean > 0 ? "Mi lista" : "Paso").dsCaps().font(DS.TextRecipe.section.font).tracking(DS.Match.stampTracking)
                     .foregroundStyle(lean > 0 ? DS.brandMoon : DS.paper)
                     .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
                     .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)

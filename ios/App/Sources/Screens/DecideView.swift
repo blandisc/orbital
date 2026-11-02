@@ -112,8 +112,7 @@ struct DecideView: View {
                     // Tocar otro cartel lo elige; tocar el elegido abre su ficha (la de la serie o la película).
                     Button { if chosen { dismiss(); open(option.route) } else { withAnimation(DS.Motion.base(reduceMotion)) { m.select(option) } } } label: {
                         PosterView(url: option.poster, title: option.title)
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                .strokeBorder(chosen ? DS.accent : .clear, lineWidth: DS.Decide.chosenStroke))
+                            .dsSelectionRing(chosen, radius: DS.Radius.md)
                             .scaleEffect(chosen ? 1 : DS.Decide.otherScale)
                             .opacity(chosen ? 1 : DS.Opacity.dimmed)
                     }

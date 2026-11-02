@@ -178,8 +178,8 @@ struct FilterEditor: View {
                     Button { edit { $0.minRating = $0.minRating == v ? nil : v } } label: {
                         Text(verbatim: "\(v.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(v)) : FilterText.number(v))+").recipe(.label, color: on ? DS.text : DS.textMuted).monospacedDigit()
                             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                            .background(on ? DS.Filter.mintFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
+                            .dsCard(fill: on ? DS.Filter.mintFill : nil)
+                            .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -217,8 +217,8 @@ struct FilterEditor: View {
                     Button { edit { $0.minLetterboxd = $0.minLetterboxd == v ? nil : v } } label: {
                         Text(verbatim: "\(FilterText.number(v)) ★").recipe(.label, color: on ? DS.text : DS.textMuted).monospacedDigit()
                             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                            .background(on ? DS.Filter.mintFill : DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
+                            .dsCard(fill: on ? DS.Filter.mintFill : nil)
+                            .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(on ? page.hue : .clear, lineWidth: DS.Stroke.regular))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

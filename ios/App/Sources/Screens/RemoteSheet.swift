@@ -275,10 +275,8 @@ struct RemoteSheet: View {
                     Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares.toggle() } } label: {
                         Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
                             .recipe(.label, color: DS.text)
-                            .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
-                            .background(DS.fill, in: Capsule())
                     }
-                    .buttonStyle(.plain).frame(maxWidth: .infinity)
+                    .dsSecondaryButton().controlSize(.large).frame(maxWidth: .infinity)
                     .accessibilityIdentifier("remote-scares")
                 }
             }

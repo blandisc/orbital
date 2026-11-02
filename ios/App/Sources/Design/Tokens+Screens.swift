@@ -356,7 +356,7 @@ extension DS {
         /// El alto de la hoja corta antes de medirse.
         static let quickHeight: CGFloat = 470
         /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues.
-        static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92
+        static let otherScale: CGFloat = 0.92
         /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
         static let pitchMin = 40
         /// Los carteles apilados de una lista en «De qué listas».
@@ -418,7 +418,7 @@ extension DS {
         /// Lo que la sección siguiente puede montarse sobre el reflejo de la última fila (su parte ya desvanecida): sin esto,
         /// entre una fila con reflejo y la siguiente quedaba el reflejo entero más el aire entre secciones (un hueco vacío).
         static let reflectionTail: CGFloat = 24
-        static let weight: CGFloat = 18, weightTint: Double = 0.35
+        static let weightTint: Double = 0.35
         /// El nombre de un premio sube sobre la cola del reflejo; y el aire después de Premios.
         static let captionLift: CGFloat = 36
         /// La línea de tiempo de «Próximas temporadas»: el punto, el grueso y lo tenue de la línea, y desde cuántos días se
@@ -560,10 +560,8 @@ extension DS {
         static let columnsCompact = DesignTokens.Mosaic.columnsCompact, compactWidth = CGFloat(DesignTokens.Mosaic.compactWidth)
         static let uniform = DesignTokens.Mosaic.uniform
         static let growRatio = CGFloat(DesignTokens.Mosaic.growRatio)
-        static let idle = DesignTokens.Mosaic.idleSeconds, alive = DesignTokens.Mosaic.aliveSeconds
         static let driftTick = DesignTokens.Mosaic.driftTick
         static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
-        static let buffer = CGFloat(DesignTokens.Mosaic.bufferHeight)
         static let focusedRowRatio = DesignTokens.Mosaic.focusedRowRatio
         /// Cuánto hay que deslizar de lado para regresar a Explorar.
         static let swipeBack: CGFloat = 80

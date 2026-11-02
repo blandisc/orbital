@@ -31,12 +31,8 @@ struct RemoteStatusCard: View {
                         Text("Conéctalo al Wi-Fi de tu casa para controlar la TV.").recipe(.footnote)
                     }
                 }
-                Button { Task { await model.retryNow() } } label: {
-                    Text("Reintentar").font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                        .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
-                        .background(DS.fill, in: Capsule())
-                }
-                .buttonStyle(.plain)
+                Button { Task { await model.retryNow() } } label: { Text("Reintentar").font(DS.TextRecipe.label.font) }
+                    .dsSecondaryButton().controlSize(.large)
                 .accessibilityIdentifier("remote-retry")
             }
             .frame(maxWidth: .infinity, alignment: .leading)

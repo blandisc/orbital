@@ -81,7 +81,7 @@ struct MatchDeckScreen: View {
 
     /// La carta en gris mientras carga.
     private var skeleton: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous).fill(DS.fill)
+        RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous).fill(DS.fill)   // ds-exception: esqueleto con la forma de la carta, no una caja
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityLabel(Text("Cargando"))
     }

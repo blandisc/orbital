@@ -133,7 +133,7 @@ struct WatchedOption: View {
             }
             .padding(.horizontal, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Watched.row, alignment: .leading)
-            .background(DS.surface, in: shape)
+            .dsCard()
             .contentShape(shape)
         }
         .buttonStyle(.plain)

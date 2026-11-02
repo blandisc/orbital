@@ -113,7 +113,7 @@ struct VoiceRow: View {
     private var listening: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack {
-                Text(phase == .asking ? "Preguntándole a tu Orbital" : "Te escucho").recipe(.eyebrow).textCase(.uppercase)
+                Text(phase == .asking ? "Preguntándole a tu Orbital" : "Te escucho").recipe(.eyebrow).dsCaps()
                 Spacer(minLength: DS.Space.s2)
                 closeButton
             }
@@ -142,7 +142,7 @@ struct VoiceRow: View {
                     statusTile(ok: ok)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    if ok { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).textCase(.uppercase) }
+                    if ok { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).dsCaps() }
                     Text(verbatim: reply?.speech.isEmpty == false ? reply!.speech : "Listo").recipe(.cardTitle).lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                     if let heard = reply?.heard, !heard.isEmpty { Text("Entendí: «\(heard)»").recipe(.caption, color: DS.textMuted).lineLimit(2) }
@@ -224,7 +224,7 @@ struct VoiceChoicesCarousel: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 0) {
-                    if reply.picked != nil { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).textCase(.uppercase) }
+                    if reply.picked != nil { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).dsCaps() }
                     else { Text("¿Cuál?").recipe(.cardTitle) }
                     if !reply.heard.isEmpty { Text("Entendí: «\(reply.heard)» · desliza para ver más").recipe(.caption, color: DS.textMuted).lineLimit(1) }
                 }
@@ -273,7 +273,7 @@ struct VoiceChoicesCarousel: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(DS.Space.s3)
-        .background(DS.fillStrong, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .dsCard(fill: DS.fillStrong)
         .id(choice.id)
         .accessibilityElement(children: .contain)
     }

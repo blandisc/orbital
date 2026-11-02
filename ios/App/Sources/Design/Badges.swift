@@ -29,13 +29,6 @@ struct DSChip: View {
     private var color: Color { switch tone { case .normal: DS.textMuted; case .good: DS.good; case .warn: DS.warning } }
 }
 
-/// Un dato ya armado (nombres, tamaños): no se traduce.
-struct DSChipText: View {
-    let text: String
-    var tone: DSChip.Tone = .normal
-    var body: some View { DSChip(verbatim: text, tone: tone) }
-}
-
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
 /// puede ver hoy (la marca «Hoy» de «Lo nuevo de lo tuyo»), una cápsula verde (`DS.success`, se lee en los dos modos). «Nuevo» sobre un póster es `DSCornerRibbon`.
 struct DSBadge: View {
@@ -63,7 +56,7 @@ struct DSCornerRibbon: View {
     let text: LocalizedStringKey
 
     var body: some View {
-        Text(text).textCase(.uppercase).font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)
+        Text(text).dsCaps().font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)
             .foregroundStyle(DS.onSuccess).lineLimit(1)
             .padding(.vertical, DS.Space.s1 / 2)
             .frame(width: DS.Ribbon.length)

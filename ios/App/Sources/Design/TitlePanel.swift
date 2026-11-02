@@ -88,7 +88,7 @@ struct TitlePanel: View {
                 .titleDestinations()
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Cerrar", systemImage: "xmark", action: close).accessibilityIdentifier("title-panel-close")
+                        Button("Cerrar", systemImage: "xmark", action: close).accessibilityIdentifier("title-panel-close")   // ds-exception: botón nativo de la barra de navegación (D7)
                     }
                 }
         }

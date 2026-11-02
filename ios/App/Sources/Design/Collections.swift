@@ -151,7 +151,7 @@ struct SourceBadge: View {
     }
 
     private var label: some View {
-        source.name.textCase(.uppercase)
+        source.name.dsCaps()
             .font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
@@ -296,7 +296,7 @@ private struct BecauseBackdrop: ViewModifier {
                     .accessibilityHidden(true)
                 }
         } else {
-            content.background(DS.surface, in: shape)
+            content.dsCard(.card)
         }
     }
 }

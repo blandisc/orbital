@@ -57,7 +57,7 @@ struct VersionChip: View {
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
-        let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous)
         Button(action: action) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 HStack(spacing: DS.Space.s1) {
@@ -75,7 +75,7 @@ struct VersionChip: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Space.s2)
-            .background(option.recommended ? DS.fillStrong : DS.fill, in: shape)
+            .dsCard(translucent: true, fill: option.recommended ? DS.fillStrong : nil)
             .overlay(shape.strokeBorder(option.recommended ? .clear : DS.hairline, lineWidth: DS.Stroke.hairline))
             .dsSelectionRing(option.recommended, in: shape)   // la recomendada, con el anillo de lo elegido (D5; antes turquesa)
             .contentShape(shape)
