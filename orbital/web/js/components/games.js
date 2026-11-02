@@ -8,7 +8,7 @@ import { dragScroll } from "../core/swipe.js";
 import { fillFilters, fitBar, keepInView, replay, showFilter } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
-import { EmptyState, GlassSwitch } from "./ui.js";
+import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect } from "./ui.js";
 
 /**
  * Juegos, como el Apple TV (Fernando, 31 oct 2026): dos pisos arriba —la barra de secciones y, debajo, tus consolas en el
@@ -70,11 +70,19 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   function paintAll() {
     targets.clear();
     list.forEach((c, i) => targets.set(`rail:${i}`, { kind: "rail", console: c }));
-    mount(consoles, list.length > 1 && GlassSwitch(list.map((c, i) => ({
-      id: c.id, label: c.name, on: c.id === consoleId, focusId: `rail:${i}`,
-      img: c.photo || (SYSTEMS[c.system]?.photo ? `img/consoles/${SYSTEMS[c.system].photo}` : null),
-    })), { label: "Consolas", onPick: (item) => switchTo(item.id) }));
-    fitConsoles();
+    // Las mismas consolas: solo cambia la elegida y su cápsula viaja (repintarlo todo la hacía brincar).
+    const key = list.map((c) => `${c.id}:${c.name}`).join("|");
+    const nav = consoles.firstElementChild;
+    if (nav && consoles.dataset.key === key) {
+      glassSwitchSelect(nav, (i) => list[i].id === consoleId);
+    } else {
+      consoles.dataset.key = key;
+      mount(consoles, list.length > 1 && GlassSwitch(list.map((c, i) => ({
+        id: c.id, label: c.name, on: c.id === consoleId, focusId: `rail:${i}`,
+        img: c.photo || (SYSTEMS[c.system]?.photo ? `img/consoles/${SYSTEMS[c.system].photo}` : null),
+      })), { label: "Consolas", onPick: (item) => switchTo(item.id) }));
+      fitConsoles();
+    }
     renderConsole();
     if (!targets.has(focusId)) focusId = games.length ? "game:0" : activeFilter();
     paint();
@@ -84,8 +92,13 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   function fitConsoles() {
     const nav = consoles.firstElementChild;
     if (!nav) return;
+    // Se mide sin animar y se vuelve a fijar antes de soltar las transiciones: así nada se estira ni se pliega al medir.
+    nav.classList.add("glass-switch--measuring");
     nav.classList.remove("glass-switch--compact");
-    if (nav.scrollWidth > consoles.clientWidth + 1) nav.classList.add("glass-switch--compact");
+    nav.classList.toggle("glass-switch--compact", nav.scrollWidth > consoles.clientWidth + 1);
+    void nav.offsetWidth;
+    nav.classList.remove("glass-switch--measuring");
+    glassSwitchGlide(nav);
   }
 
   // --- la consola: filtros y portadas ----------------------------------------------------------

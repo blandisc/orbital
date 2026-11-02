@@ -53,14 +53,33 @@
    la enfocada, el foco invertido de toda píldora. Si no caben con su nombre, las que no están elegidas ni enfocadas quedan en su
    foto (glass-switch--compact, lo pone quien la usa al medir). */
 .glass-switch {
-  display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; padding: var(--space-1); border-radius: var(--radius-pill);
+  position: relative; display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; padding: var(--space-1); border-radius: var(--radius-pill);
   background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
 }
-.glass-switch__item { padding: 0 var(--space-4) 0 var(--space-3); color: var(--color-text-muted); }
-.glass-switch__item.pill--on { background: var(--color-fill-hover); color: var(--color-text); }
+/* La cápsula de la elegida es una sola y viaja de una a otra (glassSwitchGlide), como la de la barra de secciones. */
+.glass-switch__glide {
+  position: absolute; left: 0; top: 0; border-radius: var(--radius-pill); pointer-events: none;
+  background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected);
+}
+.glass-switch__item {
+  position: relative; padding: 0 var(--space-4) 0 var(--space-3); color: var(--color-text-muted);
+  transition: padding var(--duration-slow) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.glass-switch__item.pill--on { background: transparent; color: var(--color-text); }
 .glass-switch__item.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }
+/* Enfocada y elegida a la vez (al pasar de consola con ◀ ▶): el blanco del foco es la cápsula que viaja. */
+.glass-switch__item.pill--on.is-focused { background: transparent; transform: none; }
+.glass-switch:has(.pill--on.is-focused) .glass-switch__glide { background: var(--inverse-bg); box-shadow: none; }
+/* El nombre se estira y se pliega (grid 0fr → 1fr, sin medirlo), como el de las secciones. */
+.glass-switch__label {
+  display: grid; grid-template-columns: 1fr; opacity: 1;
+  transition: grid-template-columns var(--duration-slow) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+}
+.glass-switch__label > span { min-width: 0; overflow: hidden; white-space: nowrap; }
+/* Al medir si caben (games.js · fitConsoles), sin animar: si no, se leería el ancho a medio camino. */
+.glass-switch--measuring .glass-switch__item, .glass-switch--measuring .glass-switch__label { transition: none; }
 .glass-switch__img { flex: none; height: var(--icon-xl); width: calc(var(--icon-xl) * 1.5); object-fit: contain; filter: var(--shadow-drop-sm); }
-.glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) .glass-switch__label { display: none; }
+.glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) .glass-switch__label { grid-template-columns: 0fr; opacity: 0; }
 .glass-switch--compact .glass-switch__item:not(.pill--on):not(.is-focused) { padding-inline: var(--space-3); }
 [data-input="touch"] .glass-switch__item { min-height: var(--touch-target); }
 /* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila

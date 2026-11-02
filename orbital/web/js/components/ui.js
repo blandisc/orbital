@@ -1,5 +1,6 @@
 import { h, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { reducedMotion } from "../core/motion.js";
 import { Glyph } from "./glyph.js";
 
 /**
@@ -93,12 +94,71 @@ export const Segmented = (choices, { onPick = null } = {}) =>
  * enfocada se invierte y crece, como toda píldora. items: [{ id, label, img, on, focusId }]; tocar una llama onPick(item).
  */
 export const GlassSwitch = (items, { label, onPick = null, className = null } = {}) =>
-  h("nav", { class: ["glass-switch", className], role: "tablist", "aria-label": label }, items.map((item) => Pill(
-    h("span", { class: "glass-switch__label" }, item.label), {
+  h("nav", { class: ["glass-switch", className], role: "tablist", "aria-label": label },
+    h("span", { class: "glass-switch__glide", "aria-hidden": "true" }), items.map((item) => Pill(
+    h("span", { class: "glass-switch__label" }, h("span", {}, item.label)), {
       on: item.on, className: "glass-switch__item", role: "tab", tabindex: "-1", "data-focus-id": item.focusId,
       icon: item.img ? h("img", { class: "glass-switch__img", src: item.img, alt: "", "aria-hidden": "true" }) : null,
       onClick: () => onPick?.(item),
     })));
+
+/**
+ * Elige otra opción del selector sin volver a pintarlo: la cápsula de la elegida viaja hasta ella como la de la barra de
+ * secciones (el borde de adelante corre y el de atrás lo alcanza) y, compacto, su nombre se estira mientras el de la que dejas
+ * se pliega. on(i): ¿la i-ésima es la elegida?
+ */
+export function glassSwitchSelect(nav, on) {
+  [...nav.querySelectorAll(".glass-switch__item")].forEach((item, i) => {
+    item.classList.toggle("pill--on", !!on(i));
+    item.setAttribute("aria-selected", on(i) ? "true" : "false");
+  });
+  glassSwitchGlide(nav, true);
+}
+
+/** Coloca la cápsula de la elegida; con `travel`, la lleva hasta ella cuadro a cuadro mientras los nombres crecen o se pliegan. */
+export function glassSwitchGlide(nav, travel = false) {
+  const glide = nav.querySelector(".glass-switch__glide");
+  if (!glide) return;
+  const target = () => {
+    const item = nav.querySelector(".glass-switch__item.pill--on");
+    if (!item) return null;
+    const base = nav.getBoundingClientRect();
+    const r = item.getBoundingClientRect();
+    return { l: r.left - base.left, r: r.right - base.left, top: r.top - base.top, h: r.height };
+  };
+  const state = (glide.glideState ??= { edges: null, frame: 0, until: 0 });
+  const paint = (t) => {
+    glide.style.transform = `translate(${state.edges.l}px, ${t.top}px)`;
+    glide.style.width = `${Math.max(0, state.edges.r - state.edges.l)}px`;
+    glide.style.height = `${t.h}px`;
+  };
+  const t0 = target();
+  glide.hidden = !t0;
+  if (!t0) return;
+  if (!travel || !state.edges || reducedMotion()) {
+    if (state.frame) return; // va viajando: la persecución ya la sigue
+    state.edges = { l: t0.l, r: t0.r };
+    paint(t0);
+    return;
+  }
+  state.until = performance.now() + 900; // lo que tardan los nombres en estirarse, con holgura
+  if (state.frame) return;
+  let last = performance.now();
+  const chase = (now) => {
+    const t = target();
+    if (!t) { state.frame = 0; return; }
+    const k = (rate) => 1 - (1 - rate) ** (Math.min(64, now - last || 16.7) / 16.7);
+    last = now;
+    const right = (t.l + t.r) / 2 > (state.edges.l + state.edges.r) / 2;
+    state.edges.r += (t.r - state.edges.r) * (right ? k(.24) : k(.13));
+    state.edges.l += (t.l - state.edges.l) * (right ? k(.13) : k(.24));
+    const done = Math.abs(t.l - state.edges.l) < .4 && Math.abs(t.r - state.edges.r) < .4;
+    if (done && now > state.until) { state.edges = { l: t.l, r: t.r }; paint(t); state.frame = 0; return; }
+    paint(t);
+    state.frame = requestAnimationFrame(chase);
+  };
+  state.frame = requestAnimationFrame(chase);
+}
 
 /** Cuánto llevas (0..1). Sin avance no se dibuja nada. */
 export function Progress(fraction, { className = null, label = "Avance" } = {}) {
