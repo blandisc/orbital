@@ -5,7 +5,7 @@ import OrbitalModels
 /// La regla de años de Época (el diseño que Fernando eligió el 29 oct 2026 y regresó el 31): una rayita por año, más larga
 /// cada cinco y cada diez, y una ventana blanca con lo elegido. Se arrastra la ventana entera o sus orillas; tocar fuera de
 /// ella acerca la orilla más cercana; tocar una década abajo la elige entera (otra vez, la quita). Con VoiceOver se mueve
-/// la ventana de año en año. La ventana es dorada, el color de Época (31 oct 2026). Qué años quedan elegidos lo decide
+/// la ventana de año en año. La ventana es ámbar, el color de Época (31 oct 2026; el arcoíris, 2 nov). Qué años quedan elegidos lo decide
 /// `YearRulerLogic` (OrbitalModels, con pruebas); aquí solo se dibuja y se mide.
 struct YearRuler: View {
     @Binding var years: ClosedRange<Int>?
@@ -52,19 +52,19 @@ struct YearRuler: View {
     private func window(_ r: ClosedRange<Int>, _ width: CGFloat) -> some View {
         let left = x(max(r.lowerBound, first), width), right = x(min(r.upperBound, last), width)   // «Clásicos» empieza antes de la regla
         let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-        return shape.fill(DS.Filter.goldFill)
-            .overlay(shape.strokeBorder(DS.Filter.gold, lineWidth: DS.Stroke.selected))
+        return shape.fill(DS.Filter.amberFill)
+            .overlay(shape.strokeBorder(DS.Filter.amber, lineWidth: DS.Stroke.selected))
             .overlay(alignment: .leading) { handle.offset(x: -DS.Filter.handleWidth / 2) }
             .overlay(alignment: .trailing) { handle.offset(x: DS.Filter.handleWidth / 2) }
             // Con uno o dos años la ventana tiene un ancho mínimo (las orillas no se enciman) y no se sale de la regla.
             .frame(width: max(right - left, DS.Filter.windowMin), height: DS.Filter.rulerWindow)
             .offset(x: min(left, width - max(right - left, DS.Filter.windowMin)), y: -DS.Space.s1)
-            .glow(DS.Filter.goldGlow)
+            .glow(DS.Filter.amberGlow)
             .animation(drag == nil ? DS.Motion.base(reduceMotion) : nil, value: r)
     }
 
     private var handle: some View {
-        Capsule().fill(DS.Filter.gold).frame(width: DS.Filter.handleWidth, height: DS.Filter.handleHeight).shadow(DS.Elevation.medium.drop(0))
+        Capsule().fill(DS.Filter.amber).frame(width: DS.Filter.handleWidth, height: DS.Filter.handleHeight).shadow(DS.Elevation.medium.drop(0))
     }
 
     /// Las décadas debajo, cada una centrada en su tramo: tocar una la elige entera.
@@ -78,7 +78,7 @@ struct YearRuler: View {
                     Text(verbatim: "’\(String(format: "%02d", d % 100))")
                         .recipe(.label, color: on ? DS.bg : DS.textMuted).monospacedDigit()
                         .frame(width: DS.Filter.decadeButton, height: DS.Size.touchTarget)
-                        .background(on ? DS.Filter.gold : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                        .background(on ? DS.Filter.amber : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

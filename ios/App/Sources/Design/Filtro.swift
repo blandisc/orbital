@@ -35,8 +35,8 @@ enum FilterPage: String, Hashable, CaseIterable, Identifiable {
     /// Su color (solo en detalles). Dónde verla lleva el azul de Orbital; Estudios, blanco: el color lo ponen sus logos.
     var hue: Color {
         switch self {
-        case .genre: DS.Filter.coral; case .era, .awards: DS.Filter.gold; case .length: DS.Filter.lilac; case .rating: DS.Filter.mint
-        case .fame: DS.Filter.rose; case .place: DS.orbitalBlue; case .origin: DS.Filter.sky; case .studio: DS.text
+        case .genre: DS.Filter.coral; case .era, .awards: DS.Filter.amber; case .length: DS.Filter.sky; case .rating: DS.Filter.lime
+        case .fame: DS.Filter.meadow; case .place: DS.orbitalBlue; case .origin: DS.Filter.lavender; case .studio: DS.text
         }
     }
 
@@ -312,8 +312,8 @@ struct MiniRuler: View {
                     Rectangle().fill(DS.Filter.tickMid).frame(width: DS.Stroke.regular, height: geo.size.height / 2).offset(x: x(d))
                 }
                 RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                    .fill(DS.Filter.goldFill)
-                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.gold, lineWidth: DS.Stroke.selected))
+                    .fill(DS.Filter.amberFill)
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).strokeBorder(DS.Filter.amber, lineWidth: DS.Stroke.selected))
                     // Siempre visible y dentro de la regla (los años muy recientes, como Estrenos, quedaban fuera de la orilla).
                     .frame(width: windowWidth, height: geo.size.height)
                     .offset(x: min(x(years.lowerBound), geo.size.width - windowWidth))
@@ -334,7 +334,7 @@ struct MiniQuadrant: View {
         .aspectRatio(DS.Poster.aspect * 2, contentMode: .fit)
     }
     private func cell(_ fame: AdvancedFilter.Fame) -> some View {
-        RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(selected == fame ? DS.Filter.rose : DS.fillStrong)
+        RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(selected == fame ? DS.Filter.meadow : DS.fillStrong)
     }
 }
 

@@ -21,23 +21,24 @@ extension DS {
         static let rulerHeight: CGFloat = 64, rulerWindow: CGFloat = 46, handleWidth: CGFloat = 12, handleHeight: CGFloat = 30
         static let tickYear: CGFloat = 8, tickFive: CGFloat = 14, tickDecade: CGFloat = 24, rulerBase: CGFloat = 16
         static let decadeButton: CGFloat = 40
-        /// El color de cada filtro (Fernando, 31 oct 2026, dirección A): solo en detalles (el ícono, un puntito cuando tiene
-        /// algo y el control abierto); lo elegido sigue en blanco. Claros sobre oscuro y más intensos sobre el papel.
-        static let coral = DS.adaptive(dark: "#ff7a6b", light: "#c9432f"), gold = DS.adaptive(dark: "#f4c24d", light: "#a86f00")
-        static let lilac = DS.adaptive(dark: "#a99cff", light: "#5b4bd6"), mint = DS.adaptive(dark: "#7ee0a1", light: "#1f8a4c")
-        static let rose = DS.adaptive(dark: "#ff8fb1", light: "#c43c6c"), sky = DS.adaptive(dark: "#7cc4ff", light: "#1f6fb8")
-        /// El velo y el brillo dorados de la ventana de Época.
-        static let goldFill = gold.opacity(0.16), goldGlow = gold.opacity(0.35)   // ds-exception: velo y brillo del dorado de la regla
+        /// El color de cada filtro (Fernando, 31 oct 2026, dirección A; el arcoíris, 2 nov): solo en detalles (el ícono, un puntito
+        /// cuando tiene algo y el control abierto); lo elegido sigue en blanco. Son el arcoíris del azul de Orbital
+        /// (`design/tokens.json` › rainbow: oklch 0.804 0.11 girado), los mismos de la TV; sobre el papel, oklch 0.52 0.12 (4.5:1).
+        static let coral = DS.adaptive(dark: "#fea39b", light: "#a34945"), amber = DS.adaptive(dark: "#f0b070", light: "#975800")
+        static let lime = DS.adaptive(dark: "#c3c56f", light: "#6e6e00"), meadow = DS.adaptive(dark: "#8ad399", light: "#287c42")
+        static let sky = DS.adaptive(dark: "#66cef4", light: "#00769c"), lavender = DS.adaptive(dark: "#a3bcff", light: "#4e63ae")
+        /// El velo y el brillo ámbar de la ventana de Época.
+        static let amberFill = amber.opacity(0.16), amberGlow = amber.opacity(0.35)   // ds-exception: velo y brillo del ámbar de la regla
         static let dot: CGFloat = 7
         /// Lo más angosto de la ventana de la regla chiquita (un año o dos se leen igual).
         static let miniWindow: CGFloat = 12, windowMin: CGFloat = 32
-        /// «Qué tan conocida»: el alto de cada cuadrante y el velo rosa del elegido. Género: cuántos géneros caben en su mosaico.
+        /// «Qué tan conocida»: el alto de cada cuadrante y el velo verde del elegido. Género: cuántos géneros caben en su mosaico.
         static let quadrantCell: CGFloat = 96, genreMosaicMax = 6
-        static let roseFill = rose.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el rosa de este filtro
+        static let meadowFill = meadow.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el verde de este filtro
         /// El logo de TMDB en el mosaico de Calificación (chico: el número manda).
         static let tmdbMark: CGFloat = 11
-        /// Calificación: el velo verde del nivel elegido (los niveles, en `RatingLevels`).
-        static let mintFill = mint.opacity(0.18)   // ds-exception: el velo del atajo elegido, en el verde de Calificación
+        /// Calificación: el velo lima del nivel elegido (los niveles, en `RatingLevels`).
+        static let limeFill = lime.opacity(0.18)   // ds-exception: el velo del atajo elegido, en el lima de Calificación
         /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte azul y su orilla (otra cosa que buscar por nombre).
         static let doorIcon: CGFloat = 36
         static let doorFill = DS.orbitalBlue.opacity(0.1)   // ds-exception: el tinte de la búsqueda avanzada, apenas azul

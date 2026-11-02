@@ -121,7 +121,7 @@ struct FilterRatingEditor: View {
                 bottom.recipe(.caption, color: on ? hue : DS.textMuted).monospacedDigit().lineLimit(1)
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-            .dsCard(fill: on ? DS.Filter.mintFill : nil)
+            .dsCard(fill: on ? DS.Filter.limeFill : nil)
             .overlay(RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous).strokeBorder(on ? hue : .clear, lineWidth: DS.Stroke.regular))
             .contentShape(Rectangle())
         }

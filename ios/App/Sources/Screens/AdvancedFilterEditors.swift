@@ -103,10 +103,10 @@ struct FilterEditor: View {
             }
             YearRuler(years: Binding(get: { filter.years }, set: { y in edit { $0.years = y } }), first: AdvancedFilter.firstYear, last: filter.currentYear)
             HStack(spacing: DS.Space.s2) {
-                FilterChoice(symbol: "bolt", title: Text("Estrenos"), detail: Text("Este año y el pasado"), hue: DS.Filter.gold, selected: filter.years == filter.releases) {
+                FilterChoice(symbol: "bolt", title: Text("Estrenos"), detail: Text("Este año y el pasado"), hue: DS.Filter.amber, selected: filter.years == filter.releases) {
                     edit { $0.years = $0.years == $0.releases ? nil : $0.releases }
                 }
-                FilterChoice(symbol: "film.stack", title: Text("Clásicos"), detail: Text("Antes de 1990"), hue: DS.Filter.gold, selected: filter.years == AdvancedFilter.classics) {
+                FilterChoice(symbol: "film.stack", title: Text("Clásicos"), detail: Text("Antes de 1990"), hue: DS.Filter.amber, selected: filter.years == AdvancedFilter.classics) {
                     edit { $0.years = $0.years == AdvancedFilter.classics ? nil : AdvancedFilter.classics }
                 }
             }
@@ -114,11 +114,11 @@ struct FilterEditor: View {
                 Label { VStack(alignment: .leading, spacing: 0) {
                     Text("Repartido por décadas").recipe(.label, color: DS.text)
                     Text("Una de cada época, no solo lo reciente").recipe(.caption, color: DS.textMuted)
-                } } icon: { Image(systemName: "dice").foregroundStyle(DS.Filter.gold) }
+                } } icon: { Image(systemName: "dice").foregroundStyle(DS.Filter.amber) }
             }
             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Filter.choiceHeight * 0.75)
             .dsCard()
-            .tint(DS.Filter.gold)
+            .tint(DS.Filter.amber)
             .accessibilityIdentifier("filter-spread")
         }
     }
@@ -137,7 +137,7 @@ struct FilterEditor: View {
                 lengthChoice(.long, "tortoise", Text("Para echarse"), series ? Text("50 min o más") : Text("2 h 10 o más"))
             }
             FilterChoice(symbol: "moon.zzz", title: Text("Que acabe antes de las \(FilterText.clock(filter.endsBy, language: context.language))"),
-                         detail: filter.noMovieFits ? Text("Caben \(Strings.duration(filter.minutesLeft)): solo series") : Text("Caben \(Strings.duration(filter.minutesLeft))"), hue: DS.Filter.lilac, selected: filter.length == .before) {
+                         detail: filter.noMovieFits ? Text("Caben \(Strings.duration(filter.minutesLeft)): solo series") : Text("Caben \(Strings.duration(filter.minutesLeft))"), hue: DS.Filter.sky, selected: filter.length == .before) {
                 model.refreshClock()
                 edit { $0.length = $0.length == .before ? .any : .before }
             }
@@ -146,7 +146,7 @@ struct FilterEditor: View {
                 Slider(value: Binding(get: { filter.endsBy < 12 ? filter.endsBy + 24 : filter.endsBy },
                                       set: { h in edit { $0.endsBy = h >= 24 ? h - 24 : h } }),
                        in: DS.Filter.endsByRange, step: DS.Filter.endsByStep) { Text("Hora a la que quieres terminar") }
-                    .tint(DS.Filter.lilac)
+                    .tint(DS.Filter.sky)
                     .accessibilityValue(Text(verbatim: FilterText.clock(filter.endsBy, language: context.language)))
                     .accessibilityIdentifier("filter-ends-by-slider")
             }
@@ -154,7 +154,7 @@ struct FilterEditor: View {
     }
 
     private func lengthChoice(_ value: AdvancedFilter.Length, _ symbol: String, _ title: Text, _ detail: Text) -> some View {
-        FilterChoice(symbol: symbol, title: title, detail: detail, hue: DS.Filter.lilac, selected: filter.length == value) {
+        FilterChoice(symbol: symbol, title: title, detail: detail, hue: DS.Filter.sky, selected: filter.length == value) {
             edit { $0.length = $0.length == value ? .any : value }
         }
     }

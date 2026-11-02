@@ -3,7 +3,7 @@ import OrbitalCore
 
 /// «Qué tan conocida»: el cuadro fama × calificación, como cuadrantes (Fernando, 31 oct 2026: «más que cuatro botones,
 /// cuadrantes»). Arriba lo bien calificado, a la derecha lo famoso; las cuatro esquinas van pegadas, con una rayita entre
-/// ellas como ejes. La elegida se pinta en el rosa de este filtro; tocarla otra vez la quita.
+/// ellas como ejes. La elegida se pinta en el verde de este filtro; tocarla otra vez la quita.
 struct FameQuadrant: View {
     let selected: AdvancedFilter.Fame
     let pick: (AdvancedFilter.Fame) -> Void
@@ -38,14 +38,14 @@ struct FameQuadrant: View {
         let on = selected == fame
         return Button { pick(on ? .any : fame) } label: {
             VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(on ? DS.Filter.rose : DS.textMuted)
+                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(on ? DS.Filter.meadow : DS.textMuted)
                 title.recipe(.label, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 detail.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s3)
             .frame(maxWidth: .infinity, minHeight: DS.Filter.quadrantCell)
-            .background(on ? DS.Filter.roseFill : DS.surface)
+            .background(on ? DS.Filter.meadowFill : DS.surface)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
