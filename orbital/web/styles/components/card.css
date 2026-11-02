@@ -163,7 +163,8 @@
 .card--no-art .card__caption, .card--named .card__caption { display: none; }
 
 /* Destacados: el logo del título sobre el arte ancho, abajo a la izquierda, con la base oscura del arte para leerse. */
-.card--wide.card--has-art::before { content: ""; position: absolute; inset: 40% 0 0; border-radius: inherit; background: var(--gradient-art-base); pointer-events: none; z-index: var(--z-raised); }
+/* height: auto: con avance, la regla de .card--has-progress (alto 30 %) la cortaba en seco a media tarjeta. */
+.card--wide.card--has-art::before { content: ""; position: absolute; inset: 40% 0 0; height: auto; border-radius: inherit; background: var(--gradient-art-base); pointer-events: none; z-index: var(--z-raised); }
 .card__logo { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   max-width: 58%; max-height: 38%; object-fit: contain; object-position: left bottom; filter: var(--shadow-drop-sm); }
 /* Con avance (A continuación): el logo y el nombre se suben arriba de la barra; antes el logo la tapaba. */
