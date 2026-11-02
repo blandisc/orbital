@@ -29,31 +29,39 @@ function tokenMs(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-/** El tono de un aviso: el que se pidió o, para los de siempre, el que se deduce (error, voz, «…» en curso). */
+/** El tono de un aviso: el que se pidió o, para los de siempre, el que se deduce (error, voz, «…» en curso: el del título,
+ *  «Actualizando Orbital… · Puedes seguir usándolo» también está en curso). */
 export function toneOf({ tone = "", error = false, voice = false, message = "" } = {}) {
   if (tone && TONES[tone]) return tone;
   if (error) return "error";
   if (voice) return "voice";
-  if (/…$/.test(message)) return "progress";
+  if (/…$/.test(linesOf(message).title)) return "progress";
   return "info";
 }
 
-/** Título y detalle, como el iPhone: «Stremio conectado · 812 títulos» se parte en dos renglones por el primer « · ». */
+/** Un renglón de aviso sin espacios de más ni punto final (un aviso no es un párrafo; «…» y «?» sí se quedan). */
+const tidy = (text) => String(text || "").replace(/\s+/g, " ").trim().replace(/(?<!\.)\.$/, "");
+const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * Título y detalle, como el iPhone (la regla de los avisos: docs/sistema-de-diseno.md · Avisos). Venga de donde venga el texto
+ * (de aquí, del servidor, de la voz, de un error), se parte igual: por el primer « · »; si no, por la primera frase («No pude
+ * reproducir el tráiler. Intenta de nuevo»); si no y es largo, por «Algo: lo demás». Así ningún título acaba en «…» recortado.
+ */
 export function linesOf(message, detail = "") {
-  if (detail) return { title: message, detail };
-  const cut = message.indexOf(" · ");
-  if (cut > 0) return { title: message.slice(0, cut), detail: message.slice(cut + 3) };
-  // Una frase larga con «Algo: lo demás» se parte ahí: el título en un renglón y el resto debajo (antes «Sin internet: ves lo
-  // último que se guardó; para ver algo necesitas conexión (o desca…» se cortaba con puntos suspensivos).
-  const colon = message.indexOf(": ");
-  if (message.length > 48 && colon > 0 && colon < 40) {
-    const rest = message.slice(colon + 2);
-    return { title: message.slice(0, colon), detail: rest.charAt(0).toUpperCase() + rest.slice(1) };
-  }
-  return { title: message, detail: "" };
+  const text = tidy(message);
+  if (detail) return { title: text, detail: tidy(detail) };
+  const cut = text.indexOf(" · ");
+  if (cut > 0) return { title: text.slice(0, cut), detail: tidy(text.slice(cut + 3)) };
+  const sentence = /^(.{4,64}?(?:[.?!]|…))\s+(\S.*)$/.exec(text);
+  if (sentence) return { title: tidy(sentence[1]), detail: capital(tidy(sentence[2])) };
+  const colon = text.indexOf(": ");
+  if (text.length > 48 && colon > 0 && colon <= 48) return { title: text.slice(0, colon), detail: capital(text.slice(colon + 2)) };
+  return { title: text, detail: "" };
 }
 
-export function createToast() {
+/** `onTone(tone)`: cada aviso que sale (para su sonido: un error suena aunque venga del servidor). */
+export function createToast({ onTone = () => {} } = {}) {
   const el = h("div", { class: "toast", role: "status", "aria-live": "polite", hidden: true });
   const queue = [];
   let timer;
@@ -95,6 +103,7 @@ export function createToast() {
     showing = true;
     cancelExit();
     const { title, detail } = linesOf(toast.message, toast.detail);
+    onTone(toast.tone);
     const action = toast.onPress && toast.actionLabel
       ? h("span", { class: "toast__action" },
         toast.actionGlyph ? KeyHint(toast.actionGlyph, toast.actionLabel) : h("span", {}, toast.actionLabel),
@@ -140,8 +149,13 @@ export function createToast() {
     };
     // Lo urgente (un error, una cuenta atrás, una acción que caduca) va ya, delante de los demás.
     const now = countdown || toast.tone === "error" || urgent || !!toast.actionLabel;
-    if (now) queue.unshift(toast);
-    else queue.push(toast);
+    if (now) {
+      queue.unshift(toast);
+      // Lo que estaba a la vista y no era urgente no se pierde: sale otra vez después (antes, un error que llegaba justo
+      // después de «Cancelé Hades» lo borraba sin que se alcanzara a leer).
+      const shown = showing && current;
+      if (shown && !(shown.countdown || shown.tone === "error" || shown.actionLabel) && shown !== toast) queue.splice(1, 0, shown);
+    } else queue.push(toast);
     if (queue.length > MAX_QUEUE) queue.splice(MAX_QUEUE);
     if (!showing) next();
     else if (now) { clearTimeout(timer); next(); }

@@ -13,7 +13,7 @@ demás (vienen en .7z o con instalador) se avisan con su página para bajarlos a
 Si una versión nueva sale mal, «Regresar a la versión anterior» pone de vuelta lo del respaldo y quita lo que la
 nueva agregó. Y si tienes juegos de una consola sin su emulador, Orbital lo instala (en la carpeta de tus emuladores).
 
-El modo («avisar», «auto» o «nunca») es un ajuste (Ajustes › Mantenimiento › Emuladores). En automático, Orbital revisa
+El modo («avisar», «auto» o «nunca») es un ajuste (Ajustes › Jugar › Emuladores). En automático, Orbital revisa
 al arrancar y cada 12 h, e instala solo lo que puede instalar y nunca con un juego abierto.
 """
 
@@ -573,7 +573,7 @@ class EmulatorUpdates:
         if mode == "avisar":  # solo lo seguro (con número de versión): «parece más nueva» no merece un aviso
             pending = [s.source.name for s in statuses if s.update and not s.likely]
             if pending:
-                self.notify(f"Hay versión nueva de {', '.join(pending)} (Ajustes › Mantenimiento › Emuladores).")
+                self.notify(f"Hay versión nueva de {', '.join(pending)} · Ajustes › Jugar › Emuladores")
             return []
         for status in statuses:
             if not status.can_install or self.busy():

@@ -44,7 +44,8 @@
 /* Título en un renglón (el detalle, hasta dos): se lee de lejos sin que el aviso crezca. Con el interlineado cerrado
    del aviso (1.1) el recorte de los renglones se comía las colitas de la g, p, y («jugaste»): aquí, 1.3. */
 .toast__body { display: grid; gap: 0; min-width: 0; padding-block: var(--space-1); line-height: var(--leading-title); }
-.toast__title { font-weight: var(--weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* El título cabe en dos renglones si hace falta (un nombre largo de juego): nunca se corta con «…». */
+.toast__title { font-weight: var(--weight-semibold); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .toast__detail {
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
@@ -66,3 +67,5 @@
 @keyframes toast-countdown { to { transform: scaleX(0); } }
 /* Con un menú lateral abierto el aviso sale a su izquierda: nunca encima del título del menú. */
 body:has(.sheet:not([hidden]):not(.sheet--leaving)) .toast { right: calc(min(var(--sheet-width), 100vw) + var(--page-gutter) + var(--space-5)); } /* la hoja también deja su margen: antes el aviso se le encimaba */
+/* Con el dedo y algo encima, «Atrás» ocupa la esquina de arriba: el aviso baja lo que mide ese botón y su aire. */
+[data-input="touch"][data-overlay="true"] .toast { top: calc(var(--space-5) + var(--safe-y) + var(--control-height) + var(--space-4)); }

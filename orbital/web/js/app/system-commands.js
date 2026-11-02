@@ -159,7 +159,7 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     },
     "update-apply": async (command, context) => {
       await api.applyUpdate();
-      return ui.toast.show("Actualizando Orbital… puedes seguir usándolo.");
+      return ui.toast.show("Actualizando Orbital…", { detail: "Puedes seguir usándolo" });
     },
     "folders": async (command, context) => {
       return openMenu(foldersMenu(await api.folders()), nested(context));
@@ -176,7 +176,7 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     },
     "emulator-install": async (command, context) => {
       await api.installEmulator(command.id);
-      return ui.toast.show(`Actualizando ${command.name}… puedes seguir usando Orbital.`);
+      return ui.toast.show(`Actualizando ${command.name}…`, { detail: "Puedes seguir usando Orbital" });
     },
     "emulator-menu": async (command, context) => {
       return openMenu(emulatorMenu(command.emulator), nested(context));
@@ -190,11 +190,11 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     "emulator-install-forced": async (command, context) => {
       ui.sheet.close();
       await api.installEmulatorForced(command.id);
-      return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
+      return ui.toast.show(`Instalando ${command.name}…`, { detail: "Puedes seguir usando Orbital" });
     },
     "emulator-install-new": async (command, context) => {
       await api.installNewEmulator(command.id);
-      return ui.toast.show(`Instalando ${command.name}… puedes seguir usando Orbital.`);
+      return ui.toast.show(`Instalando ${command.name}…`, { detail: "Puedes seguir usando Orbital" });
     },
     "emulator-rollback": async (command, context) => {
       await api.rollbackEmulator(command.id);

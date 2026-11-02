@@ -501,7 +501,7 @@ class OrbitalPlayer(PlayerScreen):
             threading.Thread(target=self._safe, args=(self.on_memory_full, dict(segment.meta)), daemon=True,
                              name="mpv-memory").start()
         elif not segment.live:
-            self.toast(f"El reproductor ocupa mucha memoria ({mb / 1024:.1f} GB). Si se pone lento, sal y vuelve: sigues donde ibas.", 8)
+            self.toast(f"El reproductor ocupa mucha memoria ({mb / 1024:.1f} GB) · Si se pone lento, sal y vuelve: sigues donde ibas", 8)
 
     def finish(self, playback: Playback) -> None:
         """mpv se cerró: guarda lo visto o, si no llegó a verse nada y nadie lo cerró, avisa."""

@@ -27,6 +27,9 @@ const MOVE_GAP = 70; // ms: al mantener una flecha, un clic cada tanto (no una r
 
 let ctx;
 let lastMove = 0;
+let lastName = "";
+let lastAt = 0;
+const ECHO_MS = 250;
 let hush = 0;
 // Abrir el audio cuesta ~200 ms (el dispositivo): se abre durante la entrada (warm), no en el primer botón. Y un contexto
 // abierto procesa silencio sin parar: tras un rato sin sonar se suspende, y el siguiente sonido lo reanuda.
@@ -42,6 +45,10 @@ export const sound = {
   get enabled() { return storage.get(KEY, true); },
   set enabled(value) { storage.set(KEY, !!value); },
   play(name) {
+    const at = performance.now();
+    if (name !== "move" && name === lastName && at - lastAt < ECHO_MS) return; // el mismo, dos veces seguidas: una
+    lastName = name;
+    lastAt = at;
     if (FEEL[name]) rumble(FEEL[name]);
     if (!this.enabled) return;
     if (name === "move") {

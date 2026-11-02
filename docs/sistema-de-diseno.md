@@ -132,6 +132,23 @@ Las pantallas que recorre la prueba de texto partido: las cinco secciones, la fi
 avanzado, Colecciones, Panel rápido, Jugadores, Buscar con resultados y las siete categorías de Ajustes, en la tele y en la Legion Go
 con la letra más grande.
 
+### Avisos (la regla, 2 nov 2026)
+
+Un aviso dice una cosa, se lee de un vistazo y no se pierde. Valen para los de la interfaz (`toast.js`), los que manda el servidor
+(`{"type": "toast"}`) y los del reproductor (`player_ui.toast_ass`). Prueba: `tests/web/notifications.test.mjs` (y
+`test_player.py · test_player_notices_follow_the_same_rule_as_the_interface`).
+
+| Regla | Cómo |
+|---|---|
+| Título y detalle | El título dice qué pasó; el detalle, qué sigue o por qué. Se escribe con `detail` (o « · »). Si llega una frase entera («No pude reproducir X. Prueba otra versión»), se parte sola por la primera frase o por «Algo: lo demás» (`linesOf`, `lines_of`): ningún título termina en «…» recortado; si es largo, cabe en dos renglones |
+| Sin punto final, sin «!» | Un aviso no es un párrafo. «…» solo al final del título de lo que está en curso («Actualizando Orbital…»), que gira (`progress`) |
+| Un tono por papel | `info` (pasó), `success` (quedó hecho), `warn` (funciona con un pero), `error` (no se pudo: dura más, se adelanta y suena), `progress` (en curso), `voice` (Alexa). Nada de otros tonos |
+| Sonido | Un error siempre suena, venga de donde venga (`createToast({ onTone })`); el mismo sonido dos veces seguidas es uno (`sound.js`). Lo logrado suena a `success` desde quien lo hace |
+| La cola | Uno a la vez, en orden; el mismo dos veces seguidas, una; un error, una cuenta atrás o una acción («Deshacer») se adelantan, y lo que estaba a la vista vuelve después, no se pierde; caben 4 esperando |
+| Duración | La del iPhone (`--duration-notice`), más larga para un error; en el reproductor, nunca menos de lo que tarda en leerse (`toast_seconds`) |
+| Dónde | Arriba a la derecha, bajo la hora; con una hoja abierta, a su izquierda; con el dedo y algo encima, debajo de «Atrás» |
+| A dónde manda | Si dice «Ajustes › …», nombra una categoría que existe (Resumen, Ver, Jugar, Tele y voz, Pantalla y sonido, Cuentas, Sistema) |
+
 ### Piezas del lenguaje
 
 | Pieza | Archivo | Para qué |

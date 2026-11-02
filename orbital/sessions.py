@@ -132,7 +132,7 @@ class Sessions:
         launcher.on_playtime = self.state.record_session
         launcher.on_timeout = lambda item_id, title: self.events.publish({
             "type": "toast", "ok": False,
-            "message": f"{title} no arrancó. Revisa Steam (puede estar actualizando o pidiendo algo en su ventana)."})
+            "message": f"{title} no arrancó", "detail": "Revisa Steam: puede estar actualizando o pidiendo algo en su ventana"})
 
     @property
     def revealing(self) -> bool:

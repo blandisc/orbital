@@ -231,7 +231,7 @@ class Downloads:
                 return
             log.warning("No pude descargar %s: %s", job.get("title"), exc)
             job.update(status="failed", error=str(exc)[:200] or "No se pudo descargar.")
-            self.publish({"type": "toast", "ok": False, "message": f"No pude descargar {job['title']}. Inténtalo de nuevo desde Descargas."})
+            self.publish({"type": "toast", "ok": False, "message": f"No pude descargar {job['title']}", "detail": "Inténtalo de nuevo desde Descargas"})
         finally:
             if job["id"] not in self._cancel:
                 self._save()

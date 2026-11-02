@@ -67,7 +67,7 @@ def pair_info(config, tailscale_url=None) -> dict:
     """Si se puede conectar el iPhone y, si no, qué falta (en palabras)."""
     token = config.server.token
     if not token or config.server.token_is_ephemeral:
-        return {"ready": False, "reason": "Primero configura Alexa (Ajustes › Mantenimiento): el iPhone usa el mismo token."}
+        return {"ready": False, "reason": "Primero configura Alexa (Ajustes › Tele y voz): el iPhone usa el mismo token."}
     url = (tailscale_url or alexa_setup.tailscale_url)()
     if not url:
         return {"ready": False, "reason": "No encontré Tailscale. El iPhone entra por el mismo túnel que Alexa: enciéndelo y vuelve a intentar."}

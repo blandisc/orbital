@@ -46,7 +46,7 @@ def router(d: Deps, updater: Updater | None = None, restart=restart_orbital) -> 
             try:
                 ok, message = up.apply(lambda text: d.hub.publish_threadsafe({"type": "toast", "message": text}))
                 if ok and not supervisor.is_child():
-                    message = "Listo. Cierra y abre Orbital para usar la versión nueva."
+                    message = "Listo · Cierra y abre Orbital para usar la versión nueva"
                 d.hub.publish_threadsafe({"type": "update-done", "ok": ok, "message": message})
                 if ok and supervisor.is_child():
                     threading.Timer(2.0, restart, args=(d,)).start()
@@ -56,7 +56,7 @@ def router(d: Deps, updater: Updater | None = None, restart=restart_orbital) -> 
         threading.Thread(target=work, daemon=True, name="update").start()
         return {"ok": True}
 
-    # --- emuladores (Ajustes › Mantenimiento › Emuladores) ------------------------------------------------------------
+    # --- emuladores (Ajustes › Jugar › Emuladores) --------------------------------------------------------------------
     @r.get("/api/emulators/updates")
     async def emulator_updates(force: bool = False) -> dict:
         return await run_in_threadpool(d.extra["emulator_updates"].summary, force)

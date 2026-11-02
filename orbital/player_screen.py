@@ -311,7 +311,7 @@ class PlayerScreen(SubtitleTrial):
             self.hide_hud()
 
     def toast(self, text: str, seconds: float = 1.6) -> None:
-        self._show_notice(player_ui.toast_ass(text), seconds)
+        self._show_notice(player_ui.toast_ass(text), player_ui.toast_seconds(text, seconds))
 
     # Cada aviso en su capa (antes compartían la 3 y se borraban entre sí: el volumen se comía «Salir», y el
     # fin del «Cargando…» borraba un aviso útil al que aún le quedaban segundos).

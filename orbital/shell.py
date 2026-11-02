@@ -673,7 +673,7 @@ class ConsoleShell:
                 running = self.catalog.launcher.status()
                 if running:
                     self.notify({"type": "toast", "tone": "warn", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min",
-                                 "detail": "Si no vuelves (Home). Lo no guardado se pierde"})
+                                 "detail": "Si no vuelves con Home · Lo que no guardaste se pierde"})
             return False
         self._idle_warned = False
         running = self.catalog.launcher.status()

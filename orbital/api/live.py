@@ -81,7 +81,7 @@ class ProblemNotifier(logging.Handler):
 
             text = URL.sub(lambda m: redact(m.group(0)), record.getMessage().splitlines()[0])[:160]
             self.publish({"type": "toast", "ok": False,
-                          "message": f"Algo falló: {text}. Más en Ajustes → Diagnóstico."})
+                          "message": "Algo falló", "detail": f"{text.rstrip('.')} · Más en Ajustes › Sistema › Diagnóstico"})
         except Exception:  # noqa: BLE001 - avisar nunca debe romper el registro
             pass
 

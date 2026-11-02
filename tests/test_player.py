@@ -1338,3 +1338,15 @@ def test_the_bar_moves_while_it_is_on_screen():
     time.sleep(.15)
     assert "10:05" in mpv.overlays[1]
     p.hide_hud()
+
+
+def test_player_notices_follow_the_same_rule_as_the_interface():
+    """Los avisos del reproductor: sin punto final; lo largo se parte en título y detalle (dos renglones), como la interfaz,
+    y duran lo que tarda en leerse."""
+    assert player_ui.lines_of("Subtítulos: Español") == ("Subtítulos: Español", "")
+    assert player_ui.lines_of("Desde el principio · Y › Volver a 10:00") == ("Desde el principio · Y › Volver a 10:00", "")
+    assert player_ui.lines_of("No pude reproducir el tráiler. Intenta de nuevo.") == ("No pude reproducir el tráiler", "Intenta de nuevo")
+    long = "El reproductor ocupa mucha memoria (3.1 GB) · Si se pone lento, sal y vuelve: sigues donde ibas"
+    assert player_ui.lines_of(long)[1].startswith("Si se pone lento")
+    assert "Si se pone lento" in player_ui.toast_ass(long) and "…" not in player_ui.toast_ass(long)
+    assert player_ui.toast_seconds("Volumen", 1.6) == 1.6 and player_ui.toast_seconds(long, 1.6) > 4

@@ -1150,7 +1150,7 @@ class Watch:
         """Una fuente no arrancó o se cortó: la siguiente mejor, en el mismo punto. True si se intenta."""
         title = meta.get("title") or "esto"
         if meta.get("clip"):  # un tráiler no tiene otra versión
-            self.events.publish({"type": "toast", "ok": False, "message": "No pude reproducir el tráiler. Intenta de nuevo."})
+            self.events.publish({"type": "toast", "ok": False, "message": "No pude reproducir el tráiler", "detail": "Inténtalo otra vez"})
             return False
         back_to = meta.get("back_to")
         if alive and back_to is not None:
@@ -1186,7 +1186,7 @@ class Watch:
                 meta = {**meta, "tried": sorted(tried)}
                 return self._source_failed(meta, position, alive)  # esa tampoco abrió: la siguiente
         self.events.publish({"type": "toast", "ok": False,
-                      "message": f"No pude reproducir {title}. Prueba otra versión desde la ficha (Y)."})
+                      "message": f"No pude reproducir {title}", "detail": "Prueba otra versión desde la ficha (Y)"})
         return False
 
     def _title_facts(self, kind: str, video_id: str) -> dict | None:

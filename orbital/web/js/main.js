@@ -296,7 +296,7 @@ const ui = {
     },
     onOpenVideo: (item) => api.openCapture(item.path).catch((err) => ui.toast.show(err.message, { error: true })),
   }),
-  toast: createToast(),
+  toast: createToast({ onTone: (tone) => tone === "error" && sound.play("error") }), // un error siempre suena (también los del servidor)
 };
 
 // Con el dedo no hay botón B ni ☰: «Atrás» sobre las vistas encima y «Menú» en las pantallas de siempre.

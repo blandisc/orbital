@@ -243,7 +243,8 @@ def test_errors_are_shown_once_a_minute_without_keys():
         logging.getLogger("uvicorn").error("ajeno")
     finally:
         log.removeHandler(handler)
-    assert len(seen) == 1 and "clave-secreta" not in seen[0]["message"] and "Diagnóstico" in seen[0]["message"]
+    assert len(seen) == 1 and seen[0]["message"] == "Algo falló"
+    assert "clave-secreta" not in seen[0]["detail"] and "Ajustes › Sistema › Diagnóstico" in seen[0]["detail"]
 
 
 def test_auto_close_times_can_be_changed_from_orbital(make_client, library):

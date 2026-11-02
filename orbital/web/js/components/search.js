@@ -151,7 +151,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     const chips = recent.map((q, i) => Pill(q, {
       tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = i; zone = "results"; open(); },
     }));
-    const cards = trending.map((item, i) => Card(item, {
+    // El pie de un póster chico: el año (con «Película · 2…» recortado no se leía nada).
+    const cards = trending.map((item, i) => Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
       caption: true, onPress: () => { zone = "results"; resultIndex = recent.length + i; open(); },
     }));
     focusables = [...chips, ...cards];

@@ -1199,12 +1199,46 @@ NOTICE_Y = 124  # avisos, volumen y «Salir»
 BUFFER_Y = 196  # «Cargando… 40 %»: su propia altura, no borra el aviso que estaba
 
 
+def lines_of(message: str) -> tuple[str, str]:
+    """Título y detalle de un aviso, con la misma regla de la interfaz (toast.js · linesOf): sin punto final; se parte por el
+    primer « · », si no por la primera frase y, si es largo, por «Algo: lo demás»."""
+    def tidy(t: str) -> str:
+        t = " ".join(str(t or "").split())
+        return t[:-1] if t.endswith(".") and not t.endswith("..") else t
+    text_ = tidy(message)
+    if " · " in text_ and len(text_) > 48:
+        title, rest = text_.split(" · ", 1)
+        return title, tidy(rest)
+    m = re.match(r"^(.{4,64}?(?:[.?!]|…))\s+(\S.*)$", text_)
+    if m:
+        rest = tidy(m.group(2))
+        return tidy(m.group(1)), rest[:1].upper() + rest[1:]
+    colon = text_.find(": ")
+    if len(text_) > 48 and 0 < colon <= 48:
+        rest = text_[colon + 2:]
+        return text_[:colon], rest[:1].upper() + rest[1:]
+    return text_, ""
+
+
 def toast_ass(message: str, top: float = NOTICE_Y) -> str:
-    """Aviso corto arriba a la derecha («Subtítulos: Español», «Cargando… 40 %»)."""
-    message = fit(message, 24, W - 2 * MARGIN - 44, "semi")
-    w = text_width(message, 24, "semi") + 44
+    """Aviso arriba a la derecha («Subtítulos: Español», «Cargando… 40 %»): una píldora; con detalle, dos renglones."""
+    title, detail = lines_of(message)
+    room = W - 2 * MARGIN - 44
+    title = fit(title, 24, room, "semi")
+    if not detail:
+        w = text_width(title, 24, "semi") + 44
+        x = W - MARGIN - w
+        return "\n".join([rrect(x, top, w, 54, 27, PANEL, "30"), text(x + 22, top + 27, esc(title), 24, weight="semi", align=4)])
+    detail = fit(detail, 20, room)
+    w = max(text_width(title, 24, "semi"), text_width(detail, 20)) + 44
     x = W - MARGIN - w
-    return "\n".join([rrect(x, top, w, 54, 27, PANEL, "30"), text(x + 22, top + 27, esc(message), 24, weight="semi", align=4)])
+    return "\n".join([rrect(x, top, w, 84, 24, PANEL, "30"), text(x + 22, top + 28, esc(title), 24, weight="semi", align=4),
+                      text(x + 22, top + 58, esc(detail), 20, SOFT, align=4)])
+
+
+def toast_seconds(message: str, seconds: float) -> float:
+    """Lo que dura un aviso: lo pedido, pero nunca menos de lo que tarda en leerse (≈ 3,5 palabras por segundo, tope 6 s)."""
+    return max(seconds, min(6.0, 1.2 + len(str(message).split()) / 3.5))
 
 
 def quit_hold_ass(progress: float, key: str = "B", label: str = "Salir") -> str:
