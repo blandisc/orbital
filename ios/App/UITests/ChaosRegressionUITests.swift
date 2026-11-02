@@ -174,10 +174,13 @@ final class ChaosRegressionUITests: XCTestCase {
         let walk = app.buttons["paraTi-walk-mosaic"]
         XCTAssertTrue(walk.waitForExistence(timeout: 20))
         walk.tap()
-        let mosaic = app.otherElements["mosaic"]
+        // El mosaico ya no sale como `otherElements` (tanda 4): se busca por su identificador en cualquier tipo.
+        let mosaic = app.descendants(matching: .any)["mosaic"]
         XCTAssertTrue(mosaic.waitForExistence(timeout: 10))
         sleep(2)
-        let pts: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [(0.5, 0.8, 0.5, 0.1), (0.5, 0.1, 0.5, 0.9), (0.9, 0.5, 0.1, 0.5), (0.1, 0.5, 0.9, 0.5), (0.9, 0.9, 0.1, 0.1)]
+        // Verticales y en diagonal: un arrastre de lado (a cualquier lado) es el gesto que regresa a Explorar
+        // (`DS.Mosaic.swipeBack`) y saldría del mosaico a propósito.
+        let pts: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [(0.5, 0.8, 0.5, 0.1), (0.5, 0.1, 0.5, 0.9), (0.1, 0.9, 0.9, 0.1), (0.9, 0.1, 0.1, 0.9), (0.9, 0.9, 0.1, 0.1)]
         for _ in 0..<4 {
             for p in pts {
                 mosaic.coordinate(withNormalizedOffset: CGVector(dx: p.0, dy: p.1))
