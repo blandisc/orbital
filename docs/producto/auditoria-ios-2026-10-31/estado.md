@@ -119,3 +119,46 @@ opacidades de «apagado» a 0.6/0.35/0.4; algunas sombras y brillos a la escala 
 
 ## Tanda 4 · Auditor autónomo
 Lo lanza la sesión de la tanda 3 al terminar: revisa las tandas 1 y 3 y vuelve a intentar romper la app (R5).
+
+## Tanda 6 · Arreglos de las verificaciones (1 nov 2026)
+
+Commits 6701e2e3 … 22d5d7c0 (8). `swift test` completo verde sobre main 56380150 (938: 461 OrbitalModels + 467 OrbitalCore +
+10 Addons); la app compila en Debug y Release. Se probó en una copia aparte (/tmp) porque otras sesiones tenían archivos a
+medias en el mismo checkout. CI de GitHub: macOS (las pruebas del iPhone) verde; Windows rojo por pyright en el Python de la
+TV (`orbital/library/trakt.py`), de otra sesión, fuera de este alcance.
+
+**Hecho.**
+1. iPad de pie, Top 10 de Buscar: **ya lo había arreglado otra sesión** (f9ac5bb3 quitó el gesto de toque del zoom que se
+   comía el toque). `IPadLayoutUITests.testTitleOpensInTheSidePanel` verde en «Orbital QA iPad» (vertical y horizontal).
+2. «Siguiente · T1 E2» al cruzar el 90 % (c0da04fb): `PlayerModel.pastNextMark` avisa una vez al cruzar la marca
+   (`PlaybackRules.nextEpisodeAt`). PlayerTimeTests.testCruzarElNoventaPorCientoAvisaUnaVez. Lo demás que lee la posición fuera
+   del reloj son toques y gestos (leen al momento) y la bitácora.
+3. Temporadas (7742de92 y la regla en db5cd8f2): `DSSeasonMenu` (menú nativo) en la ficha, Mi media y la hoja de episodios;
+   las cápsulas `DSSeasonPicker` solo en el reproductor. DesignRulesTests.testSeasonChipsOnlyInThePlayer. README, D8,
+   docs/ios-proyeccion.md y el registro de paridad (TV pendiente: su ficha usa pestañas «T1…»). Sin captura de la lista: hay
+   que bajar por la ficha con una prueba de interfaz (más de 2 min).
+4. Carrera de «Mi lista» (6701e2e3): una lectura de lo tuyo que salió antes de un toque ya no pisa el botón
+   (`TitleModel.libraryEdits`). ScreenModelsTests.testMyListToggleIsNotUndoneByARefreshInFlight (fallaba 6 de 20 vueltas).
+5. «Charging» (2672173c): «Cargando» → «Loading»; la batería tiene su clave («Cargando la batería» → «Charging»).
+6. testMosaicoEnRafaga (22d5d7c0): busca el mosaico en cualquier tipo y arrastra en vertical y diagonal (un arrastre de lado
+   es el gesto que regresa a Explorar). Verde en «Orbital QA».
+7. Regla 13 (db5cd8f2): palabra completa y tipos genéricos, de 287 s a 0.4 s. Borrados: PlayerPanel.portraitCenterRange y
+   portraitTop, DS.Motion.lockShrink, Collections.weight, Mosaic.idle/alive/buffer y DSChipText.
+8. Reglas 5, 6, 8 y 12 (db5cd8f2): sin la exención `Remote*`; la 6 ve ternarios, fillStrong, esquinas desparejas, `in: shape`
+   y la caja como forma (`.dsCard(fill:)`); la 8 ve curvas sin paréntesis (`DS.Motion.steady`); la 12 ve el ✕ en
+   `Button("Cerrar", systemImage:)` y las mayúsculas fuera de la pieza `.dsCaps()`. Limpieza: D4 (9 cajas a dsCard), D5
+   (anillos de Decide y del mapa del año), D9 (dos cápsulas del control), D11 (7 mayúsculas a `.dsCaps()`).
+9. Menús contextuales (50a719c5): `SuggestionActions` lee el entorno opcional y ToolbarEnvironmentTests revisa cada
+   `.contextMenu` (y ahora lee el bloque completo de `.toolbar`, que antes se saltaba al primer bloque de adentro).
+10. Colecciones (108c6e43): «La más reciente que te falta» sale de lo filtrado. Sin prueba unitaria (es la vista).
+
+**Cambios a la vista a propósito.** Temporadas en lista desplegable; las casillas chicas de versiones, filtros, premios y
+calificación pasan de esquina 10 a 13 (dsCard); el anillo de la elegida en Decide va en el color del texto (antes, el acento);
+«Mapa de sustos» y «Reintentar» del control son botones secundarios nativos; la batería dice «Cargando la batería».
+
+**No hecho / queda.**
+- `TitleWatchedWhen` (TitleView+Watched.swift) sigue con entorno obligatorio; hoy no va en barra ni menú, así que la prueba
+  no lo marca.
+- La regla 6 no revisa casillas con `Circle`/`Capsule` (son controles, no cajas), y no hay regla para anillos de selección
+  a mano (los dos que había ya se fueron).
+- R5 en SE y Pro Max sigue sin pasarse.
