@@ -230,10 +230,20 @@ public final class DecideModel: ObservableModel {
     }
 
     /// Lo que eligiste, en una cadena: los siguientes ya buscados solo sirven si no cambió.
+    /// Por partes: en una sola expresión el compilador de la CI se rendía («unable to type-check… in reasonable time»).
     var filtersKey: String {
-        [time.rawValue, mood?.rawValue ?? "", kind ?? "", genres.sorted().joined(separator: ","), "\(includeWatched)", sourceIDs.sorted().joined(separator: ","),
-         decades.sorted().map(String.init).joined(separator: ","), "\(minRating)", ratingSources.map(\.rawValue).sorted().joined(separator: ","),
-         "\(minLetterboxd)", fame.rawValue, awards.sorted().joined(separator: ",")].joined(separator: "|")
+        let list = { (items: [String]) -> String in items.sorted().joined(separator: ",") }
+        var parts: [String] = [time.rawValue, mood?.rawValue ?? "", kind ?? ""]
+        parts.append(list(Array(genres)))
+        parts.append(String(includeWatched))
+        parts.append(list(Array(sourceIDs)))
+        parts.append(decades.sorted().map(String.init).joined(separator: ","))
+        parts.append("\(minRating)")
+        parts.append(list(ratingSources.map(\.rawValue)))
+        parts.append("\(minLetterboxd)")
+        parts.append(fame.rawValue)
+        parts.append(list(Array(awards)))
+        return parts.joined(separator: "|")
     }
 
     /// Nivel 1: la propuesta rápida (lo que sigues primero si cabe; si no, al azar entre lo tuyo).
