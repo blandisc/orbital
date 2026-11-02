@@ -52,6 +52,9 @@ public final class TitleModel: ObservableModel {
     public var canFavorite: Bool { traktAvailable && metaID.hasPrefix("tt") }
     /// Cambios del corazón que aún no contesta Trakt: una lectura que llega mientras tanto no lo regresa a como estaba.
     private var favoriteWrites = 0
+    /// Cuántas veces se ha tocado «Mi lista»: una lectura de lo tuyo que salió antes de un toque trae el valor viejo y no lo
+    /// pisa (al abrir la ficha llegaban los episodios de Trakt y «Mi lista» se regresaba sola).
+    private var libraryEdits = 0
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     public private(set) var message: String? { didSet { changed() } }
@@ -249,9 +252,10 @@ public final class TitleModel: ObservableModel {
         async let listed = forYou.listKeys()
         async let favorites = forYou.favoriteKeys()
         async let queue = downloads.all
+        let edits = libraryEdits
         if let prefetched { entry = prefetched } else { entry = await watch.entry(metaID: id) }
         watched = entry?.seen ?? []
-        inLibrary = entry?.inList ?? false
+        if edits == libraryEdits { inLibrary = entry?.inList ?? false }
         traktAvailable = await linked
         inSomeList = await listed.contains(metaID)
         let onTraktFavorites = await favorites.contains(metaID)
@@ -363,6 +367,7 @@ public final class TitleModel: ObservableModel {
     /// Mi lista: cambia aquí al instante y viaja a tu watchlist de Trakt (sin conexión, en cuanto haya).
     public func toggleLibrary() async {
         let target = !inLibrary
+        libraryEdits += 1
         inLibrary = target
         await services.watch.setInLibrary(kind: kind, metaID: metaID, title: originalTitle, poster: poster, add: target, outbox: services.traktOutbox)
         await services.forYou.clearCache(["trakt:watchlist"])   // solo la watchlist: lo demás de Para ti sigue válido

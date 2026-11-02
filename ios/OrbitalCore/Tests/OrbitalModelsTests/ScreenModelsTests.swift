@@ -287,6 +287,24 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertNil(title.message)
     }
 
+    /// Tocar «Mi lista» mientras la ficha todavía lee lo tuyo (al abrirla llegan los episodios de Trakt y se vuelve a leer):
+    /// la lectura vieja no regresa el botón a como estaba (auditoría, tanda 4; pintaba la CI de rojo a ratos).
+    func testMyListToggleIsNotUndoneByARefreshInFlight() async throws {
+        let rig = try titleRig()
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        XCTAssertTrue(title.inLibrary)
+        for round in 0..<20 {
+            let refresh = Task { await title.refreshState() }
+            await Task.yield()   // la lectura ya salió con lo de antes del toque
+            let want = !title.inLibrary
+            await title.toggleLibrary()
+            await refresh.value
+            XCTAssertEqual(title.inLibrary, want, "vuelta \(round): la lectura vieja regresó Mi lista")
+            XCTAssertEqual(rig.services.library.entry("tt0386676")?.inList, want)
+        }
+    }
+
     /// Marcar visto: ✓ en el teléfono, a Trakt (`/sync/history`) y copia en Stremio (el bitfield), con el título original.
     func testMarkingWatchedIsLocalAndCopiesTheBitfieldToStremio() async throws {
         let rig = try ServicesRig()
