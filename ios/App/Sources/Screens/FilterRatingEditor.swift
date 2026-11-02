@@ -4,8 +4,8 @@ import OrbitalModels
 
 /// Búsqueda avanzada › Calificación (Fernando, 2 nov 2026; propuesta en docs/producto/propuestas-2026-11-01/calificacion.html):
 /// dos opiniones que hablan igual. Arriba, un resumen de lo elegido; debajo, «El público» (TMDB, de 10) y «Los cinéfilos»
-/// (Letterboxd, de 5 estrellas, solo películas), cada una con Sin mínimo · Buena · Muy buena · Excelente y su número, un
-/// ejemplo conocido para darle escala y «Ajustar el número» para lo fino. Con «Series», los cinéfilos se apagan y dicen por qué.
+/// (Letterboxd, de 5 estrellas, solo películas), cada una con Sin mínimo · Buena · Muy buena · Excelente y su número y
+/// «Ajustar el número» para lo fino. Con «Series», los cinéfilos se apagan y dicen por qué.
 struct FilterRatingEditor: View {
     let model: AdvancedFilterModel
     let hue: Color
@@ -19,11 +19,11 @@ struct FilterRatingEditor: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             summary
             source(title: Text("El público"), scale: Text("de 10"), detail: Text("Millones de votos en TMDB"), mark: AnyView(tmdbMark),
-                   value: filter.minRating, presets: RatingLevels.tmdb, prefix: "", example: Text("Dune: Part Two tiene 8.1"),
+                   value: filter.minRating, presets: RatingLevels.tmdb, prefix: "",
                    range: 1...9, fine: $fineTMDB, enabled: true, id: "tmdb") { v in edit { $0.minRating = v } }
             source(title: Text("Los cinéfilos"), scale: Text("de ★5 · solo películas"), detail: Text("Letterboxd · califican más duro"),
                    mark: AnyView(LetterboxdMark()), value: filter.minLetterboxd, presets: RatingLevels.letterboxd, prefix: "★",
-                   example: Text("Dune: Part Two tiene ★4.4"), range: 0.5...5, fine: $fineLetterboxd,
+                   range: 0.5...5, fine: $fineLetterboxd,
                    enabled: filter.format != .series, id: "letterboxd") { v in edit { $0.minLetterboxd = v } }
         }
     }
@@ -66,7 +66,7 @@ struct FilterRatingEditor: View {
 
     /// Una opinión: su encabezado, los cuatro niveles con su número, un ejemplo y, si lo pides, el deslizador.
     private func source(title: Text, scale: Text, detail: Text, mark: AnyView, value: Double?, presets: [Double], prefix: String,
-                        example: Text, range: ClosedRange<Double>, fine: Binding<Bool>, enabled: Bool, id: String,
+                        range: ClosedRange<Double>, fine: Binding<Bool>, enabled: Bool, id: String,
                         set: @escaping (Double?) -> Void) -> some View {
         let level = value.flatMap { RatingLevels.level($0, in: presets) }
         return VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -94,7 +94,6 @@ struct FilterRatingEditor: View {
                     .accessibilityIdentifier("filter-\(id)-slider")
             }
             HStack {
-                example.recipe(.caption, color: DS.textMuted)
                 Spacer()
                 if enabled {
                     Button { fine.wrappedValue.toggle() } label: {
