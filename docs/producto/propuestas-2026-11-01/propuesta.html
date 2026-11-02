@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbital · tres propuestas (1 nov 2026)</title>
+<style>
+  :root{--bg:#0c0c0e;--card:#18181c;--card2:#1e1e23;--line:#2a2a30;--muted:#a3a3ab;--dim:#55555d;--text:#f5f4f0;--teal:#5fd6c6;--amber:#f4c24d;
+    --red:#f0574d;--green:#3fd47a;--blue:#4a9cf0;--lb:#00e054;--sys:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sys);line-height:1.45}
+  main{max-width:1120px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-size:34px;margin:0 0 6px} h2{font-size:26px;margin:64px 0 6px} h3{font-size:17px;margin:0 0 6px}
+  .why{color:var(--teal);font-size:14px;font-weight:600;margin:0 0 4px}
+  .lead{color:var(--muted);font-size:17px;max-width:780px}
+  .row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:22px}
+  .opt{flex:1 1 300px;min-width:280px;background:var(--card);border-radius:18px;padding:18px;border:1px solid transparent}
+  .opt.rec{border-color:var(--teal)}
+  .opt h3 .tag{font-size:11px;font-weight:800;color:#06201c;background:var(--teal);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+  .opt p,.opt li{color:var(--muted);font-size:14px} .opt ul{padding-left:18px;margin:8px 0}
+  .pros b{color:var(--green)} .cons b{color:var(--red)}
+  .ask{background:var(--card);border-radius:16px;padding:16px 20px;margin-top:18px}
+  .ask li{color:var(--muted);margin:8px 0} .ask b{color:var(--text)}
+
+  /* 1 · mazo */
+  .phone{width:260px;flex:0 0 260px;border-radius:40px;background:#000;padding:10px;border:1px solid #222;box-shadow:0 18px 44px rgba(0,0,0,.5)}
+  .screen{border-radius:31px;height:520px;overflow:hidden;position:relative;background:linear-gradient(180deg,#141a1e,#0c0c0e 50%);padding:16px 14px}
+  .scap{font-size:12px;color:var(--teal);font-weight:700} .stitle{font-size:20px;font-weight:800;margin:2px 0 12px}
+  .deck{position:relative;height:330px}
+  .mcard{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,#3b5d78,#141b24);box-shadow:0 14px 30px rgba(0,0,0,.5)}
+  .mcard.back{transform:scale(.94) translateY(10px);opacity:.6}
+  .mcard .t{position:absolute;left:14px;bottom:14px;right:14px} .mcard .t b{font-size:18px;display:block} .mcard .t span{color:#cfd6dc;font-size:12px}
+  .stamp{position:absolute;top:22px;font-size:22px;font-weight:900;letter-spacing:.08em;border:3px solid;border-radius:10px;padding:2px 10px}
+  .tint{position:absolute;inset:0}
+  .left .mcard.top{transform:translateX(-46px) rotate(-9deg)} .left .tint{background:linear-gradient(90deg,rgba(240,87,77,.45),transparent 70%)}
+  .left .stamp{right:16px;color:var(--red);border-color:var(--red);transform:rotate(12deg)}
+  .right .mcard.top{transform:translateX(46px) rotate(9deg)} .right .tint{background:linear-gradient(270deg,rgba(63,212,122,.45),transparent 70%)}
+  .right .stamp{left:16px;color:var(--green);border-color:var(--green);transform:rotate(-12deg)}
+  .up .mcard.top{transform:translateY(-16px)} .up .tint{background:linear-gradient(0deg,transparent 30%,rgba(74,156,240,.5))}
+  .up .stamp{left:50%;transform:translateX(-50%);top:auto;bottom:90px;color:var(--blue);border-color:var(--blue);white-space:nowrap}
+  .playmini{position:absolute;right:12px;bottom:12px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:13px}
+  .btns{display:flex;justify-content:center;gap:18px;margin-top:18px}
+  .b{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:22px;font-weight:800;background:var(--card2);border:2px solid}
+  .b.x{color:var(--red);border-color:var(--red)} .b.s{width:44px;height:44px;margin-top:5px;color:var(--blue);border-color:var(--blue);font-size:18px} .b.h{color:var(--green);border-color:var(--green)}
+  .on .b.x{background:var(--red);color:#fff} .on2 .b.h{background:var(--green);color:#06201c} .on3 .b.s{background:var(--blue);color:#fff}
+  .lbl{display:flex;justify-content:center;gap:30px;color:var(--muted);font-size:11px;margin-top:6px}
+  .caption{text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+
+  /* 2 · calificación */
+  .sheet{background:var(--card2);border-radius:18px;padding:16px}
+  .seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;gap:3px;margin:10px 0}
+  .seg span{flex:1;text-align:center;padding:8px 4px;border-radius:9px;font-size:13px;color:var(--muted)} .seg span.on{background:var(--card);color:var(--text);font-weight:700}
+  .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .chip{background:var(--bg);border-radius:12px;padding:10px 6px;text-align:center;font-size:13px;color:var(--muted);border:2px solid transparent}
+  .chip b{display:block;color:var(--text);font-size:15px} .chip.on{border-color:var(--teal);color:var(--text)}
+  .src{font-size:12px;color:var(--dim);margin-top:10px}
+  .big{font-size:30px;font-weight:800;text-align:center} .slider{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--teal) 70%,var(--line) 70%);margin:12px 0 4px}
+
+  /* 3 · mosaico */
+  .mos{height:300px;border-radius:18px;overflow:hidden;background:#0b0b10;display:flex;gap:6px;padding:0 6px;position:relative}
+  .col{flex:1;display:flex;flex-direction:column;gap:6px;animation-name:drift;animation-timing-function:linear;animation-iteration-count:infinite}
+  .col i{display:block;flex:0 0 82px;height:82px;border-radius:9px;background:linear-gradient(160deg,var(--c1),var(--c2))}
+  @keyframes drift{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+  @keyframes driftDown{from{transform:translateY(-50%)}to{transform:translateY(0)}}
+  @keyframes breathe{0%{transform:translateY(0)}40%{transform:translateY(-22%)}55%{transform:translateY(-22%)}95%{transform:translateY(-50%)}100%{transform:translateY(-50%)}}
+  .mos .veil{position:absolute;inset:0;background:linear-gradient(180deg,#0b0b10,transparent 18%,transparent 82%,#0b0b10);pointer-events:none}
+  .speeds{font-size:12px;color:var(--dim);margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+  <p class="why">Propuestas · 1 nov 2026</p>
+  <h1>Tres propuestas para Orbital</h1>
+  <p class="lead">El mazo de «¿Qué vemos hoy?» más como Tinder, la calificación del filtro avanzado más clara y el mosaico de Explorar moviéndose con más calma. En cada una va mi recomendación (con borde turquesa) y al final lo que necesito que decidas.</p>
+
+  <!-- 1 -->
+  <h2>1 · «¿Qué vemos hoy?» como Tinder</h2>
+  <p class="lead">Cada dirección tiene su color, su sello y su botón: <b style="color:var(--red)">izquierda = Paso (rojo)</b>, <b style="color:var(--green)">derecha = Guardar (verde)</b> y <b style="color:var(--blue)">arriba = Súper (azul)</b>. Mientras arrastras, la carta se tiñe del color de lo que va a pasar y aparece el sello; al soltar, una vibración distinta para cada una.</p>
+  <div class="row">
+    <div class="phone left on"><div class="screen">
+      <div class="scap">Encuentra tu match perfecto</div><div class="stitle">¿Qué vemos hoy?</div>
+      <div class="deck"><div class="mcard back"></div><div class="mcard top"><div class="tint"></div><div class="stamp">PASO</div><div class="t"><b>Dune</b><span>2021 · Ciencia ficción · 2 h 35 min</span></div><div class="playmini">▶</div></div></div>
+      <div class="btns"><div class="b x">✕</div><div class="b s">★</div><div class="b h">♥</div></div>
+      <div class="lbl"><span>Paso</span><span>Súper</span><span>Guardar</span></div>
+    </div><div class="caption">Arrastrando a la izquierda</div></div>
+    <div class="phone up on3"><div class="screen">
+      <div class="scap">Encuentra tu match perfecto</div><div class="stitle">¿Qué vemos hoy?</div>
+      <div class="deck"><div class="mcard back"></div><div class="mcard top" style="background:linear-gradient(160deg,#6b4a2a,#1b1712)"><div class="tint"></div><div class="stamp">★ PARA HOY</div><div class="t"><b>Perfect Days</b><span>2023 · Drama · 2 h 4 min</span></div><div class="playmini">▶</div></div></div>
+      <div class="btns"><div class="b x">✕</div><div class="b s">★</div><div class="b h">♥</div></div>
+      <div class="lbl"><span>Paso</span><span>Súper</span><span>Guardar</span></div>
+    </div><div class="caption">Arrastrando hacia arriba (Súper)</div></div>
+    <div class="phone right on2"><div class="screen">
+      <div class="scap">Encuentra tu match perfecto</div><div class="stitle">¿Qué vemos hoy?</div>
+      <div class="deck"><div class="mcard back"></div><div class="mcard top" style="background:linear-gradient(160deg,#2d5a45,#0f1a15)"><div class="tint"></div><div class="stamp">GUARDAR</div><div class="t"><b>Roma</b><span>2018 · Drama · 2 h 15 min</span></div><div class="playmini">▶</div></div></div>
+      <div class="btns"><div class="b x">✕</div><div class="b s">★</div><div class="b h">♥</div></div>
+      <div class="lbl"><span>Paso</span><span>Súper</span><span>Guardar</span></div>
+    </div><div class="caption">Arrastrando a la derecha</div></div>
+  </div>
+  <p class="lead" style="margin-top:22px">«Ver ya» deja de ser el botón del centro (ese lugar es del Súper, como en Tinder) y pasa a un ▶ chico en la esquina de la carta: sigue a un toque, pero ya no se confunde con decidir.</p>
+  <h3 style="margin-top:22px">¿Qué hace el Súper?</h3>
+  <div class="row">
+    <div class="opt rec"><h3>A · «Para hoy» <span class="tag">Recomendada</span></h3>
+      <p>La guarda hasta arriba de tu lista con una marca «Para hoy» y el aviso ofrece «Ver ya». En Inicio, lo de «Para hoy» sale primero esa noche.</p>
+      <ul class="pros"><li><b>+</b> Es lo que Tinder significa: «esta sí, ya».</li><li><b>+</b> No te avienta a ver algo por un desliz.</li></ul>
+      <ul class="cons"><li><b>−</b> Una marca más que entender.</li></ul></div>
+    <div class="opt"><h3>B · «Ver ya»</h3>
+      <p>Hacia arriba la abre y la reproduce al momento.</p>
+      <ul class="pros"><li><b>+</b> Lo más rápido para decidir esta noche.</li></ul>
+      <ul class="cons"><li><b>−</b> Un deslizamiento sin querer empieza una película.</li><li><b>−</b> Ya existe el ▶ de la carta.</li></ul></div>
+    <div class="opt"><h3>C · «Me encanta»</h3>
+      <p>La guarda y le pone el corazón de tus favoritos en Trakt.</p>
+      <ul class="pros"><li><b>+</b> Usa algo que ya existe.</li></ul>
+      <ul class="cons"><li><b>−</b> Favoritos es para lo que ya viste y te encantó; mezclarlo con lo que quieres ver lo ensucia.</li></ul></div>
+  </div>
+
+  <!-- 2 -->
+  <h2>2 · La calificación del filtro avanzado</h2>
+  <p class="lead">Hoy hay un número de 0 a 9 con el logo de TMDB y, debajo, estrellas de Letterboxd: dos escalas distintas y un logo que se confunde con IMDb (TMDB es <i>The Movie Database</i>, no IMDb). La idea: decir qué tan buena la quieres con palabras y elegir de quién es la opinión.</p>
+  <div class="row">
+    <div class="opt"><h3>Hoy</h3>
+      <div class="sheet"><div class="big">7.5 <span style="font-size:14px;color:var(--muted)">o más</span></div><div class="slider"></div>
+        <div class="src">Cualquiera · <b style="color:#90cea1">TMDB</b> · 9</div>
+        <div style="margin-top:12px;font-size:13px">●●● En Letterboxd <span style="float:right;color:var(--dim)">Solo películas</span></div>
+        <div class="chips" style="grid-template-columns:repeat(4,1fr)"><div class="chip">3 ★</div><div class="chip">3.5 ★</div><div class="chip on">4 ★</div><div class="chip">4.5 ★</div></div></div>
+      <ul class="cons"><li><b>−</b> Dos escalas (de 10 y de 5) a la vez.</li><li><b>−</b> No dice qué significa «7.5».</li></ul></div>
+    <div class="opt rec"><h3>A · Palabras y «según quién» <span class="tag">Recomendada</span></h3>
+      <div class="sheet">
+        <div class="seg"><span class="on">El público</span><span>Los cinéfilos</span></div>
+        <div class="chips"><div class="chip"><b>Buena</b>7 o más</div><div class="chip on"><b>Muy buena</b>7.5 o más</div><div class="chip"><b>Excelente</b>8 o más</div></div>
+        <div class="src">El público: millones de votos en TMDB. Los cinéfilos: Letterboxd (solo películas).</div></div>
+      <ul class="pros"><li><b>+</b> Una sola decisión: qué tan buena.</li><li><b>+</b> «Según quién» explica la diferencia sin logos.</li><li><b>+</b> Con «Los cinéfilos», las mismas palabras usan 3.5★, 3.8★ y 4★.</li></ul>
+      <ul class="cons"><li><b>−</b> Pierdes el ajuste fino de medio punto (se puede dejar en «Más…»).</li></ul></div>
+    <div class="opt"><h3>B · Todo en estrellas</h3>
+      <div class="sheet"><div class="big" style="color:var(--amber)">★★★★☆</div>
+        <div class="seg"><span class="on">Todas</span><span>Público</span><span>Cinéfilos</span></div>
+        <div class="src">4 estrellas = 8 en TMDB = 4★ en Letterboxd.</div></div>
+      <ul class="pros"><li><b>+</b> Una sola escala, la de Letterboxd y la de calificar en Orbital.</li></ul>
+      <ul class="cons"><li><b>−</b> 4★ en TMDB (8) y en Letterboxd (4) no valen lo mismo: Letterboxd califica más duro y salen pocas.</li></ul></div>
+  </div>
+
+  <!-- 3 -->
+  <h2>3 · El mosaico de Explorar, con más calma</h2>
+  <p class="lead">Hoy cada columna va a su velocidad (de 12 a 19 puntos por segundo): las de 17 y 19 se sienten apuradas y el conjunto se ve inquieto. Abajo, las tres opciones moviéndose de verdad (a la velocidad que se verían en el iPhone).</p>
+  <div class="row">
+    <div class="opt"><h3>Hoy</h3>
+      <div class="mos" id="today"></div><div class="speeds">16 · 12 · 19 · 14 pt/s</div>
+      <ul class="cons"><li><b>−</b> Dos columnas casi al doble que otras.</li></ul></div>
+    <div class="opt rec"><h3>A · Marea lenta <span class="tag">Recomendada</span></h3>
+      <div class="mos" id="tide"></div><div class="speeds">8 · 9 · 8 · 9 pt/s, una sube y la siguiente baja</div>
+      <ul class="pros"><li><b>+</b> Como el protector de pantalla del Apple TV: se nota vivo pero no distrae.</li><li><b>+</b> Columnas en sentidos contrarios: profundidad sin velocidad.</li></ul>
+      <ul class="cons"><li><b>−</b> Tarda más en enseñarte pósters nuevos (unos 20 s).</li></ul></div>
+    <div class="opt"><h3>B · Respira</h3>
+      <div class="mos" id="breath"></div><div class="speeds">avanza, se detiene un momento, sigue (columnas desfasadas)</div>
+      <ul class="pros"><li><b>+</b> En cada pausa se alcanza a ver un póster.</li></ul>
+      <ul class="cons"><li><b>−</b> Las pausas pueden sentirse como tirones.</li></ul></div>
+  </div>
+
+  <h2>Lo que necesito que decidas</h2>
+  <div class="ask"><ol>
+    <li><b>El mazo:</b> ¿te gusta rojo · azul · verde con sellos, y «Ver ya» como ▶ en la carta? ¿El Súper es A «Para hoy» (mi recomendación), B «Ver ya» o C «Me encanta»?</li>
+    <li><b>La calificación:</b> ¿A, palabras con «El público / Los cinéfilos» (mi recomendación), o B, todo en estrellas?</li>
+    <li><b>El mosaico:</b> ¿A «Marea lenta» (mi recomendación) o B «Respira»? Si quieres, la misma velocidad también en la TV.</li>
+  </ol></div>
+</main>
+<script>
+  const hues=[["#3b5d78","#141b24"],["#6b4a2a","#1b1712"],["#2d5a45","#0f1a15"],["#5a2d4a","#1a0f17"],["#4a4a6b","#14141f"],["#6b2d2d","#1a0f0f"],["#2d4a6b","#0f141a"],["#5a5a2d","#17170f"]];
+  function build(id, cols){
+    const box=document.getElementById(id);
+    cols.forEach((c,i)=>{
+      const col=document.createElement('div'); col.className='col';
+      const n=12; for(let k=0;k<n*2;k++){const t=document.createElement('i'); const h=hues[(k*3+i*5)%hues.length]; t.style.setProperty('--c1',h[0]); t.style.setProperty('--c2',h[1]); col.appendChild(t)}
+      // la altura de media columna (12 pósters de 82 + 6 de espacio) entre la velocidad = segundos por vuelta
+      const half=12*88; col.style.animationDuration=(half/c.speed)+'s';
+      if(c.name) col.style.animationName=c.name; if(c.delay) col.style.animationDelay=c.delay;
+      box.appendChild(col);
+    });
+    const v=document.createElement('div'); v.className='veil'; box.appendChild(v);
+  }
+  build('today',[{speed:16},{speed:12},{speed:19},{speed:14}]);
+  build('tide',[{speed:8},{speed:9,name:'driftDown'},{speed:8},{speed:9,name:'driftDown'}]);
+  build('breath',[{speed:10,name:'breathe'},{speed:10,name:'breathe',delay:'-6s'},{speed:10,name:'breathe',delay:'-12s'},{speed:10,name:'breathe',delay:'-3s'}]);
+</script>
+</body>
+</html>
