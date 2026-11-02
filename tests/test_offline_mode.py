@@ -69,3 +69,16 @@ def test_the_title_page_details_and_saga_like_the_iphone(monkeypatch):
     saga = {"parts": [{"id": 2, "release_date": "2024-02-27"}, {"id": 3}, {"id": 1, "release_date": "2021-09-15"}]}
     monkeypatch.setattr(client, "_get", lambda path, **params: saga)
     assert [p["id"] for p in client.collection_parts(726871)] == [1, 2, 3]
+
+
+def test_seasons_say_how_long_until_they_start_like_the_iphone():
+    """«Próximas temporadas»: cuánto falta, con las mismas palabras que la línea de tiempo del iPhone."""
+    from datetime import date
+
+    from orbital.library import tmdb
+
+    assert [tmdb.season_when(d) for d in (0, 1, 24, 44, 50, 120)] == [
+        "Ya es temporada", "Mañana", "En 24 días", "En 44 días", "En 2 meses", "En 4 meses"]
+    navidad = tmdb.SEASON_BY_SLUG["navidad"]
+    assert tmdb.season_days(navidad, date(2026, 11, 1)) == 24
+    assert tmdb.season_days(navidad, date(2026, 12, 31)) == 0  # cruza el año

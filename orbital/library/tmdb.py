@@ -116,6 +116,25 @@ def ordered_seasons(today: date, seasons: tuple[Season, ...] = SEASONS) -> list[
         0 if _in_season(pair[1].start, pair[1].end, day) else _days_until(pair[1].start, day), pair[0]))
     return [season for _, season in ranked]
 
+
+def season_days(season: Season, today: date) -> int:
+    """Cuántos días faltan para que empiece (0: ya va)."""
+    day = (today.month, today.day)
+    return 0 if _in_season(season.start, season.end, day) else _days_until(season.start, day)
+
+
+def season_when(days: int) -> str:
+    """Cuánto falta, como la línea de tiempo de «Próximas temporadas» del iPhone (SeasonTimelineStop): «ya es temporada»,
+    «mañana», «en 24 días» o, desde 45 días, «en 4 meses»."""
+    if days <= 0:
+        return "Ya es temporada"
+    if days <= 1:
+        return "Mañana"
+    if days < 45:
+        return f"En {days} días"
+    months = round(days / 30)
+    return "En 1 mes" if months == 1 else f"En {months} meses"
+
 PLATFORMS = {
     "netflix": ("Netflix", ("netflix",)),
     "disney": ("Disney+", ("disney plus", "disney+")),

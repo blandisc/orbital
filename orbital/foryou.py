@@ -668,9 +668,11 @@ class ForYou:
             out += [{"id": f"genre:{g.slug}", "title": g.title, "headline": f"Lo mejor de {g.title} en {year}",
                      "meta": "Las mejor calificadas del año", "icon": "film", "source": "TMDB", "collection": "genre",
                      "kinds": ["movie", "series"]} for g in tmdb_api.GENRES]
+            today = self._today()
             out += [{"id": f"season:{s.slug}", "title": s.title, "headline": s.title, "meta": s.blurb, "icon": "calendar",
-                     "source": "TMDB", "collection": "season", "kinds": ["movie", "series"]}
-                    for s in tmdb_api.ordered_seasons(self._today())]
+                     "source": "TMDB", "collection": "season", "kinds": ["movie", "series"],
+                     "when": tmdb_api.season_when(tmdb_api.season_days(s, today))}
+                    for s in tmdb_api.ordered_seasons(today)]
         if self.trakt.configured:
             this_year = datetime.now().year
             out += [{"id": f"year:{y}", "title": str(y), "meta": f"Lo más popular de {y}", "icon": "calendar", "source": "Trakt",

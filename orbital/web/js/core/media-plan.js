@@ -177,7 +177,9 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
         const hero = heroOf(got[0], EYEBROW[type]);
         // Un estudio: su logo (TMDB) en la tarjeta, arriba en el héroe y en su lista, en blanco (mono).
         if (type === "studio" && l.logo) hero.extra = { ...hero.extra, logo: l.logo, logoMono: true };
-        return card(`collection:${l.id}`, l.title, { type: type === "award" ? "award" : type, name: l.title, detail: l.meta, statue: l.statue,
+        // Una temporada dice cuánto falta («En 24 días», como la línea de tiempo del iPhone) antes de su frase.
+        const detail = l.when ? `${l.when} · ${l.meta}` : l.meta;
+        return card(`collection:${l.id}`, l.title, { type: type === "award" ? "award" : type, name: l.title, detail, statue: l.statue,
           tint: l.tint, count: l.count, logo: l.logo || null, posters: got.slice(0, type === "year" ? 4 : 3).map(posterOf), list: l }, hero);
       }).filter((c) => type === "year" || c.collection.posters.length);
     if (items.length) rows.push({ id: `curated:${group}`, title, group, cards: true, items });
