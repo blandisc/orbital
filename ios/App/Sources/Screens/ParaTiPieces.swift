@@ -32,7 +32,7 @@ struct SuggestionActions: View {
                 Task { if await env.markWatched(suggestion), list != nil { onWatched?(suggestion) } }
             }
         }
-        if let list {
+        if list != nil {
             Button("Quitar de Mi lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
         } else if favorite {
             Button("Quitar de favoritos", systemImage: "heart.slash", role: .destructive) { onDismiss(suggestion) }

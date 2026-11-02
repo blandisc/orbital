@@ -61,7 +61,8 @@ final class ImagePipeline: @unchecked Sendable {
         configuration.httpMaximumConnectionsPerHost = Self.maxDownloads
         configuration.timeoutIntervalForRequest = 20
         session = URLSession(configuration: configuration)
-        NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [memory] _ in memory.removeAllObjects() }
+        nonisolated(unsafe) let memory = memory   // NSCache es seguro entre hilos; Swift no lo sabe (no es Sendable)
+        NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { _ in memory.removeAllObjects() }
     }
 
     private func key(_ url: URL, _ maxPixel: CGFloat) -> String { "\(url.absoluteString)#\(Self.bucket(maxPixel))" }

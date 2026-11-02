@@ -1,5 +1,6 @@
 import UIKit
 import Vision
+import CoreML
 
 /// Dónde está lo importante de una imagen (0…1, desde arriba a la izquierda): las caras, y si no hay, lo que llama la atención
 /// (Vision, en el teléfono, sin red). Así un recorte grande (un fondo 16:9 en un marco alto) se acomoda al sujeto en vez de al
@@ -27,7 +28,12 @@ enum FocalPoint {
         let objects = VNGenerateObjectnessBasedSaliencyImageRequest()
         #if targetEnvironment(simulator)
         // El simulador no tiene el motor neuronal: sin esto, la atención falla y todo quedaba al centro.
-        for request in [faces, attention, objects] as [VNImageBasedRequest] { request.usesCPUOnly = true }
+        // (`usesCPUOnly` está obsoleto desde iOS 17: se elige el procesador en cada etapa.)
+        for request in [faces, attention, objects] as [VNImageBasedRequest] {
+            for (stage, devices) in (try? request.supportedComputeStageDevices) ?? [:] {
+                request.setComputeDevice(devices.first { if case .cpu = $0 { true } else { false } }, for: stage)
+            }
+        }
         #endif
         do { try VNImageRequestHandler(cgImage: image, options: [:]).perform([faces, attention, objects]) } catch { return nil }
         // Las caras grandes (las de los protagonistas, no las del fondo); si no hay, lo que más llama la atención, y si tampoco,

@@ -500,7 +500,7 @@ extension PlayerScreen {
     func scrubValue(shown: Double, duration: Double, scares: [JumpScare]) -> Text {
         let time = Text(verbatim: "\(clock(shown)) / \(clock(duration))")
         let ahead = scares.filter { $0.time > shown }.count
-        return scares.isEmpty ? time : time + Text(verbatim: ", ") + Text("\(ahead) sustos por delante")
+        return scares.isEmpty ? time : Text("\(time), \(Text("\(ahead) sustos por delante"))")
     }
 
     /// Las rayitas fijas: dónde termina la intro y dónde empiezan los créditos.

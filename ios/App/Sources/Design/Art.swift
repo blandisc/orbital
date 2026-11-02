@@ -51,17 +51,17 @@ struct BleedArt<Content: View>: View {
             // Al recogerse: se queda un poco atrás, se encoge apenas, se difumina al final y se desvanece. Todo con
             // `visualEffect` (en el render, sin volver a medir ni a dibujar la imagen); al jalar hacia abajo se estira desde abajo.
             .visualEffect { [on = collapse != nil, still = reduceMotion, raised] view, proxy in
-                let s = Self.collapseState(proxy, on: on, still: still, raised: raised)
+                let s = BleedCollapse.state(proxy, on: on, still: still, raised: raised)
                 return view.offset(y: s.offset).scaleEffect(s.scale, anchor: .bottom).blur(radius: s.blur).opacity(s.artOpacity)
             }
             // El logo y la frase se van con el contenido (sin parallax) y antes que el arte: no se quedan detrás de los datos.
             content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, scheme == .dark ? DS.Space.s3 : DS.Space.s5)
                 .visualEffect { [on = collapse != nil, still = reduceMotion, raised] view, proxy in
-                    let s = Self.collapseState(proxy, on: on, still: still, raised: raised)
+                    let s = BleedCollapse.state(proxy, on: on, still: still, raised: raised)
                     return view.scaleEffect(s.contentScale, anchor: .bottom).opacity(s.contentOpacity)
                 }
         }
-        .coordinateSpace(.named(Self.space))
+        .coordinateSpace(.named(BleedCollapse.space))
         .frame(minHeight: minHeight)      // con letra grande crece en vez de encimar el texto
         .padding(.horizontal, scheme == .dark ? 0 : DS.Space.gutter)
         .accessibilityElement(children: .contain)
@@ -83,30 +83,16 @@ struct BleedArt<Content: View>: View {
     /// sube desde abajo (como Apple TV y Música). Solo cambian su opacidad y su alto, en el render.
     private func veil(_ color: Color) -> some View {
         ZStack {
-            color.visualEffect { [still = reduceMotion, raised] view, proxy in view.opacity(Self.collapseState(proxy, on: true, still: still, raised: raised).dim) }
+            color.visualEffect { [still = reduceMotion, raised] view, proxy in view.opacity(BleedCollapse.state(proxy, on: true, still: still, raised: raised).dim) }
             LinearGradient(stops: [.init(color: color.opacity(DS.TitleHero.riseTopOpacity), location: 0), .init(color: color.opacity(DS.TitleHero.riseSolidOpacity), location: DS.TitleHero.riseSolidAt),
                                    .init(color: color, location: 1)], startPoint: .top, endPoint: .bottom)
                 .visualEffect { [still = reduceMotion, raised] view, proxy in
-                    let rise = Self.collapseState(proxy, on: true, still: still, raised: raised).rise
+                    let rise = BleedCollapse.state(proxy, on: true, still: still, raised: raised).rise
                     return view.scaleEffect(x: 1, y: max(rise, DS.TitleHero.riseMin), anchor: .bottom).opacity(rise > 0 ? 1 : 0)
                 }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    private nonisolated static var space: String { "bleed-art" }
-
-    /// Cuánto se ha recogido el arte entero (no la capa que pregunta): su lugar en el desplazamiento y su alto salen del
-    /// espacio con nombre del arte, así el logo, el velo y el arte usan la misma cuenta.
-    private nonisolated static func collapseState(_ proxy: GeometryProxy, on: Bool, still: Bool, raised: CGFloat = 0) -> HeroCollapse {
-        let tuning = HeroCollapse.Tuning(parallax: DS.TitleHero.parallax, shrink: DS.TitleHero.shrink, blur: DS.TitleHero.blur, blurFrom: DS.TitleHero.blurFrom,
-                                         dim: DS.TitleHero.dim, riseEnd: DS.TitleHero.riseEnd, fadeFrom: DS.TitleHero.fadeFrom,
-                                         contentFadeEnd: DS.TitleHero.contentFadeEnd, contentShrink: DS.TitleHero.contentShrink)
-        guard on, let hero = proxy.bounds(of: .named(space)) else { return HeroCollapse.at(minY: 0, height: 1, reduceMotion: true, tuning: tuning) }
-        // `bounds(of:)` es el arte entero visto desde esta capa: su origen es lo que esta capa está corrida dentro del arte.
-        let top = proxy.frame(in: .scrollView).minY + hero.minY + raised
-        return HeroCollapse.at(minY: top, height: hero.height, reduceMotion: still, tuning: tuning)
     }
 }
 
@@ -163,6 +149,24 @@ struct TitleLogo: View {
         Text(title).font((size == .hero ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font.weight(.bold)).foregroundStyle(DS.text)
             .lineLimit(size == .hero ? 2 : 1).multilineTextAlignment(centered ? .center : .leading)
             .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
+    }
+}
+
+/// La cuenta del recogido de `BleedArt`, fuera de la vista genérica: los cierres de `visualEffect` corren fuera del actor
+/// principal y, dentro de la vista, capturaban su tipo (aviso de Swift 6 sobre `Content.Type`).
+private enum BleedCollapse {
+    nonisolated static var space: String { "bleed-art" }
+
+    /// Cuánto se ha recogido el arte entero (no la capa que pregunta): su lugar en el desplazamiento y su alto salen del
+    /// espacio con nombre del arte, así el logo, el velo y el arte usan la misma cuenta.
+    nonisolated static func state(_ proxy: GeometryProxy, on: Bool, still: Bool, raised: CGFloat = 0) -> HeroCollapse {
+        let tuning = HeroCollapse.Tuning(parallax: DS.TitleHero.parallax, shrink: DS.TitleHero.shrink, blur: DS.TitleHero.blur, blurFrom: DS.TitleHero.blurFrom,
+                                         dim: DS.TitleHero.dim, riseEnd: DS.TitleHero.riseEnd, fadeFrom: DS.TitleHero.fadeFrom,
+                                         contentFadeEnd: DS.TitleHero.contentFadeEnd, contentShrink: DS.TitleHero.contentShrink)
+        guard on, let hero = proxy.bounds(of: .named(space)) else { return HeroCollapse.at(minY: 0, height: 1, reduceMotion: true, tuning: tuning) }
+        // `bounds(of:)` es el arte entero visto desde esta capa: su origen es lo que esta capa está corrida dentro del arte.
+        let top = proxy.frame(in: .scrollView).minY + hero.minY + raised
+        return HeroCollapse.at(minY: top, height: hero.height, reduceMotion: still, tuning: tuning)
     }
 }
 

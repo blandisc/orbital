@@ -77,7 +77,7 @@ struct VoiceRow: View {
         } else if let hint {
             // La pista: una frase del momento; tocarla la manda tal cual (atajo y lección a la vez).
             Button { tap { actions.say(hint) } } label: {
-                (Text("Prueba: ") + Text(verbatim: "«\(hint)»").foregroundStyle(DS.text).fontWeight(.medium))
+                Text("Prueba: \(Text(verbatim: "«\(hint)»").foregroundStyle(DS.text).fontWeight(.medium))")
                     .recipe(.caption, color: DS.textMuted).lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())

@@ -100,8 +100,9 @@ enum CompanionAlerts {
     static func scheduleCloseWarning(_ env: AppEnvironment, game: OrbitalRemote.Game?) {
         let center = UNUserNotificationCenter.current()
         // Sin juego (lo cerraste) o sin pausa: el aviso pendiente se quita (antes llegaba «se va a cerrar» de un juego ya cerrado).
-        center.getPendingNotificationRequests { requests in
-            let old = requests.map(\.identifier).filter { $0.hasPrefix("game-closing.") && $0 != game.map { "game-closing.\($0.id)" } }
+        let keep = game.map { "game-closing.\($0.id)" }
+        Task {
+            let old = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("game-closing.") && $0 != keep }
             center.removePendingNotificationRequests(withIdentifiers: old)
         }
         guard let game else { return }
@@ -116,12 +117,12 @@ enum CompanionAlerts {
 
     static func notify(id: String, title: String, body: String, at: Date?) {
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
+        Task {
+            guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
             let content = UNMutableNotificationContent()
             content.title = title; content.body = body; content.sound = .default
             let seconds = max(1, (at ?? Date()).timeIntervalSinceNow)
-            center.add(UNNotificationRequest(identifier: id, content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)))
+            try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)))
         }
     }
 }

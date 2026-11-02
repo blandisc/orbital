@@ -121,7 +121,6 @@ enum ReleaseNotifier {
             let facts = [alert.minutes.map { "\($0) min" }].compactMap { $0 }
             content.body = ([Strings.tr("Ya salió", language: language)] + facts).joined(separator: " · ")
             content.threadIdentifier = thread(alert.metaID)
-            content.summaryArgument = alert.show
             content.categoryIdentifier = category
             content.sound = .default
             content.userInfo = ["kind": "series", "id": alert.metaID, "video": alert.id, "title": alert.show]
