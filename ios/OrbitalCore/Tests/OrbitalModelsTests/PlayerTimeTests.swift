@@ -35,4 +35,26 @@ final class PlayerTimeTests: XCTestCase {
         rig.model.subtitleDelay = 1
         XCTAssertEqual(screen, 1)
     }
+
+    /// «Siguiente» sale al cruzar el 90 % con los controles a la vista: la posición sola no avisa a la pantalla, así que el
+    /// modelo avisa una vez al cruzar la marca (auditoría, tanda 5: no salía hasta volver a tocar).
+    func testCruzarElNoventaPorCientoAvisaUnaVez() async throws {
+        let rig = try PlayerModelTests().twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(890, duration: 1000))
+        await rig.model.handle(rig.playing(891, duration: 1000))
+        XCTAssertFalse(rig.model.pastNextMark)
+        var screen = 0
+        let a = rig.model.onChange { screen += 1 }
+        defer { a.cancel() }
+        await rig.model.handle(rig.playing(899.75, duration: 1000))
+        XCTAssertEqual(screen, 0, "antes del 90 %, nada")
+        await rig.model.handle(rig.playing(900, duration: 1000))
+        XCTAssertTrue(rig.model.pastNextMark)
+        XCTAssertEqual(screen, 1, "al cruzar el 90 % la pantalla se vuelve a pintar (sale «Siguiente»)")
+        await rig.model.handle(rig.playing(900.25, duration: 1000))
+        XCTAssertEqual(screen, 1, "y no otra vez con cada avance")
+        await rig.model.handle(rig.playing(100, duration: 1000))
+        XCTAssertFalse(rig.model.pastNextMark, "regresar antes del 90 % lo quita")
+    }
 }

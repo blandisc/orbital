@@ -397,16 +397,14 @@ extension PlayerScreen {
         }
     }
 
-    /// «Siguiente · T5 E3»: solo desde el 90 % del episodio (antes no estorba) y mientras no esté la tarjeta del final.
-    /// ¿Hay «Saltar intro» o «Siguiente» que enseñar ahora?
+    /// ¿Hay «Saltar intro» o «Siguiente» que enseñar ahora? «Siguiente · T5 E3» solo desde el 90 % del episodio (antes no
+    /// estorba; `pastNextMark` avisa al cruzarlo) y mientras no esté la tarjeta del final.
     func offersSkipOrNext(_ model: PlayerModel) -> Bool {
-        let s = model.snapshot
-        return model.skipIntroTo != nil || (model.nextUp != nil && model.upNext == nil && s.duration > 0 && s.position >= s.duration * DS.PlayerPanel.nextAt)
+        model.skipIntroTo != nil || (model.nextUp != nil && model.upNext == nil && model.pastNextMark)
     }
 
     @ViewBuilder func nextEpisode(_ model: PlayerModel) -> some View {
-        let s = model.snapshot
-        if let next = model.nextUp, model.upNext == nil, model.skipIntroTo == nil, s.duration > 0, s.position >= s.duration * DS.PlayerPanel.nextAt {
+        if let next = model.nextUp, model.upNext == nil, model.skipIntroTo == nil, model.pastNextMark {
             Button { Task { await model.playEpisode(next.videoID) } } label: {
                 Label { Text("Siguiente · \(next.label)") } icon: { Image(systemName: "forward.end.fill") }
             }

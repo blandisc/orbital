@@ -52,9 +52,13 @@ public final class PlayerModel: ObservableModel {
     public internal(set) var snapshot = EngineSnapshot() {
         didSet {
             time.update(position: snapshot.position, duration: snapshot.duration)
+            pastNextMark = snapshot.duration > 0 && snapshot.position >= snapshot.duration * PlaybackRules.nextEpisodeAt
             if !snapshot.sameExceptPosition(oldValue) { changed() }
         }
     }
+    /// Ya pasó el 90 % del video: desde ahí los controles ofrecen «Siguiente». Avisa una vez al cruzarlo (la posición sola ya
+    /// no avisa a la pantalla, y «Siguiente» no salía hasta volver a tocar; auditoría, tanda 5).
+    public private(set) var pastNextMark = false { didSet { if oldValue != pastNextMark { changed() } } }
     /// La posición y la duración, para lo único que se mueve con el video: la barra de avance y sus tiempos.
     public let time = PlayerTime()
     /// Un episodio descargado que viste hasta el final y del que el reproductor pasó solo al siguiente (para «Borrar al

@@ -11,6 +11,7 @@ public enum PlaybackRules {
     public static let stillWatchingAfter = 3                 // episodios seguidos sin tocar la pantalla → «¿Sigues viendo?»
     public static let streamScrubInterval: UInt64 = 250_000_000   // ns entre búsquedas al arrastrar la barra de un video de internet
     public static let maxSourceRetries = 4                   // «otra fuente si falla»
+    public static let nextEpisodeAt = 0.9                    // parte del episodio: desde ahí los controles ofrecen «Siguiente»
     public static let skipSeconds: Double = 10               // los botones y el doble toque de ±10 s
     public static let fastForwardRate: Float = 2             // mantener el dedo en el gesto de 2×
     /// Un salto de más de esto (adelantar, regresar, otra fuente) se le vuelve a avisar a Trakt: su «Viendo ahora»

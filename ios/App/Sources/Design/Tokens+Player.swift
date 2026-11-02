@@ -111,8 +111,6 @@ extension DS {
         static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
         static let episodeThumb: CGFloat = 112
-        /// «Siguiente» en los controles aparece al llegar a esta parte del episodio (antes no estorba).
-        static let nextAt = 0.9
         /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
         static let sizeValue: CGFloat = 72
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
