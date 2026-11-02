@@ -53,7 +53,7 @@ export function AwardWordmark(name, tint = "gold", extra = "") {
 /** El sello de origen junto a un título (Trakt, Stremio o tu Orbital), como SourceBadge del iPhone. */
 const SOURCE = {
   trakt: ["source-badge source-badge--trakt", "Trakt"], stremio: ["source-badge source-badge--stremio", "Stremio"],
-  orbital: ["source-badge source-badge--orbital", "Orbital"],
+  orbital: ["source-badge source-badge--orbital", "Orbital"], letterboxd: ["source-badge source-badge--letterboxd", "Letterboxd"],
 };
 export function SourceBadge(source) {
   const [cls, name] = SOURCE[source] ?? [];

@@ -105,6 +105,7 @@
   line-height: var(--leading-normal); white-space: nowrap;
 }
 .source-badge--trakt { background: var(--color-source-trakt); }
+.source-badge--letterboxd { background: var(--color-source-letterboxd); }
 .source-badge--stremio { background: var(--color-source-stremio); }
 .source-badge--orbital { background: var(--color-source-orbital); }
 

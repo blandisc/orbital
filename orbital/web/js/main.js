@@ -247,7 +247,7 @@ const ui = {
   }),
   // «¿Qué vemos hoy?» (como el iPhone): el mazo de tus propuestas de hoy.
   match: createMatchDeck({
-    load: (mood) => api.matchDeck(mood),
+    load: () => api.matchDeck(),
     save: (card, add, where = null) => saveMatch(card, add, where),
     onOpen: (card) => openTitle(card),
     onPlay: (card) => (card.kind === "movie" ? watch({ kind: "movie", id: card.meta_id, title: card.title, item: card }) : openTitle(card)),

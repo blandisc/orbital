@@ -76,6 +76,7 @@
 .title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); }
 .title__rating-mark { display: block; height: 1.3rem; width: auto; }
 .title__rating-mark--trakt { height: 1.4rem; } /* el círculo se ve más chico que las cajas a la misma altura */
+.title__rating-mark--letterboxd { height: 1.1rem; } /* sus tres puntos, a lo ancho */
 
 /* Serie, con el foco en la fila: cuál episodio es («T2 · E3 · Su nombre»). Guarda su renglón aunque esté vacío. */
 .title__episode {
@@ -273,3 +274,26 @@
 .title__rating--mine { gap: var(--space-2); }
 .title__rating-label { color: var(--color-on-art-secondary); }
 .title__rating-stars { color: var(--color-rating); letter-spacing: var(--tracking-label); }
+
+/* «Reseñas en Letterboxd» (como el iPhone): tarjetas de vidrio en fila, la tuya primero con el borde verde de Letterboxd; las
+   que traen spoilers, tapadas hasta que las abres. */
+.title__more-row--reviews { align-items: stretch; }
+.title__review {
+  flex: none; display: flex; flex-direction: column; gap: var(--space-2); width: var(--review-width); padding: var(--inset-card);
+  border-radius: var(--tile-radius); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+}
+.title__review--mine { box-shadow: inset var(--letterboxd-edge) 0 0 var(--color-letterboxd), var(--edge-glass-hairline); }
+.title__review--focused { background: var(--color-glass-selected); box-shadow: var(--focus-lift), var(--edge-glass-selected); transform: scale(1.02); }
+.title__review-head { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+.title__review-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
+.title__review--mine .title__review-author { color: var(--color-letterboxd); }
+.title__review-stars { flex: none; color: var(--color-rating); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--tracking-label); }
+.title__review-liked { flex: none; color: var(--color-source-trakt); }
+.title__review-likes { flex: none; margin-left: auto; color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); }
+.title__review-when { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); }
+.title__review-text {
+  margin: 0; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); line-height: var(--leading-normal);
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line;
+}
+.title__review-text--hidden { font-style: italic; }

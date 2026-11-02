@@ -7,7 +7,7 @@ import { TONIGHT, today, tonightPick } from "../core/tonight.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
 import { Glyph } from "./glyph.js";
-import { EmptyState, Pill, Veil } from "./ui.js";
+import { EmptyState, Veil } from "./ui.js";
 
 /**
  * «¿Qué vemos hoy?» · Encuentra tu match perfecto, como el iPhone (MatchDeckScreen y MatchCard, «como Tinder», 1 nov 2026): un
@@ -15,12 +15,12 @@ import { EmptyState, Pill, Veil } from "./ui.js";
  * con su porqué, su nombre, año · duración · tipo, sus géneros, su calificación de Trakt y el ▶ de «Ver ya» (A). Abajo, ✕ · ★ ·
  * ♥ con su color: ← Paso (rojo; no vuelve en un mes), ↑ Para hoy (el azul de Orbital: guardada y primera en Mi lista hoy) y
  * → Guardar (verde; en «Tu match perfecto» de Trakt, sin Trakt en Mi lista). Al decidir, la carta se tiñe, asoma su sello y
- * sale volando hacia allá. Y su ficha · X deshace lo último · LB/RB el ánimo. Con el dedo o el ratón, los botones y la carta.
+ * sale volando hacia allá. Y su ficha · X deshace lo último. Sin ánimos (Fernando, 1 nov 2026: el mazo es uno solo, de todo).
+ * Con el dedo o el ratón, los botones y la carta.
  *
- * load(mood) → { cards: [{ meta_id, kind, title, image, hero, genres, why, year, runtime, rating }] } · save(card, add) → "match" | "none"
+ * load() → { cards: [{ meta_id, kind, title, image, hero, genres, why, year, runtime, rating }] } · save(card, add) → "match" | "none"
  * onOpen(card) · onPlay(card) · onSaved(card, where, err, { tonight }) · onMove · onClose · onReady (llegaron las cartas)
  */
-const MOODS = [[null, "Todos"], ["light", "Ligera"], ["intense", "Intensa"], ["think", "Para pensar"], ["together", "En pareja"]];
 const DISCARDED = "match-discarded";
 export const DISCARD_DAYS = 30;
 const GENRES = 3; // DS.Match.genres
@@ -39,20 +39,17 @@ const WAYS = {
 
 export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady }) {
   const backdrop = h("div", { class: "match__backdrop", "aria-hidden": "true" });
-  const moods = h("div", { class: "match__moods", role: "tablist", "aria-label": "Ánimo" });
   const saved = h("span", { class: "match__saved", hidden: true });
   const stage = h("div", { class: "match__stage" });
   const actions = h("div", { class: "match__actions" });
   const el = h("section", { class: "match screen", hidden: true, "aria-label": "¿Qué vemos hoy?" },
     backdrop,
     h("header", { class: "match__head" },
-      h("div", { class: "match__titles" }, h("span", { class: "match__eyebrow" }, "Encuentra tu match perfecto"), h("h1", { class: "match__title" }, "¿Qué vemos hoy?"),
-        moods),
+      h("div", { class: "match__titles" }, h("span", { class: "match__eyebrow" }, "Encuentra tu match perfecto"), h("h1", { class: "match__title" }, "¿Qué vemos hoy?")),
       saved),
     stage, actions);
 
   let cards = [];
-  let mood = null;
   let kept = []; // lo que guardaste en esta vuelta
   let last = null; // lo último (para X Deshacer): { card, how: "save" | "discard", where }
   let flying = false; // la carta va saliendo: lo siguiente espera a que llegue la otra
@@ -75,10 +72,9 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   async function refill() {
     const mine = ++token;
     mount(stage, h("div", { class: "match__card match__card--skeleton", "aria-label": "Cargando" }));
-    paintMoods();
     paintActions();
     try {
-      const res = await load(mood);
+      const res = await load();
       if (mine !== token) return;
       const gone = discards();
       const keptIds = new Set(kept.map((c) => c.meta_id));
@@ -94,17 +90,6 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     onReady?.(); // las pistas del pie, ya con la carta («Ver ya», «Ficha»)
   }
 
-  function paintMoods() {
-    mount(moods, MOODS.map(([id, label], i) => Pill(label, { on: id === mood, tone: "tab", role: "tab", tabindex: "-1", onClick: () => pickMood(i) })));
-  }
-
-  function pickMood(i) {
-    if (!MOODS[i] || MOODS[i][0] === mood) return;
-    mood = MOODS[i][0];
-    refill();
-    onMove?.();
-  }
-
   /** El fondo de la pantalla: el arte de la carta de arriba, desenfocado y en voz baja (como el resto de Orbital). */
   function paintBackdrop(card) {
     const src = card?.hero || card?.image;
@@ -115,7 +100,6 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   }
 
   function paint() {
-    paintMoods();
     saved.hidden = !kept.length;
     mount(saved, svg(ICONS.heart), String(kept.length));
     const [top, next] = cards;
@@ -123,8 +107,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (!top) {
       mount(stage, EmptyState(kept.length
         ? { icon: "bookmark", title: "Ya viste todo el mazo", text: `Guardaste ${kept.length}. Vuelve mañana: el mazo cambia cada día.` }
-        : mood ? { icon: "spark", title: "Nada de este ánimo", text: "Prueba con otro o con todos." }
-          : { icon: "list", title: "Ya viste todo el mazo", text: "Vuelve mañana: el mazo cambia cada día." }));
+        : { icon: "list", title: "Ya viste todo el mazo", text: "Vuelve mañana: el mazo cambia cada día." }));
       return paintActions();
     }
     mount(stage, next && Card(next, { behind: true }), Card(top));
@@ -244,11 +227,6 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
-    if (action === "prevsection" || action === "nextsection") { // LB/RB: el ánimo
-      const at = MOODS.findIndex(([id]) => id === mood) + (action === "nextsection" ? 1 : -1);
-      pickMood(Math.max(0, Math.min(MOODS.length - 1, at)));
-      return true;
-    }
     if (action === "left") { decide("pass"); return true; }
     if (action === "right") { decide("keep"); return true; }
     if (action === "up") { decide("tonight"); return true; }
@@ -259,7 +237,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   }
 
   const hints = (g) => [cards[0] && { glyph: g.select, label: "Ver ya" }, cards[0] && { glyph: g.options, label: "Ficha" },
-    last && { glyph: g.alt, label: "Deshacer" }, { glyph: g.section, label: "Ánimo", secondary: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
+    last && { glyph: g.alt, label: "Deshacer" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
 
   return { el, open, close, handle, hints, play, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

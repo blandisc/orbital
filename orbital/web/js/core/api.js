@@ -110,7 +110,7 @@ export const api = {
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
   forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),
   forYouCollections: () => request("/api/foryou/collections"), // Colecciones: los premios y las listas famosas
-  matchDeck: (mood = null) => request(`/api/foryou/match${mood ? `?mood=${encodeURIComponent(mood)}` : ""}`),
+  matchDeck: () => request("/api/foryou/match"), // un solo mazo, de todo (sin ánimos)
   match: (kind, id, add = true) => post("/api/foryou/match", { kind, id, add }),
   myRating: (kind, id) => request(`/api/foryou/rating?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`),
   rate: (kind, id, stars) => post("/api/foryou/rating", { kind, id, stars }),
@@ -146,6 +146,7 @@ export const api = {
   downloadPlay: (videoId, fromStart = false) => post(`/api/downloads/play/${encodeURIComponent(videoId)}`, { from_start: fromStart }),
   traceInput: (entries) => post("/api/ui/trace", { entries }),
   titleRatings: (kind, id) => request(`/api/foryou/title-ratings?kind=${kind}&id=${encodeURIComponent(id)}`),
+  titleLetterboxd: (kind, id) => request(`/api/foryou/letterboxd?kind=${kind}&id=${encodeURIComponent(id)}`),
   titleExtras: (kind, id) => request(`/api/foryou/title-extras?kind=${kind}&id=${encodeURIComponent(id)}`),
   forYouToday: () => request("/api/foryou/today"),
   forYouKeys: (service, values, signal) => post("/api/foryou/keys", { service, values }, { signal, timeout: 20000 }),

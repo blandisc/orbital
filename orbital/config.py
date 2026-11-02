@@ -138,6 +138,7 @@ class ParaTiConfig:
     - TMDB (themoviedb.org/settings/api): lo más popular en Netflix, Disney+ y HBO Max, y sinopsis en español.
     - RAWG (rawg.io/apidocs): novedades, lo más popular y lo mejor calificado en juegos.
     - SteamGridDB (steamgriddb.com › Preferences › API): más portadas y fondos para elegir en tus juegos.
+    - Letterboxd: tu usuario (sin clave): tu reseña en la ficha y tus listas, solo leer.
     - MDBList (mdblist.com › Preferences › API): «Aprobadas por la crítica» (Rotten Tomatoes). Sin clave también sale,
       con las listas públicas; `critics_movies` y `critics_series` dicen cuáles («mdblist:usuario/lista» o
       «trakt:usuario/lista»; vacío, esa mitad no sale).
@@ -149,6 +150,7 @@ class ParaTiConfig:
     rawg_key: str = ""
     steamgriddb_key: str = ""
     mdblist_key: str = ""
+    letterboxd_user: str = ""  # tu usuario de Letterboxd (solo se lee lo público de tu perfil; también desde Ajustes › Cuentas)
     critics_movies: str = "mdblist:tbotcotw/recent-certified-fresh"  # Certified Fresh de los últimos 90 días
     critics_series: str = "trakt:truckclancy/rotten-tomatoes-certified-fresh-tv-shows-ranked-by-tomatometer-score"
     region: str = "MX"  # país para «lo más popular en…» (código de dos letras)

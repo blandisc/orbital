@@ -199,7 +199,7 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const listCard = (l, source) => {
     const got = itemsOf(itemsById, l);
     return got.length ? card(`collection:${l.id}`, l.title, { type: "list", name: l.title, source, count: got.length, posters: got.slice(0, 2).map(posterOf), list: l },
-      heroOf(got[0], source === "trakt" ? "Lista de Trakt" : "Lista de Stremio")) : null;
+      heroOf(got[0], { trakt: "Lista de Trakt", letterboxd: "Lista de Letterboxd" }[source] || "Lista de Stremio")) : null;
   };
   // Como el iPhone: Tu watchlist, tus favoritos (el corazón), Tus series y luego tus listas personales.
   const traktOrder = (l) => ({ watchlist: 0, "trakt-favorites": 1, mine: 2 })[l.id] ?? 3;
@@ -209,6 +209,9 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const upcoming = byId.estrenos && listCard(byId.estrenos, "trakt");
   if (upcoming) trakt.splice(Math.min(2, trakt.length), 0, upcoming);
   if (trakt.length) rows.push({ id: "curated:lists-trakt", title: "Listas de Trakt", group: "lists", cards: true, items: trakt });
+  // Tus listas de Letterboxd (como el iPhone, en Tus listas): solo leer.
+  const letterboxd = lists.filter((l) => l.id?.startsWith("letterboxd:")).map((l) => listCard(l, "letterboxd")).filter(Boolean);
+  if (letterboxd.length) rows.push({ id: "curated:lists-letterboxd", title: "Listas de Letterboxd", group: "lists", cards: true, items: letterboxd });
   const stremio = lists.filter((l) => l.id === "mylist" || l.id?.startsWith("addon:")).map((l) => listCard(l, "stremio")).filter(Boolean);
   if (stremio.length) rows.push({ id: "curated:lists-stremio", title: "Listas de Stremio", group: "lists", cards: true, items: stremio });
 

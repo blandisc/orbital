@@ -95,6 +95,8 @@
      de las tarjetas. Los mismos valores que el iPhone. */
   --color-source-trakt: #ed1c24;
   --color-source-stremio: #8a59ab;
+  --color-source-letterboxd: #2c3440; /* el pizarra de Letterboxd: su placa de origen */
+  --color-letterboxd: #00e054; /* el verde de Letterboxd (DS.Letterboxd.leaf): el borde de tu reseña */
   --color-source-orbital: #3d7ad9;
   --color-award-gold: #d4a640;
   --color-award-silver: #c7c2b8;

@@ -56,7 +56,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   // Al bajar desde los botones, lo de abajo de la ficha del iPhone y en su orden: Reparto y equipo, La saga, Más como esto
   // y Detalles. Cada parte con el encabezado de toda la app (su título y, a la derecha, lo que dice: «Quién sale y quién la
   // hizo»). El tráiler es un botón de arriba (con el mando no hay tira de clips: distinto a propósito).
-  const PANEL = ["cast", "saga", "more", "details"];
+  const PANEL = ["cast", "saga", "more", "reviews", "details"];
   const panel = Object.fromEntries(PANEL.map((id) => {
     const head = h("div", { class: "title__more-head" });
     const row = h("div", { class: ["title__more-row", `title__more-row--${id}`], role: "group" });
@@ -85,7 +85,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let expanded = false; // «Más»: ya enseña todos los botones
   let extras = null; // frase, clasificación, créditos, la saga, los datos y «Más como esto» (title-extras)
   let restore = null; // { zone: "cast", index }: el foco que dejaste al abrir una persona
-  let rated = { ratings: null, mine: null }; // las calificaciones de los servicios y la tuya (Trakt)
+  let rated = { ratings: null, mine: null, letterboxd: null }; // las de los servicios, la tuya (Trakt) y el promedio de Letterboxd
+  let revealed = new Set(); // las reseñas con spoilers que ya abriste (A)
   let following = null; // una serie: ¿la sigues? (la campana, como el iPhone); null mientras no se sabe
   let own = null; // desde Mi media: { have: Set(video_id), versions: [...] } (tu carpeta de OneDrive)
   let season = 0;
@@ -168,6 +169,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       (p, i) => PersonChip(p, { onPress: () => pick("cast", i) }));
     fillPanel("saga", (x?.saga?.items || []).filter((m) => m.meta_id), "La saga", x?.saga?.name || "", card("saga"));
     fillPanel("more", (x?.more || []).filter((m) => m.meta_id && m.meta_id !== item?.meta_id), "Más como esto", "Si te gusta esta", card("more"));
+    paintReviews();
     const rows = detailRows(x);
     fillPanel("details", rows.length ? [rows] : [], "Detalles", "Los datos de la ficha",
       (list) => h("dl", { class: "title__details" }, list.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v)])));
@@ -177,6 +179,33 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     if (again?.items[at]) { zone = restore.zone; again.index = at; render(); }
     restore = null;
     onChange();
+  }
+
+  /** «Reseñas en Letterboxd» (como el iPhone): primero la tuya, con el borde verde, y luego las populares (las que traen
+   * spoilers, tapadas hasta que las abres con A). */
+  let letterboxd = null;
+  const starsOf = (n) => (n > 0 ? "★".repeat(Math.floor(n)) + (n % 1 ? "½" : "") : "");
+  const compact = new Intl.NumberFormat("es-MX", { notation: "compact" });
+  function paintReviews() {
+    const x = letterboxd;
+    const items = [
+      ...(x?.mine ? [{ mine: true, author: "Tu reseña en Letterboxd", rating: x.mine.rating, liked: x.mine.liked, text: x.mine.review,
+        when: x.mine.watched ? `Vista el ${new Date(`${x.mine.watched}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}${x.mine.rewatch ? " · otra vez" : ""}` : null }] : []),
+      ...(x?.reviews || []).slice(0, 3),
+    ];
+    fillPanel("reviews", items, "Reseñas en Letterboxd", x?.mine ? "La tuya y las más populares" : "Las más populares", (r, i) => {
+      const hidden = r.spoiler && !revealed.has(i);
+      return h("article", { class: ["title__review", r.mine && "title__review--mine"], onClick: () => pick("reviews", i) },
+        h("header", { class: "title__review-head" },
+          h("strong", { class: "title__review-author" }, r.author),
+          r.rating > 0 && h("span", { class: "title__review-stars", "aria-label": `${r.rating} de 5` }, starsOf(r.rating)),
+          r.liked && h("span", { class: "title__review-liked", "aria-label": "Te gustó" }, "♥"),
+          r.likes > 0 && h("span", { class: "title__review-likes" }, `♥ ${compact.format(r.likes)}`)),
+        r.when && h("span", { class: "title__review-when" }, r.when),
+        hidden ? h("p", { class: "title__review-text title__review-text--hidden" }, "Tiene spoilers · A para leerla")
+          : r.text && h("p", { class: "title__review-text" }, r.text));
+    });
+    more.hidden = !PANEL.some((id) => panel[id].items.length);
   }
 
   function fillPanel(id, items, title, end, draw) {
@@ -203,6 +232,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     const it = p?.items[p.index];
     if (!it) return;
     if (zone === "cast") onPerson(it);
+    else if (zone === "reviews") { if (it.spoiler) { revealed.add(p.index); const at = p.index; paintReviews(); p.index = at; paintMore(); } }
     else if (zone === "saga" || zone === "more") open({ kind: it.kind, meta_id: it.meta_id, title: it.title, image: it.image, hero: it.hero, extra: it.extra });
   }
 
@@ -268,7 +298,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function paintMore() {
     for (const id of PANEL) {
       const p = panel[id];
-      [...p.row.children].forEach((node, i) => node.classList.toggle(id === "cast" ? "person-chip--focused" : "card--focused", zone === id && i === p.index && id !== "details"));
+      const focused = id === "cast" ? "person-chip--focused" : id === "reviews" ? "title__review--focused" : "card--focused";
+      [...p.row.children].forEach((node, i) => node.classList.toggle(focused, zone === id && i === p.index && id !== "details"));
       const node = p.row.children[p.index];
       if (node && zone === id && id !== "details") p.row.scrollTo({ left: Math.max(0, node.offsetLeft - p.row.clientWidth * .3), behavior: motion("smooth") });
     }
@@ -289,6 +320,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       r?.imdb && ["imdb", Number(r.imdb).toFixed(1), "IMDb"],
       r?.tmdb && ["tmdb", `${Math.round(r.tmdb * 10)} %`, "TMDB"],
       r?.trakt && ["trakt", `${Math.round(r.trakt * 10)} %`, "Trakt"],
+      rated.letterboxd && ["letterboxd", rated.letterboxd.toFixed(1), "Letterboxd"], // su promedio, de 5 (como el iPhone)
     ].filter(Boolean);
     mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark(id),
       h("span", { class: "title__rating-value" }, value))),
@@ -618,6 +650,16 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       details = data;
       api.titleExtras(kind, id).then((x) => { if (mine === token) applyExtras(x); }).catch(() => {});
       showRatings({ imdb: Number(data.rating) || null }, mine);
+      if (kind === "movie") {
+        api.titleLetterboxd(kind, id).then((x) => {
+          if (mine !== token) return;
+          letterboxd = x;
+          rated.letterboxd = x?.average || null;
+          showRatings(rated.ratings, mine);
+          paintReviews();
+          onChange();
+        }).catch(() => {});
+      }
       if (hasTrakt() && kind === "series") api.following(id).then((r) => { if (mine === token) { following = r?.following !== false; renderActions(); } }).catch(() => {});
       if (hasTrakt()) api.myRating(kind, id).then((r) => { if (mine === token) { rated.mine = r?.stars || null; showRatings(rated.ratings, mine); } }).catch(() => {});
       api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {});
@@ -722,7 +764,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     action = 0;
     expanded = false;
     extras = null;
-    rated = { ratings: null, mine: null };
+    rated = { ratings: null, mine: null, letterboxd: null };
+    letterboxd = null;
+    revealed = new Set();
     following = null;
     for (const id of PANEL) { panel[id].items = []; panel[id].index = 0; mount(panel[id].row); panel[id].box.hidden = true; }
     track.style.transform = "";
@@ -857,7 +901,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   }
 
   /** Pistas del pie según dónde está el foco. */
-  const PANEL_NAMES = { cast: "Reparto y equipo", saga: "La saga", more: "Más como esto", details: "Detalles" };
+  const PANEL_NAMES = { cast: "Reparto y equipo", saga: "La saga", more: "Más como esto", reviews: "Reseñas en Letterboxd", details: "Detalles" };
   let glyphs = {};
   const hints = (g) => {
     if (g.select !== glyphs.select) { glyphs = g; if (!el.hidden) renderActions(); } // cambió el mando: su botón A
@@ -868,7 +912,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     : zone === "about"
     ? [{ glyph: g.select, label: aboutOpen ? "Ver menos" : "Ver más" }, { glyph: g.back, label: "Atrás", end: true }]
     : inPanel()
-    ? [zone === "cast" ? { glyph: g.select, label: "Ver a la persona" } : zone !== "details" && { glyph: g.select, label: "Ver la ficha" },
+    ? [zone === "cast" ? { glyph: g.select, label: "Ver a la persona" }
+      : zone === "reviews" ? panel.reviews.items[panel.reviews.index]?.spoiler && !revealed.has(panel.reviews.index) && { glyph: g.select, label: "Leer" }
+        : zone !== "details" && { glyph: g.select, label: "Ver la ficha" },
       panelStep(1) && { glyph: g.rows, label: PANEL_NAMES[panelStep(1)] }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : zone === "episodes"
     ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Ver de internet"

@@ -1117,6 +1117,12 @@ export const KEY_FORMS = {
     lead: "En steamgriddb.com entra con tu cuenta de Steam, ve a Preferences › API y copia la clave (API Key).",
     fields: [{ name: "key", label: "Clave de SteamGridDB", secret: true }],
   },
+  letterboxd: {
+    service: "letterboxd", label: "Letterboxd", icon: "list", mark: "img/ratings/letterboxd.svg", hint: "Tus reseñas en la ficha y tus listas",
+    title: "Tu usuario de Letterboxd", submitLabel: "Guardar",
+    lead: "Escribe tu usuario, el de letterboxd.com/tu-usuario. Orbital solo lee lo público de tu perfil (tu diario, tus reseñas y tus listas); nunca escribe en Letterboxd.",
+    fields: [{ name: "user", label: "Usuario de Letterboxd", secret: false }],
+  },
   onedrive: {
     service: "onedrive", label: "Clave de OneDrive", icon: "cloud", hint: "Para ver tus películas guardadas en OneDrive",
     title: "Clave de OneDrive", submitLabel: "Guardar",
@@ -1199,8 +1205,10 @@ function keyRow(service, status) {
   const form = KEY_FORMS[service];
   const ready = service === "trakt" ? !!status.trakt?.configured : !!status[service];
   const saved = (status.saved || []).includes(service);
+  // Letterboxd no es una clave: dice tu usuario («@fernando»).
+  const shown = service === "letterboxd" && status.letterboxd ? `@${status.letterboxd}` : "✓ Guardada";
   return { icon: form.icon, mark: form.mark, label: form.label, hint: form.hint,
-    value: saved || ready ? "✓ Guardada" : "Agregar", ok: saved || ready,
+    value: saved || ready ? shown : "Agregar", ok: saved || ready,
     command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
 }
 

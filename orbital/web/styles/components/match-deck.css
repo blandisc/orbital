@@ -1,5 +1,5 @@
 /* «¿Qué vemos hoy?» (js/components/match-deck.js), como el iPhone (MatchCard, «como Tinder»): el arte de la carta de fondo,
-   arriba a la izquierda el título y los ánimos, al centro la carta (un póster grande, la siguiente asoma detrás) y abajo
+   arriba a la izquierda el título, al centro la carta (un póster grande, la siguiente asoma detrás) y abajo
    ✕ · ★ · ♥ con su color. Al decidir, la carta se tiñe, asoma su sello y sale volando hacia allá. */
 .match { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-4); overflow: hidden; }
 /* El fondo: el arte de la carta de arriba, desenfocado y en voz baja, sobre el fondo de siempre. */
@@ -9,16 +9,13 @@
   object-fit: cover; filter: blur(var(--blur-case)); opacity: var(--opacity-dim); animation: fade-in var(--duration-slow) var(--ease-out);
 }
 .match > :not(.match__backdrop) { position: relative; }
-/* Arriba a la izquierda el título y los ánimos, y a la derecha lo guardado: la carta, al centro, usa todo el alto. */
+/* Arriba a la izquierda el título, y a la derecha lo guardado: la carta, al centro, usa todo el alto. */
 .match > .match__head { position: absolute; top: calc(var(--space-10) + var(--safe-y)); left: var(--page-gutter); right: var(--page-gutter); z-index: var(--z-raised); display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-5); padding-right: var(--touch-back-room); pointer-events: none; }
 .match__head > * { pointer-events: auto; }
-/* Solo en el lado libre: de la orilla a la carta (que mide a lo más --match-card-height de alto y 2/3 de ancho), con aire. Los
-   ánimos bajan a otro renglón si no caben (Legion Go). */
+/* Solo en el lado libre: de la orilla a la carta (que mide a lo más --match-card-height de alto y 2/3 de ancho), con aire. */
 .match__titles { display: grid; gap: var(--space-1); max-width: calc(50% - var(--match-card-height) / 3 - var(--space-8)); }
-.match__moods { flex-wrap: wrap; }
 .match__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); }
 .match__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
-.match__moods { display: flex; gap: var(--space-2); margin-top: var(--layout-title-to-content); }
 /* Cuántas guardaste en esta vuelta (el ♥ verde de Guardar). */
 .match__saved {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--pill-height); padding: 0 var(--space-4);

@@ -230,6 +230,8 @@
   --control-height: 3rem; /* un botón, un aviso, la barra de arriba */
   /* Lo que ocupa debajo de una portada enfocada su nombre y su dato (dos renglones de footnote, card.css · .card__caption), y
      crece con ella al enfocarse. Lo deja libre la fila que los enseña (Inicio, la página de un juego). */
+  --review-width: 30rem; /* una reseña de Letterboxd en la ficha */
+  --letterboxd-edge: 3px; /* el borde verde de tu reseña (DS.Letterboxd.edge) */
   --match-card-height: 40rem; /* la carta del mazo: un póster grande (2:3), lo más alta que quepa */
   --match-stamp-line: 3px; /* el borde del sello (DS.Match.stampLine) */
   --match-stamp-tilt: 12deg; /* el giro del sello y de la carta al salir (DS.Match.stampTilt) */
