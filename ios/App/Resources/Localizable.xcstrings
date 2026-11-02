@@ -56,17 +56,6 @@
         }
       }
     },
-    "%@ a tu repisa: %@ de %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ on your shelf: %@ of %@"
-          }
-        }
-      }
-    },
     "%@ a tus Colecciones: %@ de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -118,17 +107,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ of battery"
-          }
-        }
-      }
-    },
-    "%@ del canon en tu repisa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ from the canon on your shelf"
           }
         }
       }
@@ -536,17 +514,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld of what you watched"
-          }
-        }
-      }
-    },
-    "%lld del canon en tu repisa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld from the canon on your shelf"
           }
         }
       }
@@ -1053,17 +1020,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "In sync"
-          }
-        }
-      }
-    },
-    "A tu repisa": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On your shelf"
           }
         }
       }
@@ -2131,71 +2087,6 @@
         }
       }
     },
-    "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPad only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this Mac only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to enter on the Trakt page shown. The session belongs to this iPhone only (your Orbital has its own): what you watch is reported, you pick up where you left off on the TV, and your watchlist and lists show up."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPad (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de esta Mac (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone (tu Orbital tiene la suya): se avisa de lo que ves, sigues donde ibas en la TV y salen tu watchlist y tus listas."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas.": {
       "extractionState": "manual",
       "localizations": {
@@ -2254,71 +2145,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen Mi lista y tus listas."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to type on the Trakt page shown. The session is only for this iPad: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to type on the Trakt page shown. The session is only for this iPhone: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to type on the Trakt page shown. The session is only for this Mac: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "A code appears to type on the Trakt page shown. The session is only for this iPhone: what you watch is reported, you pick up where you left off on your other devices, and your watchlist and lists show up."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPad: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de esta Mac: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Aparece un código para escribir en la página de Trakt que se indica. La sesión es solo de este iPhone: se avisa de lo que ves, sigues donde ibas en tus otros aparatos y salen tu watchlist y tus listas."
                 }
               }
             }
@@ -5276,17 +5102,6 @@
         }
       }
     },
-    "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings."
-          }
-        }
-      }
-    },
     "Conecta Trakt en Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -6776,17 +6591,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "My list, your lists and what you follow stop showing; what you watch is no longer marked on Trakt."
-          }
-        }
-      }
-    },
-    "Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your watchlist, lists and shows stop appearing; what you watch is no longer marked on Trakt."
           }
         }
       }
@@ -8979,17 +8783,6 @@
         }
       }
     },
-    "Empieza tu repisa: lo que veas del canon se pinta aquí": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start your shelf: what you watch from the canon lights up here"
-          }
-        }
-      }
-    },
     "Empieza tus colecciones: lo que veas del canon se pinta aquí": {
       "extractionState": "manual",
       "localizations": {
@@ -9587,28 +9380,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "In your list"
-          }
-        }
-      }
-    },
-    "En tu watchlist": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In your watchlist"
-          }
-        }
-      }
-    },
-    "En tu watchlist de Trakt": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In your Trakt watchlist"
           }
         }
       }
@@ -11063,17 +10834,6 @@
         }
       }
     },
-    "Guardada en tu watchlist": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saved to your watchlist"
-          }
-        }
-      }
-    },
     "Guardado": {
       "extractionState": "manual",
       "localizations": {
@@ -11875,17 +11635,6 @@
         }
       }
     },
-    "Intentar de nuevo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try again"
-          }
-        }
-      }
-    },
     "Ir": {
       "extractionState": "manual",
       "localizations": {
@@ -12135,17 +11884,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Picked for your language, quality and size"
-          }
-        }
-      }
-    },
-    "La fuente dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The source stopped responding. Try again and we'll pick up where you were, with another source if needed."
           }
         }
       }
@@ -12507,17 +12245,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "The season · tomorrow"
-          }
-        }
-      }
-    },
-    "La versión dejó de responder. Al intentar de nuevo seguimos donde ibas, con otra si hace falta.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The version stopped responding. Trying again picks up where you were, with another one if needed."
           }
         }
       }
@@ -16878,28 +16605,6 @@
         }
       }
     },
-    "No pude cambiar tu watchlist de Trakt": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't change your Trakt watchlist"
-          }
-        }
-      }
-    },
-    "No pude cambiar tu watchlist de Trakt: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I couldn't change your Trakt watchlist: %@"
-          }
-        }
-      }
-    },
     "No pude cambiar tus favoritos de Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -19680,17 +19385,6 @@
         }
       }
     },
-    "Quitada de tu watchlist": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Removed from your watchlist"
-          }
-        }
-      }
-    },
     "Quitada de tus favoritos": {
       "extractionState": "manual",
       "localizations": {
@@ -19764,17 +19458,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove from favorites"
-          }
-        }
-      }
-    },
-    "Quitar de tu watchlist": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove from your watchlist"
           }
         }
       }
@@ -27130,28 +26813,6 @@
         }
       }
     },
-    "Tu watchlist": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your watchlist"
-          }
-        }
-      }
-    },
-    "Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
-          }
-        }
-      }
-    },
     "Tus canales": {
       "extractionState": "manual",
       "localizations": {
@@ -30102,17 +29763,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "What should we watch today?"
-          }
-        }
-      }
-    },
-    "¿Qué vemos?": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What should we watch?"
           }
         }
       }
