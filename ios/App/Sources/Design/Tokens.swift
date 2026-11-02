@@ -328,10 +328,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
     enum PlatformBadge { static let logo: CGFloat = 16, logoRadius = Radius.logo(16) }
     /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
-    /// centro (en cada eje, desde la esquina), su giro y el interletrado del texto en mayúsculas.
+    /// centro (en cada eje, desde la esquina) y el interletrado del texto en mayúsculas; el de siempre y el compacto (los
+    /// pósters de 50 pt del widget). Los dos con el mismo giro y el mismo brillo.
     enum Ribbon {
-        static let corner: CGFloat = 60, length: CGFloat = 104, center: CGFloat = 22
-        static let angle: Double = -45, tracking: CGFloat = 0.8, shine: Double = 0.28
+        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat, tracking: CGFloat }
+        static let regular = Size(corner: 60, length: 104, center: 22, tracking: 0.8)
+        static let compact = Size(corner: 38, length: 66, center: 14, tracking: 0.4)
+        static let angle: Double = -45, shine: Double = 0.28
     }
 
     enum Brand {

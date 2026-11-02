@@ -49,31 +49,6 @@ struct DSBadge: View {
     }
 }
 
-/// Lo que acaba de salir, en la esquina de arriba a la izquierda de un póster: un listón en diagonal que cruza la esquina,
-/// verde con un brillo arriba y el texto en mayúsculas. Va en `.overlay(alignment: .topLeading)` del póster, sin padding:
-/// la caja recorta la banda y su orilla de afuera queda lejos de la curva del póster.
-struct DSCornerRibbon: View {
-    let text: LocalizedStringKey
-
-    var body: some View {
-        Text(text).dsCaps().font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)
-            .foregroundStyle(DS.onSuccess).lineLimit(1)
-            .padding(.vertical, DS.Space.s1 / 2)
-            .frame(width: DS.Ribbon.length)
-            .background {
-                DS.success.overlay(LinearGradient(colors: [DS.paper.opacity(DS.Ribbon.shine), .clear], startPoint: .top, endPoint: .center))
-            }
-            .overlay(alignment: .top) { Rectangle().fill(DS.paper.opacity(DS.Ribbon.shine)).frame(height: DS.Size.hairline) }
-            .shadow(DS.Elevation.low)
-            .rotationEffect(.degrees(DS.Ribbon.angle))
-            .position(x: DS.Ribbon.center, y: DS.Ribbon.center)
-            .frame(width: DS.Ribbon.corner, height: DS.Ribbon.corner)
-            .clipped()
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(text))
-    }
-}
-
 /// Una marca de una sola idea en la esquina de un póster (en tu watchlist): el ícono sobre la placa oscura, con su nombre para VoiceOver.
 struct DSIconBadge: View {
     let symbol: String

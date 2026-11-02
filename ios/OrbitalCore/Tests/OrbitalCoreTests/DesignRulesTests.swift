@@ -235,8 +235,8 @@ final class DesignRulesTests: XCTestCase {
         }
         problems += hits(#"Image\(systemName:\s*"xmark"\)"#, in: files, skip: { ["Buttons.swift", "Surfaces.swift"].contains($0.name) || self.isPlayer($0) })
         problems += hits(#"Button\("Cerrar",[^)]*systemImage:\s*"xmark""#, in: files).map { $0 + " (cerrar: DSIconButton)" }
-        // Las mayúsculas las pone una sola pieza (`dsCaps`, en Surfaces.swift), nunca el texto ni otra receta (D11).
-        problems += hits(#"\.textCase\(\.uppercase\)|Text\([^)]*\.uppercased\(\)"#, in: files, skip: { $0.name == "Surfaces.swift" })
+        // Las mayúsculas las pone una sola pieza (`dsCaps`, en CornerRibbon.swift), nunca el texto ni otra receta (D11).
+        problems += hits(#"\.textCase\(\.uppercase\)|Text\([^)]*\.uppercased\(\)"#, in: files, skip: { $0.name == "CornerRibbon.swift" })
             .map { $0 + " (mayúsculas: .dsCaps())" }
         let acronyms = #"\b(IMDb|HDR|SDR|TMDB|IMDB|DTS|AAC|URL|PIN|VPN|API|MKV|HEVC|OK|DV|IPTV|UHD|FHD|LG|USB|QR|NYT|AFI|BAFTA|AI|HBO|ID|MB|GB|KB|FPS|DNS|IP)\b"#
         problems += hits(#"Text\("[^"\\]*[A-ZÁÉÍÓÚÑ]{3,}"#, in: files, unless: nil).filter { hit in

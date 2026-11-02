@@ -19,9 +19,6 @@ extension View {
         background(fill ?? (translucent ? DS.fill : DS.surface), in: RoundedRectangle(cornerRadius: level.radius, style: .continuous))
     }
 
-    /// La única manera de escribir en mayúsculas (rótulos, sellos, listones): el texto se escribe normal y se traduce normal.
-    func dsCaps() -> some View { textCase(.uppercase) }
-
     /// Receta: el anillo de lo elegido (un avatar, una opción, una plataforma), en el color del texto y del grueso de lo
     /// elegido (`DS.Stroke.selected`); sin elegir, nada (el lugar no cambia). Por dentro de la forma: no la agranda.
     func dsSelectionRing<S: InsettableShape>(_ selected: Bool, in shape: S, width: CGFloat = DS.Stroke.selected) -> some View {

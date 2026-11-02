@@ -16,6 +16,9 @@ struct ListsView: View {
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
+    /// Para saltar a un grupo desde el índice: con la lista perezosa, `ScrollViewReader.scrollTo` no encontraba uno que aún
+    /// no se armaba (el menú no bajaba a «Temporadas»); la posición del `ScrollView` sí lo encuentra.
+    @State private var position = ScrollPosition()
     /// Arriba del todo: la barra no pone su desvanecido (el mosaico sigue detrás del título sin un corte).
     @State private var atTop = true
     /// Saltos elegidos en el índice (el toque háptico es de esos, no de cada sección que pasa al deslizar).
@@ -110,7 +113,7 @@ struct ListsView: View {
         }
         if let name = Demo.section, let section = CollectionSection.allCases.first(where: { "\($0)" == name }) {
             try? await Task.sleep(for: .seconds(3))   // Demo: espera a que carguen las capturas
-            proxy.scrollTo(section, anchor: .top)
+            position.scrollTo(id: section, anchor: .top)
         }
         if let open = Demo.collection?.split(separator: ":"), open.count == 2 {
             try? await Task.sleep(for: .seconds(2))   // Demo: espera a que carguen las capturas
@@ -180,10 +183,12 @@ struct ListsView: View {
                 // Cada colección es una sección: 40 entre rótulos, medido desde el reflejo (decisión 2, 31 oct 2026).
                 if restReady { rest }
             }
+            .scrollTargetLayout()   // los grupos son destinos de `position` (sin `scrollTargetBehavior`, no cambia cómo se desliza)
             .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Layout.screenTop)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
             .padding(.bottom, DS.Layout.screenBottom)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
+        .scrollPosition($position)
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top < DS.Size.barScrollHide } action: { _, top in
             atTop = top
             if !top { restReady = true }   // deslizaste: lo de abajo ya hace falta
@@ -222,9 +227,10 @@ struct ListsView: View {
         return items.filter { seen.insert($0).inserted }
     }
 
-    /// Plataformas, colecciones, premios, años, «Lo que ves» y tus listas: lo de abajo de la portada y lo general.
-    private var rest: some View {
-                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+    /// Plataformas, colecciones, premios, años, «Lo que ves» y tus listas: lo de abajo de la portada y lo general. Sin caja
+    /// propia: cada grupo es hijo directo de la lista perezosa (el mismo aire entre ellos), para que el índice de arriba salte a
+    /// uno que aún no se ha armado (dentro de una caja, `scrollTo` no lo encontraba y «Temporadas» no bajaba).
+    @ViewBuilder private var rest: some View {
                     if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                     if collections.model.tmdbReady {
                         studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection))
@@ -256,7 +262,6 @@ struct ListsView: View {
                         listRows(label: CollectionSection.addons.title, symbol: CollectionSection.addons.symbol, cards: addonCards)
                             .modifier(SectionSpy(section: .addons, active: $activeSection))
                     }
-                }
     }
 
     // MARK: tus plataformas
@@ -288,11 +293,11 @@ struct ListsView: View {
                 Button {
                     activeSection = section
                     jumps += 1
-                    if restReady { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) } }
+                    if restReady { withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
                     else {
                         // Lo de abajo aún no estaba armado: primero se arma y en el siguiente cuadro se salta.
                         restReady = true
-                        Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) } }
+                        Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
                     }
                 } label: {
                     // Cada sección con su ícono; la que ves, con ✓ al lado.

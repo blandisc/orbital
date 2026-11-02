@@ -152,7 +152,7 @@ struct SourceBadge: View {
 
     private var label: some View {
         source.name.dsCaps()
-            .font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)   // negrita, como `.source-badge` de la TV
+            .font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.regular.tracking)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
             .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («COMPLE / MENTO»)
