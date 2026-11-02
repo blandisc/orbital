@@ -176,7 +176,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const tile = consolesTrack.firstElementChild;
     const lead = tile ? tile.getBoundingClientRect().top - consoles.getBoundingClientRect().top : consolesHead.offsetHeight;
     const below = (upnext.hidden ? 0 : upnext.offsetHeight + gap) + (consoles.hidden ? 0 : lead + gap + peek);
-    hero.style.height = `${Math.max(0, room() - below)}px`;
+    // Un mínimo, no un alto: si lo de arriba crece después (llega «Seguir jugando» con el estado), crece entero y cede lo que
+    // asoma de las consolas (que de todos modos se desvanece) en vez de cortarse arriba.
+    hero.style.minHeight = `max(12rem, ${Math.max(0, room() - below)}px)`;
     scrollToFocus();
   }
 
