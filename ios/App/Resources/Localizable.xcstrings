@@ -276,6 +276,17 @@
         }
       }
     },
+    "%@, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@"
+          }
+        }
+      }
+    },
     "%@. El servicio no contesta ahora; intenta en un rato.": {
       "extractionState": "manual",
       "localizations": {
@@ -3855,6 +3866,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimum rating"
+          }
+        }
+      }
+    },
+    "Calificación mínima en Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum Letterboxd rating"
           }
         }
       }
@@ -17438,6 +17460,17 @@
         }
       }
     },
+    "Para hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For today"
+          }
+        }
+      }
+    },
     "Para pensar": {
       "extractionState": "manual",
       "localizations": {
@@ -18723,13 +18756,13 @@
         }
       }
     },
-    "Prueba: ": {
+    "Prueba: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Try: "
+            "value": "Try: %@"
           }
         }
       }
@@ -22120,6 +22153,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Movies only"
+          }
+        }
+      }
+    },
+    "Solo películas: Letterboxd no califica series.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies only: Letterboxd doesn't rate shows."
           }
         }
       }
