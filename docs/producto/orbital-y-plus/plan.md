@@ -76,8 +76,8 @@ Ultra = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en
     pública) pasa por revisión de Apple y una app con Real-Debrid puede no pasar.
 19. La clave de TMDB incluida viaja en cada versión que subas (hoy vive solo en la Mac, `Secrets.xcconfig`).
 20. ~~Ícono propio de Plus para que se distinga de Ultra en tu iPhone.~~ Hecho (1 nov 2026): cada versión se cuenta en lunas
-    (Orbital una, Plus dos, Ultra tres), clásico y Cielo nocturno, en `design/marca/`. La app de hoy ya lleva el de Ultra; al
-    crear el destino `OrbitalPlus` (y el de Orbital), `IPHONE` en `scripts/make_icon.py` o un juego de íconos por destino.
+    (Orbital una, Plus dos, Ultra tres), clásico y Cielo nocturno, en `design/marca/`. **Apagado por ahora** (Fernando, 1 nov): la app de hoy lleva
+    la marca de una luna; se encienden con `IPHONE` en `scripts/make_icon.py` al crear el destino `OrbitalPlus` (y el de Orbital), `IPHONE` en `scripts/make_icon.py` o un juego de íconos por destino.
 
 **F · Comprobarlo.**
 21. Una persona que nunca usó Stremio instala Plus desde TestFlight, crea su Real-Debrid y ve algo, sin ayuda. Se graba

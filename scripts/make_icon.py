@@ -6,7 +6,7 @@ lunas sobre esa órbita: Orbital una, Plus dos, Ultra tres.
 Escribe:
   - orbital/web/icons: PNG de 16 a 512 y orbital.ico (la app de la TV: una luna, la marca sola).
   - ios/App/Resources/Assets.xcassets: AppIcon (clásico, oscuro y teñido), AppIconNight (Cielo nocturno) y sus vistas
-    previas de Ajustes, en la edición de `IPHONE` (la app de iPhone de hoy es la de Fernando: Ultra).
+    previas de Ajustes, en la versión de `IPHONE` (por ahora la de una luna: las lunas por versión están apagadas).
   - design/marca: los SVG de las tres ediciones, clásico y noche, y su PNG de 1024 (para cuando Plus y Orbital tengan
     su propia app).
 
@@ -26,7 +26,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 WEB = ROOT / "orbital" / "web" / "icons"
 ASSETS = ROOT / "ios" / "App" / "Resources" / "Assets.xcassets"
 MARCA = ROOT / "design" / "marca"
-IPHONE = "ultra"   # la edición de la app de iPhone de hoy (mx.iracheta.orbital); Plus y Orbital, cuando tengan su destino
+# Qué versión lleva la app de iPhone. Las lunas por versión están listas pero apagadas (Fernando, 1 nov): por ahora todas
+# llevan la marca de una luna. Para encenderlas, "ultra" aquí (y "plus" en su destino, cuando exista).
+IPHONE = "orbital"
 LUNAS = {"orbital": 1, "plus": 2, "ultra": 3}
 
 # La geometría, en el cuadro de 1024 (el mismo centro, tamaño e inclinación de la marca de antes).
