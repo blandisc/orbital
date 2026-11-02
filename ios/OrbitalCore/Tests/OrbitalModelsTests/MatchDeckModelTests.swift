@@ -85,6 +85,20 @@ final class MatchDeckModelTests: XCTestCase {
 /// Lo que ves: la tarjeta pide solo la semana, la pantalla los diez años una vez, y luego solo lo nuevo (guardado en el iPhone).
 @MainActor
 final class WatchingModelTests: XCTestCase {
+    /// El domingo la semana empieza vacía: se cae en el primer periodo con algo y se sabe qué fue lo último.
+    func testElPrimerPeriodoConAlgo() async throws {
+        let rig = try ServicesRig()
+        var cal = Calendar(identifier: .gregorian); cal.firstWeekday = 1; cal.timeZone = TimeZone(identifier: "UTC")!
+        let sunday = cal.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 12))!   // un domingo
+        let model = WatchingModel(rig.services, clock: { sunday }, calendar: cal)
+        model.preload([TraktPlay(at: sunday.addingTimeInterval(-20 * 3600), kind: "series", imdb: "tt0096697", title: "Los Simpson", minutes: 22, genres: ["comedy"]),
+                       TraktPlay(at: sunday.addingTimeInterval(-40 * 86400), kind: "movie", imdb: "tt0111161", title: "Sueño de fuga", minutes: 142, genres: ["drama"])])
+        XCTAssertTrue(model.stats(.week).isEmpty, "el sábado ya es la semana pasada")
+        XCTAssertEqual(model.firstPeriodWithData(), .year, "noviembre empezó hoy: tampoco hay en el mes")
+        XCTAssertEqual(model.lastPlay?.title, "Los Simpson")
+        XCTAssertEqual(model.start(of: .week), cal.startOfDay(for: sunday))
+    }
+
     func testLaSemanaYLuegoSoloLoNuevo() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         let clock = rig.clock

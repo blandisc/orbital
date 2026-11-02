@@ -15,10 +15,13 @@ struct WatchingCardLoader: View {
         // había cómo entrar); su carga va afuera para que se reintente al volver a Explorar.
         Group {
             if model.linked {
-                let week = model.loaded && !model.failed ? model.stats(.week) : nil
+                // Del primer periodo con algo (Fernando, 1 nov 2026: el domingo la semana empieza vacía y la tarjeta decía «Aún nada»).
+                let period = model.firstPeriodWithData() ?? .week
+                let shown = model.loaded && !model.failed ? model.stats(period) : nil
                 let language = env.services.appSettings.uiLanguage
                 NavigationLink(value: WatchingRoute()) {
-                    WatchingCard(stats: week, name: Strings.tr("Lo que ves", language: language), genres: (week?.genres ?? []).map { WatchingText.genre($0.name, language: language) })
+                    WatchingCard(stats: shown, name: Strings.tr("Lo que ves", language: language), genres: (shown?.genres ?? []).map { WatchingText.genre($0.name, language: language) },
+                                 period: period, lastTitle: model.lastPlay?.title)
                 }
                 .buttonStyle(.plain)
             }
@@ -53,6 +56,8 @@ struct WatchingView: View {
     @State private var pickedStars: Int?
     /// Lo que viste en Letterboxd y Trakt no tiene («Pasarlas a Trakt»).
     @State private var notInTrakt: [LetterboxdEntry] = []
+    /// Ya se cayó en el primer periodo con algo (una vez por visita: si después eliges uno vacío, se queda ahí).
+    @State private var picked = false
     @State private var passing = false
 
     var body: some View {
@@ -77,7 +82,7 @@ struct WatchingView: View {
                     if !model.loaded { DSLoadingState() }
                     // No llegó el historial y no hay nada guardado: es un error, no «nada en este periodo».
                     else if model.failed { DSErrorState(offline: !env.isOnline) { Task { await model.load(full: true, force: true) } } }
-                    else if s.isEmpty { DSEmptyState(symbol: "popcorn", title: Text("Nada en este periodo"), message: Text("Lo que veas aquí o en Trakt aparece solo.")) }
+                    else if s.isEmpty { emptyPeriod(model, language) }
                     else { content(s, model, language) }
                     letterboxdSection
                 }
@@ -90,7 +95,8 @@ struct WatchingView: View {
         #endif
         .background(Backdrop())
         .navigationTitle(Text("Lo que ves"))
-        .task { await model.load(full: true) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
+        .onAppear { pickFirstWithData(model) }   // con lo guardado: sin parpadear en el periodo vacío
+        .task { await model.load(full: true); pickFirstWithData(model) }   // aquí sí, los diez años (la tarjeta solo pidió la semana)
         .refreshable { await model.load(full: true, force: true) }
         .onChange(of: env.watchedSomething) { Task { await model.load(full: true, force: true) } }   // terminaste de ver algo: al día
         .task(id: env.letterboxd.entries.count) {
@@ -212,6 +218,35 @@ struct WatchingView: View {
             out.append(.init(id: play.imdb, title: play.title, kind: play.kind, stars: Int(RatingScale.stars(trakt: trakt).rounded(.up))))
         }
         return out
+    }
+
+    /// Al abrir, el primer periodo con algo (Fernando, 1 nov 2026): el domingo la semana empieza vacía y se veía «nada».
+    private func pickFirstWithData(_ model: WatchingModel) {
+        guard !picked, model.loaded, !model.plays.isEmpty else { return }
+        picked = true
+        if model.stats().isEmpty, let first = model.firstPeriodWithData() { model.period = first }
+    }
+
+    /// Un periodo sin nada: por qué (cuándo empezó y qué fue lo último que viste) y un atajo al primero que sí tiene algo.
+    private func emptyPeriod(_ model: WatchingModel, _ language: String) -> some View {
+        let start = Text(verbatim: Strings.date(model.start(of: model.period), .weekdayDayMonth, language: language))
+        let why: Text = switch model.period {
+        case .week: Text("La semana empezó el \(start) y todavía no ves nada.")
+        case .month: Text("El mes empezó el \(start) y todavía no ves nada.")
+        case .year: Text("El año empezó el \(start) y todavía no ves nada.")
+        case .all: Text("Lo que veas aquí o en Trakt aparece solo.")
+        }
+        let last: Text? = model.lastPlay.map { p in
+            Text("Lo último que viste fue \(Text(verbatim: p.title)), el \(Text(verbatim: Strings.date(p.at, .weekdayDayMonth, language: language))).")
+        }
+        let first = model.firstPeriodWithData()
+        return DSEmptyState(symbol: "popcorn", title: Text("Aún nada \(WatchingCard.phrase(model.period))"),
+                            message: last.map { Text("\(why) \($0)") } ?? why) {
+            if let first, first != model.period {
+                Button { model.period = first } label: { Text("Ver \(WatchingCard.phrase(first))") }
+                    .accessibilityIdentifier("watching-first-with-data")
+            }
+        }
     }
 
     /// «Tus reseñas» (Letterboxd): lo último que calificaste o reseñaste y, si viste algo que Trakt no tiene, el aviso para

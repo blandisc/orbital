@@ -44,6 +44,20 @@ public final class WatchingModel: ObservableModel {
         WatchingStats.make(plays, period: period ?? self.period, now: clock(), calendar: calendar)
     }
 
+    /// El primer periodo con algo (semana, mes, año o siempre): a donde se cae al abrir y lo que dice la tarjeta de Explorar
+    /// (Fernando, 1 nov 2026: el domingo la semana empieza vacía y todo decía «Aún nada»). nil sin nada en el historial.
+    public func firstPeriodWithData() -> WatchingStats.Period? {
+        WatchingStats.Period.allCases.first { !stats($0).isEmpty }
+    }
+
+    /// Lo último que viste (para decir por qué un periodo está vacío).
+    public var lastPlay: TraktPlay? { plays.max { $0.at < $1.at } }
+
+    /// Cuándo empezó un periodo (el domingo de esta semana, el 1 del mes…).
+    public func start(of period: WatchingStats.Period) -> Date {
+        WatchingStats.start(of: period, now: clock(), calendar: calendar, oldest: plays.map(\.at).min())
+    }
+
     /// Quitaste algo de vistos (la ficha): sale ya de «Lo que ves» (lo guardado solo pregunta por lo nuevo y nunca se
     /// enteraba de lo que quitabas). `videoID` «tt123:1:5» es un episodio; si no, toda la película.
     public func forget(metaID: String, videoID: String) {
