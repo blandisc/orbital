@@ -393,9 +393,28 @@ class Tmdb:
                 rating = next((d.get("certification") for d in (hit or {}).get("release_dates") or [] if d.get("certification")), None)
                 if rating:
                     break
+        # «Los datos de la ficha», como el iPhone: el estreno (o el primer episodio), los idiomas, el estudio (o la cadena) y
+        # la saga a la que pertenece una película.
+        companies = raw.get("networks") if kind == "series" else raw.get("production_companies")
+        studios = list(dict.fromkeys(str(c["name"]).strip() for c in companies or [] if isinstance(c, dict) and c.get("name")))[:3]
+        spoken = raw.get("spoken_languages") or []
+        languages = [s.get("iso_639_1") for s in spoken if isinstance(s, dict) and s.get("iso_639_1")] or \
+            [code for code in raw.get("languages") or [] if isinstance(code, str)]
+        saga = raw.get("belongs_to_collection")
         return {"tagline": str(raw.get("tagline") or "").strip() or None, "certification": rating,
                 "directors": creators or names({"Director"}), "writers": [] if kind == "series" else names({"Screenplay", "Writer"}),
-                "cast": cast, "people": people}
+                "cast": cast, "people": people,
+                "release": str(raw.get("first_air_date" if kind == "series" else "release_date") or "")[:10] or None,
+                "languages": list(dict.fromkeys(languages))[:4], "studios": studios,
+                "collection": {"id": saga["id"], "name": str(saga.get("name") or "").strip()}
+                if isinstance(saga, dict) and isinstance(saga.get("id"), int) else None}
+
+    def collection_parts(self, collection_id: int) -> list[dict]:
+        """Las películas de una saga, en el orden en que salieron: [{kind, id}] (las que aún no tienen fecha, al final)."""
+        raw = self._get(f"/collection/{int(collection_id)}")
+        parts = [p for p in raw.get("parts") or [] if isinstance(p, dict) and isinstance(p.get("id"), int)]
+        parts.sort(key=lambda p: str(p.get("release_date") or "9999"))
+        return [{"kind": "movie", "id": p["id"]} for p in parts]
 
     def person(self, person_id: int) -> dict:
         """Una persona (al elegir su cara en la ficha), como el iPhone: foto, de dónde es, su biografía (en español; si

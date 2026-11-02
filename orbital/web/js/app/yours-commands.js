@@ -55,6 +55,7 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
     },
     "rate-set": async (command) => {
       await api.rate(command.kind, command.id, command.stars);
+      ui.title.rated?.(command.id, command.stars); // la ficha abierta dice «Tu calificación» al instante
       ui.sheet.close();
       sound.play("select");
       ui.toast.show(command.stars ? `${command.title} · ${starText(command.stars)}` : `Quité tu calificación de ${command.title}`, { tone: "success" });

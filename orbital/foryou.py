@@ -779,7 +779,8 @@ class ForYou:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
         con IMDb para abrirlo). Lo que no se pueda (sin clave, sin red) queda vacío; se recuerda (también sin internet)."""
         kind = kind if kind in ("movie", "series") else "movie"
-        empty = {"tagline": None, "certification": None, "directors": [], "writers": [], "cast": [], "people": [], "more": []}
+        empty = {"tagline": None, "certification": None, "directors": [], "writers": [], "cast": [], "people": [], "more": [],
+                 "release": None, "languages": [], "studios": [], "collection": None, "saga": None}
         if not isinstance(imdb, str) or not re.fullmatch(r"tt[0-9]{1,12}", imdb):
             return empty
         out = dict(empty)
@@ -788,9 +789,19 @@ class ForYou:
                 tmdb_id = self.tmdb.find_id(imdb, kind)
                 return self.tmdb.extras(kind, tmdb_id, self.region) if tmdb_id else {}
             try:
-                out.update(self.cache.get(f"extras:{kind}:{imdb}", SLOW_TTL, load_tmdb) or {})
+                out.update(self.cache.get(f"extras2:{kind}:{imdb}", SLOW_TTL, load_tmdb) or {})
             except Exception:  # noqa: BLE001 - lo de TMDB es un extra: la ficha se ve sin él
                 log.info("Ficha: no pude leer los extras de %s", imdb)
+            saga = out.get("collection")
+            if isinstance(saga, dict) and saga.get("id"):
+                # «La saga» (como el iPhone): sus películas en orden, ya con IMDb para abrirlas.
+                try:
+                    items = self.cache.get(f"saga-parts:{saga['id']}", SLOW_TTL,
+                                           lambda: self._tmdb_items(self.tmdb.collection_parts(saga["id"]), "movie", saga["name"], limit=12))
+                    if len(items) >= 2:
+                        out["saga"] = {"name": saga["name"], "items": items}
+                except Exception:  # noqa: BLE001 - la saga es un extra
+                    log.info("Ficha: no pude leer la saga %s", saga.get("id"))
         if self.trakt.configured:
             related = self._related({"imdb": imdb, "kind": kind})
             out["more"] = [video_item(e, "Más como esto") for e in related[:15]]

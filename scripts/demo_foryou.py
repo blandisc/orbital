@@ -242,11 +242,18 @@ class DemoTmdb:
             return {"tagline": "Separa tu vida del trabajo. Para siempre.", "certification": "B15", "directors": ["Dan Erickson"],
                     "writers": [], "cast": ["Adam Scott", "Britt Lower", "Zach Cherry"],
                     "people": [face(1, "Dan Erickson", "Creación"), face(2, "Adam Scott", "Mark Scout"), face(3, "Britt Lower", "Helly R."),
-                               face(4, "Zach Cherry", "Dylan G."), face(5, "Patricia Arquette", "Harmony Cobel"), face(6, "John Turturro", "Irving B.")]}
+                               face(4, "Zach Cherry", "Dylan G."), face(5, "Patricia Arquette", "Harmony Cobel"), face(6, "John Turturro", "Irving B.")],
+                    "release": "2022-02-18", "languages": ["en"], "studios": ["Apple TV+"], "collection": None}
         return {"tagline": "Larga vida a la lucha.", "certification": "B", "directors": ["Denis Villeneuve"],
                 "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"],
                 "people": [face(7, "Denis Villeneuve", "Dirección"), face(8, "Jon Spaihts", "Guion"), face(9, "Timothée Chalamet", "Paul Atreides"),
-                           face(10, "Zendaya", "Chani"), face(11, "Rebecca Ferguson", "Jessica")]}
+                           face(10, "Zendaya", "Chani"), face(11, "Rebecca Ferguson", "Jessica")],
+                "release": "2024-02-29", "languages": ["en", "es"], "studios": ["Legendary Pictures", "Warner Bros."],
+                "collection": {"id": 726871, "name": "Dune: colección"}}
+
+    def collection_parts(self, collection_id):  # la saga del demo: las dos de Dune (los ids del filtro avanzado ya traen su IMDb)
+        keys = list(M)
+        return [{"kind": "movie", "id": self.FILTER_BASE + keys.index(k)} for k in ("dune1", "dune2") if k in keys]
 
     def person(self, person_id):  # una persona: su filmografía con los títulos del demo
         picks = ["severance", "dune2", "inter", "br", "arrival", "tlou", "andor", "oppen"]
