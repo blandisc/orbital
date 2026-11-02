@@ -15,6 +15,9 @@ public final class MatchDeckModel: ObservableModel {
     /// Cuánto tarda en volver algo que descartaste.
     public nonisolated static let discardFor: TimeInterval = 30 * 86400
     static let discardedKey = "match-discarded"
+    /// Lo que guardaste desde el mazo (cualquier día): no vuelve a salir (antes solo se recordaba mientras el mazo estaba
+    /// abierto y, como el orden es el mismo todo el día, al volver a abrirlo salía arriba la que ya habías guardado).
+    static let savedKey = "match-saved"
 
     private let services: Services
     private let pool: [Suggestion]
@@ -53,13 +56,16 @@ public final class MatchDeckModel: ObservableModel {
     private func rebuild() {
         let day = Int(clock().timeIntervalSince1970 / 86400)
         // Lo que ya guardaste en esta vuelta tampoco vuelve al cambiar de ánimo.
-        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)), mood: mood, day: day)
+        // Tampoco lo que ya está en Mi lista (guardado desde una ficha o desde otro aparato).
+        let inList = Set(services.library.all.filter(\.inList).map(\.metaID))
+        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), mood: mood, day: day)
     }
 
     /// Guardar la de arriba (derecha o ＋).
     public func save(_ s: Suggestion) async {
         cards.removeAll { $0.imdb == s.imdb }
         saved.append(s)
+        remember(s.imdb, saved: true)
         await keep(s, add: true)
     }
 
@@ -68,6 +74,7 @@ public final class MatchDeckModel: ObservableModel {
     public func saveForTonight(_ s: Suggestion) async {
         cards.removeAll { $0.imdb == s.imdb }
         saved.append(s)
+        remember(s.imdb, saved: true)
         ParaHoy.mark(s.imdb, kv: services.kv, now: services.now())
         await keep(s, add: true)
         try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: true)
@@ -76,6 +83,7 @@ public final class MatchDeckModel: ObservableModel {
     /// «Deshacer» del aviso de guardar: sale de donde se guardó y la carta vuelve arriba del mazo.
     public func undo(_ s: Suggestion) async {
         guard saved.contains(where: { $0.imdb == s.imdb }) else { return }
+        remember(s.imdb, saved: false)
         if ParaHoy.ids(kv: services.kv, now: services.now()).contains(s.imdb) {   // era «Para hoy»: también sale de Mi lista
             ParaHoy.unmark(s.imdb, kv: services.kv)
             try? await titles.setSaved(s, in: titles.preferredDestination(for: s), add: false)
@@ -121,6 +129,14 @@ public final class MatchDeckModel: ObservableModel {
         var all = discardedDates.filter { clock().timeIntervalSince($0.value) < Self.discardFor }
         all[s.imdb] = clock()
         services.kv.set(Self.discardedKey, data: try? JSONEncoder().encode(all))
+    }
+
+    /// Lo guardado desde el mazo, para siempre (hasta «Deshacer»).
+    private var savedEver: Set<String> { Set(services.kv.data(Self.savedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []) }
+    private func remember(_ imdb: String, saved: Bool) {
+        var all = savedEver
+        if saved { all.insert(imdb) } else { all.remove(imdb) }
+        services.kv.set(Self.savedKey, data: try? JSONEncoder().encode(all.sorted()))
     }
 
     private var discardedDates: [String: Date] {
