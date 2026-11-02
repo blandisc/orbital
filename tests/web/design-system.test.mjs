@@ -185,6 +185,34 @@ test("vidrio: lo que flota se desenfoca con la receta (--filter-glass), nunca co
   assert.deepEqual(offenders.map(where), [], "Usa background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass)");
 });
 
+// Vidrio riguroso (Fernando, 1 nov 2026: «que sea riguroso de los elementos de vidrio»). Tres papeles: un control (lo que se
+// toca o se enfoca) es vidrio con su filo; lo que flota encima de todo (paneles, avisos, hojas) es vidrio fuerte; el contenido
+// (portadas, fotos, tarjetas) y los esqueletos de carga no. El relleno gris de antes (--color-fill) solo queda en los esqueletos.
+const cssRules = () => COMPONENT_CSS.flatMap((file) => [...stripCssComments(read(file)).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  .map((m) => ({ file: file.slice(WEB.length + 1), sel: m[1].trim().replace(/\s+/g, " "), body: m[2] })));
+const rule = (r) => `${r.file} ${r.sel.slice(0, 90)}`;
+
+test("vidrio: ningún control se pinta con el gris de antes (--color-fill), solo los esqueletos de carga", () => {
+  const offenders = cssRules().filter((r) => /background[^;]*var\(--color-fill(-hover)?\)/.test(r.body) && !/skeleton|search__ghost|shimmer/.test(r.sel));
+  assert.deepEqual(offenders.map(rule), [], "Un control: background: var(--color-glass) y su filo (--edge-glass, --edge-glass-hairline)");
+});
+
+test("vidrio: lo que flota encima de todo (con --shadow-overlay) es vidrio fuerte", () => {
+  // El arte (la portada que se abre) es contenido, no vidrio.
+  const offenders = cssRules().filter((r) => r.body.includes("var(--shadow-overlay)") && /background\s*:/.test(r.body) && !/cover|poster|__art/.test(r.sel)
+    && !/var\(--color-glass-strong\)/.test(r.body));
+  assert.deepEqual(offenders.map(rule), [], "background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass)");
+});
+
+test("vidrio: cada control de vidrio lleva su filo (un vidrio sin filo es un gris más)", () => {
+  // Las filas dentro de un panel de vidrio, los :hover, los modificadores y lo enfocado (su regla de siempre ya trae el filo, o
+  // el foco lo cambia por su sombra) no llevan uno propio.
+  const inside = /:hover|--focused|is-focused|sheet__item|filter__row|status-bar__brand|assistant|\w--(go|on)\b/;
+  const offenders = cssRules().filter((r) => /background\s*:\s*var\(--color-glass(-hover|-selected)?\)/.test(r.body)
+    && !/box-shadow[^;]*var\(--edge-glass/.test(r.body) && !inside.test(r.sel));
+  assert.deepEqual(offenders.map(rule), [], "box-shadow: var(--edge-glass) (flota) o var(--edge-glass-hairline) (dentro de una fila o un panel)");
+});
+
 test("el foco se levanta: ningún componente dibuja un anillo con --color-focus (solo :focus-visible en base.css)", () => {
   const offenders = cssLines().filter(([, , line]) => line.includes("var(--color-focus)"));
   assert.deepEqual(offenders.map(where), [], "Enfocado: crece y flota con var(--focus-lift); en una fila o una tecla, el foco invertido");

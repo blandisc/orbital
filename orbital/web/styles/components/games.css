@@ -24,8 +24,17 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: clip; overflow-clip-margin: var(--clip-tail);
 }
 .games__title--long { font-size: var(--type-title); }
-.games__facts { color: var(--color-on-art-secondary); font-size: var(--type-secondary); text-shadow: var(--shadow-text-strong); }
-.games__facts b { color: var(--color-text); font-weight: var(--weight-medium); }
+/* Los datos: una línea de piezas con su punto en medio (como la del destacado del Inicio); la consola con su marca y en blanco,
+   lo demás en el gris sobre el arte, y cuántos juegan con su ícono. */
+.games__facts {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: var(--space-2); max-width: 100%; overflow: hidden; white-space: nowrap;
+  color: var(--color-on-art-secondary); font-size: var(--type-body); text-shadow: var(--shadow-text-strong);
+}
+.games__fact { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.games__fact + .games__fact::before { content: "·"; color: var(--color-text-faint); }
+.games__fact--platform b { color: var(--color-text); font-weight: var(--weight-medium); }
+.games__fact .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); fill: none; stroke: currentColor; stroke-width: var(--stroke-regular); stroke-linecap: round; stroke-linejoin: round; }
+.games__fact--platform > svg { flex: none; width: var(--icon-lg); height: var(--icon-lg); }
 .games__actions { margin-top: var(--space-1); }
 
 /* Sus juegos: filtros y la cuadrícula. Solo el enfocado dice su nombre, debajo (Card · caption "focus"). */

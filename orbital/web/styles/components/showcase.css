@@ -10,7 +10,7 @@
   padding: var(--inset-card); background: var(--color-surface-raised);
 }
 .showcase__icon { grid-row: 1 / 3; display: grid; place-items: center; width: var(--control-height); height: var(--control-height); border-radius: 50%;
-  background: var(--color-fill); color: var(--color-orbital); }
+  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-orbital); }
 .showcase__icon .icon { width: var(--icon-lg); height: var(--icon-lg); }
 .showcase__item[data-tint="gold"] .showcase__icon { color: var(--color-award-gold); }
 .showcase__item[data-tint="silver"] .showcase__icon { color: var(--color-award-silver); }

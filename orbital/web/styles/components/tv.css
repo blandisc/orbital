@@ -17,7 +17,7 @@
 .tv__cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tv__cat .icon { flex: none; width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; align-self: center; }
 .tv__cat-count { flex: none; color: var(--color-text-faint-strong); font-size: var(--type-secondary); font-variant-numeric: tabular-nums; }
-.tv__cat--on { background: var(--color-fill); color: var(--color-text); font-weight: var(--weight-medium); }
+.tv__cat--on { background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); color: var(--color-text); font-weight: var(--weight-medium); }
 .tv__cat.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }
 .tv__cat.is-focused .tv__cat-count { color: inherit; opacity: var(--opacity-near); }
 

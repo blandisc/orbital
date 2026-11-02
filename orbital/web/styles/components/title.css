@@ -111,10 +111,10 @@
 .title__status--error {
   display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
   padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
-  background: var(--color-surface-raised); box-shadow: var(--shadow-overlay), var(--edge-hairline), inset .3rem 0 0 var(--color-danger);
+  background: var(--color-glass-strong); box-shadow: var(--shadow-overlay), var(--edge-glass), inset .3rem 0 0 var(--color-danger); backdrop-filter: var(--filter-glass);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }
-.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-fill); color: var(--color-danger); }
+.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-danger); }
 .title__status-icon .icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--stroke-regular); }
 .title__status-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }
@@ -137,14 +137,15 @@
   transform-origin: left center; /* enfocado crece hacia la derecha: no se sale del margen */
   margin-inline-end: var(--space-5); /* …y ese crecimiento (6 % de su ancho) cabe antes del redondo de «Guardar» */
   min-width: 13rem; max-width: 100%; padding: 0 var(--space-8) 0 var(--space-5);
-  background: var(--color-fill); font-size: var(--type-section); font-weight: var(--weight-medium);
+  background: var(--color-primary); color: var(--color-on-primary); /* el principal, siempre en blanco (como «Jugar») */
+  font-size: var(--type-section); font-weight: var(--weight-medium);
 }
 .title__action--primary > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* «Continuar T12 E8» nunca parte el botón */
 .title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular); }
 /* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
 .title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }
 .title__action-tile {
-  display: grid; place-items: center; width: var(--control-height); height: var(--control-height); border-radius: 50%; background: var(--color-fill);
+  display: grid; place-items: center; width: var(--control-height); height: var(--control-height); border-radius: 50%; background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .title__action-name {
@@ -160,7 +161,7 @@
 .title__action--icon.title__action--focused { transform: scale(var(--inverse-scale)); }
 .title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
 .title__action--icon.title__action--focused .title__action-name { opacity: 1; }
-.title__action--icon:hover .title__action-tile { background: var(--color-fill-hover); }
+.title__action--icon:hover .title__action-tile { background: var(--color-glass-hover); }
 
 /* Abajo (series): temporadas (LB/RB) y la fila de episodios (◀ ▶). */
 .title__browser { display: none; flex-direction: column; gap: var(--space-2); min-width: 0; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-1) backwards; }

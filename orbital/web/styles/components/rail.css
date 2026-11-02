@@ -9,7 +9,7 @@
 /* La pestaña: una superficie que crece desde el borde, detrás de las casillas. */
 .rail::before {
   content: ""; position: absolute; z-index: var(--z-behind); inset: calc(-1 * var(--space-3)) 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
-  border-radius: var(--radius-2xl); background: var(--color-surface); box-shadow: var(--edge-hairline), var(--shadow-overlay);
+  border-radius: var(--radius-2xl); background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
   opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
 }
 .rail--open { width: var(--rail-open); }
@@ -54,7 +54,7 @@
   position: relative; flex: none; display: grid; place-items: center; box-sizing: border-box; overflow: hidden;
   grid-template: minmax(0, 1fr) / minmax(0, 1fr); /* la foto se mide contra la casilla: la Xbox 360 (alta) se cortaba abajo */
   width: var(--rail-tile); height: var(--rail-tile); padding: var(--space-2); margin-left: calc((var(--rail-width) - var(--rail-tile)) / 2);
-  border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--edge-hairline); color: var(--color-text-muted);
+  border-radius: var(--radius-lg); background: var(--color-glass); box-shadow: var(--edge-glass); color: var(--color-text-muted);
   opacity: var(--opacity-away);
   transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out),
     width var(--duration-base) var(--ease-out), height var(--duration-base) var(--ease-out), margin var(--duration-base) var(--ease-out);

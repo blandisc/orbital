@@ -33,12 +33,12 @@
 .calendar__cell--focused { opacity: 1; transform: scale(var(--tile-focus-scale)); box-shadow: var(--focus-lift); z-index: var(--z-raised); }
 .calendar__status { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); }
 
-.calendar__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; padding: var(--inset-card); border-radius: var(--tile-radius); background: var(--color-surface); }
+.calendar__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; padding: var(--inset-card); border-radius: var(--tile-radius); background: var(--color-glass-strong); }
 .calendar__day-title { margin: 0; font-size: var(--type-section); font-weight: var(--weight-bold); }
 .calendar__list { display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow: hidden; }
 .calendar__show {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-3); padding: var(--inset-row);
-  border-radius: var(--radius-lg); background: var(--color-fill); color: var(--color-text); text-align: left;
+  border-radius: var(--radius-lg); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text); text-align: left;
 }
 .calendar__show--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .calendar__thumb { width: 3.2rem; aspect-ratio: 2 / 3; border-radius: var(--radius-inner-row); object-fit: cover; background: var(--color-surface-raised); }

@@ -14,7 +14,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
   height: 100%; padding: 0 var(--space-2); margin-left: calc(-1 * var(--space-2)); border-radius: var(--radius-md);
   transition: background var(--duration-fast) var(--ease-out);
 }
-.status-bar__brand:hover { background: var(--color-fill); }
+.status-bar__brand:hover { background: var(--color-glass); }
 .status-bar__brand { gap: .6rem; }
 /* La marca (icons.js · mark): el planeta de contorno, el anillo que pasa por delante y la luna como punto final de
    «orbital». Quieta: su entrada la hace la de arranque (boot.css), que llega volando a este mismo lugar. Al señalarla,
@@ -141,7 +141,7 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
   border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-medium); white-space: nowrap;
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
-.assistant:hover { background: var(--color-fill); color: var(--color-text); }
+.assistant:hover { background: var(--color-glass); color: var(--color-text); }
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que Buscar. */
 .assistant.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .assistant.is-focused .assistant__ring { color: inherit; filter: none; }

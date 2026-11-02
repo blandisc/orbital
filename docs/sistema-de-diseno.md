@@ -33,7 +33,7 @@ pueden medir (marcadas «prueba»).
 
 | Receta | Cómo se escribe | Dónde | Prueba |
 |---|---|---|---|
-| **Vidrio** (lo que flota sobre el arte) | `background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass)`; al señalar, `--color-glass-hover`; un menú u hoja, `--color-glass-strong` | La barra de secciones y Buscar, el selector de consolas, los botones secundarios y redondos, los menús (`side-panel`), «Atrás» táctil, el reloj del protector, las marcas del mosaico | sí: ningún `backdrop-filter` fuera de `--filter-glass` |
+| **Vidrio** (riguroso, 1 nov 2026) | Tres papeles. **Control** (lo que se toca o se enfoca: botones secundarios y redondos, teclas, campos, versiones, cápsulas, chips, íconos en su casilla): `background: var(--color-glass)` y su filo, `--edge-glass` si flota sobre el arte o `--edge-glass-hairline` dentro de una fila o un panel; al señalar, `--color-glass-hover`; lo elegido dentro de un grupo, `--color-glass-selected` con `--edge-glass-selected`. **Lo que flota encima de todo** (menús, hojas, paneles, avisos): `--color-glass-strong`, `--edge-glass`, `--shadow-overlay` y `backdrop-filter: var(--filter-glass)`. **Contenido** (portadas, fotos, tarjetas) y esqueletos de carga: no son vidrio. Los glifos del mando y las teclas, de cristal (`--glyph-bg`, `--edge-glyph`); sobre lo blanco, sólidos (`--glyph-bg-solid`). El principal, siempre en blanco. El desenfoque solo en lo que flota directo sobre el arte (Orbital ligera: las teclas no desenfocan cada una) | Barra y Buscar, selector de consolas, botones, teclas, Ajustes, menús, avisos, la batería | sí: `--color-fill` solo en esqueletos; todo `--shadow-overlay` con `--color-glass-strong`; todo control de vidrio con su filo; ningún `backdrop-filter` fuera de `--filter-glass` |
 | **Principal en blanco** | `Button({ variant: "primary" })` → `--color-primary` con `--color-on-primary`; nunca el color del arte | «Jugar», «Continuar», «Ver», «Ver la serie», «Reintentar»; en el reproductor, el primer botón de `buttons()` | sí |
 | **Cápsula** | `border-radius: var(--radius-pill)` en todo botón, píldora y selector | Botones, pestañas, filtros, `GlassSwitch`, `Segmented` | — |
 | **El foco se levanta** | Crece (`--card-focus-scale`, `--tile-focus-scale`, `--inverse-scale`) y flota con `--focus-lift`; a una portada le cruza `--focus-shine` (en su `::after`). Sin anillo | Portadas, tarjetas, tiles, consolas, caras del reparto, casillas del calendario y de Tu año | sí: nadie usa `--color-focus` fuera de `:focus-visible` |
@@ -69,7 +69,7 @@ Nada baja de `caption` (se lee a 3 m). Un componente usa la receta, nunca `--tex
 |---|---|---|
 | Fondo | `--color-bg`, `--color-tinted-bg` (el tono del arte) | Grafito; el color lo pone lo enfocado |
 | Superficie | `--color-surface`, `--color-surface-raised` | Paneles de una pantalla completa (Ajustes, Tu año); sobre el arte, vidrio |
-| Vidrio | `--color-glass`, `--color-glass-hover`, `--color-glass-strong`, `--edge-glass` | Ver la receta |
+| Vidrio | `--color-glass`, `--color-glass-hover`, `--color-glass-selected`, `--color-glass-strong`, `--edge-glass`, `--edge-glass-hairline`, `--edge-glass-selected` | Ver la receta |
 | Texto | `--color-text`, `--color-text-muted`, `--color-text-faint`, `--color-on-art-secondary` | El tenue (50 %) se lee (≥ 4,5:1); sobre el arte, `on-art-secondary` con su sombra |
 | Principal | `--color-primary` / `--color-on-primary` | Blanco con letra negra; también el foco invertido |
 | Porqué | `--color-reason` | Turquesa; solo porqués |

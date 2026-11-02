@@ -32,11 +32,11 @@
   font-size: var(--type-card-title); font-weight: var(--weight-medium); text-align: left; color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
-.sheet__item:hover { background: var(--color-fill); }
+.sheet__item:hover { background: var(--color-glass); }
 /* Ícono en su casilla redondeada (se lee como un botón de consola, no como un dibujo suelto). */
 .sheet__icon {
   display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: var(--radius-md);
-  background: var(--color-fill); color: var(--color-text);
+  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .sheet__icon:empty { background: transparent; }
@@ -61,7 +61,7 @@
 .sheet__item--focused .sheet__value--ok { color: inherit; }
 .sheet__value--choice {
   flex: none; max-width: none; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); padding: .3rem .4rem; border-radius: var(--radius-pill);
-  background: var(--color-fill); color: var(--color-text);
+  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text);
 }
 .sheet__chev { display: grid; place-items: center; opacity: var(--opacity-faint); }
 .sheet__chev .icon { width: var(--icon-xs); height: var(--icon-xs); }

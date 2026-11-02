@@ -40,6 +40,8 @@
   /* Lo elegido dentro de un vidrio (la sección de la barra): un vidrio más claro, con su propio filo. */
   --color-glass-selected: linear-gradient(180deg, rgba(255, 255, 255, .32), rgba(255, 255, 255, .16));
   --edge-glass-selected: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 0 0 1px rgba(255, 255, 255, .14);
+  /* Un control de vidrio dentro de una fila o de un panel (teclas, versiones, chips): el mismo filo, sin la sombra que despega. */
+  --edge-glass-hairline: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .08);
   /* Un menú o una hoja: más tapado, para leer encima de cualquier cosa. */
   --color-glass-strong: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02)), rgba(30, 30, 36, .74);
   --edge-glass: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .1), inset 0 -1px 0 rgba(255, 255, 255, .04), 0 .5rem 1.4rem rgba(0, 0, 0, .22);
@@ -130,7 +132,6 @@
 
   /* Sobre el arte: placas oscuras para números, insignias y «Abierto»; sombras de texto y logos. */
   --color-badge-bg: color-mix(in oklab, var(--palette-ink-1000) 80%, transparent);
-  --color-chip-bg: rgba(255, 255, 255, .09);
   --gradient-art-base: linear-gradient(transparent, color-mix(in oklab, var(--palette-ink-1000) 85%, transparent));
   --shadow-text: 0 2px 30px rgba(0, 0, 0, .45);
   --shadow-text-strong: 0 1px 14px rgba(0, 0, 0, .75);

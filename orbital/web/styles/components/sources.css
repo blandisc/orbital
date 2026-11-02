@@ -34,14 +34,14 @@
   position: relative; flex-shrink: 0; /* sin esto, la lista aplastaba las tarjetas en vez de desplazarse */
   display: grid; grid-template-columns: 4.8rem minmax(0, 1fr); align-items: center; column-gap: var(--space-4);
   width: 100%; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
-  border-radius: var(--radius-lg); text-align: left; background: var(--color-fill);
+  border-radius: var(--radius-lg); text-align: left; background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
-.source:hover { background: var(--color-fill-hover); }
+.source:hover { background: var(--color-glass-hover); }
 
 .source__res {
   display: grid; place-items: center; height: 3.4rem; border-radius: var(--radius-md);
-  background: var(--color-chip-bg); font-family: var(--font-sans); font-size: var(--type-body);
+  background: var(--color-glass); box-shadow: var(--edge-glass-hairline); font-family: var(--font-sans); font-size: var(--type-body);
   font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums;
 }
 .source__res--4k { color: var(--color-accent); }
@@ -69,10 +69,10 @@
 
 .version {
   position: relative; display: grid; align-content: center; gap: var(--space-1);
-  min-height: 5.2rem; padding: var(--space-3); border-radius: var(--radius-lg); text-align: left; background: var(--color-fill);
+  min-height: 5.2rem; padding: var(--space-3); border-radius: var(--radius-lg); text-align: left; background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
-.version:hover { background: var(--color-fill-hover); }
+.version:hover { background: var(--color-glass-hover); }
 .version__res { font-family: var(--font-sans); font-size: var(--type-body); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
 .version__state { font-size: var(--type-footnote); font-weight: var(--weight-medium); }

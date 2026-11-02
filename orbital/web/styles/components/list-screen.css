@@ -14,7 +14,7 @@
 .list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); }
 .list-screen__chips { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); align-self: center; }
 .list-screen__chip {
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-raised);
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass);
   box-shadow: var(--edge-hairline); font-size: var(--type-secondary); font-weight: var(--weight-medium);
 }
 .list-screen__tabs { display: flex; gap: var(--space-2); }

@@ -13,7 +13,7 @@
 .filter__row[data-hue="lima"] { --hue: var(--rainbow-lima); }
 .filter__row[data-hue="verde"] { --hue: var(--rainbow-verde); }
 .filter__row[data-hue="lavanda"] { --hue: var(--rainbow-lavanda); }
-.filter__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: var(--radius-md); background: var(--color-fill); color: var(--hue); }
+.filter__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: var(--radius-md); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--hue); }
 .filter__icon .icon { width: var(--icon-md); height: var(--icon-md); }
 .filter__label { font-size: var(--type-card-title); font-weight: var(--weight-medium); }
 .filter__value { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); }
@@ -23,7 +23,7 @@
 .filter__row--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .filter__row--focused .filter__value { color: var(--inverse-fg); }
 .filter__row--focused .filter__icon { background: var(--on-light-fill-strong); }
-.filter__row:not(.filter__row--focused):hover { background: var(--color-fill); }
+.filter__row:not(.filter__row--focused):hover { background: var(--color-glass); }
 .filter__result { display: grid; justify-items: center; gap: var(--space-3); }
 .filter__note { color: var(--color-warning); font-size: var(--type-secondary); }
 .filter__clear { color: var(--color-text-muted); font-size: var(--type-secondary); }

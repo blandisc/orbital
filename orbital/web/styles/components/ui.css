@@ -5,7 +5,7 @@
 /* Chip: un dato corto (4K, Inglés, Al instante). */
 .chip {
   display: inline-flex; align-items: center; gap: var(--space-1);
-  padding: .14rem .55rem; border-radius: var(--radius-xs); background: var(--color-chip-bg);
+  padding: .14rem .55rem; border-radius: var(--radius-xs); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   font-size: var(--type-secondary); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
   white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
@@ -37,8 +37,8 @@
 }
 .pill .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); }
 .pill--outline { box-shadow: var(--edge-strong); }
-.pill--fill { background: var(--color-fill); }
-.pill--on { color: var(--color-text); background: var(--color-fill-hover); box-shadow: none; }
+.pill--fill { background: var(--color-glass); box-shadow: var(--edge-glass); }
+.pill--on { color: var(--color-text); background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); }
 /* Pestañas de texto (tone "tab", como DSTextTabs del iPhone): para cambiar lo que ves (los filtros de una consola, Series ·
    Películas de una lista, las temporadas). Sin cápsula: el texto tenue y la elegida en blanco, en negrita, con su rayita. */
 .pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; }
@@ -84,7 +84,7 @@
 [data-input="touch"] .glass-switch__item { min-height: var(--touch-target); }
 /* Valores segmentados (Segmented): las opciones de un ajuste juntas en una cápsula; la elegida en papel. Dentro de una fila
    enfocada (foco invertido, fondo claro) se invierte con ella. Con el dedo, cada una del alto de un dedo. */
-.segmented { flex: none; display: inline-flex; gap: var(--space-1); margin-left: auto; padding: var(--space-1); border-radius: var(--radius-pill); background: var(--color-fill); }
+.segmented { flex: none; display: inline-flex; gap: var(--space-1); margin-left: auto; padding: var(--space-1); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass-hairline); }
 .segmented__item { min-height: calc(var(--pill-height) - var(--space-2)); padding: 0 var(--space-4); font-size: var(--type-secondary); font-weight: var(--weight-medium); cursor: pointer; }
 .segmented__item:hover { color: var(--color-text); }
 .segmented__item.pill--on { background: var(--color-primary); color: var(--color-on-primary); }
@@ -221,7 +221,7 @@
 
 /* EmptyState: su ícono en un círculo tenue, el título y una línea (DSEmptyState). */
 .empty-state { display: grid; justify-items: start; gap: var(--space-2); max-width: 34rem; padding-block: var(--space-4); }
-.empty-state__icon { display: grid; place-items: center; width: var(--control-height); height: var(--control-height); margin-bottom: var(--space-1); border-radius: 50%; background: var(--color-fill); color: var(--color-text-muted); }
+.empty-state__icon { display: grid; place-items: center; width: var(--control-height); height: var(--control-height); margin-bottom: var(--space-1); border-radius: 50%; background: var(--color-glass); box-shadow: var(--edge-glass-hairline); color: var(--color-text-muted); }
 .empty-state__icon .icon { width: var(--icon-lg); height: var(--icon-lg); }
 .empty-state__title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
 .empty-state__text { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); line-height: var(--leading-relaxed); }

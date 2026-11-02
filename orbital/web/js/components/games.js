@@ -1,14 +1,15 @@
-import { h, markGridEdge, mount } from "../core/dom.js";
+import { h, markGridEdge, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
 import { consoleGames, filtersFor, gameConsoles, gameReason, pickConsole, stepConsole } from "../core/games.js";
 import { SYSTEMS } from "../core/home.js";
+import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll } from "../core/swipe.js";
 import { fillFilters, fitBar, keepInView, replay, showFilter } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
-import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect } from "./ui.js";
+import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark } from "./ui.js";
 
 /**
  * Juegos, como el Apple TV (Fernando, 31 oct 2026): dos pisos arriba —la barra de secciones y, debajo, tus consolas en el
@@ -149,16 +150,22 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     const extra = item.extra || {};
     const g = options.glyphs;
     const alt = alternativeRunner(item);
-    const players = extra.players ? (Number(extra.players) > 1 ? `1 a ${extra.players} jugadores` : "1 jugador") : null;
+    const many = Number(extra.players) > 1;
     const title = h("h2", { class: ["games__title", String(item.title).length > 28 && "games__title--long"] }, item.title);
     const logo = extra.logo ? h("img", { class: "games__logo", src: extra.logo, alt: item.title, decoding: "async" }) : null;
     logo?.addEventListener("error", () => logo.replaceWith(title), { once: true });
     mount(hero,
       h("span", { class: "games__reason" }, gameReason(item)),
       logo || title,
+      // Los datos, como la línea del destacado del Inicio: la marca de su consola con su nombre corto («Switch», no «Nintendo
+      // Switch»: el logo ya lo dice), el año, sus géneros y cuántos juegan con su ícono. Cada dato en su pieza, con su punto.
       h("p", { class: "games__facts" },
-        h("b", {}, item.subtitle || current()?.name || ""),
-        ...[extra.year, genres(extra.genres || []).slice(0, 2).join(", "), players].filter(Boolean).map((f) => ` · ${f}`)),
+        h("span", { class: "games__fact games__fact--platform" },
+          PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)] || ICONS.apps)), h("b", {}, current()?.name || item.subtitle || "")),
+        extra.year && h("span", { class: "games__fact" }, String(extra.year)),
+        (extra.genres || []).length > 0 && h("span", { class: "games__fact" }, genres(extra.genres).slice(0, 2).join(", ")),
+        extra.players && h("span", { class: "games__fact", "aria-label": many ? `1 a ${extra.players} jugadores` : "1 jugador" },
+          svg(ICONS.players), many ? `1 a ${extra.players}` : "1")),
       h("div", { class: "button-row games__actions" },
         Button({ label: primaryLabel(item, options.runningId), glyph: g.select, variant: "primary", onPress: () => onAction?.("select", item) }),
         alt && item.id !== options.runningId && Button({ label: alt.name, ariaLabel: `Abrir con ${alt.name}`, glyph: g.alt, yields: true, onPress: () => onAction?.("alt", item) }),
