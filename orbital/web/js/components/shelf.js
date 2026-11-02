@@ -112,7 +112,7 @@ export function createShelf({ onPick, onSwipe }) {
     const track = h("div", { class: "shelf__track", role: "group" }, els.slice(seeds));
     const stage = row.stage && Stage(row.stage, row.items.slice(0, seeds), els.slice(0, seeds), { more: els.length > seeds });
     const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
-    const count = h("span", { class: "shelf__count" }, String(row.items.length - seeds));
+    const count = h("span", { class: "shelf__count" }, row.items.length - seeds ? String(row.items.length - seeds) : "");
     // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
     const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
     // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
@@ -200,7 +200,7 @@ export function createShelf({ onPick, onSwipe }) {
       rowEl.classList.toggle("shelf__row--current", isCurrent);
       // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno; en «Porque viste», entre lo relacionado).
       const shown = cards.length - seeds;
-      count.textContent = isCurrent && shown > 1 && c >= seeds ? `${c - seeds + 1} / ${shown}` : String(shown);
+      count.textContent = isCurrent && shown > 1 && c >= seeds ? `${c - seeds + 1} / ${shown}` : shown ? String(shown) : "";
       dots?.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === (isCurrent ? c : 0)));
       cards.forEach((card, col) => {
         const focused = isCurrent && col === c;

@@ -112,7 +112,7 @@ export function columnsOf(rects) {
 
 /** El ícono de cada categoría (por su nombre en español; las que no tienen uno propio, la tele). */
 const CATEGORY_ICONS = {
-  "Tus canales": "watching", Todos: "grid", General: "catGeneral", Noticias: "catNews", Entretenimiento: "catEntertainment",
+  Recientes: "watching", "Tus canales": "bookmark", Todos: "grid", General: "catGeneral", Noticias: "catNews", Entretenimiento: "catEntertainment",
   Deportes: "catSports", "Películas": "movie", Series: "series", Infantil: "catKids", Familia: "catKids", "Animación": "catAnimation",
   Comedia: "catAnimation", "Música": "catMusic", Cultura: "catCulture", "Educación": "catEducation", Documentales: "catDocumentary",
   Ciencia: "catDocumentary", Viajes: "catDocumentary", Legislativo: "catLegislative", "Público": "catLegislative",
@@ -123,7 +123,7 @@ export const categoryIcon = (title) => CATEGORY_ICONS[title] ?? "tv";
 /** El tono de cada categoría (el arcoíris del azul de Orbital, --rainbow-*): lo tuyo y lo de Orbital en su turquesa; «Todos»
  *  y «Otros» sin color. Va por ícono, así dos categorías que comparten dibujo comparten color. */
 const ICON_HUES = {
-  watching: "orbital", spark: "orbital", catGeneral: "cielo", catNews: "ambar", catEntertainment: "rosa", catSports: "verde",
+  watching: "orbital", bookmark: "orbital", spark: "orbital", catGeneral: "cielo", catNews: "ambar", catEntertainment: "rosa", catSports: "verde",
   movie: "lavanda", series: "lavanda", catKids: "lima", catAnimation: "coral", catMusic: "rosa", catCulture: "lavanda",
   catEducation: "cielo", catDocumentary: "verde", catLegislative: "ambar", catReligion: "lavanda",
 };

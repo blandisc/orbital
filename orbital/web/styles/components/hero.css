@@ -82,8 +82,8 @@
 /* Frase para Alexa: discreta, debajo de los botones; enseña la voz sin estorbar. */
 .hero__voice {
   display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4);
-  color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-style: italic;
-  animation: fade-in var(--duration-slow) var(--ease-out);
+  color: var(--color-on-art-secondary); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-style: italic;
+  text-shadow: var(--shadow-text-strong); animation: fade-in var(--duration-slow) var(--ease-out);
 }
 .hero__voice svg { flex: none; width: var(--icon-sm); height: var(--icon-sm); color: var(--color-accent); }
 .hero__voice span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

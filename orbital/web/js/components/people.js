@@ -11,13 +11,19 @@ const HEAD_PX = 140;
  */
 const initials = (name) => String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
+/** Varios personajes («Homer Simpson / Abe Simpson / Barney Gumble»): el primero y cuántos más. */
+export function shortRole(role) {
+  const parts = String(role).split(" / ").map((p) => p.trim()).filter(Boolean);
+  return parts.length > 1 ? `${parts[0]} y\u00a0${parts.length - 1}\u00a0más` : String(role);
+}
+
 export function PersonChip(person, { onPress } = {}) {
   const photo = person.photo
     ? h("img", { class: "person-chip__photo", src: sized(person.photo, PHOTO_PX), alt: "", loading: "lazy", decoding: "async" })
     : h("span", { class: "person-chip__photo person-chip__photo--initials", "aria-hidden": "true" }, initials(person.name));
   if (person.photo) photo.addEventListener("error", () => photo.replaceWith(h("span", { class: "person-chip__photo person-chip__photo--initials" }, initials(person.name))));
   return h("button", { class: "person-chip", type: "button", tabindex: "-1", "aria-label": `${person.name}${person.role ? `, ${person.role}` : ""}`, onClick: onPress },
-    photo, h("strong", { class: "person-chip__name" }, person.name), person.role ? h("span", { class: "person-chip__role" }, person.role) : null);
+    photo, h("strong", { class: "person-chip__name" }, person.name), person.role ? h("span", { class: "person-chip__role" }, shortRole(person.role)) : null);
 }
 
 /** La persona arriba de su filmografía (list-screen): foto grande, de dónde es y su biografía (Y la despliega). */

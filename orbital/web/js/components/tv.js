@@ -69,10 +69,10 @@ export function createTv({ onFocus, onPick }) {
   const byId = (id) => allChannels().find((c) => c.id === id) ?? null;
   const recent = () => (data?.recent || []).map(byId).filter(Boolean);
 
-  /** Las categorías: «Tus canales» (si ya viste alguno), Todos y las del servidor. */
+  /** Las categorías: «Recientes» (si ya viste alguno), Todos y las del servidor (con «Tus canales», tu lista de series). */
   function categories() {
     const mine = recent();
-    return [...(mine.length ? [{ id: RECENT, title: "Tus canales", count: mine.length }] : []), ...categoriesOf(data)];
+    return [...(mine.length ? [{ id: RECENT, title: "Recientes", count: mine.length }] : []), ...categoriesOf(data)];
   }
   const channelsOf = (id) => (id === RECENT ? recent() : channelsIn(data, id));
 

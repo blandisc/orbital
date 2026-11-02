@@ -131,7 +131,8 @@
 
 /* Los botones en un renglón, como Apple TV: «Ver» / «Continuar» con su botón del mando y, a su lado, los demás redondos.
    Abajo queda el lugar del nombre del redondo enfocado (sale ahí, sin mover nada). */
-.title__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); min-width: 0; margin: var(--space-3) 0 var(--space-8); }
+/* En un renglón siempre: si «Continuar» trae su versión larga, la versión se recorta (antes «Más» bajaba a otro renglón). */
+.title__actions { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-3); min-width: 0; margin: var(--space-3) 0 var(--space-8); }
 .title__action {
   position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
   min-height: var(--control-height); border-radius: var(--radius-pill); flex: none; text-shadow: none;
@@ -145,7 +146,9 @@
   background: var(--color-primary); color: var(--color-on-primary); /* el principal, siempre en blanco (como «Jugar») */
   font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking);
 }
-.title__action--primary > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* «Continuar T12 E8» nunca parte el botón */
+.title__action--primary { flex: 0 1 auto; min-width: 0; }
+.title__action--primary > span { flex: none; white-space: nowrap; } /* «Continuar T12 E8» entero, siempre */
+.title__action--primary > small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* lo que cede es la versión */
 .title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
 .title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }
@@ -158,8 +161,8 @@
   white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); text-shadow: var(--shadow-text-strong);
   opacity: 0; transition: opacity var(--duration-fast) var(--ease-out);
 }
-/* Prendido («Guardada»): el redondo con el color del arte, como en el iPhone. */
-.title__action--on .title__action-tile { background: var(--color-primary); color: var(--inverse-fg); }
+/* Prendido («Siguiendo», «Guardada»): vidrio elegido, el papel de lo seleccionado. En blanco se confundía con el enfocado. */
+.title__action--on .title__action-tile { background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); color: var(--color-text); }
 /* Foco invertido (como el menú): se ve desde el sofá. «Ver» toma el color del arte (como el Jugar de Game Glance). */
 .title__action--primary.title__action--focused { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
 .title__action--focused small { color: inherit; opacity: var(--opacity-near); }
@@ -222,7 +225,8 @@
   background: linear-gradient(180deg, transparent, var(--color-tinted-bg) 22%);
   transform: translateY(100%); transition: transform var(--duration-slow) var(--ease-out);
 }
-.title__more-clip { flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0 calc(-1 * var(--space-2)); padding: 0 var(--space-2); }
+/* Llega a las orillas de la pantalla, como las filas de Películas y series (antes cortaba la última tarjeta en el margen). */
+.title__more-clip { flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0 calc(-1 * var(--page-gutter)); padding: 0 var(--page-gutter); }
 .title__more-clip--scrolled {
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8));
   mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) var(--space-8));
@@ -230,10 +234,15 @@
 .title__more-track { display: grid; gap: var(--layout-between-sections); transition: transform var(--duration-slow) var(--ease-out); }
 .title__more-section { display: grid; gap: var(--layout-title-to-content); min-width: 0; }
 .title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) .title__more { transform: none; }
+/* Lo de arriba se va del todo: a media luz se encimaba con «Reparto y equipo» (el logo y las calificaciones debajo del título). */
 .title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) :is(.title__info, .title__browser) {
-  opacity: var(--opacity-off); transition: opacity var(--duration-base) var(--ease-out);
+  opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
 }
-.title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
+/* Aire de sobra para la sombra de la enfocada (se corta donde termina la fila: antes se veía un cuadro oscuro alrededor). */
+.title__more-row {
+  display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; align-items: flex-end;
+  padding: var(--space-3) calc(var(--page-gutter) + var(--space-2)) var(--space-14); margin: 0 calc(-1 * var(--page-gutter)) calc(var(--space-3) - var(--space-14));
+}
 .title__more-row > .card { flex: none; }
 /* Las portadas crecen hacia arriba al enfocarlas (desde la esquina de abajo): arriba les queda ese lugar (antes el anillo
    de la enfocada se cortaba). */

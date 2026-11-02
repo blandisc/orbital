@@ -12,6 +12,9 @@
    Lo que sale por arriba se desvanece (no queda cortado en seco). */
 .home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
 .home--scrolled { -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); }
+/* Ahí lo de arriba no es lo enfocado: se aparta (antes seguía igual de presente y el fondo ya era el de la consola). */
+.home__hero { transition: opacity var(--duration-base) var(--ease-out); }
+.home--scrolled .home__hero { opacity: var(--opacity-dim); }
 
 /* Arriba: lo enfocado, abajo a la izquierda (el alto lo pone home.js: la pantalla menos «A continuación» y el título de
    Tus consolas). Al cambiar, entra con un fundido. */
@@ -35,7 +38,8 @@
 .home__row[hidden] { display: none; }
 .home__viewport {
   --fade-left: var(--mask-solid); --fade-right: var(--mask-solid);
-  overflow: hidden; padding: var(--space-3) var(--space-4) var(--space-2); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4)) 0;
+  /* Abajo y a los lados, aire para la sombra de la enfocada (antes se cortaba en un cuadro oscuro); el margen lo devuelve. */
+  overflow: hidden; padding: var(--space-3) var(--space-10) var(--space-14); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-10)) calc(var(--space-2) - var(--space-14));
   -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%);
   mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%);
 }

@@ -203,7 +203,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
           r.liked && h("span", { class: "title__review-liked", "aria-label": "Te gustó" }, "♥"),
           r.likes > 0 && h("span", { class: "title__review-likes" }, `♥ ${compact.format(r.likes)}`)),
         r.when && h("span", { class: "title__review-when" }, r.when),
-        hidden ? h("p", { class: "title__review-text title__review-text--hidden" }, "Tiene spoilers · A para leerla")
+        hidden ? h("p", { class: "title__review-text title__review-text--hidden" }, "Tiene spoilers · ábrela para leerla")
           : r.text && h("p", { class: "title__review-text" }, r.text));
     });
     more.hidden = !PANEL.some((id) => panel[id].items.length);

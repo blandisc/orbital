@@ -115,4 +115,4 @@
 .shelf__row--centered .card--collection.card--focused { transform: scale(var(--card-focus-scale)); margin-inline: calc(var(--card-height) * var(--ratio) * (var(--card-focus-scale) - 1) / 2); }
 .shelf__row--current.shelf__row--centered .card--collection:not(.card--focused) { transform: scale(.9); opacity: var(--opacity-away); }
 /* Un reflejo corto y tenue: solo insinuado, sin meterse bajo el título de la fila de abajo. */
-.shelf__row--current.shelf__row--centered .shelf__track { -webkit-box-reflect: below var(--space-1) linear-gradient(transparent 84%, color-mix(in oklab, var(--color-text) 9%, transparent)); }
+.shelf__row--current.shelf__row--centered .shelf__track { -webkit-box-reflect: below var(--space-1) linear-gradient(transparent 92%, color-mix(in oklab, var(--color-text) 6%, transparent)); }
