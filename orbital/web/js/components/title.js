@@ -331,14 +331,16 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
   const SECONDARY_ORDER = ["restart", "mylist", "follow", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
-  const SECONDARY_SHOWN = 5; // una serie con Trakt: Guardar, Tráiler, Calificar, Vista y la campana, todos a la vista
+  // Una serie con Trakt: Guardar, la campana, Tráiler, Calificar y Vista, todos a la vista; una película, cuatro (su «Ver» trae la
+  // versión al lado y con cinco no cabían en un renglón).
+  const secondaryShown = () => (kindOf() === "series" ? 5 : 4);
 
   function arrange(all) {
     const primary = all.filter((b) => b.primary);
     const rank = (b) => { const i = SECONDARY_ORDER.indexOf(b.id); return i < 0 ? SECONDARY_ORDER.length : i; };
     const rest = all.filter((b) => !b.primary).sort((a, b) => rank(a) - rank(b));
-    if (expanded || rest.length <= SECONDARY_SHOWN) return [...primary, ...rest];
-    return [...primary, ...rest.slice(0, SECONDARY_SHOWN - 1), { id: "more-actions", icon: "more", label: "Más opciones", short: "Más" }];
+    if (expanded || rest.length <= secondaryShown()) return [...primary, ...rest];
+    return [...primary, ...rest.slice(0, secondaryShown() - 1), { id: "more-actions", icon: "more", label: "Más opciones", short: "Más" }];
   }
 
   function renderActions() {

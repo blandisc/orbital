@@ -225,8 +225,8 @@
 }
 .title__more-track { display: grid; gap: var(--layout-between-sections); transition: transform var(--duration-slow) var(--ease-out); }
 .title__more-section { display: grid; gap: var(--layout-title-to-content); min-width: 0; }
-.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="details"]) .title__more { transform: none; }
-.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="details"]) :is(.title__info, .title__browser) {
+.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) .title__more { transform: none; }
+.title:is([data-zone="cast"], [data-zone="saga"], [data-zone="more"], [data-zone="reviews"], [data-zone="details"]) :is(.title__info, .title__browser) {
   opacity: var(--opacity-off); transition: opacity var(--duration-base) var(--ease-out);
 }
 .title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
