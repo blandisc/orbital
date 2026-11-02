@@ -89,7 +89,7 @@ struct RootView: View {
                           actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
                           symbol: "tv", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
                         .transition(DS.Motion.notice(reduceMotion))
-                } else {
+                } else if !ui.coverShowsNotices {
                     BannerView()
                 }
             }

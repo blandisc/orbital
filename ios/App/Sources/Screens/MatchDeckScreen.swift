@@ -11,6 +11,7 @@ struct MatchDeckScreen: View {
     let onPlay: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var model: MatchDeckModel?
     /// Lo que pidió un botón (la carta sale volando igual que al arrastrarla).
     @State private var command: MatchCommand?
@@ -56,6 +57,12 @@ struct MatchDeckScreen: View {
         }
         .padding(DS.Space.gutter)
         .background(Backdrop())
+        // «Guardada en Tu match perfecto · Deshacer» al momento: el mazo tapa la raíz, que es donde van los avisos, y antes
+        // salía hasta cerrarlo. Arriba, para no tapar los botones de abajo.
+        .overlay(alignment: .top) { BannerView().padding(.top, DS.Space.s2) }
+        .animation(DS.Motion.enter(reduceMotion), value: env.notices.current?.serial)
+        .onAppear { env.ui.coverShowsNotices = true }
+        .onDisappear { env.ui.coverShowsNotices = false }
         .task {
             if model == nil {
                 let m = MatchDeckModel(env.services, pool: pool, titles: env.titles, watched: { [env] in await env.collections.watchedIDs() })

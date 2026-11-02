@@ -17,6 +17,9 @@ final class AppUI {
     /// Lo que flota sobre la barra de pestañas en la pantalla de ahora (el pie del mosaico): los avisos suben eso para
     /// no taparlo.
     var noticeLift: CGFloat = 0
+    /// Una pantalla encima de todo (el mazo de «¿Qué vemos hoy?») pinta los avisos ella misma: la raíz no los repite (vibraría
+    /// dos veces y VoiceOver los leería dos veces).
+    var coverShowsNotices = false
     var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
