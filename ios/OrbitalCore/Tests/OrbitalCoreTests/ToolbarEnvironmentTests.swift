@@ -1,6 +1,7 @@
 import XCTest
 
-/// Lo que va en la barra de arriba (`.toolbar { … }`) y la ficha (`TitleView`) leen los objetos del entorno como opcionales
+/// Lo que va en la barra de arriba (`.toolbar { … }`), en un menú contextual (`.contextMenu { … }`, cuya vista previa también se
+/// arma fuera del árbol de la app) y la ficha (`TitleView`) leen los objetos del entorno como opcionales
 /// (`@Environment(AppEnvironment.self) private var env: AppEnvironment?`).
 ///
 /// Por qué (R1, 31 oct 2026): al mantener presionado un póster de Inicio («Sugerencias para ti»), iOS armaba la ficha y los
@@ -41,16 +42,17 @@ final class ToolbarEnvironmentTests: XCTestCase {
         }
         XCTAssertFalse(strict.isEmpty, "la búsqueda ya no encuentra vistas con entorno (¿cambió la forma de escribirlo?)")
 
-        // Lo que hay dentro de cada `.toolbar { … }` y de cada `@ToolbarContentBuilder`.
+        // Lo que hay dentro de cada `.toolbar { … }`, de cada `@ToolbarContentBuilder` y de cada menú contextual.
         var problems: [String] = []
         for (name, text) in texts {
             let chars = Array(text)
             var blocks: [String] = []
-            for marker in [".toolbar {", "@ToolbarContentBuilder"] {
+            for marker in [".toolbar {", "@ToolbarContentBuilder", ".contextMenu {", ".contextMenu(menuItems:"] {
                 var search = text.startIndex
                 while let found = text.range(of: marker, range: search..<text.endIndex) {
                     search = found.upperBound
-                    var i = text.distance(from: text.startIndex, to: found.upperBound)
+                    // Desde el principio del marcador: si ya trae su «{», ese es el bloque (antes se saltaba al siguiente).
+                    var i = text.distance(from: text.startIndex, to: found.lowerBound)
                     while i < chars.count, chars[i] != "{" { i += 1 }
                     guard i < chars.count else { break }
                     var depth = 0, j = i
@@ -60,7 +62,7 @@ final class ToolbarEnvironmentTests: XCTestCase {
             }
             for block in blocks {
                 for view in strict where block.range(of: #"\b\#(view)\("#, options: .regularExpression) != nil {
-                    problems.append("\(name): `\(view)` va en la barra y lee el entorno obligatorio; hazlo opcional (`: Tipo?`)")
+                    problems.append("\(name): `\(view)` va en la barra o en un menú contextual y lee el entorno obligatorio; hazlo opcional (`: Tipo?`)")
                 }
             }
         }

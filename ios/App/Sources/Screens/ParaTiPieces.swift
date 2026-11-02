@@ -5,8 +5,10 @@ import OrbitalModels
 /// Piezas de Para ti que conocen el entorno de la app: las acciones de una sugerencia, el póster de estante y el filtro por tipo.
 
 /// Las acciones de una sugerencia (mantener el dedo sobre un póster, o «Más» en el destacado): ver, Mi lista, descargar, la TV y «No me interesa».
+/// Lee el entorno como opcional: el menú contextual y su vista previa se arman a veces fuera del árbol de la app (R1).
 struct SuggestionActions: View {
-    @Environment(AppEnvironment.self) private var env
+    @Environment(AppEnvironment.self) private var appEnv: AppEnvironment?
+    private var env: AppEnvironment { appEnv ?? .shared }
     let suggestion: Suggestion
     var includeWatch = true
     /// Dentro de una de tus listas (Inicio y su «Ver todo»): en vez de «Guardar» y «No me interesa», «Quitar de …» (eso hace
