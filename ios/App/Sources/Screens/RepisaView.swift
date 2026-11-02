@@ -182,7 +182,8 @@ struct RepisaCollectionView: View {
                 let facts = await env.collections.imdbFacts(c.items.map { ($0.kind, $0.imdb) })
                 ratings = facts.ratings; genres = facts.genres
             }
-            .safeAreaInset(edge: .bottom) { if let next = c.next(model.watched) { nextBar(next, c) } }
+            // La que sigue sale de lo que pasa el filtro (antes, de la colección entera: «Anora» con «Drama · 2010s»).
+            .safeAreaInset(edge: .bottom) { if let next = filtered(c, model).next(model.watched) { nextBar(next, c) } }
             .sheet(item: $picked, onDismiss: { asking = askNext; askNext = nil }) { item in quick(item, c, model).presentationDetents([.height(DS.Repisa.quickHeight)]) }
             .askingWhenWatched($asking) { s, date in place(s, at: date, model) }
             .overlay { if let placed { moment(placed, c, model) } }
