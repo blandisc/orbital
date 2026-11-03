@@ -348,7 +348,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
-  const SECONDARY_ORDER = ["restart", "mylist", "follow", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
+  // «Pedirlo a Real-Debrid» primero: si no hay versión que arranque, es lo único que sirve (RD-1); al final quedaba en «Más».
+  const SECONDARY_ORDER = ["rd-request", "restart", "mylist", "follow", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
   // Una serie con Trakt: Guardar, la campana, Tráiler, Calificar y Vista, todos a la vista; una película, cuatro (su «Ver» trae la
   // versión al lado y con cinco no cabían en un renglón).
   const secondaryShown = () => (kindOf() === "series" ? 5 : 4);
