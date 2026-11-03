@@ -38,10 +38,72 @@
     "sizefilter": { "type": "texto", "label": "Tamaño máximo", "format": "«5GB» o «800MB» para todo; «10GB,2GB» = películas, episodios" },
     "debridoptions": { "type": "lista", "values": { "nodownloadlinks": "Solo lo que ya está en Real-Debrid (esconde las que habría que bajar)", "nocatalog": "Sin el catálogo de Real-Debrid (no tiene pantalla; se conserva si venía en un Torrentio traído)" } }
   },
+  "requests": {
+    "_": "La libreta de pedidos a Real-Debrid, una sola forma en los dos lados (corte S2 de la TV, acuerdo S2 del iPhone; 3 nov 2026, tras la revisión adversarial de la TV: RQ-1 a RQ-12). Una entrada por torrent, con su huella como clave. La TV es el almacén; cada aparato le pregunta a Real-Debrid solo por lo de su propia cuenta. No lleva claves ni enlaces de Real-Debrid.",
+    "entry": {
+      "hash": "la huella del torrent, 40 caracteres hexadecimales en minúsculas: la clave del pedido",
+      "account": "el id de usuario de Real-Debrid (GET /user), nunca la clave. Sin `account` = de la misma cuenta (compatibilidad con lo de antes)",
+      "rd_id": "su id en esa cuenta, o null (Torrentio lo pidió al abrirlo y todavía no se encuentra: se busca por huella en GET /torrents)",
+      "title": "≤ 120 caracteres",
+      "kind": "«movie» | «series»",
+      "meta_id": "el id del título",
+      "video_ids": "los videos que trae (un paquete de temporada trae varios), ≤ 50",
+      "files": "{\"<video_id>\": file_idx}: el archivo de cada video dentro del torrent, desde 0, como lo da Torrentio. Pedir otro episodio del mismo paquete agrega su archivo; nunca se vuelve a agregar el torrent",
+      "season": "entero o null",
+      "episode": "entero o null",
+      "language": "«es-419», o vacío",
+      "release": "el nombre de la versión, o vacío",
+      "by": "el nombre del aparato que lo pidió, el de su renglón en Cuentas («iPhone de Fernando», «TV»), ≤ 60",
+      "since": "segundos desde 1970: cuándo se pidió",
+      "updated": "segundos desde 1970: lo pone la TV al guardar, nunca el cliente",
+      "rd_status": "lo que dice Real-Debrid tal cual («downloading», «magnet_error»…)",
+      "percent": "0 a 100",
+      "seeders": "entero o null",
+      "progress_at": "segundos desde 1970: la última vez que avanzó (para «Sigue sin bajar» a las 24 h)",
+      "state": "uno de `states`"
+    },
+    "states": {
+      "queued": "En cola",
+      "downloading": "Bajando · 42 %",
+      "no_peers": "Sin gente que lo comparta",
+      "refused": "Real-Debrid no lo dejó bajar",
+      "too_many": "Muchas descargas activas",
+      "ready": "Listo",
+      "gone": "lápida: ya no está en tu Real-Debrid (lo cancelaste aquí, en el otro aparato o en real-debrid.com). No se enseña; se guarda 7 días para que el otro lado no lo vuelva a anotar"
+    },
+    "rd_status_map": {
+      "downloaded": "ready",
+      "magnet_error | error | virus | dead": "refused",
+      "downloading | compressing | uploading": "downloading; «downloading» con seeders 0 y menos de 100 % = no_peers",
+      "*": "queued",
+      "_": "Error 21 de Real-Debrid al pedir = too_many; error 35 = refused. 404 de un rd_id = gone. La TV ya no usa «failed»: una entrada vieja con «failed» se lee como refused"
+    },
+    "unknown_state": "se lee como queued y se le vuelve a preguntar a Real-Debrid; si no está en tu cuenta, gone",
+    "merge": {
+      "_": "Al juntar dos entradas con la misma huella. Los relojes de los aparatos nunca deciden.",
+      "video_ids, files": "se unen",
+      "percent, progress_at": "el mayor",
+      "state": "el de mayor precedencia: gone > ready > refused > too_many > no_peers > downloading > queued; un pedido nuevo de una huella con refused o gone empieza de cero",
+      "rd_id": "el primero que no venga vacío",
+      "title, by, since": "los del primero que lo anotó",
+      "rd_status, seeders": "los de la entrada con más `percent`"
+    },
+    "local_only": {
+      "_": "Se guardan en cada aparato y nunca viajan.",
+      "notified, nudged": "ya avisó «Ya está» / «Sigue sin bajar». Avisa solo el aparato que lo pidió (`by`), al ver el cambio en su propio vistazo a Real-Debrid. Un pedido que llega del otro aparato nunca avisa aquí. El aviso al celular de lo que pidió la TV (R14) es otra decisión, pendiente de Fernando",
+      "url, filename, linked": "el enlace de Real-Debrid va atado a quien lo pidió y vive solo en la memoria de ese aparato"
+    },
+    "forget": "lo terminado (ready, refused, too_many, gone) se olvida 7 días después de `updated`; lo que sigue en camino, nunca. Excepción: lo de otra cuenta, que nadie aquí puede seguir, se olvida 7 días después de su último `updated` aunque siga en camino. Un GET no devuelve lo olvidado y un POST no lo reaviva",
+    "limits": { "entries": 200, "body_bytes": 16384, "_": "más de 200: se olvida primero lo terminado más viejo; nunca lo que sigue en camino. Un campo fuera de su forma = 422" },
+    "other_account": "Una entrada con otra `account` se enseña («Lo pidió la TV · …» en el iPhone, «Lo pidió el <by>» en la TV) pero no se sigue, no se cancela y no sale como versión: ese enlace no existe en tu cuenta",
+    "access": "Por ahora, con el token del puerto del túnel (el mismo de Alexa), porque no lleva claves ni enlaces; el iPhone solo llega por https o por Tailscale. Pasa a «solo llave de aparato» cuando existan (AD-3). Nada de lo que traiga una clave usa este acceso"
+  },
   "routes": {
     "GET /api/addons": "la lista con su revision; las direcciones que traen clave van tapadas («•••»). Con ?full=1 las da completas, solo con llave de aparato (nunca con la de Alexa) y nunca en el puerto local de la TV.",
     "PUT /api/addons": "{base_revision, changed_at, changed_by, addons, removed}: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (una máscara, un origin que no existe, un complemento agregado a mano).",
     "PUT /api/realdebrid": "{token}: la clave fija, aparte de la lista y solo al oprimir «Pasar a la TV» en el iPhone. Responde con el usuario y el vencimiento, nunca con la clave.",
-    "GET /api/realdebrid": "usuario, Premium, vencimiento y la clave tapada («termina en ••••3F2A»); con ?full=1 y llave de aparato, la clave completa (para «Usar la de la TV» en el iPhone)."
+    "GET /api/realdebrid": "usuario, Premium, vencimiento y la clave tapada («termina en ••••3F2A»); con ?full=1 y llave de aparato, la clave completa (para «Usar la de la TV» en el iPhone).",
+    "GET /api/realdebrid/requests": "{version: 1, account, requests: [entry]}: `account` es la cuenta de la TV (null sin Real-Debrid). Sin `local_only` y sin lo olvidado. Quien lee toma cada entrada por separado: una mala se salta, no tira la lista.",
+    "POST /api/realdebrid/requests": "una entrada sin `updated` ni `local_only`: la TV la junta por huella (`merge`), pone `updated` y responde 200 con la entrada guardada. Nunca le pide nada a Real-Debrid. 422 si algo no tiene su forma. Sirve para anotar un pedido nuevo y para mandar lo que cambió en tu vistazo a Real-Debrid. Cancelar no tiene ruta propia: el aparato cancela en su Real-Debrid (un 404 cuenta como hecho) y manda la entrada con gone."
   }
 }
