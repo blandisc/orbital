@@ -103,6 +103,13 @@ extension DemoHTTPClient {
                 return json(.array(traktLists[i].items.sorted().map { ["type": "movie", "movie": ["ids": ["imdb": .string($0)]]] }))
             }
         }
+        // Las series que viste (Ajustes › Avisos › Series que sigues) y seguir o dejar de seguir una (se acepta sin más).
+        if path == "/sync/watched/shows" {
+            let shows = [("tt0386676", "The Office", 2), ("tt11280740", "Severance", 20), ("tt0903747", "Breaking Bad", 70),
+                         ("tt14452776", "The Bear", 200), ("tt5753856", "Dark", 400), ("tt7366338", "Chernobyl", 900)]
+            return json(.array(shows.map { ["last_watched_at": iso(Double($0.2)), "show": ["title": .string($0.1), "year": 2020, "ids": ["imdb": .string($0.0), "trakt": 1]]] }))
+        }
+        if path.hasPrefix("/users/hidden/") { return json(["added": [:]], status: 201) }
         if path.hasPrefix("/sync/watchlist") {
             return lock.withLock {
                 if post {

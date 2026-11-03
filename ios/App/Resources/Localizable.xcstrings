@@ -30095,6 +30095,61 @@
           }
         }
       }
+    },
+    "Series que sigues": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series you follow"
+          }
+        }
+      }
+    },
+    "Elige de cuáles te aviso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose which ones notify you"
+          }
+        }
+      }
+    },
+    "Buscar una serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for a series"
+          }
+        }
+      }
+    },
+    "Todavía no has visto series en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't watched any series on Trakt yet."
+          }
+        }
+      }
+    },
+    "Apagada, ya no sale en tus estrenos ni te avisa. Lo que viste no cambia; la vuelves a prender aquí o en su ficha.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned off, it no longer shows in your releases or notifies you. What you watched doesn't change; turn it back on here or on its page."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

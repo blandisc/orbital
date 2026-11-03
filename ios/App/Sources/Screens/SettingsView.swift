@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
+    @State private var showsFollowed = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State private var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
@@ -135,6 +136,8 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
         .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
+        .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
         #endif
     }
 
@@ -315,7 +318,16 @@ struct SettingsView: View {
         // Lo que cuenta es tu sesión de Trakt en el iPhone. Antes se pedía el Client ID de Ajustes, que quedó vacío desde que
         // viene incluido en la app: con Trakt conectado decía «Conecta Trakt» y no dejaba prender los avisos.
         .disabled(!model.traktLinked)
-        if !model.traktLinked {
+        if model.traktLinked {
+            // Cuáles sigues y cuáles ya no, en una lista (antes solo desde la ficha de cada serie).
+            Section {
+                NavigationLink { FollowedSeriesView() } label: {
+                    SettingsRow(title: "Series que sigues", symbol: "bell", tint: DS.ListTint.flame, value: Text("Elige de cuáles te aviso"))
+                }
+                .accessibilityIdentifier("followed-series")
+            }
+            .listRowBackground(DS.surface)
+        } else {
             Section { Text("Conecta Trakt para saber qué series sigues.").recipe(.footnote) }.listRowBackground(DS.surface)
         }
     }
