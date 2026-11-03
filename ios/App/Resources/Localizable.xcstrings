@@ -30227,6 +30227,72 @@
           }
         }
       }
+    },
+    "Todos los géneros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All genres"
+          }
+        }
+      }
+    },
+    "Se acabaron tus matches": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're out of matches"
+          }
+        }
+      }
+    },
+    "Si quieres ver más, cambia tus filtros.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see more, change your filters."
+          }
+        }
+      }
+    },
+    "Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see more, change your filters or come back tomorrow: the deck changes every day."
+          }
+        }
+      }
+    },
+    "Guardaste %lld en tu lista de Trakt «Tu match perfecto».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You saved %lld to your Trakt list “Your perfect match”."
+          }
+        }
+      }
+    },
+    "Guardaste %lld en Mi lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You saved %lld to My list."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

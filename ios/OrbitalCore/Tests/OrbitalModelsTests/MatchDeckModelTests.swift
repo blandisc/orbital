@@ -17,6 +17,23 @@ final class MatchDeckModelTests: XCTestCase {
         XCTAssertEqual(Set(all.map(\.imdb)), ["tt1", "tt2"], "sin repetir, sin lo visto ni lo descartado")
     }
 
+    /// Películas o series y un género (Fernando, 3 nov 2026); «sci-fi» y «science-fiction» son el mismo género.
+    func testFiltraPorTipoYGenero() async throws {
+        var serie = s("tt3", ["science-fiction"]); serie.kind = "series"
+        let rig = try ServicesRig()
+        let model = MatchDeckModel(rig.services, pool: [s("tt1", ["comedy"]), s("tt2", ["sci-fi", "comedy"]), s("tt4", ["Comedy"]), serie], watched: { [] })
+        await model.load()
+        XCTAssertEqual(model.genres.first, "Comedia", "el que más sale, primero")
+        model.genre = "Ciencia ficción"
+        XCTAssertEqual(Set(model.cards.map(\.imdb)), ["tt2", "tt3"])
+        model.kind = "series"
+        XCTAssertEqual(model.cards.map(\.imdb), ["tt3"])
+        XCTAssertEqual(model.genres, ["Ciencia ficción"], "los géneros, solo de lo que hay del tipo elegido")
+        model.genre = "Comedia"
+        XCTAssertNil(model.genre, "un género que ya no hay vuelve a todos")
+        XCTAssertEqual(model.cards.map(\.imdb), ["tt3"])
+    }
+
     func testElOrdenEsElMismoEnElDiaYCambiaAlOtro() {
         let pool = (1...12).map { s("tt\($0)", ["drama"]) }
         let a = MatchDeckModel.deck(pool, watched: [], discarded: [], day: 100).map(\.imdb)

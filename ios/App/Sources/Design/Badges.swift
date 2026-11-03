@@ -204,9 +204,11 @@ struct DSSectionHead: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    private var sectionTitle: some View {
+    private var sectionTitle: some View { sectionTitle(chevron: chevron) }
+
+    private func sectionTitle(chevron: Bool) -> some View {
         (chevron ? title.withTitleChevron() : title).recipe(level == .section ? .title : quiet ? .sectionQuiet : .section).multilineTextAlignment(.leading)
-            .accessibilityLabel(title).accessibilityHint(chevron ? Text("Ver todo") : Text(verbatim: ""))
+            .accessibilityLabel(title).accessibilityHint(self.chevron ? Text("Ver todo") : Text(verbatim: ""))
             // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
             // así lo de la derecha no queda alto.
             .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: level == .section ? .title1 : quiet ? .title3 : .title2).capHeight / 2 }
@@ -217,7 +219,7 @@ struct DSSectionHead: View {
     private var seeAllChevron: some View { DSTitleChevron() }
 
     /// El título, con la flecha de «Ver todo» al final de su texto si abre la lista completa.
-    private func titleLine(_ lines: Int) -> some View { sectionTitle.lineLimit(lines) }
+    private func titleLine(_ lines: Int, chevron: Bool? = nil) -> some View { sectionTitle(chevron: chevron ?? self.chevron).lineLimit(lines) }
 
     private var head: some View {
         // Lo de la derecha («Ver todo», el número) va a la altura del título, no de la línea ámbar de arriba.
@@ -230,8 +232,10 @@ struct DSSectionHead: View {
                 // siempre al lado; un sello con nombre, si no caben en un renglón, cede y baja bajo el título.
                 if let source, source.isIcon {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                        titleLine(2)
+                        // La flecha de «Ver todo» va después del jitomate, no entre el título y él (Fernando, 3 nov 2026).
+                        titleLine(2, chevron: false)
                         SourceBadge(source: source).alignmentGuide(.firstTextBaseline) { $0[.bottom] - DS.Size.markOvershoot }   // el jitomate, centrado con las mayúsculas
+                        if chevron { Text(Image(systemName: "chevron.forward")).recipe(quiet ? .sectionQuiet : .section, color: DS.textMuted).accessibilityHidden(true) }
                     }
                 } else { ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {

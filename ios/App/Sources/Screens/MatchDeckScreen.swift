@@ -41,6 +41,7 @@ struct MatchDeckScreen: View {
             }
             if let model {
                 let _ = model.track()
+                if model.loaded, !pool.isEmpty { filters(model) }
                 if !model.loaded {
                     skeleton   // mientras llega lo visto: la forma de la carta, no una pantalla en blanco
                 } else if model.cards.isEmpty {
@@ -93,12 +94,33 @@ struct MatchDeckScreen: View {
     }
 
     /// Sin cartas: si nunca hubo propuestas lo dice así; si ya las recorriste, lo dice distinto.
+    /// Películas o series y el género (Fernando, 3 nov 2026): el mazo cambia al momento.
+    private func filters(_ model: MatchDeckModel) -> some View {
+        @Bindable var model = model
+        let language = env.services.appSettings.uiLanguage
+        return HStack(alignment: .center, spacing: DS.Space.s3) {
+            DSKindFilter(kind: $model.kind)
+            Spacer(minLength: 0)
+            if !model.genres.isEmpty || model.genre != nil {
+                DSGenreMenu(genres: model.genres, selection: $model.genre) { model.genreName($0, language: language) }
+            }
+        }
+        .animation(DS.Motion.fade, value: model.cards.map(\.imdb))
+    }
+
+    /// Al final del mazo, como el aviso de Tinder cuando se acaban los matches (Fernando, 3 nov 2026): se acabaron, y para ver
+    /// más, cambia tus filtros (los de arriba). Con algo filtrado, el botón los quita de un toque.
     @ViewBuilder private func emptyState(_ model: MatchDeckModel) -> some View {
         if pool.isEmpty {
             DSEmptyState(symbol: "rectangle.stack", title: Text("Aún no hay propuestas"), message: Text("Cuando Para ti cargue sus listas, aquí salen."))
         } else {
-            DSEmptyState(symbol: "rectangle.stack", title: Text("Ya viste todo el mazo"),
-                         message: model.saved.isEmpty ? Text("Vuelve mañana: el mazo cambia cada día.") : (model.savesToTrakt ? Text("Guardaste \(model.saved.count). Están en tu lista de Trakt «Tu match perfecto».") : Text("Guardaste \(model.saved.count). Están en Mi lista.")))
+            let saved: Text? = model.saved.isEmpty ? nil : (model.savesToTrakt ? Text("Guardaste \(model.saved.count) en tu lista de Trakt «Tu match perfecto».") : Text("Guardaste \(model.saved.count) en Mi lista."))
+            let hint = model.isFiltered ? Text("Si quieres ver más, cambia tus filtros.") : Text("Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.")
+            DSEmptyState(symbol: "rectangle.stack", title: Text("Se acabaron tus matches"),
+                         message: saved.map { $0 + Text(verbatim: " ") + hint } ?? hint) {
+                if model.isFiltered { Button("Quitar filtros") { model.genre = nil; model.kind = "" } }
+            }
+            .accessibilityIdentifier("match-empty")
         }
     }
 

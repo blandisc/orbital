@@ -10,6 +10,16 @@ public final class MatchDeckModel: ObservableModel {
     public private(set) var loaded = false { didSet { changed() } }
     /// Lo que guardaste en esta vuelta (el «Guardaste 3» del final).
     public private(set) var saved: [Suggestion] = [] { didSet { changed() } }
+    /// Qué se ve en el mazo: "" es todo, «movie» o «series» (Fernando, 3 nov 2026: filtrar por películas o series).
+    public var kind = "" { didSet { if kind != oldValue { rebuild() } } }
+    /// Un género del mazo (su nombre en español, el de `Vocabulary`); nil, todos.
+    public var genre: String? { didSet { if genre != oldValue { rebuild() } } }
+    /// Los géneros que hay en el mazo (del tipo elegido), los que más salen primero.
+    public private(set) var genres: [String] = [] { didSet { changed() } }
+    /// Un nombre tal cual llegó para cada género (para nombrarlo en inglés).
+    private var genreSamples: [String: String] = [:]
+    /// Hay algo filtrado: el mazo vacío no es «ya viste todo».
+    public var isFiltered: Bool { !kind.isEmpty || genre != nil }
 
     /// Cuánto tarda en volver algo que descartaste.
     public nonisolated static let discardFor: TimeInterval = 30 * 86400
@@ -46,6 +56,21 @@ public final class MatchDeckModel: ObservableModel {
         return fresh.sorted { hash("\(day):\($0.imdb)") < hash("\(day):\($1.imdb)") }
     }
 
+    /// El género con el que se compara y se agrupa: su nombre en español («sci-fi» y «science-fiction» son uno).
+    public nonisolated static func genreKey(_ genre: String) -> String { Vocabulary.genres([genre], language: "es").first ?? genre }
+
+    /// Solo lo del tipo y el género elegidos ("" es todo; nil, cualquier género).
+    public nonisolated static func filter(_ deck: [Suggestion], kind: String, genre: String?) -> [Suggestion] {
+        deck.filter { s in
+            (kind.isEmpty || (kind == "series") == (s.kind == "series")) && (genre.map { g in s.genres.contains { genreKey($0) == g } } ?? true)
+        }
+    }
+
+    /// El nombre de un género del mazo en el idioma de la app.
+    public func genreName(_ key: String, language: String) -> String {
+        language.hasPrefix("es") ? key : Vocabulary.genres([genreSamples[key] ?? key], language: language).first ?? key
+    }
+
     nonisolated static func hash(_ s: String) -> UInt64 {
         var x = s.utf8.reduce(14_695_981_039_346_656_037) { ($0 ^ UInt64($1)) &* 1_099_511_628_211 }   // FNV-1a
         x ^= x >> 33; x = x &* 0xff51_afd7_ed55_8ccd; x ^= x >> 33   // mezcla final: un día distinto cambia todo el orden
@@ -57,7 +82,17 @@ public final class MatchDeckModel: ObservableModel {
         // Lo que ya guardaste en esta vuelta tampoco vuelve.
         // Tampoco lo que ya está en Mi lista (guardado desde una ficha o desde otro aparato).
         let inList = Set(services.library.all.filter(\.inList).map(\.metaID))
-        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
+        let deck = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
+        // Los géneros, de lo que hay del tipo elegido; si el elegido ya no hay, vuelve a todos.
+        var counts: [String: Int] = [:], samples: [String: String] = [:]
+        for s in Self.filter(deck, kind: kind, genre: nil) {
+            for g in Set(s.genres.map(Self.genreKey)) { counts[g, default: 0] += 1 }
+            for raw in s.genres { samples[Self.genreKey(raw)] = samples[Self.genreKey(raw)] ?? raw }
+        }
+        genreSamples = samples
+        genres = counts.keys.sorted { counts[$0]! != counts[$1]! ? counts[$0]! > counts[$1]! : $0 < $1 }
+        if let g = genre, counts[g] == nil { genre = nil; return }   // el didSet vuelve a armar el mazo
+        cards = Self.filter(deck, kind: kind, genre: genre)
     }
 
     /// Guardar la de arriba (derecha o ＋).
