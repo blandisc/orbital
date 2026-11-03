@@ -19,6 +19,12 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # «¿Qué vemos hoy?», 3 nov: filtrar por películas o series y por género, y el final del mazo como el aviso de Tinder.
+    "Todos los géneros": "All genres", "Se acabaron tus matches": "You're out of matches", "Quitar filtros": "Clear filters",
+    "Si quieres ver más, cambia tus filtros.": "To see more, change your filters.",
+    "Si quieres ver más, cambia tus filtros o vuelve mañana: el mazo cambia cada día.": "To see more, change your filters or come back tomorrow: the deck changes every day.",
+    "Guardaste %lld en tu lista de Trakt «Tu match perfecto».": "You saved %lld to your Trakt list “Your perfect match”.",
+    "Guardaste %lld en Mi lista.": "You saved %lld to My list.",
     # Widgets del 1 nov: «Lo nuevo de lo tuyo», «Seguir viendo» con «Aquí» y «En la TV», el mosaico, el Simpson del día y «Viendo en la TV».
     "Lo que ya salió de tus series y lo que viene.": "What's out from your shows and what's coming.", "Madrugada": "Overnight",
     "Cuando salga algo de tus series, aparece aquí.": "When something from your shows comes out, it shows up here.",

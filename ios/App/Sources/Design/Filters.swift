@@ -126,3 +126,31 @@ struct DSTextTabs<ID: Hashable>: View {
         }
     }
 }
+
+/// Un género en una lista desplegable nativa («Género ⌃⌄», o el elegido): la misma cápsula y el mismo `Menu` con `Picker`
+/// que las temporadas (`DSSeasonMenu`). El mazo de «¿Qué vemos hoy?» (Fernando, 3 nov 2026). `name`: cómo se llama cada uno.
+struct DSGenreMenu: View {
+    let genres: [String]
+    @Binding var selection: String?
+    var name: (String) -> String = { $0 }
+
+    var body: some View {
+        Menu {
+            Picker(selection: $selection) {
+                Text("Todos los géneros").tag(String?.none)
+                ForEach(genres, id: \.self) { Text(verbatim: name($0)).tag(String?.some($0)) }
+            } label: { EmptyView() }
+        } label: {
+            HStack(spacing: DS.Space.s2) {
+                Image(systemName: FilterPage.genre.symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                (selection.map { Text(verbatim: name($0)) } ?? Text("Género")).recipe(.labelLarge, color: DS.text).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+            }
+        }
+        .dsSecondaryButton()
+        .sensoryFeedback(.selection, trigger: selection)
+        .accessibilityLabel(Text("Género"))
+        .accessibilityValue(selection.map { Text(verbatim: name($0)) } ?? Text("Todos los géneros"))
+        .accessibilityIdentifier("genre-menu")
+    }
+}

@@ -10,6 +10,16 @@ public final class MatchDeckModel: ObservableModel {
     public private(set) var loaded = false { didSet { changed() } }
     /// Lo que guardaste en esta vuelta (el «Guardaste 3» del final).
     public private(set) var saved: [Suggestion] = [] { didSet { changed() } }
+    /// Qué se ve en el mazo: "" es todo, «movie» o «series» (Fernando, 3 nov 2026: filtrar por películas o series).
+    public var kind = "" { didSet { if kind != oldValue { rebuild() } } }
+    /// Un género del mazo (su nombre en español, el de `Vocabulary`); nil, todos.
+    public var genre: String? { didSet { if genre != oldValue { rebuild() } } }
+    /// Los géneros que hay en el mazo (del tipo elegido), los que más salen primero.
+    public private(set) var genres: [String] = [] { didSet { changed() } }
+    /// Un nombre tal cual llegó para cada género (para nombrarlo en inglés).
+    private var genreSamples: [String: String] = [:]
+    /// Hay algo filtrado: el mazo vacío no es «ya viste todo».
+    public var isFiltered: Bool { !kind.isEmpty || genre != nil }
 
     /// Cuánto tarda en volver algo que descartaste.
     public nonisolated static let discardFor: TimeInterval = 30 * 86400
@@ -35,6 +45,46 @@ public final class MatchDeckModel: ObservableModel {
         watched = await watchedSource()
         rebuild()
         loaded = true
+        await fillGenres()
+    }
+
+    /// Los géneros que Cinemeta sabe de cada título (las listas de complementos, los Top 10 y la consola no los traen y el
+    /// filtro de género no salía; Fernando, 3 nov 2026).
+    private var fetchedGenres: [String: [String]] = [:]
+    /// Cuántas fichas a la vez y hasta cuántas (las primeras del mazo de hoy).
+    nonisolated static let genreConcurrency = 12, genreLookups = 120
+
+    /// Pide los géneros que faltan, con una ventana de pedidos (al terminar uno entra el siguiente), y vuelve a armar el mazo.
+    private func fillGenres() async {
+        var seen = Set<String>()
+        let missing = cards.filter { $0.genres.isEmpty && seen.insert($0.imdb).inserted }.prefix(Self.genreLookups).map { (kind: $0.kind, imdb: $0.imdb) }
+        guard !missing.isEmpty else { return }
+        let cinemeta = services.cinemeta
+        let found = await withTaskGroup(of: (String, [String]).self) { group in
+            var next = 0, out: [(String, [String])] = []
+            func add() {
+                guard next < missing.count, !Task.isCancelled else { return }
+                let item = missing[next]
+                next += 1
+                group.addTask {
+                    let meta = try? await cinemeta.meta(kind: item.kind, id: item.imdb)
+                    return (item.imdb, (meta?["genres"]?.array ?? meta?["genre"]?.array ?? []).compactMap(\.string))
+                }
+            }
+            for _ in 0..<Self.genreConcurrency { add() }
+            for await r in group { out.append(r); add() }
+            return out
+        }
+        for (id, genres) in found where !genres.isEmpty { fetchedGenres[id] = genres }
+        guard !Task.isCancelled else { return }
+        rebuild()
+    }
+
+    private func withGenres(_ s: Suggestion) -> Suggestion {
+        guard s.genres.isEmpty, let genres = fetchedGenres[s.imdb] else { return s }
+        var x = s
+        x.genres = genres
+        return x
     }
 
     /// El mazo de hoy: sin repetir, sin lo visto ni lo descartado, de todo (sin ánimos: Fernando, 1 nov 2026), en un orden
@@ -44,6 +94,21 @@ public final class MatchDeckModel: ObservableModel {
         let fresh = pool.filter { !$0.imdb.isEmpty && !watched.contains($0.imdb) && !discarded.contains($0.imdb) && seen.insert($0.imdb).inserted }
         // Revuelto fijo por día (el mismo orden si vuelves a abrirlo hoy).
         return fresh.sorted { hash("\(day):\($0.imdb)") < hash("\(day):\($1.imdb)") }
+    }
+
+    /// El género con el que se compara y se agrupa: su nombre en español («sci-fi» y «science-fiction» son uno).
+    public nonisolated static func genreKey(_ genre: String) -> String { Vocabulary.genres([genre], language: "es").first ?? genre }
+
+    /// Solo lo del tipo y el género elegidos ("" es todo; nil, cualquier género).
+    public nonisolated static func filter(_ deck: [Suggestion], kind: String, genre: String?) -> [Suggestion] {
+        deck.filter { s in
+            (kind.isEmpty || (kind == "series") == (s.kind == "series")) && (genre.map { g in s.genres.contains { genreKey($0) == g } } ?? true)
+        }
+    }
+
+    /// El nombre de un género del mazo en el idioma de la app.
+    public func genreName(_ key: String, language: String) -> String {
+        language.hasPrefix("es") ? key : Vocabulary.genres([genreSamples[key] ?? key], language: language).first ?? key
     }
 
     nonisolated static func hash(_ s: String) -> UInt64 {
@@ -57,7 +122,17 @@ public final class MatchDeckModel: ObservableModel {
         // Lo que ya guardaste en esta vuelta tampoco vuelve.
         // Tampoco lo que ya está en Mi lista (guardado desde una ficha o desde otro aparato).
         let inList = Set(services.library.all.filter(\.inList).map(\.metaID))
-        cards = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
+        let deck = Self.deck(pool.map(withGenres), watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
+        // Los géneros, de lo que hay del tipo elegido; si el elegido ya no hay, vuelve a todos.
+        var counts: [String: Int] = [:], samples: [String: String] = [:]
+        for s in Self.filter(deck, kind: kind, genre: nil) {
+            for g in Set(s.genres.map(Self.genreKey)) { counts[g, default: 0] += 1 }
+            for raw in s.genres { samples[Self.genreKey(raw)] = samples[Self.genreKey(raw)] ?? raw }
+        }
+        genreSamples = samples
+        genres = counts.keys.sorted { counts[$0]! != counts[$1]! ? counts[$0]! > counts[$1]! : $0 < $1 }
+        if let g = genre, counts[g] == nil { genre = nil; return }   // el didSet vuelve a armar el mazo
+        cards = Self.filter(deck, kind: kind, genre: genre)
     }
 
     /// Guardar la de arriba (derecha o ＋).
