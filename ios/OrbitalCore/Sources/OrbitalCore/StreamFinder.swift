@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalAddons
 
 /// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
 public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
@@ -23,9 +24,13 @@ public actor StreamFinder {
     static let budget: Double = 3
     private enum Arrival: Sendable { case addon(Int, [JSON]?), budget }
 
+    /// Lo más que se espera a un complemento (C8): pasado esto se salta y se dice su nombre.
+    public static let slowAfter: TimeInterval = 8
     private let http: HTTPClient
     private let registry: AddonRegistry
     private let clock: @Sendable () -> Date
+    /// Cómo le va a cada complemento (C2): el que no contesta dos veces seguidas ya no se espera hasta su próximo intento.
+    private let health: AddonHealth?
     private var cache: [String: (expires: Date, sources: [Source])] = [:]
     /// Los avisos de Torrentio que llegaron en lugar de versiones en la última búsqueda de cada video (R5): no se ofrecen,
     /// pero dicen por qué no hay.
@@ -41,8 +46,8 @@ public actor StreamFinder {
     /// primero.
     private var happened: [String: [SearchEvent]] = [:]
 
-    public init(http: HTTPClient, registry: AddonRegistry, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.registry = registry; self.clock = clock
+    public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.registry = registry; self.health = health; self.clock = clock
     }
 
     /// De dónde es un título (su idioma original y país), para el audio de lo que no lo dice; y lo comprobado al ver una
@@ -51,13 +56,18 @@ public actor StreamFinder {
     /// Una función con nombre (no un cierre asíncrono en la línea): ver `AsyncDefaults`.
     @Sendable static func noOrigin(_ kind: String, _ metaID: String) async -> TitleOrigin? { nil }
     private var checked: @Sendable (_ key: String) -> [AudioLanguage]? = { _ in nil }
+    /// Tu plan B de idiomas (T2): los «Idiomas primero» de tu Torrentio, como códigos.
+    private var fallback: @Sendable () -> [String] = { [] }
     public func configure(origin: @escaping @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin?,
-                          checked: @escaping @Sendable (_ key: String) -> [AudioLanguage]?) {
-        self.origin = origin; self.checked = checked
+                          checked: @escaping @Sendable (_ key: String) -> [AudioLanguage]?,
+                          fallback: @escaping @Sendable () -> [String] = { [] }) {
+        self.origin = origin; self.checked = checked; self.fallback = fallback
         cache = [:]
     }
     /// Se comprobó el audio de una versión: lo que estaba ordenado con lo que se suponía ya no vale.
     public func forgetSorted() { cache = [:] }
+    /// Cambiaron tus complementos o sus opciones (T1): nada de lo que contestaron antes vale.
+    public func forgetAll() { cache = [:]; answers = [:]; noticesSeen = [:] }
     /// Real-Debrid terminó de bajar un pedido (o lo empezó): lo guardado de ese video ya no vale; la versión pedida sale
     /// «Al instante» en la siguiente búsqueda.
     public func forget(kind: String, videoID: String) {
@@ -69,18 +79,26 @@ public actor StreamFinder {
     private func fetch(_ addon: Addon, kind: String, videoID: String) async -> [JSON]? {
         // nil si la red falló (para no recordar «no hay» 10 minutos)
         guard let url = URL(string: "\(addon.base)/stream/\(kind)/\(uriComponent(videoID)).json") else { return nil }
+        let start = Date()
         do {
-            let streams = try await http.getJSON(url, timeout: 15)?["streams"]?.array ?? []
+            let streams = try await http.getJSON(url, timeout: Self.slowAfter)?["streams"]?.array ?? []
+            health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
             return streams.filter { $0.object != nil && ($0["url"]?.nonEmptyString != nil || $0["infoHash"]?.nonEmptyString != nil) }
         } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") {
+            health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
             return []   // contestó (no tiene ese video): eso es «no hay», no un fallo de red
-        } catch { return nil }
+        } catch {
+            if !Task.isCancelled { health?.fail(addon.url) }   // no esperarlo porque otro ya contestó no es un fallo
+            return nil
+        }
     }
 
     /// Todas las fuentes ordenadas. `onlyPlayable`: en iOS solo sirven las de URL http(s) (Real-Debrid).
     /// `fresh`: se salta la caché (para pedir un enlace nuevo cuando el que se tenía caducó).
     public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true, fresh: Bool = false) async throws -> [Source] {
-        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(purpose):\(onlyPlayable)"
+        var prefs = prefs
+        if prefs.fallback.isEmpty { prefs.fallback = fallback() }
+        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(prefs.fallback.joined(separator: ",")):\(purpose):\(onlyPlayable)"
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).
         let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
@@ -99,6 +117,7 @@ public actor StreamFinder {
                 if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión
                 if let real = checked(source.key) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
+                if let url = source.playbackURL { PlaybackHeaders.remember(source.requestHeaders, for: url) }   // M3
                 // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.
                 if purpose == .download, let ext = source.playbackURL?.pathExtension.lowercased(), ["m3u8", "mpd"].contains(ext) { continue }
                 sources.append(source); seen.insert(index)
@@ -154,7 +173,10 @@ public actor StreamFinder {
     }
 
     private func askAll(kind: String, videoID: String) async throws -> Answers {
-        let serving = try await registry.serving("stream", kind: kind, itemID: videoID)
+        let all = try await registry.serving("stream", kind: kind, itemID: videoID)
+        // Los que no contestan se saltan (C2); si son todos, se les pregunta igual: nunca te quedas sin preguntar.
+        let awake = all.filter { health?.skip($0.url) != true }
+        let serving = awake.isEmpty ? all : awake
         let key = "\(kind):\(videoID)"
         emit(key, .asking(serving.map(\.name)))
         // Un complemento lento no detiene a los demás: pasado `budget`, si alguno ya dio fuentes, no se le espera (cuenta como

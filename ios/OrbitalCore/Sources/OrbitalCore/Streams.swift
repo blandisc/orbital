@@ -28,6 +28,9 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var otherTitle = false
     /// No es una versión: es el aviso de Torrentio en su lugar («RD error» o su video de «descargando», R5).
     public var notice: StreamNotice?
+    /// M3: lo que el enlace pide que mande el reproductor (`behaviorHints.proxyHeaders.request`): algunos de MediaFusion y
+    /// AIOStreams solo abren así.
+    public var requestHeaders: [String: String] = [:]
 
     public var id: Int { index }
     /// Arranca al instante: ya está en Real-Debrid ([RD+]) o no pasa por un servicio de descarga. Un reintento solo prueba
@@ -105,6 +108,9 @@ public struct Preferences: Sendable, Equatable {
     public var quality: String    // «4K», «1080p», «720p», «480p»
     /// Con audio en español: «es-419» (latino), «es-ES» (castellano) o "" (cualquiera).
     public var spanish: String
+    /// El plan B en orden (T2 → R6): tus «Idiomas primero» de Torrentio como códigos («es-419», «es-ES», «ja»). Si no hay en
+    /// el que quieres, se prueba el siguiente de esta lista antes que cualquier otro idioma.
+    public var fallback: [String] = []
     public init(audio: String = "en", quality: String = "1080p", spanish: String = "") { self.audio = audio; self.quality = quality; self.spanish = spanish }
     /// El idioma que se busca, con su variante («es-419» si quieres latino).
     public var wanted: String { audio == "es" && !spanish.isEmpty ? spanish : audio }
@@ -459,8 +465,8 @@ public enum Streams {
         let firstWord = addon.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? ""
         var src = Source(index: index, addon: firstWord, stream: stream, transportURL: transportURL)
         src.binge = hints?["bingeGroup"]?.nonEmptyString
-        src.cached = name.contains("[RD+]") || (name.components(separatedBy: .newlines).first ?? "").contains("+]")
-        src.debrid = matches(debridPattern, name)
+        (src.cached, src.debrid) = instantMark(name: name, addon: addon, transportURL: transportURL)
+        src.requestHeaders = (hints?["proxyHeaders"]?["request"]?.object ?? [:]).compactMapValues(\.nonEmptyString)
         src.notice = TorrentioNotices.notice(name: name, url: stream["url"]?.string.flatMap(URL.init(string:)))
         // La resolución que declara el complemento manda; el nombre del archivo solo si no dice nada
         // («1080p.UHD.BluRay» no es 4K: «UHD» ahí es el origen del disco).
@@ -474,9 +480,11 @@ public enum Streams {
             let bytes = sizeNumber(amount) * units[unit.uppercased(), default: 1]
             src.size = bytes.isFinite && bytes >= 0 && bytes < 9e15 ? Int(bytes) : 0   // un tamaño absurdo se ignora (no tumba la app)
         }
+        // M2: lo que declara el complemento con el estándar (`behaviorHints.videoSize`), si no lo escribió con 💾.
+        if src.size == 0, let declared = hints?["videoSize"]?.doubleValue, declared > 0, declared < 9e15 { src.size = Int(declared) }
         if let n = capture(seedersPattern, description) { src.seeders = Int(n) ?? 0 }
         if let site = capture(sitePattern, description) { src.site = site.trimmingCharacters(in: .whitespacesAndNewlines) }
-        src.release = first
+        src.release = first.isEmpty ? filename : first   // M2: sin descripción, el nombre del archivo que declara
         src.tags = tagPatterns.filter { matches($0.1, blob) }.map(\.0)
         // El audio y cómo lo sabemos; lo comprobado al verla (sus pistas reales) gana a todo. Pone «Latino» / «Castellano» primero.
         src.setAudio(checked ?? audio(name: name, description: description, filename: filename, site: src.site, origin: origin))
@@ -540,7 +548,7 @@ public enum Streams {
     static func languageScore(_ src: Source, _ prefs: Preferences) -> Double {
         let audio = src.audio.isEmpty ? src.languages.map { AudioLanguage($0, .name) } : src.audio
         func points(_ code: String) -> Double? { audio.filter { $0.code == code }.compactMap { languagePoints[$0.evidence] }.max() }
-        guard prefs.audio == "es" else { return points(prefs.audio) ?? wrongLanguage }
+        guard prefs.audio == "es" else { return points(prefs.audio) ?? fallbackScore(audio, prefs) }
         let wanted = spanishVariants.contains(prefs.spanish) ? prefs.spanish : nil
         var best = wrongLanguage
         for code in spanish {
@@ -549,7 +557,15 @@ public enum Streams {
             else if let wanted, code != wanted { value -= 250 }   // el otro doblaje
             best = max(best, value)
         }
-        return best
+        return best == wrongLanguage ? fallbackScore(audio, prefs) : best
+    }
+
+    /// Otro idioma que está en tu plan B (T2): arriba de los demás idiomas, en tu orden, pero siempre debajo del que quieres
+    /// (aunque ese tarde): el plan B no le gana a tu idioma.
+    static func fallbackScore(_ audio: [AudioLanguage], _ prefs: Preferences) -> Double {
+        let codes = Set(audio.map(\.code))
+        guard let place = prefs.fallback.firstIndex(where: { code in codes.contains(code) || (code.hasPrefix("es") && codes.contains("es")) }) else { return wrongLanguage }
+        return wrongLanguage + 300 - 40 * Double(min(place, 6))
     }
 
     /// El nombre de un idioma de versión: «Latino», «Castellano», «Español (no dice cuál)» o el del idioma («Inglés»).
@@ -578,3 +594,4 @@ public enum Streams {
         return scored.enumerated().sorted { a, b in a.element.score != b.element.score ? a.element.score > b.element.score : a.offset < b.offset }.map(\.element)
     }
 }
+

@@ -10,7 +10,7 @@ final class AddonListTests: XCTestCase {
 
     func testTheTemplateCarriesYourKeyAndTheKeyIsHiddenInLogs() throws {
         let url = try XCTUnwrap(AddonCatalog.torrentio.manifestURL(token: token))
-        XCTAssertEqual(url, "https://torrentio.strem.fun/qualityfilter=cam,scr,unknown|language=latino,spanish|realdebrid=\(token)/manifest.json")
+        XCTAssertEqual(url, "https://torrentio.strem.fun/language=latino,spanish|qualityfilter=cam,scr,unknown|realdebrid=\(token)/manifest.json")
         XCTAssertNil(AddonCatalog.torrentio.manifestURL(token: nil), "sin clave no se arma")
         XCTAssertNotNil(AddonCatalog.openSubtitles.manifestURL(token: nil), "el que no usa Real-Debrid no la pide")
         let log = "No contestó \(url)"
@@ -165,7 +165,7 @@ final class AddonStorageTests: XCTestCase {
         XCTAssertTrue(torrentio.enabled, "sin «enabled»: prendido")
         XCTAssertEqual(torrentio.options?.languages, ["latino"])
         XCTAssertEqual(torrentio.options?.excludedQualities, AddonOptions.defaultExcludedQualities)
-        XCTAssertEqual(torrentio.options?.extra["sort"], .string("seeders"))
+        XCTAssertEqual(torrentio.options?.sort, "seeders", "el orden ya se conoce (T4)")
         XCTAssertEqual(torrentio.extra["syncRevision"], .number(7))
         list.setEnabled("torrentio", false)
         let saved = try XCTUnwrap(String(data: XCTUnwrap(vault.data("addons-installed")), encoding: .utf8))

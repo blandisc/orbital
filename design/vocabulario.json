@@ -42,7 +42,7 @@
     { "texto": "En cola", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): Real-Debrid lo recibió y espera turno." },
     { "texto": "Sin gente que lo comparta", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): baja sin nadie que lo comparta; puede tardar días." },
     { "texto": "Muchas descargas activas", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): tu cuenta llegó a su máximo a la vez (error 21 de Real-Debrid)." },
-    { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta».", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } }
+    { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta»." }
   ],
   "formatos": [
     { "texto": "termina a las", "en": ["tv", "ios"], "evitar": ["acaba a las", "Termina a las"] },

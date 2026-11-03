@@ -32,6 +32,8 @@ public final class Services: ObservableModel {
     /// complementos siguen saliendo de tu cuenta de Stremio, como antes.
     public let addonList: AddonList
     public let debrid: DebridAccount
+    /// Cómo le va a cada complemento en este aparato (C1, C2): «Contesta en 0,6 s» y quién se salta.
+    public let addonHealth: AddonHealth
     /// Los avisos de vencimiento de Real-Debrid que ya se programaron.
     public let debridReminders: DebridReminderBook
     /// Tus pedidos a Real-Debrid (R12, R13): la libreta de este aparato, pedir y seguir cuánto lleva cada uno.
@@ -207,7 +209,9 @@ public final class Services: ObservableModel {
                                 clock: clock)
         let oneDrive = OneDrive(http: http, secrets: secrets, clientID: { settings.value.oneDriveClientID }, clock: clock)
         let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
-        let finder = StreamFinder(http: http, registry: registry, clock: clock)
+        let addonHealth = AddonHealth(vault: vault, clock: clock)
+        self.addonHealth = addonHealth
+        let finder = StreamFinder(http: http, registry: registry, health: addonHealth, clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
@@ -242,7 +246,8 @@ public final class Services: ObservableModel {
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) }, cinemeta: cinemeta)
         let prefs = titlePrefs
         Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
-                                      checked: { key in prefs.checkedAudio(key) }) }
+                                      checked: { key in prefs.checkedAudio(key) },
+                                      fallback: { TorrentioConfig.fallbackCodes(addonList.torrentio?.options) }) }   // T2 → R6
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
                                    otherSource: Services.otherSource(finder: finder, settings: settings, titlePrefs: titlePrefs),
@@ -429,6 +434,7 @@ public final class Services: ObservableModel {
         }
         let added = addonList.importOnce(StremioImport.addons(account: account, own: own), again: again)
         await adoptDebridKeyFromImport()
+        addonList.adoptImportedTorrentio()   // C5: un solo Torrentio de Stremio pasa al de Orbital con todas sus opciones
         await resetAccountCaches()
         return added
     }
@@ -444,6 +450,7 @@ public final class Services: ObservableModel {
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.
     public func resetAccountCaches() async {
         await registry.invalidate()
+        await finder.forgetAll()
         await forYou.clearCache()
         await forYouRemote.clearCache()
         generation += 1

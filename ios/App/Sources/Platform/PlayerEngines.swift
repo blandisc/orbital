@@ -197,7 +197,9 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     func load(url: URL, startAt: Double) async throws {
         ended = false; chapters = []
         hub.send(EngineSnapshot(state: .loading))   // un video nuevo empieza sin el «falló» del anterior
-        let asset = AVURLAsset(url: url)
+        // M3: los datos extra que pide el enlace (algunos de MediaFusion y AIOStreams no abren sin ellos).
+        let headers = PlaybackHeaders.headers(for: url)
+        let asset = headers.isEmpty ? AVURLAsset(url: url) : AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
         let item = AVPlayerItem(asset: asset)
         await MainActor.run {
             if let endObserver { NotificationCenter.default.removeObserver(endObserver) }

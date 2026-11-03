@@ -215,6 +215,80 @@ public final class AddonList: @unchecked Sendable {
         return added
     }
 
+    // MARK: C5 · tu Torrentio de Stremio, configurable
+
+    /// El Torrentio que viene con Orbital (el que se configura en Ajustes › Complementos › Torrentio).
+    public var torrentio: InstalledAddon? { installed.first { $0.origin == .recommended(AddonCatalog.torrentio.id) } }
+
+    /// Los Torrentio traídos de Stremio que siguen como una entrada aparte (su dirección, con su clave, en el llavero).
+    public var importedTorrentios: [InstalledAddon] {
+        installed.filter { !$0.isBuiltIn && resolvedURL($0).map(TorrentioConfig.isTorrentio) == true }
+    }
+
+    /// Hay que preguntar con cuál Torrentio quedarse: hay uno traído aparte y ya tienes tu clave en Cuentas.
+    public var needsTorrentioChoice: Bool { !importedTorrentios.isEmpty && hasKey }
+    private var hasKey: Bool { debridToken != nil }
+    /// Tu clave de Real-Debrid, solo para armar una dirección (la prueba de T9): nunca se enseña ni se anota.
+    public var debridToken: String? { vault.secret(AddonKeys.realDebridToken).flatMap { $0.isEmpty ? nil : $0 } }
+
+    /// Quedarse con un Torrentio (C5). Con el `id` de uno traído, todas sus opciones (las que la app no conoce, tal cual)
+    /// pasan al de Orbital, que se arma con tu clave de Cuentas (nunca con la vieja de su dirección); con nil se queda el de
+    /// Orbital como está. Los traídos se quitan: su dirección sale del llavero y «Volver a traer» no los regresa. false si
+    /// todavía no hay clave en Cuentas (sin ella se perdería la de su dirección).
+    @discardableResult
+    public func keepTorrentio(from id: String?, now: Date = Date()) -> Bool {
+        let imported = importedTorrentios
+        guard !imported.isEmpty, hasKey else { return false }
+        let keep = id.flatMap { id in imported.first { $0.id == id } }
+        let parsed = keep.flatMap(resolvedURL).flatMap(TorrentioConfig.parse)
+        if torrentio == nil { add(AddonCatalog.torrentio) }
+        let gone = Set(imported.map(\.id))
+        update { list in
+            guard let mine = list.firstIndex(where: { $0.origin == .recommended(AddonCatalog.torrentio.id) }) else { return }
+            var entry = list[mine]
+            if let parsed { entry.options = parsed.options }
+            if let keep { entry.enabled = keep.enabled || entry.enabled }
+            let position = list.indices.filter { gone.contains(list[$0].id) || $0 == mine }.min() ?? mine
+            list.removeAll { gone.contains($0.id) || $0.id == entry.id }
+            list.insert(entry, at: min(position, list.count))
+        }
+        var stones = tombstones.filter { !gone.contains($0.entry.id) }
+        for var entry in imported {
+            vault.setSecret(AddonKeys.addonURL(entry.id), nil)
+            entry.options = nil
+            stones.append(Tombstone(entry: entry, index: 0, removedAt: now, purged: true))
+        }
+        tombstones = stones
+        return true
+    }
+
+    /// Sin preguntar (C5): llegó un solo Torrentio de Stremio y el de Orbital sigue como vino. Devuelve true si lo adoptó.
+    @discardableResult
+    public func adoptImportedTorrentio() -> Bool {
+        let imported = importedTorrentios
+        guard imported.count == 1, (torrentio?.options ?? TorrentioConfig.recommended) == TorrentioConfig.recommended else { return false }
+        return keepTorrentio(from: imported[0].id)
+    }
+
+    /// M4: la página de configuración de un complemento traído devolvió su nueva dirección. Se guarda en el mismo (nunca se
+    /// agrega otro) y solo si es del mismo servidor. false si no se puede.
+    @discardableResult
+    public func replaceURL(_ id: String, with url: String) -> Bool {
+        guard let entry = installed.first(where: { $0.id == id }), !entry.isBuiltIn, let old = resolvedURL(entry),
+              let normalized = Self.manifestURL(url), URL(string: normalized)?.host == URL(string: old)?.host else { return false }
+        vault.setSecret(AddonKeys.addonURL(id), normalized)
+        update { list in if let i = list.firstIndex(where: { $0.id == id }) { list[i].usesDebrid = InstalledAddon.mentionsDebrid(normalized) } }
+        return true
+    }
+
+    /// `stremio://…` (el botón «Install» de su página) o `https://…`, siempre terminada en `/manifest.json`. nil si no es web.
+    static func manifestURL(_ input: String) -> String? {
+        var url = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if url.lowercased().hasPrefix("stremio://") { url = "https://" + url.dropFirst("stremio://".count) }
+        guard url.lowercased().hasPrefix("https://") || url.lowercased().hasPrefix("http://") else { return nil }
+        return url.hasSuffix("/manifest.json") ? url : url.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/manifest.json"
+    }
+
     /// Las claves que hay que tapar en lo que se muestra o se anota (tu Real-Debrid).
     /// También las que vienen dentro de un complemento importado o pegado (su Torrentio de Stremio lleva la clave en la URL).
     public func secretsToRedact() -> [String] {

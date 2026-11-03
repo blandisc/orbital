@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var showsFollowed = false
     @State private var showsRequests = false
     @State private var showsPlayback = false
+    @State private var showsDemoPage = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State private var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
@@ -144,6 +145,9 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { showsRequests = true } }
         .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
+        // `-demo-settings-page torrentio|addons|realdebrid`: Complementos, Torrentio y tu cuenta de Real-Debrid (Fase 3).
+        .navigationDestination(isPresented: $showsDemoPage) { DemoSettingsPage(name: Demo.value(after: "-demo-settings-page") ?? "", debrid: debrid.model) }
+        .task { if Demo.isOn, ["torrentio", "addons", "realdebrid"].contains(Demo.value(after: "-demo-settings-page") ?? "") { showsDemoPage = true } }
         #endif
     }
 

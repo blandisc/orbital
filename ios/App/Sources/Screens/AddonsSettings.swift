@@ -1,42 +1,54 @@
 import SwiftUI
-import OrbitalModels
+import OrbitalCore
 import OrbitalAddons
+import OrbitalModels
 
-/// Ajustes › Complementos (maqueta 12): se preguntan en este orden (con «Ordenar» se arrastran), cada uno con su interruptor,
-/// qué aporta y si usa tu Real-Debrid. «Agregar»: los recomendados que falten y volver a traer los de Stremio. Ya no se
-/// agregan complementos pegando su dirección (Fernando, 3 nov 2026, C9); los que ya tenías se quedan.
+/// Ajustes › Complementos (C1): «Se preguntan en este orden» (con «Ordenar» se arrastran), cada uno con qué aporta y cómo le
+/// va en este aparato («Contesta en 0,6 s», «No contesta desde el sábado · se salta»). Tocar uno abre su página: qué aporta,
+/// prenderlo, «Configurar» (C3) y quitarlo (C7). Si hay dos Torrentio, se pregunta con cuál quedarse (C5). Ya no se agregan
+/// complementos pegando su dirección (Fernando, 3 nov 2026, C9); los que ya tenías se quedan.
 struct AddonsSettings: View {
     @Environment(AppEnvironment.self) private var env
     @State private var addons = ModelObserver(AddonsModel(AppEnvironment.shared.services))
     @State private var editMode: EditMode = .inactive
     /// El que se va a quitar (se confirma diciendo qué se pierde).
     @State private var removing: InstalledAddon?
-    /// Tu última fuente prendida, que vas a apagar (se confirma: te quedas sin versiones).
-    @State private var turningOffLast: InstalledAddon?
+    @State private var explaining = false
 
     var body: some View {
         let model = addons.model
         Form {
             Section {
+                Button { explaining = true } label: { Label("¿Qué es esto?", systemImage: "questionmark.circle") }
+                    .accessibilityIdentifier("addons-explain")
+            }
+            .listRowBackground(DS.surface)
+            if !model.torrentioChoice.isEmpty { torrentioChoice(model) }
+            Section {
                 ForEach(model.items) { addon in
-                    let what = AddonsModel.summary(addon)
-                    Toggle(isOn: Binding(get: { addon.enabled }, set: { on in
-                        // La última fuente: antes de apagarla se avisa (C7).
-                        if !on, model.isLastSource(addon.id) { turningOffLast = addon } else { Task { await model.setEnabled(addon.id, on) } }
-                    })) {
-                        AddonLabel(name: addon.name, usesDebrid: what.usesDebrid, subtitles: what.subtitles, imported: what.imported)
+                    NavigationLink { AddonDetail(addons: addons, id: addon.id) { remove($0, model) } } label: {
+                        AddonRowLabel(addon: addon, health: model.health(addon), english: env.services.appSettings.uiLanguage.hasPrefix("en"))
                     }
                     // Solo los traídos de Stremio se quitan; los que vienen con Orbital solo se apagan (C7). Con el dedo se desliza;
                     // con el mouse o el trackpad (Mac, iPad), el menú del clic secundario.
                     .swipeActions { if model.canRemove(addon) { Button("Quitar", role: .destructive) { removing = addon }.tint(DS.danger) } }   // rojo, como en iOS
                     .contextMenu { if model.canRemove(addon) { Button("Quitar complemento", systemImage: "trash", role: .destructive) { removing = addon } } }
+                    .accessibilityIdentifier("addon-row-\(addon.id)")
                 }
                 .onMove { from, to in Task { await model.move(fromOffsets: from, toOffset: to) } }
-                if model.items.isEmpty { Text("Sin complementos: agrega uno para tener fuentes.").foregroundStyle(DS.textMuted) }
-            } footer: {
-                Text("Se preguntan en este orden. Toca «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando.")
+                if model.items.isEmpty { Text("Sin complementos: vuelve a traer los de tu Stremio.").foregroundStyle(DS.textMuted) }
+            } header: { Text("Se preguntan en este orden") } footer: {
+                Text("Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden.")
             }
             .listRowBackground(DS.surface)
+            if env.session.state == .signedIn {
+                Section {
+                    Button { Task { await model.importAgain() } } label: { Label("Volver a traer", systemImage: "arrow.down.circle") }
+                        .disabled(model.working)
+                        .accessibilityIdentifier("addons-reimport")
+                } header: { Text("Traídos de tu Stremio") } footer: { Text("Tu Stremio no se toca. Lo que quitaste no regresa solo.") }
+                .listRowBackground(DS.surface)
+            }
             if let error = model.error {
                 Section { Text(verbatim: env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }.listRowBackground(DS.surface)
             }
@@ -46,18 +58,15 @@ struct AddonsSettings: View {
         .navigationTitle("Complementos").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu("Agregar", systemImage: "plus") {
-                    if !model.missingRecommended.isEmpty {
-                        Section("Recomendados") {
+            if !model.missingRecommended.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu("Agregar", systemImage: "plus") {
+                        Section("Vienen con Orbital") {
                             ForEach(model.missingRecommended) { t in Button(t.name) { Task { await model.add(t) } } }
                         }
                     }
-                    if env.session.state == .signedIn {
-                        Button("Volver a traer", systemImage: "arrow.down.circle") { Task { await model.importAgain() } }   // sin los que quitaste
-                    }
+                    .accessibilityIdentifier("addons-add")
                 }
-                .accessibilityIdentifier("addons-add")
             }
             ToolbarItem(placement: .topBarLeading) {
                 Button(editMode.isEditing ? "Listo" : "Ordenar") { editMode = editMode.isEditing ? .inactive : .active }
@@ -72,13 +81,28 @@ struct AddonsSettings: View {
                 ? Text("Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.")
                 : Text("Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.")
         }
-        .confirmationDialog(Text("¿Apagar tu última fuente?"), isPresented: Binding(get: { turningOffLast != nil }, set: { if !$0 { turningOffLast = nil } }),
-                            titleVisibility: .visible, presenting: turningOffLast) { addon in
-            Button("Apagar de todos modos", role: .destructive) { Task { await model.setEnabled(addon.id, false) } }
-            Button("Cancelar", role: .cancel) {}
-        } message: { _ in Text("Sin ella no habrá versiones para ver hasta que prendas otra.") }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons) { explaining = false }.presentationDetents([.medium, .large]) }
         .environment(\.editMode, $editMode)
         .task { await model.prepare() }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("addons-settings")
+    }
+
+    /// C5: dos Torrentio (el de Orbital y el de tu Stremio, o dos traídos): cuál se queda, con lo que trae cada uno.
+    @ViewBuilder private func torrentioChoice(_ model: AddonsModel) -> some View {
+        let ui = env.services.appSettings.uiLanguage
+        Section {
+            ForEach(model.torrentioChoice) { candidate in
+                Button { Task { await model.keepTorrentio(candidate) } } label: {
+                    TorrentioRowLabel(title: candidate.addonID == nil ? Text("Quedarme con el de Orbital") : Text("Quedarme con el de tu Stremio"),
+                                      detail: TorrentioWords.summary(candidate.options, uiLanguage: ui))
+                }
+                .accessibilityIdentifier("addons-keep-\(candidate.id)")
+            }
+        } header: { Text("Tienes \(model.torrentioChoice.count) Torrentio") } footer: {
+            Text("Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone; tu Stremio no se toca.")
+        }
+        .listRowBackground(DS.surface)
     }
 
     /// Quita y ofrece «Deshacer» mientras dura el aviso (lo regresa con su dirección y su lugar).

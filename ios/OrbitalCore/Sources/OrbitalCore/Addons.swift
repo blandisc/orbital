@@ -20,6 +20,8 @@ public struct Addon: Sendable, Equatable {
     public var url: String               // transportUrl: …/manifest.json
     public var rules: [String: AddonRule]
     public var catalogs: [JSON]
+    /// Tiene su propia página de configuración (`behaviorHints.configurable` o `configurationRequired`): C3 y M4.
+    public var configurable = false
 
     public var base: String {
         if let range = url.range(of: "/manifest.json", options: .backwards) { return String(url[..<range.lowerBound]) }
@@ -77,7 +79,9 @@ public enum Addons {
         guard !rules.isEmpty else { return nil }
         let name = manifest["name"]?.string.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 } ?? "Addon"
         let catalogs = (manifest["catalogs"]?.array ?? []).filter { $0.object != nil }
-        return Addon(name: name, url: url, rules: rules, catalogs: catalogs)
+        let hints = manifest["behaviorHints"]
+        let configurable = hints?["configurable"]?.bool == true || hints?["configurationRequired"]?.bool == true
+        return Addon(name: name, url: url, rules: rules, catalogs: catalogs, configurable: configurable)
     }
 }
 

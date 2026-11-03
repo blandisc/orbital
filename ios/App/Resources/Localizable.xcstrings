@@ -1,6 +1,1775 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "%@ puntos · días de Premium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ points · Premium days"
+          }
+        }
+      }
+    },
+    "%@ · de Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · from Stremio"
+          }
+        }
+      }
+    },
+    "%@ · de Stremio · usa tu Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · from Stremio · uses your Real-Debrid"
+          }
+        }
+      }
+    },
+    "%@ · usa tu Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · uses your Real-Debrid"
+          }
+        }
+      }
+    },
+    "%lld de %lld prendidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld on"
+          }
+        }
+      }
+    },
+    "Abre su propia página. Al tocar «Install» ahí, se guarda en este mismo complemento.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens its own page. When you tap “Install” there, it's saved in this same add-on."
+          }
+        }
+      }
+    },
+    "Agregar idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add language"
+          }
+        }
+      }
+    },
+    "Alta definición; la más común": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High definition; the most common"
+          }
+        }
+      }
+    },
+    "Apagado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        }
+      }
+    },
+    "Apagado: también ves lo que se puede pedir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off: you also see what can be requested"
+          }
+        }
+      }
+    },
+    "Aquí decides cuáles te enseña": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Here you decide which ones it shows you"
+          }
+        }
+      }
+    },
+    "Bajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move down"
+          }
+        }
+      }
+    },
+    "Buena en el teléfono": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good on the phone"
+          }
+        }
+      }
+    },
+    "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each one knows about something: video versions, subtitles or lists. They're asked in the order of the list."
+          }
+        }
+      }
+    },
+    "Calidad y luego tamaño": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality, then size"
+          }
+        }
+      }
+    },
+    "Calidades": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualities"
+          }
+        }
+      }
+    },
+    "Calidades que no quieres": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualities you don't want"
+          }
+        }
+      }
+    },
+    "Canjeando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeeming…"
+          }
+        }
+      }
+    },
+    "Canjear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem"
+          }
+        }
+      }
+    },
+    "Canjear puntos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem points"
+          }
+        }
+      }
+    },
+    "Casi nunca hace falta: apaga uno solo si da versiones que no sirven.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rarely needed: turn one off only if it gives versions that don't work."
+          }
+        }
+      }
+    },
+    "Colores intensos; solo si tu TV lo aguanta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vivid colors; only if your TV supports it"
+          }
+        }
+      }
+    },
+    "Con esto no verías nada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With this you wouldn't see anything"
+          }
+        }
+      }
+    },
+    "Con esto, %@ tiene %@ al instante y %@ para pedir.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With this, %@ has %@ instant and %@ to request."
+          }
+        }
+      }
+    },
+    "Con esto, %@ tiene %@ versiones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With this, %@ has %@ versions."
+          }
+        }
+      }
+    },
+    "Con una cámara en la sala: se ve y oye mal": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filmed in the theater: looks and sounds bad"
+          }
+        }
+      }
+    },
+    "Conecta Orbital con tu cuenta. Vive en el llavero de este aparato y nunca se muestra completa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It connects Orbital to your account. It lives in this device's keychain and is never shown in full."
+          }
+        }
+      }
+    },
+    "Contesta en %@ s": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answers in %@ s"
+          }
+        }
+      }
+    },
+    "Contesta lento · %@ s": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answers slowly · %@ s"
+          }
+        }
+      }
+    },
+    "Copia de prensa, a veces con marcas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press copy, sometimes watermarked"
+          }
+        }
+      }
+    },
+    "Copia exacta del disco; enorme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exact copy of the disc; huge"
+          }
+        }
+      }
+    },
+    "Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you pick a title, it checks sites on the internet and brings you the list of versions that exist: languages, qualities, sizes."
+          }
+        }
+      }
+    },
+    "Cuesta y vence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It costs and it expires"
+          }
+        }
+      }
+    },
+    "Cuántas por calidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How many per quality"
+          }
+        }
+      }
+    },
+    "Copias viejas o de menos calidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Old or lower-quality copies"
+          }
+        }
+      }
+    },
+    "De ahí salen los videos. Tu cuenta, tu clave y tus pedidos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's where the videos come from. Your account, your key and your requests."
+          }
+        }
+      }
+    },
+    "Deja todo como viene con Orbital. Lo que traía tu Torrentio y la app no conoce se queda.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puts everything back the way Orbital ships it. Whatever your Torrentio had that the app doesn't know stays."
+          }
+        }
+      }
+    },
+    "Dejarás de ver lo que aporta. «Volver a traer» no lo regresa solo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll stop seeing what it adds. “Bring back” won't return it on its own."
+          }
+        }
+      }
+    },
+    "El que no contesta se salta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The one that doesn't answer is skipped"
+          }
+        }
+      }
+    },
+    "Entre iguales, la más ligera": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Among equals, the lightest"
+          }
+        }
+      }
+    },
+    "Es tu único complemento de video prendido. Apagado, no podrás ver nada hasta prenderlo. Tu configuración se queda.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's your only video add-on that's on. Off, you won't be able to watch anything until you turn it on. Your settings stay."
+          }
+        }
+      }
+    },
+    "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca en segundos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's a paid service that keeps movies and shows on its servers. What it already has starts in seconds."
+          }
+        }
+      }
+    },
+    "Esconder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        }
+      }
+    },
+    "Estado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        }
+      }
+    },
+    "Este complemento se quitó.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This add-on was removed."
+          }
+        }
+      }
+    },
+    "Falta tu clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key is missing"
+          }
+        }
+      }
+    },
+    "Fuentes de video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video sources"
+          }
+        }
+      }
+    },
+    "Grabada en el cine": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theater recording"
+          }
+        }
+      }
+    },
+    "Guarda copias por ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It keeps copies for you"
+          }
+        }
+      }
+    },
+    "Guardé su nueva configuración": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I saved its new settings"
+          }
+        }
+      }
+    },
+    "HDR y Dolby Vision": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HDR and Dolby Vision"
+          }
+        }
+      }
+    },
+    "Hasta %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %lld"
+          }
+        }
+      }
+    },
+    "Hasta 2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to 2"
+          }
+        }
+      }
+    },
+    "Hasta 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to 5"
+          }
+        }
+      }
+    },
+    "Hoy %@ no tiene versiones ni con lo recomendado: no son tus filtros.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today %@ has no versions even with the recommended settings: it's not your filters."
+          }
+        }
+      }
+    },
+    "Idiomas primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Languages first"
+          }
+        }
+      }
+    },
+    "Idiomas, calidades y qué versiones te enseña.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Languages, qualities and which versions it shows you."
+          }
+        }
+      }
+    },
+    "La mayor calidad de archivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The highest file quality"
+          }
+        }
+      }
+    },
+    "La mejor imagen; pesa mucho": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The best picture; very large"
+          }
+        }
+      }
+    },
+    "La más corta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The shortest"
+          }
+        }
+      }
+    },
+    "La página dio la dirección de otro complemento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The page gave the address of another add-on"
+          }
+        }
+      }
+    },
+    "Las más compartidas primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most shared first"
+          }
+        }
+      }
+    },
+    "Las más pesadas primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Largest first"
+          }
+        }
+      }
+    },
+    "Las versiones en estos idiomas salen arriba. Si no hay en el primero, se prueba el siguiente.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versions in these languages come first. If there's none in the first one, the next one is tried."
+          }
+        }
+      }
+    },
+    "Latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latin American Spanish"
+          }
+        }
+      }
+    },
+    "Lista corta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short list"
+          }
+        }
+      }
+    },
+    "Lista larga, más para elegir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Long list, more to choose from"
+          }
+        }
+      }
+    },
+    "Listo: tus puntos ya son días de Premium.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: your points are now Premium days."
+          }
+        }
+      }
+    },
+    "Lo básico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The basics"
+          }
+        }
+      }
+    },
+    "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you choose on this page decides which versions show up in “Version”. The defaults are fine; change them only if something bothers you."
+          }
+        }
+      }
+    },
+    "Lo que no tiene, lo baja": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What it doesn't have, it downloads"
+          }
+        }
+      }
+    },
+    "Lo recomendado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended"
+          }
+        }
+      }
+    },
+    "Lo traías de tu Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It came from your Stremio"
+          }
+        }
+      }
+    },
+    "Los %lld prendidos · apaga uno si da basura": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %lld on · turn one off if it gives junk"
+          }
+        }
+      }
+    },
+    "Los complementos buscan por ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add-ons search for you"
+          }
+        }
+      }
+    },
+    "Mejor calidad primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best quality first"
+          }
+        }
+      }
+    },
+    "Ninguna: ves todas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None: you see them all"
+          }
+        }
+      }
+    },
+    "No contesta desde %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not answering since %@"
+          }
+        }
+      }
+    },
+    "No contesta desde %@ · se salta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not answering since %@ · skipped"
+          }
+        }
+      }
+    },
+    "No dice qué es": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doesn't say what it is"
+          }
+        }
+      }
+    },
+    "No pude probar: Torrentio no contestó.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't test: Torrentio didn't answer."
+          }
+        }
+      }
+    },
+    "No se guardó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It wasn't saved"
+          }
+        }
+      }
+    },
+    "Orden de la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List order"
+          }
+        }
+      }
+    },
+    "Orden, cuántas, tamaño y sitios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Order, how many, size and sites"
+          }
+        }
+      }
+    },
+    "Otras copias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other copies"
+          }
+        }
+      }
+    },
+    "Para lentes 3D": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For 3D glasses"
+          }
+        }
+      }
+    },
+    "Por qué arranca al instante y qué cuesta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why it starts instantly and what it costs"
+          }
+        }
+      }
+    },
+    "Prendido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
+          }
+        }
+      }
+    },
+    "Prendido: solo ves lo que arranca al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On: you only see what starts instantly"
+          }
+        }
+      }
+    },
+    "Probando con %@…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testing with %@…"
+          }
+        }
+      }
+    },
+    "Quedarme con el de Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Orbital's"
+          }
+        }
+      }
+    },
+    "Quedarme con el de tu Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the one from your Stremio"
+          }
+        }
+      }
+    },
+    "Real-Debrid cambia tus puntos por días de Premium. No se puede deshacer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid exchanges your points for Premium days. It can't be undone."
+          }
+        }
+      }
+    },
+    "Real-Debrid las sirve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid serves them"
+          }
+        }
+      }
+    },
+    "Remux de Blu-ray": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blu-ray remux"
+          }
+        }
+      }
+    },
+    "Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It comes from real-debrid.com/apitoken. It lives in this device's keychain."
+          }
+        }
+      }
+    },
+    "Se agrega al final de tu lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's added at the end of your list."
+          }
+        }
+      }
+    },
+    "Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You request it and it downloads it: minutes to days, depending on how many people share it."
+          }
+        }
+      }
+    },
+    "Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's paid by days at real-debrid.com and doesn't renew on its own. We'll remind you 14 days before, 3 days before and on the day it expires."
+          }
+        }
+      }
+    },
+    "Se preguntan en este orden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They're asked in this order"
+          }
+        }
+      }
+    },
+    "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone; tu Stremio no se toca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone; tu Stremio no se toca."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPad; tu Stremio no se toca."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de esta Mac; tu Stremio no se toca."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone; tu Stremio no se toca."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One stays, with your Real-Debrid key from Accounts. The other is removed from this iPhone; your Stremio isn't touched."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One stays, with your Real-Debrid key from Accounts. The other is removed from this iPad; your Stremio isn't touched."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One stays, with your Real-Debrid key from Accounts. The other is removed from this Mac; your Stremio isn't touched."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One stays, with your Real-Debrid key from Accounts. The other is removed from this iPhone; your Stremio isn't touched."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Se ve borrosa en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looks blurry on the TV"
+          }
+        }
+      }
+    },
+    "Si marcas de más, la prueba con un título te avisa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you check too many, the test with a title warns you."
+          }
+        }
+      }
+    },
+    "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it already has the version, it starts in seconds (“instant”). If not, it can download it for you (“to download”): minutes to days."
+          }
+        }
+      }
+    },
+    "Sin %@ y %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No %@ or %@"
+          }
+        }
+      }
+    },
+    "Sin Premium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Premium"
+          }
+        }
+      }
+    },
+    "Sin calidad conocida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown quality"
+          }
+        }
+      }
+    },
+    "Sin complementos: vuelve a traer los de tu Stremio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No add-ons: bring back the ones from your Stremio."
+          }
+        }
+      }
+    },
+    "Sin ella no hay versiones hasta que pongas otra. Tu cuenta de Real-Debrid no se toca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without it there are no versions until you add another. Your Real-Debrid account isn't touched."
+          }
+        }
+      }
+    },
+    "Sin límite": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No limit"
+          }
+        }
+      }
+    },
+    "Sin límite, salvo que tu internet sea lento o veas con datos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No limit, unless your internet is slow or you watch on cellular data."
+          }
+        }
+      }
+    },
+    "Sin tu clave de Real-Debrid no se sabe cuáles arrancan al instante.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without your Real-Debrid key it can't tell which ones start instantly."
+          }
+        }
+      }
+    },
+    "Sitios donde busca": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sites it searches"
+          }
+        }
+      }
+    },
+    "Solo lo que ya está en Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only what's already on Real-Debrid"
+          }
+        }
+      }
+    },
+    "Subir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move up"
+          }
+        }
+      }
+    },
+    "Suelen bajar más rápido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usually download faster"
+          }
+        }
+      }
+    },
+    "Tamaño máximo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum size"
+          }
+        }
+      }
+    },
+    "Te quedarás sin fuentes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll be left without sources"
+          }
+        }
+      }
+    },
+    "Tienes %lld Torrentio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have %lld Torrentio"
+          }
+        }
+      }
+    },
+    "Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap one to see what it adds, configure it or remove it. “Sort” changes the order."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap one to see what it adds, configure it or remove it. “Sort” changes the order."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click one to see what it adds, configure it or remove it. “Sort” changes the order."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap one to see what it adds, configure it or remove it. “Sort” changes the order."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Todavía no te alcanzan los puntos para canjear.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have enough points to redeem yet."
+          }
+        }
+      }
+    },
+    "Torrentio busca las versiones de lo que quieres ver. Aquí decides cuáles te enseña. Lo de abajo ya viene bien; cámbialo solo si algo te molesta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrentio finds the versions of what you want to watch. Here you decide which ones it shows you. The settings below are already fine; change them only if something bothers you."
+          }
+        }
+      }
+    },
+    "Torrentio es un buscador": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrentio is a search engine"
+          }
+        }
+      }
+    },
+    "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrentio, Comet and OpenSubtitles come with Orbital: they're turned on and off. The ones brought from your Stremio can also be removed."
+          }
+        }
+      }
+    },
+    "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After two failures in a row it's no longer waited for. It's retried less and less often, up to every hour, and comes back on its own."
+          }
+        }
+      }
+    },
+    "Tras dos fallos seguidos ya no se le espera; se vuelve a probar solo, hasta cada hora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After two failures in a row it's no longer waited for; it's retried on its own, up to every hour."
+          }
+        }
+      }
+    },
+    "Traído de tu Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brought from your Stremio"
+          }
+        }
+      }
+    },
+    "Traídos de tu Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brought from your Stremio"
+          }
+        }
+      }
+    },
+    "Tu Stremio no se toca. Lo que quitaste no regresa solo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Stremio isn't touched. What you removed doesn't come back on its own."
+          }
+        }
+      }
+    },
+    "Tu clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key"
+          }
+        }
+      }
+    },
+    "Tu cuenta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account"
+          }
+        }
+      }
+    },
+    "Tus idiomas, calidades y demás opciones vuelven a como vienen con Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your languages, qualities and other options go back to how Orbital ships them."
+          }
+        }
+      }
+    },
+    "Vence el %@ · queda 1 día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %@ · 1 day left"
+          }
+        }
+      }
+    },
+    "Vence el %@ · quedan %@ días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %@ · %@ days left"
+          }
+        }
+      }
+    },
+    "Venció el %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired %@"
+          }
+        }
+      }
+    },
+    "Ver también lo que se puede pedir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also show what can be requested"
+          }
+        }
+      }
+    },
+    "Viene con Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comes with Orbital"
+          }
+        }
+      }
+    },
+    "Vienen con Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come with Orbital"
+          }
+        }
+      }
+    },
+    "Vienen con Orbital o de tu Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From Orbital or from your Stremio"
+          }
+        }
+      }
+    },
+    "Volver a lo recomendado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to recommended"
+          }
+        }
+      }
+    },
+    "Volver a mostrar %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show %@ again"
+          }
+        }
+      }
+    },
+    "Ya no está": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's gone"
+          }
+        }
+      }
+    },
+    "cine": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "theater"
+          }
+        }
+      }
+    },
+    "otras copias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "other copies"
+          }
+        }
+      }
+    },
+    "sin calidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no quality"
+          }
+        }
+      }
+    },
+    "sin idioma primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no language first"
+          }
+        }
+      }
+    },
+    "termina en ••••%@ · nunca se muestra completa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ends in ••••%@ · never shown in full"
+          }
+        }
+      }
+    },
+    "¿Canjear tus puntos?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem your points?"
+          }
+        }
+      }
+    },
+    "¿Quitar tu clave?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove your key?"
+          }
+        }
+      }
+    },
+    "¿Qué es Real-Debrid?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is Real-Debrid?"
+          }
+        }
+      }
+    },
+    "¿Volver a lo recomendado?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to recommended?"
+          }
+        }
+      }
+    },
     "hace 1 día": {
       "extractionState": "manual",
       "localizations": {
@@ -11314,17 +13083,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Theater recordings and trailers"
-          }
-        }
-      }
-    },
-    "Grabada en el cine": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Theater recording"
           }
         }
       }

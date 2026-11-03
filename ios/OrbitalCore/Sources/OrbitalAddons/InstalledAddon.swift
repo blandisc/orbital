@@ -107,29 +107,51 @@ public struct InstalledAddon: Codable, Equatable, Sendable, Identifiable {
 }
 
 /// Las opciones de un recomendado, como en su página de configuración. Lo que falta toma el valor de siempre; las llaves
-/// que esta versión no conoce (las de Torrentio que lleguen después: `sort`, `limit`…) se guardan en `extra`.
+/// que esta versión no conoce se guardan en `extra`. Las de Torrentio (T1–T8) usan sus mismos valores (`TorrentioConfig`);
+/// vacío o nil es «lo de Torrentio» (no se escribe en la dirección).
 public struct AddonOptions: Codable, Equatable, Sendable {
     /// Las de hoy. Se escriben en cada complemento al armarlo (no se dejan «vacías = las de la app»), para que cambiarlas
     /// en una versión nueva no cambie en silencio la URL de quien ya lo tenía.
     public static let defaultExcludedQualities = ["cam", "scr", "unknown"]
     public static let defaultLanguages = ["latino", "spanish"]
 
-    /// Calidades que no quieres ver («cam», «scr», «480p»…).
+    /// Calidades que no quieres ver («cam», «scr», «480p»…): `qualityfilter`.
     public var excludedQualities: [String]
-    /// Idiomas que van primero («spanish», «latino»…).
+    /// Idiomas que van primero, en orden («latino», «spanish»…): `language`. El orden es también el plan B (R6).
     public var languages: [String]
+    /// El orden de la lista (`sort`): nil o «quality» = mejor calidad (T4).
+    public var sort: String?
+    /// Cuántas de cada calidad (`limit`, 1–999): nil = todas (T5).
+    public var limit: Int?
+    /// Tamaño máximo (`sizefilter`): «5GB» para todo o «10GB,2GB» = películas, episodios (T6). nil = sin límite.
+    public var sizeFilter: String?
+    /// Sitios donde busca (`providers`): vacío = los 25 (T7).
+    public var providers: [String]
+    /// `debridoptions`: «nodownloadlinks» = solo lo que ya está en Real-Debrid (T8); «nocatalog» se conserva si venía.
+    public var debridOptions: [String]
+    /// Lo que traía tu Torrentio y la app no conoce, tal cual («clave=valor», en su orden): se vuelve a escribir (T10, C5).
+    public var verbatim: [String]
     public var extra: [String: StoredJSON] = [:]
 
-    public init(excludedQualities: [String] = AddonOptions.defaultExcludedQualities, languages: [String] = AddonOptions.defaultLanguages) {
-        self.excludedQualities = excludedQualities; self.languages = languages
+    public init(excludedQualities: [String] = AddonOptions.defaultExcludedQualities, languages: [String] = AddonOptions.defaultLanguages,
+                sort: String? = nil, limit: Int? = nil, sizeFilter: String? = nil, providers: [String] = [], debridOptions: [String] = [],
+                verbatim: [String] = []) {
+        self.excludedQualities = excludedQualities; self.languages = languages; self.sort = sort; self.limit = limit
+        self.sizeFilter = sizeFilter; self.providers = providers; self.debridOptions = debridOptions; self.verbatim = verbatim
     }
 
-    private enum Keys: String, CodingKey, CaseIterable { case excludedQualities, languages }
+    private enum Keys: String, CodingKey, CaseIterable { case excludedQualities, languages, sort, limit, sizeFilter, providers, debridOptions, verbatim }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
         excludedQualities = try c.decodeIfPresent([String].self, forKey: .excludedQualities) ?? Self.defaultExcludedQualities
         languages = try c.decodeIfPresent([String].self, forKey: .languages) ?? Self.defaultLanguages
+        sort = try? c.decodeIfPresent(String.self, forKey: .sort)
+        limit = try? c.decodeIfPresent(Int.self, forKey: .limit)
+        sizeFilter = try? c.decodeIfPresent(String.self, forKey: .sizeFilter)
+        providers = (try? c.decodeIfPresent([String].self, forKey: .providers)) ?? []
+        debridOptions = (try? c.decodeIfPresent([String].self, forKey: .debridOptions)) ?? []
+        verbatim = (try? c.decodeIfPresent([String].self, forKey: .verbatim)) ?? []
         let all = try decoder.container(keyedBy: AnyKey.self)
         let known = Set(Keys.allCases.map(\.rawValue))
         for key in all.allKeys where !known.contains(key.stringValue) { extra[key.stringValue] = try all.decode(StoredJSON.self, forKey: key) }
@@ -140,6 +162,10 @@ public struct AddonOptions: Codable, Equatable, Sendable {
         for (key, value) in extra { try all.encode(value, forKey: AnyKey(key)) }
         var c = encoder.container(keyedBy: Keys.self)
         try c.encode(excludedQualities, forKey: .excludedQualities); try c.encode(languages, forKey: .languages)
+        try c.encodeIfPresent(sort, forKey: .sort); try c.encodeIfPresent(limit, forKey: .limit); try c.encodeIfPresent(sizeFilter, forKey: .sizeFilter)
+        if !providers.isEmpty { try c.encode(providers, forKey: .providers) }
+        if !debridOptions.isEmpty { try c.encode(debridOptions, forKey: .debridOptions) }
+        if !verbatim.isEmpty { try c.encode(verbatim, forKey: .verbatim) }
     }
 }
 
