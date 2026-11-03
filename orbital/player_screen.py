@@ -390,6 +390,7 @@ class PlayerScreen(SubtitleTrial):
             title=current.title, detail=meta.get("detail") or ("Película" if meta.get("kind") == "movie" else ""),
             position=position, duration=duration, paused=bool(self._value("pause")) if paused is None else paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
+            audio_flag=player_ui.current_flag(tracks),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
             next=meta.get("next", "") if meta.get("kind") == "series" and self.on_episode is not None else "",
             clip=bool(meta.get("clip")),

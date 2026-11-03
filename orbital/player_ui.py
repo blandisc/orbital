@@ -203,6 +203,12 @@ def current_label(tracks: list[dict], kind: str) -> str:
     return language(chosen.get("lang")) or track_label(chosen)
 
 
+def current_flag(tracks: list[dict]) -> str | None:
+    """La bandera del audio que suena (None si no hay pista o su idioma no tiene país)."""
+    chosen = next((t for t in tracks if t.get("type") == "audio" and t.get("selected")), None)
+    return flags.flag_for(chosen.get("lang"), str(chosen.get("title") or "")) if chosen else None
+
+
 # --- piezas de dibujo (reutilizables) ------------------------------------------------------------
 def _shape(path: str, color: str, alpha: str = "00", *, outline: str | None = None, width: float = 0,
            fill_alpha: str | None = None, blur: float = 0, outline_alpha: str = "00") -> str:
@@ -471,15 +477,29 @@ class Hud:
     seeking: str = ""  # "+10 s" / "−1 min" mientras adelantas: solo la barra y la burbuja
     pip: bool = False  # Home lo pone en pequeño (Ajustes): se dice arriba, que si no nadie lo descubre
     logo: tuple[float, float] | None = None  # en pausa, el logo del título (ancho, alto en el lienzo) en vez de su nombre
+    audio_flag: str | None = None  # la bandera del audio que suena: va en lugar de su nombre (M2/N2, como la ficha y el iPhone)
 
 
 def info_line(hud: Hud) -> str:
-    """«Inglés · Subtítulos en español · 1080p · Torrentio»."""
+    """«Inglés · Subtítulos en español · 1080p · Torrentio»; con bandera, sin el nombre del audio: «· Subtítulos…» (la
+    bandera la dibuja `info_ass` antes del texto, como «🇲🇽 · 1080p» en la ficha)."""
     if hud.subtitles and hud.subtitles not in ("No", "—"):
         subs = f"Subtítulos en {hud.subtitles[:1].lower()}{hud.subtitles[1:]}"
     else:
         subs = "Sin subtítulos"
-    return "  ·  ".join(p for p in (hud.audio if hud.audio != "—" else "", subs, hud.source) if p)
+    audio = "" if hud.audio_flag or hud.audio == "—" else hud.audio
+    line = "  ·  ".join(p for p in (audio, subs, hud.source) if p)
+    return f"·  {line}" if hud.audio_flag else line
+
+
+def info_ass(hud: Hud, room: float) -> list[str]:
+    """La línea de abajo del reproductor: la bandera del audio (si la hay) y lo demás en palabras, en `room` de ancho."""
+    out, x = [], float(MARGIN)
+    if hud.audio_flag:
+        out += flags.ass(hud.audio_flag, x, 1022 - FLAG_H / 2, FLAG_H)
+        x += FLAG_H * flags.W / flags.H + FLAG_GAP
+    out.append(text(x, 1022, esc(fit(info_line(hud), 22, min(1200, room) - (x - MARGIN), "semi")), 22, MUTED, weight="semi", align=4))
+    return out
 
 
 BAR_Y = 930
@@ -570,7 +590,7 @@ def hud_ass(hud: Hud) -> str:
     lines += [bar, _times(hud, BAR_Y + 28)]
     room = W - 2 * MARGIN - (pills_width(_touch_items(hud, paused=False)) if TOUCH else hints_width(items)) - 48
     if room >= 260:  # si no cabe la línea de audio, se quita (está en X)
-        lines.append(text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4))
+        lines += info_ass(hud, room)
     lines.append(bottom)
     return "\n".join(lines)
 
@@ -639,7 +659,7 @@ def paused_ass(hud: Hud) -> str:
     bottom = _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)
     lines += [bar, _times(hud, BAR_Y + 28)]
     if room >= 260:  # si no cabe la línea de audio, se quita (está en X)
-        lines.append(text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4))
+        lines += info_ass(hud, room)
     lines.append(bottom)
     return "\n".join(lines)
 
