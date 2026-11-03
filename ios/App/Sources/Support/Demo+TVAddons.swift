@@ -10,6 +10,7 @@ import OrbitalModels
 /// - `-demo-tv-addons unreachable`: la TV no contesta.
 /// - `-demo-tv-addons conflict`: Torrentio cambió en los dos (gana la TV y avisa con «Usar la de este iPhone»), y el primer
 ///   envío llega tarde (409): se junta y se reintenta.
+/// - `-demo-tv-addons torrents`: uno traído de Stremio que solo da torrents (M6): apagado aquí, «en la TV sí».
 /// - `-demo-tv-addons keys`: uno traído de Stremio con clave se queda en este iPhone, y la TV contesta 422 «Espera las llaves
 ///   por aparato».
 ///
@@ -22,6 +23,9 @@ extension Demo {
         let list = services.addonList
         list.startWithRecommended()
         if mode == "conflict" { var o = TorrentioConfig.recommended; o.sort = "size"; list.setOptions("torrentio", o) }
+        if mode == "torrents" {   // M6: uno traído que solo da torrents viene apagado aquí
+            list.importOnce([.init(name: "Torrentio sin Real-Debrid", url: "https://torrentio.demo.invalid/language=latino/manifest.json", resources: ["stream"])])
+        }
         if mode == "keys" {
             list.importOnce([.init(name: "ThePirateBay+", url: "https://thepiratebay-plus.demo.invalid/realdebrid=\(String(repeating: "DEMO", count: 13))/manifest.json",
                                    resources: ["stream"])])

@@ -71,17 +71,36 @@ struct AddonQuietLine: View {
     }
 }
 
+/// M6: un complemento que solo da torrents, en una línea con su ícono: aquí no se reproduce; en la TV (Ultra) sí.
+struct AddonTorrentsLine: View {
+    /// Hay una TV emparejada (Ultra): se dice que allá sí.
+    var tv = false
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
+            Image(systemName: "iphone.slash").foregroundStyle(DS.warning).accessibilityHidden(true)
+            (tv ? Text("En el iPhone no se puede reproducir; en la TV sí") : Text("En el iPhone no se puede reproducir")).foregroundStyle(DS.textMuted)
+        }
+        .font(DS.TextRecipe.footnote.font)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// Un complemento en la lista (C1): su nombre, qué aporta y, debajo, cómo le va o «Apagado».
 struct AddonRowLabel: View {
     let addon: InstalledAddon
     let health: AddonHealth.State
     var english = false
+    /// M6: solo da torrents (`AddonTorrentsLine`); `tv`: hay una TV emparejada.
+    var torrents = false
+    var tv = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text(verbatim: addon.name).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
             AddonWhat(addon: addon).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-            AddonHealthLine(state: health, enabled: addon.enabled, english: english)
+            if torrents { AddonTorrentsLine(tv: tv) }
+            else { AddonHealthLine(state: health, enabled: addon.enabled, english: english) }
         }
         .accessibilityElement(children: .combine)
     }

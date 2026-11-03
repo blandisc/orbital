@@ -87,7 +87,10 @@ public actor StreamFinder {
         do {
             let streams = try await http.getJSON(url, timeout: Self.slowAfter)?["streams"]?.array ?? []
             health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
-            return streams.filter { $0.object != nil && ($0["url"]?.nonEmptyString != nil || $0["infoHash"]?.nonEmptyString != nil) }
+            let found = streams.filter { $0.object != nil && ($0["url"]?.nonEmptyString != nil || $0["infoHash"]?.nonEmptyString != nil) }
+            // M6: si solo da torrents, el iPhone no puede reproducir nada de él (la TV sí).
+            if !found.isEmpty { health?.answered(addon.url, onlyTorrents: AddonTorrents.onlyTorrents(found.map { ($0["url"]?.string, $0["infoHash"]?.string) })) }
+            return found
         } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") {
             health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
             return []   // contestó (no tiene ese video): eso es «no hay», no un fallo de red

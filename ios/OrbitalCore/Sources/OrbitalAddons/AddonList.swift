@@ -228,7 +228,24 @@ public final class AddonList: @unchecked Sendable {
             if installed.count > before { added += 1 }
         }
         vault.setData(AddonKeys.importedFromStremio, Data("1".utf8))
+        turnOffTorrentsOnly(AddonTorrents.byAddress)   // M6: lo que solo da torrents viene apagado aquí
         return added
+    }
+
+    // MARK: M6 · lo que solo da torrents
+
+    static let torrentsMark = "torrents_only"
+
+    /// Apaga en este iPhone, una sola vez, los traídos que solo dan torrents (`isTorrents` con su dirección): aquí no se
+    /// pueden reproducir. Si lo vuelves a prender, se respeta. Devuelve los que apagó.
+    @discardableResult
+    public func turnOffTorrentsOnly(_ isTorrents: (String) -> Bool) -> [String] {
+        let found = installed.filter { !$0.isBuiltIn && $0.extra[Self.torrentsMark] == nil && resolvedURL($0).map(isTorrents) == true }.map(\.id)
+        guard !found.isEmpty else { return [] }
+        update { list in
+            for i in list.indices where found.contains(list[i].id) { list[i].enabled = false; list[i].extra[Self.torrentsMark] = .bool(true) }
+        }
+        return found
     }
 
     // MARK: C5 · tu Torrentio de Stremio, configurable

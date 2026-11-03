@@ -33869,6 +33869,136 @@
           }
         }
       }
+    },
+    "En el iPhone no se puede reproducir; en la TV sí": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone no se puede reproducir; en la TV sí"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad no se puede reproducir; en la TV sí"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac no se puede reproducir; en la TV sí"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone no se puede reproducir; en la TV sí"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the iPhone; it can on the TV"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the iPad; it can on the TV"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the Mac; it can on the TV"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the iPhone; it can on the TV"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "En el iPhone no se puede reproducir": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone no se puede reproducir"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad no se puede reproducir"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En la Mac no se puede reproducir"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPhone no se puede reproducir"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It can't play on the iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "version": "1.0"

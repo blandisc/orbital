@@ -25,6 +25,8 @@ public final class AddonHealth: @unchecked Sendable {
         var fails = 0
         var since: Date?
         var retry: Date?
+        /// M6: lo que contestó fueron solo torrents (sin enlace que el iPhone pueda abrir).
+        var torrents: Bool?
     }
 
     private let vault: AddonVault?
@@ -41,7 +43,17 @@ public final class AddonHealth: @unchecked Sendable {
     public static func key(_ url: String) -> String { AddonList.newID(url) }
 
     public func ok(_ url: String, seconds: Double) {
-        change(url) { $0 = Record(seconds: (max(0, seconds) * 100).rounded() / 100) }
+        change(url) { $0 = Record(seconds: (max(0, seconds) * 100).rounded() / 100, torrents: $0.torrents) }
+    }
+
+    /// M6: contestó con versiones y todas eran torrents sin enlace (`onlyTorrents`), o dio al menos un enlace que sí abre.
+    public func answered(_ url: String, onlyTorrents: Bool) {
+        change(url) { $0.torrents = onlyTorrents }
+    }
+
+    /// M6: solo da torrents, por su dirección (`AddonTorrents.byAddress`) o por lo que contestó aquí.
+    public func onlyTorrents(_ url: String) -> Bool {
+        AddonTorrents.byAddress(url) || lock.withLock { records[Self.key(url)]?.torrents } == true
     }
 
     /// Falló (`at`: cuándo; por omisión, ahora).
@@ -98,5 +110,25 @@ public enum AddonHealthWords {
         let es = ["el domingo", "el lunes", "el martes", "el miércoles", "el jueves", "el viernes", "el sábado"]
         let en = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         return english ? en[index] : es[index]
+    }
+}
+
+/// M6: un complemento traído de Stremio que solo da torrents (sin Real-Debrid). El iPhone no puede reproducirlos; la TV sí
+/// (con Stremio abierto en esa computadora). Se reconoce por su dirección o por lo que contestó.
+public enum AddonTorrents {
+    /// Un Torrentio (o uno con su forma, como KnightCrawler) sin la clave de ningún servicio de descarga.
+    public static func byAddress(_ url: String) -> Bool {
+        let lower = url.lowercased()
+        guard TorrentioConfig.isTorrentio(url) || lower.contains("knightcrawler") else { return false }
+        return AddonSecrets.keys(in: url).isEmpty && !InstalledAddon.mentionsDebrid(url.replacingOccurrences(of: "debridoptions", with: ""))
+    }
+
+    /// Lo que contestó (la dirección y la huella de cada versión): al menos una y ninguna con un enlace http(s), solo huella.
+    public static func onlyTorrents(_ streams: [(url: String?, infoHash: String?)]) -> Bool {
+        guard !streams.isEmpty else { return false }
+        return streams.allSatisfy { stream in
+            let url = (stream.url ?? "").lowercased()
+            return !(url.hasPrefix("http://") || url.hasPrefix("https://")) && !(stream.infoHash ?? "").isEmpty
+        }
     }
 }

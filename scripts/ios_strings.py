@@ -40,6 +40,8 @@ TRANSLATIONS = {
     "Viven en tu TV; este iPhone no los usa.": "They live on your TV; this iPhone doesn't use them.",
     "Se quedó la de la TV (%@)": "The TV's was kept (%@)", "Se quedó la de la TV": "The TV's was kept",
     "Usar la de este iPhone": "Use this iPhone's", "Otras opciones": "Other options",
+    "En el iPhone no se puede reproducir; en la TV sí": "It can't play on the iPhone; it can on the TV",
+    "En el iPhone no se puede reproducir": "It can't play on the iPhone",
     # Pasada de Real-Debrid y Complementos (3 nov): lo que se rompía o se podía decir mejor.
     "Seguir esperando": "Keep waiting", "No pude ver tu cuenta": "I couldn't see your account",
     "Real-Debrid no contestó. Tu clave sigue guardada.": "Real-Debrid didn't answer. Your key is still saved.",

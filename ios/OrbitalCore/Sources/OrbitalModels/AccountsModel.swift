@@ -139,6 +139,8 @@ public final class AddonsModel: ObservableModel {
         if !services.addonList.hasImported { _ = try? await services.importAddonsFromStremio() }
         // C5 también para lo que ya tenías: un Torrentio traído antes pasa al de Orbital si este sigue como vino.
         if services.addonList.adoptImportedTorrentio() { await services.resetAccountCaches() }
+        // M6: el que ya contestó solo con torrents se apaga aquí (una vez); en la TV sigue.
+        if !services.addonList.turnOffTorrentsOnly(services.addonHealth.onlyTorrents).isEmpty { await services.resetAccountCaches() }
         reload()
         await loadConfigurable()
     }
@@ -201,6 +203,11 @@ public final class AddonsModel: ObservableModel {
     private func reload() { items = services.addonList.installed; torrentioChoice = Self.choices(services.addonList) }
 
     // MARK: C1 · cómo le va a cada uno; C3 y M4 · «Configurar»; C5 · con cuál Torrentio quedarse
+
+    /// M6: solo da torrents: «En el iPhone no se puede reproducir; en la TV sí».
+    public func onlyTorrents(_ addon: InstalledAddon) -> Bool {
+        !addon.isBuiltIn && services.addonList.resolvedURL(addon).map(services.addonHealth.onlyTorrents) == true
+    }
 
     /// Cómo le ha ido en este aparato (sin dato si está apagado o aún no se le ha preguntado).
     public func health(_ addon: InstalledAddon) -> AddonHealth.State {

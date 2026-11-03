@@ -33,7 +33,8 @@ struct AddonsSettings: View {
             Section {
                 ForEach(model.items) { addon in
                     NavigationLink { AddonDetail(addons: addons, id: addon.id) { remove($0, model) } } label: {
-                        AddonRowLabel(addon: addon, health: model.health(addon), english: env.services.appSettings.uiLanguage.hasPrefix("en"))
+                        AddonRowLabel(addon: addon, health: model.health(addon), english: env.services.appSettings.uiLanguage.hasPrefix("en"),
+                                      torrents: model.onlyTorrents(addon), tv: env.services.orbitalOn)
                     }
                     // Solo los traídos de Stremio se quitan; los que vienen con Orbital solo se apagan (C7). Con el dedo se desliza;
                     // con el mouse o el trackpad (Mac, iPad), el menú del clic secundario.

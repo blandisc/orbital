@@ -41,7 +41,9 @@ struct AddonDetail: View {
                 })) { Text("Prendido").foregroundStyle(DS.text) }
                 .accessibilityIdentifier("addon-enabled")
             } footer: {
-                if addon.enabled, case .down(_, true) = model.health(addon) {
+                if model.onlyTorrents(addon) {
+                    AddonTorrentsLine(tv: env.services.orbitalOn)   // M6: por eso viene apagado aquí
+                } else if addon.enabled, case .down(_, true) = model.health(addon) {
                     Text("Tras dos fallos seguidos ya no se le espera; se vuelve a probar solo, hasta cada hora.")
                 }
             }
