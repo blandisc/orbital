@@ -235,7 +235,7 @@ struct ListFilterMenu: View {
                 } label: { Label("Década", systemImage: "calendar") }
                 .pickerStyle(.menu)
             }
-            if hideWatchedAvailable { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
+            if hideWatchedAvailable { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") }.toggleStyle(.automatic) }   // en el menú, la palomita del sistema
         } label: {
             // Mientras llegan las calificaciones de IMDb, la ruedita va en el botón (la cuadrícula no se mueve).
             if loading { ProgressView() }   // ds-exception: la ruedita ocupa el lugar del ícono del menú (la cuadrícula no se mueve)
@@ -324,4 +324,21 @@ struct DSPosterGrid<Data: RandomAccessCollection, Cell: View>: View where Data.E
 struct DSPosterSlot: Identifiable {
     let id: Int
     static func slots(_ count: Int) -> [DSPosterSlot] { (0..<count).map(DSPosterSlot.init) }
+}
+
+/// Una lista agrupada con el rótulo de cada sección como su primer renglón (Descargas): el rótulo al ras de las tarjetas, a
+/// 20 pt de la suya, y unos 40 entre una sección y la siguiente (Fernando, 2 nov 2026, I2: antes 34 y 67, mucho aire). La
+/// regla de toda lista con rótulos así: `listHeadRow()` en el rótulo y `listHeadRows()` en la lista.
+extension View {
+    /// El rótulo como renglón: sin fondo, sin sangría ni separador, y su aire hasta la tarjeta (`DS.ListSection.headPad` más
+    /// el espacio entre renglones y el del propio rótulo: unos 20 pt).
+    func listHeadRow() -> some View {
+        padding(.bottom, DS.ListSection.headPad)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
+    /// La lista: sin el alto mínimo de renglón del sistema (44 pt), que dejaba aire arriba y abajo del rótulo.
+    func listHeadRows() -> some View { environment(\.defaultMinListRowHeight, 0) }
 }

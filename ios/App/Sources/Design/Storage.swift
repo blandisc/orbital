@@ -30,14 +30,19 @@ struct StorageBar: View {
     let total: Int64
     let format: (Int64) -> String
 
+    /// Lo de Orbital (la suma de sus partes) y lo de las otras apps (lo que no es de Orbital ni está libre).
+    private var mine: Int64 { parts.reduce(0) { $0 + $1.bytes } }
+    private var others: Int64 { max(0, total - free - mine) }
+
     var body: some View {
-        let others = max(0, total - free - parts.reduce(0) { $0 + $1.bytes })
         let low = total > 0 && Double(free) / Double(total) < DS.Storage.lowFraction
         VStack(alignment: .leading, spacing: DS.Space.s2) {
+            // Arriba, las dos cifras que importan: cuánto usa Orbital y cuánto queda (Fernando, 2 nov 2026, I1). Lo de Orbital
+            // casi no se ve en la barra frente a todo el teléfono; dicho con su número, sí.
             HStack(alignment: .firstTextBaseline) {
-                Text("Espacio").recipe(.cardTitle)
+                Text("Orbital usa \(format(mine))").recipe(.cardTitle)
                 Spacer()
-                Text("\(format(free)) libres de \(format(total))").recipe(.footnote, color: low ? DS.warning : DS.textMuted)
+                Text("\(format(free)) libres").recipe(.footnote, color: low ? DS.warning : DS.textMuted)
             }
             GeometryReader { geo in
                 HStack(spacing: DS.Storage.gap) {
@@ -62,7 +67,7 @@ struct StorageBar: View {
 
     @ViewBuilder private var legends: some View {
         ForEach(parts) { part in legend(Text("\(part.label)\(Text(verbatim: " \(format(part.bytes))"))"), color: part.color) }
-        legend(Text("Otras apps"), color: DS.textFaint)
+        legend(Text("\(Text("Otras apps"))\(Text(verbatim: " \(format(others))"))"), color: DS.textFaint)
     }
 
     private func segment(_ bytes: Int64, width: CGFloat, color: Color) -> some View {
@@ -75,5 +80,40 @@ struct StorageBar: View {
             Circle().fill(color).frame(width: DS.Storage.dot, height: DS.Storage.dot)
             text.recipe(.caption, color: DS.textMuted).lineLimit(1)
         }
+    }
+}
+
+/// El anillo de una descarga con lo que hace al tocarlo (Descargas y la fila de un episodio): bajando, ‖ para pausar; en pausa,
+/// la flecha y «Seguir» debajo; si falló, ↻ y «Reintentar». Fernando, 2 nov 2026 (I3): la flecha sola no decía que reanuda.
+struct DownloadRingButton: View {
+    enum Action { case pause, resume, retry }
+    let fraction: Double
+    let action: Action
+    let perform: () -> Void
+
+    var body: some View {
+        Button(action: perform) {
+            VStack(spacing: DS.Space.s1) {
+                ZStack {
+                    DownloadRing(fraction: fraction, tint: action == .retry ? DS.warning : DS.accent, lineWidth: DS.TitleAction.ringSmallLine)
+                    Image(systemName: symbol).font(DS.TextRecipe.badge.font).foregroundStyle(DS.text)
+                }
+                .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
+                if let name { name.recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize() }
+            }
+            .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name ?? Text("Pausar"))
+    }
+
+    private var symbol: String {
+        switch action { case .pause: "pause.fill"; case .resume: DS.Symbol.resumeDownload; case .retry: "arrow.clockwise" }
+    }
+
+    /// El nombre bajo el anillo: solo cuando el ícono no lo dice solo (‖ es pausar en todos lados).
+    private var name: Text? {
+        switch action { case .pause: nil; case .resume: Text("Seguir"); case .retry: Text("Reintentar") }
     }
 }
