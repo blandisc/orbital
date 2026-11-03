@@ -74,7 +74,7 @@ Cómo se mantiene:
 
 ## Textos pendientes (`design/vocabulario.json`)
 
-En la TV (CX, 3 nov 2026, sesión de la TV): «Aparatos conectados» (hoy renglones sueltos «iPhone» y «Conectar otro» en Cuentas), «Darle su propia conexión» (la pregunta en su pantalla) y «Tu TV es nueva: vuelve a escanear su código» (`device_unknown`). Antes (2 nov) no quedaba ninguno («Familia» ya en la TV también): «Mi lista», «Decide por mí», «Colecciones» y «Reintentar» ya se dicen igual en las dos apps; las traducciones viejas con «tu watchlist», «tu repisa», «Intentar de nuevo» y «¿Qué vemos?» salieron del iPhone.
+En la TV (CX, 3 nov 2026, sesión de la TV): «Aparatos conectados» (hoy renglones sueltos «iPhone» y «Conectar otro» en Cuentas), «Darle su propia conexión» (la pregunta en su pantalla; «Tu TV es nueva: vuelve a escanear su código» ya lo dicen los dos, 96408144). Antes (2 nov) no quedaba ninguno («Familia» ya en la TV también): «Mi lista», «Decide por mí», «Colecciones» y «Reintentar» ya se dicen igual en las dos apps; las traducciones viejas con «tu watchlist», «tu repisa», «Intentar de nuevo» y «¿Qué vemos?» salieron del iPhone.
 
 ## Olas de la TV
 

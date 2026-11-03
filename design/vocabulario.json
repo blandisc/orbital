@@ -25,7 +25,7 @@
   ],
   "nombres": [
     { "texto": "Aparatos conectados", "en": ["tv", "ios"], "evitar": ["Aparatos de tu TV"], "nota": "UX-36 (3 nov): un solo nombre para la lista de aparatos en los dos lados (iPhone: Ajustes › Tu Orbital; TV: Ajustes › Cuentas). En el iPhone, «Quitar» en todos; en el iPad, solo en sí mismo (CX5).", "pendiente": { "tv": "La TV dice «iPhone» / «Conectar otro» sueltos en Cuentas; falta el rótulo «Aparatos conectados» (sesión de la TV, CX 3 nov 2026)" } },
-    { "texto": "Tu TV es nueva: vuelve a escanear su código", "en": ["tv", "ios"], "nota": "TEC-30, UX-8 (3 nov): 401 `device_unknown` o un `tv_id` distinto. Nunca «Esta TV te quitó» (es falso y asusta). Siempre con «Escanear».", "pendiente": { "tv": "La TV todavía no manda `device_unknown` ni `tv_id` (sesión de la TV, CX 3 nov 2026)" } },
+    { "texto": "Tu TV es nueva: vuelve a escanear su código", "en": ["tv", "ios"], "nota": "TEC-30, UX-8 (3 nov): 401 `device_unknown` o un `tv_id` distinto. Nunca «Esta TV te quitó» (es falso y asusta). Siempre con «Escanear». Los dos lo dicen desde el 3 nov (TV 96408144)." },
     { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista", "Tu watchlist", "tu watchlist", "Tu Watchlist", "tu Watchlist"], "nota": "Lo que dejaste pendiente: tu watchlist de Trakt (sin Trakt, tu biblioteca de Stremio). Un solo nombre, siempre con M (glosario del iPhone, 31 oct 2026)." },
     { "texto": "En Mi lista", "en": ["tv", "ios"] },
     { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando", "Donde te quedaste"] },
