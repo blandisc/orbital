@@ -12,6 +12,9 @@ import UIKit
 /// Cómo se entera: con la app abierta pregunta cada 20 s mientras algo baja (`DebridRequestsModel.follow`); al volver a la
 /// app, en cuanto se abre; con la app cerrada, cuando iOS la despierta para la bandeja de la TV (`InboxBackgroundTask`,
 /// mejor esfuerzo: puede tardar, y nada si la cerraste a la fuerza). Lo dice la hoja «¿Qué es esto?».
+///
+/// R11-B (Fernando, 3 nov): sin Actividad en vivo de un pedido por ahora. Con la app cerrada nadie le mandaría el avance y se
+/// quedaría quieta; se agrega junto con R14-A (la TV manda el avance por Apple), si se decide.
 enum DebridRequestNotifier {
     static let category = "orbital.debrid-ready"
     static let prefix = "debrid."
