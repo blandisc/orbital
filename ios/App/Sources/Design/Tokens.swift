@@ -436,7 +436,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     enum Widget {
         static let progressHeight = CGFloat(DesignTokens.Widget.progressHeight), thumbWidth = CGFloat(DesignTokens.Widget.thumbWidth)
         static let scrimStart = DesignTokens.Widget.scrimStart, scrimStartWide = DesignTokens.Widget.scrimStartWide
-        static let logoHeight = CGFloat(DesignTokens.Widget.logoHeight), textShadowRadius = CGFloat(DesignTokens.Widget.textShadowRadius)
+        static let logoHeight = CGFloat(DesignTokens.Widget.logoHeight), logoWidth = CGFloat(DesignTokens.Widget.logoWidth), textShadowRadius = CGFloat(DesignTokens.Widget.textShadowRadius)
         static let fallbackRefresh = DesignTokens.Widget.fallbackRefreshHours * 3600
         /// La actividad en vivo de descargas: el póster (pixeles con que se guarda, ancho en la pantalla bloqueada y en la isla).
         static let activityPosterPixels: CGFloat = 240, activityPoster: CGFloat = 52, islandPoster: CGFloat = 44

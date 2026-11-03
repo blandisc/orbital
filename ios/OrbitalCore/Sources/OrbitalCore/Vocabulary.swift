@@ -108,6 +108,22 @@ public enum Artwork {
         return url
     }
 
+    /// Lo contrario de `variant`, para los widgets (se bajan una vez y se ven a pantalla de iPhone): el póster «large» de metahub
+    /// (780×1170) en vez del «medium» (500×750), y de TMDB w780 en vez de w342 o w500, cuando se piden más pixeles de los que
+    /// trae la variante de la URL. Lo demás, tal cual.
+    public static func sharper(_ url: String, pixels: Int) -> String {
+        if pixels > 750, url.contains("images.metahub.space/poster/medium/") || url.contains("images.metahub.space/poster/small/") {
+            return url.replacingOccurrences(of: "/poster/medium/", with: "/poster/large/").replacingOccurrences(of: "/poster/small/", with: "/poster/large/")
+        }
+        if pixels > 600, url.contains("images.metahub.space/background/small/") {
+            return url.replacingOccurrences(of: "/background/small/", with: "/background/medium/")
+        }
+        for small in ["/t/p/w342/", "/t/p/w500/"] where url.contains("image.tmdb.org" + small) && pixels > 500 {
+            return url.replacingOccurrences(of: small, with: "/t/p/w780/")
+        }
+        return url
+    }
+
     /// Una versión ligera de la misma imagen para enseñar mientras llega la buena, y su lado más largo: el fondo «medium» de
     /// metahub son 1920×1080 y ~1 MB (el «small», 480×270 y ~20 KB); el póster «medium», 500×750 y ~100 KB (el «small»,
     /// 300×450 y ~20 KB: llega en una fracción). nil si no hay una más ligera.
