@@ -1395,3 +1395,16 @@ def test_pause_shows_the_episode_on_its_own_line_and_the_synopsis_ends_on_a_full
     assert "T13 E22 · Papá tiene una placa nueva" in ass and "Papá tiene una placa nueva · 2002" not in ass
     movie = player_ui.paused_ass(player_ui.Hud(title="Midsommar", detail="Película", facts="2019", paused=True))
     assert "Película · 2019" in movie  # en una película la línea de datos sigue entera
+
+
+def test_the_bottom_line_shows_the_flag_instead_of_the_language():
+    """M2/N2 (como la ficha y el iPhone): «🇲🇽 · Sin subtítulos · 1080p», con la bandera dibujada en lugar de «Latino»."""
+    from orbital import player_ui
+    hud = player_ui.Hud(title="Midsommar", audio="Latino", subtitles="No", source="1080p · Torrentio")
+    assert player_ui.info_line(hud).startswith("Latino")
+    flagged = player_ui.Hud(title="Midsommar", audio="Latino", subtitles="No", source="1080p · Torrentio", audio_flag="mx")
+    assert player_ui.info_line(flagged).startswith("·  Sin subtítulos") and "Latino" not in player_ui.info_line(flagged)
+    drawn = player_ui.info_ass(flagged, 900)
+    assert len(drawn) > 1 and "Sin subtítulos" in drawn[-1]  # la bandera (sus franjas) y después el texto
+    assert player_ui.current_flag([{"type": "audio", "selected": True, "lang": "spa", "title": "Latino"}]) == "mx"
+    assert player_ui.current_flag([]) is None
