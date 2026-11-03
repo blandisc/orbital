@@ -100,7 +100,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "api.trakt.tv", Demo.trakt, let found = await traktDemo(request) { return found }
         if let found = await guideDemo(request) { return found }   // la guía de la primera vez (`-demo-first-run`)
         if let found = Self.publicDemo(url) { return found }
-        if let found = Self.realDebridDemo(url) { return found }   // tendencia, popular, búsqueda y la crítica (Trakt y MDBList)
+        if let found = Self.realDebridDemo(url) { return found }
+        // Tu Torrentio sin Real-Debrid (R4) con `-demo-rd-request`: el torrent que existe (o ninguno, con `none`).
+        if url.host == "torrentio.strem.fun", Demo.rdRequest != nil {
+            let found: [JSON] = Demo.rdRequest == "none" ? [] : [["name": "Torrentio\n1080p", "title": "Demo.S02E06.1080p.WEB-DL.LATINO\n👤 12 💾 1.2 GB 🇲🇽",
+                                                                  "infoHash": .string(Self.demoTorrent), "fileIdx": 1]]
+            return HTTPResponse(status: 200, data: JSON.object(["streams": .array(found)]).serialized())
+        }   // tendencia, popular, búsqueda y la crítica (Trakt y MDBList)
         // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
         if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
@@ -483,6 +489,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         })]
     }
 
+    /// La huella del torrent de mentira de `-demo-rd-request`.
+    static let demoTorrent = String(repeating: "a", count: 40)
+
     static let manifest: JSON = ["id": "orbital.demo", "name": "Demo (videos de prueba)", "resources": ["stream"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
 
     private func addon(_ path: String) -> HTTPResponse {
@@ -493,6 +502,17 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if ProcessInfo.processInfo.arguments.contains("-demo-slow") {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
+        }
+        // `-demo-rd-request …`: Real-Debrid todavía no tiene tu versión (latino, «por bajar») y otra en inglés sí arranca;
+        // con `none`, nadie lo tiene. Para ver «Pedirlo y avisarme» y los estados del pedido.
+        if let rd = Demo.rdRequest, rd != "ready" {
+            guard rd != "none" else { return HTTPResponse(status: 200, data: JSON.object(["streams": []]).serialized()) }
+            let pending = "https://demo.orbital.invalid/resolve/realdebrid/DEMO/\(Self.demoTorrent)/null/1/Demo.S02E06.1080p.LATINO.mkv"
+            return HTTPResponse(status: 200, data: JSON.object(["streams": [
+                ["name": "[RD download] Torrentio\n1080p", "title": "Demo.S02E06.1080p.WEB-DL.LATINO\n👤 12 💾 1.2 GB ⚙️ Cinecalidad\n🇲🇽", "url": .string(pending)],
+                ["name": "[RD+] Torrentio\n720p", "title": "Demo.S02E06.720p.WEB-DL.ENG\n👤 40 💾 700 MB ⚙️ EZTV",
+                 "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"],
+            ]]).serialized())
         }
         // `-demo-video <url>` solo (sin `-demo-versions`): una sola versión con ese video, para cualquier título (p. ej. el MKV 4:3
         // de `scripts/ios_software_path.sh`, como los de Los Simpson). Antes solo valía junto con `-demo-versions`.

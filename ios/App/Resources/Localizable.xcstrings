@@ -1,6 +1,589 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "hace 1 día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 day ago"
+          }
+        }
+      }
+    },
+    "Lo pidió la TV · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV requested it · %@"
+          }
+        }
+      }
+    },
+    "%lld bajando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld downloading"
+          }
+        }
+      }
+    },
+    "Abrir la ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the title page"
+          }
+        }
+      }
+    },
+    "Avisarme cuando esté": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify me when it's ready"
+          }
+        }
+      }
+    },
+    "Avisos apagados · actívalos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications off · turn them on"
+          }
+        }
+      }
+    },
+    "Bajando para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading for you"
+          }
+        }
+      }
+    },
+    "Bajando para ti · %lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading for you · %lld of %lld"
+          }
+        }
+      }
+    },
+    "Bajando · %lld %%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading · %lld %%"
+          }
+        }
+      }
+    },
+    "Cancela una en Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel one on Real-Debrid"
+          }
+        }
+      }
+    },
+    "Cancelar pedido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel request"
+          }
+        }
+      }
+    },
+    "Con la app abierta lo sabes al momento. Con la app cerrada, iOS decide cuándo revisar: el aviso puede tardar un rato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the app open you know right away. With the app closed, iOS decides when to check: the notification may take a while."
+          }
+        }
+      }
+    },
+    "Con la app cerrada, el aviso de que ya está puede tardar: iOS decide cuándo revisar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the app closed, the ready notification may take a while: iOS decides when to check."
+          }
+        }
+      }
+    },
+    "Cuando pidas algo que Real-Debrid todavía no tiene, aquí ves cuánto lleva.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you request something Real-Debrid doesn't have yet, you'll see its progress here."
+          }
+        }
+      }
+    },
+    "Desliza un pedido para cancelarlo. Los que terminan se quedan una semana.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe a request to cancel it. Finished ones stay for a week."
+          }
+        }
+      }
+    },
+    "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's a paid service that keeps movies and shows on its servers. What it already has starts instantly."
+          }
+        }
+      }
+    },
+    "Lo pediste en %@ · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You requested it on %@ · %@"
+          }
+        }
+      }
+    },
+    "Muchas descargas activas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many active downloads"
+          }
+        }
+      }
+    },
+    "No pude hablar con Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't reach Real-Debrid"
+          }
+        }
+      }
+    },
+    "No puedo buscar versiones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't search for versions."
+          }
+        }
+      }
+    },
+    "Orbital te manda un aviso cuando Real-Debrid termine. Solo eso: nada de promociones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital sends you a notification when Real-Debrid finishes. Just that: no promotions."
+          }
+        }
+      }
+    },
+    "Para avisarte cuando esté": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To let you know when it's ready"
+          }
+        }
+      }
+    },
+    "Pedido cancelado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request canceled"
+          }
+        }
+      }
+    },
+    "Pedir solo el siguiente episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request just the next episode"
+          }
+        }
+      }
+    },
+    "Pedirlo es que lo baje por ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requesting it means it downloads it for you"
+          }
+        }
+      }
+    },
+    "Pedirlo y avisarme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request it and notify me"
+          }
+        }
+      }
+    },
+    "Permitir avisos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow notifications"
+          }
+        }
+      }
+    },
+    "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They ask the internet which versions exist of what you picked: in which language, what quality and how many people share it."
+          }
+        }
+      }
+    },
+    "Probar otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another version"
+          }
+        }
+      }
+    },
+    "Puede tardar días · prueba otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It may take days · try another version"
+          }
+        }
+      }
+    },
+    "Real-Debrid lo está bajando · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid is downloading it · %@"
+          }
+        }
+      }
+    },
+    "Real-Debrid lo guarda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid keeps it"
+          }
+        }
+      }
+    },
+    "Real-Debrid lo recibió y espera turno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid got it and is waiting its turn"
+          }
+        }
+      }
+    },
+    "Real-Debrid pide esperar un momento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid asks to wait a moment"
+          }
+        }
+      }
+    },
+    "Real-Debrid terminó de bajarlo · ábrelo para verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid finished downloading it · open it to watch"
+          }
+        }
+      }
+    },
+    "Real-Debrid terminó tu pedido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid finished your request"
+          }
+        }
+      }
+    },
+    "Si Real-Debrid aún no lo tiene, se lo pide 3 min antes del final del que ves.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If Real-Debrid doesn't have it yet, it's requested 3 min before the end of the one you're watching."
+          }
+        }
+      }
+    },
+    "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it doesn't have it yet, you request it and it downloads it. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+          }
+        }
+      }
+    },
+    "Sigue sin bajar · ¿probar otra versión?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still not downloading · try another version?"
+          }
+        }
+      }
+    },
+    "Sin gente que lo comparta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody is sharing it"
+          }
+        }
+      }
+    },
+    "Sin pedidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No requests"
+          }
+        }
+      }
+    },
+    "Te avisamos cuando esté": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll let you know when it's ready"
+          }
+        }
+      }
+    },
+    "Tus complementos buscan dónde verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your add-ons look for where to watch it"
+          }
+        }
+      }
+    },
+    "Tus pedidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your requests"
+          }
+        }
+      }
+    },
+    "Ver créditos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch credits"
+          }
+        }
+      }
+    },
+    "Verlo en %@ al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch it in %@ instantly"
+          }
+        }
+      }
+    },
+    "Ya arranca al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts instantly now"
+          }
+        }
+      }
+    },
+    "Ya está %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is ready"
+          }
+        }
+      }
+    },
+    "hace %lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago"
+          }
+        }
+      }
+    },
+    "hace %lld h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h ago"
+          }
+        }
+      }
+    },
+    "hace %lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min ago"
+          }
+        }
+      }
+    },
+    "¿Cancelar el pedido?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the request?"
+          }
+        }
+      }
+    },
+    "¿Qué es esto?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is this?"
+          }
+        }
+      }
+    },
     "Orbital usa %@": {
       "extractionState": "manual",
       "localizations": {

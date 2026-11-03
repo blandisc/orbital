@@ -222,6 +222,43 @@ enum Demo {
     /// `-demo-trakt-builtin`: Trakt conectado con el Client ID incluido en la app (Ajustes sin Client ID).
     static var traktBuiltIn: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt-builtin") }
 
+    /// `-demo-rd-request queued|downloading|stalled|nopeers|blocked|toomany|ready|all`: tus pedidos a Real-Debrid de
+    /// mentira (la libreta ya llena: The Office T1 E2 en ese estado; `all`, uno de cada uno) para ver la ficha, «Seguir
+    /// viendo» y Ajustes › Tus pedidos en el simulador. Con `-demo-rd premium`. Nada sale a Real-Debrid.
+    static var rdRequest: String? { value(after: "-demo-rd-request") }
+
+    @MainActor static func seedRequests(_ services: Services) {
+        guard let wanted = rdRequest else { return }
+        let book = services.debridRequests.requester.book
+        let now = Date()
+        func entry(_ hash: String, _ title: String, _ meta: String, _ video: String, _ season: Int?, _ episode: Int?, _ state: DebridRequest.State,
+                   _ percent: Int, ago: TimeInterval, device: String = services.deviceName) -> DebridRequest {
+            var r = DebridRequest(hash: String(repeating: hash, count: 40), rdID: "DEMO\(hash)", title: title, kind: season == nil ? "movie" : "series",
+                                  metaID: meta, videoIDs: meta == "tt0386676" ? [video, "tt0386676:1:1"] : [video], season: season, episode: episode, language: "es-419", device: device,
+                                  createdAt: now.addingTimeInterval(-ago), rdStatus: state == .ready ? "downloaded" : "downloading", percent: percent,
+                                  seeders: state == .noPeers ? 0 : 12, state: state)
+            r.progressAt = now.addingTimeInterval(-(wanted == "stalled" ? 26 * 3600 : 60))
+            return r
+        }
+        let office: (DebridRequest.State, Int) = switch wanted {
+        case "queued": (.queued, 0)
+        case "nopeers", "stalled": (.noPeers, 3)
+        case "blocked": (.refused, 0)
+        case "toomany": (.tooMany, 0)
+        case "ready": (.ready, 100)
+        default: (.downloading, 42)
+        }
+        book.put(entry("a", "The Office", "tt0386676", "tt0386676:2:6", 2, 6, office.0, office.1, ago: wanted == "stalled" ? 27 * 3600 : 360))
+        if wanted == "all" {
+            book.put(entry("b", "Nocturne", "tt1160419", "tt1160419", nil, nil, .queued, 0, ago: 1200, device: "TV"))
+            book.put(entry("c", "Severance", "tt11280740", "tt11280740:1:3", 1, 3, .noPeers, 3, ago: 90_000))
+            book.put(entry("d", "Dune: Parte dos", "tt15239678", "tt15239678", nil, nil, .refused, 0, ago: 4000))
+            book.put(entry("e", "Andor", "tt9253284", "tt9253284:2:7", 2, 7, .tooMany, 0, ago: 300))
+            book.put(entry("f", "Interstellar", "tt0816692", "tt0816692", nil, nil, .ready, 100, ago: 7200))
+        }
+        services.debridRequests.reloadForDemo()
+    }
+
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
     /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free, invalid
     /// o un número de días («14»).
@@ -235,7 +272,7 @@ enum Demo {
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         // `-demo-rd premium|soon|expired|free|invalid`: una clave de Real-Debrid de mentira (api.real-debrid.com la contesta la demo).
-        if realDebrid != nil { secrets.set(AddonKeys.realDebridToken, Self.realDebridToken) }
+        if realDebrid != nil || rdRequest != nil { secrets.set(AddonKeys.realDebridToken, Self.realDebridToken) }
         if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
         return secrets
     }

@@ -19,6 +19,41 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Real-Debrid, Fase 2 (3 nov): pedir lo que todavía no tiene y avisar (R2-A, R3, R4, R7, R8, R10, R12, R13, D3, O2).
+    "Pedirlo y avisarme": "Request it and notify me", "Verlo en %@ al instante": "Watch it in %@ instantly",
+    "Bajando · %lld %%": "Downloading · %lld %%", "Sin gente que lo comparta": "Nobody is sharing it",
+    "Muchas descargas activas": "Too many active downloads",
+    "Real-Debrid lo recibió y espera turno": "Real-Debrid got it and is waiting its turn",
+    "Puede tardar días · prueba otra versión": "It may take days · try another version",
+    "Cancela una en Real-Debrid": "Cancel one on Real-Debrid", "Ya arranca al instante": "Starts instantly now",
+    "Sigue sin bajar · ¿probar otra versión?": "Still not downloading · try another version?",
+    "Real-Debrid pide esperar un momento": "Real-Debrid asks to wait a moment",
+    "No pude hablar con Real-Debrid": "I couldn't reach Real-Debrid", "Lo pediste en %@ · %@": "You requested it on %@ · %@",
+    "hace %lld min": "%lld min ago", "hace %lld h": "%lld h ago", "hace %lld días": "%lld days ago", "hace 1 día": "1 day ago", "Lo pidió la TV · %@": "The TV requested it · %@",
+    "Avisos apagados · actívalos": "Notifications off · turn them on", "Cancelar pedido": "Cancel request",
+    "Probar otra versión": "Try another version", "¿Qué es esto?": "What is this?", "Pedido cancelado": "Request canceled",
+    "¿Cancelar el pedido?": "Cancel the request?", "Tus complementos buscan dónde verlo": "Your add-ons look for where to watch it",
+    "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte.": "They ask the internet which versions exist of what you picked: in which language, what quality and how many people share it.",
+    "Real-Debrid lo guarda": "Real-Debrid keeps it",
+    "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante.": "It's a paid service that keeps movies and shows on its servers. What it already has starts instantly.",
+    "Pedirlo es que lo baje por ti": "Requesting it means it downloads it for you",
+    "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos.": "If it doesn't have it yet, you request it and it downloads it. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you.",
+    "Te avisamos cuando esté": "We'll let you know when it's ready",
+    "Con la app abierta lo sabes al momento. Con la app cerrada, iOS decide cuándo revisar: el aviso puede tardar un rato.": "With the app open you know right away. With the app closed, iOS decides when to check: the notification may take a while.",
+    "Para avisarte cuando esté": "To let you know when it's ready",
+    "Orbital te manda un aviso cuando Real-Debrid termine. Solo eso: nada de promociones.": "Orbital sends you a notification when Real-Debrid finishes. Just that: no promotions.",
+    "Permitir avisos": "Allow notifications", "Avisarme cuando esté": "Notify me when it's ready", "Ver créditos": "Watch credits",
+    "Real-Debrid lo está bajando · %@": "Real-Debrid is downloading it · %@",
+    "Pedir solo el siguiente episodio": "Request just the next episode",
+    "Si Real-Debrid aún no lo tiene, se lo pide 3 min antes del final del que ves.": "If Real-Debrid doesn't have it yet, it's requested 3 min before the end of the one you're watching.",
+    "Tus pedidos": "Your requests", "%lld bajando": "%lld downloading", "Sin pedidos": "No requests",
+    "Cuando pidas algo que Real-Debrid todavía no tiene, aquí ves cuánto lleva.": "When you request something Real-Debrid doesn't have yet, you'll see its progress here.",
+    "Bajando para ti": "Downloading for you", "Bajando para ti · %lld de %lld": "Downloading for you · %lld of %lld",
+    "Desliza un pedido para cancelarlo. Los que terminan se quedan una semana.": "Swipe a request to cancel it. Finished ones stay for a week.",
+    "Con la app cerrada, el aviso de que ya está puede tardar: iOS decide cuándo revisar.": "With the app closed, the ready notification may take a while: iOS decides when to check.",
+    "Abrir la ficha": "Open the title page", "No puedo buscar versiones.": "I can't search for versions.", "Ya está %@": "%@ is ready",
+    "Real-Debrid terminó de bajarlo · ábrelo para verlo": "Real-Debrid finished downloading it · open it to watch",
+    "Real-Debrid terminó tu pedido": "Real-Debrid finished your request",
     # «¿Qué vemos hoy?», 3 nov: filtrar por películas o series y por género, y el final del mazo como el aviso de Tinder.
     "Todos los géneros": "All genres", "Se acabaron tus matches": "You're out of matches", "Quitar filtros": "Clear filters",
     "Si quieres ver más, cambia tus filtros.": "To see more, change your filters.",
@@ -1130,7 +1165,7 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta", "UnavailableCause")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta", "UnavailableCause", "DebridRequestWords")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
