@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import OrbitalCore
 
@@ -32,6 +33,8 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
 
     struct Context: Codable {
         var file: String            // relativo a `root`: la ruta del contenedor cambia al actualizar la app
+        /// La huella del enlace (`Self.fingerprint`), no el enlace: el de Torrentio lleva tu clave de Real-Debrid adentro y
+        /// esto se guarda en los ajustes de la app (D2, Fase 2). El enlace vive en el llavero (`Downloads`) y en memoria (`links`).
         var url: String
         var usedResumeData = false
         /// La marca de las tareas de ahora (`id#token` o `id#token#pedazo`). Antes las tareas se reconocían solo por `id`, y al
@@ -41,8 +44,16 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         /// vez) y hasta qué pedazo ya se juntó en el video.
         var parts: [Part]?
         var total: Int64?
+        /// Solo en memoria (no se guarda): el enlace de Real-Debrid ya resuelto, para no pasar por Torrentio en cada pedazo.
         var resolved: String?
         var assembled: Int?
+
+        enum CodingKeys: String, CodingKey { case file, url, usedResumeData, token, parts, total, assembled }
+    }
+
+    /// La huella de un enlace: para saber si es el mismo sin guardarlo (ni su clave) en disco.
+    static func fingerprint(_ url: URL) -> String {
+        "sha256:" + SHA256.hash(data: Data(url.absoluteString.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     /// `id#token#pedazo` → (id, token, pedazo). Las tareas de versiones anteriores no traen token.
@@ -64,6 +75,8 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
 
     let lock = NSLock()
     var contexts: [String: Context] = [:]
+    /// El enlace de cada descarga mientras la app está abierta (en disco va solo su huella, `Context.url`).
+    var links: [String: URL] = [:]
     private var lastProgress: [String: Date] = [:]
     /// Lo bajado de cada pedazo en marcha (para el avance de todo el archivo).
     var partWritten: [String: [Int: Int64]] = [:]
@@ -106,6 +119,13 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         (events, continuation) = AsyncStream.makeStream(bufferingPolicy: .unbounded)
         super.init()
         contexts = (defaults.data(forKey: "orbital.download-contexts").flatMap { try? JSONDecoder().decode([String: Context].self, from: $0) }) ?? [:]
+        // Lo guardado antes de la Fase 2 traía el enlace tal cual (con tu clave de Real-Debrid): se reescribe con su huella.
+        if contexts.values.contains(where: { !$0.url.hasPrefix("sha256:") }) {
+            for (id, context) in contexts where !context.url.hasPrefix("sha256:") {
+                contexts[id]?.url = URL(string: context.url).map(Self.fingerprint) ?? ""
+            }
+            saveContexts()
+        }
         let configuration = URLSessionConfiguration.background(withIdentifier: Self.identifier)
         configuration.isDiscretionary = false          // las pides tú: que empiecen ya
         configuration.sessionSendsLaunchEvents = true
@@ -141,7 +161,8 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         let existing = lock.withLock { contexts[id] }
         // Por partes, con el mismo enlace: se retoma (los pedazos vivos se adoptan, los que faltan se piden, y si ya estaban
         // todos, se juntan).
-        if let existing, existing.parts != nil, existing.url == url.absoluteString {
+        lock.withLock { links[id] = url }   // en memoria: el de disco es solo su huella
+        if let existing, existing.parts != nil, existing.url == Self.fingerprint(url) {
             return startParts(id: id, context: existing, live: tasks)
         }
         // De una pieza: si el sistema siguió bajando con la app cerrada, la tarea viva se adopta.
@@ -152,8 +173,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         }
         // Nueva (o con enlace nuevo): ¿cuánto mide y acepta pedazos? Así se decide si se parte.
         // (Con pedazos de antes y enlace renovado, aunque ya haya una parte del video juntada en disco: sigue por pedazos.)
-        if resumeFrom == 0 || existing?.parts != nil, let probe = await probe(url), probe.total >= Self.partsMinimumBytes {
-            var context = Context(file: relative(file), url: url.absoluteString, token: UUID().uuidString, total: probe.total, resolved: probe.resolved.absoluteString)
+        let probed = resumeFrom == 0 || existing?.parts != nil ? await probe(url) : nil
+        if let probe = probed, probe.total >= Self.partsMinimumBytes {
+            var context = Context(file: relative(file), url: Self.fingerprint(url), token: UUID().uuidString, total: probe.total, resolved: probe.resolved.absoluteString)
             // Enlace renovado del mismo archivo: los pedazos terminados se quedan.
             if let old = existing?.parts, existing?.total == probe.total { context.parts = old; context.assembled = existing?.assembled }
             else { context.parts = Self.split(probe.total); try? FileManager.default.removeItem(at: partFolder(id)) }
@@ -163,7 +185,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
             continuation.yield(.progress(id: id, written: written(id, context), total: probe.total))
             return startParts(id: id, context: context, live: [])
         }
-        startSingle(id: id, url: url, resumeFrom: resumeFrom, file: file, existing: existing)
+        // De una pieza, también desde el enlace ya resuelto si se conoce: los datos de reanudación que guarda iOS llevan la
+        // dirección, y la de Torrentio trae tu clave de Real-Debrid.
+        startSingle(id: id, url: url, target: probed?.resolved ?? url, resumeFrom: resumeFrom, file: file, existing: existing)
     }
 
     /// Los pedazos parejos de un archivo de `total` bytes.
@@ -207,7 +231,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         })
         if foreground { for task in live { task.cancel() } }
         lock.withLock { _ = failedTokens.remove(token) }
-        guard let target = URL(string: context.resolved ?? context.url) else { return }
+        guard let target = context.resolved.flatMap(URL.init(string:)) ?? lock.withLock({ links[id] }) else { return }
         var finished: [Int] = []
         for (i, part) in parts.enumerated() where !part.done && !running.contains(i) {
             if lock.withLock({ streams[id]?[i] != nil }) { continue }   // ya baja dentro de la app
@@ -289,9 +313,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         }
     }
 
-    private func startSingle(id: String, url: URL, resumeFrom: Int64, file: URL, existing: Context?) {
+    private func startSingle(id: String, url: URL, target: URL, resumeFrom: Int64, file: URL, existing: Context?) {
         let resumeURL = resumeFile(id)
-        let sameLink = existing?.url == url.absoluteString
+        let sameLink = existing?.url == Self.fingerprint(url)
         let task: URLSessionDownloadTask
         var usedResume = false
         if sameLink, let data = try? Data(contentsOf: resumeURL), !data.isEmpty {
@@ -299,7 +323,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
             usedResume = true
         } else {
             try? FileManager.default.removeItem(at: resumeURL)     // enlace nuevo: lo bajado con el viejo no sirve
-            var request = URLRequest(url: url)
+            var request = URLRequest(url: target)
             request.allowsCellularAccess = allowsCellular()
             request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
             if resumeFrom > 0 { request.setValue("bytes=\(resumeFrom)-", forHTTPHeaderField: "Range") }
@@ -307,7 +331,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         }
         let token = UUID().uuidString
         task.taskDescription = "\(id)#\(token)"
-        lock.withLock { contexts[id] = Context(file: relative(file), url: url.absoluteString, usedResumeData: usedResume, token: token); saveContexts() }
+        lock.withLock { contexts[id] = Context(file: relative(file), url: Self.fingerprint(url), usedResumeData: usedResume, token: token); saveContexts() }
         try? FileManager.default.removeItem(at: resumeURL)
         task.resume()
     }
