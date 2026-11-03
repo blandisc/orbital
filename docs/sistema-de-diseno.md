@@ -402,6 +402,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Logos de marca | `--platform-*` y los logos de `ui.js` | Igual | — |
 | Lo que se mueve solo | El mosaico se detiene a los 90 s; todo respeta movimiento reducido | Igual | La TV no tiene cielo que se mueva: Orbital no gasta detrás de un juego. |
 | Pedido a Real-Debrid | `title.js` (RD-1, RD-3) y el aviso «Ya está…» de `rd_requests.py` | Distinto a propósito: la TV dice tres estados y el porcentaje; los seis de R13, la hoja del pedido y «Tus pedidos» llegan con S2/S4 (registro de paridad) | «Pedirlo y avisarme» y «Bajando en Real-Debrid · 42 %» ya son iguales. |
+| Complementos y Torrentio | Ajustes › Complementos (`menus.js`, `addonHealth`) | Distinto a propósito: la TV tiene sus propias pantallas con las mismas palabras; las opciones de Torrentio viajan con S6 (pendiente en el registro de paridad) | Las mismas palabras de cómo le va a cada uno («Contesta en 0,6 s»…) ya están en los dos. La página de Torrentio y la prueba con un título son del iPhone por ahora; las opciones viajan con S6 (renglón «Configurar Torrentio y Complementos» del registro de paridad). |
 | Accesibilidad | Foco visible y pistas de cada superficie | Solo iPhone: es cómo SwiftUI agrupa los identificadores | — |
 
 ### Movimiento
