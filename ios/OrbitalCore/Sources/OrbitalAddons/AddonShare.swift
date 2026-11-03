@@ -32,6 +32,12 @@ public struct SharedAddon: Equatable, Sendable {
     /// Vive solo en la TV (Archivos de la TV): «Archivos de la TV · Solo en la TV» en los dos lados (S5).
     public var isTVFiles: Bool { onlyOn == "tv" }
 
+    /// Lo prendido para un aparato (K1, contrato «devices»): `enabled[<su id>]`, si no `enabled[<su plataforma>]`; nil si no
+    /// dice nada (vale lo de fábrica de la entrada).
+    public func isEnabled(device: String, platform: String?) -> Bool? {
+        enabled[device] ?? platform.flatMap { enabled[$0] }
+    }
+
     init?(_ json: StoredJSON) {
         guard case .object(let o) = json, case .string(let id)? = o["id"], case .string(let origin)? = o["origin"],
               origin == "orbital" || origin == "stremio" else { return nil }
@@ -122,6 +128,11 @@ public enum AddonShare {
     /// y lo que este iPhone ya no escribe en disco, como la configuración en base64 de Comet).
     public static func canTravel(_ url: String) -> Bool {
         url.lowercased().hasPrefix("https://") && !AddonSecrets.mayCarrySecret(url) && tvMasked(url) == url && !url.contains(AddonRedaction.mask)
+    }
+
+    /// K1: con la llave de este aparato también viaja la que lleva clave (siempre https y nunca una ya tapada).
+    public static func canTravel(_ url: String, withDeviceKey: Bool) -> Bool {
+        withDeviceKey ? url.lowercased().hasPrefix("https://") && !url.contains(AddonRedaction.mask) : canTravel(url)
     }
 
     /// `changed_at`: la TV lo manda en segundos desde 1970; el contrato dice ISO 8601. Se leen los dos.

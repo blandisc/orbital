@@ -19,6 +19,8 @@ public enum SecretKey {
     public static let traktClientSecret = "trakt_client_secret"
     public static let orbitalToken = "orbital_token"     // el token de tu Orbital (el mismo de Alexa): «Ver en la TV»
     public static let orbitalAddress = "orbital_address" // la dirección de tu Orbital, también aquí: sobrevive a borrar la app
+    /// K1 · la llave de este aparato para tu Orbital («od1.…»): solo de este aparato (ni iCloud ni copias a otro iPhone).
+    public static let orbitalDeviceKey = "orbital_device_key"
     public static let oneDriveTokens = "onedrive_tokens"  // la sesión de OneDrive (Files.Read)
 }
 
@@ -71,9 +73,15 @@ public final class KeychainSecrets: SecretsStore, @unchecked Sendable {
         if update == errSecItemNotFound {
             var q = query(key)
             q[kSecValueData as String] = data
-            q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            q.merge(Self.addAttributes) { _, new in new }
             SecItemAdd(q as CFDictionary, nil)
         }
+    }
+
+    /// Cómo se guarda cada secreto nuevo: solo en este aparato y después del primer desbloqueo; nunca en el llavero de iCloud
+    /// (K1: la llave por aparato no debe aparecer en tu otro iPhone ni en uno restaurado de una copia).
+    public static var addAttributes: [String: Any] {
+        [kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly, kSecAttrSynchronizable as String: kCFBooleanFalse as Any]
     }
 }
 #endif

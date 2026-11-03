@@ -36,7 +36,7 @@ extension OrbitalRemote {
         do { response = try await http.send(request) } catch { throw Failure.unreachable }
         switch response.status {
         case 200..<300: return response.data
-        case 401, 403: throw Failure.badToken
+        case 401, 403: throw authFailure(response)
         case 404: throw Failure.outdated
         default: throw Failure.refused(JSON.parse(response.data)?["detail"]?.string ?? "Tu Orbital contestó con un error (\(response.status)).")
         }

@@ -44,6 +44,10 @@ public final class Services: ObservableModel {
     public let addonSync: AddonTVSync
     /// El nombre de este aparato («iPhone», «iPad», «Mac»): quién hizo cada pedido.
     public let deviceName: String
+    /// K1 · qué pasó con la llave de este aparato (la TV la pide o lo quitó): la frase de «Escanear».
+    public let orbitalAuth: OrbitalAuthState
+    /// K1 · `"pairing"` de `GET /api/companion`: 2 si tu TV reparte llaves por aparato. Se sabe al conectar (cada arranque).
+    public internal(set) var tvPairing = 1 { didSet { if oldValue != tvPairing { changed() } } }
     public private(set) var finder: StreamFinder { didSet { notify() } }
     /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
     public let oneDrive: OneDrive
@@ -162,7 +166,7 @@ public final class Services: ObservableModel {
     let freeSpace: @Sendable () -> Int64
     private let clock: @Sendable () -> Date
     /// Qué aparato es (iPhone o iPad): va en cada petición a tu Orbital.
-    private let device: OrbitalRemote.Device?
+    let device: OrbitalRemote.Device?
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, library: LocalLibrary = LocalLibrary(), downloadTransport: DownloadTransport,
@@ -227,20 +231,23 @@ public final class Services: ObservableModel {
         let debrid = self.debrid
         // La libreta va en los ajustes de la app (no lleva claves ni enlaces); la clave, en el llavero.
         // `by`: el nombre con que este aparato se presenta a la TV (su renglón en Cuentas); `account`: el id de usuario de Real-Debrid.
+        let orbitalAuth = OrbitalAuthState(secrets: secrets)
+        self.orbitalAuth = orbitalAuth
+        let makeOrbital: @Sendable () -> OrbitalRemote = {
+            Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: allowsOrbital, auth: orbitalAuth)
+        }
         let requestsBy = allowsOrbital ? (device?.name).flatMap { $0.isEmpty ? nil : $0 } ?? deviceName : deviceName
         // Se junta con la libreta de tu Orbital (corte S2 de la TV, contrato «requests») si la tienes conectada.
         let requester = DebridRequester(book: DebridRequestBook(vault: vault), api: RealDebridTorrents(http: http),
                                         token: { vault.secret(AddonKeys.realDebridToken) }, device: { requestsBy },
                                         account: { await debrid.accountID() }, knownAccount: debrid.saved?.userID, clock: clock,
-                                        sync: OrbitalRemoteDebridRequestSync(remote: {
-                                            let on = allowsOrbital && settings.value.orbitalEnabled
-                                            return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "",
-                                                                 token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
-                                        }))
-        self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: {
-            let on = allowsOrbital && settings.value.orbitalEnabled
-            return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "", token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
-        }), available: { allowsOrbital && settings.value.orbitalEnabled }, device: device?.kind ?? "iphone", deviceName: { requestsBy })
+                                        sync: OrbitalRemoteDebridRequestSync(remote: makeOrbital))
+        // K1: con llave, `enabled[<id de este aparato>]`; sin ella, `enabled[<plataforma>]` (lo de antes).
+        let platform = device?.kind ?? "iphone"
+        self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: makeOrbital),
+                                     available: { allowsOrbital && settings.value.orbitalEnabled },
+                                     device: { AddonDevice(platform: platform, id: (secrets.get(SecretKey.orbitalDeviceKey)).flatMap(OrbitalDeviceKey.deviceID(of:))) },
+                                     deviceName: { requestsBy }, manifest: Services.manifestReader(http: http))
         self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
                                                   finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
         let requests = self.debridRequests, appearPrefs = self.titlePrefs
@@ -254,10 +261,7 @@ public final class Services: ObservableModel {
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
-        self.forYouRemote = RemoteForYou(remote: {
-            let on = allowsOrbital && settings.value.orbitalEnabled
-            return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "", token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
-        }, clock: clock)
+        self.forYouRemote = RemoteForYou(remote: makeOrbital, clock: clock)
         self.watch = WatchService(library: library, stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt,
                                   pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
@@ -273,6 +277,7 @@ public final class Services: ObservableModel {
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    clock: clock, onChange: onDownloadsChange)
         super.init()
+        orbitalAuth.onChange = { [weak self] in Task { @MainActor in self?.changed() } }
     }
 
     /// El Client ID, en orden: el de Ajustes (escrito a mano, o el que trajo tu Orbital si no había uno), el del Keychain
@@ -359,6 +364,7 @@ public final class Services: ObservableModel {
         let remote = orbital
         try await remote.check()
         let keys = try await remote.keys()
+        if tvPairing != keys.pairing { tvPairing = keys.pairing }
         var got: [String] = []
         if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
         if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }
@@ -383,8 +389,7 @@ public final class Services: ObservableModel {
     /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes. Sin `allowsOrbital` (la Mac) nunca queda
     /// configurado: ni control, ni «En la TV», ni lo que manda la TV, aunque el llavero traiga una dirección y un token.
     public var orbital: OrbitalRemote {
-        guard orbitalOn else { return OrbitalRemote(http: http, address: "", token: "", device: device) }
-        return OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "", device: device)
+        Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: allowsOrbital, auth: orbitalAuth)
     }
 
     /// ¿Este aparato habla con tu Orbital? No en la Mac (decisión de Fernando, 29 oct 2026): ahí la app es solo para ver.
@@ -397,6 +402,8 @@ public final class Services: ObservableModel {
     public func turnOffOrbital() {
         settings.update { $0.orbitalEnabled = false; $0.orbitalAddress = "" }
         secrets.set(SecretKey.orbitalAddress, nil); secrets.set(SecretKey.orbitalToken, nil)
+        secrets.set(SecretKey.orbitalDeviceKey, nil)   // K1: la TV la sigue listando hasta que la quites allá
+        orbitalAuth.clear(); tvPairing = 1
         changed()
     }
 

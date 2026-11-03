@@ -5,9 +5,10 @@ import OrbitalModels
 
 /// Tu Orbital (la consola): emparejar, «Ver en la TV», pasarle el video desde el reproductor y deshacerlo.
 extension AppEnvironment {
-    func pairWithOrbital(address: String, token: String) async {
+    /// El QR de la TV abierto con la cámara del iPhone: v1 (el token del túnel) o v2 (K1: la llave de este aparato).
+    func pairWithOrbital(_ link: OrbitalPairing) async {
         do {
-            let got = try await services.connectOrbital(address: address, token: token)
+            let got = try await services.pair(link)
             let brought = got.joined(separator: services.appSettings.uiLanguage == "en" ? " and " : " y ")
             if got.isEmpty { notify("Conectado con tu Orbital", tone: .success) } else { notify(format: "Conectado con tu Orbital: %@ ya están aquí.", brought, tone: .success) }
         } catch { notifyOrbital(error) }

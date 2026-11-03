@@ -34,8 +34,13 @@ struct OrbitalSetupView: View {
             }, fallback: { byHand = true })
         }
         #if DEBUG
-        // `-demo-open orbital-setup -demo-scan`: lee un código de mentira, para recorrer la hoja sin cámara.
-        .task { if Demo.isOn, CommandLine.arguments.contains("-demo-scan") { await setup.model.scanned("orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo") } }
+        // `-demo-open orbital-setup -demo-scan [v2]`: lee un código de mentira (v1, o v2 con la llave de K1), sin cámara.
+        .task {
+            guard Demo.isOn, CommandLine.arguments.contains("-demo-scan") else { return }
+            let v2 = Demo.value(after: "-demo-scan") == "v2"
+            await setup.model.scanned(v2 ? "orbital-ios://pair?v=2&u=https%3A%2F%2Ftv.demo.invalid&c=DEMOcode_DEMOcode_DEMOcode_DEMOcode_abc"
+                                         : "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo")
+        }
         #endif
     }
 

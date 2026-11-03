@@ -287,6 +287,7 @@ enum Demo {
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         // `-demo-rd premium|soon|expired|free|invalid`: una clave de Real-Debrid de mentira (api.real-debrid.com la contesta la demo).
         if realDebrid != nil || rdRequest != nil { secrets.set(AddonKeys.realDebridToken, Self.realDebridToken) }
+        seedKeys(secrets)   // `-demo-keys`: la llave de este aparato (K1)
         if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
         return secrets
     }

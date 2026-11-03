@@ -3,11 +3,13 @@ import Foundation
 /// Tu lista y la de tu TV, la misma (S1, S3, S6): qué complemento de aquí es cuál de allá, juntar lo que cambió en la TV y
 /// armar lo que se le manda. Sin red: `AddonTVSync` (OrbitalModels) hace las peticiones.
 ///
-/// - Cada aparato cambia solo su propio prendido (`enabled[device]`); el de la TV nunca se manda.
+/// - Cada aparato cambia solo su propio prendido (`enabled[device]`: su id con llave, K1; si no, su plataforma); se lee
+///   `enabled[id] ?? enabled[plataforma] ?? lo de fábrica`. El de la TV nunca se manda.
 /// - Torrentio viaja como opciones; cada lado arma su dirección con su clave.
-/// - Lo traído de Stremio que la TV ya tiene viaja por su id, sin dirección; uno nuevo, con su dirección solo si no lleva
-///   clave (`AddonShare.canTravel`). Si lleva clave se queda en este iPhone: espera las llaves por aparato (K1).
-/// - Las direcciones de la TV llegan tapadas: sirven para reconocer uno que este iPhone ya tiene y nada más.
+/// - Lo traído de Stremio que la TV ya tiene viaja por su id, sin dirección; uno nuevo, con su dirección: sin llave por
+///   aparato solo si no lleva clave (`AddonShare.canTravel`); con llave (K1), también con clave.
+/// - Las direcciones de la TV llegan tapadas (sirven para reconocer uno que este iPhone ya tiene); con llave, `?full=1`
+///   trae las completas de los que este iPhone no tiene.
 public struct AddonTVMerge: Equatable, Sendable {
     /// Las opciones de Torrentio que cambiaron en los dos lados: se quedó la de la TV (S3).
     public var conflicts: [String] = []
@@ -105,8 +107,11 @@ extension AddonList {
 
     /// Lo que se le manda a la TV desde `tv` (la última lista que dio): tu orden, tu prendido, tus opciones de Torrentio y lo
     /// que quitaste. `newID` da el id de uno nuevo (nunca un hash de su dirección: puede llevar clave).
-    public func plan(for tv: SharedAddonList, links: [String: String], device: String, changedBy: String, now: Date,
-                     newID: () -> String = { UUID().uuidString.lowercased() }) -> AddonTVPlan {
+    /// `device`: la llave de este aparato en `enabled` (nunca «tv»); `platform`: la de antes de K1, para leer; `deviceKey`:
+    /// habla con su llave por aparato (lo que lleva clave también viaja).
+    public func plan(for tv: SharedAddonList, links: [String: String], device: String, platform: String? = nil, deviceKey: Bool = false,
+                     changedBy: String, now: Date, newID: () -> String = { UUID().uuidString.lowercased() }) -> AddonTVPlan {
+        let device = device == "tv" ? (platform ?? "iphone") : device   // un aparato nunca escribe el prendido de la TV
         var links = link(tv, links: links)
         let byID = Dictionary(tv.addons.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         var items: [StoredJSON] = [], sent: [String] = [], waiting: [String] = []
@@ -124,7 +129,7 @@ extension AddonList {
                 }
             } else if let id = links[addon.id], byID[id] != nil {
                 entry = SharedAddon(id: id, origin: "stremio", name: addon.name, order: items.count)   // sin dirección: no cambia
-            } else if let url = resolvedURL(addon), AddonShare.canTravel(url) {
+            } else if let url = resolvedURL(addon), AddonShare.canTravel(url, withDeviceKey: deviceKey) {
                 let id = links[addon.id] ?? newID()
                 links[addon.id] = id
                 entry = SharedAddon(id: id, origin: "stremio", url: url, name: addon.name, order: items.count)
@@ -134,7 +139,7 @@ extension AddonList {
                 continue
             }
             entry.enabled = [device: addon.enabled]
-            if byID[entry.id]?.enabled[device] != addon.enabled { differs = true }
+            if byID[entry.id]?.isEnabled(device: device, platform: platform) != addon.enabled { differs = true }
             items.append(entry.json)
             sent.append(entry.id)
         }
@@ -149,6 +154,20 @@ extension AddonList {
         let mine = Set(links.values)
         let tvOnly = tv.addons.filter { !mine.contains($0.id) && $0.origin == "stremio" }
         return AddonTVPlan(body: body, needsPut: differs, waitingForKeys: waiting, tvOnly: tvOnly, links: links)
+    }
+
+    /// K1 · uno de la TV que este iPhone no tenía, ya con su dirección completa (`?full=1`): se guarda como los traídos (la
+    /// dirección en el llavero, nunca en los ajustes), con el prendido que la TV dice para este aparato. Devuelve su id aquí.
+    @discardableResult
+    public func adoptFromTV(_ shared: SharedAddon, url: String, name: String, resources: [String], device: String, platform: String?) -> String? {
+        guard url.lowercased().hasPrefix("https://"), !url.contains(AddonRedaction.mask), !shared.isTVFiles, !resources.isEmpty else { return nil }
+        var id: String?
+        fromTV {
+            let added = add(url: url, name: shared.name.isEmpty ? name : shared.name, resources: resources, origin: .imported)
+            setEnabled(added, shared.isEnabled(device: device, platform: platform) ?? true)
+            id = added
+        }
+        return id
     }
 
     /// «Usar la de este iPhone» tras un choque (S3): tus opciones de antes vuelven y se mandan.

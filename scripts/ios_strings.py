@@ -19,6 +19,30 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # K1 (3 nov): llaves por aparato, «Pasar a la TV» y «Usar la de la TV».
+    "Vuelve a escanear el código de tu TV": "Scan your TV's code again", "Vuelve a escanear": "Scan again", "Escanear": "Scan",
+    "Tu TV quitó este iPhone de sus aparatos.": "Your TV removed this iPhone from its devices.",
+    "Tu TV ahora le da una llave a cada aparato.": "Your TV now gives each device its own key.",
+    "Aparatos de tu TV": "Your TV's devices", "Buscando tus aparatos…": "Looking for your devices…",
+    "Cada uno entra con su propia llave. Quitar uno no se deshace: tendría que escanear el código otra vez.": "Each one gets in with its own key. Removing one can't be undone: it would have to scan the code again.",
+    "¿Quitar %@?": "Remove %@?", "Este aparato": "This device", "Se usó %@": "Used %@", "Sin usarse todavía": "Not used yet",
+    "Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.": "This iPhone stops talking to your TV until you scan its code again. It can't be undone.",
+    "Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.": "It stops talking to your TV until it scans the code again. It can't be undone.",
+    "Pasar a la TV": "Send to the TV", "Usar la de la TV": "Use the TV's", "Tu TV": "Your TV",
+    "Tu TV usará la clave de este iPhone": "Your TV will use this iPhone's key", "Este iPhone usará la clave de tu TV": "This iPhone will use your TV's key",
+    "Real-Debrid revisa la clave antes de guardarla. Nunca se muestra completa.": "Real-Debrid checks the key before it's saved. It's never shown in full.",
+    "Tu TV usará esta clave": "Your TV will use this key",
+    "Termina en ••••%@. Si Real-Debrid no la reconoce, tu TV se queda con la que tenía.": "Ends in ••••%@. If Real-Debrid doesn't recognize it, your TV keeps the one it had.",
+    "Reemplaza la de este iPhone si Real-Debrid la acepta con Premium.": "It replaces this iPhone's if Real-Debrid accepts it with Premium.",
+    "Hablando con tu TV…": "Talking to your TV…",
+    "Tu TV ya usa tu clave · termina en %@ · Premium": "Your TV now uses your key · ends in %@ · Premium",
+    "Tu TV ya usa tu clave · termina en %@": "Your TV now uses your key · ends in %@",
+    "Listo: este iPhone ya usa la clave de tu TV": "Done: this iPhone now uses your TV's key",
+    "Tu TV todavía no tiene clave de Real-Debrid.": "Your TV doesn't have a Real-Debrid key yet.",
+    "Esa cuenta de Real-Debrid no tiene Premium: no la guardé.": "That Real-Debrid account doesn't have Premium: I didn't save it.",
+    "Este código ya no sirve": "This code no longer works", "Real-Debrid no la reconoce": "Real-Debrid doesn't recognize it",
+    "Tu TV ya tiene 10 aparatos. Quita uno en Ajustes › Cuentas": "Your TV already has 10 devices. Remove one in Settings › Accounts",
+    "Tu TV contestó algo que no entiendo. Vuelve a escanear el código.": "Your TV answered something I don't understand. Scan the code again.",
     # Decisiones de Real-Debrid (3 nov, P1-A…P6-A) y lo suelto (C8, M3).
     "Bajando": "Downloading", "Bajando · %lld de %lld": "Downloading · %lld of %lld", "Ya terminaron": "Finished",
     "Toca un pedido para ver qué puedes hacer. Los que terminan se quedan una semana.": "Tap a request to see what you can do. Finished ones stay for a week.",

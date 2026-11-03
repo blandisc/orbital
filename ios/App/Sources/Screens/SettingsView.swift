@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var showsFollowed = false
     @State private var showsRequests = false
     @State private var showsPlayback = false
+    @State private var showsOrbital = false
     @State private var showsDemoPage = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State private var orbitalSetup: OrbitalSetupStart?
@@ -145,6 +146,8 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { showsRequests = true } }
         .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
+        .navigationDestination(isPresented: $showsOrbital) { page("Tu Orbital") { orbitalSection(model) } }   // `-demo-settings-page orbital` (K1)
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "orbital" { showsOrbital = true } }
         // `-demo-settings-page torrentio|addons|realdebrid`: Complementos, Torrentio y tu cuenta de Real-Debrid (Fase 3).
         .navigationDestination(isPresented: $showsDemoPage) { DemoSettingsPage(name: Demo.value(after: "-demo-settings-page") ?? "", debrid: debrid.model) }
         .task { if Demo.isOn, ["torrentio", "addons", "realdebrid"].contains(Demo.value(after: "-demo-settings-page") ?? "") { showsDemoPage = true } }
@@ -166,7 +169,7 @@ struct SettingsView: View {
             if on {
                 NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
                     SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series,
-                                value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
+                                value: env.services.orbitalNeedsRescan ? Text("Vuelve a escanear") : env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
                 }
                 NavigationLink { VoiceGuideView() } label: {   // la voz le da órdenes a tu Orbital
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
@@ -380,6 +383,7 @@ struct SettingsView: View {
 
     @ViewBuilder func orbitalSection(_ model: SettingsModel) -> some View {
         let connected = env.services.orbital.isConfigured
+        OrbitalRescanProblem { orbitalSetup = .connect }   // K1: «Vuelve a escanear el código de tu TV», solo cuando pasa
         Section {
             if connected {
                 Label {
@@ -416,6 +420,7 @@ struct SettingsView: View {
             Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Trakt se conecta aparte en cada uno.")
         }
         .listRowBackground(DS.surface)
+        OrbitalDevicesSection()   // K1: los aparatos de tu TV, con «Quitar»
     }
 
     // MARK: Trakt

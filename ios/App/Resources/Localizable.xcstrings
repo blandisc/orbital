@@ -1,6 +1,693 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Vuelve a escanear el código de tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan your TV's code again"
+          }
+        }
+      }
+    },
+    "Vuelve a escanear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan again"
+          }
+        }
+      }
+    },
+    "Escanear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan"
+          }
+        }
+      }
+    },
+    "Tu TV quitó este iPhone de sus aparatos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV quitó este iPhone de sus aparatos."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV quitó este iPad de sus aparatos."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV quitó esta Mac de sus aparatos."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV quitó este iPhone de sus aparatos."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV removed this iPhone from its devices."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV removed this iPad from its devices."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV removed this Mac from its devices."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV removed this iPhone from its devices."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu TV ahora le da una llave a cada aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV now gives each device its own key."
+          }
+        }
+      }
+    },
+    "Aparatos de tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV's devices"
+          }
+        }
+      }
+    },
+    "Buscando tus aparatos…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking for your devices…"
+          }
+        }
+      }
+    },
+    "Cada uno entra con su propia llave. Quitar uno no se deshace: tendría que escanear el código otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each one gets in with its own key. Removing one can't be undone: it would have to scan the code again."
+          }
+        }
+      }
+    },
+    "¿Quitar %@?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@?"
+          }
+        }
+      }
+    },
+    "Este aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device"
+          }
+        }
+      }
+    },
+    "Se usó %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used %@"
+          }
+        }
+      }
+    },
+    "Sin usarse todavía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not used yet"
+          }
+        }
+      }
+    },
+    "Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este iPad deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este Mac deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone stops talking to your TV until you scan its code again. It can't be undone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPad stops talking to your TV until you scan its code again. It can't be undone."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This Mac stops talking to your TV until you scan its code again. It can't be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone stops talking to your TV until you scan its code again. It can't be undone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It stops talking to your TV until it scans the code again. It can't be undone."
+          }
+        }
+      }
+    },
+    "Pasar a la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to the TV"
+          }
+        }
+      }
+    },
+    "Usar la de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the TV's"
+          }
+        }
+      }
+    },
+    "Tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV"
+          }
+        }
+      }
+    },
+    "Tu TV usará la clave de este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV usará la clave de este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV usará la clave de este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV usará la clave de esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu TV usará la clave de este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV will use this iPhone's key"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV will use this iPad's key"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV will use this Mac's key"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your TV will use this iPhone's key"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Este iPhone usará la clave de tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este iPhone usará la clave de tu TV"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este iPad usará la clave de tu TV"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este Mac usará la clave de tu TV"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este iPhone usará la clave de tu TV"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone will use your TV's key"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPad will use your TV's key"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This Mac will use your TV's key"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone will use your TV's key"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Real-Debrid revisa la clave antes de guardarla. Nunca se muestra completa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid checks the key before it's saved. It's never shown in full."
+          }
+        }
+      }
+    },
+    "Tu TV usará esta clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV will use this key"
+          }
+        }
+      }
+    },
+    "Termina en ••••%@. Si Real-Debrid no la reconoce, tu TV se queda con la que tenía.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends in ••••%@. If Real-Debrid doesn't recognize it, your TV keeps the one it had."
+          }
+        }
+      }
+    },
+    "Reemplaza la de este iPhone si Real-Debrid la acepta con Premium.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Reemplaza la de este iPhone si Real-Debrid la acepta con Premium."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Reemplaza la de este iPad si Real-Debrid la acepta con Premium."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Reemplaza la de esta Mac si Real-Debrid la acepta con Premium."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Reemplaza la de este iPhone si Real-Debrid la acepta con Premium."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It replaces this iPhone's if Real-Debrid accepts it with Premium."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It replaces this iPad's if Real-Debrid accepts it with Premium."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It replaces this Mac's if Real-Debrid accepts it with Premium."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It replaces this iPhone's if Real-Debrid accepts it with Premium."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Hablando con tu TV…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talking to your TV…"
+          }
+        }
+      }
+    },
+    "Tu TV ya usa tu clave · termina en %@ · Premium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV now uses your key · ends in %@ · Premium"
+          }
+        }
+      }
+    },
+    "Tu TV ya usa tu clave · termina en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV now uses your key · ends in %@"
+          }
+        }
+      }
+    },
+    "Listo: este iPhone ya usa la clave de tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: este iPhone ya usa la clave de tu TV"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: este iPad ya usa la clave de tu TV"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: esta Mac ya usa la clave de tu TV"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: este iPhone ya usa la clave de tu TV"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this iPhone now uses your TV's key"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this iPad now uses your TV's key"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this Mac now uses your TV's key"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this iPhone now uses your TV's key"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu TV todavía no tiene clave de Real-Debrid.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV doesn't have a Real-Debrid key yet."
+          }
+        }
+      }
+    },
+    "Esa cuenta de Real-Debrid no tiene Premium: no la guardé.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That Real-Debrid account doesn't have Premium: I didn't save it."
+          }
+        }
+      }
+    },
+    "Este código ya no sirve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This code no longer works"
+          }
+        }
+      }
+    },
+    "Real-Debrid no la reconoce": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't recognize it"
+          }
+        }
+      }
+    },
+    "Tu TV ya tiene 10 aparatos. Quita uno en Ajustes › Cuentas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV already has 10 devices. Remove one in Settings › Accounts"
+          }
+        }
+      }
+    },
+    "Tu TV contestó algo que no entiendo. Vuelve a escanear el código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV answered something I don't understand. Scan the code again."
+          }
+        }
+      }
+    },
     "%@ puntos · días de Premium": {
       "extractionState": "manual",
       "localizations": {

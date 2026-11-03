@@ -21,7 +21,7 @@ public final class DebridModel: ObservableModel {
     public enum KeyCheck: Equatable, Sendable { case checking, confirmed, rejected, unreachable }
     public private(set) var keyCheck: KeyCheck = .checking { didSet { if oldValue != keyCheck { changed() } } }
     public var token = "" { didSet { if oldValue != token { check = .idle; changed() } } }
-    private let services: Services
+    let services: Services
 
     public init(_ services: Services) {
         self.services = services
@@ -61,16 +61,25 @@ public final class DebridModel: ObservableModel {
             let found = try await services.debrid.verify(clean)
             guard clean == token.trimmingCharacters(in: .whitespacesAndNewlines) else { return }   // cambiaste la clave mientras
             guard found.isPremium else { check = .free(found); return }
-            await services.debrid.save(token: clean, status: found)
-            services.addonList.startWithRecommended()
-            await services.resetAccountCaches()
-            status = found
-            keyCheck = .confirmed   // la acabas de pegar y Real-Debrid la aceptó
+            await keep(clean, found)
             check = .ok(found)
         } catch let error as DebridError {
             check = .failed(error.description)
         } catch { check = .failed(DebridError.unexpected.description) }
     }
+
+    /// Guarda una clave que Real-Debrid ya aceptó (Premium): la pegada o la de tu TV.
+    func keep(_ clean: String, _ found: DebridStatus) async {
+        await services.debrid.save(token: clean, status: found)
+        services.addonList.startWithRecommended()
+        await services.resetAccountCaches()
+        status = found
+        keyCheck = .confirmed   // Real-Debrid la acaba de aceptar
+    }
+
+    /// K1 · «Pasar a la TV» y «Usar la de la TV»: trabajando, lo que quedó o por qué no (en palabras).
+    public enum TVShare: Equatable, Sendable { case idle, working, passed(OrbitalTVDebrid), used, failed(String) }
+    public internal(set) var tvShare: TVShare = .idle { didSet { if oldValue != tvShare { changed() } } }
 
     /// D1: las últimas 4 letras de tu clave («3F2A»); nunca completa.
     public var keyTail: String? { services.debrid.keyTail }

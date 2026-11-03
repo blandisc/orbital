@@ -8,7 +8,8 @@ import OrbitalAddons
 /// iguales, ya está.
 ///
 /// Solo en Orbital Ultra con una TV emparejada (S4): en Plus, o sin TV, no hace nada y Complementos no dice nada de la TV.
-/// Nunca manda una clave: «Pasar a la TV» y «Usar la de la TV» esperan las llaves por aparato (K1).
+/// Sin llave por aparato nunca manda una clave. Con llave (K1) escribe solo `enabled[<su id>]`, lo que lleva clave también
+/// viaja, y los de la TV que este aparato no tiene se piden una vez con `?full=1` y se guardan aquí (la dirección, en el llavero).
 @MainActor
 public final class AddonTVSync: ObservableModel {
     public enum Status: Equatable, Sendable {
@@ -49,27 +50,47 @@ public final class AddonTVSync: ObservableModel {
         var base: SharedAddonList?
         var links: [String: String] = [:]
         var pending = false
+        /// K1 · los de la TV ya pedidos con `?full=1` (cuenta para el tope de 20 por hora: no se piden otra vez).
+        var fullAsked: [String] = []
+
+        init() {}
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            base = try c.decodeIfPresent(SharedAddonList.self, forKey: .base)
+            links = try c.decodeIfPresent([String: String].self, forKey: .links) ?? [:]
+            pending = try c.decodeIfPresent(Bool.self, forKey: .pending) ?? false
+            fullAsked = try c.decodeIfPresent([String].self, forKey: .fullAsked) ?? []
+        }
     }
 
     private let list: AddonList
     private let vault: AddonVault
     private let remote: AddonListRemote
     private let available: @MainActor () -> Bool
-    private let device: String
+    private let device: @MainActor () -> AddonDevice
     private let deviceName: @MainActor () -> String
+    /// El nombre y lo que aporta un complemento, de su manifiesto (para guardar uno de la TV). nil: no se guardan.
+    private let manifest: (@Sendable (String) async -> (name: String, resources: [String])?)?
     private let clock: @Sendable () -> Date
     private var running: Task<Void, Never>?
     private var again = false
     private var debounce: Task<Void, Never>?
 
-    /// `device`: la llave de este aparato en `enabled` («iphone», «ipad»). Cuando existan las llaves por aparato (K1), será
-    /// el id que dé la TV al emparejar.
+    /// `device`: este aparato en `enabled`: su plataforma («iphone», «ipad») y, con llave (K1), el id que le dio la TV.
     public init(list: AddonList, vault: AddonVault, remote: AddonListRemote, available: @escaping @MainActor () -> Bool,
-                device: String, deviceName: @escaping @MainActor () -> String, clock: @escaping @Sendable () -> Date = { Date() }) {
+                device: @escaping @MainActor () -> AddonDevice, deviceName: @escaping @MainActor () -> String,
+                manifest: (@Sendable (String) async -> (name: String, resources: [String])?)? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
         self.list = list; self.vault = vault; self.remote = remote; self.available = available; self.device = device
-        self.deviceName = deviceName; self.clock = clock
+        self.deviceName = deviceName; self.manifest = manifest; self.clock = clock
         super.init()
         list.onLocalChange = { [weak self] in Task { @MainActor in self?.localChanged() } }
+    }
+
+    /// Sin llave por aparato: la plataforma de siempre.
+    public convenience init(list: AddonList, vault: AddonVault, remote: AddonListRemote, available: @escaping @MainActor () -> Bool,
+                            device: String, deviceName: @escaping @MainActor () -> String, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.init(list: list, vault: vault, remote: remote, available: available, device: { AddonDevice(platform: device) },
+                  deviceName: deviceName, clock: clock)
     }
 
     private var state: State {
@@ -123,7 +144,12 @@ public final class AddonTVSync: ObservableModel {
             clash = Clash(at: tv.changedAt, options: merge.conflicts.map { AddonShare.optionNames[$0] ?? "Orden" }, mine: mine)
         }
         if merge.changed, let onListChanged { await onListChanged() }
-        let plan = list.plan(for: tv, links: saved.links, device: device, changedBy: deviceName(), now: clock())
+        let me = device(), keyed = remote.hasDeviceKey
+        var plan = list.plan(for: tv, links: saved.links, device: me.key, platform: me.platform, deviceKey: keyed, changedBy: deviceName(), now: clock())
+        if keyed, await adopt(plan.tvOnly, into: &saved, device: me) {
+            if let onListChanged { await onListChanged() }
+            plan = list.plan(for: tv, links: saved.links, device: me.key, platform: me.platform, deviceKey: keyed, changedBy: deviceName(), now: clock())
+        }
         saved.links = plan.links
         tvOnly = plan.tvOnly; waitingForKeys = plan.waitingForKeys
         guard plan.needsPut else {
@@ -135,7 +161,7 @@ public final class AddonTVSync: ObservableModel {
         switch await remote.put(plan.body) {
         case .list(let stored):
             saved.base = stored.withoutURLs; saved.pending = false; state = saved
-            tvOnly = list.plan(for: stored, links: saved.links, device: device, changedBy: deviceName(), now: clock()).tvOnly
+            tvOnly = list.plan(for: stored, links: saved.links, device: me.key, platform: me.platform, deviceKey: keyed, changedBy: deviceName(), now: clock()).tvOnly
             status = .same(at: stored.changedAt, by: stored.changedBy)
         case .conflict(let current) where retries > 0:
             await settle(current, retries: retries - 1)
@@ -144,6 +170,24 @@ public final class AddonTVSync: ObservableModel {
         case .outdated: status = .outdated
         case .unreachable: status = .unreachable
         }
+    }
+
+    /// K1 · los de la TV que este aparato no tiene: una sola lectura con `?full=1` (tope de 20 por hora) y se guardan aquí
+    /// con su dirección completa en el llavero. Cada uno se pide una vez. Devuelve si se guardó alguno.
+    private func adopt(_ tvOnly: [SharedAddon], into saved: inout State, device me: AddonDevice) async -> Bool {
+        let wanted = tvOnly.filter { !$0.isTVFiles && !saved.fullAsked.contains($0.id) }
+        guard let manifest, !wanted.isEmpty, case .list(let full) = await remote.get(full: true) else { return false }
+        saved.fullAsked.append(contentsOf: wanted.map(\.id))
+        var added = false
+        for shared in wanted {
+            guard let url = full.addons.first(where: { $0.id == shared.id })?.url, let found = await manifest(url),
+                  let id = list.adoptFromTV(shared, url: url, name: found.name, resources: found.resources, device: me.key, platform: me.platform)
+            else { continue }
+            saved.links[id] = shared.id
+            added = true
+        }
+        state = saved
+        return added
     }
 
     /// «Usar la de este iPhone» (S3): tus opciones de antes del choque vuelven y se mandan.

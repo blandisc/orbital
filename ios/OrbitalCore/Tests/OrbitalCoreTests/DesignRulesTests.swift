@@ -349,7 +349,8 @@ final class DesignRulesTests: XCTestCase {
     func testWhatTheScreenSaysIsTrueWhenItOpens() throws {
         let page = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "DebridAccountView.swift" })
         var problems: [String] = []
-        if !page.lines.contains(where: { $0.contains(".task { await model.recheck() }") }) { problems.append("la página no revisa tu clave al abrirse") }
+        // Una vez por visita (da8f60e3: al volver de «Tus pedidos» o «Cambiar clave» no se pregunta otra vez).
+        if !page.lines.contains(where: { $0.contains(".task {") && $0.contains("await model.recheck() }") }) { problems.append("la página no revisa tu clave al abrirse") }
         for (i, line) in page.lines.enumerated() where line.contains("Text(\"Conectada\")") && !line.contains("case .confirmed") {
             problems.append("\(page.path):\(i + 1): «Conectada» sin confirmar en esta visita")
         }

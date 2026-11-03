@@ -7,6 +7,9 @@ public struct OrbitalRemote: Sendable {
         case notConfigured, badToken, unreachable, refused(String)
         /// La consola no tiene esa ruta (versión anterior): el iPhone esconde lo que la usa.
         case outdated
+        /// K1: la TV ya reparte llaves por aparato y este no tiene la suya (401 `device_key_required`), o la TV lo quitó
+        /// (401 `device_removed`). Las dos se arreglan igual: «Escanear» el código de la TV.
+        case needsKey, removed
         public var description: String {
             switch self {
             case .notConfigured: "Prende «Usar con tu Orbital» en Ajustes para conectarla."
@@ -14,6 +17,7 @@ public struct OrbitalRemote: Sendable {
             case .unreachable: "Tu Orbital no contesta. ¿Está prendida la consola?"
             case .refused(let message): message
             case .outdated: "Actualiza tu Orbital para usar el control completo."
+            case .needsKey, .removed: OrbitalRemote.rescanLine
             }
         }
     }
@@ -22,6 +26,10 @@ public struct OrbitalRemote: Sendable {
     public let base: URL?
     private let token: String
     private let device: Device?
+    /// K1 · la llave de este aparato («od1.<id>.<secreto>», del llavero): si está, va en lugar del token del túnel.
+    private let deviceKey: String
+    /// A quién avisarle de un 401 con `device_key_required` o `device_removed` (Services: la frase de «Escanear»).
+    public var authProblem: (@Sendable (Failure) -> Void)?
 
     /// Qué aparato le habla a tu Orbital: iPhone e iPad usan el mismo token, y así la TV distingue cuál sigue conectado
     /// (Ajustes › Cuentas: «iPhone de Fernando · ✓ Conectado» / «iPad · Lo usaste hace 3 h»). Va en cada petición como
@@ -39,20 +47,22 @@ public struct OrbitalRemote: Sendable {
         }
     }
 
-    /// `orbital-ios://pair?u=<dirección>&t=<token>` (el QR de «Conectar iPhone» en la TV).
+    /// `orbital-ios://pair?u=<dirección>&t=<token>` (el QR de «Conectar iPhone» en la TV, v1). El de v2 (`pairingLink`) no
+    /// trae token: aquí da nil.
     public static func pairing(_ url: URL) -> (address: String, token: String)? {
-        guard url.scheme == "orbital-ios", url.host == "pair", let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
-              let address = items.first(where: { $0.name == "u" })?.value, normalize(address) != nil,
-              let token = items.first(where: { $0.name == "t" })?.value, !token.isEmpty else { return nil }
-        return (address, token)
+        if case .token(let address, let token)? = pairingLink(url) { return (address, token) }
+        return nil
     }
 
-    public init(http: HTTPClient, address: String, token: String, device: Device? = nil) {
+    public init(http: HTTPClient, address: String, token: String, device: Device? = nil, deviceKey: String? = nil) {
         self.http = http; self.token = token.trimmingCharacters(in: .whitespacesAndNewlines); self.device = device
+        self.deviceKey = OrbitalDeviceKey.isValid(deviceKey ?? "") ? deviceKey ?? "" : ""
         self.base = Self.normalize(address)
     }
 
-    public var isConfigured: Bool { base != nil && !token.isEmpty }
+    public var isConfigured: Bool { base != nil && (!token.isEmpty || hasDeviceKey) }
+    /// ¿Habla con su llave por aparato (K1)?
+    public var hasDeviceKey: Bool { !deviceKey.isEmpty }
 
     /// «orbital.midominio.com», «https://orbital.midominio.com/» o con ruta: siempre https y sin la barra final. `http://`
     /// solo hacia tu red privada de Tailscale (100.64.0.0/10 o `*.ts.net`, que ya va cifrada): por ahí viaja tu token, y por
@@ -98,6 +108,8 @@ public struct OrbitalRemote: Sendable {
     /// la aplicación de Trakt y el país. La sesión de Trakt de la consola no viaja: cada dispositivo conecta la suya con un código.
     public struct Keys: Sendable, Equatable {
         public var tmdbKey: String, traktClientID: String, region: String
+        /// K1 · `"pairing": 2`: la TV reparte llaves por aparato (QR v2). 1: una TV de antes (solo el token del túnel).
+        public var pairing = 1
         public init(tmdbKey: String, traktClientID: String, region: String) {
             self.tmdbKey = tmdbKey; self.traktClientID = traktClientID; self.region = region
         }
@@ -106,7 +118,9 @@ public struct OrbitalRemote: Sendable {
     public func keys() async throws -> Keys {
         let json = try await send("api/companion", method: "GET", body: nil)
         func text(_ key: String) -> String { json?[key]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-        return Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
+        var keys = Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
+        keys.pairing = json?["pairing"]?.intValue ?? 1
+        return keys
     }
 
     /// Pone en la TV un título de Stremio (película o el episodio `videoID`), desde donde ibas.
@@ -527,9 +541,11 @@ public struct OrbitalRemote: Sendable {
 
     /// La petición a `path` con el token y el aparato (sin mandarla).
     func request(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?, timeout: TimeInterval) throws -> HTTPRequest {
-        guard let base, !token.isEmpty else { throw Failure.notConfigured }
-        var headers = ["Authorization": "Bearer \(token)"]
+        guard let base, isConfigured else { throw Failure.notConfigured }
+        // K1: con llave, la llave (y la TV ignora `X-Orbital-Device-Id`, así que ya no va); sin ella, el token del túnel.
+        var headers = ["Authorization": "Bearer \(hasDeviceKey ? deviceKey : token)"]
         if let device { headers.merge(device.headers) { mine, _ in mine } }
+        if hasDeviceKey { headers["X-Orbital-Device-Id"] = nil }
         if body != nil { headers["Content-Type"] = "application/json" }
         var components = URLComponents(url: base.appendingPathComponent(path), resolvingAgainstBaseURL: false)
         if !query.isEmpty { components?.queryItems = query }
@@ -544,8 +560,8 @@ public struct OrbitalRemote: Sendable {
         catch { if Task.isCancelled { throw CancellationError() }; throw Failure.unreachable }   // cancelar no es «la consola no contesta»
         switch response.status {
         case 200..<300: return JSON.parse(response.data)
-        case 401, 403: throw Failure.badToken
-        case 429: throw Failure.refused("Tu Orbital pidió esperar un poco: demasiados intentos.")
+        case 401, 403: throw authFailure(response)
+        case 429: throw Failure.refused(Self.waitLine)
         case 404 where path == "api/companion/input" || path == "api/companion/text" || path == "api/voice/hints":
             throw Failure.outdated
         case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"):

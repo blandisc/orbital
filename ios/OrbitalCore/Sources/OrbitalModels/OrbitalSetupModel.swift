@@ -27,28 +27,29 @@ public final class OrbitalSetupModel: ObservableModel {
     /// A dónde quedó conectada («orbital.casa»).
     public var host: String { services.orbital.base?.host ?? "" }
 
-    /// Lo que leyó la cámara: el código de la TV es un enlace `orbital-ios://pair?u=…&t=…`.
+    /// Lo que leyó la cámara: el código de la TV es un enlace `orbital-ios://pair?u=…&t=…` (v1) o
+    /// `orbital-ios://pair?v=2&u=…&c=…` (v2, K1: un código de un solo uso que se cambia por la llave de este aparato).
     public func scanned(_ payload: String) async {
         guard !connecting else { return }
-        guard let url = URL(string: payload.trimmingCharacters(in: .whitespacesAndNewlines)), let pair = OrbitalRemote.pairing(url) else {
+        guard let url = URL(string: payload.trimmingCharacters(in: .whitespacesAndNewlines)), let link = OrbitalRemote.pairingLink(url) else {
             problem = "Ese código no es de Orbital. En la TV abre Ajustes › Cuentas › iPhone."
             return
         }
-        await connect(address: pair.address, token: pair.token)
+        await connect(link)
     }
 
     /// «Conectar a mano»: la dirección y el token (el mismo de Alexa).
     public func connectByHand(address: String, token: String) async {
         let address = address.trimmingCharacters(in: .whitespaces), token = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !address.isEmpty, !token.isEmpty else { problem = "Escribe la dirección y el token."; return }
-        await connect(address: address, token: token)
+        await connect(.token(address: address, token: token))
     }
 
-    private func connect(address: String, token: String) async {
+    private func connect(_ link: OrbitalPairing) async {
         connecting = true; problem = nil
         defer { connecting = false }
         do {
-            try await services.connectOrbital(address: address, token: token)
+            try await services.pair(link)
             stage = .connected
         } catch {
             // No contestó o no aceptó el token: se queda apagada, como estaba.

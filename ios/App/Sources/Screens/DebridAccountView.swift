@@ -92,6 +92,7 @@ struct DebridAccountView: View {
         } header: { Text("Tu cuenta") } footer: { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. No se renueva solo.") }
         .listRowBackground(DS.surface)
         requestsSection()
+        DebridTVSection(debrid: model)   // K1: «Pasar a la TV» y «Usar la de la TV», solo con llave y una TV que las reparte
         keySection(model, key)
     }
 
@@ -185,6 +186,7 @@ struct DebridAccountView: View {
             Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
         } header: { Text("Tu clave") } footer: { Text("Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.") }
         .listRowBackground(DS.surface)
+        DebridTVSection(debrid: model)   // K1: sin clave aquí, «Usar la de la TV»
     }
 
     /// «Vence el sábado 21 de noviembre · quedan 18 días»; «Vence hoy»; «Venció el …»; sin fecha, lo de siempre.

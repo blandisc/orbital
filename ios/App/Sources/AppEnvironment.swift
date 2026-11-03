@@ -352,7 +352,7 @@ final class AppEnvironment {
         // Un video que te pasaron (AirDrop, Archivos, «Abrir con…»).
         if url.isFileURL { return await openFile(url) }
         // El QR de «Conectar iPhone» en la TV: queda conectada sin escribir nada.
-        if let pair = OrbitalRemote.pairing(url) { return await pairWithOrbital(address: pair.address, token: pair.token) }
+        if let link = OrbitalRemote.pairingLink(url) { return await pairWithOrbital(link) }
         // El widget «Lo siguiente para ti»: reproducir donde ibas o abrir la ficha.
         if let link = WidgetLink.parse(url) { return await open(link) }
         guard let result = Infuse.parseCallback(url) else { return }
