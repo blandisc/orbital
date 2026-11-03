@@ -120,6 +120,10 @@ export const api = {
   consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
+  // Por qué no hay una versión que arranque ya, y «Pedirlo y avisarme» a Real-Debrid (orbital/rd_requests.py).
+  stremioAvailability: (kind, id, video) =>
+    request(`/api/stremio/availability?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
+  stremioRequest: ({ kind, id, video, title }) => post("/api/stremio/request", { kind, id, video, title }),
   focusWindow: (id) => post("/api/windows/focus", { id }),
   // «Para ti»
   voiceCommands: () => request("/api/voice/commands"),

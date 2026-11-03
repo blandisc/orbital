@@ -1,6 +1,6 @@
 /**
  * Que el foco se sienta físico (docs/sistema-de-diseno.md · Movimiento): hacia dónde vas (las tarjetas reciben el foco con un
- * leve empujón y el brillo las cruza en esa dirección: card.css · focus-sweep) y A que hunde lo enfocado al 97 % y lo
+ * leve empujón de ese lado: card.css · focus-lean) y A que hunde lo enfocado al 97 % y lo
  * regresa (ui.css · is-pressed). Con el mouse y el dedo, lo mismo lo hace :active. Todo es CSS: «Reducir movimiento» lo apaga.
  */
 import { tokenMs } from "./tokens.js";

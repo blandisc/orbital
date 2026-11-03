@@ -2366,10 +2366,22 @@ const saver = (() => {
       // contar cuando vuelves (si no, el protector salía a los 15 s de regresar de una película).
       if (playing()) last = Date.now();
       if (back !== null || !minutes() || busy() || Date.now() - last < minutes() * 60_000) return;
-      start();
+      // Antes de ponerlo, se pregunta al servidor qué hay abierto: si se perdió un aviso de «status» (la conexión se
+      // reinició), la página creía que no había nada y el protector salía detrás del video (Fernando, 2 nov 2026).
+      api.status().then(({ running }) => {
+        applyStatus(running);
+        if (back === null && !busy()) start();
+      }).catch(() => {});
+    },
+    /** Orbital vuelve a verse con el protector puesto: el mosaico sigue su deriva y trae sus pósters (tapado, el navegador
+     * no anima ni carga imágenes, y se quedaba congelado y con huecos). */
+    resume() {
+      if (back !== null) ui.foryou.screensaver(true);
     },
   };
 })();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) saver.resume(); });
+window.addEventListener("focus", () => saver.resume());
 setInterval(() => saver.check(), 15_000);
 for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => { stir(); saver.wake(); }, { capture: true, passive: true });
 

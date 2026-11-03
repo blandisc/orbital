@@ -230,6 +230,26 @@ def router(d: Deps) -> APIRouter:
         return {"sources": [s.public() for s in found], "audio": prefs.audio, "spanish": prefs.spanish,
                 "quality": prefs.quality, "meta": info, "recommended": recommended}
 
+    @r.get("/availability")
+    def availability(kind: str, id: str, video: str | None = None) -> dict:
+        """Por qué no hay una versión que arranque ya y qué se puede hacer (la ficha lo dice; RD-1, RD-5)."""
+        if kind not in ("movie", "series") or not _clean_id(id) or (video is not None and not _clean_id(video)):
+            raise HTTPException(400, "Falta qué buscar")
+        return catalog.watch.availability(kind, id, video or id)
+
+    @r.post("/request")
+    def request_debrid(body: dict) -> dict:
+        """«Pedirlo y avisarme»: Real-Debrid lo empieza a bajar; al terminar llega el aviso «Ya está…»."""
+        kind, meta_id, video = body.get("kind"), body.get("id"), body.get("video") or body.get("id")
+        if kind not in ("movie", "series") or not _clean_id(meta_id) or not _clean_id(video):
+            raise HTTPException(400, "Falta qué pedir")
+        meta_id, video = str(meta_id), str(video)
+        try:
+            request = catalog.watch.request_debrid(kind, meta_id, video, str(body.get("title") or "")[:200])
+        except LookupError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        return {"request": request, "availability": catalog.watch.availability(kind, meta_id, video)}
+
     @r.post("/play")
     def play(body: PlayRequest) -> dict:
         """Con `source`: esa fuente. Sin ella (y con el reproductor de Orbital): la recomendada, directo."""

@@ -52,6 +52,13 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
   tabs.addEventListener("scroll", () => markTabEdges(), { passive: true });
   const list = h("div", { class: "title__episodes", role: "group" });
+  // El borde se desvanece solo del lado donde hay más episodios: a la izquierda los que ya pasaste; a la derecha, solo si
+  // la temporada sigue (antes el último de la temporada salía difuminado aunque no hubiera nada después).
+  const markEpisodeEdges = () => {
+    list.classList.toggle("title__episodes--more-left", list.scrollLeft > 2);
+    list.classList.toggle("title__episodes--more-right", list.scrollLeft + list.clientWidth < list.scrollWidth - 2);
+  };
+  list.addEventListener("scroll", markEpisodeEdges, { passive: true });
   const browser = h("div", { class: "title__browser" }, tabs, list);
   // Al bajar desde los botones, lo de abajo de la ficha del iPhone y en su orden: Reparto y equipo, La saga, Más como esto
   // y Detalles. Cada parte con el encabezado de toda la app (su título y, a la derecha, lo que dice: «Quién sale y quién la
@@ -78,6 +85,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let item = null;
   let details = null;
   let plays = null; // { video_id, line }: cómo va a sonar «Ver» (lo dice el servidor)
+  let ask = null; // por qué no hay versión que arranque ya y si se puede pedir a Real-Debrid (api.stremioAvailability)
+  let askTimer = 0;
   let buttons = [];
   let zone = "actions"; // "about" (la sinopsis) | "actions" | "episodes" | una parte de abajo (PANEL)
   let aboutOpen = false; // la sinopsis completa, sin cortar
@@ -354,7 +363,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = arrange(titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt(), following }));
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt(), following,
+      request: ask?.can_request ? "ask" : ask?.why === "requested" ? (ask.request?.percent ?? 0) : null }));
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
@@ -517,6 +527,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     if (left - room < list.scrollLeft) next = left - room;
     else if (left + node.offsetWidth + room > list.scrollLeft + list.clientWidth) next = left + node.offsetWidth + room - list.clientWidth;
     list.scrollTo({ left: Math.max(0, next), behavior: motion(smooth ? "smooth" : "auto") });
+    requestAnimationFrame(markEpisodeEdges); // sin desplazarse (otra temporada, la misma posición) no llega «scroll»
   }
 
   function setIndex(i) {
@@ -588,6 +599,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     else if (button.id === "versions") { const t = target(); if (t && own) onVersions({ ...t, own: true }, own.versions); }
     else if (button.id === "fix") onFix({ kind: kindOf(), imdb: details?.id || item.meta_id, title: details?.title || item.title });
     else if (button.id === "retry") load();
+    else if (button.id === "rd-request") requestDebrid();
     else if (button.id === "more-actions") { expanded = true; renderActions(); onChange(); }
   }
 
@@ -719,12 +731,15 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   async function prefetch(mine) {
     avail.hidden = true;
     plays = null;
+    ask = null;
+    clearTimeout(askTimer);
     const t = canPrefetch() && target();
     if (!t) return;
     try {
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
-      const found = availability(Array.isArray(data?.sources) ? data.sources : []);
+      const list = Array.isArray(data?.sources) ? data.sources : [];
+      const found = availability(list);
       // Lo que se sale de lo que pediste para esta serie («Solo en castellano: no hay latino»), antes que lo demás.
       if (data?.recommended?.note) found.unshift({ warn: data.recommended.note });
       plays = data?.recommended?.line ? { video_id: t.video_id, line: data.recommended.line } : null;
@@ -732,14 +747,55 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       // Un renglón de texto tenue (antes, cinco chips encima del arte): «4K · HDR · Inglés, Español · Al instante».
       // Solo lo que hay que saber: un aviso o que no hay versiones. Lo normal (calidad, idiomas) ya no ocupa un renglón.
       const warns = found.filter((c) => c.warn);
-      mount(avail, !found.length ? h("span", { class: "title__avail-none" }, "Sin versiones por ahora")
-        : warns.map((c) => h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, c.warn)));
-      avail.hidden = found.length > 0 && !warns.length;
+      mount(avail, warns.map((c) => h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, c.warn)));
+      avail.hidden = !warns.length;
+      // Ninguna arranca ya (todas «Hay que bajarla»): por qué y qué hacer, como cuando no hay ninguna.
+      if (!list.some((s) => s.cached || !s.debrid)) explain(mine, t);
     } catch (err) {
-      if (mine === token) {
+      if (mine === token) explain(mine, t, err);
+    }
+  }
+
+  /** Por qué no hay versión que arranque ya, con sus palabras (RD-5: aún no se estrena, sin internet, Real-Debrid no lo
+   * tiene, nadie lo tiene) y, si se puede, «Pedirlo y avisarme» en la fila de botones (RD-1). Pedido, cuánto lleva (RD-3). */
+  async function explain(mine, t, err = null) {
+    let why = null;
+    try {
+      why = await api.stremioAvailability(t.kind, t.id, t.video_id);
+    } catch { /* sin respuesta: lo de antes */ }
+    if (mine !== token) return;
+    if (!why || why.why === "ok") {
+      if (err) {
         mount(avail, h("span", { class: "title__avail-none" }, err?.status === 404 ? "Sin versiones por ahora" : "No pude buscar versiones ahora"));
         avail.hidden = false;
       }
+      return;
+    }
+    ask = why;
+    mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, `${why.message} · ${why.detail}`));
+    avail.hidden = false;
+    renderActions();
+    onChange();
+    if (why.why === "requested") askTimer = setTimeout(() => mine === token && explain(mine, t), 20_000); // cuánto lleva
+  }
+
+  async function requestDebrid() {
+    const t = target();
+    if (!t || !ask?.can_request) return;
+    const mine = token;
+    try {
+      const res = await api.stremioRequest({ kind: t.kind, id: t.id, video: t.video_id, title: details?.title || item?.title });
+      if (mine !== token) return;
+      ask = res.availability;
+      mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, `${ask.message} · ${ask.detail}`));
+      avail.hidden = false;
+      renderActions();
+      onChange();
+      if (ask.why === "requested") askTimer = setTimeout(() => mine === token && explain(mine, t), 20_000);
+    } catch (err) {
+      if (mine !== token) return;
+      mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, err.message || "Real-Debrid no pudo con ese pedido"));
+      avail.hidden = false;
     }
   }
 

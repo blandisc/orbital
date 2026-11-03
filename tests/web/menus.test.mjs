@@ -101,7 +101,7 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   const page = settingsCategory("watch", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
     ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
-    ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Lo que recuerda cada título", undefined]]);
+    ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Lo que recuerda cada título", undefined]]);
   assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "watch" });
   // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
   assert.equal(settingsCategory("watch", { audio: "es" }).options[0].value, "Español (cualquiera)");

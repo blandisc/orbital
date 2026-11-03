@@ -13,21 +13,13 @@
     transform var(--duration-base) var(--ease-spring), margin var(--duration-base) var(--ease-out),
     box-shadow var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
 }
-/* Borde interior fino: separa portadas oscuras del fondo sin cambiar de tamaño al enfocar. */
+/* Borde interior fino: separa portadas oscuras del fondo sin cambiar de tamaño al enfocar. Enfocada ya no le cruza ningún
+   brillo ni destello (Fernando, 2 nov 2026: «quita ese brillo que sale cada vez que seleccionas un póster»): dice cuál es
+   el levantón y el leve empujón de abajo. */
 .card::after {
   content: ""; position: absolute; inset: 0; z-index: var(--z-raised); border-radius: inherit; pointer-events: none;
-  box-shadow: var(--edge-hairline); background: var(--focus-shine); opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
+  box-shadow: var(--edge-hairline);
 }
-/* Enfocada, le cruza el brillo en diagonal (Apple TV): con el levantón, dice cuál es sin anillo. Al llegar, además, un
-   destello la cruza una vez en la dirección en que ibas (core/feel.js pone data-heading), y entra con un leve empujón de ese
-   lado que se asienta con el resorte firme: el foco tiene cuerpo, no aparece. */
-.card--focused::after {
-  opacity: 1; background: var(--focus-sweep), var(--focus-shine); background-size: 300% 100%, 100% 100%; background-position: -50% 0, 0 0;
-  animation: focus-sweep var(--duration-enter) var(--ease-out);
-}
-[data-heading="left"] .card--focused::after { animation-name: focus-sweep-back; }
-@keyframes focus-sweep { from { background-position: 150% 0, 0 0; } }
-@keyframes focus-sweep-back { from { background-position: -150% 0, 0 0; } to { background-position: 150% 0, 0 0; } }
 .card--focused:not(.card--bump-left, .card--bump-right) { animation: focus-lean var(--duration-snappy) var(--ease-snappy); }
 [data-heading="left"] .card--focused:not(.card--bump-left, .card--bump-right) { animation-name: focus-lean-back; }
 @keyframes focus-lean { from { translate: -.3rem 0; } }

@@ -45,7 +45,14 @@ export function downloadAction(job) {
 export const episodesLed = (details, kind = "movie") =>
   !!details && !details.error && (details.kind || kind) === "series" && (details.seasons || []).some((s) => s.episodes?.length);
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false, following = null } = {}) {
+/** «Pedirlo y avisarme» a Real-Debrid (RD-1) o, ya pedido, cuánto lleva. `request`: "ask" | un porcentaje | null. */
+export function debridAction(request) {
+  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedirlo a Real-Debrid y avisarme", short: "Pedirlo" };
+  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Real-Debrid lo baja · ${request} %`, short: `${request} %`, active: true };
+  return null;
+}
+
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false, following = null, request = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -55,7 +62,9 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // y los episodios a la derecha (lo mismo dos veces), y «Versión» y «Descargar» de un episodio que no se veía cuál era.
   // «Guardada» si está en Mi lista o en tu watchlist / una de tus listas de Trakt (como el iPhone).
   const saved = details.in_library || details.saved_elsewhere;
+  const ask = debridAction(request);
   if (episodesLed(details, kind)) {
+    if (ask) out.push(ask); // lo primero de la fila: es lo único que sirve si no hay versión que arranque
     out.push(saved
       ? { id: "mylist", icon: "check", label: "Guardada", active: true }
       : { id: "mylist", icon: "plus", label: "Guardar" });
@@ -94,6 +103,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   }
   // Bajo «Ver», cómo va a sonar («Latino · 1080p · Sin subtítulos»), si es lo que ese botón pone (el mismo episodio).
   if (out[0] && plays?.line && (!out[0].video_id || out[0].video_id === plays.video_id)) out[0].hint = plays.line;
+  if (ask) out.push(ask);
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(saved

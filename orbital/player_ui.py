@@ -1188,39 +1188,81 @@ def channels_panel(categories: list[dict], channels: list[dict], *, focus: str =
 
 
 # --- tarjetas y avisos -------------------------------------------------------------------------------
-def skip_ass(label: str) -> str:
-    """«Saltar intro»: un botón claro abajo a la derecha (A); se va solo."""
+CARD_RISE = 32  # lo que sube una tarjeta al entrar (aparece a la vez: PlayerScreen.CARD_IN)
+STILL_BOX = (242, 136)  # el cuadro del episodio en «Siguiente episodio» (16:9), en el lienzo; la imagen la pone mpv encima
+
+
+def ease_out(t: float) -> float:
+    """Arranca rápido y se asienta despacio (la entrada de las tarjetas y el anillo que se vuelve «cargando»)."""
+    t = max(0.0, min(1.0, t)) if math.isfinite(t) else 1.0
+    return 1 - (1 - t) ** 3
+
+
+def _entering(ass: str, appear: float) -> str:
+    return ass if appear >= 1 else fade(ass, ease_out(appear))
+
+
+def skip_ass(label: str, *, appear: float = 1.0) -> str:
+    """«Saltar intro»: un botón claro abajo a la derecha (A); se va solo. `appear` (0 a 1): entra subiendo."""
     targets["card"] = []
+    placed.pop("still", None)
+    lift = (1 - ease_out(appear)) * CARD_RISE
     if TOUCH:
         w = text_width(label, 24, "bold") + 56
-        x, y = W - MARGIN - w, 780
+        x, y = W - MARGIN - w, 780 + lift
         targets["card"].append((x, y, w, 76, "a"))
-        return "\n".join([rrect(x, y, w, 76, 14, TEXT), text(x + w / 2, y + 38, esc(label), 24, ON_LIGHT, weight="bold", align=5)])
+        return _entering("\n".join([rrect(x, y, w, 76, 14, TEXT),
+                                    text(x + w / 2, y + 38, esc(label), 24, ON_LIGHT, weight="bold", align=5)]), appear)
     gw = glyph(0, 0, "A", 30)[1]  # con teclado, «Espacio»: el botón crece con su glifo
     w = 16 + gw + 12 + text_width(label, 24, "bold") + 28
-    x, y = W - MARGIN - w, 790
+    x, y = W - MARGIN - w, 790 + lift
     shape, gw = glyph(x + 16, y + 32, "A", 30)
-    return "\n".join([rrect(x, y, w, 64, 14, TEXT), shape,
-                      text(x + 16 + gw + 12, y + 32, esc(label), 24, ON_LIGHT, weight="bold", align=4)])
+    return _entering("\n".join([rrect(x, y, w, 64, 14, TEXT), shape,
+                                text(x + 16 + gw + 12, y + 32, esc(label), 24, ON_LIGHT, weight="bold", align=4)]), appear)
 
 
 def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, progress: float | None = None,
-               actions: list[tuple[str, str]] | None = None) -> str:
-    """Tarjeta abajo a la derecha: «Siguiente episodio» con la cuenta atrás en un anillo, o «¿Sigues viendo?»."""
+               actions: list[tuple[str, str]] | None = None, spinner: tuple[float, float] | None = None,
+               still: bool = False, appear: float = 1.0) -> str:
+    """Tarjeta abajo a la derecha: «Siguiente episodio» con la cuenta atrás en un anillo, «¿Sigues viendo?» o, ya
+    elegido, la misma tarjeta «Cargando…» con el anillo girando (`spinner`: (giro, largo del arco), en vueltas).
+
+    `still`: a la izquierda, el lugar del cuadro del episodio (mpv pone la imagen encima, en `placed["still"]`); el anillo
+    pasa a la derecha. `appear` (0 a 1): entra subiendo y apareciendo (PlayerScreen la mueve a 30 cuadros por segundo)."""
     targets["card"] = []
+    circled = seconds is not None or spinner is not None
     # Sin renglón de arriba («¿Sigues viendo?» sin nombre del episodio), la tarjeta es más baja: antes quedaba un hueco.
-    short = 0 if eyebrow or seconds is not None else 32
-    w, h = 660, (206 if TOUCH else 176) - short
-    x, y = W - MARGIN - w, 870 - h
+    short = 0 if eyebrow or circled else 32
+    still = still and not short
+    w, h = (880 if still else 660), (206 if TOUCH else 176) - short
+    x, y = W - MARGIN - w, 870 - h + (1 - ease_out(appear)) * CARD_RISE
     lines = [rrect(x, y, w, h, 20, PANEL, "18")]
-    tx = x + 32
-    if seconds is not None:
-        cx, cy = x + 32 + 50, y + h / 2
-        lines += [circle(cx, cy, 50, TEXT, "C8"), circle(cx, cy, 42, PANEL),
-                  ring(cx, cy, 50, 8, 1 if progress is None else progress, TEXT),
-                  text(cx, cy, str(seconds), 34, weight="bold", align=5)]
-        tx = x + 32 + 100 + 28
-    room = x + w - 32 - tx
+    tx, right = x + 32, x + w - 32
+    if still:
+        sw, sh = STILL_BOX
+        sx, sy = x + 20, y + (h - sh) / 2
+        lines.append(rrect(sx, sy, sw, sh, 12, TEXT, "E6"))  # el lugar del cuadro mientras llega (y si no llega)
+        placed["still"] = (sx, sy, sw, sh)
+        tx = sx + sw + 28
+    else:
+        placed.pop("still", None)
+    if circled:
+        r, thick = (44, 7) if still else (50, 8)
+        cx, cy = (right - r, y + h / 2) if still else (x + 32 + r, y + h / 2)
+        lines += [circle(cx, cy, r, TEXT, "C8"), circle(cx, cy, r - thick, PANEL)]
+        if spinner is not None:
+            turn, length = spinner
+            if length > .005:
+                start = -90 + 360 * turn
+                lines.append(arc(cx, cy, r - thick / 2, thick, start, start + 360 * min(1.0, length), TEXT))
+        else:
+            lines += [ring(cx, cy, r, thick, 1 if progress is None else progress, TEXT),
+                      text(cx, cy, str(seconds), 30 if still else 34, weight="bold", align=5)]
+        if still:
+            right = cx - r - 24
+        else:
+            tx = x + 32 + 2 * r + 28
+    room = right - tx
     if eyebrow:
         lines.append(text(tx, y + 30, esc(fit(eyebrow, 22, room, "semi")), 22, MUTED, weight="semi"))
     lines.append(text(tx, y + 62 - short, esc(fit(title, 30, room, "bold")), 30, weight="bold"))
@@ -1229,7 +1271,7 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
         lines.append(pills(touch, y + h - 84, left=tx, layer="card", h=64))
     else:
         lines.append(hints(actions or [], y + h - 40, left=tx))
-    return "\n".join(lines)
+    return _entering("\n".join(lines), appear)
 
 
 # Los avisos van debajo de la hora (antes, a la misma altura, la tapaban: se leía «21:0» a través).

@@ -25,8 +25,9 @@ export function createHero({ onAction, onKind = null }) {
   // Una frase para Alexa según lo enfocado (solo si Alexa está configurada).
   // La frase va al lado de los botones, no debajo: debajo se salía del destacado y se cortaba.
   const row = h("div", { class: "hero__row" }, actions);
-  const content = h("div", { class: "hero__content" }, kinds, eyebrow, logo, title, facts, description, row);
-  const el = h("main", { class: "hero" }, content);
+  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, row);
+  // Las pestañas, fuera de lo que se desvanece al cambiar de título: se quedan quietas (antes parpadeaban con cada cambio).
+  const el = h("main", { class: "hero" }, kinds, content);
   let timer;
 
   /**
@@ -144,6 +145,7 @@ export function createHero({ onAction, onKind = null }) {
   /** Las pestañas Todo · Películas · Series: [[valor, nombre]] y el elegido; sin `choices`, se esconden. */
   function setKinds(choices = null, current = "all") {
     kinds.hidden = !choices;
+    el.classList.toggle("hero--steady", !!choices); // Películas y series: el héroe no cambia de alto entre títulos
     if (!choices) return mount(kinds);
     mount(kinds, choices.map(([value, label]) => Pill(label, { on: value === current, tone: "tab", role: "tab", tabindex: "-1",
       onClick: (event) => { event.stopPropagation(); onKind?.(value); } })));

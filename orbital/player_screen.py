@@ -40,41 +40,218 @@ class PlayerScreen(SubtitleTrial):
     hace cada botón del mando. Se mezcla en OrbitalPlayer: usa su estado (mpv, segment…)."""
 
     # --- tarjetas encima del video -------------------------------------------------------------
+    # Las tarjetas se mueven a 30 cuadros por segundo, en su hilo: entran subiendo y apareciendo, la cuenta atrás corre
+    # seguida (antes saltaba una vez por segundo, con el vistazo del vigilante), cargando el anillo gira, y al irse se
+    # desvanecen. Las pruebas lo apagan con CARD_FRAME = 0 (todo de golpe, como antes).
+    CARD = 4  # la capa de las tarjetas
+    CARD_FRAME = 1 / 30
+    CARD_IN, CARD_OUT = .32, .2  # s: entrar, irse
+    SPIN = .85  # vueltas por segundo del anillo de «Cargando…»
+    SPIN_ARC = .28  # lo largo del arco que gira (en vueltas)
+    MORPH = .45  # s: lo que tarda el anillo de la cuenta atrás en volverse el de «Cargando…»
+    LOADING_MAX = 45.0  # s: si lo siguiente nunca da imagen, la tarjeta se va igual (el aviso de error ya dice qué pasó)
+
     def _show_card(self, card: dict, now: float | None = None) -> None:
+        card.setdefault("shown", time.monotonic())
         self._card = card
         self._draw_card(now)
+        self._animate_card()
+
+    def _card_appear(self, card: dict) -> float:
+        if not self.CARD_FRAME:
+            return 1.0
+        return min(1.0, (time.monotonic() - card.get("shown", 0.0)) / self.CARD_IN)
+
+    def _card_moving(self, card: dict) -> bool:
+        return card["kind"] in ("next", "loading") or self._card_appear(card) < 1
+
+    def _animate_card(self) -> None:
+        """El hilo que mueve la tarjeta mientras haga falta (uno por tarjeta: el de la anterior se detiene solo)."""
+        if not self.CARD_FRAME:
+            return
+        token = object()
+        self._card_anim = token
+
+        def run() -> None:
+            while getattr(self, "_card_anim", None) is token:
+                card = self._card
+                if card is None:
+                    return
+                now = time.monotonic()
+                if card["kind"] == "next" and self.menu is None:
+                    segment = card["segment"]
+                    if segment.upnext_deadline is not None and now >= segment.upnext_deadline:
+                        self._play_next(segment, auto=True)  # justo al vaciarse el anillo (no al siguiente vistazo)
+                        return
+                if card["kind"] == "loading" and now - card["since"] > self.LOADING_MAX:
+                    self._end_loading()
+                    return
+                if self.menu is None:
+                    self._safe(self._draw_card, now)
+                if not self._card_moving(card):
+                    return
+                time.sleep(self.CARD_FRAME)
+
+        threading.Thread(target=run, daemon=True, name="player-card").start()
 
     def _draw_card(self, now: float | None = None) -> None:
         card = self._card
         if card is None:
-            self._overlay(4, None)
+            self._overlay(self.CARD, None)
             return
+        appear = self._card_appear(card)
+        bitmap, room = None, False
         if card["kind"] == "skip":
-            ass = player_ui.skip_ass(card["label"])
+            ass = player_ui.skip_ass(card["label"], appear=appear)
         elif card["kind"] == "quit":
             # Un canal en vivo no guarda avance (no entra en «Seguir viendo»): ahí sería mentira.
             ass = player_ui.upnext_ass(f"¿Salir de {card['title']}?", "TV en vivo" if self._is_live() else "Tu avance se guarda",
-                                       actions=[("A", "Seguir viendo"), ("B", "Salir")])
+                                       actions=[("A", "Seguir viendo"), ("B", "Salir")], appear=appear)
+        elif card["kind"] == "loading":
+            # La misma tarjeta, ya elegido: dice «Cargando…» y su anillo gira hasta que el episodio da imagen (antes se iba
+            # y salía otro aviso, «Cargando T1 E2…», arriba a la derecha).
+            bitmap, room = self._still_state(card.get("still"))
+            spent = time.monotonic() - card["since"]
+            settle = player_ui.ease_out(spent / self.MORPH) if self.CARD_FRAME else 1.0
+            length = self.SPIN_ARC + (card.get("from", 0.0) - self.SPIN_ARC) * (1 - settle)  # el arco que quedaba
+            label, name = card.get("label") or "", card.get("name") or ""
+            ass = player_ui.upnext_ass(name or label or "Siguiente episodio",
+                                       f"Cargando {label}…" if label and name else "Cargando…",
+                                       spinner=(spent * self.SPIN, length), actions=[("B", "Mantén: salir")],
+                                       still=room, appear=appear)
         else:
             segment = card["segment"]
             info = segment.upnext or {}
-            title = " · ".join(p for p in (info.get("label"), info.get("title")) if p)
-            if card["kind"] == "still":
-                ass = player_ui.upnext_ass("¿Sigues viendo?", title, actions=[("A", "Seguir viendo"), ("B", "Mantén: salir")])
+            label, name = info.get("label") or "", info.get("title") or ""
+            bitmap, room = self._still_state(info.get("still"))
+            if card["kind"] == "debrid":  # RD-4: el siguiente no arranca al instante (RD-6: ya se le pidió solo)
+                eyebrow = f"Siguiente episodio · {label}" if label else "Siguiente episodio"
+                if info.get("requested"):
+                    ass = player_ui.upnext_ass("Real-Debrid lo está bajando", eyebrow, actions=[("A", "Avisarme cuando esté"), ("B", "Ver créditos")],
+                                               still=room, appear=appear)
+                else:
+                    ass = player_ui.upnext_ass("Real-Debrid todavía no lo tiene", eyebrow,
+                                               actions=[("A", "Pedirlo y avisarme"), ("B", "Ver créditos")], still=room, appear=appear)
+            elif card["kind"] == "still":
+                ass = player_ui.upnext_ass("¿Sigues viendo?", " · ".join(p for p in (label, name) if p),
+                                           actions=[("A", "Seguir viendo"), ("B", "Mantén: salir")], still=room, appear=appear)
             else:
                 now = time.monotonic() if now is None else now
                 left = max(0.0, (segment.upnext_deadline or now) - now)
-                ass = player_ui.upnext_ass(title or "Siguiente episodio", "Siguiente episodio", seconds=int(left + .99),
-                                           progress=left / UPNEXT_COUNTDOWN, actions=[("A", "Ver ahora"), ("B", "Ver créditos")])
-        self._overlay(4, ass)
+                # Arriba qué es («Siguiente episodio · T1 E2»), abajo su nombre en grande: con el cuadro, el nombre cabe.
+                eyebrow = f"Siguiente episodio · {label}" if label and name else "Siguiente episodio"
+                ass = player_ui.upnext_ass(name or label or "Siguiente episodio", eyebrow, seconds=math.ceil(left),
+                                           progress=left / UPNEXT_COUNTDOWN, actions=[("A", "Ver ahora"), ("B", "Ver créditos")],
+                                           still=room, appear=appear)
+        where = player_ui.placed.get("still") if room else None
+        with self._card_paint:
+            if self._card is not card:
+                return  # se fue mientras se dibujaba (otro hilo): no vuelve a aparecer
+            self._overlay(self.CARD, ass)
+            self._card_last = (ass, where, bitmap)
+            self._show_still(where, bitmap, player_ui.ease_out(appear))
 
     def _hide_card(self) -> None:
-        self._card = None
-        self._overlay(4, None)
+        """Quita la tarjeta (ya no cuenta para A ni B) y, a la vista, se desvanece en CARD_OUT."""
+        with self._card_paint:
+            card, self._card = self._card, None
+            last = getattr(self, "_card_last", None)
+            if card is None or last is None or not self.CARD_FRAME or self.menu is not None:
+                self._overlay(self.CARD, None)
+                return
+            token = object()
+            self._card_ghost = token
+        ass, where, bitmap = last
+        started = time.monotonic()
+
+        def run() -> None:
+            while True:
+                left = 1 - (time.monotonic() - started) / self.CARD_OUT
+                with self._card_paint:
+                    if getattr(self, "_card_ghost", None) is not token:
+                        return  # otra tarjeta, un panel o el video en pequeño ya mandan en la capa
+                    if left <= 0:
+                        self._overlay(self.CARD, None)
+                        return
+                    self._overlay(self.CARD, player_ui.fade(ass, left), fading=True)
+                    self._show_still(where, bitmap, left)
+                time.sleep(self.CARD_FRAME)
+
+        threading.Thread(target=run, daemon=True, name="player-card-out").start()
+
+    def _end_loading(self, card: dict | None = None, target=None) -> None:
+        """Se acabó «Cargando…» (el episodio ya da imagen, no se pudo o tardó demasiado): la tarjeta se va. Con `card`,
+        solo si sigue siendo esa; con `target`, solo si es la del archivo que cargó."""
+        current = self._card
+        if current is None or current.get("kind") != "loading" or (card is not None and current is not card):
+            return
+        if target is not None and current.get("target") is not target:
+            return
+        self._hide_card()
+
+    # --- el cuadro del episodio en la tarjeta: una imagen encima (mpv overlay-add), como el logo de la pausa ------------
+    STILL_OVERLAY = 1
+    STILL_STEPS = (.25, .5, .75, 1.0)  # la imagen entra y sale en estos pasos de transparencia (una copia de cada uno)
+
+    def _still_state(self, url: str | None) -> tuple[tuple[list[str], int, int] | None, bool]:
+        """(la imagen lista o None, si la tarjeta le guarda lugar). Mientras se prepara, el lugar ya está (no brinca al
+        llegar); si no hay o no se pudo bajar, la tarjeta de siempre."""
+        found = self._still_for(url) if url else None
+        if isinstance(found, tuple):
+            return found, True
+        return None, found == self._LOGO_BUSY
+
+    def _still_for(self, url: str):
+        key = (url, self._px_per_unit())
+        if not self.still_provider or not key[1]:
+            return None
+        cache = self.__dict__.setdefault("_stills", {})
+        if key not in cache:
+            cache[key] = self._LOGO_BUSY
+            threading.Thread(target=self._prepare_still, args=key, daemon=True, name="player-still").start()
+        return cache[key]
+
+    def _prepare_still(self, url: str, scale: float) -> None:
+        result = None
+        box = (round(player_ui.STILL_BOX[0] * scale), round(player_ui.STILL_BOX[1] * scale))
+        try:
+            raw = self.still_provider(url, box[0])
+            if raw:
+                result = still_bgra(raw, url, box, round(12 * scale), self.STILL_STEPS)
+        except Exception:  # noqa: BLE001 - sin cuadro, la tarjeta de siempre
+            log.info("Sin cuadro del episodio: %s", url, exc_info=True)
+        self.__dict__.setdefault("_stills", {})[(url, scale)] = result
+        card = self._card
+        if card is not None and self._card_still(card) == url and self.menu is None and not self._card_moving(card):
+            self._draw_card()  # llegó con la tarjeta quieta a la vista: ya con el cuadro
+
+    @staticmethod
+    def _card_still(card: dict) -> str | None:
+        """La dirección del cuadro del episodio de esa tarjeta (None si no lleva)."""
+        if card["kind"] == "loading":
+            return card.get("still")
+        info = getattr(card.get("segment"), "upnext", None)
+        return info.get("still") if isinstance(info, dict) else None
+
+    def _show_still(self, where, bitmap, appear: float) -> None:
+        """Pone el cuadro del episodio en su lugar (en el paso de transparencia de `appear`), o lo quita."""
+        if where is None or bitmap is None or appear < .15:
+            if getattr(self, "_still_at", None) is not None:
+                self._still_at = None
+                self.mpv.command("overlay-remove", self.STILL_OVERLAY)
+            return
+        paths, w, h = bitmap
+        step = min(len(paths) - 1, max(0, math.ceil(appear * len(paths)) - 1))
+        scale = self._px_per_unit() or 1.0
+        at = (paths[step], round(where[0] * scale), round(where[1] * scale))
+        if at == getattr(self, "_still_at", None):
+            return  # quieta: no se vuelve a mandar a mpv en cada cuadro
+        self._still_at = at
+        self.mpv.command("overlay-add", self.STILL_OVERLAY, at[1], at[2], at[0], 0, "bgra", w, h, w * 4)
 
     def _card_accept(self) -> None:
         card = self._card
-        if card is None:
+        if card is None or card["kind"] == "loading":
             return
         if card["kind"] == "skip":
             self._hide_card()
@@ -83,6 +260,8 @@ class PlayerScreen(SubtitleTrial):
             self._hide_card()  # A: seguir viendo
             if self._value("pause"):
                 self.show_hud()
+        elif card["kind"] == "debrid":
+            self._request_next(card["segment"])
         else:
             self._play_next(card["segment"], auto=False)
 
@@ -91,10 +270,10 @@ class PlayerScreen(SubtitleTrial):
         if card is None:
             return
         self._hide_card()
-        if card["kind"] in ("still", "quit"):
+        if card["kind"] in ("still", "quit", "loading"):  # «Cargando…» con el dedo: «Salir» (con el mando, mantener B)
             self._user_quit = True
             self._quit()
-        elif card["kind"] == "next":
+        elif card["kind"] in ("next", "debrid"):
             card["segment"].upnext_dismissed = True  # se queda en los créditos; al final, sale
 
     def _fit_canvas(self) -> None:
@@ -129,12 +308,24 @@ class PlayerScreen(SubtitleTrial):
 
     # --- interfaz encima del video (player_ui) -------------------------------------------------
     def _overlay(self, overlay_id: int, ass: str | None, *, fading: bool = False) -> None:
+        if overlay_id == self.CARD:
+            with self._card_paint:  # la tarjeta la pintan varios hilos (el vigilante, su animación, su salida)
+                if not fading:
+                    self._card_ghost = None  # lo que se pinta ahora manda: la tarjeta que se iba desvaneciendo ya no
+                self._paint(overlay_id, ass)
+                if not ass:
+                    self._card_last = None
+                    self._show_still(None, None, 0)  # el cuadro del episodio se va con su tarjeta
+            return
         if overlay_id == 1 and not fading:
             self._fade_token = None  # lo que se pinta ahora manda: un fundido de la pausa que iba a medias ya no lo tapa
-        self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
-                               data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
+        self._paint(overlay_id, ass)
         if overlay_id == 1 and not ass:  # se fue la barra (o la tapó un panel): el logo de la pausa, con ella
             self._show_logo(None)
+
+    def _paint(self, overlay_id: int, ass: str | None) -> None:
+        self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
+                               data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
 
     # --- el logo del título en pausa: una imagen encima del video (mpv overlay-add), no texto plano -----------------
     LOGO_OVERLAY = 0  # el id de overlay-add (las imágenes van aparte de las capas ASS)
@@ -645,7 +836,7 @@ class PlayerScreen(SubtitleTrial):
                 self._card_accept()
             elif action == "b":
                 self._card_dismiss()
-            elif self.menu is None and self._card.get("kind") in ("skip", "next"):
+            elif self.menu is None and self._card.get("kind") in ("skip", "next", "loading"):
                 self._tap_video(x, y)  # «Saltar intro» no tapa el video: tocar fuera sigue siendo el video
             return
         if self.menu is not None:
@@ -781,8 +972,10 @@ class PlayerScreen(SubtitleTrial):
         if button == "b" and self._episode_steps and self._episode_timer is not None:
             self._cancel_episode()  # LT/RT sin querer: B lo deshace antes de que cargue
             return
-        # «¿Sigues viendo?»: salir es «Mantén B», como en todo el reproductor (un toque no saca del video).
-        still = self._card is not None and self._card["kind"] == "still"
+        # «¿Sigues viendo?» y «Cargando…»: salir es «Mantén B», como en todo el reproductor (un toque no saca del video).
+        still = self._card is not None and self._card["kind"] in ("still", "loading")
+        if button == "a" and self._card is not None and self._card["kind"] == "loading":
+            return  # A mientras carga el otro episodio: nada (ni pausa lo que está cargando)
         if self._card is not None and button in ("a", "b") and not (button == "b" and still):
             if button == "a":
                 self._card_accept()
@@ -983,29 +1176,36 @@ class PlayerScreen(SubtitleTrial):
         self._episode_countdown(title)
 
     def _episode_countdown(self, title: str) -> None:
-        """La tarjeta con el anillo que se vacía y los segundos que faltan, redibujada 10 veces por segundo."""
+        """La tarjeta con el anillo que se vacía y los segundos que faltan, redibujada 30 veces por segundo (como la de
+        «Siguiente episodio»; entra subiendo la primera vez, no con cada RT)."""
         started = time.monotonic()
         self._episode_anim = started
+        self._episode_title = title
+        since = getattr(self, "_episode_since", None)
+        if since is None:
+            self._episode_since = since = started
 
         def draw() -> bool:
-            left = self.EPISODE_WAIT - (time.monotonic() - started)
+            now = time.monotonic()
+            left = self.EPISODE_WAIT - (now - started)
             if left <= 0 or getattr(self, "_episode_anim", None) != started:
                 return False
+            appear = min(1.0, (now - since) / self.CARD_IN) if self.CARD_FRAME else 1.0
             self._overlay(self.EPISODE_CARD, player_ui.upnext_ass(
                 title, "Cambio de episodio", seconds=math.ceil(left), progress=left / self.EPISODE_WAIT,
-                actions=[("B", "Cancelar")]))
+                actions=[("B", "Cancelar")], appear=appear))
             return True
 
         draw()  # ya, sin esperar al hilo: la tarjeta sale en cuanto oprimes RT
 
         def run() -> None:
             while draw():
-                time.sleep(.1)
+                time.sleep(self.CARD_FRAME or .1)
 
         threading.Thread(target=run, daemon=True, name="episode-countdown").start()
 
     def _stop_episode_card(self) -> None:
-        self._episode_anim = None
+        self._episode_anim = self._episode_since = None
         self._overlay(self.EPISODE_CARD, None)
 
     def _cancel_episode(self) -> None:
@@ -1017,10 +1217,26 @@ class PlayerScreen(SubtitleTrial):
         self.toast("Sigues en este episodio", 2)
 
     def _step_episodes(self, meta: dict) -> None:
-        self._stop_episode_card()
         delta, self._episode_steps = self._episode_steps, 0
-        if delta and self.current is not None:
-            self._in_background(self.on_episode, meta, delta, failed="No pude cambiar de episodio")
+        if not delta or self.current is None:
+            self._stop_episode_card()
+            return
+        # La tarjeta de la cuenta atrás se queda donde estaba y pasa a «Cargando…» (antes se iba y salía otro aviso).
+        card = {"kind": "loading", "name": getattr(self, "_episode_title", ""), "since": time.monotonic(), "shown": 0.0}
+        self._show_card(card)
+        self._stop_episode_card()
+        self._in_background(self._load_with_card, card, self.on_episode, meta, delta, failed="No pude cambiar de episodio")
+
+    def _load_with_card(self, card: dict, load, *args):
+        """Carga otro episodio con la tarjeta «Cargando…» a la vista: si no se pudo (o ya se avisó por qué), se va; si
+        cargó, se va cuando el episodio da imagen (`_started`)."""
+        ok = False
+        try:
+            ok = load(*args)
+            return ok
+        finally:
+            if ok is not True:
+                self._end_loading(card)
 
     def _expected_position(self, step: float) -> float | None:
         """Adónde va el seek que se acaba de pedir (mpv lo confirma un instante después)."""
@@ -1240,6 +1456,37 @@ class PlayerScreen(SubtitleTrial):
             column.options, column.index, column.top = new.options, new.index, 0
         panel.col = 1
         self._draw_panel()
+
+
+def still_bgra(raw: bytes, url: str, size: tuple[int, int], radius: int,
+               steps: tuple[float, ...]) -> tuple[list[str], int, int]:
+    """El cuadro del episodio -> archivos BGRA (alfa premultiplicado, para mpv overlay-add) del tamaño exacto de su lugar
+    (recortado para llenarlo, sin estirarlo), con las esquinas redondeadas y una copia por cada paso de transparencia
+    (`steps`): así entra y sale con la tarjeta. (rutas, ancho, alto)."""
+    import hashlib
+    import io
+    import tempfile
+    from pathlib import Path as _Path
+
+    from PIL import Image, ImageDraw, ImageOps
+
+    w, h = size
+    image = ImageOps.fit(Image.open(io.BytesIO(raw)).convert("RGB"), (w, h), Image.Resampling.LANCZOS)
+    big = Image.new("L", (w * 4, h * 4), 0)  # la esquina, dibujada en grande y reducida: sin dientes
+    ImageDraw.Draw(big).rounded_rectangle((0, 0, w * 4 - 1, h * 4 - 1), radius * 4, fill=255)
+    mask = big.resize((w, h), Image.Resampling.LANCZOS)
+    folder = _Path(tempfile.gettempdir()) / "orbital-stills"
+    folder.mkdir(exist_ok=True)
+    key = hashlib.sha1(url.encode("utf-8", "surrogatepass")).hexdigest()[:16]
+    paths = []
+    for step in steps:
+        rgba = image.convert("RGBA")
+        rgba.putalpha(mask.point([round(v * step) for v in range(256)]))  # el filo con su suavizado, más transparente
+        r, g, b, a = rgba.convert("RGBa").split()  # RGBa: alfa premultiplicado
+        path = folder / f"{key}-{w}x{h}-{round(step * 100)}.bgra"
+        path.write_bytes(Image.merge("RGBa", (b, g, r, a)).tobytes())
+        paths.append(str(path))
+    return paths, w, h
 
 
 def logo_bgra(raw: bytes, key: str, box: tuple[float, float]) -> tuple[str, int, int] | None:

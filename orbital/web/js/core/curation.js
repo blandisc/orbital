@@ -45,7 +45,7 @@ export const GENRE_SHELVES = [
   { genre: "Crime", kind: "movie", title: "Crimen" },
   { genre: "Romance", kind: "movie", title: "Romance" },
   { genre: "Animation", kind: "movie", title: "Animación" },
-  { genre: "Family", kind: "movie", title: "Familiar" },
+  { genre: "Family", kind: "movie", title: "Familia" },
   { genre: "Documentary", kind: "movie", title: "Documental" },
   { genre: "Biography", kind: "movie", title: "Biografía" },
   { genre: "History", kind: "movie", title: "Historia" },

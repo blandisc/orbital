@@ -112,3 +112,22 @@ def test_palabras_del_titulo_y_marcas_no_son_idiomas():
     assert streams.audio_languages("Money.Heist.S01.DUBBED.1080p", original="es-ES") == {"en": "maybe"}
     peerflix = parse({"name": "Peerflix 🇪🇸 1080p", "title": "Some.Movie.2020.1080p.WEB-DL"}, "Peerflix", "u", 1)
     assert "es" in peerflix.audio_langs
+
+
+def test_un_complemento_muerto_no_hace_decir_sin_conexion(monkeypatch):
+    """ThePirateBay+ ya no existe y «Local Files» está apagado: si Torrentio sí contestó (sin nada), no es «sin conexión»."""
+    class Client:
+        def request(self, method, params):
+            return {"addons": [
+                {"transportUrl": TORRENTIO, "manifest": {"name": "Torrentio RD", "resources": ["stream"], "types": ["series"]}},
+                {"transportUrl": "https://tpb/manifest.json", "manifest": {"name": "ThePirateBay+", "resources": ["stream"], "types": ["series"]}},
+            ]}
+
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: [] if "Torrentio" in addon.name else None)
+    finder = streams.StreamFinder(AddonRegistry(Client(), auth=lambda: "key"))
+    assert finder.find("series", "tt1:1:7", Preferences()) == []
+    assert finder.outcome["series:tt1:1:7"] == "ok"  # «no lo tienen», no «revisa Internet»
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: None)
+    finder._down.clear()
+    assert finder.find("series", "tt1:1:8", Preferences()) == []
+    assert finder.outcome["series:tt1:1:8"] == "offline"  # nadie contestó: eso sí es sin conexión

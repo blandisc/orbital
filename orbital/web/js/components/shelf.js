@@ -7,7 +7,7 @@ import { tokenPx } from "../core/tokens.js";
 import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
-import { EmptyState, PosterSkeletons, SectionHead } from "./ui.js";
+import { Badge, EmptyState, PosterSkeletons, SectionHead } from "./ui.js";
 
 /** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
 const SECTION_ICONS = { platforms: "tv", awards: "trophy", studios: "movie", "genre-top": "star", seasons: "sun", years: "calendar", lists: "list" };
@@ -92,6 +92,17 @@ export function createShelf({ onPick, onSwipe }) {
     return { el, show };
   }
 
+  /** «Lo nuevo de lo tuyo» como en el iPhone: arriba el día con su punto (turquesa: ya salió; gris: viene), sobre el póster su
+   * episodio, lo que viene apagado y, antes del primero de hoy, la marca «Hoy». */
+  function Dated(item, card, todayMark) {
+    const el = h("div", { class: ["shelf__dated", item.soon && "shelf__dated--soon", todayMark && "shelf__dated--today"] },
+      todayMark && h("span", { class: "shelf__today", "aria-hidden": "true" }, Badge("Hoy", { className: "shelf__today-chip", plate: true })),
+      h("span", { class: "shelf__day" }, h("i", { class: "shelf__dot", "aria-hidden": "true" }), item.when_label),
+      card,
+      h("span", { class: "shelf__marks" }, item.left && Badge(item.left, { plate: true }), item.subtitle && Badge(item.subtitle, { plate: true })));
+    return { el, card };
+  }
+
   /** Una fila armada: su título, su sello y sus tarjetas (o el escenario de «Porque viste»). */
   function makeRow(row, r, popId) {
     // Un Top 10 (row.ranked): cada póster con su cifra grande detrás, como en Para ti y el iPhone.
@@ -102,6 +113,7 @@ export function createShelf({ onPick, onSwipe }) {
       };
       // Una tarjeta de colección (plataforma, premio, estudio, año, lista): la abre completa, como en el iPhone.
       if (item.collection) return { card: CollectionCard(item, options) };
+      if (row.timeline) return Dated(item, Card(item, options), c === row.startAt && c > 0);
       return row.ranked ? RankedCard(item, { ...options, brand: row.brand }) : { card: Card(item, options) };
     });
     const cards = built.map((b) => b.card);
@@ -122,13 +134,16 @@ export function createShelf({ onPick, onSwipe }) {
     const seal = row.seal ? SourceBadge(row.seal) : null;
     // Una fila de tarjetas de colección (Tus plataformas, Premios, Estudios, Temporadas…) es una sección: su rótulo con
     // ícono y línea, y cuántas a la derecha. Las demás son subsecciones: el título blanco con su sello.
+    // El porqué junto al título, en la misma línea (de dónde viene la fila: «… · de tus series en Trakt»).
+    const reason = row.reason && h("span", { class: "shelf__reason" }, row.reason);
     const heading = row.cards
       ? h("div", { class: "shelf__heading shelf__heading--section" },
         SectionHead(row.title, { level: "section", icon: SECTION_ICONS[row.group] || "grid", meta: count }))
-      : h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count);
+      : h("h2", { class: "shelf__heading" }, logo, row.title, seal, reason, dots || count);
     const rowEl = h("div", { class: ["shelf__row", row.centered && "shelf__row--centered"] },
       heading, stage ? h("div", { class: "shelf__stage-row" }, stage.el, rest) : track);
-    return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest, stage };
+    // `measured`: el ancho de cada pieza se mide (el Top 10 con su cifra, la marca «Hoy» con su lugar), no se calcula del póster.
+    return { rowEl, track, cards, els, count, dots, measured: !!row.ranked || !!row.timeline, centered: !!row.centered, seeds, rest, stage };
   }
 
   // Las mismas filas con los mismos títulos (los mismos objetos: la biblioteca recargada trae objetos nuevos): no se rearma
@@ -239,7 +254,7 @@ export function createShelf({ onPick, onSwipe }) {
       return;
     }
     // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa.
-    const widths = row.ranked ? row.els.map((node) => node.offsetWidth) : row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+    const widths = row.measured ? row.els.map((node) => node.offsetWidth) : row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
     const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);
     const x = (row.centered ? centeredOffset : rowOffset)(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
     row.track.style.transform = `translateX(${-x}px)`;

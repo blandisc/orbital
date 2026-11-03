@@ -31,7 +31,7 @@ export const itemAt = (rows, r, c) => rows[r]?.items[c] ?? null;
  */
 export function rowJump(rows, memory, r, delta) {
   const target = clamp(r + delta, 0, Math.max(0, rows.length - 1));
-  return clampFocus(rows, target, memory[rows[target]?.id] ?? 0);
+  return clampFocus(rows, target, memory[rows[target]?.id] ?? rows[target]?.startAt ?? 0); // «Lo nuevo de lo tuyo» abre en hoy
 }
 
 /** Proporción típica (ancho / alto) de las portadas de cada sistema, medida en una biblioteca real. */
