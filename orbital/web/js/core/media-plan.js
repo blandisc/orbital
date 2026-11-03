@@ -96,11 +96,32 @@ export function becauseSeed(because, chosen = null, unseeded = []) {
   return picked ? { seed: picked, listId: `because:${picked.meta_id}`, seeds } : { seed: base, listId: "because", seeds };
 }
 
-/** Un estreno de «Lo nuevo de lo tuyo» como póster: su día y su episodio debajo; lo que ya salió, con el listón «Nuevo»; lo
- *  de hoy, con «Hoy» en la esquina. */
-export function latestItem(i) {
-  return { ...curatedItem(i, { rowTitle: "Lo nuevo de lo tuyo" }), subtitle: [i.day_label, i.episode_label].filter(Boolean).join(" · "),
-    fresh: !!i.released, today: !!i.today, day_label: undefined };
+/** Hoy en este equipo (AAAA-MM-DD; toISOString daría el de Greenwich, que de noche ya es mañana). */
+const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** NU-7: lo que dice el destacado con el foco en un estreno: el episodio y cuándo («T1 E3 · sale el jueves 5 a las 9:00 p. m.»,
+ *  «T3 E5 · salió ayer», «T4 E2 · sale hoy»), en vez de solo «Episodio nuevo el jueves 5». */
+export function whenLine(i, days) {
+  const day = String(i.day_label || "");
+  const low = day.charAt(0).toLowerCase() + day.slice(1);
+  const at = i.time && /\d/.test(i.time) ? ` a las ${i.time}` : "";
+  const when = i.today ? `sale hoy${at}` : i.released ? (days === -1 ? "salió ayer" : `salió el ${low}`)
+    : days === 1 ? `sale mañana${at}` : day ? `sale el ${low}${at}` : "";
+  return [i.episode_label, when].filter(Boolean).join(" · ");
+}
+
+/** Un estreno de «Lo nuevo de lo tuyo» en la línea de tiempo (como el iPhone, Fernando, 2 nov 2026): arriba su día («Ayer»,
+ *  «Hoy», «Mañana», «Domingo 18»), debajo la serie y su episodio; lo de hoy con el listón «Nuevo»; lo que viene, apagado y
+ *  con cuánto falta. `now`: la fecha de hoy (AAAA-MM-DD). */
+export function latestItem(i, now = localDay()) {
+  const soon = !i.released && !i.today;
+  const days = i.day ? Math.round((Date.parse(i.day) - Date.parse(now)) / 864e5) : null;
+  // El día arriba, corto («Jueves 5»); cuánto falta, en la placa del episodio sobre el póster («T4 E4 · en 3 días»), como el iPhone.
+  const left = soon && days >= 2 ? `en ${days} días` : "";
+  const base = curatedItem(i, { rowTitle: "Lo nuevo de lo tuyo" });
+  return { ...base, extra: { ...base.extra, eyebrow: whenLine(i, days) || base.extra.eyebrow }, subtitle: i.episode_label || "", left,
+    when_label: i.day_label || "", soon,
+    fresh: !!i.today, today: false, day_label: undefined };
 }
 
 /** Cuánto tiempo algo de tu OneDrive cuenta como «Nuevo» (como el iPhone). */
@@ -123,12 +144,19 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const inRow = (title) => (item) => curatedItem(item, { rowTitle: title });
   const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(inRow(title)), ...extra }); };
 
-  // Lo nuevo de lo tuyo (como el Inicio del iPhone): hoy primero, luego lo que viene y al final lo que salió la semana pasada
-  // (con el listón «Nuevo»). Cada póster dice su día y su episodio.
-  const latest = itemsOf(itemsById, byId.nuevo, filter).map((i) => ({ ...latestItem(i), _order: i.today ? 0 : i.released ? 2 : 1, _day: i.day || "" }))
-    .sort((a, b) => a._order - b._order || (a._order === 2 ? b._day.localeCompare(a._day) : a._day.localeCompare(b._day)))
-    .map(({ _order, _day, ...i }) => i);
-  if (latest.length) rows.push({ id: "curated:nuevo", title: "Lo nuevo de lo tuyo", seal: "trakt", group: "nuevo", items: latest.slice(0, 20) });
+  // Lo nuevo de lo tuyo (como el Inicio del iPhone): una línea de tiempo. A la izquierda lo que ya salió, la marca «Hoy» y
+  // a la derecha lo que viene; la fila abre en lo de hoy (`startAt`). De dónde viene, en su porqué (no el logo de Trakt
+  // junto al título: regla del 2 nov 2026).
+  const dated = itemsOf(itemsById, byId.nuevo, filter)
+    .map((i) => ({ i, key: `${i.day || ""} ${i.time || ""}` }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+  const past = dated.filter(({ i }) => i.released);
+  const latest = [...past.slice(-8), ...dated.filter(({ i }) => !i.released)].slice(0, 20).map(({ i }) => latestItem(i));
+  if (latest.length) {
+    const startAt = Math.max(0, latest.findIndex((i) => i.fresh || i.soon));
+    rows.push({ id: "curated:nuevo", title: "Lo nuevo de lo tuyo", reason: "Ya salió y lo que viene · de tus series en Trakt",
+      group: "nuevo", timeline: true, startAt: latest.some((i) => i.fresh || i.soon) ? startAt : latest.length - 1, items: latest });
+  }
   const because = byId.because;
   if (because?.seed && becauseSeed(because, becauseChoice, unseeded).seed) {
     // «Escenario» (la tele, no el mazo del iPhone): una sola fila. A la izquierda, fijo, lo que viste en grande y tus
@@ -208,6 +236,13 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   // Próximos estrenos también como tarjeta (como el iPhone, en Listas › Trakt): se abre con un día por pestaña («Semana»).
   const upcoming = byId.estrenos && listCard(byId.estrenos, "trakt");
   if (upcoming) trakt.splice(Math.min(2, trakt.length), 0, upcoming);
+  // NU-6: al final de «Lo nuevo de lo tuyo», el mes completo (la cápsula «Noviembre» del iPhone): abre el calendario.
+  const nuevoRow = rows.find((r) => r.id === "curated:nuevo");
+  if (nuevoRow && upcoming) {
+    const month = new Date().toLocaleString("es-MX", { month: "long" });
+    const name = `${month.charAt(0).toUpperCase()}${month.slice(1)}`;
+    nuevoRow.items = [...nuevoRow.items, { ...upcoming, title: name, collection: { ...upcoming.collection, name } }];
+  }
   if (trakt.length) rows.push({ id: "curated:lists-trakt", title: "Listas de Trakt", group: "lists", cards: true, items: trakt });
   // Tus listas de Letterboxd (como el iPhone, en Tus listas): solo leer.
   const letterboxd = lists.filter((l) => l.id?.startsWith("letterboxd:")).map((l) => listCard(l, "letterboxd")).filter(Boolean);

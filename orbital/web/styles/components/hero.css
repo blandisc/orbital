@@ -96,5 +96,12 @@
   .hero__content { max-width: 100%; }
   .hero__title { font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--type-title-tracking); }
 }
+/* Películas y series (.hero--steady): al pasar de un título a otro (el carrusel de Destacados, o tú) nada cambia de alto, así
+   «Todo · Películas · Series», el porqué y los botones no brincan (Fernando, 2 nov 2026: antes subían y bajaban unos px según
+   lo alto del logo o si el título traía año). El logo y el nombre ocupan siempre la misma caja; los datos, su renglón. */
+.hero--steady .hero__logo { height: 6rem; max-height: none; flex-shrink: 0; }
+.hero--steady .hero__title { height: 6rem; margin: var(--space-3) 0 var(--space-4); display: -webkit-box; align-content: end; }
+.hero--steady .hero__facts:empty::before { content: "\200b"; } /* sin datos: el renglón queda, vacío */
+:is([data-text-size="large"], [data-text-size="xlarge"]) .hero--steady :is(.hero__logo, .hero__title) { height: 5rem; margin: var(--space-2) 0; }
 /* Todo · Películas · Series (pestañas de texto) arriba del porqué, como la franja del Inicio del iPhone. */
-.hero__kinds { display: flex; gap: var(--space-1); margin: 0 0 var(--space-3) calc(var(--space-3) * -1); }
+.hero__kinds { display: flex; align-self: flex-start; flex-shrink: 0; gap: var(--space-1); margin: 0 0 var(--space-3) calc(var(--space-3) * -1); }

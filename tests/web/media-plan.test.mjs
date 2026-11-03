@@ -236,15 +236,25 @@ test("Lo mejor del género y Temporadas van junto a Estudios y Tus plataformas",
   assert.deepEqual(groups.slice(groups.indexOf("studios"), groups.indexOf("years") + 1), ["studios", "genre-top", "seasons", "years"]);
 });
 
-test("Lo nuevo de lo tuyo: hoy primero, luego lo que viene y al final lo que salió (con el listón), cada uno con su día", async () => {
-  const { mediaRows, keyOf } = await plan();
+test("Lo nuevo de lo tuyo: una línea de tiempo como el iPhone (lo que salió, hoy y lo que viene), abre en hoy", async () => {
+  const { mediaRows, keyOf, latestItem } = await plan();
   const all = {};
   const ep = (id, day, extra) => ({ meta_id: id, kind: "series", title: id, day, day_label: extra.label, episode_label: "T1 E2", ...extra });
-  all[keyOf("nuevo", null)] = [ep("pasado-lejos", "2026-10-09", { label: "Viernes 9", released: true }), ep("ayer", "2026-10-14", { label: "Ayer", released: true }),
-    ep("hoy", "2026-10-15", { label: "Hoy", today: true }), ep("luego", "2026-10-18", { label: "Domingo 18" })];
+  all[keyOf("nuevo", null)] = [ep("luego", "2026-10-18", { label: "Domingo 18" }), ep("pasado-lejos", "2026-10-09", { label: "Viernes 9", released: true }),
+    ep("hoy", "2026-10-15", { label: "Hoy", today: true }), ep("ayer", "2026-10-14", { label: "Ayer", released: true })];
   const row = mediaRows([{ id: "nuevo", title: "Lo nuevo de lo tuyo" }], all).find((r) => r.id === "curated:nuevo");
-  assert.deepEqual(row.items.map((i) => i.meta_id), ["hoy", "luego", "ayer", "pasado-lejos"]);
-  assert.deepEqual(row.items.map((i) => [i.subtitle, !!i.today, !!i.fresh]), [["Hoy · T1 E2", true, false], ["Domingo 18 · T1 E2", false, false],
-    ["Ayer · T1 E2", false, true], ["Viernes 9 · T1 E2", false, true]]);
+  assert.deepEqual(row.items.map((i) => i.meta_id), ["pasado-lejos", "ayer", "hoy", "luego"]);
+  assert.equal(row.startAt, 2); // abre en lo de hoy; lo de antes queda a la izquierda
+  assert.equal(row.timeline, true);
+  assert.equal(row.seal, undefined); // Trakt va en el porqué, no como logo junto al título
+  assert.match(row.reason, /de tus series en Trakt/);
+  assert.deepEqual(row.items.map((i) => [i.when_label, !!i.fresh, !!i.soon]), [["Viernes 9", false, false], ["Ayer", false, false],
+    ["Hoy", true, false], ["Domingo 18", false, true]]);
+  assert.equal(latestItem(ep("x", "2026-10-18", { label: "Domingo 18" }), "2026-10-15").left, "en 3 días");
+  assert.equal(latestItem(ep("x", "2026-10-16", { label: "Mañana" }), "2026-10-15").left, "");
+  // NU-7: el destacado dice el episodio y cuándo.
+  assert.equal(latestItem(ep("x", "2026-10-18", { label: "Domingo 18", time: "9:00 p. m." }), "2026-10-15").extra.eyebrow, "T1 E2 · sale el domingo 18 a las 9:00 p. m.");
+  assert.equal(latestItem(ep("x", "2026-10-14", { label: "Ayer", released: true }), "2026-10-15").extra.eyebrow, "T1 E2 · salió ayer");
+  assert.equal(latestItem(ep("x", "2026-10-15", { label: "Hoy", today: true, time: "Desde la madrugada" }), "2026-10-15").extra.eyebrow, "T1 E2 · sale hoy");
   assert.equal(row.group, "nuevo");
 });

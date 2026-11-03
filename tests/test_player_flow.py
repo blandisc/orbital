@@ -77,9 +77,26 @@ def test_a_source_that_never_starts_tries_the_next_one():
 
 def test_when_no_source_works_it_says_so_and_closes():
     p, mpv = series_player(**{"time-pos": None, "duration": None})
-    p.on_failed = lambda *a: False
+    p.on_failed = None  # sin quién busque otra (con on_failed, Orbital dice la causa: watch.give_up_words)
     p.tick(p.segment, p.segment.loaded + player.STARTUP_TIMEOUT + 1, False)
     assert "ninguna versión" in mpv.overlays[3]
+
+
+def test_fallback_tries_your_language_first_then_another_and_says_why_it_gave_up():
+    from orbital import watch
+    from orbital.library import streams
+
+    def src(index, langs, cached=True, debrid=True):
+        s = streams.Source(index=index, addon="Torrentio", stream={"url": f"http://x/{index}"}, transport_url="", resolution="1080p")
+        s.languages = langs
+        s.cached, s.debrid = cached, debrid
+        return s
+    later_es, en, es = src(1, ["es"], cached=False), src(2, ["en"]), src(3, ["es"])
+    assert watch.fallback_source([later_es, en, es], "es").index == 3  # tu idioma y al instante primero
+    assert watch.fallback_source([later_es, en], "es").index == 2  # luego otro idioma; nunca una que aún hay que bajar
+    assert watch.fallback_source([later_es], "es") is None
+    message, detail = watch.give_up_words("Nocturne · T1 E1", [later_es], "es")
+    assert message == "Real-Debrid aún no tiene Nocturne · T1 E1 en español" and "Pídelo desde la ficha" in detail
 
 
 def test_progress_is_saved_every_minute_not_only_at_the_end():
@@ -116,6 +133,103 @@ def test_next_episode_card_counts_down_and_plays_in_the_same_window():
             break
         time.sleep(.01)
     assert started == ["T1 E2"] and mpv.overlays[4] is None
+
+
+def test_watch_now_turns_the_same_card_into_loading_until_the_episode_shows():
+    """«Ver ahora»: la tarjeta no se va ni sale otro aviso «Cargando…»; ella misma lo dice (y gira) hasta que el episodio
+    da imagen, y entonces se va."""
+    import threading
+    p, mpv = series_player(**{"time-pos": 5980.0, "duration": 6000.0})
+    release = threading.Event()
+    loaded = []
+
+    def play():
+        release.wait(2)
+        loaded.append(p.load("http://b", "The Office · T1 E2", {"kind": "series", "meta_id": "s", "video_id": "s:1:2"}))
+        return loaded[-1]
+
+    p.next_provider = lambda meta: {"label": "T1 E2", "title": "Diversity Day", "play": play}
+    segment = p.segment
+    p.tick(segment, 0, False)
+    segment.upnext, segment.upnext_requested = p.next_provider(segment.meta), True
+    p.tick(segment, 1, False)
+    mpv.overlays[3] = None
+    p.press("a")  # «Ver ahora»
+    card = mpv.overlays[4]
+    assert "Cargando T1 E2…" in card and "Diversity Day" in card and "Ver ahora" not in card
+    assert mpv.overlays[3] is None  # ningún aviso aparte
+    p.press("a")  # otra A mientras carga: ni pausa ni nada
+    assert mpv.props["pause"] is False
+    release.set()
+    import time
+    for _ in range(100):
+        if loaded:
+            break
+        time.sleep(.01)
+    assert loaded == [True] and "Cargando T1 E2…" in mpv.overlays[4] and mpv.overlays[3] is None  # cargando: sigue ella
+    new = p.segment
+    assert new is not segment
+    p._started(new)  # ya hay imagen
+    assert mpv.overlays[4] is None and p._card is None
+    p.hide_hud()  # la barra que sacó _started no sigue redibujándose en las pruebas de después
+
+
+def test_the_loading_card_goes_away_if_the_episode_could_not_load():
+    p, mpv = series_player(**{"time-pos": 5980.0, "duration": 6000.0})
+    p.next_provider = lambda meta: {"label": "T1 E2", "title": "", "play": lambda: False}
+    segment = p.segment
+    p.tick(segment, 0, False)
+    segment.upnext, segment.upnext_requested = p.next_provider(segment.meta), True
+    p.tick(segment, 1, False)
+    p.press("a")
+    import time
+    for _ in range(100):
+        if mpv.overlays.get(4) is None:
+            break
+        time.sleep(.01)
+    assert mpv.overlays[4] is None and "No pude cargar el siguiente episodio" in (mpv.overlays[3] or "")
+
+
+def test_the_card_shows_the_episode_still_and_moves_smoothly():
+    """El cuadro del episodio a la izquierda (una imagen de mpv encima, con su lugar ya guardado mientras llega) y la cuenta
+    atrás redibujada muchas veces por segundo, no una."""
+    import io
+    import time
+
+    from PIL import Image
+
+    from orbital import player_ui
+    p, mpv = series_player(**{"time-pos": 5980.0, "duration": 6000.0, "osd-height": 1080})
+    buf = io.BytesIO()
+    Image.new("RGB", (480, 270), (200, 40, 40)).save(buf, "PNG")
+    p.still_provider = lambda url, width: buf.getvalue()
+    info = {"label": "T1 E2", "title": "Diversity Day", "still": "https://episodes.metahub.space/s/1/2/w780.jpg",
+            "play": lambda: None}
+    segment = p.segment
+    p.tick(segment, 0, False)
+    segment.upnext, segment.upnext_requested = info, True
+    p._still_for(info["still"])
+    for _ in range(200):
+        if isinstance(p._stills.get((info["still"], 1.0)), tuple):
+            break
+        time.sleep(.01)
+    p.CARD_FRAME = 1 / 30
+    frames = []
+    real = mpv.command_named
+    mpv.command_named = lambda **a: (frames.append(a["data"]) if a["id"] == 4 else None, real(**a))
+    segment.upnext_deadline = None
+    p._show_card({"kind": "next", "segment": segment})
+    segment.upnext_deadline = time.monotonic() + 8
+    time.sleep(.5)
+    assert len(set(frames)) >= 8  # entra y el anillo corre seguido (antes: un cuadro por segundo)
+    added = [c for c in mpv.sent if c[0] == "overlay-add" and c[1] == p.STILL_OVERLAY]
+    assert added and added[-1][-3:] == (242, 136, 242 * 4)  # el cuadro, del tamaño de su lugar
+    x, y, w, h = player_ui.placed["still"]
+    assert (added[-1][2], added[-1][3]) == (round(x), round(y)) and "Siguiente episodio · T1 E2" in frames[-1]
+    p._card_anim = None  # que el hilo pare
+    p.CARD_FRAME = 0
+    p._hide_card()
+    assert ("overlay-remove", p.STILL_OVERLAY) in mpv.sent  # se va con su tarjeta
 
 
 def test_b_on_the_card_stays_in_the_credits():
@@ -520,3 +634,41 @@ def test_the_time_is_said_in_12_hours():
     assert clock(datetime(2026, 10, 16, 9, 0)) == "9:00 a. m."
 
 
+
+
+def test_a_30_second_filler_is_a_failed_source_not_the_end_of_the_episode():
+    """Real-Debrid manda un video de ~30 s cuando aún no lo tiene: antes se veía, «terminaba» y saltaba al siguiente episodio.
+    Ahora es una versión que falló: se prueba otra desde donde ibas."""
+    p, mpv = series_player(**{"time-pos": 1.0, "duration": 30.0})
+    tried = []
+    p.on_failed = lambda meta, pos, alive: tried.append((pos, alive)) or True
+    p.next_provider = lambda meta: {"label": "T2 E1", "title": "", "play": lambda: tried.append("siguiente")}
+    segment = p.segment
+    segment.start = 1594.0
+    p.tick(segment, segment.loaded + 5, False)
+    assert tried == [(1594.0, True)] and "Real-Debrid aún no tiene esa versión" in mpv.overlays[3]
+    p.hide_hud()
+
+
+def test_next_episode_not_in_real_debrid_offers_to_request_it_instead_of_counting_down():
+    """RD-4: el siguiente no arranca al instante. La tarjeta lo dice, A lo pide a Real-Debrid y te quedas en los créditos; al
+    final sale (antes contaba hasta 0 y cargaba el video de aviso de 30 s)."""
+    import time
+    p, mpv = series_player(**{"time-pos": 5980.0, "duration": 6000.0})
+    asked, played = [], []
+    p.next_provider = lambda meta: {"label": "T2 E1", "title": "", "ready": False, "request": lambda: asked.append(1),
+                                    "play": lambda: played.append(1)}
+    segment = p.segment
+    p.tick(segment, 0, False)
+    segment.upnext, segment.upnext_requested = p.next_provider(segment.meta), True
+    p.tick(segment, 1, False)
+    card = mpv.overlays[4]
+    assert "Real-Debrid todavía no lo tiene" in card and "Pedirlo y avisarme" in card and segment.upnext_deadline is None
+    p.press("a")
+    for _ in range(100):
+        if asked:
+            break
+        time.sleep(.01)
+    assert asked == [1] and mpv.overlays[4] is None and not played
+    p._at_end(segment)
+    assert not played and ("quit",) in mpv.sent

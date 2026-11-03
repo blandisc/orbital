@@ -576,3 +576,15 @@ def test_the_iphone_gets_big_answers_compressed(library):
         res = c.get("/api/foryou", headers={"Authorization": "Bearer secreto", "Accept-Encoding": "gzip"})
     assert res.status_code == 200 and len(res.content) > 1024
     assert res.headers.get("content-encoding") == "gzip"
+
+
+def test_skip_and_seek_answer_with_the_new_minute(library):
+    """±10 s y la barra del iPhone: la TV contesta con el punto nuevo, no con el de antes del salto (parecía no hacer nada)."""
+    p, mpv = _play_movie(library)
+    before = companion.now_playing(library)["position"]
+    now = companion.control_player(library, "skip", 10)
+    assert ("seek", 10.0, "relative") in mpv.sent and now["position"] == before + 10
+    now = companion.control_player(library, "seek", 1234)
+    assert ("seek", 1234.0, "absolute") in mpv.sent and now["position"] == 1234
+    with pytest.raises(ValueError):
+        companion.control_player(library, "seek")

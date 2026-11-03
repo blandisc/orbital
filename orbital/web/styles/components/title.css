@@ -195,9 +195,11 @@
   /* Arriba y a los lados, el lugar del anillo y del crecer del enfocado (si no, se cortaban). */
   padding: var(--space-4) var(--space-3) var(--space-2); margin: 0 calc(-1 * var(--space-3));
   position: relative; /* offsetLeft de los episodios, relativo a la fila */
-  -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 6rem), transparent);
-  mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 6rem), transparent);
 }
+/* Se desvanece solo el lado donde hay más episodios (title.js · markEpisodeEdges): el último de la temporada se ve entero. */
+.title__episodes--more-right { -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 6rem), transparent); mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 6rem), transparent); }
+.title__episodes--more-left { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 6rem); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 6rem); }
+.title__episodes--more-left.title__episodes--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 6rem, var(--mask-solid) calc(100% - 6rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 6rem, var(--mask-solid) calc(100% - 6rem), transparent); }
 /* Mientras el foco está en los botones, la fila se queda en segundo plano. */
 .title[data-zone="actions"] .title__episodes { opacity: var(--opacity-away); transition: opacity var(--duration-base) var(--ease-out); }
 

@@ -627,7 +627,10 @@ class StreamFinder:
                     continue
                 seen.add(index)
         ranked = rank(sources, prefs, kind)
-        self.outcome[f"{kind}:{video_id}"] = "no-addons" if not serving else "offline" if failed and not ranked else "ok"
+        # «Sin conexión» solo si nadie contestó: un complemento muerto (ThePirateBay+ ya no existe, «Local Files» apagado)
+        # hacía decir «No pude conectar con tus complementos» aunque Torrentio sí respondiera que no lo tiene.
+        answered = any(streams is not None for _, streams in results)
+        self.outcome[f"{kind}:{video_id}"] = "no-addons" if not serving else "offline" if not answered and not ranked else "ok"
         if failed and not ranked:
             return ranked  # la red falló y no hay nada: no se recuerda, la próxima vez se pregunta otra vez
         with self._lock:

@@ -26,6 +26,7 @@ SETTINGS = {
     "game_idle_minutes": {0, 30, 60, 120},
     "video_idle_minutes": {0, 15, 30, 60},
     "video_home": {"pip", "pause"},  # Home durante un video: en pequeño en una esquina, o pausa
+    "rd_auto_request": {True, False},  # el siguiente episodio que Real-Debrid no tiene se le pide solo (RD-6)
     "close_previous": {True, False},  # la frase de Alexa debajo de los botones del héroe
     "game_mode": {"heavy", "off"},  # modo juego: cerrar la ventana de Orbital mientras juegas Switch, Wii U…
     "game_resolution": {"lower", "native"},
@@ -106,7 +107,7 @@ def router(d: Deps) -> APIRouter:
                 "reduce_motion": False, "sounds": True, "voice_tips": True,
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,
-                "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, "video_home": "pip", "game_mode": "heavy",
+                "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, "video_home": "pip", "rd_auto_request": True, "game_mode": "heavy",
                 "game_resolution": "lower",
                 **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,

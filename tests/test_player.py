@@ -68,6 +68,7 @@ TRACKS = [
 def make_player(**props):
     mpv = FakeMpv(props)
     p = player.OrbitalPlayer(mpv=mpv)
+    p.CARD_FRAME = 0  # las tarjetas sin su hilo de animación: se dibujan de golpe (las pruebas que la miran la prenden)
     p.current = player.Playback("Interstellar", None, 0, {})
     return p, mpv
 

@@ -638,6 +638,7 @@ export const SETTING_VALUES = {
   game_idle_minutes: [[30, "30 min"], [60, "1 hora"], [120, "2 horas"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
+  rd_auto_request: [[true, "Sí"], [false, "No"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   game_mode: [["heavy", "Consolas pesadas"], ["off", "Nunca"]],
   game_resolution: [["lower", "1080p"], ["native", "La de la pantalla"]],
@@ -681,7 +682,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "download",
   game_mode: "memory", game_resolution: "hd",
 };
 
@@ -693,6 +694,7 @@ const SETTING_TEXT = {
   sub_scale: ["Letra de los subtítulos", "El tamaño de los subtítulos en el reproductor."],
   video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
   video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
+  rd_auto_request: ["Pedir solo el siguiente episodio", "Si Real-Debrid aún no lo tiene, se lo pide unos minutos antes de que acabe el que ves."],
   game_idle_minutes: ["Cerrar juegos olvidados en pausa", "Un juego en pausa se cierra solo después de ese rato. Lo no guardado se pierde."],
   close_previous: ["Abrir algo nuevo cierra lo anterior", "Así no se quedan dos juegos o videos abiertos gastando memoria."],
   game_mode: ["Cerrar Orbital al jugar", "Más memoria para Switch, Wii U y las consolas pesadas. Vuelve sola al salir del juego."],
@@ -821,7 +823,7 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   const row = (key) => settingRow(key, settings, id);
   switch (id) {
     case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
-      row("audio"), row("subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"),
+      row("audio"), row("subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
       { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
     ] };
     case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [

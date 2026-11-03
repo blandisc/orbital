@@ -317,7 +317,7 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
 
 class CompanionPlayerAction(BaseModel):
     action: str
-    delta: float | None = None  # "skip": segundos (±10, ±30); "volume": cuánto sube o baja (±5)
+    delta: float | None = None  # "skip": segundos (±10, ±30); "seek": a qué segundo; "volume": cuánto sube o baja (±5)
     level: int | None = None  # "volume": el nivel exacto (0-100)
     track: int | str | None = None  # "subtitles" / "audio": el id de playing.tracks ("no": sin subtítulos)
 

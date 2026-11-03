@@ -88,3 +88,35 @@
 /* Una sección de tarjetas: el rótulo ocupa el renglón del título, a su altura, y llega hasta la orilla. */
 .shelf__heading--section { display: flex; align-items: center; }
 .shelf__heading--section .section-head { flex: 1; }
+
+/* «Lo nuevo de lo tuyo» (como el iPhone, Fernando, 2 nov 2026): una línea de tiempo. Arriba de cada póster su día con un punto
+   (lo que ya salió en el color de lo nuevo; lo que viene, gris y con «en 3 días»); sobre el póster, su episodio; lo que viene,
+   apagado; y antes del primero de hoy, una línea con «Hoy». Todo va encima de la tarjeta (absoluto): la fila no cambia de
+   alto ni de ancho. En la enfocada el día se va: el destacado de arriba ya dice cuándo sale y qué episodio es. */
+.shelf__dated { --today-room: 3.4rem; position: relative; flex: none; }
+.shelf__day {
+  position: absolute; left: 0; bottom: calc(100% + var(--space-2)); display: flex; align-items: center; gap: var(--space-2);
+  max-width: calc(100% + var(--card-gap) - var(--space-2)); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+.shelf__dated:has(.card--focused) .shelf__day { opacity: 0; }
+.shelf__dot { flex: none; width: .5rem; height: .5rem; border-radius: var(--radius-pill); background: var(--color-new); }
+.shelf__dated--soon .shelf__day { color: var(--color-text-muted); }
+.shelf__dated--soon .shelf__dot { background: var(--color-text-muted); }
+.shelf__dated--soon:not(:has(.card--focused)) { opacity: var(--opacity-soft); }
+.shelf__marks {
+  position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-above);
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); pointer-events: none;
+}
+.shelf__dated--today { padding-left: var(--today-room); } /* la marca «Hoy» con su propio lugar (no se encima con los días) */
+.shelf__dated--today > .shelf__day { left: var(--today-room); }
+.shelf__dated--today > .shelf__marks { left: calc(var(--today-room) + var(--inset-poster)); }
+.shelf__today {
+  position: absolute; top: 0; bottom: 0; left: calc((var(--today-room) - var(--card-gap)) / 2); width: .15rem; translate: -50% 0;
+  border-radius: var(--radius-pill); background: var(--color-new);
+}
+.shelf__today-chip { position: absolute; bottom: calc(100% + var(--space-1)); left: 50%; translate: -50% 0; max-width: none; color: var(--color-new); }
+
+/* El porqué de una fila, en la línea de su título (de dónde viene: «… · de tus series en Trakt»), en el color del porqué. */
+.shelf__reason { color: var(--color-reason); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); letter-spacing: normal; }

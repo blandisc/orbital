@@ -99,7 +99,7 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     wrong_audio,
 )
 from .player_screen import PlayerScreen
-from .scrobble import CHECKPOINT_SECONDS
+from .scrobble import CHECKPOINT_SECONDS, not_the_video
 
 log = logging.getLogger(__name__)
 
@@ -210,7 +210,9 @@ class OrbitalPlayer(PlayerScreen):
         self._hud_timer: threading.Timer | None = None
         self._toast_timer: threading.Timer | None = None
         self._hud_visible = False
-        self._card: dict | None = None  # {"kind": "skip" | "next" | "still", ...}
+        self._card: dict | None = None  # {"kind": "skip" | "next" | "still" | "quit" | "loading", ...}
+        self._card_paint = threading.RLock()  # la capa de la tarjeta, de un hilo a la vez (ver PlayerScreen._overlay)
+        self._next_lock = threading.Lock()  # el siguiente episodio se pide una sola vez (el anillo y el vigilante a la vez)
         self._subs_lang = "en"
         self._sub_urls: dict[str, str] = {}  # archivo local → la URL de donde se bajó (lo que «Continuar» recuerda)
         self.fetch_subtitle = fetch_subtitle
@@ -237,6 +239,7 @@ class OrbitalPlayer(PlayerScreen):
         self.next_provider = None  # (meta) -> {"label", "title", "play"} | None
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]
         self.logo_provider = None  # (meta) -> PNG del logo del título (en pausa, el título estilizado) | None
+        self.still_provider = None  # (url, ancho en px) -> la imagen del cuadro del episodio («Siguiente episodio») | None
         self.on_tracks = None  # (meta, track-list) -> aviso si no trae tu idioma (y lo recuerda: «Comprobado»)
         self.versions_provider = None  # (meta) -> [{"id", "label", "hint"}]: tu idioma en otra versión (X › Audio)
         self.on_switch_source = None  # (meta, id_fuente, posición)
@@ -375,7 +378,11 @@ class OrbitalPlayer(PlayerScreen):
         self._lift_subs(False)
         self._try_end()  # «Probar otros» era del archivo anterior
         self._keep_delay = False
-        self._hide_card()
+        loading = self._card if self._card is not None and self._card.get("kind") == "loading" else None
+        if loading is not None:
+            loading["target"] = segment  # la tarjeta «Cargando…» se queda hasta que este archivo dé imagen (o falle)
+        else:
+            self._hide_card()
         # Siempre los del archivo nuevo (None = «sin subtítulos» o «solo forzados»): antes se quedaban
         # los del episodio anterior y al siguiente le ponían los subtítulos de otro.
         self._fallback_subs = fallback_subs
@@ -399,7 +406,8 @@ class OrbitalPlayer(PlayerScreen):
         # mpv lo vuelve a pausar mientras siga ahí, así que la pausa de arriba no alcanzaba. El siguiente episodio (de un
         # canal 24/7 o de una serie) arrancaba en pausa en el segundo 0: parecía que «no ponía el siguiente».
         self.mpv.command("set_property", "pause", False)
-        self.toast(message or f"Cargando {title}…", 4)
+        if loading is None:  # con la tarjeta «Cargando…» a la vista, ella lo dice (no un segundo aviso)
+            self.toast(message or f"Cargando {title}…", 4)
         log.info("Cargando en el mismo mpv: %s", title)
         return True
 
@@ -558,6 +566,8 @@ class OrbitalPlayer(PlayerScreen):
             segment.position = float(pos)
             if known:
                 segment.duration = float(dur)
+        if self._filler(segment):  # la duración llegó tarde: era el relleno de la fuente, no el episodio
+            return self._fail(segment, filler=True)
         if not segment.scrobbling:
             if segment.duration and not paused:  # primera imagen real (o ya se supo la duración): «viendo ahora»
                 self._scrobble("start", segment)
@@ -802,6 +812,9 @@ class OrbitalPlayer(PlayerScreen):
         """Primera imagen de este archivo: avisos, subtítulos, capítulos y la barra."""
         if not segment.live:
             self._lift_curtain(segment)
+            self._end_loading(target=segment)  # «Cargando…» se desvanece mientras el episodio aparece
+        if self._filler(segment):
+            return self._fail(segment, filler=True)
         tracks = self.mpv.get("track-list")
         tracks = tracks if isinstance(tracks, list) else []  # una respuesta rara de mpv nunca tumba al vigilante
         chapters = self.mpv.get("chapter-list")
@@ -894,10 +907,19 @@ class OrbitalPlayer(PlayerScreen):
             self.toast("Sin señal en este canal · ▲▼ para cambiar", 5)
             self.show_hud()  # «Sin señal», a la vista hasta que hagas algo
 
-    def _fail(self, segment: Segment) -> None:
+    def _filler(self, segment: Segment) -> bool:
+        """Lo que da imagen dura tan poco que no puede ser el título: el video de aviso de la fuente (Real-Debrid manda uno de
+        ~30 s cuando aún no lo tiene). Antes se veía entero, «terminaba» y saltaba al siguiente episodio."""
+        return (not segment.live and not segment.failed and not segment.meta.get("clip")
+                and not_the_video(segment.meta, segment.duration))
+
+    def _fail(self, segment: Segment, filler: bool = False) -> None:
         if segment.failed or segment.closed:
             return
         segment.failed = True
+        if filler:  # la otra versión, desde donde ibas (no desde el segundo del relleno)
+            log.info("%s: la fuente mandó un relleno de %d s, no el video", segment.title, segment.duration)
+            segment.position = segment.start
         if segment.live:
             return self._fail_channel(segment)
         if segment.meta.get("synthetic"):
@@ -913,10 +935,13 @@ class OrbitalPlayer(PlayerScreen):
         retrying = False
         if self.on_failed:
             self.toast("Esa versión no abrió · regreso a la de antes…" if segment.meta.get("back_to") is not None
+                       else "Real-Debrid aún no tiene esa versión · probando otra…" if filler
                        else "Esa versión falló · probando otra…", 6)
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:
-            self.toast("No pude reproducir esto con ninguna versión", 4)
+            self._end_loading(target=segment)
+            if not self.on_failed:  # con on_failed, Orbital ya dijo por qué y qué hacer (watch.give_up_words)
+                self.toast("No pude reproducir esto con ninguna versión", 4)
             timer = threading.Timer(4, lambda: self.segment is segment and self._quit())
             timer.daemon = True
             timer.start()
@@ -1085,6 +1110,8 @@ class OrbitalPlayer(PlayerScreen):
             def ask() -> None:
                 try:
                     segment.upnext = provider(segment.meta) or False
+                    if isinstance(segment.upnext, dict) and segment.upnext.get("still"):
+                        self._still_for(segment.upnext["still"])  # el cuadro del episodio, listo antes de la tarjeta
                 except Exception:  # noqa: BLE001 - Cinemeta no respondió: se pregunta otra vez (3 intentos)
                     log.exception("No pude saber el siguiente episodio")
                     segment.upnext_tries += 1
@@ -1098,13 +1125,17 @@ class OrbitalPlayer(PlayerScreen):
             return
         card = self._card
         if card is None and (remaining <= UPNEXT_AT or credits):
+            if segment.upnext.get("ready") is False:  # Real-Debrid aún no lo tiene: lo dice y ofrece pedirlo (RD-4)
+                segment.upnext_deadline = None
+                self._show_card({"kind": "debrid", "segment": segment}, now)
+                return
             still = self._quiet_episodes >= STILL_WATCHING_AFTER - 1
             segment.upnext_deadline = None if still else now + UPNEXT_COUNTDOWN
             self._show_card({"kind": "still" if still else "next", "segment": segment}, now)
         elif card is not None and card.get("segment") is segment and card["kind"] == "next":
             if segment.upnext_deadline is not None and now >= segment.upnext_deadline:
                 self._play_next(segment, auto=True)
-            else:
+            elif not self.CARD_FRAME:  # sin animación (pruebas), la cuenta atrás va con este vistazo
                 self._draw_card(now)
 
     def _at_end(self, segment: Segment) -> None:
@@ -1117,7 +1148,7 @@ class OrbitalPlayer(PlayerScreen):
                 segment.next_loading = time.monotonic()
                 self._in_background(self._synthetic_next, segment, failed="No pude seguir con el canal")
             return
-        if segment.upnext and not segment.upnext_dismissed:
+        if segment.upnext and not segment.upnext_dismissed and segment.upnext.get("ready") is not False:
             if self._card is None or self._card.get("kind") != "still":
                 self._play_next(segment, auto=True)
             return  # "¿Sigues viendo?": espera tu respuesta
@@ -1152,17 +1183,49 @@ class OrbitalPlayer(PlayerScreen):
         self._user_quit = True
         self._quit()
 
+    def _request_next(self, segment: Segment) -> None:
+        """A en «Real-Debrid todavía no lo tiene»: se le pide el siguiente episodio y te quedas en los créditos (RD-4)."""
+        info = segment.upnext
+        self._hide_card()
+        segment.upnext_dismissed = True
+        if not isinstance(info, dict) or not callable(info.get("request")):
+            return
+
+        if info.get("requested"):  # ya se lo pidió solo: el aviso «Ya está…» llega al terminar
+            self.toast(f"Te aviso cuando {info.get('label') or 'el siguiente episodio'} esté listo", 4)
+            return
+
+        def run() -> None:
+            try:
+                info["request"]()
+            except LookupError as exc:
+                self.toast(str(exc), 6)
+                return
+            self.toast(f"Pedido a Real-Debrid · {info.get('label') or 'el siguiente episodio'} · Te aviso cuando esté", 5)
+
+        threading.Thread(target=run, daemon=True, name="rd-request").start()
+
     def _play_next(self, segment: Segment, auto: bool) -> None:
         info = segment.upnext
-        if not isinstance(info, dict) or segment.closed:
-            return
-        self._hide_card()
+        with self._next_lock:  # el anillo (su hilo) y el vigilante pueden llegar a la vez al final de la cuenta atrás
+            if not isinstance(info, dict) or segment.closed or segment.next_loading:
+                return
+            segment.next_loading = time.monotonic()
         self._quiet_episodes = self._quiet_episodes + 1 if auto else 0
         segment.upnext_dismissed = True  # que no se dispare dos veces
         segment.finished = True  # «Ver ahora» en los créditos: este episodio ya se vio
-        segment.next_loading = time.monotonic()
-        self.toast(f"Cargando {info.get('label') or 'el siguiente episodio'}…", 6)
-        self._in_background(info["play"], failed="No pude cargar el siguiente episodio")
+        # La misma tarjeta pasa a «Cargando…» (no se va ni entra otra vez); el arco que le quedaba a la cuenta atrás se
+        # vuelve el que gira. Antes se iba y salía otro aviso arriba a la derecha.
+        card = self._card if self._card is not None and self._card.get("segment") is segment else None
+        left = 0.0
+        if card is not None and card["kind"] == "next" and segment.upnext_deadline is not None:
+            left = max(0.0, min(1.0, (segment.upnext_deadline - time.monotonic()) / UPNEXT_COUNTDOWN))
+        loading = {"kind": "loading", "segment": segment, "label": info.get("label") or "", "name": info.get("title") or "",
+                   "still": info.get("still"), "since": time.monotonic(), "from": left}
+        if card is not None and "shown" in card:
+            loading["shown"] = card["shown"]
+        self._show_card(loading)
+        self._in_background(self._load_with_card, loading, info["play"], failed="No pude cargar el siguiente episodio")
         if not auto:  # tras «Ver ahora», un segundo A no pausa lo que está cargando
             self._loading_until = time.monotonic() + 3
 
@@ -1309,13 +1372,17 @@ class OrbitalPlayer(PlayerScreen):
         self.show_hud()
 
     def seek_to(self, seconds: float) -> None:
-        """A un punto exacto (voz: «desde el principio», «ve al minuto 20»)."""
-        self.mpv.command("seek", max(0.0, seconds), "absolute")
-        self.show_hud()
+        """A un punto exacto (voz: «desde el principio», «ve al minuto 20»; el iPhone, al soltar su barra)."""
+        target = max(0.0, seconds)
+        self.mpv.command("seek", target, "absolute")
+        self._ask("time-pos", target)  # lo que contesta now_playing ya es el punto nuevo (ver abajo)
+        self.show_hud(position=target)
 
     def seek(self, seconds: float) -> None:
+        """Adelantar o regresar (el iPhone: ±10 s). Antes el iPhone recibía el minuto de antes del salto (la TV lo anota una
+        vez por segundo) y parecía que el botón no hacía nada."""
+        self.show_hud(position=self._expected_position(seconds))
         self.mpv.command("seek", seconds, "relative")
-        self.show_hud()
 
     def select_language(self, kind: str, lang: str, variant: str = "") -> bool:
         """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae. `variant` («es-419» / «es-ES»,
@@ -1392,5 +1459,10 @@ class OrbitalPlayer(PlayerScreen):
                 "video_id": meta.get("video_id"), "title": meta.get("title") or current.title,
                 "episode_label": episode_label, "poster": meta.get("poster"),
                 **episode_numbers(meta.get("video_id") if meta.get("kind") == "series" else None),
-                "position": segment.position, "duration": segment.duration,
-                "paused": bool(self.mpv.get("pause"))}
+                "position": self._reported_position(segment), "duration": segment.duration,
+                "paused": bool(self._value("pause"))}
+
+    def _reported_position(self, segment: Segment) -> float:
+        """Dónde va, contando un salto recién pedido (mpv lo confirma un instante después)."""
+        want = self._value("time-pos")
+        return float(want) if isinstance(want, (int, float)) and not isinstance(want, bool) else segment.position

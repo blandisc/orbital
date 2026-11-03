@@ -18,16 +18,17 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 
-from . import companion, flags, player, player_ui, ytdlp
+from . import companion, flags, player, player_ui, remote_art, ytdlp
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
-from .library import addons, cinemeta, localize, streams, stremio_api
+from .library import addons, cinemeta, localize, realdebrid, streams, stremio_api
 from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
 from .library.models import LibraryItem
+from .rd_requests import RdRequests
 from .scrobble import TraktScrobbler, not_the_video
 from .sessions import Sessions
 from .state import State
@@ -132,6 +133,50 @@ def player_source_label(source: streams.Source) -> str:
     langs = " + ".join(streams.LANG_NAMES.get(lang, lang) for lang in source.languages[:2])
     size = f"{source.size / 1e9:.1f} GB" if source.size else ""
     return " · ".join(p for p in (langs, source_label(source), size) if p)
+
+
+def player_ui_day(when: float) -> str:
+    """«el viernes 6», «mañana», «hoy a las 9 p. m.»: cuándo sale algo, como lo dice la interfaz."""
+    from datetime import datetime, timedelta
+
+    day = datetime.fromtimestamp(when)
+    today = datetime.now().date()
+    if day.date() == today:
+        return "hoy"
+    if day.date() == today + timedelta(days=1):
+        return "mañana"
+    names = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+    return f"el {names[day.weekday()]} {day.day}"
+
+
+FALLBACK_TRIES = 6  # versiones que se prueban solas antes de rendirse (primero tu idioma, luego otro)
+
+
+def ready_now(source: streams.Source) -> bool:
+    """Arranca ya: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que bajarla» solo da el video de
+    aviso de 30 s de Real-Debrid: probarla sola no sirve."""
+    return source.cached or not source.debrid
+
+
+def fallback_source(found: list[streams.Source], audio: str, native: bool = True) -> streams.Source | None:
+    """La versión que se prueba sola cuando una falla (Fernando, 2 nov 2026: «checar otras versiones en ese idioma y después
+    en otro idioma»): primero las de tu idioma que arrancan ya, luego las de otro idioma que arrancan ya. Nunca una
+    grabación de cine ni un tráiler, ni una que Real-Debrid aún no tiene. `found` viene ordenada de mejor a peor."""
+    usable = [s for s in found if ready_now(s) and not ({"CAM", "Tráiler"} & set(s.tags))
+              and (not native or player.stream_url(s.stream) or s.stream.get("onedrive"))]
+    mine = [s for s in usable if audio in s.languages]
+    return (mine or usable or [None])[0]
+
+
+def give_up_words(title: str, left: list[streams.Source], audio: str) -> tuple[str, str]:
+    """Por qué no se pudo y qué hacer, en palabras (aviso con título y detalle)."""
+    language = streams.LANG_NAMES.get(audio, audio)
+    if any(audio in s.languages and s.debrid and not s.cached for s in left):
+        return (f"Real-Debrid aún no tiene {title} en {language.lower()}",
+                "Pídelo desde la ficha: lo baja y te aviso cuando esté")
+    if any(not s.cached and s.debrid for s in left):
+        return f"Real-Debrid aún no tiene {title}", "Pídelo desde la ficha: lo baja y te aviso cuando esté"
+    return f"No pude abrir ninguna versión de {title}", "Las que hay no abrieron · inténtalo más tarde o elige otra con Y"
 
 
 VERSION_RES = ("4K", "1080p", "720p", "SD")
@@ -390,6 +435,8 @@ class Watch:
                                             lambda: self.setting("language", config.ui.language))
         self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
+        # Lo que Real-Debrid aún no tiene se le pide desde la ficha o el reproductor; ya bajado, es una versión más.
+        self.rd = RdRequests(self.streams, self.state, lambda event: self.events.publish(event))
         self.streams.facts = self._title_facts  # el idioma original (TMDB): de qué idioma es una fuente que no lo dice
         self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
                                   / "pistas-de-audio.json") if config.source else None)
@@ -763,7 +810,75 @@ class Watch:
         (como el iPhone): tu copia se ve desde Mi media (play_own)."""
         if not self.has_addons:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
-        return self.streams.find(kind, video_id, prefs or self.stream_prefs)
+        found = self.streams.find(kind, video_id, prefs or self.stream_prefs)
+        if any(s.cached for s in found):
+            return found
+        mine = self.rd.ready_source(kind, video_id)  # tu pedido a Real-Debrid ya bajado: arranca al instante
+        return [mine, *found] if mine is not None else found
+
+    def availability(self, kind: str, meta_id: str, video_id: str) -> dict:
+        """Por qué no hay una versión que arranque ya y qué se puede hacer (la ficha lo dice con sus palabras, RD-1 y RD-5):
+        {"why": "ok" | "unreleased" | "offline" | "no-addons" | "debrid" | "none", "message", "detail", "can_request",
+        "request"}. «debrid»: existe en internet pero Real-Debrid aún no lo tiene (se le puede pedir)."""
+        prefs = self.asked_language({"meta_id": meta_id})[0]
+        out = {"why": "ok", "message": "", "detail": "", "can_request": False, "request": self.rd.status(video_id)}
+        if out["request"] and out["request"]["state"] == "downloading":
+            pct = out["request"].get("percent") or 0
+            return {**out, "why": "requested", "message": f"Pedido a Real-Debrid · lleva {pct} %",
+                    "detail": "Te aviso cuando esté listo"}
+        when = self._release_of(kind, meta_id, video_id)
+        if when and when > time.time():
+            day = player_ui_day(when)
+            return {**out, "why": "unreleased", "message": f"Aún no se estrena · sale {day}",
+                    "detail": "Cuando salga, aparece aquí"}
+        try:
+            found = self.stream_sources(kind, video_id, prefs)
+        except stremio_api.StremioError as exc:
+            return {**out, "why": "no-addons", "message": "No puedo buscar versiones", "detail": str(exc)}
+        if any(ready_now(s) for s in found):
+            return out
+        outcome = self.streams.outcome.get(f"{kind}:{video_id}")
+        if outcome == "offline":
+            return {**out, "why": "offline", "message": "No pude conectar con tus complementos",
+                    "detail": "Revisa Internet e inténtalo de nuevo"}
+        if outcome == "no-addons":
+            return {**out, "why": "no-addons", "message": "Tu cuenta de Stremio no tiene complementos de video",
+                    "detail": "Instala Torrentio en Stremio"}
+        exists = bool(found) or bool(self.rd.candidates(kind, video_id, prefs))
+        if exists and self.rd.client() is not None:
+            language = streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
+            return {**out, "why": "debrid", "can_request": True, "message": "Real-Debrid todavía no lo tiene",
+                    "detail": f"Lo puede bajar por ti, de preferencia en {language}; tarda según cuánta gente lo comparte"}
+        return {**out, "why": "none", "message": "Nadie lo tiene todavía en internet",
+                "detail": "Suele aparecer en unas horas o días · vuelve a buscar más tarde"}
+
+    def request_debrid(self, kind: str, meta_id: str, video_id: str, title: str = "") -> dict:
+        """«Pedirlo y avisarme»: Real-Debrid empieza a bajarlo (RD-1). Lanza LookupError con el motivo en palabras."""
+        prefs = self.asked_language({"meta_id": meta_id})[0]
+        if not title:
+            try:
+                info = self.cinemeta.meta(kind, meta_id)
+                title = self._episode_title(info, meta_id, video_id)[0] if kind == "series" else info.get("name") or ""
+            except cinemeta.CinemetaError:
+                title = ""
+        try:
+            return self.rd.request(kind, video_id, title or "tu pedido", prefs)
+        except realdebrid.RealDebridError as exc:
+            raise LookupError(str(exc)) from exc
+
+    def _release_of(self, kind: str, meta_id: str, video_id: str) -> float | None:
+        """Cuándo sale ese episodio (None si ya salió o no se sabe)."""
+        if kind != "series":
+            return None
+        try:
+            info = self.cinemeta.meta("series", meta_id)
+        except cinemeta.CinemetaError:
+            return None
+        for season in cinemeta.seasons(info):
+            for episode in season["episodes"]:
+                if episode["id"] == video_id:
+                    return cinemeta.released_at(episode.get("released"))
+        return None
 
     def _url_for(self, source: streams.Source) -> str | None:
         if source.stream.get("onedrive") and self.onedrive is not None:
@@ -795,6 +910,7 @@ class Watch:
         p.on_scrobble = self.scrobbler.event
         p.on_failed = self._source_failed
         p.next_provider = self._next_up
+        p.still_provider = self._episode_still
         p.sources_provider = self._player_sources
         p.on_switch_source = self._switch_source
         p.on_episode = self._step_episode
@@ -1166,27 +1282,30 @@ class Watch:
             tried = set(meta.get("tried") or [meta["source"]])
             prefs = self.asked_language(meta)[0]
             try:
-                source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried, prefs=prefs)
-                # El respaldo no cae en una grabación de cine ni en un tráiler sin que lo elijas tú.
-                while source is not None and {"CAM", "Tráiler"} & set(source.tags):
-                    tried.add(source.index)
-                    source = self.best_source(meta["kind"], meta["video_id"], None, skip=tried, prefs=prefs)
+                found = [s for s in self.stream_sources(meta["kind"], meta["video_id"], prefs) if s.index not in tried]
             except stremio_api.StremioError:
-                source = None
-            if source is not None and len(tried) < 4:
-                log.info("Probando otra fuente para %s (%s)", title, source_label(source))
+                found = []
+            source = fallback_source(found, prefs.audio, self.native_player)
+            if source is not None and len(tried) < FALLBACK_TRIES:
                 other = prefs.audio not in source.languages  # otro idioma: se dice cuál
+                log.info("Probando otra fuente para %s (%s%s)", title, source_label(source), ", otro idioma" if other else "")
                 label = player_source_label(source) if other else source_label(source)
-                ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source,
-                                          start=position, message=f"Probando otra versión · {label}", tried=list(tried),
-                                          asked=meta.get("asked"))
+                ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source, start=position,
+                                          message=f"Probando {'en otro idioma' if other else 'otra versión'} · {label}",
+                                          tried=list(tried), asked=meta.get("asked"))
                 if ok:
                     return True
                 tried.add(source.index)
                 meta = {**meta, "tried": sorted(tried)}
                 return self._source_failed(meta, position, alive)  # esa tampoco abrió: la siguiente
+            message, detail = give_up_words(title, found, prefs.audio)
+            self.events.publish({"type": "toast", "ok": False, "message": message, "detail": detail})
+            self.player.toast(f"{message} · {detail}", 6)
+            return False
         self.events.publish({"type": "toast", "ok": False,
                       "message": f"No pude reproducir {title}", "detail": "Prueba otra versión desde la ficha (Y)"})
+        if alive:
+            self.player.toast(f"No pude reproducir {title} · Prueba otra versión con Y", 6)
         return False
 
     def _title_facts(self, kind: str, video_id: str) -> dict | None:
@@ -1311,14 +1430,31 @@ class Watch:
         if next_id is None:
             return None
         title, detail = self._episode_title(info, meta["meta_id"], next_id)
-        try:
-            self.stream_sources("series", next_id, self.asked_language(meta)[0])  # que al llegar el momento ya esté buscada
+        ready = True
+        try:  # que al llegar el momento ya esté buscada, y saber si arranca ya (RD-4)
+            found = self.stream_sources("series", next_id, self.asked_language(meta)[0])
+            ready = any(ready_now(s) for s in found) or (not found and self.streams.outcome.get(f"series:{next_id}") == "offline")
         except stremio_api.StremioError:
             pass
+        requested = False
+        if not ready and not meta.get("own") and self.setting("rd_auto_request", True):
+            try:  # RD-6: unos minutos antes del final, Real-Debrid ya lo está bajando
+                requested = self.request_debrid("series", meta["meta_id"], next_id, title).get("state") in ("downloading", "ready")
+            except LookupError as exc:
+                log.info("No pedí el siguiente episodio a Real-Debrid: %s", exc)
         label, name = self._episode_label(info, next_id)
-        return {"label": label, "title": name,
+        still = next((e["thumbnail"] for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == next_id), None)
+        return {"label": label, "title": name, "still": still if remote_art.allowed(still or "") else None,
+                "ready": ready or bool(meta.get("own")), "requested": requested,  # de tu carpeta de OneDrive arranca aunque Real-Debrid no lo tenga
+                "request": lambda: self.request_debrid("series", meta["meta_id"], next_id, title),
                 "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"), own=bool(meta.get("own")),
                                                    asked=meta.get("asked"))}
+
+    @staticmethod
+    def _episode_still(url: str, width: int) -> bytes | None:
+        """El cuadro del episodio que sigue, del ancho en que se ve en la tarjeta (bajado una vez, como el arte de Orbital)."""
+        path = remote_art.sized(url, width)
+        return path.read_bytes() if path is not None else None
 
     def _play_episode(self, meta_id: str, video_id: str, title: str, binge: str | None = None,
                       start: float = 0, own: bool = False, asked: dict | None = None) -> bool | None:

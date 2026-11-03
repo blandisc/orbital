@@ -110,7 +110,7 @@ class NothingPlaying(Exception):
     """Nada se está viendo ahora mismo: no hay «Viendo en la TV» que enseñar ni que controlar."""
 
 
-PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute", "volume", "subtitles", "audio",
+PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "seek", "next", "previous", "stop", "mute", "volume", "subtitles", "audio",
                   "channel_up", "channel_down", "guide"}
 
 # El control remoto del iPhone (la hoja «Viendo en la TV» estirada): las mismas acciones que el mando en la interfaz
@@ -239,6 +239,13 @@ def control_player(catalog, action: str, delta: float | None = None, level: int 
             raise ValueError("La TV en vivo no se pausa")
         paused = (not bool(player.mpv.get("pause"))) if action == "toggle" else action == "pause"
         player.set_pause(paused)
+        return now_playing(catalog)
+    if action == "seek":  # a un punto exacto (la barra del iPhone): `delta` son los segundos desde el principio
+        if live:
+            raise ValueError("La TV en vivo no se adelanta")
+        if not isinstance(delta, (int, float)) or delta < 0:
+            raise ValueError("Falta a qué minuto ir")
+        player.seek_to(float(delta))
         return now_playing(catalog)
     if action == "skip":
         if live:
