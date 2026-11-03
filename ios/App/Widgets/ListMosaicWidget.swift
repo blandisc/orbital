@@ -26,11 +26,48 @@ struct ListMosaicProvider: AppIntentTimelineProvider {
     func timeline(for configuration: ChooseListIntent, in context: Context) async -> Timeline<ListMosaicEntry> {
         // El muro sube una fila cada 20 minutos (Fernando, 2 nov 2026): los cuadros ya quedan listos y iOS anima el paso de uno
         // al otro, sin gastar batería ni internet. La app pide recarga cuando cambian las listas; si no, al acabarse los cuadros.
-        let now = Date(), list = WidgetStore.loadLists()?.list(configuration.list?.id)
+        let now = Date(), list = await ListMosaicImages.complete(WidgetStore.loadLists()?.list(configuration.list?.id))
         let entries = (0..<DS.Widget.listSteps).map { step in
             ListMosaicEntry(date: now.addingTimeInterval(Double(step) * DS.Widget.listStepMinutes * 60), list: list, step: step)
         }
         return Timeline(entries: entries, policy: .atEnd)
+    }
+}
+
+/// Los pósters que le faltan al muro los baja el propio widget. La app los baja de todas tus listas (hasta 12 × 24), uno por
+/// uno y solo mientras está abierta: si salías antes de que terminara, las listas de abajo se quedaban con uno o dos pósters y
+/// lo demás en gris (Fernando, 3 nov 2026: «sigue sin cargar»). Aquí solo los de la lista elegida, unos cuantos a la vez, y
+/// se guardan con el mismo nombre que usa la app (no se vuelven a bajar).
+enum ListMosaicImages {
+    static func complete(_ list: WidgetLists.List?) async -> WidgetLists.List? {
+        guard var list else { return nil }
+        let missing = list.posters.indices.filter { list.posters[$0].imageFile.flatMap(WidgetStore.listImageURL).map { !exists($0) } ?? true }
+        let found: [Int: String] = await withTaskGroup(of: (Int, String?).self) { group in
+            var next = missing.makeIterator(), result: [Int: String] = [:]
+            func add() { if let i = next.next() { let poster = list.posters[i]; group.addTask { (i, await fetch(poster)) } } }
+            for _ in 0..<DS.Widget.listDownloadsAtOnce { add() }
+            for await (i, name) in group { if let name { result[i] = name }; add() }
+            return result
+        }
+        for (i, name) in found { list.posters[i].imageFile = name }
+        return list
+    }
+
+    private static func exists(_ url: URL) -> Bool { FileManager.default.fileExists(atPath: url.path) }
+
+    /// El nombre del archivo si ya estaba o si se pudo bajar; nil si no.
+    private static func fetch(_ poster: WidgetLists.Poster) async -> String? {
+        let name = WidgetLists.imageFileName(for: poster.metaID)
+        guard let target = WidgetStore.listImageURL(name) else { return nil }
+        if exists(target) { return name }
+        guard let url = URL(string: Artwork.variant(poster.poster, pixels: Int(DesignTokens.Widget.listImagePixels))) else { return nil }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = DS.Widget.listDownloadTimeout
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              ((response as? HTTPURLResponse)?.statusCode ?? 200) < 400,
+              let reduced = WidgetImage.reduce(data, maxPixels: DesignTokens.Widget.listImagePixels, quality: DesignTokens.Widget.jpegQuality),
+              (try? reduced.data.write(to: target, options: .atomic)) != nil else { return nil }
+        return name
     }
 }
 

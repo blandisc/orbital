@@ -465,6 +465,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// El mosaico avanza solo una fila cada `listStepMinutes` (iOS lo anima entre un cuadro y el siguiente; un widget no
         /// puede moverse de forma continua). Se dejan listos `listSteps` cuadros: seis horas.
         static let listStepMinutes = 20.0, listSteps = 18
+        /// Los pósters que le faltan al mosaico los baja el widget: cuántos a la vez y cuánto espera cada uno (segundos).
+        static let listDownloadsAtOnce = 6, listDownloadTimeout: TimeInterval = 8
         /// Cuánto se corre el orden con cada «Revolver» (un primo: cada número da otro orden).
         static let listShuffleJump = 11
     }
