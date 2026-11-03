@@ -36,6 +36,8 @@ extension DS {
         static let tvBody = Color(red: 0.6, green: 0.42, blue: 0.74)    // la tele morada de la sala
         static let tvShade = Color(red: 0.42, green: 0.27, blue: 0.55)
         static let knob = Color(red: 0.3, green: 0.18, blue: 0.4)
+        /// Las franjas de la pantalla de la tele del widget cuando la imagen es panorámica: negro, como una tele vieja.
+        static let screenBars = Color.black
         static let antenna = Color(red: 0.62, green: 0.62, blue: 0.66)
         static let osd = Color(red: 0.35, green: 1, blue: 0.45)          // el número de canal verde de las teles viejas
     }

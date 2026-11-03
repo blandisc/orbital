@@ -175,7 +175,7 @@ private struct SmallView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .widgetURL(item.link)
-            .containerBackground(for: .widget) { ZStack { Art(item: item); bottomScrim() } }
+            .widgetArtBackground { ZStack { Art(item: item); bottomScrim() } }   // también en la pantalla tintada
         } else {
             EmptyState()
         }

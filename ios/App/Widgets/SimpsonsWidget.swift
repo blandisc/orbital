@@ -66,8 +66,8 @@ struct SimpsonsDayView: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             SimpsonsTV(day: entry.day).frame(maxWidth: .infinity)
             Spacer(minLength: 0)
-            Text("Episodio del día").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.backdropDeep.opacity(DS.Opacity.dimmed))
-            caption(lines: 1)
+            // En el chico, sin la etiqueta «Episodio del día»: el nombre cabe completo (antes «Treehouse of Horr…»).
+            caption(lines: 2)
         }
     }
 
@@ -149,8 +149,9 @@ private struct SimpsonsTV: View {
 
     /// La pantalla con la imagen del episodio (o la estática verde de la tele vieja si aún no la hay).
     private var screen: some View {
-        // Recortada al centro y reducida al tamaño exacto de la pantalla (`WidgetImage.fill`).
-        WidgetFillImage(url: day?.imageFile.flatMap { WidgetStore.simpsonsImageURL($0) }, anchor: .center) {
+        // Completa, con franjas negras arriba y abajo como en una tele vieja (Fernando, 2 nov 2026): las imágenes son
+        // panorámicas y la pantalla es casi cuadrada; recortada se perdía una cuarta parte (Bart a la mitad en «Cape Feare»).
+        WidgetFitImage(url: day?.imageFile.flatMap { WidgetStore.simpsonsImageURL($0) }, bars: DS.Simpsons.screenBars) {
             ZStack {
                 DS.Simpsons.knob
                 Image("simpsons.donut").font(DS.font(.lg)).foregroundStyle(DS.Simpsons.amarillo)
