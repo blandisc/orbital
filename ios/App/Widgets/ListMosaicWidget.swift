@@ -98,11 +98,10 @@ struct ListMosaicView: View {
     }
 
     private func tile(_ poster: WidgetLists.Poster) -> some View {
-        ZStack {
-            DS.surface
-            if let file = poster.imageFile, let url = WidgetStore.listImageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()
-            } else {
+        // Recortado y reducido al tamaño exacto de la pieza (`WidgetImage.fill`).
+        WidgetFillImage(url: poster.imageFile.flatMap { WidgetStore.listImageURL($0) }) {
+            ZStack {
+                DS.surface
                 Text(verbatim: poster.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
                     .multilineTextAlignment(.center).padding(DS.Space.s1)
             }

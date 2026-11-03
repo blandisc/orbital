@@ -18,7 +18,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         public var progress: Double?
         /// El póster remoto de donde salió la imagen (la app lo baja y lo reduce; el widget no lo usa).
         public var poster: String?
-        /// Nombre del archivo del póster vertical reducido (JPEG, máx. `DesignTokens.Widget.maxImagePixels`), junto al snapshot.
+        /// Nombre del archivo del póster vertical reducido (JPEG, máx. `DesignTokens.Widget.posterPixels`), junto al snapshot.
         public var imageFile: String?
         /// La imagen ancha (fondo) de donde salió `wideFile`, y el logo del título de donde salió `logoFile` (la app los baja y reduce).
         public var wide: String?

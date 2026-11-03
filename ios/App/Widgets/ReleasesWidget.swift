@@ -69,11 +69,10 @@ struct ReleasesView: View {
 private struct ReleasePoster: View {
     var airing: WidgetSnapshot.UpcomingEpisode
     var body: some View {
-        ZStack {
-            DS.surface
-            if let file = airing.imageFile, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()   // en la pantalla de inicio tintada, el arte sigue siendo foto
-            } else {
+        // Recortado y reducido al tamaño exacto del póster (`WidgetImage.fill`).
+        WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }) {
+            ZStack {
+                DS.surface
                 Text(verbatim: airing.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
                     .multilineTextAlignment(.center).padding(DS.Space.s1)
             }
@@ -120,13 +119,14 @@ private struct ReleaseWhen {
     }
 }
 
-/// El punto del rótulo, como en la línea de Inicio: verde lo que ya salió (se puede ver), gris lo que viene.
+/// El punto del rótulo, como en la línea de Inicio: turquesa (`DS.fresh`, el punto del logo) lo que ya salió (se puede ver), gris lo
+/// que viene.
 private struct ReleaseDot: View {
     var out: Bool
     /// Sobre el arte (el chico): lo que viene en papel, que el gris no se ve.
     var onArt = false
     var body: some View {
-        Circle().fill(out ? DS.success : onArt ? DS.onArtSecondary : DS.ink500).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
+        Circle().fill(out ? DS.fresh : onArt ? DS.onArtSecondary : DS.ink500).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
     }
 }
 
@@ -171,11 +171,12 @@ private struct ReleasesLine: View {
         .widgetURL(URL(string: "\(WidgetLink.scheme)://"))
     }
 
-    /// La marca HOY: una línea verde delgada con «Hoy» arriba (la de Inicio).
+    /// La marca HOY: una línea turquesa delgada que se desvanece hacia abajo, con «Hoy» arriba (la de Inicio, `HomeTimeline`).
     private var todayMark: some View {
         VStack(spacing: DS.Space.s1) {
-            Text("Hoy").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.success)
-            Capsule().fill(DS.success).frame(width: DS.HomeTimeline.markLine).frame(maxHeight: .infinity)
+            Text("Hoy").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.fresh)
+            Capsule().fill(LinearGradient(colors: [DS.fresh, .clear], startPoint: .top, endPoint: .bottom))
+                .frame(width: DS.HomeTimeline.markLine).frame(maxHeight: .infinity)
         }
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityHidden(true)
@@ -238,10 +239,8 @@ private struct ReleasesSpotlight: View {
             .containerBackground(for: .widget) {
                 ZStack {
                     DS.bg
-                    if let file = airing.imageFile, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                        Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() }.clipped()
-                            .opacity(when.isOut ? 1 : DS.Opacity.dimmed)
-                    }
+                    WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }, anchor: .top)
+                        .opacity(when.isOut ? 1 : DS.Opacity.dimmed)
                     LinearGradient(stops: [.init(color: .clear, location: DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],   // ds-exception: el widget es otro programa y no trae ArtVeil
                                    startPoint: .top, endPoint: .bottom)
                 }

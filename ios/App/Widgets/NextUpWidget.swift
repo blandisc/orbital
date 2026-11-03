@@ -68,9 +68,9 @@ struct NextUpView: View {
 
 // MARK: Piezas
 
-/// La imagen reducida que dejó la app (nada de red aquí).
-private func poster(_ item: WidgetSnapshot.Item) -> UIImage? {
-    item.imageFile.flatMap { WidgetStore.imageURL($0) }.flatMap { UIImage(contentsOfFile: $0.path) }
+/// Un archivo de imagen del App Group que sí está.
+private func existing(_ file: String?) -> URL? {
+    file.flatMap { WidgetStore.imageURL($0) }.flatMap { FileManager.default.fileExists(atPath: $0.path) ? $0 : nil }
 }
 
 private func artTone(_ item: WidgetSnapshot.Item) -> Color { DS.Palette.color(hex: item.tint) ?? DS.surface }
@@ -103,15 +103,22 @@ private struct Art: View {
     var body: some View {
         ZStack {
             tintedBackground(artTone(item))
-            if let image = (wide ? item.wideFile.flatMap(load) : nil) ?? poster(item) {
-                // La imagen solo rellena el espacio que le toca (no lo agranda): si no, empuja el texto fuera del widget.
-                Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() }.clipped()
-            }
+            // Recortada y reducida al tamaño exacto del hueco (`WidgetImage.fill`): nítida y sin pasar del límite de WidgetKit.
+            if let url = (wide ? existing(item.wideFile) : nil) ?? existing(item.imageFile) { WidgetFillImage(url: url, anchor: .top) }
         }
     }
 }
 
-private func load(_ file: String) -> UIImage? { WidgetStore.imageURL(file).flatMap { UIImage(contentsOfFile: $0.path) } }
+/// El logo del título a su tamaño exacto (cabe en `box`), o nil si no hay.
+private struct LogoImage: View {
+    var url: URL
+    @Environment(\.displayScale) private var scale
+    var body: some View {
+        if let image = WidgetImage.fit(url, box: CGSize(width: DS.Widget.logoWidth, height: DS.Widget.logoHeight), scale: scale) {
+            Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFit()
+        }
+    }
+}
 
 /// El velo inferior: del arte limpio a casi opaco, para que el título y el dato se lean (en el ancho empieza más arriba).
 private func bottomScrim(wide: Bool = false) -> some View {
@@ -127,8 +134,8 @@ private struct Caption: View {
     var actions: WatchActions.Style? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            if let logo = item.logoFile.flatMap(load) {
-                Image(uiImage: logo).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFit().frame(maxHeight: DS.Widget.logoHeight, alignment: .leading)
+            if let logo = existing(item.logoFile) {
+                LogoImage(url: logo).frame(maxWidth: DS.Widget.logoWidth, maxHeight: DS.Widget.logoHeight, alignment: .leading)
                     .accessibilityLabel(item.title)
             } else {
                 Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
@@ -300,10 +307,8 @@ private struct Row: View {
     var body: some View {
         Link(destination: item.link ?? URL(fileURLWithPath: "/")) {
             HStack(spacing: DS.Space.s2) {
-                ZStack {
-                    if let image = poster(item) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() } else { artTone(item) }
-                }
-                .frame(width: DS.Widget.thumbWidth).aspectRatio(DS.Poster.aspect, contentMode: .fit)
+                WidgetFillImage(url: existing(item.imageFile)) { artTone(item) }
+                .frame(width: DS.Widget.thumbWidth, height: DS.Widget.thumbWidth / DS.Poster.aspect)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(item.title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)

@@ -223,19 +223,28 @@ public enum DesignTokens {
     /// tono del arte (como `ArtTint`), la calidad del JPEG, cada cuánto se pide recarga si la app no avisa, el alto de la barra de
     /// avance y el ancho de la miniatura de los renglones del widget mediano (puntos).
     public enum Widget {
-        public static let maxImagePixels = 300.0, jpegQuality = 0.7, tintMix = 0.55, fallbackRefreshHours = 6.0
+        /// Con cuánto se guarda cada imagen (lado largo, pixeles): un poco más de lo que pide el hueco más grande donde sale, en
+        /// un iPhone Pro Max (× 3). El widget la lee ya recortada al tamaño exacto de su hueco (`WidgetImage.fill`), así que
+        /// guardar más no pasa del límite de WidgetKit. Antes todas a 300 px y JPEG 0,7: borrosas (Fernando, 2 nov 2026).
+        /// - Póster: el chico lo pinta a lo ancho (170 pt → 510 px de ancho, 765 de alto): el «large» de metahub (780×1170).
+        /// - Ancha: el grande la pinta a lo ancho (364 pt → 1092 px): el fondo «medium» de metahub (1920×1080) reducido.
+        /// - Logo: hasta 28 pt de alto y ~180 de ancho (540 px).
+        public static let posterPixels = 900.0, widePixels = 1280.0, logoPixels = 600.0
+        public static let jpegQuality = 0.82, tintMix = 0.55, fallbackRefreshHours = 6.0
         /// Segundos que el app espera antes de preparar el widget (no compite con la pantalla que se está abriendo).
         public static let publishDelay = 2.0
         public static let progressHeight = 3.0, thumbWidth = 44.0
         /// Dónde empieza el velo inferior del póster (fracción de su alto) para que el título se lea.
         public static let scrimStart = 0.25, scrimStartWide = 0.05
         /// Alto del logo del título y radio de la sombra del texto sobre el arte (contraste del dato, como en el destacado de Inicio).
-        public static let logoHeight = 28.0, textShadowRadius = 3.0
+        public static let logoHeight = 28.0, logoWidth = 180.0, textShadowRadius = 3.0
         /// «Un Simpson del día»: la imagen del episodio (más grande que un póster: llena el mediano) y cuántos días por delante
         /// debe haber armados antes de volver a armar la semana.
-        public static let simpsonsImagePixels = 600.0, simpsonsAheadDays = 3
-        /// «Mosaico de una lista»: los pósters del muro son chicos (hasta 24 por lista).
-        public static let listImagePixels = 220.0
+        /// La imagen del episodio se guarda completa (w780 de TMDB): la pantalla de la tele la recorta a 4:3 al centro.
+        public static let simpsonsImagePixels = 780.0, simpsonsAheadDays = 3
+        /// «Mosaico de una lista»: los pósters del muro (hasta 24 por lista). En el grande cada uno mide ~73 × 110 pt (330 px
+        /// de alto); antes 220 px y se veían borrosos.
+        public static let listImagePixels = 450.0
         /// «Viendo en la TV»: cuánto salta cada botón (lo mismo que el control: 10 s) y cuántos segundos de diferencia con lo
         /// esperado justifican mandar otra actualización.
         public static let tvSkip = 10.0, tvDrift = 5.0

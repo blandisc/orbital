@@ -58,8 +58,23 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(WidgetLabels.spanish.timeLeft(20), "quedan 20 min")
     }
 
-    func testWidgetImagesStaySmall() {
-        XCTAssertLessThanOrEqual(DesignTokens.Widget.maxImagePixels, 300)
+    func testWidgetsAskForTheSharperVariant() {
+        XCTAssertEqual(Artwork.sharper("https://images.metahub.space/poster/medium/tt1/img", pixels: 900), "https://images.metahub.space/poster/large/tt1/img")
+        XCTAssertEqual(Artwork.sharper("https://images.metahub.space/poster/medium/tt1/img", pixels: 450), "https://images.metahub.space/poster/medium/tt1/img")
+        XCTAssertEqual(Artwork.sharper("https://images.metahub.space/background/small/tt1/img", pixels: 1280), "https://images.metahub.space/background/medium/tt1/img")
+        XCTAssertEqual(Artwork.sharper("https://image.tmdb.org/t/p/w342/a.jpg", pixels: 900), "https://image.tmdb.org/t/p/w780/a.jpg")
+        XCTAssertEqual(Artwork.sharper("https://image.tmdb.org/t/p/w1280/a.jpg", pixels: 1280), "https://image.tmdb.org/t/p/w1280/a.jpg")
+    }
+
+    /// Nítidas en el hueco más grande donde salen (Pro Max, × 3) sin llegar a pesar: ninguna pasa de ~1300 px.
+    func testWidgetImagesAreSharpButBounded() {
+        let w = DesignTokens.Widget.self
+        XCTAssertGreaterThanOrEqual(w.posterPixels, 765)     // el chico: póster a lo ancho de 170 pt
+        XCTAssertGreaterThanOrEqual(w.widePixels, 1092)      // el grande: imagen ancha de 364 pt
+        XCTAssertGreaterThanOrEqual(w.logoPixels, 540)
+        XCTAssertGreaterThanOrEqual(w.listImagePixels, 330)  // el mosaico grande: pósters de 110 pt de alto
+        for pixels in [w.posterPixels, w.widePixels, w.logoPixels, w.listImagePixels, w.simpsonsImagePixels] { XCTAssertLessThanOrEqual(pixels, 1300) }
+        XCTAssertGreaterThanOrEqual(w.jpegQuality, 0.8)
         XCTAssertGreaterThan(DesignTokens.Widget.fallbackRefreshHours, 0)
     }
 }
