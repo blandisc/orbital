@@ -26,7 +26,7 @@ import threading
 import time
 
 from . import player_ui
-from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, seek_step, track_variant
+from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, VOLUME_BOOST_MAX, seek_step, track_variant
 from .player_subs import SubtitleTrial
 from .text import clock
 
@@ -861,7 +861,18 @@ class PlayerScreen(SubtitleTrial):
         system = getattr(self, "system_volume", None)
         if system:
             now = system[0]() or {}
-            level = max(0, min(100, int(now.get("level") or 0) + 5 * direction))
+            current = int(now.get("level") or 0)
+            boost = getattr(self, "boost", 100)
+            # Pasado el 100 de Windows, sigue el del reproductor (hasta VOLUME_BOOST_MAX); al bajar, primero se quita eso.
+            if (direction > 0 and current >= 100) or (direction < 0 and boost > 100):
+                boost = max(100, min(VOLUME_BOOST_MAX, boost + 5 * direction))
+                self.boost = boost
+                self.mpv.command("set_property", "volume", boost)
+                if direction > 0 and now.get("muted"):
+                    system[1](level=current, muted=False)
+                self._show_notice(player_ui.volume_ass(boost, muted=False), 1.6, layer=self.VOLUME)
+                return
+            level = max(0, min(100, current + 5 * direction))
             after = system[1](level=level, muted=False if direction > 0 else None) or {"level": level}
             self._show_notice(player_ui.volume_ass(after.get("level", level), muted=bool(after.get("muted"))), 1.6, layer=self.VOLUME)
             return

@@ -241,11 +241,16 @@ def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
                     ("subs-fallback", "default"), ("subs-fallback-forced", "yes")]
 
 
+# El volumen es el de Windows; pasado su 100, el reproductor amplifica hasta aquí (Fernando, 2 nov 2026: «el 100 es muy
+# bajo y tengo que subir mucho la tele, y al cambiar de aplicación está muy alto»). Ver player_screen._change_volume.
+VOLUME_BOOST_MAX = 150
+
+
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
                   subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
                   sub_scale: float = 1.0, live: bool = False, user_agent: str | None = None,
                   referrer: str | None = None, ytdl: str | None = None, ytdl_format: str | None = None,
-                  paused: bool = False) -> list[str]:
+                  paused: bool = False, volume: int = 100) -> list[str]:
     """`live`: un canal de TV (caché corta, reconexión, sin posición que recordar). `user_agent` y `referrer`
     son los del canal; los canales siguientes los llevan en su propio `loadfile` (ver OrbitalPlayer.tune).
     `ytdl`: dónde está yt-dlp, para abrir un video de YouTube (ver ytdlp.py); `ytdl_format`, qué calidad y audio pedirle.
@@ -271,7 +276,7 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         # (DWM) y cada cambio de video ~100 MB más, sin devolverlos nunca (controlador AMD, tele 4K: llegó a 14 GB y
         # Windows se quedaba sin RAM). Medido en la tele: con flip, +578 MB en 4 ventanas; sin flip, 0 MB.
         "--d3d11-flip=no",
-        "--save-position-on-quit=no", "--volume=100", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
+        "--save-position-on-quit=no", f"--volume={volume}", f"--volume-max={VOLUME_BOOST_MAX}", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
     ]
     if live:
         cmd.append(f"--user-agent={user_agent or LIVE_USER_AGENT}")

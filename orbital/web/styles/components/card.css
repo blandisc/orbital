@@ -179,6 +179,10 @@
 
 /* Sin portada propia, el nombre y la consola ya van sobre el arte: en el pie de Buscar no se repiten. */
 .card--no-art .card__caption, .card--named .card__caption { display: none; }
+/* Sin arte: el color de su consola o de las películas y series (--fill, card.js), no un cuadro gris (unslop, 2 nov 2026). */
+.card--no-art {
+  background: radial-gradient(130% 90% at 25% 15%, color-mix(in oklab, var(--fill, var(--system-default)) 45%, var(--color-backdrop-deep)), color-mix(in oklab, var(--fill, var(--system-default)) 14%, var(--color-backdrop-deep)) 75%);
+}
 
 /* Destacados: el logo del título sobre el arte ancho, abajo a la izquierda, con la base oscura del arte para leerse. */
 /* height: auto: con avance, la regla de .card--has-progress (alto 30 %) la cortaba en seco a media tarjeta. */

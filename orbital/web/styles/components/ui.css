@@ -131,13 +131,14 @@
 .section-head__reason { flex-basis: 100%; margin: 0; color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .section-head__title { font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); white-space: nowrap; }
 .section-head__end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
-/* Sección: el rótulo (ícono en el azul de Orbital, nombre en mayúsculas chicas, línea fina hasta la orilla y el dato). */
+/* Sección: el rótulo (ícono en el azul de Orbital, nombre en minúsculas y negrita, línea fina hasta la orilla y el dato). Antes en
+   mayúsculas espaciadas (IN-1, 2 nov 2026: se veían «de IA»). */
 .section-head--section { align-items: center; gap: var(--space-2); }
 .section-head__icon { display: grid; place-items: center; flex: none; width: 1.15em; height: 1.15em; color: var(--color-orbital); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .section-head__icon svg { width: 100%; height: 100%; }
 .section-head__label {
   margin: 0; color: var(--color-text-muted); font-family: var(--font-sans); font-size: var(--type-group-label); font-weight: var(--type-group-label-weight);
-  letter-spacing: var(--type-group-label-tracking); text-transform: uppercase; white-space: nowrap; /* ds-exception: rótulo de sección */
+  letter-spacing: var(--type-group-label-tracking); white-space: nowrap;
 }
 .section-head__rule { flex: 1; min-width: var(--space-6); height: 0; border-top: 1px solid var(--color-hairline); margin-left: var(--space-2); }
 .section-head--section .section-head__end { margin-left: var(--space-2); }
@@ -164,8 +165,13 @@
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
 .badge--lg { padding: .22rem var(--space-3); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
-/* «En Netflix» (PlatformBadge): la cápsula del color de la plataforma, su logo a la izquierda y el texto en blanco. */
-.badge--platform { gap: var(--space-1); padding-left: var(--space-1); color: var(--color-text); background: var(--platform-color); }
+/* «En Netflix» (PlatformBadge): una cápsula de vidrio con el logo de la plataforma a la izquierda y el texto en blanco. El
+   color de la plataforma va solo en su logo (Fernando, 2 nov 2026, unslop): la cápsula roja o morada le competía al logo
+   del título, que es lo que tiene que brillar. --platform-color se queda para lo que sí lleva su color (una pieza sin arte). */
+.badge--platform {
+  gap: var(--space-1); padding-left: var(--space-1); color: var(--color-text);
+  background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+}
 .badge--platform-netflix { --platform-color: var(--platform-netflix); }
 .badge--platform-disney { --platform-color: var(--platform-disney); }
 .badge--platform-hbo { --platform-color: var(--platform-hbo); }

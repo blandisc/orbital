@@ -44,7 +44,8 @@ export function showFilter(filters, node) {
   filters.classList.toggle("browse__filters--scrolled", filters.scrollLeft > 0);
 }
 
-/** La portada enfocada siempre a la vista: la cuadrícula se recorre lo justo. */
+/** La portada enfocada siempre a la vista. Si hay que recorrer la cuadrícula, su fila sube hasta arriba: recorrerla «lo justo»
+ *  dejaba la fila de antes a medias y desvanecida, una franja vacía entre lo de arriba y los canales (TV-4, 2 nov 2026). */
 export function keepInView(grid, viewport, focusId) {
   const node = grid.querySelector(`[data-focus-id="${focusId}"]`);
   if (!node) return;
@@ -62,7 +63,7 @@ export function keepInView(grid, viewport, focusId) {
   const below = caption ? Math.max(0, caption.offsetTop + caption.offsetHeight - node.offsetHeight) * scale : 0;
   const bottom = node.offsetHeight + (below ? below + rem * .75 : 0); // y un respiro bajo el pie
   let next = shift;
-  if (top + bottom - shift > room) next = top + bottom - room;
+  if (top + bottom - shift > room) next = top;
   if (top < next) next = top; // el borde de arriba de la enfocada siempre gana
   grid.dataset.shift = String(Math.max(0, next));
   grid.style.transform = `translateY(${-Math.max(0, next)}px)`;

@@ -70,7 +70,7 @@ export function gameReason(item, now = Date.now()) {
   if (item.live) return "Abierto ahora";
   const ago = shortAgo(item.last_played, now);
   const when = ago && (ago === "ahora" || ago === "ayer" ? ago : /^\d/.test(ago) ? `hace ${ago}` : `el ${ago}`);
-  if (when) return item.playtime >= 60 ? `Lo jugaste ${when} · ${duration(item.playtime)}` : `Lo jugaste ${when}`;
+  if (when) return item.playtime >= 60 ? `Lo jugaste ${when} · ${duration(item.playtime)} en total` : `Lo jugaste ${when}`; // «en total» (JU-2)
   if (item.playtime >= 60) return `Llevas ${duration(item.playtime)}`;
   if (item.new) return "Nuevo en tu consola";
   return "Sin estrenar";

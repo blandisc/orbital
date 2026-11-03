@@ -118,9 +118,9 @@
   --type-badge: var(--text-2xs); /* una placa: «4K», «Nuevo», cifras en una placa */
   --type-badge-weight: var(--weight-bold);
   --type-badge-tracking: .02em;
-  --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en mayúsculas (DSGroupLabel); en la TV, un paso más grande: se lee de lejos */
+  --type-group-label: var(--text-sm); /* el rótulo de un grupo o de una sección, en minúsculas y negrita; en la TV, un paso más grande: se lee de lejos */
   --type-group-label-weight: var(--weight-bold);
-  --type-group-label-tracking: var(--tracking-caps);
+  --type-group-label-tracking: var(--tracking-label);
   --type-stat: var(--text-2xl); /* una cifra grande, tabular: el número que tecleas en TV en vivo */
   --type-stat-weight: var(--weight-heavy);
   --weight-regular: 400;
@@ -141,7 +141,7 @@
   --tracking-display: -.035em;
   --tracking-tight: -.015em;
   --tracking-label: .025em; /* letras chicas y en negrita: glifos, «Abierto» */
-  --tracking-caps: .1em; /* el rótulo de una sección: su nombre en mayúsculas chicas, con aire entre letras (DSChapterLabel) */
+  --tracking-caps: .1em; /* lo poco que va en mayúsculas (el sello del mazo, el listón «Nuevo»): con aire entre letras */
   --tracking-digits: .12em; /* cifras y puntos que se leen uno a uno: los de una contraseña, el número tecleado de un canal */
   --tracking-rank: -.08em; /* la cifra grande del Top 10: el «10» no se abre de más */
   --blur-case: 32px; /* el fondo del estuche: la portada de una caja, tan desenfocada que solo queda su color */

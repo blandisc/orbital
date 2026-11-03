@@ -587,7 +587,7 @@ def test_whats_new_of_yours_has_last_week_and_whats_coming(make_foryou, net):
     items = fy.latest(now=now)
     assert [(i["title"], i["day_label"], i["why"], i["released"]) for i in items] == [
         ("Martes", "Viernes 9", "Ya salió", True), ("Ayer", "Ayer", "Ya salió", True), ("Hoy", "Hoy", "Sale hoy", False),
-        ("Luego", "Domingo 18", "Domingo 18", False)]
+        ("Luego", "Domingo 18", "Episodio nuevo el domingo 18", False)]
     asked = [c for c in net.calls if "/calendars/my/shows/" in c[1]]
     assert len(asked) == 1 and "/2026-10-07/23" in asked[0][1]
     assert {row["id"]: row for row in fy.lists()}["nuevo"]["title"] == "Lo nuevo de lo tuyo"

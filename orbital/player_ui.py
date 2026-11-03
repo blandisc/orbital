@@ -165,8 +165,13 @@ def sub_kind(track: dict) -> str:
     return "normal"
 
 
+# La variante de un idioma va pegada a él («Español latino», no «Español · Latino»): un separador menos y el nombre del audio
+# cabe en su columna (RE-1, 2 nov 2026: se cortaba en «Español · Latino · Estér…»).
+VARIANTS = {"latino", "latinoamérica", "latinoamericano", "castellano", "españa", "méxico", "brasil", "portugal", "francia", "canadá"}
+
+
 def track_label(track: dict) -> str:
-    """'Inglés · 5.1 · E-AC3' / 'Español · Forzados' / 'Pista 3'."""
+    """'Inglés · 5.1 · E-AC3' / 'Español latino · Estéreo' / 'Español · Forzados' / 'Pista 3'."""
     parts = [language(track.get("lang"))]
     title = (track.get("title") or "").strip()
     lowered = title.lower()
@@ -175,6 +180,8 @@ def track_label(track: dict) -> str:
         parts.append("Forzados")
     elif kind == "sdh":
         parts.append("Para sordos")
+    elif title and lowered in VARIANTS and parts[0]:
+        parts[0] = f"{parts[0]} {lowered}"
     elif title and language(track.get("lang")).lower() not in lowered and len(title) <= 28:
         parts.append(title)
     if track.get("type") == "audio":
@@ -365,11 +372,36 @@ def wrap(value: str, size: int, width: float, lines: int) -> list[str]:
     return out
 
 
+def wrap_sentences(value: str, size: int, width: float, lines: int) -> list[str]:
+    """Como `wrap`, pero si el texto no cabe termina en la última frase completa que sí cabe, con su punto, no a media frase
+    con «…» (PA-1, 2 nov 2026: la sinopsis de la pausa acababa en «…en un lugar en el que…»). Si ni la primera frase cabe,
+    se corta como siempre."""
+    text_value = str(value or "").strip()
+    full = wrap(text_value, size, width, lines)
+    if " ".join(full) == " ".join(text_value.split()):
+        return full
+    sentences = [s for s in re.split(r"(?<=[.!?…])\s+", text_value) if s]
+    for count in range(len(sentences) - 1, 0, -1):
+        shorter = " ".join(sentences[:count])
+        out = wrap(shorter, size, width, lines)
+        if " ".join(out) == " ".join(shorter.split()):
+            return out
+    return full
+
+
 def fit(value: str, size: int, width: float, weight: str = "regular") -> str:
-    """Una sola línea que cabe en `width` (termina en «…»)."""
+    """Una sola línea que cabe en `width`. Si son datos con « · » («Español latino · Estéreo · AAC»), primero se quitan los del
+    final, enteros; solo si ni el primero cabe se corta con «…» (RE-1: nada se corta a media palabra si hay de dónde quitar)."""
     value = str(value)
     if text_width(value, size, weight) <= width:
         return value
+    pieces = value.split(" · ")
+    while len(pieces) > 1:
+        pieces.pop()
+        shorter = " · ".join(pieces)
+        if text_width(shorter, size, weight) <= width:
+            return shorter
+    value = pieces[0]
     while value and text_width(value + "…", size, weight) > width:
         value = value[:-1]
     return value.rstrip(" ,.;:·") + "…"
@@ -563,11 +595,14 @@ def paused_ass(hud: Hud) -> str:
     # Con logo, el título va estilizado (la imagen la pone mpv encima, en `placed`); sin él, su nombre en texto.
     title_lines = [] if hud.logo else wrap(hud.title, 64, width, 2)
     title_h = hud.logo[1] + 28 if hud.logo else 92 * len(title_lines)
-    meta = " · ".join(p for p in (hud.detail, hud.facts) if p)
-    about = wrap(hud.description, 26, min(1000, width), 3)
+    # En una serie, lo que ves es el episodio: va en su propio renglón, en blanco y más grande, bajo el logo; la línea de datos
+    # queda con lo de la serie (PA-2, 2 nov 2026: «T13 E22 · Papá tiene una placa nueva» iba perdido en la línea gris).
+    episode = hud.detail if hud.series and hud.detail else ""
+    meta = hud.facts if episode else " · ".join(p for p in (hud.detail, hud.facts) if p)
+    about = wrap_sentences(hud.description, 26, min(1000, width), 3)
     # Bajo «En pausa», aire: con logo, una línea más (pegados, el ícono de pausa y el logo se leían como una sola pieza).
     after_pause = 78 if hud.logo else 54
-    height = after_pause + title_h + (52 if meta else 0) + 40 * len(about) + 30 + 62
+    height = after_pause + title_h + (60 if episode else 0) + (52 if meta else 0) + 40 * len(about) + 30 + 62
     y = max(110, BAR_Y - 56 - height)
     # «‖ En pausa»: el ícono dibujado (dos barras) y la palabra, sin mayúsculas.
     lines += [rrect(MARGIN, y + 5, 6, 22, 2, TEXT), rrect(MARGIN + 12, y + 5, 6, 22, 2, TEXT),
@@ -579,6 +614,9 @@ def paused_ass(hud: Hud) -> str:
     for line in title_lines:
         lines.append(text(MARGIN, y, esc(line), 64, weight="bold"))
         y += 92
+    if episode:
+        lines.append(text(MARGIN, y, esc(fit(episode, 36, width, "semi")), 36, weight="semi"))
+        y += 60
     if meta:
         lines.append(text(MARGIN, y + 4, esc(fit(meta, 26, min(1300, width))), 26, SOFT))
         y += 52
@@ -1288,7 +1326,7 @@ def volume_ass(volume: float, muted: bool = False) -> str:
     que se llena de abajo arriba y la bocina abajo, con sus ondas según el nivel (o una ✕ en silencio: la barra se apaga).
     Arriba a la derecha van los avisos y antes se encimaban; abajo, la barra del video y los paneles."""
     try:
-        level = max(0.0, min(100.0, float(volume)))
+        level = max(0.0, min(150.0, float(volume)))  # pasado 100, el reproductor amplifica (playback.VOLUME_BOOST_MAX)
     except (TypeError, ValueError):
         level = 0.0
     if not math.isfinite(level):
@@ -1297,7 +1335,7 @@ def volume_ass(volume: float, muted: bool = False) -> str:
     x, y = W - MARGIN + 20 - w, BUFFER_Y + 80  # debajo de «Cargando…» y del anillo de «Salir»
     track_w, track_top, track_h = 14, y + 70, 170
     track_x = x + (w - track_w) / 2
-    fill = 0 if muted else max(track_w, track_h * level / 100)
+    fill = 0 if muted else max(track_w, track_h * min(level, 100) / 100)  # la barra llena en 100; el número dice cuánto más
     number = "—" if muted else f"{int(level)}"
     parts = [rrect(x, y, w, h, w / 2, PANEL, "38", blur=1),  # la cápsula, como los paneles (un poco de vidrio)
              text(x + w / 2, y + 38, number, 30, TEXT, weight="semi", align=5, alpha="70" if muted else "00"),

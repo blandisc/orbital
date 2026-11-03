@@ -234,7 +234,7 @@ export function whenSaid(at, now = new Date()) {
   return today ? `hoy ${time}` : `${d} ${MONTHS[mo - 1]} ${time}`;
 }
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const clock12 = (h, mi) => `${h % 12 || 12}:${String(mi).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}`;
+const clock12 = (h, mi) => `${h % 12 || 12}:${String(mi).padStart(2, "0")}\u00a0${h < 12 ? "a.\u00a0m." : "p.\u00a0m."}`; // sin partirse (TV-3)
 
 /**
  * Qué ha oído la consola: cuándo llegó la última orden de cada lado y las últimas que llegaron, con lo que se dijo, lo

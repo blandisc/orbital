@@ -249,6 +249,7 @@ class OrbitalPlayer(PlayerScreen):
         self.iphone_provider = None  # () -> bool: ¿hay iPhone conectado? (Y › «Enviar al iPhone»)
         self.on_send_iphone = None  # (meta, "open" | "download") -> aviso en palabras (o lanza ValueError con el motivo)
         self.system_volume = None  # (leer, escribir) del volumen de Windows: un solo volumen (ver player_screen._muted)
+        self.boost = 100  # el volumen del reproductor: 100, o más si pasaste el 100 de Windows; el siguiente video arranca igual
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         self.on_sub_kept = None  # (meta): «Probar otros» › «Este va bien»: recordar ya esos subtítulos (y su sincronía)
         self.spanish_provider = None  # (meta) -> "es-419" | "es-ES" | "": el doblaje que va con ese título
@@ -296,7 +297,7 @@ class OrbitalPlayer(PlayerScreen):
             self._safe(self.before_open)
         self._held = bool(options.get("paused"))
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, bindings=input_conf(),
-                                    sub_scale=self.sub_scale, **options))
+                                    sub_scale=self.sub_scale, volume=getattr(self, "boost", 100), **options))
         self.menu = None
         self._card = None
         self._user_quit = False

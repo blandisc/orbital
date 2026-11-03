@@ -1,7 +1,7 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { logoUrl as titleLogo, rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
-import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
+import { SYSTEMS, platformColor, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { clampRatio, coverRatio, needsInternet } from "../core/library.js";
@@ -58,6 +58,9 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   const logo = wide && logoUrl ? h("img", { class: "card__logo", src: trimmedLogo(logoUrl), alt: item.title, decoding: "async" }) : null;
   logo?.addEventListener("error", () => logo.replaceWith(h("span", { class: "card__label" }, item.title)), { once: true });
   const icon = appIcon(item);
+  // Sin arte: la tarjeta toma el color de su consola o, si es video, el de las películas y series (card.css · .card--no-art),
+  // no el grafito de siempre (unslop, 2 nov 2026: «un rectángulo negro con un ícono»).
+  const fill = platformColor(item);
   const fallback = () => (icon
     ? h("span", { class: "card__placeholder card__placeholder--app", "aria-hidden": "true" }, h("img", { class: "card__app-icon", src: icon, alt: "" }))
     : h("span", { class: "card__placeholder", "aria-hidden": "true" }, svg(ICONS[systemIconName(item)])));
@@ -74,6 +77,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     "aria-label": item.title,
     onClick: onPress,
   });
+  if (fill) card.style.setProperty("--fill", fill);
   const setRatio = (ratio) => {
     card.dataset.ratio = String(ratio);
     card.style.setProperty("--ratio", String(ratio));

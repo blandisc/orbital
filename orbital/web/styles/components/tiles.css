@@ -47,8 +47,9 @@
 .tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
 .tile--console__text { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: var(--space-2) var(--inset-card) var(--inset-card); }
 .tile--console__name {
-  /* Con letra grande, «GameCube» quedaba en «GameC…»: el nombre se achica lo justo para caber en la tarjeta. */
-  font-family: var(--font-sans); font-size: min(var(--type-section), var(--console-name-fit)); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
+  /* Con letra grande, «GameCube» quedaba en «GameC…»: el nombre se achica lo justo para caber en la tarjeta. Pasadas las 8 letras
+     («GeForce NOW») se achica en proporción a las que tiene (--name-chars, tiles.js), para no cortarse (IN-3). */
+  font-family: var(--font-sans); font-size: min(var(--type-section), calc(var(--console-name-fit) * 8 / var(--name-chars, 8))); font-weight: var(--weight-bold); line-height: var(--leading-title); letter-spacing: var(--tracking-tight);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
 .tile--console__text { min-width: 0; }

@@ -86,7 +86,7 @@ export function createTv({ onFocus, onPick }) {
     return h("button", {
       class: ["tile", "tv__tile", "needs-internet", isShaky(channel) && "tile--dimmed"], type: "button", tabindex: "-1", "data-focus-id": id,
       "aria-label": channelLabel(channel), onClick: () => onPick?.(targets.get(id), id),
-    }, channel.synthetic ? Chip("24/7", { plate: true, className: "tv__number" }) : channel.number && Chip(String(channel.number), { plate: true, className: "tv__number" }),
+    }, !channel.synthetic && channel.number && Chip(String(channel.number), { plate: true, className: "tv__number" }), // sin «24/7»: lo llevaban casi todos (TV-2)
     channel.id === playing ? Badge("Al aire", { plate: true, className: "tv__flag" })
       : isShaky(channel) && Chip("Sin señal reciente", { tone: "warn", plate: true, className: "tv__flag" }),
     h("span", { class: "tv__media" }, logo || fallback),

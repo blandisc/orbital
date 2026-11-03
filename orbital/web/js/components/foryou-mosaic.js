@@ -1,10 +1,12 @@
 import { h, svg } from "../core/dom.js";
-import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio } from "../core/foryou.js";
+import { softHyphens } from "../core/format.js";
+import { brandParts, kindLabel, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio } from "../core/foryou.js";
+import { systemColor } from "../core/home.js";
 import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { reducedMotion, settler } from "../core/motion.js";
 import { ArtFit } from "./art-fit.js";
-import { Badge, PlatformBadge } from "./ui.js";
+import { Badge, PLATFORM_PILLS, PlatformBadge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
 import { tokenPx } from "../core/tokens.js";
 
@@ -16,10 +18,28 @@ const POSTER_PX = 360;
 function whyBadge(why) {
   const parts = brandParts(why);
   const brand = parts.find((p) => p.brand)?.brand;
-  return PlatformBadge(why, brand, { large: true })
+  // En una pieza angosta, «N.º 1 en HBO Max» se cortaba («N.º 1 en HB…»): ahí dice solo «N.º 1» y el logo dice dónde
+  // (Fernando, 2 nov 2026, unslop). Las dos van en la cápsula y el CSS enseña una (foryou-mosaic.css · __why-short).
+  const short = brand && !parts[0]?.brand ? parts[0].text.replace(/\s+(en|de)\s*$/, "").trim() : "";
+  const text = short && short !== why
+    ? h("span", {}, h("span", { class: "foryou-mosaic__why-full" }, why), h("span", { class: "foryou-mosaic__why-short" }, short))
+    : why;
+  return PlatformBadge(text, brand, { large: true })
     || Badge(h("span", {}, parts.map((p) => (p.brand ? h("span", { class: ["brand-name", `brand-name--${p.brand}`] }, p.text) : p.text))), { large: true });
 }
 const WIDE_PX = 720;
+
+/** Su dato: «Película · 2015». En una pieza angosta, solo «2015» (si no, «Película · 2…»); sin año, el tipo se queda. */
+function fact(item) {
+  const kind = kindLabel(item);
+  const detail = item?.detail;
+  if (!kind || !detail) return h("span", { class: "foryou-mosaic__fact" }, kind || detail || "");
+  return h("span", { class: "foryou-mosaic__fact" }, h("span", { class: "foryou-mosaic__fact-kind" }, `${kind} · `), detail);
+}
+
+/** Un juego de consola (no Steam): su caja trae la franja de la consola y la clasificación. En el mosaico va su arte
+ *  sin texto, con su logo encima (unslop, 2 nov 2026); la caja se queda para Juegos. */
+const sceneArt = (item) => item?.kind === "game" && item.item?.system && item.item.system !== "steam" && item.hero && item.logo;
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -124,12 +144,14 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
         if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare");
       });
     };
-    const poster = art(h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", alt: "", decoding: "async" }), sized(item.image || item.hero || "", POSTER_PX));
+    const scene = sceneArt(item);
+    const poster = art(h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", alt: "", decoding: "async" }),
+      scene ? sized(item.hero, WIDE_PX) : sized(item.image || item.hero || "", POSTER_PX)); // recortado a lo alto: pide más ancho
     // El arte ancho solo hace falta cuando su columna se enfoca (ahí todas pasan a lo ancho): se pide hasta entonces.
     // Antes cada pieza cargaba también su fondo ancho, aunque nunca se viera (el doble de memoria en Edge).
     // Sin fondo ancho, lo ancho es su póster: va entero sobre su copia desenfocada (ArtFit), no recortado a una franja.
     let wide = null;
-    swap(poster, sized(item.image_fallback || item.hero, POSTER_PX));
+    swap(poster, scene ? sized(item.image, POSTER_PX) : sized(item.image_fallback || item.hero, POSTER_PX));
     // En la columna enfocada, un juego de Steam sin foco enseña su cápsula (lleva el juego y su nombre); el «hero» es un
     // fondo pensado para el logo encima, así que solo sale en la pieza enfocada, con el logo.
     const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", alt: "", decoding: "async" });
@@ -143,7 +165,7 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
       }
       if (capsule && !capsule.getAttribute("src")) capsule.src = sized(item.wide, WIDE_PX);
     };
-    const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
+    const name = () => h("strong", { class: "foryou-mosaic__name" }, softHyphens(item.title)); // angosta: parte con guion (format.js)
     const kind = h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps));
     const logo = item.logo ? art(h("img", { class: "foryou-mosaic__logo", alt: item.title }), sized(trimmedLogo(item.logo), 320)) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
@@ -152,7 +174,13 @@ export function createForYouMosaic({ onFocus, onPick, covered = () => false }) {
       h("div", { class: "foryou-mosaic__info" },
         // Un solo renglón de texto (la insignia es flex: con pedazos sueltos se perdía el espacio, «enNetflix»).
         item.why && whyBadge(item.why), logo,
-        h("span", { class: "foryou-mosaic__fact" }, factLine(item))));
+        fact(item)));
+    if (scene) node.classList.add("foryou-mosaic__tile--scene");
+    // Sin ninguna imagen, la pieza se llena del color de su plataforma o su consola (no un cuadro negro): el de su cápsula
+    // («N.º 1 en HBO Max»), si no el de su consola, si no el de las películas y series.
+    const brand = brandParts(item.why).find((p) => p.brand)?.brand;
+    node.style.setProperty("--tile-fill", item.kind === "game" ? systemColor(item.item?.system || (item.item?.source === "steam" ? "steam" : null))
+      : PLATFORM_PILLS[brand] ? `var(--platform-${brand})` : "var(--system-media)");
     return { item, node, logo, loadWide, top: 0, h: 0 };
   }
 

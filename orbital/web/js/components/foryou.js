@@ -106,7 +106,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   function hints(g) {
     const end = { glyph: g.menu, label: "Menú", end: true }; // como en todas las pantallas base (las secciones ya las enseña la barra de arriba)
     if (!data) return [end];
-    if (mosaic.ambient) return [{ glyph: g.select, label: "Elegir" }, end];
+    if (mosaic.ambient) return [{ glyph: g.select, label: "Explorar" }, end]; // A entra al mosaico: el pie dice eso, no «Elegir»
     const item = mosaic.current;
     return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Opciones" },
       onDecide && { glyph: g.alt, label: "Decide por mí" }, end].filter(Boolean);

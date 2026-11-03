@@ -382,6 +382,18 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 - **Nada salta.** Una portada llega desenfocada y se enfoca mientras aparece; las calificaciones de la ficha ruedan hasta su número
   (`motion.js · rollNumber`) y su renglón se aparta desde que se abre (`title__ratings--waiting`); se precarga también el fondo de la
   tarjeta de atrás.
+- **Pasada de unslop por Explorar** (Fernando, 2 nov 2026; vale para toda la app): la cápsula de una plataforma
+  («N.º 1 en Netflix», `PlatformBadge`) es de vidrio y su color va solo en su logo; lo que no tiene arte se llena del color
+  de su consola o plataforma (`.card--no-art` con `--fill`, la pieza `--bare` de Explorar con `--tile-fill`), nunca un cuadro
+  gris; en una pieza angosta nada se corta: la versión corta del porqué («N.º 1»), el dato sin el tipo («2015») y el nombre
+  en la receta `eyebrow`, hasta cuatro renglones, con guiones suaves por sílaba (`format.js · softHyphens`); la sombra de lo
+  enfocado es `--focus-lift` (corta y con su filo); el pie dice qué hace el botón («Enter Explorar», no «Elegir»); un juego
+  de consola en Explorar va con su arte sin texto y su logo (la caja con la franja de la consola y la clasificación se queda
+  para Juegos).
+- **Una cuadrícula que se recorre** (`browse.js · keepInView`: Juegos, listas, TV en vivo) sube la fila enfocada hasta arriba; nunca
+  deja la de antes a medias y desvanecida, que se veía como un hueco (TV-4, 2 nov 2026).
+- **El porqué va arriba del título en todas las pantallas** (Fernando, 2 nov 2026, opción B): se consideró bajarlo a la línea de
+  datos (impeccable) y se descartó para que la regla sea una sola.
 - **El arte del fondo** (`backdrop.css`, Fernando, 2 nov 2026): arriba a la derecha, más chico que la pantalla (empieza a un
   tercio del ancho y termina a tres cuartos del alto), para que lo tapen menos la barra y el destacado; lo que deja libre se llena
   con su color (`backdrop__layer--art`). Una consola enfocada en Inicio no lleva arte: solo su color (`--system-*`).
@@ -547,8 +559,16 @@ letras que bajan: g, p, j, y).
 ## 6. Texto
 
 - **Fuentes**: todo el texto es Segoe UI Variable, la del sistema (`--font-sans` para títulos, `--font-text` para cuerpo); no se carga ninguna con `@font-face` porque Orbital corre en Windows. Solo el nombre de un premio (`--font-award`) pide una con remate: Didot (que Windows no trae), luego Bodoni MT y Palatino Linotype; en esta máquina sale Bodoni MT.
-- Español, frases normales. **Sin mayúsculas espaciadas** (se ven «de IA»; la única es el rótulo de sección, ver Excepciones): ni en etiquetas, ni pestañas,
-  ni insignias.
+- Español, frases normales. **Sin mayúsculas espaciadas** (se ven «de IA»): ni en etiquetas, ni pestañas, ni insignias, ni en el rótulo de
+  sección, que desde el 2 nov 2026 va en minúsculas y negrita («Tus consolas», IN-1); solo el sello del mazo y el listón «Nuevo» (ver Excepciones).
+- **Nada se corta en su lugar**: un nombre que no cabe en su tarjeta se achica antes de cortarse («GeForce NOW», IN-3); una hora con
+  «a. m.» o «p. m.» va con espacios que no se parten (`format.js · clock`, TV-3). En el reproductor, una línea de datos con « · » que no cabe
+  suelta primero los datos del final, enteros (`player_ui.fit`), y la variante de un idioma va pegada a él («Español latino · Estéreo», RE-1). Una sinopsis que no cabe termina en la última frase
+  completa (`player_ui.wrap_sentences`, PA-1), no a media frase con «…». En la pausa de una serie, el episodio va en su propio renglón,
+  en blanco, bajo el logo (PA-2). Pasado el 100 de Windows, el reproductor amplifica hasta 150 (`playback.VOLUME_BOOST_MAX`).
+- **Un dato dice qué es**: el tiempo jugado lleva «en total» («1 h 18 min en total», JU-2); una fecha dice qué pasa ese día
+  («Episodio nuevo el miércoles 4», PS-2).
+- **Una etiqueta que llevan casi todos no se pone**: no distingue nada (el «24/7» de los canales de Orbital, TV-2).
 - Tamaños solo con `--text-*` o, mejor, una receta `--type-*` (escalan con Ajustes → Tamaño del texto).
 - Títulos con `line-clamp` o «…»: `-webkit-line-clamp` corta en el borde del último renglón, así que un `padding-bottom` no salva la cola de g, p, j, y. **Chicos** (tarjetas, riel, hojas): interlineado `--leading-title` (1,3). **Grandes** (héroe, ficha, destacado, mosaico): su interlineado de siempre y `overflow: clip; overflow-clip-margin: var(--clip-tail)`, que deja asomar la cola sin inflar el interlineado ni mover el diseño (con `clip` el elemento flex pide `min-width: 0` y `min-height: 0`).
 
@@ -560,7 +580,6 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 |---|---|---|
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
-| rótulo de sección | `ui.css` (`.section-head__label`) | El rótulo de una sección (ícono, nombre y línea) va en mayúsculas chicas, igual que `DSChapterLabel` del iPhone (Fernando, 31 oct 2026): es lo que separa una sección de sus filas. Solo el rótulo; nada más lleva mayúsculas espaciadas. |
 | sello del mazo | `match-deck.css` (`.match__stamp`) | El sello que asoma al decidir en «¿Qué vemos hoy?» (PASO, GUARDAR, ★ PARA HOY) va en mayúsculas, como el de `MatchCard` del iPhone y el de Tinder. |
 | listón «Nuevo» | `ui.css` (`.corner-ribbon__band`) | El listón en diagonal de la esquina de un póster dice NUEVO en mayúsculas, como `DSCornerRibbon` del iPhone. |
 

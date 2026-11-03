@@ -232,6 +232,7 @@ def test_holding_x_enters_the_trial_and_a_tap_opens_the_panel_on_release():
 
 def test_keyboard_s_mouse_wheel_and_the_touch_button():
     p, mpv, _ = trial_player()
+    p.HUD_TICK = 0  # sin su reloj: redibujaba su barra en segundo plano y a veces borraba los botones de la pausa de abajo
     p.key("subs")  # la tecla S
     assert p._try is not None
     p.key("wheel-down")
@@ -247,6 +248,7 @@ def test_keyboard_s_mouse_wheel_and_the_touch_button():
     p.close_menu()
 
     q, qmpv, _ = trial_player(urls=None)
+    q.HUD_TICK = 0
     qmpv.props["pause"] = True
     player_ui.set_touch(True)
     try:

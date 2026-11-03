@@ -46,12 +46,12 @@ export function duration(seconds) {
 
 /** La hora en 12 horas, como se dice en México: «9:05 p. m.» (la misma que el reproductor y la voz: orbital/text.py). */
 export const clock = (date = new Date()) =>
-  `${date.getHours() % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")} ${date.getHours() < 12 ? "a. m." : "p. m."}`;
+  `${date.getHours() % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")}\u00a0${date.getHours() < 12 ? "a.\u00a0m." : "p.\u00a0m."}`; // sin partirse en dos renglones (TV-3)
 
 
 const GENRES = {
   Action: "Acción", Adventure: "Aventura", Animation: "Animación", Biography: "Biografía", Comedy: "Comedia",
-  Crime: "Crimen", Documentary: "Documental", Drama: "Drama", Family: "Familiar", Fantasy: "Fantasía",
+  Crime: "Crimen", Documentary: "Documental", Drama: "Drama", Family: "Familia", Fantasy: "Fantasía",
   History: "Historia", Horror: "Terror", Music: "Música", Musical: "Musical", Mystery: "Misterio", Romance: "Romance",
   "Sci-Fi": "Ciencia ficción", "Science Fiction": "Ciencia ficción", Sport: "Deportes", Thriller: "Suspenso",
   War: "Bélica", Western: "Western", "Reality-TV": "Reality", "Talk-Show": "Talk show", "Game-Show": "Concurso",
@@ -100,3 +100,27 @@ export function crashMessage({ title, kind = "emulator" }) {
   return `${title} se cerró enseguida. Revisa que el juego y el emulador estén completos (ROM, firmware, claves).`;
 }
 
+
+/**
+ * Guiones suaves (U+00AD) entre las sílabas de las palabras largas («Terroríficamente» → «Te­rro­rí­fi­ca­men­te»): en una
+ * tarjeta angosta el navegador la parte con guion por donde toca, no a media sílaba («Terroríficame / nte»). Edge no
+ * trae diccionario de español para `hyphens: auto`. Reglas sencillas del español: V-CV y VC-CV (sin partir bl, br, ch, ll,
+ * rr…); las palabras cortas, tal cual.
+ */
+const VOWEL = "aeiouáéíóúü";
+const PAIRS = new Set(["bl", "br", "cl", "cr", "dr", "fl", "fr", "gl", "gr", "kl", "kr", "pl", "pr", "tr", "ch", "ll", "rr"]);
+export function softHyphens(text, min = 11) {
+  return String(text ?? "").replace(/\p{L}+/gu, (word) => {
+    if (word.length < min) return word;
+    const isV = (c) => VOWEL.includes(c.toLowerCase());
+    let out = "";
+    for (let i = 0; i < word.length; i++) {
+      out += word[i];
+      const [a, b, c] = [word[i], word[i + 1], word[i + 2]];
+      if (!b || !c || i < 1 || i + 3 > word.length) continue;
+      if (isV(a) && !isV(b) && isV(c)) out += "­"; // V-CV: ca-sa
+      else if (!isV(a) && !isV(b) && isV(c) && isV(word[i - 1]) && !PAIRS.has((a + b).toLowerCase())) out += "­"; // VC-CV: car-ta
+    }
+    return out;
+  });
+}

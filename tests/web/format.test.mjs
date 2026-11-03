@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { duration, lastPlayed, shortAgo } from "../../orbital/web/js/core/format.js";
+import { duration, lastPlayed, shortAgo, softHyphens } from "../../orbital/web/js/core/format.js";
 
 const NOW = 1_800_000_000_000;
 const ago = (seconds) => NOW / 1000 - seconds;
@@ -81,9 +81,9 @@ test("si un juego se cierra enseguida, el aviso dice qué revisar según de dón
 
 test("la hora va en 12 horas, como se dice en México", async () => {
   const { clock } = await import("../../orbital/web/js/core/format.js");
-  assert.equal(clock(new Date(2026, 9, 16, 21, 5)), "9:05 p. m.");
-  assert.equal(clock(new Date(2026, 9, 16, 0, 30)), "12:30 a. m.");
-  assert.equal(clock(new Date(2026, 9, 16, 12, 0)), "12:00 p. m.");
+  assert.equal(clock(new Date(2026, 9, 16, 21, 5)), "9:05\u00a0p.\u00a0m."); // espacios que no se parten (TV-3)
+  assert.equal(clock(new Date(2026, 9, 16, 0, 30)), "12:30\u00a0a.\u00a0m.");
+  assert.equal(clock(new Date(2026, 9, 16, 12, 0)), "12:00\u00a0p.\u00a0m.");
 });
 
 test("lo que dura un video: «169 min» de Cinemeta se dice «2 h 49 min»", async () => {
@@ -111,4 +111,12 @@ test("¿Qué vemos? no dice que caben si no caben", async () => {
   assert.equal(decideLead([fit, long, long], "media hora"), "Una cabe en media hora; las otras, las más cortas.");
   assert.equal(decideLead([fit, fit, long], "una hora"), "Dos caben en una hora; la otra es la más corta.");
   assert.equal(decideLead([{}, {}], "media hora"), "Dos de tus sugerencias que caben en media hora."); // un Orbital sin «fits»
+});
+
+test("guiones suaves: las palabras largas se parten por sílaba (una tarjeta angosta de Explorar), las cortas no", () => {
+  const show = (text) => softHyphens(text).replace(/\u00AD/g, "-");
+  assert.equal(show("Scary Movie: Terroríficamente incorrecta"), "Scary Movie: Terro-rí-fi-ca-men-te incorrecta");
+  assert.equal(show("Extraordinario"), "Extraor-di-na-rio");
+  assert.equal(show("Chernobyl"), "Chernobyl");
+  assert.equal(softHyphens(""), "");
 });

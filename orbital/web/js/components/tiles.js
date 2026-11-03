@@ -91,7 +91,7 @@ export function ConsoleTile(system, { focusId, index = 0, onPress }) {
   h("span", { class: "tile--console__media" },
     system.photo ? art(system.photo, system.logo ? "tile--console__logo" : "tile--console__photo") : art(system.cover, "tile--console__cover")),
   h("span", { class: "tile--console__text" },
-    h("strong", { class: "tile--console__name" }, system.name),
+    h("strong", { class: "tile--console__name", style: { "--name-chars": String(Math.max(8, [...system.name].length)) } }, system.name),
     h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`)));
 }
 

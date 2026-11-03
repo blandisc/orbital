@@ -454,9 +454,9 @@ test("Voz: lo esencial primero, dónde hablarle con cuándo llegó lo último de
   assert.equal(rows[0].icon, "check");
   assert.equal(rows[1].icon, "warning"); // lo que no salió, marcado
   assert.ok(rows[0].hint.includes("Poniendo The Simpsons."));
-  assert.equal(rows[0].hint, "21 oct 6:51 p. m. · Poniendo The Simpsons."); // cuándo llegó, como se dice
+  assert.equal(rows[0].hint, "21 oct 6:51\u00a0p.\u00a0m. · Poniendo The Simpsons."); // cuándo llegó, como se dice
   const { whenSaid } = await import("../../orbital/web/js/core/menus.js");
-  assert.equal(whenSaid("2026-10-29 15:43:56", new Date(2026, 9, 29, 20, 0)), "hoy 3:43 p. m.");
+  assert.equal(whenSaid("2026-10-29 15:43:56", new Date(2026, 9, 29, 20, 0)), "hoy 3:43\u00a0p.\u00a0m.");
   assert.equal(whenSaid("rara"), "rara");
   const { oneLine } = await import("../../orbital/web/js/core/menus.js");
   assert.equal(oneLine("Poniendo The Office."), "Poniendo The Office.");

@@ -133,7 +133,7 @@ def test_audio_menu_lists_tracks_and_switches():
     p, mpv = make_player()
     p.press("x")
     assert p.menu.kind == "tracks" and p.menu.column.key == "audio" and [o["label"] for o in p.menu.options] == [
-        "Inglés · 5.1 · E-AC3", "Español · Latino · Estéreo · AAC"]
+        "Inglés · 5.1 · E-AC3", "Español latino · Estéreo · AAC"]
     assert [c.key for c in p.menu.columns] == ["audio", "sub", "size", "sync"]
     assert p.menu.index == 0 and "Tamaño de los subtítulos" in mpv.overlays[2] and mpv.overlays.get(1) is None
     assert ("set_property", "sub-pos", 46) in mpv.sent  # con el panel abierto, los subtítulos suben y se ven encima
@@ -857,6 +857,33 @@ def test_one_volume_the_players_buttons_move_the_computers():
     assert "--volume=100" in player.build_command("mpv.exe", "u", "t")
 
 
+def test_past_windows_100_the_player_turns_itself_up_and_the_next_video_starts_there():
+    """El 100 de Windows se oía bajo (Fernando, 2 nov 2026): pasado ese tope, ▲ sube el del reproductor hasta 150; ▼ lo baja
+    primero a 100 y después baja Windows. El siguiente video arranca con lo que dejaste."""
+    system = {"level": 95, "muted": False}
+
+    def write(level=None, muted=None):
+        if level is not None:
+            system["level"] = level
+        if muted is not None:
+            system["muted"] = muted
+        return dict(system)
+
+    p, mpv = make_player()
+    p.HUD_TICK = 0  # sin el reloj de la barra: con trece ▲ seguía redibujando la pausa encima de las pruebas siguientes
+    p.system_volume = (lambda: dict(system), write)
+    p.press("up")
+    assert system["level"] == 100 and p.boost == 100
+    for _ in range(12):
+        p.press("up")
+    assert system["level"] == 100 and p.boost == 150  # tope: playback.VOLUME_BOOST_MAX
+    assert ("set_property", "volume", 150) in [tuple(c[:3]) for c in mpv.sent]
+    p.press("down")
+    assert p.boost == 145 and system["level"] == 100  # al bajar, primero se quita lo amplificado
+    cmd = player.build_command("mpv.exe", "u", "t", volume=p.boost)
+    assert "--volume=145" in cmd and "--volume-max=150" in cmd
+
+
 def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
     from orbital import player_ui
 
@@ -1350,3 +1377,20 @@ def test_player_notices_follow_the_same_rule_as_the_interface():
     assert player_ui.lines_of(long)[1].startswith("Si se pone lento")
     assert "Si se pone lento" in player_ui.toast_ass(long) and "…" not in player_ui.toast_ass(long)
     assert player_ui.toast_seconds("Volumen", 1.6) == 1.6 and player_ui.toast_seconds(long, 1.6) > 4
+
+
+def test_pause_shows_the_episode_on_its_own_line_and_the_synopsis_ends_on_a_full_sentence():
+    """PA-1 y PA-2 (2 nov 2026): en una serie, el episodio va en su renglón bajo el logo (y no en la línea gris); la sinopsis
+    que no cabe termina en la última frase completa, con su punto, no a media frase con «…»."""
+    from orbital import player_ui
+    long_text = ("Una pareja estadounidense que no está pasando por su mejor momento acude con unos amigos a un festival de verano "
+                 "que se celebra cada noventa años en una aldea remota de Suecia. Lo que comienza como unas vacaciones de ensueño "
+                 "en un lugar en el que el sol no se pone nunca, poco a poco se convierte en una oscura pesadilla.")
+    lines = player_ui.wrap_sentences(long_text, 26, 1000, 3)
+    assert lines[-1].endswith("Suecia.") and "…" not in " ".join(lines)
+    assert player_ui.wrap_sentences("Corta.", 26, 1000, 3) == ["Corta."]
+    hud = player_ui.Hud(title="Los Simpson", detail="T13 E22 · Papá tiene una placa nueva", facts="2002 · ★ 8.6", series=True, paused=True)
+    ass = player_ui.paused_ass(hud)
+    assert "T13 E22 · Papá tiene una placa nueva" in ass and "Papá tiene una placa nueva · 2002" not in ass
+    movie = player_ui.paused_ass(player_ui.Hud(title="Midsommar", detail="Película", facts="2019", paused=True))
+    assert "Película · 2019" in movie  # en una película la línea de datos sigue entera
