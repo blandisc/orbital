@@ -11,7 +11,7 @@
     { "texto": "Reintentar", "en": ["tv", "ios"], "evitar": ["Intentar de nuevo"], "nota": "El botón tras un error." },
     { "texto": "Pasar a la TV", "en": ["ios"], "nota": "Manda tu clave de Real-Debrid a la TV (Cuentas › Real-Debrid). «Mandar a la TV» se evita (ver «Ver en la TV»)." },
     { "texto": "Usar la de la TV", "en": ["ios"], "nota": "Trae la clave de Real-Debrid de la TV al iPhone (K1: con la llave del aparato, `GET /api/realdebrid?full=1`)." },
-    { "texto": "Vuelve a escanear el código de tu TV", "en": ["tv", "ios"], "nota": "K1: la TV ya reparte llaves por aparato y este no tiene la suya, o la TV lo quitó. Siempre con «Escanear».", "pendiente": { "tv": "La TV dice «Esta TV te quitó: vuelve a escanear el QR» (contrato devices, K1); falta decirlo igual en Ajustes › Cuentas (llaves por aparato, 3 nov 2026)" } },
+    { "texto": "Vuelve a escanear el código de tu TV", "en": ["tv", "ios"], "nota": "K1: la TV ya reparte llaves por aparato y este no tiene la suya, o la TV lo quitó. Siempre con «Escanear»." },
     { "texto": "Mándala desde tu iPhone", "en": ["tv"], "nota": "En la TV, en lugar de «Usar la de mi iPhone»: la TV no puede pedirle nada al iPhone." },
     { "texto": "Pedirlo y avisarme", "en": ["tv", "ios"], "nota": "Real-Debrid baja lo que todavía no tiene y avisa al terminar (R2-A, RD-1). En la ficha toma el lugar de «Ver»; también en el reproductor al rendirse (R7). No promete que lo logrará." },
     { "texto": "Avisarme cuando aparezca", "en": ["ios"], "nota": "R15 (iPhone, Fase 4): con «Nadie lo tiene todavía en internet», revisa una vez al día durante 14 días y avisa «Ya apareció…». La TV no avisa al celular (R14 pendiente)." },
