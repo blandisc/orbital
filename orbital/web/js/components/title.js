@@ -12,6 +12,7 @@ import { Glyph } from "./glyph.js";
 import { flight, motion, reducedMotion, rollNumber } from "../core/motion.js";
 import { tokenMs, tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress } from "../core/watch.js";
+import { Flag } from "./flag.js";
 
 /**
  * La ficha de una película o serie, a pantalla completa sobre su arte y con el mando (como Apple TV): lo que manda es
@@ -84,7 +85,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   let item = null;
   let details = null;
-  let plays = null; // { video_id, line }: cómo va a sonar «Ver» (lo dice el servidor)
+  let plays = null; // { video_id, line, lang, dub }: cómo va a sonar «Ver» (lo dice el servidor)
   let ask = null; // por qué no hay versión que arranque ya y si se puede pedir a Real-Debrid (api.stremioAvailability)
   let askTimer = 0;
   let buttons = [];
@@ -377,15 +378,21 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label)]
       : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)]),
     // El botón dice solo «Continuar» o «Ver» (Fernando, 2 nov, opción C); a su lado, cómo va a sonar y verse, en una cápsula
-    // de vidrio que con Y (o tocándola) abre las versiones.
-    b.primary && b.hint && h("button", { class: "title__version", type: "button", "aria-label": `Versión: ${b.hint}`, onClick: () => sources() },
-      glyphs.options && Glyph(glyphs.options, { small: true }), h("span", {}, versionShort(b.hint)))]).filter(Boolean));
+    // de vidrio que con Y (o tocándola) abre las versiones. El idioma va como su bandera, sin la palabra: «🇲🇽 · 1080p · CC».
+    b.primary && b.hint && versionCapsule(b.hint)]).filter(Boolean));
+  }
+
+  function versionCapsule(line) {
+    const flag = plays?.line === line && plays.lang ? Flag(plays.lang, plays.dub) : null;
+    const rest = flag ? String(line).split(" · ").slice(1).join(" · ") : line;
+    return h("button", { class: "title__version", type: "button", "aria-label": `Versión: ${line}`, onClick: () => sources() },
+      glyphs.options && Glyph(glyphs.options, { small: true }), flag, h("span", {}, [flag && rest && "· ", versionShort(rest, line)].filter(Boolean)));
   }
 
   /** «Inglés · 1080p · Subtítulos en inglés» → «Inglés · 1080p · CC»; con otro idioma de subtítulos, «CC español». */
-  function versionShort(line) {
+  function versionShort(line, full = line) {
     const parts = String(line).split(" · ");
-    const audio = (parts[0] || "").toLowerCase();
+    const audio = (String(full).split(" · ")[0] || "").toLowerCase();
     return parts.map((p) => {
       const sub = /^Subtítulos en (.+)$/i.exec(p);
       return sub ? (sub[1].toLowerCase() === audio ? "CC" : `CC ${sub[1]}`) : p;
@@ -428,7 +435,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       const st = states.get(ep.id) || {};
       return h("button", {
         class: ["episode", zone === "episodes" && i === index && "episode--focused", st.watched && "episode--watched",
-          st.upcoming && "episode--upcoming"],
+          st.upcoming && "episode--upcoming", st.left && "episode--current"],
         type: "button", role: "listitem", "aria-label": `Episodio ${ep.episode} · ${ep.title}`,
         onClick: () => {
           // Con el dedo, un toque lo pone (no hay foco que mover primero); con el ratón, el segundo clic.
@@ -444,10 +451,13 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
         ep.id === details?.resume?.video_id && Badge(details.resume.position > 0 ? "Continuar" : "Sigue", { className: "episode__next" }),
         st.watched && h("span", { class: "episode__check", "aria-label": "Visto" }, svg(ICONS.check)),
         Chip(String(ep.episode), { plate: true, className: "episode__number" }),
+        // El que vas viendo resalta (como el iPhone, O1): ▶ sobre su imagen, la barra más gruesa y «quedan 20 min».
+        st.left && h("span", { class: "episode__play", "aria-hidden": "true" }, svg(ICONS.play)),
         Progress(st.progress, { className: "episode__progress" })),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
-        st.upcoming ? h("span", { class: "episode__date" }, st.upcoming)
+        st.left ? h("span", { class: "episode__left" }, `quedan ${st.left} min`)
+          : st.upcoming ? h("span", { class: "episode__date" }, st.upcoming)
           : own ? (own.have.has(ep.id) ? Chip("En tu carpeta", { tone: "good" }) : Chip("No está en tu carpeta"))
             : downloadChip(downloadOf(ep.id))));
     }));
@@ -742,7 +752,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       const found = availability(list);
       // Lo que se sale de lo que pediste para esta serie («Solo en castellano: no hay latino»), antes que lo demás.
       if (data?.recommended?.note) found.unshift({ warn: data.recommended.note });
-      plays = data?.recommended?.line ? { video_id: t.video_id, line: data.recommended.line } : null;
+      const rec = data?.recommended;
+      plays = rec?.line ? { video_id: t.video_id, line: rec.line, lang: rec.lang, dub: rec.dub } : null;
       renderActions(); // «Ver» dice cómo va a sonar
       // Un renglón de texto tenue (antes, cinco chips encima del arte): «4K · HDR · Inglés, Español · Al instante».
       // Solo lo que hay que saber: un aviso o que no hay versiones. Lo normal (calidad, idiomas) ya no ocupa un renglón.

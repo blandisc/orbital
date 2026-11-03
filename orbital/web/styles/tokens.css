@@ -281,6 +281,7 @@
   --stroke-bold: 2.5;
   --stroke-heavy: 3.2;
   --progress-height: .25rem;
+  --progress-height-current: .4rem; /* la barra del episodio que vas viendo, más gruesa (como el iPhone, O1) */
   --sheet-width: 29rem;
   --pip-room: 20vw; /* el video en pequeño: 30 % del ancho en 16:9 más su margen (player.PIP_WIDTH y PIP_MARGIN) */
   --keyboard-width: 54rem;

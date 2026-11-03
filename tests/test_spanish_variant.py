@@ -133,6 +133,10 @@ def test_ver_dice_lo_que_va_a_sonar():
     assert watch.version_line(source(0, ENGLISH), latino, "es") == "Inglés · 1080p · Subtítulos en español"
     assert watch.version_line(source(0, DUAL_LAT), streams.Preferences(audio="en"), "forced") \
         == "Inglés · 1080p · Solo traducciones en pantalla"
+    # La ficha lo pone como bandera («🇲🇽 · 1080p»): el idioma de esa misma línea.
+    assert watch.version_lang(source(0, LATINO), latino) == "es"
+    assert watch.version_lang(source(0, ENGLISH), latino) == "en"
+    assert watch.version_lang(source(0, DUAL_LAT), streams.Preferences(audio="en")) == "en"
 
 
 def test_ver_y_la_ficha_eligen_la_misma(library, monkeypatch):

@@ -223,10 +223,11 @@ def router(d: Deps) -> APIRouter:
         # La que pondría «Ver» (con «Continuar», la de antes) y cómo va a sonar: la ficha lo dice bajo el botón.
         chosen = catalog.watch.choose_source(kind, video or id, prefs, catalog.watch.resume_choice(id, video or id))
         recommended = {"id": chosen.index, "line": watch.version_line(chosen, prefs, subtitles),
+                       "lang": watch.version_lang(chosen, prefs), "dub": chosen.dub,
                        "note": watch.version_note(chosen, prefs)} if chosen else None
         downloads = catalog.watch.downloads
         if recommended and downloads is not None and downloads.file_for(video or id):
-            recommended["line"] = "Tu descarga · sin internet"  # «Ver» la pone del disco
+            recommended.update(line="Tu descarga · sin internet", lang="")  # «Ver» la pone del disco
         return {"sources": [s.public() for s in found], "audio": prefs.audio, "spanish": prefs.spanish,
                 "quality": prefs.quality, "meta": info, "recommended": recommended}
 
