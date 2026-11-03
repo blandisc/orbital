@@ -1,0 +1,205 @@
+<title>Juegos en Orbital Ultra</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; las tres opciones lado a lado con su iPhone dibujado; decisiones al final con su código. */
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --raised:#ebe9e3; --fg:#111113; --muted:#5c5c64;
+  --line:#dcd9d1; --teal:#0b7a6e; --teal-soft:#d9efeb; --warn:#9a5b00; --warn-soft:#f6ead6;
+  --bad:#a3322b; --bad-soft:#f5dedb; --screen:#0c0c0e; --screen-fg:#f2f1ec;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:68ch}
+.lede{font-size:1.15rem;color:var(--muted)}
+.why{color:var(--teal);font-weight:500}
+section{display:grid;gap:18px}
+.code{font-family:var(--f-mono);font-size:.85rem;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--fg);color:var(--bg);white-space:nowrap}
+.tag{font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--teal-soft);color:var(--teal)} .mid{background:var(--warn-soft);color:var(--warn)} .no{background:var(--bad-soft);color:var(--bad)}
+/* estado por consola */
+.state{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.95rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.85rem}
+tr:last-child td{border-bottom:0}
+/* opciones */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
+.opt{display:grid;gap:14px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.opt.rec{border:2px solid var(--teal)}
+.opt header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.opt ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.gain,.lose{font-size:.95rem}
+.gain b{color:var(--teal)} .lose b{color:var(--bad)}
+.meta{display:flex;gap:8px;flex-wrap:wrap}
+/* iPhone dibujado */
+.phone{width:200px;max-width:100%;aspect-ratio:9/19;margin:0 auto;border-radius:30px;border:7px solid var(--fg);background:var(--screen);color:var(--screen-fg);position:relative;overflow:hidden;font-size:11px;line-height:1.3}
+.phone .notch{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:56px;height:14px;border-radius:9px;background:#000}
+.scr{position:absolute;inset:28px 10px 12px;display:flex;flex-direction:column;gap:8px}
+.art{border-radius:8px;background:linear-gradient(135deg,#2b4d8f,#7a2f6b);aspect-ratio:3/2;display:flex;align-items:flex-end;padding:6px;font-weight:600}
+.row{display:flex;gap:6px}
+.cover{flex:1;aspect-ratio:2/3;border-radius:6px}
+.c1{background:#c4433a}.c2{background:#3a7bc4}.c3{background:#d6a531}
+.sheet{margin-top:auto;background:#26262b;border-radius:14px;padding:10px;display:grid;gap:6px}
+.sheet .btn{background:#3a3a40;border-radius:8px;padding:7px;text-align:center}
+.sheet .btn.p{background:var(--screen-fg);color:#000;font-weight:600}
+.game{background:#9bbc0f;color:#0f380f;border-radius:4px;aspect-ratio:3/2;display:grid;place-items:center;font-weight:700;font-family:var(--f-mono)}
+.pads{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.dpad{width:62px;height:62px;position:relative}
+.dpad i{position:absolute;background:#3a3a40;border-radius:4px}
+.dpad i:nth-child(1){left:21px;top:0;width:20px;height:62px}
+.dpad i:nth-child(2){top:21px;left:0;height:20px;width:62px}
+.ab{display:flex;gap:8px}.ab i{width:28px;height:28px;border-radius:50%;background:#3a3a40;display:grid;place-items:center;font-style:normal;font-weight:700}
+.pill{align-self:center;background:#1d3d39;color:#7fe0d2;border-radius:999px;padding:3px 9px;font-size:10px}
+.stream{flex:1;border-radius:8px;background:linear-gradient(160deg,#e60012 0 40%,#1b1b1f 40%);display:grid;place-items:center;font-weight:700}
+.small{color:#9a9aa1;font-size:10px;text-align:center}
+/* decisiones */
+.dec{display:grid;gap:14px;padding:22px;border-radius:18px;background:var(--raised)}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.choice{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:6px;min-width:0}
+.choice.rec{border:2px solid var(--teal)}
+.recline{font-weight:600}
+.recline span{color:var(--teal)}
+.plan{display:grid;gap:10px;counter-reset:p;padding:0;margin:0;list-style:none}
+.plan li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.plan li::before{counter-increment:p;content:counter(p);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--teal);width:1.4em}
+.src{font-size:.85rem;color:var(--muted)} .src a{color:inherit}
+a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header style="display:grid;gap:14px">
+  <p class="src">Orbital Ultra · investigación · 3 nov 2026</p>
+  <h1>Juegos en Orbital Ultra</h1>
+  <p class="lede">En la tele, Orbital abre tus emuladores de Windows como programas aparte. En el iPhone eso casi no se puede: cada app vive encerrada y no deja que otra le pase un juego y lo abra. Así que aquí la pregunta real es si Orbital <b>abre</b> otra app, <b>juega por dentro</b> o <b>transmite</b> lo que corre en la consola.</p>
+</header>
+
+<section>
+  <h2>Cómo está la emulación en el iPhone hoy</h2>
+  <p class="why">Lo que decide todo es un permiso de Apple llamado JIT: los emuladores pesados lo necesitan y Apple no lo da.</p>
+  <div class="state">
+  <table>
+    <thead><tr><th>Consola</th><th>Apps que existen</th><th>¿Corre bien sin JIT?</th><th>¿Se puede meter dentro de Orbital?</th></tr></thead>
+    <tbody>
+      <tr><td>Game Boy, GBA, NES, SNES, Genesis</td><td>Delta, RetroArch, Provenance (App Store)</td><td><span class="tag ok">Sí, de sobra</span></td><td><span class="tag ok">Sí</span> el mismo motor que mGBA de la tele</td></tr>
+      <tr><td>Nintendo DS</td><td>Delta, melonDS</td><td><span class="tag ok">Sí</span></td><td><span class="tag ok">Sí</span> con dos pantallas en el iPhone</td></tr>
+      <tr><td>PSP</td><td>PPSSPP (App Store)</td><td><span class="tag ok">Casi todo</span> en iPhones recientes</td><td><span class="tag mid">Sí, más trabajo</span> por probar en tu iPhone</td></tr>
+      <tr><td>PlayStation 1</td><td>Gamma, RetroArch</td><td><span class="tag ok">Sí</span></td><td><span class="tag ok">Sí</span></td></tr>
+      <tr><td>GameCube y Wii</td><td>DolphiniOS (fuera de la App Store)</td><td><span class="tag no">No</span> necesita JIT</td><td><span class="tag no">No</span></td></tr>
+      <tr><td>Switch</td><td>MeloNX (fuera de la App Store)</td><td><span class="tag no">No</span> necesita JIT y más memoria</td><td><span class="tag no">No</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>El Switch en el iPhone sí existe (MeloNX), pero cada vez que juegas hay que encender el JIT con otra app (StikDebug) y una cuenta de desarrollador de pago. Cada versión de iOS lo rompe: iOS 26 lo rompió, la 26.4 otra vez, y en iOS 27, que es lo que tiene tu iPhone, hoy solo funciona con algunas apps. No es algo que Orbital pueda hacer confiable.</p>
+</section>
+
+<section>
+  <h2>Tres formas de llevarlo a Orbital</h2>
+  <p class="why">Van de menos a más integrado. No se excluyen: la recomendación junta dos.</p>
+  <div class="opts">
+
+    <article class="opt">
+      <header><span class="code">E1</span><h3>Orbital abre otra app</h3></header>
+      <div class="phone" aria-hidden="true"><span class="notch"></span><div class="scr">
+        <div class="art">Pokémon Esmeralda</div>
+        <div class="sheet"><div class="btn p">Abrir en Delta</div><div class="btn">Abrir en PPSSPP</div><div class="small">Se va a Delta. Orbital se queda atrás.</div></div>
+      </div></div>
+      <p>Igual que en la tele y que «Abrir en Infuse»: Orbital te muestra tus juegos, baja el archivo de la consola y se lo pasa a Delta o PPSSPP.</p>
+      <p class="gain"><b>Ganas:</b> rápido de hacer (días) y lo juegas con apps muy pulidas.</p>
+      <p class="lose"><b>Pierdes:</b> cada juego se importa a mano la primera vez; tu partida vive en Delta y no se cruza con la de la tele; sales de Orbital para jugar.</p>
+      <div class="meta"><span class="tag ok">Días</span><span class="tag mid">Poca integración</span></div>
+    </article>
+
+    <article class="opt rec">
+      <header><span class="code">E2</span><h3>Orbital juega por dentro</h3><span class="tag ok">Recomendada</span></header>
+      <div class="phone" aria-hidden="true"><span class="notch"></span><div class="scr">
+        <span class="pill">Sigues donde ibas en la tele · hace 2 h</span>
+        <div class="game">GBA</div>
+        <div class="pads"><div class="dpad"><i></i><i></i></div><div class="ab"><i>B</i><i>A</i></div></div>
+        <div class="small" style="margin-top:auto">Al salir, la partida se guarda en la consola</div>
+      </div></div>
+      <p>Orbital trae adentro el motor de cada consola (el mismo mGBA y PPSSPP que usa la tele) y el juego corre en Orbital, con sus botones en pantalla.</p>
+      <p class="gain"><b>Ganas:</b> una sola Orbital: tus juegos y tus portadas de la tele, y la <b>misma partida</b> en los dos lados. Empiezas en la tele y sigues en la cama.</p>
+      <p class="lose"><b>Pierdes:</b> semanas de trabajo; los botones en pantalla son nuestros y hay que hacerlos buenos; solo consolas ligeras (hasta PSP).</p>
+      <div class="meta"><span class="tag mid">2–4 semanas por tandas</span><span class="tag ok">Integración total</span></div>
+    </article>
+
+    <article class="opt">
+      <header><span class="code">E3</span><h3>Orbital transmite la consola</h3></header>
+      <div class="phone" aria-hidden="true"><span class="notch"></span><div class="scr">
+        <span class="pill">Transmitiendo desde la Legion Go</span>
+        <div class="stream">Zelda · Switch</div>
+        <div class="small">La consola corre el juego y te manda la imagen</div>
+      </div></div>
+      <p>El juego corre en la Legion Go (Ryujinx, PS2, PS3, lo que sea) y el iPhone solo recibe la imagen, como Netflix pero de ida y vuelta. Se hace con Moonlight en el iPhone y Apollo en la consola.</p>
+      <p class="gain"><b>Ganas:</b> todo tu catálogo, Switch incluido, sin pelear con Apple.</p>
+      <p class="lose"><b>Pierdes:</b> solo con buena red (en casa, o fuera con Tailscale); la consola queda ocupada y la tele se apaga mientras; necesitas un mando, en touch es incómodo.</p>
+      <div class="meta"><span class="tag ok">Días para abrirlo</span><span class="tag mid">Depende de la red</span></div>
+    </article>
+
+  </div>
+</section>
+
+<section>
+  <h2>Lo que tienes que decidir</h2>
+
+  <div class="dec">
+    <h3>D1 · ¿Qué camino tomamos?</h3>
+    <div class="choices">
+      <div class="choice"><span class="code" style="justify-self:start">D1-A</span><p>Solo E1: abrir Delta y PPSSPP. Lo más barato, la partida no se cruza.</p></div>
+      <div class="choice rec"><span class="code" style="justify-self:start">D1-B</span><p><b>E2 para lo ligero (GBA, DS, SNES, PS1, PSP) y E3 para lo pesado (Switch, PS2 y arriba).</b></p></div>
+      <div class="choice"><span class="code" style="justify-self:start">D1-C</span><p>Solo E3: todo por transmisión. Rápido, pero sin red no juegas nada.</p></div>
+    </div>
+    <p class="recline"><span>Recomiendo D1-B.</span> Es lo único que se siente como «una sola Orbital»: lo ligero lo juegas en cualquier lado con la misma partida de la tele, y lo pesado no lo intentamos en el iPhone, se lo pedimos a la consola.</p>
+  </div>
+
+  <div class="dec">
+    <h3>D2 · Los mandos</h3>
+    <p>Habías dicho que la app del iPhone no se usa con mando (29 oct). Para navegar la app eso sigue igual. Pero jugar es otra cosa.</p>
+    <div class="choices">
+      <div class="choice"><span class="code" style="justify-self:start">D2-A</span><p>Solo botones en pantalla. Respeta la regla, pero PSP y la transmisión se juegan mal.</p></div>
+      <div class="choice rec"><span class="code" style="justify-self:start">D2-B</span><p><b>Botones en pantalla, y si conectas un mando, el juego lo toma.</b> Solo dentro del juego; el resto de Orbital sigue sin mando.</p></div>
+    </div>
+    <p class="recline"><span>Recomiendo D2-B.</span> Leer un mando es casi gratis en iOS, y sin él la opción E3 no sirve.</p>
+  </div>
+
+  <div class="dec">
+    <h3>D3 · El Switch</h3>
+    <div class="choices">
+      <div class="choice rec"><span class="code" style="justify-self:start">D3-A</span><p><b>Switch solo por transmisión (E3).</b> Funciona hoy y no se rompe con iOS.</p></div>
+      <div class="choice"><span class="code" style="justify-self:start">D3-B</span><p>Además, un botón «Abrir en MeloNX» si lo tienes instalado. Tú te encargas del JIT cada vez.</p></div>
+    </div>
+    <p class="recline"><span>Recomiendo D3-A.</span> MeloNX en iOS 27 está en el aire y pide pasos que no son de Orbital.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Si dices D1-B, así lo haría</h2>
+  <ol class="plan">
+    <li><div><b>GBA y Game Boy primero.</b> Meter el motor mGBA en Ultra, pantalla, botones en pantalla y guardar. Una semana. Así vemos si el iPhone lo mueve como queremos antes de ir más lejos.</div></li>
+    <li><div><b>La partida compartida.</b> La consola le da al iPhone tu lista de juegos, el archivo y la partida guardada; al salir, el iPhone la devuelve. Si jugaste en los dos lados sin conexión, Orbital pregunta cuál se queda, nunca borra.</div></li>
+    <li><div><b>DS, SNES, PS1 y PSP.</b> El mismo molde con más motores. PSP es la que hay que medir en tu iPhone.</div></li>
+    <li><div><b>Transmisión.</b> Apollo en la Legion Go y un botón «Jugar desde la consola» que abre Moonlight. Más adelante, si vale la pena, traerlo dentro de Orbital.</div></li>
+  </ol>
+  <p><b>Solo en Ultra.</b> Los motores tienen licencias libres que obligan a publicar el código si repartes la app, y pegan con la idea de Plus y de la App Store. En Ultra, que es solo tuya, no hay problema. En la tele no cambia nada; queda anotado en el registro de paridad.</p>
+</section>
+
+<p class="src">Fuentes: <a href="https://git.ryujinx.app/projects/MeloNX">MeloNX</a> · <a href="https://github.com/StikDebug/StikDebug">StikDebug</a> · <a href="https://docs.sidestore.io/docs/advanced/jit">SideStore, JIT en iOS 26.6 y 27</a> · <a href="https://github.com/Provenance-Emu/iCube/issues/11">Provenance, JIT en iOS 26</a> · <a href="https://docs.libretro.com/guides/install-ios/">RetroArch en iOS</a> · <a href="https://github.com/rileytestut/Delta">Delta</a> · <a href="https://club.macstories.net/posts/the-power-of-delta-deep-links">enlaces de Delta</a></p>
+
+</div>
