@@ -242,9 +242,10 @@ public enum DesignTokens {
         /// debe haber armados antes de volver a armar la semana.
         /// La imagen del episodio se guarda completa (w780 de TMDB): la pantalla de la tele la recorta a 4:3 al centro.
         public static let simpsonsImagePixels = 780.0, simpsonsAheadDays = 3
-        /// «Mosaico de una lista»: los pósters del muro (hasta 24 por lista). En el grande cada uno mide ~73 × 110 pt (330 px
-        /// de alto); antes 220 px y se veían borrosos.
-        public static let listImagePixels = 450.0
+        /// «Mosaico de una lista»: los pósters del muro (hasta 24 por lista). En el grande cada uno mide ~73 × 110 pt: se guardan
+        /// a 330 px de alto, justo lo que ocupan, y el widget los pinta tal cual (a 450 y recortados ahí, el grande pasaba el
+        /// límite de memoria del widget y se quedaba sin imágenes). Antes 220 px, borrosos.
+        public static let listImagePixels = 330.0
         /// «Viendo en la TV»: cuánto salta cada botón (lo mismo que el control: 10 s) y cuántos segundos de diferencia con lo
         /// esperado justifican mandar otra actualización.
         public static let tvSkip = 10.0, tvDrift = 5.0

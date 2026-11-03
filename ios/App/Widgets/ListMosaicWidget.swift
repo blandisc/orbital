@@ -123,14 +123,21 @@ struct ListMosaicView: View {
     }
 
     private func tile(_ poster: WidgetLists.Poster) -> some View {
-        // Recortado y reducido al tamaño exacto de la pieza (`WidgetImage.fill`).
-        WidgetFillImage(url: poster.imageFile.flatMap { WidgetStore.listImageURL($0) }) {
-            ZStack {
-                DS.surface
-                Text(verbatim: poster.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
-                    .multilineTextAlignment(.center).padding(DS.Space.s1)
+        // El archivo ya viene del tamaño de la pieza (`listImagePixels`): se pinta tal cual. Antes cada uno de los hasta 30
+        // pósters se leía de un archivo de 450 px y se recortaba aquí; en la pantalla de inicio eso pasaba el límite de memoria
+        // del widget y se quedaba sin imágenes (Fernando, 2 nov 2026).
+        Group {
+            if let image = poster.imageFile.flatMap({ WidgetStore.listImageURL($0) }).flatMap({ UIImage(contentsOfFile: $0.path) }) {
+                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).aspectRatio(contentMode: .fill)
+            } else {
+                ZStack {
+                    DS.surface
+                    Text(verbatim: poster.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
+                        .multilineTextAlignment(.center).padding(DS.Space.s1)
+                }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
     }
 }
