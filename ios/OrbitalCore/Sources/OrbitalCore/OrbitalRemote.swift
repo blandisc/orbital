@@ -54,14 +54,39 @@ public struct OrbitalRemote: Sendable {
 
     public var isConfigured: Bool { base != nil && !token.isEmpty }
 
-    /// «orbital.midominio.com», «https://orbital.midominio.com/» o con ruta: siempre https y sin la barra final.
+    /// «orbital.midominio.com», «https://orbital.midominio.com/» o con ruta: siempre https y sin la barra final. `http://`
+    /// solo hacia tu red privada de Tailscale (100.64.0.0/10 o `*.ts.net`, que ya va cifrada): por ahí viaja tu token, y por
+    /// `http` a cualquier otro lado viajaría a la vista (B-P1-6). Lo demás no se acepta (`addressProblem` dice por qué).
     public static func normalize(_ address: String) -> URL? {
+        guard let url = parse(address), let scheme = url.scheme?.lowercased() else { return nil }
+        return scheme == "https" || (scheme == "http" && isTailscale(url.host ?? "")) ? url : nil
+    }
+
+    /// Por qué no sirve una dirección escrita a mano (nil si sirve o si está vacía).
+    public static func addressProblem(_ address: String) -> String? {
+        guard !address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, normalize(address) == nil else { return nil }
+        if let url = parse(address), url.scheme?.lowercased() == "http" {
+            return "Por seguridad, tu Orbital solo se conecta con https o por Tailscale (100.x o .ts.net)."
+        }
+        return "Esa dirección no sirve: escribe la de tu Orbital (orbital.tudominio.com)."
+    }
+
+    private static func parse(_ address: String) -> URL? {
         var text = address.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
         if !text.contains("://") { text = "https://" + text }
         while text.hasSuffix("/") { text.removeLast() }
         guard let url = URL(string: text), let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http", url.host != nil else { return nil }
         return url
+    }
+
+    /// Una dirección de Tailscale: `*.ts.net` o una IP 100.64.0.0/10 (de 100.64.x.x a 100.127.x.x).
+    static func isTailscale(_ host: String) -> Bool {
+        let host = host.lowercased()
+        if host.hasSuffix(".ts.net") { return true }
+        let parts = host.split(separator: ".").compactMap { Int($0) }
+        guard parts.count == 4, host.split(separator: ".").count == 4, parts.allSatisfy({ (0...255).contains($0) }) else { return false }
+        return parts[0] == 100 && (64...127).contains(parts[1])
     }
 
     /// ¿Contesta y acepta el token?

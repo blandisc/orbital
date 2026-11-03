@@ -7,6 +7,17 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(OrbitalRemote.normalize(" https://orbital.casa.mx/// ")?.absoluteString, "https://orbital.casa.mx")
         XCTAssertNil(OrbitalRemote.normalize(""))
         XCTAssertNil(OrbitalRemote.normalize("ftp://x"))
+        // B-P1-6: por http solo hacia Tailscale; a cualquier otro lado el token viajaría a la vista.
+        XCTAssertNil(OrbitalRemote.normalize("http://orbital.casa.mx"))
+        XCTAssertNil(OrbitalRemote.normalize("http://192.168.1.20:8711"))
+        XCTAssertNil(OrbitalRemote.normalize("http://100.128.0.1:8711"), "fuera de 100.64.0.0/10")
+        XCTAssertEqual(OrbitalRemote.normalize("http://100.101.102.103:8711")?.absoluteString, "http://100.101.102.103:8711")
+        XCTAssertEqual(OrbitalRemote.normalize("http://legion.tail1234.ts.net:8711/")?.absoluteString, "http://legion.tail1234.ts.net:8711")
+        XCTAssertNotNil(OrbitalRemote.addressProblem("http://orbital.casa.mx"))
+        XCTAssertNil(OrbitalRemote.addressProblem("orbital.casa.mx"))
+        XCTAssertNil(OrbitalRemote.addressProblem(""))
+        XCTAssertNil(OrbitalRemote.pairing(URL(string: "orbital-ios://pair?u=http%3A%2F%2Fevil.example&t=T")!), "un QR que manda a http cualquiera no se acepta")
+        XCTAssertNil(OrbitalRemote(http: FakeHTTP(), address: "http://evil.example", token: "T").base)
     }
 
     func testPlaySendsTheEpisodeWithTheToken() async throws {

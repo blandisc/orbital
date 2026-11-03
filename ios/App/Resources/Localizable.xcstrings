@@ -30774,6 +30774,28 @@
           }
         }
       }
+    },
+    "Esa dirección no sirve: escribe la de tu Orbital (orbital.tudominio.com).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That address won't work: type your Orbital's (orbital.yourdomain.com)."
+          }
+        }
+      }
+    },
+    "Por seguridad, tu Orbital solo se conecta con https o por Tailscale (100.x o .ts.net).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For security, your Orbital only connects over https or through Tailscale (100.x or .ts.net)."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

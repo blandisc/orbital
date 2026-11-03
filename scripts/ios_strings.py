@@ -457,6 +457,9 @@ TRANSLATIONS = {
     # Real-Debrid y complementos, Fase 1 (3 nov 2026).
     "Venció hoy": "Expired today", "Tomé tu clave de Real-Debrid de tu Torrentio": "I took your Real-Debrid key from your Torrentio",
     "Real-Debrid todavía no lo tiene.": "Real-Debrid doesn't have it yet.",
+    # Tu Orbital solo por https o Tailscale (B-P1-6).
+    "Por seguridad, tu Orbital solo se conecta con https o por Tailscale (100.x o .ts.net).": "For security, your Orbital only connects over https or through Tailscale (100.x or .ts.net).",
+    "Esa dirección no sirve: escribe la de tu Orbital (orbital.tudominio.com).": "That address won't work: type your Orbital's (orbital.yourdomain.com).",
     # Quitar complementos (C7): solo los traídos de Stremio, con «Deshacer»; la última fuente se avisa.
     "Quitar complemento": "Remove add-on", "¿Quitar «%@»?": "Remove “%@”?", "Quitar de todos modos": "Remove anyway",
     "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it.",

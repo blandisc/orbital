@@ -388,6 +388,9 @@ struct SettingsView: View {
             DisclosureGroup(connected ? "Cambiar a mano" : "Conectar a mano") {
                 TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
+                if let problem = OrbitalRemote.addressProblem(model.settings.orbitalAddress) {
+                    Text(verbatim: env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger)   // por qué no se conecta
+                }
                 SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
