@@ -106,6 +106,12 @@ export const api = {
   trailer: (kind, id, keep = false) => post("/api/stremio/trailer", { kind, id, keep }),
   stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),
+  // Ajustes › Complementos (S1): tu lista, traerla de Stremio, prender, ordenar, quitar y de dónde salen.
+  addonsStatus: () => request("/api/addons/status"),
+  addonsImport: () => post("/api/addons/import", {}, { timeout: 30000 }),
+  addonChange: (id, action) => post("/api/addons/change", { id, action }),
+  addonRestore: (id) => post("/api/addons/restore", { id }),
+  addonsSource: (source) => post("/api/addons/source", { source }),
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
   forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),

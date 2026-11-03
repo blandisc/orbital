@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { stepSetting } from "../../orbital/web/js/core/menus.js";
+import { addonHealth, addonMenu, addonRows, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
@@ -42,7 +42,7 @@ test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   // Ajustes: siete categorías en el riel; lo técnico en Sistema, lo de tus juegos en Jugar.
-  assert.deepEqual(SETTINGS_CATEGORIES.map((c) => c.title), ["Resumen", "Ver", "Jugar", "Tele y voz", "Pantalla y sonido", "Cuentas", "Sistema"]);
+  assert.deepEqual(SETTINGS_CATEGORIES.map((c) => c.title), ["Resumen", "Ver", "Complementos", "Jugar", "Tele y voz", "Pantalla y sonido", "Cuentas", "Sistema"]);
   assert.deepEqual(settingsCategory("system", {}).options.map((o) => o.command.type), ["setup", "update-check", "diagnostics", "windows", "power-menu"]);
   assert.deepEqual(settingsCategory("system", {}, { canExit: true }).options.at(-1).command, { type: "confirm-exit" });
   assert.deepEqual(settingsCategory("play", {}).options.filter((o) => o.command && o.command.type !== "setting").map((o) => o.command.type),
@@ -600,4 +600,29 @@ test("una captura dice el nombre de lo capturado, sin lo que pone Windows", asyn
   assert.equal(captureName("Orbital - [InPrivate] - Microsoft Edge 10_11_2026 7_47_43 PM"), "Orbital");
   assert.equal(captureName("Hades 2026-10-11 19-47-43.png"), "Hades");
   assert.equal(captureName(""), "Captura");
+});
+
+test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le puede hacer (La TV sin Stremio, S1)", () => {
+  const now = Date.parse("2026-11-03T12:00:00");
+  assert.equal(addonHealth({ state: "ok", seconds: 0.6 }), "Contesta en 0,6 s");
+  assert.equal(addonHealth({ state: "slow", seconds: 4.2 }), "Contesta lento · 4,2 s");
+  assert.equal(addonHealth({ state: "down", since: Date.parse("2026-10-31T20:00:00") / 1000, skipped: true }, now), "No contesta desde el sábado · se salta");
+  assert.equal(addonHealth({ state: "off" }), "");
+  const status = { source: "own", stremio_linked: true, imported_at: Date.parse("2026-11-03T10:00:00") / 1000, entries: [
+    { id: "opensubtitles", name: "OpenSubtitles", origin: "orbital", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.3 } },
+    { id: "t", name: "Torrentio RD", origin: "stremio", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
+    { id: "l", name: "Local Files", origin: "stremio", on: false, only_on: "tv", gives: "", health: { state: "off" } },
+  ] };
+  const rows = addonRows(status);
+  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "OpenSubtitles", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
+    "Volver a traer", "De dónde salen", "Volver a los de Stremio"]);
+  assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
+  assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
+  assert.equal(rows[4].value, "Apagado");
+  assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
+  // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
+  assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
+  assert.deepEqual(addonMenu(status.entries[1], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
+  // Sin traer todavía: primero «Traer de tu Stremio».
+  assert.equal(addonRows({ source: "stremio", stremio_linked: true, entries: [] })[0].label, "Traer de tu Stremio");
 });

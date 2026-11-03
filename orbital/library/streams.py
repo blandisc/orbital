@@ -196,7 +196,6 @@ def _size_number(text: str) -> float:
 
 
 FIND_DEADLINE = 8.0  # s para juntar fuentes: lo que llegó, se usa
-DOWN_SECONDS = 120.0  # s que se salta un complemento que no respondió
 CACHE_MAX = 200
 RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
 def stable_index(addon_url: str, stream: dict) -> int:
@@ -506,7 +505,8 @@ class StreamFinder:
         self.registry = registry
         self.timeout = timeout
         self._cache: dict[str, tuple[float, list[Source]]] = {}
-        self._down: dict[str, float] = {}
+        # Cómo le va a cada complemento (addons.Health): la del registro, para que Ajustes › Complementos diga lo mismo.
+        self.health = getattr(registry, "health", None) or addons.Health()
         self.outcome: dict[str, str] = {}  # kind:video -> "ok" | "offline" | "no-addons" (para decir por qué no hay)  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
         # Lo que se sabe del título y de cada fuente fuera de los complementos (los pone Watch):
@@ -523,12 +523,14 @@ class StreamFinder:
 
     def _fetch(self, addon: addons.Addon, kind: str, video_id: str) -> list[dict] | None:
         """Las fuentes de un complemento; None si la red falló (para no recordar «no hay» 10 minutos)."""
+        started = time.monotonic()
         try:
             streams = self._get_json(addon, f"stream/{kind}/{quote(video_id, safe='')}.json").get("streams")
             streams = streams if isinstance(streams, list) else []
         except NET_ERRORS as exc:
             log.info("Sin fuentes de %s: %s", addon.name, exc)
             return None
+        self.health.ok(addon.url, time.monotonic() - started)
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
 
     def subtitles(self, kind: str, video_id: str, lang: str) -> list[str]:
@@ -583,9 +585,9 @@ class StreamFinder:
             if hit and time.time() - hit[0] < CACHE_SECONDS:
                 return hit[1]
         serving = [a for a in self.addons() if a.handles("stream", kind, video_id)]
-        # Un complemento caído no se espera otra vez durante unos minutos (si todos lo están, se prueban).
-        now = time.time()
-        alive = [a for a in serving if self._down.get(a.url, 0) <= now] or serving
+        # Un complemento que falló dos veces seguidas no se espera: se vuelve a probar con espera creciente, hasta una
+        # hora (si todos están así, se prueban).
+        alive = [a for a in serving if not self.health.skip(a.url)] or serving
         skipped = len(alive) < len(serving)
         pool = ThreadPoolExecutor(max_workers=max(1, len(alive)))
         futures = {pool.submit(self._fetch, a, kind, video_id): a for a in alive}
@@ -596,10 +598,8 @@ class StreamFinder:
         for future, addon in futures.items():
             streams = future.result() if future in done else None
             if streams is None:
-                self._down[addon.url] = now + DOWN_SECONDS
-                log.info("%s no respondió a tiempo: se omite unos minutos", addon.name)
-            else:
-                self._down.pop(addon.url, None)
+                self.health.fail(addon.url)
+                log.info("%s no respondió a tiempo", addon.name)
             results.append((addon, streams))
         sources, seen = [], set()
         failed = skipped or any(streams is None for _, streams in results)

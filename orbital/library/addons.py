@@ -10,17 +10,26 @@ Un complemento es un servidor HTTP que responde JSON en rutas fijas; su manifies
 
 Orbital junta los de tu cuenta de Stremio (en su orden, como Stremio) y los tuyos (`orbital stremio
 addon add <url>`: se guardan cifrados, porque su URL suele llevar claves), y a cada pregunta le contesta el complemento que la sabe responder: por recurso,
-tipo y prefijo de id (un id `kitsu:` no se le pregunta a quien solo sabe de IMDb).
+tipo y prefijo de id (un id `kitsu:` no se le pregunta a quien solo sabe de IMDb). Con tu lista propia («La TV sin
+Stremio», S1: addon_list.py) ya no se le pregunta nada a tu cuenta.
+
+Cada complemento lleva su salud (`Health`): cuánto tardó la última vez y, si falla dos veces seguidas, se salta y se
+vuelve a probar con espera creciente hasta una hora (C1 y C2 del iPhone). Un manifiesto que ya contestó se guarda en
+disco: si el complemento no responde al arrancar, se usa el guardado.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import threading
 import time
 import urllib.request
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from ..net import NET_ERRORS, read_json
 from .stremio_api import StremioError
@@ -31,6 +40,47 @@ CACHE_SECONDS = 600
 RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
 REQUEST_TIMEOUT = 15
 RESOURCES = ("catalog", "meta", "stream", "subtitles")
+SKIP_AFTER = 2  # fallos seguidos para dejar de esperarlo (C2)
+RETRY_BASE = 60.0  # s: la primera espera; se duplica hasta RETRY_MAX
+RETRY_MAX = 3600.0
+SLOW_SECONDS = 3.0  # «Contesta lento · 4,2 s» desde aquí
+
+
+class Health:
+    """Cómo le ha ido a cada complemento (por su dirección): lo que tardó la última vez que contestó y, si falla, desde
+    cuándo. Tras SKIP_AFTER fallos seguidos se salta (`skip`) hasta su próximo intento, con espera creciente."""
+
+    def __init__(self, clock: Callable[[], float] = time.time) -> None:
+        self.clock = clock
+        self._data: dict[str, dict] = {}
+        self._lock = threading.Lock()
+
+    def ok(self, url: str, seconds: float) -> None:
+        with self._lock:
+            self._data[url] = {"seconds": round(max(0.0, seconds), 2), "at": self.clock()}
+
+    def fail(self, url: str) -> None:
+        with self._lock:
+            now = self.clock()
+            last = self._data.get(url, {})
+            fails = int(last.get("fails", 0)) + 1
+            wait = min(RETRY_MAX, RETRY_BASE * 2 ** (fails - SKIP_AFTER)) if fails >= SKIP_AFTER else 0.0
+            self._data[url] = {**last, "fails": fails, "since": last.get("since") or now, "retry": now + wait}
+
+    def skip(self, url: str) -> bool:
+        with self._lock:
+            state = self._data.get(url, {})
+            return int(state.get("fails", 0)) >= SKIP_AFTER and self.clock() < float(state.get("retry", 0))
+
+    def status(self, url: str) -> dict:
+        """{"state": "ok" | "slow" | "down" | "unknown", "seconds"?, "since"?}: lo que dice Ajustes › Complementos."""
+        with self._lock:
+            state = dict(self._data.get(url, {}))
+        if state.get("fails"):
+            return {"state": "down", "since": state.get("since"), "skipped": int(state["fails"]) >= SKIP_AFTER}
+        if "seconds" in state:
+            return {"state": "slow" if state["seconds"] >= SLOW_SECONDS else "ok", "seconds": state["seconds"]}
+        return {"state": "unknown"}
 
 
 def fetch_json(url: str, timeout: float = REQUEST_TIMEOUT) -> dict:
@@ -119,6 +169,11 @@ def parse_manifest(manifest, url) -> Addon | None:
                  catalogs=catalogs)
 
 
+def _slot(url: str) -> str:
+    """Dónde se guarda el manifiesto de una dirección (su huella: la dirección lleva claves y no se escribe tal cual)."""
+    return hashlib.sha256(url.encode()).hexdigest()[:24]
+
+
 def clean_urls(value) -> list[str]:
     """Las URLs de tus complementos, normalizadas y sin repetir (lo que no es una URL se ignora)."""
     listed = [value] if isinstance(value, str) else value if isinstance(value, list) else []
@@ -133,21 +188,67 @@ class AddonRegistry:
     si cambia la cuenta o agregas o quitas uno."""
 
     def __init__(self, account=None, auth: Callable[[], str | None] = lambda: None,
-                 own: Callable[[], Iterable[str]] = lambda: (), timeout: float = REQUEST_TIMEOUT) -> None:
+                 own: Callable[[], Iterable[str]] = lambda: (), timeout: float = REQUEST_TIMEOUT,
+                 listing=None, manifests: Path | None = None) -> None:
         self.account = account
         self.auth = auth
         self.own = own
         self.timeout = timeout
+        self.listing = listing  # addon_list.AddonList: con `source` «own», la lista sale de ahí y no de la cuenta
+        self.health = Health()
+        self.manifests = manifests  # archivo donde se guardan los manifiestos que ya contestaron
         self._cache: tuple[float, tuple, list[Addon]] = (0.0, (), [])
         self._lock = threading.Lock()
         self._loading = threading.Lock()
 
     @property
+    def own_list(self) -> bool:
+        """Las fuentes salen de tu lista de Orbital (no de tu cuenta de Stremio)."""
+        return self.listing is not None and self.listing.source == "own"
+
+    @property
     def local(self) -> list[str]:
+        if self.own_list:
+            return clean_urls(self.listing.urls())
         return clean_urls(list(self.own()))
 
     def _key(self) -> tuple:
-        return (self.auth(), tuple(self.local))
+        return (None if self.own_list else self.auth(), tuple(self.local))
+
+    def forget(self) -> None:
+        """La lista cambió (prendiste, quitaste, trajiste): la próxima pregunta la vuelve a armar."""
+        with self._lock:
+            self._cache = (0.0, (), [])
+
+    def _saved(self) -> dict:
+        if not self.manifests:
+            return {}
+        try:
+            data = json.loads(self.manifests.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _save_manifests(self, fresh: dict[str, dict]) -> None:
+        if not self.manifests or not fresh:
+            return
+        try:
+            self.manifests.parent.mkdir(parents=True, exist_ok=True)
+            self.manifests.write_text(json.dumps({**self._saved(), **fresh}, ensure_ascii=False), encoding="utf-8")
+        except OSError as exc:
+            log.info("No pude guardar los manifiestos: %s", exc)
+
+    def _manifest(self, url: str) -> tuple[dict | None, bool]:
+        """El manifiesto de un complemento y si contestó; sin respuesta, el guardado (si lo hay)."""
+        started = time.monotonic()
+        try:
+            data = fetch_json(url, self.timeout)
+        except NET_ERRORS as exc:
+            log.info("No pude leer el complemento de %s: %s", redact(url), exc)
+            self.health.fail(url)
+            return self._saved().get(_slot(url)), False
+        self.health.ok(url, time.monotonic() - started)
+        return data, True
 
     def _fresh(self) -> list[Addon] | None:
         stamp, key, found = self._cache
@@ -161,19 +262,21 @@ class AddonRegistry:
                 return hit
             key = self._key()
             found, failed, error = self._from_account(key[0])
-            for url in key[1]:
-                if any(a.url == url for a in found):
-                    continue
-                try:
-                    addon = parse_manifest(fetch_json(url, self.timeout), url)
-                except NET_ERRORS as exc:
-                    log.info("No pude leer el complemento de %s: %s", redact(url), exc)
-                    failed = True
-                    continue
+            wanted = [u for u in key[1] if not any(a.url == u for a in found)]
+            # En paralelo: un complemento colgado no hace esperar a los demás uno tras otro.
+            with ThreadPoolExecutor(max_workers=max(1, min(8, len(wanted)))) as pool:
+                answers = list(pool.map(self._manifest, wanted))
+            fresh = {}
+            for url, (manifest, answered) in zip(wanted, answers, strict=True):
+                failed = failed or not answered
+                addon = parse_manifest(manifest, url)
                 if addon:
                     found.append(addon)
-                else:
+                    if answered:
+                        fresh[_slot(url)] = manifest
+                elif answered:
                     log.warning("Complemento sin nada que Orbital use (%s)", redact(url))
+            self._save_manifests(fresh)
             if error and not found:
                 raise error
             # Si algo no respondió (Wi-Fi al despertar), la lista se recuerda solo unos segundos.

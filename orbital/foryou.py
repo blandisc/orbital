@@ -552,14 +552,19 @@ class ForYou:
     def addon_catalogs(self) -> list[dict]:
         """Los catálogos de tus complementos de Stremio que agregan algo: uno por nombre, con sus tipos
         (series y películas) y de qué complemento salen. Sin Stremio conectado o sin red: ninguno."""
-        auth = self.catalog.credentials.get("stremio_auth_key")
-        if not auth:
-            return []
-        try:
-            addons = self.cache.get("stremio:addons", SLOW_TTL, lambda: self._addons(auth), stale=True)
-        except SERVICE_ERRORS as exc:
-            log.warning("Para ti: no pude leer tus complementos de Stremio: %s", exc)
-            return []
+        registry = getattr(getattr(self.catalog, "watch", None), "addons", None)
+        if registry is not None and registry.own_list:
+            # Tu lista de Orbital (Ajustes › Complementos): los mismos complementos que dan las fuentes, sin tu cuenta.
+            addons = self._listed(registry.known())
+        else:
+            auth = self.catalog.credentials.get("stremio_auth_key")
+            if not auth:
+                return []
+            try:
+                addons = self.cache.get("stremio:addons", SLOW_TTL, lambda: self._addons(auth), stale=True)
+            except SERVICE_ERRORS as exc:
+                log.warning("Para ti: no pude leer tus complementos de Stremio: %s", exc)
+                return []
         covered = {fold(name) for name, _ in tmdb_api.PLATFORMS.values()} if self.platforms() else set()
         found: dict[str, dict] = {}
         for addon in addons:
@@ -577,6 +582,18 @@ class ForYou:
                                                "catalog": cat["id"], "kinds": []})
                 entry["kinds"].append(cat["type"])
         return list(found.values())
+
+    @staticmethod
+    def _listed(found) -> list[dict]:
+        """Los catálogos que se pueden pedir sin datos extra, de los complementos ya leídos (library/addons.Addon)."""
+        addons = []
+        for addon in found:
+            catalogs = [c for c in addon.catalogs if c.get("id") and c.get("name")
+                        and not any(isinstance(e, dict) and e.get("isRequired") for e in c.get("extra") or [])]
+            if catalogs and addon.url.startswith("https://"):
+                addons.append({"name": addon.name, "base": addon.base,
+                               "catalogs": [{"id": str(c["id"]), "name": str(c["name"]), "type": c.get("type")} for c in catalogs]})
+        return addons
 
     def _addons(self, auth: str) -> list[dict]:
         raw = self.catalog.stremio_client.request("addonCollectionGet", {"authKey": auth, "update": True})

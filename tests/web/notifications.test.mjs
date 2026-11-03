@@ -70,7 +70,7 @@ test("avisos del servidor: sin punto final y con su detalle aparte", () => {
 
 test("lo que manda a Ajustes nombra una categoría que existe", () => {
   // Las de Ajustes (core/menus.js · SETTINGS_CATEGORIES): si cambian, cambia esta lista y cada texto que las nombra.
-  const CATEGORIES = ["Resumen", "Ver", "Jugar", "Tele y voz", "Pantalla y sonido", "Cuentas", "Sistema"];
+  const CATEGORIES = ["Resumen", "Ver", "Complementos", "Jugar", "Tele y voz", "Pantalla y sonido", "Cuentas", "Sistema"];
   const problems = [];
   for (const file of [...JS, ...PY]) {
     read(file).split("\n").forEach((line, i) => {

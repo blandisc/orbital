@@ -1,7 +1,38 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ api, applySettings, keysMenu, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, keysMenu, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+  const addons = (status) => applySettings({ ...state.settings, addons: status });
   return {
+    // Ajustes › Complementos («La TV sin Stremio», S1)
+    "addons-import": async () => {
+      const res = await api.addonsImport();
+      addons(res);
+      sound.play("select");
+      const n = res.done?.added ?? 0;
+      return ui.toast.show(n ? `Traje ${n} ${n === 1 ? "complemento" : "complementos"} de tu Stremio` : "Ya estaban todos",
+        { tone: "success", detail: "Desde ahora salen de tu lista; tu cuenta de Stremio no se tocó" });
+    },
+    "addon-menu": async (command, context) => {
+      const entries = state.settings?.addons?.entries || [];
+      const entry = entries.find((e) => e.id === command.id);
+      if (!entry) return;
+      const group = entries.filter((e) => (e.origin === "orbital") === (entry.origin === "orbital"));
+      return openMenu(addonMenu(entry, { first: group[0]?.id === entry.id, last: group.at(-1)?.id === entry.id }), nested(context));
+    },
+    "addon-change": async (command) => {
+      const res = await api.addonChange(command.id, command.action);
+      addons(res);
+      sound.play("select");
+      if (command.action !== "remove") return;
+      ui.toast.show(`Quité ${command.name || "el complemento"}`, { duration: UNDO_MS, action: { label: "Deshacer",
+        onPress: async () => addons(await api.addonRestore(command.id)) } });
+    },
+    "addons-source": async (command) => {
+      addons(await api.addonsSource(command.source));
+      sound.play("select");
+      return ui.toast.show(command.source === "own" ? "Ahora salen de tu lista" : "Ahora salen de tu cuenta de Stremio",
+        { detail: command.source === "own" ? "" : "Tu lista se quedó: regresas en Ajustes › Complementos" });
+    },
     "stremio-account": async (command, context) => {
       return openMenu(stremioAccountMenu(), nested(context));
     },

@@ -786,6 +786,7 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
 export const SETTINGS_CATEGORIES = [
   { id: "summary", title: "Resumen", icon: "check" },
   { id: "watch", title: "Ver", icon: "play" },
+  { id: "addons", title: "Complementos", icon: "addon" },
   { id: "play", title: "Jugar", icon: "gamepad" },
   { id: "voice", title: "Tele y voz", icon: "tv" },
   { id: "display", title: "Pantalla y sonido", icon: "display" },
@@ -802,6 +803,7 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
       return n ? `${n} ${n === 1 ? "cosa" : "cosas"} por hacer` : "Todo listo";
     }
     case "watch": return `${settingLabel("audio", settings.audio)} · ${settingLabel("quality", settings.quality)}`;
+    case "addons": return addonsMeta(settings.addons);
     case "play": return settings.game_idle_minutes ? `En pausa, se cierran en ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "En pausa, no se cierran";
     case "voice": return voice ? `Voz: ${sinceVoice(lastVoice(voice), now).toLowerCase()}` : "La tele, Alexa y el iPhone";
     case "display": return `Texto ${settingLabel("text_size", settings.text_size ?? "normal").toLowerCase()}`;
@@ -838,6 +840,8 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
       row("text_size"), row("safe_area"), row("reduce_motion"), row("sounds"), row("screensaver_minutes"),
     ] };
     case "accounts": return { title: "Cuentas", lead: "Lo que Orbital usa de afuera.", options: accountRows(settings) };
+    case "addons": return { title: "Complementos", lead: "De dónde salen las versiones y los subtítulos. Se preguntan en este orden.",
+      options: addonRows(settings.addons) };
     case "system": return { title: "Sistema", lead: "Lo técnico, fuera del camino de todos los días.", options: [
       { icon: "check", label: "Tu consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
       { icon: "refresh", label: "Actualizar Orbital", hint: "Buscar una versión nueva", command: { type: "update-check" } },
@@ -1244,6 +1248,80 @@ export function stremioAccountMenu() {
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
     ],
+  };
+}
+
+/** Cómo le va a un complemento, en palabras (C1 del iPhone): «Contesta en 0,6 s», «Contesta lento · 4,2 s», «No contesta
+ * desde el sábado · se salta». Sin dato todavía (o apagado), nada. */
+export function addonHealth(health, now = Date.now()) {
+  const secs = (s) => s.toFixed(1).replace(".", ",");
+  if (health?.state === "ok") return `Contesta en ${secs(health.seconds)} s`;
+  if (health?.state === "slow") return `Contesta lento · ${secs(health.seconds)} s`;
+  if (health?.state !== "down") return "";
+  const since = health.since ? new Date(health.since * 1000) : null;
+  const day = !since ? "" : now - since.getTime() < 86400e3 ? " desde hoy"
+    : ` desde el ${since.toLocaleDateString("es", { weekday: "long" })}`;
+  return `No contesta${day}${health.skipped ? " · se salta" : ""}`;
+}
+
+/** El dato de Complementos en el riel: «4 de 5 contestan», o de dónde salen si aún no son tuyos. */
+function addonsMeta(status) {
+  if (!status || status.source !== "own") return "Los de tu cuenta de Stremio";
+  const on = (status.entries || []).filter((e) => e.on);
+  if (!on.length) return "Ninguno prendido";
+  const answering = on.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
+  return `${answering} de ${on.length} contestan`;
+}
+
+/** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital, los traídos de tu Stremio y de dónde
+ * salen las fuentes. A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
+export function addonRows(status) {
+  if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
+  const entry = (e) => {
+    const tv = e.only_on === "tv";
+    return { icon: "addon", label: tv ? "Archivos de la TV" : e.name,
+      hint: [e.gives, tv ? "Solo en la TV · Necesita Stremio abierto" : "", addonHealth(e.health)].filter(Boolean).join(" · "),
+      value: e.on ? "Prendido" : "Apagado", warn: e.on && e.health?.state === "down",
+      command: { type: "addon-menu", id: e.id } };
+  };
+  const ours = (status.entries || []).filter((e) => e.origin === "orbital");
+  const brought = (status.entries || []).filter((e) => e.origin !== "orbital");
+  const imported = status.imported_at ? `Traídos el ${new Date(status.imported_at * 1000).toLocaleDateString("es", { day: "numeric", month: "short" })}` : "";
+  if (status.source !== "own" && !status.imported_at) {
+    return [
+      status.stremio_linked
+        ? { icon: "download", label: "Traer de tu Stremio", hint: "Tus complementos, una sola vez · tu cuenta no se toca", value: "Traer",
+          command: { type: "addons-import" } }
+        : { icon: "trailer", label: "Por ahora salen de tu cuenta de Stremio", hint: "Conéctala en Ajustes › Cuentas para traerlos" },
+      { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
+    ];
+  }
+  return [
+    { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
+    { heading: true, label: "Traídos de tu Stremio" }, ...brought.map(entry),
+    status.stremio_linked && { icon: "refresh", label: "Volver a traer", hint: [imported, "tu cuenta no se toca"].filter(Boolean).join(" · "),
+      command: { type: "addons-import" } },
+    { heading: true, label: "De dónde salen" },
+    status.source === "own"
+      ? { icon: "swap", label: "Volver a los de Stremio", hint: "Tu lista se queda: regresas cuando quieras", command: { type: "addons-source", source: "stremio" } }
+      : { icon: "swap", label: "Usar tu lista", hint: "Ahora salen de tu cuenta de Stremio", value: "Usar", command: { type: "addons-source", source: "own" } },
+  ].filter(Boolean);
+}
+
+/** A en un complemento: prender o apagar, subirlo o bajarlo en el orden, quitarlo (solo lo traído; lo de Orbital se apaga). */
+export function addonMenu(entry, { first = false, last = false } = {}) {
+  const tv = entry.only_on === "tv";
+  return {
+    title: tv ? "Archivos de la TV" : entry.name,
+    subtitle: [entry.gives, addonHealth(entry.health)].filter(Boolean).join(" · ") || undefined,
+    options: [
+      { icon: entry.on ? "stop" : "play", label: entry.on ? "Apagar" : "Prender", command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on" } },
+      !first && { icon: "back", label: "Subir", hint: "Se le pregunta antes", command: { type: "addon-change", id: entry.id, action: "up" } },
+      !last && { icon: "chevron", label: "Bajar", hint: "Se le pregunta después", command: { type: "addon-change", id: entry.id, action: "down" } },
+      entry.origin !== "orbital" && { icon: "close", label: "Quitar", hint: "Solo en esta TV · se puede deshacer", danger: true,
+        command: { type: "addon-change", id: entry.id, action: "remove", name: tv ? "Archivos de la TV" : entry.name } },
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ].filter(Boolean),
   };
 }
 

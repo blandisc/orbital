@@ -15,7 +15,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 
 from . import companion, flags, player, player_ui, remote_art, ytdlp
@@ -23,7 +23,7 @@ from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
-from .library import addons, cinemeta, localize, realdebrid, streams, stremio_api
+from .library import addon_list, addons, cinemeta, localize, realdebrid, streams, stremio_api
 from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
@@ -263,6 +263,14 @@ def time_left(seconds: float) -> str:
 CONTINUE_MIN_PROGRESS = .01  # menos del 1 % (lo abriste un momento): no ensucia Seguir viendo
 
 
+def addon_gives(addon: addons.Addon | None) -> str:
+    """Qué aporta un complemento, en una línea («Fuentes de video · Subtítulos»), de su manifiesto."""
+    if addon is None:
+        return ""
+    names = {"stream": "Fuentes de video", "subtitles": "Subtítulos", "catalog": "Catálogos", "meta": "Fichas"}
+    return " · ".join(names[r] for r in ("stream", "subtitles", "catalog", "meta") if r in addon.rules)
+
+
 def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
     season, episode = w.episode
     if episode is not None:
@@ -431,9 +439,14 @@ class Watch:
         self.trakt_library.dismissed = lambda imdb: self.state.prefs(f"stremio:{imdb}").get("dismissed")
         self._trakt_busy = threading.Lock()
         self._saving = threading.Lock()
-        # Tus complementos (los de la cuenta y los tuyos): fuentes, subtítulos y fichas.
-        self.addons = addons.AddonRegistry(self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY),
-                                           own=self.own_addons)
+        # Tus complementos: los de tu cuenta de Stremio o, ya traídos, tu lista de Orbital (Ajustes › Complementos).
+        self.addon_list = addon_list.AddonList(self.credentials, legacy=self.own_addons)
+        self._removed_addons: dict[str, dict] = {}
+        self.addons = addons.AddonRegistry(
+            self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY), own=self.own_addons,
+            listing=self.addon_list,
+            manifests=(Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "manifiestos.json")
+            if config.source else None)
         self.cinemeta.registry = self.addons
         # Las fichas en el idioma de Orbital (TMDB traduce lo que Cinemeta da en inglés).
         self.localizer = localize.Localizer(tmdb_api.Tmdb(config.para_ti.tmdb_key, timeout=5),
@@ -463,10 +476,72 @@ class Watch:
 
     @property
     def has_addons(self) -> bool:
-        """Hay a quién pedirle fuentes: tu cuenta de Stremio o complementos tuyos."""
+        """Hay a quién pedirle fuentes: tu lista de Orbital (con algo prendido), o tu cuenta de Stremio o complementos tuyos."""
+        if self.addons.own_list:
+            return bool(self.addons.local)
         return self.stremio_linked or bool(self.addons.local)
 
-    def own_addons(self) -> list[str]:
+    # --- Ajustes › Complementos («La TV sin Stremio», S1) ---------------------
+    def addon_status(self) -> dict:
+        """Lo que enseña Ajustes › Complementos: de dónde salen, cada uno con qué aporta y si contesta."""
+        known = {a.url: a for a in self.addons.known()}
+        entries = []
+        for entry in self.addon_list.entries():
+            found = known.get(entry.address or "")
+            entries.append({
+                "id": entry.id, "name": entry.name, "origin": entry.origin, "on": entry.on(),
+                "only_on": entry.only_on, "gives": addon_gives(found),
+                "health": self.addons.health.status(entry.address) if entry.on() and entry.address else {"state": "off"},
+            })
+        return {"source": self.addon_list.source, "imported_at": self.addon_list.imported_at,
+                "stremio_linked": self.stremio_linked, "entries": entries}
+
+    def import_addons(self) -> dict:
+        """«Traer de tu Stremio» / «Volver a traer»: tus complementos de la cuenta, una vez; desde ahí son tuyos aquí."""
+        key = self.credentials.get(STREMIO_KEY)
+        if not key:
+            raise ValueError("Primero conecta tu cuenta de Stremio")
+        result = self.stremio_client.request("addonCollectionGet", {"authKey": key, "update": True})
+        raw = result.get("addons") if isinstance(result, dict) else None
+        found = []
+        for item in raw if isinstance(raw, list) else []:
+            if isinstance(item, dict) and isinstance(item.get("transportUrl"), str):
+                manifest = item.get("manifest") if isinstance(item.get("manifest"), dict) else None
+                url = addons.manifest_url(item["transportUrl"])
+                if url:
+                    found.append(((manifest or {}).get("name") or "", url, manifest))
+        done = self.addon_list.import_from_stremio(found)
+        self.addons.forget()
+        return done
+
+    def change_addon(self, ident: str, action: str) -> dict:
+        """Prender, apagar, subir, bajar o quitar uno de tu lista. Quitar devuelve lo quitado para «Deshacer»."""
+        if action in ("on", "off"):
+            self.addon_list.set_enabled(ident, action == "on")
+            gone = None
+        elif action in ("up", "down"):
+            self.addon_list.move(ident, -1 if action == "up" else 1)
+            gone = None
+        elif action == "remove":
+            gone = asdict(self.addon_list.remove(ident))
+            self._removed_addons[ident] = gone  # para «Deshacer»: solo regresa lo que quitaste aquí
+        else:
+            raise ValueError(action)
+        self.addons.forget()
+        return {**self.addon_status(), "removed": gone}
+
+    def restore_addon(self, ident: str) -> dict:
+        self.addon_list.restore(self._removed_addons.pop(ident))
+        self.addons.forget()
+        return self.addon_status()
+
+    def set_addon_source(self, source: str) -> dict:
+        """«Volver a los de Stremio» (stremio) o «Usar los tuyos» (own): tu lista se queda en los dos casos."""
+        self.addon_list.set_source(source)
+        self.addons.forget()
+        return self.addon_status()
+
+    def own_addons(self) -> list[str]:  # los de `orbital stremio addon add`, de antes de tu lista (S1)
         return addons.clean_urls(self.credentials.get(ADDONS_KEY))
 
     def add_addon(self, url: str) -> addons.Addon:
@@ -847,8 +922,8 @@ class Watch:
             return {**out, "why": "offline", "message": "No pude conectar con tus complementos",
                     "detail": "Revisa Internet e inténtalo de nuevo"}
         if outcome == "no-addons":
-            return {**out, "why": "no-addons", "message": "Tu cuenta de Stremio no tiene complementos de video",
-                    "detail": "Instala Torrentio en Stremio"}
+            return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
+                    "detail": "Ajustes › Complementos"}
         exists = bool(found) or bool(self.rd.candidates(kind, video_id, prefs))
         if exists and self.rd.client() is not None:
             language = streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
@@ -1050,7 +1125,7 @@ class Watch:
         if why == "offline":
             return "No pude conectar con tus complementos. Revisa Internet e inténtalo de nuevo."
         if why == "no-addons":
-            return "Tu cuenta de Stremio no tiene complementos de video (como Torrentio). Instálalos en Stremio."
+            return "No tienes complementos prendidos. Ajustes › Complementos."
         return "No encontré dónde ver esto: tus complementos no lo tienen."
 
     def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,

@@ -128,6 +128,5 @@ def test_un_complemento_muerto_no_hace_decir_sin_conexion(monkeypatch):
     assert finder.find("series", "tt1:1:7", Preferences()) == []
     assert finder.outcome["series:tt1:1:7"] == "ok"  # «no lo tienen», no «revisa Internet»
     monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: None)
-    finder._down.clear()
     assert finder.find("series", "tt1:1:8", Preferences()) == []
     assert finder.outcome["series:tt1:1:8"] == "offline"  # nadie contestó: eso sí es sin conexión
