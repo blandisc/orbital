@@ -74,7 +74,7 @@ public final class DebridModel: ObservableModel {
 }
 
 /// Tus complementos (Ajustes › Complementos y la guía): en tu orden, con interruptor, de dónde vino cada uno y si usa tu
-/// Real-Debrid. Agregar un recomendado, pegar una dirección (o un QR), quitar e importar una vez los de Stremio.
+/// Real-Debrid. Agregar un recomendado que falte, quitar los traídos de Stremio e importarlos (ya no se pega una dirección, C9).
 @MainActor
 public final class AddonsModel: ObservableModel {
     public private(set) var items: [InstalledAddon] = [] { didSet { changed() } }
@@ -123,23 +123,6 @@ public final class AddonsModel: ObservableModel {
     public func add(_ template: AddonTemplate) async {
         services.addonList.add(template)
         reload(); await services.resetAccountCaches()
-    }
-
-    /// Pega una dirección (también `stremio://`, o lo que trae un QR): se comprueba su manifiesto antes de guardarla.
-    @discardableResult
-    public func add(address input: String) async -> Bool {
-        guard let url = Addons.manifestURL(input), let target = URL(string: url) else {
-            error = "Pega la dirección completa del complemento (https://…)."; return false
-        }
-        working = true
-        defer { working = false }
-        guard let manifest = (try? await services.http.getJSON(target)).flatMap({ Addons.parseManifest($0, url: url) }) else {
-            error = "Ese complemento no responde o no da videos ni fichas."; return false
-        }
-        services.addonList.add(url: url, name: manifest.name, resources: Set(manifest.rules.keys).union(manifest.catalogs.isEmpty ? [] : ["catalog"]).sorted())
-        error = nil
-        reload(); await services.resetAccountCaches()
-        return true
     }
 
     /// «Volver a importar de Stremio».

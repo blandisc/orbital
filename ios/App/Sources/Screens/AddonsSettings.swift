@@ -2,12 +2,11 @@ import SwiftUI
 import OrbitalModels
 
 /// Ajustes › Complementos (maqueta 12): se preguntan en este orden (con «Ordenar» se arrastran), cada uno con su interruptor,
-/// qué aporta y si usa tu Real-Debrid. «Agregar»: los recomendados que falten o pegar una dirección. Deslizar quita.
+/// qué aporta y si usa tu Real-Debrid. «Agregar»: los recomendados que falten y volver a traer los de Stremio. Ya no se
+/// agregan complementos pegando su dirección (Fernando, 3 nov 2026, C9); los que ya tenías se quedan.
 struct AddonsSettings: View {
     @Environment(AppEnvironment.self) private var env
     @State private var addons = ModelObserver(AddonsModel(AppEnvironment.shared.services))
-    @State private var pasting = false
-    @State private var address = ""
     @State private var editMode: EditMode = .inactive
 
     var body: some View {
@@ -41,7 +40,6 @@ struct AddonsSettings: View {
                             ForEach(model.missingRecommended) { t in Button(t.name) { Task { await model.add(t) } } }
                         }
                     }
-                    Button("Pegar dirección", systemImage: "doc.on.clipboard") { address = ""; model.clearError(); pasting = true }
                     if env.session.state == .signedIn {
                         Button("Volver a importar", systemImage: "arrow.down.circle") { Task { await model.importAgain() } }
                     }
@@ -52,11 +50,6 @@ struct AddonsSettings: View {
                 Button(editMode.isEditing ? "Listo" : "Ordenar") { editMode = editMode.isEditing ? .inactive : .active }
             }
         }
-        .alert("Pegar dirección", isPresented: $pasting) {
-            TextField(String(localized: "https://…/manifest.json"), text: $address).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-            Button("Agregar") { Task { await model.add(address: address) } }
-            Button("Cancelar", role: .cancel) {}
-        } message: { Text("La dirección completa del complemento.") }
         .environment(\.editMode, $editMode)
         .task { await model.prepare() }
     }

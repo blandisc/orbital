@@ -5,7 +5,7 @@ import OrbitalAddons
 
 /// Ajustes › Cuentas y Complementos, lo que no cubre la guía (`OnboardingModelTests`): Real-Debrid sin red o con una clave
 /// que no reconoce (no se guarda nada), cambiar la clave a medias, «Quitar» que olvida todo, el estado guardado un día, y los
-/// complementos cuando algo falla (una dirección que no es dirección, «Volver a importar» sin red).
+/// complementos cuando algo falla («Volver a traer» sin red).
 @MainActor
 final class AccountsModelTests: XCTestCase {
     let user = "https://api.real-debrid.com/rest/1.0/user"
@@ -73,18 +73,6 @@ final class AccountsModelTests: XCTestCase {
         XCTAssertEqual(reopened.check, .idle)
         XCTAssertFalse(reopened.ready)
         XCTAssertNil(DebridModel(rig.services).status, "tampoco al volver a abrir")
-    }
-
-    func testUnaDireccionQueNoEsDireccionDiceQuePegarYSePuedeQuitarElAviso() async throws {
-        let rig = try ServicesRig(signedIn: false)
-        let model = AddonsModel(rig.services)
-        let added = await model.add(address: "no es una dirección")
-        XCTAssertFalse(added)
-        XCTAssertEqual(model.error, "Pega la dirección completa del complemento (https://…).")
-        XCTAssertFalse(model.working)
-        XCTAssertTrue(model.items.isEmpty)
-        model.clearError()
-        XCTAssertNil(model.error)
     }
 
     func testVolverAImportarSinRedDiceQuePasoYLaListaSeQueda() async throws {

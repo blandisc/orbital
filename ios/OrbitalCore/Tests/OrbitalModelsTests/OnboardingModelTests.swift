@@ -53,21 +53,15 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertNil(linked.next(after: .done))
     }
 
-    func testAddonsCanBeReorderedSwitchedOffAndPasted() async throws {
+    func testAddonsCanBeReorderedAndSwitchedOff() async throws {
         let rig = try ServicesRig(signedIn: false)
-        rig.http.json["https://nuevo.example/KEY/manifest.json"] = ["name": "Comet", "resources": ["stream"], "types": ["movie"]]
         let addons = AddonsModel(rig.services)
         await addons.prepare()
         XCTAssertEqual(Array(addons.items.map(\.id).prefix(3)), ["torrentio", "comet", "opensubtitles"], "los recomendados primero")
         XCTAssertEqual(addons.items.last?.origin, .imported, "y lo que tenías pegado, importado una vez")
-        let pasted = await addons.add(address: "stremio://nuevo.example/KEY")
-        XCTAssertTrue(pasted)
-        XCTAssertEqual(addons.items.last?.name, "Comet")
-        let broken = await addons.add(address: "https://roto.example")
-        XCTAssertFalse(broken)
-        XCTAssertNotNil(addons.error)
+        let last = try XCTUnwrap(addons.items.last?.name)
         await addons.move(fromOffsets: [addons.items.count - 1], toOffset: 0)
-        XCTAssertEqual(addons.items.first?.name, "Comet", "se pregunta primero")
+        XCTAssertEqual(addons.items.first?.name, last, "se pregunta primero")
         await addons.setEnabled("opensubtitles", false)
         XCTAssertEqual(addons.items.first { $0.id == "opensubtitles" }?.enabled, false)
         XCTAssertTrue(addons.missingRecommended.isEmpty)
