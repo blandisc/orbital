@@ -276,24 +276,25 @@ extension PlayerScreen {
     /// La píldora «2×» se ve mientras mantienes el dedo y, si quedó fija, cuando hay controles. Bloqueada la pantalla, no.
     var speedPillVisible: Bool { drag.isFastForwarding && (drag.fastForwardHolding || controlsVisible) && !padlock.locked }
 
-    /// Abajo al centro. Horizontal: justo encima de la barra. Vertical: al pie del área segura, salvo «Recortar» con
-    /// controles, que va encima de su barra.
+    /// Vertical: abajo al centro, al pie del área segura, salvo «Recortar» con controles, que va encima de su barra.
+    /// Horizontal: arriba al centro, para no encimarse nunca con los subtítulos (2 nov 2026).
     var speedPillBottomInset: CGFloat {
-        if landscape { return DS.Gesture.fastForwardPillBottomInset }
         if fillsPortrait && controlsVisible { return DS.Gesture.fastForwardPillFillInset }
         return DS.Space.s2
     }
 
     var speedPill: some View {
         VStack {
-            Spacer(minLength: 0)
+            if !landscape { Spacer(minLength: 0) }
             Button { if !drag.fastForwardHolding { endFastForward(holder.model, force: true) } } label: {
                 DSSpeedPill(locked: drag.fastForwardLocked, progress: fastForwardProgress, holding: drag.fastForwardHolding,
                             unlocks: drag.fastForwardLockedAtStart)
             }
             .buttonStyle(.plain)
+            if landscape { Spacer(minLength: 0) }
         }
-        .padding(.bottom, speedPillBottomInset)
+        .padding(.top, landscape ? (controlsVisible ? DS.Gesture.fastForwardPillTopInset : DS.Space.s3) : 0)
+        .padding(.bottom, landscape ? 0 : speedPillBottomInset)
     }
 
     /// El arrastre del video en vertical no se queda con el toque del ×2.
@@ -454,7 +455,7 @@ extension PlayerScreen {
     func indicatorPlacement(in size: CGSize) -> (y: CGFloat, bar: CGFloat) {
         func bar(_ room: CGFloat) -> CGFloat { min(DS.Gesture.indicatorBarHeight, max(DS.Gesture.indicatorBarMin, room - DS.Gesture.indicatorChrome)) }
         if landscape {
-            let top = DS.Space.s8, bottom = DS.Gesture.fastForwardPillBottomInset
+            let top = DS.Space.s8, bottom = DS.Gesture.aboveScrubInset
             let room = max(0, size.height - top - bottom)
             return (top + room / 2, bar(room))
         }

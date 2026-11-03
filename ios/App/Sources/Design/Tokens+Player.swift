@@ -57,9 +57,13 @@ extension DS {
         /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
         static let seekBubbleBottomInset: CGFloat = 120   // ds-exception: sobre el video, arriba de la barra de avance
-        /// La píldora «2×» en horizontal, dentro del área segura (igual que los controles): el borde de abajo
-        /// queda un `s3` por encima de la hilera de tiempos y de la barra (`padding` de `controls` + `scrubHit`).
-        static var fastForwardPillBottomInset: CGFloat {
+        /// La píldora «2×» en horizontal va arriba al centro, lejos de los subtítulos (Fernando, 2 nov 2026: «mejor ponlo arriba
+        /// para que no estorbe con los subtítulos en absoluto»). Con los controles, debajo de la hilera de ✕ y el nombre
+        /// (`padding` de `controls` + el botón de 44 + aire); sin ellos, pegada arriba.
+        static let fastForwardPillTopInset: CGFloat = DS.Space.s6 + DS.Size.touchTarget + DS.Space.s3
+        /// En horizontal, lo que ocupa abajo la barra de avance con sus tiempos (dentro del `padding` de `controls` +
+        /// `scrubHit`) y su aire: el indicador de brillo o volumen no baja de ahí.
+        static var aboveScrubInset: CGFloat {
             DS.Space.s6 + DS.PlayerPanel.scrubHit + DS.PlayerPanel.scrubTimes + DS.Space.s3
         }
         /// «Recortar» en vertical, con los controles a la vista: encima de la barra (aire de abajo, «Saltar intro», la propia

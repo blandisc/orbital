@@ -172,7 +172,7 @@ struct PlayerScreen: View {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
-                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, speedPill: speedPillVisible && landscape, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
+                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, speedPill: false, look: SubtitleLook(settings: env.services.appSettings), delay: model.subtitleDelay)
                             // Con la tarjeta de «Siguiente episodio» (abajo a la derecha, en horizontal) la línea sube sobre ella.
                             .offset(y: landscape && model.upNext != nil && !padlock.locked && !dockState.subtitleDock ? -(upNextHeight + DS.Space.s6) : 0)
                             .transition(.opacity)
