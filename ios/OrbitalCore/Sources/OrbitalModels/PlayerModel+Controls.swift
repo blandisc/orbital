@@ -149,6 +149,7 @@ extension PlayerModel {
         await engine.stop()
         guard mine == generation, !closing else { return }
         startLoading()
+        if !choice.instant { queued.mark(choice.key, at: clock()) }   // abrirla le pide a Real-Debrid que la baje
         if let previous { switchBack = (previous, position) }
         forgetSubtitleSearch()   // otro archivo: «coincide con tu copia» se vuelve a calcular con su huella
         if subtitlesWereOn { askInSync = true }   // otro archivo, la sincronía empieza en 0: «¿Va a tiempo?»

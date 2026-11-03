@@ -27,6 +27,9 @@ public actor StreamFinder {
     private let registry: AddonRegistry
     private let clock: @Sendable () -> Date
     private var cache: [String: (expires: Date, sources: [Source])] = [:]
+    /// Los avisos de Torrentio que llegaron en lugar de versiones en la última búsqueda de cada video (R5): no se ofrecen,
+    /// pero dicen por qué no hay.
+    private var noticesSeen: [String: [StreamNotice]] = [:]
     /// Lo que contestó cada complemento para un video, una sola vez: Ver, Descargar y la hoja de Fuente solo lo ordenan
     /// distinto (antes cada una volvía a preguntar a todos y esperaba al más lento). Y lo que ya se está pidiendo se comparte.
     private typealias Answers = (serving: [Addon], results: [[JSON]?])
@@ -79,13 +82,14 @@ public actor StreamFinder {
         let (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
         let failed = results.contains { $0 == nil }
         let titleOrigin = await originTask.value
-        var sources: [Source] = [], seen = Set<Int>()
+        var sources: [Source] = [], seen = Set<Int>(), notices: [StreamNotice] = []
         for (addon, streams) in zip(serving, results) {
             for stream in streams ?? [] {
                 var index = Streams.stableIndex(addonURL: addon.url, stream: stream)
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
                 var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
                 source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")")
+                if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión
                 if let real = checked(source.key) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
                 // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.
@@ -94,6 +98,7 @@ public actor StreamFinder {
             }
         }
         let ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
+        noticesSeen["\(kind):\(videoID)"] = notices
         // Nadie contestó: es la red, no que no haya fuentes (antes se decía «No hay fuentes» sin internet).
         if !results.isEmpty, results.allSatisfy({ $0 == nil }), ranked.isEmpty { throw StreamFinderError.unreachable }
         if failed && ranked.isEmpty { return ranked }  // la red falló y no hay nada: no se recuerda
@@ -174,8 +179,13 @@ public actor StreamFinder {
     /// La huella de un video en línea (para pedir subtítulos de esa copia exacta).
     public func fingerprint(of url: URL) async -> FileFingerprint? { await FileFingerprint.ofRemote(url, http: http) }
 
-    public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], purpose: Purpose = .watch) async throws -> Source? {
-        let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose).filter { !skip.contains($0.index) }
+    /// Los avisos de Torrentio de la última búsqueda de ese video (vacío si no hubo).
+    public func notices(kind: String, videoID: String) -> [StreamNotice] { noticesSeen["\(kind):\(videoID)"] ?? [] }
+
+    /// `instantOnly`: solo las que arrancan al instante (un reintento nunca le pide a Real-Debrid otra descarga, R6).
+    public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], instantOnly: Bool = false,
+                     purpose: Purpose = .watch) async throws -> Source? {
+        let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose).filter { !skip.contains($0.index) && (!instantOnly || $0.instant) }
         guard let first = found.first else { return nil }
         if let binge, let same = found.first(where: { $0.binge == binge && $0.score > first.score - 700 }) { return same }
         return first

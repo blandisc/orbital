@@ -453,7 +453,10 @@ TRANSLATIONS = {
     "No pude buscar dónde verlo": "I couldn't look for where to watch it",
     "No pude buscar versiones. Intenta de nuevo.": "I couldn't look for versions. Try again.",
     "Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.": "We tried the available versions and none responded. Sometimes it's temporary.",
-    "Probando otra versión (%lld)…": "Trying another version (%lld)…",
+    "Probando otra versión (%lld de %lld)…": "Trying another version (%lld of %lld)…",
+    # Real-Debrid y complementos, Fase 1 (3 nov 2026).
+    "Venció hoy": "Expired today", "Tomé tu clave de Real-Debrid de tu Torrentio": "I took your Real-Debrid key from your Torrentio",
+    "Real-Debrid todavía no lo tiene.": "Real-Debrid doesn't have it yet.",
     "Prueba otra versión o ábrela aquí": "Try another version or open it here",
     "Sin conexión: no pude buscar dónde verlo.": "Offline: I couldn't look for where to watch it.",
     "Sin versiones por ahora": "No versions yet",

@@ -51,7 +51,9 @@ public struct UpNext: Sendable, Equatable {
 }
 
 public enum PlayerNotice: Sendable, Equatable {
-    case triedAnotherSource(attempt: Int)
+    /// «Probando otra versión (2 de 3)»: `attempt` es el intento que empieza; `of`, cuántos habrá (solo las que arrancan al
+    /// instante, hasta `PlaybackRules.maxSourceRetries + 1`).
+    case triedAnotherSource(attempt: Int, of: Int)
     case audioNotInYourLanguage
     /// Esta versión no trae el idioma que quieres (o no su variante: latino) y otra sí: se ofrece cambiar sin perder el punto.
     /// `language` es el código que quieres («es-419»); `have`, lo que trae esta («en», «es-ES»).

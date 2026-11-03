@@ -149,7 +149,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.tick()
         await rig.model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.map(\.url.absoluteString), ["https://rd.example/best.mkv", "https://rd.example/second.mkv"])
-        XCTAssertEqual(rig.model.notice, .triedAnotherSource(attempt: 1))
+        XCTAssertEqual(rig.model.notice, .triedAnotherSource(attempt: 2, of: 2), "el intento que empieza, de cuántos habrá")
         XCTAssertTrue(rig.engine.calls.contains("stop"))
     }
 

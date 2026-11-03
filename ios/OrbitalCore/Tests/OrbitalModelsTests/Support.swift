@@ -133,6 +133,7 @@ final class Rig {
         watch = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: cinemeta, trakt: trakt, pending: pending,
                              clock: { clock.now }, scrobbleLog: scrobbleLog, sleep: { _ in })
         model = PlayerModel(engine: engine, finder: finder, watch: watch, titlePrefs: titlePrefs, settings: settings, clock: { clock.now })
+        model.queued = QueuedOnRealDebrid()   // cada prueba con su propia lista de lo ya pedido a Real-Debrid
     }
 
     func stream(_ id: String, title: String = "Show 1080p", size: String = "💾 2 GB", url: String? = nil, name: String = "T\n1080p [RD+]", binge: String? = nil) -> JSON {

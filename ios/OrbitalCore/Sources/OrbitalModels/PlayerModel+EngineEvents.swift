@@ -31,7 +31,8 @@ extension PlayerModel {
         // El aviso de Real-Debrid (una versión que aún no tiene): no es el título. Nunca cuenta como visto, terminado ni pasa
         // al siguiente episodio; se vuelve a la tuya (si la cambiaste a mano) o se prueba otra.
         if !hasPlayed, isPlaceholder(s) {
-            if let source { failedSources.insert(source.index) }
+            if let source { failedSources.insert(source.index); queued.mark(source.key, at: clock()) }   // ya quedó pedida: no se vuelve a pedir
+            lastNotice = .downloading
             notice = .notReadyOnRealDebrid
             if !goBackAfterSwitch() { retryWithAnotherSource() }
             return
@@ -132,8 +133,15 @@ extension PlayerModel {
         Self.note("otra versión (ya fallaron \(failedSources.count + 1))")
         if let source { failedSources.insert(source.index) }
         attempts = failedSources.count
-        guard failedSources.count <= PlaybackRules.maxSourceRetries else { retrying = false; fail("Ninguna versión funcionó.", .noneWorked); return nil }
-        notice = .triedAnotherSource(attempt: failedSources.count)
+        // Solo quedan las que Real-Debrid tendría que bajar: no se prueban (cada una sería otra descarga en tu cuenta, R6).
+        guard failedSources.count <= PlaybackRules.maxSourceRetries, sourceChoices.isEmpty || remainingInstant > 0 else {
+            retrying = false
+            let engine = engine
+            Task { await engine.stop() }   // suelta lo que se quedó abriendo (no queda una carga trabada detrás)
+            if lastNotice == .downloading { fail("Real-Debrid todavía no lo tiene.", .noSources) } else { fail("Ninguna versión funcionó.", .noneWorked) }
+            return nil
+        }
+        notice = triedAnother()
         let position = snapshot.position
         generation += 1
         let mine = generation

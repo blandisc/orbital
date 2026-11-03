@@ -102,3 +102,32 @@ final class StreamsTests: XCTestCase {
         XCTAssertEqual(plain.qualitySummary, ["1080p"])
     }
 }
+
+/// R5: los avisos de Torrentio se reconocen por su nombre o por la ruta de su video (sin abrir nada).
+final class TorrentioNoticeTests: XCTestCase {
+    func testStaticVideosAndTheRDErrorVersion() {
+        func notice(_ path: String) -> StreamNotice? { TorrentioNotices.notice(url: URL(string: "https://torrentio.strem.fun\(path)")) }
+        XCTAssertEqual(notice("/videos/downloading_v3.mp4"), .downloading)
+        XCTAssertEqual(notice("/videos/downloading_v2.mp4"), .downloading, "la versión del nombre cambia")
+        XCTAssertEqual(notice("/videos/failed_access_v3.mp4"), .access)
+        XCTAssertEqual(notice("/videos/blocked_access_v2.mp4"), .blocked)
+        XCTAssertEqual(notice("/videos/failed_infringement_v3.mp4"), .infringing)
+        XCTAssertEqual(notice("/videos/limits_exceeded_v2.mp4"), .limits)
+        XCTAssertEqual(notice("/videos/failed_too_big_v2.mp4"), .downloadFailed)
+        XCTAssertEqual(notice("/videos/failed_rar_v1.mp4"), .downloadFailed)
+        XCTAssertEqual(notice("/videos/something_new_v4.mp4"), .downloadFailed, "uno que aún no se conoce: falla de Real-Debrid")
+        XCTAssertNil(notice("/resolve/realdebrid/KEY/abc/0/Movie.mkv"))
+        XCTAssertNil(notice("/videos/movies/Movie.2020.mp4"), "solo la ruta exacta de los avisos")
+        XCTAssertEqual(TorrentioNotices.notice(name: "Torrentio\nRD error", url: URL(string: "https://x.example/y")), .access)
+        XCTAssertNil(TorrentioNotices.notice(name: "Torrentio\n1080p [RD+]", url: URL(string: "https://x.example/y.mkv")))
+        XCTAssertTrue(StreamNotice.access.aboutTheAccount)
+        XCTAssertFalse(StreamNotice.downloading.aboutTheAccount)
+    }
+
+    func testAnInstantVersionIsCachedOrNotFromADownloadService() {
+        let cached = Streams.parse(["name": "Torrentio\n[RD+] 1080p", "url": "https://x/a.mkv"], addon: "Torrentio", transportURL: "", index: 0)
+        let download = Streams.parse(["name": "Torrentio\n[RD download] 1080p", "url": "https://x/b.mkv"], addon: "Torrentio", transportURL: "", index: 1)
+        let direct = Streams.parse(["name": "Directo 1080p", "url": "https://x/c.mkv"], addon: "Directo", transportURL: "", index: 2)
+        XCTAssertEqual([cached.instant, download.instant, direct.instant], [true, false, true])
+    }
+}

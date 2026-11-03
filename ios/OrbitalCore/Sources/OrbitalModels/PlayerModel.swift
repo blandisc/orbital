@@ -1,5 +1,6 @@
 import Foundation
 import OrbitalCore
+import OrbitalAddons
 import os
 
 /// Orquesta una reproducción: elige la fuente, reanuda donde ibas, pone el audio y los subtítulos que quieres,
@@ -140,6 +141,14 @@ public final class PlayerModel: ObservableModel {
     private var consuming: Task<Void, Never>?
     var transition: Task<Void, Never>?
     var failedSources = Set<Int>()
+    /// El último aviso de Torrentio de este video (su «RD error» o su video de «descargando»): por qué falló, en palabras (R5).
+    public internal(set) var lastNotice: StreamNotice? { didSet { if oldValue != lastNotice { changed() } } }
+    /// Las versiones que ya se le pidieron a Real-Debrid al abrirlas: un reintento no las vuelve a pedir (R6).
+    var queued = QueuedOnRealDebrid.shared
+    /// Cuando Torrentio dice que hay un problema con tu cuenta: se le pregunta ya a Real-Debrid (la app pone `services.debrid`).
+    public var debridTrouble: (@Sendable () async -> DebridHealth)?
+    /// Lo que contestó Real-Debrid la última vez que hubo un problema con tu cuenta (para decir «venció», «sin Premium»…).
+    public internal(set) var debridHealth: DebridHealth? { didSet { if oldValue != debridHealth { changed() } } }
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
     public internal(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
     /// Ya corre de verdad: desde que sonó avanzó `startupSettleSeconds` (o lo pausaste). El motor dice «suena» con casi nada en
@@ -306,7 +315,7 @@ public final class PlayerModel: ObservableModel {
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; skipAnchor = nil; reachedEnd = false; finalReported = false
         pendingResumeFraction = nil
-        notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
+        notice = nil; attempts = 0; lastNotice = nil; debridHealth = nil; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
         // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
         foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil; scares = nil
@@ -355,7 +364,7 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation, !closing, let url = own.playbackURL else { failedSources.insert(own.index); continue }
                 startLoading()
                 do { try await loadVideo(url, at: start); return }
-                catch { guard mine == generation else { return }; failedSources.insert(own.index); notice = .triedAnotherSource(attempt: 1); acceptingSnapshots = false; continue }
+                catch { guard mine == generation else { return }; failedSources.insert(own.index); notice = triedAnother(); acceptingSnapshots = false; continue }
             }
             do {
                 if search == nil { search = SourceSearch() }
@@ -366,6 +375,7 @@ public final class PlayerModel: ObservableModel {
                 defer { listening.cancel() }
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
                 Self.note("versiones encontradas: \(sourceChoices.count)")
+                await noteTorrentioNotices(await finder.notices(kind: request.kind, videoID: request.videoID), generation: mine)
                 if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
@@ -376,7 +386,9 @@ public final class PlayerModel: ObservableModel {
                 // Otro episodio: la misma familia de versión con que dejaste la serie (no solo el mismo idioma).
                 else {
                     let family = request.binge ?? (request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)?.binge)
-                    found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: family, skip: failedSources)
+                    // Un reintento solo prueba las que arrancan al instante: nunca le pide otra descarga a Real-Debrid (R6).
+                    found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: family, skip: failedSources,
+                                                  instantOnly: !failedSources.isEmpty)
                 }
             } catch { guard mine == generation else { return }; return fail("Sin conexión: no pude buscar dónde verlo.", .network) }
             guard mine == generation, !closing else { return }
@@ -386,18 +398,44 @@ public final class PlayerModel: ObservableModel {
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
+            // Ya se le pidió a Real-Debrid hace poco (se abrió y mandó su «descargando»): no se pide otra vez, se dice.
+            if !found.instant, queued.contains(found.key, now: clock()) {
+                lastNotice = .downloading
+                return fail("Real-Debrid todavía no lo tiene.", .noSources)
+            }
             startLoading()
+            if !found.instant { queued.mark(found.key, at: clock()) }   // abrirla le pide a Real-Debrid que la baje
             do { try await loadVideo(url, at: start); return }
             catch {
                 guard mine == generation else { return }
                 Self.note("no abrió en \(Int(clock().timeIntervalSince(loadStartedAt))) s (\(String(describing: error).prefix(80))): otra versión")
                 failedSources.insert(found.index)
                 attempts = failedSources.count
-                if failedSources.count > PlaybackRules.maxSourceRetries { return fail("Ninguna versión funcionó.", .noneWorked) }
-                notice = .triedAnotherSource(attempt: failedSources.count)
+                if failedSources.count > PlaybackRules.maxSourceRetries || remainingInstant == 0 { return fail("Ninguna versión funcionó.", .noneWorked) }
+                notice = triedAnother()
                 acceptingSnapshots = false
             }
         }
+    }
+
+    /// Las que quedan por probar en un reintento (las que arrancan al instante y no han fallado).
+    var remainingInstant: Int { sourceChoices.filter { $0.instant && !failedSources.contains($0.index) }.count }
+
+    /// «Probando otra versión (2 de 3)»: el intento que sigue y cuántos habrá en total, contando solo las que se van a
+    /// probar (las que arrancan al instante, hasta `maxSourceRetries + 1`). Así el número del aviso es el de verdad.
+    func triedAnother() -> PlayerNotice {
+        let total = min(PlaybackRules.maxSourceRetries + 1, failedSources.count + max(1, remainingInstant))
+        return .triedAnotherSource(attempt: min(failedSources.count + 1, total), of: total)
+    }
+
+    /// Lo que Torrentio mandó en lugar de versiones: si es de tu cuenta («RD error», sin acceso), se le pregunta ya a
+    /// Real-Debrid (lo guardado puede decir «Premium» el día que venció, B-P1-1).
+    func noteTorrentioNotices(_ notices: [StreamNotice], generation mine: Int) async {
+        guard let first = notices.first(where: \.aboutTheAccount) ?? notices.first else { return }
+        lastNotice = first
+        guard first.aboutTheAccount, let debridTrouble else { return }
+        let health = await debridTrouble()
+        if mine == generation { debridHealth = health }
     }
 
     /// El segundo donde empezar. Si Trakt solo dio un porcentaje (sin duración conocida) se empieza en 0 y se busca ese punto

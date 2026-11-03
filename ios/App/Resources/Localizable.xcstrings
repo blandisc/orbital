@@ -18890,17 +18890,6 @@
         }
       }
     },
-    "Probando otra versión (%lld)…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trying another version (%lld)…"
-          }
-        }
-      }
-    },
     "Probar conexión": {
       "extractionState": "manual",
       "localizations": {
@@ -30290,6 +30279,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "You saved %lld to My list."
+          }
+        }
+      }
+    },
+    "Probando otra versión (%lld de %lld)…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trying another version (%lld of %lld)…"
+          }
+        }
+      }
+    },
+    "Real-Debrid todavía no lo tiene.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have it yet."
+          }
+        }
+      }
+    },
+    "Tomé tu clave de Real-Debrid de tu Torrentio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I took your Real-Debrid key from your Torrentio"
+          }
+        }
+      }
+    },
+    "Venció hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired today"
           }
         }
       }

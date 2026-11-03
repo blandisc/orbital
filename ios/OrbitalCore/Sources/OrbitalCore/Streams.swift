@@ -26,8 +26,13 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var dub = ""
     /// El nombre no menciona el título (TMDB y Cinemeta): Torrentio a veces trae otro («La casa de la pradera»). Baja, no se esconde.
     public var otherTitle = false
+    /// No es una versión: es el aviso de Torrentio en su lugar («RD error» o su video de «descargando», R5).
+    public var notice: StreamNotice?
 
     public var id: Int { index }
+    /// Arranca al instante: ya está en Real-Debrid ([RD+]) o no pasa por un servicio de descarga. Un reintento solo prueba
+    /// estas (R6): abrir una «[RD download]» le pide a Real-Debrid que la baje.
+    public var instant: Bool { cached || !debrid }
 
     /// Pone el audio (de la versión o lo comprobado al verla) y lo que sale de ahí, como `set_languages` de la TV: sus idiomas
     /// sin variante, el doblaje (solo si es seguro: lo comprobado, lo dicho o el original) y la etiqueta «Latino» / «Castellano».
@@ -456,6 +461,7 @@ public enum Streams {
         src.binge = hints?["bingeGroup"]?.nonEmptyString
         src.cached = name.contains("[RD+]") || (name.components(separatedBy: .newlines).first ?? "").contains("+]")
         src.debrid = matches(debridPattern, name)
+        src.notice = TorrentioNotices.notice(name: name, url: stream["url"]?.string.flatMap(URL.init(string:)))
         // La resolución que declara el complemento manda; el nombre del archivo solo si no dice nada
         // («1080p.UHD.BluRay» no es 4K: «UHD» ahí es el origen del disco).
         for place in [name, "\(first) \(filename)"] {

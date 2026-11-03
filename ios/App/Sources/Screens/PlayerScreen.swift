@@ -2,6 +2,7 @@ import SwiftUI
 import AVFoundation
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// Guarda el motor y el modelo juntos (el motor se arma una sola vez por reproducción). Vive en un `@State`, que evalúa su
 /// valor inicial en cada `init` de la vista: por eso el motor y el modelo se arman la primera vez que se piden, no al crearlo.
@@ -38,6 +39,8 @@ final class PlayerHolder {
         model.subtitlePicks = SubtitlePicks(services.kv)   // «Este va bien»: el subtítulo que elegiste para la serie
         model.subtitleOffsets = SubtitleOffsets(services.kv)   // la sincronía de cada versión (antes no se conectaba y se perdía)
         model.ownSource = { videoID, preferred in await library.source(videoID, purpose: .watch, preferring: preferred) }   // Mi media: tu copia primero
+        let debrid = services.debrid
+        model.debridTrouble = { await debrid.refreshAfterTrouble() }   // Torrentio dijo «RD error»: se le pregunta ya a Real-Debrid (B-P1-1)
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
             Task {
@@ -415,8 +418,8 @@ struct PlayerScreen: View {
                 return show(PlayerNotice(title: Strings.tr("Esa versión no abrió", language: ui0), detail: Strings.tr("Volviste a la que veías, en el mismo punto.", language: ui0), tone: .warn))
             }
             // Una versión falló y se prueba otra: se dice (antes cambiaba a escondidas y solo se veía la carga más tiempo).
-            if case .triedAnotherSource(let attempt)? = value {
-                return show(PlayerNotice(title: String(format: Strings.tr("Probando otra versión (%lld)…", language: ui0), attempt),
+            if case .triedAnotherSource(let attempt, let total)? = value {
+                return show(PlayerNotice(title: String(format: Strings.tr("Probando otra versión (%lld de %lld)…", language: ui0), attempt, total),
                                          detail: Strings.tr("La anterior no respondió. Sigue en el mismo punto.", language: ui0), tone: .info))
             }
             if value == .notReadyOnRealDebrid {
