@@ -292,7 +292,7 @@ struct BrowseView: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: PopularRoute()) {
                 DSSectionHead(title: "Lo más popular hoy", chevron: true,
-                              meta: Text("Lo más visto hoy en Trakt"), source: .trakt)
+                              meta: Text("Lo más visto hoy en Trakt"))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, DS.Space.gutter)

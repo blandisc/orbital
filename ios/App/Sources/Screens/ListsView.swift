@@ -504,7 +504,7 @@ struct ListsView: View {
     /// Sin ninguna fuente tuya: lo que está en tendencia en Trakt y una invitación (un botón, no una tarjeta gris).
     @ViewBuilder private var sourcesFallback: some View {
         if !model.mosaic.isEmpty {
-            Shelf(title: Text("En tendencia"), meta: Text("Lo que más se está viendo ahora"), source: .trakt) {
+            Shelf(title: Text("En tendencia"), meta: Text("Lo más visto ahora en Trakt")) {
                 ForEach(model.mosaic) { s in
                     ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }

@@ -13424,17 +13424,6 @@
         }
       }
     },
-    "Lo que más se está viendo ahora": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What people are watching right now"
-          }
-        }
-      }
-    },
     "Lo que más se está viendo ahora, películas y series": {
       "extractionState": "manual",
       "localizations": {
@@ -30103,6 +30092,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recent critically acclaimed movies and series"
+          }
+        }
+      }
+    },
+    "Lo más visto ahora en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched right now on Trakt"
           }
         }
       }
