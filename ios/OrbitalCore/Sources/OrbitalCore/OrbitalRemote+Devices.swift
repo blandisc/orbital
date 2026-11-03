@@ -141,7 +141,7 @@ extension OrbitalRemote {
     public func putRealDebrid(token: String) async throws -> OrbitalTVDebrid {
         guard hasDeviceKey else { throw Failure.needsKey }
         let json = try await send("api/realdebrid", method: "PUT", body: JSON.object(["token": .string(token)]).serialized())
-        return OrbitalTVDebrid(user: json?["user"]?.string ?? json?["username"]?.string ?? "", premium: json?["premium"]?.bool ?? false,
+        return OrbitalTVDebrid(user: json?["user"]?.string ?? "", premium: json?["premium"]?.bool ?? false,
                                expires: Self.date(json?["expires"]), tail: json?["tail"]?.string ?? "")
     }
 
@@ -149,7 +149,7 @@ extension OrbitalRemote {
     public func realDebridKey() async throws -> String? {
         guard hasDeviceKey else { throw Failure.needsKey }
         let json = try await send("api/realdebrid", method: "GET", query: [URLQueryItem(name: "full", value: "1")], body: nil)
-        return (json?["token"]?.nonEmptyString ?? json?["key"]?.nonEmptyString)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return json?["token"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Una fecha de la TV: segundos desde 1970 o ISO 8601.
