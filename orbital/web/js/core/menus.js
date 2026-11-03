@@ -1372,6 +1372,11 @@ export function addonRows(status) {
   if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
   const entry = (e) => {
     const tv = e.only_on === "tv";
+    if (e.template === "torrentio") { // corte S3: se configura aquí
+      return { icon: "addon", label: e.name, value: e.on ? "Prendido" : "Apagado",
+        hint: e.needs_key ? "Necesita tu clave de Real-Debrid · Ajustes › Cuentas" : [torrentioSummary(e.options), addonHealth(e.health)].filter(Boolean).join(" · "),
+        warn: e.needs_key || (e.on && e.health?.state === "down"), command: { type: "addon-menu", id: e.id } };
+    }
     return { icon: "addon", label: tv ? "Archivos de la TV" : e.name,
       hint: [e.gives, tv ? "Solo en la TV · Necesita Stremio abierto" : "", addonHealth(e.health)].filter(Boolean).join(" · "),
       value: e.on ? "Prendido" : "Apagado", warn: e.on && e.health?.state === "down",
@@ -1408,6 +1413,7 @@ export function addonMenu(entry, { first = false, last = false } = {}) {
     title: tv ? "Archivos de la TV" : entry.name,
     subtitle: [entry.gives, addonHealth(entry.health)].filter(Boolean).join(" · ") || undefined,
     options: [
+      entry.template === "torrentio" && { icon: "settings", label: "Configurar", hint: "Idiomas, calidades, orden y más", command: { type: "torrentio-menu" } },
       { icon: entry.on ? "stop" : "play", label: entry.on ? "Apagar" : "Prender", command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on" } },
       !first && { icon: "back", label: "Subir", hint: "Se le pregunta antes", command: { type: "addon-change", id: entry.id, action: "up" } },
       !last && { icon: "chevron", label: "Bajar", hint: "Se le pregunta después", command: { type: "addon-change", id: entry.id, action: "down" } },
@@ -1415,6 +1421,159 @@ export function addonMenu(entry, { first = false, last = false } = {}) {
         command: { type: "addon-change", id: entry.id, action: "remove", name: tv ? "Archivos de la TV" : entry.name } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
     ].filter(Boolean),
+  };
+}
+
+// --- Torrentio con tus opciones («La TV sin Stremio», corte S3) ------------------------------------------------------
+// Los nombres son los del iPhone (TorrentioWords) y los de la dirección, los del contrato (design/addons-contract.json).
+export const TORRENTIO_RECOMMENDED = { language: ["latino", "spanish"], qualityfilter: ["cam", "scr", "unknown"] };
+const TORRENTIO_LANGUAGES = {
+  latino: "Latino", spanish: "Español de España", portuguese: "Portugués", french: "Francés", italian: "Italiano", german: "Alemán",
+  japanese: "Japonés", korean: "Coreano", chinese: "Chino", taiwanese: "Taiwanés", russian: "Ruso", dutch: "Neerlandés", hindi: "Hindi",
+  telugu: "Telugu", tamil: "Tamil", polish: "Polaco", lithuanian: "Lituano", latvian: "Letón", estonian: "Estonio", czech: "Checo",
+  slovakian: "Eslovaco", slovenian: "Esloveno", hungarian: "Húngaro", romanian: "Rumano", bulgarian: "Búlgaro", serbian: "Serbio",
+  croatian: "Croata", ukrainian: "Ucraniano", greek: "Griego", danish: "Danés", finnish: "Finés", swedish: "Sueco", norwegian: "Noruego",
+  turkish: "Turco", arabic: "Árabe", persian: "Persa", hebrew: "Hebreo", vietnamese: "Vietnamita", indonesian: "Indonesio", malay: "Malayo",
+  thai: "Tailandés" };
+const TORRENTIO_QUALITIES = [
+  ["4k", "4K", "La mejor imagen; pesa mucho"], ["1080p", "1080p", "Alta definición; la más común"], ["720p", "720p", "Buena en el teléfono"],
+  ["480p", "480p", "Se ve borrosa en la TV"], ["hdrall", "HDR y Dolby Vision", "Colores intensos; solo si tu TV lo aguanta"],
+  ["threed", "3D", "Para lentes 3D"], ["brremux", "Remux de Blu-ray", "Copia exacta del disco; enorme"],
+  ["scr", "Screener", "Copia de prensa, a veces con marcas"],
+  ["cam", "Grabada en el cine (CAM)", "Con una cámara en la sala: se ve y oye mal"], // ds-exception: siglas de calidad de video
+  ["other", "Otras copias (DVD)", "Copias viejas o de menos calidad"], // ds-exception: siglas de calidad de video
+  ["unknown", "Sin calidad conocida", "No dice qué es"]];
+const TORRENTIO_SHORT = { cam: "cine", scr: "Screener", brremux: "Remux", unknown: "sin calidad", "4k": "4K", hdrall: "HDR", threed: "3D", other: "otras copias" };
+const TORRENTIO_SORTS = [["quality", "Mejor calidad primero"], ["qualitysize", "Calidad y luego tamaño"], ["seeders", "Las más compartidas primero"],
+  ["size", "Las más pesadas primero"]];
+const TORRENTIO_LIMITS = [[undefined, "Todas"], [5, "Hasta 5"], [2, "Hasta 2"]];
+const TORRENTIO_SIZES = [[undefined, "Sin límite"], ["10GB,2GB", "10 GB películas · 2 GB episodios"], ["5GB", "5 GB"], ["2GB,1GB", "2 GB películas · 1 GB episodios"]];
+export const TORRENTIO_PROVIDERS = ["yts", "eztv", "rarbg", "1337x", "ext", "thepiratebay", "kickasstorrents", "torrentgalaxy", "magnetdl", "horriblesubs",
+  "nyaasi", "tokyotosho", "anidex", "nekobt", "rutor", "rutracker", "comando", "bludv", "micoleaodublado", "torrent9", "ilcorsaronero",
+  "mejortorrent", "wolfmax4k", "cinecalidad", "besttorrents"];
+const PROVIDER_NAMES = { yts: "YTS", eztv: "EZTV", rarbg: "RARBG", "1337x": "1337x", ext: "EXT", thepiratebay: "ThePirateBay", kickasstorrents: "KickassTorrents",
+  torrentgalaxy: "TorrentGalaxy", magnetdl: "MagnetDL", horriblesubs: "HorribleSubs", nyaasi: "NyaaSi", tokyotosho: "TokyoTosho", anidex: "AniDex",
+  nekobt: "nekoBT", rutor: "Rutor", rutracker: "Rutracker", comando: "Comando", bludv: "BluDV", micoleaodublado: "MicoLeaoDublado",
+  torrent9: "Torrent9", ilcorsaronero: "ilCorSaRoNeRo", mejortorrent: "MejorTorrent", wolfmax4k: "Wolfmax4k", cinecalidad: "Cinecalidad",
+  besttorrents: "BestTorrents" };
+
+const nextOf = (list, current) => list[(list.findIndex(([v]) => v === current) + 1) % list.length][0];
+const nameOf = (list, current, fallback) => (list.find(([v]) => v === current) || [null, fallback])[1];
+
+/** Las calidades escondidas en una línea, como el iPhone: «Sin cine, Screener y sin calidad». */
+export function torrentioHidden(keys = []) {
+  const words = keys.map((k) => TORRENTIO_SHORT[k] || k);
+  if (!words.length) return "Ninguna: ves todas";
+  return words.length === 1 ? `Sin ${words[0]}` : `Sin ${words.slice(0, -1).join(", ")} y ${words.at(-1)}`;
+}
+
+/** Torrentio en una línea (el renglón de Complementos): «Las más compartidas primero · Latino · Sin cine…». */
+export function torrentioSummary(options = {}) {
+  const lang = options.language?.[0] ? TORRENTIO_LANGUAGES[options.language[0]] || options.language[0] : "sin idioma primero";
+  return [nameOf(TORRENTIO_SORTS, options.sort || "quality", ""), lang, torrentioHidden(options.qualityfilter)].join(" · ");
+}
+
+const isRecommended = (o = {}) => JSON.stringify([o.language || [], o.qualityfilter || [], o.sort || "quality", o.limit, o.sizefilter, o.providers || [], o.debridoptions || []])
+  === JSON.stringify([TORRENTIO_RECOMMENDED.language, TORRENTIO_RECOMMENDED.qualityfilter, "quality", undefined, undefined, [], []]);
+
+/** Ajustes › Complementos › Torrentio (SS-6, T1 del iPhone): cada cambio se guarda al hacerlo, con «Deshacer». */
+export function torrentioMenu(entry) {
+  const o = entry?.options || {};
+  const only = (o.debridoptions || []).includes("nodownloadlinks");
+  const set = (patch) => ({ type: "torrentio-set", options: { ...o, ...patch }, reopen: "main" });
+  const sites = (o.providers || []).length || TORRENTIO_PROVIDERS.length;
+  return {
+    title: "Torrentio",
+    subtitle: "Aquí decides qué versiones te enseña y en qué orden. Lo de fábrica ya viene bien; cada cambio se guarda al hacerlo.",
+    options: [
+      entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Mándala desde tu iPhone o ponla en tu Torrentio", warn: true, command: { type: "rd-account" } },
+      { icon: "captions", label: "Idiomas primero", value: (o.language || []).map((k) => TORRENTIO_LANGUAGES[k] || k).join(", ") || "Ninguno",
+        command: { type: "torrentio-languages" } },
+      { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },
+      { icon: "bolt", label: "Solo lo que ya está en Real-Debrid", value: only ? "Sí" : "No",
+        hint: only ? "Solo lo que arranca al instante" : "También lo que se puede pedir",
+        command: set({ debridoptions: only ? (o.debridoptions || []).filter((d) => d !== "nodownloadlinks") : [...(o.debridoptions || []), "nodownloadlinks"] }) },
+      { icon: "list", label: "Orden", value: nameOf(TORRENTIO_SORTS, o.sort || "quality", ""),
+        command: set({ sort: nextOf(TORRENTIO_SORTS, o.sort || "quality") === "quality" ? undefined : nextOf(TORRENTIO_SORTS, o.sort || "quality") }) },
+      { icon: "grid", label: "Cuántas por calidad", value: nameOf(TORRENTIO_LIMITS, o.limit, `Hasta ${o.limit}`),
+        command: set({ limit: nextOf(TORRENTIO_LIMITS, TORRENTIO_LIMITS.some(([v]) => v === o.limit) ? o.limit : undefined) }) },
+      { icon: "memory", label: "Tamaño máximo", value: nameOf(TORRENTIO_SIZES, o.sizefilter, o.sizefilter),
+        command: set({ sizefilter: nextOf(TORRENTIO_SIZES, TORRENTIO_SIZES.some(([v]) => v === o.sizefilter) ? o.sizefilter : undefined) }) },
+      { icon: "search", label: "Sitios donde busca", value: `${sites} de ${TORRENTIO_PROVIDERS.length}`,
+        command: { type: "torrentio-providers" } },
+      !isRecommended(o) && { icon: "refresh", label: "Volver a lo recomendado", hint: "Latino y español primero; sin cine, Screener ni sin calidad",
+        command: { type: "torrentio-set", options: { ...TORRENTIO_RECOMMENDED, verbatim: o.verbatim }, reopen: "main" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Idiomas primero: los tuyos en orden (A: subir, bajar o quitar) y «Agregar idioma». */
+export function torrentioLanguagesMenu(entry) {
+  const o = entry?.options || {};
+  const mine = o.language || [];
+  return {
+    title: "Idiomas primero",
+    subtitle: "Las versiones en estos idiomas salen arriba. Si no hay en el primero, se prueba el siguiente.",
+    options: [
+      ...mine.map((k, i) => ({ icon: "captions", label: `${i + 1}. ${TORRENTIO_LANGUAGES[k] || k}`, command: { type: "torrentio-language", key: k } })),
+      { icon: "plus", label: "Agregar idioma", hint: "Se agrega al final de tu lista", command: { type: "torrentio-language-add" } },
+    ],
+  };
+}
+
+/** Uno de tus idiomas: subir, bajar o quitar («Cancelar» al final, como las demás hojas de opciones). */
+export function torrentioLanguageMenu(entry, key) {
+  const o = entry?.options || {};
+  const mine = o.language || [];
+  const i = mine.indexOf(key);
+  const moved = (j) => { const list = [...mine]; list.splice(i, 1); list.splice(j, 0, key); return list; };
+  return {
+    title: TORRENTIO_LANGUAGES[key] || key,
+    options: [
+      i > 0 && { icon: "back", label: "Subir", command: { type: "torrentio-set", options: { ...o, language: moved(i - 1) }, reopen: "languages", back: true } },
+      i < mine.length - 1 && { icon: "chevron", label: "Bajar", command: { type: "torrentio-set", options: { ...o, language: moved(i + 1) }, reopen: "languages", back: true } },
+      { icon: "close", label: "Quitar", danger: true, command: { type: "torrentio-set", options: { ...o, language: mine.filter((k) => k !== key) }, reopen: "languages", back: true } },
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Agregar idioma: los que Torrentio sabe poner primero y todavía no están en tu lista. */
+export function torrentioLanguageAddMenu(entry) {
+  const o = entry?.options || {};
+  const mine = o.language || [];
+  return {
+    title: "Agregar idioma",
+    options: Object.keys(TORRENTIO_LANGUAGES).filter((k) => !mine.includes(k)).map((k) => ({ icon: "captions", label: TORRENTIO_LANGUAGES[k],
+      command: { type: "torrentio-set", options: { ...o, language: [...mine, k] }, reopen: "languages", back: true } })),
+  };
+}
+
+/** Calidades que no quieres: A esconde o enseña cada una. */
+export function torrentioQualitiesMenu(entry) {
+  const o = entry?.options || {};
+  const hidden = o.qualityfilter || [];
+  return {
+    title: "Calidades que no quieres",
+    subtitle: "Las que escondas no salen en «Versión».",
+    options: TORRENTIO_QUALITIES.map(([k, name, hint]) => ({ icon: hidden.includes(k) ? "hide" : "show", label: name, hint,
+      value: hidden.includes(k) ? "Se esconde" : "Se ve", warn: false,
+      command: { type: "torrentio-set", options: { ...o, qualityfilter: hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k] }, reopen: "qualities" } })),
+  };
+}
+
+/** Sitios donde busca: A prende o apaga cada uno (todos prendidos = no se escribe). */
+export function torrentioProvidersMenu(entry) {
+  const o = entry?.options || {};
+  const on = (o.providers || []).length ? o.providers : TORRENTIO_PROVIDERS;
+  return {
+    title: "Sitios donde busca",
+    subtitle: "Apaga uno si da versiones que no sirven.",
+    options: TORRENTIO_PROVIDERS.map((k) => {
+      const next = on.includes(k) ? on.filter((x) => x !== k) : [...on, k];
+      return { icon: "search", label: PROVIDER_NAMES[k] || k, value: on.includes(k) ? "Prendido" : "Apagado",
+        command: { type: "torrentio-set", options: { ...o, providers: next.length === TORRENTIO_PROVIDERS.length ? [] : next }, reopen: "providers" } };
+    }),
   };
 }
 

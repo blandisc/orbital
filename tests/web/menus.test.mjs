@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -657,4 +658,34 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   assert.deepEqual(theirs.options.map((o) => o.label), ["Es de otra cuenta de Real-Debrid"]);
   assert.equal(requestLabel({ state: "ready" }), "Listo");
   assert.equal(requestedBy({ by: "iPad" }), "Lo pidió el iPad");
+});
+
+test("ajustes › Complementos › Torrentio: cada opción con su valor y su cambio (corte S3, los nombres del iPhone)", () => {
+  const entry = { id: "torrentio", template: "torrentio", name: "Torrentio", on: true, options: { sort: "seeders", language: ["latino"], qualityfilter: ["brremux", "cam", "scr"] } };
+  assert.equal(torrentioSummary(entry.options), "Las más compartidas primero · Latino · Sin Remux, cine y Screener");
+  assert.equal(torrentioHidden([]), "Ninguna: ves todas");
+  const row = addonRows({ source: "own", imported_at: 1, entries: [entry] }).find((r) => r.label === "Torrentio");
+  assert.equal(row.hint, "Las más compartidas primero · Latino · Sin Remux, cine y Screener");
+  assert.equal(addonRows({ source: "own", imported_at: 1, entries: [{ ...entry, needs_key: true }] }).find((r) => r.label === "Torrentio").warn, true);
+  assert.equal(addonMenu(entry).options[0].label, "Configurar");
+  const menu = torrentioMenu(entry);
+  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Idiomas primero", "Latino"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
+    ["Solo lo que ya está en Real-Debrid", "No"], ["Orden", "Las más compartidas primero"], ["Cuántas por calidad", "Todas"],
+    ["Tamaño máximo", "Sin límite"], ["Sitios donde busca", "25 de 25"], ["Volver a lo recomendado", undefined]]);
+  const order = menu.options[3].command;
+  assert.equal(order.options.sort, "size"); // A pasa al siguiente orden
+  assert.equal(menu.options[2].command.options.debridoptions[0], "nodownloadlinks");
+  assert.deepEqual(menu.options.at(-1).command.options.language, ["latino", "spanish"]);
+  assert.ok(!torrentioMenu({ options: { language: ["latino", "spanish"], qualityfilter: ["cam", "scr", "unknown"] } }).options.some((o) => o.label === "Volver a lo recomendado"));
+  const langs = torrentioLanguagesMenu({ options: { language: ["latino", "japanese"] } });
+  assert.deepEqual(langs.options.map((o) => o.label), ["1. Latino", "2. Japonés", "Agregar idioma"]);
+  const japanese = torrentioLanguageMenu({ options: { language: ["latino", "japanese"] } }, "japanese");
+  assert.deepEqual(japanese.options.map((o) => o.label), ["Subir", "Quitar", "Cancelar"]);
+  assert.deepEqual(japanese.options[0].command.options.language, ["japanese", "latino"]);
+  const quality = torrentioQualitiesMenu(entry).options.find((o) => o.label === "Grabada en el cine (CAM)");
+  assert.equal(quality.value, "Se esconde");
+  assert.deepEqual(quality.command.options.qualityfilter, ["brremux", "scr"]);
+  const sites = torrentioProvidersMenu(entry).options;
+  assert.equal(sites.length, 25);
+  assert.equal(sites[0].command.options.providers.length, 24); // apagar uno escribe los otros 24
 });

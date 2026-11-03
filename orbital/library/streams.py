@@ -681,6 +681,12 @@ class StreamFinder:
             for key in [k for k in self._cache if k.startswith(f"{kind}:{video_id}:")]:
                 del self._cache[key]
 
+    def forget_all(self) -> None:
+        """Cambiaron tus complementos o sus opciones (Torrentio): la próxima búsqueda pregunta de nuevo."""
+        with self._lock:
+            self._cache.clear()
+        self.outcome.clear()
+
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:
         found = self.cached(kind, video_id, prefs)
         if not found:

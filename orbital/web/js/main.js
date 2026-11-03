@@ -9,6 +9,7 @@ import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
+import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
@@ -1770,7 +1771,9 @@ const nested = (context) => (context ? { stack: [...context.stack, { menu: conte
 let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
-  const deps = { UNDO_MS, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const torrentioMenus = { main: torrentioMenu, languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
+    qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
+  const deps = { UNDO_MS, torrentioMenus, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
   return commandTable;
 }
