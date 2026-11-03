@@ -1,0 +1,47 @@
+{
+  "_": "El contrato de tus complementos entre la TV (Orbital Ultra) y el iPhone: lo que viaja por PUT/GET /api/addons. Acordado entre las sesiones de la TV y del iPhone (3 nov 2026, tras la revisión adversarial de las dos: AD-4, AD-6, AD-10 de la TV; A2, A3 del iPhone). Las pruebas de los dos lados leen este archivo y tests/fixtures/torrentio-config.json. En Orbital Plus no hay consola: solo el iPhone lo usa.",
+  "version": 1,
+  "store": {
+    "_": "La TV es el almacén: lleva `revision`, un entero que solo sube. Quien manda un cambio dice sobre qué revisión lo hizo (`base_revision`); si no coincide, la TV contesta 409 con la lista actual y el cliente junta por id y por opción y reintenta. Si al reintentar la lista ya es igual a lo que mandó, es éxito. `changed_at` y `changed_by` solo sirven para el aviso («Se quedó la de la TV (9:40) · Usar la de este iPhone»), nunca para decidir quién gana.",
+    "fields": {
+      "revision": "entero ≥ 0, lo asigna la TV",
+      "base_revision": "entero: solo en PUT, la revisión que tenía el cliente",
+      "changed_at": "ISO 8601 con zona",
+      "changed_by": "id del aparato que hizo el último cambio (ver devices)",
+      "addons": "lista de entradas (ver entry), en su orden",
+      "removed": "ids de lo traído de Stremio que se quitó; lo que viene con Orbital no se borra, solo se apaga"
+    }
+  },
+  "devices": {
+    "_": "`enabled` va por aparato, con su id: «tv» para la consola y, para cada iPhone, iPad o Mac, el id que recibe al emparejarse (su llave por aparato, AD-3). Un aparato que no aparece en `enabled` usa el valor de fábrica de la entrada. Lo que vive en la computadora de la TV (Archivos de la TV) se marca `only_on: \"tv\"` y nunca se prende en otro aparato.",
+    "platforms": ["tv", "iphone", "ipad", "mac"]
+  },
+  "entry": {
+    "id": "fijo: «torrentio», «comet» u «opensubtitles» para lo que viene con Orbital; un uuid asignado al traerlo para lo de Stremio. Nunca un hash de una dirección con clave.",
+    "origin": "«orbital» (viene con Orbital) | «stremio» (traído de tu Stremio). Nunca uno agregado a mano (Fernando, 3 nov: no se agregan complementos).",
+    "template": "solo con origin «orbital»: el mismo valor que id",
+    "url": "solo con origin «stremio»: su dirección tal cual. Ausente o null en un PUT = no cambia. Una dirección con la máscara «•••» se rechaza con 422.",
+    "name": "su nombre",
+    "enabled": "{\"<id del aparato>\": bool}",
+    "only_on": "opcional: «tv»",
+    "order": "entero: el lugar en la lista",
+    "options": "opcional, solo en Torrentio: ver torrentio_options",
+    "extra": "opcional: llaves que un lado no conoce; se conservan tal cual"
+  },
+  "torrentio_options": {
+    "_": "Los nombres son los de la dirección de Torrentio, leídos de su página de configuración (torrentio.strem.fun/configure, 3 nov 2026). La dirección se arma en este orden, saltando lo vacío, unido con «|»: providers, sort, language, qualityfilter, limit, sizefilter, debridoptions y al final realdebrid=<clave>. Cada aparato pone su propia clave fija (la de real-debrid.com/apitoken), nunca la llave que caduca del código de dispositivo.",
+    "providers": { "type": "lista", "empty_means": "todos (Torrentio no pone el campo si están los 25)", "values": ["yts", "eztv", "rarbg", "1337x", "ext", "thepiratebay", "kickasstorrents", "torrentgalaxy", "magnetdl", "horriblesubs", "nyaasi", "tokyotosho", "anidex", "nekobt", "rutor", "rutracker", "comando", "bludv", "micoleaodublado", "torrent9", "ilcorsaronero", "mejortorrent", "wolfmax4k", "cinecalidad", "besttorrents"] },
+    "sort": { "type": "uno", "default": "quality", "omit_default": true, "values": { "quality": "Mejor calidad", "qualitysize": "Calidad y luego tamaño", "seeders": "Más compartidas", "size": "Más pesadas" } },
+    "language": { "type": "lista ordenada", "label": "Idiomas primero", "values": ["japanese", "russian", "italian", "portuguese", "spanish", "latino", "korean", "chinese", "taiwanese", "french", "german", "dutch", "hindi", "telugu", "tamil", "polish", "lithuanian", "latvian", "estonian", "czech", "slovakian", "slovenian", "hungarian", "romanian", "bulgarian", "serbian", "croatian", "ukrainian", "greek", "danish", "finnish", "swedish", "norwegian", "turkish", "arabic", "persian", "hebrew", "vietnamese", "indonesian", "malay", "thai"] },
+    "qualityfilter": { "type": "lista", "label": "Calidades · Esconder", "values": ["brremux", "hdrall", "dolbyvision", "dolbyvisionwithhdr", "threed", "nonthreed", "4k", "1080p", "720p", "480p", "other", "scr", "cam", "unknown"] },
+    "limit": { "type": "entero 1–999 o vacío", "label": "Cuántas por calidad", "empty_means": "Todas" },
+    "sizefilter": { "type": "texto", "label": "Tamaño máximo", "format": "«5GB» o «800MB» para todo; «10GB,2GB» = películas, episodios" },
+    "debridoptions": { "type": "lista", "values": { "nodownloadlinks": "Solo lo que ya está en Real-Debrid (esconde las que habría que bajar)", "nocatalog": "Sin el catálogo de Real-Debrid (no tiene pantalla; se conserva si venía en un Torrentio traído)" } }
+  },
+  "routes": {
+    "GET /api/addons": "la lista con su revision; las direcciones que traen clave van tapadas («•••»). Con ?full=1 las da completas, solo con llave de aparato (nunca con la de Alexa) y nunca en el puerto local de la TV.",
+    "PUT /api/addons": "{base_revision, changed_at, changed_by, addons, removed}: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (una máscara, un origin que no existe, un complemento agregado a mano).",
+    "PUT /api/realdebrid": "{token}: la clave fija, aparte de la lista y solo al oprimir «Pasar a la TV» en el iPhone. Responde con el usuario y el vencimiento, nunca con la clave.",
+    "GET /api/realdebrid": "usuario, Premium, vencimiento y la clave tapada («termina en ••••3F2A»); con ?full=1 y llave de aparato, la clave completa (para «Usar la de la TV» en el iPhone)."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "_": "Ejemplos compartidos (TV en Python, iPhone en Swift): las opciones de Torrentio de design/addons-contract.json y la dirección que tienen que armar los dos lados, con la clave como {CLAVE}. Nombres y orden leídos de torrentio.strem.fun/configure el 3 nov 2026. `parse` dice si la dirección tiene que poder leerse de vuelta a esas mismas opciones (al traer un Torrentio de Stremio).",
+  "base": "https://torrentio.strem.fun",
+  "cases": [
+    {
+      "name": "La de Fernando hoy: más compartidas, latino, sin Remux, Screener ni CAM",
+      "options": { "sort": "seeders", "language": ["latino"], "qualityfilter": ["brremux", "cam", "scr"] },
+      "url": "https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=brremux,cam,scr|realdebrid={CLAVE}/manifest.json",
+      "parse": true
+    },
+    {
+      "name": "Los valores de fábrica de Orbital (iPhone, AddonOptions): latino y español, sin CAM, Screener ni sin calidad",
+      "options": { "language": ["latino", "spanish"], "qualityfilter": ["cam", "scr", "unknown"] },
+      "url": "https://torrentio.strem.fun/language=latino,spanish|qualityfilter=cam,scr,unknown|realdebrid={CLAVE}/manifest.json",
+      "parse": true
+    },
+    {
+      "name": "El orden de fábrica (quality) no se escribe",
+      "options": { "sort": "quality", "language": ["latino"] },
+      "url": "https://torrentio.strem.fun/language=latino|realdebrid={CLAVE}/manifest.json",
+      "parse": false
+    },
+    {
+      "name": "Todo junto, en el orden de Torrentio",
+      "options": { "providers": ["yts", "1337x", "mejortorrent", "cinecalidad"], "sort": "qualitysize", "language": ["latino", "spanish"], "qualityfilter": ["4k", "cam"], "limit": 5, "sizefilter": "10GB,2GB", "debridoptions": ["nodownloadlinks"] },
+      "url": "https://torrentio.strem.fun/providers=yts,1337x,mejortorrent,cinecalidad|sort=qualitysize|language=latino,spanish|qualityfilter=4k,cam|limit=5|sizefilter=10GB,2GB|debridoptions=nodownloadlinks|realdebrid={CLAVE}/manifest.json",
+      "parse": true
+    },
+    {
+      "name": "Los 25 sitios es lo mismo que no decir ninguno",
+      "options": { "providers": ["yts", "eztv", "rarbg", "1337x", "ext", "thepiratebay", "kickasstorrents", "torrentgalaxy", "magnetdl", "horriblesubs", "nyaasi", "tokyotosho", "anidex", "nekobt", "rutor", "rutracker", "comando", "bludv", "micoleaodublado", "torrent9", "ilcorsaronero", "mejortorrent", "wolfmax4k", "cinecalidad", "besttorrents"] },
+      "url": "https://torrentio.strem.fun/realdebrid={CLAVE}/manifest.json",
+      "parse": false
+    },
+    {
+      "name": "Un límite fuera de 1–999 no se escribe",
+      "options": { "limit": 0 },
+      "url": "https://torrentio.strem.fun/realdebrid={CLAVE}/manifest.json",
+      "parse": false
+    }
+  ]
+}
