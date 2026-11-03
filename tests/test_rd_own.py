@@ -113,3 +113,15 @@ def test_the_iphone_reads_and_writes_the_book_through_the_tunnel(apps, monkeypat
     big = {**entry, "release": "x" * 20000}
     assert public.post("/api/realdebrid/requests", content=json.dumps(big), headers={**auth, "Content-Type": "application/json"}).status_code == 413
     assert public.post("/api/realdebrid/requests/cancel", json={"hash": H}, headers=auth).status_code in (401, 404, 405)  # cancelar: solo en la TV
+
+
+def test_the_account_is_checked_again_and_the_key_never_leaves(apps, monkeypatch):
+    """P6-A: al abrir la cuenta se le pregunta a Real-Debrid otra vez; la clave nunca sale entera."""
+    local, _, watch = apps
+    monkeypatch.setattr(rd_requests.RdRequests, "_torrentio_token", lambda self: "TORRENTIOKEY3F2A")
+    monkeypatch.setattr(realdebrid, "RealDebrid", User)
+    User.answer, User.error = {"id": 7, "username": "fer", "type": "premium", "expiration": "2099-11-21T18:00:00.000Z"}, None
+    got = local.get("/api/realdebrid").json()
+    assert got["linked"] and got["premium"] and got["ends_with"] == "3F2A" and "TORRENTIOKEY" not in json.dumps(got)
+    User.error = realdebrid.RealDebridError("Vuelve a conectar Real-Debrid", 401, 8)
+    assert local.get("/api/realdebrid").json()["problem"] == "bad_key"  # sin esperar la media hora

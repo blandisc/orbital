@@ -745,7 +745,9 @@ function accountRows(settings) {
     { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio · respaldo", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
       ok: !!settings.stremio_linked,
       command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-      hint: settings.stremio_linked ? "Opcional: tus complementos y Mi lista, mientras no tengas Trakt" : "Opcional: para traer tus complementos y Mi lista" },
+      hint: !settings.stremio_linked ? "Opcional: para traer tus complementos y Mi lista"
+        : settings.stremio_role === "backup" ? (settings.stremio_copy !== false ? "De respaldo · recibe copia de tu avance" : "De respaldo · ya no se lee")
+          : "Opcional: tus complementos y Mi lista, mientras no tengas Trakt" },
     settings.para_ti && { heading: true, label: "Claves de Explorar" },
     ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
   ].filter(Boolean);
@@ -1286,7 +1288,9 @@ export function debridRow(rd) {
     command: { type: "rd-account" } };
   const problem = DEBRID_PROBLEMS[rd.problem];
   if (problem) return { ...base, value: problem.label, warn: true, hint: problem.hint };
-  if (rd.loading || rd.problem === "offline") return { ...base, value: "✓ Conectada", ok: true, hint: "Para que los videos arranquen al instante" };
+  // P6-A (como el iPhone): sin la respuesta de Real-Debrid no se dice «Conectada».
+  if (rd.loading) return { ...base, value: "Revisando…", hint: "Le pregunto a Real-Debrid por tu cuenta" };
+  if (rd.problem === "offline") return { ...base, value: "Sin confirmar", hint: "No pude hablar con Real-Debrid · Revisa Internet" };
   const days = rd.days == null ? "" : rd.days === 1 ? " · queda 1 día" : ` · quedan ${rd.days} días`;
   return { ...base, value: "✓ Conectada", ok: true, warn: rd.days != null && rd.days <= 7,
     hint: rd.expires ? `Premium · vence el ${dayMonth(rd.expires)}${days}` : "Premium" };
@@ -1322,40 +1326,72 @@ export function debridAccountMenu(rd) {
 /** «Tus pedidos» (R13 del iPhone): cada uno con su estado en palabras e ícono (no solo color) y quién lo pidió. */
 export function debridRequestsMenu(requests = []) {
   const shown = requests.filter((r) => r.state !== "gone");
+  // El estado va en la línea de abajo (con quién lo pidió): a la derecha apretaba el título en dos o tres renglones.
+  const row = (r) => ({ icon: REQUEST_ICONS[r.state] || "download", label: r.title || "Tu pedido",
+    hint: `${requestLabel(r)} · ${requestedBy(r)}`, ok: r.state === "ready", warn: ["refused", "too_many", "no_peers"].includes(r.state),
+    command: { type: "rd-request-menu", hash: r.hash } });
+  // Dos grupos, como el iPhone (P1-A, Fernando, 3 nov): lo que sigue en camino y lo que ya terminó; uno vacío no sale.
+  const going = shown.filter((r) => ["queued", "downloading", "no_peers", "too_many"].includes(r.state));
+  const done = shown.filter((r) => ["ready", "refused"].includes(r.state));
   return {
     title: "Tus pedidos",
     subtitle: "Lo que le pediste a Real-Debrid desde la TV o tu iPhone. Lo terminado se olvida a la semana.",
-    // El estado va en la línea de abajo (con quién lo pidió): a la derecha apretaba el título en dos o tres renglones.
-    options: shown.length ? shown.map((r) => ({ icon: REQUEST_ICONS[r.state] || "download", label: r.title || "Tu pedido",
-      hint: `${requestLabel(r)} · ${requestedBy(r)}`, ok: r.state === "ready", warn: ["refused", "too_many", "no_peers"].includes(r.state),
-      command: { type: "rd-request-menu", hash: r.hash } }))
-      : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } }],
+    options: shown.length ? [
+      ...(going.length ? [{ heading: true, label: "Bajando" }, ...going.map(row)] : []),
+      ...(done.length ? [{ heading: true, label: "Ya terminaron" }, ...done.map(row)] : []),
+    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } }],
   };
 }
 
 /** Un pedido: «Cancelar pedido» lo quita de tu Real-Debrid (pide confirmar; «Cancelar» va primero). */
 export function debridRequestMenu(req, { account = null } = {}) {
   const theirs = req.account && account && req.account !== account;
+  const ref = req.meta_id && { kind: req.kind || "movie", meta_id: req.meta_id, title: req.title };
+  const video = req.video_ids?.[0] || req.meta_id;
+  // P2-B (Fernando, 3 nov): «Probar otra versión» si se atoró o no se dejó, «Abrir la ficha» y «Cancelar pedido»; lo de otra
+  // cuenta solo trae «Abrir la ficha».
+  const open = ref && { icon: "info", label: "Abrir la ficha", command: { type: "title-ref", ref } };
+  if (theirs) {
+    return { title: req.title || "Tu pedido", subtitle: `${requestLabel(req)} · ${requestedBy(req)} · con otra cuenta de Real-Debrid`,
+      options: [open || { icon: "info", label: "Es de otra cuenta de Real-Debrid", command: { type: "close" } }] };
+  }
   return {
     title: req.title || "Tu pedido",
     subtitle: `${requestLabel(req)} · ${requestedBy(req)}`,
-    options: theirs
-      ? [{ icon: "info", label: "Es de otra cuenta de Real-Debrid", hint: "Solo se puede seguir o cancelar desde ese aparato", command: { type: "close" } }]
-      : [
-        { icon: "close", label: "Seguir esperando", command: { type: "close" } },
-        { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } },
-      ],
+    options: [
+      ["refused", "no_peers", "too_many"].includes(req.state) && ref && { icon: "swap", label: "Probar otra versión",
+        command: { type: "rd-other-version", play: { kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
+      open,
+      req.state !== "ready" && req.state !== "refused"
+        ? { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } }
+        : { icon: "exit", label: "Quitar de la lista", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } },
+      { icon: "close", label: "Seguir esperando", command: { type: "close" } },
+    ].filter(Boolean),
   };
 }
 
-export function stremioAccountMenu() {
+/** Stremio en Cuentas (SS-8, corte S5): traer lo tuyo una vez y dejarlo de respaldo; si quieres, sigue recibiendo copia. */
+export function stremioAccountMenu(settings = {}) {
+  const backup = settings.stremio_role === "backup";
+  const copy = settings.stremio_copy !== false;
+  const trakt = !!settings.trakt?.linked;
   return {
-    title: "Cuenta de Stremio",
-    subtitle: "Dejarás de ver Seguir viendo y tus complementos.",
+    title: "Stremio",
+    subtitle: backup ? "De respaldo: ya no se lee; lo tuyo sale de Trakt y de tu lista de complementos."
+      : "Hoy Orbital todavía lee tu Seguir viendo y Mi lista de aquí.",
     options: [
+      !backup && (trakt
+        ? { icon: "download", label: "Traer de tu Stremio", hint: "Tus complementos y Mi lista, a Trakt · una sola vez", command: { type: "stremio-bring" } }
+        : { icon: "spark", label: "Traer de tu Stremio", hint: "Primero conecta Trakt: tu avance y Mi lista van ahí", warn: true,
+          command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } }),
+      { icon: "swap", label: "Seguir mandándole copia", hint: "Tu avance y Mi lista, por si lo usas en otro lado", value: copy ? "Sí" : "No",
+        command: { type: "setting", key: "stremio_copy", value: !copy } },
+      backup && { icon: "refresh", label: "Volver a leer tu Stremio", hint: "Seguir viendo y Mi lista otra vez desde aquí",
+        command: { type: "setting", key: "stremio_role", value: "both" } },
+      { icon: "exit", label: "Desconectar", danger: true, hint: backup ? "No se pierde nada: lo tuyo ya está en Trakt" : "Dejarás de ver tu Seguir viendo de Stremio",
+        command: { type: "stremio-logout" } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
-      { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
-    ],
+    ].filter(Boolean),
   };
 }
 

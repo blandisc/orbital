@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { moviesSetupMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -654,15 +654,23 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     { hash: "b", title: "Severance · T2 E1", state: "no_peers", by: "iPhone de Fernando" },
     { hash: "c", title: "Midsommar", state: "gone", by: "TV" }]);
   assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
+    ["Bajando", undefined, undefined], // P1-A: dos grupos; «Ya terminaron» no sale vacío
     ["Nocturne · T1 E1", "Bajando en Real-Debrid · 42 % · Lo pediste aquí", "download"],
     ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"]]); // la lápida no se enseña
+  assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }]).options.filter((o) => o.heading).map((o) => o.label),
+    ["Bajando", "Ya terminaron"]);
   assert.equal(debridRequestsMenu([]).options[0].label, "Todavía no le pides nada");
-  const one = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "too_many", by: "TV", account: "7" }, { account: "7" });
+  const one = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "too_many", by: "TV", account: "7", kind: "series", meta_id: "tt1",
+    video_ids: ["tt1:1:1"] }, { account: "7" });
   assert.equal(one.subtitle, "Muchas descargas activas · Lo pediste aquí");
-  assert.deepEqual(one.options.map((o) => o.label), ["Seguir esperando", "Cancelar pedido"]); // «Seguir esperando» primero, como el iPhone
-  assert.deepEqual(one.options[1].command, { type: "rd-cancel", hash: "a", title: "Nocturne · T1 E1" });
-  const theirs = debridRequestMenu({ hash: "b", state: "queued", by: "iPhone", account: "99" }, { account: "7" });
-  assert.deepEqual(theirs.options.map((o) => o.label), ["Es de otra cuenta de Real-Debrid"]);
+  // P2-B: «Probar otra versión», «Abrir la ficha» y «Cancelar pedido»
+  assert.deepEqual(one.options.map((o) => o.label), ["Probar otra versión", "Abrir la ficha", "Cancelar pedido", "Seguir esperando"]);
+  assert.deepEqual(one.options[0].command.play, { kind: "series", id: "tt1", video_id: "tt1:1:1", title: "Nocturne · T1 E1" });
+  assert.deepEqual(one.options[2].command, { type: "rd-cancel", hash: "a", title: "Nocturne · T1 E1" });
+  const theirs = debridRequestMenu({ hash: "b", state: "queued", by: "iPhone", account: "99", kind: "movie", meta_id: "tt9", title: "Dune" }, { account: "7" });
+  assert.deepEqual(theirs.options.map((o) => o.label), ["Abrir la ficha"]); // lo de otra cuenta, solo la ficha
+  assert.equal(debridRow({ linked: true, loading: true }).value, "Revisando…"); // P6-A: nunca «Conectada» sin confirmar
+  assert.equal(debridRow({ linked: true, problem: "offline" }).value, "Sin confirmar");
   assert.equal(requestLabel({ state: "ready" }), "Listo");
   assert.equal(requestedBy({ by: "iPad" }), "Lo pidió el iPad");
 });
@@ -707,4 +715,16 @@ test("resumen sin Stremio: lo que falta para películas y series (corte S4, AD-1
   assert.deepEqual(labels({ realdebrid: { linked: true, days: 18 } }), []);
   assert.deepEqual(labels({ addons: { entries: [{ template: "opensubtitles", on: true }, { template: "torrentio", on: false }] } }), ["No tienes complementos prendidos"]);
   assert.deepEqual(labels({ addons: { entries: [{ template: "torrentio", on: true, health: { state: "down" } }] } }), ["Torrentio no contesta"]);
+});
+
+test("cuentas › Stremio de respaldo: traer una vez, la copia y volver a leerlo (corte S5, SS-8)", () => {
+  const before = stremioAccountMenu({ trakt: { linked: true } });
+  assert.deepEqual(before.options.map((o) => [o.label, o.value]), [["Traer de tu Stremio", undefined], ["Seguir mandándole copia", "Sí"],
+    ["Desconectar", undefined], ["Cancelar", undefined]]);
+  assert.deepEqual(before.options[0].command, { type: "stremio-bring" });
+  assert.equal(stremioAccountMenu({ trakt: { configured: true } }).options[0].command.type, "trakt-link"); // sin Trakt, primero Trakt
+  const after = stremioAccountMenu({ stremio_role: "backup", stremio_copy: false, trakt: { linked: true } });
+  assert.deepEqual(after.options.map((o) => [o.label, o.value]), [["Seguir mandándole copia", "No"], ["Volver a leer tu Stremio", undefined],
+    ["Desconectar", undefined], ["Cancelar", undefined]]);
+  assert.deepEqual(after.options[0].command, { type: "setting", key: "stremio_copy", value: true });
 });

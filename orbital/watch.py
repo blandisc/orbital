@@ -663,6 +663,38 @@ class Watch:
         self.addons.forget()
         return self.addon_status()
 
+    def bring_from_stremio(self) -> dict:
+        """«Traer de tu Stremio» (SS-8, corte S5): tus complementos (si no los habías traído) y Mi lista de Stremio a la
+        watchlist de Trakt; desde ahí Stremio ya no se lee y solo recibe copia si la dejas. Sin Trakt, ValueError: Stremio
+        sigue siendo tu lista (P-4). Devuelve {"addons", "my_list", "already"}."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth:
+            raise ValueError("Primero conecta tu cuenta de Stremio")
+        trakt = self.trakt_library.client()
+        if trakt is None:
+            raise ValueError("Primero conecta Trakt: tu avance y Mi lista van ahí")
+        brought = self.import_addons() if not self.addon_list.imported_at else {"added": 0, "kept": 0, "skipped": 0}
+        raw = self.stremio_client.library(auth)
+        mine = [w for w in stremio_api.parse_library(raw) if w.in_library and w.type in ("movie", "series")]
+        try:
+            have = {str(e.get("imdb") or e.get("id") or "") for e in trakt.watchlist() if isinstance(e, dict)}
+        except Exception:  # noqa: BLE001 — sin la lista de Trakt se intenta agregar todo (agregar dos veces no duplica)
+            have = set()
+        added = already = 0
+        for w in mine:
+            if w.id in have:
+                already += 1
+                continue
+            try:
+                trakt.set_watchlist(w.type, w.id, True)
+                added += 1
+            except Exception as exc:  # noqa: BLE001 — uno que falla no detiene a los demás
+                log.info("No pude pasar %s a Mi lista de Trakt: %s", w.id, exc)
+        self.state.set_setting("stremio_role", "backup")
+        self.refresh_trakt(background=True)
+        self.refresh_stremio(background=True)
+        return {"addons": brought.get("added", 0), "my_list": added, "already": already}
+
     def own_addons(self) -> list[str]:  # los de `orbital stremio addon add`, de antes de tu lista (S1)
         return addons.clean_urls(self.credentials.get(ADDONS_KEY))
 
@@ -709,9 +741,28 @@ class Watch:
         except OSError:
             log.warning("No pude guardar la biblioteca de Stremio en caché", exc_info=True)
 
+    @property
+    def stremio_backup(self) -> bool:
+        """Corte S5: Stremio ya no se lee (Seguir viendo y Mi lista salen de Trakt) y solo recibe copia si la dejas. Sin
+        Trakt conectado nunca: Stremio sigue siendo tu lista (P-4)."""
+        return self.setting("stremio_role", "both") == "backup" and self.trakt_library.active
+
+    def _save_stremio(self, auth: str, item: dict) -> None:
+        """Lo que Orbital le manda a tu Stremio (tu avance, Mi lista, quitar de Seguir viendo): solo si dejaste la copia."""
+        if self.setting("stremio_copy", True):
+            self.stremio_client.save_library_item(auth, item)
+
     def refresh_stremio(self, background: bool = False) -> bool:
         """Descarga la biblioteca de Stremio. En segundo plano no bloquea a quien llama."""
         if not self.config.stremio.enabled or not self.stremio_linked:
+            return False
+        if self.stremio_backup:  # respaldo: lo tuyo sale de Trakt; Stremio solo recibe copia
+            with self._stremio_publish:
+                had = bool(self.stremio_items)
+                self.stremio_items = []
+                self.store.replace_source("stremio", self.trakt_library.merged([]))
+            if had:
+                self.events.publish({"type": "library-changed"})
             return False
         if background:
             threading.Thread(target=self.refresh_stremio, daemon=True).start()
@@ -847,7 +898,7 @@ class Watch:
         raw = self.stremio_client.library_item(auth, meta_id)
         if raw:
             back = next((i for i in self.stremio_items if i.extra.get("meta_id") == meta_id and i.extra.get("new_episode")), None)
-            self.stremio_client.save_library_item(
+            self._save_stremio(
                 auth, stremio_api.dismissed(raw, time.time(), back.extra.get("video_id") if back else None))
         self.refresh_stremio()
         self.events.publish({"type": "library-changed"})
@@ -1999,7 +2050,7 @@ class Watch:
                 raw = self.stremio_client.library_item(auth, meta_id)
                 item = stremio_api.library_toggled(raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta_id,
                                                    poster=info.get("poster"), add=add, now=time.time())
-                self.stremio_client.save_library_item(auth, item)
+                self._save_stremio(auth, item)
             except stremio_api.StremioError as exc:
                 if trakt is None:
                     raise
@@ -2130,6 +2181,8 @@ class Watch:
                 poster=info.get("poster"), video_id=video_id, position=position, duration=duration,
                 watched=watched, next_video=next_video, now=time.time(),
                 video_ids=[v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")])
+            if not self.setting("stremio_copy", True):
+                return
             self.stremio_client.save_library_item(auth, item)
             log.info("Progreso guardado en Stremio: %s %d/%d s", video_id, position, duration)
         except stremio_api.StremioError as exc:

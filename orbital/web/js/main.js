@@ -1720,7 +1720,9 @@ const { watch, trailer, launch, resumeRunning, playChannel } = createLaunching({
 });
 
 function openSources(play) {
-  if (!state.stremioLinked) return runCommand({ type: "stremio-login" }); // la pantalla ya dice qué hacer (un aviso encima tapaba su título)
+  // Sin Stremio y sin complementos que den versiones (corte S4): la guía de películas y series, no «Conectar Stremio».
+  const own = (state.settings?.addons?.entries || []).some((e) => e.on && !e.needs_key && e.template !== "opensubtitles");
+  if (!state.stremioLinked && !own) return runCommand({ type: "movies-setup" });
   sound.play("menu");
   ui.sources.open(play);
   renderHints();
@@ -1774,7 +1776,7 @@ function commands() {
   if (commandTable) return commandTable;
   const torrentioMenus = { main: torrentioMenu, languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
-  const deps = { UNDO_MS, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { UNDO_MS, openSources, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
   return commandTable;
 }

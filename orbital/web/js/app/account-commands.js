@@ -1,6 +1,6 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, openSources, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -41,8 +41,15 @@ export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, movies
       return openMenu(moviesSetupMenu(settings), nested(context));
     },
     // Ajustes › Cuentas › Real-Debrid y «Tus pedidos» (corte S2)
+    // P6-A: al abrirla se vuelve a revisar tu clave (nunca «Conectada» por una que no se confirmó)
     "rd-account": async (command, context) => {
+      const fresh = await api.debridStatus().catch(() => null);
+      if (fresh) applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, ...fresh } });
       return openMenu(debridAccountMenu(state.settings?.realdebrid), nested(context));
+    },
+    "rd-other-version": async (command) => {
+      ui.sheet.close();
+      return openSources(command.play);
     },
     "rd-requests": async (command, context) => {
       const res = await api.debridRequests();
@@ -84,7 +91,19 @@ export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, movies
       return openMenu(build(torrentioEntry()), where);
     },
     "stremio-account": async (command, context) => {
-      return openMenu(stremioAccountMenu(), nested(context));
+      return openMenu(stremioAccountMenu(state.settings), nested(context));
+    },
+    // Traer de tu Stremio una vez (SS-8, corte S5): desde ahí Stremio es respaldo
+    "stremio-bring": async (command, context) => {
+      ui.toast.show("Trayendo lo tuyo de Stremio…");
+      const res = await api.stremioBring();
+      addons(res);
+      applySettings(await api.settings());
+      sound.play("select");
+      const d = res.done || {};
+      ui.toast.show(`Traje ${d.my_list || 0} de Mi lista a Trakt${d.addons ? ` y ${d.addons} ${d.addons === 1 ? "complemento" : "complementos"}` : ""}`,
+        { tone: "success", detail: "Desde ahora Stremio es respaldo · lo cambias en Cuentas › Stremio" });
+      return loadLibrary();
     },
     "stremio-logout": async (command, context) => {
       await api.stremioLogout();

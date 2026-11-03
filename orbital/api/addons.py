@@ -49,6 +49,11 @@ async def request_entry(request: Request) -> dict:
         raise HTTPException(422, "Ese pedido no tiene la forma acordada") from exc
 
 
+def run_debrid_status(watch) -> dict:
+    status = watch.debrid_status(fresh=True)
+    return {k: v for k, v in status.items() if k != "token"}
+
+
 def receive_request(watch, raw: object) -> dict:
     try:
         return watch.rd.receive(raw)
@@ -107,6 +112,18 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
             raise HTTPException(422, "Faltan las opciones de Torrentio")
         return watch.set_torrentio(options)
 
+    @r.post("/api/stremio/bring")
+    async def bring_stremio(request: Request) -> dict:
+        """«Traer de tu Stremio» (SS-8, corte S5): complementos y Mi lista, una vez; desde ahí Stremio es respaldo."""
+        local_only(request)
+        try:
+            done = await run_in_threadpool(watch.bring_from_stremio)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        except stremio_api.StremioError as exc:
+            raise HTTPException(502, "No pude leer tu Stremio. Revisa Internet e inténtalo de nuevo.") from exc
+        return {**watch.addon_status(), "done": done}
+
     @r.post("/api/addons/source")
     def source(body: SourceRequest, request: Request) -> dict:
         local_only(request)
@@ -121,6 +138,11 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
     async def debrid_request_in(request: Request) -> dict:
         raw = await request_entry(request)
         return await run_in_threadpool(receive_request, watch, raw)
+
+    @r.get("/api/realdebrid")
+    def debrid_account() -> dict:
+        """Tu Real-Debrid, revisado ahora (P6-A): usuario, Premium, vencimiento y la clave tapada; nunca entera."""
+        return run_debrid_status(watch)
 
     @r.post("/api/realdebrid/requests/cancel")
     def debrid_cancel(body: CancelRequest, request: Request) -> dict:

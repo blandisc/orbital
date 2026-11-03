@@ -340,6 +340,7 @@ def demo_debrid(catalog) -> None:
     watch._rd_status = (now + 10**9, "DEMODEMO3F2A", {
         "linked": True, "source": "torrentio", "user": "fernando", "premium": problem is None, "expires": now + 18 * 86400 - 3600,
         "days": 18, "problem": problem, "ends_with": "3F2A"})
+    watch.debrid_status = lambda fresh=False: watch._rd_status[2]  # «Revisar» la cuenta no sale a internet
     rows = [("Nocturne · T1 E2", "tt29623480:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
             ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),
             ("Los Simpson · T36 E4", "tt0096697:36:4", "too_many", 0, "TV"), ("Oppenheimer", "tt15398776", "refused", 0, "TV")]

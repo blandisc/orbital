@@ -113,8 +113,10 @@ export const api = {
   addonRestore: (id) => post("/api/addons/restore", { id }),
   addonsSource: (source) => post("/api/addons/source", { source }),
   torrentioOptions: (options) => post("/api/addons/torrentio", { options }),
+  stremioBring: () => post("/api/stremio/bring", {}, { timeout: 60000 }),
   // Tus pedidos a Real-Debrid (corte S2): la libreta común con el iPhone, y «Cancelar pedido».
   debridRequests: () => request("/api/realdebrid/requests"),
+  debridStatus: () => request("/api/realdebrid"),
   debridCancel: (hash) => post("/api/realdebrid/requests/cancel", { hash }),
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
