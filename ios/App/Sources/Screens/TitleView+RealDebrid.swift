@@ -96,14 +96,8 @@ extension TitleView {
         case .explain:
             DebridExplainer(close: { debridSheet = nil }).presentationDetents([.large]).presentationDragIndicator(.visible)
         case .notify:
-            DebridNotifyPrompt(allow: {
-                debridSheet = nil
-                Task { _ = await DebridRequestNotifier.requestPermission(); await sendRequest(model) }
-            }, notNow: {
-                debridSheet = nil
-                Task { await sendRequest(model) }
-            })
-            .fittedSheet()
+            // La misma explicación que en el reproductor (P4-A): una sola pieza.
+            DebridNotifyAsk { _ in debridSheet = nil; await sendRequest(model) }
         case .request:
             if let request = model.debridRequest {
                 let name = [request.title, DebridRequestNotifier.episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
@@ -112,31 +106,12 @@ extension TitleView {
                                                                    detail: DebridRequestWords.detail(request, now: Date(), tr),
                                                                    fraction: request.state == .downloading ? Double(request.percent) / 100 : nil,
                                                                    warn: DebridRequestWords.isTrouble(request, now: Date())),
-                                       otherVersion: model.continueVideoID.map { video in { debridSheet = nil; openVersions(video) } },
-                                       cancel: { Task { await cancelRequest(request) } },
+                                       otherVersion: DebridRequestWords.suggestsOtherVersion(request, now: Date())
+                                           ? model.continueVideoID.map { video in { debridSheet = nil; openVersions(video) } } : nil,
+                                       openTitle: nil, cancel: { Task { await cancelRequest(request) } },
                                        explain: { debridSheet = .explain }, close: { debridSheet = nil })
                 .fittedSheet()
             }
         }
-    }
-}
-
-/// La hoja de un pedido con lo que solo sabe iOS: si los avisos de la app están apagados.
-struct DebridRequestSheetHost: View {
-    let request: DebridRequest
-    let name: String
-    let since: String
-    let status: DebridRequestStatus
-    let otherVersion: (() -> Void)?
-    let cancel: () -> Void
-    let explain: () -> Void
-    let close: () -> Void
-    @State private var notificationsOff = false
-
-    var body: some View {
-        DebridRequestSheet(name: name, status: status, since: since, notificationsOff: notificationsOff,
-                           turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, otherVersion: otherVersion,
-                           cancel: cancel, explain: explain, close: close)
-            .task { notificationsOff = await DebridRequestNotifier.permission() == .denied }
     }
 }

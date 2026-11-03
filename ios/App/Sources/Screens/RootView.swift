@@ -11,6 +11,8 @@ struct TitleRoute: Hashable {
     var metaID: String
     var title: String
     var poster: String?
+    /// Abrir ya «Versión» de este video (P2-B: «Probar otra versión» desde «Tus pedidos»).
+    var versionsFor: String? = nil
 }
 
 struct RootView: View {

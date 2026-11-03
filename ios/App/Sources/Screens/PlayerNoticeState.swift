@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import UserNotifications
 
 /// Lo que el reproductor dice encima del video: el aviso del modelo, el de subtítulos, los que esperan su turno y el ícono fugaz.
 /// Vive aparte de `PlayerScreen` (ver `PlayerDragState`): las vistas que lo leen se vuelven a pintar con cada cambio.
@@ -11,6 +12,12 @@ final class PlayerNoticeState {
     var subtitleToast: String?
     /// Lo que pasó al pedir «Descargar» (el mismo aviso que en el resto de la app, arriba: abajo están los controles).
     var notice: PlayerScreen.PlayerNotice?
+    /// P4-A: la explicación antes de la pregunta de iOS de los avisos, y qué hacer cuando se contesta.
+    var askNotify: NotifyAsk?
+    struct NotifyAsk: Identifiable {
+        let id = UUID()
+        let then: @MainActor (UNAuthorizationStatus) async -> Void
+    }
     /// Avisos que llegaron con la cápsula del candado en pantalla. Salen, en orden, cuando esa cápsula se va.
     var heldNotices = HeldNotices<PlayerScreen.QueuedNotice>()
     var heldDrain: Task<Void, Never>?

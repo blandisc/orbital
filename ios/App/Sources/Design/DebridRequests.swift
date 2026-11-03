@@ -45,8 +45,10 @@ struct IconBeside<Content: View>: View {
     }
 }
 
-/// La hoja de un pedido desde la ficha (R3, R13): cómo va, si los avisos están apagados, y sus salidas: probar otra
-/// versión, cancelar el pedido y «¿Qué es esto?».
+/// La hoja de un pedido (R3, R13, P2-B), la misma en la ficha y en «Tus pedidos»: cómo va, si los avisos están apagados, y
+/// sus salidas: probar otra versión (solo cuando ayuda, `DebridRequestWords.suggestsOtherVersion`), abrir la ficha (desde
+/// «Tus pedidos»), cancelar el pedido (preguntando antes, con «Seguir esperando») y «¿Qué es esto?». Lo de otra cuenta de
+/// Real-Debrid no se cancela ni se cambia desde aquí: solo «Abrir la ficha».
 struct DebridRequestSheet: View {
     /// «The Office · T1 E2».
     let name: String
@@ -57,9 +59,13 @@ struct DebridRequestSheet: View {
     let notificationsOff: Bool
     let turnOnNotifications: () -> Void
     let otherVersion: (() -> Void)?
-    let cancel: () -> Void
+    /// «Abrir la ficha» (desde «Tus pedidos»); nil en la ficha misma.
+    let openTitle: (() -> Void)?
+    /// nil: es de otra cuenta de Real-Debrid y no se cancela desde aquí.
+    let cancel: (() -> Void)?
     let explain: () -> Void
     let close: () -> Void
+    @State private var confirmingCancel = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
@@ -75,17 +81,30 @@ struct DebridRequestSheet: View {
             VStack(spacing: DS.Space.s2) {
                 if let otherVersion {
                     Button(action: otherVersion) { Label("Probar otra versión", systemImage: "list.bullet.rectangle").frame(maxWidth: .infinity) }
-                        .dsSecondaryButton().controlSize(.large)
+                        .dsPrimaryButton(size: .large)
+                        .accessibilityIdentifier("debrid-other-version")
                 }
-                Button(role: .destructive, action: cancel) { Label("Cancelar pedido", systemImage: "xmark.circle").frame(maxWidth: .infinity) }
-                    .dsSecondaryButton().controlSize(.large)
-                    .accessibilityIdentifier("debrid-cancel")
+                if let openTitle {
+                    Button(action: openTitle) { Label("Abrir la ficha", systemImage: "info.circle").frame(maxWidth: .infinity) }
+                        .dsSecondaryButton().controlSize(.large)
+                        .accessibilityIdentifier("debrid-open-title")
+                }
+                if cancel != nil {
+                    Button(role: .destructive) { confirmingCancel = true } label: { Label("Cancelar pedido", systemImage: "xmark.circle").frame(maxWidth: .infinity) }
+                        .dsSecondaryButton().controlSize(.large)
+                        .accessibilityIdentifier("debrid-cancel")
+                }
                 Button(action: explain) { Text("¿Qué es esto?").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
                     .buttonStyle(.borderless).tint(DS.accent)
                     .accessibilityIdentifier("debrid-explain")
             }
         }
         .dsSheetContent()
+        .confirmationDialog(Text("¿Cancelar el pedido?"), isPresented: $confirmingCancel, titleVisibility: .visible) {
+            Button("Cancelar pedido", role: .destructive) { cancel?() }
+            // Sin esto iOS pone «Cancelar» junto a «Cancelar pedido»: dos «cancelar» que dicen cosas opuestas.
+            Button("Seguir esperando", role: .cancel) {}
+        } message: { Text(verbatim: name) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-request-sheet")
     }

@@ -108,7 +108,10 @@ struct PlayerScreen: View {
         /// «Cambiar a latino»: otra versión que sí trae tu idioma (su índice), en el mismo segundo.
         var switchTo: Int? = nil
         var switchTitle: String? = nil
+        /// «Avisos apagados»: el arreglo es «Ajustes» (los avisos de la app en Ajustes del iPhone; P5-A, como en la ficha).
+        var opensNotificationSettings = false
         let id = UUID()
+        var hasAction: Bool { showsDownloads || switchTo != nil || opensNotificationSettings }
     }
     /// Lo que espera turno. Subtítulos y zoom se quedan con el último; los demás, todos, en orden.
     enum QueuedNotice {
@@ -304,6 +307,8 @@ struct PlayerScreen: View {
         .accessibilityAction(.escape) { Task { await close() } }
         .accessibilityAction(.magicTap) { userTogglePlay(holder.model) }
         .statusBarHidden(true)
+        // P4-A: antes de la pregunta de iOS, la misma explicación que en la ficha (una sola vez, la primera).
+        .sheet(item: $notices.askNotify) { ask in DebridNotifyAsk(done: ask.then) }
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: drag.dragAxis)
@@ -350,6 +355,10 @@ struct PlayerScreen: View {
                     case "episodes": openEpisodes(model)   // `-demo-player episodes`: la lista de episodios
                     case "near-end": await model.seek(to: model.snapshot.duration * 0.92); hideTask?.cancel(); controlsVisible = true   // con «Siguiente» a la vista
                     case "close": await close()
+                    // `-demo-player rd-notify`: la explicación antes de la pregunta de avisos (P4-A); `rd-notify-off`: «Avisos
+                    // apagados» con «Ajustes» (P5-A). Nada sale a Real-Debrid.
+                    case "rd-notify": notices.askNotify = PlayerNoticeState.NotifyAsk { _ in }
+                    case "rd-notify-off": demoNotificationsOff()
                     default: break
                     }
                 }

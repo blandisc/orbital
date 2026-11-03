@@ -139,7 +139,7 @@ extension PlayerScreen {
             framing.zoomToastTask?.cancel()
             withAnimation(DS.Motion.base(reduceMotion)) { notices.subtitleToast = nil; framing.zoomToast = nil }
             reveal(new)
-            try? await Task.sleep(nanoseconds: Toast.duration(new.tone, hasAction: new.showsDownloads || new.switchTo != nil) ?? DS.Timing.toastAction)
+            try? await Task.sleep(nanoseconds: Toast.duration(new.tone, hasAction: new.hasAction) ?? DS.Timing.toastAction)
         case .subtitle(let text):
             framing.zoomToastTask?.cancel()
             withAnimation(DS.Motion.base(reduceMotion)) { notices.notice = nil; framing.zoomToast = nil }

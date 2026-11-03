@@ -77,6 +77,7 @@ struct TitleView: View {
         .task {
             await model.load()
             Task { await model.loadBestSource(onCellular: env.connectivity.isCellular); if model.bestSource != nil { Perf.mark("title.sources") } }   // aparte: las fuentes tardan y no detienen el color del fondo
+            if let video = route.versionsFor { sourcesFor = SourcesTarget(videoID: video, purpose: .watch) }   // «Probar otra versión» desde «Tus pedidos»
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources" || Demo.open == "sources-all", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }

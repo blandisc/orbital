@@ -57,6 +57,36 @@ public enum DebridRequestWords {
         [.refused, .noPeers, .tooMany].contains(request.state) || request.isStalled(now: now)
     }
 
+    /// P1-A · los dos grupos de «Tus pedidos»: lo que todavía falta y lo que ya terminó (bien o mal). Como las descargas de
+    /// iOS: nunca pierdes de vista lo que todavía no está.
+    public enum Group: Sendable, Equatable, CaseIterable {
+        /// «Bajando»: en cola, bajando, sin gente que lo comparta, muchas descargas activas.
+        case pending
+        /// «Ya terminaron»: listo o Real-Debrid no lo dejó bajar.
+        case finished
+    }
+
+    public static func group(_ state: DebridRequest.State) -> Group {
+        switch state {
+        case .queued, .downloading, .noPeers, .tooMany: .pending
+        case .ready, .refused, .gone: .finished
+        }
+    }
+
+    /// Los pedidos en sus grupos, en el orden de la lista y sin grupos vacíos. Lo de otra cuenta va donde diga su estado.
+    public static func grouped(_ requests: [DebridRequest]) -> [(group: Group, requests: [DebridRequest])] {
+        Group.allCases.compactMap { g in
+            let these = requests.filter { group($0.state) == g }
+            return these.isEmpty ? nil : (g, these)
+        }
+    }
+
+    /// P2-B · la hoja del pedido ofrece «Probar otra versión» solo cuando ayuda: Real-Debrid no lo dejó bajar, nadie lo
+    /// comparte o lleva 24 h sin avanzar.
+    public static func suggestsOtherVersion(_ request: DebridRequest, now: Date) -> Bool {
+        [.refused, .noPeers].contains(request.state) || request.isStalled(now: now)
+    }
+
     /// El ícono de cada estado (SF Symbols).
     public static func symbol(_ state: DebridRequest.State) -> String {
         switch state {

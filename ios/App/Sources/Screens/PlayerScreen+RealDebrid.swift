@@ -8,17 +8,22 @@ import UserNotifications
 extension PlayerScreen {
     private var ui: String { env.services.appSettings.uiLanguage }
 
-    /// R7: lo pide (la versión «por bajar» que ya se abrió, o el mejor torrent que exista) y dice qué contestó Real-Debrid.
+    /// R7: lo pide (la versión «por bajar» que ya se abrió, o el mejor torrent que exista) y dice qué contestó Real-Debrid. La
+    /// primera vez, antes de la pregunta de iOS, la misma explicación que en la ficha (P4-A).
     func requestFromPlayer(_ model: PlayerModel) async {
-        let off = await askForNotifications()
+        await withNotifications { off in await sendFromPlayer(model, off: off) }
+    }
+
+    private func sendFromPlayer(_ model: PlayerModel, off: Bool) async {
         guard let outcome = await model.requestFromDebrid() else { return }
         let tr = { (key: String) in Strings.tr(key, language: ui) }
         switch outcome {
         case .requested(let request):
             let warn = [.refused, .tooMany].contains(request.state)
+            // P5-A: «Avisos apagados» trae su arreglo, «Ajustes», como en la ficha.
             show(PlayerNotice(title: DebridRequestWords.title(request, tr),
                               detail: off && !warn ? tr("Avisos apagados · actívalos") : DebridRequestWords.detail(request, now: Date(), tr),
-                              tone: warn || off ? .warn : .success))
+                              tone: warn || off ? .warn : .success, opensNotificationSettings: off && !warn))
         case .failed(let cause?, _): show(PlayerNotice(title: cause.title(tr), detail: cause.detail(tr), tone: .warn))
         case .failed(nil, let error): show(PlayerNotice(title: error.words(tr), detail: nil, tone: .warn))
         case .nobodyHasIt: show(PlayerNotice(title: UnavailableCause.nobodyHasIt.title(tr), detail: UnavailableCause.nobodyHasIt.detail(tr), tone: .info))
@@ -26,17 +31,33 @@ extension PlayerScreen {
     }
 
     /// R8 · «Avisarme» en la tarjeta del siguiente episodio: ya está pedido; solo falta el permiso de avisos (si no se dio).
+    /// Con «Ahora no» no se promete avisar.
     func notifyWhenReady() async {
-        let off = await askForNotifications()
-        show(PlayerNotice(title: Strings.tr(off ? "Avisos apagados · actívalos" : "Te aviso cuando esté listo", language: ui), detail: nil, tone: off ? .warn : .success))
-    }
-
-    /// Pide permiso de avisos la primera vez (R10). true si están apagados.
-    private func askForNotifications() async -> Bool {
-        switch await DebridRequestNotifier.permission() {
-        case .notDetermined: return !(await DebridRequestNotifier.requestPermission())
-        case .denied: return true
-        default: return false
+        await withNotifications(silentIfNotNow: true) { off in
+            show(PlayerNotice(title: Strings.tr(off ? "Avisos apagados · actívalos" : "Te aviso cuando esté listo", language: ui), detail: nil,
+                              tone: off ? .warn : .success, opensNotificationSettings: off))
         }
     }
+
+    /// Los avisos antes de seguir: la primera vez (iOS no ha preguntado), la explicación y luego la pregunta (P4-A, R10);
+    /// después, lo que ya se sabe. `then` recibe si están apagados.
+    private func withNotifications(silentIfNotNow: Bool = false, then: @escaping @MainActor (_ off: Bool) async -> Void) async {
+        switch await DebridRequestNotifier.permission() {
+        case .notDetermined:
+            notices.askNotify = PlayerNoticeState.NotifyAsk { answer in
+                if silentIfNotNow, answer == .notDetermined { return }
+                await then(answer == .denied)
+            }
+        case .denied: await then(true)
+        default: await then(false)
+        }
+    }
+
+    #if DEBUG
+    /// `-demo-player rd-notify-off`: el aviso de «Avisos apagados» con su arreglo, como si iOS los tuviera apagados.
+    func demoNotificationsOff() {
+        let tr = { (key: String) in Strings.tr(key, language: ui) }
+        show(PlayerNotice(title: UnavailableCause.downloading(percent: 63).title(tr), detail: tr("Avisos apagados · actívalos"), tone: .warn, opensNotificationSettings: true))
+    }
+    #endif
 }

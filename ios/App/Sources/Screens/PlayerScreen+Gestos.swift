@@ -210,10 +210,11 @@ extension PlayerScreen {
         if let notice = notices.notice, !padlock.lockNoticeVisible {
             VStack {
                 Toast(tone: notice.tone, title: Text(verbatim: notice.title), detail: notice.detail.map { Text(verbatim: $0) },
-                      actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : nil),
+                      actionTitle: notice.switchTitle.map { LocalizedStringKey($0) } ?? (notice.showsDownloads ? "Ver" : notice.opensNotificationSettings ? "Ajustes" : nil),
                       action: notice.switchTo.map { index in { Task { await holder.model.switchSource(to: index) } } }
-                        ?? (notice.showsDownloads ? { Task { await close(); env.openTab = AppEnvironment.downloadsTab } } : nil),
-                      seconds: Toast.duration(notice.tone, hasAction: notice.showsDownloads || notice.switchTo != nil) ?? DS.Timing.toastAction,
+                        ?? (notice.showsDownloads ? { Task { await close(); env.openTab = AppEnvironment.downloadsTab } }
+                            : notice.opensNotificationSettings ? { DebridRequestNotifier.openSystemSettings() } : nil),
+                      seconds: Toast.duration(notice.tone, hasAction: notice.hasAction) ?? DS.Timing.toastAction,
                       dismiss: { withAnimation(DS.Motion.base(reduceMotion)) { if notices.notice?.id == notice.id { notices.notice = nil } } })
                     .id(notice.id)
                 Spacer()

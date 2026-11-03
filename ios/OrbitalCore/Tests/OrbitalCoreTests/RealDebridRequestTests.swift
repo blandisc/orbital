@@ -78,6 +78,30 @@ final class RealDebridRequestTests: XCTestCase {
         XCTAssertEqual(DebridRequestWords.detail(request, now: Date(timeIntervalSince1970: 25 * 3600)), "Sigue sin bajar · ¿probar otra versión?")
     }
 
+    /// P1-A: «Tus pedidos» en dos grupos, lo que falta y lo que ya terminó, sin grupos vacíos; P2-B: «Probar otra versión»
+    /// solo cuando ayuda.
+    func testRequestsSplitIntoPendingAndFinished() {
+        func make(_ hash: Character, _ state: DebridRequest.State) -> DebridRequest {
+            var r = DebridRequest(hash: String(repeating: hash, count: 40), title: "X", kind: "movie", metaID: "tt\(hash)", videoIDs: ["tt\(hash)"],
+                                  device: "iPhone", createdAt: Date(timeIntervalSince1970: 0))
+            r.state = state; r.progressAt = Date(timeIntervalSince1970: 0)
+            return r
+        }
+        let all = [make("a", .ready), make("b", .downloading), make("c", .refused), make("d", .queued), make("e", .noPeers), make("f", .tooMany)]
+        let groups = DebridRequestWords.grouped(all)
+        XCTAssertEqual(groups.map(\.group), [.pending, .finished])
+        XCTAssertEqual(groups[0].requests.map(\.state), [.downloading, .queued, .noPeers, .tooMany], "en el orden de la lista")
+        XCTAssertEqual(groups[1].requests.map(\.state), [.ready, .refused])
+        XCTAssertEqual(DebridRequestWords.grouped([make("a", .ready)]).map(\.group), [.finished], "un grupo vacío no sale")
+        XCTAssertTrue(DebridRequestWords.grouped([]).isEmpty)
+        let soon = Date(timeIntervalSince1970: 60)
+        XCTAssertTrue(DebridRequestWords.suggestsOtherVersion(make("c", .refused), now: soon))
+        XCTAssertTrue(DebridRequestWords.suggestsOtherVersion(make("e", .noPeers), now: soon))
+        XCTAssertFalse(DebridRequestWords.suggestsOtherVersion(make("b", .downloading), now: soon))
+        XCTAssertTrue(DebridRequestWords.suggestsOtherVersion(make("b", .downloading), now: Date(timeIntervalSince1970: 25 * 3600)), "atorado 24 h")
+        XCTAssertFalse(DebridRequestWords.suggestsOtherVersion(make("a", .ready), now: soon))
+    }
+
     func testRealDebridAnswersBecomeCauses() {
         XCTAssertEqual(UnavailableCause.from(.refused), .debridRefused)
         XCTAssertEqual(UnavailableCause.from(.invalidKey), .reconnectDebrid)
