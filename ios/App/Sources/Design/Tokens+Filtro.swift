@@ -47,8 +47,10 @@ extension DS {
         static let ratingRuler: CGFloat = 60, trackY: CGFloat = 18, track: CGFloat = 4, tickY: CGFloat = 32, rulerNumberY: CGFloat = 50
         static let thumbWidth: CGFloat = 44, thumbHeight: CGFloat = 26, star: CGFloat = 40
         static let starGap = DS.Space.s2
-        /// La puerta de «Búsqueda avanzada» en Buscar: el círculo de su ícono.
+        /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte turquesa y su orilla (otra cosa que buscar por nombre).
         static let doorIcon: CGFloat = 36
+        static let doorFill = DS.orbitalBlue.opacity(0.1)   // ds-exception: el tinte de la búsqueda avanzada, apenas turquesa
+        static let doorStroke = DS.orbitalBlue.opacity(0.35)   // ds-exception: su orilla, en el mismo turquesa
         /// Al cambiar de filtro: la pausa entre cerrar el de antes y abrir el nuevo, y cuándo se sube la lista para que se vea.
         static let switchPause: Duration = .milliseconds(180), revealAfter: Duration = .milliseconds(320)
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme

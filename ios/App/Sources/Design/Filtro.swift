@@ -403,10 +403,10 @@ struct FilterDoor: View {
             HStack(alignment: .center, spacing: DS.Space.s5) {
                 Button { open(nil) } label: {
                     HStack(spacing: DS.Space.s3) {
-                        // Su propio ícono en un círculo: se distingue de un vistazo del campo de arriba, que busca por nombre.
-                        Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
+                        // Su propio ícono en un círculo turquesa: se distingue de un vistazo del campo de arriba, que busca por nombre.
+                        Image(systemName: "slider.horizontal.3").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.onPrimary)
                             .frame(width: DS.Filter.doorIcon, height: DS.Filter.doorIcon)
-                            .background(DS.fillStrong, in: Circle())
+                            .background(DS.orbitalBlue, in: Circle())   // ds-exception: la puerta de Búsqueda avanzada en turquesa (Fernando, 2 nov 2026)
                         VStack(alignment: .leading, spacing: DS.Space.s1) {
                             HStack(spacing: DS.Space.s1) {
                                 Text("Búsqueda avanzada").recipe(.cardTitle)
@@ -434,9 +434,10 @@ struct FilterDoor: View {
             }
         }
         .padding(DS.Space.s3)
-        // La tarjeta de siempre: el turquesa no decora orillas ni fondos (Fernando, 2 nov 2026: «la voz de Orbital»; antes
-        // teñida de azul y con orilla).
-        .dsCard(.card)
+        // Teñida de turquesa y con orilla: otra cosa que la búsqueda por nombre (Fernando, 31 oct 2026). Excepción decidida a
+        // «el turquesa no decora» (2 nov 2026: «déjalo en la tarjeta de búsqueda avanzada»).
+        .background(DS.Filter.doorFill, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).strokeBorder(DS.Filter.doorStroke))
     }
 
     private var subtitle: Text {

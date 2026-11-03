@@ -391,9 +391,9 @@ struct SeasonTimelineStop: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            Circle().fill(DS.textMuted).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
+            Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
             when.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-            Rectangle().fill(DS.textMuted.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
+            Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine))   // turquesa a propósito (Fernando, 2 nov 2026).frame(height: DS.Collections.timelineStroke)
                 .padding(.trailing, -DS.Space.s3)   // hasta la siguiente tarjeta
         }
         .accessibilityElement(children: .ignore)

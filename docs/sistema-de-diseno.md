@@ -361,7 +361,7 @@ vigila.
 | Cuándo sale, en un póster: el calendario y el día completo («Domingo») | `DSBadge(symbol:)` | — |
 | Una placa sobre el arte es oscura; el color lo pone el logo | `PlatformBadge` en `DS.badgeBackground` | — |
 | Una sola palabra por cosa en toda la app | «Familia», «Fama», la versión como «🇲🇽 · 1080p» | design/vocabulario.json |
-| El turquesa es la voz de Orbital: el porqué, lo nuevo y lo encendido o lo que pasa ahora («En vivo», «Viendo», la voz que escucha). Nunca decoración: ni fondos, ni orillas, ni íconos sueltos, ni cifras | `DS.eyebrow`, `DS.fresh`, `DS.switchOn`, `DS.live`; lo «listo» (en Real-Debrid, verificado) es verde (`DS.success`); el avance es el papel (`DS.accent`) | `testTurquoiseIsNotDecoration` |
+| El turquesa es la voz de Orbital: el porqué, lo nuevo y lo encendido o lo que pasa ahora («En vivo», «Viendo», la voz que escucha). Nunca decoración: ni fondos, ni orillas, ni íconos sueltos, ni cifras. Dos excepciones decididas: la línea de tiempo de Próximas temporadas y la tarjeta de Búsqueda avanzada (su tinte, su orilla y su círculo) | `DS.eyebrow`, `DS.fresh`, `DS.switchOn`, `DS.live`; lo «listo» (en Real-Debrid, verificado) es verde (`DS.success`); el avance es el papel (`DS.accent`) | `testTurquoiseIsNotDecoration` |
 | Nada en mayúsculas: todo en letra normal (también el listón «Nuevo», «Top», «✓ En la TV»). Única excepción: el sello del mazo de Match, que imita un sello físico | sin `dsCaps()` fuera de `MazoMatch` | `testNoSpacedCaps` |
 | Títulos: dos niveles (sección y subsección). La subsección tiene dos pesos solo en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): lo de descubrir un paso más chico. Explorar, que es todo descubrir, lleva el tamaño normal | `DSSectionHead(quiet:)` | — |
 
