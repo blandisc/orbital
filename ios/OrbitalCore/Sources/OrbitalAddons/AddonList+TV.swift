@@ -114,7 +114,7 @@ extension AddonList {
         for addon in installed {
             var entry: SharedAddon
             if case .recommended(let template) = addon.origin {
-                // Lo que viene con Orbital solo viaja si la TV lo tiene (Comet todavía no: se queda aquí, sin ruido).
+                // Lo que viene con Orbital solo viaja si la TV lo tiene (Comet lo tiene desde 41a18774; una TV vieja sin él, se queda aquí).
                 guard let id = links[addon.id], byID[id] != nil else { continue }
                 entry = SharedAddon(id: id, origin: "orbital", template: template, name: addon.name, order: items.count)
                 if template == AddonCatalog.torrentio.id {

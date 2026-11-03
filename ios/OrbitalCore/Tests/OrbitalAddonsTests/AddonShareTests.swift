@@ -51,6 +51,15 @@ final class AddonShareTests: XCTestCase {
         XCTAssertEqual(object(plan.body)["base_revision"], .number(3))
     }
 
+    func testCometTravelsOnceTheTVHasIt() {
+        let list = list()
+        let theirs = tv(addons: [SharedAddon(id: "torrentio", origin: "orbital", template: "torrentio", name: "Torrentio", enabled: ["tv": true], order: 0,
+                                             options: AddonShare.wire(TorrentioConfig.recommended)),
+                                 SharedAddon(id: "comet", origin: "orbital", template: "comet", name: "Comet", enabled: ["tv": false], order: 1)])
+        let plan = list.plan(for: theirs, links: [:], device: "iphone", changedBy: "iPhone de Fernando", now: Date())
+        XCTAssertNotNil(entries(plan).map { $0["id"] }.firstIndex(of: .string("comet")), "Comet viene con Orbital en los dos (corte S6 de la TV, 41a18774)")
+    }
+
     func testAKeyNeverTravelsAndMaskedAddressesAreOnlyForRecognizing() throws {
         let list = list()
         let keyed = "https://thepiratebay-plus.strem.fun/realdebrid=\(token)/manifest.json"
