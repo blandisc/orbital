@@ -36,7 +36,7 @@ private final class FakeK1TV: HTTPClient, @unchecked Sendable {
                                               ["device_id": "ee", "name": "iPad", "platform": "ipad", "this": false]])
             case _ where path.hasPrefix("/api/devices/"): return json(["ok": true])
             case "/api/realdebrid":
-                if request.method == "PUT" { return rdStatus == 200 ? json(["user": "fer", "premium": true, "tail": "••••3F2A"]) : json(["detail": "Real-Debrid no la reconoce"], rdStatus) }
+                if request.method == "PUT" { return rdStatus == 200 ? json(["user": "fer", "premium": true, "ends_with": "••••3F2A"]) : json(["detail": "Real-Debrid no la reconoce"], rdStatus) }
                 return json(["token": .string(tvKey)])
             case "/api/addons":
                 if request.method == "GET" {

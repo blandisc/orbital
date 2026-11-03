@@ -60,7 +60,7 @@ TRANSLATIONS = {
     "Vuelve a escanear el código de tu TV": "Scan your TV's code again", "Vuelve a escanear": "Scan again", "Escanear": "Scan",
     "Tu TV quitó este iPhone de sus aparatos.": "Your TV removed this iPhone from its devices.",
 "Buscando tus aparatos…": "Looking for your devices…",
-    "¿Quitar %@?": "Remove %@?", "Este aparato": "This device", "Se usó %@": "Used %@", "Sin usarse todavía": "Not used yet",
+    "¿Quitar %@?": "Remove %@?", "Este aparato": "This device", "Lo usaste %@": "You used it %@", "Sin usarse todavía": "Not used yet",
     "Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.": "This iPhone stops talking to your TV until you scan its code again. It can't be undone.",
     "Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.": "It stops talking to your TV until it scans the code again. It can't be undone.",
     "Pasar a la TV": "Send to the TV", "Usar la de la TV": "Use the TV's", "Tu TV": "Your TV",

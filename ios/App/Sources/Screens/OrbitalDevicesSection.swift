@@ -63,12 +63,12 @@ struct OrbitalDevicesSection: View {
         let locale = AppEnvironment.shared.uiLocale
         if device.isThis { return Text("Este aparato") }
         if let by = device.invitedBy { return Text("Invitado por \(by)") }   // CX4-A
-        if let seen = device.seen { return Text("Se usó \(seen.formatted(.relative(presentation: .named).locale(locale)))") }
+        if let seen = device.seen { return Text("Lo usaste \(seen.formatted(.relative(presentation: .named).locale(locale)))") }
         return Text("Sin usarse todavía")
     }
 
     static func symbol(_ platform: String) -> String {
-        switch platform { case "ipad": "ipad"; case "mac": "laptopcomputer"; default: "iphone" }
+        platform == "ipad" ? "ipad" : "iphone"   // la Mac no se conecta con la TV (CX1-B)
     }
 }
 

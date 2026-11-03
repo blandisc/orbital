@@ -1015,17 +1015,6 @@
         }
       }
     },
-    "Se usó %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Used %@"
-          }
-        }
-      }
-    },
     "Sin usarse todavía": {
       "extractionState": "manual",
       "localizations": {
@@ -35534,6 +35523,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use mine"
+          }
+        }
+      }
+    },
+    "Lo usaste %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You used it %@"
           }
         }
       }

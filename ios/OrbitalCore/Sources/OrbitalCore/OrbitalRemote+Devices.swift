@@ -158,7 +158,7 @@ extension OrbitalRemote {
         guard hasDeviceKey else { throw Failure.needsKey }
         let json = try await send("api/realdebrid", method: "PUT", body: JSON.object(["token": .string(token)]).serialized())
         return OrbitalTVDebrid(user: json?["user"]?.string ?? "", premium: json?["premium"]?.bool ?? false,
-                               expires: Self.date(json?["expires"]), tail: json?["tail"]?.string ?? "")
+                               expires: Self.date(json?["expires"]), tail: json?["ends_with"]?.string ?? "")
     }
 
     /// «Usar la de la TV»: la clave completa (`?full=1`). nil si la TV no tiene una.

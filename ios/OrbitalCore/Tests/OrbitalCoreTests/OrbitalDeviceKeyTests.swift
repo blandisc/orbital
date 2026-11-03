@@ -143,10 +143,10 @@ final class OrbitalDeviceKeyTests: XCTestCase {
         let status = Box(200)
         let tv = ScriptedTV { request in
             if request.method == "PUT" {
-                return status.value == 200 ? (200, ["user": "fer", "premium": true, "expires": "2027-03-01T00:00:00Z", "tail": "••••3F2A"])
+                return status.value == 200 ? (200, ["user": "fer", "premium": true, "expires": "2027-03-01T00:00:00Z", "ends_with": "••••3F2A"])
                                            : (status.value, ["detail": "Real-Debrid no la reconoce"])
             }
-            return (200, ["token": "RDKEYFROMTHETV", "tail": "••••ETV"])
+            return (200, ["token": "RDKEYFROMTHETV", "ends_with": "••••ETV"])
         }
         let noKey = OrbitalRemote(http: tv, address: "tv.example", token: "TOKEN")
         do { _ = try await noKey.putRealDebrid(token: "X"); XCTFail() } catch { XCTAssertEqual(error as? OrbitalRemote.Failure, .needsKey) }
