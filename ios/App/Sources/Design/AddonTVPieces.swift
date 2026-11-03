@@ -37,6 +37,7 @@ struct AddonTVStatus: View {
             Line(symbol: "tv", tint: DS.warning, title: Text("Tu TV no contestó"), detail: Text("Lo que cambies aquí le llega cuando conteste"))
         case .outdated:
             Line(symbol: "arrow.down.circle", tint: DS.warning, title: Text("Actualiza Orbital en tu TV"), detail: Text("Así toma esta lista"))
+        case .refused(let why) where AddonTVSync.waitsForKeys(why) && !waitingForKeys.isEmpty: nil   // ya lo dice el renglón de abajo
         case .refused(let why) where AddonTVSync.waitsForKeys(why):
             Line(symbol: "key", tint: DS.textMuted, title: Text("Espera las llaves por aparato"), detail: Text("Lo que lleva una clave se queda en este iPhone"))
         case .refused(let why):

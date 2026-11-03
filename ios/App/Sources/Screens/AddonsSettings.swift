@@ -147,10 +147,10 @@ extension AppEnvironment {
         guard let clash = sync.clash else { return }
         sync.clearClash()
         let ui = services.appSettings.uiLanguage
-        let title = clash.at.map { String(format: Strings.tr("Se quedó la de la TV (%@)", language: ui), Strings.clock($0, language: ui)) }
-            ?? Strings.tr("Se quedó la de la TV", language: ui)
-        notify(title, detail: clash.options.map { Strings.tr($0, language: ui) }.joined(separator: " · "), tone: .info,
-               actionTitle: "Usar la de este iPhone", actionSymbol: "iphone") {
+        // «Se quedó la de la TV (9:40) · Usar la de este iPhone» no cabe en el aviso: la hora pasa abajo, con lo que chocó.
+        let when = clash.at.map { Strings.clock($0, language: ui) }
+        let detail = (clash.options.map { Strings.tr($0, language: ui) } + [when].compactMap { $0 }).joined(separator: " · ")
+        notify("Se quedó la de la TV", detail: detail, tone: .info, actionTitle: "Usar la mía", actionSymbol: "iphone") {
             Task { await sync.useMine() }
         }
     }

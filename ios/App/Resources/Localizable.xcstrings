@@ -33772,17 +33772,6 @@
         }
       }
     },
-    "Se quedó la de la TV (%@)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The TV's was kept (%@)"
-          }
-        }
-      }
-    },
     "Se quedó la de la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -33790,71 +33779,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "The TV's was kept"
-          }
-        }
-      }
-    },
-    "Usar la de este iPhone": {
-      "extractionState": "manual",
-      "localizations": {
-        "es": {
-          "variations": {
-            "device": {
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Usar la de este iPhone"
-                }
-              },
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Usar la de este iPad"
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Usar la de esta Mac"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Usar la de este iPhone"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Use this iPhone's"
-                }
-              },
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Use this iPad's"
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Use this Mac's"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Use this iPhone's"
-                }
-              }
-            }
           }
         }
       }
@@ -34044,17 +33968,6 @@
         }
       }
     },
-    "Nadie lo tiene todavía en internet · suele aparecer en horas o días": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nobody has it online yet · it usually shows up in hours or days"
-          }
-        }
-      }
-    },
     "Reviso una vez al día durante 14 días": {
       "extractionState": "manual",
       "localizations": {
@@ -34084,6 +33997,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Someone is sharing it now · open it to watch or request it"
+          }
+        }
+      }
+    },
+    "Usar la mía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use mine"
           }
         }
       }

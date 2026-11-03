@@ -16,7 +16,7 @@ extension TitleView {
                                   play: {}, aside: (Text("Ya no avisarme"), "bell.slash", { watch.stop(kind: model.kind, videoID: videoID) }), tint: artAccent)
         }
         return ContinueAction(title: Text("Avisarme cuando aparezca"), symbol: "bell",
-                              version: Text("Nadie lo tiene todavía en internet · suele aparecer en horas o días"),
+                              version: Text("Nadie lo tiene todavía en internet"),
                               play: { watchForIt(model, videoID: videoID) }, tint: artAccent)
     }
 

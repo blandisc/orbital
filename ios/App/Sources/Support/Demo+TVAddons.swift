@@ -24,7 +24,7 @@ extension Demo {
         list.startWithRecommended()
         if mode == "conflict" { var o = TorrentioConfig.recommended; o.sort = "size"; list.setOptions("torrentio", o) }
         if mode == "torrents" {   // M6: uno traído que solo da torrents viene apagado aquí
-            list.importOnce([.init(name: "Torrentio sin Real-Debrid", url: "https://torrentio.demo.invalid/language=latino/manifest.json", resources: ["stream"])])
+            list.importOnce([.init(name: "KnightCrawler", url: "https://knightcrawler.demo.invalid/manifest.json", resources: ["stream"])])
         }
         if mode == "keys" {
             list.importOnce([.init(name: "ThePirateBay+", url: "https://thepiratebay-plus.demo.invalid/realdebrid=\(String(repeating: "DEMO", count: 13))/manifest.json",
