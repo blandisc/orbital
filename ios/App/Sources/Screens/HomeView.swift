@@ -110,7 +110,7 @@ struct HomeView: View {
                 }
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
-                    Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt"), source: .trakt) {
+                    Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt"), quiet: true) {
                         // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
                         ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
                     }
@@ -466,7 +466,7 @@ struct HomeView: View {
                                                       : AnyLayout(HStackLayout(alignment: .sectionTitle))
             layout {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
-                              eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"))
+                              eyebrow: service.weekly ? Text("Esta semana en tu país") : Text("Lo más visto hoy · JustWatch"), quiet: true)
                     .lineLimit(typeSize.isAccessibilitySize ? nil : 1).minimumScaleFactor(DS.Size.titleShrink)
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // La pastilla junto al título, con ícono (Fernando, 31 oct 2026). Siempre ocupa su lugar (oculta si el servicio

@@ -30,21 +30,42 @@ struct DSChip: View {
 }
 
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
-/// puede ver hoy (la marca «Hoy» de «Lo nuevo de lo tuyo»), una cápsula verde (`DS.success`, se lee en los dos modos). «Nuevo» sobre un póster es `DSCornerRibbon`.
+/// puede ver hoy (la marca «Hoy» de «Lo nuevo de lo tuyo»): el punto turquesa del logo y el texto en turquesa, sin cápsula
+/// (`DS.fresh`, 2 nov 2026: antes una cápsula verde). «Nuevo» sobre un póster es `DSCornerRibbon`; bajo él, `DSFreshMark`.
 struct DSBadge: View {
     enum Tone { case onArt, fresh }
     let text: LocalizedStringKey
     var tone: Tone = .onArt
+    /// Un ícono antes del texto (el calendario de «Domingo»: cuándo sale), para que la placa diga qué es sin una frase que se
+    /// corte en un póster angosto («Sale el do…»; Fernando, 2 nov 2026, F2).
+    var symbol: String? = nil
     var body: some View {
         switch tone {
         case .onArt:
-            Text(text).font(DS.TextRecipe.badge.font).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
+            HStack(spacing: DS.Space.s1) {
+                if let symbol { Image(systemName: symbol).accessibilityHidden(true) }
+                Text(text)
+            }
+            .font(DS.TextRecipe.badge.font).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
         case .fresh:
-            Text(text).font(DS.TextRecipe.badge.font).lineLimit(1).foregroundStyle(DS.onSuccess)
-                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
-                .background(DS.success, in: Capsule())
+            DSFreshMark(text: text, tone: .strong)
+        }
+    }
+}
+
+/// Lo nuevo o lo de hoy: el punto turquesa del logo de Orbital y su palabra («Hoy», «Nuevo»). La firma de la app para lo
+/// reciente, la misma en toda la app (Fernando, 2 nov 2026, B4 y D3). `strong`: la palabra en turquesa («Hoy» en la línea de
+/// tiempo); `quiet`: en gris, bajo un póster («Nuevo» en el Top 10).
+struct DSFreshMark: View {
+    enum Tone { case strong, quiet }
+    let text: LocalizedStringKey
+    var tone: Tone = .quiet
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {
+            Circle().fill(DS.fresh).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
+            Text(text).recipe(tone == .strong ? .label : .footnote, color: tone == .strong ? DS.fresh : DS.textMuted).lineLimit(1)
         }
     }
 }
@@ -111,8 +132,8 @@ struct DSProgress: View {
 
 /// El encabezado de toda sección de la app (dirección «Editorial»), en dos niveles y nada más (Fernando, 31 oct 2026,
 /// opción A: la misma regla en toda la app):
-/// - `.section`: agrupa varias cosas («Plataformas», «Premios», «Día por día»). El rótulo: ícono azul (si lo trae), el
-///   nombre en mayúsculas chicas y una línea fina hasta la orilla (`DSChapterLabel`, el mismo de `DSChapterHead`). Sin porqué.
+/// - `.section`: agrupa varias cosas («Plataformas», «Premios», «Día por día»). El rótulo: ícono gris (si lo trae), el
+///   nombre en letra normal y una línea fina hasta la orilla (`DSChapterLabel`, el mismo de `DSChapterHead`). Sin porqué.
 /// - `.subsection`: una fila o un estante («En tendencia», «Seguir viendo», «Tus 5 estrellas»). Título blanco mediano; su
 ///   porqué arriba en turquesa (`eyebrow`, o `meta`) solo cuando ayuda.
 /// «Ver todo» es una flecha pegada al título (todo el encabezado abre la lista); a la derecha, si acaso, un dato (cuántos, cuánto pesa), nunca una frase; lo que explica va
@@ -135,20 +156,23 @@ struct DSSectionHead: View {
     /// El porqué, en una línea turquesa arriba del título («Lo que dejaste pendiente»), como en una revista (solo subsecciones).
     var eyebrow: Text?
     var level: Level = .subsection
-    /// El ícono del rótulo de una sección (en el azul de Orbital).
+    /// El ícono del rótulo de una sección (gris).
     var symbol: String?
+    /// Una fila de descubrir en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): el título un paso más chico
+    /// (`sectionQuiet`), para que lo tuyo pese más (Fernando, 2 nov 2026, C5).
+    var quiet = false
 
     init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
-         level: Level = .subsection, symbol: String? = nil) {
+         level: Level = .subsection, symbol: String? = nil, quiet: Bool = false) {
         self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta
         self.source = source == .trakt ? nil : source
-        self.eyebrow = eyebrow; self.level = level; self.symbol = symbol
+        self.eyebrow = eyebrow; self.level = level; self.symbol = symbol; self.quiet = quiet
     }
 
     init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
-         level: Level = .subsection, symbol: String? = nil) {
+         level: Level = .subsection, symbol: String? = nil, quiet: Bool = false) {
         self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow,
-                  level: level, symbol: symbol)
+                  level: level, symbol: symbol, quiet: quiet)
     }
 
     var body: some View {
@@ -179,15 +203,15 @@ struct DSSectionHead: View {
     }
 
     private var sectionTitle: some View {
-        title.recipe(level == .section ? .title : .section).multilineTextAlignment(.leading)
+        title.recipe(level == .section ? .title : quiet ? .sectionQuiet : .section).multilineTextAlignment(.leading)
             // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
             // así lo de la derecha no queda alto.
-            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: level == .section ? .title1 : .title2).capHeight / 2 }
+            .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: level == .section ? .title1 : quiet ? .title3 : .title2).capHeight / 2 }
     }
 
     /// «Ver todo»: la flecha va pegada al título y todo el encabezado abre la lista (Fernando, 2 nov 2026: sin la cápsula
     /// de texto a la derecha, como en Música y la App Store).
-    private var seeAllChevron: some View { DSTitleChevron(small: level == .section) }
+    private var seeAllChevron: some View { DSTitleChevron(small: level == .section || quiet) }
 
     /// El título con la flecha de «Ver todo» pegada (si abre la lista completa).
     private func titleLine(_ lines: Int) -> some View {

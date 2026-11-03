@@ -27,11 +27,11 @@ struct DSKindFilter: View {
     @Binding var kind: String
     var includeAll = true
     var counts: (movies: Int, series: Int)?
-    /// La pastilla chica junto al título (el Top 10, Fernando, 31 oct 2026): el segmentado con su ícono en cada opción.
+    /// La pastilla chica junto al título (el Top 10, Fernando, 31 oct 2026): el segmentado con solo su ícono en cada opción
+    /// (2 nov 2026, D1).
     var compact = false
     /// La rayita de la elegida: blanca (lo elegido) o turquesa en Inicio (Fernando, 31 oct 2026: Inicio se queda como estaba).
     var mark: Color = DS.text
-    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         if compact {
@@ -42,9 +42,7 @@ struct DSKindFilter: View {
                     Button { kind = option.0 } label: {
                         HStack(spacing: DS.Space.s1) {
                             Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
-                            // Con letra de accesibilidad solo el ícono (el nombre va para VoiceOver): con el texto la
-                            // pastilla medía más que la pantalla y empujaba todo Inicio fuera de la orilla.
-                            if !typeSize.isAccessibilitySize { Text(option.1).lineLimit(1) }
+                            // Solo el ícono, sin el nombre (Fernando, 2 nov 2026, D1): el nombre va para VoiceOver.
                         }
                         .accessibilityLabel(Text(option.1))
                         .font(DS.TextRecipe.badge.font)   // chica: el título de al lado cabe en un renglón

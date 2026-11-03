@@ -84,11 +84,17 @@ public enum DesignTokens {
         /// texto sobre él. En oscuro, el verde de la tecla A del mando; en claro, el mismo verde más oscuro y la letra en
         /// papel, para que se lea sobre el papel (antes era el verde del sistema con letra clara: ≈ 2:1).
         case success, onSuccess
+        /// Lo nuevo y lo de hoy («Hoy» y su línea en «Lo nuevo de lo tuyo», el listón «Nuevo», el «Nuevo» del Top 10): el
+        /// turquesa del puntito del logo de Orbital, la firma de la app (Fernando, 2 nov 2026, B4 y D3: antes era el verde de
+        /// «listo», un segundo acento junto al turquesa de los porqués). En claro, el mismo turquesa oscurecido para leerse.
+        case fresh, onFresh
 
         public var hex: (dark: String, light: String) {
             switch self {
             case .success: (palette["pad-green"]!, "#1f7a3a")
             case .onSuccess: (palette["ink-1000"]!, palette["paper"]!)
+            case .fresh: (palette["teal-300"]!, "#0b7a6e")
+            case .onFresh: (palette["ink-1000"]!, palette["paper"]!)
             }
         }
 
@@ -96,6 +102,8 @@ public enum DesignTokens {
             switch self {
             case .success: ("#86efac", "#14532d")
             case .onSuccess: ("#000000", "#ffffff")
+            case .fresh: ("#99f6e4", "#065a51")
+            case .onFresh: ("#000000", "#ffffff")
             }
         }
     }

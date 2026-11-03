@@ -72,10 +72,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static let good = role(.accent)
     /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
     static let switchOn = Color.green
-    /// Lo que ya está o ya salió («Hoy», el listón «Nuevo», «conectado», «Este va bien» de los subtítulos) y la letra sobre
+    /// Lo que ya está o salió bien («conectado», «Este va bien» de los subtítulos) y la letra sobre
     /// él: cambian con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
     static let success = role(.success)
     static let onSuccess = role(.onSuccess)
+    /// Lo nuevo y lo de hoy («Hoy», el listón «Nuevo», el «Nuevo» del Top 10): el turquesa del puntito del logo (2 nov 2026).
+    static let fresh = role(.fresh)
+    static let onFresh = role(.onFresh)
     static let warning = role(.warning)
     /// El azul de Orbital: el del puntito del logo (Fernando, 31 oct 2026). Los íconos de los rótulos de Para ti, el
     /// calendario y las horas de «Lo que ves».
@@ -198,8 +201,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// |--------------|--------------|------------------------|----------------------------------------------------|
     /// | Pantalla     | (barra nativa) / `display` | largeTitle, negrita | «Para ti», «Buscar»; las cifras héroe         |
     /// | Título de hoja | `title`    | title, negrita         | `DSSheetHeader`                                    |
-    /// | Sección      | `groupLabel` | caption, negrita, MAYÚSCULAS | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
+    /// | Sección      | `groupLabel` | footnote, negrita      | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
     /// | Subsección   | `section`    | title2, negrita        | `DSSectionHead` de una fila o estante, con su porqué |
+    /// | Subsección de descubrir | `sectionQuiet` | title3, negrita | en Inicio, las filas que no son tuyas (Sugerencias, Por lo que viste, Top 10): `DSSectionHead(quiet:)` |
     /// | Porqué       | `eyebrow`    | footnote, seminegrita, turquesa | solo arriba de una subsección o de una portada |
     /// | Pieza        | `cardTitle`  | headline               | el nombre en una tarjeta o renglón                 |
     /// | Cuerpo       | `body`       | body                   | lo que explica                                     |
@@ -210,14 +214,17 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// | Rótulo       | `label`      | footnote, seminegrita  | botones chicos, datos que resaltan                 |
     /// | Rótulo grande| `labelLarge` | subheadline, seminegrita | el valor de un control, un nombre en un renglón  |
     /// | Placa        | `badge`      | caption, negrita       | «4K», «Nuevo», cifras en una placa                 |
-    /// | Grupo        | `groupLabel` | caption, negrita       | el rótulo de un grupo (`DSGroupLabel`, en mayúsculas) |
+    /// | Grupo        | `groupLabel` | footnote, negrita      | el rótulo de un grupo (`DSGroupLabel`, en letra normal) |
     /// | Cifra        | `stat`       | largeTitle, gruesa, tabular | las cifras grandes de Lo que ves, el mazo     |
     enum TextRecipe {
         case display, title, section, cardTitle, body, secondary, footnote, caption, eyebrow, data
         /// Las que antes se armaban torciendo otra con `.weight` (D12): un rótulo o botón chico (`label`), uno mediano
-        /// (`labelLarge`), una placa (`badge`), el rótulo de un grupo (`groupLabel`, en mayúsculas con `DSGroupLabel`) y una
+        /// (`labelLarge`), una placa (`badge`), el rótulo de un grupo (`groupLabel`, con `DSGroupLabel`) y una
         /// cifra grande (`stat`, tabular).
         case label, labelLarge, badge, groupLabel, stat
+        /// Una subsección de descubrir en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): un paso abajo de
+        /// `section`, para que lo tuyo pese más (Fernando, 2 nov 2026, C5). Solo del iPhone: la TV no mezcla las dos cosas.
+        case sectionQuiet
         var font: Font {
             switch self {
             case .display: .system(.largeTitle, design: .default).weight(.bold)
@@ -232,7 +239,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
             case .data: .system(.footnote, design: .default).monospacedDigit()   // números tabulares, como `tabular-nums` en la TV
             case .label: .system(.footnote, design: .default).weight(.semibold)
             case .labelLarge: .system(.subheadline, design: .default).weight(.semibold)
-            case .badge, .groupLabel: .system(.caption, design: .default).weight(.bold)
+            case .badge: .system(.caption, design: .default).weight(.bold)
+            case .groupLabel: .system(.footnote, design: .default).weight(.bold)   // en letra normal desde el 2 nov 2026 (E3)
+            case .sectionQuiet: .system(.title3, design: .default).weight(.bold)
             case .stat: .system(.largeTitle, design: .default).weight(.heavy).monospacedDigit()
             }
         }

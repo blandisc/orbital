@@ -45,7 +45,8 @@ struct BrowseView: View {
     /// cambia en cada cuadro del deslizamiento y no debe volver a pintar la pantalla.)
     @State private var scroll = ScrollOffset()
     private let ui = AppEnvironment.shared.ui
-    /// La barra de abajo (con el campo) se esconde al bajar y vuelve al subir: iOS no la encoge en la pestaña de búsqueda.
+    /// Con el campo abierto, la barra de arriba (título y campo) se esconde al bajar por los resultados y vuelve al subir.
+    /// La de pestañas no: siempre completa (2 nov 2026).
     @State private var barHidden = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Los resultados: todo, solo películas o solo series.
@@ -112,7 +113,7 @@ struct BrowseView: View {
             let hide = !up && scroll.y > DS.Size.barScrollHide   // el teclado se fue al deslizar hacia abajo
             if hide != barHidden { withAnimation(DS.Motion.base(reduceMotion)) { barHidden = hide } }
         }
-        .toolbarVisibility(barHidden ? .hidden : .visible, for: .tabBar)
+        // La barra de pestañas ya no se esconde al bajar: siempre completa, como en toda la app (2 nov 2026).
         // Con el campo abierto, iOS 27 lo deja fijo arriba: al bajar por los resultados se va también la barra de arriba
         // (título y campo) y vuelve al subir, con lo escrito.
         .toolbarVisibility(barHidden && searching ? .hidden : .visible, for: .navigationBar)

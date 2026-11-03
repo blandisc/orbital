@@ -66,7 +66,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `display` | largeTitle bold | Títulos grandes fuera de la barra |
 | `title` | title bold | El título de una hoja (`DSSheetHeader`) |
 | `section` | title2 bold | **Subsección**: el título de una fila o estante (`DSSectionHead`, `Shelf`, `Rail`), con su porqué turquesa arriba si ayuda |
-| `groupLabel` | caption bold, en mayúsculas | **Sección**: `DSSectionHead(level: .section)` pinta `DSChapterLabel` (el rótulo con su línea), sola, sin porqué; dentro de una hoja o panel, `DSGroupLabel` |
+| `groupLabel` | footnote negrita, en letra normal (2 nov 2026) | **Sección**: `DSSectionHead(level: .section)` pinta `DSChapterLabel` (el rótulo con su línea), sola, sin porqué; dentro de una hoja o panel, `DSGroupLabel` |
 | `eyebrow` | footnote semibold, turquesa | El porqué arriba de una subsección o de una portada (≤ 38 letras, sin cifras) |
 | `cardTitle` | headline | Nombre en una pieza o renglón |
 | `body` | body | Texto de lectura |

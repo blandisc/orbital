@@ -19,16 +19,18 @@ struct Rail<Content: View>: View {
     /// El porqué arriba del título y de dónde viene (su sello).
     var eyebrow: Text?
     var source: ListSource?
+    /// Una fila de descubrir junto a lo tuyo (Inicio): el título un paso más chico (`DSSectionHead(quiet:)`).
+    var quiet = false
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Group {
                 if let route {
-                    NavigationLink(value: route) { DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, chevron: true, source: source, eyebrow: eyebrow) }
+                    NavigationLink(value: route) { DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, chevron: true, source: source, eyebrow: eyebrow, quiet: quiet) }
                         .buttonStyle(.plain)
                 } else {
-                    DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, source: source, eyebrow: eyebrow)
+                    DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, source: source, eyebrow: eyebrow, quiet: quiet)
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
@@ -46,6 +48,8 @@ struct Rail<Content: View>: View {
 struct TitleLink: View {
     let route: TitleRoute
     var badge: LocalizedStringKey?
+    /// El ícono de la placa (el calendario de cuándo sale).
+    var badgeSymbol: String?
     /// Su puesto en una plataforma: la píldora con su logo (`PlatformBadge`).
     var platformRank: (rank: Int, platform: String)?
     /// Está en tu watchlist: un marcador en la esquina (sin texto que se corte en un póster angosto).
@@ -63,7 +67,7 @@ struct TitleLink: View {
     var body: some View {
         TitleNavigationLink(route: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
+                PosterCard(title: route.title, poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
                     .titleZoomSource(route)
                 // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
                 if captions {

@@ -47,7 +47,7 @@ struct ShelfPoster: View {
     let suggestion: Suggestion
     let style: ShelfPlan.Style
     let inList: Bool
-    /// El porqué en el póster («Sale el viernes», «N.º 3 en Netflix»), si lo hay.
+    /// El porqué en el póster (cuándo sale, «N.º 3 en Netflix»), si lo hay.
     var badge: PosterBadge? = nil
     /// El ancho del póster (más chico dentro de «Porque viste»).
     var width: CGFloat = DS.Poster.railWidth
@@ -61,7 +61,7 @@ struct ShelfPoster: View {
             if style == .top10, let rank = suggestion.rank {
                 TitleNavigationLink(route: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew, zoom: suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), platformRank: platformRank, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
+                TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), badgeSymbol: badge.flatMap(badgeSymbol), platformRank: platformRank, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
@@ -77,16 +77,24 @@ struct ShelfPoster: View {
     }
 }
 
-/// «Sale hoy», «Sale mañana» o «Sale el viernes». El puesto en una plataforma va en su píldora (`PlatformBadge`).
+/// Cuándo sale, con el calendario antes: «Hoy», «Mañana» o el día completo («Domingo»). Antes «Sale el domingo», que no
+/// cabía en un póster y se cortaba («Sale el do…»; Fernando, 2 nov 2026, F2). El puesto en una plataforma va en su píldora
+/// (`PlatformBadge`).
 @MainActor func badgeText(_ badge: PosterBadge) -> LocalizedStringKey? {
     switch badge {
     case .rank: return nil
     case .airs(let day):
-        if Calendar.current.isDateInToday(day) { return "Sale hoy" }
-        if Calendar.current.isDateInTomorrow(day) { return "Sale mañana" }
-        let weekday = day.formatted(.dateTime.weekday(.wide).locale(AppEnvironment.shared.uiLocale))
-        return "Sale el \(weekday)"
+        if Calendar.current.isDateInToday(day) { return "Hoy" }
+        if Calendar.current.isDateInTomorrow(day) { return "Mañana" }
+        let locale = AppEnvironment.shared.uiLocale
+        return "\(day.formatted(.dateTime.weekday(.wide).locale(locale)).capitalized(with: locale))"
     }
+}
+
+/// El ícono de la placa de un póster: el calendario cuando dice cuándo sale.
+func badgeSymbol(_ badge: PosterBadge) -> String? {
+    if case .airs = badge { return "calendar" }
+    return nil
 }
 
 /// Los nombres de los estantes: los de la consola vienen ya con su texto; los de este iPhone se nombran por su id.

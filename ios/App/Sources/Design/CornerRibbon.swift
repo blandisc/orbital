@@ -8,7 +8,7 @@ extension View {
 }
 
 /// Lo que acaba de salir, en la esquina de arriba a la izquierda de un póster: un listón en diagonal que cruza la esquina,
-/// verde con un brillo arriba y el texto en mayúsculas. Va en `.overlay(alignment: .topLeading)` del póster, sin padding:
+/// en el turquesa de lo nuevo (`DS.fresh`, el del puntito del logo; antes verde) con un brillo arriba y el texto en mayúsculas. Va en `.overlay(alignment: .topLeading)` del póster, sin padding:
 /// la caja recorta la banda y su orilla de afuera queda lejos de la curva del póster. `compact`: el de los pósters chicos
 /// del widget (50 pt de ancho), con su letra y su caja más chicas.
 struct DSCornerRibbon: View {
@@ -18,11 +18,11 @@ struct DSCornerRibbon: View {
     var body: some View {
         let size = compact ? DS.Ribbon.compact : DS.Ribbon.regular
         Text(text).dsCaps().font(compact ? DS.font(.xs, weight: .bold) : DS.TextRecipe.badge.font).tracking(size.tracking)   // ds-exception: el compacto (pósters de 50 pt del widget) va un punto abajo de la placa o «Nuevo» no cabe en la esquina
-            .foregroundStyle(DS.onSuccess).lineLimit(1)
+            .foregroundStyle(DS.onFresh).lineLimit(1)
             .padding(.vertical, DS.Space.s1 / 2)
             .frame(width: size.length)
             .background {
-                DS.success.overlay(LinearGradient(colors: [DS.paper.opacity(DS.Ribbon.shine), .clear], startPoint: .top, endPoint: .center))
+                DS.fresh.overlay(LinearGradient(colors: [DS.paper.opacity(DS.Ribbon.shine), .clear], startPoint: .top, endPoint: .center))
             }
             .overlay(alignment: .top) { Rectangle().fill(DS.paper.opacity(DS.Ribbon.shine)).frame(height: DS.Size.hairline) }
             .shadow(DS.Elevation.low)

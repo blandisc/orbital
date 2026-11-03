@@ -95,7 +95,9 @@ struct DSGroupLabel: View {
     var color: Color = DS.textMuted
 
     var body: some View {
-        title.recipe(.groupLabel, color: color).dsCaps().tracking(DS.Chapter.tracking)
+        // En letra normal, sin mayúsculas espaciadas (Fernando, 2 nov 2026, E3/G2/H2: «que todos los títulos de ese mismo estilo
+        // tengan una regla en el sistema de diseño y que si cambiamos uno, cambiamos todos»).
+        title.recipe(.groupLabel, color: color)
             .accessibilityAddTraits(.isHeader)
     }
 }

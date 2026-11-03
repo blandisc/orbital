@@ -391,9 +391,6 @@ extension DS {
         static let closeWarning: TimeInterval = 600
     }
 
-    /// El arranque de una sección (`DSChapterHead`): el interletrado del rótulo en mayúsculas.
-    enum Chapter { static let tracking: CGFloat = 1.6 }
-
     enum Collections {
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
@@ -459,8 +456,8 @@ extension DS {
         static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius = DS.Radius.xxl
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius = DS.Radius.logo(34), glow: CGFloat = 18
-        /// La pastilla de una plataforma (el Top 10 de Inicio): el logo (en círculo), el aire alrededor y el borde de la elegida.
-        static let pillLogo: CGFloat = 26
+        /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
+        static let pickLogo: CGFloat = 40
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44
