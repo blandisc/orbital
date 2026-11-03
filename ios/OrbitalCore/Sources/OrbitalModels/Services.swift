@@ -48,6 +48,8 @@ public final class Services: ObservableModel {
     public let orbitalAuth: OrbitalAuthState
     /// K1 · `"pairing"` de `GET /api/companion`: 2 si tu TV reparte llaves por aparato. Se sabe al conectar (cada arranque).
     public internal(set) var tvPairing = 1 { didSet { if oldValue != tvPairing { changed() } } }
+    /// CX2-A · qué dice la copia de tu clave que comparten tus aparatos Apple (al abrir y al volver a la app).
+    public internal(set) var sharedDebrid: SharedDebrid = .none { didSet { if oldValue != sharedDebrid { changed() } } }
     public private(set) var finder: StreamFinder { didSet { notify() } }
     /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
     public let oneDrive: OneDrive
@@ -167,13 +169,16 @@ public final class Services: ObservableModel {
     private let clock: @Sendable () -> Date
     /// Qué aparato es (iPhone o iPad): va en cada petición a tu Orbital.
     let device: OrbitalRemote.Device?
+    /// «iphone», «ipad» o «mac» (la Mac, aunque se presente como iPad, es «mac»): quién puede quitar a quién (CX5), quién ve
+    /// la invitación (CX4) y quién puso la copia compartida de tu clave (CX2).
+    public let platform: String
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
     public init(http: HTTPClient, secrets: SecretsStore, kv: KeyValueStore, pending: PendingStore, library: LocalLibrary = LocalLibrary(), downloadTransport: DownloadTransport,
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
                 builtInTraktClientID: String = Services.bundledTraktClientID, builtInTMDBKey: String = Services.bundledTMDBKey,
-                device: OrbitalRemote.Device? = nil, deviceName: String? = nil,
+                device: OrbitalRemote.Device? = nil, deviceName: String? = nil, platform: String? = nil,
                 allowsOrbital: Bool = true, detailsMemo: TmdbDetailsMemo? = nil) {
         self.cacheRoot = cacheRoot
         self.caches = CacheStore(directory: cacheRoot?.appendingPathComponent("models", isDirectory: true), legacy: kv)
@@ -181,6 +186,8 @@ public final class Services: ObservableModel {
         let detailsGate = self.detailsGate
         self.allowsOrbital = allowsOrbital
         self.device = device
+        let platform = platform ?? device?.kind ?? "iphone"
+        self.platform = platform
         self.builtInTraktClientID = builtInTraktClientID
         self.builtInTMDBKey = builtInTMDBKey
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.library = library; self.downloadTransport = downloadTransport
@@ -204,7 +211,7 @@ public final class Services: ObservableModel {
         let vault = AppAddonVault(secrets: secrets, kv: kv)
         let addonList = AddonList(vault: vault)
         self.addonList = addonList
-        self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, clock: clock)
+        self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, platform: platform, clock: clock)
         self.debridReminders = DebridReminderBook(vault: vault)
         let deviceName = deviceName ?? device?.name ?? "iPhone"
         self.deviceName = deviceName
@@ -243,7 +250,6 @@ public final class Services: ObservableModel {
                                         account: { await debrid.accountID() }, knownAccount: debrid.saved?.userID, clock: clock,
                                         sync: OrbitalRemoteDebridRequestSync(remote: makeOrbital))
         // K1: con llave, `enabled[<id de este aparato>]`; sin ella, `enabled[<plataforma>]` (lo de antes).
-        let platform = device?.kind ?? "iphone"
         self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: makeOrbital),
                                      available: { allowsOrbital && settings.value.orbitalEnabled },
                                      device: { AddonDevice(platform: platform, id: (secrets.get(SecretKey.orbitalDeviceKey)).flatMap(OrbitalDeviceKey.deviceID(of:))) },
@@ -365,6 +371,7 @@ public final class Services: ObservableModel {
         try await remote.check()
         let keys = try await remote.keys()
         if tvPairing != keys.pairing { tvPairing = keys.pairing }
+        noteTVID(keys.tvID)   // TEC-30: otro `tv_id` es otra TV (o reinstalada): «Tu TV es nueva»
         var got: [String] = []
         if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
         if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }

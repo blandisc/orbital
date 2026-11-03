@@ -19,12 +19,47 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # CX (3 nov, Fernando: «CX2A, CX3A, CX4A… la Mac no habla con la TV», CX5, CX7A, CX8A): tu clave entre tus aparatos Apple,
+    # quitarla solo aquí o de todos, la invitación del iPhone al iPad, el nombre al conectar y «Darle su propia conexión».
+    "Aparatos conectados": "Connected devices",
+    "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez.": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again.",
+    "Solo tu iPhone o la TV pueden quitar otro aparato.": "Only your iPhone or the TV can remove another device.",
+    "Solo tu iPhone puede invitar a tu iPad.": "Only your iPhone can invite your iPad.",
+    "Este aparato ya tiene su propia conexión.": "This device already has its own connection.", "Invitado por %@": "Invited by %@",
+    "Tu TV ahora conecta a cada aparato por separado. Puedes pedírselo desde aquí.": "Your TV now connects each device on its own. You can ask it from here.",
+    "Tu TV es nueva: vuelve a escanear su código": "Your TV is new: scan its code again",
+    "Se reinstaló o es otra consola. Tus aparatos se conectan otra vez, uno por uno.": "It was reinstalled or it's another console. Your devices connect again, one by one.",
+    "Darle su propia conexión": "Give it its own connection", "Pedírsela a tu TV": "Ask your TV", "Pedírsela otra vez": "Ask again",
+    "Tu TV te pregunta en su pantalla. Una vez por aparato.": "Your TV asks on its screen. Once per device.",
+    "Confirma en tu TV": "Confirm on your TV",
+    "Tu TV pregunta en su pantalla por «%@». Elige Sí con el control.": "Your TV asks about “%@” on its screen. Choose Yes with the remote.",
+    "Listo: este iPhone ya tiene su propia conexión": "Done: this iPhone now has its own connection",
+    "Tu TV dijo que no": "Your TV said no", "Tu TV no contestó a tiempo": "Your TV didn't answer in time",
+    "Nada cambió. Si fue un error, pídeselo otra vez o escanea su código.": "Nothing changed. If it was a mistake, ask again or scan its code.",
+    "Revisa que esté prendida y pídeselo otra vez, o escanea su código.": "Check that it's on and ask again, or scan its code.",
+    "Conectar tu iPad": "Connect your iPad",
+    "En el iPad abre Orbital y toca Conectar. Llega por tu llavero de iCloud.": "On the iPad, open Orbital and tap Connect. It arrives through your iCloud Keychain.",
+    "Listo: abre Orbital en tu iPad. Vale hasta el %@.": "Done: open Orbital on your iPad. Valid until %@.",
+    "¿Conectar con %@?": "Connect to %@?",
+    "Tu iPhone te invita. Este iPad tendrá su propia conexión.": "Your iPhone invites you. This iPad will have its own connection.",
+    "Esta invitación ya venció": "This invitation has expired",
+    "Abre Orbital en tu iPhone para que llegue otra, o escanea el código de tu TV.": "Open Orbital on your iPhone to get another one, or scan your TV's code.",
+    "Esta invitación ya no sirve. Abre Orbital en tu iPhone o escanea el código de tu TV.": "This invitation no longer works. Open Orbital on your iPhone or scan your TV's code.",
+    "No pude guardar la conexión en este aparato. Inténtalo otra vez.": "I couldn't save the connection on this device. Try again.",
+    "¿Cómo se llama este aparato?": "What's this device called?",
+    "Tu %@ cambió la clave de Real-Debrid": "Your %@ changed the Real-Debrid key",
+    "Tu clave de Real-Debrid cambió en otro de tus aparatos Apple": "Your Real-Debrid key changed on another of your Apple devices",
+    "La nueva es de la cuenta %@ · la de este iPhone, de %@.": "The new one is from the %@ account · this iPhone's, from %@.",
+    "La nueva es de la cuenta %@. La de este iPhone ya no sirve.": "The new one is from the %@ account. This iPhone's no longer works.",
+    "Usar la nueva": "Use the new one", "Seguir con la de este iPhone": "Keep this iPhone's",
+    "Usar la clave de tus aparatos Apple": "Use the key from your Apple devices",
+    "De tu llavero de iCloud · cuenta %@": "From your iCloud Keychain · %@ account",
+    "Solo de este iPhone": "Only from this iPhone", "De todos tus aparatos Apple": "From all your Apple devices",
+    "Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.": "It comes from real-debrid.com/apitoken. It's saved on this iPhone and, if you use iCloud Keychain, your other Apple devices see it too.",
     # K1 (3 nov): llaves por aparato, «Pasar a la TV» y «Usar la de la TV».
     "Vuelve a escanear el código de tu TV": "Scan your TV's code again", "Vuelve a escanear": "Scan again", "Escanear": "Scan",
     "Tu TV quitó este iPhone de sus aparatos.": "Your TV removed this iPhone from its devices.",
-    "Tu TV ahora le da una llave a cada aparato.": "Your TV now gives each device its own key.",
-    "Aparatos de tu TV": "Your TV's devices", "Buscando tus aparatos…": "Looking for your devices…",
-    "Cada uno entra con su propia llave. Quitar uno no se deshace: tendría que escanear el código otra vez.": "Each one gets in with its own key. Removing one can't be undone: it would have to scan the code again.",
+"Buscando tus aparatos…": "Looking for your devices…",
     "¿Quitar %@?": "Remove %@?", "Este aparato": "This device", "Se usó %@": "Used %@", "Sin usarse todavía": "Not used yet",
     "Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.": "This iPhone stops talking to your TV until you scan its code again. It can't be undone.",
     "Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.": "It stops talking to your TV until it scans the code again. It can't be undone.",
@@ -125,7 +160,7 @@ TRANSLATIONS = {
     "Por qué arranca al instante y qué cuesta": "Why it starts instantly and what it costs", "Probando con %@…": "Testing with %@…",
     "Quedarme con el de Orbital": "Keep Orbital's", "Quedarme con el de tu Stremio": "Keep the one from your Stremio",
     "Real-Debrid cambia tus puntos por días de Premium. No se puede deshacer.": "Real-Debrid exchanges your points for Premium days. It can't be undone.", "Real-Debrid las sirve": "Real-Debrid serves them",
-    "Remux de Blu-ray": "Blu-ray remux", "Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.": "It comes from real-debrid.com/apitoken. It lives in this device's keychain.",
+    "Remux de Blu-ray": "Blu-ray remux", 
     "Se agrega al final de tu lista.": "It's added at the end of your list.", "Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte.": "You request it and it downloads it: minutes to days, depending on how many people share it.",
     "Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence.": "It's paid by days at real-debrid.com and doesn't renew on its own. We'll remind you 14 days before, 3 days before and on the day it expires.", "Se preguntan en este orden": "They're asked in this order",
     "Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone; tu Stremio no se toca.": "One stays, with your Real-Debrid key from Accounts. The other is removed from this iPhone; your Stremio isn't touched.", "Se ve borrosa en la TV": "Looks blurry on the TV",
@@ -1339,7 +1374,7 @@ def ui_word(word: str) -> bool:
 # El aparato en los textos: la misma app corre en iPhone, iPad y Mac («Diseñada para iPad»). Un texto que dice «iPhone»
 # lleva una variación por aparato del catálogo (Apple elige la del aparato) y en el iPhone se lee igual que siempre.
 # No se tocan los que nombran algo literal: el menú «Ajustes › iPhone» de la TV y la frase de voz «… en mi iPhone».
-DEVICE_LITERAL = ("› iPhone", "mi iPhone")
+DEVICE_LITERAL = ("› iPhone", "mi iPhone", "en tu iPhone", "Tu iPhone te invita", "Solo tu iPhone")   # CX4-A: el iPad habla de tu iPhone
 MAC_ES = [("del iPhone", "de la Mac"), ("al iPhone", "a la Mac"), ("este iPhone", "esta Mac"), ("El iPhone", "La Mac"),
           ("el iPhone", "la Mac"), ("iPhone", "Mac")]
 

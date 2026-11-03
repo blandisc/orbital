@@ -39,8 +39,14 @@ final class Connectivity: @unchecked Sendable {
 /// es iPhone o iPad y su id por instalación. La TV solo acepta `iphone` e `ipad` (`orbital/companion.py`): la Mac
 /// («Diseñada para iPad») se presenta como iPad hasta que la TV conozca `mac` (Etapa 2 de `docs/producto/ipad-y-mac-2026-10.md`).
 enum ThisDevice {
-    /// La Mac no habla con tu Orbital: es solo para ver (decisión de Fernando, 29 oct 2026). El iPhone y el iPad, sí.
+    /// La Mac no habla con tu Orbital: es solo para ver (decisión de Fernando, 29 oct 2026; CX1-B, 3 nov: «La Mac no se
+    /// conecta con la TV para nada»). El iPhone y el iPad, sí. Solo recibe tu clave de Real-Debrid por iCloud (CX2-A).
+    /// `MacNeverTalksToTheTVTests` cuida que esto no cambie.
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// «iphone», «ipad» o «mac»: quién puso la copia compartida de tu clave, quién quita a quién (CX5) y quién ve la invitación.
+    @MainActor static var platform: String {
+        ProcessInfo.processInfo.isiOSAppOnMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+    }
     /// Brillo y volumen con el dedo sobre el video (iPhone, iPad). En la Mac no aplican.
     static let hasTouchScreenControls = !ProcessInfo.processInfo.isiOSAppOnMac
     /// Las descargas en la pantalla bloqueada y la Dynamic Island. En la Mac no existen.

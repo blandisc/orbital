@@ -65,6 +65,8 @@ struct OrbitalSetupView: View {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 GuideNumberedStep(number: 1, text: Text("En la TV abre Ajustes › Cuentas › iPhone. Aparece un código.")) { EmptyView() }
                 GuideNumberedStep(number: 2, text: Text("Toca «Escanear el código» y apúntale.")) { EmptyView() }
+                DeviceNameField(name: Binding(get: { model.deviceName }, set: { model.deviceName = $0 }))   // CX7-A
+                    .padding(DS.Space.s3).dsCard(translucent: true)
                 if model.connecting { DSInlineProgress(text: Text("Conectando…")) }
                 if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .error) }
                 if byHand {

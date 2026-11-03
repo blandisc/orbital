@@ -101,6 +101,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if let found = await guideDemo(request) { return found }   // la guía de la primera vez (`-demo-first-run`)
         if let found = Self.publicDemo(url) { return found }
         if Demo.rdSlow, url.host == "api.real-debrid.com", url.path.hasSuffix("/user") { try? await Task.sleep(nanoseconds: 3_000_000_000) }   // ds-exception: demora de red simulada (solo modo demo)
+        if let found = DemoCX.realDebrid(request) { return found }   // `-demo-cx`: la copia de tu clave en tus aparatos Apple
         if let found = Self.realDebridDemo(url) { return found }
         // Tu Torrentio sin Real-Debrid (R4) con `-demo-rd-request`: el torrent que existe (o ninguno, con `none`).
         if url.host == "torrentio.strem.fun", Demo.rdRequest != nil {
@@ -118,6 +119,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "api.themoviedb.org", Demo.tmdb { return tmdbDemo(url) }
         if Demo.oneDrive != nil, url.host == "login.microsoftonline.com" || url.host == "graph.microsoft.com" { return Self.oneDriveDemo(url) }
         if let found = try await DemoTVAddons.shared.respond(request) { return found }   // `-demo-tv-addons`: tu lista y la de la TV
+        if let found = DemoCX.respond(request) { return found }   // `-demo-cx`: CX4, CX5, CX8 y «Tu TV es nueva»
         if let found = DemoDevices.respond(request) { return found }   // `-demo-keys`: las llaves por aparato (K1)
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }

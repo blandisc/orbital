@@ -157,12 +157,14 @@ struct RootView: View {
             env.tvNow.setActive(phase == .active)
             if phase == .background { foreground.wentToBackground() }
             if phase == .active {
+                Task { await env.services.refreshSharedDebrid() }   // CX2-A, TEC-6: lo de iCloud puede llegar en cualquier momento
                 let decision = foreground.becameActive(at: Date())
                 if decision != .skip {
                     Task { await env.ratings.refresh() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }
                     Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) }
                     Task { await env.services.addonSync.refresh() }   // S6: tu lista y la de tu TV (solo Ultra con TV)
                     Task { await AppearNotifier.check() }   // R15: lo que nadie tenía, una vez al día
+                    Task { await env.services.renewInviteIfNeeded() }   // CX4-A, TEC-16: la invitación para tu iPad no se vence
                 }
                 if decision == .refresh {
                     Task { await env.services.syncLibrary() }   // al abrir ya la pide el arranque

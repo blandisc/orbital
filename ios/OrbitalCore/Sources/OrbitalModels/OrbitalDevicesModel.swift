@@ -15,7 +15,8 @@ public final class OrbitalDevicesModel: ObservableModel {
     public init(_ services: Services) { self.services = services; super.init() }
 
     /// Solo con la llave de este aparato (la lista es suya).
-    public var isAvailable: Bool { services.hasOrbitalDeviceKey }
+    /// Si la TV pide escanear otra vez (te quitó, es nueva), el problema de arriba ya lo dice: la lista no lo repite.
+    public var isAvailable: Bool { services.hasOrbitalDeviceKey && services.orbitalAuth.problem == nil }
 
     public func refresh() async {
         guard isAvailable else { devices = []; load = .idle; return }
@@ -29,6 +30,9 @@ public final class OrbitalDevicesModel: ObservableModel {
         } catch let failure as OrbitalRemote.Failure { load = .failed(failure.description) }
         catch { load = .failed(OrbitalRemote.Failure.unreachable.description) }
     }
+
+    /// CX5 · el iPhone puede quitar a cualquiera; el iPad, solo a sí mismo. La TV contesta 403 si no (dicho en palabras).
+    public func canRemove(_ device: OrbitalPairedDevice) -> Bool { services.canRemove(device) }
 
     /// «Quitar» (la pantalla ya preguntó). Si es este aparato, se olvida su llave: queda sin emparejar.
     public func remove(_ device: OrbitalPairedDevice) async {

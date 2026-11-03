@@ -1,6 +1,889 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Solo tu iPhone o la TV pueden quitar otro aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only your iPhone or the TV can remove another device."
+          }
+        }
+      }
+    },
+    "Solo tu iPhone puede invitar a tu iPad.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only your iPhone can invite your iPad."
+          }
+        }
+      }
+    },
+    "Este aparato ya tiene su propia conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device already has its own connection."
+          }
+        }
+      }
+    },
+    "Invitado por %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invited by %@"
+          }
+        }
+      }
+    },
+    "Tu TV pregunta en su pantalla por «%@». Elige Sí con el control.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV asks about “%@” on its screen. Choose Yes with the remote."
+          }
+        }
+      }
+    },
+    "Aparatos conectados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected devices"
+          }
+        }
+      }
+    },
+    "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada uno está conectado por separado: quitar uno no haz clic en a los demás. No se deshace: tendría que escanear el código otra vez."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu TV ahora conecta a cada aparato por separado. Puedes pedírselo desde aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV now connects each device on its own. You can ask it from here."
+          }
+        }
+      }
+    },
+    "Tu TV es nueva: vuelve a escanear su código": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV is new: scan its code again"
+          }
+        }
+      }
+    },
+    "Se reinstaló o es otra consola. Tus aparatos se conectan otra vez, uno por uno.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It was reinstalled or it's another console. Your devices connect again, one by one."
+          }
+        }
+      }
+    },
+    "Darle su propia conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give it its own connection"
+          }
+        }
+      }
+    },
+    "Pedírsela a tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask your TV"
+          }
+        }
+      }
+    },
+    "Pedírsela otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask again"
+          }
+        }
+      }
+    },
+    "Tu TV te pregunta en su pantalla. Una vez por aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV asks on its screen. Once per device."
+          }
+        }
+      }
+    },
+    "Confirma en tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm on your TV"
+          }
+        }
+      }
+    },
+    "Listo: este iPhone ya tiene su propia conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: este iPhone ya tiene su propia conexión"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: este iPad ya tiene su propia conexión"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: esta Mac ya tiene su propia conexión"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Listo: este iPhone ya tiene su propia conexión"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this iPhone now has its own connection"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this iPad now has its own connection"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this Mac now has its own connection"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Done: this iPhone now has its own connection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu TV dijo que no": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV said no"
+          }
+        }
+      }
+    },
+    "Tu TV no contestó a tiempo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV didn't answer in time"
+          }
+        }
+      }
+    },
+    "Nada cambió. Si fue un error, pídeselo otra vez o escanea su código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing changed. If it was a mistake, ask again or scan its code."
+          }
+        }
+      }
+    },
+    "Revisa que esté prendida y pídeselo otra vez, o escanea su código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check that it's on and ask again, or scan its code."
+          }
+        }
+      }
+    },
+    "Conectar tu iPad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your iPad"
+          }
+        }
+      }
+    },
+    "En el iPad abre Orbital y toca Conectar. Llega por tu llavero de iCloud.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad abre Orbital y toca Conectar. Llega por tu llavero de iCloud."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad abre Orbital y toca Conectar. Llega por tu llavero de iCloud."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad abre Orbital y haz clic en Conectar. Llega por tu llavero de iCloud."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En el iPad abre Orbital y toca Conectar. Llega por tu llavero de iCloud."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPad, open Orbital and tap Connect. It arrives through your iCloud Keychain."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPad, open Orbital and tap Connect. It arrives through your iCloud Keychain."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPad, open Orbital and click Connect. It arrives through your iCloud Keychain."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On the iPad, open Orbital and tap Connect. It arrives through your iCloud Keychain."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Listo: abre Orbital en tu iPad. Vale hasta el %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done: open Orbital on your iPad. Valid until %@."
+          }
+        }
+      }
+    },
+    "¿Conectar con %@?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to %@?"
+          }
+        }
+      }
+    },
+    "Tu iPhone te invita. Este iPad tendrá su propia conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone invites you. This iPad will have its own connection."
+          }
+        }
+      }
+    },
+    "Esta invitación ya venció": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation has expired"
+          }
+        }
+      }
+    },
+    "Abre Orbital en tu iPhone para que llegue otra, o escanea el código de tu TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Orbital on your iPhone to get another one, or scan your TV's code."
+          }
+        }
+      }
+    },
+    "Esta invitación ya no sirve. Abre Orbital en tu iPhone o escanea el código de tu TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation no longer works. Open Orbital on your iPhone or scan your TV's code."
+          }
+        }
+      }
+    },
+    "No pude guardar la conexión en este aparato. Inténtalo otra vez.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't save the connection on this device. Try again."
+          }
+        }
+      }
+    },
+    "¿Cómo se llama este aparato?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's this device called?"
+          }
+        }
+      }
+    },
+    "Tu %@ cambió la clave de Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your %@ changed the Real-Debrid key"
+          }
+        }
+      }
+    },
+    "Tu clave de Real-Debrid cambió en otro de tus aparatos Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Real-Debrid key changed on another of your Apple devices"
+          }
+        }
+      }
+    },
+    "La nueva es de la cuenta %@ · la de este iPhone, de %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@ · la de este iPhone, de %@."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@ · la de este iPad, de %@."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@ · la de esta Mac, de %@."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@ · la de este iPhone, de %@."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account · this iPhone's, from %@."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account · this iPad's, from %@."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account · this Mac's, from %@."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account · this iPhone's, from %@."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "La nueva es de la cuenta %@. La de este iPhone ya no sirve.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@. La de este iPhone ya no sirve."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@. La de este iPad ya no sirve."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@. La de esta Mac ya no sirve."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nueva es de la cuenta %@. La de este iPhone ya no sirve."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account. This iPhone's no longer works."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account. This iPad's no longer works."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account. This Mac's no longer works."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The new one is from the %@ account. This iPhone's no longer works."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Usar la nueva": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the new one"
+          }
+        }
+      }
+    },
+    "Seguir con la de este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seguir con la de este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seguir con la de este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seguir con la de esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seguir con la de este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep this iPhone's"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep this iPad's"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep this Mac's"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep this iPhone's"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Usar la clave de tus aparatos Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the key from your Apple devices"
+          }
+        }
+      }
+    },
+    "De tu llavero de iCloud · cuenta %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From your iCloud Keychain · %@ account"
+          }
+        }
+      }
+    },
+    "Solo de este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo de este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo de este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo de esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo de este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only from this iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only from this iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only from this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only from this iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "De todos tus aparatos Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From all your Apple devices"
+          }
+        }
+      }
+    },
+    "Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sale de real-debrid.com/apitoken. Se guarda en este iPad y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sale de real-debrid.com/apitoken. Se guarda en esta Mac y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It comes from real-debrid.com/apitoken. It's saved on this iPhone and, if you use iCloud Keychain, your other Apple devices see it too."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It comes from real-debrid.com/apitoken. It's saved on this iPad and, if you use iCloud Keychain, your other Apple devices see it too."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It comes from real-debrid.com/apitoken. It's saved on this Mac and, if you use iCloud Keychain, your other Apple devices see it too."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It comes from real-debrid.com/apitoken. It's saved on this iPhone and, if you use iCloud Keychain, your other Apple devices see it too."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Vuelve a escanear el código de tu TV": {
       "extractionState": "manual",
       "localizations": {
@@ -99,28 +982,6 @@
         }
       }
     },
-    "Tu TV ahora le da una llave a cada aparato.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your TV now gives each device its own key."
-          }
-        }
-      }
-    },
-    "Aparatos de tu TV": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your TV's devices"
-          }
-        }
-      }
-    },
     "Buscando tus aparatos…": {
       "extractionState": "manual",
       "localizations": {
@@ -128,17 +989,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Looking for your devices…"
-          }
-        }
-      }
-    },
-    "Cada uno entra con su propia llave. Quitar uno no se deshace: tendría que escanear el código otra vez.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Each one gets in with its own key. Removing one can't be undone: it would have to scan the code again."
           }
         }
       }
@@ -1707,17 +2557,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Blu-ray remux"
-          }
-        }
-      }
-    },
-    "Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It comes from real-debrid.com/apitoken. It lives in this device's keychain."
           }
         }
       }

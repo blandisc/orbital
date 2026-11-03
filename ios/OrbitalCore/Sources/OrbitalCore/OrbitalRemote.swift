@@ -10,6 +10,8 @@ public struct OrbitalRemote: Sendable {
         /// K1: la TV ya reparte llaves por aparato y este no tiene la suya (401 `device_key_required`), o la TV lo quitó
         /// (401 `device_removed`). Las dos se arreglan igual: «Escanear» el código de la TV.
         case needsKey, removed
+        /// TEC-30 · la TV no conoce este aparato (401 `device_unknown`) o anuncia otro `tv_id`: se reinstaló o es otra consola.
+        case unknownTV
         public var description: String {
             switch self {
             case .notConfigured: "Prende «Usar con tu Orbital» en Ajustes para conectarla."
@@ -18,6 +20,7 @@ public struct OrbitalRemote: Sendable {
             case .refused(let message): message
             case .outdated: "Actualiza tu Orbital para usar el control completo."
             case .needsKey, .removed: OrbitalRemote.rescanLine
+            case .unknownTV: OrbitalRemote.newTVLine
             }
         }
     }
@@ -110,6 +113,8 @@ public struct OrbitalRemote: Sendable {
         public var tmdbKey: String, traktClientID: String, region: String
         /// K1 · `"pairing": 2`: la TV reparte llaves por aparato (QR v2). 1: una TV de antes (solo el token del túnel).
         public var pairing = 1
+        /// TEC-30 · el id de esta instalación de la TV (`tv_id`); vacío en una TV de antes.
+        public var tvID = ""
         public init(tmdbKey: String, traktClientID: String, region: String) {
             self.tmdbKey = tmdbKey; self.traktClientID = traktClientID; self.region = region
         }
@@ -120,6 +125,7 @@ public struct OrbitalRemote: Sendable {
         func text(_ key: String) -> String { json?[key]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
         var keys = Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
         keys.pairing = json?["pairing"]?.intValue ?? 1
+        keys.tvID = json?["tv_id"]?.nonEmptyString ?? ""
         return keys
     }
 
@@ -560,6 +566,8 @@ public struct OrbitalRemote: Sendable {
         catch { if Task.isCancelled { throw CancellationError() }; throw Failure.unreachable }   // cancelar no es «la consola no contesta»
         switch response.status {
         case 200..<300: return JSON.parse(response.data)
+        case 403 where method == "DELETE" && path.hasPrefix("api/devices/"): throw Failure.refused(Self.removeOthersLine)   // CX5
+        case 403 where path == "api/devices/invite": throw Failure.refused(Self.inviteOnlyIPhoneLine)   // CX4-A
         case 401, 403: throw authFailure(response)
         case 429: throw Failure.refused(Self.waitLine)
         case 404 where path == "api/companion/input" || path == "api/companion/text" || path == "api/voice/hints":

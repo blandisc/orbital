@@ -15,12 +15,15 @@ public final class OrbitalSetupModel: ObservableModel {
     public private(set) var connecting = false { didSet { changed() } }
     /// Por qué no se conectó, en palabras («Ese código no es de Orbital», lo que dijo la consola); nil si no hay problema.
     public private(set) var problem: String? { didSet { changed() } }
+    /// CX7-A · cómo se llamará este aparato en la lista de tu TV (≤ 60), ya escrito con la sugerencia.
+    public var deviceName: String { didSet { if oldValue != deviceName { changed() } } }
     private let services: Services
 
     /// `tutorialOnly`: «Qué puedes hacer con la TV», ya conectada: directo al tutorial.
     public init(_ services: Services, tutorialOnly: Bool = false) {
         self.services = services
         stage = tutorialOnly ? .tutorial(1) : .connect
+        deviceName = services.suggestedDeviceName()
         super.init()
     }
 
@@ -49,7 +52,7 @@ public final class OrbitalSetupModel: ObservableModel {
         connecting = true; problem = nil
         defer { connecting = false }
         do {
-            try await services.pair(link)
+            try await services.pair(link, name: deviceName)
             stage = .connected
         } catch {
             // No contestó o no aceptó el token: se queda apagada, como estaba.

@@ -83,7 +83,10 @@ struct SettingsView: View {
             } header: { Text("Conexiones") }
             .listRowBackground(DS.surface)
             // La app es de una sola pieza: lo de la consola sale solo con esto prendido (en la Mac no hay consola).
-            if env.services.allowsOrbital { orbitalSettings(model) }
+            if env.services.allowsOrbital {
+                IPadInviteCard { orbitalSetup = .connect }   // CX4-A: la invitación de tu iPhone (solo en un iPad sin conectar)
+                orbitalSettings(model)
+            }
             // Lo que casi no se toca: complementos, la clave de TMDB y el país.
             Section {
                 NavigationLink { page("Avanzado") { suggestions(model) } } label: {

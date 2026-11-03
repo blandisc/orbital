@@ -16,7 +16,8 @@ public final class OrbitalAuthState: @unchecked Sendable {
     public var problem: OrbitalRemote.Failure? { lock.withLock { current } }
 
     func report(_ failure: OrbitalRemote.Failure) {
-        guard failure == .needsKey || failure == .removed else { return }
+        // `unknownTV` (TEC-30): la llave se queda, para mandarla al volver a emparejar y que la TV reemplace el renglón.
+        guard failure == .needsKey || failure == .removed || failure == .unknownTV else { return }
         if failure == .removed { secrets.set(SecretKey.orbitalDeviceKey, nil) }
         let changed = lock.withLock { () -> Bool in defer { current = failure }; return current != failure }
         if changed { onChange?() }
@@ -75,29 +76,41 @@ extension Services {
 
     /// El QR v2: cambia el código por la llave de este aparato, la guarda en el llavero (solo de este aparato), borra el token
     /// del túnel y conecta como siempre. Lanza con el motivo en palabras («Este código ya no sirve»).
+    /// `name` (CX7-A): el que escribiste al conectar; si no, el guardado o la sugerencia. Si este aparato ya tenía llave, va
+    /// en `Authorization` para que la TV reemplace su renglón (TEC-32).
     @discardableResult
-    public func pairOrbital(address: String, code: String) async throws -> String {
+    public func pairOrbital(address: String, code: String, name: String? = nil) async throws -> String {
         guard allowsOrbital else { return "" }
         let open = OrbitalRemote(http: http, address: address, token: "", device: device)
-        let platform = device?.kind ?? "iphone"
-        let paired = try await open.pair(code: code, name: device?.name ?? deviceName, platform: platform)
-        secrets.set(SecretKey.orbitalDeviceKey, paired.key)
-        secrets.set(SecretKey.orbitalToken, nil)   // con v2, el token del túnel ya no le sirve al iPhone (K1-13)
-        orbitalAuth.clear()
+        let name = rememberDeviceName(name)
+        let old = secrets.get(SecretKey.orbitalDeviceKey)
+        let paired = try await open.pair(code: code, name: name, platform: platform, replacing: old)
+        try adopt(paired)
         try await connectOrbital(address: address, token: nil)
         return paired.tvName
     }
 
+    /// La llave nueva al llavero (solo de este aparato); el token del túnel ya no le sirve (K1-13). Si el llavero no la acepta,
+    /// no se borra nada (TEC-5).
+    func adopt(_ paired: OrbitalPairResult) throws {
+        guard secrets.store(SecretKey.orbitalDeviceKey, paired.key) else { throw OrbitalRemote.Failure.refused(Self.keychainLine) }
+        secrets.set(SecretKey.orbitalToken, nil)
+        secrets.set(SecretKey.orbitalTVID, paired.tvID.isEmpty ? nil : paired.tvID)   // la TV con que se acaba de emparejar
+        if !paired.tvName.isEmpty { kv.set(Self.tvNameKey, data: Data(paired.tvName.utf8)) }
+        orbitalAuth.clear()
+    }
+    static let keychainLine = "No pude guardar la conexión en este aparato. Inténtalo otra vez."
+
     /// Lo que leyó la cámara o el enlace que abrió la app, v1 o v2. Devuelve lo que se trajo de tu Orbital («TMDB», «Trakt»).
     @discardableResult
-    public func pair(_ link: OrbitalPairing) async throws -> [String] {
+    public func pair(_ link: OrbitalPairing, name: String? = nil) async throws -> [String] {
         switch link {
         case .token(let address, let token):
             secrets.set(SecretKey.orbitalDeviceKey, nil)   // un código v1: la TV es de antes de las llaves
             orbitalAuth.clear()
             return try await connectOrbital(address: address, token: token)
         case .code(let address, let code):
-            try await pairOrbital(address: address, code: code)
+            try await pairOrbital(address: address, code: code, name: name)
             return []
         }
     }

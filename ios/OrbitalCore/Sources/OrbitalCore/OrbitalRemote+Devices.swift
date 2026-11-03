@@ -40,21 +40,26 @@ public struct OrbitalPairedDevice: Sendable, Equatable, Identifiable {
     public var pairedAt: Date?, seen: Date?
     /// Es este iPhone.
     public var isThis: Bool
-    public init(id: String, name: String, platform: String, pairedAt: Date? = nil, seen: Date? = nil, isThis: Bool = false) {
+    /// CX4-A · quién lo invitó («iPhone de Fernando»), si entró con una invitación.
+    public var invitedBy: String?
+    public init(id: String, name: String, platform: String, pairedAt: Date? = nil, seen: Date? = nil, isThis: Bool = false, invitedBy: String? = nil) {
         self.id = id; self.name = name; self.platform = platform; self.pairedAt = pairedAt; self.seen = seen; self.isThis = isThis
+        self.invitedBy = invitedBy
     }
 
     static func parse(_ json: JSON) -> OrbitalPairedDevice? {
         guard let id = json["device_id"]?.nonEmptyString else { return nil }
         return OrbitalPairedDevice(id: id, name: json["name"]?.nonEmptyString ?? id, platform: json["platform"]?.string ?? "",
                                    pairedAt: OrbitalRemote.date(json["paired_at"]), seen: OrbitalRemote.date(json["seen"]),
-                                   isThis: json["this"]?.bool ?? false)
+                                   isThis: json["this"]?.bool ?? false, invitedBy: json["invited_by"]?.nonEmptyString)
     }
 }
 
 /// Lo que contestó la TV al emparejar. La llave no se enseña al imprimirlo.
 public struct OrbitalPairResult: Sendable, Equatable, CustomStringConvertible {
     public var deviceID: String, key: String, tvName: String
+    /// TEC-30 · el id de la TV con que se emparejó (16 hex); vacío en una TV de antes.
+    public var tvID = ""
     public var description: String { "OrbitalPairResult(deviceID: \(deviceID), tvName: \(tvName), key: •••)" }
 }
 
@@ -67,6 +72,12 @@ public struct OrbitalTVDebrid: Sendable, Equatable {
 extension OrbitalRemote {
     /// La frase tranquila (con «Escanear»): la TV ya reparte llaves y este aparato no tiene la suya, o la TV lo quitó.
     public static let rescanLine = "Vuelve a escanear el código de tu TV"
+    /// TEC-30 · la TV se reinstaló o es otra: no «te quitó» (eso asusta y es falso).
+    public static let newTVLine = "Tu TV es nueva: vuelve a escanear su código"
+    /// CX5 · 403 al quitar otro aparato desde uno que no es el iPhone.
+    public static let removeOthersLine = "Solo tu iPhone o la TV pueden quitar otro aparato."   // las palabras del contrato
+    /// CX4-A · 403 al pedir una invitación desde algo que no es un iPhone.
+    public static let inviteOnlyIPhoneLine = "Solo tu iPhone puede invitar a tu iPad."
     /// 429: la TV pidió esperar (tope por hora). En palabras, no una pantalla de error.
     public static let waitLine = "Tu Orbital pidió esperar un poco: demasiados intentos."
 
@@ -90,6 +101,7 @@ extension OrbitalRemote {
         let failure: Failure = switch JSON.parse(response.data)?["code"]?.string ?? JSON.parse(response.data)?["detail"]?["code"]?.string {
         case "device_key_required": .needsKey
         case "device_removed": .removed
+        case "device_unknown": .unknownTV
         default: .badToken
         }
         if failure != .badToken { authProblem?(failure) }
@@ -98,12 +110,15 @@ extension OrbitalRemote {
 
     // MARK: Emparejar (sin token: el código es la prueba)
 
-    /// `POST /api/devices/pair` con el código del QR v2, el nombre de este aparato (≤ 60) y su plataforma.
-    public func pair(code: String, name: String, platform: String) async throws -> OrbitalPairResult {
+    /// `POST /api/devices/pair` con el código del QR v2 (o de la invitación de tu iPhone), el nombre de este aparato (≤ 60) y
+    /// su plataforma. `replacing` (TEC-32): la llave que este aparato tenía, en `Authorization`, para que la TV reemplace su
+    /// renglón en vez de sumar otro de los 10.
+    public func pair(code: String, name: String, platform: String, replacing oldKey: String? = nil) async throws -> OrbitalPairResult {
         guard let base else { throw Failure.notConfigured }
         let body = JSON.object(["code": .string(code), "name": .string(String(name.prefix(60))), "platform": .string(platform)]).serialized()
-        let request = HTTPRequest(url: base.appendingPathComponent("api/devices/pair"), method: "POST",
-                                  headers: ["Content-Type": "application/json", "Cache-Control": "no-store"], body: body, timeout: 12)
+        var headers = ["Content-Type": "application/json", "Cache-Control": "no-store"]
+        if let oldKey, OrbitalDeviceKey.isValid(oldKey) { headers["Authorization"] = "Bearer \(oldKey)" }
+        let request = HTTPRequest(url: base.appendingPathComponent("api/devices/pair"), method: "POST", headers: headers, body: body, timeout: 12)
         let response: HTTPResponse
         do { response = try await http.send(request) } catch { throw Failure.unreachable }
         let json = JSON.parse(response.data)
@@ -112,7 +127,8 @@ extension OrbitalRemote {
             guard let key = json?["key"]?.string, let id = OrbitalDeviceKey.deviceID(of: key) else {
                 throw Failure.refused("Tu TV contestó algo que no entiendo. Vuelve a escanear el código.")
             }
-            return OrbitalPairResult(deviceID: json?["device_id"]?.nonEmptyString ?? id, key: key, tvName: json?["tv_name"]?.nonEmptyString ?? "")
+            return OrbitalPairResult(deviceID: json?["device_id"]?.nonEmptyString ?? id, key: key, tvName: json?["tv_name"]?.nonEmptyString ?? "",
+                                     tvID: json?["tv_id"]?.nonEmptyString ?? "")
         case 404:
             // Cualquier falla del código (vencido, ya usado, otro) es 404. Una TV de antes tampoco tiene la ruta: mismo arreglo.
             throw Failure.refused(json?["detail"]?.string ?? "Este código ya no sirve")
