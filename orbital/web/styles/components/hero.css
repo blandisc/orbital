@@ -103,6 +103,7 @@
 /* Si no cabe (pantalla baja, letra grande), cede el logo y no los botones; lo demás siempre mide lo mismo, así que se encoge
    igual en todos los títulos y nada brinca. Las pestañas van fuera del bloque: este toma solo lo que queda. */
 .hero--steady .hero__content { flex: 0 1 auto; max-height: none; }
+.hero--steady .hero__content > .hero__title { flex-shrink: 1; min-height: calc(var(--type-hero) * var(--leading-tight)); } /* sin logo, el nombre cede igual */
 .hero--steady .hero__title { height: 6rem; margin: var(--space-3) 0 var(--space-4); display: -webkit-box; align-content: end; }
 .hero--steady .hero__facts:empty::before { content: "\200b"; } /* sin datos: el renglón queda, vacío */
 :is([data-text-size="large"], [data-text-size="xlarge"]) .hero--steady :is(.hero__logo, .hero__title) { height: 5rem; margin: var(--space-2) 0; }

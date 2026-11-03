@@ -38,7 +38,8 @@ export function createHero({ onAction, onKind = null }) {
     description.classList.remove("hero__description--short");
     title.classList.remove("hero__title--short");
     description.style.display = "";
-    const overflows = () => content.scrollHeight > content.clientHeight + 1;
+    // También si el nombre (sin logo) cedió alto y ya no le caben sus renglones: entonces va en uno.
+    const overflows = () => content.scrollHeight > content.clientHeight + 1 || (!title.hidden && title.scrollHeight > title.clientHeight + 1);
     if (!overflows()) return;
     description.classList.add("hero__description--short");
     if (!overflows()) return;
