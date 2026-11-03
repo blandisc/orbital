@@ -213,7 +213,7 @@ struct PosterFan: View {
 }
 
 /// «La temporada»: la de ahora (o la siguiente en llegar) en grande, con su color, cuándo, su frase, sus tres más vistos en
-/// abanico. Toda la tarjeta abre la colección (la flecha junto al nombre).
+/// abanico. Toda la tarjeta abre la colección (sin flecha ni cápsula).
 struct SeasonFeature: View {
     let name: String
     let blurb: String
@@ -225,9 +225,9 @@ struct SeasonFeature: View {
         HStack(alignment: .center, spacing: DS.Space.s4) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Eyebrow(text: when, reason: true)
-                // Toda la tarjeta abre la colección: la flecha va junto al nombre, sin cápsula «Ver la colección»
-                // (Fernando, 2 nov 2026, H3: como el «Ver todo» de los encabezados).
-                Text(verbatim: name).withTitleChevron().recipe(.title).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
+                // Toda la tarjeta abre la colección, sin cápsula «Ver la colección» (H3) y sin flecha: la temporada de ahora es la
+                // portada de la sección, no una fila (Fernando, 2 nov 2026).
+                Text(verbatim: name).recipe(.title).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
                 Text(verbatim: blurb).recipe(.footnote, color: DS.textMuted).lineLimit(2)
             }
             Spacer(minLength: 0)

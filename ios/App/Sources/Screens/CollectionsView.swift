@@ -147,7 +147,7 @@ struct CollectionGridView: View {
         case .genre:
             guard let genre = Tmdb.genres.first(where: { $0.slug == route.id }) else { return nil }
             let name = Strings.tr(genre.title, language: language)
-            guard let chart = collections.model.genreCharts[genre.slug] else { return (Text(verbatim: name), nil, DS.Collections.studio) }
+            guard let chart = collections.model.genreCharts[genre.slug] else { return (Text(verbatim: name), nil, DS.Collections.genre(genre.slug)) }
             let asked = String(chart.asked), used = String(chart.year)
             let meta: Text = switch chart.basis {
             case .votes: Text("Las mejor calificadas del año")
@@ -155,7 +155,7 @@ struct CollectionGridView: View {
             case .previous: Text("Pocas de \(asked): las mejor calificadas de \(used)")
             case .previousPopular: Text("Pocas de \(asked): lo más visto en \(used)")
             }
-            return (Text("Lo mejor de \(name) en \(used)"), meta, DS.Collections.studio)
+            return (Text("Lo mejor de \(name) en \(used)"), meta, DS.Collections.genre(genre.slug))
         default: return nil
         }
     }
