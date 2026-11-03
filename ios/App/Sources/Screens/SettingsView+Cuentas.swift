@@ -39,14 +39,6 @@ extension SettingsView {
         .listRowBackground(DS.surface)
     }
 
-    /// «2 bajando» o nada.
-    private var requestsValue: Text? {
-        let requests = env.services.debridRequests
-        let _ = requests.track()
-        let active = requests.active.count
-        return active == 0 ? nil : Text("\(active) bajando")
-    }
-
     private var letterboxdValue: Text {
         let model = AppEnvironment.shared.letterboxd
         let _ = model.track()
@@ -54,34 +46,17 @@ extension SettingsView {
         return model.importedAt != nil ? Text("Tu archivo") : Text("No conectado")
     }
 
-    /// Real-Debrid: cómo está (días, vencimiento), «Renovar», «Cambiar clave» y «Quitar»; sin clave, el campo para pegarla.
+    /// Real-Debrid: un renglón con cuánto le queda (ámbar desde 14 días antes) que lleva a su página (D1).
     @ViewBuilder private var debridSection: some View {
         let model = debrid.model
         Section {
-            if let status = model.status {
-                LabeledContent {
-                    DebridWords.text(status).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                } label: {
-                    Text(verbatim: status.isPremium ? "\(status.username) · Premium" : status.username).foregroundStyle(DS.text)
-                }
-                if model.keyCameFromImport {
-                    Text("Tomé tu clave de Real-Debrid de tu Torrentio").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                }
-                Link(destination: model.renewURL) { Label("Renovar", systemImage: "arrow.up.right") }
-                // D3: lo que Real-Debrid está bajando para ti (tus pedidos), con «Cancelar».
-                NavigationLink { DebridRequestsView() } label: {
-                    SettingsRow(title: "Tus pedidos", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: requestsValue)
-                }
-                .accessibilityIdentifier("settings-debrid-requests")
-                NavigationLink { page("Cambiar clave") { Section { DebridKeyField(debrid: model) }.listRowBackground(DS.surface) } } label: {
-                    Text("Cambiar clave")
-                }
-                Button("Quitar", role: .destructive) { Task { await model.remove() } }
-            } else {
-                DebridKeyField(debrid: model)
-                Link(destination: model.tokenURL) { Label(String(localized: "Sacar tu clave en real-debrid.com/apitoken"), systemImage: "arrow.up.right") }
+            NavigationLink { DebridAccountView(debrid: model) } label: {
+                SettingsRow(title: "Real-Debrid", symbol: "externaldrive.badge.checkmark",
+                            tint: model.status.map(DebridAccountView.isWarning) == true ? DS.warning : DS.ListTint.calendar,
+                            value: model.status.map { DebridWords.short($0) } ?? Text("Falta tu clave"))
             }
-        } header: { Text(verbatim: "Real-Debrid") } footer: { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. No se renueva solo.") }
+            .accessibilityIdentifier("settings-debrid")
+        } footer: { Text("De ahí salen los videos. Tu cuenta, tu clave y tus pedidos.") }
         .listRowBackground(DS.surface)
         .task { await model.load(force: true) }
     }

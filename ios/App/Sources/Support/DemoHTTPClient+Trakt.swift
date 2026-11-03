@@ -57,12 +57,17 @@ extension DemoHTTPClient {
 
     /// Real-Debrid de mentira (`-demo-rd`): `GET /rest/1.0/user` con la cuenta que se pidió.
     static func realDebridDemo(_ url: URL) -> HTTPResponse? {
+        // D4: canjear puntos (`-demo-rd-points`): contesta la demo, nada sale a Real-Debrid.
+        if url.host == "api.real-debrid.com", url.path.hasSuffix("/settings/convertPoints"), Demo.realDebrid != nil {
+            return HTTPResponse(status: Demo.rdPoints >= 1000 ? 204 : 503, data: Data())
+        }
         guard url.host == "api.real-debrid.com", url.path.hasSuffix("/user"), let state = Demo.realDebrid else { return nil }
         let days: Double = switch state { case "soon": 3; case "expired": -2; case "free": 0; default: Double(state) ?? 143 }
         guard state != "invalid" else { return HTTPResponse(status: 401, data: JSON.object(["error": "bad_token", "error_code": 8]).serialized()) }
         let expires = ISO8601DateFormatter().string(from: Date().addingTimeInterval(days * 86_400))
         let premium = state == "free" || days < 0 ? 0 : Int(days * 86_400)
-        let user: JSON = ["id": 1, "username": "demo", "type": premium > 0 ? "premium" : "free", "premium": .int(premium), "expiration": .string(expires)]
+        let user: JSON = ["id": 1, "username": "demo", "type": premium > 0 ? "premium" : "free", "premium": .int(premium), "expiration": .string(expires),
+                          "points": .int(Demo.rdPoints)]
         return HTTPResponse(status: 200, data: user.serialized())
     }
 
