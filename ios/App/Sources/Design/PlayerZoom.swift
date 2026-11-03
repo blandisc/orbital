@@ -33,7 +33,9 @@ extension View {
     func playerZoomSource(_ id: PlayerZoomID) -> some View { modifier(PlayerZoomSource(id: id)) }
 
     /// El reproductor crece desde la tarjeta que se tocó (`source`); sin tarjeta (Siri, un aviso, la ruleta), entra como siempre.
+    /// El zoom de iOS deja cerrarlo arrastrando o pellizcando: se apaga, solo se sale con la ✕ (Fernando, 3 nov 2026: «está
+    /// excesivamente sensible… te saca del reproductor», y el pellizco de los modos de imagen lo cerraba).
     @ViewBuilder func playerZoom(from source: PlayerZoomID?, in zoom: Namespace.ID) -> some View {
-        if let source { navigationTransition(.zoom(sourceID: source, in: zoom)) } else { self }
+        if let source { navigationTransition(.zoom(sourceID: source, in: zoom)).interactiveDismissDisabled() } else { interactiveDismissDisabled() }
     }
 }

@@ -83,7 +83,7 @@ struct SimpsonsRoulette: View {
             finished = true
             var quiet = Transaction(); quiet.disablesAnimations = true
             withTransaction(quiet) { dismiss() }
-        }) { request in PlayerScreen(request: request) }
+        }) { request in PlayerScreen(request: request).interactiveDismissDisabled() }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Un Simpson al azar"))
     }
