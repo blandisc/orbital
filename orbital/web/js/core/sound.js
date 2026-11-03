@@ -1,9 +1,8 @@
 /**
  * Efectos de sonido sintetizados con Web Audio (sin archivos): una sola familia (el mismo «clic de cristal»), ordenada por
- * tono, donde cada sonido dice una cosa (docs/sistema-de-diseno.md · Sonido y vibración). Elegir y lograr algo también se
- * sienten en el mando (haptics.js), cada uno con su pulso.
+ * tono, donde cada sonido dice una cosa (docs/sistema-de-diseno.md · Sonido). Orbital no hace vibrar el mando al navegar
+ * (Fernando, 2 nov 2026): cansaba.
  */
-import { rumble } from "./haptics.js";
 import { storage } from "./storage.js";
 
 const KEY = "orbital.sound";
@@ -21,8 +20,6 @@ export const TONES = {
   edge: [[210, 0, .06, .05, 170]], // el borde: un golpe sordo y corto (antes, el de error: sonaba a que algo falló)
   success: [[660, 0, .08, .045, 680], [990, .07, .18, .045, 1000]], // lo logrado (guardado, calificado, vista): dos notas que suben
 };
-// El pulso que acompaña a cada sonido (aunque el sonido esté apagado: se apagan por separado en Ajustes).
-const FEEL = { select: "tap", success: "success" };
 const MOVE_GAP = 70; // ms: al mantener una flecha, un clic cada tanto (no una ráfaga que zumba)
 
 let ctx;
@@ -49,7 +46,6 @@ export const sound = {
     if (name !== "move" && name === lastName && at - lastAt < ECHO_MS) return; // el mismo, dos veces seguidas: una
     lastName = name;
     lastAt = at;
-    if (FEEL[name]) rumble(FEEL[name]);
     if (!this.enabled) return;
     if (name === "move") {
       const now = performance.now();

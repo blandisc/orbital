@@ -634,7 +634,6 @@ export const SETTING_VALUES = {
   safe_area: [[0, "Sin margen"], [2, "Pequeño"], [4, "Normal"], [6, "Grande"]],
   reduce_motion: [[false, "No"], [true, "Sí"]],
   sounds: [[true, "Sí"], [false, "No"]],
-  haptics: [[true, "Sí"], [false, "No"]],
   voice_tips: [[true, "Sí"], [false, "No"]],
   game_idle_minutes: [[30, "30 min"], [60, "1 hora"], [120, "2 horas"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
@@ -681,7 +680,7 @@ function edgeAware(key, value, step, page) {
 /** Un ícono por ajuste (antes, todos los de la página con el mismo). */
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
-  reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
+  reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", game_idle_minutes: "gamepad",
   video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide",
   game_mode: "memory", game_resolution: "hd",
 };
@@ -702,7 +701,6 @@ const SETTING_TEXT = {
   safe_area: ["Márgenes de la TV", "Si la tele corta los bordes, súbelo."],
   reduce_motion: ["Reducir movimiento", "Cambios directos, sin deslizar ni acercar."],
   sounds: ["Sonidos", "Los sonidos al moverte y elegir."],
-  haptics: ["Vibración del mando", "El mando vibra en los topes y al elegir."],
   screensaver_minutes: ["Protector de pantalla", "El mosaico de Explorar después de ese rato sin usarla."],
   voice_tips: ["Frases en pantalla", "Al pedir algo por voz, el aviso dice qué más puedes decir en ese momento."],
 };
@@ -835,7 +833,7 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
     ] };
     case "voice": return { title: "Tele y voz", lead: "La tele se prende sola; tú le hablas desde el iPhone, Alexa o Siri.", options: voiceRows(settings, voice, now) };
     case "display": return { title: "Pantalla y sonido", lead: "Lo que se ve y se oye en la consola.", options: [
-      row("text_size"), row("safe_area"), row("reduce_motion"), row("sounds"), row("haptics"), row("screensaver_minutes"),
+      row("text_size"), row("safe_area"), row("reduce_motion"), row("sounds"), row("screensaver_minutes"),
     ] };
     case "accounts": return { title: "Cuentas", lead: "Lo que Orbital usa de afuera.", options: accountRows(settings) };
     case "system": return { title: "Sistema", lead: "Lo técnico, fuera del camino de todos los días.", options: [

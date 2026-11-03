@@ -169,7 +169,7 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
 
 /**
  * Conecta teclado, rueda y mandos. onModality avisa si el usuario pasó a mando o teclado.
- * onAction(acción, { repeat }) — `repeat`: viene de mantener el botón (sin rebote ni vibración).
+ * onAction(acción, { repeat }) — `repeat`: viene de mantener el botón (sin rebote).
  * Mientras `typing()` es verdadero (el teclado de Buscar), las letras van a onText y no son atajos.
  */
 /**

@@ -133,10 +133,10 @@ test("JavaScript no pone mayúsculas a un texto entero (salvo logotipos document
   assert.deepEqual(problems, [], `Mayúsculas en JS (documenta la excepción):\n${problems.join("\n")}`);
 });
 
-test("movimiento: ni el JS ni el CSS escriben a mano tiempos o curvas (salvo el temblor del mando)", () => {
+test("movimiento: ni el JS ni el CSS escriben a mano tiempos o curvas", () => {
   // Web Animations (`.animate(…, { duration: 620 })`) no pasa por el CSS: sus tiempos y curvas salen de los tokens (core/motion.js · flight).
   const problems = [];
-  for (const file of JS_FILES.filter((f) => !f.endsWith("haptics.js"))) {
+  for (const file of JS_FILES) {
     read(file).split("\n").forEach((line, i) => {
       if (/\b(duration|delay)\s*:\s*\d|cubic-bezier\(/.test(line)) problems.push(`${file.slice(WEB.length + 1)}:${i + 1} ${line.trim().slice(0, 110)}`);
     });

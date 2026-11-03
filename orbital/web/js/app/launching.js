@@ -3,7 +3,6 @@
  * la elegida). Si hay un juego abierto que se cerraría, primero se pregunta.
  */
 import { api } from "../core/api.js";
-import { rumble } from "../core/haptics.js";
 import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
 import { beforePlayMenu, keepBothMenu, switchMenu as closeAndOpenMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
@@ -19,7 +18,6 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   function offlineBlock(title) {
     if (state.online !== false) return false;
     sound.play("error");
-    rumble("edge");
     ui.toast.show("Sin internet", { error: true, detail: `${title || "Esto"} necesita conexión · Tus juegos siguen aquí` });
     return true;
   }
@@ -44,7 +42,6 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (!local && offlineBlock(title)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
-    rumble("launch");
     state.launchingId = "media:player";
     const native = local || own || (state.player === "orbital" && state.stremioLinked);
     ui.launch.show({ ...(item || {}), title }, native ? "" : "Se abre en Stremio");
@@ -109,7 +106,6 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (offlineBlock(`El tráiler de ${title}`)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
-    rumble("launch");
     state.launchingId = "media:player";
     state.launchingTitle = title;
     state.launchLockedUntil = Infinity; // mientras el servidor busca el video no se abre otra cosa encima
@@ -147,7 +143,6 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     if (running) return openMenu(switchMenu({ running, title: channel.name, command: { type: "tv", channel, category } }));
     if (!takeLaunchLock(state)) return;
     sound.play("open");
-    rumble("launch");
     state.launchingId = "media:player";
     state.launchingTitle = channel.name;
     // Con un canal ya al aire se sintoniza en su mismo reproductor y solo se trae su ventana: sin pantalla de carga.
@@ -197,7 +192,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       }
       return;
     }
-    if (inFlight) return rumble("edge"); // ya se está abriendo algo: un «no» suave, no silencio
+    if (inFlight) return sound.play("error"); // ya se está abriendo algo: un «no» suave, no silencio
     if (item.source === "search") return openSearch();
     // Seguir viendo: A pone el episodio en el que ibas, directo (como Netflix). Y abre la ficha.
     const watchExtra = item.extra;
@@ -220,7 +215,6 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     state.launchingId = item.id;
     takeLaunchLock(state);
     sound.play("open");
-    rumble("launch");
     const name = runnerName(item, runner);
     const from = item.id === current()?.id ? focusedRect() : null;
     const art = ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });

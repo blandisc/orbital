@@ -1,6 +1,6 @@
 /** Comandos de la consola: energía, ventanas, ajustes, mandos, emuladores, actualizar, capturas y Alexa.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, rumble, runnerMenu, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
+export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, foldersMenu, loadLibrary, memoryMenu, nested, openMenu, openQuick, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, renderHints, resumeRunning, runnerMenu, setupMenu, sound, state, stillThere, stopMenu, tourMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, windowsMenu }) {
   return {
     "stop": async (command, context) => {
       await api.stop();
@@ -52,7 +52,6 @@ export function systemCommands({ alexaMenu, api, applySettings, capturesMenu, cl
     "setting": async (command, context) => {
       if (command.edge) { // ◀/▶ en el tope: no cambia nada, y se nota
         sound.play("error");
-        rumble("edge");
       } else {
         applySettings(await api.setSettings({ [command.key]: command.value }));
         sound.play("select");

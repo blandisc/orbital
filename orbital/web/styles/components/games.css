@@ -54,5 +54,8 @@
 .games--away .games__logo { max-width: 16rem; max-height: 4.2rem; }
 .games--away .games__title { font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--type-section-tracking); -webkit-line-clamp: 1; }
 .games--away .games__actions { margin-top: 0; }
+/* Entre fila y fila, el aire de un nombre (Fernando, 2 nov: «el título del juego se lo come la fila de abajo»): con el de
+   browse.css, el nombre de la enfocada quedaba a 1 px de las portadas de abajo. */
+.games .games__grid { row-gap: var(--space-14); }
 /* Bajo la portada enfocada, solo su nombre: la consola ya la dice el selector de arriba (y su renglón se encimaba con la fila de abajo). */
 .games .card--name-on-focus .card__caption > span { display: none; }

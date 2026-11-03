@@ -4,7 +4,7 @@
  * Con solo pedir los mandos una vez (getGamepads o escuchar gamepadconnected), Edge deja un hilo leyendo el hardware
  * para siempre: ~14 % de un núcleo con Orbital quieta. Ese hilo sigue mientras exista el documento que los pidió, así que
  * se piden desde un iframe vacío: al soltarlo (Orbital quieta) el hilo se apaga, y al volver a usarla se arma otro.
- * Todo lo que lee el mando (input.js, la vibración, el aviso de los controles Legion) pasa por aquí.
+ * Todo lo que lee el mando (input.js, el aviso de los controles Legion) pasa por aquí.
  */
 let frame = null;
 const connected = new Set();

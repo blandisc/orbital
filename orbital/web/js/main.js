@@ -7,7 +7,6 @@ import { markFocus } from "./core/focus-mark.js";
 import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
-import { haptics, rumble } from "./core/haptics.js";
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
@@ -179,7 +178,7 @@ const ui = {
     onMore: (item) => openMenu(forYouMenu(item, { trakt: traktLinked() })),
     onDecide: () => openDecide(),
     onFocus: (item) => forYouFocused(item),
-    onEdge: () => { sound.play("edge"); rumble("edge"); },
+    onEdge: () => sound.play("edge"),
     covered: () => !!topOverlay() || ui.sheet.isOpen || ui.launch.visible, // con una capa encima, el mosaico no entra en ambiente
   }),
   tv: createTv({
@@ -279,7 +278,7 @@ const ui = {
   calendar: createCalendar({
     load: (month) => api.forYouCalendar(month),
     onPick: (item) => openTitle(item),
-    onEdge: () => { sound.play("edge"); rumble("edge"); ui.toast.show("El calendario llega hasta dos años"); },
+    onEdge: () => { sound.play("edge"); ui.toast.show("El calendario llega hasta dos años"); },
     onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
@@ -465,11 +464,10 @@ function renderHints() {
 function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   const next = clampFocus(state.rows, r, c);
   const moved = next.r !== state.focus.r || next.c !== state.focus.c;
-  // Al final de la fila: rebota y vibra solo en la pulsación, no en cada repetición al mantener.
+  // Al final de la fila: rebota y suena solo en la pulsación, no en cada repetición al mantener.
   if (!moved && edge && !silent && !repeat) {
     ui.shelf.bump(edge);
     sound.play("edge");
-    rumble("edge");
   }
   state.focus = next;
   const rowId = state.rows[next.r]?.id;
@@ -562,7 +560,6 @@ function applySettings(settings) {
   root.style.setProperty("--safe-area", `${settings.safe_area ?? 4}`);
   root.dataset.motion = settings.reduce_motion ? "reduce" : "full";
   sound.enabled = settings.sounds !== false;
-  haptics.enabled = settings.haptics !== false;
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
   ui.settings.update({ settings }); // Ajustes abierto: el valor nuevo se ve en su lugar
@@ -634,7 +631,7 @@ function handleForYou(action, { repeat = false } = {}) {
     else if (action === "pageleft" || action === "pageright" || action === "alt") sound.play("open");
     return renderHints();
   }
-  if (handled === "edge") { if (!repeat) { sound.play("edge"); rumble("edge"); } return; }
+  if (handled === "edge") { if (!repeat) sound.play("edge"); return; }
   if (handled === "exit") return goToSection("home", 1);
   switch (action) {
     case "prevsection": return stepSection(-1);
@@ -684,7 +681,7 @@ function handleTv(action, { repeat = false } = {}) {
     sound.play(action === "pageleft" || action === "pageright" ? "open" : "move");
     return renderHints();
   }
-  if (moved === "edge") { if (!repeat) rumble("edge"); return; }
+  if (moved === "edge") return;
   if (moved === "exit") return goToSection("home", -1);
   switch (action) {
     case "select": return tvActivate(ui.tv.current);
@@ -692,7 +689,7 @@ function handleTv(action, { repeat = false } = {}) {
     case "options": { // Y en uno de «Tus canales»: ver la serie o quitarlo (con Trakt); en los demás, nada
       const channel = ui.tv.current?.channel;
       const mine = channel?.categories?.includes("Tus canales") && String(channel.id).startsWith("mine:") ? channel.id.slice(5) : null;
-      if (!mine) { sound.play("error"); return rumble("edge"); }
+      if (!mine) return sound.play("error");
       return openMenu(mineChannelMenu(channel.name, mine, traktLinked()));
     }
     case "prevsection": return stepSection(-1); // LB/RB: siempre la sección de al lado
@@ -749,7 +746,7 @@ function gamePageAction(action, item) {
   if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked(), page: true }));
   if (action === "alt") {
     const alt = alternativeRunner(item);
-    return alt ? launch(item, alt.id) : rumble("edge");
+    return alt ? launch(item, alt.id) : sound.play("error");
   }
   return launch(item);
 }
@@ -770,8 +767,7 @@ function gamesActivate(target, action = "select") {
   if (action === "alt") {
     const alt = alternativeRunner(item);
     if (alt) return launch(item, alt.id);
-    sound.play("error");
-    return rumble("edge");
+    return sound.play("error");
   }
   return launch(item);
 }
@@ -783,7 +779,7 @@ function handleGames(action, { repeat = false } = {}) {
     sound.play(action === "pageleft" || action === "pageright" ? "open" : "move");
     return renderHints();
   }
-  if (moved === "edge") { if (!repeat) rumble("edge"); return; }
+  if (moved === "edge") return;
   if (moved === "exit") return goToSection("home", -1);
   const target = ui.games.current;
   switch (action) {
@@ -791,8 +787,7 @@ function handleGames(action, { repeat = false } = {}) {
     case "alt": return gamesActivate(target, "alt");
     case "options":
       if (target?.kind === "game") return gamesActivate(target, "options");
-      sound.play("error");
-      return rumble("edge");
+      return sound.play("error");
     case "prevsection": return stepSection(-1);
     case "nextsection": return stepSection(1);
     case "search": return openSearch();
@@ -840,11 +835,11 @@ function homeActivate(target, action = "select") {
     if (target.unhide) return runCommand({ type: "unhide-all" });
     return target.setup ? runCommand({ type: "setup" }) : goToSection("games", 1);
   }
-  if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
-  if (target.kind === "alexa") return action === "select" ? runCommand({ type: "alexa-menu" }) : rumble("edge");
+  if (target.kind === "search") return action === "select" ? openSearch() : sound.play("error");
+  if (target.kind === "alexa") return action === "select" ? runCommand({ type: "alexa-menu" }) : sound.play("error");
   if (target.kind === "console") {
     if (action === "alt" && target.console.last) return launch(target.console.last);
-    if (action !== "select") { sound.play("error"); return rumble("edge"); }
+    if (action !== "select") return sound.play("error");
     wantedConsole = target.console.id;
     ui.games.openConsole(target.console.id);
     return goToSection("games", 1);
@@ -855,8 +850,7 @@ function homeActivate(target, action = "select") {
     if (isWatchable(item)) return openTitle(item);
     const alt = alternativeRunner(item);
     if (alt) return launch(item, alt.id);
-    sound.play("error");
-    return rumble("edge");
+    return sound.play("error");
   }
   return launch(item);
 }
@@ -919,7 +913,7 @@ function stepSection(delta) {
   const i = list.findIndex((s) => s.id === state.section);
   const next = list[i + delta];
   if (next) goToSection(next.id, delta);
-  else rumble("edge");
+  else sound.play("edge");
 }
 
 let libraryRetry = 0;
@@ -1774,7 +1768,7 @@ const nested = (context) => (context ? { stack: [...context.stack, { menu: conte
 let commandTable = null;
 function commands() {
   if (commandTable) return commandTable;
-  const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, rumble, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
   return commandTable;
 }
@@ -1987,7 +1981,6 @@ function handleAction(action, { repeat = false } = {}) {
       cancelLaunch();
     } else if (action === "select") {
       sound.play("error"); // A no hace nada aquí: que se note (la pantalla dice «B Cancelar»)
-      rumble("edge");
     }
     return;
   }
@@ -2045,7 +2038,7 @@ function handleRows(action, { repeat = false } = {}) {
       // Películas y series: LT/RT pasan de grupo en grupo (Plataformas, Premios, Estudios…), como de consola en Juegos.
       if (state.section === "media" && state.rows.some((row) => row.group)) {
         const to = groupJump(state.rows, r, action === "pageright" ? 1 : -1);
-        if (to == null) { if (!repeat) rumble("edge"); return; }
+        if (to == null) return;
         sound.play("move");
         return setFocus(to, state.memory[state.rows[to].id] ?? 0);
       }
@@ -2062,11 +2055,10 @@ function handleRows(action, { repeat = false } = {}) {
       if (isWatchable(item)) return openTitle(item); // X = la ficha, en todas las pantallas
       const alt = alternativeRunner(item);
       if (alt) return launch(item, alt.id);
-      sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio
-      return rumble("edge");
+      return sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio
     }
     case "options":
-      if (item?.source === "genre" || item?.source === "collection") { sound.play("error"); return rumble("edge"); } // una lista no tiene opciones
+      if (item?.source === "genre" || item?.source === "collection") return sound.play("error"); // una lista no tiene opciones
       if (item?.download) return openMenu(downloadMenu(item));
       return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
     case "menu":
@@ -2085,15 +2077,14 @@ function handleRows(action, { repeat = false } = {}) {
 function handleHome(action, { repeat = false } = {}) {
   const moved = ui.home.handle(action === "home" ? "back" : action);
   if (moved === true) { sound.play("move"); return renderHints(); }
-  if (moved === "edge") { if (!repeat) { ui.home.bump(action); rumble("edge"); } return; }
+  if (moved === "edge") { if (!repeat) ui.home.bump(action); return; }
   const target = ui.home.current;
   switch (action) {
     case "select": return homeActivate(target, "select");
     case "alt": return homeActivate(target, "alt");
     case "options":
       if (target?.kind === "item") return homeActivate(target, "options");
-      sound.play("error");
-      return rumble("edge");
+      return sound.play("error");
     case "prevsection": return stepSection(-1);
     case "nextsection": return stepSection(1);
     case "search": return openSearch();

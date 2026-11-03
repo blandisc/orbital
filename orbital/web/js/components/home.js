@@ -274,7 +274,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     return false;
   }
 
-  /** Ya no hay más hacia allá: lo enfocado se empuja un poco (con teclado o sin vibración no se notaba nada). */
+  /** Ya no hay más hacia allá: lo enfocado se empuja un poco (con teclado no se notaba nada). */
   function bump(direction) {
     const node = el.querySelector(`[data-focus-id="${focusId}"]`);
     if (!node || !["left", "right", "up", "down"].includes(direction)) return;

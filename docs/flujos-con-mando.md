@@ -141,7 +141,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 | Suspender, reiniciar, apagar | ☰ → Apagar. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
 | Tu consola | La primera vez (y en ☰ → Ajustes → Mantenimiento → Tu consola): qué encontró Orbital (Steam, emuladores, ES-DE, Stremio, reproductor, Alexa) y cómo resolver lo que falta | ✅ (nuevo) |
 | Conectar Stremio | ☰ → Ajustes → Cuentas → Stremio: correo y contraseña con el teclado en pantalla (Y muestra la contraseña, LT/RT cambian de campo). Ya no hace falta la PC | ✅ (nuevo) |
-| Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido y vibración, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |
+| Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |
 | Encender Orbital | Animación de arranque (planeta y órbitas) mientras se prepara la biblioteca; al volver de un juego, la interfaz "aterriza" | ✅ (nuevo) |
 | Vista de tareas de Windows | 3 dedos hacia arriba (panel o pantalla) | ⚠️ funciona con Orbital abierto, pero la Vista de tareas no se maneja con mando: mejor ☰ → Ventanas abiertas |
 

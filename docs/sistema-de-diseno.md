@@ -388,11 +388,9 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
   apretar a ver el foco (mediana menor a 100 ms) y cuántos cuadros tardan más de dos (menos del 10 %). Lo nuevo de movimiento pasa por
   ahí: si cuesta cuadros, no entra.
 
-**Sonido y vibración: un idioma** (`core/sound.js`, `core/haptics.js`). Una sola familia de «clic de cristal», ordenada por tono:
+**Sonido: un idioma** (`core/sound.js`). Una sola familia de «clic de cristal», ordenada por tono:
 `move` (el más corto), `select`, `back`, `open`, `menu`, `edge` (el borde: un golpe sordo; antes sonaba el de error), `success`
-(lo logrado: guardar en Mi lista, calificar, marcar vista, un canal nuevo: dos notas que suben) y `error`. Elegir y lograr también se
-sienten en el mando (`select` → `tap`, apenas; `success` → un pulso largo); el borde y abrir un juego ya vibraban. Sonido y vibración
-se apagan por separado en Ajustes.
+(lo logrado: guardar en Mi lista, calificar, marcar vista, un canal nuevo: dos notas que suben) y `error`. **El mando no vibra** al navegar ni al abrir algo (Fernando, 2 nov 2026: cansaba); solo cuando lo pides para saber qué jugador es (Jugadores, y al conectar un control). El sonido se apaga en Ajustes.
 
 **Capas**: toda capa nueva se funde en `--duration-base`, un panel lateral se desliza en `--duration-slow` y todo sale en `--duration-exit` (la ficha entra en `--duration-fast` a propósito: su arte aparece casi de inmediato).
 
