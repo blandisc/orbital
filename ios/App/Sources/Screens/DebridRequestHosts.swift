@@ -11,18 +11,24 @@ struct DebridRequestSheetHost: View {
     let name: String
     let since: String
     let status: DebridRequestStatus
+    var watchNow: (() -> Void)?
     let otherVersion: (() -> Void)?
     var openTitle: (() -> Void)?
+    var otherAccount = false
     let cancel: (() -> Void)?
     var explain: (() -> Void)?
     let close: () -> Void
     @State private var notificationsOff = false
     @State private var explaining = false
+    /// Tus descargas en Real-Debrid (IOS-9: el arreglo de «Muchas descargas activas»).
+    static let downloadsURL = URL(string: "https://real-debrid.com/torrents")!
 
     var body: some View {
         DebridRequestSheet(name: name, status: status, since: since, notificationsOff: notificationsOff,
-                           turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, otherVersion: otherVersion,
-                           openTitle: openTitle, cancel: cancel, explain: explain ?? { explaining = true }, close: close)
+                           turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, watchNow: watchNow, otherVersion: otherVersion,
+                           openTitle: openTitle, finished: DebridRequestWords.group(request.state) == .finished, otherAccount: otherAccount,
+                           manageDownloads: request.state == .tooMany && !otherAccount ? Self.downloadsURL : nil,
+                           cancel: cancel, explain: explain ?? { explaining = true }, close: close)
             .task { notificationsOff = await DebridRequestNotifier.permission() == .denied }
             .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }).presentationDetents([.large]) }
     }

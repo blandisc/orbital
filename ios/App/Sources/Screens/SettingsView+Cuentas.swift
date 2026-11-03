@@ -8,7 +8,9 @@ extension SettingsView {
     /// Lo que dice el renglón «Cuentas»: cuánto le queda a tu Real-Debrid, o que falta.
     var debridValue: Text {
         guard let status = debrid.model.status else { return Text("Falta Real-Debrid") }
-        return DebridModel.summary(status, now: Date()).state == .free ? Text("Cuenta gratuita") : DebridWords.short(status)
+        // IOS-17: «143 días» no dice de qué; «Real-Debrid · 143 días».
+        let value = DebridModel.summary(status, now: Date()).state == .free ? Text("Cuenta gratuita") : DebridWords.short(status)
+        return Text("\(Text(verbatim: "Real-Debrid")) · \(value)")
     }
 
     @ViewBuilder func accounts(_ model: SettingsModel) -> some View {

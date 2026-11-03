@@ -2,6 +2,7 @@ import Foundation
 import Network
 import OrbitalCore
 import UIKit
+import SwiftUI
 
 /// Espacio libre para lo que importa (descargas), según iOS.
 enum DiskSpace {
@@ -59,5 +60,14 @@ enum ThisDevice {
         let device = UIDevice.current
         return OrbitalRemote.Device(name: device.name, kind: device.userInterfaceIdiom == .pad ? "ipad" : "iphone",
                                     id: device.identifierForVendor?.uuidString ?? "")
+    }
+}
+
+/// IOS-12 · las frases con «este iPhone» que también ve la Mac (Real-Debrid: quitar tu clave, dónde se guarda, la copia de
+/// tus aparatos Apple). Una app de iPad en la Mac («Diseñada para iPad») se presenta como iPad, así que la variante del
+/// catálogo le diría «iPad»; aquí la palabra se elige en el código con `ThisDevice.platform`. `DeviceWordsOnMacTests` lo cuida.
+enum DeviceWords {
+    @MainActor static func text(_ key: LocalizedStringKey, mac: LocalizedStringKey) -> Text {
+        ThisDevice.platform == "mac" ? Text(mac) : Text(key)
     }
 }

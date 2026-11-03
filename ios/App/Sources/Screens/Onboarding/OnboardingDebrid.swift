@@ -88,7 +88,11 @@ struct DebridKeyField: View {
                 DSNotice(text: "Tu cuenta es gratuita: necesitas Premium para ver.", tone: .warn)
                 Button("Hacerla Premium") { openURL(debrid.renewURL) }.dsGlassButton()
             case .failed(let message):
-                DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error)
+                // IOS-9, IOS-18: en ámbar y con su arreglo (antes, rojo y sin botón).
+                DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
+                Button("Abrir real-debrid.com/apitoken", systemImage: "arrow.up.right") { openURL(debrid.tokenURL) }
+                    .dsGlassButton()
+                    .accessibilityIdentifier("debrid-open-apitoken")
             }
         }
     }

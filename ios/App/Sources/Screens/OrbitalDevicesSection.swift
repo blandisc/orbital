@@ -2,13 +2,15 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// K1 · Ajustes › Tu Orbital › «Aparatos conectados» (el mismo nombre en la TV, UX-36), este marcado. CX5: en el iPhone,
-/// «Quitar» en todos; en el iPad, solo en sí mismo (los demás se quitan desde el iPhone o la TV). Pregunta antes; no se deshace.
+/// K1 · Ajustes › Tu Orbital › «Aparatos conectados» (el mismo nombre en la TV, UX-36). IOS-13, como la TV (`deviceMenu`):
+/// en la lista, cada aparato con su chevron; tocarlo abre su hoja con «Quitar» (pregunta antes; no se deshace). Este aparato
+/// va aparte, al final: «Desconectar este iPhone». CX5: en el iPad, los demás no se tocan (se quitan desde el iPhone o la TV).
 /// En el iPhone, «Conectar tu iPad» (CX4-A). Sin la conexión propia de este aparato no se enseña.
 struct OrbitalDevicesSection: View {
     @Environment(AppEnvironment.self) private var env
     @State private var devices = ModelObserver(OrbitalDevicesModel(AppEnvironment.shared.services))
-    @State private var removing: OrbitalPairedDevice?
+    @State private var opened: OrbitalPairedDevice?
+    @State private var confirmingThis = false
 
     var body: some View {
         let _ = env.services.track()
@@ -16,12 +18,15 @@ struct OrbitalDevicesSection: View {
     }
 
     @ViewBuilder private func list(_ model: OrbitalDevicesModel) -> some View {
+        let others = model.devices.filter { !$0.isThis }
+        let me = model.devices.first(where: \.isThis)
         Section {
-            if !model.devices.isEmpty { ForEach(model.devices) { device in row(device, model) } }
+            if !model.devices.isEmpty { ForEach(others) { device in row(device, model) } }
             else if case .failed(let why) = model.load {
                 DSNotice(verbatim: env.message(why), tone: .warn)
                 Button("Reintentar") { Task { await model.refresh() } }
             } else { DSInlineProgress(text: Text("Buscando tus aparatos…")) }
+            if let me { thisDeviceLine(me) }
             if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .warn) }
             InviteIPadRow()   // CX4-A: solo en el iPhone
         } header: { Text("Aparatos conectados") } footer: {
@@ -31,17 +36,45 @@ struct OrbitalDevicesSection: View {
         }
         .listRowBackground(DS.surface)
         .task { await model.refresh() }
-        .confirmationDialog(removing.map { Text("¿Quitar \($0.name)?") } ?? Text(verbatim: ""), isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
-                            titleVisibility: .visible, presenting: removing) { device in
-            Button("Quitar", role: .destructive) { Task { await model.remove(device) } }
-            Button("Cancelar", role: .cancel) {}
-        } message: { device in
-            device.isThis ? Text("Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.")
-                          : Text("Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.")
+        .sheet(item: $opened) { device in
+            OrbitalDeviceSheet(device: device, detail: detail(device)) { opened = nil; Task { await model.remove(device) } } close: { opened = nil }
+        }
+        if let me {
+            Section {
+                Button(role: .destructive) { confirmingThis = true } label: { Text("Desconectar este iPhone") }
+                    .accessibilityIdentifier("orbital-device-disconnect-this")
+            } footer: { Text("Deja de hablar con tu TV hasta que escanees su código otra vez.") }
+            .listRowBackground(DS.surface)
+            .confirmationDialog(Text("¿Desconectar este iPhone?"), isPresented: $confirmingThis, titleVisibility: .visible) {
+                Button("Desconectar", role: .destructive) { Task { await model.remove(me) } }
+                Button("Cancelar", role: .cancel) {}
+            } message: { Text("Este iPhone deja de hablar con tu TV hasta que escanees su código otra vez. No se deshace.") }
         }
     }
 
-    private func row(_ device: OrbitalPairedDevice, _ model: OrbitalDevicesModel) -> some View {
+    /// Un aparato: con chevron si se puede abrir (en el iPhone, todos); en el iPad, los demás solo se enseñan (CX5).
+    @ViewBuilder private func row(_ device: OrbitalPairedDevice, _ model: OrbitalDevicesModel) -> some View {
+        if model.canRemove(device) {
+            Button { opened = device } label: {
+                HStack(spacing: DS.Space.s3) {
+                    label(device)
+                    Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint).accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("orbital-device")
+        } else {
+            label(device).accessibilityElement(children: .combine).accessibilityIdentifier("orbital-device")
+        }
+    }
+
+    /// «Este aparato», en la lista sin acción: se desconecta abajo, aparte.
+    private func thisDeviceLine(_ device: OrbitalPairedDevice) -> some View {
+        label(device).accessibilityElement(children: .combine).accessibilityIdentifier("orbital-device-this")
+    }
+
+    private func label(_ device: OrbitalPairedDevice) -> some View {
         HStack(spacing: DS.Space.s3) {
             Image(systemName: Self.symbol(device.platform)).foregroundStyle(DS.textMuted).frame(width: DS.SettingsLook.rowIcon).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
@@ -49,14 +82,7 @@ struct OrbitalDevicesSection: View {
                 detail(device).recipe(.footnote, color: DS.textMuted).lineLimit(1)
             }
             Spacer(minLength: DS.Space.s2)
-            if model.canRemove(device) {   // CX5: el iPad solo se quita a sí mismo
-                Button("Quitar", role: .destructive) { removing = device }
-                    .buttonStyle(.borderless)
-                    .accessibilityIdentifier("orbital-device-remove")
-            }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(device.isThis ? "orbital-device-this" : "orbital-device")
     }
 
     private func detail(_ device: OrbitalPairedDevice) -> Text {
@@ -69,6 +95,31 @@ struct OrbitalDevicesSection: View {
 
     static func symbol(_ platform: String) -> String {
         platform == "ipad" ? "ipad" : "iphone"   // la Mac no se conecta con la TV (CX1-B)
+    }
+}
+
+/// La hoja de un aparato (como `deviceMenu` de la TV): quién es y «Quitar», que pregunta antes («Cancelar» primero).
+private struct OrbitalDeviceSheet: View {
+    let device: OrbitalPairedDevice
+    let detail: Text
+    let remove: () -> Void
+    let close: () -> Void
+    @State private var confirming = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            DSSheetHeader(title: Text(verbatim: device.name), subtitle: detail, close: close)
+            Text("Tiene su propia conexión con tu TV.").recipe(.secondary, color: DS.textMuted)
+            Button(role: .destructive) { confirming = true } label: { Label("Quitar", systemImage: "minus.circle").frame(maxWidth: .infinity) }
+                .dsSecondaryButton().controlSize(.large)
+                .accessibilityIdentifier("orbital-device-remove")
+        }
+        .dsSheetContent()
+        .fittedSheet()
+        .confirmationDialog(Text("¿Quitar \(device.name)?"), isPresented: $confirming, titleVisibility: .visible) {
+            Button("Quitar", role: .destructive, action: remove)
+            Button("Cancelar", role: .cancel) {}
+        } message: { Text("Deja de hablar con tu TV hasta que lo escanee otra vez. No se deshace.") }
     }
 }
 
@@ -97,9 +148,13 @@ struct OrbitalRescanProblem: View {
                 DSProblem(title: Text("Vuelve a escanear el código de tu TV"), detail: Text("Tu TV quitó este iPhone de sus aparatos."),
                           symbol: "qrcode.viewfinder") { scanButton(primary: true) }
             case .needsOwnConnection:
-                // CX8-A: sin volver a escanear, si la TV lo confirma. «Escanear» se queda como la otra salida.
-                DSProblem(title: Text("Vuelve a escanear el código de tu TV"), detail: Text("Tu TV ahora conecta a cada aparato por separado. Puedes pedírselo desde aquí."),
-                          symbol: "qrcode.viewfinder") {
+                // CX8-A: sin volver a escanear, si la TV lo confirma. «Escanear» se queda como la otra salida. IOS-4: el título no
+                // dice «escanear» cuando lo principal es justo no escanear.
+                let upgrade = env.services.canUpgradeConnection
+                DSProblem(title: upgrade ? Text("Tu TV ya conecta a cada aparato por separado") : Text("Vuelve a escanear el código de tu TV"),
+                          detail: upgrade ? Text("Pídele a tu TV que le dé a este iPhone su propia conexión, sin volver a escanear.")
+                                          : Text("Tu TV ahora conecta a cada aparato por separado. Escanea su código una vez."),
+                          symbol: upgrade ? "link" : "qrcode.viewfinder") {
                     if env.services.canUpgradeConnection {
                         Button { upgrading = true } label: { Label("Darle su propia conexión", systemImage: "link").frame(maxWidth: .infinity) }
                             .dsProblemFix(primary: true)

@@ -28,10 +28,11 @@ final class MacNeverTalksToTheTVTests: XCTestCase {
 
     func testTheTVPartsOfSettingsHideOnTheMac() throws {
         let settings = try source("Screens/SettingsView.swift")
-        let gate = try XCTUnwrap(settings.range(of: "if env.services.allowsOrbital {"))
-        let block = settings[gate.upperBound...].prefix(400)
-        XCTAssertTrue(block.contains("IPadInviteCard"), "la invitación del iPhone, solo donde se habla con la TV")
-        XCTAssertTrue(block.contains("orbitalSettings(model)"), "«Orbital en la TV» y «Tu Orbital», nunca en la Mac")
+        // IOS-10: la invitación va arriba de Ajustes y «Orbital en la TV» más abajo; cada una con su guardia.
+        XCTAssertTrue(settings.contains("if env.services.allowsOrbital { IPadInviteCard"), "la invitación del iPhone, solo donde se habla con la TV")
+        XCTAssertTrue(settings.contains("if env.services.allowsOrbital { orbitalSettings(model) }"), "«Orbital en la TV» y «Tu Orbital», nunca en la Mac")
+        XCTAssertFalse(settings.replacingOccurrences(of: "if env.services.allowsOrbital { IPadInviteCard", with: "").contains("IPadInviteCard {"),
+                       "la invitación no sale en ningún otro lado de Ajustes sin su guardia")
         for (file, gate) in [("App/AppDelegate.swift", "ThisDevice.talksToOrbital"), ("Platform/OrbitalIntents.swift", "ThisDevice.talksToOrbital"),
                              ("Screens/RootView.swift", "env.services.allowsOrbital"), ("Screens/AppCommands.swift", "ThisDevice.talksToOrbital")] {
             XCTAssertTrue(try source(file).contains(gate), "\(file): sin su guardia de la Mac")

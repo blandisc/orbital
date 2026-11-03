@@ -91,8 +91,11 @@ public final class SettingsModel: ObservableModel {
     public func checkOrbital() async {
         checkingOrbital = true
         defer { checkingOrbital = false }
-        do { try await services.orbital.check(); orbitalCheck = ""; await importFromOrbital() }
-        catch { orbitalCheck = (error as? OrbitalRemote.Failure)?.description ?? "\(error)" }
+        do { try await services.orbital.check(); orbitalCheck = ""; services.tvLink = .answered(services.now()); await importFromOrbital() }
+        catch {
+            orbitalCheck = (error as? OrbitalRemote.Failure)?.description ?? "\(error)"
+            services.tvLink = services.orbitalAuth.problem != nil ? .unknown : .silent   // IOS-2
+        }
     }
 
     /// Lo que se trajo de tu Orbital la última vez («TMDB y Trakt»), para decirlo en Ajustes.

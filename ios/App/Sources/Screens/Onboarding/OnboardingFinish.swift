@@ -1,11 +1,13 @@
 import SwiftUI
 import OrbitalModels
 
-/// 9 · Todo listo: el resumen y, aparte y en tono bajo, la invitación a conectar Stremio (opcional).
+/// 9 · Todo listo: el resumen y, aparte y en tono bajo, la invitación a conectar Stremio (opcional) y, si tienes TV, dónde
+/// conectarla (IOS-18).
 struct OnboardingDone: View {
     let finish: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var connectingStremio = false
+    @State private var connectingTV = false
     @Environment(AppEnvironment.self) private var env
 
     init(guide: OnboardingModel, finish: @escaping () -> Void) {
@@ -30,8 +32,20 @@ struct OnboardingDone: View {
                     .padding(DS.Space.s4)
                     .padding(.top, DS.Space.s4)
                 }
+                // IOS-18 (como la guía de la TV, que menciona el iPhone como opcional): en el iPad con la invitación de tu
+                // iPhone, la tarjeta CX4-A aquí mismo; si no, una línea opcional. Nunca en la Mac (CX1-B).
+                if env.services.allowsOrbital {
+                    if env.services.pendingInvite != nil {
+                        IPadInviteCard { connectingTV = true }
+                    } else if !env.services.orbital.isConfigured {
+                        Text("¿Tienes Orbital en la TV? Ajustes › Tu Orbital").recipe(.footnote, color: DS.textMuted)
+                            .padding(.horizontal, DS.Space.s4)
+                            .accessibilityIdentifier("guide-tv-line")
+                    }
+                }
             }
         }
         .sheet(isPresented: $connectingStremio) { NavigationStack { LoginView(session: env.session) } }
+        .sheet(isPresented: $connectingTV) { OrbitalSetupView() }
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import OrbitalCore
 import OrbitalModels
+import OrbitalAddons
 
 /// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
@@ -27,6 +28,8 @@ struct TitleView: View {
     struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
     /// Real-Debrid: la hoja de un pedido, «¿Qué es esto?» o la línea antes de pedir permiso de avisos (`TitleView+RealDebrid`).
     @State var debridSheet: TitleDebridSheet?
+    /// IOS-7 · el pedido que se va a cancelar desde el botón de la ficha (pregunta antes, como la hoja).
+    @State var cancelling: DebridRequest?
     var observerModel: TitleModel { observer.model }
     func openVersions(_ videoID: String) { sourcesFor = SourcesTarget(videoID: videoID, purpose: .watch) }
     @State private var saving = false
@@ -107,6 +110,9 @@ struct TitleView: View {
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
         .sheet(item: $debridSheet) { kind in debridSheetContent(kind, model) }
+        .task { _ = await DebridRequestNotifier.permission() }   // IOS-8: sin permiso no se promete «Te aviso»
+        .debridCancelConfirmation(isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }),
+                                  name: cancelling?.title ?? "", finished: false) { if let request = cancelling { Task { await cancelRequest(request) } } }
         // Un pedido cambió de estado (quedó listo, lo cancelaste): la versión y el botón se ponen al día.
         .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))
@@ -340,7 +346,7 @@ struct TitleView: View {
             }
         }
         .menuStyle(.button).buttonStyle(.plain)
-        .disabled(target == nil)
+        .disabled(target == nil || (model.debridOffer != nil && model.recommendedSource?.instant != true))   // IOS-17, R2-A: con «Pedirlo y avisarme», apagado
         .accessibilityIdentifier("title-download")
     }
 

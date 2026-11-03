@@ -11,6 +11,8 @@ private final class FakeK1TV: HTTPClient, @unchecked Sendable {
     var rdStatus = 200
     var authCode: String?
     var tvKey = String(repeating: "TVKEY", count: 10)
+    /// La cuenta de Real-Debrid de la TV (`GET /api/realdebrid`); nil: la TV no tiene.
+    var tvUser: String? = "fer"
     var addons = SharedAddonList(revision: 3, addons: [])
     var fullAddons: [String: String] = [:]
     private(set) var requests: [HTTPRequest] = []
@@ -37,7 +39,8 @@ private final class FakeK1TV: HTTPClient, @unchecked Sendable {
             case _ where path.hasPrefix("/api/devices/"): return json(["ok": true])
             case "/api/realdebrid":
                 if request.method == "PUT" { return rdStatus == 200 ? json(["user": "fer", "premium": true, "ends_with": "••••3F2A"]) : json(["detail": "Real-Debrid no la reconoce"], rdStatus) }
-                return json(["token": .string(tvKey)])
+                if request.url.query == "full=1" { return json(["token": .string(tvKey)]) }
+                return tvUser == nil ? json(["linked": false]) : json(["linked": true, "user": .string(tvUser ?? ""), "premium": true, "ends_with": "TVKE"])
             case "/api/addons":
                 if request.method == "GET" {
                     var list = addons
@@ -158,7 +161,7 @@ final class DeviceKeysTests: XCTestCase {
         XCTAssertTrue(model.canShareWithTV)
         await model.passToTV()
         XCTAssertEqual(model.tvShare, .passed(OrbitalTVDebrid(user: "fer", premium: true, expires: nil, tail: "••••3F2A")))
-        let put = try XCTUnwrap(tv.requests.last)
+        let put = try XCTUnwrap(tv.requests.last { $0.method == "PUT" })   // después se le pregunta su cuenta (IOS-6)
         XCTAssertEqual(JSON.parse(try XCTUnwrap(put.body))?["token"]?.string, rdKey)
         tv.rdStatus = 422
         await model.passToTV()
@@ -231,5 +234,49 @@ final class DeviceKeysTests: XCTestCase {
         let state = kv.everything
         XCTAssertFalse(state.contains(rdKey), "ni la clave de los complementos…")
         XCTAssertFalse(state.contains("S3cr3t"), "…ni la llave del aparato en lo que se guarda")
+    }
+
+    /// IOS-6 · «Tu TV usa la cuenta X»: se compara la cuenta (no la clave) y las tres salidas solo cuando son distintas.
+    func testTheTVsRealDebridIsComparedByAccount() async throws {
+        let tv = FakeK1TV()
+        let (services, _, secrets, _) = rig(tv: tv, token: nil, key: FakeK1TV.key)
+        try await services.connectOrbital()
+        secrets.set(AddonKeys.realDebridToken, rdKey)
+        let model = DebridModel(services)
+        await model.load(force: true)
+        await model.compareWithTV()
+        XCTAssertEqual(model.tvAccount, .same(user: "fer"), "la misma cuenta: nada que preguntar")
+        tv.tvUser = "Ana"
+        await model.compareWithTV()
+        XCTAssertEqual(model.tvAccount, .different(tv: "Ana", mine: "fer", keptApart: false))
+        model.keepAccountsApart()
+        await model.compareWithTV()
+        XCTAssertEqual(model.tvAccount, .different(tv: "Ana", mine: "fer", keptApart: true), "«Dejar cada una» no se vuelve a preguntar")
+        tv.tvUser = nil
+        await model.compareWithTV()
+        XCTAssertEqual(model.tvAccount, .tvHasNone)
+        XCTAssertFalse(tv.requests.contains { $0.url.path == "/api/realdebrid" && $0.url.query == "full=1" }, "para comparar no se pide la clave")
+    }
+
+    /// IOS-2 · «Conectada» solo si la TV contestó hace menos de 2 min; con un problema de «Escanear», ni «Conectada» ni «no contesta».
+    func testConnectedOnlyIfTheTVJustAnswered() async throws {
+        let tv = FakeK1TV()
+        let (services, _, _, _) = rig(tv: tv, token: nil, key: FakeK1TV.key)
+        XCTAssertEqual(services.tvLinkNow, .unknown)
+        await services.checkTV()
+        XCTAssertTrue(services.tvAnsweredRecently)
+        if case .answered = services.tvLinkNow {} else { XCTFail("contestó: «Conectada»") }
+        tv.authCode = "device_removed"
+        await services.checkTV(force: true)
+        XCTAssertEqual(services.tvLinkNow, .unknown, "con «Vuelve a escanear» arriba no se dice nada más")
+    }
+
+    /// IOS-11 · los pedidos llevan el nombre que escribiste al conectar, no el que da iOS.
+    func testRequestsCarryTheNameYouGaveThisDevice() async throws {
+        let (services, _, _, kv) = rig()
+        XCTAssertEqual(services.debridRequests.requester.deviceName, "iPhone de Fer", "sin nombre propio, el de iOS")
+        kv.set("orbital.device-name", data: Data("iPhone de Fernando".utf8))
+        XCTAssertEqual(services.debridRequests.requester.deviceName, "iPhone de Fernando")
+        XCTAssertTrue(services.debridRequests.alsoMine.contains("iPhone de Fer"), "lo de antes sigue siendo tuyo para avisar")
     }
 }

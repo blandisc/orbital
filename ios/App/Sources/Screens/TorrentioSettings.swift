@@ -12,6 +12,7 @@ struct TorrentioSettings: View {
     @State private var explaining = false
     @State private var confirmReset = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let model = torrentio.model
@@ -25,8 +26,11 @@ struct TorrentioSettings: View {
                 .listRowBackground(DS.surface)
             }
             Section {
-                Text("Torrentio busca las versiones de lo que quieres ver. Aquí decides cuáles te enseña. Lo de abajo ya viene bien; cámbialo solo si algo te molesta.")
-                    .recipe(.footnote, color: DS.textMuted)
+                // IOS-15: con letra de accesibilidad el párrafo ocupaba la pantalla entera; ahí basta «¿Qué es esto?», que lo explica.
+                if !typeSize.isAccessibilitySize {
+                    Text("Torrentio busca las versiones de lo que quieres ver. Aquí decides cuáles te enseña. Lo de abajo ya viene bien; cámbialo solo si algo te molesta.")
+                        .recipe(.footnote, color: DS.textMuted)
+                }
                 Button { explaining = true } label: { Label("¿Qué es esto?", systemImage: "questionmark.circle") }
                     .accessibilityIdentifier("torrentio-explain")
             }
@@ -148,10 +152,12 @@ extension TorrentioSettingsModel.Probe {
 struct TorrentioRowLabel: View {
     let title: Text
     let detail: Text
+    /// IOS-17 · un renglón que se toca y hace algo (no lleva a otra página): su título en el color de lo interactivo.
+    var action = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            title.foregroundStyle(DS.text)
+            title.foregroundStyle(action ? DS.accent : DS.text)
             detail.recipe(.footnote, color: DS.textMuted)
         }
     }

@@ -66,13 +66,16 @@ final class RealDebridRequestTests: XCTestCase {
         request.state = .downloading
         XCTAssertEqual(DebridRequestWords.title(request), "Bajando en Real-Debrid · 42 %", "el texto de design/vocabulario.json › causas")
         XCTAssertEqual(DebridRequestWords.short(request), "Bajando · 42 %")
+        // IOS-8: sin permiso de avisos (o pedido desde otro aparato) no se promete avisar.
+        XCTAssertEqual(DebridRequestWords.detail(request, now: now), "Te aviso cuando esté listo")
+        XCTAssertEqual(DebridRequestWords.detail(request, now: now, notifies: false), "Ábrelo aquí para ver cuánto lleva")
         request.state = .refused
         XCTAssertEqual(DebridRequestWords.title(request), "Real-Debrid no lo dejó bajar")
         // Lo de otra cuenta de Real-Debrid nunca es «lo pediste» (contrato › other_account).
         request.device = "TV"
-        XCTAssertEqual(DebridRequestWords.since(request, now: now, otherAccount: true), "Lo pidió la TV · hace 1 h")
+        XCTAssertEqual(DebridRequestWords.since(request, now: now, otherAccount: true), "Lo pidió la TV · hace 1 h · con otra cuenta de Real-Debrid")
         request.device = "iPad"
-        XCTAssertEqual(DebridRequestWords.since(request, now: now, otherAccount: true), "Lo pidió iPad · hace 1 h")
+        XCTAssertEqual(DebridRequestWords.since(request, now: now, otherAccount: true), "Lo pidió iPad · hace 1 h · con otra cuenta de Real-Debrid")
         XCTAssertEqual(DebridRequestWords.since(request, now: now), "Lo pediste en iPad · hace 1 h")
         request.state = .noPeers
         XCTAssertEqual(DebridRequestWords.detail(request, now: Date(timeIntervalSince1970: 25 * 3600)), "Sigue sin bajar · ¿probar otra versión?")

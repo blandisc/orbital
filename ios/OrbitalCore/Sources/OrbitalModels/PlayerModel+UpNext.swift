@@ -267,3 +267,8 @@ extension PlayerModel {
         }
     }
 }
+
+extension PlayerModel.Phase {
+    /// La pantalla de un error o de un pedido está abierta (IOS-16: la tarjeta del siguiente episodio no va encima).
+    public var isFailed: Bool { if case .failed = self { return true }; return false }
+}

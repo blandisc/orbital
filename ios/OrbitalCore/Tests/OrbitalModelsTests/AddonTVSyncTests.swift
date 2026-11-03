@@ -124,5 +124,6 @@ final class AddonTVSyncTests: XCTestCase {
         XCTAssertEqual(sync.waitingForKeys, ["ThePirateBay+"])
         XCTAssertFalse(tv.list.addons.contains { $0.name == "ThePirateBay+" })
         XCTAssertTrue(AddonTVSync.waitsForKeys("Espera las llaves por aparato: esa dirección lleva una clave"))
+        XCTAssertTrue(AddonTVSync.waitsForKeys("Vuelve a escanear el código de tu TV: esa dirección lleva una clave"), "lo que dice la TV de hoy")
     }
 }

@@ -11,13 +11,20 @@ import OrbitalModels
 struct AddonTVStatus: View {
     let status: AddonTVSync.Status
     var waitingForKeys: [String] = []
+    /// «Reintentar» (IOS-9): la TV no contestó o no tomó la lista.
+    var retry: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             if let line = main { row(line.symbol, line.tint, line.title, line.detail) }
-            if !waitingForKeys.isEmpty {
-                row("key", DS.textMuted, Text("\(waitingForKeys.joined(separator: ", ")) se queda en este iPhone"),
-                    Text("Espera las llaves por aparato: su dirección lleva una clave"))
+            if let retry, hasProblem {
+                Button(action: retry) { Text("Reintentar").font(DS.TextRecipe.label.font) }
+                    .dsSecondaryButton().controlSize(.large)
+                    .accessibilityIdentifier("addons-tv-retry")
+            }
+            if !waitingForKeys.isEmpty {   // IOS-5: solo sin conexión propia (con ella, todo viaja); sin «llaves»
+                row("iphone", DS.textMuted, Text("\(waitingForKeys.joined(separator: ", ")) se queda en este iPhone"),
+                    Text("Su dirección lleva tu clave: pasa a la TV cuando este iPhone tenga su propia conexión (Ajustes › Tu Orbital)."))
             }
         }
         .accessibilityElement(children: .contain)
@@ -37,11 +44,18 @@ struct AddonTVStatus: View {
             Line(symbol: "tv", tint: DS.warning, title: Text("Tu TV no contestó"), detail: Text("Lo que cambies aquí le llega cuando conteste"))
         case .outdated:
             Line(symbol: "arrow.down.circle", tint: DS.warning, title: Text("Actualiza Orbital en tu TV"), detail: Text("Así toma esta lista"))
-        case .refused(let why) where AddonTVSync.waitsForKeys(why) && !waitingForKeys.isEmpty: nil   // ya lo dice el renglón de abajo
-        case .refused(let why) where AddonTVSync.waitsForKeys(why):
-            Line(symbol: "key", tint: DS.textMuted, title: Text("Espera las llaves por aparato"), detail: Text("Lo que lleva una clave se queda en este iPhone"))
-        case .refused(let why):
-            Line(symbol: "exclamationmark.circle", tint: DS.warning, title: Text("Tu TV no tomó la lista"), detail: Text(verbatim: why))
+        case .refused(let why) where AddonTVSync.waitsForKeys(why): nil   // lo dice el renglón de abajo, si toca (IOS-5)
+        case .refused:   // IOS-9: en palabras y con «Reintentar» (antes «no tiene la forma acordada»)
+            Line(symbol: "exclamationmark.circle", tint: DS.warning, title: Text("Tu TV no tomó la lista"),
+                 detail: Text("Algo no cuadró al mandarla. Reintenta; si sigue, actualiza Orbital en tu TV."))
+        }
+    }
+
+    private var hasProblem: Bool {
+        switch status {
+        case .unreachable: true
+        case .refused(let why): !AddonTVSync.waitsForKeys(why)
+        default: false
         }
     }
 

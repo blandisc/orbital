@@ -20,7 +20,7 @@ extension Demo {
     static func seedCX(_ secrets: InMemorySecrets) {
         guard let state = cx else { return }
         switch state {
-        case "shared-differs": secrets.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: anaToken, from: "ipad").encoded)
+        case "shared-differs": secrets.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: anaToken, from: "ipad", name: "iPad de Ana").encoded)
         case "shared-offer": secrets.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: sharedToken, from: "iphone").encoded)
         case "invite", "invite-expired":
             let expires = Date().addingTimeInterval(state == "invite" ? 6 * 86_400 : -3600)

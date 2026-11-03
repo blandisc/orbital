@@ -10,6 +10,7 @@ import OrbitalCore
 /// - `-demo-keys removed`: la TV quitó este iPhone (401 `device_removed`): la llave se borra y sale la misma frase.
 /// - `-demo-keys pass-ok` · `pass-422`: «Pasar a la TV» que la TV acepta o que Real-Debrid no reconoce (con `-demo-rd premium`).
 /// - `-demo-keys use`: «Usar la de la TV» (la TV tiene una clave de mentira; con `-demo-rd premium` Real-Debrid la acepta).
+/// - `-demo-keys other-account`: la TV usa otra cuenta de Real-Debrid («ana»): la pregunta de las tres salidas (IOS-6).
 ///
 /// Con `-demo-scan v2`, la hoja de conectar lee un QR v2 y la TV de mentira le da su llave.
 extension Demo {
@@ -67,7 +68,11 @@ enum DemoDevices {
                 return json(["user": "demo", "premium": true, "expires": .string(ISO8601DateFormatter().string(from: Date().addingTimeInterval(143 * 86_400))),
                              "tail": .string("••••" + String(sent.suffix(4)).uppercased())])
             }
-            return json(["token": .string(Demo.realDebridToken), "user": "demo", "premium": true, "tail": "••••DEMO"])
+            // IOS-6: `-demo-keys other-account`: la TV usa otra cuenta («ana»). La clave, solo con `?full=1` (como la TV).
+            let user: JSON = Demo.keys == "other-account" ? "ana" : "demo"
+            var out: JSON = ["linked": true, "user": user, "premium": true, "ends_with": "DEMO"]
+            if url.query?.contains("full=1") == true { out = ["token": .string(Demo.realDebridToken), "user": user, "premium": true, "ends_with": "DEMO"] }
+            return json(out)
         }
         return nil
     }

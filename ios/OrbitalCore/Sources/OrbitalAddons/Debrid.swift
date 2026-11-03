@@ -39,12 +39,16 @@ public struct DebridStatus: Codable, Equatable, Sendable {
         case free
     }
     public static let soonDays = 14
+    /// Cuántos días después de vencer se sigue diciendo «Venció»; después, «Cuenta gratuita».
+    public static let lapsedDays = 90
 
     /// Vence a una hora, no a un día: el 21 a las 23:00, si venció a las 15:00, ya venció (antes decía «sin Premium» todo
     /// ese día, porque los días de calendario daban 0 y Real-Debrid ya decía «free»).
     public func state(now: Date, calendar: Calendar = .current) -> State {
         guard let expires, let days = daysLeft(now: now, calendar: calendar) else { return isPremium ? .active(daysLeft: .max) : .free }
-        if expires <= now { return .expired(daysAgo: max(0, -days)) }
+        // IOS-1: una cuenta gratuita cuyo último Premium fue hace meses (o nunca: Real-Debrid manda una fecha vieja) no «venció»:
+        // es gratuita. «Venció» solo los primeros `lapsedDays` días.
+        if expires <= now { return !isPremium && -days > Self.lapsedDays ? .free : .expired(daysAgo: max(0, -days)) }
         guard isPremium else { return .free }
         return days <= Self.soonDays ? .expiringSoon(daysLeft: days) : .active(daysLeft: days)
     }
@@ -167,10 +171,15 @@ public actor DebridAccount {
 
     /// Quién es este aparato («iphone», «ipad», «mac»): se anota en la copia compartida de tu clave (CX2-A).
     public nonisolated let platform: String
+    /// IOS-11 · el nombre de este aparato («iPad de Fernando», el de CX7-A), también en la copia compartida: «iPad de Fernando
+    /// cambió la clave» en vez de «Tu iPad…» leído en el mismo iPad.
+    nonisolated let deviceName: @Sendable () -> String?
     let vaultRef: AddonVault
 
-    public init(provider: DebridProvider, vault: AddonVault, platform: String = "iphone", clock: @escaping @Sendable () -> Date = { Date() }) {
+    public init(provider: DebridProvider, vault: AddonVault, platform: String = "iphone", deviceName: @escaping @Sendable () -> String? = { nil },
+                clock: @escaping @Sendable () -> Date = { Date() }) {
         self.provider = provider; self.vault = vault; self.vaultRef = vault; self.platform = platform; self.clock = clock
+        self.deviceName = deviceName
     }
 
     public nonisolated var hasToken: Bool { !(vault.secret(AddonKeys.realDebridToken) ?? "").isEmpty }

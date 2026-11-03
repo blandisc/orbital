@@ -80,6 +80,8 @@ public final class DebridModel: ObservableModel {
     /// K1 · «Pasar a la TV» y «Usar la de la TV»: trabajando, lo que quedó o por qué no (en palabras).
     public enum TVShare: Equatable, Sendable { case idle, working, passed(OrbitalTVDebrid), used, failed(String) }
     public internal(set) var tvShare: TVShare = .idle { didSet { if oldValue != tvShare { changed() } } }
+    /// IOS-6 · qué cuenta de Real-Debrid usa tu TV, comparada con la de este iPhone (la cuenta, no la clave).
+    public internal(set) var tvAccount: TVAccount = .unknown { didSet { if oldValue != tvAccount { changed() } } }
 
     /// D1: las últimas 4 letras de tu clave («3F2A»); nunca completa.
     public var keyTail: String? { services.debrid.keyTail }

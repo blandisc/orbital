@@ -33,7 +33,8 @@ final class DebridRequestsModelTests: XCTestCase {
         var told: [String] = []
         model.onReady = { told.append($0.metaID) }
         await model.refresh()
-        XCTAssertEqual(told, ["tt1"], "avisa solo el aparato que lo pidió")
+        // R14-B: en el iPhone también avisa lo que pidió la TV con tu cuenta (tt2); lo de otra cuenta (tt3), nunca.
+        XCTAssertEqual(told, ["tt1", "tt2"], "avisa el aparato que lo pidió y, en el iPhone, lo de la TV con tu cuenta")
         XCTAssertEqual(model.requests.count, 3, "lo de otra cuenta se enseña")
         let theirs = try XCTUnwrap(model.requests.first { $0.metaID == "tt3" })
         XCTAssertTrue(model.isOtherAccount(theirs))

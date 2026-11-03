@@ -25,12 +25,13 @@ public enum DebridRequestWords {
         request.state == .downloading ? String(format: tr("Bajando · %lld %%"), request.percent) : title(request, tr)
     }
 
-    /// El renglón de abajo: qué pasa y qué sigue, sin prometer.
-    public static func detail(_ request: DebridRequest, now: Date, _ tr: (String) -> String = { $0 }) -> String {
+    /// El renglón de abajo: qué pasa y qué sigue, sin prometer. IOS-8: «Te aviso cuando esté listo» solo si este aparato va
+    /// a avisar (`notifies`: con permiso y pedido desde aquí); si no, «Ábrelo aquí para ver cuánto lleva».
+    public static func detail(_ request: DebridRequest, now: Date, notifies: Bool = true, _ tr: (String) -> String = { $0 }) -> String {
         if request.isStalled(now: now) { return tr("Sigue sin bajar · ¿probar otra versión?") }
         return switch request.state {
         case .queued: tr("Real-Debrid lo recibió y espera turno")
-        case .downloading: tr("Te aviso cuando esté listo")
+        case .downloading: notifies ? tr("Te aviso cuando esté listo") : tr("Ábrelo aquí para ver cuánto lleva")
         case .noPeers: tr("Puede tardar días · prueba otra versión")
         case .refused: tr("Prueba otra versión")
         case .tooMany: tr("Cancela otra descarga para hacer lugar")
@@ -40,15 +41,17 @@ public enum DebridRequestWords {
     }
 
     /// «Lo pediste en iPhone · hace 6 min» (quién y cuándo, R12). Lo de otra cuenta de Real-Debrid (`otherAccount`) nunca
-    /// es «lo pediste»: «Lo pidió la TV · …» o, si lo pidió otro aparato, «Lo pidió iPad · …».
+    /// es «lo pediste»: «Lo pidió la TV · … · con otra cuenta de Real-Debrid» o, si lo pidió otro aparato, «Lo pidió iPad · …».
     public static func since(_ request: DebridRequest, now: Date, otherAccount: Bool = false, _ tr: (String) -> String = { $0 }) -> String {
         let minutes = max(0, Int(now.timeIntervalSince(request.createdAt) / 60))
         let ago = minutes < 60 ? String(format: tr("hace %lld min"), max(1, minutes))
             : minutes < 24 * 60 ? String(format: tr("hace %lld h"), minutes / 60)
             : minutes < 48 * 60 ? tr("hace 1 día") : String(format: tr("hace %lld días"), minutes / (24 * 60))
         // Lo pidió la TV (su libreta, S2/S4): se dice así, no «lo pediste en TV».
-        if request.device == "TV" || (otherAccount && request.device.isEmpty) { return String(format: tr("Lo pidió la TV · %@"), ago) }
-        if otherAccount { return String(format: tr("Lo pidió %@ · %@"), request.device, ago) }
+        // IOS-19: lo de otra cuenta lo dice, como la TV («· con otra cuenta de Real-Debrid»).
+        let other = otherAccount ? " · " + tr("con otra cuenta de Real-Debrid") : ""
+        if request.device == "TV" || (otherAccount && request.device.isEmpty) { return String(format: tr("Lo pidió la TV · %@"), ago) + other }
+        if otherAccount { return String(format: tr("Lo pidió %@ · %@"), request.device, ago) + other }
         return String(format: tr("Lo pediste en %@ · %@"), request.device, ago)
     }
 

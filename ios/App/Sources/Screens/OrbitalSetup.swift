@@ -12,6 +12,7 @@ struct OrbitalSetupView: View {
     @State private var token = ""
     @Environment(\.dismiss) private var dismiss
     @Environment(AppEnvironment.self) private var env
+    @State private var debrid = DebridModel(AppEnvironment.shared.services)
 
     init(tutorialOnly: Bool = false) {
         _setup = State(wrappedValue: ModelObserver(OrbitalSetupModel(AppEnvironment.shared.services, tutorialOnly: tutorialOnly)))
@@ -51,8 +52,15 @@ struct OrbitalSetupView: View {
         case .connected:
             GuidePage(title: Text("Ya se conocen"), message: Text("Tu iPhone y tu Orbital quedaron conectados."), step: (0, 2),
                       primary: Text("Ver qué puedes hacer"), secondary: Text("Ya lo sé"), next: { _ = model.advance() }, skip: { dismiss() }) {
-                GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Tu Orbital"), tag: Text(verbatim: model.host))
-                Text("Tu Trakt, tu Real-Debrid y tu país se quedan como los tienes aquí.").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
+                GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text("Tu Orbital"), tag: model.tvName.isEmpty ? nil : Text(verbatim: model.tvName))
+                // IOS-6: al conectar, la misma revisión de Real-Debrid que en Cuentas (la cuenta, no la clave), con su pregunta
+                // solo si las dos cuentas son distintas.
+                if debrid.canShareWithTV {
+                    VStack(alignment: .leading, spacing: DS.Space.s3) { DebridTVCompare(debrid: debrid) }
+                        .padding(DS.Space.s4).dsCard(translucent: true)
+                        .task { await debrid.load(); await debrid.compareWithTV() }
+                }
+                Text("Tu Trakt y tu país se quedan como los tienes aquí.").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
             }
         case .tutorial(let number): tutorial(number, model)
         }
@@ -63,12 +71,12 @@ struct OrbitalSetupView: View {
                   primary: Text("Escanear el código"), primaryEnabled: !model.connecting, secondary: Text("Conectar a mano"),
                   next: { scanning = true }, skip: { byHand.toggle() }) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
-                GuideNumberedStep(number: 1, text: Text("En la TV abre Ajustes › Cuentas › iPhone. Aparece un código.")) { EmptyView() }
+                GuideNumberedStep(number: 1, text: Text("En la TV abre Ajustes › Cuentas › Conectar un aparato. Aparece un código.")) { EmptyView() }
                 GuideNumberedStep(number: 2, text: Text("Toca «Escanear el código» y apúntale.")) { EmptyView() }
                 DeviceNameField(name: Binding(get: { model.deviceName }, set: { model.deviceName = $0 }))   // CX7-A
                     .padding(DS.Space.s3).dsCard(translucent: true)
                 if model.connecting { DSInlineProgress(text: Text("Conectando…")) }
-                if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .error) }
+                if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .warn) }   // IOS-9: ámbar
                 if byHand {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         TextField("Dirección (orbital.tudominio.com)", text: $address)

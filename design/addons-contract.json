@@ -142,7 +142,7 @@
     },
     "local_only": {
       "_": "Se guardan en cada aparato y nunca viajan.",
-      "notified, nudged": "ya avisó «Ya está» / «Sigue sin bajar». Avisa solo el aparato que lo pidió (`by`), al ver el cambio en su propio vistazo a Real-Debrid. Un pedido que llega del otro aparato nunca avisa aquí. El aviso al celular de lo que pidió la TV (R14) es otra decisión, pendiente de Fernando",
+      "notified, nudged": "ya avisó «Ya está» / «Sigue sin bajar». Avisa solo el aparato que lo pidió (`by`), al ver el cambio en su propio vistazo a Real-Debrid. Un pedido que llega del otro aparato no avisa aquí, salvo R14-B (Fernando, 3 nov): el iPhone (no el iPad ni la Mac) también avisa lo que pidió la TV (`by` = la TV) con su misma cuenta de Real-Debrid, al verlo quedar listo en su propio vistazo (la libreta de la TV y Real-Debrid, al abrir la app y en la tarea de segundo plano): «Ya está T1 E2 · Nocturne · Lo pediste desde la TV», una vez (`notified` de ese iPhone); lo que ya llega listo la primera vez que lo ve se marca avisado en silencio, y lo de otra cuenta nunca. La TV no cambia: sigue avisando solo lo suyo",
       "url, filename, linked": "el enlace de Real-Debrid va atado a quien lo pidió y vive solo en la memoria de ese aparato"
     },
     "forget": "lo terminado (ready, refused, too_many, gone) se olvida 7 días después de `updated`; lo que sigue en camino, nunca. Excepción: lo de otra cuenta, que nadie aquí puede seguir, se olvida 7 días después de su último `updated` aunque siga en camino. Un GET no devuelve lo olvidado y un POST no lo reaviva",

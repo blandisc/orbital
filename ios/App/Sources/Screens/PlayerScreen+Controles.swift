@@ -141,7 +141,7 @@ extension PlayerScreen {
                         }
                         // «Siguiente episodio» debajo de la barra: antes iba encima y la empujaba hacia abajo justo al final, quizá
                         // mientras la arrastrabas.
-                        if let up = model.upNext, !padlock.locked { upNextCard(model, up) }
+                        if let up = model.upNext, !padlock.locked, !model.phase.isFailed { upNextCard(model, up) }   // IOS-16
                         // Su lugar está apartado aunque no salga: ±10 y el botón grande no brincan cuando aparece.
                         // Solo cuando hay algo que ofrecer: el botón grande ya va sobre el video, así que su lugar apartado sobraba
                         // (dejaba una franja negra vacía bajo la barra, más notoria con el video hasta arriba).

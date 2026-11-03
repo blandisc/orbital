@@ -278,7 +278,8 @@ struct PlayerScreen: View {
             // Bloqueado no se ve (ni se toca): si llega a cero, pasa solo al siguiente. En vertical va entre el video y la barra
             // (dentro de los controles, o sola si están escondidos); en horizontal, abajo a la derecha sobre la barra.
             // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
-            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock {
+            // IOS-16: nunca sobre la pantalla de un pedido o de un error (se encimaba con «Avisarme cuando esté»).
+            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock, !model.phase.isFailed {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
                         .padding(.horizontal, DS.Space.s6)

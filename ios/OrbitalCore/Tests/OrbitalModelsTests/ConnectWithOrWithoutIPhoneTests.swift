@@ -90,6 +90,17 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
         XCTAssertEqual(again, .none)
     }
 
+    /// IOS-11 · la copia dice quién la puso por su nombre («iPhone de Ana»), para no leer «Tu iPad cambió la clave» en el iPad.
+    func testTheSharedCopyCarriesTheNameOfWhoPutIt() async throws {
+        let cloud = InMemorySecrets()
+        let (ipad, local, _) = rig("ipad", shared: cloud)
+        local.set(AddonKeys.realDebridToken, fer1)
+        cloud.set(SecretKey.sharedRealDebrid, SharedDebridKey(key: ana, from: "ipad", name: "iPad de Ana").encoded)
+        guard case .differs(let from, _, _) = await ipad.debrid.checkShared() else { return XCTFail("debía preguntar") }
+        XCTAssertEqual(from, "iPad de Ana")
+        XCTAssertNil(SharedDebridKey.decode(#"{"key":"X","from":"iphone"}"#)?.name, "una copia de antes se sigue leyendo")
+    }
+
     func testSameAccountWithBothKeysWorkingDoesNotAskAndARevokedLocalOneTakesTheNew() async throws {
         let cloud = InMemorySecrets()
         let (mac, local, _) = rig("mac", shared: cloud, allows: false)

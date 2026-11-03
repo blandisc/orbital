@@ -7,7 +7,8 @@ import UserNotifications
 /// Las hojas de Real-Debrid de la ficha: un pedido (R13), «¿Qué es esto?» (O2) y la línea antes de pedir permiso de avisos
 /// (R10).
 enum TitleDebridSheet: String, Identifiable {
-    case request, explain, notify
+    /// `notifyAppear` y `appear` (IOS-8): la explicación antes de «Avisarme cuando aparezca» y la hoja ya activado.
+    case request, explain, notify, notifyAppear, appear
     var id: String { rawValue }
 }
 
@@ -27,15 +28,27 @@ extension TitleView {
         let now = Date()
         if let request = model.debridRequest, request.state != .ready {
             let alternative = model.debridOffer.flatMap(instantAside)
-            let cancel: (title: Text, symbol: String, action: () -> Void) = (Text("Cancelar pedido"), "xmark.circle", { Task { await cancelRequest(request) } })
+            // IOS-7: el mismo «¿Cancelar el pedido?» con «Seguir esperando» que la hoja y la lista (antes cancelaba sin preguntar).
+            let cancel: (title: Text, symbol: String, action: () -> Void) = (Text("Cancelar pedido"), "xmark.circle", { cancelling = request })
+            // IOS-17: en una serie, qué episodio («T1 E2 · Te aviso cuando esté listo»).
+            let episode = DebridRequestNotifier.episodeName(request, language: language)
+            let detail = DebridRequestWords.detail(request, now: now, notifies: DebridRequestNotifier.canNotify, tr)   // IOS-8
+            // IOS-9: atorado o rechazado, el botón dice la acción («Probar otra versión») y el estado va abajo, en ámbar.
+            if DebridRequestWords.suggestsOtherVersion(request, now: now), let video = model.continueVideoID {
+                return ContinueAction(title: Text("Probar otra versión"), symbol: "list.bullet.rectangle",
+                                      version: Text(verbatim: [episode, DebridRequestWords.title(request, tr)].compactMap { $0 }.joined(separator: " · ")),
+                                      play: { openVersions(video) }, aside: alternative ?? cancel, warn: true, tint: artAccent)
+            }
             return ContinueAction(title: Text(verbatim: DebridRequestWords.title(request, tr)), symbol: DebridRequestWords.symbol(request.state),
                                   progress: request.state == .downloading ? Double(request.percent) / 100 : nil,
-                                  version: Text(verbatim: DebridRequestWords.detail(request, now: now, tr)),
+                                  version: Text(verbatim: [episode, detail].compactMap { $0 }.joined(separator: " · ")),
                                   play: { debridSheet = .request }, aside: alternative ?? cancel, tint: artAccent)
         }
         guard let offer = model.debridOffer, model.sourceCheck != .offline else { return nil }
+        // IOS-19: si la TV ya lo pide con otra cuenta, se dice; pedirlo aparte (con la tuya) sigue a un toque.
+        let others = model.otherAccountRequest.map { _ in tr("La TV lo está pidiendo con otra cuenta") }
         return ContinueAction(title: Text("Pedirlo y avisarme"), symbol: "arrow.down.circle",
-                              version: Text(verbatim: UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
+                              version: Text(verbatim: others ?? UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
                               play: { requestFromDebrid(model) }, aside: instantAside(offer), tint: artAccent)
     }
 
@@ -62,14 +75,18 @@ extension TitleView {
             switch request.state {
             case .refused: tell(.debridRefused, model)
             case .tooMany:
-                env.notify(DebridRequestWords.title(request, tr), detail: DebridRequestWords.detail(request, now: Date(), tr), tone: .warn)
+                env.notify(DebridRequestWords.title(request, tr), detail: DebridRequestWords.detail(request, now: Date(), notifies: false, tr), tone: .warn,
+                           actionTitle: tr("Abrir")) { UIApplication.shared.open(DebridRequestSheetHost.downloadsURL) }   // IOS-9: con su arreglo
             default:
-                let off = await DebridRequestNotifier.permission() == .denied
-                if off {
+                let permission = await DebridRequestNotifier.permission()
+                if permission == .denied {
                     env.notify(DebridRequestWords.title(request, tr), detail: tr("Avisos apagados · actívalos"), tone: .warn,
                                actionTitle: tr("Ajustes")) { DebridRequestNotifier.openSystemSettings() }
                 } else {
-                    env.notify(DebridRequestWords.title(request, tr), detail: UnavailableCause.downloading(percent: request.percent).detail(tr), tone: .success)
+                    // IOS-8: con «Ahora no» no se promete avisar.
+                    let notifies = DebridRequestNotifier.allows(permission)
+                    env.notify(DebridRequestWords.title(request, tr), detail: notifies ? UnavailableCause.downloading(percent: request.percent).detail(tr)
+                                                                                       : tr("Ábrelo aquí para ver cuánto lleva"), tone: .success)
                 }
             }
         case .failed(let cause?, _): tell(cause, model)
@@ -98,14 +115,17 @@ extension TitleView {
         case .notify:
             // La misma explicación que en el reproductor (P4-A): una sola pieza.
             DebridNotifyAsk { _ in debridSheet = nil; await sendRequest(model) }
+        case .notifyAppear:   // IOS-8: la misma explicación antes de «Avisarme cuando aparezca»
+            DebridNotifyAsk { status in debridSheet = nil; startWatching(model, permission: status) }
+        case .appear: appearSheet(model)
         case .request:
             if let request = model.debridRequest {
                 let name = [request.title, DebridRequestNotifier.episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
                 DebridRequestSheetHost(request: request, name: name, since: DebridRequestWords.since(request, now: Date(), tr),
                                        status: DebridRequestStatus(symbol: DebridRequestWords.symbol(request.state), title: DebridRequestWords.title(request, tr),
-                                                                   detail: DebridRequestWords.detail(request, now: Date(), tr),
+                                                                   detail: DebridRequestWords.detail(request, now: Date(), notifies: DebridRequestNotifier.canNotify, tr),
                                                                    fraction: request.state == .downloading ? Double(request.percent) / 100 : nil,
-                                                                   warn: DebridRequestWords.isTrouble(request, now: Date())),
+                                                                   warn: DebridRequestWords.isTrouble(request, now: Date()), ok: request.state == .ready),
                                        otherVersion: DebridRequestWords.suggestsOtherVersion(request, now: Date())
                                            ? model.continueVideoID.map { video in { debridSheet = nil; openVersions(video) } } : nil,
                                        openTitle: nil, cancel: { Task { await cancelRequest(request) } },

@@ -29,13 +29,15 @@ public final class OrbitalSetupModel: ObservableModel {
 
     /// A dónde quedó conectada («orbital.casa»).
     public var host: String { services.orbital.base?.host ?? "" }
+    /// IOS-2 · el nombre que dio la TV al conectar («Orbital de la sala»), nunca su dirección; vacío si no lo dio.
+    public var tvName: String { let name = services.tvName; return name == host ? "" : name }
 
     /// Lo que leyó la cámara: el código de la TV es un enlace `orbital-ios://pair?u=…&t=…` (v1) o
     /// `orbital-ios://pair?v=2&u=…&c=…` (v2, K1: un código de un solo uso que se cambia por la llave de este aparato).
     public func scanned(_ payload: String) async {
         guard !connecting else { return }
         guard let url = URL(string: payload.trimmingCharacters(in: .whitespacesAndNewlines)), let link = OrbitalRemote.pairingLink(url) else {
-            problem = "Ese código no es de Orbital. En la TV abre Ajustes › Cuentas › iPhone."
+            problem = "Ese código no es de Orbital. En la TV abre Ajustes › Cuentas › Conectar un aparato."
             return
         }
         await connect(link)

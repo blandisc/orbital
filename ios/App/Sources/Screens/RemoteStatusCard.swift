@@ -15,7 +15,7 @@ struct RemoteStatusCard: View {
             // La TV ya no reconoce este iPhone (cambió su token): sin esto el control quedaba muerto sin decir por qué.
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Label("Tu Orbital ya no reconoce este iPhone", systemImage: "lock.trianglebadge.exclamationmark").recipe(.cardTitle)
-                Text("Vuelve a conectarlos: en tu TV abre Ajustes › iPhone y escanea el código.").recipe(.footnote)
+                Text("Vuelve a conectarlos: en tu TV abre Ajustes › Cuentas › Conectar un aparato y escanea el código.").recipe(.footnote)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else if model.unreachable && !model.answered || model.unreachable && model.now == nil {

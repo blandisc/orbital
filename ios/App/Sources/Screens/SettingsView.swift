@@ -14,7 +14,7 @@ struct SettingsView: View {
     @State var confirmSignOut = false
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
-    @State private var orbitalToken = ""
+    @State var orbitalToken = ""
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
@@ -24,7 +24,7 @@ struct SettingsView: View {
     @State private var showsOrbital = false
     @State private var showsDemoPage = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
-    @State private var orbitalSetup: OrbitalSetupStart?
+    @State var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
 
     init() {
@@ -38,6 +38,8 @@ struct SettingsView: View {
         let model = settings.model
         let s = model.settings
         Form {
+            // CX4-A, IOS-10: la invitación de tu iPhone, lo primero de Ajustes (solo en un iPad sin conectar; nunca en la Mac).
+            if env.services.allowsOrbital { IPadInviteCard { orbitalSetup = .connect } }
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
                 // «Lo que ves» ya no está aquí: vive en Explorar (Fernando, 2 nov 2026: «ya tenemos otro acceso en Explorar»).
@@ -73,7 +75,7 @@ struct SettingsView: View {
                 }
                 NavigationLink { AddonsSettings() } label: {
                     SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
-                                value: env.services.addonList.isConfigured ? Text(verbatim: "\(env.services.addonList.installed.filter(\.enabled).count)") : Text("Configurar"))
+                                value: addonsValue)
                 }
                 // Tus películas y series de OneDrive como una fuente más (como en la TV).
                 NavigationLink { OneDriveSettings() } label: {
@@ -83,10 +85,7 @@ struct SettingsView: View {
             } header: { Text("Conexiones") }
             .listRowBackground(DS.surface)
             // La app es de una sola pieza: lo de la consola sale solo con esto prendido (en la Mac no hay consola).
-            if env.services.allowsOrbital {
-                IPadInviteCard { orbitalSetup = .connect }   // CX4-A: la invitación de tu iPhone (solo en un iPad sin conectar)
-                orbitalSettings(model)
-            }
+            if env.services.allowsOrbital { orbitalSettings(model) }
             // Lo que casi no se toca: complementos, la clave de TMDB y el país.
             Section {
                 NavigationLink { page("Avanzado") { suggestions(model) } } label: {
@@ -171,9 +170,10 @@ struct SettingsView: View {
             .accessibilityIdentifier("settings-orbital")
             if on {
                 NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
-                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series,
-                                value: env.services.orbitalNeedsRescan ? Text("Vuelve a escanear") : env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
+                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: env.services.orbitalNeedsRescan || env.services.tvLinkNow == .silent ? DS.warning : DS.ListTint.series,
+                                value: orbitalValue)
                 }
+                .task { await env.services.checkTV() }   // IOS-2: «Conectada» solo si la TV contestó
                 NavigationLink { VoiceGuideView() } label: {   // la voz le da órdenes a tu Orbital
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
                 }
@@ -206,6 +206,14 @@ struct SettingsView: View {
         if env.services.orbital.isConfigured { parts.append("Orbital") }
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
         return Text("Conectado: \(parts.joined(separator: " · "))")
+    }
+
+    /// IOS-17: un estado, no un verbo: «3 prendidos» o «Sin configurar».
+    private var addonsValue: Text {
+        let list = env.services.addonList
+        guard list.isConfigured else { return Text("Sin configurar") }
+        let on = list.installed.filter(\.enabled).count
+        return on == 1 ? Text("1 prendido") : Text("\(String(on)) prendidos")
     }
 
     private func appearanceName(_ value: String) -> Text {
@@ -377,53 +385,6 @@ struct SettingsView: View {
 
     @ViewBuilder private var qualityOptions: some View {
         Text("4K").tag("4K"); Text("1080p").tag("1080p"); Text("720p").tag("720p")
-    }
-
-    // MARK: tu Orbital (la TV)
-    private func imported(_ model: SettingsModel) -> String {
-        model.importedFromOrbital.joined(separator: env.services.appSettings.uiLanguage == "en" ? " and " : " y ")
-    }
-
-    @ViewBuilder func orbitalSection(_ model: SettingsModel) -> some View {
-        let connected = env.services.orbital.isConfigured
-        OrbitalRescanProblem { orbitalSetup = .connect }   // K1: «Vuelve a escanear el código de tu TV», solo cuando pasa
-        Section {
-            if connected {
-                Label {
-                    Text("Conectada a \(env.services.orbital.base?.host ?? "")")
-                } icon: { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
-                Button { Task { await model.checkOrbital() } } label: {
-                    HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }   // ds-exception: la ruedita va dentro del botón que la pidió
-                }
-                if let problem = model.orbitalCheck, !problem.isEmpty { Text(verbatim: env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
-                if !model.importedFromOrbital.isEmpty {
-                    Label("Traje de tu Orbital: \(imported(model)). No hay que escribirlo aquí.", systemImage: "arrow.down.doc")
-                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.good)
-                }
-            } else {
-                // Lo fácil primero: un código en la TV, la cámara del iPhone y listo.
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Label("En la TV: Ajustes › Cuentas › iPhone", systemImage: "qrcode").font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
-                    Text("Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.")
-                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                }
-                .padding(.vertical, DS.Space.s1)
-            }
-            DisclosureGroup(connected ? "Cambiar a mano" : "Conectar a mano") {
-                TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
-                    .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
-                if let problem = OrbitalRemote.addressProblem(model.settings.orbitalAddress) {
-                    Text(verbatim: env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger)   // por qué no se conecta
-                }
-                SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
-            }
-        } header: { Label { Text("Tu Orbital (la TV)") } icon: { OrbitalMark(size: DS.Size.markSmall) } } footer: {
-            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Trakt se conecta aparte en cada uno.")
-        }
-        .listRowBackground(DS.surface)
-        OrbitalDevicesSection()   // K1: los aparatos de tu TV, con «Quitar»
     }
 
     // MARK: Trakt

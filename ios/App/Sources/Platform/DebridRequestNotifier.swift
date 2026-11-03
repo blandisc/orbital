@@ -37,10 +37,20 @@ enum DebridRequestNotifier {
     }
 
     /// ¿Ya se pidió permiso de avisos? (`.notDetermined`: la primera vez que pides algo se explica antes, R10).
-    static func permission() async -> UNAuthorizationStatus { await UNUserNotificationCenter.current().notificationSettings().authorizationStatus }
+    static func permission() async -> UNAuthorizationStatus {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        await MainActor.run { canNotify = Self.allows(status) }
+        return status
+    }
+
+    /// IOS-8 · lo último que se supo del permiso (se pone al día con cada `permission()`): sin él no se promete «Te aviso».
+    @MainActor static var canNotify = false
+    static func allows(_ status: UNAuthorizationStatus) -> Bool { [.authorized, .provisional, .ephemeral].contains(status) }
 
     static func requestPermission() async -> Bool {
-        (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        await MainActor.run { canNotify = granted }
+        return granted
     }
 
     /// Los avisos de la app en Ajustes del iPhone («Avisos apagados · actívalos»).
@@ -58,18 +68,21 @@ enum DebridRequestNotifier {
     /// Con la app cerrada (iOS la despierta un momento): una sola consulta a Real-Debrid por todos los pedidos en camino.
     @MainActor static func checkInBackground() async {
         let requests = AppEnvironment.shared.services.debridRequests
-        guard !requests.active.isEmpty else { return }
+        // R14-B: en el iPhone se mira también la libreta de la TV, aunque aquí no baje nada (lo que pidió la TV con tu cuenta).
+        guard !requests.active.isEmpty || requests.notifiesTVRequests else { return }
         await requests.refresh()
     }
 
-    /// «Ya está T1 E2» (o «Ya está Nocturne»): Real-Debrid terminó de bajarlo.
+    /// «Ya está T1 E2» (o «Ya está Nocturne»): Real-Debrid terminó de bajarlo. R14-B: si lo pidió la TV con tu cuenta, el
+    /// iPhone también avisa: «Ya está T1 E2 · Nocturne · Lo pediste desde la TV», con los mismos botones.
     @MainActor static func post(ready request: DebridRequest, language: String) async {
         guard await allowed() else { return }
         let content = UNMutableNotificationContent()
         let what = episodeName(request, language: language) ?? request.title
         content.title = String(format: Strings.tr("Ya está %@", language: language), what)
         if request.kind == "series" { content.subtitle = request.title }
-        content.body = Strings.tr("Real-Debrid terminó de bajarlo · ábrelo para verlo", language: language)
+        content.body = request.device == DebridRequestsModel.tvDevice ? Strings.tr("Lo pediste desde la TV", language: language)
+                                                                      : Strings.tr("Real-Debrid terminó de bajarlo · ábrelo para verlo", language: language)
         content.threadIdentifier = thread
         content.categoryIdentifier = category
         content.sound = .default

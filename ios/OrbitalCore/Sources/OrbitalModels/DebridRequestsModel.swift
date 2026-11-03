@@ -15,6 +15,13 @@ public final class DebridRequestsModel: ObservableModel {
     public private(set) var activeCount: (active: Int, limit: Int)? { didSet { changed() } }
 
     public let requester: DebridRequester
+    /// Otros nombres con que este aparato pidió cosas (el de iOS, antes de ponerle nombre al conectar, IOS-11).
+    public var alsoMine: Set<String> = []
+    /// R14-B · este aparato también avisa lo que pidió la TV con tu misma cuenta de Real-Debrid. Solo el iPhone (en el iPad y
+    /// la Mac no, para que no suene en todos): lo pone `Services`.
+    public var notifiesTVRequests = false
+    /// Quién es la TV en `by` (`DEVICE` de orbital/rd_requests.py).
+    public static let tvDevice = "TV"
     private let lookup: TorrentLookup
     private let addonList: AddonList
     private let finder: @MainActor () -> StreamFinder
@@ -42,6 +49,15 @@ public final class DebridRequestsModel: ObservableModel {
     public func request(metaID: String, videoID: String?) -> DebridRequest? {
         let mine = requests.filter { $0.covers(metaID: metaID, videoID: videoID) && !isOtherAccount($0) }
         return mine.first { $0.state != .refused } ?? mine.first
+    }
+
+    /// IOS-8 · ¿este aparato avisa de este pedido? Solo el que lo pidió (los demás no prometen «Te aviso»).
+    public func isFromHere(_ request: DebridRequest) -> Bool { alsoMine.union([requester.deviceName]).contains(request.device) }
+
+    /// IOS-19 · el pedido de ese video con otra cuenta de Real-Debrid (la TV con la suya), si sigue en camino: la ficha lo
+    /// dice («La TV lo está pidiendo con otra cuenta») y aun así deja pedirlo aparte.
+    public func otherAccountRequest(metaID: String, videoID: String?) -> DebridRequest? {
+        requests.first { $0.covers(metaID: metaID, videoID: videoID) && isOtherAccount($0) && DebridRequestWords.group($0.state) == .pending }
     }
 
     /// El pedido de ese torrent en tu cuenta (nunca una lápida).
@@ -112,19 +128,28 @@ public final class DebridRequestsModel: ObservableModel {
     }
 
     /// Se junta con la TV y pregunta cuánto lleva cada uno (una sola consulta). Los que quedan listos salen «Al instante» y se
-    /// avisan; los atorados 24 h, también (una vez). Avisa solo el aparato que lo pidió (`by`): lo que llega de la TV, nunca.
+    /// avisan; los atorados 24 h, también (una vez). Avisa el aparato que lo pidió (`by`) y, R14-B, el iPhone también lo que
+    /// pidió la TV con tu misma cuenta, una vez y solo si lo vio en camino (lo que ya llegó listo se marca en silencio).
     public func refresh() async {
-        await requester.syncWithTV()
+        await requester.syncWithTV(watchReady: notifiesTVRequests)
         let changed = await requester.refresh()
         reload()
-        let me = requester.deviceName
-        for request in changed where request.state == .ready && !request.notified && request.device == me {
+        let me = alsoMine.union([requester.deviceName])
+        for request in changed where request.state == .ready && !request.notified && me.contains(request.device) {
             for video in request.videoIDs { await finder().forget(kind: request.kind, videoID: video) }
             await requester.markNotified(hash: request.hash)
             onReady?(request)
         }
+        if notifiesTVRequests, let mine = requester.knownAccount, !mine.isEmpty {
+            for request in requester.book.all where request.device == Self.tvDevice && request.state == .ready && !request.notified
+                && request.account == mine {
+                for video in request.videoIDs { await finder().forget(kind: request.kind, videoID: video) }
+                await requester.markNotified(hash: request.hash)
+                onReady?(request)
+            }
+        }
         let now = clock()
-        for request in active where request.isStalled(now: now) && !request.nudged && request.device == me {
+        for request in active where request.isStalled(now: now) && !request.nudged && me.contains(request.device) {
             await requester.markNudged(hash: request.hash)
             onStalled?(request)
         }
@@ -146,8 +171,10 @@ public final class DebridRequestsModel: ObservableModel {
 
     /// Mientras la app está abierta y algo baja, pregunta cada `every` segundos (R10). Termina al cancelar la tarea.
     public func follow(every: TimeInterval = 20) async {
+        var first = notifiesTVRequests   // R14-B: al volver a la app se mira la libreta de la TV aunque aquí no baje nada
         while !Task.isCancelled {
-            if !active.isEmpty { await refresh() }
+            if !active.isEmpty || first { await refresh() }
+            first = false
             try? await Task.sleep(nanoseconds: UInt64(every * 1_000_000_000))
         }
     }

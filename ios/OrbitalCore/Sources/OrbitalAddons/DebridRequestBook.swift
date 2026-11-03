@@ -44,8 +44,11 @@ public final class DebridRequestBook: @unchecked Sendable {
 
     /// Junta una entrada que llega de la TV: con la guardada (`DebridRequest.merge`) o, si es nueva, tal cual pero sin avisar
     /// nada aquí (solo avisa el aparato que la pidió). Devuelve lo que quedó.
+    ///
+    /// R14-B · `watchReady` (el iPhone): una nueva que todavía va en camino queda sin avisar (`notified` false), para avisar
+    /// cuando quede lista; una que ya llega lista se marca avisada en silencio (al conectar, lo de antes no suena).
     @discardableResult
-    public func absorb(_ incoming: DebridRequest) -> DebridRequest {
+    public func absorb(_ incoming: DebridRequest, watchReady: Bool = false) -> DebridRequest {
         lock.withLock {
             var list = load()
             let out: DebridRequest
@@ -55,7 +58,7 @@ public final class DebridRequestBook: @unchecked Sendable {
                 list[i] = out
             } else {
                 var fresh = incoming
-                fresh.notified = true; fresh.nudged = true; fresh.pending = false
+                fresh.notified = !(watchReady && fresh.state.isActive); fresh.nudged = true; fresh.pending = false
                 list.append(fresh); out = fresh
             }
             save(list)

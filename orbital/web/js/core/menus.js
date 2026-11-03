@@ -1216,8 +1216,12 @@ export function onedriveFolderMenu(path, folders) {
   };
 }
 
+/** «Conectar un aparato» (IOS-3): el mismo nombre que su pantalla, y el que dice el iPhone («Ajustes › Cuentas › Conectar un
+ *  aparato»). Antes «Conectar otro», y sin aparatos el renglón se llamaba «iPhone». */
+const CONNECT_DEVICE = { icon: "phone", label: "Conectar un aparato", value: "", hint: "iPhone o iPad, con un código QR", command: { type: "phone-link" } };
+
 /** Cuentas: un renglón por iPhone o iPad que conoce Orbital (la app dice quién es), el abierto ahora con «✓ Conectado»,
- *  y al final «Conectar otro» con el QR. Con llaves por aparato (K1-A) salen los emparejados, y cada uno abre su hoja
+ *  y al final «Conectar un aparato» con el QR. Con llaves por aparato (K1-A) salen los emparejados, y cada uno abre su hoja
  *  con «Quitar». Sin aparatos con nombre (app vieja): el renglón de siempre. */
 export function phoneRows(settings, now = Date.now()) {
   const paired = settings.paired_devices || [];
@@ -1229,16 +1233,19 @@ export function phoneRows(settings, now = Date.now()) {
           : row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia conexión" : row.hint,
         command: { type: "device-menu", id: device.device_id } };
     });
-    return [{ heading: true, label: "Aparatos conectados" }, ...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone o iPad, con un código QR", command: { type: "phone-link" } }];
+    return [{ heading: true, label: "Aparatos conectados" }, ...rows, CONNECT_DEVICE];
   }
   const known = settings.companion_devices || [];
-  if (!known.length) return [phoneRow(settings.companion_seen, now, settings.companion_live)];
+  if (!known.length) {
+    const row = phoneRow(settings.companion_seen, now, settings.companion_live);
+    return [row.hint === "Con un código QR" ? CONNECT_DEVICE : row]; // nunca usado: el renglón dice adónde lleva
+  }
   const rows = known.map((device) => {
     const kind = device.kind === "ipad" ? "iPad" : "iPhone";
     const label = device.name && !["iphone", "ipad"].includes(device.name.toLowerCase()) ? device.name : kind;
     return { ...phoneRow(device.seen, now, device.live), label };
   });
-  return [...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone o iPad, con un código QR", command: { type: "phone-link" } }];
+  return [...rows, CONNECT_DEVICE];
 }
 
 const PLATFORM_NAMES = { iphone: "iPhone", ipad: "iPad", mac: "Mac" };

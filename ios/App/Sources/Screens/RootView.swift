@@ -396,6 +396,8 @@ struct MainTabs: View {
             ui.goBack = false
             if !paths[tab].isEmpty { paths[tab].removeLast() }
         }
+        // IOS-10: la invitación de tu iPhone sale al abrir Orbital en el iPad (una vez por invitación), no escondida en Ajustes.
+        .task { if env.services.takeInviteToShow() { paths[tab].append(SettingsRoute()) } }
         .onChange(of: ui.openSettings) { _, open in
             guard open else { return }
             ui.openSettings = false

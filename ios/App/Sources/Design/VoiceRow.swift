@@ -300,7 +300,7 @@ struct ConnectionTrail: View {
             HStack(spacing: DS.Space.s2) {
                 node("iphone", Text("Tu iPhone"), ok: issue != .noInternet)
                 link(failed: issue == .noInternet || issue == .tunnelDown)
-                node("network", Text("Túnel"), ok: issue == .orbitalDown || issue == .tokenChanged)
+                node("network", Text("Internet"), ok: issue == .orbitalDown || issue == .tokenChanged)
                 link(failed: issue == .orbitalDown || issue == .tokenChanged)
                 node("tv", Text("Orbital"), ok: false)
             }
@@ -319,8 +319,8 @@ struct ConnectionTrail: View {
     private var message: Text {
         switch issue {
         case .noInternet: Text("Tu iPhone no tiene internet. Conéctate a una red y prueba otra vez.")
-        case .tunnelDown: Text("El túnel no contesta: la consola puede estar dormida o el túnel trabado. «Prende la tele» la despierta.")
-        case .orbitalDown: Text("El túnel contesta, Orbital no: puede estar cerrada o reiniciándose. Espera un momento.")
+        case .tunnelDown: Text("Tu TV no contesta: puede estar dormida. «Prende la tele» la despierta.")
+        case .orbitalDown: Text("Tu TV contesta, pero Orbital no: puede estar cerrada o reiniciándose. Espera un momento.")
         case .tokenChanged: Text("Tu Orbital ya no reconoce este iPhone. Vuelve a conectarlo en Ajustes › Usar con tu Orbital.")
         }
     }

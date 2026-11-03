@@ -356,5 +356,51 @@ final class DesignRulesTests: XCTestCase {
         }
         check(problems, "Lo que dice la pantalla es verdad al abrirla")
     }
+
+    // MARK: Auditoría del iPhone (IOS-1…IOS-19, 3 nov 2026)
+
+    /// IOS-1, IOS-2: «Conectada» solo con lo que contestó en esta visita (la TV: «✓ Conectado» si habló hace menos de 2 min).
+    /// Tu Real-Debrid con `case .confirmed`, tu TV con `case .answered`; nunca con solo tener algo guardado (`isConfigured`).
+    func testConnectedOnlyIfItAnswered() throws {
+        var problems: [String] = []
+        for file in try sources(["Screens"]) {
+            for (i, line) in file.lines.enumerated() where line.contains("Text(\"Conectada") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+                let before = file.lines[max(0, i - 2)...i].joined(separator: "\n")
+                if !before.contains("case .confirmed") && !before.contains("case .answered") || line.contains("isConfigured") {
+                    problems.append("\(file.path):\(i + 1): «Conectada» sin haber contestado")
+                }
+            }
+        }
+        check(problems, "Conectado solo si contestó")
+    }
+
+    /// IOS-7, como la TV: lo terminado no se cancela, se quita («Quitar de tu Real-Debrid»); y cancelar siempre pregunta
+    /// antes, con la misma pregunta (`debridCancelConfirmation`) en la ficha, en la hoja y en la lista.
+    func testFinishedIsRemovedNotCancelled() throws {
+        var problems: [String] = []
+        for file in try sources() {
+            for (i, line) in file.lines.enumerated() where !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+                if line.contains("\"Cancelar pedido\""), line.contains("cancelRequest(") {
+                    problems.append("\(file.path):\(i + 1): «Cancelar pedido» sin preguntar antes")
+                }
+                if line.contains("\"¿Cancelar el pedido?\""), file.name != "DebridRequests.swift" {
+                    problems.append("\(file.path):\(i + 1): la pregunta de cancelar es `debridCancelConfirmation`")
+                }
+                if file.name == "DebridRequestsView.swift" || file.name == "DebridRequests.swift",
+                   line.contains("\"Cancelar pedido\""), !line.contains("finished ?"), !line.contains("role: .destructive, action: perform") {
+                    problems.append("\(file.path):\(i + 1): lo terminado se quita («Quitar de tu Real-Debrid»), no se cancela")
+                }
+            }
+        }
+        check(problems, "Lo terminado no se cancela, se quita")
+    }
+
+    /// IOS-8: «Te aviso cuando esté listo» solo si este aparato va a avisar (con permiso y pedido desde aquí). Cada renglón de
+    /// un pedido dice si avisa (`notifies:`).
+    func testNoPromiseToNotifyWithoutPermission() throws {
+        let problems = hits("DebridRequestWords\\.detail\\(", in: try sources(), unless: "notifies:")
+        check(problems, "Sin permiso no se promete avisar: DebridRequestWords.detail lleva `notifies:`")
+    }
+
 }
 

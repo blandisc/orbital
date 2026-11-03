@@ -49,6 +49,12 @@ extension TitleModel {
         return services.debridRequests.request(metaID: metaID, videoID: videoID)
     }
 
+    /// IOS-19 · lo que otra cuenta de Real-Debrid (la de tu TV) está pidiendo de este mismo video.
+    public var otherAccountRequest: DebridRequest? {
+        guard let videoID = continueVideoID, debridRequest == nil else { return nil }
+        return services.debridRequests.otherAccountRequest(metaID: metaID, videoID: videoID)
+    }
+
     /// «Pedirlo y avisarme» desde la ficha: el torrent de `debridOffer` (o el mejor que exista).
     public func requestFromDebrid(onCellular: Bool = false) async -> DebridRequestsModel.Outcome? {
         guard let videoID = continueVideoID else { return nil }

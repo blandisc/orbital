@@ -6,7 +6,7 @@ import OrbitalAddons
 /// puede quitar a quién, «Darle su propia conexión» y «Tu TV es nueva». La Mac nunca habla con tu TV (CX1-B): todo esto se
 /// apaga con `allowsOrbital`.
 extension Services {
-    static let deviceNameKey = "orbital.device-name"
+    nonisolated static let deviceNameKey = "orbital.device-name"
     static let tvNameKey = "orbital.tv-name"
 
     // MARK: CX7-A · el nombre de este aparato
@@ -85,6 +85,18 @@ extension Services {
     public var pendingInvite: OrbitalInvite? {
         guard allowsOrbital, platform == "ipad", !hasOrbitalDeviceKey else { return nil }
         return OrbitalInvite.decode(secrets.get(SecretKey.orbitalInvite))
+    }
+
+    static let inviteShownKey = "orbital.invite-shown"
+
+    /// IOS-10 · al abrir la app en el iPad con una invitación vigente: true una sola vez por invitación (la app abre Ajustes,
+    /// donde la tarjeta va primero). Así «La invitación sale al abrir Orbital en el iPad» es verdad.
+    public func takeInviteToShow() -> Bool {
+        guard let invite = pendingInvite, invite.isValid(at: now()) else { return false }
+        let mark = Data(String(invite.expires.timeIntervalSince1970).utf8)
+        guard kv.data(Self.inviteShownKey) != mark else { return false }
+        kv.set(Self.inviteShownKey, data: mark)
+        return true
     }
 
     /// «Conectar tu iPad» solo en un iPhone conectado con su propia conexión.

@@ -201,5 +201,8 @@ public final class AddonTVSync: ObservableModel {
     public func clearClash() { clash = nil }
 
     /// La TV pidió una clave que este iPhone no manda: la frase tranquila de la página (no es un error).
-    public static func waitsForKeys(_ reason: String) -> Bool { reason.localizedCaseInsensitiveContains("llaves por aparato") }
+    /// La TV de antes decía «Espera las llaves por aparato»; la de hoy, «…esa dirección lleva una clave».
+    public static func waitsForKeys(_ reason: String) -> Bool {
+        reason.localizedCaseInsensitiveContains("llaves por aparato") || reason.localizedCaseInsensitiveContains("lleva una clave")
+    }
 }

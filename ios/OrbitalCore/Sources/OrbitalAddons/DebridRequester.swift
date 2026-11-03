@@ -216,15 +216,16 @@ public actor DebridRequester {
     }
 
     /// Se junta con la libreta de la TV: primero manda lo que cambió aquí y la TV todavía no tiene; luego lee la suya y la
-    /// junta entrada por entrada. Lo que llega de la TV nunca avisa aquí. Sin TV (o con `NoDebridRequestSync`), nada.
-    public func syncWithTV() async {
+    /// junta entrada por entrada. Lo que llega de la TV no avisa aquí, salvo `watchReady` (R14-B, el iPhone: lo que la TV
+    /// pidió con tu cuenta avisa al quedar listo). Sin TV (o con `NoDebridRequestSync`), nada.
+    public func syncWithTV(watchReady: Bool = false) async {
         for entry in book.stored where entry.pending {
             guard await push(entry) else { return }   // la TV no contesta: lo demás, en el siguiente vistazo
         }
         guard let pulled = await sync.pull() else { return }
         for var remote in pulled.requests {
             if remote.account == nil { remote.account = pulled.account }   // sin `account`: la de quien la guarda
-            book.absorb(remote)
+            book.absorb(remote, watchReady: watchReady)
         }
         book.prune(now: clock(), account: await currentAccount())
     }

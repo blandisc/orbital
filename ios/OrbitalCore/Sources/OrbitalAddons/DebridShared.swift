@@ -12,8 +12,12 @@ public struct SharedDebridKey: Codable, Equatable, Sendable, CustomStringConvert
     public var from: String
     /// Con «De todos tus aparatos Apple»: la huella (SHA-256) de la clave quitada; los aparatos que la usaban la quitan.
     public var removed: String?
+    /// IOS-11 · el nombre del aparato que la puso («iPad de Fernando»); nil en una copia de antes.
+    public var name: String?
 
-    public init(key: String, from: String, removed: String? = nil) { self.key = key; self.from = from; self.removed = removed }
+    public init(key: String, from: String, removed: String? = nil, name: String? = nil) {
+        self.key = key; self.from = from; self.removed = removed; self.name = name
+    }
     public var description: String { "sharedDebridKey(from: \(from), key: •••, removed: \(removed != nil))" }
 
     static func decode(_ raw: String?) -> SharedDebridKey? {
@@ -33,7 +37,7 @@ public struct SharedDebridKey: Codable, Equatable, Sendable, CustomStringConvert
 public enum SharedDebrid: Equatable, Sendable {
     case none
     /// Sin clave aquí, y tus aparatos Apple tienen una que sirve: «Usar la clave de tus aparatos Apple» (junto a «Pega tu
-    /// clave», nunca en su lugar). `from` es quién la puso.
+    /// clave», nunca en su lugar). `from` es quién la puso: su nombre («iPad de Fernando») o, en una copia de antes, su tipo.
     case offer(from: String, account: DebridStatus)
     /// La compartida es de otra cuenta que la de aquí: se pregunta.
     case differs(from: String, shared: DebridStatus, local: DebridStatus?)
@@ -49,12 +53,12 @@ extension DebridAccount {
 
     nonisolated func publishShared(_ key: String) {
         guard !key.isEmpty else { return }
-        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform).encoded)
+        _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, SharedDebridKey(key: key, from: platform, name: deviceName()).encoded)
     }
 
     nonisolated func retireShared(_ key: String) {
         guard let shared = sharedKey else { return }
-        let mark = SharedDebridKey(key: "", from: platform, removed: SharedDebridKey.fingerprint(shared.key.isEmpty ? key : shared.key))
+        let mark = SharedDebridKey(key: "", from: platform, removed: SharedDebridKey.fingerprint(shared.key.isEmpty ? key : shared.key), name: deviceName())
         _ = vaultRef.storeSecret(AddonKeys.sharedRealDebridToken, mark.encoded)
         markSharedSeen(mark.encoded)
     }
@@ -82,20 +86,22 @@ extension DebridAccount {
             markSharedSeen(shared.encoded)
             return .removedEverywhere(from: shared.from)
         }
+        // IOS-11: quién la puso, con su nombre si lo trae («iPad de Fernando»); si no, su tipo («ipad»).
+        let who = shared.name.flatMap { $0.isEmpty ? nil : $0 } ?? shared.from
         if local == shared.key { markSharedSeen(shared.key); return .none }
         if !local.isEmpty, sharedSeen == shared.key { return .none }
         guard let theirs = try? await provider.status(token: shared.key) else { return .none }   // no sirve o no contestó: nada que ofrecer
-        guard !local.isEmpty else { return theirs.isPremium ? .offer(from: shared.from, account: theirs) : .none }
+        guard !local.isEmpty else { return theirs.isPremium ? .offer(from: who, account: theirs) : .none }
         switch await checkNow() {
         case .status(let mine):
             if Self.sameAccount(mine, theirs) { markSharedSeen(shared.key); return .none }   // la misma cuenta y las dos sirven
-            return .differs(from: shared.from, shared: theirs, local: mine)
+            return .differs(from: who, shared: theirs, local: mine)
         case .invalidToken:
             if Self.sameAccount(saved, theirs) {
                 save(token: shared.key, status: theirs, share: false)
-                return .adopted(from: shared.from)
+                return .adopted(from: who)
             }
-            return .differs(from: shared.from, shared: theirs, local: nil)
+            return .differs(from: who, shared: theirs, local: nil)
         case .unreachable, .noKey: return .none
         }
     }

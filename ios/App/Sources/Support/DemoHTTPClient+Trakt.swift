@@ -62,7 +62,7 @@ extension DemoHTTPClient {
             return HTTPResponse(status: Demo.rdPoints >= 1000 ? 204 : 503, data: Data())
         }
         guard url.host == "api.real-debrid.com", url.path.hasSuffix("/user"), let state = Demo.realDebrid else { return nil }
-        let days: Double = switch state { case "soon": 3; case "expired": -2; case "free": 0; default: Double(state) ?? 143 }
+        let days: Double = switch state { case "soon": 3; case "expired": -2; case "free": -400; default: Double(state) ?? 143 }
         // `-demo-rd unreachable`: hay clave, pero Real-Debrid no contesta (para ver «No pude ver tu cuenta»).
         guard state != "unreachable" else { return HTTPResponse(status: 503, data: Data()) }
         guard state != "invalid", state != "revoked" else { return HTTPResponse(status: 401, data: JSON.object(["error": "bad_token", "error_code": 8]).serialized()) }

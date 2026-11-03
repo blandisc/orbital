@@ -11,10 +11,11 @@ extension PlayerScreen {
     /// R7: lo pide (la versión «por bajar» que ya se abrió, o el mejor torrent que exista) y dice qué contestó Real-Debrid. La
     /// primera vez, antes de la pregunta de iOS, la misma explicación que en la ficha (P4-A).
     func requestFromPlayer(_ model: PlayerModel) async {
-        await withNotifications { off in await sendFromPlayer(model, off: off) }
+        await withNotifications { off in await sendFromPlayer(model, off: off, notifies: DebridRequestNotifier.canNotify) }
     }
 
-    private func sendFromPlayer(_ model: PlayerModel, off: Bool) async {
+    /// `notifies` (IOS-8): con «Ahora no» no se promete «Te aviso cuando esté listo».
+    private func sendFromPlayer(_ model: PlayerModel, off: Bool, notifies: Bool) async {
         guard let outcome = await model.requestFromDebrid() else { return }
         let tr = { (key: String) in Strings.tr(key, language: ui) }
         switch outcome {
@@ -22,7 +23,7 @@ extension PlayerScreen {
             let warn = [.refused, .tooMany].contains(request.state)
             // P5-A: «Avisos apagados» trae su arreglo, «Ajustes», como en la ficha.
             show(PlayerNotice(title: DebridRequestWords.title(request, tr),
-                              detail: off && !warn ? tr("Avisos apagados · actívalos") : DebridRequestWords.detail(request, now: Date(), tr),
+                              detail: off && !warn ? tr("Avisos apagados · actívalos") : DebridRequestWords.detail(request, now: Date(), notifies: notifies, tr),
                               tone: warn || off ? .warn : .success, opensNotificationSettings: off && !warn))
         case .failed(let cause?, _): show(PlayerNotice(title: cause.title(tr), detail: cause.detail(tr), tone: .warn))
         case .failed(nil, let error): show(PlayerNotice(title: error.words(tr), detail: nil, tone: .warn))

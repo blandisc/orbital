@@ -397,6 +397,21 @@ Vamos con P3B. Vamos con P4A. Vamos P5A. P6A.» Cada una es regla de todo el sis
 | Antes de una pregunta de iOS que se hace una sola vez, la misma explicación en todos lados | `DebridNotifyAsk` (ficha y reproductor) | `-demo-player rd-notify` |
 | Un renglón de datos lleva su forma corta si la larga no cabe: `DataLine` suelta lo que no cabe, y lo que importa no puede ser lo que se suelta | «Seguir viendo» dice «T2 E5 · Bajando · 42 %» | — |
 
+### Reglas de la auditoría del iPhone (IOS-1…IOS-19, 3 nov 2026)
+
+Fernando: «audita a fondo…» y después «RE1-A». Lo que se rompía en el iPhone y en la TV ya estaba resuelto; es regla de las dos:
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| **Conectado solo si contestó.** «Conectada ✓» de tu TV solo si contestó hace menos de 2 min (como la TV con tus aparatos, `PHONE_LIVE`); mientras, «Revisando…»; si no, «Tu TV no contesta» con «Reintentar». De tu Real-Debrid, solo si sirve para ver: vencida o gratuita, la clave dice «Guardada · sin Premium». Debajo de un problema de «Escanear», nunca «Conectada» | `Services.checkTV()` / `tvLinkNow` (`Services+TVLink.swift`), `SettingsView+Orbital`; `DebridAccountView.canPlay` | `testConnectedOnlyIfItAnswered` |
+| **Lo terminado no se cancela, se quita.** Listo: «Ver ahora», «Abrir la ficha» y «Quitar de tu Real-Debrid» («¿Quitarlo de tu Real-Debrid?»); cancelar algo en camino pregunta siempre con «Seguir esperando», también desde el botón de la ficha | `debridCancelConfirmation` (`DebridRequests.swift`), `DebridRequestSheet.finished` | `testFinishedIsRemovedNotCancelled` |
+| **Sin permiso no se promete avisar.** «Te aviso cuando esté listo» solo si este aparato tiene permiso y lo pidió; si no, «Ábrelo aquí para ver cuánto lleva». «Avisarme cuando aparezca» pasa por la misma explicación (P4-A) y, ya activado, abre su hoja con «Ya no avisarme» | `DebridRequestWords.detail(notifies:)`, `DebridRequestNotifier.canNotify`, `TitleDebridSheet.notifyAppear` / `.appear` | `testNoPromiseToNotifyWithoutPermission` |
+| **Se compara la cuenta, no la clave.** «Tu TV usa la cuenta X · La misma que este iPhone ✓» sin botones; la pregunta («Pasar la de este iPhone · Usar la de la TV · Dejar cada una») solo si son distintas, también al conectar | `DebridModel.compareWithTV()` / `TVAccount`, `DebridTVCompare` | `DeviceKeysTests` |
+| Un problema va arriba, en ámbar y con su arreglo; nunca un texto rojo sin botón. Con letra de accesibilidad, la explicación larga se queda en su hoja («¿Qué es esto?») y no tapa la página | `DSProblem`, `DSNotice(tone: .warn)`; `dynamicTypeSize.isAccessibilitySize` | `testAProblemAlwaysBringsItsFix` |
+| Quitar un aparato: tocar su renglón abre su hoja con «Quitar» (como `deviceMenu` de la TV); el propio va aparte, «Desconectar este iPhone» | `OrbitalDevicesSection`, `OrbitalDeviceSheet` | — |
+| Un renglón que se toca y hace algo (no lleva a otra página) lleva el color de lo interactivo; uno que lleva a otra, su chevron | `TorrentioRowLabel(action: true)` | — |
+| La Mac dice «Mac»: una app de iPad en la Mac se presenta como iPad, así que las frases de «este iPhone» que también ve la Mac eligen la palabra en el código | `DeviceWords.text(_:mac:)` (`DeviceInfo.swift`) | `DeviceWordsOnMacTests` |
+
 ### Tabla espejo (iPhone ↔ TV)
 
 Una sola Orbital (Fernando, 31 oct 2026): cada papel del lenguaje del iPhone tiene aquí su pieza de la TV y su estado. Estado:

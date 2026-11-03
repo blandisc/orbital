@@ -25,6 +25,8 @@ struct ContinueAction: View {
     /// La otra salida a la derecha cuando no hay «Desde el principio» (Real-Debrid, R2-A y R13): «Verlo en inglés al
     /// instante» o «Cancelar pedido». Mismo lugar y mismo estilo: una acción en color.
     var aside: (title: Text, symbol: String, action: () -> Void)?
+    /// IOS-9 · el renglón de abajo dice un problema (atorado, rechazado): en ámbar, mientras el botón dice la acción.
+    var warn = false
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
     var tint: Color = DS.accent
     @Environment(\.colorScheme) private var scheme
@@ -70,7 +72,7 @@ struct ContinueAction: View {
     /// «quedan 50 min · 🇺🇸 Inglés · 1080p»: cuánto falta y la versión, en un solo texto gris.
     @ViewBuilder private func status(_ left: Text?, _ version: Text?) -> some View {
         if let text = Self.join(left, version) {
-            text.recipe(.footnote, color: DS.textMuted).lineLimit(1)
+            text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(1)
                 .accessibilityLabel(version == nil ? text : Self.join(left, versionLabel ?? version) ?? text)
         }
     }

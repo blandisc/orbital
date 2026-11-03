@@ -18,6 +18,7 @@ struct DebridAccountView: View {
     /// (antes «Conectada ✓» parpadeaba a «Guardada · Revisando…»).
     @State private var checked = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Cómo está tu clave en la página (P6-A).
     enum KeyState { case confirmed, checking, saved, rejected }
@@ -27,13 +28,6 @@ struct DebridAccountView: View {
     var body: some View {
         let model = debrid.model
         Form {
-            Section {
-                Button { explaining = true } label: {
-                    TorrentioRowLabel(title: Text("¿Qué es Real-Debrid?"), detail: Text("Por qué arranca al instante y qué cuesta"))
-                }
-                .accessibilityIdentifier("debrid-explain")
-            }
-            .listRowBackground(DS.surface)
             DebridSharedPrompt(debrid: model)   // CX2-A: otra cuenta en tus aparatos Apple, solo cuando pasa
             // P6-A: lo que dice la página es verdad al abrirla. Se le pregunta a Real-Debrid si tu clave sirve; mientras, lo
             // último que se supo sin la palomita; nunca «Conectada ✓» de algo que no se confirmó en esta visita.
@@ -48,6 +42,15 @@ struct DebridAccountView: View {
                     else { unknown(model) }
                 }
             }
+            // IOS-9, IOS-15: la explicación va al final; el problema, si hay, es lo primero que se ve al abrir.
+            Section {
+                Button { explaining = true } label: {
+                    if typeSize.isAccessibilitySize { Text("¿Qué es Real-Debrid?").foregroundStyle(DS.text) }
+                    else { TorrentioRowLabel(title: Text("¿Qué es Real-Debrid?"), detail: Text("Por qué arranca al instante y qué cuesta")) }
+                }
+                .accessibilityIdentifier("debrid-explain")
+            }
+            .listRowBackground(DS.surface)
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
@@ -58,14 +61,6 @@ struct DebridAccountView: View {
             Button("Canjear") { Task { await model.redeemPoints() } }
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Real-Debrid cambia tus puntos por días de Premium. No se puede deshacer.") }
-        // CX3-A: solo de este aparato o de todos tus aparatos Apple (los que usaban esta misma clave la quitan al abrir Orbital).
-        .confirmationDialog("¿Quitar tu clave?", isPresented: $confirmRemove, titleVisibility: .visible) {
-            Button("Solo de este iPhone", role: .destructive) { Task { await model.remove() } }
-                .accessibilityIdentifier("debrid-remove-here")
-            Button("De todos tus aparatos Apple", role: .destructive) { Task { await model.remove(everywhere: true) } }
-                .accessibilityIdentifier("debrid-remove-everywhere")
-            Button("Cancelar", role: .cancel) {}
-        } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de Real-Debrid no se toca.") }
         .animation(DS.Motion.base(reduceMotion), value: model.keyCheck)
         .navigationDestination(isPresented: $changingKey) { DebridChangeKeyPage(debrid: model) }
         .sensoryFeedback(.success, trigger: model.redeem) { _, new in new == .done }
@@ -80,31 +75,100 @@ struct DebridAccountView: View {
     }
 
     @ViewBuilder private func account(_ status: DebridStatus, _ model: DebridModel, key: KeyState) -> some View {
+        let (state, days) = DebridModel.summary(status, now: Date())
+        let usable = Self.canPlay(state)
+        // IOS-1 (P1-A, P6-A): vencida o sin Premium, el problema va arriba con su arreglo; nunca «Conectada ✓» debajo.
+        accountProblem(status, model, state: state, days: days)
         Section {
             LabeledContent {
                 if status.isPremium { Text(verbatim: "Premium").foregroundStyle(DS.textMuted) } else { Text("Sin Premium").foregroundStyle(DS.warning) }
             } label: { Text(verbatim: status.username).foregroundStyle(DS.text) }
             expiry(status).recipe(.footnote, color: Self.isWarning(status) ? DS.warning : DS.textMuted)   // ámbar desde 14 días antes (D1)
-            Link(destination: model.renewURL) { Label("Renovar", systemImage: "arrow.up.right") }
+            if usable && !Self.isUrgent(state, days) {   // con problema, «Renovar» ya está arriba
+                Link(destination: model.renewURL) { Label("Renovar", systemImage: "arrow.up.right") }
+            }
             // D4: solo aquí, solo si tienes puntos, y preguntando antes (no se deshace). Nunca en las pruebas: solo la demo.
-            if let points = status.points, points > 0 {
-                Button { confirmRedeem = true } label: {
-                    TorrentioRowLabel(title: Text("Canjear puntos"), detail: Text("\(Strings.count(points, language: env.services.appSettings.uiLanguage)) puntos · días de Premium"))
-                }
-                .disabled(model.redeem == .working)
-                .accessibilityIdentifier("debrid-redeem")
-            }
-            switch model.redeem {
-            case .working: DSInlineProgress(text: Text("Canjeando…"))
-            case .done: DSNotice(text: "Listo: tus puntos ya son días de Premium.", tone: .success)
-            case .failed(let message): DSNotice(verbatim: env.message(message), tone: .warn)
-            case .idle: EmptyView()
-            }
+            if let points = status.points, points > 0, usable && !Self.isUrgent(state, days) { redeemRow(points, model) }
+            redeemResult(model)
         } header: { Text("Tu cuenta") } footer: { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. No se renueva solo.") }
         .listRowBackground(DS.surface)
         requestsSection()
         DebridTVSection(debrid: model)   // K1: «Pasar a la TV» y «Usar la de la TV», solo con llave y una TV que las reparte
-        keySection(model, key)
+        keySection(model, usable ? key : .saved, playable: usable)
+    }
+
+    /// Vencida, gratuita o a 3 días o menos de vencer: el bloque de problema (P1-A), con «Renovar» o «Hacerla Premium» y, si
+    /// tienes puntos, «Canjear puntos». Las palabras son las de la TV (`DEBRID_PROBLEMS`) y del vocabulario (causas 4 y 5).
+    @ViewBuilder private func accountProblem(_ status: DebridStatus, _ model: DebridModel, state: DebridStatus.State, days: Int) -> some View {
+        let ui = env.services.appSettings.uiLanguage
+        let points = status.points ?? 0
+        if !Self.canPlay(state) || Self.isUrgent(state, days) {
+            Section {
+                switch state {
+                case .expired:
+                    DSProblem(title: Text(verbatim: UnavailableCause.debridExpired.title { Strings.tr($0, language: ui) }), detail: expiry(status)) {
+                        renewButton(Text("Renovar"), model)
+                        if points > 0 { redeemButton(points) }
+                    }
+                case .free:
+                    DSProblem(title: Text(verbatim: UnavailableCause.noPremium.title { Strings.tr($0, language: ui) }),
+                              detail: Text("Sin Premium no arranca nada al instante.")) {
+                        renewButton(Text("Hacerla Premium"), model)
+                        if points > 0 { redeemButton(points) }
+                    }
+                case .active, .expiringSoon:   // quedan 3 días o menos: el mismo bloque, tranquilo
+                    DSProblem(title: expiry(status), detail: Text("No se renueva solo."), symbol: "calendar.badge.clock") {
+                        renewButton(Text("Renovar"), model)
+                        if points > 0 { redeemButton(points) }
+                    }
+                }
+            }
+            .listRowBackground(DS.surface)
+            .accessibilityIdentifier("debrid-account-problem")
+        }
+    }
+
+    private func renewButton(_ title: Text, _ model: DebridModel) -> some View {
+        Link(destination: model.renewURL) { Label { title } icon: { Image(systemName: "arrow.up.right") }.frame(maxWidth: .infinity) }
+            .dsProblemFix(primary: true)
+            .accessibilityIdentifier("debrid-renew")
+    }
+
+    private func redeemButton(_ points: Int) -> some View {
+        Button { confirmRedeem = true } label: { Label("Canjear puntos", systemImage: "gift").frame(maxWidth: .infinity) }
+            .dsProblemFix(primary: false)
+            .accessibilityIdentifier("debrid-redeem")
+    }
+
+    /// «Canjear puntos» con su ícono, alineado con «Renovar» (IOS-17).
+    private func redeemRow(_ points: Int, _ model: DebridModel) -> some View {
+        Button { confirmRedeem = true } label: {
+            Label {
+                TorrentioRowLabel(title: Text("Canjear puntos"), detail: Text("\(Strings.count(points, language: env.services.appSettings.uiLanguage)) puntos · días de Premium"))
+            } icon: { Image(systemName: "gift") }
+        }
+        .disabled(model.redeem == .working)
+        .accessibilityIdentifier("debrid-redeem")
+    }
+
+    @ViewBuilder private func redeemResult(_ model: DebridModel) -> some View {
+        switch model.redeem {
+        case .working: DSInlineProgress(text: Text("Canjeando…"))
+        case .done: DSNotice(text: "Listo: tus puntos ya son días de Premium.", tone: .success)
+        case .failed(let message): DSNotice(verbatim: env.message(message), tone: .warn)
+        case .idle: EmptyView()
+        }
+    }
+
+    /// ¿Sirve para ver? Vencida o gratuita, no: la clave se queda «Guardada», nunca «Conectada ✓».
+    static func canPlay(_ state: DebridStatus.State) -> Bool {
+        switch state { case .active, .expiringSoon: true; case .expired, .free: false }
+    }
+
+    /// A 3 días o menos de vencer (D1: el aviso de 3 días).
+    static func isUrgent(_ state: DebridStatus.State, _ days: Int) -> Bool {
+        if case .expiringSoon = state { return days <= 3 }
+        return false
     }
 
     /// «Tus pedidos» antes que tu clave: «Quitar» (lo destructivo) va al final de la página, como en iOS.
@@ -122,13 +186,15 @@ struct DebridAccountView: View {
     /// Tu clave: cómo está (sus últimas 4 letras), cambiarla y quitarla. Lo destructivo, al final. Solo `confirmed` (Real-Debrid
     /// la aceptó en esta visita) dice «Conectada» con la palomita verde; mientras pregunta o sin respuesta, «Guardada»; si ya no
     /// la acepta, «No sirve».
-    @ViewBuilder private func keySection(_ model: DebridModel, _ key: KeyState) -> some View {
+    @ViewBuilder private func keySection(_ model: DebridModel, _ key: KeyState, playable: Bool = true) -> some View {
         let tail = model.keyTail ?? "····"
         Section {
             HStack(spacing: DS.Space.s3) {
                 switch key {
                 case .confirmed: TorrentioRowLabel(title: Text("Conectada"), detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
-                case .checking, .saved: TorrentioRowLabel(title: Text("Guardada"), detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
+                case .checking, .saved:
+                    TorrentioRowLabel(title: playable ? Text("Guardada") : Text("Guardada · sin Premium"),
+                                      detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
                 case .rejected: TorrentioRowLabel(title: Text("No sirve"), detail: Text("termina en ••••\(tail) · Real-Debrid ya no la acepta"))
                 }
                 Spacer(minLength: DS.Space.s2)
@@ -148,12 +214,24 @@ struct DebridAccountView: View {
                 NavigationLink { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar clave").foregroundStyle(DS.text) }
             }
             Button("Quitar", role: .destructive) { confirmRemove = true }
-        } header: { Text("Tu clave") } footer: { Text(Self.keyFooter) }
+                // CX3-A: solo de este aparato o de todos tus aparatos Apple (los que usaban esta misma clave la quitan al abrir
+                // Orbital). IOS-17: en el botón, para que en el iPad la pregunta salga junto a «Quitar» y no pegada arriba.
+                .confirmationDialog("¿Quitar tu clave?", isPresented: $confirmRemove, titleVisibility: .visible) {
+                    Button(role: .destructive) { Task { await model.remove() } } label: { DeviceWords.text("Solo de este iPhone", mac: "Solo de esta Mac") }
+                        .accessibilityIdentifier("debrid-remove-here")
+                    Button("De todos tus aparatos Apple", role: .destructive) { Task { await model.remove(everywhere: true) } }
+                        .accessibilityIdentifier("debrid-remove-everywhere")
+                    Button("Cancelar", role: .cancel) {}
+                } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de Real-Debrid no se toca.") }
+        } header: { Text("Tu clave") } footer: { Self.keyFooter }
         .listRowBackground(DS.surface)
     }
 
     /// UX-4, TEC-18 · dónde vive, sin prometer lo que iCloud no asegura.
-    static let keyFooter: LocalizedStringKey = "Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
+    @MainActor static var keyFooter: Text {
+        DeviceWords.text("Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.",
+                         mac: "Sale de real-debrid.com/apitoken. Se guarda en esta Mac y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple.")
+    }
 
     /// P6-A · Real-Debrid ya no acepta tu clave (la cambiaste en real-debrid.com): se dice arriba, con su arreglo.
     @ViewBuilder private func rejected(_ model: DebridModel) -> some View {
@@ -199,7 +277,7 @@ struct DebridAccountView: View {
             DebridKeyField(debrid: model)
             Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
             DebridSharedOffer(debrid: model)   // CX2-A: junto a «Pega tu clave», nunca en su lugar
-        } header: { Text("Tu clave") } footer: { Text(Self.keyFooter) }
+        } header: { Text("Tu clave") } footer: { Self.keyFooter }
         .listRowBackground(DS.surface)
         DebridTVSection(debrid: model)   // K1: sin clave aquí, «Usar la de la TV»
     }
@@ -245,7 +323,7 @@ private struct DebridChangeKeyPage: View {
             Section {
                 DebridKeyField(debrid: model)
                 Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
-            } footer: { Text(DebridAccountView.keyFooter) }
+            } footer: { DebridAccountView.keyFooter }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)

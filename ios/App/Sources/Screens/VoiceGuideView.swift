@@ -196,7 +196,7 @@ private struct VoiceTopicsView: View {
             HowRow(symbol: "rectangle.stack", title: Text("Cuando hay varias"),
                    detail: Text("Si dices «pon Dune» y hay más de una, salen bajo el micrófono con su póster: toca la que es."))
             HowRow(symbol: "wifi", title: Text("Si contesta que no encuentra tu Orbital"),
-                   detail: Text("El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."))
+                   detail: Text("El iPhone tiene que poder hablar con tu TV (en casa o desde fuera, si así la conectaste) y Orbital abierta en la TV."))
             HowRow(symbol: "mic.slash", title: Text("Si no te escucha"),
                    detail: Text("Permite el micrófono y el reconocimiento de voz para Orbital."))
             Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {

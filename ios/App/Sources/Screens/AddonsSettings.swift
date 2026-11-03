@@ -20,15 +20,19 @@ struct AddonsSettings: View {
     var body: some View {
         let model = addons.model
         Form {
+            // IOS-9: lo que falla va primero, en ámbar (antes, abajo y en rojo); la explicación, después.
+            if let error = model.error {
+                Section { DSNotice(verbatim: env.message(error), tone: .warn) }.listRowBackground(DS.surface)
+            }
+            if tv.model.status != .off {
+                Section { AddonTVStatus(status: tv.model.status, waitingForKeys: tv.model.waitingForKeys) { Task { await tv.model.refresh() } } }
+                    .listRowBackground(DS.surface)
+            }
             Section {
                 Button { explaining = true } label: { Label("¿Qué es esto?", systemImage: "questionmark.circle") }
                     .accessibilityIdentifier("addons-explain")
             }
             .listRowBackground(DS.surface)
-            if tv.model.status != .off {
-                Section { AddonTVStatus(status: tv.model.status, waitingForKeys: tv.model.waitingForKeys) }
-                    .listRowBackground(DS.surface)
-            }
             if !model.torrentioChoice.isEmpty { torrentioChoice(model) }
             Section {
                 ForEach(model.items) { addon in
@@ -67,9 +71,6 @@ struct AddonsSettings: View {
                 } header: { Text("Traídos de tu Stremio") } footer: { Text("Tu Stremio no se toca. Lo que quitaste no regresa solo.") }
                 .listRowBackground(DS.surface)
             }
-            if let error = model.error {
-                Section { Text(verbatim: env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }.listRowBackground(DS.surface)
-            }
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
@@ -87,7 +88,8 @@ struct AddonsSettings: View {
                 }
             }
             if model.items.count > 1 || editMode.isEditing {   // con uno o ninguno no hay qué ordenar
-                ToolbarItem(placement: .topBarLeading) {
+                // IOS-17: a la derecha, junto a «Agregar» (a la izquierda empujaba el título).
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(editMode.isEditing ? "Listo" : "Ordenar") { editMode = editMode.isEditing ? .inactive : .active }
                 }
             }
@@ -119,7 +121,7 @@ struct AddonsSettings: View {
             ForEach(model.torrentioChoice) { candidate in
                 Button { Task { await model.keepTorrentio(candidate) } } label: {
                     TorrentioRowLabel(title: candidate.addonID == nil ? Text("Quedarme con el de Orbital") : Text("Quedarme con el de tu Stremio"),
-                                      detail: TorrentioWords.summary(candidate.options, uiLanguage: ui))
+                                      detail: TorrentioWords.summary(candidate.options, uiLanguage: ui), action: true)
                 }
                 .accessibilityIdentifier("addons-keep-\(candidate.id)")
             }

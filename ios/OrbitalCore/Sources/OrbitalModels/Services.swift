@@ -48,6 +48,8 @@ public final class Services: ObservableModel {
     public let orbitalAuth: OrbitalAuthState
     /// K1 · `"pairing"` de `GET /api/companion`: 2 si tu TV reparte llaves por aparato. Se sabe al conectar (cada arranque).
     public internal(set) var tvPairing = 1 { didSet { if oldValue != tvPairing { changed() } } }
+    /// IOS-2 · ¿contestó tu TV? «Conectada» solo si contestó hace menos de 2 min (como la TV con tus aparatos, `PHONE_LIVE`).
+    public internal(set) var tvLink: TVLink = .unknown { didSet { if oldValue != tvLink { changed() } } }
     /// CX2-A · qué dice la copia de tu clave que comparten tus aparatos Apple (al abrir y al volver a la app).
     public internal(set) var sharedDebrid: SharedDebrid = .none { didSet { if oldValue != sharedDebrid { changed() } } }
     public private(set) var finder: StreamFinder { didSet { notify() } }
@@ -211,7 +213,8 @@ public final class Services: ObservableModel {
         let vault = AppAddonVault(secrets: secrets, kv: kv)
         let addonList = AddonList(vault: vault)
         self.addonList = addonList
-        self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, platform: platform, clock: clock)
+        self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, platform: platform,
+                                    deviceName: { kv.data(Services.deviceNameKey).flatMap { String(data: $0, encoding: .utf8) } }, clock: clock)
         self.debridReminders = DebridReminderBook(vault: vault)
         let deviceName = deviceName ?? device?.name ?? "iPhone"
         self.deviceName = deviceName
@@ -243,19 +246,26 @@ public final class Services: ObservableModel {
         let makeOrbital: @Sendable () -> OrbitalRemote = {
             Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: allowsOrbital, auth: orbitalAuth)
         }
-        let requestsBy = allowsOrbital ? (device?.name).flatMap { $0.isEmpty ? nil : $0 } ?? deviceName : deviceName
+        let systemName = allowsOrbital ? (device?.name).flatMap { $0.isEmpty ? nil : $0 } ?? deviceName : deviceName
+        // IOS-11: quién lo pidió es el nombre que escribiste al conectar («iPhone de Fernando», CX7-A); sin él, el de iOS (que
+        // en un iPhone de verdad es solo «iPhone», y en el simulador, el modelo).
+        let requestsBy: @Sendable () -> String = {
+            kv.data(Services.deviceNameKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { $0.isEmpty ? nil : $0 } ?? systemName
+        }
         // Se junta con la libreta de tu Orbital (corte S2 de la TV, contrato «requests») si la tienes conectada.
         let requester = DebridRequester(book: DebridRequestBook(vault: vault), api: RealDebridTorrents(http: http),
-                                        token: { vault.secret(AddonKeys.realDebridToken) }, device: { requestsBy },
+                                        token: { vault.secret(AddonKeys.realDebridToken) }, device: requestsBy,
                                         account: { await debrid.accountID() }, knownAccount: debrid.saved?.userID, clock: clock,
                                         sync: OrbitalRemoteDebridRequestSync(remote: makeOrbital))
         // K1: con llave, `enabled[<id de este aparato>]`; sin ella, `enabled[<plataforma>]` (lo de antes).
         self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: makeOrbital),
                                      available: { allowsOrbital && settings.value.orbitalEnabled },
                                      device: { AddonDevice(platform: platform, id: (secrets.get(SecretKey.orbitalDeviceKey)).flatMap(OrbitalDeviceKey.deviceID(of:))) },
-                                     deviceName: { requestsBy }, manifest: Services.manifestReader(http: http))
+                                     deviceName: { requestsBy() }, manifest: Services.manifestReader(http: http))
         self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
                                                   finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
+        self.debridRequests.alsoMine = [systemName]   // lo pedido antes de ponerle nombre sigue siendo tuyo (avisos)
+        self.debridRequests.notifiesTVRequests = platform == "iphone" && allowsOrbital   // R14-B: solo el iPhone
         let requests = self.debridRequests, appearPrefs = self.titlePrefs
         self.appearWatch = AppearWatch(kv: kv, clock: clock) { entry in
             let wanted = appearPrefs.languages(for: entry.metaID, settings: settings.value).prefs

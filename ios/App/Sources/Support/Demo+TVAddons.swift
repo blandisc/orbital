@@ -11,8 +11,8 @@ import OrbitalModels
 /// - `-demo-tv-addons conflict`: Torrentio cambió en los dos (gana la TV y avisa con «Usar la de este iPhone»), y el primer
 ///   envío llega tarde (409): se junta y se reintenta.
 /// - `-demo-tv-addons torrents`: uno traído de Stremio que solo da torrents (M6): apagado aquí, «en la TV sí».
-/// - `-demo-tv-addons keys`: uno traído de Stremio con clave se queda en este iPhone, y la TV contesta 422 «Espera las llaves
-///   por aparato».
+/// - `-demo-tv-addons keys`: uno traído de Stremio con clave se queda en este iPhone, y la TV contesta 422 «…esa dirección lleva una
+///   clave» (la de hoy).
 ///
 /// Abre Complementos con `-demo-settings-page addons`. Nada sale a una TV de verdad.
 extension Demo {
@@ -58,7 +58,7 @@ final class DemoTVAddons: @unchecked Sendable {
         return try lock.withLock {
             if request.method == "GET" { return HTTPResponse(status: 200, data: try JSONEncoder().encode(list)) }
             if mode == "keys" {
-                return HTTPResponse(status: 422, data: Data(#"{"detail": "Espera las llaves por aparato: esa dirección lleva una clave"}"#.utf8))
+                return HTTPResponse(status: 422, data: Data(#"{"detail": "Vuelve a escanear el código de tu TV: esa dirección lleva una clave"}"#.utf8))
             }
             if conflictOnce { conflictOnce = false; list.revision += 1; return HTTPResponse(status: 409, data: try JSONEncoder().encode(list)) }
             guard case .object(let o) = try JSONDecoder().decode(StoredJSON.self, from: request.body ?? Data()), case .array(let items)? = o["addons"] else {

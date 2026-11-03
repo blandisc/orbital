@@ -44,7 +44,12 @@ struct OrbitalUpgradeSheet: View {
                 case .waiting:
                     Section {
                         DSInlineProgress(text: Text("Confirma en tu TV"))
-                        Text("Tu TV pregunta en su pantalla por «\(model.name)». Elige Sí con el control.").recipe(.footnote, color: DS.textMuted)
+                        Text("Tu TV pregunta en su pantalla «¿Darle su propia conexión a \(model.name)?». Elige «Darle su propia conexión» con el control. La pregunta dura 3 minutos.").recipe(.footnote, color: DS.textMuted)
+                        // AU3-A (Fernando, 3 nov): la TV no pausa lo que ves para preguntar; se dice aquí, con la salida de siempre.
+                        Text("Si estás viendo algo en la TV, ciérralo para contestar.").recipe(.footnote, color: DS.textMuted)
+                            .accessibilityIdentifier("orbital-upgrade-close-video")
+                        Button(action: scan) { Label("Escanear en su lugar", systemImage: "qrcode.viewfinder") }
+                            .accessibilityIdentifier("orbital-upgrade-scan-instead")
                     }
                     .listRowBackground(DS.surface)
                     .accessibilityIdentifier("orbital-upgrade-waiting")
@@ -101,7 +106,7 @@ struct InviteIPadRow: View {
         let _ = env.services.track()
         if model.canInvite {
             Button { Task { await model.inviteIPad() } } label: {
-                TorrentioRowLabel(title: Text("Conectar tu iPad"), detail: Text("En el iPad abre Orbital y toca Conectar. Llega por tu llavero de iCloud."))
+                TorrentioRowLabel(title: Text("Conectar tu iPad"), detail: Text("La invitación sale al abrir Orbital en el iPad. Llega por tu llavero de iCloud."), action: true)
             }
             .disabled(model.state == .working)
             .accessibilityIdentifier("orbital-invite-ipad")

@@ -109,14 +109,14 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.equal(settingsCategory("watch", { audio: "es-ES" }).options[0].value, "Español de España");
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
-  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["iPhone", "Conectar"], ["Stremio · respaldo", "Conectar"]]);
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "Conectar"]]);
   assert.deepEqual(accounts.options[0].command, { type: "rd-connect" }); // Real-Debrid primero (SS-1); sin cuenta, directo a pegar la clave (UX-1)
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   assert.deepEqual(accounts.options[2].command, { type: "stremio-login" }); // corte S4: Stremio al final, opcional
   assert.ok(!accounts.options[2].warn);
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Stremio · respaldo", "✓ Conectada"], ["Claves de Explorar", undefined],
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "✓ Conectada"], ["Claves de Explorar", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Letterboxd", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[5].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
@@ -369,17 +369,19 @@ test("cuentas: el iPhone dice «Conectado» solo si la app habló hace un moment
   assert.equal(phoneRow(now / 1000 - 90 * 86400, now).hint, "Con un código QR"); // hace meses: como si no
 });
 
-test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conectar otro»", async () => {
+test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conectar un aparato»", async () => {
   const { phoneRows } = await import("../../orbital/web/js/core/menus.js");
   const now = Date.UTC(2026, 9, 28, 12);
   const s = now / 1000;
   // App vieja (sin aparatos con nombre): el renglón de siempre.
   assert.deepEqual(phoneRows({ companion_seen: s - 10, companion_live: s - 10 }, now).map((r) => r.label), ["iPhone"]);
+  // IOS-3: sin ningún aparato, el renglón se llama como su pantalla (el iPhone dice «Ajustes › Cuentas › Conectar un aparato»).
+  assert.deepEqual(phoneRows({}, now).map((r) => r.label), ["Conectar un aparato"]);
   const rows = phoneRows({ companion_devices: [
     { id: "a", name: "iPad", kind: "ipad", seen: s - 5, live: s - 5 },
     { id: "b", name: "iPhone de Fernando", kind: "iphone", seen: s - 3 * 3600, live: null },
   ] }, now);
-  assert.deepEqual(rows.map((r) => r.label), ["iPad", "iPhone de Fernando", "Conectar otro"]);
+  assert.deepEqual(rows.map((r) => r.label), ["iPad", "iPhone de Fernando", "Conectar un aparato"]);
   assert.equal(rows[0].value, "✓ Conectado"); // el iPad está abierto
   assert.equal(rows[1].value, "Conectar"); // el iPhone, no: ya no dice «Conectado» por el iPad
   assert.equal(rows[1].hint, "Lo usaste hace 3 h");
@@ -396,7 +398,7 @@ test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» p
   ] }, now);
   assert.deepEqual(all[0], { heading: true, label: "Aparatos conectados" }); // UX-36: el mismo nombre que el iPhone
   const rows = all.slice(1);
-  assert.deepEqual(rows.map((r) => r.label), ["iPhone de Fernando", "iPad", "Conectar otro"]); // los de antes ya no entran
+  assert.deepEqual(rows.map((r) => r.label), ["iPhone de Fernando", "iPad", "Conectar un aparato"]); // los de antes ya no entran
   assert.equal(rows[0].value, "✓ Conectado");
   assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 h"]); // emparejado: nunca «Conectar»
   assert.deepEqual(rows[0].command, { type: "device-menu", id: "a1" });

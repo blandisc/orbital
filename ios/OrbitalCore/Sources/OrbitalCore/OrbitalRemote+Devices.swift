@@ -161,6 +161,17 @@ extension OrbitalRemote {
                                expires: Self.date(json?["expires"]), tail: json?["ends_with"]?.string ?? "")
     }
 
+    /// IOS-6 · la cuenta de Real-Debrid de tu TV (`GET /api/realdebrid`, sin la clave): nil si la TV no tiene una.
+    public func realDebridAccount() async throws -> OrbitalTVDebrid? {
+        guard hasDeviceKey else { throw Failure.needsKey }
+        let json = try await send("api/realdebrid", method: "GET", body: nil)
+        guard json?["linked"]?.bool != false, let user = json?["user"]?.nonEmptyString else {
+            return json?["linked"]?.bool == true ? OrbitalTVDebrid(user: "", premium: false, expires: nil, tail: json?["ends_with"]?.string ?? "") : nil
+        }
+        return OrbitalTVDebrid(user: user, premium: json?["premium"]?.bool ?? false, expires: Self.date(json?["expires"]),
+                               tail: json?["ends_with"]?.string ?? "")
+    }
+
     /// «Usar la de la TV»: la clave completa (`?full=1`). nil si la TV no tiene una.
     public func realDebridKey() async throws -> String? {
         guard hasDeviceKey else { throw Failure.needsKey }

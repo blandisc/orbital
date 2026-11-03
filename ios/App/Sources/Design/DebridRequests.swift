@@ -13,9 +13,11 @@ struct DebridRequestStatus: View {
     var fraction: Double?
     /// Un problema (rechazado, sin gente, atorado): el ícono en ámbar.
     var warn = false
+    /// Listo (IOS-17): la palomita en verde, como todo lo que ya está.
+    var ok = false
 
     var body: some View {
-        IconBeside(symbol: symbol, color: warn ? DS.warning : DS.textMuted) {
+        IconBeside(symbol: symbol, color: warn ? DS.warning : ok ? DS.success : DS.textMuted) {
             Text(verbatim: title).recipe(.labelLarge, color: DS.text)
             if let detail { Text(verbatim: detail).recipe(.footnote, color: DS.textMuted).fixedSize(horizontal: false, vertical: true) }
             if let fraction { DSProgress(fraction: fraction).padding(.top, DS.Space.s1) }
@@ -47,8 +49,9 @@ struct IconBeside<Content: View>: View {
 
 /// La hoja de un pedido (R3, R13, P2-B), la misma en la ficha y en «Tus pedidos»: cómo va, si los avisos están apagados, y
 /// sus salidas: probar otra versión (solo cuando ayuda, `DebridRequestWords.suggestsOtherVersion`), abrir la ficha (desde
-/// «Tus pedidos»), cancelar el pedido (preguntando antes, con «Seguir esperando») y «¿Qué es esto?». Lo de otra cuenta de
-/// Real-Debrid no se cancela ni se cambia desde aquí: solo «Abrir la ficha».
+/// «Tus pedidos»), cancelar el pedido (preguntando antes, con «Seguir esperando») y «¿Qué es esto?». IOS-7, como la TV: lo
+/// terminado no se cancela, se quita: listo, «Ver ahora» y «Quitar de tu Real-Debrid» (pregunta «¿Quitarlo de tu
+/// Real-Debrid?»). IOS-19: lo de otra cuenta de Real-Debrid no se cancela ni se cambia desde aquí, y se dice por qué.
 struct DebridRequestSheet: View {
     /// «The Office · T1 E2».
     let name: String
@@ -58,9 +61,17 @@ struct DebridRequestSheet: View {
     /// Los avisos de la app están apagados: R3 lo dice («Avisos apagados · actívalos»).
     let notificationsOff: Bool
     let turnOnNotifications: () -> Void
+    /// «Ver ahora» (listo).
+    var watchNow: (() -> Void)?
     let otherVersion: (() -> Void)?
     /// «Abrir la ficha» (desde «Tus pedidos»); nil en la ficha misma.
     let openTitle: (() -> Void)?
+    /// Ya terminó (listo o rechazado): «Quitar de tu Real-Debrid» en vez de «Cancelar pedido».
+    var finished = false
+    /// Es de otra cuenta de Real-Debrid: se dice por qué no se cancela.
+    var otherAccount = false
+    /// IOS-9 · «Muchas descargas activas»: su arreglo, tus descargas en real-debrid.com.
+    var manageDownloads: URL?
     /// nil: es de otra cuenta de Real-Debrid y no se cancela desde aquí.
     let cancel: (() -> Void)?
     let explain: () -> Void
@@ -71,14 +82,28 @@ struct DebridRequestSheet: View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             DSSheetHeader(title: Text(verbatim: name), subtitle: Text(verbatim: since), close: close)
             status.padding(DS.Space.s4).dsCard(.card)
-            if notificationsOff {
+            if notificationsOff && !finished {
                 Button(action: turnOnNotifications) {
                     Label("Avisos apagados · actívalos", systemImage: "bell.slash").font(DS.TextRecipe.footnote.font)
                 }
                 .buttonStyle(.borderless).tint(DS.warning)
                 .accessibilityIdentifier("debrid-notifications-off")
             }
+            if otherAccount {
+                Text("Lo pidieron con otra cuenta de Real-Debrid: se cancela desde ahí.").recipe(.footnote, color: DS.textMuted)
+                    .accessibilityIdentifier("debrid-other-account")
+            }
             VStack(spacing: DS.Space.s2) {
+                if let watchNow {
+                    Button(action: watchNow) { Label("Ver ahora", systemImage: "play.fill").frame(maxWidth: .infinity) }
+                        .dsPrimaryButton(size: .large)
+                        .accessibilityIdentifier("debrid-watch-now")
+                }
+                if let manageDownloads {
+                    Link(destination: manageDownloads) { Label("Abrir tus descargas de Real-Debrid", systemImage: "arrow.up.right").frame(maxWidth: .infinity) }
+                        .dsPrimaryButton(size: .large)
+                        .accessibilityIdentifier("debrid-manage-downloads")
+                }
                 if let otherVersion {
                     Button(action: otherVersion) { Label("Probar otra versión", systemImage: "list.bullet.rectangle").frame(maxWidth: .infinity) }
                         .dsPrimaryButton(size: .large)
@@ -90,9 +115,11 @@ struct DebridRequestSheet: View {
                         .accessibilityIdentifier("debrid-open-title")
                 }
                 if cancel != nil {
-                    Button(role: .destructive) { confirmingCancel = true } label: { Label("Cancelar pedido", systemImage: "xmark.circle").frame(maxWidth: .infinity) }
-                        .dsSecondaryButton().controlSize(.large)
-                        .accessibilityIdentifier("debrid-cancel")
+                    Button(role: .destructive) { confirmingCancel = true } label: {
+                        Label(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? "trash" : "xmark.circle").frame(maxWidth: .infinity)
+                    }
+                    .dsSecondaryButton().controlSize(.large)
+                    .accessibilityIdentifier(finished ? "debrid-remove-finished" : "debrid-cancel")
                 }
                 Button(action: explain) { Text("¿Qué es esto?").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
                     .buttonStyle(.borderless).tint(DS.accent)
@@ -100,13 +127,28 @@ struct DebridRequestSheet: View {
             }
         }
         .dsSheetContent()
-        .confirmationDialog(Text("¿Cancelar el pedido?"), isPresented: $confirmingCancel, titleVisibility: .visible) {
-            Button("Cancelar pedido", role: .destructive) { cancel?() }
-            // Sin esto iOS pone «Cancelar» junto a «Cancelar pedido»: dos «cancelar» que dicen cosas opuestas.
-            Button("Seguir esperando", role: .cancel) {}
-        } message: { Text(verbatim: name) }
+        .debridCancelConfirmation(isPresented: $confirmingCancel, name: name, finished: finished) { cancel?() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-request-sheet")
+    }
+}
+
+extension View {
+    /// La misma pregunta en la ficha, en la hoja y en la lista (IOS-7): «¿Cancelar el pedido?» con «Seguir esperando» (sin
+    /// eso iOS pone «Cancelar» junto a «Cancelar pedido»: dos «cancelar» opuestos) o, si ya terminó, «¿Quitarlo de tu
+    /// Real-Debrid?» con «Quitar» y «Cancelar» (como la TV, `debridCancelMenu`).
+    func debridCancelConfirmation(isPresented: Binding<Bool>, name: String, finished: Bool, perform: @escaping () -> Void) -> some View {
+        confirmationDialog(finished ? Text("¿Quitarlo de tu Real-Debrid?") : Text("¿Cancelar el pedido?"), isPresented: isPresented, titleVisibility: .visible) {
+            if finished {
+                Button("Quitar", role: .destructive, action: perform)
+                Button("Cancelar", role: .cancel) {}
+            } else {
+                Button("Cancelar pedido", role: .destructive, action: perform)
+                Button("Seguir esperando", role: .cancel) {}
+            }
+        } message: {
+            finished ? Text("\(name) se borra de tu cuenta. Para verlo otra vez habría que pedirlo de nuevo.") : Text(verbatim: name)
+        }
     }
 }
 
@@ -118,6 +160,8 @@ struct DebridExplainer: View {
     enum Topic { case requests, torrentio, addons, realDebrid }
     var topic: Topic = .requests
     let close: () -> Void
+    /// R14-B · este aparato también avisa lo que pidió la TV (solo el iPhone; lo pone la app con `debridTVNotices`).
+    @Environment(\.debridTVNotices) private var tvNotices
 
     var body: some View {
         ScrollView {
@@ -145,6 +189,11 @@ struct DebridExplainer: View {
              Text("Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."))
         card("bell", Text("Te avisamos cuando esté"),
              Text("Con la app abierta lo sabes al momento. Con la app cerrada, iOS decide cuándo revisar: el aviso puede tardar un rato."))
+        // R14-B: lo que pides en la TV también avisa aquí, cuando la app puede mirar (solo en el iPhone).
+        if tvNotices {
+            card("tv", Text("También lo que pides en la TV"),
+                 Text("Si lo pediste en la TV con tu misma cuenta, este iPhone te avisa cuando lo note: al abrir la app o cuando iOS lo deja revisar, a veces minutos o una hora después."))
+        }
     }
 
     @ViewBuilder private var torrentio: some View {
@@ -204,4 +253,9 @@ struct DebridNotifyPrompt: View {
         }
         .dsSheetContent()
     }
+}
+
+extension EnvironmentValues {
+    /// R14-B · este aparato avisa también lo que pidió la TV con tu cuenta (`DebridRequestsModel.notifiesTVRequests`).
+    @Entry var debridTVNotices = false
 }

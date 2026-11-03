@@ -21,7 +21,7 @@ struct DebridSharedPrompt: View {
                         .dsProblemFix(primary: true)
                         .disabled(model.check == .checking)
                         .accessibilityIdentifier("debrid-shared-use")
-                    Button { model.keepLocal() } label: { Text("Seguir con la de este iPhone").frame(maxWidth: .infinity) }
+                    Button { model.keepLocal() } label: { DeviceWords.text("Seguir con la de este iPhone", mac: "Seguir con la de esta Mac").frame(maxWidth: .infinity) }
                         .dsProblemFix(primary: false)
                         .accessibilityIdentifier("debrid-shared-keep")
                 }
@@ -31,15 +31,25 @@ struct DebridSharedPrompt: View {
         }
     }
 
+    /// IOS-11: «iPad de Fernando cambió la clave…» con el nombre; de una copia de antes, el tipo, salvo que sea el mismo tipo
+    /// que este aparato («Tu iPad cambió…» leído en un iPad parecía hablar de sí mismo).
     private func changedTitle(_ from: String) -> Text {
-        if let device = DebridModel.deviceWord(from) { return Text("Tu \(device) cambió la clave de Real-Debrid") }
-        return Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple")
+        if let device = DebridModel.deviceWord(from) {
+            return from == env.services.platform ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple")
+                                                 : Text("Tu \(device) cambió la clave de Real-Debrid")
+        }
+        return from.isEmpty ? Text("Tu clave de Real-Debrid cambió en otro de tus aparatos Apple") : Text("\(from) cambió la clave de Real-Debrid")
     }
 
     /// Se compara la cuenta, no las letras: «La nueva es de la cuenta ana · la de este iPhone, de fer».
     private func detail(_ theirs: DebridStatus, _ mine: DebridStatus?) -> Text {
-        guard let mine else { return Text("La nueva es de la cuenta \(theirs.username). La de este iPhone ya no sirve.") }
-        return Text("La nueva es de la cuenta \(theirs.username) · la de este iPhone, de \(mine.username).")
+        let mac = ThisDevice.platform == "mac"   // IOS-12
+        guard let mine else {
+            return mac ? Text("La nueva es de la cuenta \(theirs.username). La de esta Mac ya no sirve.")
+                       : Text("La nueva es de la cuenta \(theirs.username). La de este iPhone ya no sirve.")
+        }
+        return mac ? Text("La nueva es de la cuenta \(theirs.username) · la de esta Mac, de \(mine.username).")
+                   : Text("La nueva es de la cuenta \(theirs.username) · la de este iPhone, de \(mine.username).")
     }
 }
 
@@ -58,7 +68,7 @@ struct DebridSharedOffer: View {
         let _ = env.services.track()
         if case .offer(_, let account) = model.shared {
             Button { Task { await model.useShared() } } label: {
-                TorrentioRowLabel(title: Text("Usar la clave de tus aparatos Apple"), detail: Text("De tu llavero de iCloud · cuenta \(account.username)"))
+                TorrentioRowLabel(title: Text("Usar la clave de tus aparatos Apple"), detail: Text("De tu llavero de iCloud · cuenta \(account.username)"), action: true)
             }
             .disabled(model.check == .checking)
             .accessibilityIdentifier("debrid-shared-offer")

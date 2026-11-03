@@ -224,6 +224,9 @@ final class RealDebridTests: XCTestCase {
         XCTAssertEqual(free.state(now: now, calendar: calendar), .expired(daysAgo: 2), "venció hace 2 días")
         let never = try await provider(200, #"{"username":"x","type":"free","premium":0}"#).status(token: token)
         XCTAssertEqual(never.state(now: now), .free)
+        // IOS-1: gratuita desde hace un año: «Cuenta gratuita», nunca «Venció el…».
+        let longAgo = try await provider(200, #"{"username":"x","type":"free","premium":0,"expiration":"2025-09-01T00:00:00.000Z"}"#).status(token: token)
+        XCTAssertEqual(longAgo.state(now: now, calendar: calendar), .free)
         do { _ = try await provider(401, #"{"error":"bad_token","error_code":8}"#).status(token: token); XCTFail() } catch { XCTAssertEqual(error as? DebridError, .invalidToken) }
         do { _ = try await provider(200, "{}").status(token: "ABC123"); XCTFail() } catch { XCTAssertEqual(error as? DebridError, .malformedToken, "incompleta: ni se pregunta") }
         do { _ = try await provider(503, "").status(token: token); XCTFail() } catch { XCTAssertEqual(error as? DebridError, .network("HTTP 503")) }

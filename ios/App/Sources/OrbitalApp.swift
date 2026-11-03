@@ -16,6 +16,7 @@ struct OrbitalApp: App {
             RootView()
                 .environment(env)
                 .environment(\.locale, env.uiLocale)
+                .environment(\.debridTVNotices, env.services.debridRequests.notifiesTVRequests)   // R14-B: «¿Qué es esto?» lo dice
                 .onAppear { env.applyAppearance() }   // Ajustes › Apariencia (por omisión, la del iPhone), en la ventana
                 .tint(DS.primary)
                 .toggleStyle(.orbital)   // todo interruptor, prendido en turquesa (`DSSwitchStyle`)

@@ -29,7 +29,7 @@ final class RealDebridRetryTests: XCTestCase {
             .object(["name": "Torrentio\nRD error", "title": "Invalid RealDebrid account", "url": "https://torrentio.strem.fun/videos/failed_access_v2.mp4"]),
             rig.stream("download", name: "T\n1080p [RD download]")]]
         let asked = Counter()
-        let expired = DebridStatus(service: "Real-Debrid", username: "x", isPremium: false, expires: Date(timeIntervalSince1970: 1), checkedAt: Date())
+        let expired = DebridStatus(service: "Real-Debrid", username: "x", isPremium: false, expires: rig.clock.now.addingTimeInterval(-2 * 86_400), checkedAt: rig.clock.now)
         rig.model.debridTrouble = { asked.add(); return .status(expired) }
         await rig.model.begin(rig.request())
         XCTAssertFalse(rig.model.sourceChoices.contains { $0.notice != nil }, "el aviso no es una versión")
