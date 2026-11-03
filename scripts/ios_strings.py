@@ -45,7 +45,7 @@ TRANSLATIONS = {
     "Este complemento se quitó.": "This add-on was removed.", "Ya no está": "It's gone",
     "Falta tu clave": "Your key is missing", "Fuentes de video": "Video sources",
     "%@ · usa tu Real-Debrid": "%@ · uses your Real-Debrid", "%@ · de Stremio": "%@ · from Stremio",
-    "%@ · de Stremio · usa tu Real-Debrid": "%@ · from Stremio · uses your Real-Debrid", "Grabada en el cine": "Recorded in the theater",
+    "%@ · de Stremio · usa tu Real-Debrid": "%@ · from Stremio · uses your Real-Debrid",
     "Guarda copias por ti": "It keeps copies for you", "Guardé su nueva configuración": "I saved its new settings",
     "HDR y Dolby Vision": "HDR and Dolby Vision", "Hasta %lld": "Up to %lld",
     "Hasta 2": "Up to 2", "Hasta 5": "Up to 5",
