@@ -202,7 +202,9 @@ struct PlayerScreen: View {
             }
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
             .onGeometryChange(for: CGSize.self) { $0.size } action: { layoutSize = $0 }
-            if padlock.locked { lockLayer } else { gestureLayer(model) }
+            // En horizontal, los gestos llegan hasta las orillas, como el video (antes respetaban el margen de la isla y la orilla
+            // curva: presionar pegado a la derecha no ponía el ×2; Fernando, 2 nov 2026).
+            if padlock.locked { lockLayer } else { gestureLayer(model).ignoresSafeArea(edges: landscape ? .horizontal : []) }
             SystemVolumeControl(volume: systemVolume) { showHardwareVolume($0) }
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
