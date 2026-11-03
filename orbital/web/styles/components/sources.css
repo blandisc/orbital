@@ -78,7 +78,7 @@
 .version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
 .version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }
-.version__state--good { color: var(--color-live); }
+.version__state--good { color: var(--color-ok); }
 .version__state--warn { color: var(--color-warning); }
 .version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }
 .version__badge { position: absolute; top: var(--space-3); right: var(--space-3); } /* arriba a la derecha: no empuja ni se corta */

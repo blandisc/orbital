@@ -15,7 +15,7 @@
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
   border-radius: var(--radius-pill); padding: .1rem .55rem; font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
 }
-.chip--good { color: var(--color-live); }
+.chip--good { color: var(--color-ok); }
 .chip--warn { color: var(--color-warning); }
 
 /* Badge: una etiqueta que llama la atención («3 nuevos», «Recomendada»). Clara sobre lo oscuro. */
