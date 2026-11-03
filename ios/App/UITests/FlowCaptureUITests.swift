@@ -39,8 +39,11 @@ final class FlowCaptureUITests: GuideUITestCase {
         open("Complementos"); wait("Torrentio"); sleep(1); shot("21-complementos")
         app.buttons["Ordenar"].tap(); sleep(1); shot("22-complementos-ordenar")
         app.buttons["Listo"].tap(); sleep(1)
-        app.buttons["addons-add"].tap(); sleep(1); shot("23-complementos-agregar")
-        app.tap(); sleep(1)   // cierra el menú («Pegar dirección» ya no existe, C9)
+        // «Agregar» solo sale si falta uno de los de Orbital (Fase 3); «Pegar dirección» ya no existe (C9).
+        if app.buttons["addons-add"].exists {
+            app.buttons["addons-add"].tap(); sleep(1); shot("23-complementos-agregar")
+            app.tap(); sleep(1)
+        }
         app.navigationBars.buttons.firstMatch.tap(); sleep(1)
         let guide = app.buttons["settings-guide"]
         for _ in 0..<6 where !(guide.exists && guide.isHittable) { app.swipeUp() }
