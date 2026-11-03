@@ -669,7 +669,7 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   const account = debridAccountMenu({ linked: true, user: "fer", ends_with: "3F2A", source: "torrentio", expires: in18, days: 18,
     requests: [{ hash: "a", state: "downloading", percent: 42 }] });
   assert.equal(account.subtitle, "Conectada como fer · Tomada de tu Torrentio · termina en ••3F2A"); // de dónde salió la clave
-  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 bajando"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined]]);
+  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined]]);
   const list = debridRequestsMenu([
     { hash: "a", title: "Nocturne · T1 E1", state: "downloading", percent: 42, by: "TV" },
     { hash: "b", title: "Severance · T2 E1", state: "no_peers", by: "iPhone de Fernando" },
@@ -761,4 +761,24 @@ test("complementos: si la lista la cambiaste en el iPhone, se dice arriba (corte
   const rows = addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "iPhone de Fernando", changed_at: now / 1000 - 120 }, now);
   assert.deepEqual([rows[0].label, rows[0].hint], ["Vienen de tu iPhone", "Cambiado hace 2 min · se configura una vez y la TV lo toma"]);
   assert.equal(addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "tv" }, now)[0].label, "Vienen con Orbital");
+});
+
+test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece volver a él, lo listo se ve y los aparatos cuentan", async () => {
+  const { addonMenu, addonRows, debridRequestMenu, debridCancelMenu, hasPhone, settingsMissing } = await import("../../orbital/web/js/core/menus.js");
+  // TV-1: apagar lo último que da versiones avisa; OpenSubtitles no cuenta como fuente.
+  const off = addonMenu({ id: "torrentio", name: "Torrentio", on: true, origin: "orbital", template: "torrentio" }, { lastSource: true })
+    .options.find((o) => o.label === "Apagar");
+  assert.deepEqual([off.hint, off.warn, off.command.lastSource], ["Te quedarás sin versiones de nada", true, true]);
+  const subs = [{ id: "opensubtitles", name: "OpenSubtitles", on: true, origin: "orbital", template: "opensubtitles" }];
+  assert.ok(settingsMissing({ addons: { entries: subs } }).some((m) => m.label === "No tienes complementos prendidos"));
+  // TV-2: sin cuenta de Stremio, ni «Volver a los de Stremio» ni un encabezado vacío.
+  const labels = addonRows({ source: "own", imported_at: 1, entries: subs, stremio_linked: false }).map((r) => r.label);
+  assert.ok(!labels.includes("Volver a los de Stremio") && !labels.includes("Traídos de tu Stremio") && !labels.includes("De dónde salen"));
+  // TV-4: lo que ya terminó se ve, y quitarlo de Real-Debrid lo dice.
+  const ready = debridRequestMenu({ hash: "h", state: "ready", title: "Midsommar", meta_id: "tt1", kind: "movie", by: "TV" });
+  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "Cancelar"]);
+  assert.equal(debridCancelMenu(ready.options[2].command).title, "¿Quitarlo de tu Real-Debrid?");
+  // TV-5: los emparejados cuentan como iPhone (antes Resumen decía «Sin iPhone»).
+  assert.ok(hasPhone({ paired_devices: [{ device_id: "a" }] }));
+  assert.ok(!settingsMissing({ paired_devices: [{ device_id: "a" }] }).some((m) => m.label === "Sin iPhone"));
 });

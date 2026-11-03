@@ -1,6 +1,6 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -18,12 +18,20 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       const entry = entries.find((e) => e.id === command.id);
       if (!entry) return;
       const group = entries.filter((e) => (e.origin === "orbital") === (entry.origin === "orbital"));
-      return openMenu(addonMenu(entry, { first: group[0]?.id === entry.id, last: group.at(-1)?.id === entry.id }), nested(context));
+      // TV-1: ¿es lo último que da versiones? Apagarlo te deja sin nada (como «Te quedarás sin fuentes» del iPhone).
+      const lastSource = entry.on && entry.template !== "opensubtitles"
+        && !entries.some((e) => e.id !== entry.id && e.on && !e.needs_key && e.template !== "opensubtitles");
+      return openMenu(addonMenu(entry, { first: group[0]?.id === entry.id, last: group.at(-1)?.id === entry.id, lastSource }), nested(context));
     },
     "addon-change": async (command) => {
       const res = await api.addonChange(command.id, command.action);
       addons(res);
       sound.play("select");
+      if (command.action === "off") { // apagar también se deshace
+        return ui.toast.show(`Apagué ${command.name || "el complemento"}`, { duration: UNDO_MS,
+          detail: command.lastSource ? "Te quedaste sin versiones de nada" : "", action: { label: "Deshacer",
+            onPress: async () => addons(await api.addonChange(command.id, "on")) } });
+      }
       if (command.action !== "remove") return;
       ui.toast.show(`Quité ${command.name || "el complemento"}`, { duration: UNDO_MS, action: { label: "Deshacer",
         onPress: async () => addons(await api.addonRestore(command.id)) } });
@@ -92,7 +100,8 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       const res = await api.debridCancel(command.hash);
       applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
       sound.play("select");
-      ui.toast.show(`Cancelé ${command.title || "el pedido"}`, { detail: "Se quitó de tu Real-Debrid" });
+      ui.toast.show(command.done ? `Quité ${command.title || "el archivo"}` : `Cancelé ${command.title || "el pedido"}`,
+        { detail: "Se quitó de tu Real-Debrid" });
       // Regresa a «Tus pedidos» (se sale de la confirmación y de la hoja del pedido); desde la ficha, se cierra.
       const back = context?.stack?.length > 1 ? { ...context, stack: context.stack.slice(0, -2) } : null;
       return back ? openMenu(debridRequestsMenu(res.requests || []), back) : ui.sheet.close();
@@ -132,8 +141,10 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
         { tone: "success", detail: "Desde ahora Stremio es respaldo · lo cambias en Cuentas › Stremio" });
       return loadLibrary();
     },
+    "stremio-logout-ask": async (command, context) => openMenu(stremioLogoutMenu(command), nested(context)),
     "stremio-logout": async (command, context) => {
       await api.stremioLogout();
+      ui.sheet.close();
       state.stremioLinked = false;
       ui.toast.show("Stremio desconectado");
       return loadLibrary();

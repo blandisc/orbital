@@ -393,12 +393,19 @@ def _companion_routes(app: FastAPI, config: Config) -> None:
             raise HTTPException(409, str(exc))
         return {"item": item, "message": companion.SENT_TOAST[item["action"]]}
 
+    def full() -> dict | None:
+        if len(app.state.devices.listing()) >= devices.MAX_DEVICES:
+            return {"ready": False, "reason": "Ya hay 10 aparatos conectados. Quita uno en Ajustes › Cuentas y vuelve a intentar."}
+        return None
+
     @app.get("/api/companion/pair")
     def pair() -> dict:
-        return companion.pair_info(config)  # sin el código: ese va solo dentro del QR
+        return full() or companion.pair_info(config)  # sin el código: ese va solo dentro del QR
 
     @app.get("/api/companion/pair.svg")
     def pair_svg() -> Response:
+        if full():
+            return Response(status_code=409)
         info = companion.pair_info(config, code=app.state.devices.code())
         if not info["ready"]:
             return Response(status_code=409)
@@ -510,7 +517,8 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
             raise HTTPException(422, "Formulario sin campos")
         urls.clear()
         urls[code] = f"https://{info['host']}/escribir/{code}"
-        return {"ready": True, "code": code, "host": info["host"], "words": remote.words(code), "short": remote.short(code)}
+        return {"ready": True, "code": code, "host": info["host"], "words": remote.words(code), "short": remote.short(code),
+                "minutes": (remote.form(code) or {}).get("minutes", 10)}
 
     @app.post("/api/realdebrid/remote/confirm")
     def debrid_remote_confirm(code: str = Body("", embed=True)) -> dict:
@@ -561,6 +569,7 @@ def save_debrid_key(app: FastAPI, token: object, source: str) -> dict:
         raise HTTPException(503, str(exc)) from exc
 
 
+QUICK_CODE_WRONG = "Ese código no es el de tu TV, o ya cambió. Revisa la pantalla de la TV y escríbelo otra vez."
 REMOTE_PAGE = Path(__file__).with_name("remote_input_page.html")
 # La página del celular no carga nada de fuera ni se deja incrustar; sin «Referer» (la dirección lleva el código).
 REMOTE_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY",
@@ -624,12 +633,16 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             if request.url.path.startswith("/clave/"):
                 code = main_app.state.remote_input.resolve(code) or ""
                 request.state.remote_code = code
+                if not code and request.method == "GET":
+                    await asyncio.sleep(guard.failed(key))
+                    return HTMLResponse(remote_page({"ask_code": True, "error": QUICK_CODE_WRONG}), status_code=404,
+                                        headers=REMOTE_HEADERS)
             if main_app.state.remote_input.form(code) is not None:
                 return await call_next(request)
             await asyncio.sleep(guard.failed(key))
             if request.method == "GET":
                 return HTMLResponse(remote_page(None), status_code=404, headers=REMOTE_HEADERS)
-            return JSONResponse({"detail": "Este código ya no sirve. Vuelve a abrir el formulario en la tele."}, status_code=404)
+            return JSONResponse({"detail": "Este código ya no sirve. Vuelve a abrir el formulario en la TV."}, status_code=404)
         if request.url.path == "/api/devices/pair" and request.method == "POST":  # el código del QR, sin token
             if guard.blocked(key):
                 return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)

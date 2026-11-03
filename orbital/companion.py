@@ -71,10 +71,10 @@ def tunnel_info(config, tailscale_url=None, funnel_on=None) -> dict:
         return {"ready": False, "reason": "El puerto del túnel está apagado (server.public_port en config.yaml)."}
     url = (tailscale_url or alexa_setup.tailscale_url)()
     if not url:
-        return {"ready": False, "reason": "No encontré Tailscale. El celular entra por su túnel: enciéndelo en esta computadora y vuelve a intentar."}
+        return {"ready": False, "reason": "Sin Tailscale encendido en esta computadora, un celular no llega a la TV. Ábrelo y vuelve a intentar."}
     if (funnel_on or alexa_setup.funnel_on)() is False:
-        return {"ready": False, "reason": f"Tailscale está encendido pero su túnel a internet (Funnel) no. En esta computadora "
-                                          f"corre «tailscale funnel --bg {port}» una vez y vuelve a intentar."}
+        return {"ready": False, "reason": f"Tailscale está encendido, pero todavía no deja entrar desde internet. Una sola vez, en "
+                                          f"esta computadora: «tailscale funnel --bg {port}» (es lo mismo que pide Alexa)."}
     return {"ready": True, "host": url.removeprefix("https://"), "url": url}
 
 

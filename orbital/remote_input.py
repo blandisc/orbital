@@ -127,12 +127,12 @@ class RemoteInput:
         with self._lock:
             p = self._alive(code)
             if p is None:
-                return "Este código ya no sirve. Vuelve a abrir el formulario en la tele."
+                return "Este código ya no sirve. Vuelve a abrir el formulario en la TV."
             p.fails += 1
             if p.fails >= MAX_FAILS:
                 self._pending = None
                 self._publish({"type": "remote-input", "code": code, "expired": True})  # la TV enseña uno nuevo
-                return f"{why}. Fueron muchos intentos: escanea el código nuevo de la tele."
+                return f"{why}. Fueron muchos intentos: escanea el código nuevo de la TV."
             return f"{why}. Revísala e inténtalo otra vez."
 
     def _alive(self, code: str) -> Pending | None:
@@ -160,7 +160,7 @@ class RemoteInput:
         with self._lock:
             p = self._alive(code)
             if p is None or p.sent:
-                return "Este código ya no sirve. Vuelve a abrir el formulario en la tele."
+                return "Este código ya no sirve. Vuelve a abrir el formulario en la TV."
             if not isinstance(values, dict):
                 return "No llegó nada."
             got: dict[str, str] = {}

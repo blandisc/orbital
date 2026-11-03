@@ -179,6 +179,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
   // quedaba con uno y la pantalla mostraba el QR del otro, que ya no existía.
   let remoteChain = Promise.resolve();
   let remoteSeq = 0;
+  let remoteRenew = 0;
   function startRemote() {
     stopRemote();
     const mine = attempt;
@@ -199,10 +200,14 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
           h("strong", {}, res.short)] : []));
         phoneShort.hidden = !res.short;
         phone.hidden = false;
+        // Vive 10 min (20 la clave de Real-Debrid): uno nuevo un minuto antes, sin que tengas que salir.
+        clearTimeout(remoteRenew);
+        remoteRenew = setTimeout(() => { if (remoteCode === res.code && !el.hidden) startRemote(); }, ((res.minutes || 10) - 1) * 60 * 1000);
       }, () => {});
   }
 
   function stopRemote() {
+    clearTimeout(remoteRenew);
     if (remoteCode) api.remoteInputCancel(remoteCode).catch(() => {});
     remoteCode = null;
     phone.hidden = true;

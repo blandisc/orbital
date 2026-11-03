@@ -11,16 +11,18 @@ import { ScreenHead } from "./ui.js";
 export function createPhoneLink({ onMove, onClose }) {
   const qr = h("div", { class: "phone-link__qr" });
   const status = h("p", { class: "phone-link__status", role: "status" });
-  const el = h("section", { class: "phone-link screen", hidden: true, "aria-label": "Conectar iPhone" },
+  const el = h("section", { class: "phone-link screen", hidden: true, "aria-label": "Conectar un aparato" },
     h("div", { class: "phone-link__box" },
-      ScreenHead({ eyebrow: "Cuentas", title: "Conectar iPhone" }),
+      ScreenHead({ eyebrow: "Cuentas", title: "Conectar un aparato" }),
       qr, status,
       h("ol", { class: "phone-link__steps" },
-        h("li", {}, "Abre la cámara del iPhone y apunta a este código"),
+        h("li", {}, "Abre la cámara de tu iPhone o iPad y apunta a este código"),
         h("li", {}, "Toca «Abrir en Orbital»: queda conectado, sin escribir nada"),
         h("li", {}, "Tu Trakt y tus claves de Explorar pasan solos al iPhone"))));
   let attempt = 0;
   let cancelExit = () => {};
+  let renew = 0;
+  const RENEW_MS = 9 * 60 * 1000; // el código vive 10 min: uno nuevo un minuto antes, sin que tengas que hacer nada
 
   async function load() {
     const mine = ++attempt;
@@ -37,7 +39,16 @@ export function createPhoneLink({ onMove, onClose }) {
       }
       status.classList.remove("phone-link__status--error");
       // El token va solo dentro del QR (la imagen), nunca en texto en pantalla.
-      mount(qr, h("img", { class: "phone-link__image", src: `/api/companion/pair.svg?v=${mine}`, alt: "Código QR para conectar el iPhone" }));
+      const image = h("img", { class: "phone-link__image", src: `/api/companion/pair.svg?v=${mine}`, alt: "Código QR para conectar un aparato" });
+      image.addEventListener("error", () => { // nunca una imagen rota: qué pasó y cómo seguir
+        if (mine !== attempt) return;
+        mount(qr);
+        status.classList.add("phone-link__status--error");
+        mount(status, "No pude preparar el código. Y para intentar otra vez.");
+      });
+      mount(qr, image);
+      clearTimeout(renew);
+      renew = setTimeout(() => { if (mine === attempt && !el.hidden) load(); }, RENEW_MS);
       mount(status, "Se conecta a ", h("strong", {}, info.host), " · aquí te avisa cuando quede conectado");
     } catch (err) {
       if (mine !== attempt) return;
@@ -56,6 +67,7 @@ export function createPhoneLink({ onMove, onClose }) {
   function close() {
     if (el.hidden) return;
     attempt++;
+    clearTimeout(renew);
     api.companionPairClose().catch(() => {}); // el código del QR muere con la pantalla
     cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();

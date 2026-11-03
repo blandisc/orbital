@@ -349,3 +349,19 @@ def test_a_dead_code_is_replaced_on_the_tv_and_a_lowercase_key_still_works(apps,
 
     monkeypatch.setattr(realdebrid, "RealDebrid", Upper)
     assert local.post("/api/realdebrid/key", json={"token": KEY.lower()}).status_code == 200
+
+
+def test_audit_a_mistyped_quick_code_lets_you_retry_and_ten_devices_hide_the_qr(apps, monkeypatch):
+    """Auditoría de la TV (TV-13, TV-14, TV-1): un código rápido mal escrito se dice y se reintenta; con 10 aparatos no hay
+    QR, se dice qué hacer; y la interfaz sabe cuál complemento es OpenSubtitles."""
+    local, public, main = apps
+    tunnel(monkeypatch)
+    local.post("/api/remote-input", json={"purpose": "realdebrid"})
+    wrong = public.get("/clave/ZZZZZZ")
+    assert wrong.status_code == 404 and "no es el de tu TV" in wrong.text and "Escribe el código de tu TV" in wrong.text
+    for i in range(10):
+        main.state.devices.pair(main.state.devices.code(), f"iPhone {i}", "iphone")
+    assert "10 aparatos" in local.get("/api/companion/pair").json()["reason"]
+    assert local.get("/api/companion/pair.svg").status_code == 409
+    templates = {e["id"]: e.get("template") for e in local.get("/api/settings").json()["addons"]["entries"]}
+    assert templates.get("opensubtitles") == "opensubtitles"

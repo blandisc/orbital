@@ -578,8 +578,10 @@ class Watch:
                 "only_on": entry.only_on, "gives": addon_gives(found),
                 "health": self.addons.health.status(entry.address) if entry.on() and entry.address else {"state": "off"},
             }
+            if entry.template:  # TV-1: la interfaz distingue OpenSubtitles (solo subtítulos) de lo que da versiones
+                row["template"] = entry.template
             if entry.template == "torrentio":  # se configura aquí (corte S3); sin tu clave no se puede armar
-                row.update(template="torrentio", options=entry.options, needs_key=entry.address is None)
+                row.update(options=entry.options, needs_key=entry.address is None)
             entries.append(row)
         raw = self.addon_list._raw()
         return {"source": self.addon_list.source, "imported_at": self.addon_list.imported_at,

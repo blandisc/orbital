@@ -760,12 +760,16 @@ function lastVoice(voice) {
   return Math.max(0, ...Object.values(voice.sources || {}).filter(Boolean));
 }
 
+/** ¿Hay un iPhone o iPad? Los emparejados con su propia conexión (K1-A) o, de antes, los que solo traían el token. */
+export const hasPhone = (settings = {}) => (settings.paired_devices || []).length > 0
+  || (settings.companion_devices || []).length > 0 || !!settings.companion_seen;
+
 /** Lo que falta (Resumen): solo lo que de verdad cambia algo; cada uno dice por qué en una línea y A lo arregla. */
 export function settingsMissing(settings, { voice = null, now = Date.now() } = {}) {
   settings ??= {};
   const missing = [];
   const last = lastVoice(voice);
-  const phones = (settings.companion_devices || []).length > 0 || !!settings.companion_seen;
+  const phones = hasPhone(settings);
   if (voice && (settings.alexa || phones) && (!last || now / 1000 - last > 2 * DAY)) {
     missing.push({ icon: "assistant", label: last ? `La voz no ha llegado en ${Math.round((now / 1000 - last) / DAY)} días` : "La voz nunca ha llegado",
       hint: "Ni Alexa ni el iPhone han mandado nada: la falla está antes de la consola", value: "Ver qué ha oído", warn: true,
@@ -826,7 +830,8 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
     case "voice": return voice ? `Voz: ${sinceVoice(lastVoice(voice), now).toLowerCase()}` : "La tele, Alexa y el iPhone";
     case "display": return `Texto ${settingLabel("text_size", settings.text_size ?? "normal").toLowerCase()}`;
     case "accounts": {
-      const rows = accountRows(settings).filter((r) => !r.heading && !["phone-link", "keys"].includes(r.command?.type));
+      const rows = accountRows(settings).filter((r) => !r.heading && !["phone-link", "keys", "device-menu"].includes(r.command?.type)
+        && !(r.label?.startsWith("Stremio") && !settings.stremio_linked));
       return `${rows.filter((r) => r.ok).length} de ${rows.length} conectadas`;
     }
     default: return "Revisar y actualizar";
@@ -876,7 +881,14 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
 function summary(settings, voice, now) {
   const missing = settingsMissing(settings, { voice, now });
   const last = lastVoice(voice);
+  const rd = settings.realdebrid;
+  const sources = (settings.addons?.entries || []).filter((e) => e.on && !e.needs_key && e.template !== "opensubtitles");
+  const paired = (settings.paired_devices || []).length;
   const fine = [
+    rd?.linked && !rd.problem && !rd.loading && { ...debridRow(rd), ok: true },
+    sources.length > 0 && { icon: "addon", label: "Complementos", value: `✓ ${sources.map((e) => e.name).join(", ")}`, ok: true,
+      command: { type: "settings", page: "addons" } },
+    paired > 0 && { icon: "phone", label: "Aparatos conectados", value: `✓ ${paired}`, ok: true, command: { type: "settings", page: "accounts" } },
     settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "✓ Conectada", ok: true, command: { type: "stremio-account" } },
     settings.trakt?.linked && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "✓ Conectada", ok: true, command: { type: "trakt-account" } },
     settings.tv?.configured && { icon: "tv", label: "La tele", value: "✓ Se prende con Orbital", ok: true, command: { type: "settings", page: "voice" } },
@@ -1251,7 +1263,7 @@ export function deviceUpgradeMenu(event) {
   const name = event.name || PLATFORM_NAMES[event.platform] || "iPhone";
   return {
     title: `¿Darle su propia conexión a ${name}?`,
-    subtitle: "Lo pide con el código de antes, para no volver a escanear. Si no fuiste tú, elige No.",
+    subtitle: "Lo pide con el código de antes, para no volver a escanear. Si no fuiste tú, elige No. La pregunta dura 3 minutos.",
     options: [
       { icon: "close", label: "No", command: { type: "device-upgrade", id: event.id, yes: false } },
       { icon: "check", label: "Darle su propia conexión", command: { type: "device-upgrade", id: event.id, yes: true, name } },
@@ -1315,9 +1327,10 @@ export function keysMenu(service) {
 // --- Real-Debrid («La TV sin Stremio», corte S2) --------------------------------------------------------------------
 // Las palabras son las de design/vocabulario.json (las mismas que el iPhone).
 const DEBRID_PROBLEMS = {
-  expired: { label: "Tu Real-Debrid venció", hint: "Renovar en real-debrid.com, desde tu celular" },
-  no_premium: { label: "Tu cuenta no tiene Premium", hint: "Sin Premium no arranca nada al instante" },
-  bad_key: { label: "Vuelve a conectar Real-Debrid", hint: "Tu clave ya no sirve · Mándala desde tu iPhone" },
+  expired: { label: "Tu Real-Debrid venció", hint: "Renuévalo en real-debrid.com, desde tu celular o tu computadora", command: { type: "stay" } },
+  no_premium: { label: "Tu cuenta no tiene Premium", hint: "Sin Premium no arranca nada al instante · real-debrid.com", command: { type: "stay" } },
+  bad_key: { label: "Vuelve a conectar Real-Debrid", hint: "Tu clave ya no sirve · Pega la nueva aquí o desde cualquier celular",
+    command: { type: "rd-connect" } },
 };
 const REQUEST_WORDS = { queued: "En cola", no_peers: "Sin gente que lo comparta", refused: "Real-Debrid no lo dejó bajar",
   too_many: "Muchas descargas activas", ready: "Listo" };
@@ -1329,9 +1342,16 @@ export function requestLabel(req) {
 }
 
 /** Quién lo pidió: «Lo pediste aquí» o «Lo pidió el iPhone de Fernando». */
-export function requestedBy(req) {
-  return !req.by || req.by === "TV" ? "Lo pediste aquí" : `Lo pidió el ${req.by}`;
+export function requestedBy(req, now = Date.now()) {
+  const here = !req.by || req.by === "TV";
+  const who = here ? "Lo pediste aquí" : `Lo pidió el ${req.by}`;
+  if (!req.since) return who;
+  const ago = shortAgo(req.since, now); // TV-11: cuándo
+  if (ago === "ahora") return here ? "Lo acabas de pedir aquí" : `Lo acaba de pedir el ${req.by}`;
+  return `${who} ${ago === "ayer" ? "ayer" : `hace ${ago}`}`;
 }
+
+const REQUEST_GOING = ["queued", "downloading", "no_peers", "too_many"]; // «Bajando»: todo lo que sigue en camino
 
 const dayMonth = (seconds) => new Date(seconds * 1000).toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
 
@@ -1342,7 +1362,8 @@ export function debridRow(rd) {
   if (!rd?.linked) return { ...base, value: "Conectar", warn: true, hint: "Para que los videos arranquen al instante · con tu clave",
     command: { type: "rd-connect" } };
   const problem = DEBRID_PROBLEMS[rd.problem];
-  if (problem) return { ...base, value: problem.label, warn: true, hint: problem.hint };
+  if (problem) return { ...base, value: problem.label, warn: true, hint: problem.hint,
+    command: rd.problem === "bad_key" ? problem.command : base.command };
   // P6-A (como el iPhone): sin la respuesta de Real-Debrid no se dice «Conectada».
   if (rd.loading) return { ...base, value: "Revisando…", hint: "Le pregunto a Real-Debrid por tu cuenta" };
   if (rd.problem === "offline") return { ...base, value: "Sin confirmar", hint: "No pude hablar con Real-Debrid · Revisa Internet" };
@@ -1355,11 +1376,11 @@ export function debridRow(rd) {
 export function debridAccountMenu(rd) {
   const requests = rd?.requests || [];
   const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
-  const active = requests.filter((r) => ["queued", "downloading", "no_peers"].includes(r.state)).length;
+  const active = requests.filter((r) => REQUEST_GOING.includes(r.state)).length;
   if (!rd?.linked) {
     return { title: "Real-Debrid", subtitle: "Es lo que hace que los videos arranquen al instante.", options: [
       { icon: "bolt", label: "Conectar con tu clave", hint: "Pégala aquí o desde cualquier celular, con un código QR", command: { type: "rd-connect" } },
-      { icon: "phone", label: "O desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "stay" } },
+      { icon: "phone", label: "Mándala desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "stay" } },
     ] };
   }
   const problem = DEBRID_PROBLEMS[rd.problem];
@@ -1367,9 +1388,9 @@ export function debridAccountMenu(rd) {
     title: "Real-Debrid",
     subtitle: [rd.user && `Conectada como ${rd.user}`, `${from} · termina en ••${rd.ends_with || ""}`].filter(Boolean).join(" · "),
     options: [
-      { icon: "download", label: "Tus pedidos", value: active ? `${active} bajando` : requests.length ? `${requests.length}` : "Ninguno",
+      { icon: "download", label: "Tus pedidos", value: active ? `${active} en camino` : requests.length ? `${requests.length}` : "Ninguno",
         hint: "Lo que le pediste desde la TV o tu iPhone", command: { type: "rd-requests" } },
-      problem ? { icon: "warning", label: problem.label, hint: problem.hint, warn: true, command: { type: "close" } }
+      problem ? { icon: "warning", label: problem.label, hint: problem.hint, warn: true, command: problem.command }
         : rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
@@ -1384,7 +1405,7 @@ const DEBRID_SOURCES = { iphone: "Te la mandó tu iPhone", celular: "La pegaste 
  *  y la guarda la consola; esta pantalla nunca la recibe del celular. */
 export const DEBRID_FORM = {
   id: "realdebrid", title: "Conectar Real-Debrid", submitLabel: "Usar esta clave", remote: "realdebrid",
-  lead: "Ábrela en real-debrid.com/apitoken desde cualquier navegador, cópiala y pégala aquí con Ctrl+V. O escanea el código con tu celular.",
+  lead: "Ábrela en real-debrid.com/apitoken desde cualquier navegador, cópiala y pégala aquí con Ctrl+V.",
   missing: "Pega tu clave de Real-Debrid.",
   fields: [{ name: "token", label: "Tu clave · real-debrid.com/apitoken", secret: true }],
 };
@@ -1403,6 +1424,16 @@ export function debridRemoteMenu(event) {
 
 /** Confirmar antes de cancelar (como el iPhone, también desde la ficha): «Seguir esperando» primero. */
 export function debridCancelMenu(command) {
+  if (command.done) { // TV-4: ya terminó: no es «cancelar», es borrarlo de tu cuenta
+    return {
+      title: "¿Quitarlo de tu Real-Debrid?",
+      subtitle: `${command.title || "El archivo"} se borra de tu cuenta. Para verlo otra vez habría que pedirlo de nuevo.`,
+      options: [
+        { icon: "close", label: "Cancelar", command: { type: "back" } },
+        { icon: "exit", label: "Quitar", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title, done: true } },
+      ],
+    };
+  }
   return {
     title: "¿Cancelar el pedido?",
     subtitle: `${command.title || "Tu pedido"} se quita de tu Real-Debrid.`,
@@ -1421,7 +1452,7 @@ export function debridRequestsMenu(requests = []) {
     hint: `${requestLabel(r)} · ${requestedBy(r)}`, ok: r.state === "ready", warn: ["refused", "too_many", "no_peers"].includes(r.state),
     command: { type: "rd-request-menu", hash: r.hash } });
   // Dos grupos, como el iPhone (P1-A, Fernando, 3 nov): lo que sigue en camino y lo que ya terminó; uno vacío no sale.
-  const going = shown.filter((r) => ["queued", "downloading", "no_peers", "too_many"].includes(r.state));
+  const going = shown.filter((r) => REQUEST_GOING.includes(r.state));
   const done = shown.filter((r) => ["ready", "refused"].includes(r.state));
   return {
     title: "Tus pedidos",
@@ -1449,6 +1480,9 @@ export function debridRequestMenu(req, { account = null, now = Date.now() } = {}
     title: req.title || "Tu pedido",
     subtitle: `${requestLabel(req)} · ${requestedBy(req)}`,
     options: [
+      // TV-4: listo es para verlo (como «Ver ahora» del iPhone).
+      req.state === "ready" && ref && { icon: "play", label: "Ver ahora", command: { type: "rd-other-version", play: {
+        kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
       // Solo cuando ayuda (como el iPhone): no lo dejó bajar, nadie lo comparte o lleva 24 h sin avanzar.
       (["refused", "no_peers"].includes(req.state) || (["queued", "downloading"].includes(req.state) && req.progress_at && now / 1000 - req.progress_at >= 86400))
         && ref && { icon: "swap", label: "Probar otra versión",
@@ -1456,9 +1490,21 @@ export function debridRequestMenu(req, { account = null, now = Date.now() } = {}
       open,
       req.state !== "ready" && req.state !== "refused"
         ? { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
-        : { icon: "exit", label: "Quitar de la lista", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } },
-      { icon: "close", label: "Seguir esperando", command: { type: "close" } },
+        : { icon: "exit", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true } },
+      { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Cancelar" : "Seguir esperando", command: { type: "close" } },
     ].filter(Boolean),
+  };
+}
+
+/** «¿Desconectar Stremio?» (TV-17): «Cancelar» primero. */
+export function stremioLogoutMenu(command = {}) {
+  return {
+    title: "¿Desconectar Stremio?",
+    subtitle: command.backup ? "No se pierde nada: lo tuyo ya está en Trakt." : "Dejarás de ver tu Seguir viendo y Mi lista de Stremio aquí.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
+    ],
   };
 }
 
@@ -1481,7 +1527,7 @@ export function stremioAccountMenu(settings = {}) {
       backup && { icon: "refresh", label: "Volver a leer tu Stremio", hint: "Seguir viendo y Mi lista otra vez desde aquí",
         command: { type: "setting", key: "stremio_role", value: "both" } },
       { icon: "exit", label: "Desconectar", danger: true, hint: backup ? "No se pierde nada: lo tuyo ya está en Trakt" : "Dejarás de ver tu Seguir viendo de Stremio",
-        command: { type: "stremio-logout" } },
+        command: { type: "stremio-logout-ask", backup } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
     ].filter(Boolean),
   };
@@ -1545,25 +1591,28 @@ export function addonRows(status, now = Date.now()) {
   return [
     fromPhone,
     { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
-    { heading: true, label: "Traídos de tu Stremio" }, ...brought.map(entry),
+    (brought.length || status.stremio_linked) && { heading: true, label: "Traídos de tu Stremio" }, ...brought.map(entry),
     status.stremio_linked && { icon: "refresh", label: "Volver a traer", hint: [imported, "tu cuenta no se toca"].filter(Boolean).join(" · "),
       command: { type: "addons-import" } },
-    { heading: true, label: "De dónde salen" },
+    // TV-2: volver a Stremio solo con su cuenta conectada (sin ella, un toque te dejaba sin versiones).
+    (status.stremio_linked || status.source !== "own") && { heading: true, label: "De dónde salen" },
     status.source === "own"
-      ? { icon: "swap", label: "Volver a los de Stremio", hint: "Tu lista se queda: regresas cuando quieras", command: { type: "addons-source", source: "stremio" } }
+      ? status.stremio_linked && { icon: "swap", label: "Volver a los de Stremio", hint: "Tu lista se queda: regresas cuando quieras", command: { type: "addons-source", source: "stremio" } }
       : { icon: "swap", label: "Usar tu lista", hint: "Ahora salen de tu cuenta de Stremio", value: "Usar", command: { type: "addons-source", source: "own" } },
   ].filter(Boolean);
 }
 
 /** A en un complemento: prender o apagar, subirlo o bajarlo en el orden, quitarlo (solo lo traído; lo de Orbital se apaga). */
-export function addonMenu(entry, { first = false, last = false } = {}) {
+export function addonMenu(entry, { first = false, last = false, lastSource = false } = {}) {
   const tv = entry.only_on === "tv";
   return {
     title: tv ? "Archivos de la TV" : entry.name,
     subtitle: [entry.gives, addonHealth(entry.health)].filter(Boolean).join(" · ") || undefined,
     options: [
       entry.template === "torrentio" && { icon: "settings", label: "Configurar", hint: "Idiomas, calidades, orden y más", command: { type: "torrentio-menu" } },
-      { icon: entry.on ? "stop" : "play", label: entry.on ? "Apagar" : "Prender", command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on" } },
+      { icon: entry.on ? "stop" : "play", label: entry.on ? "Apagar" : "Prender", warn: entry.on && lastSource,
+        hint: entry.on && lastSource ? "Te quedarás sin versiones de nada" : undefined,
+        command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on", name: tv ? "Archivos de la TV" : entry.name, lastSource } },
       !first && { icon: "back", label: "Subir", hint: "Se le pregunta antes", command: { type: "addon-change", id: entry.id, action: "up" } },
       !last && { icon: "chevron", label: "Bajar", hint: "Se le pregunta después", command: { type: "addon-change", id: entry.id, action: "down" } },
       entry.origin !== "orbital" && { icon: "close", label: "Quitar", hint: "Solo en esta TV · se puede deshacer", danger: true,
@@ -1793,13 +1842,13 @@ export function moviesSetupMenu(settings = {}) {
   const rd = settings.realdebrid;
   const ours = (settings.addons?.entries || []).filter((e) => e.origin === "orbital");
   const on = ours.filter((e) => e.on).map((e) => e.name);
-  const phones = (settings.companion_devices || []).length > 0 || !!settings.companion_seen;
+  const phones = hasPhone(settings);
   return {
     title: "Películas y series",
     subtitle: "Tres pasos, una sola vez. Cada uno se puede dejar para después.",
     options: [
       { icon: "bolt", label: "1 · Real-Debrid", hint: "Hace que los videos arranquen al instante", value: rd?.linked ? "✓ Conectada" : "Conectar",
-        ok: !!rd?.linked, command: { type: "rd-account" } },
+        ok: !!rd?.linked, command: { type: rd?.linked ? "rd-account" : "rd-connect" } },
       { icon: "addon", label: "2 · Complementos", hint: on.length ? on.join(" y ") : "Los recomendados ya vienen armados",
         value: on.length ? `✓ ${on.length} ${on.length === 1 ? "prendido" : "prendidos"}` : "Prender",
         ok: on.length > 0, command: { type: "settings", page: "addons" } },
