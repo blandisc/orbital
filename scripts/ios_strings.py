@@ -42,6 +42,12 @@ TRANSLATIONS = {
     "Usar la de este iPhone": "Use this iPhone's", "Otras opciones": "Other options",
     "En el iPhone no se puede reproducir; en la TV sí": "It can't play on the iPhone; it can on the TV",
     "En el iPhone no se puede reproducir": "It can't play on the iPhone",
+    # R15: «Avisarme cuando aparezca».
+    "Avisarme cuando aparezca": "Notify me when it shows up", "Te aviso cuando aparezca": "I'll let you know when it shows up",
+    "Reviso una vez al día, hasta el %@": "I check once a day, until %@", "Ya no avisarme": "Stop notifying me",
+    "Nadie lo tiene todavía en internet · suele aparecer en horas o días": "Nobody has it online yet · it usually shows up in hours or days",
+    "Reviso una vez al día durante 14 días": "I check once a day for 14 days", "Ya apareció %@": "%@ just showed up",
+    "Alguien ya lo comparte · ábrelo para verlo o pedirlo": "Someone is sharing it now · open it to watch or request it",
     # Pasada de Real-Debrid y Complementos (3 nov): lo que se rompía o se podía decir mejor.
     "Seguir esperando": "Keep waiting", "No pude ver tu cuenta": "I couldn't see your account",
     "Real-Debrid no contestó. Tu clave sigue guardada.": "Real-Debrid didn't answer. Your key is still saved.",

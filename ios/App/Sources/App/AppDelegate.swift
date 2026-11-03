@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // «Ya está T1 E2» de tus pedidos a Real-Debrid (R10): sus botones, y quién avisa cuando uno queda listo.
         DebridRequestNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage, tv: AppEnvironment.shared.services.orbitalOn)
         DebridRequestNotifier.connect(AppEnvironment.shared)
+        AppearNotifier.connect(AppEnvironment.shared)   // R15: «Ya apareció…»
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
         UNUserNotificationCenter.current().delegate = self
         return true

@@ -33999,6 +33999,94 @@
           }
         }
       }
+    },
+    "Te aviso cuando aparezca": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll let you know when it shows up"
+          }
+        }
+      }
+    },
+    "Reviso una vez al día, hasta el %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I check once a day, until %@"
+          }
+        }
+      }
+    },
+    "Ya no avisarme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop notifying me"
+          }
+        }
+      }
+    },
+    "Avisarme cuando aparezca": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify me when it shows up"
+          }
+        }
+      }
+    },
+    "Nadie lo tiene todavía en internet · suele aparecer en horas o días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody has it online yet · it usually shows up in hours or days"
+          }
+        }
+      }
+    },
+    "Reviso una vez al día durante 14 días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I check once a day for 14 days"
+          }
+        }
+      }
+    },
+    "Ya apareció %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ just showed up"
+          }
+        }
+      }
+    },
+    "Alguien ya lo comparte · ábrelo para verlo o pedirlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone is sharing it now · open it to watch or request it"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

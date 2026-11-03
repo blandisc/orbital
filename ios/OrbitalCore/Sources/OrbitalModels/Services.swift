@@ -38,6 +38,8 @@ public final class Services: ObservableModel {
     public let debridReminders: DebridReminderBook
     /// Tus pedidos a Real-Debrid (R12, R13): la libreta de este aparato, pedir y seguir cuánto lleva cada uno.
     public let debridRequests: DebridRequestsModel
+    /// R15 · «Avisarme cuando aparezca»: lo que nadie tenía, revisado una vez al día durante 14 días.
+    public let appearWatch: AppearWatch
     /// Tu lista de complementos, la misma que la de tu TV (S1, S3, S6): solo en Ultra con una TV emparejada.
     public let addonSync: AddonTVSync
     /// El nombre de este aparato («iPhone», «iPad», «Mac»): quién hizo cada pedido.
@@ -241,6 +243,14 @@ public final class Services: ObservableModel {
         }), available: { allowsOrbital && settings.value.orbitalEnabled }, device: device?.kind ?? "iphone", deviceName: { requestsBy })
         self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
                                                   finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
+        let requests = self.debridRequests, appearPrefs = self.titlePrefs
+        self.appearWatch = AppearWatch(kv: kv, clock: clock) { entry in
+            let wanted = appearPrefs.languages(for: entry.metaID, settings: settings.value).prefs
+            // Con tu Real-Debrid se pregunta qué torrents existen (R4); sin él, si algún complemento ya da una versión.
+            if requests.canRequest { return await requests.torrents(kind: entry.kind, videoID: entry.videoID, prefs: wanted).map { !$0.isEmpty } }
+            guard let found = try? await finder.find(kind: entry.kind, videoID: entry.videoID, prefs: wanted, fresh: true) else { return nil }
+            return !found.isEmpty
+        }
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)

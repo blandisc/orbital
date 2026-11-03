@@ -136,6 +136,7 @@ extension TitleView {
         }
         // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
         if let debrid = debridContinueAction(model) { return debrid }
+        if let appear = appearContinueAction(model) { return appear }   // R15: «Avisarme cuando aparezca»
         if let airs = model.continueAirs {
             // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
             return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
