@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { debridCancelMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -664,9 +664,15 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     video_ids: ["tt1:1:1"] }, { account: "7" });
   assert.equal(one.subtitle, "Muchas descargas activas · Lo pediste aquí");
   // P2-B: «Probar otra versión», «Abrir la ficha» y «Cancelar pedido»
-  assert.deepEqual(one.options.map((o) => o.label), ["Probar otra versión", "Abrir la ficha", "Cancelar pedido", "Seguir esperando"]);
-  assert.deepEqual(one.options[0].command.play, { kind: "series", id: "tt1", video_id: "tt1:1:1", title: "Nocturne · T1 E1" });
-  assert.deepEqual(one.options[2].command, { type: "rd-cancel", hash: "a", title: "Nocturne · T1 E1" });
+  assert.deepEqual(one.options.map((o) => o.label), ["Abrir la ficha", "Cancelar pedido", "Seguir esperando"]); // muchas descargas: otra versión no ayuda
+  assert.deepEqual(one.options[1].command, { type: "rd-cancel-ask", hash: "a", title: "Nocturne · T1 E1" });
+  const stuck = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "downloading", kind: "series", meta_id: "tt1", video_ids: ["tt1:1:1"],
+    progress_at: 1000 }, { now: (1000 + 86400) * 1000 });
+  assert.deepEqual(stuck.options[0].command.play, { kind: "series", id: "tt1", video_id: "tt1:1:1", title: "Nocturne · T1 E1" }); // 24 h sin avanzar
+  assert.equal(debridRequestMenu({ hash: "a", state: "no_peers", meta_id: "tt1" }).options[0].label, "Probar otra versión");
+  const confirm = debridCancelMenu({ hash: "a", title: "Nocturne · T1 E1" });
+  assert.deepEqual(confirm.options.map((o) => o.label), ["Seguir esperando", "Cancelar pedido"]);
+  assert.deepEqual(confirm.options[1].command, { type: "rd-cancel", hash: "a", title: "Nocturne · T1 E1" });
   const theirs = debridRequestMenu({ hash: "b", state: "queued", by: "iPhone", account: "99", kind: "movie", meta_id: "tt9", title: "Dune" }, { account: "7" });
   assert.deepEqual(theirs.options.map((o) => o.label), ["Abrir la ficha"]); // lo de otra cuenta, solo la ficha
   assert.equal(debridRow({ linked: true, loading: true }).value, "Revisando…"); // P6-A: nunca «Conectada» sin confirmar

@@ -1,6 +1,6 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, openSources, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -63,12 +63,15 @@ export function accountCommands({ UNDO_MS, openSources, addonMenu, api, applySet
       if (!req) return;
       return openMenu(debridRequestMenu(req, { account: found.account }), nested(context));
     },
+    "rd-cancel-ask": async (command, context) => openMenu(debridCancelMenu(command), nested(context)),
     "rd-cancel": async (command, context) => {
       const res = await api.debridCancel(command.hash);
       applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
       sound.play("select");
       ui.toast.show(`Cancelé ${command.title || "el pedido"}`, { detail: "Se quitó de tu Real-Debrid" });
-      return openMenu(debridRequestsMenu(res.requests || []), context?.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : {});
+      // Regresa a «Tus pedidos» (se sale de la confirmación y de la hoja del pedido); desde la ficha, se cierra.
+      const back = context?.stack?.length > 1 ? { ...context, stack: context.stack.slice(0, -2) } : null;
+      return back ? openMenu(debridRequestsMenu(res.requests || []), back) : ui.sheet.close();
     },
     // Ajustes › Complementos › Torrentio (corte S3): cada cambio se guarda al hacerlo, con «Deshacer»
     "torrentio-menu": async (command, context) => openMenu(torrentioMenus.main(torrentioEntry()), nested(context)),

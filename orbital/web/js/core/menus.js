@@ -1323,6 +1323,18 @@ export function debridAccountMenu(rd) {
   };
 }
 
+/** Confirmar antes de cancelar (como el iPhone, también desde la ficha): «Seguir esperando» primero. */
+export function debridCancelMenu(command) {
+  return {
+    title: "¿Cancelar el pedido?",
+    subtitle: `${command.title || "Tu pedido"} se quita de tu Real-Debrid.`,
+    options: [
+      { icon: "close", label: "Seguir esperando", command: { type: "close" } },
+      { icon: "exit", label: "Cancelar pedido", danger: true, command: { type: "rd-cancel", hash: command.hash, title: command.title } },
+    ],
+  };
+}
+
 /** «Tus pedidos» (R13 del iPhone): cada uno con su estado en palabras e ícono (no solo color) y quién lo pidió. */
 export function debridRequestsMenu(requests = []) {
   const shown = requests.filter((r) => r.state !== "gone");
@@ -1344,7 +1356,7 @@ export function debridRequestsMenu(requests = []) {
 }
 
 /** Un pedido: «Cancelar pedido» lo quita de tu Real-Debrid (pide confirmar; «Cancelar» va primero). */
-export function debridRequestMenu(req, { account = null } = {}) {
+export function debridRequestMenu(req, { account = null, now = Date.now() } = {}) {
   const theirs = req.account && account && req.account !== account;
   const ref = req.meta_id && { kind: req.kind || "movie", meta_id: req.meta_id, title: req.title };
   const video = req.video_ids?.[0] || req.meta_id;
@@ -1359,12 +1371,14 @@ export function debridRequestMenu(req, { account = null } = {}) {
     title: req.title || "Tu pedido",
     subtitle: `${requestLabel(req)} · ${requestedBy(req)}`,
     options: [
-      ["refused", "no_peers", "too_many"].includes(req.state) && ref && { icon: "swap", label: "Probar otra versión",
+      // Solo cuando ayuda (como el iPhone): no lo dejó bajar, nadie lo comparte o lleva 24 h sin avanzar.
+      (["refused", "no_peers"].includes(req.state) || (["queued", "downloading"].includes(req.state) && req.progress_at && now / 1000 - req.progress_at >= 86400))
+        && ref && { icon: "swap", label: "Probar otra versión",
         command: { type: "rd-other-version", play: { kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
       open,
       req.state !== "ready" && req.state !== "refused"
-        ? { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } }
-        : { icon: "exit", label: "Quitar de la lista", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } },
+        ? { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
+        : { icon: "exit", label: "Quitar de la lista", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } },
       { icon: "close", label: "Seguir esperando", command: { type: "close" } },
     ].filter(Boolean),
   };
