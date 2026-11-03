@@ -8,9 +8,34 @@ public final class AddonList: @unchecked Sendable {
     private let lock = NSLock()
     private var items: [InstalledAddon]?
 
+    /// Lo guardado que no se pudo leer entero: nunca se escribe encima (la próxima versión quizá sí lo lea), y queda una copia.
+    public private(set) var readFailed = false
+    /// Las entradas que esta versión no entiende (de una versión más nueva): se vuelven a escribir tal cual.
+    private var unreadable: [StoredJSON] = []
+
     public init(vault: AddonVault) {
         self.vault = vault
-        items = vault.data(AddonKeys.installed).flatMap { try? JSONDecoder().decode([InstalledAddon].self, from: $0) }
+        guard let raw = vault.data(AddonKeys.installed) else { return }
+        switch StoredAddons.read(raw) {
+        case .current(let list, let rest):
+            items = list; unreadable = rest
+        case .legacy(let list, let rest):
+            // Antes de tocar nada, una copia de lo que había (una sola: la primera migración manda).
+            if vault.data(AddonKeys.installedBackup) == nil { vault.setData(AddonKeys.installedBackup, raw) }
+            items = list.map(Self.withExplicitDefaults); unreadable = rest
+            write(items ?? [])
+        case .unreadable:
+            // No se entiende: se guarda aparte y no se escribe encima; la app sigue como si no hubiera lista (con Stremio).
+            if vault.data(AddonKeys.installedUnreadable) == nil { vault.setData(AddonKeys.installedUnreadable, raw) }
+            readFailed = true
+        }
+    }
+
+    /// Las opciones de hoy, escritas (T10): «sin opciones» ya no quiere decir «las que traiga la app».
+    static func withExplicitDefaults(_ addon: InstalledAddon) -> InstalledAddon {
+        var addon = addon
+        if case .recommended(let template) = addon.origin, addon.options == nil, AddonCatalog.template(template)?.usesOptions == true { addon.options = AddonOptions() }
+        return addon
     }
 
     /// Ya hay una lista propia (aunque esté vacía): manda ella, no la cuenta de Stremio.
@@ -26,7 +51,13 @@ public final class AddonList: @unchecked Sendable {
             items = list
             return list
         }
-        vault.setData(AddonKeys.installed, try? JSONEncoder().encode(saved))
+        write(saved)
+    }
+
+    private func write(_ list: [InstalledAddon]) {
+        // Lo que no se pudo leer no se pisa: los cambios de esta sesión quedan en memoria.
+        guard !readFailed, let data = StoredAddons.encode(list, unreadable: lock.withLock { unreadable }) else { return }
+        vault.setData(AddonKeys.installed, data)
     }
 
     /// Arma la lista con los recomendados (los que vienen encendidos), si aún no hay una.
@@ -34,7 +65,7 @@ public final class AddonList: @unchecked Sendable {
         guard !isConfigured else { return }
         update { list in
             for t in templates where !list.contains(where: { $0.origin == .recommended(t.id) }) {
-                list.append(InstalledAddon(id: t.id, name: t.name, resources: t.resources, enabled: t.onByDefault, origin: .recommended(t.id), usesDebrid: t.usesDebrid))
+                list.append(Self.withExplicitDefaults(InstalledAddon(id: t.id, name: t.name, resources: t.resources, enabled: t.onByDefault, origin: .recommended(t.id), usesDebrid: t.usesDebrid)))
             }
         }
     }
@@ -43,8 +74,8 @@ public final class AddonList: @unchecked Sendable {
     public func add(_ template: AddonTemplate, options: AddonOptions? = nil) {
         update { list in
             guard !list.contains(where: { $0.origin == .recommended(template.id) }) else { return }
-            list.append(InstalledAddon(id: template.id, name: template.name, resources: template.resources, origin: .recommended(template.id),
-                                       usesDebrid: template.usesDebrid, options: options))
+            list.append(Self.withExplicitDefaults(InstalledAddon(id: template.id, name: template.name, resources: template.resources, origin: .recommended(template.id),
+                                       usesDebrid: template.usesDebrid, options: options)))
         }
     }
 
@@ -130,4 +161,40 @@ public final class AddonList: @unchecked Sendable {
 
     /// Las claves que hay que tapar en lo que se muestra o se anota (tu Real-Debrid).
     public func secretsToRedact() -> [String] { [vault.secret(AddonKeys.realDebridToken)].compactMap { $0 } }
+}
+
+/// Cómo se guarda la lista: `{"version": 2, "items": [...], "unreadable": [...]}`. Antes era el arreglo solo.
+enum StoredAddons {
+    static let version = 2
+    enum Read { case current([InstalledAddon], [StoredJSON]), legacy([InstalledAddon], [StoredJSON]), unreadable }
+
+    static func read(_ data: Data) -> Read {
+        guard let json = try? JSONDecoder().decode(StoredJSON.self, from: data) else { return .unreadable }
+        switch json {
+        case .array(let entries):
+            let (list, rest) = split(entries)
+            return .legacy(list, rest)
+        case .object(let object):
+            guard case .array(let entries)? = object["items"] else { return .unreadable }
+            var (list, rest) = split(entries)
+            if case .array(let more)? = object["unreadable"] { rest += more }
+            return .current(list, rest)
+        default: return .unreadable
+        }
+    }
+
+    /// Cada entrada por su lado: la que no se entiende no se lleva a las demás.
+    private static func split(_ entries: [StoredJSON]) -> ([InstalledAddon], [StoredJSON]) {
+        var list: [InstalledAddon] = [], rest: [StoredJSON] = []
+        for entry in entries {
+            if let data = try? JSONEncoder().encode(entry), let addon = try? JSONDecoder().decode(InstalledAddon.self, from: data) { list.append(addon) }
+            else { rest.append(entry) }
+        }
+        return (list, rest)
+    }
+
+    static func encode(_ list: [InstalledAddon], unreadable: [StoredJSON]) -> Data? {
+        struct Box: Encodable { var version: Int; var items: [InstalledAddon]; var unreadable: [StoredJSON]? }
+        return try? JSONEncoder().encode(Box(version: version, items: list, unreadable: unreadable.isEmpty ? nil : unreadable))
+    }
 }

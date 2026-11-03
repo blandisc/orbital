@@ -17,6 +17,10 @@ public enum AddonKeys {
     /// La URL completa de un complemento pegado o importado (en el llavero: puede llevar tu clave adentro).
     public static func addonURL(_ id: String) -> String { "addon_url.\(id)" }
     static let installed = "addons-installed"
+    /// Copia de la lista tal como estaba antes de la primera migración de formato (T10).
+    static let installedBackup = "addons-installed.backup-v1"
+    /// Copia de una lista que no se pudo leer (no se escribe encima de ella).
+    static let installedUnreadable = "addons-installed.unreadable"
     static let importedFromStremio = "addons-imported-from-stremio"
     static let debridStatus = "debrid-status"
     static let reminders = "debrid-reminders"

@@ -86,6 +86,73 @@ final class AddonListTests: XCTestCase {
     }
 }
 
+/// T10: tus complementos nunca se borran en silencio por un cambio de formato.
+final class AddonStorageTests: XCTestCase {
+    /// Lo que guardaba la app hasta noviembre de 2026: el arreglo solo, con el origen como lo codificaba Swift.
+    let today = #"[{"id":"torrentio","name":"Torrentio","resources":["stream"],"enabled":true,"origin":{"recommended":{"_0":"torrentio"}},"usesDebrid":true},"#
+        + #"{"id":"a1x","name":"Listas","resources":["catalog"],"enabled":false,"origin":{"imported":{}},"usesDebrid":false},"#
+        + #"{"id":"a2y","name":"Pegado","resources":["stream"],"enabled":true,"origin":{"pasted":{}},"usesDebrid":false}]"#
+
+    func testTodaysSavedListIsReadBackedUpAndItsDefaultsWritten() throws {
+        let vault = InMemoryAddonVault()
+        vault.setData("addons-installed", Data(today.utf8))
+        let list = AddonList(vault: vault)
+        XCTAssertTrue(list.isConfigured)
+        XCTAssertEqual(list.installed.map(\.origin), [.recommended("torrentio"), .imported, .pasted])
+        XCTAssertEqual(list.installed.map(\.enabled), [true, false, true])
+        XCTAssertEqual(vault.data("addons-installed.backup-v1"), Data(today.utf8), "antes de migrar, una copia tal cual")
+        XCTAssertEqual(list.installed[0].options, AddonOptions(), "las opciones de hoy quedan escritas")
+        let saved = try XCTUnwrap(String(data: XCTUnwrap(vault.data("addons-installed")), encoding: .utf8))
+        XCTAssertTrue(saved.contains(#""version":2"#))
+        XCTAssertTrue(saved.contains(#""qualityfilter""#) == false && saved.contains("unknown"), "los valores, no «los de la app»")
+        // Leído otra vez (ya en el formato nuevo): lo mismo, y la copia no se toca.
+        let again = AddonList(vault: vault)
+        XCTAssertEqual(again.installed, list.installed)
+        XCTAssertEqual(vault.data("addons-installed.backup-v1"), Data(today.utf8))
+    }
+
+    func testUnknownKeysAndEntriesSurviveAndMissingKeysTakeTheirDefault() throws {
+        let vault = InMemoryAddonVault()
+        let newer = #"{"version":3,"items":[{"id":"torrentio","origin":{"kind":"recommended","template":"torrentio"},"syncRevision":7,"#
+            + #""options":{"languages":["latino"],"sort":"seeders"}},{"id":"x","origin":{"kind":"satellite"}}]}"#
+        vault.setData("addons-installed", Data(newer.utf8))
+        let list = AddonList(vault: vault)
+        let torrentio = try XCTUnwrap(list.installed.first)
+        XCTAssertEqual(list.installed.count, 1)
+        XCTAssertEqual(torrentio.name, "torrentio", "sin nombre: el id")
+        XCTAssertTrue(torrentio.enabled, "sin «enabled»: prendido")
+        XCTAssertEqual(torrentio.options?.languages, ["latino"])
+        XCTAssertEqual(torrentio.options?.excludedQualities, AddonOptions.defaultExcludedQualities)
+        XCTAssertEqual(torrentio.options?.extra["sort"], .string("seeders"))
+        XCTAssertEqual(torrentio.extra["syncRevision"], .number(7))
+        list.setEnabled("torrentio", false)
+        let saved = try XCTUnwrap(String(data: XCTUnwrap(vault.data("addons-installed")), encoding: .utf8))
+        XCTAssertTrue(saved.contains("syncRevision") && saved.contains("seeders") && saved.contains("satellite"), "lo que no se entiende se vuelve a escribir")
+        XCTAssertNil(vault.data("addons-installed.backup-v1"), "no era una migración")
+    }
+
+    func testAListThatCannotBeReadIsNeverOverwritten() {
+        let vault = InMemoryAddonVault()
+        let garbage = Data("{esto no es json".utf8)
+        vault.setData("addons-installed", garbage)
+        let list = AddonList(vault: vault)
+        XCTAssertTrue(list.readFailed)
+        XCTAssertFalse(list.isConfigured, "la app sigue con Stremio")
+        list.startWithRecommended()
+        list.setEnabled("torrentio", false)
+        XCTAssertEqual(vault.data("addons-installed"), garbage, "no se escribe encima")
+        XCTAssertEqual(vault.data("addons-installed.unreadable"), garbage, "y queda una copia aparte")
+    }
+
+    func testANewListWritesItsOptions() throws {
+        let vault = InMemoryAddonVault()
+        let list = AddonList(vault: vault)
+        list.startWithRecommended()
+        XCTAssertEqual(list.installed.first { $0.id == "torrentio" }?.options, AddonOptions())
+        XCTAssertNil(list.installed.first { $0.id == "opensubtitles" }?.options, "OpenSubtitles no tiene opciones")
+    }
+}
+
 final class RealDebridTests: XCTestCase {
     let token = String(repeating: "A1B2", count: 13)
     let now = Date(timeIntervalSince1970: 1_793_000_000)   // 2026-10-26, 07:33 UTC

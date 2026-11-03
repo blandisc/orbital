@@ -11,6 +11,8 @@ public struct AddonTemplate: Sendable, Equatable, Identifiable {
     public var usesDebrid: Bool
     /// Si viene encendido en la guía.
     public var onByDefault: Bool
+    /// Si su URL se arma con `AddonOptions` (Torrentio): sus opciones se guardan escritas, no «las de la app».
+    public var usesOptions = false
     fileprivate var build: @Sendable (_ token: String?, _ options: AddonOptions) -> String?
 
     public static func == (a: AddonTemplate, b: AddonTemplate) -> Bool { a.id == b.id }
@@ -27,7 +29,7 @@ public enum AddonCatalog {
     /// Torrentio con Real-Debrid: `https://torrentio.strem.fun/qualityfilter=cam,scr|language=latino,spanish|realdebrid={CLAVE}/manifest.json`.
     public static let torrentio = AddonTemplate(
         id: "torrentio", name: "Torrentio", summary: "Fuentes de video, servidas por tu Real-Debrid", resources: ["stream"],
-        usesDebrid: true, onByDefault: true
+        usesDebrid: true, onByDefault: true, usesOptions: true
     ) { token, options in
         guard let token, let key = token.addingPercentEncoding(withAllowedCharacters: .alphanumerics) else { return nil }
         var parts: [String] = []
