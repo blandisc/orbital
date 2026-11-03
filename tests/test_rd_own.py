@@ -130,7 +130,7 @@ def test_the_account_is_checked_again_and_the_key_never_leaves(apps, monkeypatch
 def test_the_iphone_reads_and_changes_the_addon_list_through_the_tunnel(apps):
     """Corte S6: GET/PUT /api/addons con el token del túnel; 409 con la lista actual si partió de otra revisión."""
     _, public, _ = apps
-    auth = {"Authorization": "Bearer secreto", "X-Orbital-Device": "iPhone de Fernando"}
+    auth = {"Authorization": "Bearer secreto", "X-Orbital-Device": "iPhone%20de%20Fernando"}  # llega codificado
     assert public.get("/api/addons").status_code == 401
     got = public.get("/api/addons", headers=auth).json()
     assert "revision" in got and any(a.get("template") == "torrentio" for a in got["addons"])

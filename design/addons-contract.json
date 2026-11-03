@@ -6,7 +6,7 @@
     "fields": {
       "revision": "entero ≥ 0, lo asigna la TV",
       "base_revision": "entero: solo en PUT, la revisión que tenía el cliente",
-      "changed_at": "ISO 8601 con zona",
+      "changed_at": "ISO 8601 con zona (la TV lo da así en GET y en la respuesta del PUT)",
       "changed_by": "id del aparato que hizo el último cambio (ver devices)",
       "addons": "lista de entradas (ver entry), en su orden",
       "removed": "ids de lo traído de Stremio que se quitó; lo que viene con Orbital no se borra, solo se apaga"
@@ -14,10 +14,11 @@
   },
   "devices": {
     "_": "`enabled` va por aparato, con su id: «tv» para la consola y, para cada iPhone, iPad o Mac, el id que recibe al emparejarse (su llave por aparato, AD-3). Un aparato que no aparece en `enabled` usa el valor de fábrica de la entrada. Lo que vive en la computadora de la TV (Archivos de la TV) se marca `only_on: \"tv\"` y nunca se prende en otro aparato.",
-    "platforms": ["tv", "iphone", "ipad", "mac"]
+    "platforms": ["tv", "iphone", "ipad", "mac"],
+    "interim": "Hasta las llaves por aparato (AD-3, K1) la llave de `enabled` es la plataforma: «iphone», «ipad», «mac»; la TV solo cambia «tv» y nunca acepta «tv» de otro aparato"
   },
   "entry": {
-    "id": "fijo: «torrentio», «comet» u «opensubtitles» para lo que viene con Orbital; un uuid asignado al traerlo para lo de Stremio. Nunca un hash de una dirección con clave.",
+    "id": "fijo: «torrentio», «comet» (apagado de fábrica, armado con tu clave como el iPhone) u «opensubtitles» para lo que viene con Orbital; un uuid asignado al traerlo para lo de Stremio. Nunca un hash de una dirección con clave.",
     "origin": "«orbital» (viene con Orbital) | «stremio» (traído de tu Stremio). Nunca uno agregado a mano (Fernando, 3 nov: no se agregan complementos).",
     "template": "solo con origin «orbital»: el mismo valor que id",
     "url": "solo con origin «stremio»: su dirección tal cual. Ausente o null en un PUT = no cambia. Una dirección con la máscara «•••» se rechaza con 422.",

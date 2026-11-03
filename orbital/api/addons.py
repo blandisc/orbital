@@ -8,6 +8,7 @@ Real-Debrid (GET/POST /api/realdebrid/requests, corte S2) la leen y la escriben 
 from __future__ import annotations
 
 import json
+import urllib.parse
 from collections.abc import Callable
 
 from fastapi import APIRouter, HTTPException, Request
@@ -64,7 +65,7 @@ async def addons_put(watch, request: Request) -> JSONResponse:
         raw = json.loads(body)
     except ValueError as exc:
         raise HTTPException(422, "La lista no tiene la forma acordada") from exc
-    device = request.headers.get("x-orbital-device", "iPhone")[:60]
+    device = urllib.parse.unquote(request.headers.get("x-orbital-device", "iPhone"))[:60]
     try:
         saved = await run_in_threadpool(watch.receive_addons, raw, device)
     except addon_list.Conflict as exc:

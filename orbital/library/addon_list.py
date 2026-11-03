@@ -11,11 +11,13 @@ No se agregan complementos a mano (Fernando, 3 nov 2026): solo lo que viene con 
 
 from __future__ import annotations
 
+import re
 import threading
 import time
 import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 
 from . import torrentio
 
@@ -25,7 +27,26 @@ OPENSUBTITLES = "https://opensubtitles-v3.strem.io/manifest.json"
 # Lo que viene con Orbital (como AddonTemplates del iPhone). Torrentio se arma con tus opciones y tu clave de Real-Debrid
 # (corte S3): su dirección no se guarda, se arma cada vez. Si traes uno de tu Stremio, sus opciones pasan a este.
 TEMPLATES = {"torrentio": {"name": "Torrentio", "url": None, "default": True},
+             "comet": {"name": "Comet", "url": None, "default": False},
              "opensubtitles": {"name": "OpenSubtitles", "url": OPENSUBTITLES, "default": True}}
+COMET_BASE = "https://comet.elfhosted.com"
+
+
+def comet_url(key: str | None) -> str | None:
+    """Comet con tu Real-Debrid, armado igual que el iPhone (AddonTemplates.swift): su configuración como JSON en base64
+    en la ruta; solo lo que ya está en Real-Debrid. Si el base64 trae «/» o «+», un espacio más al final lo limpia."""
+    if not key:
+        return None
+    import base64
+    import json
+    text = json.dumps({"cachedOnly": True, "debridServices": [{"apiKey": key, "service": "realdebrid"}]},
+                      separators=(",", ":"), sort_keys=True)
+    for _ in range(4):
+        encoded = base64.b64encode(text.encode()).decode()
+        if "/" not in encoded and "+" not in encoded:
+            return f"{COMET_BASE}/{encoded}/manifest.json"
+        text += " "
+    return None
 # Lo que Orbital ya usa por su cuenta: traerlo como complemento pediría todo dos veces (y apagarlo rompería las fichas).
 SKIP_IDS = ("com.linvo.cinemeta", "org.stremio.local")
 SKIP_HOSTS = ("v3-cinemeta.strem.io", "cinemeta.strem.io")
@@ -48,7 +69,7 @@ class Entry:
 
     @property
     def address(self) -> str | None:
-        if self.template == "torrentio":
+        if self.template in ("torrentio", "comet"):
             return self.built
         return TEMPLATES[self.template]["url"] if self.template in TEMPLATES else self.url
 
@@ -80,11 +101,18 @@ def host(url: str) -> str:
 MASK = "•••"
 
 
+OPAQUE = re.compile(r"^[A-Za-z0-9+/=_-]{32,}$")  # una configuración en base64 o cifrada (Comet, MediaFusion…)
+
+
 def masked(url: str) -> str:
-    """La dirección con sus claves tapadas («realdebrid=•••»): así viaja y así se enseña."""
-    import re
-    return re.sub(r"(?i)((?:%s)=)[^|/&%%]+" % "|".join(torrentio.SECRET_KEYS + ("apikey", "token", "key")), rf"\1{MASK}",
-                  url)
+    """La dirección con sus claves tapadas («realdebrid=•••», o un tramo opaco de la ruta entero): así viaja y así se
+    enseña. Comet y MediaFusion llevan la clave dentro de un tramo en base64: ese tramo se tapa completo."""
+    url = re.sub(r"(?i)((?:%s)=)[^|/&%%]+" % "|".join(torrentio.SECRET_KEYS + ("apikey", "token", "key")), rf"\1{MASK}", url)
+    head, sep, rest = url.partition("://")
+    if not sep:
+        return url
+    parts = rest.split("/")
+    return head + sep + "/".join(MASK if i and OPAQUE.match(p) else p for i, p in enumerate(parts))
 
 
 class Conflict(Exception):  # noqa: N818 — así se llama en el contrato (409)
@@ -146,6 +174,8 @@ class AddonList:
             if entry.template == "torrentio":
                 entry.options = entry.options if entry.options is not None else dict(torrentio.RECOMMENDED)
                 entry.built = torrentio.manifest_url(entry.options, key)
+            elif entry.template == "comet":
+                entry.built = comet_url(key)
         return sorted(out, key=lambda e: e.order)
 
     def torrentio(self) -> Entry:
@@ -326,7 +356,9 @@ class AddonList:
             if e.extra:
                 item["extra"] = {k: v for k, v in e.extra.items() if k != "set_here"}
             out.append(item)
-        return {"revision": self.revision, "changed_at": data.get("changed_at"), "changed_by": data.get("changed_by") or DEVICE,
+        at = data.get("changed_at")
+        iso = datetime.fromtimestamp(at, UTC).isoformat() if isinstance(at, (int, float)) else at
+        return {"revision": self.revision, "changed_at": iso, "changed_by": data.get("changed_by") or DEVICE,
                 "addons": out, "removed": list(data.get("removed") or [])}
 
     def receive(self, body: dict, device: str) -> dict:
@@ -373,10 +405,14 @@ class AddonList:
                 if got.extra:
                     mine.extra = {**mine.extra, **got.extra}
                 seen.append(mine)
-            for e in entries:  # lo que el otro no mandó se queda al final, en su orden (nada se pierde por un PUT corto)
-                if e not in seen and not (e.origin == "stremio" and e.id in removed):
-                    e.order = len(seen)
-                    seen.append(e)
+            # Lo que el otro no mandó (lo que solo vive en la TV) conserva su lugar: va justo después del que lo precedía.
+            for k, e in enumerate(entries):
+                if e in seen or (e.origin == "stremio" and e.id in removed):
+                    continue
+                before = next((p for p in reversed(entries[:k]) if p in seen), None)
+                seen.insert(seen.index(before) + 1 if before else 0, e)
+            for k, e in enumerate(seen):
+                e.order = k
             raw_by = body.get("changed_by")
             changed_by = raw_by if isinstance(raw_by, str) else device
             self._save(seen, removed=removed, changed_by=changed_by[:60], source="own")

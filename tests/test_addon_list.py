@@ -39,7 +39,9 @@ def test_traer_de_stremio_una_vez_y_desde_ahi_es_tuya():
     assert done == {"added": 2, "kept": 1, "skipped": 2}
     assert lst.source == "own" and lst.revision == 1 and lst.imported_at and keys["rd"] == "KEY"
     names = [(e.name, e.origin) for e in lst.entries()]
-    assert names == [("Torrentio", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio"), ("Local Files", "stremio")]
+    assert names == [("Torrentio", "orbital"), ("Comet", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio"),
+                     ("Local Files", "stremio")]
+    assert "comet.elfhosted.com" not in str(lst.urls())  # Comet viene apagado, como en el iPhone
     assert lst.urls()[0] == TORRENTIO  # la misma dirección: tus versiones no cambian
     assert "KEY" not in str(lst.store[addon_list.LIST_KEY]["entries"])  # la dirección con tu clave no se guarda
     local = next(e for e in lst.entries() if e.url == LOCAL)
@@ -79,7 +81,7 @@ def test_volver_a_los_de_stremio_deja_tu_lista():
     lst = AddonList(Store())
     lst.import_from_stremio(brought())
     lst.set_source("stremio")
-    assert lst.source == "stremio" and len(lst.entries()) == 4
+    assert lst.source == "stremio" and len(lst.entries()) == 5
     lst.set_source("own")
     assert lst.source == "own"
 
@@ -114,7 +116,7 @@ def test_el_torrentio_que_ya_habias_traido_pasa_al_de_orbital_y_sus_opciones_se_
         {"id": "u2", "origin": "stremio", "name": "ThePirateBay+", "order": 2, "url": TPB, "enabled": {"tv": True}}]})
     lst = AddonList(store, key=lambda: keys.get("rd"))
     assert lst.adopt_torrentio() and not lst.adopt_torrentio()  # una sola vez
-    assert [e.name for e in lst.entries()] == ["OpenSubtitles", "Torrentio", "ThePirateBay+"]  # en su lugar
+    assert [e.name for e in lst.entries()] == ["OpenSubtitles", "Torrentio", "ThePirateBay+", "Comet"]  # en su lugar
     assert lst.urls() == [addon_list.OPENSUBTITLES, TORRENTIO, TPB]
     mine = lst.set_options({**lst.torrentio().options, "qualityfilter": ["cam"], "limit": 5, "nada": 1})
     assert mine.address == "https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=cam|limit=5|realdebrid=KEY/manifest.json"
@@ -190,14 +192,14 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
     assert watch.import_addons() == {"added": 1, "kept": 1, "skipped": 1}
     status = watch.addon_status()
     # Tu Torrentio pasó al de Orbital, con sus opciones y tu clave (corte S3).
-    assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["Torrentio", "OpenSubtitles", "Local Files"]
+    assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "Local Files"]
     assert watch.credentials.get("realdebrid_token") == "KEY" and status["entries"][0]["options"]["sort"] == "seeders"
     assert not status["entries"][0]["needs_key"] and watch.addon_list.urls()[0] == TORRENTIO
-    local = status["entries"][2]["id"]
-    assert not watch.change_addon(local, "off")["entries"][2]["on"]
+    local = status["entries"][3]["id"]
+    assert not watch.change_addon(local, "off")["entries"][3]["on"]
     gone = watch.change_addon(local, "remove")["removed"]
-    assert gone["url"] == LOCAL and len(watch.addon_status()["entries"]) == 2
-    assert [e["name"] for e in watch.restore_addon(local)["entries"]] == ["Torrentio", "OpenSubtitles", "Local Files"]
+    assert gone["url"] == LOCAL and len(watch.addon_status()["entries"]) == 3
+    assert [e["name"] for e in watch.restore_addon(local)["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "Local Files"]
     changed = watch.set_torrentio({"language": ["latino", "klingon"], "qualityfilter": ["cam"], "sort": "seeders", "limit": 5,
                                    "sizefilter": "10gb,2gb", "debridoptions": ["nodownloadlinks"]})
     assert changed["previous"]["sort"] == "seeders"  # para «Deshacer»
@@ -240,6 +242,7 @@ def test_la_lista_viaja_con_el_iphone_por_revision_y_sin_claves():
     saved = lst.receive({"base_revision": 1, "changed_by": "iPhone de Fernando", "addons": changed, "removed": []}, "iPhone")
     assert saved["revision"] == 2 and saved["changed_by"] == "iPhone de Fernando"
     assert [a["name"] for a in saved["addons"]][0] == "Local Files"
+    assert saved["changed_at"].endswith("+00:00")  # ISO 8601, como el contrato
     assert all(a["enabled"].get("tv", True) for a in saved["addons"])  # la TV sigue igual
     assert lst.torrentio().options["limit"] == 5 and any("limit=5" in u for u in lst.urls())
     masked = {**changed[0], "id": "nuevo", "url": "https://x.strem.fun/realdebrid=•••/manifest.json"}
@@ -250,4 +253,17 @@ def test_la_lista_viaja_con_el_iphone_por_revision_y_sin_claves():
     fresh = {"id": "uuid-iphone", "origin": "stremio", "name": "Anime", "url": "https://anime.strem.fun/manifest.json", "order": 0}
     lst.receive({"base_revision": 2, "addons": [fresh], "removed": [tpb["id"]]}, "iPhone")
     names = [e.name for e in lst.entries()]
-    assert names[0] == "Anime" and "ThePirateBay+" not in names and "Torrentio" in names  # lo no mandado se queda
+    assert "Anime" in names and "ThePirateBay+" not in names and "Torrentio" in names  # lo no mandado se queda
+
+
+def test_comet_y_las_claves_escondidas_en_la_ruta():
+    """Comet se arma con tu clave igual que el iPhone y una configuración opaca en la ruta (Comet, MediaFusion) se tapa entera:
+    una dirección así no entra por el túnel antes de las llaves por aparato."""
+    url = addon_list.comet_url("KEY")
+    assert url.startswith("https://comet.elfhosted.com/") and "/" not in url.split("/")[3] and "+" not in url
+    assert addon_list.masked(url) == "https://comet.elfhosted.com/•••/manifest.json"
+    assert addon_list.masked("https://mediafusion.elfhosted.com/D-abcdefghijklmnopqrstuvwxyz0123456789ABCD/manifest.json").count("•••") == 1
+    assert addon_list.masked(TPB) == TPB and addon_list.masked(TORRENTIO).endswith("realdebrid=•••/manifest.json")
+    lst, _ = keyed()
+    with pytest.raises(ValueError, match="llaves por aparato"):
+        lst.receive({"base_revision": 0, "addons": [{"id": "x", "origin": "stremio", "name": "Comet viejo", "url": url, "order": 0}]}, "iPhone")
