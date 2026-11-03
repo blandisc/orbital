@@ -22,6 +22,9 @@ struct ContinueAction: View {
     let play: () -> Void
     /// «Desde el principio»: solo si ibas a medias.
     var restart: (() -> Void)?
+    /// La otra salida a la derecha cuando no hay «Desde el principio» (Real-Debrid, R2-A y R13): «Verlo en inglés al
+    /// instante» o «Cancelar pedido». Mismo lugar y mismo estilo: una acción en color.
+    var aside: (title: Text, symbol: String, action: () -> Void)?
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
     var tint: Color = DS.accent
     @Environment(\.colorScheme) private var scheme
@@ -34,7 +37,7 @@ struct ContinueAction: View {
                 .dsSolidPrimaryButton().disabled(!enabled)
                 .accessibilityIdentifier("title-play")
             if let progress { DSProgress(fraction: progress).padding(.top, DS.Space.s1) }
-            if left != nil || version != nil || restart != nil {
+            if left != nil || version != nil || restart != nil || aside != nil {
                 // Si no cabe todo en un renglón (versión larga, letra grande), «quedan…» y «Desde el principio» se quedan juntos
                 // (son el mismo asunto: el avance) y la versión baja sola.
                 ViewThatFits(in: .horizontal) {
@@ -82,7 +85,7 @@ struct ContinueAction: View {
     }
 
     @ViewBuilder private var restartRow: some View {
-        if restart != nil { Spacer(minLength: 0); restartButton }
+        if restart != nil || aside != nil { Spacer(minLength: 0); restartButton }
     }
 
     @ViewBuilder private var restartButton: some View {
@@ -90,6 +93,10 @@ struct ContinueAction: View {
             Button("Desde el principio", systemImage: "arrow.counterclockwise", action: restart)
                 .font(DS.TextRecipe.label.font).buttonStyle(.borderless).tint(ink).lineLimit(1)
                 .accessibilityIdentifier("title-restart")
+        } else if let aside {
+            Button(action: aside.action) { Label { aside.title } icon: { Image(systemName: aside.symbol) } }
+                .font(DS.TextRecipe.label.font).buttonStyle(.borderless).tint(ink).lineLimit(1)
+                .accessibilityIdentifier("title-aside")
         }
     }
 }

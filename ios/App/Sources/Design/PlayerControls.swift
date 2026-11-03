@@ -67,12 +67,16 @@ struct PlayerLockNotice: View {
 }
 
 /// «Siguiente episodio»: la imagen del episodio (si la hay), cuál es, «Ver ahora» con la cuenta atrás en un anillo y «Ahora no».
+/// Si Real-Debrid lo está bajando (R8), no cuenta hacia atrás: «Real-Debrid lo está bajando · 63 %» con «Avisarme» y
+/// «Ver créditos» (como la TV).
 struct UpNextCard: View {
     let card: UpNext
     /// Cuántos segundos dura la cuenta completa (para el anillo).
     let total: Double
     let watchNow: () -> Void
     let cancel: () -> Void
+    /// «Avisarme» (R8): el aviso cuando esté.
+    var notify: (() -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View { bodyContent.pointerHover(.lift) }
@@ -93,6 +97,11 @@ struct UpNextCard: View {
                     Text("Siguiente episodio").recipe(.caption)
                     Text(verbatim: [card.label, card.title].filter { !$0.isEmpty }.joined(separator: " · "))
                         .recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
+                    if let percent = card.downloading {
+                        Label { Text("Real-Debrid lo está bajando · \(Text(verbatim: "\(percent) %"))") } icon: { Image(systemName: "arrow.down.circle") }
+                            .recipe(.caption, color: DS.textMuted)
+                            .accessibilityIdentifier("upnext-downloading")
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -104,6 +113,22 @@ struct UpNextCard: View {
     }
 
     @ViewBuilder private var upNextButtons: some View {
+        if card.downloading != nil {
+            // No hay qué poner todavía: avisar cuando esté, o quedarse viendo los créditos.
+            Button(action: notify ?? cancel) {
+                Label("Avisarme", systemImage: "bell").lineLimit(1).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+            }
+            .dsPrimaryButton()
+            Button(action: cancel) {
+                Text("Ver créditos").lineLimit(1).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glass)
+        } else {
+            watchButtons
+        }
+    }
+
+    @ViewBuilder private var watchButtons: some View {
         Button(action: watchNow) {
             HStack(spacing: DS.Space.s2) {
                 if card.secondsLeft > 0 { countdown }

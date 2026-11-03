@@ -30,7 +30,11 @@ struct PlayerFailureView: View {
     var openSettings: (() -> Void)? = nil
     /// El idioma de la app (para los textos de la causa).
     var uiLanguage = "es"
+    /// «Pedirlo y avisarme» (R7): Real-Debrid lo baja y avisa; nil si no se puede pedir (sin clave, sin Torrentio).
+    var request: (() -> Void)? = nil
     let close: () -> Void
+    /// «¿Qué es esto?» (O2), en las causas de Real-Debrid.
+    @State private var explaining = false
 
     var body: some View {
         // En vertical, todo en una columna; en horizontal (poco alto) no cabían los tres botones bajo el texto y el último
@@ -50,6 +54,15 @@ struct PlayerFailureView: View {
         }
         .background(DS.backdropDeep.ignoresSafeArea())
         .accessibilityElement(children: .contain)
+        .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }).presentationDetents([.large]) }
+    }
+
+    /// Las causas de Real-Debrid llevan «¿Qué es esto?» (O2): es donde surge la duda.
+    private var aboutDebrid: Bool {
+        switch cause {
+        case .notInDebrid?, .nobodyHasIt?, .downloading?, .debridRefused?: true
+        default: false
+        }
     }
 
     /// El ícono y lo que pasó, dicho desde tu lado.
@@ -72,8 +85,17 @@ struct PlayerFailureView: View {
                 if let action = cause.action, let perform = perform(action) {
                     option(Text(verbatim: UnavailableCause.label(action, tr)), primary: true, action: perform)
                     option(Text("Cerrar"), primary: false, action: close)
+                } else if case .downloading = cause, let request {
+                    // Ya pedido: el mismo pedido (nunca otro) y el permiso de avisos, si falta.
+                    option(Text("Avisarme cuando esté"), primary: true, action: request)
+                    option(Text("Cerrar"), primary: false, action: close)
                 } else {
                     option(Text("Cerrar"), primary: true, action: close)
+                }
+                if aboutDebrid {
+                    Button { explaining = true } label: { Text("¿Qué es esto?").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
+                        .buttonStyle(.borderless).tint(DS.accent)
+                        .accessibilityIdentifier("player-debrid-explain")
                 }
             } else {
             switch failure {
@@ -102,6 +124,7 @@ struct PlayerFailureView: View {
         case .settings: openSettings
         case .retry: retry
         case .otherVersion: chooseVersion
+        case .request: request
         }
     }
 
@@ -110,6 +133,7 @@ struct PlayerFailureView: View {
         case .debridExpired?, .noPremium?, .reconnectDebrid?: return "person.crop.circle.badge.exclamationmark"
         case .debridRefused?: return "nosign"
         case .notInDebrid?, .downloading?: return "arrow.down.circle"
+        case .nobodyHasIt?: return "magnifyingglass"
         default: break
         }
         return switch failure {

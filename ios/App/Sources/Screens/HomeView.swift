@@ -525,6 +525,12 @@ struct HomeView: View {
     /// «T2 E5 · quedan 20 min»; «Nuevo · T38 E5» si ibas al día y ya salió el episodio que sigue.
     private func continueData(_ item: HomeItem) -> [String] {
         let facts = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes, language: env.language).components(separatedBy: " · ")
+        // R3: lo que pediste a Real-Debrid y todavía baja: «T1 E2 · Bajando en Real-Debrid · 42 %».
+        let requests = env.services.debridRequests
+        requests.track()
+        if let request = requests.request(metaID: item.metaID, videoID: item.videoID), request.state.isActive {
+            return [facts.first, DebridRequestWords.title(request) { Strings.tr($0, language: env.services.appSettings.uiLanguage) }].compactMap { $0 }
+        }
         guard item.isNew == true else { return facts }
         return [Strings.tr("Nuevo", language: env.services.appSettings.uiLanguage)] + facts
     }

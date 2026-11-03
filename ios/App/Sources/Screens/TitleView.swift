@@ -25,6 +25,10 @@ struct TitleView: View {
     @State var replacing: Replacement?
 
     struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
+    /// Real-Debrid: la hoja de un pedido, «¿Qué es esto?» o la línea antes de pedir permiso de avisos (`TitleView+RealDebrid`).
+    @State var debridSheet: TitleDebridSheet?
+    var observerModel: TitleModel { observer.model }
+    func openVersions(_ videoID: String) { sourcesFor = SourcesTarget(videoID: videoID, purpose: .watch) }
     @State private var saving = false
     /// «¿Cuándo la viste?»: qué se está marcando (la película, un episodio, la temporada o la serie).
     @State var marking: WatchedScope?
@@ -79,6 +83,9 @@ struct TitleView: View {
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
+            if Demo.isOn, let sheet = Demo.open.flatMap({ TitleDebridSheet(rawValue: $0.replacingOccurrences(of: "rd-", with: "")) }), Demo.open?.hasPrefix("rd-") == true {
+                debridSheet = sheet   // `-demo-open rd-request|rd-explain|rd-notify`: las hojas de Real-Debrid
+            }
             if Demo.isOn, Demo.open == "versions", let v = model.downloadTarget {   // `-demo-open versions`: la hoja «Ya la tienes»
                 await report(model.download([v]), model, videoID: v)
                 await model.loadBestSource()
@@ -98,6 +105,9 @@ struct TitleView: View {
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
+        .sheet(item: $debridSheet) { kind in debridSheetContent(kind, model) }
+        // Un pedido cambió de estado (quedó listo, lo cancelaste): la versión y el botón se ponen al día.
+        .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))
         .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
             if let r = replacing {

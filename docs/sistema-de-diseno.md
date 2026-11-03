@@ -279,6 +279,7 @@ agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` re
 | Números y fechas | `Strings.count` · `Strings.date` | En el idioma de la app, no en el del teléfono: «1000» sin separador hasta 9999 y con espacio fino después; «jueves 12 de agosto». Nada de `.formatted()` ni `DateFormatter` en las pantallas. | sí |
 | Logos de marca | a la misma altura *visual* | Los logos que van juntos (IMDb, TMDB, Rotten Tomatoes; las plataformas) se ven del mismo tamaño, no miden lo mismo: una palabra larga (TMDB) va más baja (`DS.RatingBrand.wordmarkScale`). | — |
 | Lo que se mueve solo | El mosaico se detiene a los 90 s (con el protector, avanza a pasos); todo respeta movimiento reducido | Igual | La TV no tiene cielo que se mueva: Orbital no gasta detrás de un juego. |
+| Pedido a Real-Debrid | `DebridRequestStatus` · `DebridRequestSheet` · `DebridExplainer` · `DebridNotifyPrompt` (`Design/DebridRequests.swift`) | Un estado de pedido (R13) lleva su ícono propio y su palabra (`DebridRequestWords`), nunca solo color; el problema (rechazado, sin gente, atorado) en ámbar. «¿Qué es esto?» (O2) abre `DebridExplainer` donde surge la duda. En la ficha, «Pedirlo y avisarme» es el botón principal (`ContinueAction` con `aside`: «Verlo en inglés al instante» o «Cancelar pedido»). (Fase 2, 3 nov 2026) | — |
 | Accesibilidad | `.accessibilityElement(children: .contain)` | Un contenedor con identificador declara `.contain`: si no, le pone su id a todo lo de adentro y VoiceOver y las pruebas pierden sus botones. | sí |
 
 **Glosario (un nombre por cosa).** Lo que se ve en pantalla se llama igual en todos lados; `DesignTests` no deja volver los
@@ -399,6 +400,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Números y fechas | `core/format.js` | Igual | — |
 | Logos de marca | `--platform-*` y los logos de `ui.js` | Igual | — |
 | Lo que se mueve solo | El mosaico se detiene a los 90 s; todo respeta movimiento reducido | Igual | La TV no tiene cielo que se mueva: Orbital no gasta detrás de un juego. |
+| Pedido a Real-Debrid | `title.js` (RD-1, RD-3) y el aviso «Ya está…» de `rd_requests.py` | Distinto a propósito: la TV dice tres estados y el porcentaje; los seis de R13, la hoja del pedido y «Tus pedidos» llegan con S2/S4 (registro de paridad) | «Pedirlo y avisarme» y «Bajando en Real-Debrid · 42 %» ya son iguales. |
 | Accesibilidad | Foco visible y pistas de cada superficie | Solo iPhone: es cómo SwiftUI agrupa los identificadores | — |
 
 ### Movimiento

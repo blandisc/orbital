@@ -42,6 +42,7 @@ final class PlayerHolder {
         let debrid = services.debrid
         model.debridTrouble = { await debrid.refreshAfterTrouble() }
         model.debridSaved = { debrid.saved }   // Torrentio dijo «RD error»: se le pregunta ya a Real-Debrid (B-P1-1)
+        model.debridRequests = services.debridRequests   // «Pedirlo y avisarme» (R7), lo pedido al abrir (R6) y el siguiente episodio (R8)
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
             Task {

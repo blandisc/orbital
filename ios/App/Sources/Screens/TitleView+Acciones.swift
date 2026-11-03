@@ -13,13 +13,9 @@ extension TitleView {
             // Si se sabe por qué (tu Real-Debrid venció, sin Premium, complementos apagados…), eso es lo que pasa, con su salida
             // (la tabla común con la TV, `UnavailableCause`).
             if let cause = model.unavailableCause { tell(cause, model) }
-            else if !env.services.debrid.hasToken {
-                // Sin tu cuenta de Real-Debrid en la app casi no hay versiones que se vean en el iPhone: esa es la salida.
-                env.notify("No encontré dónde verlo", detail: "Conecta tu Real-Debrid en Ajustes: sin él casi no hay versiones que se vean aquí",
-                           tone: .warn, actionTitle: "Ajustes") { env.ui.openSettings = true }
-            } else {
-                env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
-            }
+            // Sin tu clave de Real-Debrid en la app casi no hay versiones que se vean aquí: la causa de la tabla común.
+            else if !env.services.debrid.hasToken { tell(.reconnectDebrid, model) }
+            else { tell(.notInDebrid(language: model.recommendedLanguage ?? env.services.appSettings.audio), model) }
         case .offline:
             // Ningún complemento contestó: sin red es el iPhone; con red, son ellos (la causa 8 de la tabla común).
             if env.isOnline { tell(model.unavailableCause ?? .addonsOffline, model) }
@@ -44,6 +40,10 @@ extension TitleView {
         case .settings: env.notify(title, detail: detail, tone: .warn, actionTitle: label) { env.ui.openSettings = true }
         case .retry: env.notify(title, detail: detail, tone: .warn, actionTitle: label) { start(model, videoID: nil) }   // el reproductor vuelve a preguntar
         case .otherVersion: env.notify(title, detail: detail, tone: .warn)
+        // «Pedirlo y avisarme» (R2-A): solo si hay qué pedir; si no, la causa sola.
+        case .request:
+            if env.services.debridRequests.canRequest { env.notify(title, detail: detail, tone: .warn, actionTitle: label) { requestFromDebrid(model) } }
+            else { env.notify(title, detail: detail, tone: .warn) }
         }
     }
 
@@ -134,6 +134,8 @@ extension TitleView {
         if model.continueVideoID == nil {
             return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: Text("Buscando versión…"), play: go)
         }
+        // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
+        if let debrid = debridContinueAction(model) { return debrid }
         if let airs = model.continueAirs {
             // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
             return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
@@ -144,7 +146,8 @@ extension TitleView {
         let language = languageName.map { LanguageFlags.flagOnly($0, model.recommendedLanguage) }
         let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
         let spoken = model.recommendedSource.map { [languageName].compactMap { $0 } + $0.qualitySummary } ?? []
-        let version: Text = model.sourceCheck == .none ? Text("Sin versiones por ahora") : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
+        let cause = model.unavailableCause.map { Text(verbatim: $0.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }) }
+        let version: Text = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
             : quality.isEmpty ? Text("Buscando versión…") : Text(verbatim: quality.joined(separator: " · "))
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,

@@ -24,6 +24,7 @@ extension PlayerScreen {
                               renew: { UIApplication.shared.open(env.services.debrid.provider.renewURL) },   // en el navegador
                               openSettings: { Task { await close(); env.ui.openSettings = true } },
                               uiLanguage: env.services.appSettings.uiLanguage,
+                              request: model.debridRequests?.canRequest == true ? { Task { await requestFromPlayer(model) } } : nil,
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
@@ -366,7 +367,8 @@ extension PlayerScreen {
     }
 
     @ViewBuilder func upNextCard(_ model: PlayerModel, _ up: UpNext) -> some View {
-        UpNextCard(card: up, total: PlaybackRules.upNextCountdown, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() })
+        UpNextCard(card: up, total: PlaybackRules.upNextCountdown, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() },
+                   notify: { Task { await notifyWhenReady() } })
             .transition(.opacity)
     }
 
