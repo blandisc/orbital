@@ -59,7 +59,7 @@ final class PlayerStuckUITests: XCTestCase {
         XCTAssertTrue(zoom.waitForExistence(timeout: 5))
         shot("s4-menu")
         print("zoom: \(zoom.label)")
-        XCTAssertTrue(zoom.label.contains("Normal"), "el video en su franja, no agrandado (\(zoom.label))")
+        XCTAssertTrue(zoom.label.contains("Completa"), "el video en su franja, no agrandado (\(zoom.label))")
     }
 
     /// Sin tocar nada: la versión trabada da paso sola a otra en menos de un minuto (antes, si se colgaba al pedirla otra vez,

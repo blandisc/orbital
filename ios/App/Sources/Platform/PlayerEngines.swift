@@ -111,21 +111,12 @@ struct SubtitleLook: Equatable {
 extension VideoZoom {
     /// Cómo pinta la capa del video cada modo.
     var gravity: AVLayerVideoGravity {
-        switch self {
-        case .fit, .fitSafeArea: .resizeAspect
-        case .fill: .resizeAspectFill
-        case .stretch: .resize
-        }
+        self == .fit ? .resizeAspect : .resizeAspectFill
     }
 
     /// El ícono del botón de zoom (muestra el modo actual).
     var symbol: String {
-        switch self {
-        case .fit: "arrow.left.and.right"
-        case .fitSafeArea: "rectangle.inset.filled"
-        case .fill: "arrow.up.left.and.arrow.down.right"
-        case .stretch: "arrow.left.and.right.square"
-        }
+        self == .fit ? "rectangle.arrowtriangle.2.inward" : "rectangle.arrowtriangle.2.outward"
     }
 }
 

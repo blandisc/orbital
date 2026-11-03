@@ -26,8 +26,7 @@ extension PlayerScreen {
     @ViewBuilder func frozenCover(_ image: UIImage) -> some View {
         switch zoom {
         case .fill: Color.clear.overlay { Image(uiImage: image).resizable().scaledToFill() }.clipped()   // sin crecer más que el video
-        case .stretch: Image(uiImage: image).resizable()
-        default: Image(uiImage: image).resizable().scaledToFit()
+        case .fit: Image(uiImage: image).resizable().scaledToFit()
         }
     }
 
@@ -79,8 +78,8 @@ extension PlayerScreen {
     /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda de «Audio y subtítulos»). Vertical: arriba, a todo lo
     /// ancho y en su proporción y de orilla a orilla (no apachurrado), a la altura que lo dejes al arrastrarlo.
     func videoRect(in size: CGSize) -> CGRect {
-        if landscape && zoom == .fitSafeArea && !dockState.subtitleDock {
-            // «Ajuste de aspecto» (Aspect Fit de Infuse): el cuadro nunca queda bajo la isla ni bajo el indicador de inicio.
+        if landscape && zoom == .fit && !dockState.subtitleDock {
+            // «Completa»: el cuadro entero, nunca bajo la isla ni bajo el indicador de inicio.
             let inset = Self.windowSafeArea
             return CGRect(x: inset.left, y: inset.top, width: max(0, size.width - inset.left - inset.right),
                           height: max(0, size.height - inset.top - inset.bottom))
@@ -105,11 +104,6 @@ extension PlayerScreen {
         if dockState.subtitleDock && !dockPinned && dockState.dockPage != .episodes && dockState.syncLines == nil && dockState.dockNeed > 0 {
             let room = size.height - band.maxY - DS.Space.s4 - DS.Space.s2
             band.origin.y -= min(max(0, dockState.dockNeed - room), band.minY)
-        }
-        // «Ajuste de aspecto» en vertical: el cuadro con su margen a los lados, lejos de las esquinas redondeadas.
-        if zoom == .fitSafeArea {
-            let width = band.width - DS.Space.gutter * 2, height = width * band.height / max(band.width, 1)
-            return CGRect(x: band.minX + DS.Space.gutter, y: band.midY - height / 2, width: width, height: height)
         }
         return band
     }
@@ -154,7 +148,7 @@ extension PlayerScreen {
     static let portraitCenterKey = "player-portrait-center"
 
     /// Vertical con «Recortar»: el video a pantalla completa.
-    var fillsPortrait: Bool { !landscape && ipod == nil && (zoom == .fill || zoom == .stretch) }
+    var fillsPortrait: Bool { !landscape && ipod == nil && zoom == .fill }
 
     /// El panel de la derecha en horizontal (`PlayerLayout.sidePanelWidth`).
     static func panelWidth(in total: CGFloat) -> CGFloat { PlayerLayout.app.sidePanelWidth(in: total) }

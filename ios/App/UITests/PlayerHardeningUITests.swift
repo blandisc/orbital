@@ -29,12 +29,12 @@ final class PlayerHardeningUITests: XCTestCase {
     /// llega a la app como ~2× y el de cerrar a veces ni llega. La zona muerta se prueba en `SettingsTests`.)
     func testPinchOpenCrops() {
         let app = launch()
-        XCTAssertTrue(zoomLabel(app).contains("Normal"))
+        XCTAssertTrue(zoomLabel(app).contains("Completa"))
         sleep(5)   // que se escondan los controles
         app.pinch(withScale: 2, velocity: 1)
         sleep(1)
         let opened = zoomLabel(app)
-        XCTAssertTrue(opened.contains("Recortar"), "abrir los dedos recorta (\(opened))")
+        XCTAssertTrue(opened.contains("Llenar pantalla"), "abrir los dedos recorta (\(opened))")
 
     }
 

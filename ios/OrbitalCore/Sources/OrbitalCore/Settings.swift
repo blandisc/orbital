@@ -135,27 +135,28 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
 }
 
-/// El botón de zoom del reproductor (como Infuse): cada toque pasa al siguiente modo y pellizcar va entre
-/// `fit` (cerrar los dedos) y `fill` (abrirlos).
+/// Cómo se ve el video: dos modos y nada más (Fernando, 3 nov 2026: antes los cuatro de Infuse, «Normal», «Ajuste de aspecto»,
+/// «Recortar» y «Estirar»). Pellizcar va de uno a otro (abrir los dedos llena la pantalla, cerrarlos vuelve a la imagen
+/// completa) y el botón del «⋯» cambia al otro.
 public enum VideoZoom: String, CaseIterable, Sendable {
-    // Los cuatro de Infuse (8.1.7+), ni más ni menos, en el mismo orden del botón: Normal, Aspect Fit, Crop y Stretch.
-    case fit            // «Normal»: el cuadro completo a todo el ancho (en horizontal puede quedar bajo la isla)
-    case fitSafeArea    // «Ajuste de aspecto»: el cuadro completo, lejos de la isla y de las esquinas redondeadas
-    case fill           // «Recortar»: llena la pantalla y recorta las orillas
-    case stretch        // «Estirar»: llena la pantalla deformando la imagen
+    case fit    // «Completa»: toda la imagen, lejos de la isla y de las esquinas redondeadas
+    case fill   // «Llenar pantalla»: sin franjas negras; puede recortar las orillas
 
-    /// Lo guardado en ajustes (un valor desconocido vuelve a «Ajustar»).
-    public init(stored: String) { self = VideoZoom(rawValue: stored) ?? .fit }
-
-    /// El siguiente modo del botón (después de «Estirar» vuelve a «Normal»), en los dos sentidos, como Infuse.
-    public var next: VideoZoom {
-        let all = Self.allCases
-        return all[(all.firstIndex(of: self)! + 1) % all.count]
+    /// Lo guardado en ajustes. Los modos que ya no existen caen en el más parecido: «Ajuste de aspecto» en «Completa» y
+    /// «Estirar» en «Llenar pantalla»; uno desconocido, en «Completa».
+    public init(stored: String) {
+        switch stored {
+        case "fill", "stretch": self = .fill
+        default: self = .fit
+        }
     }
 
-    /// Pellizcar: abrir los dedos (más de un 20 %) recorta, cerrarlos (a menos de 80 %) vuelve al cuadro completo. Entre medio
-    /// no cambia nada: dos dedos que se mueven un poco (pausar con dos dedos, sujetar el teléfono con los pulgares al girar) no
-    /// son un pellizco. Antes cualquier 1 % de más ponía «Recortar» y en vertical el video quedaba agrandado sin querer.
+    /// El otro modo (el botón del «⋯»).
+    public var next: VideoZoom { self == .fit ? .fill : .fit }
+
+    /// Pellizcar: abrir los dedos (más de un 20 %) llena la pantalla, cerrarlos (a menos de 80 %) vuelve a la imagen completa.
+    /// Entre medio no cambia nada: dos dedos que se mueven un poco (pausar con dos dedos, sujetar el teléfono al girar) no son
+    /// un pellizco.
     public static func pinched(magnification: Double) -> VideoZoom? {
         if magnification > 1.2 { return .fill }
         if magnification < 0.8 { return .fit }
@@ -163,14 +164,9 @@ public enum VideoZoom: String, CaseIterable, Sendable {
     }
 
     /// El nombre que dice el aviso y VoiceOver (la clave de `Localizable.xcstrings`).
-    public var title: String {
-        switch self {
-        case .fit: "Normal"
-        case .fitSafeArea: "Ajuste de aspecto"
-        case .fill: "Recortar"
-        case .stretch: "Estirar"
-        }
-    }
+    public var title: String { self == .fit ? "Completa" : "Llenar pantalla" }
+    /// Qué hace, en una línea (el aviso al cambiar).
+    public var explanation: String { self == .fit ? "Ves toda la imagen" : "Sin franjas negras · puede recortar las orillas" }
 }
 
 public final class SettingsStore: @unchecked Sendable {

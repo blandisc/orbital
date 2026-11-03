@@ -15,6 +15,9 @@ final class PlayerZoomState {
     /// Cuándo cambió el sentido: un pellizco que termina justo después (los pulgares al girar) no cuenta.
     var rotatedAt = Date.distantPast
     var pinchStartedAt: Date?
+    /// Mientras pellizcas: a qué modo vas si sueltas ahora (nil en la zona muerta). La guía de arriba lo dice en vivo.
+    var pinching = false
+    var pinchPreview: VideoZoom?
     var zoomBeforePinch: (zoom: VideoZoom, at: Date)?
     var lastPinch = 0.0
     var zoomToast: VideoZoom?

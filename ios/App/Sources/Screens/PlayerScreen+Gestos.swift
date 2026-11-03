@@ -47,7 +47,15 @@ extension PlayerScreen {
                 userTogglePlay(model)
                 flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
             })
-            .gesture(MagnifyGesture().onChanged { _ in if framing.pinchStartedAt == nil { framing.pinchStartedAt = Date() } }.onEnded { value in
+            .gesture(MagnifyGesture().onChanged { value in
+                if framing.pinchStartedAt == nil { framing.pinchStartedAt = Date() }
+                // La guía en vivo: qué pasa si sueltas ahora (3 nov 2026: «una pequeña interfaz para que entienda qué está haciendo»).
+                let preview = VideoZoom.pinched(magnification: Double(value.magnification))
+                if !framing.pinching || framing.pinchPreview != preview {
+                    withAnimation(DS.Motion.base(reduceMotion)) { framing.pinching = true; framing.pinchPreview = preview }
+                }
+            }.onEnded { value in
+                withAnimation(DS.Motion.base(reduceMotion)) { framing.pinching = false; framing.pinchPreview = nil }
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
                 let lasted = framing.pinchStartedAt.map { Date().timeIntervalSince($0) } ?? 0
                 framing.pinchStartedAt = nil
@@ -216,12 +224,25 @@ extension PlayerScreen {
             VStack { DSToastPill(text: LocalizedStringKey(subtitleToast)); Spacer() }.padding(.top, DS.Space.s14)
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
-        if let zoomToast = framing.zoomToast, !padlock.lockNoticeVisible {
+        if framing.pinching, !padlock.lockNoticeVisible {
+            // Mientras pellizcas: qué pasa si sueltas ahora, o hacia dónde mover los dedos.
+            VStack {
+                Group {
+                    if let target = framing.pinchPreview, target != zoom {
+                        DSToastPill(text: target == .fill ? "Suelta para llenar la pantalla" : "Suelta para verla completa")
+                    } else {
+                        DSToastPill(text: zoom == .fit ? "Abre los dedos para llenar la pantalla" : "Cierra los dedos para verla completa")
+                    }
+                }
+                Spacer()
+            }
+            .padding(.top, DS.Space.s14)
+            .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+        } else if let zoomToast = framing.zoomToast, !padlock.lockNoticeVisible {
             // Los avisos de texto, todos en el mismo lugar (arriba, como el de subtítulos); antes el del zoom en vertical salía al
             // centro del video. Al centro del video solo van los glifos de los gestos.
             VStack {
-                DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: zoomToast == .fill ? Text("Llena la pantalla y recorta los lados")
-                            : zoomToast == .stretch ? Text("Llena la pantalla deformando la imagen") : nil)
+                DSToastPill(text: LocalizedStringKey(zoomToast.title), detail: Text(LocalizedStringKey(zoomToast.explanation)))
                 Spacer()
             }
             .padding(.top, DS.Space.s14)

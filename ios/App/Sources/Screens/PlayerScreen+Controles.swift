@@ -267,8 +267,8 @@ extension PlayerScreen {
                 Task { await model.setRate(next) }
             }
             .accessibilityIdentifier("player-speed")
-            PlayerMenuRow(title: "Zoom", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
-                .accessibilityHint(Text("Cambia el zoom del video"))
+            PlayerMenuRow(title: "Imagen", symbol: zoom.symbol, detail: Text(verbatim: Strings.tr(zoom.title, language: language))) { setZoom(nextZoom) }
+                .accessibilityHint(Text("Cambia entre la imagen completa y llenar la pantalla. También pellizcando el video."))
                 .accessibilityIdentifier("player-zoom")
                 #if DEBUG
                 .accessibilityValue(Text(verbatim: Demo.isOn ? "pinch \(framing.lastPinch)" : ""))
@@ -366,6 +366,6 @@ extension PlayerScreen {
             .transition(.opacity)
     }
 
-    /// El zoom siguiente del botón: los cuatro de Infuse en orden, en los dos sentidos (antes en vertical solo había dos).
+    /// El otro modo de imagen (Completa ↔ Llenar pantalla).
     var nextZoom: VideoZoom { zoom.next }
 }

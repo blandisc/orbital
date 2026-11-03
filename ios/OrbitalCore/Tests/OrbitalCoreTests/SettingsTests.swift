@@ -41,22 +41,23 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(prefs.languages(for: "tt1", settings: AppSettings()).prefs.audio, "es")
     }
 
-    /// El botón de zoom recorre los cuatro modos y vuelve al primero; pellizcar va entre Ajustar y Recortar; se recuerda.
-    func testVideoZoomCyclesPinchesAndPersists() {
-        XCTAssertEqual(VideoZoom.fit.next, .fitSafeArea)
-        XCTAssertEqual(VideoZoom.fitSafeArea.next, .fill)
-        XCTAssertEqual(VideoZoom.fill.next, .stretch)
-        XCTAssertEqual(VideoZoom.stretch.next, .fit)
+    /// Dos modos: el botón cambia al otro; pellizcar va entre los dos; los modos viejos caen en el más parecido; se recuerda.
+    func testVideoZoomTwoModesPinchesAndPersists() {
+        XCTAssertEqual(VideoZoom.allCases, [.fit, .fill])
+        XCTAssertEqual(VideoZoom.fit.next, .fill)
+        XCTAssertEqual(VideoZoom.fill.next, .fit)
         XCTAssertEqual(VideoZoom.pinched(magnification: 1.4), .fill)
         XCTAssertEqual(VideoZoom.pinched(magnification: 0.7), .fit)
         XCTAssertNil(VideoZoom.pinched(magnification: 1.05), "dos dedos que apenas se mueven no son un pellizco")
         XCTAssertNil(VideoZoom.pinched(magnification: 0.9))
         XCTAssertEqual(VideoZoom(stored: "???"), .fit)
+        XCTAssertEqual(VideoZoom(stored: "fitSafeArea"), .fit, "«Ajuste de aspecto» era la imagen completa")
+        XCTAssertEqual(VideoZoom(stored: "stretch"), .fill, "«Estirar» llenaba la pantalla")
         let kv = InMemoryKeyValueStore()
         let store = SettingsStore(kv)
         XCTAssertEqual(VideoZoom(stored: store.value.videoZoom), .fit)
-        store.update { $0.videoZoom = VideoZoom.stretch.rawValue }
-        XCTAssertEqual(VideoZoom(stored: SettingsStore(kv).value.videoZoom), .stretch)
+        store.update { $0.videoZoom = VideoZoom.fill.rawValue }
+        XCTAssertEqual(VideoZoom(stored: SettingsStore(kv).value.videoZoom), .fill)
     }
 
     /// «Un Simpson al azar»: por omisión las clásicas (5–15); lo elegido se guarda, y un ajuste guardado antes de existir no se pierde.

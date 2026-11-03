@@ -46,7 +46,7 @@ final class PlayerSoftwarePathUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         sleep(4)
         shot("\(tag)-3-vertical")
-        XCTAssertTrue(zoomLabel(app).contains("Normal"), "al girar a vertical, el cuadro completo (no agrandado)")
+        XCTAssertTrue(zoomLabel(app).contains("Completa"), "al girar a vertical, el cuadro completo (no agrandado)")
 
         XCUIDevice.shared.press(.home)
         sleep(3)

@@ -1933,17 +1933,6 @@
         }
       }
     },
-    "Ajuste de aspecto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aspect Fit"
-          }
-        }
-      }
-    },
     "Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -4033,17 +4022,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Change the sort or what you hide."
-          }
-        }
-      }
-    },
-    "Cambia el zoom del video": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Changes the video zoom"
           }
         }
       }
@@ -10317,17 +10295,6 @@
         }
       }
     },
-    "Estirar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stretch"
-          }
-        }
-      }
-    },
     "Estreno": {
       "extractionState": "manual",
       "localizations": {
@@ -12839,28 +12806,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "You've reached 100 favorites on Trakt: remove one to add another."
-          }
-        }
-      }
-    },
-    "Llena la pantalla deformando la imagen": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fills the screen by stretching the picture"
-          }
-        }
-      }
-    },
-    "Llena la pantalla y recorta los lados": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fills the screen and crops the sides"
           }
         }
       }
@@ -30169,6 +30114,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shuffle"
+          }
+        }
+      }
+    },
+    "Completa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full picture"
+          }
+        }
+      }
+    },
+    "Llenar pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill screen"
+          }
+        }
+      }
+    },
+    "Ves toda la imagen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You see the whole picture"
+          }
+        }
+      }
+    },
+    "Sin franjas negras · puede recortar las orillas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No black bars · edges may be cropped"
+          }
+        }
+      }
+    },
+    "Suelta para llenar la pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release to fill the screen"
+          }
+        }
+      }
+    },
+    "Suelta para verla completa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release to see it whole"
+          }
+        }
+      }
+    },
+    "Abre los dedos para llenar la pantalla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spread your fingers to fill the screen"
+          }
+        }
+      }
+    },
+    "Cierra los dedos para verla completa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch in to see it whole"
+          }
+        }
+      }
+    },
+    "Imagen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picture"
+          }
+        }
+      }
+    },
+    "Cambia entre la imagen completa y llenar la pantalla. También pellizcando el video.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switches between the full picture and filling the screen. You can also pinch the video."
           }
         }
       }
