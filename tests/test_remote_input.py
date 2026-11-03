@@ -27,7 +27,7 @@ def test_a_code_is_single_use_validated_and_expires():
     assert len(code) >= 20
     assert remote.form(code) == {"title": "Conectar Stremio", "fields": [
         {"name": "email", "label": "Correo de Stremio", "secret": False, "optional": False},
-        {"name": "password", "label": "Contraseña", "secret": True, "optional": False}]}
+        {"name": "password", "label": "Contraseña", "secret": True, "optional": False}], "minutes": 10}
     assert remote.form("otro") is None and remote.submit("otro", {}) is not None
     assert "Contraseña" in remote.submit(code, {"email": "yo@x.mx", "password": "  "})  # falta
     assert remote.submit(code, {"email": "x" * 600, "password": "p"}) is not None  # demasiado largo
@@ -48,7 +48,7 @@ def test_a_code_is_single_use_validated_and_expires():
 
 @pytest.fixture
 def apps(library, monkeypatch):
-    monkeypatch.setattr(companion, "pair_info", lambda config, tailscale_url=None: {"ready": True, "host": "legion.ts.net", "link": "x"})
+    monkeypatch.setattr(companion, "tunnel_info", lambda config, tailscale_url=None, funnel_on=None: {"ready": True, "host": "legion.ts.net", "url": "https://legion.ts.net"})
     main = create_app(library.config, library)
     with TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as local:
         yield local, TestClient(create_public_app(library.config, main), base_url="https://legion.ts.net", client=("127.0.0.1", 2)), library
@@ -97,7 +97,7 @@ def test_bad_codes_count_like_bad_tokens(apps, monkeypatch):
 
 
 def test_without_a_tunnel_there_is_no_qr(library, monkeypatch):
-    monkeypatch.setattr(companion, "pair_info", lambda config, tailscale_url=None: {"ready": False, "reason": "No encontré Tailscale."})
+    monkeypatch.setattr(companion, "tunnel_info", lambda config, tailscale_url=None, funnel_on=None: {"ready": False, "reason": "No encontré Tailscale."})
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as local:
         assert local.post("/api/remote-input", json={"title": "X", "fields": FIELDS}).json()["ready"] is False
 

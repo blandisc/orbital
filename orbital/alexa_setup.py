@@ -160,6 +160,22 @@ def tailscale_url() -> str | None:
     return parse_tailscale_status(out.stdout) if out.returncode == 0 else None
 
 
+def funnel_on() -> bool | None:
+    """¿El túnel de Tailscale está abierto a internet (Funnel)? None si no se pudo saber (no se bloquea por eso)."""
+    exe = tailscale_exe()
+    if not exe:
+        return None
+    try:
+        out = subprocess.run([exe, "funnel", "status", "--json"], capture_output=True, text=True, timeout=8,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        data = json.loads(out.stdout) if out.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    return any(v is True for v in (data.get("AllowFunnel") or {}).values())
+
+
 # ----------------------------------------------------------------------------- comprobación
 @dataclass
 class Check:

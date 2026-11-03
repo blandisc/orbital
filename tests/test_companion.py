@@ -17,7 +17,7 @@ def config(token="secreto", ephemeral=False):
 
 
 def test_pair_link_carries_the_tunnel_and_a_code_never_the_token():
-    info = companion.pair_info(config(), tailscale_url=lambda: "https://legion.tail1.ts.net", code="CODIGO")
+    info = companion.pair_info(config(), tailscale_url=lambda: "https://legion.tail1.ts.net", code="CODIGO", funnel_on=lambda: True)
     assert info["ready"] and info["host"] == "legion.tail1.ts.net"
     link = urlsplit(info["link"])
     assert (link.scheme, link.netloc) == ("orbital-ios", "pair")
@@ -25,8 +25,10 @@ def test_pair_link_carries_the_tunnel_and_a_code_never_the_token():
 
 
 def test_pair_explains_what_is_missing():
-    assert "Alexa" in companion.pair_info(config(ephemeral=True), tailscale_url=lambda: "https://x")["reason"]
+    # TEC-3: Alexa ya no hace falta; el túnel sí, y abierto a internet (Funnel).
+    assert companion.pair_info(config(ephemeral=True), tailscale_url=lambda: "https://x", funnel_on=lambda: True)["ready"]
     assert "Tailscale" in companion.pair_info(config(), tailscale_url=lambda: None)["reason"]
+    assert "funnel --bg" in companion.pair_info(config(), tailscale_url=lambda: "https://x", funnel_on=lambda: False)["reason"]
 
 
 def test_qr_is_an_svg_with_modules():

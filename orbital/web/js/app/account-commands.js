@@ -70,6 +70,17 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       return device && openMenu(deviceMenu(device), nested(context));
     },
     "device-remove-ask": async (command, context) => openMenu(deviceRemoveMenu(command), nested(context)),
+    "device-upgrade": async (command) => {
+      const res = await api.deviceUpgrade(command.id, command.yes);
+      if (command.yes) {
+        applySettings({ ...state.settings, paired_devices: res.devices || [] });
+        sound.play("select");
+        ui.toast.show(`${command.name} ya tiene su llave`, { tone: "success" });
+      } else {
+        sound.play("back");
+      }
+      return ui.sheet.close();
+    },
     "device-remove": async (command) => {
       const res = await api.deviceRemove(command.id);
       applySettings({ ...state.settings, paired_devices: res.devices || [] });

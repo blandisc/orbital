@@ -181,3 +181,149 @@ def test_each_device_switches_only_its_own_and_takes_it_when_removed(apps):
     assert "ZZZZ" not in json.dumps(kept.json()) and "ZZZZ" in json.dumps(public.get("/api/addons?full=1", headers=key).json())
     local.delete(f"/api/devices/{me}")
     assert all(me not in a["enabled"] for a in main.state.catalog.watch.addon_list.shared()["addons"])
+
+
+# --- Conectar con o sin iPhone (CA2-A, TEC-3/4/9-13/30/32; CX1, CX4, CX5, CX8 de Fernando, 3 nov) -------------------
+KEY = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOP"
+
+
+def tunnel(monkeypatch):
+    monkeypatch.setattr(companion, "tunnel_info", lambda config, tailscale_url=None, funnel_on=None: {"ready": True, "host": "legion.ts.net", "url": "x"})
+
+
+def test_the_key_from_any_phone_is_checked_by_the_console_and_confirmed_on_the_tv(apps, monkeypatch):
+    local, public, main = apps
+    tunnel(monkeypatch)
+    published = []
+    main.state.catalog.events.subscribe(published.append)
+    res = local.post("/api/remote-input", json={"purpose": "realdebrid", "title": "otra cosa", "fields": []}).json()
+    code, words = res["code"], res["words"]
+    assert len(words.split()) == 2
+    page = public.get(f"/escribir/{code}").text
+    assert words in page and "Usar esta clave" in page and "Conectar Real-Debrid" in page  # los campos los pone la consola
+    User.error = realdebrid.RealDebridError("mala", 401, 8)
+    bad = public.post(f"/escribir/{code}", json={"values": {"token": KEY}})
+    assert bad.status_code == 400 and "no reconoce" in bad.json()["detail"]
+    assert public.get(f"/escribir/{code}").status_code == 200  # un fallo no gasta el código
+    User.error = None
+    ok = public.post(f"/escribir/{code}", json={"values": {"token": KEY}})
+    assert ok.json() == {"ok": True, "account": "fer"}
+    arrived = next(e for e in published if e.get("type") == "remote-input")
+    assert arrived == {"type": "remote-input", "code": code, "purpose": "realdebrid", "account": "fer"}
+    assert KEY not in json.dumps(published)
+    assert local.get("/api/remote-input/take", params={"code": code}).status_code == 204  # la interfaz nunca la recoge
+    assert main.state.catalog.watch.rd_token() == "TORRENTIOKEY3F2A"  # sin el «Usar» de la TV no se guarda
+    saved = local.post("/api/realdebrid/remote/confirm", json={"code": code})
+    assert saved.status_code == 200 and saved.json()["user"] == "fer" and KEY not in saved.text
+    assert main.state.catalog.watch.rd_token() == KEY and main.state.catalog.watch.debrid_status()["source"] == "celular"
+    assert local.post("/api/realdebrid/remote/confirm", json={"code": code}).status_code == 409  # una sola vez
+
+
+def test_five_wrong_keys_end_the_code(apps, monkeypatch):
+    local, public, _ = apps
+    tunnel(monkeypatch)
+    code = local.post("/api/remote-input", json={"purpose": "realdebrid"}).json()["code"]
+    User.error = realdebrid.RealDebridError("mala", 401, 8)
+    for _ in range(5):
+        last = public.post(f"/escribir/{code}", json={"values": {"token": KEY}})
+    assert "muchos intentos" in last.json()["detail"]
+    assert public.get(f"/escribir/{code}").status_code == 404
+
+
+def test_the_key_pasted_on_the_tv_is_checked_first(apps):
+    local, _, main = apps
+    User.error = realdebrid.RealDebridError("mala", 401, 8)
+    assert local.post("/api/realdebrid/key", json={"token": KEY}).status_code == 422
+    assert local.post("/api/realdebrid/key", json={"token": "corta"}).status_code == 422
+    User.error = None
+    assert local.post("/api/realdebrid/key", json={"token": f" {KEY} "}).json()["user"] == "fer"
+    assert main.state.catalog.watch.rd_token() == KEY
+
+
+def test_a_new_tv_says_so_and_pairing_again_keeps_the_row(apps):
+    local, public, main = apps
+    tv_id = public.get("/api/companion", headers={"Authorization": "Bearer secreto"}).json()["tv_id"]
+    got, key = pair(local, public, main)
+    assert got["tv_id"] == tv_id
+    stranger = public.get("/api/addons", headers={"Authorization": f"Bearer od1.{'e' * 32}.x"})
+    assert stranger.status_code == 401 and stranger.json()["code"] == "device_unknown" and "nueva" in stranger.json()["detail"]
+    local.get("/api/companion/pair.svg")
+    again = public.post("/api/devices/pair", json={"code": main.state.devices.code(), "name": "Mi iPhone", "platform": "iphone"},
+                        headers=key).json()
+    assert again["device_id"] == got["device_id"] and again["key"] != got["key"]
+    assert [d["name"] for d in local.get("/api/devices").json()["devices"]] == ["Mi iPhone"]  # el mismo renglón
+    assert public.get("/api/addons", headers=key).status_code == 401  # la llave vieja ya no sirve
+
+
+def test_the_mac_never_pairs(apps):
+    local, public, main = apps
+    local.get("/api/companion/pair.svg")
+    mac = public.post("/api/devices/pair", json={"code": main.state.devices.code(), "name": "Mac", "platform": "mac"})
+    assert mac.status_code == 422 and "iCloud" in mac.json()["detail"]
+
+
+def test_the_iphone_invites_one_ipad_and_only_the_iphone_removes_others(apps):
+    local, public, main = apps
+    phone, phone_key = pair(local, public, main)
+    events = []
+    main.state.bus.publish_threadsafe = events.append
+    invite = public.post("/api/devices/invite", headers=phone_key).json()
+    assert invite["platform"] == "ipad"
+    as_iphone = public.post("/api/devices/pair", json={"code": invite["code"], "name": "Otro", "platform": "iphone"})
+    assert as_iphone.status_code == 404  # la invitación es para un iPad
+    pad = public.post("/api/devices/pair", json={"code": invite["code"], "name": "iPad", "platform": "ipad"})
+    assert pad.status_code == 200
+    assert {"type": "phone-linked", "name": "iPad", "platform": "ipad", "invited_by": "iPhone de Fernando"} in events
+    assert public.post("/api/devices/pair", json={"code": invite["code"], "name": "iPad 2", "platform": "ipad"}).status_code == 404
+    pad_key = {"Authorization": f"Bearer {pad.json()['key']}"}
+    assert public.post("/api/devices/invite", headers=pad_key).status_code == 403  # solo el iPhone invita
+    listed = {d["name"]: d for d in local.get("/api/devices").json()["devices"]}
+    assert listed["iPad"]["invited_by"] == "iPhone de Fernando"
+    assert public.delete(f"/api/devices/{phone['device_id']}", headers=pad_key).status_code == 403  # CX5
+    second = public.post("/api/devices/invite", headers=phone_key).json()
+    assert public.delete(f"/api/devices/{pad.json()['device_id']}", headers=phone_key).status_code == 200
+    local.delete(f"/api/devices/{phone['device_id']}")
+    assert public.post("/api/devices/pair", json={"code": second["code"], "name": "iPad", "platform": "ipad"}).status_code == 404
+
+
+def test_the_old_token_becomes_a_key_only_with_the_tv_saying_yes(apps):
+    local, public, main = apps
+    tunnel_token = {"Authorization": "Bearer secreto"}
+    pair(local, public, main, name="iPad", platform="ipad")  # ya hay un aparato: el token solo abre lo de Alexa…
+    events = []
+    main.state.bus.publish_threadsafe = events.append
+    asked = public.post("/api/devices/upgrade", json={"name": "iPhone de Fernando", "platform": "iphone"}, headers=tunnel_token)
+    assert asked.status_code == 202  # …y el paso a la llave (CX8-A)
+    ident = asked.json()["id"]
+    assert {"type": "device-upgrade", "id": ident, "name": "iPhone de Fernando", "platform": "iphone"} in events
+    assert public.get(f"/api/devices/upgrade/{ident}", headers=tunnel_token).status_code == 202
+    assert public.post("/api/devices/upgrade", json={}).status_code == 401  # sin token, nada
+    assert local.post(f"/api/devices/upgrade/{ident}", json={"yes": True}).status_code == 200
+    got = public.get(f"/api/devices/upgrade/{ident}", headers=tunnel_token)
+    assert got.status_code == 200 and got.json()["key"].startswith("od1.")
+    assert public.get(f"/api/devices/upgrade/{ident}", headers=tunnel_token).status_code == 404  # la llave, una sola vez
+    assert public.get("/api/addons", headers={"Authorization": f"Bearer {got.json()['key']}"}).status_code == 200
+    no = public.post("/api/devices/upgrade", json={"name": "Otro", "platform": "iphone"}, headers=tunnel_token).json()["id"]
+    local.post(f"/api/devices/upgrade/{no}", json={"yes": False})
+    assert public.get(f"/api/devices/upgrade/{no}", headers=tunnel_token).status_code == 403
+    assert len(local.get("/api/devices").json()["devices"]) == 2
+
+
+def test_the_quick_code_opens_the_same_page_without_scanning(apps, monkeypatch):
+    """«…ts.net/clave · KQ7MXR»: la misma página, con las mismas reglas; 5 códigos equivocados en total y se acaba."""
+    local, public, _ = apps
+    tunnel(monkeypatch)
+    res = local.post("/api/remote-input", json={"purpose": "realdebrid"}).json()
+    short = res["short"]
+    assert len(short) == 6 and set(short) <= set("ACDEFGHJKMNPQRTUVWXY34679")
+    assert "Escribe el código de tu TV" in public.get("/clave").text
+    page = public.get(f"/clave/{short.lower()}")  # se vale en minúsculas
+    assert page.status_code == 200 and res["words"] in page.text
+    assert public.post(f"/clave/{short}", json={"values": {"token": KEY}}).json() == {"ok": True, "account": "fer"}
+    res = local.post("/api/remote-input", json={"purpose": "realdebrid"}).json()
+    for _ in range(4):
+        assert public.get("/clave/AAAAAA").status_code == 404
+    assert public.get(f"/clave/{res['short']}").status_code == 200  # cuatro fallos: sigue vivo
+    assert public.get("/clave/AAAAAA").status_code == 404
+    assert public.get(f"/clave/{res['short']}").status_code == 404  # el quinto lo acabó
+    assert public.get(f"/escribir/{res['code']}").status_code == 404

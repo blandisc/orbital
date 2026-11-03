@@ -659,23 +659,36 @@ class Watch:
         self.streams.forget_all()
         return {**self.addon_status(), "previous": before}
 
-    def set_rd_token(self, token: str, by: str) -> dict:
-        """«Pasar a la TV» desde el iPhone (K1-A): se prueba con Real-Debrid antes de guardarla; si no sirve, la de antes
-        se queda. ValueError si Real-Debrid no la reconoce y ConnectionError si no contesta."""
+    @staticmethod
+    def check_rd_token(token: str) -> str:
+        """El usuario de Real-Debrid de esa clave (para «¿Usar la cuenta fernando?»). ValueError si no la reconoce y
+        ConnectionError si no contesta. Una cuenta sin Premium sí cuenta: la clave sirve."""
+        token = token.strip()
+        if not 20 <= len(token) <= 128 or not token.isalnum():
+            raise ValueError("Esa no parece una clave de Real-Debrid")
         try:
-            realdebrid.RealDebrid(token).user()
+            user = realdebrid.RealDebrid(token).user()
         except realdebrid.RealDebridError as exc:
             if exc.bad_key:
                 raise ValueError("Real-Debrid no reconoce esa clave") from exc
-            if not exc.no_premium:
-                raise ConnectionError("Real-Debrid no contestó. Inténtalo en un momento.") from exc
+            if exc.no_premium:
+                return ""
+            raise ConnectionError("Real-Debrid no contestó. Inténtalo en un momento.") from exc
+        return str(user.get("username") or "")
+
+    def set_rd_token(self, token: str, by: str, source: str = "iphone") -> dict:
+        """Tu clave fija de Real-Debrid: «Pasar a la TV» desde el iPhone (K1-A), desde cualquier celular (CA2-A) o pegada
+        en la TV (TEC-4). Se prueba con Real-Debrid antes de guardarla; si no sirve, la de antes se queda. ValueError si
+        Real-Debrid no la reconoce y ConnectionError si no contesta. Nunca se reemplaza sola (solo la de Torrentio)."""
+        token = token.strip()
+        self.check_rd_token(token)
         changed = self.credentials.get(RD_KEY) != token
         self.credentials.set(RD_KEY, token)
-        self.state.set_pref(RD_ACCOUNT, "source", "iphone")
+        self.state.set_pref(RD_ACCOUNT, "source", source)
         self._rd_status = (0.0, None, {})
         self.addons.forget()
         self.streams.forget_all()
-        if changed:
+        if changed and source == "iphone":  # lo de la TV y el celular lo confirmaste en la TV: ahí se dice
             self.events.publish({"type": "toast", "ok": True, "message": f"Tu {by} cambió la clave de Real-Debrid",
                                  "detail": "Si no fuiste tú, quítalo en Ajustes › Cuentas"})
         self.events.publish({"type": "settings-changed"})

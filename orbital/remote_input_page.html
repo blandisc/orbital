@@ -26,6 +26,8 @@
   .done { display: grid; gap: 10px; padding: 22px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
   .done strong { color: var(--ok); font-size: 20px; }
   .note { font-size: 13px; }
+  .words { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 15px; }
+  .words strong { color: var(--text); font-size: 20px; letter-spacing: .01em; }
 </style>
 </head>
 <body>
@@ -33,20 +35,43 @@
   <div class="brand">Orbital</div>
   <h1 id="title">Escribir en la tele</h1>
   <p id="lead">Lo que escribas aquí aparece en la tele y se usa una sola vez.</p>
+  <div class="words" id="words" hidden></div>
   <form id="form" autocomplete="on"></form>
   <div class="msg" id="msg" role="status"></div>
-  <p class="note">Esta página caduca en 10 minutos y sirve para un solo envío. No guarda nada.</p>
+  <p class="note" id="note">Esta página caduca en 10 minutos y sirve para un solo envío. No guarda nada.</p>
 </main>
 <script>
   const FORM = /*FORM*/null;
   const form = document.getElementById("form"), msg = document.getElementById("msg");
   // Para que el llavero del iPhone (o tu gestor de contraseñas) pueda llenarlo solo.
-  const autocomplete = (f) => f.secret ? "current-password" : /mail|correo/i.test(f.name + f.label) ? "username" : "off";
-  if (!FORM) {
+  // Con propósito (la clave de Real-Debrid) nada de llavero: no es una contraseña tuya de este sitio (TEC-13).
+  const autocomplete = (f) => FORM.purpose ? "off" : f.secret ? "current-password" : /mail|correo/i.test(f.name + f.label) ? "username" : "off";
+  if (FORM && FORM.ask_code) { // «…ts.net/clave»: escribe el código que enseña tu TV
+    document.getElementById("title").textContent = "Escribe el código de tu TV";
+    document.getElementById("lead").textContent = "Está en la pantalla de la TV, junto a la dirección. Son 6 letras y números.";
+    document.getElementById("note").textContent = "Por seguridad, después de 5 códigos equivocados la TV enseña otro.";
+    const label = document.createElement("label"), input = document.createElement("input"), go = document.createElement("button");
+    input.name = "short"; input.autocomplete = "off"; input.autocapitalize = "characters"; input.spellcheck = false; input.required = true;
+    input.maxLength = 10;
+    label.append("Código", input); go.type = "submit"; go.textContent = "Seguir";
+    form.append(label, go);
+    input.focus();
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      location.href = "/clave/" + encodeURIComponent(input.value.replace(/[^0-9a-z]/gi, "").toUpperCase());
+    });
+  } else if (!FORM) {
     document.getElementById("title").textContent = "Este código ya no sirve";
     document.getElementById("lead").textContent = "Vuelve a abrir el formulario en la tele y escanea el código nuevo.";
   } else {
     document.getElementById("title").textContent = FORM.title || "Escribir en la tele";
+    if (FORM.lead) document.getElementById("lead").textContent = FORM.lead;
+    if (FORM.minutes) document.getElementById("note").textContent = `Esta página caduca en ${FORM.minutes} minutos y sirve para un solo envío. No guarda nada.`;
+    if (FORM.words) { // las mismas dos palabras que enseña tu TV: si no coinciden, este código no es de tu TV
+      const words = document.getElementById("words");
+      words.hidden = false;
+      words.append("Tu TV dice ", Object.assign(document.createElement("strong"), { textContent: `«${FORM.words}»` }), ". Si no es lo mismo, no sigas.");
+    }
     for (const f of FORM.fields) {
       const label = document.createElement("label");
       const input = document.createElement("input");
@@ -55,7 +80,7 @@
       label.append(f.label, input); form.append(label);
     }
     const send = document.createElement("button");
-    send.type = "submit"; send.textContent = "Enviar a la tele"; form.append(send);
+    send.type = "submit"; send.textContent = FORM.submit_label || "Enviar a la tele"; form.append(send);
     form.querySelector("input")?.focus();
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -67,10 +92,19 @@
         if (!res.ok) throw new Error(data.detail || "No se pudo enviar.");
         const done = document.createElement("div");
         done.className = "done";
-        done.innerHTML = "<strong>Listo</strong><span>Ya está en la tele. Puedes cerrar esta página.</span>";
+        const strong = document.createElement("strong"), span = document.createElement("span");
+        if (FORM.purpose) { // la TV pregunta antes de guardar
+          strong.textContent = "Confirma en la tele";
+          span.textContent = data.account ? `Tu TV pregunta «¿Usar la cuenta ${data.account}?». Elige «Usar» ahí.` : "Tu TV pregunta si la usa. Elige «Usar» ahí.";
+        } else {
+          strong.textContent = "Listo";
+          span.textContent = "Ya está en la tele. Puedes cerrar esta página.";
+        }
+        done.append(strong, span);
         form.replaceWith(done);
       } catch (err) {
-        msg.textContent = err.message;
+        // Sin conexión el navegador dice «Failed to fetch» (en inglés): aquí se dice en palabras.
+        msg.textContent = err instanceof TypeError ? "No llegó a la tele. Revisa tu conexión e inténtalo otra vez." : err.message;
         send.disabled = false;
       }
     });

@@ -36,13 +36,16 @@ const STREMIO = {
 /** Borra el último carácter completo (un emoji no se parte a la mitad). */
 const dropLast = (text) => Array.from(text).slice(0, -1).join("");
 
-export function createLogin({ onDone, onMove, onClose }) {
+export function createLogin({ onDone, onMove, onClose, onRemote }) {
   let form = STREMIO;
   let fields = [];
   const box = h("div", { class: "login__form" });
   const phoneImage = h("img", { class: "login__phone-qr", alt: "Código QR para escribir desde el celular" });
+  const phoneWords = h("span", { class: "login__phone-words" });
+  // Sin escanear (código de acceso rápido): va bajo el campo, a todo lo ancho (la dirección no cabe junto al QR).
+  const phoneShort = h("p", { class: "login__quick", hidden: true });
   const phone = h("figure", { class: "login__phone", hidden: true }, phoneImage,
-    h("figcaption", {}, h("strong", {}, "O desde el celular")));
+    h("figcaption", {}, h("strong", {}, "O desde el celular"), phoneWords));
   let remoteCode = null;
   let head = h("div");
   const message = h("div", { class: "login__message", role: "status" });
@@ -182,13 +185,19 @@ export function createLogin({ onDone, onMove, onClose }) {
     const wanted = form;
     const seq = ++remoteSeq;
     const fieldsOut = form.fields.map(({ name, label, secret, optional }) => ({ name, label, secret, optional }));
-    remoteChain = remoteChain.then(() => (seq === remoteSeq ? api.remoteInputStart(wanted.title, fieldsOut) : null))
+    remoteChain = remoteChain.then(() => (seq === remoteSeq ? api.remoteInputStart(wanted.title, fieldsOut, wanted.remote) : null))
       .then((res) => {
         if (!res?.ready || el.hidden || form !== wanted || mine !== attempt || seq !== remoteSeq) {
           return res?.code ? api.remoteInputCancel(res.code).catch(() => {}) : undefined; // en la fila: antes del siguiente
         }
         remoteCode = res.code;
         phoneImage.src = `/api/remote-input/qr.svg?code=${encodeURIComponent(res.code)}`;
+        // Las mismas dos palabras salen en la página del celular: así sabes que el QR es de esta TV (TEC-11).
+        mount(phoneWords, ...(res.words ? ["Tu celular dirá", h("strong", {}, `«${res.words}»`)] : []));
+        // Sin escanear (código de acceso rápido): la dirección y el código, en cualquier navegador.
+        mount(phoneShort, ...(res.short ? ["Sin escanear, en cualquier navegador: ", h("strong", {}, `${res.host}/clave`), " · código ",
+          h("strong", {}, res.short)] : []));
+        phoneShort.hidden = !res.short;
         phone.hidden = false;
       }, () => {});
   }
@@ -197,12 +206,19 @@ export function createLogin({ onDone, onMove, onClose }) {
     if (remoteCode) api.remoteInputCancel(remoteCode).catch(() => {});
     remoteCode = null;
     phone.hidden = true;
+    phoneShort.hidden = true;
     phoneImage.removeAttribute("src");
   }
 
   /** Llegó lo escrito en el celular (aviso «remote-input»): se recoge una vez, llena los campos y se envía. */
-  async function remoteArrived(code) {
+  async function remoteArrived(code, event = {}) {
     if (!code || code !== remoteCode || el.hidden || busy) return;
+    if (event.purpose) { // la clave de Real-Debrid: no se recoge aquí; la TV pregunta «¿Usar la cuenta …?»
+      remoteCode = null; // que cerrar no anule el código: la respuesta todavía lo usa
+      close();
+      onRemote?.(event);
+      return;
+    }
     remoteCode = null;
     phone.hidden = true;
     let res;
@@ -227,7 +243,7 @@ export function createLogin({ onDone, onMove, onClose }) {
     const top = ScreenHead({ eyebrow: "Cuentas", title: form.title, className: "login__head", lead: form.lead });
     head.replaceWith(top);
     head = top;
-    mount(box, ...fields.map((f) => f.node), message);
+    mount(box, ...fields.map((f) => f.node), message, phoneShort);
     el.setAttribute("aria-label", form.title);
     const empty = fields.findIndex((f) => !f.value);
     active = empty < 0 ? fields.length - 1 : empty;

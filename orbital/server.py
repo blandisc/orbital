@@ -374,6 +374,7 @@ class ChoicesSync(BaseModel):
 
 def _companion_routes(app: FastAPI, config: Config) -> None:
     """«Conectar iPhone» en la TV: el QR y «Enviar/Descargar en el iPhone» (solo en el puerto local, el de la consola)."""
+    from fastapi import Body
     from fastapi.responses import Response
 
     @app.get("/api/companion/phone")
@@ -411,6 +412,23 @@ def _companion_routes(app: FastAPI, config: Config) -> None:
 
     @app.get("/api/devices")
     def paired_devices() -> dict:
+        return {"devices": app.state.devices.listing()}
+
+    @app.get("/api/devices/upgrade")
+    def upgrade_pending() -> dict:
+        return {"pending": app.state.devices.pending_upgrade()}
+
+    @app.post("/api/devices/upgrade/{ident}")
+    def upgrade_decide(ident: str, yes: bool = Body(False, embed=True)) -> dict:
+        """«¿Darle llave a iPhone de Fernando?» (CX8-A): sin este sí no hay llave."""
+        try:
+            done = app.state.devices.decide_upgrade(ident, yes)
+        except devices.PairError as exc:
+            raise HTTPException(exc.status, exc.detail) from exc
+        if not done:
+            raise HTTPException(404, "Ya no está esperando: que lo vuelva a pedir")
+        if yes:
+            app.state.bus.publish_threadsafe({"type": "settings-changed"})
         return {"devices": app.state.devices.listing()}
 
     @app.delete("/api/devices/{device_id}")
@@ -480,16 +498,33 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
     urls: dict[str, str] = {}
 
     @app.post("/api/remote-input")
-    def remote_start(title: str = Body(""), fields: list = Body(default_factory=list)) -> dict:
-        info = companion.pair_info(config)  # el celular entra por el mismo túnel que Alexa y el iPhone
+    def remote_start(title: str = Body(""), fields: list = Body(default_factory=list), purpose: str | None = Body(None)) -> dict:
+        info = companion.tunnel_info(config)  # el celular entra por el túnel de Tailscale (ya no hace falta Alexa)
         if not info["ready"]:
             return {"ready": False, "reason": info.get("reason", "")}
-        code = remote.start(title, fields)
+        if purpose == "realdebrid":  # CA2-A: los campos y las palabras los pone el servidor, no la interfaz
+            code = remote.start(*RD_FORM, purpose="realdebrid", lead=RD_LEAD, submit_label="Usar esta clave")
+        else:
+            code = remote.start(title, fields)
         if code is None:
             raise HTTPException(422, "Formulario sin campos")
         urls.clear()
         urls[code] = f"https://{info['host']}/escribir/{code}"
-        return {"ready": True, "code": code, "host": info["host"]}
+        return {"ready": True, "code": code, "host": info["host"], "words": remote.words(code), "short": remote.short(code)}
+
+    @app.post("/api/realdebrid/remote/confirm")
+    def debrid_remote_confirm(code: str = Body("", embed=True)) -> dict:
+        """«¿Usar la cuenta fernando?» → Sí: la clave que llegó del celular se guarda (la interfaz nunca la ve)."""
+        values = remote.take(code, purpose="realdebrid")
+        urls.pop(code, None)
+        if values is None:
+            raise HTTPException(409, "Ese código ya no sirve. Vuelve a abrir Conectar Real-Debrid.")
+        return save_debrid_key(app, values.get("token", ""), "celular")
+
+    @app.post("/api/realdebrid/key")
+    def debrid_key(token: str = Body("", embed=True)) -> dict:
+        """La clave pegada en la TV (TEC-4, sin túnel o sin celular): probada antes de guardarla."""
+        return save_debrid_key(app, token, "tv")
 
     @app.get("/api/remote-input/qr.svg")
     def remote_qr(code: str = "") -> Response:
@@ -510,6 +545,20 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
         remote.cancel(code or None)
         urls.pop(code, None)
         return {"ok": True}
+
+
+RD_FORM = ("Conectar Real-Debrid", [{"name": "token", "label": "Clave de Real-Debrid", "secret": True}])
+RD_LEAD = "Ábrela en real-debrid.com/apitoken, cópiala y pégala aquí."
+
+
+def save_debrid_key(app: FastAPI, token: object, source: str) -> dict:
+    watch = app.state.catalog.watch
+    try:
+        return watch.set_rd_token(str(token or ""), "TV" if source == "tv" else "celular", source=source)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except ConnectionError as exc:
+        raise HTTPException(503, str(exc)) from exc
 
 
 REMOTE_PAGE = Path(__file__).with_name("remote_input_page.html")
@@ -540,6 +589,15 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     public.add_exception_handler(KeyRequired, key_required)
 
     guard = guard or FailedTokens()
+    measured: set[tuple[bool, bool]] = set()
+
+    def seen_headers(request: Request) -> None:
+        """CX6: ¿el túnel (Funnel) dice quién llama? Se anota una vez por combinación si trae las cabeceras, nunca su valor."""
+        combo = ("x-forwarded-for" in request.headers, "tailscale-funnel-request" in request.headers)
+        if combo not in measured and len(measured) < 4:
+            measured.add(combo)
+            log.info("Túnel: X-Forwarded-For %s · Tailscale-Funnel-Request %s", *("sí" if c else "no" for c in combo))
+
     one_at_a_time: list[asyncio.Lock] = []  # los intentos fallidos esperan en fila, no en paralelo
     waiting = [0]
     MAX_WAITING = 20  # más que esto en fila: 429 al instante (no se acumulan conexiones abiertas)
@@ -556,10 +614,16 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         if size > MAX_PUBLIC_BODY:
             return JSONResponse({"detail": "Petición demasiado grande"}, status_code=413)
         key = FailedTokens.key(request)
-        if request.url.path.startswith("/escribir/"):
+        seen_headers(request)
+        if request.url.path == "/clave":  # el código de acceso rápido: la página que lo pide (no lleva nada)
+            return await call_next(request)
+        if request.url.path.startswith(("/escribir/", "/clave/")):
             code = request.url.path.split("/", 2)[2].strip("/")
             if guard.blocked(key):
                 return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
+            if request.url.path.startswith("/clave/"):
+                code = main_app.state.remote_input.resolve(code) or ""
+                request.state.remote_code = code
             if main_app.state.remote_input.form(code) is not None:
                 return await call_next(request)
             await asyncio.sleep(guard.failed(key))
@@ -581,14 +645,16 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
                 guard.succeeded(key)
                 request.state.device = device
                 return await call_next(request)
-            if found == "removed" and not guard.blocked(key):
+            if found in ("removed", "unknown") and not guard.blocked(key):
                 guard.failed(key)
-                return JSONResponse({"code": "device_removed", "detail": "Esta TV te quitó: vuelve a escanear el código de tu TV"},
-                                    status_code=401)
+                said = ("Esta TV te quitó: vuelve a escanear el código de tu TV" if found == "removed"
+                        else "Tu TV es nueva: vuelve a escanear su código")
+                return JSONResponse({"code": f"device_{found}", "detail": said}, status_code=401)
         # El token correcto pasa siempre: quien falsifica tu dirección no te deja fuera.
         elif token_ok(request, config.server.token):
             guard.succeeded(key)
-            if request.url.path not in devices.ALEXA_PATHS and paired.any():  # K1-13: el token ya solo es de Alexa
+            upgrading = request.url.path.startswith("/api/devices/upgrade")  # CX8-A: del token a la llave, con el sí en la TV
+            if request.url.path not in devices.ALEXA_PATHS and not upgrading and paired.any():  # K1-13: el token ya solo es de Alexa
                 return JSONResponse(KEY_REQUIRED, status_code=401)
             return await call_next(request)
         if guard.blocked(key):
@@ -653,12 +719,26 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         foryou = getattr(main_app.state.catalog, "foryou", None)
         key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
         return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
-                "pairing": 2}  # K1-12: esta TV reparte llaves por aparato
+                "pairing": 2,  # K1-12: esta TV reparte llaves por aparato
+                "tv_id": main_app.state.devices.tv_id()}  # TEC-30: una TV reinstalada tiene otro
 
     @public.get("/escribir/{code}")
     def remote_form(code: str) -> HTMLResponse:
         """La página del celular para escribir en la tele (correo, contraseña, una clave)."""
         return HTMLResponse(remote_page(main_app.state.remote_input.form(code)), headers=REMOTE_HEADERS)
+
+    # El código de acceso rápido (Fernando, 3 nov): la misma página sin escanear, desde cualquier navegador.
+    @public.get("/clave")
+    def quick_code_page() -> HTMLResponse:
+        return HTMLResponse(remote_page({"ask_code": True}), headers=REMOTE_HEADERS)
+
+    @public.get("/clave/{short}")
+    def quick_code_form(short: str, request: Request) -> HTMLResponse:
+        return HTMLResponse(remote_page(main_app.state.remote_input.form(request.state.remote_code)), headers=REMOTE_HEADERS)
+
+    @public.post("/clave/{short}")
+    async def quick_code_send(short: str, request: Request) -> JSONResponse:
+        return await remote_send(request.state.remote_code, request)
 
     @public.post("/escribir/{code}")
     async def remote_send(code: str, request: Request) -> JSONResponse:
@@ -666,10 +746,22 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             body = await request.json()
         except ValueError:
             body = {}
-        problem = main_app.state.remote_input.submit(code, body.get("values") if isinstance(body, dict) else None)
+        remote = main_app.state.remote_input
+        values = body.get("values") if isinstance(body, dict) else None
+        extra = None
+        if remote.purpose(code) == "realdebrid":  # CA2-A: la clave se prueba aquí, nunca en la interfaz
+            token = values.get("token") if isinstance(values, dict) else None
+            try:
+                account = await run_in_threadpool(main_app.state.catalog.watch.check_rd_token, str(token or ""))
+            except ValueError as exc:
+                return JSONResponse({"detail": remote.fail(code, str(exc))}, status_code=400)
+            except ConnectionError as exc:
+                return JSONResponse({"detail": str(exc)}, status_code=503)
+            extra = {"account": account}
+        problem = remote.submit(code, values, extra)
         if problem:
             return JSONResponse({"detail": problem}, status_code=400)
-        return JSONResponse({"ok": True})
+        return JSONResponse({"ok": True, **({"account": extra["account"]} if extra else {})})
 
     @public.post("/api/stremio/play")
     def play_on_tv(body: media.PlayRequest) -> dict:
@@ -749,15 +841,19 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             body = {}
         body = body if isinstance(body, dict) else {}
         try:
-            got = main_app.state.devices.pair(body.get("code"), body.get("name"), body.get("platform"))
+            sent = bearer(request)
+            got = main_app.state.devices.pair(body.get("code"), body.get("name"), body.get("platform"),
+                                              previous=sent if devices.Devices.is_key(sent) else "")
         except devices.PairError as exc:
             return JSONResponse({"detail": exc.detail}, status_code=exc.status)
         bus = getattr(main_app.state, "bus", None)
         if bus is not None:
-            bus.publish_threadsafe({"type": "phone-linked", "name": got["name"], "platform": got["platform"]})
+            bus.publish_threadsafe({"type": "phone-linked", "name": got["name"], "platform": got["platform"],
+                                    "invited_by": got.get("invited_by")})
             bus.publish_threadsafe({"type": "settings-changed"})
         log.info("Aparato emparejado: %s (%s)", got["name"], got["platform"])
-        return JSONResponse({"device_id": got["device_id"], "key": got["key"], "tv_name": "Orbital"},
+        return JSONResponse({"device_id": got["device_id"], "key": got["key"], "tv_name": "Orbital",
+                             "tv_id": main_app.state.devices.tv_id()},
                             headers={"Cache-Control": "no-store"})
 
     @public.get("/api/devices")
@@ -772,9 +868,53 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         mine = device_of(request)
         if mine is None:
             raise KeyRequired()
+        if not devices.may_remove(mine, device_id):  # CX5: un iPad solo se quita a sí mismo
+            raise HTTPException(403, "Solo tu iPhone o la TV pueden quitar otro aparato")
         if not forget_device(main_app, device_id):
             raise HTTPException(404, "Ese aparato ya no está")
         return {"devices": main_app.state.devices.listing(this=mine["device_id"])}
+
+    @public.post("/api/devices/invite")
+    def companion_device_invite(request: Request) -> JSONResponse:
+        """CX4-A: la invitación de un toque para un iPad (viaja por iCloud). Solo la pide un iPhone, con su llave."""
+        mine = device_of(request)
+        if mine is None:
+            raise KeyRequired()
+        if mine["platform"] != "iphone":
+            raise HTTPException(403, "Solo tu iPhone invita a otro aparato")
+        return JSONResponse(main_app.state.devices.invite(mine["device_id"]), headers={"Cache-Control": "no-store"})
+
+    @public.post("/api/devices/upgrade")
+    async def companion_device_upgrade(request: Request) -> JSONResponse:
+        """CX8-A: un iPhone con el token de antes pide su llave sin volver a escanear; la TV pregunta en pantalla."""
+        if device_of(request) is not None:
+            raise HTTPException(409, "Este aparato ya tiene su llave")
+        try:
+            body = await request.json()
+        except ValueError:
+            body = {}
+        body = body if isinstance(body, dict) else {}
+        try:
+            ident = main_app.state.devices.ask_upgrade(body.get("name"), body.get("platform"))
+        except devices.PairError as exc:
+            return JSONResponse({"detail": exc.detail}, status_code=exc.status)
+        pending = main_app.state.devices.pending_upgrade()
+        bus = getattr(main_app.state, "bus", None)
+        if bus is not None and pending:
+            bus.publish_threadsafe({"type": "device-upgrade", **pending})
+        return JSONResponse({"id": ident, "detail": "Confirma en la TV"}, status_code=202)
+
+    @public.get("/api/devices/upgrade/{ident}")
+    def companion_device_upgrade_result(ident: str) -> JSONResponse:
+        state, got = main_app.state.devices.upgrade_result(ident)
+        if state == "waiting":
+            return JSONResponse({"detail": "Confirma en la TV"}, status_code=202)
+        if state == "denied":
+            return JSONResponse({"detail": "La TV dijo que no"}, status_code=403)
+        if state != "ok" or got is None:
+            return JSONResponse({"detail": "Ya no sirve: vuelve a pedirlo, o escanea el código de tu TV"}, status_code=404)
+        return JSONResponse({"device_id": got["device_id"], "key": got["key"], "tv_name": "Orbital",
+                             "tv_id": main_app.state.devices.tv_id()}, headers={"Cache-Control": "no-store"})
 
     @public.get("/api/realdebrid")
     def companion_debrid(request: Request, full: int = 0) -> JSONResponse:

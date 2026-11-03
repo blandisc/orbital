@@ -110,7 +110,7 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
   assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["iPhone", "Conectar"], ["Stremio · respaldo", "Conectar"]]);
-  assert.deepEqual(accounts.options[0].command, { type: "rd-account" }); // Real-Debrid primero (SS-1)
+  assert.deepEqual(accounts.options[0].command, { type: "rd-connect" }); // Real-Debrid primero (SS-1); sin cuenta, directo a pegar la clave (UX-1)
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   assert.deepEqual(accounts.options[2].command, { type: "stremio-login" }); // corte S4: Stremio al final, opcional
   assert.ok(!accounts.options[2].warn);

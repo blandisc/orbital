@@ -169,7 +169,10 @@ export const api = {
   traktLink: () => post("/api/foryou/trakt/link"),
   traktCancel: () => post("/api/foryou/trakt/cancel"),
   // Escribir desde el celular: un código de un solo uso por formulario (remote_input.py).
-  remoteInputStart: (title, fields) => post("/api/remote-input", { title, fields }),
+  remoteInputStart: (title, fields, purpose) => post("/api/remote-input", { title, fields, purpose }),
+  /** La clave de Real-Debrid pegada en la TV, o la que llegó del celular tras «Usar» (la consola la prueba antes). */
+  debridKey: (token, signal) => post("/api/realdebrid/key", { token }, { signal, timeout: 20000 }),
+  debridRemoteConfirm: (code) => post("/api/realdebrid/remote/confirm", { code }, { timeout: 20000 }),
   remoteInputTake: (code) => request(`/api/remote-input/take?code=${encodeURIComponent(code)}`),
   remoteInputCancel: (code) => post("/api/remote-input/cancel", { code }),
   traktUnlink: () => post("/api/foryou/trakt/unlink"),
@@ -198,6 +201,7 @@ export const api = {
   /** Se cerró «Conectar iPhone»: el código del QR deja de servir (K1-11). */
   companionPairClose: () => request("/api/companion/pair/close", { method: "POST" }),
   deviceRemove: (id) => request(`/api/devices/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  deviceUpgrade: (id, yes) => post(`/api/devices/upgrade/${encodeURIComponent(id)}`, { yes }),
   companionPhone: () => request("/api/companion/phone"),
   /** «Enviar al iPhone» (`open`) o «Descargar en el iPhone» (`download`): la consola lo deja en su bandeja. */
   companionSend: (action, kind, metaId, videoId = null) => post("/api/companion/send", { action, kind, meta_id: metaId, video_id: videoId }),

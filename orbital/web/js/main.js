@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
-import { debridCancelMenu, deviceMenu, deviceRemoveMenu, moviesSetupMenu } from "./core/menus.js";
+import { DEBRID_FORM, debridCancelMenu, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, moviesSetupMenu } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
@@ -166,6 +166,7 @@ const ui = {
   login: createLogin({
     onDone: (res, form) => {
       if (loginFrom) loginFrom.done = true;
+      if (form.id === "realdebrid") return debridSaved(res);
       if (form.service) return keysSaved(form, res);
       state.stremioLinked = true;
       sound.play("select");
@@ -174,6 +175,7 @@ const ui = {
     },
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(loginFrom); },
+    onRemote: (event) => { if (loginFrom) loginFrom.done = true; sound.play("open"); openMenu(debridRemoteMenu(event)); },
   }),
   foryou: createForYou({
     onWatch: (play) => watch(play),
@@ -361,6 +363,16 @@ async function keysSaved(form, status, { removed = false } = {}) {
   ui.foryou.load({ force: true });
   renderHints();
 }
+
+/** Real-Debrid conectada (pegada en la TV o desde un celular tras «Usar»): Cuentas se repinta en su lugar. */
+function debridSaved(res) {
+  sound.play("select");
+  ui.toast.show("Real-Debrid conectada", { tone: "success", detail: res?.user ? `Cuenta ${res.user}` : "" });
+  api.settings().then(applySettings).catch(() => {});
+  renderHints();
+}
+
+const debridForm = () => ({ ...DEBRID_FORM, submit: (values, signal) => api.debridKey(values.token.trim(), signal) });
 
 /** Escribir una clave con el teclado en pantalla (o pegarla con Ctrl+V). */
 function keysForm(service) {
@@ -1860,6 +1872,21 @@ async function runCommand(command, context = null) {
         phoneFrom = { context };
         ui.phoneLink.open();
         return renderHints();
+      case "rd-connect": // Conectar Real-Debrid: pegarla aquí o con el QR desde cualquier celular (CA2-A, TEC-4)
+        sound.play("open");
+        loginFrom = { context };
+        ui.login.open(debridForm());
+        return renderHints();
+      case "rd-remote-confirm": {
+        const res = await api.debridRemoteConfirm(command.code);
+        ui.sheet.close();
+        return debridSaved(res);
+      }
+      case "rd-remote-cancel":
+        api.remoteInputCancel(command.code).catch(() => {});
+        sound.play("back");
+        ui.sheet.close();
+        return renderHints();
       case "keys":
         if (!KEY_FORMS[command.service]) return;
         sound.play("open");
@@ -2199,7 +2226,7 @@ const EVENTS = {
   },
   // escribiste en el celular: el formulario se llena y se envía solo
   "remote-input": (event) => {
-    ui.login.remoteArrived(event.code);
+    ui.login.remoteArrived(event.code, event);
     return;
   },
   "trakt-linked": (event) => {
@@ -2214,7 +2241,19 @@ const EVENTS = {
     api.settings().then(applySettings).catch(() => {});
   },
   // el iPhone escaneó el QR y ya habló con Orbital
+  // CX8-A: un iPhone con el código de antes pide su llave; sin el sí de la TV no hay llave
+  "device-upgrade": (event) => {
+    sound.play("open");
+    openMenu(deviceUpgradeMenu(event));
+    return;
+  },
   "phone-linked": (event) => {
+    if (event.invited_by) { // CX4-A: el iPad entró con la invitación del iPhone, sin QR a la vista
+      sound.play("select");
+      ui.toast.show(`Se unió ${event.name || "iPad"} · invitado por ${event.invited_by}`, { tone: "success" });
+      api.settings().then(applySettings).catch(() => {});
+      return;
+    }
     if (!ui.phoneLink.isOpen) return; // la app también pregunta al abrirse: solo se celebra con el QR a la vista
     if (phoneFrom) phoneFrom.done = true; // como «Trakt conectado»: no se reabre el menú viejo (diría «Conectar»)
     ui.phoneLink.close();

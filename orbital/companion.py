@@ -63,15 +63,27 @@ def devices(state, live: dict) -> list[dict]:
     return sorted(out, key=lambda d: d["seen"], reverse=True)
 
 
-def pair_info(config, tailscale_url=None, code: str | None = None) -> dict:
-    """Si se puede conectar el iPhone y, si no, qué falta (en palabras). Con `code` (el de devices.Devices), el QR."""
-    token = config.server.token
-    if not token or config.server.token_is_ephemeral:
-        return {"ready": False, "reason": "Primero configura Alexa (Ajustes › Tele y voz): el iPhone usa el mismo token."}
+def tunnel_info(config, tailscale_url=None, funnel_on=None) -> dict:
+    """¿Llega un celular a esta consola desde fuera? (TEC-3): el puerto público y el túnel de Tailscale abierto a internet
+    (Funnel). Ya no pide Alexa: con las llaves por aparato el iPhone no usa su token."""
+    port = getattr(config.server, "public_port", 8711)
+    if not port:
+        return {"ready": False, "reason": "El puerto del túnel está apagado (server.public_port en config.yaml)."}
     url = (tailscale_url or alexa_setup.tailscale_url)()
     if not url:
-        return {"ready": False, "reason": "No encontré Tailscale. El iPhone entra por el mismo túnel que Alexa: enciéndelo y vuelve a intentar."}
-    info = {"ready": True, "host": url.removeprefix("https://")}
+        return {"ready": False, "reason": "No encontré Tailscale. El celular entra por su túnel: enciéndelo en esta computadora y vuelve a intentar."}
+    if (funnel_on or alexa_setup.funnel_on)() is False:
+        return {"ready": False, "reason": f"Tailscale está encendido pero su túnel a internet (Funnel) no. En esta computadora "
+                                          f"corre «tailscale funnel --bg {port}» una vez y vuelve a intentar."}
+    return {"ready": True, "host": url.removeprefix("https://"), "url": url}
+
+
+def pair_info(config, tailscale_url=None, code: str | None = None, funnel_on=None) -> dict:
+    """Si se puede conectar el iPhone y, si no, qué falta (en palabras). Con `code` (el de devices.Devices), el QR."""
+    info = tunnel_info(config, tailscale_url, funnel_on)
+    if not info["ready"]:
+        return info
+    url = info.pop("url")
     return {**info, "link": pair_link(url, code)} if code else info
 
 
@@ -87,7 +99,9 @@ def phone_ready(config, tailscale_url=None, now=time.monotonic) -> bool:
         age = now() - _phone_cache["at"]
         if _phone_cache["at"] and age < (60 if _phone_cache["ready"] else 15):
             return bool(_phone_cache["ready"])
-    ready = bool(pair_info(config, tailscale_url)["ready"])
+    # Sin el token de Alexa no hay iPhone de antes (v1) que recoja lo enviado; con llave, el túnel basta.
+    token = config.server.token and not config.server.token_is_ephemeral
+    ready = bool(token and pair_info(config, tailscale_url, funnel_on=lambda: None)["ready"])
     with _phone_lock:
         _phone_cache.update(at=now(), ready=ready)
     return ready

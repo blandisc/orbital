@@ -774,7 +774,7 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
   const rd = settings.realdebrid;
   if (rd && !rd.linked) {
     missing.push({ icon: "bolt", label: "Real-Debrid sin conectar", hint: "Sin Real-Debrid los videos no arrancan al instante", value: "Conectar", warn: true,
-      command: { type: "rd-account" } });
+      command: { type: "rd-connect" } });
   } else if (rd?.problem && rd.problem !== "offline") {
     missing.push({ ...debridRow(rd), label: debridRow(rd).value, value: "Ver" });
   } else if (rd?.days != null && rd.days <= 7) {
@@ -1213,7 +1213,8 @@ export function phoneRows(settings, now = Date.now()) {
     const rows = paired.map((device) => {
       const row = phoneRow(device.seen, now, device.live);
       return { ...row, label: device.name || PLATFORM_NAMES[device.platform] || "iPhone", value: row.ok ? row.value : "",
-        hint: row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia llave" : row.hint,
+        hint: device.invited_by && !row.ok ? `Invitado por ${device.invited_by}`
+          : row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia llave" : row.hint,
         command: { type: "device-menu", id: device.device_id } };
     });
     return [...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone, iPad o Mac, con un código QR", command: { type: "phone-link" } }];
@@ -1240,6 +1241,20 @@ export function deviceMenu(device) {
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "minus", label: "Quitar", danger: true, hint: "Para volver, escanea el código de la TV",
         command: { type: "device-remove-ask", id: device.device_id, name } },
+    ],
+  };
+}
+
+/** CX8-A: un iPhone con el código de antes pide su propia llave sin volver a escanear. Sin este sí no hay llave; «No»
+ *  va primero. */
+export function deviceUpgradeMenu(event) {
+  const name = event.name || PLATFORM_NAMES[event.platform] || "iPhone";
+  return {
+    title: `¿Darle llave a ${name}?`,
+    subtitle: "Lo pide con el código de antes, para no volver a escanear. Si no fuiste tú, elige No.",
+    options: [
+      { icon: "close", label: "No", command: { type: "device-upgrade", id: event.id, yes: false } },
+      { icon: "check", label: "Dar llave", command: { type: "device-upgrade", id: event.id, yes: true, name } },
     ],
   };
 }
@@ -1323,8 +1338,9 @@ const dayMonth = (seconds) => new Date(seconds * 1000).toLocaleDateString("es-MX
 /** El renglón de Real-Debrid en Cuentas: cuántos días te quedan o, si algo falla, cuál de las tres causas. */
 export function debridRow(rd) {
   const base = { icon: "bolt", label: "Real-Debrid", command: { type: "rd-account" } };
-  if (!rd?.linked) return { ...base, value: "Conectar", warn: true, hint: "Para que los videos arranquen al instante · en tu Torrentio",
-    command: { type: "rd-account" } };
+  // UX-1: sin cuenta, directo a pegar la clave (aquí o desde cualquier celular con el QR).
+  if (!rd?.linked) return { ...base, value: "Conectar", warn: true, hint: "Para que los videos arranquen al instante · con tu clave",
+    command: { type: "rd-connect" } };
   const problem = DEBRID_PROBLEMS[rd.problem];
   if (problem) return { ...base, value: problem.label, warn: true, hint: problem.hint };
   // P6-A (como el iPhone): sin la respuesta de Real-Debrid no se dice «Conectada».
@@ -1338,12 +1354,12 @@ export function debridRow(rd) {
 /** Real-Debrid conectado: de dónde salió tu clave, tu Premium, «Tus pedidos» y cómo renovar. */
 export function debridAccountMenu(rd) {
   const requests = rd?.requests || [];
-  const from = rd?.source === "iphone" ? "Te la mandó tu iPhone" : "Tomada de tu Torrentio";
+  const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
   const active = requests.filter((r) => ["queued", "downloading", "no_peers"].includes(r.state)).length;
   if (!rd?.linked) {
     return { title: "Real-Debrid", subtitle: "Es lo que hace que los videos arranquen al instante.", options: [
-      { icon: "info", label: "Ponla en tu Torrentio", hint: "Orbital toma la clave de ahí solo, la primera vez", command: { type: "close" } },
-      { icon: "phone", label: "Mándala desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "close" } },
+      { icon: "bolt", label: "Conectar con tu clave", hint: "Pégala aquí o desde cualquier celular, con un código QR", command: { type: "rd-connect" } },
+      { icon: "phone", label: "O desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "stay" } },
     ] };
   }
   const problem = DEBRID_PROBLEMS[rd.problem];
@@ -1357,8 +1373,31 @@ export function debridAccountMenu(rd) {
         : rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
-      { icon: "phone", label: "Cambiar la clave", hint: "Mándala desde tu iPhone, o cámbiala en tu Torrentio", command: { type: "close" } },
+      { icon: "refresh", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone", command: { type: "rd-connect" } },
     ].filter(Boolean),
+  };
+}
+
+const DEBRID_SOURCES = { iphone: "Te la mandó tu iPhone", celular: "La pegaste desde tu celular", tv: "La pegaste en la TV" };
+
+/** Conectar Real-Debrid (CA2-A y TEC-4): pegarla aquí con Ctrl+V o, con el QR, desde cualquier celular. La clave la prueba
+ *  y la guarda la consola; esta pantalla nunca la recibe del celular. */
+export const DEBRID_FORM = {
+  id: "realdebrid", title: "Conectar Real-Debrid", submitLabel: "Usar esta clave", remote: "realdebrid",
+  lead: "Ábrela en real-debrid.com/apitoken desde cualquier navegador, cópiala y pégala aquí con Ctrl+V. O escanea el código con tu celular.",
+  missing: "Pega tu clave de Real-Debrid.",
+  fields: [{ name: "token", label: "Clave de Real-Debrid", secret: true }],
+};
+
+/** Llegó una clave desde un celular: la TV pregunta antes de guardarla (TEC-11/12). «Cancelar» va primero. */
+export function debridRemoteMenu(event) {
+  return {
+    title: event.account ? `¿Usar la cuenta ${event.account}?` : "¿Usar esta clave?",
+    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige Cancelar.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "rd-remote-cancel", code: event.code } },
+      { icon: "check", label: "Usar", command: { type: "rd-remote-confirm", code: event.code } },
+    ],
   };
 }
 
