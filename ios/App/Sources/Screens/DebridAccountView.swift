@@ -13,6 +13,9 @@ struct DebridAccountView: View {
     @State private var confirmRedeem = false
     @State private var confirmRemove = false
     @State private var changingKey = false
+    /// Ya se le preguntó a Real-Debrid en esta visita: al volver de «Tus pedidos» o «Cambiar clave» no se pregunta otra vez
+    /// (antes «Conectada ✓» parpadeaba a «Guardada · Revisando…»).
+    @State private var checked = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Cómo está tu clave en la página (P6-A).
@@ -58,8 +61,9 @@ struct DebridAccountView: View {
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de Real-Debrid no se toca.") }
         .animation(DS.Motion.base(reduceMotion), value: model.keyCheck)
-        .navigationDestination(isPresented: $changingKey) { keyPage(model) }
-        .task { await model.recheck() }
+        .navigationDestination(isPresented: $changingKey) { DebridChangeKeyPage(debrid: model) }
+        .sensoryFeedback(.success, trigger: model.redeem) { _, new in new == .done }
+        .task { guard !checked else { return }; checked = true; await model.recheck() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-account")
     }
@@ -129,7 +133,7 @@ struct DebridAccountView: View {
                 Text("Tomé tu clave de Real-Debrid de tu Torrentio").recipe(.footnote, color: DS.textMuted)
             }
             if key != .rejected {   // rechazada, «Cambiar clave» ya es el arreglo de arriba
-                NavigationLink { keyPage(model) } label: { Text("Cambiar clave").foregroundStyle(DS.text) }
+                NavigationLink { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar clave").foregroundStyle(DS.text) }
             }
             Button("Quitar", role: .destructive) { confirmRemove = true }
         } header: { Text("Tu clave") }
@@ -178,17 +182,9 @@ struct DebridAccountView: View {
     @ViewBuilder private func connect(_ model: DebridModel) -> some View {
         Section {
             DebridKeyField(debrid: model)
-            Link(destination: model.tokenURL) { Label(String(localized: "Sacar tu clave en real-debrid.com/apitoken"), systemImage: "arrow.up.right") }
+            Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
         } header: { Text("Tu clave") } footer: { Text("Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.") }
         .listRowBackground(DS.surface)
-    }
-
-    private func keyPage(_ model: DebridModel) -> some View {
-        Form { Section { DebridKeyField(debrid: model) }.listRowBackground(DS.surface) }
-            .tint(DS.accent)
-            .scrollContentBackground(.hidden).background(Backdrop())
-            .navigationTitle("Cambiar clave").navigationBarTitleDisplayMode(.inline)
-            .readableListWidth()
     }
 
     /// «Vence el sábado 21 de noviembre · quedan 18 días»; «Vence hoy»; «Venció el …»; sin fecha, lo de siempre.
@@ -215,5 +211,32 @@ struct DebridAccountView: View {
         let _ = requests.track()
         let active = requests.active.count
         return active == 0 ? nil : Text("\(active) bajando")
+    }
+}
+
+/// «Cambiar clave»: el campo siempre empieza vacío (la clave nunca se muestra completa, ni la que pegaste la vez pasada) y,
+/// en cuanto Real-Debrid acepta la nueva, regresa a tu cuenta, que ya dice «Conectada ✓».
+private struct DebridChangeKeyPage: View {
+    @State private var observer: ModelObserver<DebridModel>
+    @Environment(\.dismiss) private var dismiss
+
+    init(debrid: DebridModel) { _observer = State(wrappedValue: ModelObserver(debrid)) }
+
+    var body: some View {
+        let model = observer.model
+        Form {
+            Section {
+                DebridKeyField(debrid: model)
+                Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
+            } footer: { Text("Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.") }
+            .listRowBackground(DS.surface)
+        }
+        .tint(DS.accent)
+        .scrollContentBackground(.hidden).background(Backdrop())
+        .navigationTitle("Cambiar clave").navigationBarTitleDisplayMode(.inline)
+        .readableListWidth()
+        .onAppear { model.token = "" }
+        .sensoryFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }
+        .onChange(of: model.check) { _, new in if case .ok = new { dismiss() } }
     }
 }
