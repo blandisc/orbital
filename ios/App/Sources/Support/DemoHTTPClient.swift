@@ -100,6 +100,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "api.trakt.tv", Demo.trakt, let found = await traktDemo(request) { return found }
         if let found = await guideDemo(request) { return found }   // la guía de la primera vez (`-demo-first-run`)
         if let found = Self.publicDemo(url) { return found }
+        if Demo.rdSlow, url.host == "api.real-debrid.com", url.path.hasSuffix("/user") { try? await Task.sleep(nanoseconds: 3_000_000_000) }   // ds-exception: demora de red simulada (solo modo demo)
         if let found = Self.realDebridDemo(url) { return found }
         // Tu Torrentio sin Real-Debrid (R4) con `-demo-rd-request`: el torrent que existe (o ninguno, con `none`).
         if url.host == "torrentio.strem.fun", Demo.rdRequest != nil {

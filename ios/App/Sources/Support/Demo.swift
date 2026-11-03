@@ -234,7 +234,7 @@ enum Demo {
         func entry(_ hash: String, _ title: String, _ meta: String, _ video: String, _ season: Int?, _ episode: Int?, _ state: DebridRequest.State,
                    _ percent: Int, ago: TimeInterval, device: String = services.deviceName) -> DebridRequest {
             var r = DebridRequest(hash: String(repeating: hash, count: 40), rdID: "DEMO\(hash)", title: title, kind: season == nil ? "movie" : "series",
-                                  metaID: meta, videoIDs: meta == "tt0386676" ? [video, "tt0386676:1:1"] : [video], season: season, episode: episode, language: "es-419", device: device,
+                                  metaID: meta, videoIDs: meta == "tt0386676" ? [video, "tt0386676:2:6", "tt0386676:1:1"] : [video], season: season, episode: episode, language: "es-419", device: device,
                                   createdAt: now.addingTimeInterval(-ago), rdStatus: state == .ready ? "downloaded" : "downloading", percent: percent,
                                   seeders: state == .noPeers ? 0 : 12, state: state)
             r.progressAt = now.addingTimeInterval(-(wanted == "stalled" ? 26 * 3600 : 60))
@@ -248,9 +248,13 @@ enum Demo {
         case "ready": (.ready, 100)
         default: (.downloading, 42)
         }
-        book.put(entry("a", "The Office", "tt0386676", "tt0386676:2:6", 2, 6, office.0, office.1, ago: wanted == "stalled" ? 27 * 3600 : 360))
+        // T2 E5 es donde vas en la biblioteca de mentira (la ficha y «Seguir viendo»); el pedido trae también T2 E6 (la tarjeta del
+        // siguiente episodio). Antes era solo T2 E6 y la ficha decía «Pedirlo y avisarme» en lugar de «Bajando… 42 %».
+        book.put(entry("a", "The Office", "tt0386676", "tt0386676:2:5", 2, 5, office.0, office.1, ago: wanted == "stalled" ? 27 * 3600 : 360))
         if wanted == "all" {
-            book.put(entry("b", "Nocturne", "tt1160419", "tt1160419", nil, nil, .queued, 0, ago: 1200, device: "TV"))
+            var tv = entry("b", "Nocturne", "tt1160419", "tt1160419", nil, nil, .queued, 0, ago: 1200, device: "TV")
+            tv.account = "999"   // la TV con otra cuenta de Real-Debrid: se enseña, pero solo se abre su ficha (P2-B)
+            book.put(tv)
             book.put(entry("c", "Severance", "tt11280740", "tt11280740:1:3", 1, 3, .noPeers, 3, ago: 90_000))
             book.put(entry("d", "Dune: Parte dos", "tt15239678", "tt15239678", nil, nil, .refused, 0, ago: 4000))
             book.put(entry("e", "Andor", "tt9253284", "tt9253284:2:7", 2, 7, .tooMany, 0, ago: 300))
@@ -258,6 +262,16 @@ enum Demo {
         }
         services.debridRequests.reloadForDemo()
     }
+
+    /// `-demo-rd revoked`: tu cuenta se confirmó ayer (Premium) y hoy Real-Debrid ya no acepta la clave (la cambiaste en
+    /// real-debrid.com), para ver «Vuelve a conectar Real-Debrid» (P6-A). `-demo-rd-slow`: Real-Debrid tarda 3 s en contestar,
+    /// para ver la página mientras revisa tu clave.
+    @MainActor static func seedDebrid(_ services: Services) {
+        guard realDebrid == "revoked" else { return }
+        services.debrid.rememberForDemo(DebridStatus(service: "Real-Debrid", username: "demo", isPremium: true, expires: Date().addingTimeInterval(18 * 86_400),
+                                                     checkedAt: Date(), userID: "1"))
+    }
+    static var rdSlow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-rd-slow") }
 
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
     /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free, invalid, unreachable

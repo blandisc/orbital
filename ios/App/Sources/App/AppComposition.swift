@@ -31,6 +31,7 @@ enum AppComposition {
                                     detailsMemo: Demo.persist ? TmdbDetailsMemo(file: AppFiles.swrCache.appendingPathComponent("demo/tmdb-details.json")) : nil)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
             Demo.seedRequests(services)   // `-demo-rd-request`: tus pedidos a Real-Debrid de mentira
+            Demo.seedDebrid(services)     // `-demo-rd revoked`: una cuenta confirmada ayer cuya clave ya no sirve
             Demo.seedAddons(services)     // `-demo-addons`, `-demo-torrentio`: Complementos y Torrentio de mentira
             services.isOnline = { !Demo.offline }
             return services
