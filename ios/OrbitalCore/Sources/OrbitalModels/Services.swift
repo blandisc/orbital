@@ -407,8 +407,17 @@ public final class Services: ObservableModel {
             account = try await stremio.addonCollection(authKey: auth)["addons"]?.array ?? []
         }
         let added = addonList.importOnce(StremioImport.addons(account: account, own: own), again: again)
+        await adoptDebridKeyFromImport()
         await resetAccountCaches()
         return added
+    }
+
+    /// Sin clave de Real-Debrid en la app, la de tu Torrentio importado (B-P1-2): así hay estado de tu cuenta, avisos de
+    /// vencimiento y «venció» en vez de un fallo sin explicación.
+    public func adoptDebridKeyFromImport() async {
+        guard !debrid.hasToken else { return }
+        let urls = addonList.installed.filter { !$0.isBuiltIn }.compactMap { addonList.resolvedURL($0) }
+        if await debrid.adoptKey(fromAddonURLs: urls) { await resetAccountCaches() }
     }
 
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.

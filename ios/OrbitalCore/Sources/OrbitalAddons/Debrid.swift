@@ -35,12 +35,26 @@ public struct DebridStatus: Codable, Equatable, Sendable {
     }
     public static let soonDays = 14
 
+    /// Vence a una hora, no a un día: el 21 a las 23:00, si venció a las 15:00, ya venció (antes decía «sin Premium» todo
+    /// ese día, porque los días de calendario daban 0 y Real-Debrid ya decía «free»).
     public func state(now: Date, calendar: Calendar = .current) -> State {
-        guard let days = daysLeft(now: now, calendar: calendar) else { return isPremium ? .active(daysLeft: .max) : .free }
-        if days < 0 { return .expired(daysAgo: -days) }
+        guard let expires, let days = daysLeft(now: now, calendar: calendar) else { return isPremium ? .active(daysLeft: .max) : .free }
+        if expires <= now { return .expired(daysAgo: max(0, -days)) }
         guard isPremium else { return .free }
         return days <= Self.soonDays ? .expiringSoon(daysLeft: days) : .active(daysLeft: days)
     }
+}
+
+/// Qué se sabe ahora de tu cuenta, sin quedarse con lo guardado (cuando algo falló al reproducir).
+public enum DebridHealth: Equatable, Sendable {
+    /// No hay clave en la app.
+    case noKey
+    /// Real-Debrid contestó: este es su estado.
+    case status(DebridStatus)
+    /// Real-Debrid ya no reconoce tu clave: «Vuelve a conectar Real-Debrid».
+    case invalidToken
+    /// No contestó; lo último que se sabía (si hay).
+    case unreachable(DebridStatus?)
 }
 
 public enum DebridError: Error, Equatable, Sendable, CustomStringConvertible {
@@ -149,6 +163,57 @@ public actor DebridAccount {
         return fresh
     }
 
+    /// Algo falló al reproducir (Torrentio mandó su «RD error» o su video de «sin acceso»): lo guardado puede tener hasta un
+    /// día y decir «Premium» el día que vence. Se le pregunta ya, a lo más una vez cada `troubleEvery` (varios intentos
+    /// seguidos no son varias consultas).
+    public func refreshAfterTrouble() async -> DebridHealth {
+        guard let token = vault.secret(AddonKeys.realDebridToken), !token.isEmpty else { return .noKey }
+        if let last = lastTrouble, clock().timeIntervalSince(last.at) < Self.troubleEvery { return last.health }
+        let health: DebridHealth
+        do {
+            let fresh = try await provider.status(token: token)
+            remember(fresh)
+            health = .status(fresh)
+        } catch DebridError.invalidToken {
+            health = .invalidToken
+        } catch {
+            health = .unreachable(saved)
+        }
+        lastTrouble = (clock(), health)
+        return health
+    }
+    public static let troubleEvery: TimeInterval = 5 * 60
+    private var lastTrouble: (at: Date, health: DebridHealth)?
+
+    /// Si no tienes clave en la app pero tu Torrentio importado de Stremio la trae en su URL (`realdebrid=…`), se toma de
+    /// ahí (como la TV, AD-2): se comprueba con Real-Debrid, se guarda en el llavero y se anota de dónde salió. Devuelve
+    /// true si la tomó.
+    @discardableResult
+    public func adoptKey(fromAddonURLs urls: [String]) async -> Bool {
+        guard !hasToken, keySource != Self.removedByYou else { return false }
+        let candidates = urls.flatMap(Self.realDebridKeys(in:))
+        for key in Array(Set(candidates)).sorted() where RealDebrid.looksLikeToken(key) {
+            guard let status = try? await provider.status(token: key) else { continue }
+            vault.setSecret(AddonKeys.realDebridToken, key)
+            vault.setData(AddonKeys.debridKeySource, Data(Self.fromImportedTorrentio.utf8))
+            remember(status)
+            return true
+        }
+        return false
+    }
+    public static let fromImportedTorrentio = "imported-torrentio"
+    static let removedByYou = "removed"
+
+    /// De dónde salió la clave guardada: `fromImportedTorrentio` si se tomó de tu Torrentio importado; nil si la pegaste.
+    public nonisolated var keyCameFromImport: Bool { hasToken && keySource == Self.fromImportedTorrentio }
+    nonisolated var keySource: String? { vault.data(AddonKeys.debridKeySource).flatMap { String(data: $0, encoding: .utf8) } }
+
+    /// Las claves de Real-Debrid que trae la URL de un complemento con la forma de Torrentio (`…|realdebrid=CLAVE|…`).
+    static func realDebridKeys(in url: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: "(?i)realdebrid=([A-Za-z0-9]+)") else { return [] }
+        return regex.matches(in: url, range: NSRange(url.startIndex..., in: url)).compactMap { Range($0.range(at: 1), in: url).map { String(url[$0]) } }
+    }
+
     /// Comprueba una clave sin guardarla (la guía y «Cambiar clave»): el estado, o por qué no sirve.
     public func verify(_ token: String) async throws -> DebridStatus {
         try await provider.status(token: token.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -157,6 +222,8 @@ public actor DebridAccount {
     /// Guarda una clave ya comprobada (y su estado). Los recomendados se rearman solos con ella.
     public func save(token: String, status: DebridStatus) {
         vault.setSecret(AddonKeys.realDebridToken, token.trimmingCharacters(in: .whitespacesAndNewlines))
+        vault.setData(AddonKeys.debridKeySource, nil)   // la pegaste tú
+        lastTrouble = nil
         remember(status)
     }
 
@@ -165,6 +232,9 @@ public actor DebridAccount {
         vault.setSecret(AddonKeys.realDebridToken, nil)
         vault.setData(AddonKeys.debridStatus, nil)
         vault.setData(AddonKeys.reminders, nil)
+        // La quitaste tú: no se vuelve a tomar sola de tu Torrentio importado.
+        vault.setData(AddonKeys.debridKeySource, Data(Self.removedByYou.utf8))
+        lastTrouble = nil
     }
 
     private func remember(_ status: DebridStatus) { vault.setData(AddonKeys.debridStatus, try? Self.encoder.encode(status)) }

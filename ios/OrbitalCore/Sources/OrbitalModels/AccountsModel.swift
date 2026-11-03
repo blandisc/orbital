@@ -26,6 +26,8 @@ public final class DebridModel: ObservableModel {
     }
 
     public var hasToken: Bool { services.debrid.hasToken }
+    /// La clave se tomó de tu Torrentio importado de Stremio (no la pegaste): se dice en Ajustes.
+    public var keyCameFromImport: Bool { services.debrid.keyCameFromImport }
     public var tokenURL: URL { services.debrid.provider.tokenURL }
     public var renewURL: URL { services.debrid.provider.renewURL }
     /// «Continuar» de la guía: la clave guardada sirve (Premium).

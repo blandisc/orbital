@@ -12,6 +12,7 @@ enum DebridReminderNotifier {
 
     /// Al abrir la app: el estado de tu cuenta (el de hoy o uno nuevo) y los avisos que falten.
     @MainActor static func refresh(_ services: Services) async {
+        await services.adoptDebridKeyFromImport()   // tu clave, si solo vive en tu Torrentio importado
         guard services.debrid.hasToken, let status = await services.debrid.status() else { return }
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }

@@ -56,6 +56,9 @@ extension SettingsView {
                 } label: {
                     Text(verbatim: status.isPremium ? "\(status.username) · Premium" : status.username).foregroundStyle(DS.text)
                 }
+                if model.keyCameFromImport {
+                    Text("Tomé tu clave de Real-Debrid de tu Torrentio").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+                }
                 Link(destination: model.renewURL) { Label("Renovar", systemImage: "arrow.up.right") }
                 NavigationLink { page("Cambiar clave") { Section { DebridKeyField(debrid: model) }.listRowBackground(DS.surface) } } label: {
                     Text("Cambiar clave")

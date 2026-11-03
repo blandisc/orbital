@@ -104,7 +104,7 @@ enum DebridWords {
             if days == .max { return Text(verbatim: "Premium") }
             if let date { return Text("Te quedan \(String(days)) días · vence el \(date)") }
             return Text("Te quedan \(String(days)) días")
-        case .expired: return Text("Venció hace \(String(days)) días")
+        case .expired: return days == 0 ? Text("Venció hoy") : Text("Venció hace \(String(days)) días")
         case .free: return Text("Cuenta gratuita")
         }
     }

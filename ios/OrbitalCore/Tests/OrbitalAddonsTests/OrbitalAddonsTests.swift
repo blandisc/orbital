@@ -230,6 +230,75 @@ final class RealDebridTests: XCTestCase {
         XCTAssertNil(account.saved)
     }
 
+    /// B-P1-1: el día que vence (21 nov, a las 15:00 UTC) a las 9:00 aún vence hoy; a las 23:00 ya venció, aunque
+    /// Real-Debrid ya diga «free» (antes: «sin Premium» todo el día).
+    func testTheExpiryDayIsExpiredOnceTheHourPasses() {
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(identifier: "UTC")!
+        let expires = calendar.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 15))!
+        let morning = calendar.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 9))!
+        let night = calendar.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 23))!
+        let premium = DebridStatus(service: "Real-Debrid", username: "x", isPremium: true, expires: expires, checkedAt: morning)
+        XCTAssertEqual(premium.state(now: morning, calendar: calendar), .expiringSoon(daysLeft: 0))
+        XCTAssertEqual(premium.state(now: night, calendar: calendar), .expired(daysAgo: 0), "lo guardado en la mañana ya venció en la noche")
+        var free = premium; free.isPremium = false
+        XCTAssertEqual(free.state(now: night, calendar: calendar), .expired(daysAgo: 0), "«free» con fecha pasada es «venció», no «sin Premium»")
+        XCTAssertEqual(free.state(now: calendar.date(byAdding: .day, value: 2, to: night)!, calendar: calendar), .expired(daysAgo: 2))
+    }
+
+    /// B-P1-1: cuando falla al reproducir se le pregunta ya a Real-Debrid (no lo guardado de hace horas), una vez cada 5 min.
+    func testTroubleAsksRealDebridRightAwayOncePerWindow() async {
+        let vault = InMemoryAddonVault(), calls = Counter(), clock = MutableClock(now)
+        let body = BodyBox(#"{"username":"fernando","type":"premium","premium":864000}"#)
+        let rd = RealDebrid(fetch: { _ in calls.add(); return (body.status, Data(body.text.utf8)) }, clock: { clock.now })
+        let account = DebridAccount(provider: rd, vault: vault, clock: { clock.now })
+        let noKey = await account.refreshAfterTrouble()
+        XCTAssertEqual(noKey, .noKey)
+        await account.save(token: token, status: DebridStatus(service: "Real-Debrid", username: "fernando", isPremium: true, expires: nil, checkedAt: now))
+        body.text = #"{"username":"fernando","type":"free","premium":0,"expiration":"2026-10-26T00:00:00.000Z"}"#
+        let first = await account.refreshAfterTrouble()
+        guard case .status(let fresh) = first else { return XCTFail("\(first)") }
+        var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(identifier: "UTC")!
+        XCTAssertEqual(fresh.state(now: now, calendar: utc), .expired(daysAgo: 0))
+        XCTAssertEqual(account.saved?.isPremium, false, "lo guardado se pone al día")
+        _ = await account.refreshAfterTrouble()
+        XCTAssertEqual(calls.value, 1, "dentro de 5 min: la misma respuesta")
+        clock.now = now.addingTimeInterval(DebridAccount.troubleEvery + 1)
+        body.status = 401
+        let invalid = await account.refreshAfterTrouble()
+        XCTAssertEqual(invalid, .invalidToken, "«Vuelve a conectar Real-Debrid»")
+    }
+
+    /// B-P1-2: sin clave en la app, se toma la de tu Torrentio importado (comprobada), se anota de dónde salió y, si la
+    /// quitas, no vuelve sola.
+    func testTheKeyIsTakenFromTheImportedTorrentio() async {
+        let vault = InMemoryAddonVault(), seen = RequestBox()
+        let rd = RealDebrid(fetch: { request in seen.request = request; return (200, Data(#"{"username":"fernando","type":"premium","premium":864000}"#.utf8)) }, clock: { [now] in now })
+        let account = DebridAccount(provider: rd, vault: vault, clock: { [now] in now })
+        let urls = ["https://listas.example/manifest.json", "https://torrentio.strem.fun/sort=seeders|qualityfilter=brremux,cam,scr|realdebrid=\(token)/manifest.json"]
+        let took = await account.adoptKey(fromAddonURLs: urls)
+        XCTAssertTrue(took)
+        XCTAssertEqual(vault.secret(AddonKeys.realDebridToken), token)
+        XCTAssertEqual(seen.request?.value(forHTTPHeaderField: "Authorization"), "Bearer \(token)", "se comprobó antes de guardarla")
+        XCTAssertTrue(account.keyCameFromImport)
+        XCTAssertNotNil(account.saved)
+        let again = await account.adoptKey(fromAddonURLs: urls)
+        XCTAssertFalse(again, "ya hay clave")
+        await account.remove()
+        let afterRemoving = await account.adoptKey(fromAddonURLs: urls)
+        XCTAssertFalse(afterRemoving, "la quitaste tú: no vuelve sola")
+        await account.save(token: token, status: DebridStatus(service: "Real-Debrid", username: "x", isPremium: true, expires: nil, checkedAt: now))
+        XCTAssertFalse(account.keyCameFromImport, "pegada por ti")
+    }
+
+    func testABadKeyInsideTheImportedTorrentioIsNotSaved() async {
+        let vault = InMemoryAddonVault()
+        let rd = RealDebrid(fetch: { _ in (401, Data()) }, clock: { [now] in now })
+        let account = DebridAccount(provider: rd, vault: vault, clock: { [now] in now })
+        let took = await account.adoptKey(fromAddonURLs: ["https://torrentio.strem.fun/realdebrid=\(token)/manifest.json"])
+        XCTAssertFalse(took)
+        XCTAssertNil(vault.secret(AddonKeys.realDebridToken))
+    }
+
     func testRemindersAreScheduledOnceAt14And3DaysAndOnTheDay() {
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(identifier: "UTC")!
         let expires = calendar.date(from: DateComponents(year: 2026, month: 11, day: 20, hour: 15))!
@@ -259,4 +328,10 @@ final class MutableClock: @unchecked Sendable {
     private let lock = NSLock(); private var _now: Date
     init(_ now: Date) { _now = now }
     var now: Date { get { lock.withLock { _now } } set { lock.withLock { _now = newValue } } }
+}
+final class BodyBox: @unchecked Sendable {
+    private let lock = NSLock(); private var _text: String; private var _status = 200
+    init(_ text: String) { _text = text }
+    var text: String { get { lock.withLock { _text } } set { lock.withLock { _text = newValue } } }
+    var status: Int { get { lock.withLock { _status } } set { lock.withLock { _status = newValue } } }
 }

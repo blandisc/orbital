@@ -23,6 +23,8 @@ public enum AddonKeys {
     static let installedUnreadable = "addons-installed.unreadable"
     static let importedFromStremio = "addons-imported-from-stremio"
     static let debridStatus = "debrid-status"
+    /// De dónde salió tu clave de Real-Debrid (si se tomó de tu Torrentio importado).
+    static let debridKeySource = "debrid-key-source"
     static let reminders = "debrid-reminders"
 }
 
