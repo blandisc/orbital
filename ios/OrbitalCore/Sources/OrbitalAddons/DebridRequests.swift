@@ -3,7 +3,8 @@ import Foundation
 /// Un pedido a Real-Debrid (R12): qué torrent, para qué título y episodio, en qué idioma, desde qué aparato y cómo va. Real-
 /// Debrid solo sabe el nombre del archivo; lo demás lo sabe esta libreta.
 ///
-/// Su forma es la que acordó la TV (A6/A7 de la revisión adversarial, `orbital/rd_requests.py`): una entrada por torrent
+/// Su forma es la acordada con la TV (A6/A7 de la revisión adversarial; `orbital/rd_requests.py` la adopta en el corte S2
+/// de la TV, hasta entonces guarda por video y con tres estados): una entrada por torrent
 /// (la clave es su huella), con `video_ids`, `meta_id`, `title`, `episode`, `by` (el aparato), `hash`, `rd_id`, `rd_status`,
 /// `percent`, `seeders`, `since` y los seis estados de R13. Así S2/S4 la pueden juntar con la de la TV sin traducirla
 /// (`GET/POST /api/realdebrid/requests`, ver `DebridRequestSync`). Se lee con tolerancia: lo que falta toma su valor de siempre.
