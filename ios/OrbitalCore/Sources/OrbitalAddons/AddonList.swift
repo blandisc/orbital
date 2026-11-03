@@ -160,7 +160,11 @@ public final class AddonList: @unchecked Sendable {
     }
 
     /// Las claves que hay que tapar en lo que se muestra o se anota (tu Real-Debrid).
-    public func secretsToRedact() -> [String] { [vault.secret(AddonKeys.realDebridToken)].compactMap { $0 } }
+    /// También las que vienen dentro de un complemento importado o pegado (su Torrentio de Stremio lleva la clave en la URL).
+    public func secretsToRedact() -> [String] {
+        let imported = installed.filter { !$0.isBuiltIn }.compactMap { vault.secret(AddonKeys.addonURL($0.id)) }.flatMap(AddonSecrets.keys(in:))
+        return Array(Set([vault.secret(AddonKeys.realDebridToken)].compactMap { $0 } + imported)).sorted()
+    }
 }
 
 /// Cómo se guarda la lista: `{"version": 2, "items": [...], "unreadable": [...]}`. Antes era el arreglo solo.

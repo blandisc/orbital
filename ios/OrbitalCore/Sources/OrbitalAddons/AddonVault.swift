@@ -42,14 +42,47 @@ public enum AddonRedaction {
     public static let mask = "•••"
     public static func redact(_ text: String, secrets: [String]) -> String {
         let secrets = secrets.filter { $0.count >= 6 }
-        let plain = secrets.reduce(text) { $0.replacingOccurrences(of: $1, with: mask) }
+        var plain = secrets.reduce(text) { $0.replacingOccurrences(of: $1, with: mask) }
+        // La clave de un servicio de descarga dentro de una URL se tapa aunque no se sepa cuál es (una importada de Stremio).
+        plain = AddonSecrets.keyPattern.stringByReplacingMatches(in: plain, range: NSRange(plain.startIndex..., in: plain), withTemplate: "$1=\(mask)")
         // Comet guarda la clave dentro de un tramo en base64 de la URL: ese tramo también se tapa.
         var out = plain
         for segment in plain.split(separator: "/") where segment.count >= 16 && segment.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "=" }) {
             guard let data = Data(base64Encoded: String(segment)), let decoded = String(data: data, encoding: .utf8),
-                  secrets.contains(where: decoded.contains) else { continue }
+                  secrets.contains(where: decoded.contains) || !AddonSecrets.keys(inJSON: decoded).isEmpty else { continue }
             out = out.replacingOccurrences(of: String(segment), with: mask)
         }
         return out
+    }
+}
+
+/// Las claves que puede llevar la URL de un complemento (D2): para taparlas y para no escribirlas en disco.
+public enum AddonSecrets {
+    static let services = "realdebrid|alldebrid|premiumize|debridlink|offcloud|putio|torbox|easydebrid"
+    /// `realdebrid=CLAVE` (Torrentio y los que copian su forma), hasta el siguiente «|», «/», «&», «?» o comillas.
+    static let keyPattern = try! NSRegularExpression(pattern: "(?i)\\b(\(services))=([^|/&?#\\s\"'<>,;]+)")
+
+    /// Las claves que trae una URL: las de la forma de Torrentio y las de una configuración en base64 (Comet).
+    public static func keys(in url: String) -> [String] {
+        var found = keyPattern.matches(in: url, range: NSRange(url.startIndex..., in: url)).compactMap { Range($0.range(at: 2), in: url).map { String(url[$0]) } }
+        for segment in url.split(separator: "/") where segment.count >= 16 {
+            guard let data = Data(base64Encoded: String(segment)), let decoded = String(data: data, encoding: .utf8) else { continue }
+            found += keys(inJSON: decoded)
+        }
+        return found.filter { $0.count >= 6 && $0 != AddonRedaction.mask }
+    }
+
+    /// `"apiKey": "…"` y parecidos dentro de un JSON.
+    static func keys(inJSON text: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: #"(?i)"(apiKey|debridApiKey|token|key)"\s*:\s*"([^"]{6,})""#) else { return [] }
+        return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { Range($0.range(at: 2), in: text).map { String(text[$0]) } }
+    }
+
+    /// Una URL que puede llevar una clave: no se escribe tal cual en un archivo (solo en el llavero).
+    public static func mayCarrySecret(_ url: String) -> Bool {
+        if !keys(in: url).isEmpty || InstalledAddon.mentionsDebrid(url) { return true }
+        if url.contains("?") { return true }
+        let parts: [Substring] = url.split(separator: "/")
+        return parts.dropFirst(2).contains { (part: Substring) in part.count >= 24 }
     }
 }

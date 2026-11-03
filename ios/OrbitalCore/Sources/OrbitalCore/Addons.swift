@@ -157,21 +157,53 @@ public actor AddonRegistry {
         } catch { return ([], true, error) }
     }
 
-    /// Un archivo por cuenta y lista propia (el nombre es un hash: la clave de la sesión no queda escrita).
+    /// Un archivo por cuenta y lista propia (el nombre es un hash: la clave de la sesión no queda escrita). `v2`: desde que
+    /// las URLs con clave ya no se escriben adentro (D2).
     private func diskFile(_ key: [String]) -> URL? {
-        disk?.appendingPathComponent("addons-" + SHA1.hex(Array(key.joined(separator: "\n").utf8)) + ".json")
+        disk?.appendingPathComponent(Self.diskPrefix + SHA1.hex(Array(key.joined(separator: "\n").utf8)) + ".json")
+    }
+    static let diskPrefix = "addons-v2-"
+    private var purgedOldFiles = false
+
+    /// Los archivos de antes guardaban la URL de cada complemento tal cual, con tu clave de Real-Debrid: se borran una vez.
+    private func purgeOldFiles() {
+        guard !purgedOldFiles, let disk else { return }
+        purgedOldFiles = true
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: disk.path)) ?? []
+        for name in names where name.hasPrefix("addons-") && !name.hasPrefix(Self.diskPrefix) {
+            try? FileManager.default.removeItem(at: disk.appendingPathComponent(name))
+        }
     }
 
+    /// Una URL que puede llevar una clave no se escribe: va su huella, y al leer se recupera de la lista (que vive en el
+    /// llavero). Si alguna no se puede recuperar (la de una cuenta de Stremio), no se usa el archivo: se pide de nuevo.
     private func readDisk(_ key: [String]) -> [Addon]? {
+        purgeOldFiles()
         guard let file = diskFile(key), let data = try? Data(contentsOf: file), let entries = JSON.parse(data)?.array else { return nil }
-        let found = entries.compactMap { Addons.parseManifest($0["manifest"], url: $0["transportUrl"]?.string) }
+        let known = Dictionary(key.dropFirst().map { (SHA1.hex(Array($0.utf8)), $0) }, uniquingKeysWith: { a, _ in a })
+        var found: [Addon] = []
+        for entry in entries {
+            let url = entry["transportUrl"]?.string ?? entry["urlRef"]?.string.flatMap { known[$0] }
+            guard let url else { return nil }
+            if let addon = Addons.parseManifest(entry["manifest"], url: url) { found.append(addon) }
+        }
         return found.isEmpty ? nil : found
     }
 
     private func writeDisk(_ key: [String], _ entries: [JSON]) {
+        purgeOldFiles()
         guard let disk, let file = diskFile(key) else { return }
+        let safe: [JSON] = entries.map { entry in
+            guard let url = entry["transportUrl"]?.string, AddonSecrets.mayCarrySecret(url) else { return entry }
+            // Por si el manifiesto repite la clave (en su descripción o en sus `behaviorHints`), también se tapa ahí.
+            var manifest = entry["manifest"] ?? .null
+            let keys = AddonSecrets.keys(in: url)
+            if !keys.isEmpty, let text = try? String(data: manifest.serialized(), encoding: .utf8), keys.contains(where: text.contains),
+               let clean = JSON.parse(Data(AddonRedaction.redact(text, secrets: keys).utf8)) { manifest = clean }
+            return .object(["manifest": manifest, "urlRef": .string(SHA1.hex(Array(url.utf8)))])
+        }
         try? FileManager.default.createDirectory(at: disk, withIntermediateDirectories: true)
-        try? JSON.array(entries).serialized().write(to: file, options: .atomic)
+        try? JSON.array(safe).serialized().write(to: file, options: .atomic)
     }
 
     public func serving(_ resource: String, kind: String, itemID: String? = nil) async throws -> [Addon] {

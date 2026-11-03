@@ -144,7 +144,9 @@ public final class AddonsModel: ObservableModel {
     public func importAgain() async {
         working = true
         defer { working = false }
-        do { _ = try await services.importAddonsFromStremio(again: true); error = nil } catch { self.error = "\(error)" }
+        // El error puede traer la URL de un complemento con su clave (D2): nunca se enseña.
+        do { _ = try await services.importAddonsFromStremio(again: true); error = nil }
+        catch { self.error = AddonRedaction.redact(stripURLs("\(error)"), secrets: services.addonList.secretsToRedact()) }
         reload()
     }
 

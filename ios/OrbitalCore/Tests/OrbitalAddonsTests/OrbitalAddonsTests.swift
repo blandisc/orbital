@@ -38,6 +38,20 @@ final class AddonListTests: XCTestCase {
         XCTAssertEqual(AddonCatalog.recommended.map(\.id), ["torrentio", "comet", "opensubtitles"])
     }
 
+    /// D2: la clave de un Torrentio importado (no la tuya del llavero) también se tapa en los errores.
+    func testTheKeyInsideAnImportedAddonIsHiddenToo() {
+        let vault = InMemoryAddonVault()
+        let list = AddonList(vault: vault)
+        let imported = "ZZ88YY77XX66WW55VV44UU33TT22SS11RR00QQ99PP88OO77NN66"
+        list.importOnce([AddonList.Imported(name: "Torrentio", url: "https://torrentio.strem.fun/sort=seeders|realdebrid=\(imported)/manifest.json", resources: ["stream"])])
+        XCTAssertEqual(list.secretsToRedact(), [imported])
+        let message = "No contestó https://torrentio.strem.fun/sort=seeders|realdebrid=\(imported)/stream/movie/tt1.json"
+        XCTAssertFalse(AddonRedaction.redact(message, secrets: list.secretsToRedact()).contains(imported))
+        XCTAssertFalse(AddonRedaction.redact(message, secrets: []).contains(imported), "aunque no se sepa cuál es")
+        XCTAssertTrue(AddonSecrets.mayCarrySecret("https://torrentio.strem.fun/realdebrid=\(imported)/manifest.json"))
+        XCTAssertFalse(AddonSecrets.mayCarrySecret("https://opensubtitles-v3.strem.io/manifest.json"))
+    }
+
     func testOrderAndOffAreRespected() {
         let vault = InMemoryAddonVault()
         vault.setSecret(AddonKeys.realDebridToken, token)

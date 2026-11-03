@@ -78,6 +78,34 @@ final class AddonsTests: XCTestCase {
         XCTAssertEqual(http.calls.filter { $0 == url }.count, 2, "revalidando en segundo plano")
     }
 
+    /// D2: el archivo de la lista guardada no lleva tu clave de Real-Debrid (ni en el nombre ni adentro), y los de antes se borran.
+    func testTheSavedListDoesNotKeepYourKeyOnDisk() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let old = dir.appendingPathComponent("addons-0123abcd.json")
+        try Data(#"[{"transportUrl":"https://torrentio.strem.fun/realdebrid=VIEJACLAVE1234/manifest.json"}]"#.utf8).write(to: old)
+        let key = String(repeating: "K9", count: 26)
+        let keyed = "https://torrentio.strem.fun/realdebrid=\(key)/manifest.json", plain = "https://subs.example/manifest.json"
+        let http = FakeHTTP()
+        http.json[keyed] = ["name": "Torrentio", "resources": ["stream"], "description": .string("Con realdebrid=\(key)")]
+        http.json[plain] = ["name": "Subs", "resources": ["subtitles"]]
+        let registry = AddonRegistry(http: http, account: nil, own: { [keyed, plain] }, disk: dir)
+        _ = try await registry.addons()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: old.path), "el archivo de antes (con la clave) se borra")
+        let files = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+        XCTAssertEqual(files.count, 1)
+        XCTAssertFalse(files[0].contains(key))
+        let text = try String(contentsOf: dir.appendingPathComponent(files[0]), encoding: .utf8)
+        XCTAssertFalse(text.contains(key), "ni la URL ni el manifiesto llevan la clave")
+        XCTAssertTrue(text.contains(plain), "una URL sin clave se guarda tal cual")
+        // Al abrir otra vez: la URL con clave se recupera de la lista, no del archivo.
+        http.fail = true
+        let reopened = AddonRegistry(http: http, account: nil, own: { [keyed, plain] }, disk: dir)
+        let saved = try await reopened.addons()
+        XCTAssertEqual(saved.map(\.url), [keyed, plain])
+    }
+
     func testRepeatedReadsShareAndRecentItemIsReused() async throws {
         let http = FakeHTTP(), url = "https://api.strem.io/api/datastoreGet"
         http.json[url] = ["result": [["_id": "tt1", "name": "Uno", "state": [:]]]]
