@@ -131,9 +131,11 @@ final class AppEnvironment {
     var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
     static let downloadsTab = 3
 
-    /// Las imágenes de tu Orbital (logos de canales, arte de juegos) se piden con su token.
+    /// Las imágenes de tu Orbital (logos de canales, arte de juegos) se piden con la llave de este aparato (K1) o, sin ella,
+    /// con el token del túnel: tras el primer emparejado v2 el token ya no abre `/api/art` ni `/api/tv/logo` (K1-13).
     private func shareConsoleWithImages() {
-        ImagePipeline.shared.setConsole(services.orbital.base, token: services.secrets.get(SecretKey.orbitalToken))
+        let key = services.secrets.get(SecretKey.orbitalDeviceKey).flatMap { OrbitalDeviceKey.isValid($0) ? $0 : nil }
+        ImagePipeline.shared.setConsole(services.orbital.base, token: key ?? services.secrets.get(SecretKey.orbitalToken))
     }
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
