@@ -109,6 +109,7 @@ class RemoteInput:
             live.fails += 1
             if live.fails >= MAX_FAILS:
                 self._pending = None
+                self._publish({"type": "remote-input", "code": live.code, "expired": True})  # la TV enseña uno nuevo
             return None
 
     def words(self, code: str) -> str | None:
@@ -130,7 +131,8 @@ class RemoteInput:
             p.fails += 1
             if p.fails >= MAX_FAILS:
                 self._pending = None
-                return f"{why}. Fueron muchos intentos: vuelve a abrir el formulario en la tele."
+                self._publish({"type": "remote-input", "code": code, "expired": True})  # la TV enseña uno nuevo
+                return f"{why}. Fueron muchos intentos: escanea el código nuevo de la tele."
             return f"{why}. Revísala e inténtalo otra vez."
 
     def _alive(self, code: str) -> Pending | None:

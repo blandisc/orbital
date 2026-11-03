@@ -327,3 +327,25 @@ def test_the_quick_code_opens_the_same_page_without_scanning(apps, monkeypatch):
     assert public.get("/clave/AAAAAA").status_code == 404
     assert public.get(f"/clave/{res['short']}").status_code == 404  # el quinto lo acabó
     assert public.get(f"/escribir/{res['code']}").status_code == 404
+
+
+def test_a_dead_code_is_replaced_on_the_tv_and_a_lowercase_key_still_works(apps, monkeypatch):
+    """Auditoría (3 nov): tras 5 fallos la TV enseña otro código sola; una clave escrita en minúsculas con el teclado de la
+    TV se prueba también en mayúsculas (así son las de Real-Debrid)."""
+    local, public, main = apps
+    tunnel(monkeypatch)
+    published = []
+    main.state.catalog.events.subscribe(published.append)
+    code = local.post("/api/remote-input", json={"purpose": "realdebrid"}).json()["code"]
+    for _ in range(5):
+        public.get("/clave/AAAAAA")
+    assert {"type": "remote-input", "code": code, "expired": True} in published
+
+    class Upper(User):
+        def user(self):
+            if self.token != self.token.upper():
+                raise realdebrid.RealDebridError("mala", 401, 8)
+            return super().user()
+
+    monkeypatch.setattr(realdebrid, "RealDebrid", Upper)
+    assert local.post("/api/realdebrid/key", json={"token": KEY.lower()}).status_code == 200

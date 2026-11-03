@@ -75,7 +75,7 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       if (command.yes) {
         applySettings({ ...state.settings, paired_devices: res.devices || [] });
         sound.play("select");
-        ui.toast.show(`${command.name} ya tiene su llave`, { tone: "success" });
+        ui.toast.show(`${command.name} ya tiene su propia conexión`, { tone: "success" });
       } else {
         sound.play("back");
       }

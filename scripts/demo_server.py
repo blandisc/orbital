@@ -215,8 +215,10 @@ def no_side_effects() -> None:
     music.command = lambda action: False
     memory.close = lambda exe, protect_pids=None: 0
     # Los QR (iPhone, escribir desde el celular) no llevan la dirección real del túnel: apuntarían a tu Orbital de verdad.
-    companion.pair_info = lambda config, tailscale_url=None: {"ready": True, "host": "demo.orbital.invalid",
-                                                              "link": companion.pair_link("https://demo.orbital.invalid", "demo")}
+    companion.tunnel_info = lambda config, tailscale_url=None, funnel_on=None: {
+        "ready": True, "host": "demo.orbital.invalid", "url": "https://demo.orbital.invalid"}
+    companion.pair_info = lambda config, tailscale_url=None, code=None, funnel_on=None: {
+        "ready": True, "host": "demo.orbital.invalid", "link": companion.pair_link("https://demo.orbital.invalid", code or "demo")}
     # Tampoco enseña los programas de este equipo (salían la app de Claude y lo que tengas abierto): unos de mentiras.
     memory.usage = lambda limit=6, protect_pids=None: [
         memory.AppUsage("steam.exe", "Steam", 1300, [], True, "Las descargas siguen cuando lo vuelvas a abrir"),

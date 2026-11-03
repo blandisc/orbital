@@ -390,11 +390,13 @@ test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» p
   const { phoneRows, deviceMenu, deviceRemoveMenu } = await import("../../orbital/web/js/core/menus.js");
   const now = Date.UTC(2026, 10, 3, 12);
   const s = now / 1000;
-  const rows = phoneRows({ companion_devices: [{ id: "viejo", name: "iPad", kind: "ipad", seen: s }], paired_devices: [
+  const all = phoneRows({ companion_devices: [{ id: "viejo", name: "iPad", kind: "ipad", seen: s }], paired_devices: [
     { device_id: "a1", name: "iPhone de Fernando", platform: "iphone", seen: s - 5, live: s - 5 },
-    { device_id: "b2", name: "", platform: "mac", seen: s - 2 * 3600, live: null },
+    { device_id: "b2", name: "", platform: "ipad", seen: s - 2 * 3600, live: null },
   ] }, now);
-  assert.deepEqual(rows.map((r) => r.label), ["iPhone de Fernando", "Mac", "Conectar otro"]); // los de antes ya no entran
+  assert.deepEqual(all[0], { heading: true, label: "Aparatos conectados" }); // UX-36: el mismo nombre que el iPhone
+  const rows = all.slice(1);
+  assert.deepEqual(rows.map((r) => r.label), ["iPhone de Fernando", "iPad", "Conectar otro"]); // los de antes ya no entran
   assert.equal(rows[0].value, "✓ Conectado");
   assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 h"]); // emparejado: nunca «Conectar»
   assert.deepEqual(rows[0].command, { type: "device-menu", id: "a1" });

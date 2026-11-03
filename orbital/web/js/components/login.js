@@ -213,6 +213,12 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
   /** Llegó lo escrito en el celular (aviso «remote-input»): se recoge una vez, llena los campos y se envía. */
   async function remoteArrived(code, event = {}) {
     if (!code || code !== remoteCode || el.hidden || busy) return;
+    if (event.expired) { // cinco intentos equivocados: otro código (y otras palabras), sin que tengas que salir
+      remoteCode = null;
+      message.textContent = "Hubo muchos intentos con el código: este es uno nuevo.";
+      startRemote();
+      return;
+    }
     if (event.purpose) { // la clave de Real-Debrid: no se recoge aquí; la TV pregunta «¿Usar la cuenta …?»
       remoteCode = null; // que cerrar no anule el código: la respuesta todavía lo usa
       close();

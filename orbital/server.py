@@ -547,7 +547,7 @@ def _remote_input_routes(app: FastAPI, config: Config) -> None:
         return {"ok": True}
 
 
-RD_FORM = ("Conectar Real-Debrid", [{"name": "token", "label": "Clave de Real-Debrid", "secret": True}])
+RD_FORM = ("Conectar Real-Debrid", [{"name": "token", "label": "Tu clave de Real-Debrid", "secret": True}])
 RD_LEAD = "Ábrela en real-debrid.com/apitoken, cópiala y pégala aquí."
 
 
@@ -881,14 +881,14 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         if mine is None:
             raise KeyRequired()
         if mine["platform"] != "iphone":
-            raise HTTPException(403, "Solo tu iPhone invita a otro aparato")
+            raise HTTPException(403, "Solo tu iPhone puede invitar a tu iPad.")
         return JSONResponse(main_app.state.devices.invite(mine["device_id"]), headers={"Cache-Control": "no-store"})
 
     @public.post("/api/devices/upgrade")
     async def companion_device_upgrade(request: Request) -> JSONResponse:
         """CX8-A: un iPhone con el token de antes pide su llave sin volver a escanear; la TV pregunta en pantalla."""
         if device_of(request) is not None:
-            raise HTTPException(409, "Este aparato ya tiene su llave")
+            raise HTTPException(409, "Este aparato ya tiene su propia conexión.")
         try:
             body = await request.json()
         except ValueError:
@@ -926,7 +926,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         out = addons.run_debrid_status(watch)
         if full:
             out["token"] = watch.rd_token()
-            watch.events.publish({"type": "toast", "message": f"Tu {device['name']} tomó la clave de Real-Debrid",
+            watch.events.publish({"type": "toast", "message": f"«{device['name']}» tomó la clave de Real-Debrid",
                                   "detail": "Si no fuiste tú, quítalo en Ajustes › Cuentas"})
         return JSONResponse(out, headers={"Cache-Control": "no-store"})
 

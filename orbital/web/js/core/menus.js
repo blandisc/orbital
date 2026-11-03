@@ -1214,10 +1214,10 @@ export function phoneRows(settings, now = Date.now()) {
       const row = phoneRow(device.seen, now, device.live);
       return { ...row, label: device.name || PLATFORM_NAMES[device.platform] || "iPhone", value: row.ok ? row.value : "",
         hint: device.invited_by && !row.ok ? `Invitado por ${device.invited_by}`
-          : row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia llave" : row.hint,
+          : row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia conexión" : row.hint,
         command: { type: "device-menu", id: device.device_id } };
     });
-    return [...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone, iPad o Mac, con un código QR", command: { type: "phone-link" } }];
+    return [{ heading: true, label: "Aparatos conectados" }, ...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone o iPad, con un código QR", command: { type: "phone-link" } }];
   }
   const known = settings.companion_devices || [];
   if (!known.length) return [phoneRow(settings.companion_seen, now, settings.companion_live)];
@@ -1236,7 +1236,7 @@ export function deviceMenu(device) {
   const name = device.name || PLATFORM_NAMES[device.platform] || "iPhone";
   return {
     title: name,
-    subtitle: "Tiene su propia llave para entrar a esta TV.",
+    subtitle: "Tiene su propia conexión con esta TV.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "minus", label: "Quitar", danger: true, hint: "Para volver, escanea el código de la TV",
@@ -1250,11 +1250,11 @@ export function deviceMenu(device) {
 export function deviceUpgradeMenu(event) {
   const name = event.name || PLATFORM_NAMES[event.platform] || "iPhone";
   return {
-    title: `¿Darle llave a ${name}?`,
+    title: `¿Darle su propia conexión a ${name}?`,
     subtitle: "Lo pide con el código de antes, para no volver a escanear. Si no fuiste tú, elige No.",
     options: [
       { icon: "close", label: "No", command: { type: "device-upgrade", id: event.id, yes: false } },
-      { icon: "check", label: "Dar llave", command: { type: "device-upgrade", id: event.id, yes: true, name } },
+      { icon: "check", label: "Darle su propia conexión", command: { type: "device-upgrade", id: event.id, yes: true, name } },
     ],
   };
 }
@@ -1263,7 +1263,7 @@ export function deviceUpgradeMenu(event) {
 export function deviceRemoveMenu(command) {
   return {
     title: `¿Quitar ${command.name}?`,
-    subtitle: "Su llave deja de servir al instante. Para volver, escanea el código de la TV otra vez.",
+    subtitle: "Deja de hablar con esta TV al instante. Para volver, escanea el código de la TV otra vez.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "back" } },
       { icon: "minus", label: "Quitar", danger: true, command: { type: "device-remove", id: command.id, name: command.name } },
@@ -1386,7 +1386,7 @@ export const DEBRID_FORM = {
   id: "realdebrid", title: "Conectar Real-Debrid", submitLabel: "Usar esta clave", remote: "realdebrid",
   lead: "Ábrela en real-debrid.com/apitoken desde cualquier navegador, cópiala y pégala aquí con Ctrl+V. O escanea el código con tu celular.",
   missing: "Pega tu clave de Real-Debrid.",
-  fields: [{ name: "token", label: "Clave de Real-Debrid", secret: true }],
+  fields: [{ name: "token", label: "Tu clave · real-debrid.com/apitoken", secret: true }],
 };
 
 /** Llegó una clave desde un celular: la TV pregunta antes de guardarla (TEC-11/12). «Cancelar» va primero. */
@@ -1632,10 +1632,10 @@ export function torrentioMenu(entry) {
   const set = (patch) => ({ type: "torrentio-set", options: { ...o, ...patch }, reopen: "main" });
   const sites = (o.providers || []).length || TORRENTIO_PROVIDERS.length;
   return {
-    title: "Torrentio",
+    title: "Configurar",
     subtitle: "Aquí decides qué versiones te enseña y en qué orden. Lo de fábrica ya viene bien; cada cambio se guarda al hacerlo.",
     options: [
-      entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Mándala desde tu iPhone o ponla en tu Torrentio", warn: true, command: { type: "rd-account" } },
+      entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true, command: { type: "rd-connect" } },
       { icon: "captions", label: "Idiomas primero", value: (o.language || []).map((k) => TORRENTIO_LANGUAGES[k] || k).join(", ") || "Ninguno",
         command: { type: "torrentio-languages" } },
       { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },

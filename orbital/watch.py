@@ -667,7 +667,12 @@ class Watch:
         if not 20 <= len(token) <= 128 or not token.isalnum():
             raise ValueError("Esa no parece una clave de Real-Debrid")
         try:
-            user = realdebrid.RealDebrid(token).user()
+            try:
+                user = realdebrid.RealDebrid(token).user()
+            except realdebrid.RealDebridError as exc:
+                if not (exc.bad_key and token != token.upper()):
+                    raise
+                user = realdebrid.RealDebrid(token.upper()).user()  # escrita en minúsculas con el teclado de la TV
         except realdebrid.RealDebridError as exc:
             if exc.bad_key:
                 raise ValueError("Real-Debrid no reconoce esa clave") from exc
@@ -689,7 +694,7 @@ class Watch:
         self.addons.forget()
         self.streams.forget_all()
         if changed and source == "iphone":  # lo de la TV y el celular lo confirmaste en la TV: ahí se dice
-            self.events.publish({"type": "toast", "ok": True, "message": f"Tu {by} cambió la clave de Real-Debrid",
+            self.events.publish({"type": "toast", "ok": True, "message": f"«{by}» cambió la clave de Real-Debrid",
                                  "detail": "Si no fuiste tú, quítalo en Ajustes › Cuentas"})
         self.events.publish({"type": "settings-changed"})
         status = self.debrid_status(fresh=True)
