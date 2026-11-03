@@ -257,7 +257,7 @@ struct Toast: View {
     }
 
     static func color(_ tone: DSNotice.Tone) -> Color {
-        switch tone { case .info: DS.textMuted; case .success: DS.brandMoon; case .warn: DS.warning; case .error: DS.danger }
+        switch tone { case .info: DS.textMuted; case .success: DS.success; case .warn: DS.warning; case .error: DS.danger }
     }
 
     /// Lo que hay que hacer (Conectar, Reintentar) va en la cápsula clara; lo opcional (Otra, Ver, Deshacer), en la gris.

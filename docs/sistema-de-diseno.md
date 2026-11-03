@@ -361,11 +361,12 @@ vigila.
 | Cuándo sale, en un póster: el calendario y el día completo («Domingo») | `DSBadge(symbol:)` | — |
 | Una placa sobre el arte es oscura; el color lo pone el logo | `PlatformBadge` en `DS.badgeBackground` | — |
 | Una sola palabra por cosa en toda la app | «Familia», «Fama», la versión como «🇲🇽 · 1080p» | design/vocabulario.json |
+| El turquesa es la voz de Orbital: el porqué, lo nuevo y lo encendido o lo que pasa ahora («En vivo», «Viendo», la voz que escucha). Nunca decoración: ni fondos, ni orillas, ni íconos sueltos, ni cifras | `DS.eyebrow`, `DS.fresh`, `DS.switchOn`, `DS.live`; lo «listo» (en Real-Debrid, verificado) es verde (`DS.success`); el avance es el papel (`DS.accent`) | `testTurquoiseIsNotDecoration` |
+| Nada en mayúsculas: todo en letra normal (también el listón «Nuevo», «Top», «✓ En la TV»). Única excepción: el sello del mazo de Match, que imita un sello físico | sin `dsCaps()` fuera de `MazoMatch` | `testNoSpacedCaps` |
+| Títulos: dos niveles (sección y subsección). La subsección tiene dos pesos solo en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): lo de descubrir un paso más chico. Explorar, que es todo descubrir, lleva el tamaño normal | `DSSectionHead(quiet:)` | — |
 
-**Pendiente de Fernando (lo dejó para ver primero; ver el registro de paridad):** el gris más claro y los rótulos sin
-mayúsculas (en la TV siguen en mayúsculas y lo nuevo en verde hasta que decida); las mayúsculas que quedan (el listón
-«NUEVO», «✓ EN LA TV» y «TE ESCUCHO» de la voz, «TOP» de las plataformas, el sello con nombre de una fuente y el sello del
-mazo de Match) y cuántos papeles lleva el turquesa (porqué, lo nuevo y lo encendido).
+**Pendiente de Fernando:** si la TV sigue al iPhone (rótulos sin mayúsculas, lo nuevo en turquesa, el turquesa sin
+decoración); hoy la TV sigue en mayúsculas y lo nuevo en verde (registro de paridad).
 
 ### Tabla espejo (iPhone ↔ TV)
 

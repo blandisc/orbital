@@ -32,7 +32,7 @@ struct FanCard<Emblem: View>: View {
         ZStack(alignment: .topLeading) {
             RadialGradient(colors: [tint.opacity(DS.PlatformFan.tintTop), .clear], center: .bottom, startRadius: 0,
                            endRadius: DS.PlatformFan.height)
-            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).dsCaps().padding(DS.Space.s3) }
+            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).padding(DS.Space.s3) }
             fan.frame(maxWidth: .infinity)
             VStack { Spacer(); emblem().padding(.bottom, DS.Space.s3) }.frame(maxWidth: .infinity)
         }

@@ -342,9 +342,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// centro (en cada eje, desde la esquina) y el interletrado del texto en mayúsculas; el de siempre y el compacto (los
     /// pósters de 50 pt del widget). Los dos con el mismo giro y el mismo brillo.
     enum Ribbon {
-        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat, tracking: CGFloat }
-        static let regular = Size(corner: 60, length: 104, center: 22, tracking: 0.8)
-        static let compact = Size(corner: 38, length: 66, center: 14, tracking: 0.4)
+        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat }
+        static let regular = Size(corner: 60, length: 104, center: 22)
+        static let compact = Size(corner: 38, length: 66, center: 14)
         static let angle: Double = -45, shine: Double = 0.28
     }
 

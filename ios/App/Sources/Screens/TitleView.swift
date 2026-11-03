@@ -399,7 +399,7 @@ struct TitleView: View {
                     } label: { Label("Marcar como vista", systemImage: "checkmark.circle").font(DS.TextRecipe.footnote.font) }
                     .accessibilityIdentifier("season-mark-watched")
                 }
-                ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.brandMoon)
+                ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.accent)
             }
         }
         let _ = env.ratings.track()   // tus estrellas de cada capítulo: calificar uno vuelve a pintar la lista

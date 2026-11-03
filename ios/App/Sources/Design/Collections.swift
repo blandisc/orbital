@@ -148,8 +148,8 @@ struct SourceBadge: View {
     }
 
     private var label: some View {
-        source.name.dsCaps()
-            .font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.regular.tracking)   // negrita, como `.source-badge` de la TV
+        source.name
+            .font(DS.TextRecipe.badge.font)   // negrita, en letra normal (2 nov 2026)
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
             .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («COMPLE / MENTO»)
@@ -391,9 +391,9 @@ struct SeasonTimelineStop: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
+            Circle().fill(DS.textMuted).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
             when.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-            Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
+            Rectangle().fill(DS.textMuted.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
                 .padding(.trailing, -DS.Space.s3)   // hasta la siguiente tarjeta
         }
         .accessibilityElement(children: .ignore)

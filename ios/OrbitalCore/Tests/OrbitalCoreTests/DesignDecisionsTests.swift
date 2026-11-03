@@ -23,11 +23,11 @@ extension DesignRulesTests {
         check(hits(#"for: \.tabBar"#, in: files), "La barra de pestañas no se esconde")
     }
 
-    /// Nada en mayúsculas espaciadas. Los que quedan esperan la decisión de Fernando (docs/sistema-de-diseno.md): no se agregan más.
-    func testNoNewSpacedCaps() throws {
-        let pending = ["CornerRibbon", "MazoMatch", "VoiceRow", "PlatformFan", "Collections"]
-        check(hits(#"\.dsCaps\(\)"#, in: try sources(), skip: { f in pending.contains { f.name.hasPrefix($0) } }),
-              "Sin mayúsculas espaciadas: los rótulos van en letra normal (DSGroupLabel)")
+    /// Nada en mayúsculas en la app: todo en letra normal. La única excepción es el sello del mazo de Match, que imita un
+    /// sello físico (Fernando, 2 nov 2026).
+    func testNoSpacedCaps() throws {
+        check(hits(#"\.dsCaps\(\)"#, in: try sources(), skip: { $0.name.hasPrefix("MazoMatch") }),
+              "Sin mayúsculas: todo en letra normal (solo el sello de Match)")
     }
 
     /// Lo nuevo y lo de hoy van en el turquesa del logo (`DS.fresh`), no en el verde de «listo».
@@ -39,6 +39,15 @@ extension DesignRulesTests {
     /// Un solo interruptor: el turquesa de la marca lo pone `DSSwitchStyle` para toda la app; ninguna pantalla lo pinta.
     func testTogglesAreNotTintedPerScreen() throws {
         check(hits(#"\.tint\(DS\.switchOn\)"#, in: try sources(), skip: { $0.name == "Buttons.swift" }), "Los interruptores los pinta DSSwitchStyle, no cada pantalla")
+    }
+
+    /// El turquesa es la voz de Orbital (el porqué, lo nuevo, lo encendido o lo que pasa ahora), nunca decoración: no pinta
+    /// fondos, orillas ni íconos sueltos (Fernando, 2 nov 2026).
+    func testTurquoiseIsNotDecoration() throws {
+        check(hits(#"(background|strokeBorder|stroke)\(DS\.(orbitalBlue|brandMoon|eyebrow)\b"#, in: try sources(), skip: isArt),
+              "El turquesa no pinta fondos ni orillas")
+        check(hits(#"Image\(systemName:[^)]*\)[^\n]*foregroundStyle\(DS\.orbitalBlue\)"#, in: try sources()),
+              "El turquesa no pinta íconos sueltos")
     }
 
     /// De dónde viene una lista lo dice su porqué; el sello de Trakt ya no va junto a un título.

@@ -123,7 +123,7 @@ struct WatchedOption: View {
         let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
         Button(action: action) {
             HStack(spacing: DS.Space.s3) {
-                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(DS.orbitalBlue).frame(width: DS.Watched.icon)
+                Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(DS.textMuted).frame(width: DS.Watched.icon)
                 VStack(alignment: .leading, spacing: 0) {
                     title.recipe(.cardTitle, color: DS.text)
                     if let detail { detail.recipe(.footnote, color: DS.textMuted) }

@@ -8,7 +8,7 @@ extension View {
 }
 
 /// Lo que acaba de salir, en la esquina de arriba a la izquierda de un póster: un listón en diagonal que cruza la esquina,
-/// en el turquesa de lo nuevo (`DS.fresh`, el del puntito del logo; antes verde) con un brillo arriba y el texto en mayúsculas. Va en `.overlay(alignment: .topLeading)` del póster, sin padding:
+/// en el turquesa de lo nuevo (`DS.fresh`, el del puntito del logo; antes verde) con un brillo arriba; el texto en letra normal (2 nov 2026: sin mayúsculas en la app, salvo el sello de Match). Va en `.overlay(alignment: .topLeading)` del póster, sin padding:
 /// la caja recorta la banda y su orilla de afuera queda lejos de la curva del póster. `compact`: el de los pósters chicos
 /// del widget (50 pt de ancho), con su letra y su caja más chicas.
 struct DSCornerRibbon: View {
@@ -17,7 +17,7 @@ struct DSCornerRibbon: View {
 
     var body: some View {
         let size = compact ? DS.Ribbon.compact : DS.Ribbon.regular
-        Text(text).dsCaps().font(compact ? DS.font(.xs, weight: .bold) : DS.TextRecipe.badge.font).tracking(size.tracking)   // ds-exception: el compacto (pósters de 50 pt del widget) va un punto abajo de la placa o «Nuevo» no cabe en la esquina
+        Text(text).font(compact ? DS.font(.xs, weight: .bold) : DS.TextRecipe.badge.font)   // ds-exception: el compacto (pósters de 50 pt del widget) va un punto abajo de la placa o «Nuevo» no cabe en la esquina
             .foregroundStyle(DS.onFresh).lineLimit(1)
             .padding(.vertical, DS.Space.s1 / 2)
             .frame(width: size.length)
