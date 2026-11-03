@@ -35,10 +35,7 @@ struct SettingsView: View {
         Form {
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
-                // Lo que ves (con «Tu año» adentro): lo que viste, del historial de Trakt.
-                NavigationLink { WatchingFromSettings() } label: {
-                    SettingsRow(title: "Lo que ves", symbol: "chart.bar.xaxis", tint: DS.ListTint.calendar, value: Text("Lo que viste, contado"))
-                }
+                // «Lo que ves» ya no está aquí: vive en Explorar (Fernando, 2 nov 2026: «ya tenemos otro acceso en Explorar»).
             }
             .listRowBackground(DS.surface)
             // Lo tuyo: cómo se ve y cómo se reproduce.

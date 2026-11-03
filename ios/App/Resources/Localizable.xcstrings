@@ -13589,17 +13589,6 @@
         }
       }
     },
-    "Lo que viste, contado": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What you watched, counted"
-          }
-        }
-      }
-    },
     "Lo que viste, día por día": {
       "extractionState": "manual",
       "localizations": {
