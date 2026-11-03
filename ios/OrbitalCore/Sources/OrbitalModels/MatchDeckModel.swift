@@ -45,6 +45,46 @@ public final class MatchDeckModel: ObservableModel {
         watched = await watchedSource()
         rebuild()
         loaded = true
+        await fillGenres()
+    }
+
+    /// Los géneros que Cinemeta sabe de cada título (las listas de complementos, los Top 10 y la consola no los traen y el
+    /// filtro de género no salía; Fernando, 3 nov 2026).
+    private var fetchedGenres: [String: [String]] = [:]
+    /// Cuántas fichas a la vez y hasta cuántas (las primeras del mazo de hoy).
+    nonisolated static let genreConcurrency = 12, genreLookups = 120
+
+    /// Pide los géneros que faltan, con una ventana de pedidos (al terminar uno entra el siguiente), y vuelve a armar el mazo.
+    private func fillGenres() async {
+        var seen = Set<String>()
+        let missing = cards.filter { $0.genres.isEmpty && seen.insert($0.imdb).inserted }.prefix(Self.genreLookups).map { (kind: $0.kind, imdb: $0.imdb) }
+        guard !missing.isEmpty else { return }
+        let cinemeta = services.cinemeta
+        let found = await withTaskGroup(of: (String, [String]).self) { group in
+            var next = 0, out: [(String, [String])] = []
+            func add() {
+                guard next < missing.count, !Task.isCancelled else { return }
+                let item = missing[next]
+                next += 1
+                group.addTask {
+                    let meta = try? await cinemeta.meta(kind: item.kind, id: item.imdb)
+                    return (item.imdb, (meta?["genres"]?.array ?? meta?["genre"]?.array ?? []).compactMap(\.string))
+                }
+            }
+            for _ in 0..<Self.genreConcurrency { add() }
+            for await r in group { out.append(r); add() }
+            return out
+        }
+        for (id, genres) in found where !genres.isEmpty { fetchedGenres[id] = genres }
+        guard !Task.isCancelled else { return }
+        rebuild()
+    }
+
+    private func withGenres(_ s: Suggestion) -> Suggestion {
+        guard s.genres.isEmpty, let genres = fetchedGenres[s.imdb] else { return s }
+        var x = s
+        x.genres = genres
+        return x
     }
 
     /// El mazo de hoy: sin repetir, sin lo visto ni lo descartado, de todo (sin ánimos: Fernando, 1 nov 2026), en un orden
@@ -82,7 +122,7 @@ public final class MatchDeckModel: ObservableModel {
         // Lo que ya guardaste en esta vuelta tampoco vuelve.
         // Tampoco lo que ya está en Mi lista (guardado desde una ficha o desde otro aparato).
         let inList = Set(services.library.all.filter(\.inList).map(\.metaID))
-        let deck = Self.deck(pool, watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
+        let deck = Self.deck(pool.map(withGenres), watched: watched, discarded: discarded.union(saved.map(\.imdb)).union(savedEver).union(inList), day: day)
         // Los géneros, de lo que hay del tipo elegido; si el elegido ya no hay, vuelve a todos.
         var counts: [String: Int] = [:], samples: [String: String] = [:]
         for s in Self.filter(deck, kind: kind, genre: nil) {

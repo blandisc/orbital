@@ -34,6 +34,17 @@ final class MatchDeckModelTests: XCTestCase {
         XCTAssertEqual(model.cards.map(\.imdb), ["tt3"])
     }
 
+    /// Las cartas sin géneros (complementos, Top 10, la consola) los piden a Cinemeta: así sale el filtro (Fernando, 3 nov 2026).
+    func testLosGenerosQueFaltanLlegandeCinemeta() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://v3-cinemeta.strem.io/meta/movie/tt9.json"] = ["meta": ["id": "tt9", "name": "tt9", "genres": ["Horror"]]]
+        let model = MatchDeckModel(rig.services, pool: [s("tt9", []), s("tt1", ["comedy"])], watched: { [] })
+        await model.load()
+        XCTAssertEqual(Set(model.genres), ["Terror", "Comedia"])
+        model.genre = "Terror"
+        XCTAssertEqual(model.cards.map(\.imdb), ["tt9"])
+    }
+
     func testElOrdenEsElMismoEnElDiaYCambiaAlOtro() {
         let pool = (1...12).map { s("tt\($0)", ["drama"]) }
         let a = MatchDeckModel.deck(pool, watched: [], discarded: [], day: 100).map(\.imdb)
