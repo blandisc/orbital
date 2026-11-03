@@ -122,6 +122,13 @@ final class DebridRequestsContractTests: XCTestCase {
 
     // MARK: leer
 
+    func testAllFilesFromTheTVMarksAPackAndTheOldLocalMarkStillReads() throws {
+        let tv = #"[{"hash": "\#(infoHash)", "video_ids": ["tt1:1:1"], "files": {"tt1:1:1": 0}, "all_files": true}, {"hash": "\#(String(repeating: "a", count: 40))", "pack": true}]"#
+        let entries = DebridRequestBook.decodeEach(Data(tv.utf8))
+        XCTAssertEqual(entries.count, 2)
+        XCTAssertTrue(entries.allSatisfy(\.coversWholeTorrent), "`all_files` de la TV y la marca `pack` de antes cuentan como paquete")
+    }
+
     func testEachEntryIsReadOnItsOwn() throws {
         let body = #"""
         {"version": 1, "account": 111, "requests": [
@@ -152,13 +159,14 @@ final class DebridRequestsContractTests: XCTestCase {
         _ = try await requester.request(wish(2))
         let sent = try XCTUnwrap(sync.pushed.last)
         for key in ["hash", "title", "kind", "meta_id", "video_ids", "season", "episode", "files", "rd_id", "language", "release", "rd_status", "percent",
-                    "seeders", "progress_at", "state", "since", "account", "by"] {
+                    "seeders", "progress_at", "state", "since", "account", "by", "all_files"] {
             XCTAssertTrue(sent.keys.contains(key), "falta «\(key)» en lo que se manda")
         }
         for key in ["notified", "nudged", "url", "filename", "linked", "updated", "pack", "pending"] {
             XCTAssertNil(sent[key], "«\(key)» nunca viaja")
         }
         XCTAssertEqual(sent["account"] as? String, "111"); XCTAssertEqual(sent["by"] as? String, "iPhone de Fernando")
+        XCTAssertNotNil(sent["all_files"] as? Bool, "si se eligieron todos sus videos viaja como `all_files`")
         XCTAssertEqual(sent["files"] as? [String: Int], ["tt0386676:1:2": 1])
         XCTAssertFalse(requester.book.find(hash: infoHash)!.pending, "la TV lo recibió")
         XCTAssertFalse(String(data: try JSONSerialization.data(withJSONObject: sent), encoding: .utf8)!.contains("KEY"), "nunca la clave")

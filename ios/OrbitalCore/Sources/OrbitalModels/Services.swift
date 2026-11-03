@@ -217,11 +217,15 @@ public final class Services: ObservableModel {
         // La libreta va en los ajustes de la app (no lleva claves ni enlaces); la clave, en el llavero.
         // `by`: el nombre con que este aparato se presenta a la TV (su renglón en Cuentas); `account`: el id de usuario de Real-Debrid.
         let requestsBy = allowsOrbital ? (device?.name).flatMap { $0.isEmpty ? nil : $0 } ?? deviceName : deviceName
-        // Se junta con la TV (`OrbitalRemoteDebridRequestSync`) cuando el corte S2 de la TV esté en main; hasta entonces, nada.
+        // Se junta con la libreta de tu Orbital (corte S2 de la TV, contrato «requests») si la tienes conectada.
         let requester = DebridRequester(book: DebridRequestBook(vault: vault), api: RealDebridTorrents(http: http),
                                         token: { vault.secret(AddonKeys.realDebridToken) }, device: { requestsBy },
                                         account: { await debrid.accountID() }, knownAccount: debrid.saved?.userID, clock: clock,
-                                        sync: NoDebridRequestSync())
+                                        sync: OrbitalRemoteDebridRequestSync(remote: {
+                                            let on = allowsOrbital && settings.value.orbitalEnabled
+                                            return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "",
+                                                                 token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
+                                        }))
         self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
                                                   finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb

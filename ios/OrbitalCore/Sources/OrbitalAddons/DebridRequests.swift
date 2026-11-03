@@ -123,7 +123,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case hash, files, account, legacyFileIdx = "file_idx", rdID = "rd_id", title, kind, metaID = "meta_id", videoIDs = "video_ids", season,
              episode, language, release, device = "by", createdAt = "since", updatedAt = "updated", rdStatus = "rd_status", percent, seeders,
-             state, progressAt = "progress_at", notified, nudged, pack, pending
+             state, progressAt = "progress_at", notified, nudged, pack = "all_files", legacyPack = "pack", pending
     }
 
     /// Con `true` en el `userInfo` del codificador se escribe todo (la libreta de este aparato); sin él, solo lo que viaja a
@@ -158,7 +158,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         progressAt = (try? c.decodeIfPresent(Date.self, forKey: .progressAt)) ?? updatedAt
         notified = (try? c.decodeIfPresent(Bool.self, forKey: .notified)) ?? false
         nudged = (try? c.decodeIfPresent(Bool.self, forKey: .nudged)) ?? false
-        pack = (try? c.decodeIfPresent(Bool.self, forKey: .pack)) ?? false
+        pack = ((try? c.decodeIfPresent(Bool.self, forKey: .pack)) ?? nil ?? (try? c.decodeIfPresent(Bool.self, forKey: .legacyPack)) ?? nil) ?? false
         pending = (try? c.decodeIfPresent(Bool.self, forKey: .pending)) ?? false
     }
 
@@ -185,11 +185,11 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         try c.encode(seeders, forKey: .seeders)
         try c.encode(progressAt, forKey: .progressAt)
         try c.encode(state.rawValue, forKey: .state)
+        try c.encode(pack, forKey: .pack)   // `all_files`: se eligieron todos sus videos (contrato)
         guard local else { return }
         try c.encode(updatedAt, forKey: .updatedAt)
         try c.encode(notified, forKey: .notified)
         try c.encode(nudged, forKey: .nudged)
-        try c.encode(pack, forKey: .pack)
         try c.encode(pending, forKey: .pending)
     }
 
