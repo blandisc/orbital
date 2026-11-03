@@ -221,17 +221,6 @@
         }
       }
     },
-    "Casi nunca hace falta: apaga uno solo si da versiones que no sirven.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rarely needed: turn one off only if it gives versions that don't work."
-          }
-        }
-      }
-    },
     "Colores intensos; solo si tu TV lo aguanta": {
       "extractionState": "manual",
       "localizations": {
@@ -1865,17 +1854,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Downloading · %lld %%"
-          }
-        }
-      }
-    },
-    "Cancela una en Real-Debrid": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel one on Real-Debrid"
           }
         }
       }
@@ -33156,6 +33134,105 @@
           "stringUnit": {
             "state": "translated",
             "value": "Other copies (DVD)"
+          }
+        }
+      }
+    },
+    "Seguir esperando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep waiting"
+          }
+        }
+      }
+    },
+    "No pude ver tu cuenta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't see your account"
+          }
+        }
+      }
+    },
+    "Real-Debrid no contestó. Tu clave sigue guardada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid didn't answer. Your key is still saved."
+          }
+        }
+      }
+    },
+    "Sin complementos: agrega los que vienen con Orbital con «Agregar», arriba.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No add-ons: add the ones that come with Orbital with “Add”, above."
+          }
+        }
+      }
+    },
+    "Ninguno: las versiones salen sin importar el idioma.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None: versions show up regardless of language."
+          }
+        }
+      }
+    },
+    "Escondida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden"
+          }
+        }
+      }
+    },
+    "Con esto, %@ tiene 1 versión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With this, %@ has 1 version."
+          }
+        }
+      }
+    },
+    "Casi nunca hace falta: apaga uno solo si da versiones que no sirven. Siempre queda uno prendido.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rarely needed: turn one off only if it gives versions that don't work. One always stays on."
+          }
+        }
+      }
+    },
+    "Cancela otra descarga para hacer lugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel another download to make room"
           }
         }
       }

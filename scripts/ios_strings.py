@@ -19,6 +19,12 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Pasada de Real-Debrid y Complementos (3 nov): lo que se rompía o se podía decir mejor.
+    "Seguir esperando": "Keep waiting", "No pude ver tu cuenta": "I couldn't see your account",
+    "Real-Debrid no contestó. Tu clave sigue guardada.": "Real-Debrid didn't answer. Your key is still saved.",
+    "Sin complementos: agrega los que vienen con Orbital con «Agregar», arriba.": "No add-ons: add the ones that come with Orbital with “Add”, above.",
+    "Ninguno: las versiones salen sin importar el idioma.": "None: versions show up regardless of language.",
+    "Escondida": "Hidden", "Con esto, %@ tiene 1 versión.": "With this, %@ has 1 version.",
     # Fase 3 (3 nov): configurar Torrentio (T1–T11), Complementos (C1–C5, M4) y tu cuenta de Real-Debrid (D1, D4).
     "Vienen con Orbital o de tu Stremio": "From Orbital or from your Stremio",
     "Abre su propia página. Al tocar «Install» ahí, se guarda en este mismo complemento.": "Opens its own page. When you tap “Install” there, it's saved in this same add-on.", "Agregar idioma": "Add language",
@@ -30,7 +36,7 @@ TRANSLATIONS = {
     "Calidad y luego tamaño": "Quality, then size", "Calidades": "Qualities",
     "Calidades que no quieres": "Qualities you don't want", "Canjeando…": "Redeeming…",
     "Canjear": "Redeem", "Canjear puntos": "Redeem points",
-    "Casi nunca hace falta: apaga uno solo si da versiones que no sirven.": "Rarely needed: turn one off only if it gives versions that don't work.", "Colores intensos; solo si tu TV lo aguanta": "Vivid colors; only if your TV supports it",
+    "Casi nunca hace falta: apaga uno solo si da versiones que no sirven. Siempre queda uno prendido.": "Rarely needed: turn one off only if it gives versions that don't work. One always stays on.", "Colores intensos; solo si tu TV lo aguanta": "Vivid colors; only if your TV supports it",
     "Con esto no verías nada": "With this you wouldn't see anything", "Con esto, %@ tiene %@ al instante y %@ para pedir.": "With this, %@ has %@ instant and %@ to request.",
     "Con esto, %@ tiene %@ versiones.": "With this, %@ has %@ versions.", "Con una cámara en la sala: se ve y oye mal": "Filmed in the theater: looks and sounds bad",
     "Conecta Orbital con tu cuenta. Vive en el llavero de este aparato y nunca se muestra completa.": "It connects Orbital to your account. It lives in this device's keychain and is never shown in full.", "Contesta en %@ s": "Answers in %@ s",
@@ -102,7 +108,7 @@ TRANSLATIONS = {
     "Muchas descargas activas": "Too many active downloads",
     "Real-Debrid lo recibió y espera turno": "Real-Debrid got it and is waiting its turn",
     "Puede tardar días · prueba otra versión": "It may take days · try another version",
-    "Cancela una en Real-Debrid": "Cancel one on Real-Debrid", "Ya arranca al instante": "Starts instantly now",
+    "Cancela otra descarga para hacer lugar": "Cancel another download to make room", "Ya arranca al instante": "Starts instantly now",
     "Sigue sin bajar · ¿probar otra versión?": "Still not downloading · try another version?",
     "Real-Debrid pide esperar un momento": "Real-Debrid asks to wait a moment",
     "No pude hablar con Real-Debrid": "I couldn't reach Real-Debrid", "Lo pediste en %@ · %@": "You requested it on %@ · %@",

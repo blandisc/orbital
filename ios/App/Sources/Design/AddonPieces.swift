@@ -179,7 +179,8 @@ struct TorrentioProbeRow: View {
             line("wifi.exclamationmark", DS.textMuted, Text("No pude probar: Torrentio no contestó."))
         case .result(.found(let instant, let toRequest, let other)):
             if instant + toRequest == 0 {
-                line("checkmark.circle", DS.success, Text("Con esto, \(sample) tiene \(String(other)) versiones."))
+                line("checkmark.circle", DS.success, other == 1 ? Text("Con esto, \(sample) tiene 1 versión.")
+                                                                : Text("Con esto, \(sample) tiene \(String(other)) versiones."))
             } else {
                 line("checkmark.circle", DS.success, Text("Con esto, \(sample) tiene \(String(instant)) al instante y \(String(toRequest)) para pedir."))
             }
