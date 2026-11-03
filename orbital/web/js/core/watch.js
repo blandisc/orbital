@@ -151,7 +151,9 @@ export function episodeStates(details, now = Date.now()) {
     });
   }
   if (at >= 0 && resume.position > 0 && resume.duration > 0) {
-    states.set(resume.video_id, { progress: Math.min(1, resume.position / resume.duration) });
+    // «quedan 20 min»: lo que falta del que vas viendo (en segundos, como lo manda el servidor).
+    states.set(resume.video_id, { progress: Math.min(1, resume.position / resume.duration),
+      left: Math.max(1, Math.round((resume.duration - resume.position) / 60)) });
   }
   for (const ep of seasons.flatMap((s) => s.episodes)) {
     const when = ep.released ? Date.parse(ep.released) : NaN;

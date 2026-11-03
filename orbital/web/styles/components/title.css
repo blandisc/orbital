@@ -221,6 +221,13 @@
 .episode__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); --progress-width: auto; }
 .episode__text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); min-width: 0; padding-inline: var(--space-1); }
 .episode__title { max-width: 100%; color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.episode--current .episode__progress { --progress-height: var(--progress-height-current); }
+.episode__play {
+  position: absolute; inset: 0; margin: auto; display: grid; place-items: center; width: var(--control-height); height: var(--control-height);
+  border-radius: 50%; background: var(--color-badge-bg); color: var(--color-text);
+}
+.episode__play .icon { width: var(--icon-lg); height: var(--icon-lg); }
+.episode__left { color: var(--color-accent); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .episode__date { color: var(--color-warning); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .episode--watched .episode__thumb { filter: saturate(.75); }
 .episode--upcoming { opacity: var(--opacity-away); }

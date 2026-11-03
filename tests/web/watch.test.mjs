@@ -38,7 +38,7 @@ test("episodios: vistos, a medias y por estrenar", () => {
   const states = episodeStates({ seasons, resume: { video_id: "s:2:1", position: 900, duration: 1800 } }, Date.parse("2026-10-10"));
   assert.deepEqual(states.get("s:1:1"), { watched: true });
   assert.deepEqual(states.get("s:1:2"), { watched: true });
-  assert.deepEqual(states.get("s:2:1"), { progress: .5 });
+  assert.deepEqual(states.get("s:2:1"), { progress: .5, left: 15 }); // «quedan 15 min»
   assert.match(states.get("s:2:2").upcoming, /^Se estrena el 5/);
   assert.equal(states.get("s:0:1"), undefined); // los especiales no cuentan como vistos
 });

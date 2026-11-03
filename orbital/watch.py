@@ -75,10 +75,15 @@ SUBTITLE_LINES = {"": "Sin subtítulos", "forced": "Solo traducciones en pantall
 def version_line(source: streams.Source, prefs: streams.Preferences, subtitles: str) -> str:
     """Lo que va a sonar con «Ver», en palabras: «Latino · 1080p · Sin subtítulos». El doblaje solo si el nombre de la
     fuente lo dice (si no, «Español»); el idioma que pediste si la fuente lo trae, si no el que trae."""
-    lang = prefs.audio if prefs.audio in source.languages else (source.languages or [""])[0]
+    lang = version_lang(source, prefs)
     name = source.dub.capitalize() if lang == "es" and source.dub else streams.LANG_NAMES.get(lang, lang)
     subs = SUBTITLE_LINES.get(subtitles) or f"Subtítulos en {streams.LANG_NAMES.get(subtitles, subtitles).lower()}"
     return " · ".join(p for p in (name, source.resolution, subs) if p)
+
+
+def version_lang(source: streams.Source, prefs: streams.Preferences) -> str:
+    """El idioma de lo que va a sonar con «Ver» (el de `version_line`): la ficha lo pone como bandera («🇲🇽 · 1080p»)."""
+    return prefs.audio if prefs.audio in source.languages else (source.languages or [""])[0]
 
 
 WANTED_NAMES = {"es-419": "latino", "es-ES": "castellano"}
