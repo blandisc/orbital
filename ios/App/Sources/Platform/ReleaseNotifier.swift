@@ -25,6 +25,8 @@ enum ReleaseNotifier {
             schedule()
             let work = Task { @MainActor in
                 await check(origin: "ios-estrenos")
+                // De paso, tus listas de Explorar para el widget del mosaico (sin tener que abrir Explorar).
+                await WidgetListsPublisher.refreshInBackground(AppEnvironment.shared.services)
                 task.setTaskCompleted(success: !Task.isCancelled)
             }
             task.expirationHandler = { work.cancel() }

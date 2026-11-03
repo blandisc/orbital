@@ -29,3 +29,14 @@ struct ChooseListIntent: WidgetConfigurationIntent {
     init() {}
 }
 
+/// «Revolver» en el widget «Mosaico de una lista»: otro orden de pósters al momento, sin abrir la app (Fernando, 2 nov 2026).
+/// Corre en la extensión; iOS vuelve a dibujar el widget al terminar.
+struct ShuffleMosaicIntent: AppIntent {
+    static let title: LocalizedStringResource = "Revolver el mosaico"
+    static let isDiscoverable = false
+    init() {}
+    func perform() async throws -> some IntentResult {
+        WidgetStore.shuffleMosaic()
+        return .result()
+    }
+}
