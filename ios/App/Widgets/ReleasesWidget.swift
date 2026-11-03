@@ -186,12 +186,14 @@ private struct ReleasesLine: View {
         let when = ReleaseWhen(airing: airing, now: entry.date, language: entry.language)
         return Link(destination: airing.link ?? URL(fileURLWithPath: "/")) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                // El rótulo puede usar el aire entre pósters («Mañana» no cabía en el ancho del póster y se cortaba).
-                HStack(spacing: DS.Space.s1) {
-                    ReleaseDot(out: when.isOut)
-                    when.label.font(DS.font(.xs, weight: .semibold)).foregroundStyle(when.isOut ? DS.text : DS.textMuted).lineLimit(1)
+                // El rótulo nunca pasa del ancho del póster: antes podía usar el aire entre pósters y «Mañana» se encimaba con el
+                // punto del siguiente (Fernando, 3 nov 2026). Si con el punto no cabe, va sin él y un poco más chico (el color
+                // del texto sigue diciendo si ya salió).
+                let label = when.label.font(DS.font(.xs, weight: .semibold)).foregroundStyle(when.isOut ? DS.text : DS.textMuted).lineLimit(1)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Space.s1) { ReleaseDot(out: when.isOut); label }.fixedSize()
+                    label.minimumScaleFactor(DS.Widget.labelShrink)
                 }
-                .fixedSize()
                 .frame(width: DS.Widget.releasePoster, alignment: .leading)
                 ReleasePoster(airing: airing).opacity(when.isOut ? 1 : DS.Opacity.dimmed)
                     .overlay(alignment: .topLeading) { if when.isNew { DSCornerRibbon(text: "Nuevo", compact: true) } }
