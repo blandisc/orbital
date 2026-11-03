@@ -93,10 +93,12 @@ extension PlayerScreen {
                 if drag.touchStartX == nil { drag.touchStartX = value.startLocation.x; drag.touchStartY = value.startLocation.y }
                 if drag.fastForwardHolding { fastForwardDrag(translationY: value.translation.height, screenHeight: geo.size.height, model: model) }
             }.onEnded { _ in drag.touchStartX = nil; drag.touchStartY = nil; releaseFastForward(model) })
-            // ×2 del lado derecho: casi al instante. Hacia abajo se fija (vibra); hacia arriba se quita al momento.
+            // ×2: casi al instante. Hacia abajo se fija (vibra); hacia arriba se quita al momento.
             // Simultánea: como gesto normal competía con los dobles toques de las orillas y casi nunca ganaba.
+            // En cualquier lugar de la pantalla, no solo la mitad derecha (Fernando, 3 nov 2026: «que se pueda picar desde el
+            // lado izquierdo, derecho, desde cualquier lugar»).
             .simultaneousGesture(LongPressGesture(minimumDuration: DS.Timing.fastForwardStart, maximumDistance: DS.Gesture.axisThreshold)
-                .onEnded { _ in if (drag.touchStartX ?? geo.size.width) >= geo.size.width / 2 { holdFastForward(model) } })
+                .onEnded { _ in holdFastForward(model) })
             .sensoryFeedback(.impact, trigger: drag.isFastForwarding)
             .sensoryFeedback(.impact(weight: .light), trigger: skipHaptic)
             .sensoryFeedback(.impact(weight: .heavy), trigger: skipEdgeHaptic)
@@ -298,7 +300,7 @@ extension PlayerScreen {
     var speedPillVisible: Bool { drag.isFastForwarding && (drag.fastForwardHolding || controlsVisible) && !padlock.locked }
 
     /// Vertical: abajo al centro, al pie del área segura, salvo «Recortar» con controles, que va encima de su barra.
-    /// Horizontal: arriba al centro, para no encimarse nunca con los subtítulos (2 nov 2026).
+    /// Horizontal: arriba al centro, a la altura de los botones de arriba, lejos de los subtítulos (2 y 3 nov 2026).
     var speedPillBottomInset: CGFloat {
         if fillsPortrait && controlsVisible { return DS.Gesture.fastForwardPillFillInset }
         return DS.Space.s2
@@ -312,9 +314,11 @@ extension PlayerScreen {
                             unlocks: drag.fastForwardLockedAtStart)
             }
             .buttonStyle(.plain)
+            // En horizontal, centrada en la hilera de ✕ y los botones de arriba (en el hueco entre ellos), con o sin controles.
+            .frame(height: landscape ? DS.Size.touchTarget : nil)
             if landscape { Spacer(minLength: 0) }
         }
-        .padding(.top, landscape ? (controlsVisible ? DS.Gesture.fastForwardPillTopInset : DS.Space.s3) : 0)
+        .padding(.top, landscape ? DS.Gesture.fastForwardPillTopInset : 0)
         .padding(.bottom, landscape ? 0 : speedPillBottomInset)
     }
 

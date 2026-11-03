@@ -58,9 +58,9 @@ extension DS {
         /// `padding(DS.Space.s6)` de `controls`, con la hilera de tiempos debajo de la barra).
         static let seekBubbleBottomInset: CGFloat = 120   // ds-exception: sobre el video, arriba de la barra de avance
         /// La píldora «2×» en horizontal va arriba al centro, lejos de los subtítulos (Fernando, 2 nov 2026: «mejor ponlo arriba
-        /// para que no estorbe con los subtítulos en absoluto»). Con los controles, debajo de la hilera de ✕ y el nombre
-        /// (`padding` de `controls` + el botón de 44 + aire); sin ellos, pegada arriba.
-        static let fastForwardPillTopInset: CGFloat = DS.Space.s6 + DS.Size.touchTarget + DS.Space.s3
+        /// para que no estorbe con los subtítulos en absoluto»), a la altura de la hilera de ✕ y los botones (el `padding` de
+        /// `controls`), en el hueco entre ellos; antes iba debajo de la hilera (Fernando, 3 nov 2026).
+        static let fastForwardPillTopInset: CGFloat = DS.Space.s6
         /// En horizontal, lo que ocupa abajo la barra de avance con sus tiempos (dentro del `padding` de `controls` +
         /// `scrubHit`) y su aire: el indicador de brillo o volumen no baja de ahí.
         static var aboveScrubInset: CGFloat {
