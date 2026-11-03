@@ -5,7 +5,8 @@ import OrbitalAddons
 
 /// Ajustes › Cuentas › Real-Debrid › Tus pedidos (D3, R13): lo que Real-Debrid está bajando para ti, tus pedidos primero,
 /// cada uno con su estado en palabras, su avance y «Cancelar»; y cuántas descargas van de tu límite. Un pedido que lleva
-/// 24 h sin avanzar lo dice. La libreta es la de este aparato (R12); la de la TV se junta en S2/S4.
+/// 24 h sin avanzar lo dice. La libreta es la de este aparato (R12) con la forma común de la TV (acuerdo S2); lo de otra
+/// cuenta de Real-Debrid se enseña («Lo pidió la TV · …») sin «Cancelar».
 struct DebridRequestsView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var explaining = false
@@ -28,15 +29,17 @@ struct DebridRequestsView: View {
             } else {
                 Section {
                     ForEach(model.requests) { request in
+                        // De otra cuenta de Real-Debrid (la TV con la suya): se enseña, pero no se cancela desde aquí.
+                        let other = model.isOtherAccount(request)
                         DebridRequestStatus(symbol: DebridRequestWords.symbol(request.state), title: name(request),
                                             detail: [DebridRequestWords.short(request, tr), DebridRequestWords.detail(request, now: now, tr)].joined(separator: " · ")
-                                                + "\n" + DebridRequestWords.since(request, now: now, tr),
+                                                + "\n" + DebridRequestWords.since(request, now: now, otherAccount: other, tr),
                                             fraction: request.state == .downloading ? Double(request.percent) / 100 : nil,
                                             warn: DebridRequestWords.isTrouble(request, now: now))
-                            .swipeActions { Button("Cancelar", role: .destructive) { cancelling = request } }
+                            .swipeActions { if !other { Button("Cancelar", role: .destructive) { cancelling = request } } }
                             .contextMenu {
                                 Button("Abrir la ficha", systemImage: "info.circle") { open(request) }
-                                Button("Cancelar pedido", systemImage: "xmark.circle", role: .destructive) { cancelling = request }
+                                if !other { Button("Cancelar pedido", systemImage: "xmark.circle", role: .destructive) { cancelling = request } }
                             }
                             .accessibilityIdentifier("debrid-request-\(request.hash.prefix(8))")
                     }

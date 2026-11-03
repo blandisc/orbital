@@ -12,9 +12,12 @@ public struct DebridStatus: Codable, Equatable, Sendable {
     public var expires: Date?
     /// Cuándo se le preguntó al servicio.
     public var checkedAt: Date
+    /// El id de usuario (`GET /user` › `id`): la `account` de la libreta de pedidos. Nunca la clave.
+    public var userID: String?
 
-    public init(service: String, username: String, isPremium: Bool, expires: Date?, checkedAt: Date) {
+    public init(service: String, username: String, isPremium: Bool, expires: Date?, checkedAt: Date, userID: String? = nil) {
         self.service = service; self.username = username; self.isPremium = isPremium; self.expires = expires; self.checkedAt = checkedAt
+        self.userID = userID
     }
 
     /// Días que quedan, contados por días de calendario (vence mañana = 1; hoy = 0; ya venció = negativo).
@@ -116,14 +119,16 @@ public struct RealDebrid: DebridProvider {
         return try Self.parse(body, checkedAt: clock())
     }
 
-    /// `{"username": "…", "type": "premium" | "free", "premium": segundos, "expiration": "2027-03-21T12:00:00.000Z"}`.
+    /// `{"id": 123, "username": "…", "type": "premium" | "free", "premium": segundos, "expiration": "2027-03-21T12:00:00.000Z"}`.
     static func parse(_ body: Data, checkedAt: Date) throws -> DebridStatus {
         guard let user = try? JSONSerialization.jsonObject(with: body) as? [String: Any], let name = user["username"] as? String else { throw DebridError.unexpected }
         let premiumSeconds = (user["premium"] as? NSNumber)?.doubleValue ?? 0
         let isPremium = (user["type"] as? String)?.lowercased() == "premium" && premiumSeconds > 0
         var expires = (user["expiration"] as? String).flatMap(Self.date)
         if expires == nil, premiumSeconds > 0 { expires = checkedAt.addingTimeInterval(premiumSeconds) }
-        return DebridStatus(service: "Real-Debrid", username: name, isPremium: isPremium, expires: expires, checkedAt: checkedAt)
+        let id = (user["id"] as? NSNumber)?.stringValue ?? (user["id"] as? String)
+        return DebridStatus(service: "Real-Debrid", username: name, isPremium: isPremium, expires: expires, checkedAt: checkedAt,
+                            userID: id?.isEmpty == false ? id : nil)
     }
 
     static func date(_ text: String) -> Date? {
@@ -161,6 +166,13 @@ public actor DebridAccount {
         guard let fresh = try? await provider.status(token: token) else { return saved }
         remember(fresh)
         return fresh
+    }
+
+    /// El id de usuario de tu Real-Debrid (la `account` de la libreta de pedidos): el guardado; si el guardado es de antes de
+    /// saberlo, se le pregunta una vez. nil sin clave o si no contesta.
+    public func accountID() async -> String? {
+        if let id = saved?.userID { return id }
+        return await status(force: saved != nil)?.userID
     }
 
     /// Algo falló al reproducir (Torrentio mandó su «RD error» o su video de «sin acceso»): lo guardado puede tener hasta un
