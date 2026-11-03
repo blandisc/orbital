@@ -75,6 +75,36 @@ final class AccountsModelTests: XCTestCase {
         XCTAssertNil(DebridModel(rig.services).status, "tampoco al volver a abrir")
     }
 
+    /// P6-A: lo que dice tu cuenta es verdad al abrirla. Se le pregunta a Real-Debrid cada vez; mientras, no se confirma nada
+    /// (aunque ayer sirviera); si ya no la acepta, se dice; sin respuesta, tampoco «Conectada».
+    func testAbrirTuCuentaRevisaLaClaveYNuncaConfirmaLoDeAyer() async throws {
+        let rig = try ServicesRig(signedIn: false)
+        premium(rig)
+        let model = DebridModel(rig.services)
+        model.token = token
+        await model.verify()
+        XCTAssertEqual(model.keyCheck, .confirmed, "la acabas de pegar")
+        // Otra visita: lo guardado se enseña, pero sin confirmar hasta que Real-Debrid conteste.
+        let visit = DebridModel(rig.services)
+        XCTAssertEqual(visit.keyCheck, .checking)
+        XCTAssertNotNil(visit.status, "lo último que se supo")
+        await visit.recheck()
+        XCTAssertEqual(visit.keyCheck, .confirmed)
+        // La cambiaste en real-debrid.com: ya no sirve.
+        rig.http.statuses[user] = 401
+        rig.http.json[user] = ["error": "bad_token"]
+        let later = DebridModel(rig.services)
+        await later.recheck()
+        XCTAssertEqual(later.keyCheck, .rejected, "«Vuelve a conectar Real-Debrid»")
+        XCTAssertTrue(later.hasToken, "la clave no se borra sola")
+        // Sin internet: no se sabe, y no se dice «Conectada».
+        rig.http.statuses[user] = nil
+        rig.http.offline = true
+        let offline = DebridModel(rig.services)
+        await offline.recheck()
+        XCTAssertEqual(offline.keyCheck, .unreachable)
+    }
+
     func testVolverAImportarSinRedDiceQuePasoYLaListaSeQueda() async throws {
         let rig = try ServicesRig(signedIn: true)
         rig.services.addonList.startWithRecommended()

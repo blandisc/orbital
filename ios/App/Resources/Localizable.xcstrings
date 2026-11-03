@@ -33236,6 +33236,192 @@
           }
         }
       }
+    },
+    "Bajando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading"
+          }
+        }
+      }
+    },
+    "Bajando · %lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading · %lld of %lld"
+          }
+        }
+      }
+    },
+    "Ya terminaron": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished"
+          }
+        }
+      }
+    },
+    "Toca un pedido para ver qué puedes hacer. Los que terminan se quedan una semana.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca un pedido para ver qué puedes hacer. Los que terminan se quedan una semana."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca un pedido para ver qué puedes hacer. Los que terminan se quedan una semana."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en un pedido para ver qué puedes hacer. Los que terminan se quedan una semana."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca un pedido para ver qué puedes hacer. Los que terminan se quedan una semana."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a request to see what you can do. Finished ones stay for a week."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a request to see what you can do. Finished ones stay for a week."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click a request to see what you can do. Finished ones stay for a week."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap a request to see what you can do. Finished ones stay for a week."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "No sirve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doesn't work"
+          }
+        }
+      }
+    },
+    "termina en ••••%@ · Real-Debrid ya no la acepta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ends in ••••%@ · Real-Debrid no longer accepts it"
+          }
+        }
+      }
+    },
+    "Tu clave ya no sirve. Pega la nueva de real-debrid.com/apitoken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your key no longer works. Paste the new one from real-debrid.com/apitoken."
+          }
+        }
+      }
+    },
+    "Revisando tu clave…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking your key…"
+          }
+        }
+      }
+    },
+    "No contestó a tiempo: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn't answer in time: %@"
+          }
+        }
+      }
+    },
+    "No contestaron a tiempo: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn't answer in time: %@"
+          }
+        }
+      }
+    },
+    "Infuse no puede abrir esta versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Infuse can't open this version"
+          }
+        }
+      }
+    },
+    "Necesita algo que solo manda el reproductor de Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It needs something only Orbital's player sends"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

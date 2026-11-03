@@ -16,6 +16,10 @@ public final class DebridModel: ObservableModel {
     public private(set) var check: Check = .idle { didSet { changed() } }
     /// Lo que se sabe de la clave guardada (nil sin clave).
     public private(set) var status: DebridStatus? { didSet { changed() } }
+    /// P6-A · si tu clave sirve, según Real-Debrid en esta visita (`recheck`). Mientras pregunta, `checking`: la página enseña
+    /// lo último que se supo sin la palomita; nunca «Conectada ✓» de algo que no se confirmó ahora.
+    public enum KeyCheck: Equatable, Sendable { case checking, confirmed, rejected, unreachable }
+    public private(set) var keyCheck: KeyCheck = .checking { didSet { if oldValue != keyCheck { changed() } } }
     public var token = "" { didSet { if oldValue != token { check = .idle; changed() } } }
     private let services: Services
 
@@ -36,6 +40,18 @@ public final class DebridModel: ObservableModel {
     /// Al abrir Ajustes: el estado guardado, o uno nuevo si es de ayer.
     public func load(force: Bool = false) async { status = await services.debrid.status(force: force) }
 
+    /// P6-A · al abrir tu cuenta de Real-Debrid: se le pregunta si tu clave sirve. Rechazada: «Vuelve a conectar Real-Debrid»;
+    /// sin respuesta: «No pude ver tu cuenta»; confirmada: «Conectada ✓».
+    public func recheck() async {
+        keyCheck = .checking
+        switch await services.debrid.checkNow() {
+        case .status(let fresh): status = fresh; keyCheck = .confirmed
+        case .invalidToken: keyCheck = .rejected
+        case .unreachable: keyCheck = .unreachable
+        case .noKey: status = nil; keyCheck = .checking
+        }
+    }
+
     /// Comprueba la clave pegada. Si es Premium se guarda y tus complementos recomendados se arman con ella.
     public func verify() async {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -49,6 +65,7 @@ public final class DebridModel: ObservableModel {
             services.addonList.startWithRecommended()
             await services.resetAccountCaches()
             status = found
+            keyCheck = .confirmed   // la acabas de pegar y Real-Debrid la aceptó
             check = .ok(found)
         } catch let error as DebridError {
             check = .failed(error.description)
@@ -76,7 +93,7 @@ public final class DebridModel: ObservableModel {
     public func remove() async {
         await services.debrid.remove()
         await services.resetAccountCaches()
-        status = nil; token = ""; check = .idle
+        status = nil; token = ""; check = .idle; keyCheck = .checking
     }
 
     /// «Te quedan 143 días» / «Vence hoy» / «Venció hace 2 días» / «Cuenta gratuita»: cómo está, en palabras.

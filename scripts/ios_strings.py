@@ -19,6 +19,15 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Decisiones de Real-Debrid (3 nov, P1-A…P6-A) y lo suelto (C8, M3).
+    "Bajando": "Downloading", "Bajando · %lld de %lld": "Downloading · %lld of %lld", "Ya terminaron": "Finished",
+    "Toca un pedido para ver qué puedes hacer. Los que terminan se quedan una semana.": "Tap a request to see what you can do. Finished ones stay for a week.",
+    "No sirve": "Doesn't work", "termina en ••••%@ · Real-Debrid ya no la acepta": "ends in ••••%@ · Real-Debrid no longer accepts it",
+    "Tu clave ya no sirve. Pega la nueva de real-debrid.com/apitoken.": "Your key no longer works. Paste the new one from real-debrid.com/apitoken.",
+    "Revisando tu clave…": "Checking your key…",
+    "No contestó a tiempo: %@": "Didn't answer in time: %@", "No contestaron a tiempo: %@": "Didn't answer in time: %@",
+    "Infuse no puede abrir esta versión": "Infuse can't open this version",
+    "Necesita algo que solo manda el reproductor de Orbital": "It needs something only Orbital's player sends",
     # Pasada de Real-Debrid y Complementos (3 nov): lo que se rompía o se podía decir mejor.
     "Seguir esperando": "Keep waiting", "No pude ver tu cuenta": "I couldn't see your account",
     "Real-Debrid no contestó. Tu clave sigue guardada.": "Real-Debrid didn't answer. Your key is still saved.",

@@ -11,11 +11,19 @@ struct TorrentioSettings: View {
     @State private var torrentio = ModelObserver(TorrentioSettingsModel(AppEnvironment.shared.services))
     @State private var explaining = false
     @State private var confirmReset = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let model = torrentio.model
         let options = model.options
         Form {
+            // P3-B: si con tus filtros no verías nada, se dice arriba (donde se ve) con su arreglo; si todo va bien, nada cambia.
+            if case .result(.nothing(let fixes)) = model.probe {
+                Section {
+                    TorrentioNothingProblem(sample: TorrentioProbe.sample.name, fixes: fixes) { fix in model.apply(fix) }
+                }
+                .listRowBackground(DS.surface)
+            }
             Section {
                 Text("Torrentio busca las versiones de lo que quieres ver. Aquí decides cuáles te enseña. Lo de abajo ya viene bien; cámbialo solo si algo te molesta.")
                     .recipe(.footnote, color: DS.textMuted)
@@ -46,7 +54,7 @@ struct TorrentioSettings: View {
             } header: { Text("Lo básico") }
             .listRowBackground(DS.surface)
             // T9: se prueba sola al cambiar algo; si no quedaría nada, el arreglo está aquí mismo.
-            if model.probe != .idle {
+            if model.probe != .idle, !model.probe.isNothing {
                 Section {
                     TorrentioProbeRow(probe: model.probe, sample: TorrentioProbe.sample.name) { fix in model.apply(fix) }
                 } footer: {
@@ -63,6 +71,7 @@ struct TorrentioSettings: View {
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)
+        .animation(DS.Motion.base(reduceMotion), value: model.probe.isNothing)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: "Torrentio")).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
@@ -127,6 +136,11 @@ struct TorrentioSettings: View {
             o.languages.swapAt(i, i + step)
         }
     }
+}
+
+extension TorrentioSettingsModel.Probe {
+    /// La prueba dio 0 versiones con tus filtros (P3-B: el aviso sube arriba de la página).
+    var isNothing: Bool { if case .result(.nothing) = self { true } else { false } }
 }
 
 /// Un renglón que lleva a otra página: su nombre y, debajo, cómo está ahora (en gris).

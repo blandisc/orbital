@@ -276,6 +276,7 @@ agrega al catálogo (`ios/App/Sources/Design/`) y a esta tabla. `DesignTests` re
 | Texto sobre arte | `ArtVeil` | Todo texto encima de un póster, fotograma o fondo desenfocado va sobre su velo (`bottom`, `top`, `both`, `full`, `leading`; `soft`, `strong`, `deep`). Nunca un degradado a mano. | sí |
 | Cargando | el esqueleto de su forma · `DSLoadingState` | Una lista o fila carga con su esqueleto (`FeedSkeleton`, `ShelfSkeleton`, `CheckRowSkeleton`); un área que no es lista, con `DSLoadingState`. Junto a un botón, el indicador chico con su texto («Conectando…»). | sí |
 | Sin conexión o error | `DSErrorState(offline:retry:)` · `DSNotice` | Un área que no llegó dice «Sin conexión» o «No se pudo cargar» con «Reintentar»; nunca un vacío que diga «nada» cuando lo que pasó es que no llegó. Dentro de una sección, `DSNotice`. | — |
+| Problema con su arreglo | `DSProblem` · `dsProblemFix(primary:)` | Qué pasa en ámbar con su ícono, por qué en gris y el arreglo de un toque debajo; arriba de la página y solo cuando pasa (3 nov 2026, P3-B y P6-A). Un aviso sin salida es `DSNotice`. | sí |
 | Números y fechas | `Strings.count` · `Strings.date` | En el idioma de la app, no en el del teléfono: «1000» sin separador hasta 9999 y con espacio fino después; «jueves 12 de agosto». Nada de `.formatted()` ni `DateFormatter` en las pantallas. | sí |
 | Logos de marca | a la misma altura *visual* | Los logos que van juntos (IMDb, TMDB, Rotten Tomatoes; las plataformas) se ven del mismo tamaño, no miden lo mismo: una palabra larga (TMDB) va más baja (`DS.RatingBrand.wordmarkScale`). | — |
 | Lo que se mueve solo | El mosaico se detiene a los 90 s (con el protector, avanza a pasos); todo respeta movimiento reducido | Igual | La TV no tiene cielo que se mueva: Orbital no gasta detrás de un juego. |
@@ -383,6 +384,18 @@ Fernando: «dale una pasada a todas las pantallas que hiciste intentando romperl
 | Donde marcar es esconder, la marca es el ojo tachado, no la palomita (y VoiceOver dice «Escondida», no «seleccionado») | `CheckLine(mark: "eye.slash")` | — |
 | Con clave guardada pero sin respuesta de Real-Debrid, la página dice «No pude ver tu cuenta» con «Reintentar»; nunca el campo vacío para pegarla | `DebridAccountView.unknown` | `-demo-rd unreachable` |
 
+**Decisiones del 3 nov 2026 (P1-A…P6-A, canvas «Seis decisiones de Real-Debrid»).** Fernando: «Vamos con P1A. Vamos con P2B.
+Vamos con P3B. Vamos con P4A. Vamos P5A. P6A.» Cada una es regla de todo el sistema:
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| **Un problema siempre trae su arreglo.** Qué pasa (ámbar con su ícono), por qué (gris) y el arreglo de un toque debajo (el primero blanco, los demás de vidrio); arriba de la página, donde se ve al abrirla, y solo cuando pasa: si todo va bien, la página no cambia. Entra y sale con `DS.Motion.base` | `DSProblem` (`Feedback.swift`, sus arreglos son obligatorios) · `dsProblemFix(primary:)`. «Con esto no verías nada» (P3-B, `TorrentioNothingProblem`), «Vuelve a conectar Real-Debrid» (P6-A). «Avisos apagados» siempre con «Ajustes», también en el reproductor (P5-A, `PlayerNotice.opensNotificationSettings`) | `testAProblemAlwaysBringsItsFix` |
+| **Lo que dice la pantalla es verdad al abrirla.** Tu cuenta de Real-Debrid le pregunta a Real-Debrid al abrirse; mientras, lo último que se supo sin la palomita («Guardada · Revisando…»); «Conectada ✓» solo con lo confirmado en esta visita; rechazada, «No sirve» | `DebridModel.recheck()` / `keyCheck` | `testWhatTheScreenSaysIsTrueWhenItOpens`, `testAbrirTuCuentaRevisaLaClaveYNuncaConfirmaLoDeAyer` · `-demo-rd revoked`, `-demo-rd-slow` |
+| Una lista de cosas que pasan solas se parte en lo que falta y lo que ya terminó, como las descargas de iOS; un grupo vacío no sale | «Tus pedidos»: «Bajando» y «Ya terminaron» (`DebridRequestWords.grouped`) | `testRequestsSplitIntoPendingAndFinished` |
+| Tocar un renglón hace lo que promete: abre su hoja con lo que se puede hacer (no solo dejando el dedo). La hoja es la misma donde salga | `DebridRequestSheet` (en la ficha y en «Tus pedidos»): «Probar otra versión» solo si ayuda (`suggestsOtherVersion`), «Abrir la ficha», «Cancelar pedido» con «Seguir esperando»; de otra cuenta, solo «Abrir la ficha» | `-demo-rd-sheet mine\|other` |
+| Antes de una pregunta de iOS que se hace una sola vez, la misma explicación en todos lados | `DebridNotifyAsk` (ficha y reproductor) | `-demo-player rd-notify` |
+| Un renglón de datos lleva su forma corta si la larga no cabe: `DataLine` suelta lo que no cabe, y lo que importa no puede ser lo que se suelta | «Seguir viendo» dice «T2 E5 · Bajando · 42 %» | — |
+
 ### Tabla espejo (iPhone ↔ TV)
 
 Una sola Orbital (Fernando, 31 oct 2026): cada papel del lenguaje del iPhone tiene aquí su pieza de la TV y su estado. Estado:
@@ -410,6 +423,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Texto sobre arte | `Veil(...lados)` y `--veil-bottom`, `--veil-leading`, `--veil-top`, `--veil-bottom-soft`, `--veil-corner` | Igual | Una receta por lado; los velos de pseudo-elemento (tarjeta de premio, escenario de «Porque viste», mosaico) usan los mismos tokens. |
 | Cargando | `PosterSkeletons(n)` (`skeleton--poster`, `skeleton--heading`) | Igual | Películas y series (dos filas) y una lista abierta, quietos: nada se anima mientras se espera. |
 | Sin conexión o error | Mensajes en palabras con «Reintentar» | Igual | — |
+| Problema con su arreglo | Mensajes en palabras con su botón | Pendiente · ola 6 | La TV aún no tiene la prueba con un título ni revisa tu clave al abrir tu cuenta (registro de paridad, «Decisiones de Real-Debrid»). |
 | Números y fechas | `core/format.js` | Igual | — |
 | Logos de marca | `--platform-*` y los logos de `ui.js` | Igual | — |
 | Lo que se mueve solo | El mosaico se detiene a los 90 s; todo respeta movimiento reducido | Igual | La TV no tiene cielo que se mueva: Orbital no gasta detrás de un juego. |

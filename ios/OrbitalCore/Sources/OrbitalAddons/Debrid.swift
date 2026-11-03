@@ -196,21 +196,29 @@ public actor DebridAccount {
     /// día y decir «Premium» el día que vence. Se le pregunta ya, a lo más una vez cada `troubleEvery` (varios intentos
     /// seguidos no son varias consultas).
     public func refreshAfterTrouble() async -> DebridHealth {
+        if hasToken, let last = lastTrouble, clock().timeIntervalSince(last.at) < Self.troubleEvery { return last.health }
+        let health = await checkNow()
+        if hasToken { lastTrouble = (clock(), health) }
+        return health
+    }
+
+    /// P6-A · al abrir tu cuenta: se le pregunta ya a Real-Debrid si tu clave sirve (lo que dice la pantalla es verdad al
+    /// abrirla). Sin esperar a nadie ni recordar la respuesta.
+    public func checkNow() async -> DebridHealth {
         guard let token = vault.secret(AddonKeys.realDebridToken), !token.isEmpty else { return .noKey }
-        if let last = lastTrouble, clock().timeIntervalSince(last.at) < Self.troubleEvery { return last.health }
-        let health: DebridHealth
         do {
             let fresh = try await provider.status(token: token)
             remember(fresh)
-            health = .status(fresh)
+            return .status(fresh)
         } catch DebridError.invalidToken {
-            health = .invalidToken
+            return .invalidToken
         } catch {
-            health = .unreachable(saved)
+            return .unreachable(saved)
         }
-        lastTrouble = (clock(), health)
-        return health
     }
+
+    /// La demostración (`-demo-rd revoked`): una cuenta que ya se había confirmado antes.
+    public nonisolated func rememberForDemo(_ status: DebridStatus) { vault.setData(AddonKeys.debridStatus, try? Self.encoder.encode(status)) }
     public static let troubleEvery: TimeInterval = 5 * 60
     private var lastTrouble: (at: Date, health: DebridHealth)?
 

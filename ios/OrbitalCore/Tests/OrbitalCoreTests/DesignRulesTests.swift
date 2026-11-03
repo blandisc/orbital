@@ -322,4 +322,38 @@ final class DesignRulesTests: XCTestCase {
         }
         check(problems, "Una pregunta que confirma «Cancelar …» lleva su botón de salida con nombre (role: .cancel)")
     }
+
+    /// Decisiones del 3 nov 2026 (P3-B, P5-A, P6-A): un problema siempre trae su arreglo. «Avisos apagados» va con «Ajustes»
+    /// (un botón, `actionTitle` o `opensNotificationSettings`); «Con esto no verías nada» y «Vuelve a conectar Real-Debrid» en
+    /// una página son un `DSProblem` (sus arreglos son obligatorios).
+    func testAProblemAlwaysBringsItsFix() throws {
+        var problems: [String] = []
+        for file in try sources() {
+            for (i, line) in file.lines.enumerated() {
+                let code = line.trimmingCharacters(in: .whitespaces)
+                if code.hasPrefix("//") || line.contains("ds-exception:") { continue }
+                let window = file.lines[i..<min(file.lines.count, i + 2)].joined(separator: "\n")
+                if line.contains("\"Avisos apagados"), !["actionTitle", "opensNotificationSettings", "Label("].contains(where: window.contains) {
+                    problems.append("\(file.path):\(i + 1): «Avisos apagados» sin «Ajustes»")
+                }
+                if line.contains("Text(\"Con esto no verías nada\")") || line.contains("UnavailableCause.reconnectDebrid.title"), !line.contains("DSProblem(") {
+                    problems.append("\(file.path):\(i + 1): el problema va en un DSProblem, con su arreglo")
+                }
+            }
+        }
+        check(problems, "Un problema siempre trae su arreglo")
+    }
+
+    /// P6-A: lo que dice la pantalla es verdad al abrirla. Tu cuenta de Real-Debrid le pregunta a Real-Debrid al abrirse
+    /// (`recheck`) y solo dice «Conectada» con lo que se confirmó en esta visita.
+    func testWhatTheScreenSaysIsTrueWhenItOpens() throws {
+        let page = try XCTUnwrap(try sources(["Screens"]).first { $0.name == "DebridAccountView.swift" })
+        var problems: [String] = []
+        if !page.lines.contains(where: { $0.contains(".task { await model.recheck() }") }) { problems.append("la página no revisa tu clave al abrirse") }
+        for (i, line) in page.lines.enumerated() where line.contains("Text(\"Conectada\")") && !line.contains("case .confirmed") {
+            problems.append("\(page.path):\(i + 1): «Conectada» sin confirmar en esta visita")
+        }
+        check(problems, "Lo que dice la pantalla es verdad al abrirla")
+    }
 }
+

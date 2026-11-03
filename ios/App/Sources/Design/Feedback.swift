@@ -40,6 +40,36 @@ struct DSNotice: View {
     }
 }
 
+/// Un problema siempre trae su arreglo (Fernando, 3 nov 2026: P3-B, P5-A, P6-A). Qué pasa (ámbar, con su ícono), por qué
+/// (gris) y, debajo, el arreglo de un toque: el primero es el principal (blanco), los demás de vidrio. Va arriba de la
+/// página, donde se ve al abrirla, y solo cuando pasa: si todo va bien, la página no cambia. Los arreglos no son opcionales
+/// (`fixes` es obligatorio): un problema sin salida es un aviso de una línea (`DSNotice`).
+struct DSProblem<Fixes: View>: View {
+    let title: Text
+    var detail: Text?
+    var symbol = "exclamationmark.triangle"
+    @ViewBuilder let fixes: () -> Fixes
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            IconBeside(symbol: symbol, color: DS.warning) {
+                title.recipe(.labelLarge, color: DS.text)
+                if let detail { detail.recipe(.footnote, color: DS.textMuted).fixedSize(horizontal: false, vertical: true) }
+            }
+            VStack(spacing: DS.Space.s2) { fixes() }
+        }
+        .padding(.vertical, DS.Space.s2)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// Los arreglos de un `DSProblem`: el primero, el principal en blanco; los demás, de vidrio (su texto va a lo ancho).
+extension View {
+    @ViewBuilder func dsProblemFix(primary: Bool) -> some View {
+        if primary { dsPrimaryButton(size: .large) } else { dsSecondaryButton().controlSize(.large) }
+    }
+}
+
 /// Cuando algo no llegó: la causa de verdad (sin internet, un servicio que no contesta, algo sin conectar), qué sigue
 /// funcionando y la salida («Tus descargas», «Reintentar», «Abrir Ajustes»). Es el aviso del modo degradado
 /// (`docs/producto/modo-degradado.md`); `DSNotice` queda para avisos de una línea sin salida.

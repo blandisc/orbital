@@ -52,6 +52,25 @@ struct AddonHealthLine: View {
     }
 }
 
+/// C8 · en la lista de versiones: quién no contestó a tiempo (o se saltó por no contestar antes), por su nombre, para que
+/// «no hay latino» no parezca culpa del título. Con la tortuga de «Contesta lento».
+struct AddonQuietLine: View {
+    let names: [String]
+
+    var body: some View {
+        let joined = names.joined(separator: " · ")
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
+            Image(systemName: "tortoise").foregroundStyle(DS.warning).accessibilityHidden(true)
+            (names.count == 1 ? Text("No contestó a tiempo: \(joined)") : Text("No contestaron a tiempo: \(joined)"))
+                .foregroundStyle(DS.textMuted).fixedSize(horizontal: false, vertical: true)
+        }
+        .font(DS.TextRecipe.caption.font)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("sources-quiet")
+    }
+}
+
 /// Un complemento en la lista (C1): su nombre, qué aporta y, debajo, cómo le va o «Apagado».
 struct AddonRowLabel: View {
     let addon: InstalledAddon
@@ -186,16 +205,8 @@ struct TorrentioProbeRow: View {
             }
         case .result(.titleHasNothing):
             line("info.circle", DS.textMuted, Text("Hoy \(sample) no tiene versiones ni con lo recomendado: no son tus filtros."))
-        case .result(.nothing(let fixes)):
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                line("exclamationmark.triangle", DS.warning, Text("Con esto no verías nada"))
-                Text("\(sample) daría 0 versiones con estos filtros.").recipe(.footnote, color: DS.textMuted)
-                ForEach(fixes, id: \.self) { fix in
-                    Button { apply(fix) } label: { fixTitle(fix) }
-                        .buttonStyle(.borderless)
-                }
-            }
-            .accessibilityElement(children: .contain)
+        case .result(.nothing):
+            EmptyView()   // P3-B: «Con esto no verías nada» sube arriba de la página (`TorrentioNothingProblem`)
         }
     }
 
@@ -207,11 +218,29 @@ struct TorrentioProbeRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func fixTitle(_ fix: TorrentioProbe.Fix) -> Text {
+    static func fixTitle(_ fix: TorrentioProbe.Fix) -> Text {
         switch fix {
         case .showQuality(let q): Text("Volver a mostrar \(q == "4k" ? "4K" : q)")
         case .allowRequests: Text("Ver también lo que se puede pedir")
         case .recommended: Text("Volver a lo recomendado")
         }
+    }
+}
+
+/// P3-B · «Con esto no verías nada» arriba de la página de Torrentio, solo cuando la prueba da 0 versiones, con sus arreglos
+/// de un toque (`DSProblem`). Si todo va bien, la página no cambia.
+struct TorrentioNothingProblem: View {
+    let sample: String
+    let fixes: [TorrentioProbe.Fix]
+    let apply: (TorrentioProbe.Fix) -> Void
+
+    var body: some View {
+        DSProblem(title: Text("Con esto no verías nada"), detail: Text("\(sample) daría 0 versiones con estos filtros.")) {
+            ForEach(Array(fixes.enumerated()), id: \.element) { index, fix in
+                Button { apply(fix) } label: { TorrentioProbeRow.fixTitle(fix).frame(maxWidth: .infinity) }
+                    .dsProblemFix(primary: index == 0)
+            }
+        }
+        .accessibilityIdentifier("torrentio-nothing")
     }
 }
