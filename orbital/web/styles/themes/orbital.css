@@ -59,7 +59,7 @@
   --color-match-keep: var(--color-success);
   --color-match-tonight: var(--color-orbital); /* las estrellas de una calificación: el ámbar del iPhone (DS.Rating.filled) */
   --color-live: var(--palette-teal-300);
-  --color-ok: var(--color-success); /* lo listo o conectado: «✓ Conectada», «Al instante», «Descargado» (DS.success, el verde; el turquesa es lo nuevo y lo que pasa ahora) */
+  --color-ok: var(--palette-teal-300); /* un estado que ya está bien: «✓ Conectada», «✓ Guardada» */
   /* El arcoíris del azul de Orbital (Fernando, 31 oct 2026): el turquesa de la luna (oklch .804 .110 183) girado por el círculo
      con la misma luz y la misma intensidad. Acento para cosas que se distinguen por su color (las categorías de TV en vivo; los
      filtros, con el iPhone). Las secciones se quedan con un solo azul. design/tokens.json › rainbow. */

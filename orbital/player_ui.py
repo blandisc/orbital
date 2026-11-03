@@ -900,7 +900,7 @@ def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active:
             good = cell["hint"] == "Al instante" and not cell["doubt"]
             lines += [text(cx + 14, y + 17, esc(fit(cell["label"], 21, width - 24, "semi")), 21, ink, weight="semi", align=4),
                       text(cx + 14, y + 40, esc(fit(state, 17, width - 24)), 17,
-                           ON_LIGHT if focused else (OK if good else MUTED), align=4)]
+                           ON_LIGHT if focused else (LIVE if good else MUTED), align=4)]
             cx += width + 10
         y += 60
     return lines
@@ -1123,7 +1123,6 @@ class LiveHud:
 # Qué dice y de qué color es cada estado del canal.
 NEXT = ass_color(PALETTE["amber-300"])  # «Siguiente» en Y › Episodios (--color-warning: el que sigue, no un error)
 LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
-OK = ass_color(PALETTE["pad-green"])  # lo listo: «Al instante» (--color-ok, el verde; el turquesa es lo que pasa ahora)
 LIVE_STATUS = {"live": ("En vivo", LIVE), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
 
 

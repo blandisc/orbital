@@ -81,8 +81,7 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Principal | `--color-primary` / `--color-on-primary` | Blanco con letra negra; también el foco invertido |
 | Porqué | `--color-reason` | Turquesa; solo porqués |
 | Lo de Orbital | `--color-orbital` (la luna) | El ícono de un rótulo de sección |
-| En vivo | `--color-live` | Turquesa |
-| Listo, conectado | `--color-ok` | Verde (`--color-success`): «✓ Conectada», «Al instante», «Descargado» |
+| En vivo · bien | `--color-live`, `--color-ok` | Turquesa |
 | Aviso · peligro | `--color-warning`, `--color-danger` | Ámbar · rojo |
 | Nuevo | `--color-new` | El listón «Nuevo», «Hoy»: el turquesa del puntito del logo (`DS.fresh`), no el verde |
 | Acento por categoría | `--rainbow-*` | El arcoíris del azul de Orbital: categorías de TV en vivo (filtros, después) |
@@ -650,7 +649,7 @@ y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CS
 | Adelantando (◀ ▶, LB/RB) | Solo la barra y, sobre el punto, la hora, cuánto salta y el capítulo | Mantén: más rápido |
 | X | Panel abajo: Audio · Subtítulos · Tamaño · Sincronía (el video sigue). Elegir audio o subtítulos **no lo cierra**; mientras está abierto, los subtítulos suben (`sub-pos`) para verse encima. En Audio, tras las pistas de esta versión, tu idioma (y los que no trae) en otra: «Latino» con «En otra · 4K» a la derecha (corto: la columna es angosta); elegirla cambia de fuente y sigue donde ibas | ◀ ▶ columna · A elegir · B cerrar |
 | Probar otros (X › Subtítulos) | Franja arriba (`sub_trial_ass`, 96 px): «Español · Subtítulo 2 de 5», del video o de tu complemento, la sincronía y, a la derecha, qué pasa (bajando, sin internet, no hay más) | ◀▶ Otro subtítulo · ↑↓ Adelantar o atrasar · A Este va bien · B Listo (se queda el último que probaste, como el iPhone) |
-| Y | Panel «Más»: **Episodios** (series; el encabezado dice la temporada, «Episodios · T5», y abre en la que ves; el que ves dice «Viendo» y el que sigue «Siguiente» en ámbar, `--color-warning`; LB/RB cambian de temporada, con el dedo «‹ Temporada» y «Temporada ›») · **Versión** · Reproducción. Versión es la cuadrícula de «Versión» de la ficha (`watch.version_grid`, `_grid_rows`): un renglón por idioma y sus calidades en casillas («1080p» y debajo «Al instante» en `--color-ok`, el verde); abre en la que ves (con contorno) y abajo dice la enfocada en palabras | ↑↓ idioma · ◀ ▶ calidad (del borde, a la columna de al lado) · A cambiar (sigue donde ibas) · B cerrar |
+| Y | Panel «Más»: **Episodios** (series; el encabezado dice la temporada, «Episodios · T5», y abre en la que ves; el que ves dice «Viendo» y el que sigue «Siguiente» en ámbar, `--color-warning`; LB/RB cambian de temporada, con el dedo «‹ Temporada» y «Temporada ›») · **Versión** · Reproducción. Versión es la cuadrícula de «Versión» de la ficha (`watch.version_grid`, `_grid_rows`): un renglón por idioma y sus calidades en casillas («1080p» y debajo «Al instante» en `--color-live`); abre en la que ves (con contorno) y abajo dice la enfocada en palabras | ↑↓ idioma · ◀ ▶ calidad (del borde, a la columna de al lado) · A cambiar (sigue donde ibas) · B cerrar |
 | Tarjetas | «Saltar intro» (botón claro), «Siguiente episodio» (anillo de cuenta atrás), «¿Sigues viendo?» | A / B |
 
 El reproductor no usa ☰ (Start es de Orbital: con Home, salir del juego).
