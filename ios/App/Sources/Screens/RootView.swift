@@ -161,6 +161,7 @@ struct RootView: View {
                 if decision != .skip {
                     Task { await env.ratings.refresh() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }
                     Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) }
+                    Task { await env.services.addonSync.refresh() }   // S6: tu lista y la de tu TV (solo Ultra con TV)
                 }
                 if decision == .refresh {
                     Task { await env.services.syncLibrary() }   // al abrir ya la pide el arranque

@@ -10,6 +10,8 @@ import OrbitalModels
 struct AddonsSettings: View {
     @Environment(AppEnvironment.self) private var env
     @State private var addons = ModelObserver(AddonsModel(AppEnvironment.shared.services))
+    /// Tu lista y la de tu TV (S6): solo en Ultra con una TV emparejada (S4).
+    @State private var tv = ModelObserver(AppEnvironment.shared.services.addonSync)
     @State private var editMode: EditMode = .inactive
     /// El que se va a quitar (se confirma diciendo qué se pierde).
     @State private var removing: InstalledAddon?
@@ -23,6 +25,10 @@ struct AddonsSettings: View {
                     .accessibilityIdentifier("addons-explain")
             }
             .listRowBackground(DS.surface)
+            if tv.model.status != .off {
+                Section { AddonTVStatus(status: tv.model.status, waitingForKeys: tv.model.waitingForKeys) }
+                    .listRowBackground(DS.surface)
+            }
             if !model.torrentioChoice.isEmpty { torrentioChoice(model) }
             Section {
                 ForEach(model.items) { addon in
@@ -46,6 +52,12 @@ struct AddonsSettings: View {
                 Text("Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden.")
             }
             .listRowBackground(DS.surface)
+            if tv.model.status != .off, !tv.model.tvOnly.isEmpty {
+                Section {
+                    ForEach(tv.model.tvOnly, id: \.id) { AddonTVOnlyRow(addon: $0) }
+                } header: { Text("En tu TV") } footer: { Text("Viven en tu TV; este iPhone no los usa.") }
+                .listRowBackground(DS.surface)
+            }
             if env.session.state == .signedIn {
                 Section {
                     Button { Task { await model.importAgain() } } label: { Label("Volver a traer", systemImage: "arrow.down.circle") }
@@ -90,7 +102,11 @@ struct AddonsSettings: View {
         }
         .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons) { explaining = false }.presentationDetents([.medium, .large]) }
         .environment(\.editMode, $editMode)
-        .task { await model.prepare() }
+        .task {
+            await model.prepare()
+            await model.syncWithTV()
+            env.announceAddonClash()
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("addons-settings")
     }
@@ -119,6 +135,22 @@ struct AddonsSettings: View {
             env.notify("Quitaste el complemento", detail: addon.name, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
                 Task { await model.undoRemove(addon.id) }
             }
+        }
+    }
+}
+
+extension AppEnvironment {
+    /// S3: tus opciones y las de tu TV cambiaron en lo mismo; se quedó la de la TV y se ofrece la tuya.
+    func announceAddonClash() {
+        let sync = services.addonSync
+        guard let clash = sync.clash else { return }
+        sync.clearClash()
+        let ui = services.appSettings.uiLanguage
+        let title = clash.at.map { String(format: Strings.tr("Se quedó la de la TV (%@)", language: ui), Strings.clock($0, language: ui)) }
+            ?? Strings.tr("Se quedó la de la TV", language: ui)
+        notify(title, detail: clash.options.map { Strings.tr($0, language: ui) }.joined(separator: " · "), tone: .info,
+               actionTitle: "Usar la de este iPhone", actionSymbol: "iphone") {
+            Task { await sync.useMine() }
         }
     }
 }

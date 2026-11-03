@@ -28,6 +28,18 @@ TRANSLATIONS = {
     "No contestó a tiempo: %@": "Didn't answer in time: %@", "No contestaron a tiempo: %@": "Didn't answer in time: %@",
     "Infuse no puede abrir esta versión": "Infuse can't open this version",
     "Necesita algo que solo manda el reproductor de Orbital": "It needs something only Orbital's player sends",
+    # Fase 4 (3 nov): tu lista de complementos, la misma que tu TV (S1, S3, S5, S6).
+    "Revisando con tu TV…": "Checking with your TV…", "Es la misma lista que tu TV": "It's the same list as your TV",
+    "El último cambio fue en tu TV": "The last change was on your TV", "Lo que cambies aquí, tu TV lo toma": "What you change here, your TV picks up",
+    "Tu TV no contestó": "Your TV didn't answer", "Lo que cambies aquí le llega cuando conteste": "What you change here reaches it when it answers",
+    "Actualiza Orbital en tu TV": "Update Orbital on your TV", "Así toma esta lista": "So it takes this list",
+    "Espera las llaves por aparato": "Waiting for per-device keys", "Lo que lleva una clave se queda en este iPhone": "Whatever carries a key stays on this iPhone",
+    "Tu TV no tomó la lista": "Your TV didn't take the list", "%@ se queda en este iPhone": "%@ stays on this iPhone",
+    "Espera las llaves por aparato: su dirección lleva una clave": "Waiting for per-device keys: its address carries a key",
+    "Archivos de la TV": "TV files", "Solo en la TV": "Only on the TV", "En tu TV": "On your TV",
+    "Viven en tu TV; este iPhone no los usa.": "They live on your TV; this iPhone doesn't use them.",
+    "Se quedó la de la TV (%@)": "The TV's was kept (%@)", "Se quedó la de la TV": "The TV's was kept",
+    "Usar la de este iPhone": "Use this iPhone's", "Otras opciones": "Other options",
     # Pasada de Real-Debrid y Complementos (3 nov): lo que se rompía o se podía decir mejor.
     "Seguir esperando": "Keep waiting", "No pude ver tu cuenta": "I couldn't see your account",
     "Real-Debrid no contestó. Tu clave sigue guardada.": "Real-Debrid didn't answer. Your key is still saved.",

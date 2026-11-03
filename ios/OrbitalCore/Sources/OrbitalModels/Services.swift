@@ -38,6 +38,8 @@ public final class Services: ObservableModel {
     public let debridReminders: DebridReminderBook
     /// Tus pedidos a Real-Debrid (R12, R13): la libreta de este aparato, pedir y seguir cuánto lleva cada uno.
     public let debridRequests: DebridRequestsModel
+    /// Tu lista de complementos, la misma que la de tu TV (S1, S3, S6): solo en Ultra con una TV emparejada.
+    public let addonSync: AddonTVSync
     /// El nombre de este aparato («iPhone», «iPad», «Mac»): quién hizo cada pedido.
     public let deviceName: String
     public private(set) var finder: StreamFinder { didSet { notify() } }
@@ -230,6 +232,10 @@ public final class Services: ObservableModel {
                                             return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "",
                                                                  token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
                                         }))
+        self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: {
+            let on = allowsOrbital && settings.value.orbitalEnabled
+            return OrbitalRemote(http: http, address: on ? settings.value.orbitalAddress : "", token: on ? secrets.get(SecretKey.orbitalToken) ?? "" : "", device: device)
+        }), available: { allowsOrbital && settings.value.orbitalEnabled }, device: device?.kind ?? "iphone", deviceName: { requestsBy })
         self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
                                                   finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb

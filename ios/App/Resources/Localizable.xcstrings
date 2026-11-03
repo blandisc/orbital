@@ -33422,6 +33422,453 @@
           }
         }
       }
+    },
+    "Revisando con tu TV…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking with your TV…"
+          }
+        }
+      }
+    },
+    "Es la misma lista que tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's the same list as your TV"
+          }
+        }
+      }
+    },
+    "El último cambio fue en tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last change was on your TV"
+          }
+        }
+      }
+    },
+    "Lo que cambies aquí, tu TV lo toma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you change here, your TV picks up"
+          }
+        }
+      }
+    },
+    "Tu TV no contestó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV didn't answer"
+          }
+        }
+      }
+    },
+    "Lo que cambies aquí le llega cuando conteste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you change here reaches it when it answers"
+          }
+        }
+      }
+    },
+    "Actualiza Orbital en tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Orbital on your TV"
+          }
+        }
+      }
+    },
+    "Así toma esta lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So it takes this list"
+          }
+        }
+      }
+    },
+    "Espera las llaves por aparato": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for per-device keys"
+          }
+        }
+      }
+    },
+    "Lo que lleva una clave se queda en este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que lleva una clave se queda en este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que lleva una clave se queda en este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que lleva una clave se queda en esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que lleva una clave se queda en este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Whatever carries a key stays on this iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Whatever carries a key stays on this iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Whatever carries a key stays on this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Whatever carries a key stays on this iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Tu TV no tomó la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV didn't take the list"
+          }
+        }
+      }
+    },
+    "%@ se queda en este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ se queda en este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ se queda en este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ se queda en esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ se queda en este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ stays on this iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ stays on this iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ stays on this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ stays on this iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Espera las llaves por aparato: su dirección lleva una clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for per-device keys: its address carries a key"
+          }
+        }
+      }
+    },
+    "Archivos de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV files"
+          }
+        }
+      }
+    },
+    "Solo en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only on the TV"
+          }
+        }
+      }
+    },
+    "En tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On your TV"
+          }
+        }
+      }
+    },
+    "Viven en tu TV; este iPhone no los usa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Viven en tu TV; este iPhone no los usa."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Viven en tu TV; este iPad no los usa."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Viven en tu TV; esta Mac no los usa."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Viven en tu TV; este iPhone no los usa."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They live on your TV; this iPhone doesn't use them."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They live on your TV; this iPad doesn't use them."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They live on your TV; this Mac doesn't use them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They live on your TV; this iPhone doesn't use them."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Se quedó la de la TV (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV's was kept (%@)"
+          }
+        }
+      }
+    },
+    "Se quedó la de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The TV's was kept"
+          }
+        }
+      }
+    },
+    "Usar la de este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar la de este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar la de este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar la de esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usar la de este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPhone's"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPad's"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this Mac's"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPhone's"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Otras opciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other options"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -45,14 +45,30 @@ public final class AddonList: @unchecked Sendable {
     /// Ya se trajeron los de Stremio (una sola vez).
     public var hasImported: Bool { vault.data(AddonKeys.importedFromStremio) != nil }
 
-    private func update(_ change: (inout [InstalledAddon]) -> Void) {
-        let saved: [InstalledAddon] = lock.withLock {
+    /// Quien escucha lo que cambias tú en este iPhone (no lo que llega de la TV): S6 lo manda a tu TV.
+    public var onLocalChange: (@Sendable () -> Void)? {
+        get { lock.withLock { localChangeObserver } }
+        set { lock.withLock { localChangeObserver = newValue } }
+    }
+    private var localChangeObserver: (@Sendable () -> Void)?
+    private var applyingRemote = 0
+
+    /// Cambios que llegan de tu TV (S3): se guardan sin volver a avisar que cambiaste algo aquí.
+    func fromTV(_ work: () -> Void) {
+        lock.withLock { applyingRemote += 1 }
+        work()
+        lock.withLock { applyingRemote -= 1 }
+    }
+
+    func update(_ change: (inout [InstalledAddon]) -> Void) {
+        let (saved, observer): ([InstalledAddon], (@Sendable () -> Void)?) = lock.withLock {
             var list = items ?? []
             change(&list)
             items = list
-            return list
+            return (list, applyingRemote == 0 ? localChangeObserver : nil)
         }
         write(saved)
+        observer?()
     }
 
     private func write(_ list: [InstalledAddon]) {

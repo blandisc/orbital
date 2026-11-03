@@ -27,6 +27,13 @@ public final class TorrentioSettingsModel: ObservableModel {
         super.init()
     }
 
+    /// Al abrir la página: tus opciones y las de tu TV se juntan (S3) y la página enseña las que quedaron.
+    public func syncWithTV() async {
+        await services.addonSync.refresh()
+        let now = services.addonList.torrentio?.options ?? TorrentioConfig.recommended
+        if now != options { options = now }
+    }
+
     /// Ya tienes tu Torrentio configurable (con la guía o al abrir Complementos se arma).
     public var exists: Bool { services.addonList.torrentio != nil }
     public var isRecommended: Bool { options == TorrentioProbe.recommended(keeping: options) }

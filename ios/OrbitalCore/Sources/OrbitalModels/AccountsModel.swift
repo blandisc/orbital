@@ -190,6 +190,14 @@ public final class AddonsModel: ObservableModel {
     }
 
     public func clearError() { error = nil }
+
+    /// Tu lista y la de tu TV (S6): al abrir Complementos se lee la de la TV y se junta; lo que cambie aquí se le manda solo.
+    public var tv: AddonTVSync { services.addonSync }
+    public func syncWithTV() async {
+        await services.addonSync.refresh()
+        reload()
+    }
+
     private func reload() { items = services.addonList.installed; torrentioChoice = Self.choices(services.addonList) }
 
     // MARK: C1 · cómo le va a cada uno; C3 y M4 · «Configurar»; C5 · con cuál Torrentio quedarse

@@ -117,6 +117,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         if url.host == "api.themoviedb.org", Demo.tmdb { return tmdbDemo(url) }
         if Demo.oneDrive != nil, url.host == "login.microsoftonline.com" || url.host == "graph.microsoft.com" { return Self.oneDriveDemo(url) }
+        if let found = try await DemoTVAddons.shared.respond(request) { return found }   // `-demo-tv-addons`: tu lista y la de la TV
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }

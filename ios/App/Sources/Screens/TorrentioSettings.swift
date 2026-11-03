@@ -80,6 +80,7 @@ struct TorrentioSettings: View {
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Tus idiomas, calidades y demás opciones vuelven a como vienen con Orbital.") }
         .sheet(isPresented: $explaining) { DebridExplainer(topic: .torrentio) { explaining = false }.presentationDetents([.medium, .large]) }
+        .task { await model.syncWithTV(); env.announceAddonClash() }   // S3: tus opciones y las de tu TV, juntas
         .task { if model.probe == .idle || model.probe == .unreachable { model.scheduleProbe(now: true) } }   // al regresar de una subpágina no se vuelve a probar lo mismo
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("torrentio-settings")
