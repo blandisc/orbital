@@ -55,6 +55,23 @@ public final class DebridModel: ObservableModel {
         } catch { check = .failed(DebridError.unexpected.description) }
     }
 
+    /// D1: las últimas 4 letras de tu clave («3F2A»); nunca completa.
+    public var keyTail: String? { services.debrid.keyTail }
+
+    /// D4: el canje de puntos: trabajando, hecho o por qué no.
+    public enum Redeem: Equatable { case idle, working, done, failed(String) }
+    public private(set) var redeem: Redeem = .idle { didSet { changed() } }
+
+    /// D4: canjea tus puntos por días de Premium (la pantalla pregunta antes: no se puede deshacer).
+    public func redeemPoints() async {
+        redeem = .working
+        do {
+            if let fresh = try await services.debrid.redeemPoints() { status = fresh }
+            redeem = .done
+        } catch let error as DebridError { redeem = .failed(error.description) }
+        catch { redeem = .failed(DebridError.unexpected.description) }
+    }
+
     /// «Quitar»: se olvida la clave (los recomendados se quedan sin fuentes hasta que pongas otra).
     public func remove() async {
         await services.debrid.remove()
@@ -86,6 +103,7 @@ public final class AddonsModel: ObservableModel {
         self.services = services
         super.init()
         items = services.addonList.installed
+        torrentioChoice = Self.choices(services.addonList)
     }
 
     /// Los recomendados que todavía no tienes (para «Agregar › Recomendados»).
@@ -102,7 +120,10 @@ public final class AddonsModel: ObservableModel {
     public func prepare() async {
         services.addonList.startWithRecommended()
         if !services.addonList.hasImported { _ = try? await services.importAddonsFromStremio() }
+        // C5 también para lo que ya tenías: un Torrentio traído antes pasa al de Orbital si este sigue como vino.
+        if services.addonList.adoptImportedTorrentio() { await services.resetAccountCaches() }
         reload()
+        await loadConfigurable()
     }
 
     public func setEnabled(_ id: String, _ on: Bool) async {
@@ -152,5 +173,68 @@ public final class AddonsModel: ObservableModel {
     }
 
     public func clearError() { error = nil }
-    private func reload() { items = services.addonList.installed }
+    private func reload() { items = services.addonList.installed; torrentioChoice = Self.choices(services.addonList) }
+
+    // MARK: C1 · cómo le va a cada uno; C3 y M4 · «Configurar»; C5 · con cuál Torrentio quedarse
+
+    /// Cómo le ha ido en este aparato (sin dato si está apagado o aún no se le ha preguntado).
+    public func health(_ addon: InstalledAddon) -> AddonHealth.State {
+        guard addon.enabled, let url = services.addonList.resolvedURL(addon) else { return .unknown }
+        return services.addonHealth.status(url)
+    }
+
+    public enum Configure: Equatable, Sendable {
+        /// Torrentio: la página de la app (T1).
+        case torrentio
+        /// Uno traído que tiene su propia página: se abre dentro de la app (M4).
+        case page(URL)
+    }
+
+    /// Los traídos con página de configuración (de su manifiesto); se llena con `loadConfigurable`.
+    public private(set) var configurableIDs: Set<String> = [] { didSet { changed() } }
+
+    public func configure(_ addon: InstalledAddon) -> Configure? {
+        if addon.origin == .recommended(AddonCatalog.torrentio.id) { return .torrentio }
+        guard configurableIDs.contains(addon.id), let url = services.addonList.resolvedURL(addon) else { return nil }
+        let base = url.hasSuffix("/manifest.json") ? String(url.dropLast("/manifest.json".count)) : url
+        return URL(string: "\(base)/configure").map(Configure.page)
+    }
+
+    /// Lee de los manifiestos cuáles tienen página propia (solo los prendidos: los apagados no se preguntan).
+    public func loadConfigurable() async {
+        guard let addons = try? await services.registry.addons() else { return }
+        let configurable = Set(addons.filter(\.configurable).map(\.url))
+        configurableIDs = Set(items.filter { !$0.isBuiltIn && services.addonList.resolvedURL($0).map(configurable.contains) == true }.map(\.id))
+    }
+
+    /// M4: su página dio una dirección nueva al tocar «Install»: se guarda en el mismo complemento, nunca uno nuevo.
+    @discardableResult
+    public func saveConfiguration(_ id: String, url: String) async -> Bool {
+        guard services.addonList.replaceURL(id, with: url) else { return false }
+        reload(); await services.resetAccountCaches()
+        return true
+    }
+
+    /// Un Torrentio para elegir (C5): el de Orbital (`id` nil) o uno traído de tu Stremio, con sus opciones.
+    public struct TorrentioCandidate: Equatable, Identifiable, Sendable {
+        public var id: String { addonID ?? "orbital" }
+        public var addonID: String?
+        public var options: AddonOptions
+    }
+
+    /// Hay dos o más Torrentio: con cuál te quedas (vacío si no hay que preguntar).
+    public private(set) var torrentioChoice: [TorrentioCandidate] = [] { didSet { changed() } }
+
+    nonisolated static func choices(_ list: AddonList) -> [TorrentioCandidate] {
+        guard list.needsTorrentioChoice else { return [] }
+        let mine = TorrentioCandidate(addonID: nil, options: list.torrentio?.options ?? TorrentioConfig.recommended)
+        return list.importedTorrentios.compactMap { addon in
+            list.resolvedURL(addon).flatMap(TorrentioConfig.parse).map { TorrentioCandidate(addonID: addon.id, options: $0.options) }
+        } + [mine]
+    }
+
+    public func keepTorrentio(_ candidate: TorrentioCandidate) async {
+        services.addonList.keepTorrentio(from: candidate.addonID)
+        reload(); await services.resetAccountCaches()
+    }
 }

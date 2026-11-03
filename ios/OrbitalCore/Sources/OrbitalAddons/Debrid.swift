@@ -14,10 +14,12 @@ public struct DebridStatus: Codable, Equatable, Sendable {
     public var checkedAt: Date
     /// El id de usuario (`GET /user` › `id`): la `account` de la libreta de pedidos. Nunca la clave.
     public var userID: String?
+    /// Tus puntos de fidelidad (D4: se canjean por días de Premium). nil si el servicio no los dice.
+    public var points: Int?
 
-    public init(service: String, username: String, isPremium: Bool, expires: Date?, checkedAt: Date, userID: String? = nil) {
+    public init(service: String, username: String, isPremium: Bool, expires: Date?, checkedAt: Date, userID: String? = nil, points: Int? = nil) {
         self.service = service; self.username = username; self.isPremium = isPremium; self.expires = expires; self.checkedAt = checkedAt
-        self.userID = userID
+        self.userID = userID; self.points = points
     }
 
     /// Días que quedan, contados por días de calendario (vence mañana = 1; hoy = 0; ya venció = negativo).
@@ -67,8 +69,11 @@ public enum DebridError: Error, Equatable, Sendable, CustomStringConvertible {
     case invalidToken
     case network(String)
     case unexpected
+    /// D4: no te alcanzan los puntos para un canje.
+    case notEnoughPoints
     public var description: String {
         switch self {
+        case .notEnoughPoints: "Todavía no te alcanzan los puntos para canjear."
         case .malformedToken: "La clave está incompleta. Cópiala completa de real-debrid.com/apitoken."
         case .invalidToken: "Real-Debrid no reconoce esa clave. Revisa que sea la de real-debrid.com/apitoken."
         case .network: "No pude hablar con Real-Debrid. Revisa tu conexión."
@@ -128,7 +133,19 @@ public struct RealDebrid: DebridProvider {
         if expires == nil, premiumSeconds > 0 { expires = checkedAt.addingTimeInterval(premiumSeconds) }
         let id = (user["id"] as? NSNumber)?.stringValue ?? (user["id"] as? String)
         return DebridStatus(service: "Real-Debrid", username: name, isPremium: isPremium, expires: expires, checkedAt: checkedAt,
-                            userID: id?.isEmpty == false ? id : nil)
+                            userID: id?.isEmpty == false ? id : nil, points: (user["points"] as? NSNumber)?.intValue)
+    }
+
+    /// D4: canjea tus puntos por días de Premium (`POST /settings/convertPoints`). No se puede deshacer: la pantalla
+    /// pregunta antes. 503 = no te alcanzan los puntos.
+    public func convertPoints(token: String) async throws {
+        var request = URLRequest(url: Self.api.appendingPathComponent("settings/convertPoints"), timeoutInterval: 12)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (status, _): (Int, Data)
+        do { (status, _) = try await fetch(request) } catch { throw DebridError.network("\(error)") }
+        if status == 401 || status == 403 { throw DebridError.invalidToken }
+        guard (200..<300).contains(status) else { throw status == 503 ? DebridError.notEnoughPoints : DebridError.network("HTTP \(status)") }
     }
 
     static func date(_ text: String) -> Date? {
@@ -224,6 +241,19 @@ public actor DebridAccount {
     static func realDebridKeys(in url: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: "(?i)realdebrid=([A-Za-z0-9]+)") else { return [] }
         return regex.matches(in: url, range: NSRange(url.startIndex..., in: url)).compactMap { Range($0.range(at: 1), in: url).map { String(url[$0]) } }
+    }
+
+    /// Lo que se enseña de tu clave (D1): sus últimas 4 letras («3F2A»); nunca completa. nil sin clave.
+    public nonisolated var keyTail: String? {
+        guard let token = vault.secret(AddonKeys.realDebridToken), token.count >= 4 else { return nil }
+        return String(token.suffix(4)).uppercased()
+    }
+
+    /// D4: canjea tus puntos por días de Premium y vuelve a leer tu cuenta. Solo Real-Debrid lo tiene.
+    public func redeemPoints() async throws -> DebridStatus? {
+        guard let token = vault.secret(AddonKeys.realDebridToken), !token.isEmpty, let rd = provider as? RealDebrid else { throw DebridError.unexpected }
+        try await rd.convertPoints(token: token)
+        return await status(force: true)
     }
 
     /// Comprueba una clave sin guardarla (la guía y «Cambiar clave»): el estado, o por qué no sirve.

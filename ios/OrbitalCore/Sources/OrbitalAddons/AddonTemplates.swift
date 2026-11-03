@@ -26,19 +26,12 @@ public struct AddonTemplate: Sendable, Equatable, Identifiable {
 public enum AddonCatalog {
     public static let torrentioBase = "https://torrentio.strem.fun"
 
-    /// Torrentio con Real-Debrid: `https://torrentio.strem.fun/qualityfilter=cam,scr|language=latino,spanish|realdebrid={CLAVE}/manifest.json`.
+    /// Torrentio con Real-Debrid: `https://torrentio.strem.fun/language=latino,spanish|qualityfilter=cam,scr,unknown|realdebrid={CLAVE}/manifest.json`,
+    /// con todas tus opciones en el orden de Torrentio (`TorrentioConfig`), igual que la TV.
     public static let torrentio = AddonTemplate(
         id: "torrentio", name: "Torrentio", summary: "Fuentes de video, servidas por tu Real-Debrid", resources: ["stream"],
         usesDebrid: true, onByDefault: true, usesOptions: true
-    ) { token, options in
-        guard let token, let key = token.addingPercentEncoding(withAllowedCharacters: .alphanumerics) else { return nil }
-        var parts: [String] = []
-        let clean = { (values: [String]) in values.map { $0.lowercased().filter { $0.isLetter || $0.isNumber } }.filter { !$0.isEmpty } }
-        if !clean(options.excludedQualities).isEmpty { parts.append("qualityfilter=" + clean(options.excludedQualities).joined(separator: ",")) }
-        if !clean(options.languages).isEmpty { parts.append("language=" + clean(options.languages).joined(separator: ",")) }
-        parts.append("realdebrid=\(key)")
-        return "\(torrentioBase)/\(parts.joined(separator: "|"))/manifest.json"
-    }
+    ) { token, options in TorrentioConfig.manifestURL(options: options, token: token) }
 
     public static let cometBase = "https://comet.elfhosted.com"
 
