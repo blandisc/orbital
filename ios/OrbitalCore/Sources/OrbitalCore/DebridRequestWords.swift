@@ -16,6 +16,7 @@ public enum DebridRequestWords {
         case .refused: UnavailableCause.debridRefused.title(tr)
         case .tooMany: tr("Muchas descargas activas")
         case .ready: tr("Listo")
+        case .gone: tr("Pedido cancelado")   // la lápida no se enseña; por si acaso, lo que pasó
         }
     }
 
@@ -34,17 +35,20 @@ public enum DebridRequestWords {
         case .refused: tr("Prueba otra versión")
         case .tooMany: tr("Cancela una en Real-Debrid")
         case .ready: tr("Ya arranca al instante")
+        case .gone: ""
         }
     }
 
-    /// «Lo pediste en iPhone · hace 6 min» (quién y cuándo, R12).
-    public static func since(_ request: DebridRequest, now: Date, _ tr: (String) -> String = { $0 }) -> String {
+    /// «Lo pediste en iPhone · hace 6 min» (quién y cuándo, R12). Lo de otra cuenta de Real-Debrid (`otherAccount`) nunca
+    /// es «lo pediste»: «Lo pidió la TV · …» o, si lo pidió otro aparato, «Lo pidió iPad · …».
+    public static func since(_ request: DebridRequest, now: Date, otherAccount: Bool = false, _ tr: (String) -> String = { $0 }) -> String {
         let minutes = max(0, Int(now.timeIntervalSince(request.createdAt) / 60))
         let ago = minutes < 60 ? String(format: tr("hace %lld min"), max(1, minutes))
             : minutes < 24 * 60 ? String(format: tr("hace %lld h"), minutes / 60)
             : minutes < 48 * 60 ? tr("hace 1 día") : String(format: tr("hace %lld días"), minutes / (24 * 60))
         // Lo pidió la TV (su libreta, S2/S4): se dice así, no «lo pediste en TV».
-        if request.device == "TV" { return String(format: tr("Lo pidió la TV · %@"), ago) }
+        if request.device == "TV" || (otherAccount && request.device.isEmpty) { return String(format: tr("Lo pidió la TV · %@"), ago) }
+        if otherAccount { return String(format: tr("Lo pidió %@ · %@"), request.device, ago) }
         return String(format: tr("Lo pediste en %@ · %@"), request.device, ago)
     }
 
@@ -62,6 +66,7 @@ public enum DebridRequestWords {
         case .refused: "nosign"
         case .tooMany: "exclamationmark.triangle"
         case .ready: "checkmark.circle"
+        case .gone: "xmark.circle"
         }
     }
 }

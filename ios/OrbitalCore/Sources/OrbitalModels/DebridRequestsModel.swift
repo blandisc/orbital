@@ -6,8 +6,11 @@ import OrbitalAddons
 /// lleva cada uno y avisar cuando queda listo. La ficha, «Seguir viendo», el reproductor y Ajustes leen de aquí.
 @MainActor
 public final class DebridRequestsModel: ObservableModel {
-    /// Todos los de la libreta, el más reciente primero.
+    /// Los de la libreta que se enseñan (sin las lápidas), el más reciente primero. Trae también los de otra cuenta de
+    /// Real-Debrid (los de la TV con otra cuenta): esos se enseñan, pero no se siguen ni se cancelan (`isOtherAccount`).
     public private(set) var requests: [DebridRequest] = [] { didSet { if oldValue != requests { changed() } } }
+    /// La cuenta de Real-Debrid de este aparato (su id de usuario), la última que se supo.
+    public private(set) var account: String? { didSet { if oldValue != account { changed() } } }
     /// Cuántas descargas tienes a la vez y tu máximo (D3), si se preguntó.
     public private(set) var activeCount: (active: Int, limit: Int)? { didSet { changed() } }
 
@@ -26,15 +29,25 @@ public final class DebridRequestsModel: ObservableModel {
          hasKey: @escaping @MainActor () -> Bool, clock: @escaping @Sendable () -> Date) {
         self.requester = requester; self.lookup = lookup; self.addonList = addonList; self.finder = finder; self.hasKey = hasKey; self.clock = clock
         super.init()
-        requests = requester.book.all
+        reload()
     }
 
-    public var active: [DebridRequest] { requests.filter { $0.state.isActive } }
+    /// Los que siguen en camino en tu cuenta (los que se siguen).
+    public var active: [DebridRequest] { requests.filter { $0.state.isActive && !isOtherAccount($0) } }
 
-    /// El pedido de ese video (película o episodio), si hay.
+    /// Es de otra cuenta de Real-Debrid: se enseña («Lo pidió la TV · …»), pero no se sigue, no se cancela ni sale como versión.
+    public func isOtherAccount(_ request: DebridRequest) -> Bool { request.isOther(account: account) }
+
+    /// El pedido de ese video (película o episodio) en tu cuenta, si hay.
     public func request(metaID: String, videoID: String?) -> DebridRequest? {
-        let mine = requests.filter { $0.covers(metaID: metaID, videoID: videoID) }
+        let mine = requests.filter { $0.covers(metaID: metaID, videoID: videoID) && !isOtherAccount($0) }
         return mine.first { $0.state != .refused } ?? mine.first
+    }
+
+    /// El pedido de ese torrent en tu cuenta (nunca una lápida).
+    public func request(hash: String) -> DebridRequest? {
+        guard let found = requester.book.find(hash: hash), found.state != .gone, !isOtherAccount(found) else { return nil }
+        return found
     }
 
     /// Tu Torrentio sin Real-Debrid (R4): la base para ver qué torrents existen. nil sin clave o sin Torrentio prendido.
@@ -98,27 +111,30 @@ public final class DebridRequestsModel: ObservableModel {
         reload()
     }
 
-    /// Cuánto lleva cada uno (una sola consulta). Los que quedan listos salen «Al instante» y se avisan; los atorados 24 h,
-    /// también (una vez).
+    /// Se junta con la TV y pregunta cuánto lleva cada uno (una sola consulta). Los que quedan listos salen «Al instante» y se
+    /// avisan; los atorados 24 h, también (una vez). Avisa solo el aparato que lo pidió (`by`): lo que llega de la TV, nunca.
     public func refresh() async {
+        await requester.syncWithTV()
         let changed = await requester.refresh()
         reload()
-        for request in changed where request.state == .ready && !request.notified {
+        let me = requester.deviceName
+        for request in changed where request.state == .ready && !request.notified && request.device == me {
             for video in request.videoIDs { await finder().forget(kind: request.kind, videoID: video) }
             await requester.markNotified(hash: request.hash)
             onReady?(request)
         }
         let now = clock()
-        for request in active where request.isStalled(now: now) && !request.nudged {
+        for request in active where request.isStalled(now: now) && !request.nudged && request.device == me {
             await requester.markNudged(hash: request.hash)
             onStalled?(request)
         }
         reload()
     }
 
-    /// «Cancelar pedido». false si Real-Debrid no contestó.
+    /// «Cancelar pedido» (queda como lápida y se le dice a la TV). false si Real-Debrid no contestó o es de otra cuenta.
     @discardableResult
     public func cancel(_ request: DebridRequest) async -> Bool {
+        guard !isOtherAccount(request) else { return false }
         do { try await requester.cancel(hash: request.hash) } catch { return false }
         reload()
         for video in request.videoIDs { await finder().forget(kind: request.kind, videoID: video) }
@@ -136,7 +152,7 @@ public final class DebridRequestsModel: ObservableModel {
         }
     }
 
-    func reload() { requests = requester.book.all }
+    func reload() { account = requester.knownAccount; requests = requester.book.all }
     /// La demostración llenó la libreta (`-demo-rd-request`).
     public func reloadForDemo() { reload() }
 }

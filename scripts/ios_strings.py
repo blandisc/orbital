@@ -29,7 +29,7 @@ TRANSLATIONS = {
     "Sigue sin bajar · ¿probar otra versión?": "Still not downloading · try another version?",
     "Real-Debrid pide esperar un momento": "Real-Debrid asks to wait a moment",
     "No pude hablar con Real-Debrid": "I couldn't reach Real-Debrid", "Lo pediste en %@ · %@": "You requested it on %@ · %@",
-    "hace %lld min": "%lld min ago", "hace %lld h": "%lld h ago", "hace %lld días": "%lld days ago", "hace 1 día": "1 day ago", "Lo pidió la TV · %@": "The TV requested it · %@",
+    "hace %lld min": "%lld min ago", "hace %lld h": "%lld h ago", "hace %lld días": "%lld days ago", "hace 1 día": "1 day ago", "Lo pidió la TV · %@": "The TV requested it · %@", "Lo pidió %@ · %@": "%@ requested it · %@",
     "Avisos apagados · actívalos": "Notifications off · turn them on", "Cancelar pedido": "Cancel request",
     "Probar otra versión": "Try another version", "¿Qué es esto?": "What is this?", "Pedido cancelado": "Request canceled",
     "¿Cancelar el pedido?": "Cancel the request?", "Tus complementos buscan dónde verlo": "Your add-ons look for where to watch it",

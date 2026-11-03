@@ -49,7 +49,7 @@ extension PlayerModel {
 
     /// Esa versión ya está pedida en la libreta (y sigue en camino): abrirla otra vez no sirve.
     func alreadyRequested(_ source: Source) -> Bool {
-        guard let torrent = source.torrent, let found = debridRequests?.requester.book.find(hash: torrent.hash) else { return false }
+        guard let torrent = source.torrent, let found = debridRequests?.request(hash: torrent.hash) else { return false }
         return found.state.isActive
     }
 

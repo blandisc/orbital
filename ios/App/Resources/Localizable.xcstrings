@@ -12,6 +12,17 @@
         }
       }
     },
+    "Lo pidió %@ · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ requested it · %@"
+          }
+        }
+      }
+    },
     "Lo pidió la TV · %@": {
       "extractionState": "manual",
       "localizations": {

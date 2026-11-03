@@ -1,15 +1,14 @@
 import Foundation
 
-/// Un pedido a Real-Debrid (R12): qué torrent, para qué título y episodio, en qué idioma, desde qué aparato y cómo va. Real-
-/// Debrid solo sabe el nombre del archivo; lo demás lo sabe esta libreta.
+/// Un pedido a Real-Debrid (R12): qué torrent, para qué título y episodios, en qué idioma, desde qué aparato y cómo va.
+/// Real-Debrid solo sabe el nombre del archivo; lo demás lo sabe esta libreta.
 ///
-/// Su forma es la acordada con la TV (A6/A7 de la revisión adversarial; `orbital/rd_requests.py` la adopta en el corte S2
-/// de la TV, hasta entonces guarda por video y con tres estados): una entrada por torrent
-/// (la clave es su huella), con `video_ids`, `meta_id`, `title`, `episode`, `by` (el aparato), `hash`, `rd_id`, `rd_status`,
-/// `percent`, `seeders`, `since` y los seis estados de R13. Así S2/S4 la pueden juntar con la de la TV sin traducirla
-/// (`GET/POST /api/realdebrid/requests`, ver `DebridRequestSync`). Se lee con tolerancia: lo que falta toma su valor de siempre.
+/// Su forma es la del contrato con la TV (`design/addons-contract.json` › `requests`, acuerdo S2 del iPhone y corte S2 de
+/// la TV, RQ-1 a RQ-12): una entrada por torrent (la clave es su huella), con `account` (el id de usuario de Real-Debrid,
+/// nunca la clave), `files` (el archivo de cada video), los seis estados más la lápida `gone`, y lo que nunca viaja
+/// (`notified`, `nudged`) aparte. Se lee con tolerancia: lo que falta toma su valor de siempre.
 public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
-    /// Los seis estados de R13, en palabras en `DebridRequestWords`.
+    /// Los seis estados de R13 (en palabras en `DebridRequestWords`) y la lápida `gone`.
     public enum State: String, Codable, Sendable, CaseIterable {
         /// «En cola»: Real-Debrid lo recibió y espera turno (o está leyendo el torrent).
         case queued
@@ -23,16 +22,43 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         case tooMany = "too_many"
         /// «Listo»: ya arranca al instante.
         case ready
+        /// Lápida: ya no está en tu Real-Debrid (lo cancelaste aquí, en el otro aparato o en real-debrid.com). No se enseña ni
+        /// se sigue; se guarda 7 días para que el otro lado no lo vuelva a anotar.
+        case gone
 
         /// Sigue en camino (se le pregunta a Real-Debrid cuánto lleva).
         public var isActive: Bool { self == .queued || self == .downloading || self == .noPeers }
+
+        /// Al juntar dos entradas gana el de mayor precedencia (contrato › merge › state): gone > ready > refused > no_peers >
+        /// downloading > queued > too_many (too_many se reintenta más tarde: cualquier otro le gana).
+        public var precedence: Int {
+            switch self {
+            case .gone: 6
+            case .ready: 5
+            case .refused: 4
+            case .noPeers: 3
+            case .downloading: 2
+            case .queued: 1
+            case .tooMany: 0
+            }
+        }
+
+        /// Lo que se lee: «failed» (la TV de antes) es `refused`; un estado que esta versión no conoce, «En cola» (se le
+        /// vuelve a preguntar a Real-Debrid y, si ya no está en tu cuenta, queda `gone`).
+        public static func read(_ raw: String?) -> State {
+            guard let raw else { return .queued }
+            if raw == "failed" { return .refused }
+            return State(rawValue: raw) ?? .queued
+        }
     }
 
     /// La huella del torrent (minúsculas): la clave del pedido, en los dos aparatos.
     public var hash: String
-    /// El archivo dentro del torrent (el de Torrentio, desde 0), si se sabe.
-    public var fileIdx: Int?
-    /// Su id en tu Real-Debrid (nil si lo pidió Torrentio al abrirlo y todavía no se encuentra en tu cuenta).
+    /// El archivo de cada video dentro del torrent (`{video_id: file_idx}`, desde 0, como lo da Torrentio).
+    public var files: [String: Int]
+    /// El id de usuario de Real-Debrid de quien lo pidió (nunca la clave). nil = de la misma cuenta (lo de antes).
+    public var account: String?
+    /// Su id en esa cuenta (nil si lo pidió Torrentio al abrirlo y todavía no se encuentra).
     public var rdID: String?
     public var title: String
     public var kind: String
@@ -45,9 +71,10 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
     public var language: String?
     /// El nombre de la versión (el del archivo).
     public var release: String?
-    /// Quién lo pidió: el nombre del aparato («iPhone de Fernando», la TV).
+    /// Quién lo pidió: el nombre del aparato, el de su renglón en Cuentas de la TV («iPhone de Fernando», «TV»).
     public var device: String
     public var createdAt: Date
+    /// Lo pone la TV al guardar; aquí, cuando cambió en este aparato. Para olvidar, nunca para decidir al juntar.
     public var updatedAt: Date
     /// Lo que dice Real-Debrid tal cual (`downloading`, `magnet_error`…).
     public var rdStatus: String?
@@ -56,52 +83,118 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
     public var state: State
     /// La última vez que avanzó (para «sigue sin bajar» a las 24 h).
     public var progressAt: Date
-    /// Ya se avisó que está listo (R10) / que sigue atorado (R13).
+
+    // Solo de este aparato (contrato › local_only y lo que esta libreta necesita): nunca viajan a la TV.
+    /// Ya se avisó que está listo (R10) / que sigue atorado (R13). Un pedido que llega de la TV entra con los dos en true.
     public var notified: Bool
     public var nudged: Bool
+    /// Se eligieron todos sus videos (un paquete): pedir otro episodio solo une su video, sin preguntarle a Real-Debrid.
+    public var pack: Bool
+    /// Cambió aquí y la TV todavía no lo tiene (se manda en el siguiente vistazo).
+    public var pending: Bool
 
     public var id: String { hash }
 
-    public init(hash: String, fileIdx: Int? = nil, rdID: String? = nil, title: String, kind: String, metaID: String, videoIDs: [String],
-                season: Int? = nil, episode: Int? = nil, language: String? = nil, release: String? = nil, device: String, createdAt: Date,
-                rdStatus: String? = nil, percent: Int = 0, seeders: Int? = nil, state: State = .queued) {
-        self.hash = hash.lowercased(); self.fileIdx = fileIdx; self.rdID = rdID; self.title = title; self.kind = kind; self.metaID = metaID
+    public init(hash: String, fileIdx: Int? = nil, files: [String: Int]? = nil, account: String? = nil, rdID: String? = nil, title: String, kind: String,
+                metaID: String, videoIDs: [String], season: Int? = nil, episode: Int? = nil, language: String? = nil, release: String? = nil,
+                device: String, createdAt: Date, rdStatus: String? = nil, percent: Int = 0, seeders: Int? = nil, state: State = .queued) {
+        self.hash = hash.lowercased(); self.rdID = rdID; self.title = title; self.kind = kind; self.metaID = metaID; self.account = account
+        self.files = files ?? (fileIdx.flatMap { idx in videoIDs.first.map { [$0: idx] } } ?? [:])
         self.videoIDs = videoIDs; self.season = season; self.episode = episode; self.language = language; self.release = release
         self.device = device; self.createdAt = createdAt; self.updatedAt = createdAt; self.rdStatus = rdStatus; self.percent = percent
         self.seeders = seeders; self.state = state; self.progressAt = createdAt; self.notified = false; self.nudged = false
+        self.pack = false; self.pending = true
+    }
+
+    /// El archivo del primer video (el que se pidió primero).
+    public var fileIdx: Int? { videoIDs.lazy.compactMap { self.files[$0] }.first ?? files.values.min() }
+
+    /// Se eligieron todos los videos del torrent: cualquier episodio que traiga ya viene. Un paquete viejo pedido con un
+    /// solo archivo no cuenta: ese otro episodio se pide como torrent nuevo.
+    public var coversWholeTorrent: Bool { pack || files.count > 1 }
+
+    /// Es de otra cuenta de Real-Debrid (las dos se saben y no son la misma): se enseña, pero no se sigue, no se cancela y
+    /// no sale como versión (ese enlace no existe en tu cuenta).
+    public func isOther(account mine: String?) -> Bool {
+        guard let account, !account.isEmpty, let mine, !mine.isEmpty else { return false }
+        return account != mine
     }
 
     enum CodingKeys: String, CodingKey {
-        case hash, fileIdx = "file_idx", rdID = "rd_id", title, kind, metaID = "meta_id", videoIDs = "video_ids", season, episode, language,
-             release, device = "by", createdAt = "since", updatedAt = "updated", rdStatus = "rd_status", percent, seeders, state,
-             progressAt = "progress_at", notified, nudged
+        case hash, files, account, legacyFileIdx = "file_idx", rdID = "rd_id", title, kind, metaID = "meta_id", videoIDs = "video_ids", season,
+             episode, language, release, device = "by", createdAt = "since", updatedAt = "updated", rdStatus = "rd_status", percent, seeders,
+             state, progressAt = "progress_at", notified, nudged, pack, pending
     }
+
+    /// Con `true` en el `userInfo` del codificador se escribe todo (la libreta de este aparato); sin él, solo lo que viaja a
+    /// la TV (sin `updated` ni lo de este aparato, con los topes del contrato).
+    public static let localKey = CodingUserInfoKey(rawValue: "orbital.debrid-requests.local")!
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         hash = try c.decode(String.self, forKey: .hash).lowercased()
-        fileIdx = try c.decodeIfPresent(Int.self, forKey: .fileIdx)
-        rdID = try c.decodeIfPresent(String.self, forKey: .rdID)
+        guard !hash.isEmpty else { throw DecodingError.dataCorruptedError(forKey: .hash, in: c, debugDescription: "sin huella") }
+        rdID = (try? c.decodeIfPresent(String.self, forKey: .rdID)).flatMap { $0.isEmpty ? nil : $0 }
+        account = (try? c.decodeIfPresent(String.self, forKey: .account)) ?? nil
+        if account == nil, let number = try? c.decodeIfPresent(Int.self, forKey: .account) { account = String(number) }
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
         kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "movie"
         metaID = try c.decodeIfPresent(String.self, forKey: .metaID) ?? ""
         videoIDs = try c.decodeIfPresent([String].self, forKey: .videoIDs) ?? []
-        season = try c.decodeIfPresent(Int.self, forKey: .season)
-        episode = try c.decodeIfPresent(Int.self, forKey: .episode)
-        language = try c.decodeIfPresent(String.self, forKey: .language)
-        release = try c.decodeIfPresent(String.self, forKey: .release)
+        files = (try? c.decodeIfPresent([String: Int].self, forKey: .files)) ?? [:]
+        // La libreta de antes guardaba un solo `file_idx`: es el del primer video.
+        if files.isEmpty, let idx = try? c.decodeIfPresent(Int.self, forKey: .legacyFileIdx), let first = videoIDs.first { files = [first: idx] }
+        season = try? c.decodeIfPresent(Int.self, forKey: .season)
+        episode = try? c.decodeIfPresent(Int.self, forKey: .episode)
+        language = (try? c.decodeIfPresent(String.self, forKey: .language)).flatMap { $0.isEmpty ? nil : $0 }
+        release = (try? c.decodeIfPresent(String.self, forKey: .release)).flatMap { $0.isEmpty ? nil : $0 }
         device = try c.decodeIfPresent(String.self, forKey: .device) ?? ""
-        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date(timeIntervalSince1970: 0)
-        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
-        rdStatus = try c.decodeIfPresent(String.self, forKey: .rdStatus)
-        percent = try c.decodeIfPresent(Int.self, forKey: .percent) ?? 0
-        seeders = try c.decodeIfPresent(Int.self, forKey: .seeders)
-        // Un estado que esta versión no conoce (uno nuevo de la TV) se lee como «En cola»: se vuelve a preguntar.
-        state = (try? c.decodeIfPresent(State.self, forKey: .state)) ?? .queued
-        progressAt = try c.decodeIfPresent(Date.self, forKey: .progressAt) ?? updatedAt
-        notified = try c.decodeIfPresent(Bool.self, forKey: .notified) ?? false
-        nudged = try c.decodeIfPresent(Bool.self, forKey: .nudged) ?? false
+        createdAt = (try? c.decodeIfPresent(Date.self, forKey: .createdAt)) ?? Date(timeIntervalSince1970: 0)
+        updatedAt = (try? c.decodeIfPresent(Date.self, forKey: .updatedAt)) ?? createdAt
+        rdStatus = try? c.decodeIfPresent(String.self, forKey: .rdStatus)
+        percent = min(100, max(0, (try? c.decodeIfPresent(Int.self, forKey: .percent)) ?? 0))
+        seeders = try? c.decodeIfPresent(Int.self, forKey: .seeders)
+        state = State.read(try? c.decodeIfPresent(String.self, forKey: .state))
+        progressAt = (try? c.decodeIfPresent(Date.self, forKey: .progressAt)) ?? updatedAt
+        notified = (try? c.decodeIfPresent(Bool.self, forKey: .notified)) ?? false
+        nudged = (try? c.decodeIfPresent(Bool.self, forKey: .nudged)) ?? false
+        pack = (try? c.decodeIfPresent(Bool.self, forKey: .pack)) ?? false
+        pending = (try? c.decodeIfPresent(Bool.self, forKey: .pending)) ?? false
     }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        let local = encoder.userInfo[Self.localKey] as? Bool == true
+        let videos = local ? videoIDs : Array(videoIDs.prefix(Self.maxVideos))
+        try c.encode(hash, forKey: .hash)
+        try c.encode(account, forKey: .account)
+        try c.encode(rdID, forKey: .rdID)
+        try c.encode(local ? title : String(title.prefix(Self.maxTitle)), forKey: .title)
+        try c.encode(kind, forKey: .kind)
+        try c.encode(metaID, forKey: .metaID)
+        try c.encode(videos, forKey: .videoIDs)
+        try c.encode(local ? files : files.filter { videos.contains($0.key) }, forKey: .files)
+        try c.encode(season, forKey: .season)
+        try c.encode(episode, forKey: .episode)
+        try c.encode(language ?? "", forKey: .language)
+        try c.encode(release ?? "", forKey: .release)
+        try c.encode(local ? device : String(device.prefix(Self.maxBy)), forKey: .device)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(rdStatus ?? "", forKey: .rdStatus)
+        try c.encode(percent, forKey: .percent)
+        try c.encode(seeders, forKey: .seeders)
+        try c.encode(progressAt, forKey: .progressAt)
+        try c.encode(state.rawValue, forKey: .state)
+        guard local else { return }
+        try c.encode(updatedAt, forKey: .updatedAt)
+        try c.encode(notified, forKey: .notified)
+        try c.encode(nudged, forKey: .nudged)
+        try c.encode(pack, forKey: .pack)
+        try c.encode(pending, forKey: .pending)
+    }
+
+    /// Los topes del contrato (`entry`).
+    public static let maxTitle = 120, maxBy = 60, maxVideos = 50
 
     /// Lo que dice Real-Debrid de un torrent, como uno de los seis estados (la máquina de estados de R13).
     public static func state(rdStatus: String, progress: Int, seeders: Int?) -> State {
@@ -151,231 +244,42 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         updatedAt = now
         return true
     }
-}
 
-/// La libreta de pedidos de este aparato (R12): sobrevive a reiniciar la app y nunca olvida uno que sigue en camino. Los
-/// terminados (listos o rechazados) se olvidan a la semana, como en la TV. Se guarda en los ajustes de la app (no lleva
-/// claves ni enlaces de Real-Debrid: los enlaces van atados a quien los pidió).
-public final class DebridRequestBook: @unchecked Sendable {
-    public static let key = "debrid-requests"
-    public static let forgetFinishedAfter: TimeInterval = 7 * 24 * 3600
-    private let vault: AddonVault
-    private let lock = NSLock()
-    private var cached: [DebridRequest]?
-
-    public init(vault: AddonVault) { self.vault = vault }
-
-    /// Todos, el más reciente primero.
-    public var all: [DebridRequest] { lock.withLock { load() }.sorted { $0.createdAt > $1.createdAt } }
-    public var active: [DebridRequest] { all.filter { $0.state.isActive } }
-
-    public func find(hash: String) -> DebridRequest? { lock.withLock { load().first { $0.hash == hash.lowercased() } } }
-
-    /// El pedido de un video (el más reciente que no fue rechazado; si todos lo fueron, el último).
-    public func find(metaID: String, videoID: String?) -> DebridRequest? {
-        let mine = all.filter { $0.covers(metaID: metaID, videoID: videoID) }
-        return mine.first { $0.state != .refused } ?? mine.first
-    }
-
-    /// Anota o reemplaza (por huella).
-    public func put(_ request: DebridRequest) {
-        lock.withLock {
-            var list = load()
-            if let i = list.firstIndex(where: { $0.hash == request.hash }) { list[i] = request } else { list.append(request) }
-            save(list)
+    /// Junta lo guardado con lo que llega (de la TV, o la respuesta de la TV a lo que se le mandó) por campo, como dice el
+    /// contrato (`requests` › `merge`). Los relojes nunca deciden. Lo de este aparato (avisos, paquete) se queda como estaba.
+    /// - Un `rd_id` que llega no vacío y distinto del guardado es un pedido nuevo (volver a pedir siempre da otro): reemplaza
+    ///   la entrada, con los videos y archivos unidos. Así una lápida o un rechazo no atoran un pedido nuevo.
+    /// - Si no: videos y archivos unidos, el mayor avance, el estado de mayor precedencia, el primer `rd_id` no vacío, el
+    ///   título, quién y cuándo de quien lo anotó primero, y lo que dice Real-Debrid de la que lleva más avance.
+    public static func merge(_ stored: DebridRequest, _ incoming: DebridRequest) -> DebridRequest {
+        let videos = stored.videoIDs + incoming.videoIDs.filter { !stored.videoIDs.contains($0) }
+        let files = stored.files.merging(incoming.files) { mine, _ in mine }
+        var out: DebridRequest
+        if let new = incoming.rdID, !new.isEmpty, let old = stored.rdID, !old.isEmpty, new != old {
+            out = incoming
+        } else {
+            out = stored
+            let ahead = incoming.percent > stored.percent ? incoming : stored
+            out.percent = ahead.percent
+            out.rdStatus = ahead.rdStatus
+            out.seeders = ahead.seeders
+            out.progressAt = max(stored.progressAt, incoming.progressAt)
+            out.state = incoming.state.precedence > stored.state.precedence ? incoming.state : stored.state
+            out.rdID = stored.rdID ?? incoming.rdID
+            out.account = stored.account ?? incoming.account
+            if out.title.isEmpty { out.title = incoming.title }
+            if out.device.isEmpty { out.device = incoming.device }
+            if out.metaID.isEmpty { out.metaID = incoming.metaID; out.kind = incoming.kind }
+            out.season = out.season ?? incoming.season
+            out.episode = out.episode ?? incoming.episode
+            out.language = out.language ?? incoming.language
+            out.release = out.release ?? incoming.release
+            out.pack = stored.pack || incoming.pack
         }
+        out.videoIDs = videos
+        out.files = files
+        out.updatedAt = max(stored.updatedAt, incoming.updatedAt)
+        out.notified = stored.notified; out.nudged = stored.nudged; out.pending = stored.pending
+        return out
     }
-
-    public func update(hash: String, _ change: (inout DebridRequest) -> Void) {
-        lock.withLock {
-            var list = load()
-            guard let i = list.firstIndex(where: { $0.hash == hash.lowercased() }) else { return }
-            change(&list[i])
-            save(list)
-        }
-    }
-
-    public func remove(hash: String) { lock.withLock { save(load().filter { $0.hash != hash.lowercased() }) } }
-
-    /// Olvida los terminados de hace más de una semana (los que siguen en camino, nunca).
-    public func prune(now: Date) {
-        lock.withLock {
-            let list = load()
-            let kept = list.filter { $0.state.isActive || now.timeIntervalSince($0.updatedAt) < Self.forgetFinishedAfter }
-            if kept.count != list.count { save(kept) }
-        }
-    }
-
-    private func load() -> [DebridRequest] {
-        if let cached { return cached }
-        let list = vault.data(Self.key).flatMap { try? Self.decoder.decode([DebridRequest].self, from: $0) } ?? []
-        cached = list
-        return list
-    }
-    private func save(_ list: [DebridRequest]) {
-        cached = list
-        vault.setData(Self.key, try? Self.encoder.encode(list))
-    }
-
-    static let encoder: JSONEncoder = { let e = JSONEncoder(); e.dateEncodingStrategy = .secondsSince1970; e.outputFormatting = [.sortedKeys]; return e }()
-    static let decoder: JSONDecoder = { let d = JSONDecoder(); d.dateDecodingStrategy = .secondsSince1970; return d }()
-}
-
-/// Por donde la libreta se juntará con la de la TV (S2/S4): `GET /api/realdebrid/requests` para leer los suyos y `POST
-/// /api/realdebrid/requests {hash, video_ids, title, by}` para anotar los de este aparato (la TV no le vuelve a pedir nada a
-/// Real-Debrid; es idempotente por huella). La TV los agrega en su S2: hasta entonces la app usa `NoDebridRequestSync` y
-/// nunca llama a esas rutas.
-public protocol DebridRequestSync: Sendable {
-    /// Los pedidos que tiene la TV (vacío si no hay TV o no contesta).
-    func pull() async -> [DebridRequest]
-    /// Anota en la TV un pedido de este aparato.
-    func push(_ request: DebridRequest) async
-}
-
-public struct NoDebridRequestSync: DebridRequestSync {
-    public init() {}
-    public func pull() async -> [DebridRequest] { [] }
-    public func push(_ request: DebridRequest) async {}
-}
-
-/// Lo que se quiere pedir: un torrent que existe (de tu Torrentio sin Real-Debrid, R4) para un título.
-public struct DebridWish: Equatable, Sendable {
-    public var hash: String
-    public var fileIdx: Int?
-    public var title: String
-    public var kind: String
-    public var metaID: String
-    public var videoID: String
-    public var season: Int?
-    public var episode: Int?
-    public var language: String?
-    public var release: String?
-    public init(hash: String, fileIdx: Int?, title: String, kind: String, metaID: String, videoID: String, season: Int? = nil, episode: Int? = nil,
-                language: String? = nil, release: String? = nil) {
-        self.hash = hash.lowercased(); self.fileIdx = fileIdx; self.title = title; self.kind = kind; self.metaID = metaID; self.videoID = videoID
-        self.season = season; self.episode = episode; self.language = language; self.release = release
-    }
-}
-
-/// Pide a Real-Debrid y sigue cada pedido (R12, R13): agrega el torrent una sola vez (si ya está en tu cuenta, lo toma),
-/// elige el archivo, pregunta cuánto llevan todos con una sola consulta y cancela. Lo que cambia se anota en la libreta.
-public actor DebridRequester {
-    public nonisolated let book: DebridRequestBook
-    private let api: RealDebridTorrents
-    private let token: @Sendable () -> String?
-    private let device: @Sendable () -> String
-    private let clock: @Sendable () -> Date
-    private let sync: DebridRequestSync
-
-    public init(book: DebridRequestBook, api: RealDebridTorrents, token: @escaping @Sendable () -> String?, device: @escaping @Sendable () -> String,
-                clock: @escaping @Sendable () -> Date = { Date() }, sync: DebridRequestSync = NoDebridRequestSync()) {
-        self.book = book; self.api = api; self.token = token; self.device = device; self.clock = clock; self.sync = sync
-    }
-
-    private func key() throws -> String {
-        guard let token = token(), !token.isEmpty else { throw RDRequestError.noKey }
-        return token
-    }
-
-    /// «Pedirlo y avisarme»: lo agrega a tu Real-Debrid y elige su archivo. Si ya estaba pedido (aquí o porque Torrentio lo
-    /// pidió al abrirlo), no se pide otra vez: se devuelve ese. Si Real-Debrid dice que no por el archivo (derechos, límite),
-    /// queda anotado con ese estado; si es por tu cuenta o la red, lanza `RDRequestError`.
-    public func request(_ wish: DebridWish) async throws -> DebridRequest {
-        if var known = book.find(hash: wish.hash), known.state != .refused {
-            if !known.videoIDs.contains(wish.videoID) { known.videoIDs.append(wish.videoID); book.put(known) }
-            return known
-        }
-        let token = try key()
-        let now = clock()
-        var entry = DebridRequest(hash: wish.hash, fileIdx: wish.fileIdx, title: wish.title, kind: wish.kind, metaID: wish.metaID, videoIDs: [wish.videoID],
-                                  season: wish.season, episode: wish.episode, language: wish.language, release: wish.release, device: device(), createdAt: now)
-        do {
-            // Ya en tu cuenta (Torrentio lo agregó al abrirlo, o lo pediste en real-debrid.com): se toma ese, no se agrega otro.
-            if let existing = try await api.list(limit: 100, token: token).first(where: { $0.hash == entry.hash }) {
-                entry.apply(existing, now: now)
-            } else {
-                let id = try await api.addMagnet(hash: entry.hash, token: token)
-                entry.rdID = id
-                book.put(entry)   // anotado ya: aunque falle lo que sigue, no se vuelve a agregar
-                try await selectFiles(id: id, fileIdx: wish.fileIdx, token: token)
-                if let fresh = try? await api.info(id: id, token: token) { entry.apply(fresh, now: clock()) }
-            }
-        } catch let error as RDRequestError {
-            guard let state = DebridRequest.state(after: error) else {
-                if entry.rdID == nil { book.remove(hash: entry.hash) }
-                throw error
-            }
-            entry.state = state; entry.updatedAt = clock()
-        }
-        book.put(entry)
-        await sync.push(entry)
-        return entry
-    }
-
-    /// El archivo del episodio (`fileIdx` + 1, como lo cuenta Real-Debrid) o, si no se sabe o no está, todos los videos.
-    private func selectFiles(id: String, fileIdx: Int?, token: String) async throws {
-        let info = try? await api.info(id: id, token: token)
-        let files = info?.files ?? []
-        var wanted: [Int] = []
-        if let fileIdx, files.contains(where: { $0.id == fileIdx + 1 }) { wanted = [fileIdx + 1] }
-        if wanted.isEmpty { wanted = files.filter(\.isVideo).map(\.id) }
-        try await api.selectFiles(id: id, files: wanted, token: token)
-    }
-
-    /// Torrentio ya se lo pidió a Real-Debrid al abrir una versión «por bajar» (R5/R6): se anota para seguirlo y no pedirlo
-    /// otra vez. Su id se encuentra en la siguiente revisión, por su huella.
-    public func noteOpened(_ wish: DebridWish) {
-        guard book.find(hash: wish.hash) == nil else { return }
-        let entry = DebridRequest(hash: wish.hash, fileIdx: wish.fileIdx, title: wish.title, kind: wish.kind, metaID: wish.metaID, videoIDs: [wish.videoID],
-                                  season: wish.season, episode: wish.episode, language: wish.language, release: wish.release, device: device(), createdAt: clock())
-        book.put(entry)
-    }
-
-    /// Cuánto lleva cada pedido en camino, con una sola consulta a `GET /torrents`. Devuelve los que cambiaron (para avisar
-    /// los que quedaron listos). Sin pedidos en camino no le pregunta nada a Real-Debrid.
-    @discardableResult
-    public func refresh() async -> [DebridRequest] {
-        let now = clock()
-        book.prune(now: now)
-        let active = book.active
-        guard !active.isEmpty, let token = try? key() else { return [] }
-        let torrents: [RDTorrent]
-        do { torrents = try await api.list(limit: 100, token: token) } catch { return [] }
-        var changed: [DebridRequest] = []
-        for request in active {
-            var updated = request
-            let match = torrents.first { $0.id == request.rdID } ?? torrents.first { $0.hash == request.hash }
-            if let match {
-                if match.status == "waiting_files_selection" { try? await selectFiles(id: match.id, fileIdx: request.fileIdx, token: token) }
-                guard updated.apply(match, now: now) else { continue }
-            } else if let id = request.rdID {
-                // Más viejo que los 100 de la lista: se le pregunta por él. Si ya no está, lo borraste en real-debrid.com.
-                do { let info = try await api.info(id: id, token: token); guard updated.apply(info, now: now) else { continue } }
-                catch RDRequestError.notFound { book.remove(hash: request.hash); continue }
-                catch { continue }
-            } else {
-                continue   // lo pidió Torrentio y todavía no sale en tu cuenta
-            }
-            book.put(updated)
-            changed.append(updated)
-        }
-        return changed
-    }
-
-    /// «Cancelar pedido»: se quita de tu Real-Debrid y de la libreta.
-    public func cancel(hash: String) async throws {
-        guard let entry = book.find(hash: hash) else { return }
-        if let id = entry.rdID { try await api.delete(id: id, token: try key()) }
-        book.remove(hash: hash)
-    }
-
-    /// Cuántas descargas tienes a la vez y tu máximo (D3); nil si no contestó.
-    public func activeCount() async -> (active: Int, limit: Int)? {
-        guard let token = try? key() else { return nil }
-        return try? await api.activeCount(token: token)
-    }
-
-    /// Ya se avisó que está listo / que sigue atorado.
-    public func markNotified(hash: String) { book.update(hash: hash) { $0.notified = true } }
-    public func markNudged(hash: String) { book.update(hash: hash) { $0.nudged = true } }
 }

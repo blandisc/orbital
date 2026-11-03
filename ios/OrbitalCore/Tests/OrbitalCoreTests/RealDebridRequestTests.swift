@@ -57,7 +57,7 @@ final class RealDebridRequestTests: XCTestCase {
                                     createdAt: Date(timeIntervalSince1970: 0))
         let now = Date(timeIntervalSince1970: 3600)
         var titles = Set<String>(), symbols = Set<String>()
-        for state in DebridRequest.State.allCases {
+        for state in DebridRequest.State.allCases where state != .gone {   // la lápida no se enseña
             request.state = state; request.percent = 42
             titles.insert(DebridRequestWords.title(request)); symbols.insert(DebridRequestWords.symbol(state))
             XCTAssertFalse(DebridRequestWords.detail(request, now: now).isEmpty)
@@ -68,6 +68,12 @@ final class RealDebridRequestTests: XCTestCase {
         XCTAssertEqual(DebridRequestWords.short(request), "Bajando · 42 %")
         request.state = .refused
         XCTAssertEqual(DebridRequestWords.title(request), "Real-Debrid no lo dejó bajar")
+        // Lo de otra cuenta de Real-Debrid nunca es «lo pediste» (contrato › other_account).
+        request.device = "TV"
+        XCTAssertEqual(DebridRequestWords.since(request, now: now, otherAccount: true), "Lo pidió la TV · hace 1 h")
+        request.device = "iPad"
+        XCTAssertEqual(DebridRequestWords.since(request, now: now, otherAccount: true), "Lo pidió iPad · hace 1 h")
+        XCTAssertEqual(DebridRequestWords.since(request, now: now), "Lo pediste en iPad · hace 1 h")
         request.state = .noPeers
         XCTAssertEqual(DebridRequestWords.detail(request, now: Date(timeIntervalSince1970: 25 * 3600)), "Sigue sin bajar · ¿probar otra versión?")
     }

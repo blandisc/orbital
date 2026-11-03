@@ -169,14 +169,17 @@ final class DebridRequestsTests: XCTestCase {
         let made = try await requester.request(wish(2))
         XCTAssertEqual(made.rdID, "RD1")
         XCTAssertEqual(made.device, "iPhone de prueba")
-        XCTAssertEqual(fake.bodies["torrents/selectFiles/RD1"], "files=2", "el archivo del episodio: fileIdx + 1")
+        XCTAssertEqual(fake.bodies["torrents/selectFiles/RD1"], "files=1%2C2", "un paquete: todos sus videos (Real-Debrid solo deja elegir una vez)")
+        XCTAssertEqual(made.files, ["tt0386676:1:2": 1]); XCTAssertTrue(made.pack)
         XCTAssertEqual(fake.bodies["torrents/addMagnet"], "magnet=magnet%3A%3Fxt%3Durn%3Abtih%3A\(infoHash.lowercased())")
         _ = try await requester.request(wish(2))
         XCTAssertEqual(fake.calls.filter { $0 == "POST torrents/addMagnet" }.count, 1, "nunca se agrega dos veces")
-        // Otro episodio del mismo paquete: el mismo pedido, con ese video sumado.
+        // Otro episodio del mismo paquete: el mismo pedido, con ese video sumado, sin preguntarle nada a Real-Debrid.
+        let calls = fake.calls.count
         let pack = try await requester.request(wish(3))
         XCTAssertEqual(pack.videoIDs, ["tt0386676:1:2", "tt0386676:1:3"])
-        XCTAssertEqual(fake.calls.filter { $0 == "POST torrents/addMagnet" }.count, 1)
+        XCTAssertEqual(pack.files, ["tt0386676:1:2": 1, "tt0386676:1:3": 2])
+        XCTAssertEqual(fake.calls.count, calls, "otro episodio de un paquete ya pedido: ninguna llamada a Real-Debrid")
     }
 
     func testWithoutAKnownFileItSelectsOnlyTheVideos() async throws {
@@ -246,20 +249,33 @@ final class DebridRequestsTests: XCTestCase {
         XCTAssertEqual(changed.first?.rdID, "T7")
     }
 
-    func testDeletedOnTheWebsiteLeavesTheBook() async throws {
-        let (requester, fake, _, _) = make()
+    func testDeletedOnTheWebsiteBecomesATombstone() async throws {
+        let (requester, fake, clock, _) = make()
         _ = try await requester.request(wish())
-        fake.torrents = []   // lo borraste en real-debrid.com
+        fake.torrents = []   // lo borraste en real-debrid.com (o en la TV): 404 a su rd_id
+        clock.now += 60
+        let changed = await requester.refresh()
+        XCTAssertEqual(changed.first?.state, .gone)
+        XCTAssertEqual(requester.book.find(hash: infoHash)?.state, .gone, "lápida, no se borra: así la TV no lo vuelve a anotar")
+        XCTAssertNil(requester.book.find(metaID: "tt0386676", videoID: "tt0386676:1:2"), "la lápida no se enseña ni sale como versión")
+        XCTAssertTrue(requester.book.all.isEmpty)
+        let calls = fake.calls.count
         _ = await requester.refresh()
+        XCTAssertEqual(fake.calls.count, calls, "a una lápida nunca se le pregunta")
+        // Se guarda 7 días desde su último cambio.
+        requester.book.prune(now: clock.now.addingTimeInterval(6 * 24 * 3600))
+        XCTAssertNotNil(requester.book.find(hash: infoHash))
+        requester.book.prune(now: clock.now.addingTimeInterval(7 * 24 * 3600 + 1))
         XCTAssertNil(requester.book.find(hash: infoHash))
     }
 
-    func testCancelDeletesItFromRealDebridAndTheBook() async throws {
+    func testCancelDeletesItFromRealDebridAndLeavesATombstone() async throws {
         let (requester, fake, _, _) = make()
         _ = try await requester.request(wish())
         try await requester.cancel(hash: infoHash)
         XCTAssertTrue(fake.calls.contains("DELETE torrents/delete/RD1"))
-        XCTAssertNil(requester.book.find(hash: infoHash))
+        XCTAssertEqual(requester.book.find(hash: infoHash)?.state, .gone, "cancelado: lápida")
+        XCTAssertTrue(requester.book.all.isEmpty)
         let count = await requester.activeCount()
         XCTAssertEqual(count?.active, 3); XCTAssertEqual(count?.limit, 25)
     }
