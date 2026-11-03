@@ -60,7 +60,9 @@
       "percent": "0 a 100",
       "seeders": "entero o null",
       "progress_at": "segundos desde 1970: la última vez que avanzó (para «Sigue sin bajar» a las 24 h)",
-      "state": "uno de `states`"
+      "state": "uno de `states`",
+      "all_files": "true si al pedirlo se eligieron todos sus videos (un paquete): otro episodio del mismo torrent se une sin volver a pedir nada. Falta o false = un solo archivo (los pedidos de antes)",
+      "_": "Lo que no se sabe va en null (rd_id, season, episode, seeders, account) o \"\" (language, release, rd_status): no es un error. `account` se acepta como texto o número y se guarda como texto"
     },
     "states": {
       "queued": "En cola",
@@ -87,6 +89,7 @@
       "pedido nuevo": "si llega un `rd_id` no vacío y distinto del guardado, es un pedido nuevo (volver a pedir siempre da otro rd_id): reemplaza la entrada, con video_ids y files unidos. Así gone o refused no atoran un nuevo pedido",
       "rd_id": "el primero que no venga vacío",
       "title, by, since": "los del primero que lo anotó",
+      "all_files": "true si cualquiera de las dos lo dice",
       "rd_status, seeders": "los de la entrada con más `percent`"
     },
     "local_only": {
@@ -105,6 +108,6 @@
     "PUT /api/realdebrid": "{token}: la clave fija, aparte de la lista y solo al oprimir «Pasar a la TV» en el iPhone. Responde con el usuario y el vencimiento, nunca con la clave.",
     "GET /api/realdebrid": "usuario, Premium, vencimiento y la clave tapada («termina en ••••3F2A»); con ?full=1 y llave de aparato, la clave completa (para «Usar la de la TV» en el iPhone).",
     "GET /api/realdebrid/requests": "{version: 1, account, requests: [entry]}: `account` es la cuenta de la TV (null sin Real-Debrid). Sin `local_only` y sin lo olvidado. Quien lee toma cada entrada por separado: una mala se salta, no tira la lista.",
-    "POST /api/realdebrid/requests": "una entrada sin `updated` ni `local_only`: la TV la junta por huella (`merge`), pone `updated` y responde 200 con la entrada guardada. Nunca le pide nada a Real-Debrid. 422 si algo no tiene su forma. Sirve para anotar un pedido nuevo y para mandar lo que cambió en tu vistazo a Real-Debrid. Cancelar no tiene ruta propia: el aparato cancela en su Real-Debrid (un 404 cuenta como hecho) y manda la entrada con gone."
+    "POST /api/realdebrid/requests": "una entrada sin `updated` ni `local_only`: la TV la junta por huella (`merge`), pone `updated` y responde 200 con la entrada guardada. Nunca le pide nada a Real-Debrid. 422 si algo no tiene su forma. Sirve para anotar un pedido nuevo y para mandar lo que cambió en tu vistazo a Real-Debrid. Solo el POST junta (con la regla del rd_id nuevo); el GET nunca cambia nada. Cancelar no tiene ruta propia: el aparato cancela en su Real-Debrid (un 404 cuenta como hecho) y manda la entrada con gone."
   }
 }

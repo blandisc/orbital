@@ -1,6 +1,6 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, keysMenu, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   return {
     // Ajustes › Complementos («La TV sin Stremio», S1)
@@ -32,6 +32,29 @@ export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, keysMe
       sound.play("select");
       return ui.toast.show(command.source === "own" ? "Ahora salen de tu lista" : "Ahora salen de tu cuenta de Stremio",
         { detail: command.source === "own" ? "" : "Tu lista se quedó: regresas en Ajustes › Complementos" });
+    },
+    // Ajustes › Cuentas › Real-Debrid y «Tus pedidos» (corte S2)
+    "rd-account": async (command, context) => {
+      return openMenu(debridAccountMenu(state.settings?.realdebrid), nested(context));
+    },
+    "rd-requests": async (command, context) => {
+      const res = await api.debridRequests();
+      applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
+      return openMenu(debridRequestsMenu(res.requests || []), nested(context));
+    },
+    "rd-request-menu": async (command, context) => {
+      let found = state.settings?.realdebrid;
+      if (!(found?.requests || []).some((r) => r.hash === command.hash)) found = await api.debridRequests(); // desde la ficha
+      const req = (found?.requests || []).find((r) => r.hash === command.hash);
+      if (!req) return;
+      return openMenu(debridRequestMenu(req, { account: found.account }), nested(context));
+    },
+    "rd-cancel": async (command, context) => {
+      const res = await api.debridCancel(command.hash);
+      applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
+      sound.play("select");
+      ui.toast.show(`Cancelé ${command.title || "el pedido"}`, { detail: "Se quitó de tu Real-Debrid" });
+      return openMenu(debridRequestsMenu(res.requests || []), context?.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : {});
     },
     "stremio-account": async (command, context) => {
       return openMenu(stremioAccountMenu(), nested(context));

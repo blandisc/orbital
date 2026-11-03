@@ -729,9 +729,10 @@ function settingRow(key, settings, category) {
   };
 }
 
-/** Cuentas: Stremio, Trakt, cada iPhone, OneDrive y las claves de Para ti. */
+/** Cuentas: Real-Debrid, Stremio, Trakt, cada iPhone, OneDrive y las claves de Para ti. */
 function accountRows(settings) {
   return [
+    debridRow(settings.realdebrid),
     { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
       ok: !!settings.stremio_linked, warn: !settings.stremio_linked,
       command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
@@ -1240,6 +1241,98 @@ export function keysMenu(service) {
 }
 
 /** Stremio conectado: desconectar pide confirmar (y "Cancelar" va primero). */
+// --- Real-Debrid («La TV sin Stremio», corte S2) --------------------------------------------------------------------
+// Las palabras son las de design/vocabulario.json (las mismas que el iPhone).
+const DEBRID_PROBLEMS = {
+  expired: { label: "Tu Real-Debrid venció", hint: "Renovar en real-debrid.com, desde tu celular" },
+  no_premium: { label: "Tu cuenta no tiene Premium", hint: "Sin Premium no arranca nada al instante" },
+  bad_key: { label: "Vuelve a conectar Real-Debrid", hint: "Tu clave ya no sirve · Mándala desde tu iPhone" },
+};
+const REQUEST_WORDS = { queued: "En cola", no_peers: "Sin gente que lo comparta", refused: "Real-Debrid no lo dejó bajar",
+  too_many: "Muchas descargas activas", ready: "Listo" };
+const REQUEST_ICONS = { queued: "calendar", downloading: "download", no_peers: "players", refused: "warning", too_many: "list", ready: "check" };
+
+/** Un pedido en una línea: «Bajando en Real-Debrid · 42 %», «En cola»… */
+export function requestLabel(req) {
+  return req.state === "downloading" ? `Bajando en Real-Debrid · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
+}
+
+/** Quién lo pidió: «Lo pediste aquí» o «Lo pidió el iPhone de Fernando». */
+export function requestedBy(req) {
+  return !req.by || req.by === "TV" ? "Lo pediste aquí" : `Lo pidió el ${req.by}`;
+}
+
+const dayMonth = (seconds) => new Date(seconds * 1000).toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
+
+/** El renglón de Real-Debrid en Cuentas: cuántos días te quedan o, si algo falla, cuál de las tres causas. */
+export function debridRow(rd) {
+  const base = { icon: "bolt", label: "Real-Debrid", command: { type: "rd-account" } };
+  if (!rd?.linked) return { ...base, value: "Conectar", warn: true, hint: "Para que los videos arranquen al instante · en tu Torrentio",
+    command: { type: "rd-account" } };
+  const problem = DEBRID_PROBLEMS[rd.problem];
+  if (problem) return { ...base, value: problem.label, warn: true, hint: problem.hint };
+  if (rd.loading || rd.problem === "offline") return { ...base, value: "✓ Conectada", ok: true, hint: "Para que los videos arranquen al instante" };
+  const days = rd.days == null ? "" : rd.days === 1 ? " · queda 1 día" : ` · quedan ${rd.days} días`;
+  return { ...base, value: "✓ Conectada", ok: true, warn: rd.days != null && rd.days <= 7,
+    hint: rd.expires ? `Premium · vence el ${dayMonth(rd.expires)}${days}` : "Premium" };
+}
+
+/** Real-Debrid conectado: de dónde salió tu clave, tu Premium, «Tus pedidos» y cómo renovar. */
+export function debridAccountMenu(rd) {
+  const requests = rd?.requests || [];
+  const from = rd?.source === "iphone" ? "Te la mandó tu iPhone" : "Tomada de tu Torrentio";
+  const active = requests.filter((r) => ["queued", "downloading", "no_peers"].includes(r.state)).length;
+  if (!rd?.linked) {
+    return { title: "Real-Debrid", subtitle: "Es lo que hace que los videos arranquen al instante.", options: [
+      { icon: "info", label: "Ponla en tu Torrentio", hint: "Orbital toma la clave de ahí solo, la primera vez", command: { type: "close" } },
+      { icon: "phone", label: "Mándala desde tu iPhone", hint: "En el iPhone: Ajustes › Cuentas › Real-Debrid › Pasar a la TV", command: { type: "close" } },
+    ] };
+  }
+  const problem = DEBRID_PROBLEMS[rd.problem];
+  return {
+    title: "Real-Debrid",
+    subtitle: [rd.user && `Conectada como ${rd.user}`, `${from} · termina en ••${rd.ends_with || ""}`].filter(Boolean).join(" · "),
+    options: [
+      { icon: "download", label: "Tus pedidos", value: active ? `${active} bajando` : requests.length ? `${requests.length}` : "Ninguno",
+        hint: "Lo que le pediste desde la TV o tu iPhone", command: { type: "rd-requests" } },
+      problem ? { icon: "warning", label: problem.label, hint: problem.hint, warn: true, command: { type: "close" } }
+        : rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
+          hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
+          warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
+      { icon: "phone", label: "Cambiar la clave", hint: "Mándala desde tu iPhone, o cámbiala en tu Torrentio", command: { type: "close" } },
+    ].filter(Boolean),
+  };
+}
+
+/** «Tus pedidos» (R13 del iPhone): cada uno con su estado en palabras e ícono (no solo color) y quién lo pidió. */
+export function debridRequestsMenu(requests = []) {
+  const shown = requests.filter((r) => r.state !== "gone");
+  return {
+    title: "Tus pedidos",
+    subtitle: "Lo que le pediste a Real-Debrid desde la TV o tu iPhone. Lo terminado se olvida a la semana.",
+    // El estado va en la línea de abajo (con quién lo pidió): a la derecha apretaba el título en dos o tres renglones.
+    options: shown.length ? shown.map((r) => ({ icon: REQUEST_ICONS[r.state] || "download", label: r.title || "Tu pedido",
+      hint: `${requestLabel(r)} · ${requestedBy(r)}`, ok: r.state === "ready", warn: ["refused", "too_many", "no_peers"].includes(r.state),
+      command: { type: "rd-request-menu", hash: r.hash } }))
+      : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } }],
+  };
+}
+
+/** Un pedido: «Cancelar pedido» lo quita de tu Real-Debrid (pide confirmar; «Cancelar» va primero). */
+export function debridRequestMenu(req, { account = null } = {}) {
+  const theirs = req.account && account && req.account !== account;
+  return {
+    title: req.title || "Tu pedido",
+    subtitle: `${requestLabel(req)} · ${requestedBy(req)}`,
+    options: theirs
+      ? [{ icon: "info", label: "Es de otra cuenta de Real-Debrid", hint: "Solo se puede seguir o cancelar desde ese aparato", command: { type: "close" } }]
+      : [
+        { icon: "close", label: "Cancelar", command: { type: "close" } },
+        { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } },
+      ],
+  };
+}
+
 export function stremioAccountMenu() {
   return {
     title: "Cuenta de Stremio",

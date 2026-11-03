@@ -209,6 +209,21 @@ def stable_index(addon_url: str, stream: dict) -> int:
 
 PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
 
+# Lo que Torrentio manda en lugar de una película cuando Real-Debrid no puede: la «versión» «RD error» o uno de sus videos
+# cortos de aviso (`/videos/failed_access_v3.mp4`…). Nunca es el título: no se ofrece (AD-5; igual que TorrentioNotices.swift).
+_NOTICE_VIDEO = re.compile(r"/videos/([a-z_]+?)(?:_v\d+)?\.mp4$")
+ACCOUNT_NOTICES = {"failed_access", "blocked_access"}
+
+
+def torrentio_notice(stream: dict) -> str | None:
+    """El aviso que es esta «versión» («failed_access», «downloading»…) o None si es un video de verdad."""
+    url = stream.get("url") if isinstance(stream.get("url"), str) else ""
+    m = _NOTICE_VIDEO.search(url.split("?", 1)[0])
+    if m:
+        return m.group(1)
+    name = f"{stream.get('name') or ''} {stream.get('title') or ''}".lower()
+    return "failed_access" if "rd error" in name else None
+
 
 def parse(stream: dict, addon: str, transport_url: str, index: int, original: str | None = None) -> Source:
     """`original`: el idioma original del título según TMDB ("en", "ja", "es-ES"…); None si no se sabe."""
@@ -610,8 +625,12 @@ class StreamFinder:
             facts = {}
         original = facts.get("original") if isinstance(facts.get("original"), str) else None
         titles = [x for x in facts.get("titles") or [] if isinstance(x, str) and x.strip()]
+        notices = set()
         for addon, streams in results:
             for stream in streams or []:
+                if isinstance(stream, dict) and (notice := torrentio_notice(stream)):
+                    notices.add(notice)
+                    continue
                 index = stable_index(addon.url, stream)
                 while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
                     index = (index + 1) % 2**31
@@ -631,6 +650,8 @@ class StreamFinder:
         # hacía decir «No pude conectar con tus complementos» aunque Torrentio sí respondiera que no lo tiene.
         answered = any(streams is not None for _, streams in results)
         self.outcome[f"{kind}:{video_id}"] = "no-addons" if not serving else "offline" if not answered and not ranked else "ok"
+        if notices & ACCOUNT_NOTICES:  # tu Real-Debrid no deja: la ficha le pregunta a Real-Debrid cuál de las tres causas
+            self.outcome[f"{kind}:{video_id}"] = "debrid-account"
         if failed and not ranked:
             return ranked  # la red falló y no hay nada: no se recuerda, la próxima vez se pregunta otra vez
         with self._lock:

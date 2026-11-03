@@ -633,6 +633,17 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """El iPhone ya actuó sobre estos pendientes: se quitan de la bandeja."""
         return {"removed": companion.inbox_ack(main_app.state.catalog.state, body.ids)}
 
+    # La libreta de pedidos a Real-Debrid, para el iPhone (contrato «requests»): sin claves ni enlaces. Por ahora con el
+    # token del túnel; pasa a la llave de cada aparato cuando existan (AD-3).
+    @public.get("/api/realdebrid/requests")
+    def companion_debrid_requests() -> dict:
+        return main_app.state.catalog.watch.rd.listing()
+
+    @public.post("/api/realdebrid/requests")
+    async def companion_debrid_request_in(request: Request) -> dict:
+        raw = await addons.request_entry(request)
+        return await run_in_threadpool(addons.receive_request, main_app.state.catalog.watch, raw)
+
     remote_bucket = {"tokens": 20.0, "at": time.monotonic()}  # el pad manda ~10 por segundo al mantener
 
     def remote_allowed() -> bool:

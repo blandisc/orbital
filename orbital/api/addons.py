@@ -1,18 +1,20 @@
 """Ajustes › Complementos («La TV sin Stremio», S1): tu lista, traerla de Stremio, prender, apagar, ordenar y quitar.
 
-Solo para la pantalla de la propia consola: con la llave de otro aparato (o la de Alexa) no se llega aquí. Lo que el
-iPhone manda (PUT /api/addons, design/addons-contract.json) llega con S6.
+Lo de Complementos es solo para la pantalla de la propia consola: con la llave de otro aparato (o la de Alexa) no se llega
+aquí. Lo que el iPhone manda (PUT /api/addons, design/addons-contract.json) llega con S6. La libreta de pedidos a Real-Debrid
+(GET/POST /api/realdebrid/requests, corte S2) sí la leen y la escriben los dos: no lleva claves ni enlaces.
 """
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
-from ..library import stremio_api
+from ..library import realdebrid, stremio_api
 from .deps import Deps
 
 
@@ -27,6 +29,31 @@ class RestoreRequest(BaseModel):
 
 class SourceRequest(BaseModel):
     source: str = Field(pattern="^(own|stremio)$")
+
+
+class CancelRequest(BaseModel):
+    hash: str = Field(pattern="^[0-9a-f]{40}$")
+
+
+MAX_REQUEST_BODY = 16 * 1024  # contrato «requests»: post_body_bytes
+
+
+async def request_entry(request: Request) -> dict:
+    """El cuerpo de POST /api/realdebrid/requests: una entrada de la libreta, de 16 KB como mucho."""
+    body = await request.body()
+    if len(body) > MAX_REQUEST_BODY:
+        raise HTTPException(413, "Petición demasiado grande")
+    try:
+        return json.loads(body)
+    except ValueError as exc:
+        raise HTTPException(422, "Ese pedido no tiene la forma acordada") from exc
+
+
+def receive_request(watch, raw: object) -> dict:
+    try:
+        return watch.rd.receive(raw)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
@@ -75,5 +102,25 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
     def source(body: SourceRequest, request: Request) -> dict:
         local_only(request)
         return watch.set_addon_source(body.source)
+
+    # La libreta de pedidos a Real-Debrid (design/addons-contract.json, «requests»): la lee «Tus pedidos» y el iPhone.
+    @r.get("/api/realdebrid/requests")
+    def debrid_requests() -> dict:
+        return watch.rd.listing()
+
+    @r.post("/api/realdebrid/requests")
+    async def debrid_request_in(request: Request) -> dict:
+        raw = await request_entry(request)
+        return await run_in_threadpool(receive_request, watch, raw)
+
+    @r.post("/api/realdebrid/requests/cancel")
+    def debrid_cancel(body: CancelRequest, request: Request) -> dict:
+        """«Cancelar pedido» en la TV: se quita de tu Real-Debrid y queda la lápida."""
+        local_only(request)
+        try:
+            watch.rd.cancel(body.hash)
+        except realdebrid.RealDebridError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        return watch.rd.listing()
 
     return r

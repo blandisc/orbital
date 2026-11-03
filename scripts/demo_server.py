@@ -309,7 +309,45 @@ def build(tmp: Path):
     demo_onedrive(catalog)
     demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
     demo_sources(catalog)
+    demo_debrid(catalog)
     return create_app(config, catalog)
+
+
+def demo_debrid(catalog) -> None:
+    """Real-Debrid sin internet (corte S2): una cuenta Premium que vence en 18 días y «Tus pedidos» con uno de cada estado,
+    del demo y de un iPhone. `ORBITAL_DEMO_RD=expired|no_premium|bad_key` enseña esa causa en su lugar."""
+    from orbital import rd_requests
+
+    watch, now = catalog.watch, time.time()
+    problem = os.environ.get("ORBITAL_DEMO_RD") or None
+    watch.rd_token = lambda: "DEMODEMO3F2A"
+    watch.rd.token = watch.rd_token
+    watch.rd.watch = lambda: None  # nada le pregunta a Real-Debrid
+
+    class DemoRD:  # «Cancelar pedido» sin internet
+        def __init__(self, token):
+            pass
+
+        def user(self):
+            return {"id": 7}
+
+        def delete(self, rd_id):
+            pass
+
+    watch.rd.rd_factory = DemoRD
+    watch.rd._account = (now + 10**9, "DEMODEMO3F2A", "7")
+    watch._rd_status = (now + 10**9, "DEMODEMO3F2A", {
+        "linked": True, "source": "torrentio", "user": "fernando", "premium": problem is None, "expires": now + 18 * 86400 - 3600,
+        "days": 18, "problem": problem, "ends_with": "3F2A"})
+    rows = [("Nocturne · T1 E2", "tt29623480:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
+            ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),
+            ("Los Simpson · T36 E4", "tt0096697:36:4", "too_many", 0, "TV"), ("Oppenheimer", "tt15398776", "refused", 0, "TV")]
+    for i, (title, video, state, pct, by) in enumerate(rows):
+        h = f"{i + 1:x}" * 40
+        catalog.state.set_pref(rd_requests.STATE_ID, h, {
+            "hash": h, "account": "7", "rd_id": f"DEMO{i}", "title": title, "kind": "series" if ":" in video else "movie",
+            "meta_id": video.split(":")[0], "video_ids": [video], "files": {}, "by": by, "since": now - i * 3600, "updated": now,
+            "percent": pct, "progress_at": now, "state": state, "notified": True, "nudged": True})
 
 
 def demo_sources(catalog) -> None:

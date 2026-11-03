@@ -30,7 +30,33 @@ _TOKEN = re.compile(r"realdebrid=([A-Za-z0-9]+)")
 
 
 class RealDebridError(Exception):
-    """Real-Debrid dijo que no (o no contestó). El mensaje va en palabras."""
+    """Real-Debrid dijo que no (o no contestó). El mensaje va en palabras; `status` es el HTTP y `code` su error_code
+    (21 = muchas descargas a la vez, 34–36 = no permitido, 8/9 = clave que ya no sirve, 20 = sin Premium)."""
+
+    def __init__(self, message: str, status: int | None = None, code: int | None = None) -> None:
+        super().__init__(message)
+        self.status, self.code = status, code
+
+    @property
+    def gone(self) -> bool:
+        """Ese torrent ya no está en tu cuenta (lo borraste o lo canceló otro aparato)."""
+        return self.status == 404
+
+    @property
+    def too_many(self) -> bool:
+        return self.code == 21 or self.status == 509
+
+    @property
+    def refused(self) -> bool:
+        return self.code in (34, 35, 36)
+
+    @property
+    def bad_key(self) -> bool:
+        return self.status in (401, 403) and self.code in (8, 9, None)
+
+    @property
+    def no_premium(self) -> bool:
+        return self.code == 20 or (self.status == 403 and self.code not in (8, 9, None))
 
 
 def token_in(url: str) -> str | None:
@@ -67,7 +93,8 @@ class RealDebrid:
             with self.opener(req, timeout=TIMEOUT) as res:
                 body = read_body(res, timeout=TIMEOUT, limit=4 * 1024 * 1024)
         except urllib.error.HTTPError as exc:
-            raise RealDebridError(_why(exc)) from exc
+            message, code = _why(exc)
+            raise RealDebridError(message, exc.code, code) from exc
         except NET_ERRORS as exc:
             raise RealDebridError("No pude hablar con Real-Debrid. Revisa Internet") from exc
         return json.loads(body) if body.strip() else None
@@ -75,49 +102,74 @@ class RealDebrid:
     def user(self) -> dict:
         return self._call("GET", "user") or {}
 
-    def add(self, info_hash: str, file_idx: int | None = None) -> str:
-        """Pide el torrent y elige qué bajar: el archivo del episodio si se sabe cuál, si no todos los videos. El id del pedido."""
+    def add(self, info_hash: str, file_idx: int | None = None, pack: bool = False) -> str:
+        """Pide el torrent y elige qué bajar (Real-Debrid solo deja elegir una vez): el archivo del episodio si se sabe cuál;
+        en un paquete de temporada (`pack`, más de un video) todos sus videos, como Torrentio, para que los demás episodios
+        queden listos sin volver a pedir nada (contrato «requests», `files`). El id del pedido."""
         added = self._call("POST", "torrents/addMagnet", {"magnet": magnet(info_hash)}) or {}
         rd_id = added.get("id")
         if not rd_id:
             raise RealDebridError("Real-Debrid no aceptó esa versión")
-        files = (self.info(rd_id).get("files") or []) if file_idx is not None else []
-        wanted = [f["id"] for f in files if isinstance(f, dict) and f.get("id") == file_idx + 1] if file_idx is not None else []
-        if not wanted:
-            info = self.info(rd_id)
-            wanted = [f["id"] for f in info.get("files") or [] if isinstance(f, dict) and VIDEO.search(str(f.get("path") or ""))]
-        self._call("POST", f"torrents/selectFiles/{rd_id}", {"files": ",".join(map(str, wanted)) if wanted else "all"})
+        self.select(rd_id, file_idx, pack)
         return rd_id
+
+    def select(self, rd_id: str, file_idx: int | None = None, pack: bool = False) -> None:
+        """Elige los archivos de un torrent que espera (waiting_files_selection)."""
+        files = [f for f in self.info(rd_id).get("files") or [] if isinstance(f, dict)]
+        videos = [f["id"] for f in files if VIDEO.search(str(f.get("path") or ""))]
+        wanted = [f["id"] for f in files if file_idx is not None and f.get("id") == file_idx + 1]
+        if not wanted or (pack and len(videos) > 1):
+            wanted = videos
+        self._call("POST", f"torrents/selectFiles/{rd_id}", {"files": ",".join(map(str, wanted)) if wanted else "all"})
 
     def info(self, rd_id: str) -> dict:
         return self._call("GET", f"torrents/info/{rd_id}") or {}
 
-    def link(self, info: dict) -> tuple[str, str] | None:
-        """Ya bajado: (enlace para el reproductor, nombre del archivo) del video más grande que eligió."""
+    def torrents(self, limit: int = 100) -> list[dict]:
+        """Tus torrents más recientes, con una sola consulta (para ver cuánto llevan todos los pedidos a la vez)."""
+        got = self._call("GET", f"torrents?limit={limit}") or []
+        return [t for t in got if isinstance(t, dict)] if isinstance(got, list) else []
+
+    def delete(self, rd_id: str) -> None:
+        """«Cancelar pedido». Si ya no estaba (404), cuenta como hecho."""
+        try:
+            self._call("DELETE", f"torrents/delete/{rd_id}")
+        except RealDebridError as exc:
+            if not exc.gone:
+                raise
+
+    def link(self, info: dict, file_idx: int | None = None) -> tuple[str, str] | None:
+        """Ya bajado: (enlace para el reproductor, nombre del archivo). El de ese archivo si se dice cuál (un episodio de un
+        paquete); si no, el video más grande que eligió."""
         links = [x for x in info.get("links") or [] if isinstance(x, str)]
         files = [f for f in info.get("files") or [] if isinstance(f, dict) and f.get("selected")]
         if not links:
             return None
         pairs = list(zip(links, files, strict=False)) or [(links[0], {})]  # los enlaces van en el orden de los archivos elegidos
-        best = max(pairs, key=lambda p: p[1].get("bytes", 0))[0]
+        exact = [p for p in pairs if file_idx is not None and p[1].get("id") == file_idx + 1]
+        best = exact[0][0] if exact else max(pairs, key=lambda p: p[1].get("bytes", 0))[0]
         out = self._call("POST", "unrestrict/link", {"link": best}) or {}
         url = out.get("download")
         return (url, str(out.get("filename") or "")) if isinstance(url, str) and url.startswith("https://") else None
 
 
-def _why(exc: urllib.error.HTTPError) -> str:
-    """Los errores de Real-Debrid que importan, en palabras (los demás, uno general)."""
+def _why(exc: urllib.error.HTTPError) -> tuple[str, int | None]:
+    """Los errores de Real-Debrid que importan, en las palabras de design/vocabulario.json (los demás, uno general), con
+    su error_code."""
     try:
         code = json.loads(exc.read().decode() or "{}").get("error_code")
-    except (ValueError, OSError):
+    except (ValueError, OSError, AttributeError):
         code = None
+    code = code if isinstance(code, int) else None
     if exc.code in (401, 403) and code in (8, 9, None):
-        return "Tu Real-Debrid no aceptó la conexión. Revisa tu cuenta en Ajustes › Cuentas"
+        return "Vuelve a conectar Real-Debrid", code
     if code == 20 or exc.code == 403:
-        return "Tu Real-Debrid venció o no es premium. Renuévalo en real-debrid.com"
+        return "Tu cuenta no tiene Premium", code
     if code in (34, 35, 36):
-        return "Real-Debrid no acepta esa versión (la marcó como no permitida)"
+        return "Real-Debrid no lo dejó bajar", code
     if exc.code == 509 or code == 21:
-        return "Real-Debrid ya tiene demasiados pedidos tuyos bajando. Espera a que acabe alguno"
-    return "Real-Debrid no pudo con ese pedido"
+        return "Muchas descargas activas", code
+    if exc.code == 404:
+        return "Ya no está en tu Real-Debrid", code
+    return "Real-Debrid no pudo con ese pedido", code
 

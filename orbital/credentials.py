@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import threading
+import time
 from pathlib import Path
 
 from . import dpapi
@@ -25,17 +26,20 @@ class Credentials:
         self.path = path
         self._lock = threading.Lock()
         self._data: dict = {}
+        self._unreadable = False  # no se pudo leer: antes de escribir encima se respalda (AD-15)
         if path and path.exists():
             try:
                 raw = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, ValueError) as exc:
                 log.warning("No se pudo leer %s: %s", path, exc)
+                self._unreadable = True
                 return
             if isinstance(raw, dict) and raw.get("format") == FORMAT:
                 plain = dpapi.unprotect(str(raw.get("data") or ""))
                 if plain is None:
                     log.warning("No pude descifrar %s (¿otro usuario de Windows u otro equipo?): "
                                 "vuelve a conectar Stremio", path)
+                    self._unreadable = True
                     return
                 try:
                     data = json.loads(plain)
@@ -43,6 +47,7 @@ class Credentials:
                     data = None
                 if not isinstance(data, dict):
                     log.warning("Credenciales ilegibles en %s: vuelve a conectar Stremio", path)
+                    self._unreadable = True
                     return
                 self._data = data
             elif isinstance(raw, dict):
@@ -68,6 +73,15 @@ class Credentials:
         if not self.path:
             return
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self._unreadable and self.path.exists():  # lo que no se pudo descifrar no se pierde: queda respaldado
+            backup = self.path.with_name(f"{self.path.stem}.ilegible-{int(time.time())}{self.path.suffix}")
+            try:
+                self.path.replace(backup)
+                log.warning("Respaldé las claves que no pude leer en %s", backup)
+            except OSError as exc:
+                log.warning("No pude respaldar %s: %s; no escribo encima", self.path, exc)
+                return
+            self._unreadable = False
         text = json.dumps(self._data, indent=1)
         sealed = dpapi.protect(text) if dpapi.available() else None
         if sealed is not None:

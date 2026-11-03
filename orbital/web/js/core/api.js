@@ -112,6 +112,9 @@ export const api = {
   addonChange: (id, action) => post("/api/addons/change", { id, action }),
   addonRestore: (id) => post("/api/addons/restore", { id }),
   addonsSource: (source) => post("/api/addons/source", { source }),
+  // Tus pedidos a Real-Debrid (corte S2): la libreta común con el iPhone, y «Cancelar pedido».
+  debridRequests: () => request("/api/realdebrid/requests"),
+  debridCancel: (hash) => post("/api/realdebrid/requests/cancel", { hash }),
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
   forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),

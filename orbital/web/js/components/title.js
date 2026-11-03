@@ -31,7 +31,7 @@ const EPISODE_PX = 360;
 
 export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {},
-  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, returnTo = () => null }) {
+  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, onRequest = () => {}, returnTo = () => null }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -793,6 +793,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   async function requestDebrid() {
     const t = target();
+    if (ask?.why === "requested" && ask.request?.hash) return onRequest(ask.request.hash); // ya pedido: su hoja, con «Cancelar pedido»
     if (!t || !ask?.can_request) return;
     const mine = token;
     try {

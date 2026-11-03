@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addonHealth, addonMenu, addonRows, stepSetting } from "../../orbital/web/js/core/menus.js";
+import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
@@ -108,16 +108,17 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.equal(settingsCategory("watch", { audio: "es-ES" }).options[0].value, "Español de España");
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
-  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"], ["iPhone", "Conectar"]]);
-  assert.deepEqual(accounts.options[0].command, { type: "stremio-login" });
-  assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Stremio", "Conectar"], ["iPhone", "Conectar"]]);
+  assert.deepEqual(accounts.options[0].command, { type: "rd-account" }); // Real-Debrid primero (SS-1)
+  assert.deepEqual(accounts.options[1].command, { type: "stremio-login" });
+  assert.deepEqual(accounts.options[2].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Explorar", undefined],
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Explorar", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Letterboxd", "Agregar"], ["Clave de Trakt", "Agregar"]]);
-  assert.deepEqual(keys.options[4].command, { type: "keys-menu", service: "tmdb" });
-  assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
-  assert.deepEqual(keys.options[5].command, { type: "keys", service: "rawg" });
+  assert.deepEqual(keys.options[5].command, { type: "keys-menu", service: "tmdb" });
+  assert.deepEqual(keys.options[2].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
+  assert.deepEqual(keys.options[6].command, { type: "keys", service: "rawg" });
   assert.deepEqual(keysMenu("tmdb").options.map((o) => o.command.type), ["close", "keys", "keys-remove"]);
 });
 
@@ -625,4 +626,35 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.deepEqual(addonMenu(status.entries[1], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
   // Sin traer todavía: primero «Traer de tu Stremio».
   assert.equal(addonRows({ source: "stremio", stremio_linked: true, entries: [] })[0].label, "Traer de tu Stremio");
+});
+
+test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y «Tus pedidos» (corte S2)", () => {
+  const in18 = Date.UTC(2026, 10, 21, 18) / 1000;
+  const ok = debridRow({ linked: true, premium: true, expires: in18, days: 18, problem: null });
+  assert.equal(ok.value, "✓ Conectada");
+  assert.equal(ok.hint, "Premium · vence el 21 nov · quedan 18 días");
+  assert.equal(debridRow({ linked: true, days: 3, expires: in18 }).warn, true); // una semana antes ya avisa
+  assert.equal(debridRow({ linked: true, problem: "expired" }).value, "Tu Real-Debrid venció");
+  assert.equal(debridRow({ linked: true, problem: "no_premium" }).value, "Tu cuenta no tiene Premium");
+  assert.equal(debridRow({ linked: true, problem: "bad_key" }).value, "Vuelve a conectar Real-Debrid");
+  const account = debridAccountMenu({ linked: true, user: "fer", ends_with: "3F2A", source: "torrentio", expires: in18, days: 18,
+    requests: [{ hash: "a", state: "downloading", percent: 42 }] });
+  assert.equal(account.subtitle, "Conectada como fer · Tomada de tu Torrentio · termina en ••3F2A"); // de dónde salió la clave
+  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 bajando"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined]]);
+  const list = debridRequestsMenu([
+    { hash: "a", title: "Nocturne · T1 E1", state: "downloading", percent: 42, by: "TV" },
+    { hash: "b", title: "Severance · T2 E1", state: "no_peers", by: "iPhone de Fernando" },
+    { hash: "c", title: "Midsommar", state: "gone", by: "TV" }]);
+  assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
+    ["Nocturne · T1 E1", "Bajando en Real-Debrid · 42 % · Lo pediste aquí", "download"],
+    ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"]]); // la lápida no se enseña
+  assert.equal(debridRequestsMenu([]).options[0].label, "Todavía no le pides nada");
+  const one = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "too_many", by: "TV", account: "7" }, { account: "7" });
+  assert.equal(one.subtitle, "Muchas descargas activas · Lo pediste aquí");
+  assert.deepEqual(one.options.map((o) => o.label), ["Cancelar", "Cancelar pedido"]); // «Cancelar» primero
+  assert.deepEqual(one.options[1].command, { type: "rd-cancel", hash: "a", title: "Nocturne · T1 E1" });
+  const theirs = debridRequestMenu({ hash: "b", state: "queued", by: "iPhone", account: "99" }, { account: "7" });
+  assert.deepEqual(theirs.options.map((o) => o.label), ["Es de otra cuenta de Real-Debrid"]);
+  assert.equal(requestLabel({ state: "ready" }), "Listo");
+  assert.equal(requestedBy({ by: "iPad" }), "Lo pidió el iPad");
 });

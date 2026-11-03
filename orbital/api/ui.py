@@ -117,6 +117,7 @@ def router(d: Deps) -> APIRouter:
                 "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status(),
                 "onedrive": catalog.onedrive.status(),  # tus videos de OneDrive (Ajustes › Cuentas)
                 "addons": catalog.watch.addon_status(),  # Ajustes › Complementos: tu lista y si cada uno contesta
+                "realdebrid": catalog.watch.debrid_summary(),  # Ajustes › Cuentas › Real-Debrid y «Tus pedidos» (corte S2)
                 # La última vez que la app del iPhone habló con Orbital, al segundo (en memoria; companion_seen va a disco
                 # cada 10 min): «✓ Conectado» solo si es de hace un momento.
                 "companion_live": d.extra.get("phone_seen"),

@@ -45,10 +45,11 @@ export function downloadAction(job) {
 export const episodesLed = (details, kind = "movie") =>
   !!details && !details.error && (details.kind || kind) === "series" && (details.seasons || []).some((s) => s.episodes?.length);
 
-/** «Pedirlo y avisarme» a Real-Debrid (RD-1) o, ya pedido, cuánto lleva. `request`: "ask" | un porcentaje | null. */
+/** «Pedirlo y avisarme» a Real-Debrid (RD-1) o, ya pedido, cuánto lleva (A abre el pedido, con «Cancelar pedido»).
+ * `request`: "ask" | un porcentaje | null. Las palabras son las de design/vocabulario.json. */
 export function debridAction(request) {
-  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedirlo a Real-Debrid y avisarme", short: "Pedirlo" };
-  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Real-Debrid lo baja · ${request} %`, short: `${request} %`, active: true };
+  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedirlo y avisarme", short: "Pedirlo" };
+  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en Real-Debrid · ${request} %`, short: `${request} %`, active: true };
   return null;
 }
 

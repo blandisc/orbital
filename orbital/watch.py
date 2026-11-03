@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -18,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from . import companion, flags, player, player_ui, remote_art, ytdlp
+from . import companion, flags, player, player_ui, rd_requests, remote_art, ytdlp
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -39,6 +40,13 @@ log = logging.getLogger(__name__)
 
 STREMIO_KEY = "stremio_auth_key"
 ADDONS_KEY = "stremio_addons"  # tus complementos: cifrados como la clave de sesión (sus URLs llevan claves)
+RD_KEY = "realdebrid_token"  # la clave fija de tu Real-Debrid, propia de la consola (corte S2), cifrada como las demás
+RD_ACCOUNT = "rd:account"
+RD_STATUS_TTL = 1800
+# Las tres causas de tu cuenta (AD-5), con las palabras de design/vocabulario.json: (texto, detalle).
+DEBRID_CAUSES = {"expired": ("Tu Real-Debrid venció", "Renovar en real-debrid.com, desde tu celular"),
+                 "no_premium": ("Tu cuenta no tiene Premium", "Sin Premium no arranca nada al instante"),
+                 "bad_key": ("Vuelve a conectar Real-Debrid", "Tu clave ya no sirve · Ajustes › Cuentas › Real-Debrid")}
 STREMIO_STALE_SECONDS = 180
 
 
@@ -454,7 +462,9 @@ class Watch:
         self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
         # Lo que Real-Debrid aún no tiene se le pide desde la ficha o el reproductor; ya bajado, es una versión más.
-        self.rd = RdRequests(self.streams, self.state, lambda event: self.events.publish(event))
+        self._rd_status: tuple[float, str | None, dict] = (0.0, None, {})
+        self.rd = RdRequests(self.streams, self.state, lambda event: self.events.publish(event), token=self.rd_token)
+        self.rd.start()  # lo que quedó bajando antes de reiniciar se vuelve a seguir
         self.streams.facts = self._title_facts  # el idioma original (TMDB): de qué idioma es una fuente que no lo dice
         self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
                                   / "pistas-de-audio.json") if config.source else None)
@@ -480,6 +490,77 @@ class Watch:
         if self.addons.own_list:
             return bool(self.addons.local)
         return self.stremio_linked or bool(self.addons.local)
+
+    # --- Real-Debrid propio («La TV sin Stremio», corte S2) ------------------
+    def rd_token(self) -> str | None:
+        """La clave de tu Real-Debrid. La consola guarda la suya; la primera vez la toma de tu Torrentio y lo avisa (AD-2).
+        Si la tomó de ahí y tu Torrentio trae otra, cambia a esa: nunca se queda con una vieja."""
+        own = self.credentials.get(RD_KEY)
+        source = self.state.prefs(RD_ACCOUNT).get("source")
+        if own and source not in (None, "torrentio"):  # te la mandó el iPhone: no se cambia sola
+            return own
+        torrentio = self.rd._torrentio_token() if hasattr(self, "rd") else None
+        if not torrentio or torrentio == own:
+            return own or torrentio
+        self.credentials.set(RD_KEY, torrentio)
+        self.state.set_pref(RD_ACCOUNT, "source", "torrentio")
+        self._rd_status = (0.0, None, {})
+        self.events.publish({"type": "toast", "ok": True,
+                             "message": "Tu Torrentio trae otra clave de Real-Debrid: ahora uso esa" if own
+                             else "Tomé tu clave de Real-Debrid de tu Torrentio",
+                             "detail": "La ves en Ajustes › Cuentas › Real-Debrid"})
+        return torrentio
+
+    def debrid_status(self, fresh: bool = False) -> dict:
+        """Tu Real-Debrid para Ajustes › Cuentas y para la ficha: {"linked", "source", "user", "premium", "expires",
+        "days", "problem", "ends_with"}. `problem`: "expired" | "no_premium" | "bad_key" | "offline" | None. Le pregunta a
+        Real-Debrid como mucho cada media hora (o al ver un «RD error»)."""
+        token = self.rd_token()
+        if not token:
+            return {"linked": False}
+        when, cached_token, cached = self._rd_status
+        if not fresh and cached_token == token and time.time() - when < RD_STATUS_TTL:
+            return cached
+        out = {"linked": True, "source": self.state.prefs(RD_ACCOUNT).get("source") or "torrentio", "user": None,
+               "premium": False, "expires": None, "days": None, "problem": None, "ends_with": token[-4:].upper()}
+        try:
+            user = realdebrid.RealDebrid(token).user()
+        except realdebrid.RealDebridError as exc:
+            out["problem"] = "bad_key" if exc.bad_key else "no_premium" if exc.no_premium else "offline"
+            if out["problem"] == "offline" and cached:  # sin internet: lo de la última vez
+                return cached
+        else:
+            out["user"] = str(user.get("username") or "") or None
+            expires = None
+            try:
+                raw = str(user.get("expiration") or "")
+                from datetime import datetime
+                expires = datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp() if raw else None
+            except ValueError:
+                expires = None
+            out["expires"] = expires
+            out["premium"] = user.get("type") == "premium"
+            if expires:
+                out["days"] = max(0, math.ceil((expires - time.time()) / 86400))
+            if not out["premium"]:
+                out["problem"] = "expired" if expires and expires < time.time() else "no_premium"
+        self._rd_status = (time.time(), token, out)
+        return out
+
+    def debrid_summary(self) -> dict:
+        """Para Ajustes (sin esperar a Real-Debrid): lo último que se supo, y si ya es viejo se pregunta por detrás; al
+        tenerlo llega «settings-changed». Con «Tus pedidos» (la libreta, sin enlaces)."""
+        when, token, cached = self._rd_status
+        current = self.credentials.get(RD_KEY) or (self.rd._torrentio_token() if not token else token)
+        if not current:
+            return {"linked": False, "account": None, "requests": self.rd.listing()["requests"]}
+        if not cached or token != current or time.time() - when >= RD_STATUS_TTL:
+            def ask() -> None:
+                self.debrid_status()
+                self.events.publish({"type": "settings-changed"})
+            threading.Thread(target=ask, daemon=True, name="rd-status").start()
+        listed = self.rd.listing()
+        return {**(cached or {"linked": True, "loading": True}), "account": listed["account"], "requests": listed["requests"]}
 
     # --- Ajustes › Complementos («La TV sin Stremio», S1) ---------------------
     def addon_status(self) -> dict:
@@ -902,10 +983,10 @@ class Watch:
         "request"}. «debrid»: existe en internet pero Real-Debrid aún no lo tiene (se le puede pedir)."""
         prefs = self.asked_language({"meta_id": meta_id})[0]
         out = {"why": "ok", "message": "", "detail": "", "can_request": False, "request": self.rd.status(video_id)}
-        if out["request"] and out["request"]["state"] == "downloading":
-            pct = out["request"].get("percent") or 0
-            return {**out, "why": "requested", "message": f"Bajando en Real-Debrid · {pct} %",
-                    "detail": "Te aviso cuando esté listo"}
+        req = out["request"]
+        if req and req.get("mine") and req["state"] in rd_requests.ACTIVE:
+            return {**out, "why": "requested", "message": req["message"],
+                    "detail": req["detail"] if req["state"] != rd_requests.DOWNLOADING else "Te aviso cuando esté listo"}
         when = self._release_of(kind, meta_id, video_id)
         if when and when > time.time():
             day = player_ui_day(when)
@@ -918,6 +999,10 @@ class Watch:
         if any(ready_now(s) for s in found):
             return out
         outcome = self.streams.outcome.get(f"{kind}:{video_id}")
+        if self.rd.client() is not None:  # tu cuenta va antes que lo de cada versión (el orden de vocabulario.json)
+            cause = DEBRID_CAUSES.get(self.debrid_status(fresh=outcome == "debrid-account").get("problem") or "")
+            if cause:
+                return {**out, "why": "debrid-account", "message": cause[0], "detail": cause[1]}
         if outcome == "offline":
             return {**out, "why": "offline", "message": "No pude conectar con tus complementos",
                     "detail": "Revisa Internet e inténtalo de nuevo"}
@@ -925,6 +1010,9 @@ class Watch:
             return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
                     "detail": "Ajustes › Complementos"}
         exists = bool(found) or bool(self.rd.candidates(kind, video_id, prefs))
+        if exists and self.rd.client() is not None and req and req.get("mine") and req["state"] in (
+                rd_requests.REFUSED, rd_requests.TOO_MANY):
+            return {**out, "why": "debrid", "can_request": True, "message": req["message"], "detail": req["detail"]}
         if exists and self.rd.client() is not None:
             language = streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
             return {**out, "why": "debrid", "can_request": True, "message": "Real-Debrid todavía no lo tiene",
@@ -942,7 +1030,10 @@ class Watch:
             except cinemeta.CinemetaError:
                 title = ""
         try:
-            return self.rd.request(kind, video_id, title or "tu pedido", prefs)
+            parts = video_id.split(":")
+            season, episode = (int(parts[1]), int(parts[2])) if kind == "series" and len(parts) == 3 and                 parts[1].isdigit() and parts[2].isdigit() else (None, None)
+            return self.rd.request(kind, video_id, title or "tu pedido", prefs, meta_id=meta_id, season=season,
+                                   episode=episode)
         except realdebrid.RealDebridError as exc:
             raise LookupError(str(exc)) from exc
 
