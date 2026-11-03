@@ -260,7 +260,7 @@ enum Demo {
     }
 
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
-    /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free, invalid
+    /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free, invalid, unreachable
     /// o un número de días («14»).
     static var realDebrid: String? { value(after: "-demo-rd") }
     static let realDebridToken = String(repeating: "DEMO", count: 13)
