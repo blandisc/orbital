@@ -8,6 +8,10 @@ import OrbitalModels
 final class AppUI {
     /// «Viendo en la TV» va junto a la barra minimizada (al desplazar) y no encima de ella: la pastilla de calificar baja.
     var tvAccessoryInline = false
+    /// Sube cada vez que regresas a la app después de un rato fuera (la misma regla que refresca Inicio): la pantalla que
+    /// dejaste abierta (Explorar, una ficha) se pone al día y no enseña lo de antes (Fernando, 2 nov 2026: «cuando sales y
+    /// regresas te muestra una pantalla no actualizada del último lugar donde dejaste la app»).
+    var returnedToApp = 0
     var playing: PlayRequest?
     /// La tarjeta de la que nace el reproductor (la pone quien toca «Ver»); se olvida al cerrarlo, ya que regresó a ella.
     var playerSource: PlayerZoomID?

@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
+    @State private var showsFollowed = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State private var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
@@ -35,10 +36,7 @@ struct SettingsView: View {
         Form {
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
-                // Lo que ves (con «Tu año» adentro): lo que viste, del historial de Trakt.
-                NavigationLink { WatchingFromSettings() } label: {
-                    SettingsRow(title: "Lo que ves", symbol: "chart.bar.xaxis", tint: DS.ListTint.calendar, value: Text("Lo que viste, contado"))
-                }
+                // «Lo que ves» ya no está aquí: vive en Explorar (Fernando, 2 nov 2026: «ya tenemos otro acceso en Explorar»).
             }
             .listRowBackground(DS.surface)
             // Lo tuyo: cómo se ve y cómo se reproduce.
@@ -138,6 +136,8 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
         .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
+        .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
         #endif
     }
 
@@ -318,7 +318,16 @@ struct SettingsView: View {
         // Lo que cuenta es tu sesión de Trakt en el iPhone. Antes se pedía el Client ID de Ajustes, que quedó vacío desde que
         // viene incluido en la app: con Trakt conectado decía «Conecta Trakt» y no dejaba prender los avisos.
         .disabled(!model.traktLinked)
-        if !model.traktLinked {
+        if model.traktLinked {
+            // Cuáles sigues y cuáles ya no, en una lista (antes solo desde la ficha de cada serie).
+            Section {
+                NavigationLink { FollowedSeriesView() } label: {
+                    SettingsRow(title: "Series que sigues", symbol: "bell", tint: DS.ListTint.flame, value: Text("Elige de cuáles te aviso"))
+                }
+                .accessibilityIdentifier("followed-series")
+            }
+            .listRowBackground(DS.surface)
+        } else {
             Section { Text("Conecta Trakt para saber qué series sigues.").recipe(.footnote) }.listRowBackground(DS.surface)
         }
     }

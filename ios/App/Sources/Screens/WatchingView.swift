@@ -360,8 +360,4 @@ struct WatchingRatedView: View {
 
 extension WatchingStats.Period: @retroactive Identifiable { public var id: String { rawValue } }
 
-/// «Lo que ves» desde Ajustes: lo que más viste abre su ficha en esa misma pila.
-struct WatchingFromSettings: View {
-    @State private var route: TitleRoute?
-    var body: some View { WatchingView { route = $0 }.openingTitles(item: $route) }
-}
+

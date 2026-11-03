@@ -157,7 +157,10 @@ struct RootView: View {
                     Task { await env.ratings.refresh() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }
                     Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) }
                 }
-                if decision == .refresh { Task { await env.services.syncLibrary() } }   // al abrir ya la pide el arranque
+                if decision == .refresh {
+                    Task { await env.services.syncLibrary() }   // al abrir ya la pide el arranque
+                    env.ui.returnedToApp += 1   // la pantalla abierta (Explorar, una ficha) se pone al día
+                }
             }
             #if DEBUG
             if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }

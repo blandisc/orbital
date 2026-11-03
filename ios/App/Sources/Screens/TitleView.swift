@@ -61,6 +61,8 @@ struct TitleView: View {
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
+        // De vuelta a la app (quizá viste algo en la TV): lo visto, por dónde vas y lo que sigue, al día.
+        .onChange(of: appEnv?.ui.returnedToApp) { Task { await model.refreshState() } }
         .task(id: model.metaID) {   // Letterboxd es de películas: las series no se preguntan
             guard route.kind == "movie" else { return }
             letterboxdInfo = await Letterboxd(http: env.services.http, kv: env.services.kv).info(imdb: model.metaID)
