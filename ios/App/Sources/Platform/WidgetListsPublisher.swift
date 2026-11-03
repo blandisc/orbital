@@ -1,5 +1,4 @@
 import Foundation
-import ImageIO
 import UIKit
 import WidgetKit
 import OrbitalCore
@@ -17,6 +16,7 @@ enum WidgetListsPublisher {
             // Que Explorar termine de pintar primero (sus pósters van por la misma fila).
             try? await Task.sleep(for: .seconds(DesignTokens.Widget.publishDelay * 2))
             guard !Task.isCancelled, let directory = WidgetStore.listsDirectory else { return }
+            let rebuilt = WidgetStore.discardOutdatedImages(in: directory)   // cambió el tamaño: se vuelven a bajar
             var model = WidgetLists(lists: lists)
             for l in model.lists.indices {
                 for p in model.lists[l].posters.indices {
@@ -33,7 +33,7 @@ enum WidgetListsPublisher {
                 }
             }
             guard !Task.isCancelled else { return }
-            if WidgetStore.loadLists() == model { return }
+            if !rebuilt, WidgetStore.loadLists() == model { return }
             let kept = Set(model.lists.flatMap { $0.posters.compactMap(\.imageFile) })
             for file in (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [] where file.hasSuffix(".jpg") && !kept.contains(file) {
                 try? FileManager.default.removeItem(at: directory.appendingPathComponent(file))
@@ -43,10 +43,6 @@ enum WidgetListsPublisher {
     }
 
     nonisolated private static func reduce(_ data: Data) -> Data? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-        let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
-                                        kCGImageSourceThumbnailMaxPixelSize: DesignTokens.Widget.listImagePixels]
-        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-        return UIImage(cgImage: cg).jpegData(compressionQuality: DesignTokens.Widget.jpegQuality)
+        WidgetImage.reduce(data, maxPixels: DesignTokens.Widget.listImagePixels, quality: DesignTokens.Widget.jpegQuality)?.data
     }
 }

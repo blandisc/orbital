@@ -69,11 +69,10 @@ struct ReleasesView: View {
 private struct ReleasePoster: View {
     var airing: WidgetSnapshot.UpcomingEpisode
     var body: some View {
-        ZStack {
-            DS.surface
-            if let file = airing.imageFile, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()   // en la pantalla de inicio tintada, el arte sigue siendo foto
-            } else {
+        // Recortado y reducido al tamaño exacto del póster (`WidgetImage.fill`).
+        WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }) {
+            ZStack {
+                DS.surface
                 Text(verbatim: airing.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
                     .multilineTextAlignment(.center).padding(DS.Space.s1)
             }
@@ -238,10 +237,8 @@ private struct ReleasesSpotlight: View {
             .containerBackground(for: .widget) {
                 ZStack {
                     DS.bg
-                    if let file = airing.imageFile, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                        Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() }.clipped()
-                            .opacity(when.isOut ? 1 : DS.Opacity.dimmed)
-                    }
+                    WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }, anchor: .top)
+                        .opacity(when.isOut ? 1 : DS.Opacity.dimmed)
                     LinearGradient(stops: [.init(color: .clear, location: DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],   // ds-exception: el widget es otro programa y no trae ArtVeil
                                    startPoint: .top, endPoint: .bottom)
                 }
