@@ -581,8 +581,10 @@ class Watch:
             if entry.template == "torrentio":  # se configura aquí (corte S3); sin tu clave no se puede armar
                 row.update(template="torrentio", options=entry.options, needs_key=entry.address is None)
             entries.append(row)
+        raw = self.addon_list._raw()
         return {"source": self.addon_list.source, "imported_at": self.addon_list.imported_at,
-                "stremio_linked": self.stremio_linked, "entries": entries}
+                "stremio_linked": self.stremio_linked, "entries": entries,
+                "changed_by": raw.get("changed_by"), "changed_at": raw.get("changed_at")}
 
     def import_addons(self) -> dict:
         """«Traer de tu Stremio» / «Volver a traer»: tus complementos de la cuenta, una vez; desde ahí son tuyos aquí."""
@@ -622,6 +624,14 @@ class Watch:
         self.addon_list.restore(self._removed_addons.pop(ident))
         self.addons.forget()
         return self.addon_status()
+
+    def receive_addons(self, body: dict, device: str) -> dict:
+        """PUT /api/addons (corte S6): la lista que cambiaste en el iPhone; la TV la junta y deja de leer la de Stremio."""
+        saved = self.addon_list.receive(body, device)
+        self.addons.forget()
+        self.streams.forget_all()
+        self.events.publish({"type": "settings-changed"})
+        return saved
 
     def set_torrentio(self, options: dict) -> dict:
         """Ajustes › Complementos › Torrentio (corte S3): tus opciones, revisadas contra las de Torrentio

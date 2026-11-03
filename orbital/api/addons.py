@@ -1,8 +1,8 @@
 """Ajustes › Complementos («La TV sin Stremio», S1): tu lista, traerla de Stremio, prender, apagar, ordenar y quitar.
 
-Lo de Complementos es solo para la pantalla de la propia consola: con la llave de otro aparato (o la de Alexa) no se llega
-aquí. Lo que el iPhone manda (PUT /api/addons, design/addons-contract.json) llega con S6. La libreta de pedidos a Real-Debrid
-(GET/POST /api/realdebrid/requests, corte S2) sí la leen y la escriben los dos: no lleva claves ni enlaces.
+Prender, ordenar y configurar desde aquí es solo para la pantalla de la propia consola. La lista que cambias en el iPhone
+llega por GET/PUT /api/addons (corte S6, design/addons-contract.json), con las direcciones tapadas. La libreta de pedidos a
+Real-Debrid (GET/POST /api/realdebrid/requests, corte S2) la leen y la escriben los dos: no lleva claves ni enlaces.
 """
 
 from __future__ import annotations
@@ -12,9 +12,10 @@ from collections.abc import Callable
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from ..library import realdebrid, stremio_api
+from ..library import addon_list, realdebrid, stremio_api
 from .deps import Deps
 
 
@@ -52,6 +53,25 @@ async def request_entry(request: Request) -> dict:
 def run_debrid_status(watch) -> dict:
     status = watch.debrid_status(fresh=True)
     return {k: v for k, v in status.items() if k != "token"}
+
+
+async def addons_put(watch, request: Request) -> JSONResponse:
+    """PUT /api/addons: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (contrato, `routes`)."""
+    body = await request.body()
+    if len(body) > 64 * 1024:
+        raise HTTPException(413, "Petición demasiado grande")
+    try:
+        raw = json.loads(body)
+    except ValueError as exc:
+        raise HTTPException(422, "La lista no tiene la forma acordada") from exc
+    device = request.headers.get("x-orbital-device", "iPhone")[:60]
+    try:
+        saved = await run_in_threadpool(watch.receive_addons, raw, device)
+    except addon_list.Conflict as exc:
+        return JSONResponse(exc.current, status_code=409)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return JSONResponse(saved)
 
 
 def receive_request(watch, raw: object) -> dict:
@@ -102,6 +122,16 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
             return watch.restore_addon(body.id)
         except KeyError as exc:
             raise HTTPException(404, "Ya no se puede deshacer") from exc
+
+    # Corte S6: la lista viaja con el iPhone (design/addons-contract.json). Con el token del túnel mientras no haya llaves
+    # por aparato (AD-3): las direcciones van tapadas y una con clave no entra.
+    @r.get("/api/addons")
+    def shared_addons() -> dict:
+        return watch.addon_list.shared()
+
+    @r.put("/api/addons")
+    async def receive_addons(request: Request) -> JSONResponse:
+        return await addons_put(watch, request)
 
     @r.post("/api/addons/torrentio")
     def torrentio_options(body: dict, request: Request) -> dict:

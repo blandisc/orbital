@@ -77,6 +77,24 @@ def host(url: str) -> str:
     return url.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].lower()
 
 
+MASK = "•••"
+
+
+def masked(url: str) -> str:
+    """La dirección con sus claves tapadas («realdebrid=•••»): así viaja y así se enseña."""
+    import re
+    return re.sub(r"(?i)((?:%s)=)[^|/&%%]+" % "|".join(torrentio.SECRET_KEYS + ("apikey", "token", "key")), rf"\1{MASK}",
+                  url)
+
+
+class Conflict(Exception):  # noqa: N818 — así se llama en el contrato (409)
+    """El otro aparato partió de una revisión vieja: va la lista actual para que junte y reintente."""
+
+    def __init__(self, current: dict) -> None:
+        super().__init__("La lista cambió")
+        self.current = current
+
+
 class AddonList:
     """La lista y sus cambios. `store` es el llavero de la consola (credentials.Credentials o un dict en pruebas)."""
 
@@ -150,8 +168,9 @@ class AddonList:
             if e.origin == "orbital":
                 item["url"] = None  # la dirección de lo de Orbital (con tu clave) se arma, no se guarda
             saved.append(item)
+        changed_by = extra.pop("changed_by", DEVICE)
         self.store.set(LIST_KEY, {**data, **extra, "revision": self.revision + 1, "changed_at": time.time(),
-                                  "changed_by": DEVICE, "entries": saved,
+                                  "changed_by": changed_by, "entries": saved,
                                   "removed": list(dict.fromkeys(r for r in removed if isinstance(r, str)))})
 
     def import_from_stremio(self, addons: list[tuple[str, str, dict | None]]) -> dict:
@@ -288,6 +307,80 @@ class AddonList:
             raise ValueError(source)
         with self._lock:
             self._save(self.entries(), source=source)
+
+    # --- lo que viaja con el iPhone (corte S6; design/addons-contract.json, `store`, GET/PUT /api/addons) ----------
+    def shared(self) -> dict:
+        """La lista como la lee el iPhone: con su revisión y las direcciones con clave tapadas («•••»)."""
+        data = self._raw()
+        out = []
+        for e in self.entries():
+            item = {"id": e.id, "origin": e.origin, "name": e.name, "enabled": dict(e.enabled), "order": e.order}
+            if e.template:
+                item["template"] = e.template
+            if e.origin == "stremio" and e.url:
+                item["url"] = masked(e.url)
+            if e.only_on:
+                item["only_on"] = e.only_on
+            if e.options is not None:
+                item["options"] = e.options
+            if e.extra:
+                item["extra"] = {k: v for k, v in e.extra.items() if k != "set_here"}
+            out.append(item)
+        return {"revision": self.revision, "changed_at": data.get("changed_at"), "changed_by": data.get("changed_by") or DEVICE,
+                "addons": out, "removed": list(data.get("removed") or [])}
+
+    def receive(self, body: dict, device: str) -> dict:
+        """PUT /api/addons: la lista que cambió otro aparato. Lanza Conflict (409, con la actual) si partió de otra
+        revisión y ValueError (422) si algo no cuadra. Cada aparato cambia solo su propio prendido o apagado."""
+        if not isinstance(body, dict) or not isinstance(body.get("base_revision"), int):
+            raise ValueError("Falta la revisión de la que partiste")
+        items = body.get("addons")
+        if not isinstance(items, list) or len(items) > 100:
+            raise ValueError("La lista no tiene la forma acordada")
+        with self._lock:
+            if body["base_revision"] != self.revision:
+                raise Conflict(self.shared())
+            entries = self.entries()
+            by_id = {e.id: e for e in entries}
+            by_url = {e.url: e for e in entries if e.url}
+            removed = [r for r in body.get("removed") or [] if isinstance(r, str)]
+            seen: list[Entry] = []
+            for i, raw in enumerate(items):
+                got = entry_from(raw)
+                if got is None:
+                    raise ValueError("Un complemento no tiene la forma acordada")
+                url = raw.get("url") if isinstance(raw, dict) else None
+                if isinstance(url, str) and MASK in url:
+                    raise ValueError("Una dirección tapada no se puede guardar")
+                mine = by_id.get(got.id) or (by_url.get(url) if isinstance(url, str) else None)
+                if mine is None:
+                    if got.origin != "stremio" or not isinstance(url, str) or not url.startswith("https://"):
+                        raise ValueError("No se agregan complementos a mano")
+                    if masked(url) != url:
+                        raise ValueError("Espera las llaves por aparato: esa dirección lleva una clave")
+                    mine = Entry(id=got.id, origin="stremio", name=got.name or host(url), url=url, order=i,
+                                 only_on=DEVICE if host(url) in LOCAL_HOSTS else None)
+                if mine in seen:
+                    continue
+                theirs = {k: v for k, v in got.enabled.items() if k != DEVICE}  # el prendido de la TV es de la TV
+                mine.enabled = {**mine.enabled, **theirs}
+                mine.order = i
+                if got.name:
+                    mine.name = got.name
+                if mine.template == "torrentio" and isinstance(got.options, dict):
+                    mine.options = {k: v for k, v in got.options.items() if k in (*torrentio.ORDER, "verbatim")}
+                    mine.extra = {**mine.extra, "set_here": True}
+                if got.extra:
+                    mine.extra = {**mine.extra, **got.extra}
+                seen.append(mine)
+            for e in entries:  # lo que el otro no mandó se queda al final, en su orden (nada se pierde por un PUT corto)
+                if e not in seen and not (e.origin == "stremio" and e.id in removed):
+                    e.order = len(seen)
+                    seen.append(e)
+            raw_by = body.get("changed_by")
+            changed_by = raw_by if isinstance(raw_by, str) else device
+            self._save(seen, removed=removed, changed_by=changed_by[:60], source="own")
+            return self.shared()
 
     @staticmethod
     def _find(entries: list[Entry], ident: str) -> Entry:

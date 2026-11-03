@@ -1419,7 +1419,7 @@ function addonsMeta(status) {
 
 /** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital, los traídos de tu Stremio y de dónde
  * salen las fuentes. A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
-export function addonRows(status) {
+export function addonRows(status, now = Date.now()) {
   if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
   const entry = (e) => {
     const tv = e.only_on === "tv";
@@ -1445,7 +1445,13 @@ export function addonRows(status) {
       { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
     ];
   }
+  // Corte S6: si la cambiaste en el iPhone, se dice arriba (la lista es la misma en los dos).
+  const ago = status.changed_at ? shortAgo(status.changed_at, now) : null;
+  const fromPhone = status.changed_by && status.changed_by !== "tv" && {
+    icon: "phone", label: `Vienen de tu ${/^(iphone|ipad|mac)/i.test(status.changed_by) ? status.changed_by.replace(/^(iPhone|iPad|Mac).*/i, "$1") : "iPhone"}`,
+    hint: ago ? `Cambiado ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`} · se configura una vez y la TV lo toma` : "Se configura una vez y la TV lo toma" };
   return [
+    fromPhone,
     { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
     { heading: true, label: "Traídos de tu Stremio" }, ...brought.map(entry),
     status.stremio_linked && { icon: "refresh", label: "Volver a traer", hint: [imported, "tu cuenta no se toca"].filter(Boolean).join(" · "),

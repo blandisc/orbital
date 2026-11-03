@@ -125,3 +125,18 @@ def test_the_account_is_checked_again_and_the_key_never_leaves(apps, monkeypatch
     assert got["linked"] and got["premium"] and got["ends_with"] == "3F2A" and "TORRENTIOKEY" not in json.dumps(got)
     User.error = realdebrid.RealDebridError("Vuelve a conectar Real-Debrid", 401, 8)
     assert local.get("/api/realdebrid").json()["problem"] == "bad_key"  # sin esperar la media hora
+
+
+def test_the_iphone_reads_and_changes_the_addon_list_through_the_tunnel(apps):
+    """Corte S6: GET/PUT /api/addons con el token del túnel; 409 con la lista actual si partió de otra revisión."""
+    _, public, _ = apps
+    auth = {"Authorization": "Bearer secreto", "X-Orbital-Device": "iPhone de Fernando"}
+    assert public.get("/api/addons").status_code == 401
+    got = public.get("/api/addons", headers=auth).json()
+    assert "revision" in got and any(a.get("template") == "torrentio" for a in got["addons"])
+    stale = public.put("/api/addons", json={"base_revision": got["revision"] + 5, "addons": got["addons"]}, headers=auth)
+    assert stale.status_code == 409 and stale.json()["revision"] == got["revision"]
+    ok = public.put("/api/addons", json={"base_revision": got["revision"], "addons": got["addons"], "removed": []}, headers=auth)
+    assert ok.status_code == 200 and ok.json()["revision"] == got["revision"] + 1 and ok.json()["changed_by"] == "iPhone de Fernando"
+    bad = {**got["addons"][0], "id": "x", "origin": "stremio", "url": "https://y.strem.fun/realdebrid=ZZZ/manifest.json"}
+    assert public.put("/api/addons", json={"base_revision": got["revision"] + 1, "addons": [bad]}, headers=auth).status_code == 422

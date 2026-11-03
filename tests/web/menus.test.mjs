@@ -728,3 +728,10 @@ test("cuentas › Stremio de respaldo: traer una vez, la copia y volver a leerlo
     ["Desconectar", undefined], ["Cancelar", undefined]]);
   assert.deepEqual(after.options[0].command, { type: "setting", key: "stremio_copy", value: true });
 });
+
+test("complementos: si la lista la cambiaste en el iPhone, se dice arriba (corte S6)", () => {
+  const now = Date.UTC(2026, 10, 3, 12);
+  const rows = addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "iPhone de Fernando", changed_at: now / 1000 - 120 }, now);
+  assert.deepEqual([rows[0].label, rows[0].hint], ["Vienen de tu iPhone", "Cambiado hace 2 min · se configura una vez y la TV lo toma"]);
+  assert.equal(addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "tv" }, now)[0].label, "Vienen con Orbital");
+});

@@ -635,6 +635,15 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
 
     # La libreta de pedidos a Real-Debrid, para el iPhone (contrato «requests»): sin claves ni enlaces. Por ahora con el
     # token del túnel; pasa a la llave de cada aparato cuando existan (AD-3).
+    # La lista de complementos, para el iPhone (corte S6, contrato `routes`): direcciones tapadas.
+    @public.get("/api/addons")
+    def companion_addons() -> dict:
+        return main_app.state.catalog.watch.addon_list.shared()
+
+    @public.put("/api/addons")
+    async def companion_addons_put(request: Request):
+        return await addons.addons_put(main_app.state.catalog.watch, request)
+
     @public.get("/api/realdebrid/requests")
     def companion_debrid_requests() -> dict:
         return main_app.state.catalog.watch.rd.listing()

@@ -1,5 +1,7 @@
 """Tus complementos en la TV, sin tu cuenta de Stremio («La TV sin Stremio», S1; design/addons-contract.json)."""
 
+import pytest
+
 from orbital.library import addon_list, addons
 from orbital.library.addon_list import AddonList
 
@@ -214,3 +216,38 @@ def test_sin_cuenta_de_stremio_la_tv_usa_su_lista():
     lst.set_source("own")
     linked[0] = False
     assert lst.source == "own"
+
+
+def test_la_lista_viaja_con_el_iphone_por_revision_y_sin_claves():
+    """Corte S6 (design/addons-contract.json): GET con direcciones tapadas, PUT con su revisión (409 si es vieja, 422 si
+    algo no cuadra), cada aparato solo cambia su propio prendido y nada con clave cruza antes de las llaves por aparato."""
+    lst, _ = keyed()
+    lst.import_from_stremio(brought())
+    shared = lst.shared()
+    assert shared["revision"] == 1 and all("KEY" not in str(a) for a in shared["addons"])
+    torrentio = next(a for a in shared["addons"] if a.get("template") == "torrentio")
+    assert "url" not in torrentio and torrentio["options"]["sort"] == "seeders"
+    tpb = next(a for a in shared["addons"] if a.get("url") == TPB)
+    with pytest.raises(addon_list.Conflict) as old:
+        lst.receive({"base_revision": 0, "addons": shared["addons"]}, "iPhone")
+    assert old.value.current["revision"] == 1
+    changed = [dict(a) for a in shared["addons"]]
+    changed.reverse()  # el iPhone cambió el orden,
+    for a in changed:
+        a["enabled"] = {**a["enabled"], "iphone-1": False, "tv": False}  # su propio prendido (y no el de la TV)
+        if a.get("template") == "torrentio":
+            a["options"] = {**a["options"], "limit": 5}
+    saved = lst.receive({"base_revision": 1, "changed_by": "iPhone de Fernando", "addons": changed, "removed": []}, "iPhone")
+    assert saved["revision"] == 2 and saved["changed_by"] == "iPhone de Fernando"
+    assert [a["name"] for a in saved["addons"]][0] == "Local Files"
+    assert all(a["enabled"].get("tv", True) for a in saved["addons"])  # la TV sigue igual
+    assert lst.torrentio().options["limit"] == 5 and any("limit=5" in u for u in lst.urls())
+    masked = {**changed[0], "id": "nuevo", "url": "https://x.strem.fun/realdebrid=•••/manifest.json"}
+    for bad in [{**changed[0], "origin": "a mano"}, masked,
+                {"id": "otro", "origin": "stremio", "name": "Con clave", "url": "https://y.strem.fun/realdebrid=ZZZ/manifest.json", "order": 0}]:
+        with pytest.raises(ValueError):
+            lst.receive({"base_revision": 2, "addons": [bad]}, "iPhone")
+    fresh = {"id": "uuid-iphone", "origin": "stremio", "name": "Anime", "url": "https://anime.strem.fun/manifest.json", "order": 0}
+    lst.receive({"base_revision": 2, "addons": [fresh], "removed": [tpb["id"]]}, "iPhone")
+    names = [e.name for e in lst.entries()]
+    assert names[0] == "Anime" and "ThePirateBay+" not in names and "Torrentio" in names  # lo no mandado se queda
