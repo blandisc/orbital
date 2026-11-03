@@ -265,5 +265,5 @@ def test_comet_y_las_claves_escondidas_en_la_ruta():
     assert addon_list.masked("https://mediafusion.elfhosted.com/D-abcdefghijklmnopqrstuvwxyz0123456789ABCD/manifest.json").count("•••") == 1
     assert addon_list.masked(TPB) == TPB and addon_list.masked(TORRENTIO).endswith("realdebrid=•••/manifest.json")
     lst, _ = keyed()
-    with pytest.raises(ValueError, match="llaves por aparato"):
+    with pytest.raises(ValueError, match="escanear el código"):
         lst.receive({"base_revision": 0, "addons": [{"id": "x", "origin": "stremio", "name": "Comet viejo", "url": url, "order": 0}]}, "iPhone")

@@ -195,6 +195,9 @@ export const api = {
   tvRefresh: () => post("/api/tv/refresh"),
   // La app del iPhone
   companionPair: () => request("/api/companion/pair"),
+  /** Se cerró «Conectar iPhone»: el código del QR deja de servir (K1-11). */
+  companionPairClose: () => request("/api/companion/pair/close", { method: "POST" }),
+  deviceRemove: (id) => request(`/api/devices/${encodeURIComponent(id)}`, { method: "DELETE" }),
   companionPhone: () => request("/api/companion/phone"),
   /** «Enviar al iPhone» (`open`) o «Descargar en el iPhone» (`download`): la consola lo deja en su bandeja. */
   companionSend: (action, kind, metaId, videoId = null) => post("/api/companion/send", { action, kind, meta_id: metaId, video_id: videoId }),

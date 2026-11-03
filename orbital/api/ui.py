@@ -124,7 +124,10 @@ def router(d: Deps) -> APIRouter:
                 # cada 10 min): «✓ Conectado» solo si es de hace un momento.
                 "companion_live": d.extra.get("phone_seen"),
                 # Cada iPhone o iPad por separado (la app manda quién es): Cuentas los enseña uno por uno.
-                "companion_devices": companion.devices(catalog.state, d.extra.get("phones") or {})}
+                "companion_devices": companion.devices(catalog.state, d.extra.get("phones") or {}),
+                # Los emparejados con su propia llave (K1-A): Cuentas los enseña con «Quitar». Nunca su huella.
+                "paired_devices": [{**x, "live": (d.extra.get("phones") or {}).get(x["device_id"])}
+                                   for x in (d.extra["devices"].listing() if d.extra.get("devices") else [])]}
 
     @r.post("/api/settings")
     def set_settings(body: dict) -> dict:

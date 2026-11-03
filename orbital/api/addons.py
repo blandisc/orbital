@@ -56,7 +56,7 @@ def run_debrid_status(watch) -> dict:
     return {k: v for k, v in status.items() if k != "token"}
 
 
-async def addons_put(watch, request: Request) -> JSONResponse:
+async def addons_put(watch, request: Request, keyed: dict | None = None) -> JSONResponse:
     """PUT /api/addons: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (contrato, `routes`)."""
     body = await request.body()
     if len(body) > 64 * 1024:
@@ -67,7 +67,7 @@ async def addons_put(watch, request: Request) -> JSONResponse:
         raise HTTPException(422, "La lista no tiene la forma acordada") from exc
     device = urllib.parse.unquote(request.headers.get("x-orbital-device", "iPhone"))[:60]
     try:
-        saved = await run_in_threadpool(watch.receive_addons, raw, device)
+        saved = await run_in_threadpool(watch.receive_addons, raw, device, keyed)
     except addon_list.Conflict as exc:
         return JSONResponse(exc.current, status_code=409)
     except ValueError as exc:

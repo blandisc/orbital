@@ -310,7 +310,10 @@ def build(tmp: Path):
     demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
     demo_sources(catalog)
     demo_debrid(catalog)
-    return create_app(config, catalog)
+    app = create_app(config, catalog)
+    for name, platform in (("iPhone de Fernando", "iphone"), ("iPad", "ipad")):  # emparejados con su llave (K1-A)
+        app.state.devices.pair(app.state.devices.code(), name, platform)
+    return app
 
 
 def demo_debrid(catalog) -> None:

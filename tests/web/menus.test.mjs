@@ -386,6 +386,25 @@ test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conect
   assert.equal(rows[2].command.type, "phone-link");
 });
 
+test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» pregunta con «Cancelar» primero", async () => {
+  const { phoneRows, deviceMenu, deviceRemoveMenu } = await import("../../orbital/web/js/core/menus.js");
+  const now = Date.UTC(2026, 10, 3, 12);
+  const s = now / 1000;
+  const rows = phoneRows({ companion_devices: [{ id: "viejo", name: "iPad", kind: "ipad", seen: s }], paired_devices: [
+    { device_id: "a1", name: "iPhone de Fernando", platform: "iphone", seen: s - 5, live: s - 5 },
+    { device_id: "b2", name: "", platform: "mac", seen: s - 2 * 3600, live: null },
+  ] }, now);
+  assert.deepEqual(rows.map((r) => r.label), ["iPhone de Fernando", "Mac", "Conectar otro"]); // los de antes ya no entran
+  assert.equal(rows[0].value, "✓ Conectado");
+  assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 h"]); // emparejado: nunca «Conectar»
+  assert.deepEqual(rows[0].command, { type: "device-menu", id: "a1" });
+  const sheet = deviceMenu({ device_id: "a1", name: "iPhone de Fernando", platform: "iphone" });
+  assert.deepEqual(sheet.options.map((o) => o.label), ["Cancelar", "Quitar"]);
+  const ask = deviceRemoveMenu(sheet.options[1].command);
+  assert.equal(ask.title, "¿Quitar iPhone de Fernando?");
+  assert.deepEqual(ask.options.map((o) => o.command.type), ["back", "device-remove"]);
+});
+
 test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo con ◀/▶", async () => {
   const { emulatorsMenu } = await import("../../orbital/web/js/core/menus.js");
   const menu = emulatorsMenu({ mode: "avisar", items: [

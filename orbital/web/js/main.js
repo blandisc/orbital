@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
-import { debridCancelMenu, moviesSetupMenu } from "./core/menus.js";
+import { debridCancelMenu, deviceMenu, deviceRemoveMenu, moviesSetupMenu } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
@@ -1776,7 +1776,7 @@ function commands() {
   if (commandTable) return commandTable;
   const torrentioMenus = { main: torrentioMenu, languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
-  const deps = { UNDO_MS, openSources, debridCancelMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
   return commandTable;
 }
@@ -2219,7 +2219,7 @@ const EVENTS = {
     if (phoneFrom) phoneFrom.done = true; // como «Trakt conectado»: no se reabre el menú viejo (diría «Conectar»)
     ui.phoneLink.close();
     sound.play("select");
-    ui.toast.show("iPhone conectado", { tone: "success", detail: "Ya es tu control y puedes mandar a la TV lo que ves" });
+    ui.toast.show(`${event.name || "iPhone"} conectado`, { tone: "success", detail: "Ya es tu control y puedes mandar a la TV lo que ves" });
     api.settings().then(applySettings).catch(() => {}); // Cuentas › iPhone: «✓ Conectado» la próxima vez
     return;
   },
