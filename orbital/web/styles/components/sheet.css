@@ -7,6 +7,11 @@
   width: min(var(--sheet-width), 100vw); overflow-y: auto;
   padding: var(--space-8) var(--space-6) var(--space-6);
 }
+/* AU4-A: con más opciones abajo, la orilla se difumina (nunca un renglón partido a la mitad). */
+.sheet__panel--more {
+  -webkit-mask-image: linear-gradient(to bottom, var(--mask-solid) calc(100% - var(--space-10)), transparent);
+  mask-image: linear-gradient(to bottom, var(--mask-solid) calc(100% - var(--space-10)), transparent);
+}
 /* Nada de la hoja se aplasta: si no cabe, el panel se desplaza (y la opción enfocada se mantiene a la vista). */
 .sheet__panel > * { flex-shrink: 0; }
 /* Con un video en pequeño (abajo a la derecha, encima de todo) las opciones de abajo no quedan detrás: el panel termina

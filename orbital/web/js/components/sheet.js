@@ -20,6 +20,10 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
   const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, list);
   const el = h("div", { class: ["side-panel", "sheet"], hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
+  // AU4-A (Fernando, 3 nov): si hay más abajo, la orilla se difumina en vez de partir el último renglón a la mitad.
+  const more = () => panel.classList.toggle("sheet__panel--more", panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2);
+  panel.addEventListener("scroll", more, { passive: true });
+  addEventListener("resize", () => menu && more());
   let menu = null;
   let index = 0;
   let stack = []; // menús de los que vienes: [{ menu, index }]
@@ -121,6 +125,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
 
   /** Hojas más altas que la pantalla: la opción enfocada siempre a la vista (antes se salía por abajo). */
   function reveal(smooth = "smooth") {
+    requestAnimationFrame(more);
     const behavior = motion(smooth);
     const node = list.children[index];
     if (!node) return;

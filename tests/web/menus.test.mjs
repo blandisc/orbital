@@ -645,7 +645,7 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   ] };
   const rows = addonRows(status);
   assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "OpenSubtitles", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
-    "Volver a traer", "De dónde salen", "Volver a los de Stremio"]);
+    "Volver a traer", "De dónde salen", "Volver a los de Stremio", "¿Qué es esto?"]);
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
   assert.equal(rows[4].value, "Apagado");
@@ -677,7 +677,7 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
     ["Bajando", undefined, undefined], // P1-A: dos grupos; «Ya terminaron» no sale vacío
     ["Nocturne · T1 E1", "Bajando en Real-Debrid · 42 % · Lo pediste aquí", "download"],
-    ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"]]); // la lápida no se enseña
+    ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"], ["¿Qué es esto?", undefined, "info"]]); // la lápida no se enseña
   assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }]).options.filter((o) => o.heading).map((o) => o.label),
     ["Bajando", "Ya terminaron"]);
   assert.equal(debridRequestsMenu([]).options[0].label, "Todavía no le pides nada");
@@ -713,11 +713,11 @@ test("ajustes › Complementos › Torrentio: cada opción con su valor y su cam
   const menu = torrentioMenu(entry);
   assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Idiomas primero", "Latino"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
     ["Solo lo que ya está en Real-Debrid", "No"], ["Orden", "Las más compartidas primero"], ["Cuántas por calidad", "Todas"],
-    ["Tamaño máximo", "Sin límite"], ["Sitios donde busca", "25 de 25"], ["Volver a lo recomendado", undefined]]);
+    ["Tamaño máximo", "Sin límite"], ["Sitios donde busca", "25 de 25"], ["Volver a lo recomendado", undefined], ["¿Qué es esto?", undefined]]);
   const order = menu.options[3].command;
   assert.equal(order.options.sort, "size"); // A pasa al siguiente orden
   assert.equal(menu.options[2].command.options.debridoptions[0], "nodownloadlinks");
-  assert.deepEqual(menu.options.at(-1).command.options.language, ["latino", "spanish"]);
+  assert.deepEqual(menu.options.at(-2).command.options.language, ["latino", "spanish"]);
   assert.ok(!torrentioMenu({ options: { language: ["latino", "spanish"], qualityfilter: ["cam", "scr", "unknown"] } }).options.some((o) => o.label === "Volver a lo recomendado"));
   const langs = torrentioLanguagesMenu({ options: { language: ["latino", "japanese"] } });
   assert.deepEqual(langs.options.map((o) => o.label), ["1. Latino", "2. Japonés", "Agregar idioma"]);
@@ -781,4 +781,14 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
   // TV-5: los emparejados cuentan como iPhone (antes Resumen decía «Sin iPhone»).
   assert.ok(hasPhone({ paired_devices: [{ device_id: "a" }] }));
   assert.ok(!settingsMissing({ paired_devices: [{ device_id: "a" }] }).some((m) => m.label === "Sin iPhone"));
+});
+
+test("AU1-A y AU2-A (Fernando, 3 nov): «¿Qué es esto?» con los textos del iPhone, y «Sin iPhone» deja de avisar con Real-Debrid", async () => {
+  const { explainerMenu, settingsMissing } = await import("../../orbital/web/js/core/menus.js");
+  assert.deepEqual(explainerMenu("requests").options.map((o) => o.label),
+    ["Tus complementos buscan dónde verlo", "Real-Debrid lo guarda", "Pedirlo es que lo baje por ti", "Te avisamos cuando esté"]);
+  assert.equal(explainerMenu("torrentio").options[0].hint.slice(0, 40), "Cuando eliges un título, revisa sitios d");
+  assert.ok(explainerMenu("addons").options.every((o) => o.command.type === "stay")); // solo se leen
+  assert.ok(settingsMissing({}).some((m) => m.label === "Sin iPhone"));
+  assert.ok(!settingsMissing({ realdebrid: { linked: true } }).some((m) => m.label === "Sin iPhone"));
 });

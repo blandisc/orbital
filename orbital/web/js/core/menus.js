@@ -797,7 +797,7 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
     missing.push({ icon: "spark", label: "Trakt sin conectar", hint: "Para tus listas, lo que viste y «Porque viste»", value: "Conectar", warn: true,
       command: { type: "trakt-link" } });
   }
-  if (!phones) {
+  if (!phones && !rd?.linked) { // AU2-A: con Real-Debrid ya se usa sin iPhone; se sigue ofreciendo en Cuentas
     missing.push({ icon: "phone", label: "Sin iPhone", hint: "Es el mejor micrófono y el control a distancia", value: "Conectar", warn: true,
       command: { type: "phone-link" } });
   }
@@ -1422,6 +1422,36 @@ export function debridRemoteMenu(event) {
   };
 }
 
+/** «¿Qué es esto?» (AU1-A, Fernando 3 nov): los mismos textos del iPhone (DebridExplainer), por tema. Solo se leen: A no hace
+ *  nada y B regresa. El aviso de «Ya está» cambia de lado: en la TV llega aquí mismo, no cuando iOS revisa. */
+const EXPLAINERS = {
+  requests: [
+    ["search", "Tus complementos buscan dónde verlo", "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."],
+    ["bolt", "Real-Debrid lo guarda", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante."],
+    ["download", "Pedirlo es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
+    ["bell", "Te avisamos cuando esté", "Aquí en la TV, en cuanto Real-Debrid termina de bajar lo que pediste desde la TV."],
+  ],
+  torrentio: [
+    ["search", "Torrentio es un buscador", "Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."],
+    ["bolt", "Real-Debrid las sirve", "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días."],
+    ["settings", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
+  ],
+  addons: [
+    ["addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
+    ["pulse", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
+    ["library", "Vienen con Orbital o de tu Stremio", "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan."],
+  ],
+};
+
+export function explainerMenu(topic) {
+  return {
+    title: "¿Qué es esto?",
+    options: (EXPLAINERS[topic] || []).map(([icon, label, hint]) => ({ icon, label, hint, command: { type: "stay" } })),
+  };
+}
+
+const explainRow = (topic) => ({ icon: "info", label: "¿Qué es esto?", command: { type: "explain", topic } });
+
 /** Confirmar antes de cancelar (como el iPhone, también desde la ficha): «Seguir esperando» primero. */
 export function debridCancelMenu(command) {
   if (command.done) { // TV-4: ya terminó: no es «cancelar», es borrarlo de tu cuenta
@@ -1460,7 +1490,9 @@ export function debridRequestsMenu(requests = []) {
     options: shown.length ? [
       ...(going.length ? [{ heading: true, label: "Bajando" }, ...going.map(row)] : []),
       ...(done.length ? [{ heading: true, label: "Ya terminaron" }, ...done.map(row)] : []),
-    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } }],
+      explainRow("requests"),
+    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } },
+      explainRow("requests")],
   };
 }
 
@@ -1581,6 +1613,7 @@ export function addonRows(status, now = Date.now()) {
           command: { type: "addons-import" } }
         : { icon: "trailer", label: "Por ahora salen de tu cuenta de Stremio", hint: "Conéctala en Ajustes › Cuentas para traerlos" },
       { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
+      explainRow("addons"),
     ];
   }
   // Corte S6: si la cambiaste en el iPhone, se dice arriba (la lista es la misma en los dos).
@@ -1599,6 +1632,7 @@ export function addonRows(status, now = Date.now()) {
     status.source === "own"
       ? status.stremio_linked && { icon: "swap", label: "Volver a los de Stremio", hint: "Tu lista se queda: regresas cuando quieras", command: { type: "addons-source", source: "stremio" } }
       : { icon: "swap", label: "Usar tu lista", hint: "Ahora salen de tu cuenta de Stremio", value: "Usar", command: { type: "addons-source", source: "own" } },
+    explainRow("addons"), // AU1-A
   ].filter(Boolean);
 }
 
@@ -1701,6 +1735,7 @@ export function torrentioMenu(entry) {
         command: { type: "torrentio-providers" } },
       !isRecommended(o) && { icon: "refresh", label: "Volver a lo recomendado", hint: "Latino y español primero; sin cine, Screener ni sin calidad",
         command: { type: "torrentio-set", options: { ...TORRENTIO_RECOMMENDED, verbatim: o.verbatim }, reopen: "main" } },
+      explainRow("torrentio"),
     ].filter(Boolean),
   };
 }
