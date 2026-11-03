@@ -227,10 +227,7 @@ struct SeasonFeature: View {
                 Eyebrow(text: when, reason: true)
                 // Toda la tarjeta abre la colección: la flecha va junto al nombre, sin cápsula «Ver la colección»
                 // (Fernando, 2 nov 2026, H3: como el «Ver todo» de los encabezados).
-                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
-                    Text(verbatim: name).recipe(.title).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
-                    DSTitleChevron()
-                }
+                Text(verbatim: name).withTitleChevron().recipe(.title).lineLimit(2).minimumScaleFactor(DS.Size.titleShrink)
                 Text(verbatim: blurb).recipe(.footnote, color: DS.textMuted).lineLimit(2)
             }
             Spacer(minLength: 0)

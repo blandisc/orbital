@@ -205,7 +205,8 @@ struct DSSectionHead: View {
     }
 
     private var sectionTitle: some View {
-        title.recipe(level == .section ? .title : quiet ? .sectionQuiet : .section).multilineTextAlignment(.leading)
+        (chevron ? title.withTitleChevron() : title).recipe(level == .section ? .title : quiet ? .sectionQuiet : .section).multilineTextAlignment(.leading)
+            .accessibilityLabel(title).accessibilityHint(chevron ? Text("Ver todo") : Text(verbatim: ""))
             // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
             // así lo de la derecha no queda alto.
             .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: level == .section ? .title1 : quiet ? .title3 : .title2).capHeight / 2 }
@@ -213,15 +214,10 @@ struct DSSectionHead: View {
 
     /// «Ver todo»: la flecha va pegada al título y todo el encabezado abre la lista (Fernando, 2 nov 2026: sin la cápsula
     /// de texto a la derecha, como en Música y la App Store).
-    private var seeAllChevron: some View { DSTitleChevron(small: level == .section || quiet) }
+    private var seeAllChevron: some View { DSTitleChevron() }
 
-    /// El título con la flecha de «Ver todo» pegada (si abre la lista completa).
-    private func titleLine(_ lines: Int) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
-            sectionTitle.lineLimit(lines)
-            if chevron { seeAllChevron }
-        }
-    }
+    /// El título, con la flecha de «Ver todo» al final de su texto si abre la lista completa.
+    private func titleLine(_ lines: Int) -> some View { sectionTitle.lineLimit(lines) }
 
     private var head: some View {
         // Lo de la derecha («Ver todo», el número) va a la altura del título, no de la línea ámbar de arriba.
