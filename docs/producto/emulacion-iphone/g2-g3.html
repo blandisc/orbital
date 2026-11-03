@@ -1,0 +1,212 @@
+<title>GameCube y Switch en Orbital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; los dos caminos lado a lado con su recorrido en pasos; decisiones con código; detalle técnico plegado al final. */
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --raised:#ebe9e3; --fg:#111113; --muted:#5c5c64;
+  --line:#dcd9d1; --teal:#0b7a6e; --teal-soft:#d9efeb; --warn:#9a5b00; --warn-soft:#f6ead6;
+  --bad:#a3322b; --bad-soft:#f5dedb; --screen:#0c0c0e; --screen-fg:#f2f1ec; --step:#26262b;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; --step:#2c2c31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#18181b; --raised:#222226; --fg:#f2f1ec; --muted:#a5a5ad;
+  --line:#2c2c31; --teal:#5fd3c3; --teal-soft:#123a35; --warn:#e8b25c; --warn-soft:#3a2c14;
+  --bad:#f08a80; --bad-soft:#3d1e1b; --screen:#000; --screen-fg:#f2f1ec; --step:#2c2c31; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:68ch}
+.lede{font-size:1.15rem;color:var(--muted)}
+.why{color:var(--teal);font-weight:500}
+section{display:grid;gap:18px}
+.code{font-family:var(--f-mono);font-size:.85rem;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--fg);color:var(--bg);white-space:nowrap;justify-self:start}
+.tag{font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--teal-soft);color:var(--teal)} .mid{background:var(--warn-soft);color:var(--warn)} .no{background:var(--bad-soft);color:var(--bad)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.opt{display:grid;gap:14px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.opt.rec{border:2px solid var(--teal)}
+.opt header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gain b{color:var(--teal)} .lose b{color:var(--bad)}
+.meta{display:flex;gap:8px;flex-wrap:wrap}
+/* recorrido: lo que ve Fernando, paso por paso */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.st{display:grid;gap:6px;justify-items:center;text-align:center;font-size:.82rem;color:var(--muted)}
+.mini{width:100%;max-width:92px;aspect-ratio:9/16;border-radius:14px;border:4px solid var(--fg);background:var(--screen);color:var(--screen-fg);display:grid;place-items:center;font-size:10px;font-weight:600;padding:6px;line-height:1.2}
+.mini.or{background:linear-gradient(160deg,#5a3d8f,#111 70%)}
+.mini.jit{background:var(--step)}
+.mini.gc{background:linear-gradient(160deg,#4b2a85,#111)}
+.mini.sw{background:linear-gradient(160deg,#e60012,#111)}
+.mini.ghost{border-style:dashed;opacity:.55}
+.state{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:.95rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.85rem}
+tr:last-child td{border-bottom:0}
+.once{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.once div{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:4px}
+.once b{font-family:var(--f-display)}
+.dec{display:grid;gap:14px;padding:22px;border-radius:18px;background:var(--raised)}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.choice{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:6px;min-width:0}
+.choice.rec{border:2px solid var(--teal)}
+.recline{font-weight:600}
+.recline span{color:var(--teal)}
+.plan{display:grid;gap:10px;counter-reset:p;padding:0;margin:0;list-style:none}
+.plan li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.plan li::before{counter-increment:p;content:counter(p);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--teal);width:1.4em}
+details{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 18px}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:12px}
+.tech{display:grid;gap:10px;font-size:.92rem}
+.tech code{font-family:var(--f-mono);font-size:.82rem;overflow-wrap:anywhere}
+.src{font-size:.85rem;color:var(--muted)} .src a{color:inherit}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:420px){.flow{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<div class="wrap">
+
+<header style="display:grid;gap:14px">
+  <p class="src">Orbital Ultra · investigación a fondo · 3 nov 2026 · sigue a «Juegos en Orbital Ultra»</p>
+  <h1>GameCube y Switch en Orbital</h1>
+  <p class="lede">Las dos cosas se pueden hacer. La pregunta es dónde vive el emulador: en una app hermana que Orbital maneja (G2) o dentro de la propia Orbital (G3). Desde fuera casi no se nota la diferencia; por dentro, sí.</p>
+</header>
+
+<section>
+  <h2>Lo que encontramos</h2>
+  <p class="why">Tres cosas cambiaron lo que te había dicho.</p>
+  <div class="once">
+    <div><b>El Switch sí se puede meter en Orbital.</b><span>El motor de MeloNX es una pieza aparte que otra app puede mover. Antes te dije que no; me equivoqué.</span></div>
+    <div><b>Orbital se puede encender el modo rápido a sí misma.</b><span>Con una pieza de StikDebug metida en Orbital ya no hace falta la app StikDebug. La VPN local sí sigue.</span></div>
+    <div><b>Hay quien ya lo hizo con GameCube.</b><span>Provenance metió Dolphin dentro de su app hace unos meses. Es el mapa que seguiríamos.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Los dos caminos</h2>
+  <div class="opts">
+
+    <article class="opt rec">
+      <header><span class="code">G2</span><h3>Apps hermanas</h3><span class="tag ok">Primero</span></header>
+      <div class="flow" aria-label="Recorrido de G2">
+        <div class="st"><div class="mini or">Orbital · Sunshine</div>Tocas «Jugar»</div>
+        <div class="st"><div class="mini jit">Encendiendo…</div>Un salto de 2–5 s</div>
+        <div class="st"><div class="mini gc">Juego</div>Juegas en «Orbital GameCube»</div>
+        <div class="st"><div class="mini or">De vuelta</div>Sales y regresas a Orbital</div>
+      </div>
+      <p>Compilamos DolphiniOS y MeloNX con tu cuenta, con nuestro nombre e ícono («Orbital GameCube», «Orbital Switch»), y los conectamos a Orbital por una carpeta compartida. Orbital tiene el catálogo, baja el juego de la consola y le dice a la app hermana «abre este». Al salir, la partida regresa a la consola.</p>
+      <p class="gain"><b>Ganas:</b> en días. Usamos los emuladores casi como vienen, así que cuando ellos arreglan algo para un iOS nuevo, lo traemos en minutos. Si un juego truena, Orbital ni se entera.</p>
+      <p class="lose"><b>Pierdes:</b> ves dos íconos más en el iPhone (los puedes mandar a la Biblioteca de apps), y el salto entre apps se nota.</p>
+      <div class="meta"><span class="tag ok">1–2 semanas, las dos consolas</span><span class="tag ok">Se arregla rápido</span></div>
+    </article>
+
+    <article class="opt">
+      <header><span class="code">G3</span><h3>Todo dentro de Orbital</h3><span class="tag mid">Después, si G2 convence</span></header>
+      <div class="flow" aria-label="Recorrido de G3">
+        <div class="st"><div class="mini or">Orbital · Sunshine</div>Tocas «Jugar»</div>
+        <div class="st"><div class="mini jit">Preparando…</div>La primera vez al abrir Orbital</div>
+        <div class="st"><div class="mini gc">Juego</div>Juegas dentro de Orbital</div>
+        <div class="st"><div class="mini ghost">—</div>No hay salto</div>
+      </div>
+      <p>El motor de cada consola vive dentro de Orbital, con nuestros botones, nuestro menú de pausa y nuestro diseño. Orbital se enciende el modo rápido una vez al abrirse y desde ahí los juegos arrancan al instante.</p>
+      <p class="gain"><b>Ganas:</b> una sola app, sin saltos. El menú de pausa, los botones y las partidas se ven como Orbital.</p>
+      <p class="lose"><b>Pierdes:</b> si un juego truena, se cierra toda Orbital, también la película que estabas viendo. El juego y Orbital comparten la memoria del iPhone. Cada iOS nuevo nos toca a nosotros adaptar los motores, y eso son días o semanas, no minutos.</p>
+      <div class="meta"><span class="tag mid">GameCube 3–4 semanas</span><span class="tag no">Switch 4+ semanas</span><span class="tag mid">Mantenerlo es nuestro</span></div>
+    </article>
+
+  </div>
+</section>
+
+<section>
+  <h2>GameCube y Switch no son iguales</h2>
+  <div class="state">
+  <table>
+    <thead><tr><th></th><th>GameCube (Dolphin)</th><th>Switch (MeloNX)</th></tr></thead>
+    <tbody>
+      <tr><td>¿Funciona en iOS 27?</td><td><span class="tag ok">Sí</span> desde junio</td><td><span class="tag mid">Sin confirmar</span> se vio en un solo iPhone</td></tr>
+      <tr><td>iPhone que pide</td><td>iPhone 13 o más nuevo para ir bien</td><td>iPhone 15 Pro o más nuevo</td></tr>
+      <tr><td>La partida con la tele</td><td><span class="tag ok">Se cruza</span> las tarjetas de memoria son las mismas que en Windows</td><td><span class="tag mid">Se cruza con cuidado</span> hay que emparejar juego y usuario</td></tr>
+      <tr><td>Guardado rápido (estado)</td><td colspan="2"><span class="tag no">No se cruza</span> solo sirve en el mismo aparato. La partida normal sí.</td></tr>
+      <tr><td>Llaves y firmware</td><td>No usa</td><td>Los copiamos de Ryujinx en tu consola</td></tr>
+      <tr><td>Meterlo dentro (G3)</td><td><span class="tag ok">Hay mapa</span> Provenance ya lo hizo</td><td><span class="tag mid">Nadie lo ha hecho</span> se puede, pero el motor quiere la app para él solo</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que te toca a ti, en cualquiera de los dos</h2>
+  <p class="why">Es lo que Apple no deja saltar. Lo preparamos juntos una vez.</p>
+  <div class="once">
+    <div><b>Una vez</b><span>Prender el modo desarrollador del iPhone, crear un archivo de emparejamiento (en iOS 27 sale del propio iPhone) e instalar LocalDevVPN, una app gratis.</span></div>
+    <div><b>Cada vez que juegas</b><span>LocalDevVPN prendida y wifi (sin wifi: datos, VPN y luego modo avión). Orbital te avisa si falta algo antes de abrir el juego.</span></div>
+    <div><b>Instalar desde la Mac</b><span>Orbital Ultra y las hermanas se instalan con Xcode, no por TestFlight: así traen el permiso que deja encender el modo rápido.</span></div>
+    <div><b>Con iOS nuevo, esperar</b><span>Cada versión grande de iOS lo rompe unos días o semanas. No actualizar el iPhone hasta que funcione. Mientras, G1 desde la consola sigue jalando.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que tienes que decidir</h2>
+
+  <div class="dec">
+    <h3>D5 · ¿Dónde vive el emulador?</h3>
+    <div class="choices">
+      <div class="choice"><span class="code">D5-A</span><p>Solo G2, apps hermanas. Lo rápido y estable; el salto se queda.</p></div>
+      <div class="choice rec"><span class="code">D5-B</span><p><b>G2 ahora, para las dos consolas. Después, GameCube dentro de Orbital (G3).</b> El Switch se queda como hermana mientras no se pueda hacer bien.</p></div>
+      <div class="choice"><span class="code">D5-C</span><p>Directo a G3, las dos dentro. Lo más bonito, meses, y el riesgo de que un juego tumbe Orbital.</p></div>
+    </div>
+    <p class="recline"><span>Recomiendo D5-B.</span> En dos semanas juegas GameCube y Switch desde Orbital. Lo que hagamos para G2 (catálogo, partidas, botones) se reusa en G3, así que no se tira nada. Y G3 de GameCube ya tiene a alguien que abrió el camino.</p>
+  </div>
+
+  <div class="dec">
+    <h3>D6 · Si un juego truena dentro de Orbital (solo con G3)</h3>
+    <div class="choices">
+      <div class="choice rec"><span class="code">D6-A</span><p><b>Al jugar, Orbital pausa y guarda todo lo demás</b> (películas, descargas) para que, si truena, al volver estés donde ibas.</p></div>
+      <div class="choice"><span class="code">D6-B</span><p>No hacer nada especial: si truena, truena.</p></div>
+    </div>
+    <p class="recline"><span>Recomiendo D6-A.</span> Una película que se cierra sola por un juego es lo peor que puede pasarle a Orbital.</p>
+  </div>
+
+  <div class="dec">
+    <h3>Sigue pendiente: D4 · ¿Qué iPhone tienes?</h3>
+    <p>De eso depende si el Switch va (15 Pro o más nuevo) y a qué calidad va GameCube.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Si dices D5-B, así lo haría</h2>
+  <ol class="plan">
+    <li><div><b>Probar en tu iPhone antes de construir nada.</b> Instalar DolphiniOS y MeloNX tal cual, hacer la preparación de una vez y comprobar que corren en iOS 27. Medio día. Si el Switch no va, lo sabemos aquí.</div></li>
+    <li><div><b>«Orbital GameCube».</b> Nuestra copia de DolphiniOS: carpeta compartida con Orbital, «abre este juego» desde Orbital, el modo rápido lo pide ella misma, y al salir regresa a Orbital.</div></li>
+    <li><div><b>En Orbital: tus juegos y tus partidas.</b> La consola le da al iPhone la lista de GameCube y Switch con portadas; el iPhone baja el juego que eliges y sube la partida al terminar. Si jugaste en los dos lados, pregunta cuál se queda.</div></li>
+    <li><div><b>«Orbital Switch».</b> Lo mismo con MeloNX, más tus llaves y firmware de la consola.</div></li>
+    <li><div><b>Después, G3 de GameCube.</b> El motor de Dolphin dentro de Orbital, siguiendo lo que hizo Provenance, con el modo rápido de Orbital y D6.</div></li>
+  </ol>
+  <p><b>Solo en Ultra.</b> Los dos emuladores tienen licencia libre (GPL), que obliga a publicar el código si repartes la app. En tu iPhone no pasa nada; en Plus y en la App Store no entran. En la tele no cambia nada.</p>
+</section>
+
+<section>
+  <details>
+    <summary>Detalle técnico (para la sesión que lo construya)</summary>
+    <div class="tech">
+      <p><b>Modo rápido (JIT) en iOS 26/27.</b> Desde iOS 26 los iPhone con TXM (A15 en adelante) piden que cada zona de memoria ejecutable se prepare por el depurador antes de usarla. Protocolo «universal» de StikJIT: esperar <code>CS_DEBUGGED</code>, <code>JIT26PrepareRegion</code> (<code>x16=1; brk #0xf00d</code>) por cada región, crear el alias RW, <code>JIT26Detach</code>. Las regiones se reservan antes de soltar el depurador; una nueva pide reconectar. Built-in StikJIT (<code>StikJIT.xcframework</code>, MPL-2.0) va en una extensión propia de la app (no se puede depurar a sí misma), recibe el pid por XPC, usa <code>Documents/StikJIT/pairingFile.plist</code> y el túnel de LocalDevVPN (<code>10.7.0.1:49152</code>). StikDebug 3.2.0 (30 oct) crea el emparejamiento en el iPhone con iOS 27.</p>
+      <p><b>Dolphin.</b> <code>OatmealDome/dolphin-ios</code> v5.0.0b6 (20 jun), núcleo 2509, GPL-2.0+. <code>libdolphin.dylib</code> se compila aparte (<code>Source/iOS/Library/CMakeLists.txt</code>, <code>BuildCore.sh</code>: CMake + Ninja). Sin API en C: la interfaz llama C++ por ObjC++ (<code>Host.mm</code>, <code>DolphinCoreService.mm</code>, <code>EmulationCoordinator</code>, <code>EmulationBootParameter</code>). Sin esquema de URL; la carpeta de usuario es <code>UserFolderUtil.getUserFolder()</code> (Documents), fácil de apuntar al App Group. JIT en TXM: <code>MemoryUtil_iOS_LuckTXM.cpp</code> reserva 512 MiB RX y usa <code>brk #0x69</code>, que <code>universal.js</code> ya rechaza: o <code>legacy.js</code> en G2, o parche de ~30 líneas al protocolo universal (obligatorio en G3). Fastmem pide 16 GiB de espacio virtual: <code>extended-virtual-addressing</code>. Quitar Firebase. Ojo con el umbral de TXM en iPad (issue #272). Precedente G3: Provenance <code>Cores/Dolphin</code> (<code>PVlibDolphin</code>, <code>PVDolphinCore.mm</code>) e <code>iCube</code>.</p>
+      <p><b>MeloNX.</b> Espejo <code>AzureDominus/melonx</code> (rama <code>XC-ios-ht</code>, jun 2026), AGPLv3/GPLv3; Ryubing y Ryujinx son MIT. Núcleo .NET 8 NativeAOT → <code>Ryujinx.Headless.SDL2.dylib</code> con funciones en C (<code>initialize</code>, <code>initialize-dualmapped</code>, <code>main_ryujinx_sdl</code>, <code>set_native_window</code>, <code>install_firmware</code>, <code>attach_gamepad</code>…), atadas en <code>RyujinxBridge.swift</code>. Vulkan por MoltenVK a un <code>CAMetalLayer</code>; SDL2 se queda con el hilo principal (el gran choque en G3). Ya trae <code>melonx://game?id=</code> e intent «Launch Game», pero solo para su biblioteca: falta <code>?path=</code>. Datos en Documents (<code>system/</code> llaves, <code>bis/</code>): apuntar al App Group. Partidas: <code>bis/user/save</code> indexado por <code>bis/system/save/8000000000000000</code>; emparejar por título y usuario, no copiar carpetas. JIT: <code>DualMappedJitAllocator</code> + <code>BreakpointJIT.framework</code>; en TXM pide adjuntar <code>universal.js</code> a mano: parchear <code>StikEnableJIT.swift</code> para mandar <code>script-name</code> y <code>pid</code>. Derechos: <code>increased-memory-limit</code> (quitar <code>wifi-aware</code>). Tope de 6 GB en iPhone 15 Pro y más nuevos.</p>
+      <p><b>Orbital.</b> Ya existe el App Group <code>group.mx.iracheta.orbital</code> (equipo B7KRCF776Z) y <code>POST /api/launch</code> en la consola. Para G3 hace falta la bandera <code>ORBITAL_ULTRA</code> (planeada, aún no en el código) para que los motores no entren a Plus ni a la App Store, y los derechos <code>get-task-allow</code> (firma de desarrollo), <code>increased-memory-limit</code> y <code>extended-virtual-addressing</code>.</p>
+    </div>
+  </details>
+</section>
+
+<p class="src">Fuentes: <a href="https://github.com/StikDebug/StikJIT/blob/main/INTEGRATION.md">StikJIT, integración</a> · <a href="https://github.com/StikDebug/StikJIT/blob/main/Scripts/universal.js">universal.js</a> · <a href="https://github.com/StikDebug/StikDebug/releases">StikDebug, versiones</a> · <a href="https://github.com/StikDebug/StikDebug/blob/main/SUPPORTED_APPS.md">apps compatibles</a> · <a href="https://github.com/StikDebug/StikDebug/blob/main/PAIRING.md">emparejamiento</a> · <a href="https://github.com/zeuzmakessoftware/StikDebug">MeloNX en iOS 27.0 (un iPhone)</a> · <a href="https://docs.sidestore.io/docs/advanced/jit">SideStore, JIT</a> · <a href="https://github.com/OatmealDome/dolphin-ios/releases">DolphiniOS, versiones</a> · <a href="https://github.com/OatmealDome/dolphin-ios/issues/272">DolphiniOS #272</a> · <a href="https://github.com/Provenance-Emu/Provenance/tree/develop/Cores/Dolphin">Provenance, Dolphin</a> · <a href="https://github.com/Provenance-Emu/iCube">iCube</a> · <a href="https://github.com/AzureDominus/melonx">MeloNX (espejo)</a> · <a href="https://github.com/VertexSelection/MeloVertex">MeloVertex</a> · <a href="https://piunikaweb.com/2026/03/26/ios-26-4-may-break-jit-for-sideloaded-apps/">iOS 26.4 y JIT</a></p>
+
+</div>

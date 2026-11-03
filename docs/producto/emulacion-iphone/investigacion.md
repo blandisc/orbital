@@ -35,3 +35,14 @@ Estado: **investigación, nada construido**. Espera las decisiones D1–D3 de Fe
   MeloNX pide «Increased Memory Limit» y recomienda iPhone 15 Pro o más nuevo.
 - **G3** Dolphin dentro de Orbital con StikJIT integrado: posible, meses; Switch (Ryujinx/.NET) no.
 - Recomendación: **D3-B** (G1 primero, G2 después). D4: falta saber el modelo del iPhone.
+
+## G2 y G3 a fondo (3 nov)
+Canvas: https://claude.ai/artifact/NymKjsNShkSvcYHRrPFLLU (`g2-g3.html`, con el detalle técnico plegado al final).
+- **Corrección:** el Switch sí se puede meter en Orbital (G3): MeloNX compila Ryujinx con NativeAOT a
+  `Ryujinx.Headless.SDL2.dylib` con funciones en C (`RyujinxBridge.swift`). El choque es que SDL2 quiere el hilo principal.
+- **JIT para Orbital misma:** Built-in StikJIT (`StikJIT.xcframework`, extensión propia + XPC + pairing file + LocalDevVPN).
+- **Dolphin:** v5.0.0b6 funciona en iOS 27; `libdolphin.dylib` separable; usa `brk #0x69`, que `universal.js` rechaza:
+  `legacy.js` o parche al protocolo universal. Precedente G3: Provenance (`PVDolphinCore`, iCube).
+- **Instalar con Xcode** (firma de desarrollo, `get-task-allow`), no por TestFlight.
+- Recomendación: **D5-B** (G2 para las dos consolas; luego G3 de GameCube), **D6-A** (con G3, Orbital guarda todo al jugar).
+  Primer paso: probar DolphiniOS y MeloNX tal cual en el iPhone de Fernando con iOS 27. D4 (modelo de iPhone) sigue pendiente.
