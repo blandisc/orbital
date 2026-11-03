@@ -165,8 +165,12 @@ public actor DebridAccount {
     private let vault: AddonVault
     private let clock: @Sendable () -> Date
 
-    public init(provider: DebridProvider, vault: AddonVault, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.provider = provider; self.vault = vault; self.clock = clock
+    /// Quién es este aparato («iphone», «ipad», «mac»): se anota en la copia compartida de tu clave (CX2-A).
+    public nonisolated let platform: String
+    let vaultRef: AddonVault
+
+    public init(provider: DebridProvider, vault: AddonVault, platform: String = "iphone", clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.provider = provider; self.vault = vault; self.vaultRef = vault; self.platform = platform; self.clock = clock
     }
 
     public nonisolated var hasToken: Bool { !(vault.secret(AddonKeys.realDebridToken) ?? "").isEmpty }
@@ -269,16 +273,25 @@ public actor DebridAccount {
         try await provider.status(token: token.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
-    /// Guarda una clave ya comprobada (y su estado). Los recomendados se rearman solos con ella.
-    public func save(token: String, status: DebridStatus) {
-        vault.setSecret(AddonKeys.realDebridToken, token.trimmingCharacters(in: .whitespacesAndNewlines))
+    /// Guarda una clave ya comprobada (y su estado) en este aparato y deja la copia para tus aparatos Apple (CX2-A). Los
+    /// recomendados se rearman solos con ella. false si el llavero no la aceptó: entonces nada cambia (TEC-5).
+    @discardableResult
+    public func save(token: String, status: DebridStatus, share: Bool = true) -> Bool {
+        let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard vault.storeSecret(AddonKeys.realDebridToken, clean) else { return false }
         vault.setData(AddonKeys.debridKeySource, nil)   // la pegaste tú
         lastTrouble = nil
         remember(status)
+        if share { publishShared(clean) }
+        markSharedSeen(clean)
+        return true
     }
 
-    /// «Quitar»: se olvida la clave, su estado y los avisos.
-    public func remove() {
+    /// «Quitar»: se olvida la clave, su estado y los avisos. `everywhere` (CX3-A, «De todos tus aparatos Apple»): también la
+    /// copia compartida, y tus otros aparatos que usaban esa misma clave la quitan al abrir Orbital.
+    public func remove(everywhere: Bool = false) {
+        let old = vault.secret(AddonKeys.realDebridToken) ?? ""
+        if everywhere { retireShared(old) } else if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
         vault.setSecret(AddonKeys.realDebridToken, nil)
         vault.setData(AddonKeys.debridStatus, nil)
         vault.setData(AddonKeys.reminders, nil)

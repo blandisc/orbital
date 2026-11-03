@@ -13,13 +13,13 @@ public final class DebridModel: ObservableModel {
         case free(DebridStatus)
         case failed(String)
     }
-    public private(set) var check: Check = .idle { didSet { changed() } }
+    public internal(set) var check: Check = .idle { didSet { changed() } }
     /// Lo que se sabe de la clave guardada (nil sin clave).
-    public private(set) var status: DebridStatus? { didSet { changed() } }
+    public internal(set) var status: DebridStatus? { didSet { changed() } }
     /// P6-A · si tu clave sirve, según Real-Debrid en esta visita (`recheck`). Mientras pregunta, `checking`: la página enseña
     /// lo último que se supo sin la palomita; nunca «Conectada ✓» de algo que no se confirmó ahora.
     public enum KeyCheck: Equatable, Sendable { case checking, confirmed, rejected, unreachable }
-    public private(set) var keyCheck: KeyCheck = .checking { didSet { if oldValue != keyCheck { changed() } } }
+    public internal(set) var keyCheck: KeyCheck = .checking { didSet { if oldValue != keyCheck { changed() } } }
     public var token = "" { didSet { if oldValue != token { check = .idle; changed() } } }
     let services: Services
 
@@ -98,9 +98,11 @@ public final class DebridModel: ObservableModel {
         catch { redeem = .failed(DebridError.unexpected.description) }
     }
 
-    /// «Quitar»: se olvida la clave (los recomendados se quedan sin fuentes hasta que pongas otra).
-    public func remove() async {
-        await services.debrid.remove()
+    /// «Quitar»: se olvida la clave (los recomendados se quedan sin fuentes hasta que pongas otra). CX3-A: «Solo de este
+    /// iPhone» o, con `everywhere`, «De todos tus aparatos Apple».
+    public func remove(everywhere: Bool = false) async {
+        await services.debrid.remove(everywhere: everywhere)
+        services.sharedDebrid = .none
         await services.resetAccountCaches()
         status = nil; token = ""; check = .idle; keyCheck = .checking
     }

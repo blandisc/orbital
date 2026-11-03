@@ -49,8 +49,11 @@ struct OnboardingDebridKey: View {
                 GuideNumberedStep(number: 2, text: Text("Copia el texto largo que aparece")) { EmptyView() }
                 GuideNumberedStep(number: 3, text: Text("Vuelve aquí y pégalo")) { EmptyView() }
                 DebridKeyField(debrid: model)
+                // CX2-A: si tu clave ya llegó de tus aparatos Apple, un toque (junto al campo, nunca en su lugar).
+                DebridSharedOffer(debrid: model, carded: true)
             }
         }
+        .task { await model.checkShared() }
     }
 }
 

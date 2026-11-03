@@ -8,12 +8,23 @@ public protocol AddonVault: Sendable {
     func setSecret(_ key: String, _ value: String?)
     func data(_ key: String) -> Data?
     func setData(_ key: String, _ value: Data?)
+    /// Como `setSecret`, pero dice si el llavero lo aceptó (TEC-5).
+    func storeSecret(_ key: String, _ value: String?) -> Bool
+}
+
+public extension AddonVault {
+    func storeSecret(_ key: String, _ value: String?) -> Bool { setSecret(key, value); return true }
 }
 
 /// Los nombres con que se guarda cada cosa.
 public enum AddonKeys {
     /// Tu clave de Real-Debrid (sale de real-debrid.com/apitoken). Un solo secreto: las URLs de los recomendados se derivan.
     public static let realDebridToken = "realdebrid_token"
+    /// CX2-A · la copia de tu clave que comparten tus aparatos Apple (llavero de iCloud, si lo usas): `SharedDebridKey`.
+    /// La de arriba es la de este aparato y es la que se usa; esta solo sirve para ofrecerla o preguntar si cambió.
+    public static let sharedRealDebridToken = "realdebrid_token.shared"
+    /// CX2-A · la copia compartida que este aparato ya vio y decidió («Seguir con la de este iPhone»): no se pregunta otra vez.
+    public static let sharedRealDebridSeen = "realdebrid_token.shared.seen"
     /// La URL completa de un complemento pegado o importado (en el llavero: puede llevar tu clave adentro).
     public static func addonURL(_ id: String) -> String { "addon_url.\(id)" }
     static let installed = "addons-installed"

@@ -11,6 +11,7 @@ public struct AppAddonVault: AddonVault {
     public init(secrets: SecretsStore, kv: KeyValueStore) { self.secrets = secrets; self.kv = kv }
     public func secret(_ key: String) -> String? { secrets.get(key) }
     public func setSecret(_ key: String, _ value: String?) { secrets.set(key, value) }
+    public func storeSecret(_ key: String, _ value: String?) -> Bool { secrets.store(key, value) }
     public func data(_ key: String) -> Data? { kv.data(key) }
     public func setData(_ key: String, _ value: Data?) { kv.set(key, data: value) }
 }

@@ -12,6 +12,7 @@ struct DebridAccountView: View {
     @State private var explaining = false
     @State private var confirmRedeem = false
     @State private var confirmRemove = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var changingKey = false
     /// Ya se le preguntó a Real-Debrid en esta visita: al volver de «Tus pedidos» o «Cambiar clave» no se pregunta otra vez
     /// (antes «Conectada ✓» parpadeaba a «Guardada · Revisando…»).
@@ -33,6 +34,7 @@ struct DebridAccountView: View {
                 .accessibilityIdentifier("debrid-explain")
             }
             .listRowBackground(DS.surface)
+            DebridSharedPrompt(debrid: model)   // CX2-A: otra cuenta en tus aparatos Apple, solo cuando pasa
             // P6-A: lo que dice la página es verdad al abrirla. Se le pregunta a Real-Debrid si tu clave sirve; mientras, lo
             // último que se supo sin la palomita; nunca «Conectada ✓» de algo que no se confirmó en esta visita.
             if !model.hasToken { connect(model) }
@@ -56,14 +58,23 @@ struct DebridAccountView: View {
             Button("Canjear") { Task { await model.redeemPoints() } }
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Real-Debrid cambia tus puntos por días de Premium. No se puede deshacer.") }
+        // CX3-A: solo de este aparato o de todos tus aparatos Apple (los que usaban esta misma clave la quitan al abrir Orbital).
         .confirmationDialog("¿Quitar tu clave?", isPresented: $confirmRemove, titleVisibility: .visible) {
-            Button("Quitar", role: .destructive) { Task { await model.remove() } }
+            Button("Solo de este iPhone", role: .destructive) { Task { await model.remove() } }
+                .accessibilityIdentifier("debrid-remove-here")
+            Button("De todos tus aparatos Apple", role: .destructive) { Task { await model.remove(everywhere: true) } }
+                .accessibilityIdentifier("debrid-remove-everywhere")
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Sin ella no hay versiones hasta que pongas otra. Tu cuenta de Real-Debrid no se toca.") }
         .animation(DS.Motion.base(reduceMotion), value: model.keyCheck)
         .navigationDestination(isPresented: $changingKey) { DebridChangeKeyPage(debrid: model) }
         .sensoryFeedback(.success, trigger: model.redeem) { _, new in new == .done }
+        .task { await model.checkShared() }   // CX2-A: la copia de tus aparatos Apple, cada vez que se abre
         .task { guard !checked else { return }; checked = true; await model.recheck() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.checkShared() } } }   // TEC-6
+        #if DEBUG
+        .task { if Demo.isOn, Demo.cx == "remove-choice" { try? await Task.sleep(for: .seconds(1)); confirmRemove = true } }
+        #endif
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-account")
     }
@@ -137,9 +148,12 @@ struct DebridAccountView: View {
                 NavigationLink { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar clave").foregroundStyle(DS.text) }
             }
             Button("Quitar", role: .destructive) { confirmRemove = true }
-        } header: { Text("Tu clave") }
+        } header: { Text("Tu clave") } footer: { Text(Self.keyFooter) }
         .listRowBackground(DS.surface)
     }
+
+    /// UX-4, TEC-18 · dónde vive, sin prometer lo que iCloud no asegura.
+    static let keyFooter: LocalizedStringKey = "Sale de real-debrid.com/apitoken. Se guarda en este iPhone y, si usas el llavero de iCloud, también lo ven tus otros aparatos Apple."
 
     /// P6-A · Real-Debrid ya no acepta tu clave (la cambiaste en real-debrid.com): se dice arriba, con su arreglo.
     @ViewBuilder private func rejected(_ model: DebridModel) -> some View {
@@ -184,7 +198,8 @@ struct DebridAccountView: View {
         Section {
             DebridKeyField(debrid: model)
             Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
-        } header: { Text("Tu clave") } footer: { Text("Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.") }
+            DebridSharedOffer(debrid: model)   // CX2-A: junto a «Pega tu clave», nunca en su lugar
+        } header: { Text("Tu clave") } footer: { Text(Self.keyFooter) }
         .listRowBackground(DS.surface)
         DebridTVSection(debrid: model)   // K1: sin clave aquí, «Usar la de la TV»
     }
@@ -230,7 +245,7 @@ private struct DebridChangeKeyPage: View {
             Section {
                 DebridKeyField(debrid: model)
                 Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
-            } footer: { Text("Sale de real-debrid.com/apitoken. Vive en el llavero de este aparato.") }
+            } footer: { Text(DebridAccountView.keyFooter) }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)
