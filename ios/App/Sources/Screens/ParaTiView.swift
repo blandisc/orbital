@@ -105,6 +105,7 @@ struct ParaTiView: View {
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .openingTitles(item: $openTitle)   // en el iPad y la Mac, en el panel de la derecha
+        .onChange(of: env.ui.returnedToApp) { Task { await m.loadIfStale() } }   // de vuelta a la app: al día
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
