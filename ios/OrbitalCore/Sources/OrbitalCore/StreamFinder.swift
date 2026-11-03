@@ -35,6 +35,10 @@ public actor StreamFinder {
     /// Los avisos de Torrentio que llegaron en lugar de versiones en la última búsqueda de cada video (R5): no se ofrecen,
     /// pero dicen por qué no hay.
     private var noticesSeen: [String: [StreamNotice]] = [:]
+    /// C8: los complementos que no contestaron a tiempo (o se saltaron por no contestar antes) en la última búsqueda de cada
+    /// video, por su nombre: la lista de versiones lo dice («Comet no contestó a tiempo»).
+    private var quietSeen: [String: [String]] = [:]
+    private var skippedByHealth: [String: [String]] = [:]
     /// Lo que contestó cada complemento para un video, una sola vez: Ver, Descargar y la hoja de Fuente solo lo ordenan
     /// distinto (antes cada una volvía a preguntar a todos y esperaba al más lento). Y lo que ya se está pidiendo se comparte.
     private typealias Answers = (serving: [Addon], results: [[JSON]?])
@@ -67,7 +71,7 @@ public actor StreamFinder {
     /// Se comprobó el audio de una versión: lo que estaba ordenado con lo que se suponía ya no vale.
     public func forgetSorted() { cache = [:] }
     /// Cambiaron tus complementos o sus opciones (T1): nada de lo que contestaron antes vale.
-    public func forgetAll() { cache = [:]; answers = [:]; noticesSeen = [:] }
+    public func forgetAll() { cache = [:]; answers = [:]; noticesSeen = [:]; quietSeen = [:] }
     /// Real-Debrid terminó de bajar un pedido (o lo empezó): lo guardado de ese video ya no vale; la versión pedida sale
     /// «Al instante» en la siguiente búsqueda.
     public func forget(kind: String, videoID: String) {
@@ -125,6 +129,7 @@ public actor StreamFinder {
         }
         let ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
         noticesSeen["\(kind):\(videoID)"] = notices
+        quietSeen["\(kind):\(videoID)"] = (skippedByHealth["\(kind):\(videoID)"] ?? []) + zip(serving, results).filter { $0.1 == nil }.map(\.0.name)
         // Nadie contestó: es la red, no que no haya fuentes (antes se decía «No hay fuentes» sin internet).
         if !results.isEmpty, results.allSatisfy({ $0 == nil }), ranked.isEmpty { throw StreamFinderError.unreachable }
         if failed && ranked.isEmpty { return ranked }  // la red falló y no hay nada: no se recuerda
@@ -178,6 +183,7 @@ public actor StreamFinder {
         let awake = all.filter { health?.skip($0.url) != true }
         let serving = awake.isEmpty ? all : awake
         let key = "\(kind):\(videoID)"
+        skippedByHealth[key] = awake.isEmpty ? [] : all.filter { health?.skip($0.url) == true }.map(\.name)
         emit(key, .asking(serving.map(\.name)))
         // Un complemento lento no detiene a los demás: pasado `budget`, si alguno ya dio fuentes, no se le espera (cuenta como
         // fallido: se vuelve a preguntar pronto).
@@ -210,6 +216,12 @@ public actor StreamFinder {
 
     /// Los avisos de Torrentio de la última búsqueda de ese video (vacío si no hubo).
     public func notices(kind: String, videoID: String) -> [StreamNotice] { noticesSeen["\(kind):\(videoID)"] ?? [] }
+
+    /// C8: quién no contestó a tiempo (o se saltó) en la última búsqueda de ese video, por su nombre y sin repetir.
+    public func quiet(kind: String, videoID: String) -> [String] {
+        var seen = Set<String>()
+        return (quietSeen["\(kind):\(videoID)"] ?? []).filter { seen.insert($0).inserted }
+    }
 
     /// `instantOnly`: solo las que arrancan al instante (un reintento nunca le pide a Real-Debrid otra descarga, R6).
     public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], instantOnly: Bool = false,

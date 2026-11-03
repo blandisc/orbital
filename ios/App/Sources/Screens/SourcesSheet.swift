@@ -89,6 +89,8 @@ struct SourcesSheet: View {
                     } else {
                         byLanguage(model, ui)
                     }
+                    // C8: si un complemento no contestó a tiempo, se dice quién (sus versiones no están aquí).
+                    if !model.isLoading, !model.quiet.isEmpty { AddonQuietLine(names: model.quiet).padding(.top, DS.Space.s1) }
                 }
             }
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)

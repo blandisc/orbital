@@ -18,6 +18,16 @@ extension AppEnvironment {
             do { chosen = try await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
             catch { unreachable = error is StreamFinderError }
         }
+        // M3: Infuse no manda los datos extra que pide un enlace (`behaviorHints.proxyHeaders`): esos se saltan. La que elegiste
+        // tú no se cambia a escondidas: se dice, con «Ver aquí».
+        if let picked = chosen, !picked.requestHeaders.isEmpty {
+            if source != nil {
+                return notify("Infuse no puede abrir esta versión", detail: "Necesita algo que solo manda el reproductor de Orbital", tone: .warn,
+                              actionTitle: "Ver aquí") { [weak self] in self?.play(request) }
+            }
+            let found = (try? await services.finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)) ?? []
+            chosen = found.first { $0.requestHeaders.isEmpty && $0.playbackURL != nil }
+        }
         guard let url = chosen?.playbackURL else {
             if unreachable {
                 return notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { [weak self] in

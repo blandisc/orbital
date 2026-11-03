@@ -61,6 +61,8 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         options.prepareNativeSubtitles = true
         options.preferredAudioLanguages = preferredAudio
         options.preferredSubtitleLanguages = preferredSubtitles
+        // M3: los datos extra que pide el enlace (algunos de MediaFusion y AIOStreams no abren sin ellos), como en AVPlayer.
+        options.httpHeaders = PlaybackHeaders.headers(for: url)
         options.externalSubtitles = declaredExternal.map { ExternalSubtitleTrack(url: $0, name: $0.deletingPathExtension().lastPathComponent, language: Self.language(of: $0)) }
         try await engine.load(url: url, startPosition: startAt, options: options)
         engine.play()

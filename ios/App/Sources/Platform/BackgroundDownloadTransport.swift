@@ -190,6 +190,15 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         startSingle(id: id, url: url, target: probed?.resolved ?? url, resumeFrom: resumeFrom, file: file, existing: existing)
     }
 
+    /// M3: los datos extra que pide el enlace (`behaviorHints.proxyHeaders`), también al bajarlo (antes solo al verlo). Se
+    /// buscan por el enlace original (el de la búsqueda), aunque se pida el ya resuelto. «Range» lo pone Orbital; si el enlace
+    /// pide su «User-Agent», gana el suyo.
+    static func addLinkHeaders(_ request: inout URLRequest, for link: URL) {
+        for (name, value) in PlaybackHeaders.headers(for: link) where name.lowercased() != "range" {
+            request.setValue(value, forHTTPHeaderField: name)
+        }
+    }
+
     /// Los pedazos parejos de un archivo de `total` bytes.
     static func split(_ total: Int64) -> [Part] {
         let size = (total + Int64(parts) - 1) / Int64(parts)
@@ -203,8 +212,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     /// Real-Debrid; ese enlace final es el que piden los pedazos).
     private func probe(_ url: URL) async -> (total: Int64, resolved: URL)? {
         var request = URLRequest(url: url, timeoutInterval: 15)
+        Self.addLinkHeaders(&request, for: url)
         request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
-        request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
+        if request.value(forHTTPHeaderField: "User-Agent") == nil { request.setValue("Orbital", forHTTPHeaderField: "User-Agent") }
         request.allowsCellularAccess = allowsCellular()
         // Solo los encabezados: un servidor que no hace caso del «Range» manda la película entera, y con `data(for:)` se bajaba
         // toda a la memoria solo para saber cuánto mide (y luego otra vez de verdad).
@@ -243,8 +253,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
             if have == 0, let data = try? Data(contentsOf: resume), !data.isEmpty { task = session.downloadTask(withResumeData: data) }
             else {
                 var request = URLRequest(url: target)
+                if let link = lock.withLock({ links[id] }) { Self.addLinkHeaders(&request, for: link) }
                 request.allowsCellularAccess = allowsCellular()
-                request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
+                if request.value(forHTTPHeaderField: "User-Agent") == nil { request.setValue("Orbital", forHTTPHeaderField: "User-Agent") }
                 request.setValue("bytes=\(part.start + have)-\(part.end)", forHTTPHeaderField: "Range")
                 task = session.downloadTask(with: request)
             }
@@ -271,8 +282,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         }
         try? FileManager.default.removeItem(at: resumeFile(id, part: i))   // atados a un punto que ya pasó
         var request = URLRequest(url: target)
+        if let link = lock.withLock({ links[id] }) { Self.addLinkHeaders(&request, for: link) }
         request.allowsCellularAccess = allowsCellular()
-        request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
+        if request.value(forHTTPHeaderField: "User-Agent") == nil { request.setValue("Orbital", forHTTPHeaderField: "User-Agent") }
         request.setValue("bytes=\(part.start + have)-\(part.end)", forHTTPHeaderField: "Range")
         let task = foregroundSession.dataTask(with: request)
         task.taskDescription = "\(id)#\(token)#\(i)"
@@ -324,8 +336,9 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         } else {
             try? FileManager.default.removeItem(at: resumeURL)     // enlace nuevo: lo bajado con el viejo no sirve
             var request = URLRequest(url: target)
+            Self.addLinkHeaders(&request, for: url)
             request.allowsCellularAccess = allowsCellular()
-            request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
+            if request.value(forHTTPHeaderField: "User-Agent") == nil { request.setValue("Orbital", forHTTPHeaderField: "User-Agent") }
             if resumeFrom > 0 { request.setValue("bytes=\(resumeFrom)-", forHTTPHeaderField: "Range") }
             task = session.downloadTask(with: request)
         }

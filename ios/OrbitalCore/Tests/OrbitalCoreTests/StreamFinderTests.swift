@@ -89,6 +89,23 @@ final class StreamFinderTests: XCTestCase {
         XCTAssertNotEqual(skipped?.index, plain?.index)
     }
 
+    /// C8: el complemento que no contestó a tiempo se dice por su nombre (la lista de versiones lo enseña); el que sí
+    /// contestó, aunque sin nada, no.
+    func testWhoDidNotAnswerInTimeIsNamed() async throws {
+        let http = FakeHTTP()
+        let finder = makeFinder(http)
+        http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [["name": "T\n1080p", "title": "Peli 1080p", "url": "https://rd.example/a"]]]
+        http.failing = ["https://b.example/stream/movie/tt1.json"]
+        let found = try await finder.find(kind: "movie", videoID: "tt1", prefs: Preferences())
+        XCTAssertEqual(found.count, 1)
+        let quiet = await finder.quiet(kind: "movie", videoID: "tt1")
+        XCTAssertEqual(quiet, ["Otro"])
+        http.failing = []
+        _ = try await finder.find(kind: "movie", videoID: "tt2", prefs: Preferences())
+        let none = await finder.quiet(kind: "movie", videoID: "tt2")
+        XCTAssertEqual(none, [], "un 404 es «no tiene ese video», no «no contestó»")
+    }
+
     func testNetworkFailureIsNotRememberedAsEmpty() async throws {
         let http = FakeHTTP(), clock = Clock()
         let finder = makeFinder(http, clock: clock)

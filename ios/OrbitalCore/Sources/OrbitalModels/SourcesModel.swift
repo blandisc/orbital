@@ -44,6 +44,8 @@ public final class SourcesModel: ObservableModel {
     public private(set) var languageRows: [LanguageRow] = [] { didSet { changed() } }
     public private(set) var moreLanguages: [LanguageRow] = [] { didSet { changed() } }
     public private(set) var hiddenCount = 0 { didSet { changed() } }
+    /// C8: los complementos que no contestaron a tiempo o se saltaron (sus versiones no están en la lista), por su nombre.
+    public private(set) var quiet: [String] = [] { didSet { if oldValue != quiet { changed() } } }
     /// Lo que pediste (para decir «tu idioma» y el nombre de cada uno).
     public private(set) var prefs = Preferences()
     var limitGB = 5.0
@@ -79,6 +81,7 @@ public final class SourcesModel: ObservableModel {
         }
         catch { return }
         guard !Task.isCancelled, ticket == loadCount else { return }
+        quiet = await services.finder.quiet(kind: kind, videoID: videoID)
         sources = found
         let grouped = Self.languageRows(found, prefs: prefs, limitGB: settings.warnCellularOverGB)
         languageRows = grouped.main; moreLanguages = grouped.more; hiddenCount = grouped.hidden
