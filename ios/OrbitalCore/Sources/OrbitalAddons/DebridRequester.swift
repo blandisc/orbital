@@ -61,7 +61,24 @@ public actor DebridRequester {
     /// pedido solo une su video (sin preguntarle a Real-Debrid); de un paquete viejo pedido con un solo archivo, se pide como
     /// torrent nuevo. Si Real-Debrid dice que no por el archivo (derechos, límite), queda anotado con ese estado; si es por tu
     /// cuenta o la red, lanza `RDRequestError`.
+    ///
+    /// Dos toques seguidos (o la ficha y el reproductor a la vez) no agregan el torrent dos veces: el segundo espera al
+    /// primero y luego toma lo que quedó anotado (el actor se puede reentrar en cada `await`).
     public func request(_ wish: DebridWish) async throws -> DebridRequest {
+        while let running = inFlight[wish.hash] {
+            _ = try? await running.value
+            if inFlight[wish.hash] == running { inFlight[wish.hash] = nil }   // ya terminó: sin esto se quedaría dando vueltas
+        }
+        let task = Task { try await self.place(wish) }
+        inFlight[wish.hash] = task
+        defer { if inFlight[wish.hash] == task { inFlight[wish.hash] = nil } }
+        return try await task.value
+    }
+
+    /// Los pedidos que van a medio camino, por huella.
+    private var inFlight: [String: Task<DebridRequest, Error>] = [:]
+
+    private func place(_ wish: DebridWish) async throws -> DebridRequest {
         let mine = await currentAccount()
         var replacing: DebridRequest?
         if var known = book.find(hash: wish.hash), !known.isOther(account: mine), ![.refused, .tooMany, .gone].contains(known.state) {

@@ -25,7 +25,9 @@ struct DebridAccountView: View {
                 .accessibilityIdentifier("debrid-explain")
             }
             .listRowBackground(DS.surface)
-            if let status = model.status { account(status, model) } else { connect(model) }
+            if let status = model.status { account(status, model) }
+            else if model.hasToken { unknown(model) }   // hay clave, pero Real-Debrid no contestó: nunca el campo vacío
+            else { connect(model) }
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
@@ -68,12 +70,27 @@ struct DebridAccountView: View {
             }
         } header: { Text("Tu cuenta") } footer: { Text("Te avisamos 14 días antes, 3 días antes y el día que vence. No se renueva solo.") }
         .listRowBackground(DS.surface)
+        // «Tus pedidos» antes que tu clave: «Quitar» (lo destructivo) va al final de la página, como en iOS.
+        Section {
+            // D3: lo que Real-Debrid está bajando para ti (tus pedidos), con «Cancelar».
+            NavigationLink { DebridRequestsView() } label: {
+                SettingsRow(title: "Tus pedidos", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: requestsValue)
+            }
+            .accessibilityIdentifier("settings-debrid-requests")
+        }
+        .listRowBackground(DS.surface)
+        keySection(model, verified: true)
+    }
+
+    /// Tu clave: conectada (sus últimas 4 letras), cambiarla y quitarla. Lo destructivo, al final.
+    /// `verified` false: hay clave, pero no se sabe si sirve (Real-Debrid no contestó): «Guardada», sin la palomita verde.
+    @ViewBuilder private func keySection(_ model: DebridModel, verified: Bool) -> some View {
         let tail = model.keyTail ?? "····"
         Section {
             HStack(spacing: DS.Space.s3) {
-                TorrentioRowLabel(title: Text("Conectada"), detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
+                TorrentioRowLabel(title: verified ? Text("Conectada") : Text("Guardada"), detail: Text("termina en ••••\(tail) · nunca se muestra completa"))
                 Spacer(minLength: DS.Space.s2)
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.success).accessibilityHidden(true)
+                if verified { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.success).accessibilityHidden(true) }
             }
             .accessibilityElement(children: .combine)
             if model.keyCameFromImport {
@@ -83,14 +100,19 @@ struct DebridAccountView: View {
             Button("Quitar", role: .destructive) { confirmRemove = true }
         } header: { Text("Tu clave") }
         .listRowBackground(DS.surface)
+    }
+
+    /// Hay clave guardada pero todavía no se sabe de tu cuenta (sin internet o Real-Debrid no contestó): se dice y se
+    /// reintenta; la clave sigue ahí (antes salía el campo para pegarla, como si no tuvieras).
+    @ViewBuilder private func unknown(_ model: DebridModel) -> some View {
         Section {
-            // D3: lo que Real-Debrid está bajando para ti (tus pedidos), con «Cancelar».
-            NavigationLink { DebridRequestsView() } label: {
-                SettingsRow(title: "Tus pedidos", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: requestsValue)
-            }
-            .accessibilityIdentifier("settings-debrid-requests")
-        }
+            Label { Text("No pude ver tu cuenta") } icon: { Image(systemName: "wifi.exclamationmark").foregroundStyle(DS.warning) }
+                .foregroundStyle(DS.text)
+            Button("Reintentar") { Task { await model.load(force: true) } }
+                .accessibilityIdentifier("debrid-retry")
+        } header: { Text("Tu cuenta") } footer: { Text("Real-Debrid no contestó. Tu clave sigue guardada.") }
         .listRowBackground(DS.surface)
+        keySection(model, verified: false)
     }
 
     @ViewBuilder private func connect(_ model: DebridModel) -> some View {

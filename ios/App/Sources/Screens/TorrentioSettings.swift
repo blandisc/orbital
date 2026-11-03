@@ -71,7 +71,7 @@ struct TorrentioSettings: View {
             Button("Cancelar", role: .cancel) {}
         } message: { Text("Tus idiomas, calidades y demás opciones vuelven a como vienen con Orbital.") }
         .sheet(isPresented: $explaining) { DebridExplainer(topic: .torrentio) { explaining = false }.presentationDetents([.medium, .large]) }
-        .task { model.scheduleProbe(now: true) }
+        .task { if model.probe == .idle || model.probe == .unreachable { model.scheduleProbe(now: true) } }   // al regresar de una subpágina no se vuelve a probar lo mismo
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("torrentio-settings")
     }
@@ -100,14 +100,21 @@ struct TorrentioSettings: View {
                 .accessibilityActions {
                     if index > 0 { Button("Subir") { move(model, key, by: -1) } }
                     if index < options.languages.count - 1 { Button("Bajar") { move(model, key, by: 1) } }
+                    Button("Quitar") { model.change { $0.languages.removeAll { $0 == key } } }   // lo mismo que el menú y el deslizar
                 }
                 .swipeActions { Button("Quitar", role: .destructive) { model.change { $0.languages.removeAll { $0 == key } } }.tint(DS.danger) }
             }
             .onMove { from, to in model.change { $0.languages.move(fromOffsets: from, toOffset: to) } }
-            NavigationLink { TorrentioLanguagePicker(model: torrentio) } label: {
-                Label("Agregar idioma", systemImage: "plus.circle").foregroundStyle(DS.text)
+            if options.languages.isEmpty {
+                Text("Ninguno: las versiones salen sin importar el idioma.").recipe(.footnote, color: DS.textMuted)
             }
-            .accessibilityIdentifier("torrentio-add-language")
+            // Con los 41 ya en tu lista no queda qué agregar (antes abría una página vacía).
+            if options.languages.count < TorrentioConfig.languages.count {
+                NavigationLink { TorrentioLanguagePicker(model: torrentio) } label: {
+                    Label("Agregar idioma", systemImage: "plus.circle").foregroundStyle(DS.text)
+                }
+                .accessibilityIdentifier("torrentio-add-language")
+            }
         } header: { Text("Idiomas primero") } footer: {
             Text("Las versiones en estos idiomas salen arriba. Si no hay en el primero, se prueba el siguiente.")
         }

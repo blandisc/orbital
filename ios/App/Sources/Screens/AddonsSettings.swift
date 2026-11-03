@@ -36,7 +36,12 @@ struct AddonsSettings: View {
                     .accessibilityIdentifier("addon-row-\(addon.id)")
                 }
                 .onMove { from, to in Task { await model.move(fromOffsets: from, toOffset: to) } }
-                if model.items.isEmpty { Text("Sin complementos: vuelve a traer los de tu Stremio.").foregroundStyle(DS.textMuted) }
+                if model.items.isEmpty {
+                    // Sin sesión de Stremio no hay «Volver a traer»: se dice la salida que sí está («Agregar», arriba).
+                    (env.session.state == .signedIn ? Text("Sin complementos: vuelve a traer los de tu Stremio.")
+                                                    : Text("Sin complementos: agrega los que vienen con Orbital con «Agregar», arriba."))
+                        .foregroundStyle(DS.textMuted)
+                }
             } header: { Text("Se preguntan en este orden") } footer: {
                 Text("Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden.")
             }
@@ -68,8 +73,10 @@ struct AddonsSettings: View {
                     .accessibilityIdentifier("addons-add")
                 }
             }
-            ToolbarItem(placement: .topBarLeading) {
-                Button(editMode.isEditing ? "Listo" : "Ordenar") { editMode = editMode.isEditing ? .inactive : .active }
+            if model.items.count > 1 || editMode.isEditing {   // con uno o ninguno no hay qué ordenar
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(editMode.isEditing ? "Listo" : "Ordenar") { editMode = editMode.isEditing ? .inactive : .active }
+                }
             }
         }
         .confirmationDialog(Text(verbatim: removing.map { String(format: Strings.tr("¿Quitar «%@»?", language: env.services.appSettings.uiLanguage), $0.name) } ?? ""),

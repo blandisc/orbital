@@ -15,18 +15,33 @@ struct DebridRequestStatus: View {
     var warn = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
-            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(warn ? DS.warning : DS.textMuted)
-                .frame(width: DS.SettingsLook.rowIcon)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: title).recipe(.labelLarge, color: DS.text)
-                if let detail { Text(verbatim: detail).recipe(.footnote, color: DS.textMuted).fixedSize(horizontal: false, vertical: true) }
-                if let fraction { DSProgress(fraction: fraction).padding(.top, DS.Space.s1) }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        IconBeside(symbol: symbol, color: warn ? DS.warning : DS.textMuted) {
+            Text(verbatim: title).recipe(.labelLarge, color: DS.text)
+            if let detail { Text(verbatim: detail).recipe(.footnote, color: DS.textMuted).fixedSize(horizontal: false, vertical: true) }
+            if let fraction { DSProgress(fraction: fraction).padding(.top, DS.Space.s1) }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Un ícono a la izquierda y su texto. Con letra de accesibilidad el ícono crece más que su columna y se encimaba con el
+/// título: ahí va arriba del texto (como `ParaTiB`).
+struct IconBeside<Content: View>: View {
+    let symbol: String
+    var color: Color = DS.textMuted
+    @ViewBuilder let content: Content
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
+                                                  : AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.s3))
+        layout {
+            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(color)
+                .frame(width: typeSize.isAccessibilitySize ? nil : DS.SettingsLook.rowIcon)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Space.s1) { content }
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 
@@ -143,14 +158,9 @@ struct DebridExplainer: View {
     }
 
     private func card(_ symbol: String, _ title: Text, _ body: Text) -> some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
-            Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.textMuted)
-                .frame(width: DS.SettingsLook.rowIcon).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                title.recipe(.labelLarge, color: DS.text)
-                body.recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        IconBeside(symbol: symbol) {
+            title.recipe(.labelLarge, color: DS.text)
+            body.recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
         }
         .padding(DS.Space.s4).dsCard(.card)
     }

@@ -304,4 +304,22 @@ final class DesignRulesTests: XCTestCase {
         let problems = hits(#"DSSeasonPicker\("#, in: files, skip: { ["EpisodesPanel.swift", "Surfaces.swift"].contains($0.name) })
         check(problems, "Cápsulas de temporada fuera del reproductor: usa DSSeasonMenu (lista desplegable)")
     }
+
+    // MARK: 15 · Confirmaciones que cancelan algo
+
+    /// Pasada de Real-Debrid (3 nov 2026): si lo que confirma una pregunta es «Cancelar pedido» (o «Cancelar …»), iOS pone su
+    /// propio «Cancelar» al lado: dos «cancelar» que hacen lo contrario. Esa pregunta nombra su salida («Seguir esperando»).
+    func testCancellingSomethingNamesItsCancel() throws {
+        var problems: [String] = []
+        for file in try sources() {
+            for (i, line) in file.lines.enumerated() where line.contains(".confirmationDialog(") || line.contains(".alert(") {
+                let block = file.lines[i..<min(file.lines.count, i + 12)].joined(separator: "\n")
+                let actions = block.components(separatedBy: "message").first ?? block
+                if actions.range(of: #"Button\("Cancelar \w"#, options: .regularExpression) != nil, !actions.contains("role: .cancel") {
+                    problems.append("\(file.path):\(i + 1)")
+                }
+            }
+        }
+        check(problems, "Una pregunta que confirma «Cancelar …» lleva su botón de salida con nombre (role: .cancel)")
+    }
 }

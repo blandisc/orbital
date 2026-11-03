@@ -182,6 +182,19 @@ final class DebridRequestsTests: XCTestCase {
         XCTAssertEqual(fake.calls.count, calls, "otro episodio de un paquete ya pedido: ninguna llamada a Real-Debrid")
     }
 
+    func testTwoTapsAtOnceAddTheTorrentOnlyOnce() async throws {
+        let (requester, fake, _, _) = make()
+        let two = wish(2), three = wish(3)
+        async let first = requester.request(two)
+        async let second = requester.request(two)
+        async let other = requester.request(three)
+        let (a, b, _) = try await (first, second, other)
+        XCTAssertEqual(fake.calls.filter { $0 == "POST torrents/addMagnet" }.count, 1, "dos toques seguidos: un solo torrent en tu Real-Debrid")
+        XCTAssertEqual(a.rdID, b.rdID)
+        XCTAssertEqual(Set(requester.book.find(hash: infoHash)?.videoIDs ?? []), ["tt0386676:1:2", "tt0386676:1:3"],
+                       "el otro episodio del paquete se suma al mismo pedido")
+    }
+
     func testWithoutAKnownFileItSelectsOnlyTheVideos() async throws {
         let (requester, fake, _, _) = make()
         var w = wish(2); w.fileIdx = nil

@@ -68,6 +68,8 @@ struct DebridRequestsView: View {
             Button("Cancelar pedido", role: .destructive) {
                 Task { if await !model.cancel(request) { env.notify(tr("No pude hablar con Real-Debrid"), tone: .warn) } }
             }
+            // Sin esto iOS pone «Cancelar» junto a «Cancelar pedido»: dos «cancelar» que dicen cosas opuestas.
+            Button("Seguir esperando", role: .cancel) {}
         } message: { request in Text(verbatim: name(request)) }
     }
 

@@ -33,7 +33,7 @@ public enum DebridRequestWords {
         case .downloading: tr("Te aviso cuando esté listo")
         case .noPeers: tr("Puede tardar días · prueba otra versión")
         case .refused: tr("Prueba otra versión")
-        case .tooMany: tr("Cancela una en Real-Debrid")
+        case .tooMany: tr("Cancela otra descarga para hacer lugar")
         case .ready: tr("Ya arranca al instante")
         case .gone: ""
         }

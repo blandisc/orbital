@@ -371,6 +371,18 @@ turquesa (`--color-new` = la luna); sin reflejo bajo la fila centrada; Trakt ya 
 (`shelf.js`). **«El turquesa no es decoración» no se aplica en la TV por ahora** (Fernando, 2 nov: «ahorita la turquesa no hagas
 caso»): el turquesa se queda donde estaba (ícono del rótulo, Colecciones, «✓ Conectada», «Al instante»); solo lo nuevo y «Hoy» pasan a él.
 
+### Reglas de la pasada de Real-Debrid y Complementos (3 nov 2026, iPhone)
+
+Fernando: «dale una pasada a todas las pantallas que hiciste intentando romperlas». Lo que se rompía y es patrón:
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| Una pregunta que confirma «Cancelar …» nombra su salida: iOS pone su propio «Cancelar» y quedan dos que hacen lo contrario | `Button("Seguir esperando", role: .cancel)` | `testCancellingSomethingNamesItsCancel` (DesignRulesTests) |
+| Ícono a la izquierda de un texto de varias líneas: con letra de accesibilidad el ícono va arriba del texto (antes se encimaba con el título) | `IconBeside` (`DebridRequests.swift`), como `ParaTiB` | — |
+| Lo que no se puede hacer no se ofrece: «Agregar idioma» con los 41 ya elegidos, «Ordenar» con uno solo, el último sitio de Torrentio apagado | se esconde o se deshabilita, y el pie dice por qué | — |
+| Donde marcar es esconder, la marca es el ojo tachado, no la palomita (y VoiceOver dice «Escondida», no «seleccionado») | `CheckLine(mark: "eye.slash")` | — |
+| Con clave guardada pero sin respuesta de Real-Debrid, la página dice «No pude ver tu cuenta» con «Reintentar»; nunca el campo vacío para pegarla | `DebridAccountView.unknown` | `-demo-rd unreachable` |
+
 ### Tabla espejo (iPhone ↔ TV)
 
 Una sola Orbital (Fernando, 31 oct 2026): cada papel del lenguaje del iPhone tiene aquí su pieza de la TV y su estado. Estado:

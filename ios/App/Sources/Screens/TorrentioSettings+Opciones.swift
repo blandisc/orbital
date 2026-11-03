@@ -20,7 +20,7 @@ struct TorrentioQualities: View {
                             if o.excludedQualities.contains(key) { o.excludedQualities.removeAll { $0 == key } } else { o.excludedQualities.append(key) }
                         }
                     } label: {
-                        CheckLine(title: words.name, detail: words.detail, checked: hidden.contains(key))
+                        CheckLine(title: words.name, detail: words.detail, checked: hidden.contains(key), mark: "eye.slash")
                     }
                     .accessibilityIdentifier("torrentio-quality-\(key)")
                 }
@@ -44,6 +44,8 @@ struct CheckLine: View {
     let title: Text
     let detail: Text
     let checked: Bool
+    /// La marca de lo elegido: la palomita, o el ojo tachado donde marcar es esconder («Calidades que no quieres»).
+    var mark = "checkmark"
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
@@ -52,11 +54,12 @@ struct CheckLine: View {
                 detail.recipe(.footnote, color: DS.textMuted)
             }
             Spacer(minLength: DS.Space.s2)
-            if checked { Image(systemName: "checkmark").foregroundStyle(DS.accent).accessibilityHidden(true) }
+            if checked { Image(systemName: mark).foregroundStyle(DS.accent).accessibilityHidden(true) }
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(checked ? .isSelected : [])
+        .accessibilityAddTraits(checked && mark == "checkmark" ? .isSelected : [])
+        .accessibilityValue(checked && mark != "checkmark" ? Text("Escondida") : Text(verbatim: ""))   // VoiceOver no dice «seleccionado» de algo escondido
     }
 }
 
@@ -150,8 +153,10 @@ struct TorrentioProviders: View {
                         let ordered = TorrentioConfig.providers.filter(next.contains)
                         torrentio.change { $0.providers = ordered.count == TorrentioConfig.providers.count ? [] : ordered }
                     })) { Text(verbatim: TorrentioConfig.providerNames[key] ?? key).foregroundStyle(DS.text) }
+                    // El último prendido no se apaga (antes el interruptor se regresaba solo, sin decir por qué).
+                    .disabled(on.count == 1 && on.contains(key))
                 }
-            } footer: { Text("Casi nunca hace falta: apaga uno solo si da versiones que no sirven.") }
+            } footer: { Text("Casi nunca hace falta: apaga uno solo si da versiones que no sirven. Siempre queda uno prendido.") }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)
