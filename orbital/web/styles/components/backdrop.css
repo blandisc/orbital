@@ -10,14 +10,21 @@
   transition: opacity var(--duration-tint) var(--ease-out);
 }
 .backdrop__layer--visible { opacity: 1; }
+/* Lo que el arte deja libre se llena con su color («que el espacio vacío se llene con el color», Fernando, 2 nov 2026): una
+   luz grande de su tono detrás del arte, que llega hasta las orillas de arriba y se apaga hacia las filas. Entra y sale con
+   su capa. Una portada sola ya trae su halo. */
+.backdrop__layer--art::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 90% at 66% 28%, color-mix(in oklab, var(--art-accent) 22%, var(--art-tint)) 0%, color-mix(in oklab, var(--art-tint) 80%, transparent) 50%, transparent 82%);
+}
 .backdrop__layer--pixel .backdrop__art { image-rendering: pixelated; }
 
-/* Fanart: arriba y a la derecha (Fernando, 2 nov 2026, opción B: «está centrado y lo tapan mucho los menús»). Empieza al
-   22 % del ancho y termina antes de las filas, así el personaje cae en el hueco libre junto al destacado y no bajo la barra ni
-   el selector de consolas; se funde hacia la izquierda (ahí va el destacado; el velo --scrim-hero hace el resto) y hacia abajo.
-   Sobra 3 rem a la derecha para el paralaje. */
+/* Fanart: arriba y a la derecha, más chico que la pantalla (Fernando, 2 nov 2026, «está centrado y lo tapan mucho los menús»;
+   opción B1 del Canvas). Empieza a un tercio del ancho y termina a tres cuartos del alto, así el personaje cae completo en el
+   hueco libre junto al destacado y no bajo la barra ni el selector de consolas; se funde hacia la izquierda (ahí va el
+   destacado; el velo --scrim-hero hace el resto) y hacia abajo. Sobra 3 rem a la derecha para el paralaje. */
 .backdrop__art {
-  position: absolute; inset: 0 -3rem 16% 22%;
+  position: absolute; inset: 0 -3rem 26% 32%;
   background-size: cover; background-position: center 22%;
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 30%), linear-gradient(0deg, transparent 0%, var(--mask-solid) 34%);
   -webkit-mask-composite: source-in;

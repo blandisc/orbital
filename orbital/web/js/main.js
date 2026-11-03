@@ -56,6 +56,7 @@ import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, unkeyOf, med
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
+import { systemColor } from "./core/home.js";
 import { onConnected as onPadConnected, onDisconnected as onPadDisconnected, pads as readPads } from "./core/pads.js";
 
 const state = createState();
@@ -814,11 +815,11 @@ function loadAiring() {
   }, () => { airingAt = 0; });
 }
 
-/** El fondo toma la luz de lo enfocado; una consola, la de su último juego. */
+/** El fondo toma la luz de lo enfocado; una consola, solo su color (Fernando, 2 nov 2026: antes, el arte de su último juego). */
 function homeFocused(target) {
   if (!inHome()) return;
-  const item = target?.item ?? target?.console?.last ?? null;
-  ui.backdrop.show(item?.hero || item?.image || target?.console?.photo || null);
+  if (target?.kind === "console") ui.backdrop.show(null, { color: systemColor(target.console?.system) });
+  else ui.backdrop.show(target?.item?.hero || target?.item?.image || null);
   // La luz del fondo se acerca a lo enfocado.
   const node = document.querySelector(`[data-focus-id="${ui.home.focusId}"]`);
   if (node) {

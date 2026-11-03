@@ -382,6 +382,9 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 - **Nada salta.** Una portada llega desenfocada y se enfoca mientras aparece; las calificaciones de la ficha ruedan hasta su número
   (`motion.js · rollNumber`) y su renglón se aparta desde que se abre (`title__ratings--waiting`); se precarga también el fondo de la
   tarjeta de atrás.
+- **El arte del fondo** (`backdrop.css`, Fernando, 2 nov 2026): arriba a la derecha, más chico que la pantalla (empieza a un
+  tercio del ancho y termina a tres cuartos del alto), para que lo tapen menos la barra y el destacado; lo que deja libre se llena
+  con su color (`backdrop__layer--art`). Una consola enfocada en Inicio no lleva arte: solo su color (`--system-*`).
 - **Fondo vivo pero quieto** (`backdrop.js · ALIVE_MS`, `backdrop__layer--alive`): ver la tabla de arriba. Sin ciclos: al terminar no
   se mueve nada.
 - **Velocidad.** `tests/smoke/test_ui_smoke.py · test_moving_feels_instant` mide, recorriendo una fila de Juegos, cuánto pasa de

@@ -53,6 +53,12 @@ function applyPalette({ tint, accent }) {
   root.setProperty("--art-accent", accent);
 }
 
+/** El fondo de un color dado (una consola): oscuro como el tono que sale de un arte, y su luz en el mismo color. */
+const colorPalette = (color) => ({
+  tint: `color-mix(in oklab, ${color} 40%, var(--palette-ink-1000))`,
+  accent: `color-mix(in oklab, ${color} 70%, var(--palette-ink-200))`,
+});
+
 /**
  * Fondo: el arte del juego compuesto a la derecha, desvanecido hacia el color del juego.
  * Con fanart, ocupa el lado derecho y se funde por la izquierda y por abajo (detrás del texto
@@ -92,19 +98,21 @@ export function createBackdrop({ settle = 150 } = {}) {
     if (poster && url) back.box.src = url;
     else back.box.removeAttribute("src");
     back.el.classList.toggle("backdrop__layer--poster", !!(poster && url));
+    back.el.classList.toggle("backdrop__layer--art", !!(url && !poster)); // su color llena lo que el arte deja libre (backdrop.css)
     back.el.classList.add("backdrop__layer--visible");
     layers[front].el.classList.remove("backdrop__layer--visible");
     front = 1 - front;
   }
 
-  /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). */
-  function show(url, { poster = false, pixel = false } = {}) {
+  /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). `color`: sin imagen,
+   *  el fondo solo con ese color (una consola: su variable CSS, core/home.js · systemColor). */
+  function show(url, { poster = false, pixel = false, color = null } = {}) {
     const mine = ++token;
     // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo (y cambia cuando se detiene).
     setTimeout(() => {
       if (mine !== token) return;
       if (!url) {
-        applyPalette(paletteFor(null));
+        applyPalette(color ? colorPalette(color) : paletteFor(null));
         return swap(null, false);
       }
       const img = new Image();
