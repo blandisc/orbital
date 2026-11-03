@@ -10,6 +10,7 @@ import json
 import logging
 import math
 import os
+import re
 import threading
 import time
 import urllib.error
@@ -24,7 +25,7 @@ from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
-from .library import addon_list, addons, cinemeta, localize, realdebrid, streams, stremio_api
+from .library import addon_list, addons, cinemeta, localize, realdebrid, streams, stremio_api, torrentio
 from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
@@ -448,7 +449,9 @@ class Watch:
         self._trakt_busy = threading.Lock()
         self._saving = threading.Lock()
         # Tus complementos: los de tu cuenta de Stremio o, ya traídos, tu lista de Orbital (Ajustes › Complementos).
-        self.addon_list = addon_list.AddonList(self.credentials, legacy=self.own_addons)
+        self.addon_list = addon_list.AddonList(self.credentials, legacy=self.own_addons,
+                                               key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought)
+        self.addon_list.adopt_torrentio()  # el Torrentio que ya habías traído de Stremio pasa al de Orbital (corte S3)
         self._removed_addons: dict[str, dict] = {}
         self.addons = addons.AddonRegistry(
             self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY), own=self.own_addons,
@@ -569,11 +572,14 @@ class Watch:
         entries = []
         for entry in self.addon_list.entries():
             found = known.get(entry.address or "")
-            entries.append({
+            row = {
                 "id": entry.id, "name": entry.name, "origin": entry.origin, "on": entry.on(),
                 "only_on": entry.only_on, "gives": addon_gives(found),
                 "health": self.addons.health.status(entry.address) if entry.on() and entry.address else {"state": "off"},
-            })
+            }
+            if entry.template == "torrentio":  # se configura aquí (corte S3); sin tu clave no se puede armar
+                row.update(template="torrentio", options=entry.options, needs_key=entry.address is None)
+            entries.append(row)
         return {"source": self.addon_list.source, "imported_at": self.addon_list.imported_at,
                 "stremio_linked": self.stremio_linked, "entries": entries}
 
@@ -615,6 +621,40 @@ class Watch:
         self.addon_list.restore(self._removed_addons.pop(ident))
         self.addons.forget()
         return self.addon_status()
+
+    def set_torrentio(self, options: dict) -> dict:
+        """Ajustes › Complementos › Torrentio (corte S3): tus opciones, revisadas contra las de Torrentio
+        (design/addons-contract.json). Se guarda al cambiar; lo que la TV no conoce de tu Torrentio se queda."""
+        clean: dict = {}
+        known = lambda values, allowed: [v for v in dict.fromkeys(values or []) if v in allowed] if isinstance(values, list) else []  # noqa: E731
+        clean["language"] = known(options.get("language"), torrentio.LANGUAGES)
+        clean["qualityfilter"] = known(options.get("qualityfilter"), torrentio.QUALITIES)
+        clean["providers"] = known(options.get("providers"), torrentio.PROVIDERS)
+        clean["debridoptions"] = known(options.get("debridoptions"), ("nodownloadlinks", "nocatalog"))
+        if options.get("sort") in torrentio.SORTS[1:]:
+            clean["sort"] = options["sort"]
+        limit = options.get("limit")
+        if isinstance(limit, int) and not isinstance(limit, bool) and 1 <= limit <= 999:
+            clean["limit"] = limit
+        size = options.get("sizefilter")
+        if isinstance(size, str) and re.fullmatch(r"\d+(\.\d+)?(GB|MB)(,\d+(\.\d+)?(GB|MB))?", size.upper()):
+            clean["sizefilter"] = size.upper()
+        before = self.addon_list.torrentio().options or {}
+        if before.get("verbatim"):
+            clean["verbatim"] = before["verbatim"]
+        self.addon_list.set_options(clean)
+        self.addons.forget()
+        self.streams.forget_all()
+        return {**self.addon_status(), "previous": before}
+
+    def _rd_key_brought(self, key: str) -> None:
+        """La clave que venía en el Torrentio que trajiste de Stremio: la consola la guarda como suya y lo dice."""
+        if self.credentials.get(RD_KEY):
+            return
+        self.credentials.set(RD_KEY, key)
+        self.state.set_pref(RD_ACCOUNT, "source", "torrentio")
+        self.events.publish({"type": "toast", "ok": True, "message": "Tomé tu clave de Real-Debrid de tu Torrentio",
+                             "detail": "La ves en Ajustes › Cuentas › Real-Debrid"})
 
     def set_addon_source(self, source: str) -> dict:
         """«Volver a los de Stremio» (stremio) o «Usar los tuyos» (own): tu lista se queda en los dos casos."""

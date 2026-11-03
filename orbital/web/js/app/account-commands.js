@@ -1,7 +1,8 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
+  const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
     // Ajustes › Complementos («La TV sin Stremio», S1)
     "addons-import": async () => {
@@ -55,6 +56,26 @@ export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, debrid
       sound.play("select");
       ui.toast.show(`Cancelé ${command.title || "el pedido"}`, { detail: "Se quitó de tu Real-Debrid" });
       return openMenu(debridRequestsMenu(res.requests || []), context?.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : {});
+    },
+    // Ajustes › Complementos › Torrentio (corte S3): cada cambio se guarda al hacerlo, con «Deshacer»
+    "torrentio-menu": async (command, context) => openMenu(torrentioMenus.main(torrentioEntry()), nested(context)),
+    "torrentio-languages": async (command, context) => openMenu(torrentioMenus.languages(torrentioEntry()), nested(context)),
+    "torrentio-language": async (command, context) => openMenu(torrentioMenus.language(torrentioEntry(), command.key), nested(context)),
+    "torrentio-language-add": async (command, context) => openMenu(torrentioMenus.add(torrentioEntry()), nested(context)),
+    "torrentio-qualities": async (command, context) => openMenu(torrentioMenus.qualities(torrentioEntry()), nested(context)),
+    "torrentio-providers": async (command, context) => openMenu(torrentioMenus.providers(torrentioEntry()), nested(context)),
+    "torrentio-set": async (command, context) => {
+      const res = await api.torrentioOptions(command.options);
+      addons(res);
+      sound.play("select");
+      ui.toast.show("Guardé tus opciones de Torrentio", { duration: UNDO_MS, detail: "La próxima búsqueda ya las usa",
+        action: { label: "Deshacer", onPress: async () => addons(await api.torrentioOptions(res.previous || {})) } });
+      const build = { main: torrentioMenus.main, languages: torrentioMenus.languages, qualities: torrentioMenus.qualities,
+        providers: torrentioMenus.providers }[command.reopen];
+      if (!build || !context) return;
+      // «Subir», «Quitar» o un idioma agregado regresan a tu lista de idiomas; lo demás se queda donde estás.
+      const where = command.back && context.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : context;
+      return openMenu(build(torrentioEntry()), where);
     },
     "stremio-account": async (command, context) => {
       return openMenu(stremioAccountMenu(), nested(context));

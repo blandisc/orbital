@@ -22,15 +22,24 @@ def brought():
             ("OpenSubtitles v3", addon_list.OPENSUBTITLES, {"id": "org.stremio.opensubtitlesv3"})]
 
 
+def keyed():
+    """Una lista con el llavero de la consola: la clave de Real-Debrid que traía tu Torrentio se queda ahí."""
+    keys = {}
+    return AddonList(Store(), key=lambda: keys.get("rd"), on_key=lambda k: keys.__setitem__("rd", k)), keys
+
+
 def test_traer_de_stremio_una_vez_y_desde_ahi_es_tuya():
-    lst = AddonList(Store())
-    assert lst.source == "stremio" and lst.urls() == [addon_list.OPENSUBTITLES]  # lo de Orbital ya está
+    lst, keys = keyed()
+    assert lst.source == "stremio" and lst.urls() == [addon_list.OPENSUBTITLES]  # sin clave, Torrentio no se arma
     done = lst.import_from_stremio(brought())
-    # Cinemeta no (Orbital ya la usa: apagarla rompería las fichas) y OpenSubtitles ya viene con Orbital.
-    assert done == {"added": 3, "kept": 0, "skipped": 2}
-    assert lst.source == "own" and lst.revision == 1 and lst.imported_at
+    # Cinemeta no (Orbital ya la usa: apagarla rompería las fichas), OpenSubtitles ya viene con Orbital y tu Torrentio
+    # pasa al de Orbital (corte S3), con sus opciones y su clave.
+    assert done == {"added": 2, "kept": 1, "skipped": 2}
+    assert lst.source == "own" and lst.revision == 1 and lst.imported_at and keys["rd"] == "KEY"
     names = [(e.name, e.origin) for e in lst.entries()]
-    assert names == [("OpenSubtitles", "orbital"), ("Torrentio RD", "stremio"), ("ThePirateBay+", "stremio"), ("Local Files", "stremio")]
+    assert names == [("Torrentio", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio"), ("Local Files", "stremio")]
+    assert lst.urls()[0] == TORRENTIO  # la misma dirección: tus versiones no cambian
+    assert "KEY" not in str(lst.store[addon_list.LIST_KEY]["entries"])  # la dirección con tu clave no se guarda
     local = next(e for e in lst.entries() if e.url == LOCAL)
     assert local.only_on == "tv" and local.on("tv") and not local.on("iphone")  # Archivos de la TV: solo en la TV
 
@@ -84,14 +93,32 @@ def test_con_tu_lista_ya_no_se_le_pregunta_a_tu_cuenta(monkeypatch):
     manifests = {TORRENTIO: {"name": "Torrentio", "resources": ["stream"], "types": ["movie"]},
                  addon_list.OPENSUBTITLES: {"name": "OpenSubtitles", "resources": ["subtitles"], "types": ["movie"]}}
     monkeypatch.setattr(addons, "fetch_json", lambda url, timeout=0: manifests[url])
-    lst = AddonList(Store())
+    lst, _ = keyed()
     lst.import_from_stremio([("Torrentio", TORRENTIO, None)])
     registry = addons.AddonRegistry(Account(), auth=lambda: "key", listing=lst)
-    assert [a.name for a in registry.addons()] == ["OpenSubtitles", "Torrentio"] and Account.asked == 0
+    assert [a.name for a in registry.addons()] == ["Torrentio", "OpenSubtitles"] and Account.asked == 0
     lst.set_source("stremio")
     registry.forget()
     registry.addons()
     assert Account.asked == 1  # «Volver a los de Stremio»: como antes
+
+
+def test_el_torrentio_que_ya_habias_traido_pasa_al_de_orbital_y_sus_opciones_se_cambian_aqui():
+    keys = {"rd": "KEY"}
+    store = Store()
+    store.set(addon_list.LIST_KEY, {"source": "own", "entries": [
+        {"id": "opensubtitles", "origin": "orbital", "name": "OpenSubtitles", "order": 0, "template": "opensubtitles"},
+        {"id": "u1", "origin": "stremio", "name": "Torrentio RD", "order": 1, "url": TORRENTIO, "enabled": {"tv": True}},
+        {"id": "u2", "origin": "stremio", "name": "ThePirateBay+", "order": 2, "url": TPB, "enabled": {"tv": True}}]})
+    lst = AddonList(store, key=lambda: keys.get("rd"))
+    assert lst.adopt_torrentio() and not lst.adopt_torrentio()  # una sola vez
+    assert [e.name for e in lst.entries()] == ["OpenSubtitles", "Torrentio", "ThePirateBay+"]  # en su lugar
+    assert lst.urls() == [addon_list.OPENSUBTITLES, TORRENTIO, TPB]
+    mine = lst.set_options({**lst.torrentio().options, "qualityfilter": ["cam"], "limit": 5, "nada": 1})
+    assert mine.address == "https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=cam|limit=5|realdebrid=KEY/manifest.json"
+    assert "nada" not in mine.options
+    lst.import_from_stremio([("Torrentio RD", TORRENTIO, None)])  # «Volver a traer» no pisa lo que cambiaste aquí
+    assert lst.torrentio().options["limit"] == 5
 
 
 def test_un_complemento_que_falla_dos_veces_se_salta_y_se_reintenta_cada_vez_mas_tarde():
@@ -158,12 +185,20 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
     watch = Catalog(cfg, FakeLauncher(), credentials=Credentials(tmp_path / "secrets.json"), stremio_client=Account()).watch
     watch.credentials.set("stremio_auth_key", "clave")
     assert watch.addon_status()["source"] == "stremio"
-    assert watch.import_addons() == {"added": 2, "kept": 0, "skipped": 1}
+    assert watch.import_addons() == {"added": 1, "kept": 1, "skipped": 1}
     status = watch.addon_status()
-    assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["OpenSubtitles", "Torrentio RD", "Local Files"]
-    torrentio = status["entries"][1]["id"]
-    assert not watch.change_addon(torrentio, "off")["entries"][1]["on"]
-    gone = watch.change_addon(torrentio, "remove")["removed"]
-    assert gone["url"] == TORRENTIO and len(watch.addon_status()["entries"]) == 2
-    assert [e["name"] for e in watch.restore_addon(torrentio)["entries"]] == ["OpenSubtitles", "Torrentio RD", "Local Files"]
+    # Tu Torrentio pasó al de Orbital, con sus opciones y tu clave (corte S3).
+    assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["Torrentio", "OpenSubtitles", "Local Files"]
+    assert watch.credentials.get("realdebrid_token") == "KEY" and status["entries"][0]["options"]["sort"] == "seeders"
+    assert not status["entries"][0]["needs_key"] and watch.addon_list.urls()[0] == TORRENTIO
+    local = status["entries"][2]["id"]
+    assert not watch.change_addon(local, "off")["entries"][2]["on"]
+    gone = watch.change_addon(local, "remove")["removed"]
+    assert gone["url"] == LOCAL and len(watch.addon_status()["entries"]) == 2
+    assert [e["name"] for e in watch.restore_addon(local)["entries"]] == ["Torrentio", "OpenSubtitles", "Local Files"]
+    changed = watch.set_torrentio({"language": ["latino", "klingon"], "qualityfilter": ["cam"], "sort": "seeders", "limit": 5,
+                                   "sizefilter": "10gb,2gb", "debridoptions": ["nodownloadlinks"]})
+    assert changed["previous"]["sort"] == "seeders"  # para «Deshacer»
+    assert watch.addon_list.urls()[0] == ("https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=cam|limit=5|"
+                                          "sizefilter=10GB,2GB|debridoptions=nodownloadlinks|realdebrid=KEY/manifest.json")
     assert watch.set_addon_source("stremio")["source"] == "stremio"

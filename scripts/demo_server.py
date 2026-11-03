@@ -320,6 +320,7 @@ def demo_debrid(catalog) -> None:
 
     watch, now = catalog.watch, time.time()
     problem = os.environ.get("ORBITAL_DEMO_RD") or None
+    watch.credentials.set("realdebrid_token", "DEMODEMO3F2A")  # el Torrentio de Orbital se arma con ella (corte S3)
     watch.rd_token = lambda: "DEMODEMO3F2A"
     watch.rd.token = watch.rd_token
     watch.rd.watch = lambda: None  # nada le pregunta a Real-Debrid

@@ -17,12 +17,15 @@ import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, field
 
+from . import torrentio
+
 LIST_KEY = "addon_list"
 DEVICE = "tv"
 OPENSUBTITLES = "https://opensubtitles-v3.strem.io/manifest.json"
-# Lo que viene con Orbital (como AddonTemplates del iPhone). Torrentio y Comet se arman con tu clave de Real-Debrid:
-# llegan con S2; mientras, tu Torrentio es el traído de Stremio.
-TEMPLATES = {"opensubtitles": {"name": "OpenSubtitles", "url": OPENSUBTITLES, "default": True}}
+# Lo que viene con Orbital (como AddonTemplates del iPhone). Torrentio se arma con tus opciones y tu clave de Real-Debrid
+# (corte S3): su dirección no se guarda, se arma cada vez. Si traes uno de tu Stremio, sus opciones pasan a este.
+TEMPLATES = {"torrentio": {"name": "Torrentio", "url": None, "default": True},
+             "opensubtitles": {"name": "OpenSubtitles", "url": OPENSUBTITLES, "default": True}}
 # Lo que Orbital ya usa por su cuenta: traerlo como complemento pediría todo dos veces (y apagarlo rompería las fichas).
 SKIP_IDS = ("com.linvo.cinemeta", "org.stremio.local")
 SKIP_HOSTS = ("v3-cinemeta.strem.io", "cinemeta.strem.io")
@@ -41,9 +44,12 @@ class Entry:
     only_on: str | None = None  # «tv»: vive en esta computadora (Archivos de la TV)
     options: dict | None = None
     extra: dict = field(default_factory=dict)
+    built: str | None = field(default=None, repr=False)  # la dirección de Torrentio con tu clave: nunca se guarda
 
     @property
     def address(self) -> str | None:
+        if self.template == "torrentio":
+            return self.built
         return TEMPLATES[self.template]["url"] if self.template in TEMPLATES else self.url
 
     def on(self, device: str = DEVICE) -> bool:
@@ -74,10 +80,13 @@ def host(url: str) -> str:
 class AddonList:
     """La lista y sus cambios. `store` es el llavero de la consola (credentials.Credentials o un dict en pruebas)."""
 
-    def __init__(self, store, legacy: Callable[[], Iterable[str]] = lambda: ()) -> None:
+    def __init__(self, store, legacy: Callable[[], Iterable[str]] = lambda: (),
+                 key: Callable[[], str | None] = lambda: None, on_key: Callable[[str], None] = lambda key: None) -> None:
         self.store = store
         self.legacy = legacy  # los que agregaste con `orbital stremio addon add` (antes de S1): se traen como de Stremio
-        self._lock = threading.Lock()
+        self.key = key  # tu clave de Real-Debrid (la de la consola): con ella se arma Torrentio
+        self.on_key = on_key  # la clave que venía en un Torrentio traído, para la consola si todavía no tiene
+        self._lock = threading.RLock()
 
     # --- leer ----------------------------------------------------------------------------------------------------
     def _raw(self) -> dict:
@@ -102,12 +111,20 @@ class AddonList:
         out = []
         for item in self._raw().get("entries") or []:
             entry = entry_from(item)
-            if entry and entry.address:
+            if entry and (entry.address or entry.template in TEMPLATES):
                 out.append(entry)
-        if not any(e.template == "opensubtitles" for e in out):  # lo de Orbital siempre está (apagado o prendido)
-            out.append(Entry(id="opensubtitles", origin="orbital", name="OpenSubtitles", template="opensubtitles",
-                             order=len(out)))
+        for ident, template in TEMPLATES.items():  # lo de Orbital siempre está (apagado o prendido)
+            if not any(e.template == ident for e in out):
+                out.append(Entry(id=ident, origin="orbital", name=template["name"], template=ident, order=len(out)))
+        key = self.key()
+        for entry in out:
+            if entry.template == "torrentio":
+                entry.options = entry.options if entry.options is not None else dict(torrentio.RECOMMENDED)
+                entry.built = torrentio.manifest_url(entry.options, key)
         return sorted(out, key=lambda e: e.order)
+
+    def torrentio(self) -> Entry:
+        return next(e for e in self.entries() if e.template == "torrentio")
 
     def urls(self, device: str = DEVICE) -> list[str]:
         """Las direcciones prendidas en este aparato, en su orden (lo que AddonRegistry pide)."""
@@ -119,8 +136,15 @@ class AddonList:
         removed = [*data.get("removed", []), *extra.pop("removed", [])]
         for i, entry in enumerate(sorted(entries, key=lambda e: e.order)):
             entry.order = i
+        saved = []
+        for e in entries:
+            item = asdict(e)
+            item.pop("built", None)
+            if e.origin == "orbital":
+                item["url"] = None  # la dirección de lo de Orbital (con tu clave) se arma, no se guarda
+            saved.append(item)
         self.store.set(LIST_KEY, {**data, **extra, "revision": self.revision + 1, "changed_at": time.time(),
-                                  "changed_by": DEVICE, "entries": [asdict(e) for e in entries],
+                                  "changed_by": DEVICE, "entries": saved,
                                   "removed": list(dict.fromkeys(r for r in removed if isinstance(r, str)))})
 
     def import_from_stremio(self, addons: list[tuple[str, str, dict | None]]) -> dict:
@@ -144,6 +168,10 @@ class AddonList:
                 if url == OPENSUBTITLES or (isinstance(ident, str) and ident.startswith("org.stremio.opensubtitles")):
                     skipped += 1  # ya viene con Orbital
                     continue
+                if torrentio.is_torrentio(url):  # tu Torrentio: sus opciones pasan al de Orbital (corte S3)
+                    self._adopt(entries, url)
+                    kept += 1
+                    continue
                 if url in by_url:
                     entry = by_url[url]
                     if name:
@@ -159,6 +187,45 @@ class AddonList:
                 added += 1
             self._save(entries, source="own", imported_at=time.time())
             return {"added": added, "kept": kept, "skipped": skipped}
+
+    def _adopt(self, entries: list[Entry], url: str, place: Entry | None = None) -> None:
+        """Un Torrentio de tu Stremio: el de Orbital toma sus opciones (si no las cambiaste aquí) y su lugar, y la clave
+        que traía queda como la de la consola si todavía no tiene. Arma la misma dirección: nada cambia en tus versiones."""
+        parsed = torrentio.parse(url)
+        if parsed is None:
+            return
+        options, key = parsed
+        mine = next(e for e in entries if e.template == "torrentio")
+        if not mine.extra.get("set_here"):
+            mine.options = options
+        if place is not None:
+            mine.order = place.order
+            mine.enabled = dict(place.enabled)
+        if key and not self.key():
+            self.on_key(key)
+
+    def adopt_torrentio(self) -> bool:
+        """Al arrancar: los Torrentio que ya habías traído de Stremio pasan al de Orbital (corte S3). True si cambió algo."""
+        with self._lock:
+            entries = self.entries()
+            brought = [e for e in entries if e.origin == "stremio" and e.url and torrentio.is_torrentio(e.url)]
+            if not brought:
+                return False
+            for old in brought:
+                self._adopt(entries, old.url or "", place=old if old is brought[0] else None)
+                entries.remove(old)
+            self._save(entries)
+            return True
+
+    def set_options(self, options: dict) -> Entry:
+        """Las opciones de Torrentio de Orbital (Ajustes › Complementos › Torrentio): se guardan al cambiarlas."""
+        with self._lock:
+            entries = self.entries()
+            mine = next(e for e in entries if e.template == "torrentio")
+            mine.options = {k: v for k, v in options.items() if k in (*torrentio.ORDER, "verbatim")}
+            mine.extra = {**mine.extra, "set_here": True}
+            self._save(entries)
+            return self.torrentio()
 
     def set_enabled(self, ident: str, on: bool, device: str = DEVICE) -> Entry:
         with self._lock:

@@ -98,6 +98,15 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
         except KeyError as exc:
             raise HTTPException(404, "Ya no se puede deshacer") from exc
 
+    @r.post("/api/addons/torrentio")
+    def torrentio_options(body: dict, request: Request) -> dict:
+        """Ajustes › Complementos › Torrentio (corte S3): tus opciones; se guardan al cambiarlas."""
+        local_only(request)
+        options = body.get("options")
+        if not isinstance(options, dict):
+            raise HTTPException(422, "Faltan las opciones de Torrentio")
+        return watch.set_torrentio(options)
+
     @r.post("/api/addons/source")
     def source(body: SourceRequest, request: Request) -> dict:
         local_only(request)
