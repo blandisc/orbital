@@ -107,6 +107,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                                                   "infoHash": .string(Self.demoTorrent), "fileIdx": 1]]
             return HTTPResponse(status: 200, data: JSON.object(["streams": .array(found)]).serialized())
         }   // tendencia, popular, búsqueda y la crítica (Trakt y MDBList)
+        if let found = Demo.torrentioDemo(url) { return found }   // Torrentio con tus opciones (T9), sin salir a internet
         // La calificación de la comunidad de Trakt (la ficha la enseña con su logo junto a IMDb y TMDB).
         if url.host == "api.trakt.tv", url.path.hasSuffix("/ratings") { return HTTPResponse(status: 200, data: JSON.object(["rating": .double(8.4), "votes": 52_310]).serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
