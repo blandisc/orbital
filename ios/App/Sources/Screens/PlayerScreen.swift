@@ -40,7 +40,8 @@ final class PlayerHolder {
         model.subtitleOffsets = SubtitleOffsets(services.kv)   // la sincronía de cada versión (antes no se conectaba y se perdía)
         model.ownSource = { videoID, preferred in await library.source(videoID, purpose: .watch, preferring: preferred) }   // Mi media: tu copia primero
         let debrid = services.debrid
-        model.debridTrouble = { await debrid.refreshAfterTrouble() }   // Torrentio dijo «RD error»: se le pregunta ya a Real-Debrid (B-P1-1)
+        model.debridTrouble = { await debrid.refreshAfterTrouble() }
+        model.debridSaved = { debrid.saved }   // Torrentio dijo «RD error»: se le pregunta ya a Real-Debrid (B-P1-1)
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
             Task {

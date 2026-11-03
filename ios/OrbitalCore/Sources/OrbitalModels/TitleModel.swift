@@ -1,5 +1,6 @@
 import Foundation
 import OrbitalCore
+import OrbitalAddons
 
 public struct EpisodeRow: Equatable, Identifiable {
     public var id: String                  // el video id
@@ -72,6 +73,9 @@ public final class TitleModel: ObservableModel {
     public private(set) var recommendedLanguage: String? { didSet { changed() } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
+    /// Por qué no hay qué ver, si se sabe algo mejor que «no hay» (D5): «Tu Real-Debrid venció» con «Renovar», «No tienes
+    /// complementos prendidos»…; nil si hay versiones o no se sabe.
+    public private(set) var unavailableCause: UnavailableCause? { didSet { if oldValue != unavailableCause { changed() } } }
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
@@ -218,11 +222,26 @@ public final class TitleModel: ObservableModel {
                 ?? first
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
             sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
+            unavailableCause = sourceCheck == .none ? await cause(videoID: videoID, language: prefs.wanted) : nil
         } catch {
             // Sin red puede fallar antes de preguntarle a los complementos (al leer cuáles tienes): también es «sin conexión»
             // (antes se quedaba «Buscando versión…» para siempre).
             if !Task.isCancelled { sourceCheck = error is StreamFinderError || Degraded.isOffline(error) || !services.isOnline() ? .offline : .unknown }
+            // Hay internet y ningún complemento contestó: son ellos (la causa 8), no tu conexión.
+            unavailableCause = sourceCheck == .offline && services.isOnline() ? .addonsOffline : nil
         }
+    }
+
+    /// La causa en el orden de la tabla común: tu cuenta (preguntándole ya a Real-Debrid si Torrentio dijo «RD error»),
+    /// complementos apagados y lo que dijo Torrentio en lugar de versiones.
+    private func cause(videoID: String, language: String) async -> UnavailableCause? {
+        let notices = await services.finder.notices(kind: kind, videoID: videoID)
+        let health: DebridHealth? = notices.contains(where: \.aboutTheAccount) ? await services.debrid.refreshAfterTrouble() : nil
+        let account = UnavailableCause.Account.from(health, saved: services.debrid.saved, now: Date())
+        if let byAccount = UnavailableCause.first(notice: nil, account: account, language: language) { return byAccount }
+        let list = services.addonList
+        if list.isConfigured, !list.installed.contains(where: { $0.enabled && $0.resources.contains("stream") }) { return .noAddonsOn }
+        return UnavailableCause.first(notice: notices.first(where: \.aboutTheAccount) ?? notices.first, account: account, language: language)
     }
 
     /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.

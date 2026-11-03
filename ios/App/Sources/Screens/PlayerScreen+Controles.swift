@@ -20,6 +20,10 @@ extension PlayerScreen {
                               chooseVersion: model.sourceChoices.count > 1 ? { openDock(nil, version: true) } : nil,
                               online: env.isOnline,
                               openDownloads: { Task { await close(); env.openTab = AppEnvironment.downloadsTab } },
+                              cause: model.cause,
+                              renew: { UIApplication.shared.open(env.services.debrid.provider.renewURL) },   // en el navegador
+                              openSettings: { Task { await close(); env.ui.openSettings = true } },
+                              uiLanguage: env.services.appSettings.uiLanguage,
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:

@@ -36,6 +36,16 @@ final class RealDebridRetryTests: XCTestCase {
         XCTAssertEqual(rig.model.lastNotice, .access)
         XCTAssertEqual(asked.value, 1, "se le preguntó a Real-Debrid")
         XCTAssertEqual(rig.model.debridHealth, .status(expired))
+        XCTAssertEqual(rig.model.cause, .debridExpired, "el reproductor dice «Tu Real-Debrid venció» con «Renovar»")
+    }
+
+    func testABlockedFileSaysRealDebridDidNotLetIt() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [
+            .object(["name": "Torrentio\n[RD download] 1080p", "title": "x", "url": "https://torrentio.strem.fun/videos/failed_infringement_v3.mp4"])]]
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.model.failure, .noSources)
+        XCTAssertEqual(rig.model.cause, .debridRefused)
     }
 
     func testAVersionAlreadyAskedForIsNotAskedForAgain() async throws {
@@ -50,6 +60,7 @@ final class RealDebridRetryTests: XCTestCase {
         await rig.model.retry()
         XCTAssertEqual(rig.engine.loads.count, 1, "«Reintentar» no la vuelve a pedir")
         XCTAssertEqual(rig.model.lastNotice, .downloading, "dice que ya está pedida")
+        XCTAssertEqual(rig.model.cause, .notInDebrid(language: "es"))
     }
 }
 

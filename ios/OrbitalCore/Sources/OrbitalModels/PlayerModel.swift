@@ -149,6 +149,11 @@ public final class PlayerModel: ObservableModel {
     public var debridTrouble: (@Sendable () async -> DebridHealth)?
     /// Lo que contestó Real-Debrid la última vez que hubo un problema con tu cuenta (para decir «venció», «sin Premium»…).
     public internal(set) var debridHealth: DebridHealth? { didSet { if oldValue != debridHealth { changed() } } }
+    /// Lo último que se sabe de tu Real-Debrid sin preguntar (la app pone `services.debrid.saved`).
+    public var debridSaved: (@Sendable () -> DebridStatus?)?
+    /// El idioma que se buscaba («es-419»), para decir «de preferencia en latino».
+    var wantedLanguage = ""
+
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
     public internal(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
     /// Ya corre de verdad: desde que sonó avanzó `startupSettleSeconds` (o lo pausaste). El motor dice «suena» con casi nada en
@@ -353,6 +358,7 @@ public final class PlayerModel: ObservableModel {
             return
         }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
+        wantedLanguage = langs.prefs.wanted
         while true {
             let found: Source?
             if request.ownCopy, ownAttempts < Self.maxOwnAttempts, let own = await ownSource?(request.videoID, request.sourceIndex) {
@@ -376,6 +382,9 @@ public final class PlayerModel: ObservableModel {
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
                 Self.note("versiones encontradas: \(sourceChoices.count)")
                 await noteTorrentioNotices(await finder.notices(kind: request.kind, videoID: request.videoID), generation: mine)
+                // Real-Debrid acaba de decir que tu cuenta no sirve (venció, sin Premium, clave vieja): ninguna versión va a
+                // abrir, así que se dice ya en vez de probarlas (cada una sería otro aviso de Torrentio).
+                if mine == generation, debridHealth != nil, let blocked = accountCause { return fail(blocked.title(), .noSources) }
                 if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
@@ -416,26 +425,6 @@ public final class PlayerModel: ObservableModel {
                 acceptingSnapshots = false
             }
         }
-    }
-
-    /// Las que quedan por probar en un reintento (las que arrancan al instante y no han fallado).
-    var remainingInstant: Int { sourceChoices.filter { $0.instant && !failedSources.contains($0.index) }.count }
-
-    /// «Probando otra versión (2 de 3)»: el intento que sigue y cuántos habrá en total, contando solo las que se van a
-    /// probar (las que arrancan al instante, hasta `maxSourceRetries + 1`). Así el número del aviso es el de verdad.
-    func triedAnother() -> PlayerNotice {
-        let total = min(PlaybackRules.maxSourceRetries + 1, failedSources.count + max(1, remainingInstant))
-        return .triedAnotherSource(attempt: min(failedSources.count + 1, total), of: total)
-    }
-
-    /// Lo que Torrentio mandó en lugar de versiones: si es de tu cuenta («RD error», sin acceso), se le pregunta ya a
-    /// Real-Debrid (lo guardado puede decir «Premium» el día que venció, B-P1-1).
-    func noteTorrentioNotices(_ notices: [StreamNotice], generation mine: Int) async {
-        guard let first = notices.first(where: \.aboutTheAccount) ?? notices.first else { return }
-        lastNotice = first
-        guard first.aboutTheAccount, let debridTrouble else { return }
-        let health = await debridTrouble()
-        if mine == generation { debridHealth = health }
     }
 
     /// El segundo donde empezar. Si Trakt solo dio un porcentaje (sin duración conocida) se empieza en 0 y se busca ese punto

@@ -131,3 +131,26 @@ final class TorrentioNoticeTests: XCTestCase {
         XCTAssertEqual([cached.instant, download.instant, direct.instant], [true, false, true])
     }
 }
+
+/// D5/R1: la causa sale en el orden de la tabla común con la TV, con sus textos y una sola salida.
+final class UnavailableCauseTests: XCTestCase {
+    func testOrderTextsAndActions() {
+        XCTAssertEqual(UnavailableCause.first(notice: .infringing, account: .expired, language: "es-419"), .debridExpired, "tu cuenta va primero")
+        XCTAssertEqual(UnavailableCause.first(notice: nil, account: .free, language: "en"), .noPremium)
+        XCTAssertEqual(UnavailableCause.first(notice: .access, account: .invalidKey, language: "en"), .reconnectDebrid)
+        XCTAssertEqual(UnavailableCause.first(notice: .infringing, account: .ok, language: "en"), .debridRefused)
+        XCTAssertEqual(UnavailableCause.first(notice: .access, account: .ok, language: "en"), .debridRefused, "sin acceso con la cuenta bien: no lo dejó")
+        XCTAssertEqual(UnavailableCause.first(notice: .downloading, account: .unknown, language: "es-419"), .notInDebrid(language: "es-419"))
+        XCTAssertNil(UnavailableCause.first(notice: nil, account: .ok, language: "en"), "sin nada mejor: el mensaje de siempre")
+        XCTAssertEqual(UnavailableCause.debridExpired.title(), "Tu Real-Debrid venció")
+        XCTAssertEqual(UnavailableCause.debridExpired.action, .renew)
+        XCTAssertEqual(UnavailableCause.label(.renew), "Renovar")
+        XCTAssertNil(UnavailableCause.debridExpired.detail())
+        XCTAssertEqual(UnavailableCause.notInDebrid(language: "es-419").detail(languageName: { $0 == "es-419" ? "latino" : $0 }),
+                       "Lo puede bajar por ti, de preferencia en latino; tarda según cuánta gente lo comparte")
+        XCTAssertEqual(UnavailableCause.downloading(percent: 42).title(), "Bajando en Real-Debrid · 42 %")
+        XCTAssertEqual(UnavailableCause.noAddonsOn.detail(), "Ajustes › Complementos")
+        XCTAssertEqual(UnavailableCause.noAddonsOn.action, .settings)
+        XCTAssertEqual(UnavailableCause.debridRefused.action, .otherVersion)
+    }
+}

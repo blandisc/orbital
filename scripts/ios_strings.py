@@ -457,6 +457,18 @@ TRANSLATIONS = {
     # Real-Debrid y complementos, Fase 1 (3 nov 2026).
     "Venció hoy": "Expired today", "Tomé tu clave de Real-Debrid de tu Torrentio": "I took your Real-Debrid key from your Torrentio",
     "Real-Debrid todavía no lo tiene.": "Real-Debrid doesn't have it yet.",
+    # Las causas, en el orden de design/vocabulario.json › causas (la tabla común con la TV).
+    "Bajando en Real-Debrid · %lld %%": "Downloading on Real-Debrid · %lld %%", "Te aviso cuando esté listo": "I'll let you know when it's ready",
+    "Aún no se estrena · sale %@": "Not out yet · comes out %@", "Cuando salga, aparece aquí": "When it comes out, it shows up here",
+    "No puedo buscar versiones": "I can't search for versions", "Tu Real-Debrid venció": "Your Real-Debrid expired",
+    "Tu cuenta no tiene Premium": "Your account doesn't have Premium", "Vuelve a conectar Real-Debrid": "Reconnect Real-Debrid",
+    "Real-Debrid no lo dejó bajar": "Real-Debrid wouldn't let it download", "Prueba otra versión": "Try another version",
+    "No pude conectar con tus complementos": "I couldn't reach your add-ons", "Revisa Internet e inténtalo de nuevo": "Check your internet and try again",
+    "No tienes complementos prendidos": "You have no add-ons turned on", "Ajustes › Complementos": "Settings › Add-ons",
+    "Real-Debrid todavía no lo tiene": "Real-Debrid doesn't have it yet",
+    "Lo puede bajar por ti, de preferencia en %@; tarda según cuánta gente lo comparte": "It can download it for you, preferably in %@; how long depends on how many people share it",
+    "Nadie lo tiene todavía en internet": "Nobody has it online yet",
+    "Suele aparecer en unas horas o días · vuelve a buscar más tarde": "It usually shows up in hours or days · search again later",
     "Prueba otra versión o ábrela aquí": "Try another version or open it here",
     "Sin conexión: no pude buscar dónde verlo.": "Offline: I couldn't look for where to watch it.",
     "Sin versiones por ahora": "No versions yet",
@@ -1107,7 +1119,7 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta", "UnavailableCause")] + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalAddons/*.swift"))  # sus errores (y los recomendados) llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).

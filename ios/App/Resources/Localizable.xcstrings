@@ -30326,6 +30326,204 @@
           }
         }
       }
+    },
+    "Ajustes › Complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings › Add-ons"
+          }
+        }
+      }
+    },
+    "Aún no se estrena · sale %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not out yet · comes out %@"
+          }
+        }
+      }
+    },
+    "Bajando en Real-Debrid · %lld %%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading on Real-Debrid · %lld %%"
+          }
+        }
+      }
+    },
+    "Cuando salga, aparece aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When it comes out, it shows up here"
+          }
+        }
+      }
+    },
+    "Lo puede bajar por ti, de preferencia en %@; tarda según cuánta gente lo comparte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can download it for you, preferably in %@; how long depends on how many people share it"
+          }
+        }
+      }
+    },
+    "Nadie lo tiene todavía en internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody has it online yet"
+          }
+        }
+      }
+    },
+    "No pude conectar con tus complementos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't reach your add-ons"
+          }
+        }
+      }
+    },
+    "No puedo buscar versiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I can't search for versions"
+          }
+        }
+      }
+    },
+    "No tienes complementos prendidos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have no add-ons turned on"
+          }
+        }
+      }
+    },
+    "Prueba otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another version"
+          }
+        }
+      }
+    },
+    "Real-Debrid no lo dejó bajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid wouldn't let it download"
+          }
+        }
+      }
+    },
+    "Real-Debrid todavía no lo tiene": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid doesn't have it yet"
+          }
+        }
+      }
+    },
+    "Revisa Internet e inténtalo de nuevo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your internet and try again"
+          }
+        }
+      }
+    },
+    "Suele aparecer en unas horas o días · vuelve a buscar más tarde": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It usually shows up in hours or days · search again later"
+          }
+        }
+      }
+    },
+    "Te aviso cuando esté listo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll let you know when it's ready"
+          }
+        }
+      }
+    },
+    "Tu Real-Debrid venció": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Real-Debrid expired"
+          }
+        }
+      }
+    },
+    "Tu cuenta no tiene Premium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account doesn't have Premium"
+          }
+        }
+      }
+    },
+    "Vuelve a conectar Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnect Real-Debrid"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

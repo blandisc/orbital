@@ -56,8 +56,9 @@ enum Demo {
         case "perdido": env.notify("No cabe en el iPhone", detail: "Hacen falta 2400 MB y hay 1100 MB libres.", tone: .error, action: .downloads, actionTitle: "Descargas")
         case "neutral": env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
         // El aviso al tocar «Ver» con tu Real-Debrid vencido (`TitleView+Acciones`), sin buscar fuentes de verdad.
-        case "rd-vencido": env.notify(String(format: Strings.tr("Tu Real-Debrid venció hace %lld días", language: env.services.appSettings.uiLanguage), 2),
-                                      tone: .warn, actionTitle: "Renovar") {}
+        case "rd-vencido":
+            let cause = UnavailableCause.debridExpired
+            env.notify(cause.title(), tone: .warn, actionTitle: UnavailableCause.label(.renew)) {}
         default: break
         }
     }

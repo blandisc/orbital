@@ -21,6 +21,15 @@ struct PlayerFailureView: View {
     var online = true
     /// Sin internet, lo que sí se puede ver: tus descargas.
     var openDownloads: (() -> Void)? = nil
+    /// Por qué, cuando se sabe (D5, R1, R7): «Tu Real-Debrid venció», «Real-Debrid no lo dejó bajar»… Su texto sale de
+    /// `UnavailableCause` (la tabla común con la TV) y su única salida, de `action`.
+    var cause: UnavailableCause? = nil
+    /// «Renovar»: real-debrid.com en el navegador.
+    var renew: (() -> Void)? = nil
+    /// «Ajustes».
+    var openSettings: (() -> Void)? = nil
+    /// El idioma de la app (para los textos de la causa).
+    var uiLanguage = "es"
     let close: () -> Void
 
     var body: some View {
@@ -58,6 +67,15 @@ struct PlayerFailureView: View {
     /// Solo las salidas que sirven en ese caso.
     private var options: some View {
         VStack(spacing: DS.Space.s2) {
+            if let cause {
+                // Una sola salida, la de la causa; y cerrar.
+                if let action = cause.action, let perform = perform(action) {
+                    option(Text(verbatim: UnavailableCause.label(action, tr)), primary: true, action: perform)
+                    option(Text("Cerrar"), primary: false, action: close)
+                } else {
+                    option(Text("Cerrar"), primary: true, action: close)
+                }
+            } else {
             switch failure {
             case .noSources, .localFile:
                 option(Text("Cerrar"), primary: true, action: close)
@@ -71,12 +89,30 @@ struct PlayerFailureView: View {
                 if let infuse { option(Text("Abrir en Infuse"), primary: false, action: infuse) }
                 option(Text("Cerrar"), primary: false, action: close)
             }
+            }
         }
         .frame(maxWidth: DS.Size.cardMax)
     }
 
+    private func tr(_ key: String) -> String { Strings.tr(key, language: uiLanguage) }
+
+    private func perform(_ action: UnavailableCause.Action) -> (() -> Void)? {
+        switch action {
+        case .renew: renew
+        case .settings: openSettings
+        case .retry: retry
+        case .otherVersion: chooseVersion
+        }
+    }
+
     private var symbol: String {
-        switch failure {
+        switch cause {
+        case .debridExpired?, .noPremium?, .reconnectDebrid?: return "person.crop.circle.badge.exclamationmark"
+        case .debridRefused?: return "nosign"
+        case .notInDebrid?, .downloading?: return "arrow.down.circle"
+        default: break
+        }
+        return switch failure {
         case .noSources: "film.stack"
         case .noneWorked, .sourceDied: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90"
         case .network: online ? "exclamationmark.icloud" : "wifi.slash"
@@ -85,7 +121,8 @@ struct PlayerFailureView: View {
     }
 
     private var title: Text {
-        switch failure {
+        if let cause { return Text(verbatim: cause.title(tr)) }
+        return switch failure {
         case .noSources: Text("Todavía no hay dónde verlo")
         case .noneWorked: Text("No pude reproducirlo")
         case .sourceDied: Text("Se cortó el video")
@@ -95,7 +132,11 @@ struct PlayerFailureView: View {
     }
 
     private var message: Text {
-        switch failure {
+        if let cause, let detail = cause.detail(tr, languageName: { Streams.versionLanguageName($0, in: uiLanguage).lowercased() }) {
+            return Text(verbatim: detail)
+        }
+        if cause != nil { return Text(verbatim: "") }
+        return switch failure {
         case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
             : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
         case .noneWorked: Text("Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.")

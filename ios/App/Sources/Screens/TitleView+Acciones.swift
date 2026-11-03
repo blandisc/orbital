@@ -10,12 +10,10 @@ extension TitleView {
     func play(_ model: TitleModel) {
         switch model.sourceCheck {
         case .none:
-            // Si tu Real-Debrid venció, eso es lo que pasa (no «no hay fuentes»), con la salida a la mano.
-            if case .expired(let days)? = env.services.debrid.saved?.state(now: Date()) {
-                let renew = env.services.debrid.provider.renewURL
-                env.notify(String(format: Strings.tr(days == 1 ? "Tu Real-Debrid venció ayer" : "Tu Real-Debrid venció hace %lld días", language: env.services.appSettings.uiLanguage), days),
-                           tone: .warn, actionTitle: "Renovar") { UIApplication.shared.open(renew) }
-            } else if !env.services.debrid.hasToken {
+            // Si se sabe por qué (tu Real-Debrid venció, sin Premium, complementos apagados…), eso es lo que pasa, con su salida
+            // (la tabla común con la TV, `UnavailableCause`).
+            if let cause = model.unavailableCause { tell(cause, model) }
+            else if !env.services.debrid.hasToken {
                 // Sin tu cuenta de Real-Debrid en la app casi no hay versiones que se vean en el iPhone: esa es la salida.
                 env.notify("No encontré dónde verlo", detail: "Conecta tu Real-Debrid en Ajustes: sin él casi no hay versiones que se vean aquí",
                            tone: .warn, actionTitle: "Ajustes") { env.ui.openSettings = true }
@@ -23,13 +21,29 @@ extension TitleView {
                 env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
             }
         case .offline:
-            // Ningún complemento contestó: sin red es el iPhone; con red, son ellos (antes siempre decía «Sin internet»).
-            if env.isOnline {
-                env.notify("Tus complementos no contestan", detail: "Hay internet, pero ninguno respondió", tone: .warn, actionTitle: "Reintentar") { start(model, videoID: nil) }   // el reproductor vuelve a preguntar
-            } else {
+            // Ningún complemento contestó: sin red es el iPhone; con red, son ellos (la causa 8 de la tabla común).
+            if env.isOnline { tell(model.unavailableCause ?? .addonsOffline, model) }
+            else {
                 env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { start(model, videoID: nil) }
             }
         default: start(model, videoID: nil)
+        }
+    }
+
+    /// Una causa en un aviso: su título, su renglón y su única salida.
+    func tell(_ cause: UnavailableCause, _ model: TitleModel) {
+        let ui = env.services.appSettings.uiLanguage, tr = { (key: String) in Strings.tr(key, language: ui) }
+        let detail = cause.detail(tr, languageName: { Streams.versionLanguageName($0, in: ui).lowercased() })
+        let title = cause.title(tr)
+        guard let action = cause.action else { return env.notify(title, detail: detail, tone: .warn) }
+        let label = UnavailableCause.label(action, tr)
+        switch action {
+        case .renew:
+            let renew = env.services.debrid.provider.renewURL
+            env.notify(title, detail: detail, tone: .warn, actionTitle: label) { UIApplication.shared.open(renew) }   // en el navegador
+        case .settings: env.notify(title, detail: detail, tone: .warn, actionTitle: label) { env.ui.openSettings = true }
+        case .retry: env.notify(title, detail: detail, tone: .warn, actionTitle: label) { start(model, videoID: nil) }   // el reproductor vuelve a preguntar
+        case .otherVersion: env.notify(title, detail: detail, tone: .warn)
         }
     }
 
