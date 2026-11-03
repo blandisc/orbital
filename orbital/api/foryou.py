@@ -265,7 +265,7 @@ def router(d: Deps) -> APIRouter:
         except SERVICE_ERRORS:
             raise HTTPException(502, "No pude abrir este título. Revisa tu conexión e inténtalo de nuevo.")
         if not imdb:
-            raise HTTPException(404, "Este título no está en Stremio.")
+            raise HTTPException(404, "No encontré este título.")
         return {"imdb": imdb}
 
     @r.get("/decide")

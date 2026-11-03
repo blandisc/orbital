@@ -202,3 +202,15 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
     assert watch.addon_list.urls()[0] == ("https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=cam|limit=5|"
                                           "sizefilter=10GB,2GB|debridoptions=nodownloadlinks|realdebrid=KEY/manifest.json")
     assert watch.set_addon_source("stremio")["source"] == "stremio"
+
+
+def test_sin_cuenta_de_stremio_la_tv_usa_su_lista():
+    """Corte S4: una TV nueva funciona sin Stremio; con la cuenta conectada (y sin haber elegido) sigue como antes."""
+    linked = [False]
+    lst = AddonList(Store(), key=lambda: "KEY", stremio=lambda: linked[0])
+    assert lst.source == "own" and lst.urls()[0].startswith("https://torrentio.strem.fun/language=latino,spanish|")
+    linked[0] = True
+    assert lst.source == "stremio"
+    lst.set_source("own")
+    linked[0] = False
+    assert lst.source == "own"

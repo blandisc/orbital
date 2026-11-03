@@ -804,6 +804,9 @@ class Catalog:
             "emulators": systems,
             "esde": self.esde is not None,
             "stremio": self.stremio_linked,
+            # Películas y series sin Stremio (corte S4): Real-Debrid y tus complementos.
+            "realdebrid": bool(self.watch.rd_token()),
+            "addons": sum(1 for e in self.watch.addon_list.entries() if e.on() and e.address),
             "trakt": self.foryou.status()["trakt"],
             "player": player.find_mpv() is not None,
             "alexa": bool(self.config.server.token) and not self.config.server.token_is_ephemeral,

@@ -41,7 +41,7 @@ PRECEDENCE = {GONE: 6, READY: 5, REFUSED: 4, NO_PEERS: 3, DOWNLOADING: 2, QUEUED
 WORDS = {QUEUED: "En cola", NO_PEERS: "Sin gente que lo comparta", REFUSED: "Real-Debrid no lo dejó bajar",
          TOO_MANY: "Muchas descargas activas", READY: "Listo"}
 DETAILS = {QUEUED: "Real-Debrid lo recibió y espera turno", NO_PEERS: "Puede tardar días · Prueba otra versión",
-           REFUSED: "Prueba otra versión", TOO_MANY: "Cancela otro pedido en Tus pedidos", READY: "Ya arranca al instante"}
+           REFUSED: "Prueba otra versión", TOO_MANY: "Cancela otra descarga para hacer lugar", READY: "Ya arranca al instante"}
 
 HASH = re.compile(r"^[0-9a-f]{40}$")
 LOCAL_ONLY = ("notified", "nudged")  # nunca viajan: avisa solo el aparato que lo pidió

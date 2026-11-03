@@ -450,7 +450,8 @@ class Watch:
         self._saving = threading.Lock()
         # Tus complementos: los de tu cuenta de Stremio o, ya traídos, tu lista de Orbital (Ajustes › Complementos).
         self.addon_list = addon_list.AddonList(self.credentials, legacy=self.own_addons,
-                                               key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought)
+                                               key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought,
+                                               stremio=lambda: self.stremio_linked or bool(self.own_addons()))
         self.addon_list.adopt_torrentio()  # el Torrentio que ya habías traído de Stremio pasa al de Orbital (corte S3)
         self._removed_addons: dict[str, dict] = {}
         self.addons = addons.AddonRegistry(
@@ -490,8 +491,8 @@ class Watch:
     @property
     def has_addons(self) -> bool:
         """Hay a quién pedirle fuentes: tu lista de Orbital (con algo prendido), o tu cuenta de Stremio o complementos tuyos."""
-        if self.addons.own_list:
-            return bool(self.addons.local)
+        if self.addons.own_list:  # solo subtítulos (OpenSubtitles) no da versiones de nada
+            return any(e.on() and e.address and e.template != "opensubtitles" for e in self.addon_list.entries())
         return self.stremio_linked or bool(self.addons.local)
 
     # --- Real-Debrid propio («La TV sin Stremio», corte S2) ------------------

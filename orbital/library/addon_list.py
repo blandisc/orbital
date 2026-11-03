@@ -81,8 +81,10 @@ class AddonList:
     """La lista y sus cambios. `store` es el llavero de la consola (credentials.Credentials o un dict en pruebas)."""
 
     def __init__(self, store, legacy: Callable[[], Iterable[str]] = lambda: (),
-                 key: Callable[[], str | None] = lambda: None, on_key: Callable[[str], None] = lambda key: None) -> None:
+                 key: Callable[[], str | None] = lambda: None, on_key: Callable[[str], None] = lambda key: None,
+                 stremio: Callable[[], bool] = lambda: True) -> None:
         self.store = store
+        self.stremio = stremio  # hay cuenta de Stremio conectada: sin ella (y sin haber elegido), la lista es la tuya
         self.legacy = legacy  # los que agregaste con `orbital stremio addon add` (antes de S1): se traen como de Stremio
         self.key = key  # tu clave de Real-Debrid (la de la consola): con ella se arma Torrentio
         self.on_key = on_key  # la clave que venía en un Torrentio traído, para la consola si todavía no tiene
@@ -95,7 +97,12 @@ class AddonList:
 
     @property
     def source(self) -> str:
-        return "own" if self._raw().get("source") == "own" else "stremio"
+        """«own» o «stremio». Si nunca elegiste: tu cuenta de Stremio si está conectada (como antes) y, sin ella, tu lista
+        (corte S4: una TV nueva funciona sin cuenta de Stremio)."""
+        saved = self._raw().get("source")
+        if saved in ("own", "stremio"):
+            return saved
+        return "stremio" if self.stremio() else "own"
 
     @property
     def revision(self) -> int:

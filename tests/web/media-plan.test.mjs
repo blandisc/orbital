@@ -53,7 +53,7 @@ test("Películas y series: arriba lo tuyo como el Inicio del iPhone (Porque vist
   assert.equal(byId["curated:top10"].title, "Top 10 en Netflix · Series");
   assert.equal(byId["curated:top10"].ranked, true);
   assert.equal(byId["curated:lists-trakt"].title, "Listas de Trakt");
-  assert.equal(byId["curated:lists-stremio"].title, "Listas de Stremio");
+  assert.equal(byId["curated:lists-stremio"].title, "De tus complementos"); // corte S4: sin decir Stremio
   // El sello de origen, como el iPhone: Trakt rojo, Stremio morado, Orbital azul.
   assert.equal(byId["curated:recs"].seal, "trakt");
   assert.equal(byId["curated:fresh"].seal, "orbital");

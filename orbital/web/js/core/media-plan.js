@@ -248,7 +248,7 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const letterboxd = lists.filter((l) => l.id?.startsWith("letterboxd:")).map((l) => listCard(l, "letterboxd")).filter(Boolean);
   if (letterboxd.length) rows.push({ id: "curated:lists-letterboxd", title: "Listas de Letterboxd", group: "lists", cards: true, items: letterboxd });
   const stremio = lists.filter((l) => l.id === "mylist" || l.id?.startsWith("addon:")).map((l) => listCard(l, "stremio")).filter(Boolean);
-  if (stremio.length) rows.push({ id: "curated:lists-stremio", title: "Listas de Stremio", group: "lists", cards: true, items: stremio });
+  if (stremio.length) rows.push({ id: "curated:lists-stremio", title: "De tus complementos", group: "lists", cards: true, items: stremio });
 
   return rows.map((row) => ({ ...row, centered: CENTERED.has(row.group) }));
 }

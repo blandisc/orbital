@@ -733,10 +733,6 @@ function settingRow(key, settings, category) {
 function accountRows(settings) {
   return [
     debridRow(settings.realdebrid),
-    { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
-      ok: !!settings.stremio_linked, warn: !settings.stremio_linked,
-      command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-      hint: settings.stremio_linked ? "Seguir viendo y complementos" : "Para películas y series" },
     settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
       ok: !!settings.trakt.linked,
       command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
@@ -745,6 +741,11 @@ function accountRows(settings) {
         command: { type: "keys", service: "trakt" } },
     ...phoneRows(settings),
     onedriveRow(settings.onedrive),
+    // Corte S4: Stremio ya no hace falta; queda al final, opcional, para traer lo tuyo y como respaldo.
+    { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio · respaldo", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
+      ok: !!settings.stremio_linked,
+      command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
+      hint: settings.stremio_linked ? "Opcional: tus complementos y Mi lista, mientras no tengas Trakt" : "Opcional: para traer tus complementos y Mi lista" },
     settings.para_ti && { heading: true, label: "Claves de Explorar" },
     ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
   ].filter(Boolean);
@@ -768,9 +769,23 @@ export function settingsMissing(settings, { voice = null, now = Date.now() } = {
       hint: "Ni Alexa ni el iPhone han mandado nada: la falla está antes de la consola", value: "Ver qué ha oído", warn: true,
       command: { type: "voice-log" } });
   }
-  if (!settings.stremio_linked) {
-    missing.push({ icon: "trailer", label: "Stremio sin conectar", hint: "Sin Stremio no hay películas ni series", value: "Conectar", warn: true,
-      command: { type: "stremio-login" } });
+  const rd = settings.realdebrid;
+  if (rd && !rd.linked) {
+    missing.push({ icon: "bolt", label: "Real-Debrid sin conectar", hint: "Sin Real-Debrid los videos no arrancan al instante", value: "Conectar", warn: true,
+      command: { type: "rd-account" } });
+  } else if (rd?.problem && rd.problem !== "offline") {
+    missing.push({ ...debridRow(rd), label: debridRow(rd).value, value: "Ver" });
+  } else if (rd?.days != null && rd.days <= 7) {
+    missing.push({ icon: "bolt", label: rd.days === 1 ? "Tu Real-Debrid vence mañana" : `Tu Real-Debrid vence en ${rd.days} días`,
+      hint: "Renovar en real-debrid.com, desde tu celular", value: "Ver", warn: true, command: { type: "rd-account" } });
+  }
+  const addons = settings.addons?.entries;
+  if (addons && !addons.some((e) => e.on && e.template !== "opensubtitles")) {
+    missing.push({ icon: "addon", label: "No tienes complementos prendidos", hint: "Sin ellos no hay versiones de nada", value: "Ver", warn: true,
+      command: { type: "settings", page: "addons" } });
+  } else if (addons?.some((e) => e.template === "torrentio" && e.on && e.health?.state === "down")) {
+    missing.push({ icon: "addon", label: "Torrentio no contesta", hint: "Mientras, se salta · Ajustes › Complementos", value: "Ver", warn: true,
+      command: { type: "settings", page: "addons" } });
   }
   if (settings.trakt?.configured && !settings.trakt.linked) {
     missing.push({ icon: "spark", label: "Trakt sin conectar", hint: "Para tus listas, lo que viste y «Porque viste»", value: "Conectar", warn: true,
@@ -1327,7 +1342,7 @@ export function debridRequestMenu(req, { account = null } = {}) {
     options: theirs
       ? [{ icon: "info", label: "Es de otra cuenta de Real-Debrid", hint: "Solo se puede seguir o cancelar desde ese aparato", command: { type: "close" } }]
       : [
-        { icon: "close", label: "Cancelar", command: { type: "close" } },
+        { icon: "close", label: "Seguir esperando", command: { type: "close" } },
         { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel", hash: req.hash, title: req.title } },
       ],
   };
@@ -1629,11 +1644,37 @@ export function setupMenu(status = {}) {
       games
         ? { icon: "gamepad", label: "Ver mis juegos", value: `${games}`, command: { type: "section", id: "games" } }
         : { icon: "folder", label: "Dónde poner los juegos", hint: "Steam se encuentra solo. Emuladores: en Descargas, el Escritorio o C:\\Emuladores, con sus ROMs junto a ellos", command: { type: "stay" } },
-      status.stremio
-        ? { icon: "trailer", label: "Películas y series", value: "✓ Stremio", command: { type: "stay" } }
-        : { icon: "trailer", label: "Películas y series", value: "Conectar Stremio", command: { type: "stremio-login" } },
+      status.realdebrid && status.addons
+        ? { icon: "trailer", label: "Películas y series", value: "✓ Listas", command: { type: "movies-setup" } }
+        : { icon: "trailer", label: "Películas y series", value: "Configurar", hint: "Tres pasos, una sola vez", command: { type: "movies-setup" } },
       paraTiRow(status.trakt),
       { icon: "check", label: "Listo", command: { type: "close" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Películas y series, la primera vez (SS-7, corte S4): tres pasos, cada uno se puede dejar para después y se reabre
+ * desde «Tu consola» o Ajustes › Resumen. Sin Stremio: si ya lo tienes, «Traer de tu Stremio» va al final. */
+export function moviesSetupMenu(settings = {}) {
+  const rd = settings.realdebrid;
+  const ours = (settings.addons?.entries || []).filter((e) => e.origin === "orbital");
+  const on = ours.filter((e) => e.on).map((e) => e.name);
+  const phones = (settings.companion_devices || []).length > 0 || !!settings.companion_seen;
+  return {
+    title: "Películas y series",
+    subtitle: "Tres pasos, una sola vez. Cada uno se puede dejar para después.",
+    options: [
+      { icon: "bolt", label: "1 · Real-Debrid", hint: "Hace que los videos arranquen al instante", value: rd?.linked ? "✓ Conectada" : "Conectar",
+        ok: !!rd?.linked, command: { type: "rd-account" } },
+      { icon: "addon", label: "2 · Complementos", hint: on.length ? on.join(" y ") : "Los recomendados ya vienen armados",
+        value: on.length ? `✓ ${on.length} ${on.length === 1 ? "prendido" : "prendidos"}` : "Prender",
+        ok: on.length > 0, command: { type: "settings", page: "addons" } },
+      { icon: "spark", label: "3 · Trakt", hint: "Tu avance, lo visto y Mi lista", value: settings.trakt?.linked ? "✓ Conectada" : "Conectar",
+        ok: !!settings.trakt?.linked, command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
+      { icon: "phone", label: "Tu iPhone · opcional", hint: "Configuras ahí y la TV lo toma", value: phones ? "✓ Conectado" : "Conectar",
+        ok: phones, command: { type: "phone-link" } },
+      !settings.addons?.imported_at && { icon: "download", label: "¿Ya tienes Stremio?", hint: "Trae tus complementos una vez · opcional",
+        command: { type: settings.stremio_linked ? "addons-import" : "stremio-login" } },
     ].filter(Boolean),
   };
 }

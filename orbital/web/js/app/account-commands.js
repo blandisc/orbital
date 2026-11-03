@@ -1,6 +1,6 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -33,6 +33,12 @@ export function accountCommands({ UNDO_MS, addonMenu, api, applySettings, debrid
       sound.play("select");
       return ui.toast.show(command.source === "own" ? "Ahora salen de tu lista" : "Ahora salen de tu cuenta de Stremio",
         { detail: command.source === "own" ? "" : "Tu lista se quedó: regresas en Ajustes › Complementos" });
+    },
+    // Películas y series, la primera vez (SS-7, corte S4): con lo de ahora (Real-Debrid, complementos, Trakt, iPhone)
+    "movies-setup": async (command, context) => {
+      const settings = await api.settings().catch(() => state.settings);
+      applySettings(settings);
+      return openMenu(moviesSetupMenu(settings), nested(context));
     },
     // Ajustes › Cuentas › Real-Debrid y «Tus pedidos» (corte S2)
     "rd-account": async (command, context) => {
