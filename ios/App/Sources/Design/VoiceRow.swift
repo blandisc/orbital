@@ -113,7 +113,7 @@ struct VoiceRow: View {
     private var listening: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack {
-                Text(phase == .asking ? "Preguntándole a tu Orbital" : "Te escucho").recipe(.eyebrow).dsCaps()
+                Text(phase == .asking ? "Preguntándole a tu Orbital" : "Te escucho").recipe(.eyebrow)
                 Spacer(minLength: DS.Space.s2)
                 closeButton
             }
@@ -142,7 +142,7 @@ struct VoiceRow: View {
                     statusTile(ok: ok)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    if ok { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).dsCaps() }
+                    if ok { Text("✓ En la TV").recipe(.eyebrow, color: DS.success) }
                     Text(verbatim: reply?.speech.isEmpty == false ? reply!.speech : "Listo").recipe(.cardTitle).lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                     if let heard = reply?.heard, !heard.isEmpty { Text("Entendí: «\(heard)»").recipe(.caption, color: DS.textMuted).lineLimit(2) }
@@ -224,7 +224,7 @@ struct VoiceChoicesCarousel: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 0) {
-                    if reply.picked != nil { Text("✓ En la TV").recipe(.eyebrow, color: DS.success).dsCaps() }
+                    if reply.picked != nil { Text("✓ En la TV").recipe(.eyebrow, color: DS.success) }
                     else { Text("¿Cuál?").recipe(.cardTitle) }
                     if !reply.heard.isEmpty { Text("Entendí: «\(reply.heard)» · desliza para ver más").recipe(.caption, color: DS.textMuted).lineLimit(1) }
                 }
@@ -259,9 +259,9 @@ struct VoiceChoicesCarousel: View {
                 if !choice.subtitle.isEmpty { Text(verbatim: choice.subtitle).recipe(.footnote, color: DS.textMuted).lineLimit(1) }
                 Spacer(minLength: DS.Space.s2)
                 if playing == choice.id {
+                    // Lo que pasa ahora, en turquesa y sin cápsula teñida (2 nov 2026: el turquesa no pinta fondos).
                     Text("Poniéndose").font(DS.TextRecipe.label.font).foregroundStyle(DS.brandMoon)
                         .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
-                        .background(DS.brandMoon.opacity(DS.Opacity.selectedFill), in: Capsule())
                 } else {
                     Button { playing = choice.id; actions.choose(choice) } label: {
                         Label(reply.picked == nil ? "Poner" : "Poner esta", systemImage: "play.fill").font(DS.TextRecipe.label.font)

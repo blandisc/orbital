@@ -32,6 +32,9 @@ struct RemoteSheet: View {
     @State private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
     @State private var asking = false
+    /// La pregunta en camino a tu Orbital: la X y el botón de detener la cortan (sin conexión tardaba hasta 20 s en rendirse y
+    /// el renglón no dejaba salir).
+    @State private var askTask: Task<Void, Never>?
     @State private var showsGuide = false
     /// La respuesta abierta en el renglón de la voz (se pliega sola: `DS.Remote.replyStays`).
     @State private var replyOpen = false
@@ -151,7 +154,7 @@ struct RemoteSheet: View {
     /// respuesta se enseña y se dice en voz alta, en el idioma de la app.
     private func listen(_ model: TVNowModel) {
         if speech.listening { speech.finish(); return }
-        guard !asking else { return }
+        if asking { stopAsking(); return }   // el botón de detener mientras se espera la respuesta
         let language = env.services.appSettings.uiLanguage
         // El nombre de lo que se ve en la TV, para que el dictado lo escriba bien («descarga Shōgun»).
         let hints = ["Orbital"] + [model.now?.title, model.now?.channel].compactMap { $0 }
@@ -164,11 +167,12 @@ struct RemoteSheet: View {
     private func answer(_ model: TVNowModel, _ ask: @escaping @MainActor (VoiceAssistant) async -> VoiceAssistant.Outcome) {
         guard !asking else { return }
         let language = env.services.appSettings.uiLanguage
-        Task {
-            collapsing?.cancel(); issue = nil; lastAnswer = nil
-            asking = true; reply = nil
+        collapsing?.cancel(); issue = nil; lastAnswer = nil
+        asking = true; reply = nil
+        askTask = Task {
             let outcome = await ask(VoiceAssistant(services: env.services, tvNow: model))
-            asking = false
+            guard !Task.isCancelled else { return }   // la cancelaste: no se enseña ni se dice nada
+            asking = false; askTask = nil
             var shown = outcome.reply
             shown.speech = Strings.message(outcome.speech, language: language)
             // Una tecla («pausa» la atiende el iPhone) no tiene nada que enseñar: el renglón no se abre.
@@ -178,10 +182,19 @@ struct RemoteSheet: View {
             if outcome.continueHere, let now = model.now { onContinueHere(now) }
             if outcome.guide { showsGuide = true }
             // No llegó: qué tramo falló (iPhone → túnel → tu Orbital).
-            if !shown.ok { issue = await model.diagnoseConnection() }
+            if !shown.ok {
+                let found = await model.diagnoseConnection()
+                if replyOpen { issue = found }
+            }
             // Con varias, se queda abierto hasta que elijas o lo cierres; lo demás se pliega solo.
             if shown.choices.isEmpty && shown.ok { collapseLater() }
         }
+    }
+
+    /// Dejar de esperar la respuesta (la X o el botón de detener): el renglón vuelve a quieto al momento.
+    private func stopAsking() {
+        askTask?.cancel(); askTask = nil
+        asking = false; reply = nil; issue = nil
     }
 
     /// Mandar una frase tal cual (la pista, la guía, «otro»), como si la hubieras dicho.
@@ -368,7 +381,7 @@ struct RemoteSheet: View {
                             mic: { if voicePhase == .open { collapse() }; listen(model) },
                             guide: { showsGuide = true },
                             say: { say(model, $0) },
-                            close: { if speech.listening { speech.cancel() }; collapse(); if voicePhase != .idle { replyOpen = false } },
+                            close: { if speech.listening { speech.cancel() }; if asking { stopAsking() }; collapse(); if voicePhase != .idle { replyOpen = false } },
                             other: { say(model, "otro") },
                             episodes: { pickingEpisode = true },
                             // Otra de las varias: se pone en la TV y solo cambia su letrero (el carrusel se queda).

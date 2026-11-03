@@ -103,10 +103,9 @@ private struct ReleaseWhen {
         return Text(verbatim: airing.date.formatted(.dateTime.weekday(.wide).locale(locale)).capitalized(with: locale))
     }
 
-    /// Lo que va en el renglón de arriba de cada póster, corto para que todos midan igual: «Nuevo», la hora de hoy («21:00»),
-    /// «Ayer», «Mañana» o el día abreviado («Vie»).
+    /// Lo que va en el renglón de arriba de cada póster, corto para que todos midan igual: la hora de hoy («21:00»), «Hoy»,
+    /// «Ayer», «Mañana» o el día abreviado («Vie»). «Nuevo» no va aquí: es el listón del póster, como en Inicio.
     var label: Text {
-        if isNew { return Text("Nuevo") }
         if !isOut, calendar.isDate(airing.date, inSameDayAs: now) { return hour }
         if calendar.isDate(airing.date, inSameDayAs: now) { return Text("Hoy") }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(airing.date, inSameDayAs: yesterday) { return Text("Ayer") }
@@ -121,7 +120,7 @@ private struct ReleaseWhen {
     }
 }
 
-/// El punto: verde lo que ya salió (se puede ver), gris lo que viene.
+/// El punto del rótulo, como en la línea de Inicio: verde lo que ya salió (se puede ver), gris lo que viene.
 private struct ReleaseDot: View {
     var out: Bool
     /// Sobre el arte (el chico): lo que viene en papel, que el gris no se ve.
@@ -194,6 +193,7 @@ private struct ReleasesLine: View {
                 .fixedSize()
                 .frame(width: DS.Widget.releasePoster, alignment: .leading)
                 ReleasePoster(airing: airing).opacity(when.isOut ? 1 : DS.Opacity.dimmed)
+                    .overlay(alignment: .topLeading) { if when.isNew { DSCornerRibbon(text: "Nuevo", compact: true) } }
                 Text(verbatim: airing.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
                     .minimumScaleFactor(DS.Widget.labelShrink)
             }
@@ -218,9 +218,12 @@ private struct ReleasesSpotlight: View {
         if let airing = pick {
             let when = ReleaseWhen(airing: airing, now: entry.date, language: entry.language)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                HStack(spacing: DS.Space.s1) {
-                    ReleaseDot(out: when.isOut, onArt: true)
-                    (when.isNew ? Text("Nuevo") : Text("\(when.day) · \(when.hour)")).font(DS.font(.xs, weight: .semibold)).lineLimit(1)
+                // Lo nuevo lleva el listón en la esquina (el de Inicio); lo que viene, su punto y cuándo.
+                if !when.isNew {
+                    HStack(spacing: DS.Space.s1) {
+                        ReleaseDot(out: when.isOut, onArt: true)
+                        Text("\(when.day) · \(when.hour)").font(DS.font(.xs, weight: .semibold)).lineLimit(1)
+                    }
                 }
                 Spacer(minLength: 0)
                 Text(verbatim: airing.title).font(DS.font(.md, weight: .bold)).lineLimit(2)
@@ -241,6 +244,10 @@ private struct ReleasesSpotlight: View {
                     }
                     LinearGradient(stops: [.init(color: .clear, location: DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],   // ds-exception: el widget es otro programa y no trae ArtVeil
                                    startPoint: .top, endPoint: .bottom)
+                }
+                .overlay(alignment: .topLeading) {
+                    // El fondo no hereda el idioma del widget (salía «NEW»): se le pasa aquí.
+                    if when.isNew { DSCornerRibbon(text: "Nuevo").environment(\.locale, Locale(identifier: entry.language)) }
                 }
             }
         } else {

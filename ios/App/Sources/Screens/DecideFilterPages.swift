@@ -81,7 +81,7 @@ struct DecideMoreFilters: View {
     /// «Qué tan conocida» (los votos de TMDB, como en el filtro avanzado): se piden al elegir una y se recuerdan; hasta
     /// tenerlos todos, sin número.
     @ViewBuilder private func fame(_ m: DecideModel) -> some View {
-        PanelGroupTitle(title: "Qué tan conocida")
+        PanelGroupTitle(title: "Fama")
         if env.services.tmdb.configured {
             FlowChips {
                 ForEach([AdvancedFilter.Fame.gems, .classics, .niche, .blockbusters], id: \.self) { f in

@@ -23,5 +23,10 @@ final class LanguageFlagsTests: XCTestCase {
         XCTAssertEqual(LanguageFlags.flagged("Árabe", "ar"), "Árabe")
         XCTAssertEqual(LanguageFlags.withoutFlags(both), "Inglés + latino")
     }
-}
 
+    func testTheVersionLineKeepsOnlyTheFlagAndFallsBackToTheName() {
+        XCTAssertEqual(LanguageFlags.flagOnly("Latino", "es-419"), "🇲🇽")
+        XCTAssertEqual(LanguageFlags.flagOnly("Castellano", "es-ES"), "🇪🇸")
+        XCTAssertEqual(LanguageFlags.flagOnly("Árabe", "ar"), "Árabe", "sin bandera, el nombre: algo tiene que decir el idioma")
+    }
+}

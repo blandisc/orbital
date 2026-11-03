@@ -86,6 +86,11 @@ final class DesignTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(phone(.success), hex(background)), 4.5, "\(mode): el verde de «listo» se lee sobre \(background)")
             }
             XCTAssertGreaterThanOrEqual(DesignTokens.contrast(phone(.onSuccess), phone(.success)), 4.5, "\(mode): texto sobre el verde de «listo»")
+            // El turquesa de lo nuevo («Hoy», «Nuevo»): se lee sobre el fondo y la superficie, y el listón sobre él.
+            for background in [R.background, .surface] {
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(phone(.fresh), hex(background)), 4.5, "\(mode): el turquesa de lo nuevo se lee sobre \(background)")
+            }
+            XCTAssertGreaterThanOrEqual(DesignTokens.contrast(phone(.onFresh), phone(.fresh)), 4.5, "\(mode): texto sobre el turquesa de lo nuevo")
             // «Aumentar contraste»: cada texto contrasta más que en el modo normal y el fondo se separa más de la superficie.
             func high(_ role: R) -> String { mode == "dark" ? role.highContrastHex.dark : role.highContrastHex.light }
             for background in [R.background, .surface] {

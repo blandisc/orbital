@@ -7,7 +7,7 @@ public enum DesignTokens {
     /// Paleta única: los mismos valores que `orbital/web/styles/palette.json`.
     public static let palette: [String: String] = [
         "ink-1000": "#070708", "ink-950": "#0c0c0e", "ink-900": "#131316", "ink-850": "#18181c", "ink-800": "#1e1e23",
-        "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-200": "#cdcdd3", "paper": "#f5f4f0",
+        "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-250": "#babac1", "ink-200": "#cdcdd3", "paper": "#f5f4f0",
         "red-400": "#f0574d", "amber-300": "#f4c24d", "teal-300": "#5fd6c6",
         "pad-green": "#5cbf6d", "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
     ]
@@ -42,7 +42,7 @@ public enum DesignTokens {
             case .surface: (palette["ink-850"]!, "#ffffff")
             case .surfaceRaised: (palette["ink-800"]!, "#ebe9e3")
             case .label: (palette["paper"]!, "#111113")
-            case .secondaryLabel: (palette["ink-300"]!, "#5c5c64")
+            case .secondaryLabel: (palette["ink-250"]!, "#4c4c53")   // un paso más legible que ink-300 (2 nov 2026)
             case .tertiaryLabel: ("#868687", "#6b6b72")
             case .decorative: (palette["ink-500"]!, "#9a9aa1")
             case .primary: (palette["paper"]!, "#111113")
@@ -62,7 +62,7 @@ public enum DesignTokens {
             case .surface: (palette["ink-800"]!, "#ffffff")
             case .surfaceRaised: (palette["ink-700"]!, "#dddbd4")
             case .label: ("#ffffff", "#000000")
-            case .secondaryLabel: ("#d4d4da", "#3a3a40")
+            case .secondaryLabel: ("#dcdce1", "#34343a")
             case .tertiaryLabel: ("#b4b4bb", "#48484f")
             case .decorative: ("#6e6e76", "#85858c")
             case .primary: ("#ffffff", "#000000")
@@ -84,11 +84,17 @@ public enum DesignTokens {
         /// texto sobre él. En oscuro, el verde de la tecla A del mando; en claro, el mismo verde más oscuro y la letra en
         /// papel, para que se lea sobre el papel (antes era el verde del sistema con letra clara: ≈ 2:1).
         case success, onSuccess
+        /// Lo nuevo y lo de hoy («Hoy» y su línea en «Lo nuevo de lo tuyo», el listón «Nuevo», el «Nuevo» del Top 10): el
+        /// turquesa del puntito del logo de Orbital, la firma de la app (Fernando, 2 nov 2026, B4 y D3: antes era el verde de
+        /// «listo», un segundo acento junto al turquesa de los porqués). En claro, el mismo turquesa oscurecido para leerse.
+        case fresh, onFresh
 
         public var hex: (dark: String, light: String) {
             switch self {
             case .success: (palette["pad-green"]!, "#1f7a3a")
             case .onSuccess: (palette["ink-1000"]!, palette["paper"]!)
+            case .fresh: (palette["teal-300"]!, "#0b7a6e")
+            case .onFresh: (palette["ink-1000"]!, palette["paper"]!)
             }
         }
 
@@ -96,6 +102,8 @@ public enum DesignTokens {
             switch self {
             case .success: ("#86efac", "#14532d")
             case .onSuccess: ("#000000", "#ffffff")
+            case .fresh: ("#99f6e4", "#065a51")
+            case .onFresh: ("#000000", "#ffffff")
             }
         }
     }

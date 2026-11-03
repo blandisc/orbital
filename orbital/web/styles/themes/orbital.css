@@ -18,7 +18,7 @@
   --edge-hairline: inset 0 0 0 1px var(--color-hairline);
   --edge-strong: inset 0 0 0 1px var(--color-hairline-strong);
   --color-text: var(--palette-paper);
-  --color-text-muted: var(--palette-ink-300);
+  --color-text-muted: var(--palette-ink-250); /* un paso más claro: los datos en gris se leían poco (2 nov 2026) */
   --color-text-faint: rgba(255, 255, 255, .5); /* ≥ 4,5:1 (antes .18: el placeholder no se leía) */
   --color-text-faint-strong: rgba(255, 255, 255, .62);
   --color-decorative: var(--palette-ink-500); /* solo adornos, nunca texto que leer: la cifra grande del Top 10 */

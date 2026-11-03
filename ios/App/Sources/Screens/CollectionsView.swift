@@ -33,11 +33,11 @@ struct SectionSpy: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .id(section)
             .onGeometryChange(for: Bool.self) { proxy in
                 let frame = proxy.frame(in: .scrollView)
                 return frame.minY <= DS.Collections.spyLine && frame.maxY > DS.Collections.spyLine
             } action: { inside in if inside { active = section } }
+            .id(section)   // por fuera de todo: una lista perezosa solo encuentra (para saltar) el `id` de afuera
     }
 }
 

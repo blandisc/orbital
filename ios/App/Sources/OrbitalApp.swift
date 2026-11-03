@@ -18,6 +18,7 @@ struct OrbitalApp: App {
                 .environment(\.locale, env.uiLocale)
                 .onAppear { env.applyAppearance() }   // Ajustes › Apariencia (por omisión, la del iPhone), en la ventana
                 .tint(DS.primary)
+                .toggleStyle(.orbital)   // todo interruptor, prendido en turquesa (`DSSwitchStyle`)
                 .tracksWindowSize()   // el tamaño de la ventana para las pantallas (`WindowMetrics`)
                 .onAppear { AppWindows.applyMinimumSize() }   // la ventana no se achica más que un iPhone SE (Mac, iPad)
                 .onOpenURL { url in Task { await env.handle(url: url) } }

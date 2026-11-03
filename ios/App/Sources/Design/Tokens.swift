@@ -70,12 +70,17 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static let brandMoon = role(.brandMoon)
     /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
     static let good = role(.accent)
-    /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
-    static let switchOn = Color.green
-    /// Lo que ya está o ya salió («Hoy», el listón «Nuevo», «conectado», «Este va bien» de los subtítulos) y la letra sobre
+    /// Todo interruptor prendido de la app: el turquesa de la marca (Fernando, 2 nov 2026, J3: «prendido se ve turquesa;
+    /// apagado sigue gris»). Antes, el tinte de la app lo dejaba casi blanco con la bolita blanca y Ajustes usaba el verde.
+    /// Lo pone `DSSwitchStyle` en toda la app (`OrbitalApp`), no cada pantalla.
+    static let switchOn = brandMoon
+    /// Lo que ya está o salió bien («conectado», «Este va bien» de los subtítulos) y la letra sobre
     /// él: cambian con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
     static let success = role(.success)
     static let onSuccess = role(.onSuccess)
+    /// Lo nuevo y lo de hoy («Hoy», el listón «Nuevo», el «Nuevo» del Top 10): el turquesa del puntito del logo (2 nov 2026).
+    static let fresh = role(.fresh)
+    static let onFresh = role(.onFresh)
     static let warning = role(.warning)
     /// El azul de Orbital: el del puntito del logo (Fernando, 31 oct 2026). Los íconos de los rótulos de Para ti, el
     /// calendario y las horas de «Lo que ves».
@@ -147,7 +152,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     // MARK: Espacio y forma
     /// Los cuatro espacios de toda pantalla (Fernando, 31 oct 2026, decisión 2), medidos desde donde termina lo que se ve
-    /// (el pie de un póster y su reflejo cuentan): del título a lo suyo, entre subsecciones, entre secciones y al pie.
+    /// (el pie de un póster cuenta): del título a lo suyo, entre subsecciones, entre secciones y al pie.
     /// Arriba de cada pantalla, `titleToContent`. `DesignRulesTests.testScreensKeepTheLayoutRhythm` revisa que el primer contenedor de cada pantalla los use.
     enum Layout {
         static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s10, screenBottom = Space.s14
@@ -198,8 +203,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// |--------------|--------------|------------------------|----------------------------------------------------|
     /// | Pantalla     | (barra nativa) / `display` | largeTitle, negrita | «Para ti», «Buscar»; las cifras héroe         |
     /// | Título de hoja | `title`    | title, negrita         | `DSSheetHeader`                                    |
-    /// | Sección      | `groupLabel` | caption, negrita, MAYÚSCULAS | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
+    /// | Sección      | `groupLabel` | footnote, negrita      | `DSSectionHead(level: .section)` (pinta `DSChapterLabel`): agrupa varias cosas |
     /// | Subsección   | `section`    | title2, negrita        | `DSSectionHead` de una fila o estante, con su porqué |
+    /// | Subsección de descubrir | `sectionQuiet` | title3, negrita | en Inicio, las filas que no son tuyas (Sugerencias, Por lo que viste, Top 10): `DSSectionHead(quiet:)` |
     /// | Porqué       | `eyebrow`    | footnote, seminegrita, turquesa | solo arriba de una subsección o de una portada |
     /// | Pieza        | `cardTitle`  | headline               | el nombre en una tarjeta o renglón                 |
     /// | Cuerpo       | `body`       | body                   | lo que explica                                     |
@@ -210,14 +216,17 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// | Rótulo       | `label`      | footnote, seminegrita  | botones chicos, datos que resaltan                 |
     /// | Rótulo grande| `labelLarge` | subheadline, seminegrita | el valor de un control, un nombre en un renglón  |
     /// | Placa        | `badge`      | caption, negrita       | «4K», «Nuevo», cifras en una placa                 |
-    /// | Grupo        | `groupLabel` | caption, negrita       | el rótulo de un grupo (`DSGroupLabel`, en mayúsculas) |
+    /// | Grupo        | `groupLabel` | footnote, negrita      | el rótulo de un grupo (`DSGroupLabel`, en letra normal) |
     /// | Cifra        | `stat`       | largeTitle, gruesa, tabular | las cifras grandes de Lo que ves, el mazo     |
     enum TextRecipe {
         case display, title, section, cardTitle, body, secondary, footnote, caption, eyebrow, data
         /// Las que antes se armaban torciendo otra con `.weight` (D12): un rótulo o botón chico (`label`), uno mediano
-        /// (`labelLarge`), una placa (`badge`), el rótulo de un grupo (`groupLabel`, en mayúsculas con `DSGroupLabel`) y una
+        /// (`labelLarge`), una placa (`badge`), el rótulo de un grupo (`groupLabel`, con `DSGroupLabel`) y una
         /// cifra grande (`stat`, tabular).
         case label, labelLarge, badge, groupLabel, stat
+        /// Una subsección de descubrir en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): un paso abajo de
+        /// `section`, para que lo tuyo pese más (Fernando, 2 nov 2026, C5). Solo del iPhone: la TV no mezcla las dos cosas.
+        case sectionQuiet
         var font: Font {
             switch self {
             case .display: .system(.largeTitle, design: .default).weight(.bold)
@@ -232,7 +241,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
             case .data: .system(.footnote, design: .default).monospacedDigit()   // números tabulares, como `tabular-nums` en la TV
             case .label: .system(.footnote, design: .default).weight(.semibold)
             case .labelLarge: .system(.subheadline, design: .default).weight(.semibold)
-            case .badge, .groupLabel: .system(.caption, design: .default).weight(.bold)
+            case .badge: .system(.caption, design: .default).weight(.bold)
+            case .groupLabel: .system(.footnote, design: .default).weight(.bold)   // en letra normal desde el 2 nov 2026 (E3)
+            case .sectionQuiet: .system(.title3, design: .default).weight(.bold)
             case .stat: .system(.largeTitle, design: .default).weight(.heavy).monospacedDigit()
             }
         }
@@ -328,10 +339,13 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
     enum PlatformBadge { static let logo: CGFloat = 16, logoRadius = Radius.logo(16) }
     /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
-    /// centro (en cada eje, desde la esquina), su giro y el interletrado del texto en mayúsculas.
+    /// centro (en cada eje, desde la esquina) y el interletrado del texto en mayúsculas; el de siempre y el compacto (los
+    /// pósters de 50 pt del widget). Los dos con el mismo giro y el mismo brillo.
     enum Ribbon {
-        static let corner: CGFloat = 60, length: CGFloat = 104, center: CGFloat = 22
-        static let angle: Double = -45, tracking: CGFloat = 0.8, shine: Double = 0.28
+        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat }
+        static let regular = Size(corner: 60, length: 104, center: 22)
+        static let compact = Size(corner: 38, length: 66, center: 14)
+        static let angle: Double = -45, shine: Double = 0.28
     }
 
     enum Brand {

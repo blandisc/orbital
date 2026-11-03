@@ -82,12 +82,13 @@ struct HomeChannels: View {
                         // El «cachito»: la imagen del capítulo se acerca despacio, como si estuviera pasando.
                         .modifier(ChannelDrift(running: !reduceMotion && onScreen && scenePhase == .active))
                     ArtVeil(at: DS.HomeChannels.veilStart)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(verbatim: label(air.episode)).recipe(.badge, color: DS.onArtSecondary)
-                        Text(verbatim: air.episode.name.isEmpty ? name(channel.pick) : air.episode.name).recipe(.cardTitle).lineLimit(1)
+                    // Sobre la imagen, solo el nombre del capítulo; la serie y el dato van abajo, como en Seguir viendo
+                    // (Fernando, 2 nov 2026, D6: antes era al revés).
+                    if !air.episode.name.isEmpty {
+                        Text(verbatim: air.episode.name).recipe(.cardTitle).lineLimit(1)
+                            .onArt()
+                            .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s4)
                     }
-                    .onArt()
-                    .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s4)
                     DSProgress(fraction: air.progress).padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s2)
                 }
                 .overlay(alignment: .topLeading) {
@@ -96,10 +97,11 @@ struct HomeChannels: View {
                         .padding(DS.Space.s3).onArt()
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                HStack(alignment: .firstTextBaseline) {
-                    Text(verbatim: name(channel.pick)).recipe(.label).lineLimit(1)
-                    Spacer(minLength: DS.Space.s2)
-                    Text("quedan \(air.minutesLeft) min").recipe(.caption, color: DS.textMuted).monospacedDigit()
+                // La serie arriba y el capítulo con lo que queda abajo, igual que una tarjeta de Seguir viendo (`StillCard`).
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text(verbatim: name(channel.pick)).recipe(.cardTitle).lineLimit(1)
+                    DataLine(parts: progressFact(season: air.episode.season, episode: air.episode.episode, leftMinutes: air.minutesLeft,
+                                                 language: env.language).components(separatedBy: " · "))
                 }
             }
             .frame(width: DS.HomeChannels.width)

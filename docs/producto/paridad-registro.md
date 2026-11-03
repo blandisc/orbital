@@ -48,10 +48,15 @@ Cómo se mantiene:
 | Rótulo de sección en minúsculas y negrita («Tus consolas», IN-1, 2 nov) | **Pendiente (sesión del iPhone): su `DSChapterLabel` sigue en mayúsculas espaciadas** | Ya |
 | Pasada de unslop (Fernando, 2 nov): la cápsula de plataforma («N.º 1 en Netflix») de vidrio con el color solo en su logo; lo que no tiene arte, del color de su consola o plataforma | **Pendiente (sesión del iPhone): su PlatformBadge sigue siendo la cápsula de color, y sus tarjetas sin arte, grafito** | Ya |
 | Más limpio (Fernando, 2 nov, https://claude.ai/artifact/GzjGb9KCsQnxEiodBnsWG8): los redondos con el botón del mando en su esquina y sin su nombre debajo; sin la frase de Alexa fija; el origen de una fila con el logo de Trakt o Letterboxd en sus colores; la batería solo por debajo del 95 %; la ficha sin «Ver más», sin quién la hizo ni la línea técnica arriba (todo en «Detalles», con la sinopsis entera); sin el próximo estreno junto a «A continuación»; el botón de la ficha dice solo «Continuar» o «Ver» y, a su lado, una cápsula de vidrio con el idioma y la calidad («Y Inglés · 1080p · CC») que abre las versiones | Distinto a propósito: el iPhone no tiene botones del mando ni batería, y su ficha ya se arma por secciones | Ya |
+| Descargas, Buscar y la ficha (Fernando, 2 nov, canvas unslop vs Impeccable): el espacio dice «Orbital usa 7,2 GB» y «75,0 GB libres»; «Seguir» bajo el anillo en pausa; «Descarga inteligente» con dos flechas en círculo; interruptores en turquesa; «Solo con Wi‑Fi» como interruptor en Descargas | Ya | Distinto a propósito: la TV no descarga ni tiene interruptores táctiles |
+| El renglón de la versión con la bandera sola: «🇲🇽 · 1080p» bajo «Continuar», en la cápsula de la versión de la serie (sin ícono de lista) y en el reproductor (Fernando, 2 nov, M2 y N2) | Ya | **Pendiente (ola de la TV)**: la ficha y el reproductor de la TV dicen «🇲🇽 Latino · 1080p» |
+| El episodio que vas viendo resalta en la lista: barra más gruesa, «quedan 20 min» en el color del arte y ▶ sobre su imagen (Fernando, 2 nov, O1) | Ya | **Pendiente (ola de la TV)**: la lista de episodios de la TV lo marca solo con la barra |
+| «Familia» (no «Familiar») en Por género y en el filtro avanzado (Fernando, 2 nov, L1) | Ya | **Pendiente (ola de la TV)**: core/format.js y core/curation.js dicen «Familiar» (marcado en `design/vocabulario.json`) |
+| El filtro «Fama» (antes «Qué tan conocida» en el iPhone), con su ícono de línea y sin «Cualquiera» bajo los mosaicos mientras no eliges nada (Fernando, 2 nov, K3 y K5) | Ya | Ya se llamaba «Fama»; el «Cualquiera» de sus filas es distinto a propósito (con el mando, cada fila dice su valor) |
 
 ## Textos pendientes (`design/vocabulario.json`)
 
-Ninguno (2 nov): «Mi lista», «Decide por mí», «Colecciones» y «Reintentar» ya se dicen igual en las dos apps; las traducciones viejas con «tu watchlist», «tu repisa», «Intentar de nuevo» y «¿Qué vemos?» salieron del iPhone.
+«Familia» en la TV (2 nov, ver arriba). Antes, ninguno (2 nov): «Mi lista», «Decide por mí», «Colecciones» y «Reintentar» ya se dicen igual en las dos apps; las traducciones viejas con «tu watchlist», «tu repisa», «Intentar de nuevo» y «¿Qué vemos?» salieron del iPhone.
 
 ## Olas de la TV
 

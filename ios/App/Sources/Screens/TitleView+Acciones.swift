@@ -124,14 +124,17 @@ extension TitleView {
             // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
             return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
         }
-        let language = model.recommendedLanguage.map { LanguageFlags.flagged($0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
-                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage), $0) }
+        let languageName = model.recommendedLanguage.map { $0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
+                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage) }
+        // «🇲🇽 · 1080p»: la bandera sola (M2); VoiceOver dice el nombre del idioma.
+        let language = languageName.map { LanguageFlags.flagOnly($0, model.recommendedLanguage) }
         let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
+        let spoken = model.recommendedSource.map { [languageName].compactMap { $0 } + $0.qualitySummary } ?? []
         let version: Text = model.sourceCheck == .none ? Text("Sin versiones por ahora") : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
             : quality.isEmpty ? Text("Buscando versión…") : Text(verbatim: quality.joined(separator: " · "))
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,
-                              versionLabel: quality.isEmpty ? nil : Text("Se va a ver en: \(LanguageFlags.withoutFlags(quality.joined(separator: ", ")))"),
+                              versionLabel: spoken.isEmpty ? nil : Text("Se va a ver en: \(spoken.joined(separator: ", "))"),
                               play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, tint: artAccent)
     }
 

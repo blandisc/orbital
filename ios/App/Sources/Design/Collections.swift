@@ -16,17 +16,13 @@ struct CollectionCard<Emblem: View>: View {
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            // Con nombre debajo (Premios) el reflejo es parte de la tarjeta; sin él (Estudios, Temporadas, Géneros) termina la fila
-            // y lo pide la fila (`CenteredCarousel(reflected:)`), que también ajusta el aire con lo que sigue.
-            if captioned { FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected(weight: tint) }
-            else { FanCard(name: name, posters: posters, tint: tint, emblem: emblem).rowReflection(weight: tint) }
+            FanCard(name: name, posters: posters, tint: tint, emblem: emblem).cardWeight(tint)
             if captioned {
                 VStack(alignment: .leading, spacing: 0) {
                     title.recipe(.cardTitle).lineLimit(1)
                     detail.recipe(.caption).lineLimit(1)
                 }
                 .padding(.horizontal, DS.Space.s1)
-                .padding(.top, -DS.Collections.captionLift)   // sobre la cola del reflejo: el nombre pegado a su tarjeta
             }
         }
         .frame(width: DS.PlatformFan.width, alignment: .leading)
@@ -105,7 +101,8 @@ struct DSChapterLabel: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            if let symbol { Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.orbitalBlue).accessibilityHidden(true) }
+            // El ícono en el gris del rótulo (2 nov 2026): el color lo ponen los pósters de abajo.
+            if let symbol { Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).accessibilityHidden(true) }
             // Sin `fixedSize`: con letra de accesibilidad el rótulo en mayúsculas era más ancho que la pantalla y ensanchaba toda
             // la página (Explorar). Gana el lugar a la línea y, si no cabe, baja a un segundo renglón.
             DSGroupLabel(title: label).lineLimit(2).fixedSize(horizontal: false, vertical: true).layoutPriority(1)
@@ -151,8 +148,8 @@ struct SourceBadge: View {
     }
 
     private var label: some View {
-        source.name.dsCaps()
-            .font(DS.TextRecipe.badge.font).tracking(DS.Ribbon.tracking)   // negrita, como `.source-badge` de la TV
+        source.name
+            .font(DS.TextRecipe.badge.font)   // negrita, en letra normal (2 nov 2026)
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
             .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («COMPLE / MENTO»)
@@ -241,25 +238,27 @@ struct BecauseCard<Related: View>: View {
                     }
                 }
             }
-            // La columna mide siempre lo del mazo (el nombre tiene su lugar de dos renglones y las flechas van abajo): antes un
-            // nombre largo la estiraba y la tarjeta, con todo lo de abajo, cambiaba de alto al pasar de un título a otro.
+            // La columna mide siempre lo del mazo (el nombre tiene su lugar de dos renglones): antes un nombre largo la estiraba y
+            // la tarjeta, con todo lo de abajo, cambiaba de alto al pasar de un título a otro.
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                // «Porque viste · 3 de 8»: en qué carta vas, en el mismo renglón (junto a las flechas no cabía en un iPhone angosto).
-                Text("\(Text("Porque viste"))\(seeds.count > 1 ? Text("\(Text(verbatim: " · "))\(Text("\(index + 1) de \(seeds.count)"))") : Text(verbatim: ""))")
-                    .recipe(.secondary).monospacedDigit().lineLimit(1)
+                // Arriba, en qué carta vas y las flechas: lejos del botón de Inicio de la barra, que tapaba las de abajo
+                // (Fernando, 2 nov 2026, C4).
+                if seeds.count > 1 {
+                    HStack(spacing: DS.Space.s2) {
+                        Text("\(index + 1) de \(seeds.count)").recipe(.data, color: DS.textMuted).lineLimit(1)
+                        Spacer(minLength: 0)
+                        DSIconButton(symbol: "chevron.left", label: "Anterior", size: .regular) { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) }
+                        DSIconButton(symbol: "chevron.right", label: "Siguiente", size: .regular) { choose(seeds[(index + 1) % seeds.count].id) }
+                    }
+                    .padding(.bottom, DS.Space.s2)
+                }
+                Text("Porque viste").recipe(.footnote, color: DS.textMuted).lineLimit(1)
                 Text(verbatim: current?.title ?? "").recipe(.title)
                     .lineLimit(2, reservesSpace: true).minimumScaleFactor(DS.Collections.becauseTitleScale).allowsTightening(true)
                     .contentTransition(.opacity)
                 // Qué es y de qué año.
                 Text(verbatim: current?.detail ?? "").recipe(.footnote).lineLimit(1)
                     .contentTransition(.opacity)
-                Spacer(minLength: DS.Space.s2)
-                if seeds.count > 1 {
-                    HStack(spacing: DS.Space.s2) {
-                        DSIconButton(symbol: "chevron.left", label: "Anterior") { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) }
-                        DSIconButton(symbol: "chevron.right", label: "Siguiente") { choose(seeds[(index + 1) % seeds.count].id) }
-                    }
-                }
             }
             .frame(minHeight: DS.Collections.deckHeight, alignment: .topLeading)
             Spacer(minLength: 0)
@@ -394,7 +393,7 @@ struct SeasonTimelineStop: View {
         HStack(spacing: DS.Space.s2) {
             Circle().fill(DS.orbitalBlue).frame(width: DS.Collections.timelineDot, height: DS.Collections.timelineDot)
             when.font(DS.TextRecipe.badge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-            Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine)).frame(height: DS.Collections.timelineStroke)
+            Rectangle().fill(DS.orbitalBlue.opacity(DS.Collections.timelineLine))   // turquesa a propósito (Fernando, 2 nov 2026).frame(height: DS.Collections.timelineStroke)
                 .padding(.trailing, -DS.Space.s3)   // hasta la siguiente tarjeta
         }
         .accessibilityElement(children: .ignore)

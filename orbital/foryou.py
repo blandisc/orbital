@@ -653,7 +653,7 @@ class ForYou:
                   for row in self._letterboxd_lists()[:8]]
         if self.trakt.configured:
             video += [
-                {"id": "trend", "title": "En tendencia", "icon": "trend", "source": "Trakt", "meta": "Lo más visto esta semana", "split": True},
+                {"id": "trend", "title": "En tendencia", "icon": "trend", "source": "Trakt", "meta": "Lo más visto esta semana en Trakt", "split": True},
                 {"id": "popular", "title": "Lo más popular", "icon": "flame", "source": "Trakt", "meta": "De todos los tiempos", "split": True},
             ]
         elif self._stremio("cinemeta"):
@@ -665,8 +665,9 @@ class ForYou:
         critics = self._critics_refs()
         if critics:  # Rotten Tomatoes vía MDBList (y una lista pública de Trakt para series): no pide clave
             video.append({"id": "critics", "title": "Aprobadas por la crítica", "icon": "spark", "source": "Rotten Tomatoes",
-                          "meta": " · ".join(filter(None, ["Certified Fresh recientes" if "movie" in critics else "",
-                                                           "Series Fresh" if "series" in critics else ""])),
+                          # En español y sin la jerga de Rotten Tomatoes («Certified Fresh») (Fernando, 2 nov 2026, F5).
+                          "meta": {2: "Películas y series recientes con buena crítica", 1: ("Películas recientes con buena crítica"
+                                   if "movie" in critics else "Series recientes con buena crítica")}[min(2, len(critics))],
                           "split": len(critics) > 1})
         # Netflix (Top 10 oficial) y JustWatch (lo más visto por plataforma): ninguna pide clave.
         video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "chart", "source": "Netflix",

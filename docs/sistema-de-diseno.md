@@ -231,17 +231,17 @@ apilan partes (lo de abajo de la ficha, Cambiar el arte, TV en vivo); entre las 
 Películas y series manda el alto de cada fila, y al pie va el pie de pistas (`--hints-room`) en lugar del 56 del iPhone.
 
 **Jerarquía de encabezados (iPhone, 30 oct 2026; regla A del 31 oct):** dos niveles y nada más, una sola pieza (`DSSectionHead`).
-Una sección es el **rótulo**: ícono en el azul de Orbital, el nombre en mayúsculas chicas y una línea fina hasta la orilla
+Una sección es el **rótulo**: ícono gris, el nombre en letra normal (`groupLabel`, sin mayúsculas espaciadas desde el 2 nov 2026) y una línea fina hasta la orilla
 (`DSChapterLabel`, el mismo de `DSChapterHead`). Lo de adentro son subsecciones con título blanco.
 
 | Nivel | Receta | Lleva | Ejemplos |
 |---|---|---|---|
 | Pantalla | barra nativa / `display` | — | «Para ti», «Buscar» |
-| Sección (`level: .section`) | rótulo (`caption` en mayúsculas) + ícono (`symbol:`) + línea | solo el rótulo (y a la derecha un dato o «Ver todo») | Plataformas, Premios, Temporadas, Día por día, Descargando |
+| Sección (`level: .section`) | rótulo (`groupLabel`, letra normal) + ícono gris (`symbol:`) + línea | solo el rótulo (y a la derecha un dato o «Ver todo») | Plataformas, Premios, Temporadas, Día por día, Descargando |
 | Subsección (por omisión) | `section` | título blanco; su porqué arriba en `eyebrow` turquesa solo si ayuda | En tendencia, Seguir viendo, Próximas temporadas, Tus 5 estrellas |
 
 **Espacios (iPhone, decisión 2 del 31 oct 2026):** cuatro medidas, en `DS.Layout`, medidas desde donde termina lo que se ve
-(el pie de un póster y lo visible de su reflejo cuentan): del título a lo suyo **12** (`titleToContent`), entre
+(el pie de un póster cuenta; los reflejos se quitaron de toda la app el 2 nov 2026): del título a lo suyo **12** (`titleToContent`), entre
 subsecciones **24** (`betweenSubsections`), entre secciones **40** (`betweenSections`, también `DS.Editorial.sectionGap`) y
 al pie de la pantalla **56** (`screenBottom`). Arriba de cada pantalla, 12 (`screenTop`).
 | Pieza | `card-title` | — | el nombre en una tarjeta o renglón |
@@ -294,6 +294,8 @@ nombres viejos.
 | Decide por mí | ¿Qué vemos? | el sorteo de una propuesta |
 | ¿Qué vemos hoy? | Tinder | el mazo «Encuentra tu match perfecto» |
 | Reintentar | Intentar de nuevo | el botón tras un error |
+| Familia | Familiar | el género (Por género y el filtro avanzado; 2 nov 2026) |
+| Fama | Qué tan conocida | el filtro de qué tan vista es (fama × calificación; 2 nov 2026) |
 
 **Textos cortos y que no mienten.** Un porqué cabe en un renglón en un iPhone SE (38 letras como máximo) y no lleva cifras
 fijas («Más de 50 formas» mentía si había menos). Sin jerga («Al instante»). La prueba los mide.
@@ -307,6 +309,23 @@ tarjetas de una lista, `DS.Space.s2`. A los lados, `DS.Space.gutter`. Los grupos
 colección) van más juntos (`s5`): no son secciones. En Para ti, las colecciones en carrusel se separan con `groupGap` porque su
 reflejo ya pone el resto del aire.
 
+**Listas con rótulo por sección (Descargas, 2 nov 2026, I2).** Cuando el rótulo de una sección es el primer renglón de una
+lista agrupada, va con `listHeadRow()` y la lista con `listHeadRows()`: el rótulo a unos 20 pt de su tarjeta y unos 40 entre
+secciones (antes 34 y 67, por el alto mínimo de renglón del sistema).
+
+**Interruptores (2 nov 2026, J2–J4).** Todos con el estilo nativo y prendidos en el turquesa de la marca (`DS.switchOn`, puesto
+una vez en `OrbitalApp` con `DSSwitchStyle`); apagados, el gris del sistema. Dentro de un menú siguen siendo palomita
+(`.toggleStyle(.automatic)`). Nombre corto en un renglón y, si hace falta, la explicación abajo en gris (`DSToggleRow`); un ajuste
+que vive en Ajustes y se usa en otra pantalla va ahí también como interruptor (el mismo ajuste), no como una nota.
+
+**Íconos que dicen una idea.** «Automático» son dos flechas en círculo (`DS.Symbol.automatic`), nunca la chispa de la IA. Un
+ícono que no dice solo lo que hace lleva su nombre debajo: el anillo de una descarga en pausa dice «Seguir»
+(`DownloadRingButton`, el mismo en Descargas y en la fila de un episodio).
+
+**La versión en un renglón.** «🇲🇽 · 1080p»: la bandera sola, sin el nombre del idioma (la bandera ya distingue latino de
+castellano; sin bandera conocida, el nombre). VoiceOver lee el nombre. Bajo «Continuar», en la cápsula de la versión de la
+serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).
+
 **Títulos de navegación.** Las pestañas (Para ti, Descargas, Buscar) llevan el título grande en el renglón de los botones
 (`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en
 grande (Lo que ves, Colecciones).
@@ -319,6 +338,35 @@ lo que ya se puede ver («HOY», «Nuevo»). El color del arte: el botón princi
 
 **Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento): nunca `--palette-*` directo. Un valor nuevo
 primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), no cuánto vale.
+
+### Decisiones del 2 nov 2026 (iPhone, canvas «unslop vs Impeccable»)
+
+Fernando dictó qué aplicar del canvas (códigos A1…O2) y pidió que cada cambio sea regla de todo el sistema: «cuando te pido
+un cambio, impacta el sistema de diseño y modifica todo lo demás que esté igual». `DesignDecisionsTests` (OrbitalCore) las
+vigila.
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| «Ver todo» es la flecha pegada al título; todo el encabezado abre la lista | `DSTitleChevron` dentro de `DSSectionHead`; nunca una cápsula de texto | `testSeeAllIsTheTitleChevron` |
+| Lo que es una acción de un solo ícono va en un botón redondo | `DSIconButton` (el calendario de Lo nuevo, el «+» de Canales) | — |
+| Sin reflejos bajo pósters ni tarjetas | se quitaron de `Rail`, `Shelf` y los carruseles; el color de una tarjeta de colección es `cardWeight` | `testNoReflections` |
+| La barra de pestañas siempre completa | `.tabBarMinimizeBehavior(.never)`; ninguna pantalla la esconde | `testTabBarAlwaysFull` |
+| Los rótulos en letra normal, con su ícono gris | `DSGroupLabel` / `DSChapterLabel` sin mayúsculas espaciadas | `testNoNewSpacedCaps` |
+| De dónde viene una lista lo dice su porqué («Recomendadas por Trakt»); un sello solo si califica la lista (el jitomate) | `DSSectionHead` ignora `.trakt` | `testTraktIsNotATitleStamp` |
+| Lo nuevo y lo de hoy en el turquesa del puntito del logo | `DS.fresh` / `DSFreshMark` / `DSCornerRibbon`; el verde (`DS.success`) es solo «listo, conectado» | `testNewAndTodayAreFresh` |
+| Un solo interruptor: prendido en turquesa, apagado gris; si necesita explicarse, nombre corto y la explicación en gris abajo | `DSSwitchStyle` en toda la app y `DSToggleRow` | `testTogglesAreNotTintedPerScreen` |
+| Los datos en gris, un paso más legibles | `secondaryLabel` = ink-250 (también la TV, `--color-text-muted`) | DesignTests (contraste) |
+| En una pantalla que mezcla lo tuyo con lo que descubres (Inicio), lo de descubrir lleva título un paso más chico | `DSSectionHead(quiet:)`, receta `sectionQuiet` | — |
+| Elegir de una lista corta (plataformas, Películas · Series) es con íconos o logos, no cápsulas de texto | `PlatformPill` (logo redondo con anillo), `DSKindFilter(compact:)` solo íconos | — |
+| Cuándo sale, en un póster: el calendario y el día completo («Domingo») | `DSBadge(symbol:)` | — |
+| Una placa sobre el arte es oscura; el color lo pone el logo | `PlatformBadge` en `DS.badgeBackground` | — |
+| Una sola palabra por cosa en toda la app | «Familia», «Fama», la versión como «🇲🇽 · 1080p» | design/vocabulario.json |
+| El turquesa es la voz de Orbital: el porqué, lo nuevo y lo encendido o lo que pasa ahora («En vivo», «Viendo», la voz que escucha). Nunca decoración: ni fondos, ni orillas, ni íconos sueltos, ni cifras. Dos excepciones decididas: la línea de tiempo de Próximas temporadas y la tarjeta de Búsqueda avanzada (su tinte, su orilla y su círculo) | `DS.eyebrow`, `DS.fresh`, `DS.switchOn`, `DS.live`; lo «listo» (en Real-Debrid, verificado) es verde (`DS.success`); el avance es el papel (`DS.accent`) | `testTurquoiseIsNotDecoration` |
+| Nada en mayúsculas: todo en letra normal (también el listón «Nuevo», «Top», «✓ En la TV»). Única excepción: el sello del mazo de Match, que imita un sello físico | sin `dsCaps()` fuera de `MazoMatch` | `testNoSpacedCaps` |
+| Títulos: dos niveles (sección y subsección). La subsección tiene dos pesos solo en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): lo de descubrir un paso más chico. Explorar, que es todo descubrir, lleva el tamaño normal | `DSSectionHead(quiet:)` | — |
+
+**Pendiente de Fernando:** si la TV sigue al iPhone (rótulos sin mayúsculas, lo nuevo en turquesa, el turquesa sin
+decoración); hoy la TV sigue en mayúsculas y lo nuevo en verde (registro de paridad).
 
 ### Tabla espejo (iPhone ↔ TV)
 

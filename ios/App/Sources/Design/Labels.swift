@@ -15,12 +15,19 @@ extension VerticalAlignment {
     static let sectionTitle = VerticalAlignment(SectionTitle.self)
 }
 
-/// «Ver todo ›»: en una cápsula tenue, a la altura del título (la misma en toda la app).
-struct SeeAllLabel: View {
-    var body: some View { DSCapsuleLabel(title: Text("Ver todo"), symbol: "chevron.forward", symbolFirst: false) }
+/// «Ver todo»: la flecha pegada al título de lo que abre la lista completa (encabezados de sección, la tarjeta de «La
+/// temporada»). Sin cápsula de texto (Fernando, 2 nov 2026). `small`: junto a un rótulo chico.
+struct DSTitleChevron: View {
+    var small = false
+    var body: some View {
+        Image(systemName: "chevron.forward")
+            .font((small ? DS.TextRecipe.footnote : DS.TextRecipe.section).font).imageScale(.small)
+            .foregroundStyle(DS.textMuted)
+            .accessibilityLabel(Text("Ver todo"))
+    }
 }
 
-/// La cápsula tenue de lo que va a la derecha de un título de sección («Ver todo ›», «📅 Octubre», «Todo ⌄»).
+/// La cápsula tenue de lo que va a la derecha de un título de sección («Todo ⌄»). «Ver todo» ya no es cápsula: es la flecha del título (`DSSectionHead`).
 struct DSCapsuleLabel: View {
     let title: Text
     let symbol: String

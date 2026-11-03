@@ -17,18 +17,22 @@ struct MatchDeckScreen: View {
     @State private var command: MatchCommand?
 
     var body: some View {
+        // La cuenta se lee aquí, no dentro del encabezado: en iOS 27 el encabezado no se volvía a pintar al guardar (su
+        // cierre leía el modelo sin seguirlo) y la cuenta nunca aparecía.
+        let savedCount = model.map { $0.track(); return $0.saved.count } ?? 0
+        let savesToTrakt = model?.savesToTrakt ?? false
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Eyebrow(text: Text("Encuentra tu match perfecto"), reason: true)
                 DSSheetHeader(title: Text("¿Qué vemos hoy?")) {
                     // Cuántas llevas guardadas en esta vuelta (en «Tu match perfecto» de Trakt, o en Mi lista).
-                    if let model, !model.saved.isEmpty {
-                        Label { Text(verbatim: "\(model.saved.count)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
+                    if savedCount > 0 {
+                        Label { Text(verbatim: "\(savedCount)").monospacedDigit() } icon: { Image(systemName: "bookmark.fill") }
                             .recipe(.label, color: DS.text).tint(DS.brandMoon)
                             .padding(.horizontal, DS.Space.s3).frame(minHeight: DS.Size.touchTarget)
                             .background(DS.fill, in: Capsule())
                             .contentTransition(.numericText())
-                            .accessibilityLabel(model.savesToTrakt ? Text("\(model.saved.count) guardadas en Tu match perfecto") : Text("\(model.saved.count) guardadas en Mi lista"))
+                            .accessibilityLabel(savesToTrakt ? Text("\(savedCount) guardadas en Tu match perfecto") : Text("\(savedCount) guardadas en Mi lista"))
                             .accessibilityIdentifier("match-saved-count")
                     }
                     DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular) { dismiss() }

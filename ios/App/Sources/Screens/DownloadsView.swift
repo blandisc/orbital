@@ -62,18 +62,7 @@ struct DownloadsView: View {
         DSTextTabs(options: [.init(id: Part.phone, title: Text("En el iPhone"), symbol: "iphone"), .init(id: .media, title: Text("Mi media"), symbol: "cloud")], selection: $part)
     }
 
-    /// En el iPhone: lo que se baja y lo listo para ver sin conexión.
-    /// El encabezado de una sección como el primer renglón de ella, sin fondo ni sangría: queda al ras de las tarjetas (como en
-    /// el resto de la app); un encabezado de lista agrupada se mete lo que se meten sus renglones y cambia con el ancho.
-    private func headerRow(_ head: DSSectionHead) -> some View {
-        head
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-    }
-
     private func phoneList(_ model: DownloadsModel) -> some View {
-        let settings = env.services.appSettings
         return List {
             if !model.items.isEmpty {
                 Section {
@@ -85,7 +74,7 @@ struct DownloadsView: View {
             }
             if !model.active.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: "Descargando", count: model.active.count, level: .section, symbol: "arrow.down.circle"))
+                    DSSectionHead(title: "Descargando", count: model.active.count, level: .section, symbol: "arrow.down.circle").listHeadRow()
                     ForEach(model.active) { row($0, model) }
                 }
                 .downloadCard()
@@ -93,7 +82,7 @@ struct DownloadsView: View {
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), level: .section, symbol: "tv"))
+                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), level: .section, symbol: "tv").listHeadRow()
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
                             .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
@@ -103,7 +92,7 @@ struct DownloadsView: View {
             }
             if !model.readyMovies.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: .section, symbol: "film"))
+                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: .section, symbol: "film").listHeadRow()
                     // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
                     ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
                         readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
@@ -113,11 +102,12 @@ struct DownloadsView: View {
             }
             if !model.items.isEmpty {
                 Section {
-                    headerRow(DSSectionHead(title: "Descarga inteligente", level: .section, symbol: "sparkles"))
-                    Toggle("Bajar el siguiente episodio al terminar uno", isOn: setting(\.autoNextDownload))
-                    Toggle("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
-                } footer: {
-                    if settings.wifiOnlyDownloads { Label("Solo con Wi‑Fi", systemImage: "wifi").recipe(.footnote) }
+                    // Dos flechas en círculo: «automático» (la chispa era el ícono típico de la IA; Fernando, 2 nov 2026, J1).
+                    DSSectionHead(title: "Descarga inteligente", level: .section, symbol: DS.Symbol.automatic).listHeadRow()
+                    DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", isOn: setting(\.autoNextDownload))
+                    DSToggleRow("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
+                    // El mismo ajuste de Ajustes › Descargas, aquí a la mano (antes era una nota que no se podía tocar; J4).
+                    DSToggleRow("Solo con Wi‑Fi", symbol: "wifi", isOn: setting(\.wifiOnlyDownloads))
                 }
                 .listRowBackground(DS.surface)
             }
@@ -130,6 +120,7 @@ struct DownloadsView: View {
         }
         .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen
         .listRowSpacing(DS.Space.s2)
+        .listHeadRows()   // el rótulo a 20 de su tarjeta y unos 40 entre secciones (I2)
         // Si todo cabe (o está vacía), la lista no se mueve: antes bajaba sin nada que ver y el título se encogía.
         .scrollBounceBehavior(.basedOnSize)
         // Las tarjetas a 16 pt en todos los tamaños (la lista agrupada las metía 16 o 24 según el ancho) y los encabezados al
@@ -173,27 +164,13 @@ struct DownloadsView: View {
             Spacer(minLength: DS.Space.s2)
             // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.
             switch item.state {
-            case .downloading, .queued: ringButton(item, symbol: "pause.fill", label: "Pausar") { Task { await model.pause(item.id) } }
-            case .paused, .failed: ringButton(item, symbol: item.state == .failed ? "arrow.clockwise" : "arrow.down", label: item.state == .failed ? "Reintentar" : "Reanudar") { Task { await model.resume(item.id) } }
+            case .downloading, .queued: DownloadRingButton(fraction: item.progress ?? 0, action: .pause) { Task { await model.pause(item.id) } }
+            case .paused, .failed: DownloadRingButton(fraction: item.progress ?? 0, action: item.state == .failed ? .retry : .resume) { Task { await model.resume(item.id) } }
             case .done: EmptyView()
             }
         }
         .padding(.vertical, DS.Space.s1)
         .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete([item.id]) }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
-    }
-
-    private func ringButton(_ item: DownloadItem, symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            ZStack {
-                DownloadRing(fraction: item.progress ?? 0, tint: item.state == .failed ? DS.warning : DS.accent, lineWidth: DS.TitleAction.ringSmallLine)
-                Image(systemName: symbol).font(DS.TextRecipe.badge.font).foregroundStyle(DS.text)
-            }
-            .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
-            .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(label))
     }
 
     /// «12 MB/s · faltan 3 min» (o «Calculando…» mientras se mide).
