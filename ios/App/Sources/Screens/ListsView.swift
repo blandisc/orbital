@@ -448,7 +448,7 @@ struct ListsView: View {
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text("Las mejor calificadas del año"), name: name,
                                    posters: (collections.model.genreCharts[genre.slug]?.items ?? []).prefix(3).map { Optional($0.poster) },
-                                   tint: DS.Collections.studio, captioned: false) {
+                                   tint: DS.Collections.genre(genre.slug), captioned: false) {
                         CollectionIconEmblem(slug: genre.slug, name: name)
                     }
                 }

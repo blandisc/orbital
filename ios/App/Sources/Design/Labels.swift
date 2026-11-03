@@ -15,13 +15,21 @@ extension VerticalAlignment {
     static let sectionTitle = VerticalAlignment(SectionTitle.self)
 }
 
-/// «Ver todo»: la flecha pegada al título de lo que abre la lista completa (encabezados de sección, la tarjeta de «La
-/// temporada»). Sin cápsula de texto (Fernando, 2 nov 2026). `small`: junto a un rótulo chico.
+extension Text {
+    /// «Ver todo»: la flecha al final del título, dentro del mismo texto (un carácter más, unida a la última palabra), así
+    /// queda centrada con las letras de su renglón y, si el título se parte, va al final del último renglón (Fernando, 2 nov
+    /// 2026: «que todas las flechitas de los títulos estén bien centradas respecto al renglón»). En el gris de los datos.
+    func withTitleChevron() -> Text {
+        self + Text(verbatim: "\u{00A0}") + Text(Image(systemName: "chevron.forward")).foregroundStyle(DS.textMuted)
+    }
+}
+
+/// La flecha de «Ver todo» junto a un rótulo de sección (`DSSectionHead(level: .section)`), a la derecha de su línea y
+/// centrada con ella. En un título, `Text.withTitleChevron()`.
 struct DSTitleChevron: View {
-    var small = false
     var body: some View {
         Image(systemName: "chevron.forward")
-            .font((small ? DS.TextRecipe.footnote : DS.TextRecipe.section).font).imageScale(.small)
+            .font(DS.TextRecipe.groupLabel.font)
             .foregroundStyle(DS.textMuted)
             .accessibilityLabel(Text("Ver todo"))
     }

@@ -430,8 +430,7 @@ extension DS {
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
         static let spyLine: CGFloat = 70
 
-        static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
-        static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
+        static let gold = Color(red: 0.83, green: 0.65, blue: 0.25)
         /// El carrusel centrado: cuánto se encogen y apagan las de los lados, y el peso de su color bajo cada tarjeta.
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
         static let weightTint: Double = 0.35
@@ -443,7 +442,7 @@ extension DS {
         /// El logo del estudio en su cápsula.
         static let studioLogoWidth: CGFloat = 96, studioLogoHeight: CGFloat = 26
         /// El halo de cada temporada de «Temporadas»: Halloween naranja, Día de Muertos rosa mexicano, Navidad verde, San Valentín
-        /// guinda y Verano ámbar. Los géneros usan el neutro de los estudios.
+        /// guinda y Verano ámbar.
         static let halloween = Color(red: 0.95, green: 0.47, blue: 0.12), muertos = Color(red: 0.89, green: 0.0, blue: 0.49)
         static let navidad = Color(red: 0.13, green: 0.58, blue: 0.32), sanValentin = Color(red: 0.62, green: 0.11, blue: 0.25)
         static let verano = Color(red: 0.96, green: 0.71, blue: 0.16)
@@ -454,8 +453,19 @@ extension DS {
         static let iconEmblem: CGFloat = 40, iconHeader: CGFloat = 56   // antes 22: al pie de la tarjeta se perdía
         /// El resplandor detrás del ícono de una temporada o género (cuánto tapa y de qué tamaño).
         static let iconBackdrop = 0.85, iconBackdropScale: CGFloat = 1.3
-        static func tint(_ award: String) -> Color {
-            switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
+        /// El halo de un premio: siempre dorado (Fernando, 2 nov 2026; antes el Emmy en plata y BAFTA y Ariel en bronce).
+        static func tint(_ award: String) -> Color { gold }
+        /// El halo de cada género, su color (Fernando, 2 nov 2026: «en géneros, asignan un color dependiendo del género»; antes
+        /// todos en el neutro de los estudios). Uno por género, de lo que evoca: Acción rojo, Terror sangre, Romance rosa…
+        static let genreHex: [String: (Double, Double, Double)] = [
+            "accion": (0.93, 0.33, 0.22), "aventura": (0.30, 0.68, 0.36), "animacion": (0.98, 0.60, 0.18), "comedia": (0.98, 0.80, 0.20),
+            "crimen": (0.36, 0.45, 0.62), "documental": (0.78, 0.66, 0.45), "drama": (0.55, 0.36, 0.75), "familia": (0.55, 0.80, 0.38),
+            "fantasia": (0.62, 0.42, 0.95), "terror": (0.70, 0.10, 0.14), "misterio": (0.35, 0.32, 0.75), "romance": (0.93, 0.40, 0.62),
+            "ciencia-ficcion": (0.20, 0.72, 0.86), "suspenso": (0.18, 0.52, 0.55), "historia": (0.62, 0.44, 0.28), "belica": (0.50, 0.55, 0.28),
+            "western": (0.78, 0.42, 0.20), "musical": (0.85, 0.30, 0.80), "biografia": (0.55, 0.62, 0.78), "deportes": (0.20, 0.55, 0.95),
+        ]
+        static func genre(_ slug: String) -> Color {
+            genreHex[slug].map { Color(red: $0.0, green: $0.1, blue: $0.2) } ?? studio
         }
     }
 

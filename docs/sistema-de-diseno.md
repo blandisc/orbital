@@ -348,7 +348,7 @@ vigila.
 
 | Regla | Cómo | Prueba |
 |---|---|---|
-| «Ver todo» es la flecha pegada al título; todo el encabezado abre la lista | `DSTitleChevron` dentro de `DSSectionHead`; nunca una cápsula de texto | `testSeeAllIsTheTitleChevron` |
+| «Ver todo» es la flecha pegada al título; todo el encabezado abre la lista | `Text.withTitleChevron()` (dentro del texto del título, centrada con su renglón); nunca una cápsula de texto | `testSeeAllIsTheTitleChevron` |
 | Lo que es una acción de un solo ícono va en un botón redondo | `DSIconButton` (el calendario de Lo nuevo, el «+» de Canales) | — |
 | Sin reflejos bajo pósters ni tarjetas | se quitaron de `Rail`, `Shelf` y los carruseles; el color de una tarjeta de colección es `cardWeight` | `testNoReflections` |
 | La barra de pestañas siempre completa | `.tabBarMinimizeBehavior(.never)`; ninguna pantalla la esconde | `testTabBarAlwaysFull` |
