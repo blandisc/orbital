@@ -925,17 +925,6 @@
         }
       }
     },
-    "Otras copias": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Other copies"
-          }
-        }
-      }
-    },
     "Para lentes 3D": {
       "extractionState": "manual",
       "localizations": {
@@ -33145,6 +33134,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "For security, your Orbital only connects over https or through Tailscale (100.x or .ts.net)."
+          }
+        }
+      }
+    },
+    "Grabada en el cine (CAM)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorded in the theater (CAM)"
+          }
+        }
+      }
+    },
+    "Otras copias (DVD)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other copies (DVD)"
           }
         }
       }

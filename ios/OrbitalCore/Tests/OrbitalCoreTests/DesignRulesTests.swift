@@ -238,7 +238,7 @@ final class DesignRulesTests: XCTestCase {
         // Las mayúsculas las pone una sola pieza (`dsCaps`, en CornerRibbon.swift), nunca el texto ni otra receta (D11).
         problems += hits(#"\.textCase\(\.uppercase\)|Text\([^)]*\.uppercased\(\)"#, in: files, skip: { $0.name == "CornerRibbon.swift" })
             .map { $0 + " (mayúsculas: .dsCaps())" }
-        let acronyms = #"\b(IMDb|HDR|SDR|TMDB|IMDB|DTS|AAC|URL|PIN|VPN|API|MKV|HEVC|OK|DV|IPTV|UHD|FHD|LG|USB|QR|NYT|AFI|BAFTA|AI|HBO|ID|MB|GB|KB|FPS|DNS|IP)\b"#
+        let acronyms = #"\b(IMDb|HDR|SDR|TMDB|IMDB|DTS|AAC|URL|PIN|VPN|API|MKV|HEVC|OK|DV|IPTV|UHD|FHD|LG|USB|QR|NYT|AFI|BAFTA|AI|HBO|ID|MB|GB|KB|FPS|DNS|IP|CAM|DVD)\b"#   // CAM y DVD: ds-exception «siglas de calidad de video» (Fernando, 3 nov)
         problems += hits(#"Text\("[^"\\]*[A-ZÁÉÍÓÚÑ]{3,}"#, in: files, unless: nil).filter { hit in
             // Las siglas sí van en mayúsculas.
             let quoted = hit.components(separatedBy: "Text(\"").dropFirst().map { $0.components(separatedBy: "\"").first ?? "" }

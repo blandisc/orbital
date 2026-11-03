@@ -97,8 +97,10 @@ enum TorrentioWords {
         case "threed": (Text(verbatim: "3D"), Text("Para lentes 3D"))
         case "brremux": (Text("Remux de Blu-ray"), Text("Copia exacta del disco; enorme"))
         case "scr": (Text(verbatim: "Screener"), Text("Copia de prensa, a veces con marcas"))
-        case "cam": (Text("Grabada en el cine"), Text("Con una cámara en la sala: se ve y oye mal"))
-        case "other": (Text("Otras copias"), Text("Copias viejas o de menos calidad"))
+        case "cam": (Text("Grabada en el cine (CAM)"),   // ds-exception: siglas de calidad de video
+                   Text("Con una cámara en la sala: se ve y oye mal"))
+        case "other": (Text("Otras copias (DVD)"),   // ds-exception: siglas de calidad de video
+                   Text("Copias viejas o de menos calidad"))
         case "unknown": (Text("Sin calidad conocida"), Text("No dice qué es"))
         default: (Text(verbatim: key), Text(verbatim: ""))
         }

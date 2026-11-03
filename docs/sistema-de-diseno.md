@@ -633,6 +633,7 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 |---|---|---|
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
+| siglas de calidad de video | iPhone: `Design/AddonPieces.swift` (`TorrentioWords.quality`) y la lista de siglas de `DesignRulesTests` | «CAM» y «DVD» son como la gente reconoce esas copias en las listas de versiones, así que van tal cual junto a su nombre en palabras: «Grabada en el cine (CAM)», «Otras copias (DVD)» (Fernando, 3 nov 2026). |
 | sello del mazo | `match-deck.css` (`.match__stamp`) | El sello que asoma al decidir en «¿Qué vemos hoy?» (PASO, GUARDAR, ★ PARA HOY) va en mayúsculas, como el de `MatchCard` del iPhone y el de Tinder. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)

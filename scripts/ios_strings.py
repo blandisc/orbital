@@ -64,7 +64,7 @@ TRANSLATIONS = {
     "No contesta desde %@ · se salta": "Not answering since %@ · skipped", "No dice qué es": "Doesn't say what it is",
     "No pude probar: Torrentio no contestó.": "I couldn't test: Torrentio didn't answer.", "No se guardó": "It wasn't saved",
     "Orden de la lista": "List order", "Orden, cuántas, tamaño y sitios": "Order, how many, size and sites",
-    "Otras copias": "Other copies", "Para lentes 3D": "For 3D glasses",
+    "Otras copias (DVD)": "Other copies (DVD)", "Grabada en el cine (CAM)": "Recorded in the theater (CAM)", "Para lentes 3D": "For 3D glasses",
     "Por qué arranca al instante y qué cuesta": "Why it starts instantly and what it costs", "Probando con %@…": "Testing with %@…",
     "Quedarme con el de Orbital": "Keep Orbital's", "Quedarme con el de tu Stremio": "Keep the one from your Stremio",
     "Real-Debrid cambia tus puntos por días de Premium. No se puede deshacer.": "Real-Debrid exchanges your points for Premium days. It can't be undone.", "Real-Debrid las sirve": "Real-Debrid serves them",
