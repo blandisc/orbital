@@ -1000,7 +1000,7 @@ TRANSLATIONS = {
     "Filtrar": "Filter", "Filtrar · %lld": "Filter · %lld", "Más chicas primero": "Smallest first", "Más semillas primero": "Most seeders first",
     "Solo las que ya están en Real-Debrid": "Only those already on Real-Debrid", "Grabaciones de cine y tráileres": "Theater recordings and trailers",
     "Real-Debrid aún no la tiene: puede tardar en abrir": "Real-Debrid doesn't have it yet: it may take a while to open",
-    "Ya está en Real-Debrid": "Already on Real-Debrid", "Quitar filtros": "Clear filters", "+%lld más": "+%lld more", "+%lld más en %@": "+%lld more in %@",
+    "Ya está en Real-Debrid": "Already on Real-Debrid", "+%lld más": "+%lld more", "+%lld más en %@": "+%lld more in %@",
     "%lld ocultas: grabadas en el cine o tráileres": "%lld hidden: theater recordings or trailers",
     "Toca para ver los detalles": "Tap to see the details", "Toca para cerrar los detalles": "Tap to close the details", "Copiar nombre": "Copy name",
     "Grabada en el cine": "Theater recording", "La que ves": "Playing now", "comprobado": "checked", "lo dice el nombre": "the name says so",
