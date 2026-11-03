@@ -74,7 +74,7 @@ public enum Vocabulary {
 
     private static let spanishGenres: [String: String] = [
         "action": "Acción", "adventure": "Aventura", "animation": "Animación", "biography": "Biografía", "comedy": "Comedia",
-        "crime": "Crimen", "documentary": "Documental", "drama": "Drama", "family": "Familiar", "fantasy": "Fantasía",
+        "crime": "Crimen", "documentary": "Documental", "drama": "Drama", "family": "Familia", "fantasy": "Fantasía",
         "history": "Historia", "horror": "Terror", "music": "Música", "musical": "Musical", "mystery": "Misterio", "romance": "Romance",
         "sci fi": "Ciencia ficción", "science fiction": "Ciencia ficción", "sport": "Deportes", "sports": "Deportes", "thriller": "Suspenso",
         "war": "Bélica", "western": "Western", "reality tv": "Reality", "reality": "Reality", "talk show": "Talk show", "game show": "Concurso",

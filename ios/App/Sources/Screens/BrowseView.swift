@@ -70,6 +70,9 @@ struct BrowseView: View {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
+            // Al poner el primer filtro (o quitar el último) los mosaicos de la puerta crecen o se encogen: lo de abajo (el Top 10,
+            // los géneros) se recorre con el mismo resorte, sin brincar (Fernando, 2 nov 2026, K5).
+            .animation(DS.Motion.smooth(reduceMotion), value: FilterTile.compact(FilterContext(filter: env.advancedFilter.filter)))
             .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Layout.screenBottom)

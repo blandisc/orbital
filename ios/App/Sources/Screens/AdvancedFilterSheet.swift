@@ -135,6 +135,7 @@ struct AdvancedFilterSheet: View {
             }
         }
         .animation(DS.Motion.smooth(reduceMotion), value: open)   // lo de abajo se reacomoda con el mismo resorte
+        .animation(DS.Motion.smooth(reduceMotion), value: FilterTile.compact(context))   // el primer filtro: los mosaicos crecen juntos
     }
 
     /// Otro filtro con uno abierto: primero se cierra el de antes y, ya quieto, baja el nuevo. Antes pasaba todo a la vez

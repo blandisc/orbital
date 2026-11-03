@@ -4,7 +4,7 @@ import OrbitalModels
 
 // Piezas del filtro avanzado (la entrada A de Fernando, 31 oct 2026; maqueta en
 // docs/producto/muvy-busqueda-premios/filtro-a.html): el mosaico de cada filtro con su dibujo (el mismo en la puerta de
-// Buscar y en el cajón), el panel que se abre bajo su mosaico, el cuadro «Qué tan conocida», la opción grande con ícono y
+// Buscar y en el cajón), el panel que se abre bajo su mosaico, el cuadro de «Fama» (antes «Qué tan conocida»), la opción grande con ícono y
 // el cuadrito de lo filtrado sobre los resultados. La regla de años vive en `YearRuler.swift`. Sin cápsulas: íconos.
 // Cada filtro tiene su color (`FilterPage.hue`, dirección A, 31 oct 2026) solo en detalles: el ícono, un puntito cuando
 // tiene algo y su control abierto. Lo elegido sigue en blanco; el azul de Orbital queda en lo que es de Orbital.
@@ -27,7 +27,7 @@ enum FilterPage: String, Hashable, CaseIterable, Identifiable {
     var title: Text {
         switch self {
         case .genre: Text("Género"); case .era: Text("Época"); case .length: Text("Tiempo"); case .rating: Text("Calificación")
-        case .fame: Text("Qué tan conocida"); case .place: Text("Dónde verla"); case .origin: Text("Origen")
+        case .fame: Text("Fama"); case .place: Text("Dónde verla"); case .origin: Text("Origen")
         case .awards: Text("Premios"); case .studio: Text("Estudios")
         }
     }
@@ -42,7 +42,7 @@ enum FilterPage: String, Hashable, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
-        case .genre: "theatermasks"; case .era: "calendar"; case .length: "clock"; case .rating: "star"; case .fame: "sparkles"
+        case .genre: "theatermasks"; case .era: "calendar"; case .length: "clock"; case .rating: "star"; case .fame: "person.2"
         case .place: "play.tv"; case .origin: "globe.americas"; case .awards: "trophy"; case .studio: "building.2"
         }
     }
@@ -182,7 +182,9 @@ struct FilterArt: View {
                     Image(systemName: "star.fill").font(mini ? DS.TextRecipe.caption.font : DS.TextRecipe.footnote.font).foregroundStyle(page.hue)
                     Text(verbatim: FilterText.number(f.minRating ?? f.minLetterboxd ?? 0)).font((mini ? DS.TextRecipe.secondary : DS.TextRecipe.title).font.weight(.bold)).monospacedDigit().foregroundStyle(page.hue)
                 }
-            case .fame:
+            case .fame where f.fame != .any:
+                // Con una elegida, el cuadro chiquito con su esquina; sin nada, su ícono de línea como los demás (antes, cuatro
+                // cuadros grises; Fernando, 2 nov 2026, K3).
                 MiniQuadrant(selected: f.fame)
             case .place where !f.providers.isEmpty:
                 HStack(spacing: DS.Space.s1) {
@@ -225,10 +227,18 @@ struct FilterTile: View {
     var open = false
     let action: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Sin ningún filtro puesto, los mosaicos van sin renglón de valor y más bajos (Fernando, 2 nov 2026, K5: seis
+    /// «Cualquiera» iguales no decían nada). Con uno puesto, todos crecen juntos (el renglón parejo) y solo el puesto dice su
+    /// valor; los demás no repiten «Cualquiera».
+    static func compact(_ context: FilterContext) -> Bool { FilterPage.allCases.allSatisfy { FilterText.value($0, context) == nil } }
+
     var body: some View { bodyContent.pointerHover(.lift) }
     @ViewBuilder private var bodyContent: some View {
         let value = FilterText.value(page, context)
         let on = value != nil
+        let compact = Self.compact(context)
         let shape = RoundedRectangle(cornerRadius: mini ? DS.Radius.md : DS.Radius.lg, style: .continuous)
         let art = page == .genre ? Tmdb.filterGenres.filter { context.filter.genres.contains($0.slug) }.prefix(DS.Filter.genreMosaicMax).map { FilterCatalog.genreImage($0.slug) } : []
         Button(action: action) {
@@ -246,14 +256,15 @@ struct FilterTile: View {
                         } else { LetterboxdMark() }
                         if f.minRating != nil, let stars { Text(verbatim: "· ★" + RatingLevels.short(stars)).recipe(.caption, color: DS.Letterboxd.leaf).monospacedDigit() } else { Text("o más").recipe(.caption, color: DS.text) }
                     }
-                } else {
-                    tileValue(value).recipe(.caption, color: !art.isEmpty ? DS.paper : on ? DS.text : DS.textMuted).lineLimit(1)
+                } else if let value {
+                    value.recipe(.caption, color: !art.isEmpty ? DS.paper : DS.text).lineLimit(1)
+                        .transition(.opacity.combined(with: .scale(scale: DS.Motion.leaveScale, anchor: .top)))
                 }
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, mini ? DS.Space.s2 : DS.Space.s3)
             .padding(.vertical, mini ? DS.Space.s2 : DS.Space.s3)
-            .frame(maxWidth: .infinity, minHeight: mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight)
+            .frame(maxWidth: .infinity, minHeight: compact ? (mini ? DS.Filter.miniTileCompact : DS.Filter.tileCompact) : (mini ? DS.Filter.miniTileHeight : DS.Filter.tileHeight))
             .background {
                 ZStack {
                     open || mini ? DS.surfaceRaised : DS.surface
@@ -274,10 +285,11 @@ struct FilterTile: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityValue(value ?? Text("Cualquiera"))   // VoiceOver sí lo dice: lo que se quitó es solo lo que se ve
+        // El valor entra con el resorte de la app y el mosaico crece suave (sin movimiento con Reducir movimiento).
+        .animation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade, value: on)
+        .animation(DS.Motion.smooth(reduceMotion), value: compact)
     }
-
-    /// Lo que dice el renglón de abajo (nil: cualquiera).
-    private func tileValue(_ value: Text?) -> Text { value ?? Text("Cualquiera") }
 }
 
 /// Los géneros elegidos como mosaico de fondo (hasta seis): uno solo llena el mosaico; dos o tres, en columnas; de cuatro a
@@ -323,21 +335,6 @@ struct MiniRuler: View {
             }
             .frame(maxHeight: .infinity)
         }
-    }
-}
-
-/// El cuadro chiquito de «Qué tan conocida»: cuatro esquinas, la elegida en blanco.
-struct MiniQuadrant: View {
-    let selected: AdvancedFilter.Fame
-    var body: some View {
-        Grid(horizontalSpacing: DS.Stroke.selected, verticalSpacing: DS.Stroke.selected) {
-            GridRow { cell(.gems); cell(.classics) }
-            GridRow { cell(.niche); cell(.blockbusters) }
-        }
-        .aspectRatio(DS.Poster.aspect * 2, contentMode: .fit)
-    }
-    private func cell(_ fame: AdvancedFilter.Fame) -> some View {
-        RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(selected == fame ? DS.Filter.meadow : DS.fillStrong)
     }
 }
 
