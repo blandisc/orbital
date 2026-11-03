@@ -50,8 +50,11 @@ public actor StreamFinder {
     /// primero.
     private var happened: [String: [SearchEvent]] = [:]
 
-    public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.registry = registry; self.health = health; self.clock = clock
+    /// M5: «kitsu:» y «tmdb:» al de IMDb, para preguntarle también a los que solo saben de IMDb.
+    private let bridge: IDBridge?
+
+    public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, bridge: IDBridge? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.registry = registry; self.health = health; self.bridge = bridge; self.clock = clock
     }
 
     /// De dónde es un título (su idioma original y país), para el audio de lo que no lo dice; y lo comprobado al ver una
@@ -181,7 +184,14 @@ public actor StreamFinder {
     }
 
     private func askAll(kind: String, videoID: String) async throws -> Answers {
-        let all = try await registry.serving("stream", kind: kind, itemID: videoID)
+        var all = try await registry.serving("stream", kind: kind, itemID: videoID)
+        var ids = [String: String]()   // M5: a los que solo saben de IMDb, con el id traducido
+        if IDBridge.isForeign(videoID), let bridge, let imdb = await bridge.videoID(videoID, kind: kind) {
+            let known = Set(all.map(\.url))
+            for addon in try await registry.serving("stream", kind: kind, itemID: imdb) where !known.contains(addon.url) {
+                all.append(addon); ids[addon.url] = imdb
+            }
+        }
         // Los que no contestan se saltan (C2); si son todos, se les pregunta igual: nunca te quedas sin preguntar.
         let awake = all.filter { health?.skip($0.url) != true }
         let serving = awake.isEmpty ? all : awake
@@ -192,7 +202,10 @@ public actor StreamFinder {
         // fallido: se vuelve a preguntar pronto).
         let budget = Self.budget
         let results = await withTaskGroup(of: Arrival.self) { group in
-            for (i, addon) in serving.enumerated() { group.addTask { .addon(i, await self.fetch(addon, kind: kind, videoID: videoID)) } }
+            for (i, addon) in serving.enumerated() {
+                let id = ids[addon.url] ?? videoID
+                group.addTask { .addon(i, await self.fetch(addon, kind: kind, videoID: id)) }
+            }
             group.addTask { try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000)); return .budget }
             var out = [[JSON]?](repeating: nil, count: serving.count)
             var pending = serving.count, overBudget = false

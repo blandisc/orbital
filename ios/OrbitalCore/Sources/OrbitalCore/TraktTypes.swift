@@ -115,6 +115,8 @@ public struct TraktTarget: Sendable, Equatable, Codable {
 
     /// «tt0944947:1:5» → serie 1×5; «tt1160419» → película.
     public init?(videoID: String, kind: String) {
+        // M5: «kitsu:» y «tmdb:» con el de IMDb ya traducido al abrir el título (`IDBridge`).
+        let videoID = IDBridge.isForeign(videoID) ? IDBridge.known(videoID: videoID, kind: kind) ?? videoID : videoID
         let parts = videoID.split(separator: ":").map(String.init)
         guard let imdb = parts.first, imdb.hasPrefix("tt") else { return nil }
         if kind == "movie" { self.init(imdb: imdb); return }
