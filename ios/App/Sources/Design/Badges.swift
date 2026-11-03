@@ -114,6 +114,8 @@ struct DSPlatformLogo: View {
 /// Cuánto llevas de un video.
 struct DSProgress: View {
     let fraction: Double
+    /// El grueso: el de siempre o el doble para lo que vas viendo en una lista de capítulos (Fernando, 2 nov 2026, O1).
+    var height: CGFloat = DS.Space.s1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         GeometryReader { geo in
@@ -123,7 +125,7 @@ struct DSProgress: View {
                 if fraction > 0 { Rectangle().fill(DS.accent).frame(width: max(DS.Size.hairline, geo.size.width * min(1, fraction))) }   // el acento es avance
             }
         }
-        .frame(height: DS.Space.s1).clipShape(Capsule())
+        .frame(height: height).clipShape(Capsule())
         // Al volver del reproductor, la barra corre hasta donde te quedaste (confirma que se guardó).
         .animation(DS.Motion.smooth(reduceMotion), value: fraction)
         .accessibilityLabel(Text("Avance")).accessibilityValue(Text("\(Int(fraction * 100)) %"))

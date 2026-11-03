@@ -279,7 +279,7 @@ extension DS {
     /// El episodio que vas viendo en una lista de episodios (Fernando, 2 nov 2026, O1): la barra de avance más gruesa (el doble
     /// de la de siempre) y el ▶ en vidrio sobre su imagen.
     enum EpisodeRow {
-        static let progressScale: CGFloat = 2, play: CGFloat = 28
+        static let play: CGFloat = 28
     }
 
     enum Rich {

@@ -37,8 +37,7 @@ struct EpisodeRowView: View {
                         PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
                         if let progress = row.progress {
                             // El que vas viendo: el ▶ sobre la imagen y la barra al doble de gruesa (O1).
-                            // pendiente: `DSProgress(height:)` en `Badges.swift` (otra sesión lo tiene abierto); mientras, se escala.
-                            DSProgress(fraction: progress).scaleEffect(y: inProgress ? DS.EpisodeRow.progressScale : 1, anchor: .bottom)
+                            DSProgress(fraction: progress, height: inProgress ? DS.Space.s2 : DS.Space.s1)
                         }
                         if inProgress {
                             Image(systemName: "play.fill").font(DS.TextRecipe.badge.font).foregroundStyle(DS.paper)
