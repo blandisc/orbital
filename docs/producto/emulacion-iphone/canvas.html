@@ -157,6 +157,45 @@ a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 </section>
 
 <section>
+  <h2>GameCube y Switch: cómo sí</h2>
+  <p class="why">Agregado el 3 nov, después de «para mí es súper importante». Hay dos caminos que funcionan hoy y se pueden usar juntos.</p>
+  <div class="opts">
+
+    <article class="opt rec">
+      <header><span class="code">G1</span><h3>Desde la consola</h3><span class="tag ok">Primero</span></header>
+      <div class="phone" aria-hidden="true"><span class="notch"></span><div class="scr">
+        <div class="art" style="background:linear-gradient(135deg,#5a3d8f,#1d1d24)">Super Mario Sunshine</div>
+        <div class="sheet"><div class="btn p">Jugar desde la consola</div><div class="small">La Legion Go lo abre y te lo manda</div></div>
+      </div></div>
+      <p>Eliges el juego en Orbital del iPhone, Orbital le pide a la consola que lo abra (eso ya existe en la tele) y abre la transmisión. El juego corre en Dolphin o Ryujinx de la Legion Go, a toda su potencia.</p>
+      <p class="gain"><b>Ganas:</b> funciona hoy, en cualquier iOS, con todos tus juegos y tus partidas de la tele. Apple no lo puede romper.</p>
+      <p class="lose"><b>Pierdes:</b> necesita la consola prendida y buena red. En casa va muy bien; fuera de casa, con Tailscale, depende del internet.</p>
+      <div class="meta"><span class="tag ok">Días</span><span class="tag ok">Muy estable</span></div>
+    </article>
+
+    <article class="opt">
+      <header><span class="code">G2</span><h3>En el iPhone, sin consola</h3><span class="tag mid">Después</span></header>
+      <div class="phone" aria-hidden="true"><span class="notch"></span><div class="scr">
+        <div class="art" style="background:linear-gradient(135deg,#e60012,#1d1d24)">Zelda · Switch</div>
+        <div class="sheet"><div class="btn p">Jugar en el iPhone</div><div class="small">Encendiendo el modo rápido… (5 s)</div></div>
+      </div></div>
+      <p>DolphiniOS (GameCube) y MeloNX (Switch) corren en el iPhone si se les enciende el modo rápido (JIT) con StikDebug. Los dos son de código abierto: los compilamos con tu cuenta de desarrollador y los conectamos con Orbital. Orbital les pasa el juego, tus llaves del Switch y la partida, y les enciende el modo rápido antes de abrir.</p>
+      <p class="gain"><b>Ganas:</b> juegas en el avión, sin consola. Desde Orbital es tocar y jugar.</p>
+      <p class="lose"><b>Pierdes:</b> una preparación de una vez (modo desarrollador, un archivo de la Mac y una VPN local). Cada iOS nuevo puede romperlo unas semanas: en iOS 27 DolphiniOS ya funciona y MeloNX está sin confirmar. Switch pide iPhone 15 Pro o más nuevo.</p>
+      <div class="meta"><span class="tag mid">2–3 semanas</span><span class="tag mid">Frágil con cada iOS</span></div>
+    </article>
+
+    <article class="opt">
+      <header><span class="code">G3</span><h3>Dolphin dentro de Orbital</h3><span class="tag no">No por ahora</span></header>
+      <p>Meter el motor de GameCube dentro de la propia Orbital, que se encienda el modo rápido sola, sin otra app. Se puede (StikDebug lo permite desde adentro), pero son meses y lo mismo se rompe con cada iOS. El Switch no se puede meter así: su motor es otro mundo.</p>
+      <p class="lose"><b>Pierdes:</b> meses que no cambian lo que ves frente a G2.</p>
+      <div class="meta"><span class="tag no">Meses</span></div>
+    </article>
+
+  </div>
+</section>
+
+<section>
   <h2>Lo que tienes que decidir</h2>
 
   <div class="dec">
@@ -180,12 +219,18 @@ a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   </div>
 
   <div class="dec">
-    <h3>D3 · El Switch</h3>
+    <h3>D3 · GameCube y Switch</h3>
     <div class="choices">
-      <div class="choice rec"><span class="code" style="justify-self:start">D3-A</span><p><b>Switch solo por transmisión (E3).</b> Funciona hoy y no se rompe con iOS.</p></div>
-      <div class="choice"><span class="code" style="justify-self:start">D3-B</span><p>Además, un botón «Abrir en MeloNX» si lo tienes instalado. Tú te encargas del JIT cada vez.</p></div>
+      <div class="choice"><span class="code" style="justify-self:start">D3-A</span><p>Solo G1: desde la consola. Lo estable, pero sin consola no hay GameCube ni Switch.</p></div>
+      <div class="choice rec"><span class="code" style="justify-self:start">D3-B</span><p><b>G1 primero y G2 después.</b> En la ficha del juego salen los dos botones; si el del iPhone no está listo, solo sale el de la consola.</p></div>
+      <div class="choice"><span class="code" style="justify-self:start">D3-C</span><p>Solo G2: en el iPhone. Juegas en cualquier lado, pero un iOS nuevo te puede dejar sin nada unas semanas.</p></div>
     </div>
-    <p class="recline"><span>Recomiendo D3-A.</span> MeloNX en iOS 27 está en el aire y pide pasos que no son de Orbital.</p>
+    <p class="recline"><span>Recomiendo D3-B.</span> G1 te da GameCube y Switch esta misma semana, y G2 se suma para cuando no tengas la consola, sin que tengas que elegir cada vez.</p>
+  </div>
+
+  <div class="dec">
+    <h3>D4 · ¿Qué iPhone tienes?</h3>
+    <p>Para el Switch en el iPhone (G2) se necesita un iPhone 15 Pro o más nuevo, porque el juego ocupa unos 6 GB de memoria. GameCube corre desde el iPhone 12. Para G1 sirve cualquiera. Dime el modelo y lo anoto.</p>
   </div>
 </section>
 
@@ -197,9 +242,15 @@ a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     <li><div><b>DS, SNES, PS1 y PSP.</b> El mismo molde con más motores. PSP es la que hay que medir en tu iPhone.</div></li>
     <li><div><b>Transmisión.</b> Apollo en la Legion Go y un botón «Jugar desde la consola» que abre Moonlight. Más adelante, si vale la pena, traerlo dentro de Orbital.</div></li>
   </ol>
+  <h3>Y con D3-B, GameCube y Switch van así</h3>
+  <ol class="plan">
+    <li><div><b>G1 esta semana.</b> Apollo en la Legion Go (crea una pantalla del tamaño del iPhone, así la tele no se desacomoda). En Orbital del iPhone, tus juegos de GameCube y Switch con sus portadas y «Jugar desde la consola». Va antes que GBA porque es lo que más te importa.</div></li>
+    <li><div><b>G2, GameCube.</b> Compilar DolphiniOS con tu cuenta, conectarlo con Orbital para pasarle juegos y partidas, y encenderle el modo rápido desde Orbital. Te guío una vez en la preparación del iPhone.</div></li>
+    <li><div><b>G2, Switch.</b> Lo mismo con MeloNX, más tus llaves y el firmware que ya tiene Ryujinx en la consola. Antes compruebo que MeloNX ya funcione en iOS 27.</div></li>
+  </ol>
   <p><b>Solo en Ultra.</b> Los motores tienen licencias libres que obligan a publicar el código si repartes la app, y pegan con la idea de Plus y de la App Store. En Ultra, que es solo tuya, no hay problema. En la tele no cambia nada; queda anotado en el registro de paridad.</p>
 </section>
 
-<p class="src">Fuentes: <a href="https://git.ryujinx.app/projects/MeloNX">MeloNX</a> · <a href="https://github.com/StikDebug/StikDebug">StikDebug</a> · <a href="https://docs.sidestore.io/docs/advanced/jit">SideStore, JIT en iOS 26.6 y 27</a> · <a href="https://github.com/Provenance-Emu/iCube/issues/11">Provenance, JIT en iOS 26</a> · <a href="https://docs.libretro.com/guides/install-ios/">RetroArch en iOS</a> · <a href="https://github.com/rileytestut/Delta">Delta</a> · <a href="https://club.macstories.net/posts/the-power-of-delta-deep-links">enlaces de Delta</a></p>
+<p class="src">Fuentes: <a href="https://git.ryujinx.app/projects/MeloNX">MeloNX</a> · <a href="https://github.com/StikDebug/StikDebug">StikDebug</a> · <a href="https://docs.sidestore.io/docs/advanced/jit">SideStore, JIT en iOS 26.6 y 27</a> · <a href="https://github.com/Provenance-Emu/iCube/issues/11">Provenance, JIT en iOS 26</a> · <a href="https://docs.libretro.com/guides/install-ios/">RetroArch en iOS</a> · <a href="https://github.com/rileytestut/Delta">Delta</a> · <a href="https://club.macstories.net/posts/the-power-of-delta-deep-links">enlaces de Delta</a> · <a href="https://github.com/StikDebug/StikJIT/blob/main/INTEGRATION.md">StikJIT, cómo una app pide JIT</a> · <a href="https://oatmealdome.me/blog/dolphinios-5-0-0-beta-1/">DolphiniOS 5</a> · <a href="https://builds.io/blog/technologies/ios-technologies/how-to-enable-jit-on-iphone/">JIT en iOS 27 (Builds.io)</a> · <a href="https://onejailbreak.com/blog/stikdebug-ios/download">StikDebug 3.2</a></p>
 
 </div>

@@ -24,3 +24,14 @@ Estado: **investigación, nada construido**. Espera las decisiones D1–D3 de Fe
 ## Restricciones
 - Solo en Ultra (`ORBITAL_ULTRA`): los núcleos son GPL/MPL; repartir Plus por TestFlight obligaría a publicar el código.
 - La tele no cambia. Si se construye, va una fila al registro de paridad.
+
+## GameCube y Switch (3 nov, «para mí es súper importante»)
+- **G1 desde la consola:** el iPhone pide a la tele `POST /api/launch` (ya existe en `orbital/api/play.py`; el iPhone
+  aún no lo usa) y abre Moonlight contra Apollo en la Legion Go (pantalla virtual del tamaño del iPhone). Cualquier iOS.
+- **G2 en el iPhone:** DolphiniOS y MeloNX compilados con la cuenta de Fernando, con App Group compartido con Ultra
+  (juegos, partidas, llaves y firmware del Switch desde la consola) y JIT por StikDebug
+  (`stikdebug://enable-jit?bundle-id=…&pid=…&script-name=universal.js` en TXM). Una vez: modo desarrollador, archivo de
+  emparejamiento desde la Mac, LocalDevVPN. DolphiniOS 5.0.0b6 dice funcionar en iOS 27; MeloNX sin confirmar en 27.
+  MeloNX pide «Increased Memory Limit» y recomienda iPhone 15 Pro o más nuevo.
+- **G3** Dolphin dentro de Orbital con StikJIT integrado: posible, meses; Switch (Ryujinx/.NET) no.
+- Recomendación: **D3-B** (G1 primero, G2 después). D4: falta saber el modelo del iPhone.
