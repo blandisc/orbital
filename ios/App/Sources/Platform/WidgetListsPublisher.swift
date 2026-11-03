@@ -41,7 +41,7 @@ enum WidgetListsPublisher {
     /// Guarda las listas y sus pósters (bajando los que falten), lista por lista.
     private static func write(_ lists: [WidgetLists.List]) async {
         guard !Task.isCancelled, let directory = WidgetStore.listsDirectory else { return }
-        WidgetStore.discardOutdatedImages(in: directory)   // cambió el tamaño: se vuelven a bajar
+        WidgetStore.discardOutdatedImages(in: directory, version: WidgetStore.listImagesVersion)   // cambió el tamaño: se vuelven a bajar
         var model = WidgetLists(lists: lists)
         // Primero lo que ya está en el disco: el widget lo enseña al momento.
         for l in model.lists.indices {

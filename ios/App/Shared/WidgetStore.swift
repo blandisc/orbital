@@ -36,12 +36,14 @@ enum WidgetStore {
     /// La versión de las imágenes guardadas. Al subirla (cambió el tamaño con que se guardan), la primera publicación borra
     /// las de antes y las vuelve a bajar: sin esto, las de 300 px se quedaban para siempre (se reutilizan si ya están).
     static let imagesVersion = 2
+    /// El mosaico va aparte: sus pósters se guardan del tamaño de su pieza (330 px), no a 450 (2 nov 2026).
+    static let listImagesVersion = 3
 
     /// Borra las imágenes de una versión anterior de `folder` (cada widget tiene la suya) y apunta la actual; true si borró
     /// (hay que volver a escribir y recargar aunque lo demás no haya cambiado). Lo llaman los que publican.
     @discardableResult
-    static func discardOutdatedImages(in folder: URL) -> Bool {
-        let marker = folder.appendingPathComponent("images-v\(imagesVersion)")
+    static func discardOutdatedImages(in folder: URL, version: Int = imagesVersion) -> Bool {
+        let marker = folder.appendingPathComponent("images-v\(version)")
         guard !FileManager.default.fileExists(atPath: marker.path) else { return false }
         for file in (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
         where file.hasSuffix(".jpg") || file.hasSuffix(".png") || file.hasPrefix("images-v") {
