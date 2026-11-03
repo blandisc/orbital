@@ -48,7 +48,7 @@
       "kind": "«movie» | «series»",
       "meta_id": "el id del título",
       "video_ids": "los videos que trae (un paquete de temporada trae varios), ≤ 50",
-      "files": "{\"<video_id>\": file_idx}: el archivo de cada video dentro del torrent, desde 0, como lo da Torrentio. Pedir otro episodio del mismo paquete agrega su archivo; nunca se vuelve a agregar el torrent",
+      "files": "{\"<video_id>\": file_idx}: el archivo de cada video dentro del torrent, desde 0, como lo da Torrentio. Al pedir un paquete (más de un video) se eligen todos sus videos, como hace Torrentio: Real-Debrid solo deja elegir archivos una vez (waiting_files_selection). Pedir otro episodio del mismo paquete une su video_id y su file_idx, sin volver a pedir nada. Los `links` de Real-Debrid van en el orden de los archivos elegidos: con `files` se escoge el enlace. Un paquete viejo pedido con un solo archivo no da «Listo» para otro episodio: ese se pide como torrent nuevo",
       "season": "entero o null",
       "episode": "entero o null",
       "language": "«es-419», o vacío",
@@ -83,7 +83,8 @@
       "_": "Al juntar dos entradas con la misma huella. Los relojes de los aparatos nunca deciden.",
       "video_ids, files": "se unen",
       "percent, progress_at": "el mayor",
-      "state": "el de mayor precedencia: gone > ready > refused > too_many > no_peers > downloading > queued; un pedido nuevo de una huella con refused o gone empieza de cero",
+      "state": "el de mayor precedencia: gone > ready > refused > no_peers > downloading > queued > too_many (too_many se reintenta más tarde, así que cualquier otro le gana)",
+      "pedido nuevo": "si llega un `rd_id` no vacío y distinto del guardado, es un pedido nuevo (volver a pedir siempre da otro rd_id): reemplaza la entrada, con video_ids y files unidos. Así gone o refused no atoran un nuevo pedido",
       "rd_id": "el primero que no venga vacío",
       "title, by, since": "los del primero que lo anotó",
       "rd_status, seeders": "los de la entrada con más `percent`"
@@ -94,7 +95,7 @@
       "url, filename, linked": "el enlace de Real-Debrid va atado a quien lo pidió y vive solo en la memoria de ese aparato"
     },
     "forget": "lo terminado (ready, refused, too_many, gone) se olvida 7 días después de `updated`; lo que sigue en camino, nunca. Excepción: lo de otra cuenta, que nadie aquí puede seguir, se olvida 7 días después de su último `updated` aunque siga en camino. Un GET no devuelve lo olvidado y un POST no lo reaviva",
-    "limits": { "entries": 200, "body_bytes": 16384, "_": "más de 200: se olvida primero lo terminado más viejo; nunca lo que sigue en camino. Un campo fuera de su forma = 422" },
+    "limits": { "entries": 200, "post_body_bytes": 16384, "_": "`post_body_bytes` es solo para el cuerpo de un POST; el GET devuelve todo lo guardado (hasta 200 entradas, unos 80 KB). Más de 200: se olvida primero lo terminado más viejo; nunca lo que sigue en camino. Un campo fuera de su forma = 422" },
     "other_account": "Una entrada con otra `account` se enseña («Lo pidió la TV · …» en el iPhone, «Lo pidió el <by>» en la TV) pero no se sigue, no se cancela y no sale como versión: ese enlace no existe en tu cuenta",
     "access": "Por ahora, con el token del puerto del túnel (el mismo de Alexa), porque no lleva claves ni enlaces; el iPhone solo llega por https o por Tailscale. Pasa a «solo llave de aparato» cuando existan (AD-3). Nada de lo que traiga una clave usa este acceso"
   },
