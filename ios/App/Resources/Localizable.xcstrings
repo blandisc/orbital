@@ -4367,17 +4367,6 @@
         }
       }
     },
-    "Certified Fresh recientes · Series Fresh": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recent Certified Fresh · Fresh shows"
-          }
-        }
-      }
-    },
     "Chico": {
       "extractionState": "manual",
       "localizations": {
@@ -18198,17 +18187,6 @@
         }
       }
     },
-    "Películas y series, ahora mismo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Movies and shows, right now"
-          }
-        }
-      }
-    },
     "Películas: %@ · Series: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -19964,17 +19942,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommended from what you watch"
-          }
-        }
-      }
-    },
-    "Recomendadas por Trakt con lo que ves": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recommended by Trakt from what you watch"
           }
         }
       }
@@ -30048,6 +30015,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "− Earlier"
+          }
+        }
+      }
+    },
+    "Recomendadas por Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended by Trakt"
+          }
+        }
+      }
+    },
+    "Lo más visto hoy en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched today on Trakt"
+          }
+        }
+      }
+    },
+    "Lo más visto esta semana en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched this week on Trakt"
+          }
+        }
+      }
+    },
+    "Películas y series recientes con buena crítica": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent critically acclaimed movies and series"
           }
         }
       }

@@ -115,7 +115,7 @@ struct DSProgress: View {
 ///   nombre en mayúsculas chicas y una línea fina hasta la orilla (`DSChapterLabel`, el mismo de `DSChapterHead`). Sin porqué.
 /// - `.subsection`: una fila o un estante («En tendencia», «Seguir viendo», «Tus 5 estrellas»). Título blanco mediano; su
 ///   porqué arriba en turquesa (`eyebrow`, o `meta`) solo cuando ayuda.
-/// A la derecha, «Ver todo» si abre la lista completa o un dato (cuántos, cuánto pesa), nunca una frase; lo que explica va
+/// «Ver todo» es una flecha pegada al título (todo el encabezado abre la lista); a la derecha, si acaso, un dato (cuántos, cuánto pesa), nunca una frase; lo que explica va
 /// en el cuerpo, no bajo el título. Sin íconos: el color lo pone el arte de abajo. `DesignTests` revisa las dos reglas.
 struct DSSectionHead: View {
     enum Level { case section, subsection }
@@ -128,7 +128,9 @@ struct DSSectionHead: View {
     var chevron = false
     /// La línea gris de abajo.
     var meta: Text?
-    /// De dónde viene (Trakt, tus complementos, tu Orbital): su sello junto al título.
+    /// De dónde viene (tus complementos, tu Orbital, Rotten Tomatoes): su sello junto al título. Trakt ya no lleva sello: el
+    /// círculo rojo se leía como una palomita de «hecho» y competía con los pósters; lo dice el porqué turquesa («Recomendadas
+    /// por Trakt») (Fernando, 2 nov 2026, B2/C2/E2).
     var source: ListSource?
     /// El porqué, en una línea turquesa arriba del título («Lo que dejaste pendiente»), como en una revista (solo subsecciones).
     var eyebrow: Text?
@@ -138,7 +140,8 @@ struct DSSectionHead: View {
 
     init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil,
          level: Level = .subsection, symbol: String? = nil) {
-        self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
+        self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta
+        self.source = source == .trakt ? nil : source
         self.eyebrow = eyebrow; self.level = level; self.symbol = symbol
     }
 
@@ -166,7 +169,7 @@ struct DSSectionHead: View {
                 if let action { Button(action: action) { trailing }.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
                 else { trailing.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1) }
             }
-            if chevron { SeeAllLabel() }
+            if chevron { seeAllChevron }
             else if let count { Text(verbatim: "\(count)").recipe(.footnote, color: DS.textMuted) }
         }
         .textCase(nil)
@@ -182,6 +185,18 @@ struct DSSectionHead: View {
             .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: level == .section ? .title1 : .title2).capHeight / 2 }
     }
 
+    /// «Ver todo»: la flecha va pegada al título y todo el encabezado abre la lista (Fernando, 2 nov 2026: sin la cápsula
+    /// de texto a la derecha, como en Música y la App Store).
+    private var seeAllChevron: some View { DSTitleChevron(small: level == .section) }
+
+    /// El título con la flecha de «Ver todo» pegada (si abre la lista completa).
+    private func titleLine(_ lines: Int) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
+            sectionTitle.lineLimit(lines)
+            if chevron { seeAllChevron }
+        }
+    }
+
     private var head: some View {
         // Lo de la derecha («Ver todo», el número) va a la altura del título, no de la línea ámbar de arriba.
         HStack(alignment: .sectionTitle, spacing: DS.Space.s2) {
@@ -193,16 +208,16 @@ struct DSSectionHead: View {
                 // siempre al lado; un sello con nombre, si no caben en un renglón, cede y baja bajo el título.
                 if let source, source.isIcon {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                        sectionTitle.lineLimit(2)
+                        titleLine(2)
                         SourceBadge(source: source).alignmentGuide(.firstTextBaseline) { $0[.bottom] - DS.Size.markOvershoot }   // el jitomate, centrado con las mayúsculas
                     }
                 } else { ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                        sectionTitle.lineLimit(1)
+                        titleLine(1)
                         if let source { SourceBadge(source: source) }
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        sectionTitle.lineLimit(2)
+                        titleLine(2)
                         if let source { SourceBadge(source: source) }
                     }
                 } }
@@ -213,8 +228,7 @@ struct DSSectionHead: View {
                 if let action { Button(action: action) { trailing }.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                 else { trailing.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
             }
-            if chevron { SeeAllLabel() }
-            else if let count { Text(verbatim: "\(count)").recipe(.secondary, color: DS.textMuted) }
+            if !chevron, let count { Text(verbatim: "\(count)").recipe(.secondary, color: DS.textMuted) }
         }
         .textCase(nil)   // también como encabezado de una lista (Descargas): sin las mayúsculas del sistema
         .contentShape(Rectangle())

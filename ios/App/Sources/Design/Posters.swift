@@ -8,7 +8,7 @@ import OrbitalModels
 // Equivalencias con la TV: Chip, Badge, Progress, SectionHead, Card (PosterCard), FeatureTile (HeroCard), Mosaic (`Design/Mosaic.swift` ↔ `foryou-mosaic`), Button, Sheet.
 
 
-/// El póster (con su avance, insignias y reflejo) y la tarjeta de póster.
+/// El póster (con su avance e insignias) y la tarjeta de póster.
 /// El póster de un título: la imagen, o su nombre sobre un fondo si no carga. La imagen llena su marco y se recorta:
 /// nunca agranda la vista (con `aspect: nil` ocupa el espacio que le den, como el destacado).
 struct PosterView: View {

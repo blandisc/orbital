@@ -27,12 +27,11 @@ struct ReleaseTimeline: View {
             layout {
                 DSSectionHead(title: Text("Lo nuevo de lo tuyo"), source: .trakt, eyebrow: Text("Ya salió y lo que viene"))
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
-                Button(action: onCalendar) {
-                    DSCapsuleLabel(title: Text(verbatim: Date().formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide)).capitalized(with: env.uiLocale)), symbol: "calendar")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Calendario del mes"))
-                .accessibilityIdentifier("release-calendar")
+                // El calendario es un ícono redondo, como el «+» de Canales (Fernando, 2 nov 2026, B3: sin la cápsula «Noviembre»;
+                // el mes ya se ve al abrirlo).
+                DSIconButton(symbol: "calendar", label: "Calendario del mes", size: .regular, action: onCalendar)
+                    .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+                    .accessibilityIdentifier("release-calendar")
             }
             .padding(.horizontal, DS.Space.gutter)
             ScrollViewReader { proxy in

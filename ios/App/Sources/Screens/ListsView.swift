@@ -178,9 +178,9 @@ struct ListsView: View {
                     if model.needsSources { sourcesFallback }
                 }
                 .modifier(SectionSpy(section: .forYou, active: $activeSection))
-                // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
-                // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
-                // Cada colección es una sección: 40 entre rótulos, medido desde el reflejo (decisión 2, 31 oct 2026).
+                // Las colecciones (con su carácter: en carrusel y con peso), justo después de lo general.
+                // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas.
+                // Cada colección es una sección: 40 entre rótulos (decisión 2, 31 oct 2026).
                 if restReady { rest }
             }
             .scrollTargetLayout()   // los grupos son destinos de `position` (sin `scrollTargetBehavior`, no cambia cómo se desliza)
@@ -269,11 +269,11 @@ struct ListsView: View {
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Plataformas"), symbol: CollectionSection.platforms.symbol)
-            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { hub in
+            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
                                     tint: DS.PlatformTint.color(hub.brand))
-                        .rowReflection(weight: DS.PlatformTint.color(hub.brand))
+                        .cardWeight(DS.PlatformTint.color(hub.brand))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("platform-\(hub.brand)")
@@ -344,7 +344,7 @@ struct ListsView: View {
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Estudios"), symbol: CollectionSection.studios.symbol)
-            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { studio in
+            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
                                    posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio, captioned: false) {
@@ -379,7 +379,7 @@ struct ListsView: View {
                 .padding(.top, DS.Space.s3)
             // Una línea de tiempo (Fernando, 31 oct 2026, decisión 7A): un punto por temporada con cuánto falta, la línea las une.
             CenteredCarousel(items: countdown.dropFirst().map { SeasonStop(season: $0.season, days: $0.days) }, id: \.season.slug,
-                             cardWidth: DS.PlatformFan.width, reflected: true,
+                             cardWidth: DS.PlatformFan.width,
                              header: { AnyView(SeasonTimelineStop(days: $0.days)) }) { stop in
                 let season = stop.season
                 let name = Strings.tr(season.title, language: language)
@@ -443,7 +443,7 @@ struct ListsView: View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Géneros"), symbol: CollectionSection.genres.symbol)
-            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { genre in
+            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text("Las mejor calificadas del año"), name: name,
@@ -463,9 +463,9 @@ struct ListsView: View {
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Años"), symbol: CollectionSection.years.symbol)
-            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth, reflected: true) { year in
+            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
-                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).rowReflection()
+                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? [])
                 }
                 .buttonStyle(.plain)
                 .task { await collections.model.loadYearPosters(year) }
@@ -490,10 +490,9 @@ struct ListsView: View {
 
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
-        // El porqué arriba del título (como una revista) y los pósters con su reflejo: los renglones con más carácter.
+        // El porqué arriba del título (como una revista).
         return Shelf(title: shelfTitle(plan),
-                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan),
-                     reflected: plan.style != .top10) {   // el Top 10 no lleva reflejo: abajo van su ▲ ▼ y la cifra
+                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan)) {
             ForEach(items) { s in
                 PlanPoster(suggestion: s, plan: plan, model: model, style: plan.style, badge: model.badges[s.imdb])
             }

@@ -110,7 +110,7 @@ struct HomeView: View {
                 }
                 // Tus recomendaciones de Trakt.
                 if !picks.isEmpty {
-                    Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt con lo que ves"), source: .trakt, reflected: true) {
+                    Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt"), source: .trakt) {
                         // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
                         ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
                     }

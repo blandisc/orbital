@@ -241,7 +241,7 @@ Una sección es el **rótulo**: ícono en el azul de Orbital, el nombre en mayú
 | Subsección (por omisión) | `section` | título blanco; su porqué arriba en `eyebrow` turquesa solo si ayuda | En tendencia, Seguir viendo, Próximas temporadas, Tus 5 estrellas |
 
 **Espacios (iPhone, decisión 2 del 31 oct 2026):** cuatro medidas, en `DS.Layout`, medidas desde donde termina lo que se ve
-(el pie de un póster y lo visible de su reflejo cuentan): del título a lo suyo **12** (`titleToContent`), entre
+(el pie de un póster cuenta; los reflejos se quitaron de toda la app el 2 nov 2026): del título a lo suyo **12** (`titleToContent`), entre
 subsecciones **24** (`betweenSubsections`), entre secciones **40** (`betweenSections`, también `DS.Editorial.sectionGap`) y
 al pie de la pantalla **56** (`screenBottom`). Arriba de cada pantalla, 12 (`screenTop`).
 | Pieza | `card-title` | — | el nombre en una tarjeta o renglón |

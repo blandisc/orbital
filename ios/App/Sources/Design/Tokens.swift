@@ -147,7 +147,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     // MARK: Espacio y forma
     /// Los cuatro espacios de toda pantalla (Fernando, 31 oct 2026, decisión 2), medidos desde donde termina lo que se ve
-    /// (el pie de un póster y su reflejo cuentan): del título a lo suyo, entre subsecciones, entre secciones y al pie.
+    /// (el pie de un póster cuenta): del título a lo suyo, entre subsecciones, entre secciones y al pie.
     /// Arriba de cada pantalla, `titleToContent`. `DesignRulesTests.testScreensKeepTheLayoutRhythm` revisa que el primer contenedor de cada pantalla los use.
     enum Layout {
         static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s10, screenBottom = Space.s14

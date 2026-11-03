@@ -423,15 +423,9 @@ extension DS {
 
         static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
-        /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
+        /// El carrusel centrado: cuánto se encogen y apagan las de los lados, y el peso de su color bajo cada tarjeta.
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
-        static let reflection: CGFloat = 44, reflectionGap = DS.Space.s1, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
-        /// Lo que la sección siguiente puede montarse sobre el reflejo de la última fila (su parte ya desvanecida): sin esto,
-        /// entre una fila con reflejo y la siguiente quedaba el reflejo entero más el aire entre secciones (un hueco vacío).
-        static let reflectionTail: CGFloat = 24
         static let weightTint: Double = 0.35
-        /// El nombre de un premio sube sobre la cola del reflejo; y el aire después de Premios.
-        static let captionLift: CGFloat = 36
         /// La línea de tiempo de «Próximas temporadas»: el punto, el grueso y lo tenue de la línea, y desde cuántos días se
         /// dice en meses.
         static let timelineDot: CGFloat = 8, timelineStroke: CGFloat = 2, timelineLine = 0.5, timelineMonths = 45

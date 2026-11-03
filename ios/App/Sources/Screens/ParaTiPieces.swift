@@ -150,9 +150,9 @@ struct ShelfPoster: View {
     case "mine": return Text("Las que estás viendo")
     case "watchlist": return Text("Lo que dejaste pendiente")
     case "recs": return Text("Por lo que has visto")
-    case "trend": return Text("Lo más visto esta semana")
+    case "trend": return Text("Lo más visto esta semana en Trakt")
     case "popular": return Text("De todos los tiempos")
-    case "critics": return Text("Certified Fresh recientes · Series Fresh")
+    case "critics": return Text("Películas y series recientes con buena crítica")
     default: return plan.style == .platform ? Text("Lo más popular") : plan.id.hasPrefix("addon:") ? Text("De tus complementos") : Text("Una lista para ti")
     }
 }
