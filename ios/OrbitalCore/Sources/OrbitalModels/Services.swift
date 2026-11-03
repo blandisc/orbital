@@ -34,6 +34,10 @@ public final class Services: ObservableModel {
     public let debrid: DebridAccount
     /// Los avisos de vencimiento de Real-Debrid que ya se programaron.
     public let debridReminders: DebridReminderBook
+    /// Tus pedidos a Real-Debrid (R12, R13): la libreta de este aparato, pedir y seguir cuánto lleva cada uno.
+    public let debridRequests: DebridRequestsModel
+    /// El nombre de este aparato («iPhone», «iPad», «Mac»): quién hizo cada pedido.
+    public let deviceName: String
     public private(set) var finder: StreamFinder { didSet { notify() } }
     /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
     public let oneDrive: OneDrive
@@ -159,7 +163,7 @@ public final class Services: ObservableModel {
                 downloadsRoot: URL, savedDownloads: [DownloadItem] = [], freeSpace: @escaping @Sendable () -> Int64, cacheRoot: URL? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
                 builtInTraktClientID: String = Services.bundledTraktClientID, builtInTMDBKey: String = Services.bundledTMDBKey,
-                device: OrbitalRemote.Device? = nil,
+                device: OrbitalRemote.Device? = nil, deviceName: String? = nil,
                 allowsOrbital: Bool = true, detailsMemo: TmdbDetailsMemo? = nil) {
         self.cacheRoot = cacheRoot
         self.caches = CacheStore(directory: cacheRoot?.appendingPathComponent("models", isDirectory: true), legacy: kv)
@@ -192,6 +196,8 @@ public final class Services: ObservableModel {
         self.addonList = addonList
         self.debrid = DebridAccount(provider: RealDebrid(http: http, clock: clock), vault: vault, clock: clock)
         self.debridReminders = DebridReminderBook(vault: vault)
+        let deviceName = deviceName ?? device?.name ?? "iPhone"
+        self.deviceName = deviceName
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
                                      own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) },
                                      local: addonList, disk: cacheRoot?.appendingPathComponent("addons"), clock: clock)
@@ -207,6 +213,12 @@ public final class Services: ObservableModel {
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         self.tallArt = TallArt(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate) }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, builtIn: builtInTraktClientID, clock: clock)
+        let debrid = self.debrid
+        // La libreta va en los ajustes de la app (no lleva claves ni enlaces); la clave, en el llavero.
+        let requester = DebridRequester(book: DebridRequestBook(vault: vault), api: RealDebridTorrents(http: http),
+                                        token: { vault.secret(AddonKeys.realDebridToken) }, device: { deviceName }, clock: clock)
+        self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
+                                                  finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)

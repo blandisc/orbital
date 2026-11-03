@@ -18,13 +18,23 @@ public struct AppAddonVault: AddonVault {
 public extension RealDebrid {
     /// Real-Debrid por la red de la app (la de verdad, o la fingida de la demostración y las pruebas).
     init(http: HTTPClient, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.init(fetch: { request in
+        self.init(fetch: RealDebrid.fetch(http), clock: clock)
+    }
+
+    /// Una petición de Real-Debrid por la red de la app (con su cuerpo: `addMagnet` y `selectFiles` mandan un formulario).
+    static func fetch(_ http: HTTPClient) -> DebridFetch {
+        { request in
             guard let url = request.url else { throw NetworkError("Dirección inválida") }
             let response = try await http.send(HTTPRequest(url: url, method: request.httpMethod ?? "GET", headers: request.allHTTPHeaderFields ?? [:],
-                                                           timeout: request.timeoutInterval))
+                                                           body: request.httpBody, timeout: request.timeoutInterval))
             return (response.status, response.data)
-        }, clock: clock)
+        }
     }
+}
+
+public extension RealDebridTorrents {
+    /// Los torrents de tu Real-Debrid por la red de la app.
+    init(http: HTTPClient, gate: RDGate = RDGate()) { self.init(fetch: RealDebrid.fetch(http), gate: gate) }
 }
 
 public enum StremioImport {

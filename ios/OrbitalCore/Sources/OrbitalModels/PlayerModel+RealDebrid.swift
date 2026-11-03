@@ -2,6 +2,18 @@ import Foundation
 import OrbitalCore
 import OrbitalAddons
 
+/// Lo de Real-Debrid de un video en el reproductor.
+struct PlayerDebridState {
+    /// La versión «por bajar» que se abrió o se saltó (ya pedida): la que se pide con «Pedirlo y avisarme».
+    var pendingSource: Source?
+    /// No se pudo ni buscar (leer tus complementos falló, con internet): la causa 3, con el error en palabras.
+    var searchProblem: String?
+    /// El siguiente episodio ya se le pidió a Real-Debrid en este video (R8): no se pide dos veces.
+    var requestedNext: String?
+    /// Sin ninguna versión: lo que dijo tu Torrentio sin Real-Debrid (R4): existe (10, con su torrent) o nadie lo tiene (11).
+    var lookupCause: (cause: UnavailableCause, torrent: Source?)?
+}
+
 /// Real-Debrid en el reproductor (R5, R6, D5): los avisos de Torrentio, los reintentos que no piden descargas y la causa en
 /// palabras cuando no hay qué ver.
 extension PlayerModel {
@@ -15,7 +27,80 @@ extension PlayerModel {
     public var cause: UnavailableCause? {
         guard failure == .noSources || failure == .noneWorked else { return nil }
         let account = UnavailableCause.Account.from(debridHealth, saved: debridSaved?(), now: clock())
-        return UnavailableCause.first(notice: lastNotice, account: account, language: wantedLanguage)
+        if let byAccount = UnavailableCause.first(notice: nil, account: account, language: wantedLanguage) { return byAccount }
+        if let searchProblem = rd.searchProblem { return .cannotSearch(reason: searchProblem) }
+        // 1 · Ya pedido (aquí, en la ficha o por Torrentio al abrirlo): cuánto lleva.
+        if let request = currentRequest, request.state.isActive { return .downloading(percent: request.percent) }
+        if let said = UnavailableCause.first(notice: lastNotice, account: account, language: wantedLanguage) { return said }
+        return rd.lookupCause?.cause
+    }
+
+    /// No se pudo ni buscar: la causa 3, con el error en palabras.
+    func cannotSearch(_ error: Error) {
+        rd.searchProblem = UserMessages.humanize(String(describing: error))
+        fail("No puedo buscar versiones.", .noSources)
+    }
+
+    /// El pedido de este video en la libreta, si hay.
+    var currentRequest: DebridRequest? {
+        guard let request else { return nil }
+        return debridRequests?.request(metaID: request.metaID, videoID: request.videoID)
+    }
+
+    /// Esa versión ya está pedida en la libreta (y sigue en camino): abrirla otra vez no sirve.
+    func alreadyRequested(_ source: Source) -> Bool {
+        guard let torrent = source.torrent, let found = debridRequests?.requester.book.find(hash: torrent.hash) else { return false }
+        return found.state.isActive
+    }
+
+    /// Torrentio ya se la pidió a Real-Debrid al abrirla: a la libreta, para seguirla y avisar.
+    func noteOpenedOnDebrid(_ source: Source) {
+        rd.pendingSource = source
+        guard let requests = debridRequests, let request else { return }
+        let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
+        let numbers = episodeNumbers(request.videoID), language = Streams.playingLanguage(source, prefs)?.code
+        Task { await requests.noteOpened(source, kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle,
+                                         season: numbers?.season, episode: numbers?.episode, language: language) }
+    }
+
+    /// «T1 E2» de un video id de serie («tt…:1:2»).
+    func episodeNumbers(_ videoID: String) -> (season: Int, episode: Int)? {
+        let parts = videoID.split(separator: ":")
+        guard parts.count >= 3, let season = Int(parts[parts.count - 2]), let episode = Int(parts[parts.count - 1]) else { return nil }
+        return (season, episode)
+    }
+
+    /// No hay ninguna versión: se dice y, con tu Torrentio sin Real-Debrid, se averigua si existe (R4).
+    func noSources(generation mine: Int) async {
+        fail("No hay versiones en Real-Debrid para este título.", .noSources)
+        await explainNoSources(generation: mine)
+    }
+
+    /// No hubo ninguna versión: con tu Torrentio sin Real-Debrid se sabe si existe (y se puede pedir) o si nadie lo tiene.
+    func explainNoSources(generation mine: Int) async {
+        guard let requests = debridRequests, let request, requests.canRequest else { return }
+        let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
+        guard let found = await requests.torrents(kind: request.kind, videoID: request.videoID, prefs: prefs), mine == generation else { return }
+        if let best = found.first {
+            rd.lookupCause = (.notInDebrid(language: Streams.playingLanguage(best, prefs)?.code ?? wantedLanguage), best)
+        } else {
+            rd.lookupCause = (.nobodyHasIt, nil)
+        }
+    }
+
+    /// «Pedirlo y avisarme» desde el reproductor (R7): la versión «por bajar» que ya se abrió (Real-Debrid ya la conoce) o el
+    /// mejor torrent que exista. Nunca la pide dos veces.
+    public func requestFromDebrid() async -> DebridRequestsModel.Outcome? {
+        guard let requests = debridRequests, let request else { return nil }
+        let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
+        let pick = rd.pendingSource ?? rd.lookupCause?.torrent
+        let numbers = episodeNumbers(request.videoID)
+        let outcome = await requests.request(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle,
+                                             season: numbers?.season, episode: numbers?.episode, prefs: prefs, preferred: pick?.torrent,
+                                             language: pick.flatMap { Streams.playingLanguage($0, prefs)?.code },
+                                             release: pick.flatMap { $0.release.isEmpty ? nil : $0.release })
+        changed()
+        return outcome
     }
 
     /// Las que quedan por probar en un reintento (las que arrancan al instante y no han fallado).

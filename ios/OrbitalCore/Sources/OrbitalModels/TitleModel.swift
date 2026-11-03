@@ -75,11 +75,16 @@ public final class TitleModel: ObservableModel {
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// Por qué no hay qué ver, si se sabe algo mejor que «no hay» (D5): «Tu Real-Debrid venció» con «Renovar», «No tienes
     /// complementos prendidos»…; nil si hay versiones o no se sabe.
-    public private(set) var unavailableCause: UnavailableCause? { didSet { if oldValue != unavailableCause { changed() } } }
+    public internal(set) var unavailableCause: UnavailableCause? { didSet { if oldValue != unavailableCause { changed() } } }
+    /// «Pedirlo y avisarme» (R2-A, R4): la versión que existe pero Real-Debrid todavía no tiene, lista para pedir; nil si la
+    /// recomendada arranca al instante, si no hay qué pedir o sin clave de Real-Debrid.
+    public internal(set) var debridOffer: DebridOffer? { didSet { if oldValue != debridOffer { changed() } } }
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
     let services: Services
+    /// Si Torrentio sin Real-Debrid contestó que no hay ningún torrent (por título): la causa 11.
+    var lookupEmpty: [String: Bool] = [:]
     private var meta: JSON?                // la ficha ORIGINAL
     private var localized: JSON?
     /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
@@ -222,26 +227,45 @@ public final class TitleModel: ObservableModel {
                 ?? first
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
             sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
-            unavailableCause = sourceCheck == .none ? await cause(videoID: videoID, language: prefs.wanted) : nil
+            // Lo que falta se pide (R4): si la recomendada no arranca al instante (o no hay ninguna), qué torrent existe.
+            let wanted = recommendedSource.map { !$0.instant } ?? true
+            let offer = wanted && sourceCheck != .offline ? await offerToRequest(videoID: videoID, prefs: prefs, found: found) : nil
+            guard !Task.isCancelled else { return }
+            debridOffer = offer
+            unavailableCause = sourceCheck == .none ? await cause(videoID: videoID, language: prefs.wanted, offer: offer) : nil
         } catch {
             // Sin red puede fallar antes de preguntarle a los complementos (al leer cuáles tienes): también es «sin conexión»
             // (antes se quedaba «Buscando versión…» para siempre).
             if !Task.isCancelled { sourceCheck = error is StreamFinderError || Degraded.isOffline(error) || !services.isOnline() ? .offline : .unknown }
-            // Hay internet y ningún complemento contestó: son ellos (la causa 8), no tu conexión.
-            unavailableCause = sourceCheck == .offline && services.isOnline() ? .addonsOffline : nil
+            // Hay internet y ningún complemento contestó: son ellos (la causa 8), no tu conexión. Si falló otra cosa (leer tus
+            // complementos), no se pudo ni buscar (la causa 3), con el error en palabras.
+            if sourceCheck == .offline && services.isOnline() { unavailableCause = .addonsOffline }
+            else if sourceCheck == .unknown && services.isOnline() && !Task.isCancelled {
+                unavailableCause = .cannotSearch(reason: UserMessages.humanize(String(describing: error))); sourceCheck = .none
+            } else { unavailableCause = nil }
         }
     }
 
     /// La causa en el orden de la tabla común: tu cuenta (preguntándole ya a Real-Debrid si Torrentio dijo «RD error»),
     /// complementos apagados y lo que dijo Torrentio en lugar de versiones.
-    private func cause(videoID: String, language: String) async -> UnavailableCause? {
+    private func cause(videoID: String, language: String, offer: DebridOffer?) async -> UnavailableCause? {
+        // 1 · Ya lo pediste y Real-Debrid lo está bajando: eso va primero.
+        if let request = services.debridRequests.request(metaID: metaID, videoID: videoID), request.state.isActive {
+            return .downloading(percent: request.percent)
+        }
         let notices = await services.finder.notices(kind: kind, videoID: videoID)
         let health: DebridHealth? = notices.contains(where: \.aboutTheAccount) ? await services.debrid.refreshAfterTrouble() : nil
         let account = UnavailableCause.Account.from(health, saved: services.debrid.saved, now: Date())
         if let byAccount = UnavailableCause.first(notice: nil, account: account, language: language) { return byAccount }
+        // Sin tu clave de Real-Debrid, casi nada se ve en el iPhone (Torrentio no se arma sin ella): esa es la causa.
+        if !services.debrid.hasToken, services.addonList.isConfigured { return .reconnectDebrid }
         let list = services.addonList
         if list.isConfigured, !list.installed.contains(where: { $0.enabled && $0.resources.contains("stream") }) { return .noAddonsOn }
-        return UnavailableCause.first(notice: notices.first(where: \.aboutTheAccount) ?? notices.first, account: account, language: language)
+        if let said = UnavailableCause.first(notice: notices.first(where: \.aboutTheAccount) ?? notices.first, account: account, language: language) { return said }
+        // R4: con tu Torrentio sin Real-Debrid se sabe si existe (10, se puede pedir) o si nadie lo tiene (11).
+        if let offer { return .notInDebrid(language: offer.language ?? language) }
+        if lastLookupEmpty { return .nobodyHasIt }
+        return nil
     }
 
     /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.
@@ -364,7 +388,7 @@ public final class TitleModel: ObservableModel {
     /// El video de «Ver» todavía no sale: cuándo.
     public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0) } }
 
-    private func episode(_ id: String) -> (Int, Episode)? {
+    func episode(_ id: String) -> (Int, Episode)? {
         for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }
         return nil
     }

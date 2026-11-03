@@ -4,7 +4,7 @@ import Foundation
 /// `design/vocabulario.json › causas` (la primera que aplique gana), el mismo de la TV; la ficha y el reproductor dicen lo
 /// mismo. Todos los textos viven aquí y solo aquí: las pantallas piden `title`, `detail` y `action`.
 public enum UnavailableCause: Equatable, Sendable {
-    /// 1 · Real-Debrid lo está bajando y se sabe cuánto lleva (la libreta de pedidos, Fase 2: aún no se usa).
+    /// 1 · Real-Debrid lo está bajando y se sabe cuánto lleva (la libreta de pedidos, R12).
     case downloading(percent: Int)
     /// 2 · Aún no se estrena (`day`: «el viernes 6»).
     case unreleased(day: String)
@@ -36,6 +36,8 @@ public enum UnavailableCause: Equatable, Sendable {
         case retry
         /// Elegir otra versión (Versión).
         case otherVersion
+        /// «Pedirlo y avisarme» (R2-A, R7): Real-Debrid lo baja y avisa al terminar.
+        case request
     }
 
     // pendiente: texto de la tabla común con la TV — ya está en design/vocabulario.json › causas (3 nov 2026); si cambia ahí,
@@ -80,7 +82,9 @@ public enum UnavailableCause: Equatable, Sendable {
         case .reconnectDebrid, .noAddonsOn: .settings
         case .debridRefused: .otherVersion
         case .addonsOffline, .cannotSearch: .retry
-        case .downloading, .unreleased, .notInDebrid, .nobodyHasIt: nil
+        // La 10 dice «Lo puede bajar por ti»: el botón que lo hace (Fase 2).
+        case .notInDebrid: .request
+        case .downloading, .unreleased, .nobodyHasIt: nil
         }
     }
 
@@ -91,6 +95,7 @@ public enum UnavailableCause: Equatable, Sendable {
         case .settings: tr("Ajustes")
         case .retry: tr("Reintentar")
         case .otherVersion: tr("Elegir otra versión")
+        case .request: tr("Pedirlo y avisarme")
         }
     }
 

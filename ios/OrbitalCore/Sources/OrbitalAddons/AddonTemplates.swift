@@ -74,3 +74,26 @@ public enum AddonCatalog {
 
     public static func template(_ id: String) -> AddonTemplate? { recommended.first { $0.id == id } }
 }
+
+public extension AddonCatalog {
+    /// La misma dirección de tu Torrentio (tus opciones: orden, idiomas, calidades, sitios) pero sin Real-Debrid (R4): así
+    /// enseña los torrents que existen aunque Real-Debrid no los tenga, con su `infoHash` y su `fileIdx`. Se quitan la clave
+    /// de cualquier servicio de descarga y `debridoptions`. nil si no es un Torrentio. Igual que `without_debrid` de la TV.
+    /// Devuelve la base (sin `/manifest.json`), lista para `/stream/{tipo}/{id}.json`. Nunca lleva tu clave: se puede anotar.
+    static func torrentioWithoutDebrid(_ manifestURL: String) -> String? {
+        let decoded = manifestURL.removingPercentEncoding ?? manifestURL
+        guard let scheme = decoded.range(of: "://") else { return nil }
+        let head = decoded[..<scheme.lowerBound]
+        var rest = decoded[scheme.upperBound...]
+        if rest.hasSuffix("/manifest.json") { rest = rest.dropLast("/manifest.json".count) }
+        let parts = rest.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
+        let host = String(parts[0])
+        guard host.lowercased().contains("torrentio") else { return nil }
+        let config = parts.count > 1 ? String(parts[1]) : ""
+        let services = AddonSecrets.services.split(separator: "|").map { "\($0)=" } + ["debridoptions="]
+        let kept = config.split(separator: "|").map(String.init).filter { option in
+            !option.isEmpty && !services.contains { option.lowercased().hasPrefix($0) }
+        }
+        return kept.isEmpty ? "\(head)://\(host)" : "\(head)://\(host)/\(kept.joined(separator: "|"))"
+    }
+}

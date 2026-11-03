@@ -75,7 +75,12 @@ extension PlayerModel {
         if remaining <= PlaybackRules.upNextLookahead && !preloadedNext && request.localFile == nil {
             preloadedNext = true  // que al llegar el momento ya esté buscada la fuente
             let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
-            Task { _ = try? await finder.find(kind: request.kind, videoID: next, prefs: prefs) }
+            let finder = finder
+            // Y si no arranca al instante, se le pide ya a Real-Debrid (R8, R9-B: 3 min antes del final, como la TV).
+            Task { [weak self] in
+                let found = try? await finder.find(kind: request.kind, videoID: next, prefs: prefs)
+                await self?.requestNextIfNeeded(next, found: found, remaining: remaining, prefs: prefs)
+            }
         }
         let current = s.chapters.sorted { $0.time < $1.time }.last { $0.time <= s.position }
         // «Opening Credits» al principio no son los créditos del final: solo cuentan en la segunda mitad.
@@ -84,12 +89,41 @@ extension PlayerModel {
             && s.position > s.duration / 2
         let near = PlaybackRules.shouldShowUpNext(position: s.position, duration: s.duration, inCredits: inCredits)
         if upNext == nil && !upNextDismissed && near {
-            upNextDeadline = now.addingTimeInterval(PlaybackRules.upNextCountdown)
             let (label, title) = episodeText(next)
-            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown), thumbnail: episodeThumbnail(next))
+            let downloading = nextDownloading(next)
+            // Real-Debrid lo está bajando: no cuenta hacia atrás (no hay qué poner todavía).
+            upNextDeadline = downloading == nil ? now.addingTimeInterval(PlaybackRules.upNextCountdown) : nil
+            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: downloading == nil ? Int(PlaybackRules.upNextCountdown) : 0,
+                            thumbnail: episodeThumbnail(next), downloading: downloading)
+        } else if var card = upNext, card.downloading != nil, card.downloading != nextDownloading(card.videoID) {
+            card.downloading = nextDownloading(card.videoID)   // cuánto lleva, al día (o ya está: vuelve la cuenta atrás)
+            if card.downloading == nil { upNextDeadline = now.addingTimeInterval(PlaybackRules.upNextCountdown); card.secondsLeft = Int(PlaybackRules.upNextCountdown) }
+            upNext = card
         } else if upNext != nil && !near && remaining > PlaybackRules.upNextAt + 5 {
             upNext = nil; upNextDeadline = nil          // retrocediste lejos del final: la tarjeta ya no aplica
         }
+    }
+
+    /// Si el siguiente no arranca al instante y «Pedir solo el siguiente episodio» está prendido, se le pide a Real-Debrid
+    /// (R8). Uno solo por video.
+    func requestNextIfNeeded(_ next: String, found: [Source]?, remaining: TimeInterval, prefs: Preferences) async {
+        guard let found, let requests = debridRequests, let request, request.videoID != next, rd.requestedNext != next, requests.canRequest else { return }
+        let already = requests.request(metaID: request.metaID, videoID: next)?.state.isActive ?? false
+        guard PlaybackRules.shouldRequestNext(remaining: remaining, enabled: settings.value.autoRequestNextEpisode,
+                                              nextHasInstant: found.contains(where: \.instant), alreadyRequested: already) else { return }
+        rd.requestedNext = next
+        let pending = found.first { !$0.instant }
+        let numbers = episodeNumbers(next)
+        _ = await requests.request(kind: request.kind, metaID: request.metaID, videoID: next, title: request.displayTitle,
+                                   season: numbers?.season, episode: numbers?.episode, prefs: prefs, preferred: pending?.torrent,
+                                   language: pending.flatMap { Streams.playingLanguage($0, prefs)?.code },
+                                   release: pending.flatMap { $0.release.isEmpty ? nil : $0.release })
+    }
+
+    /// Cuánto lleva el siguiente episodio en Real-Debrid, si se pidió y sigue en camino.
+    func nextDownloading(_ next: String) -> Int? {
+        guard let request, let found = debridRequests?.request(metaID: request.metaID, videoID: next), found.state.isActive else { return nil }
+        return found.percent
     }
 
     public func useLocalizedMeta(_ meta: JSON, for videoID: String) {
@@ -120,11 +154,13 @@ extension PlayerModel {
         case "skip-intro": skipKind = .intro; skipIntroTo = snapshot.position + 60
         case "error": fail("No pude abrir este video. La versión dejó de responder.", .sourceDied)
         case "no-sources": fail("No hay versiones en Real-Debrid para este título.", .noSources)
-        case "upnext":
+        case "upnext", "upnext-rd":
             guard let next = nextEpisodeIDIgnoringLocal() else { return }
             let (label, title) = episodeText(next)
             upNextDeadline = nil   // que no avance solo mientras se captura
-            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: Int(PlaybackRules.upNextCountdown) - 3, thumbnail: episodeThumbnail(next))
+            upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: kind == "upnext" ? Int(PlaybackRules.upNextCountdown) - 3 : 0,
+                            thumbnail: episodeThumbnail(next), downloading: kind == "upnext" ? nil : 63)
+        case "not-in-debrid": fail("Real-Debrid todavía no lo tiene.", .noSources); rd.lookupCause = (.notInDebrid(language: wantedLanguage.isEmpty ? "es-419" : wantedLanguage), nil)
         default: break
         }
     }
@@ -219,7 +255,9 @@ extension PlayerModel {
     var endIsReal: Bool { snapshot.duration <= 0 || snapshot.position >= snapshot.duration - Self.cutMargin }
 
     func finishAndAdvance() async {
-        if nextEpisodeID() != nil && !upNextDismissed && !stillWatchingPrompt {
+        // El siguiente lo está bajando Real-Debrid: no hay qué poner; se cierra como al final de una película (llega el aviso).
+        let nextDownloading = upNext?.downloading != nil
+        if nextEpisodeID() != nil && !upNextDismissed && !stillWatchingPrompt && !nextDownloading {
             if upNext == nil, let next = nextEpisodeID() { let (l, t) = episodeText(next); upNext = UpNext(videoID: next, label: l, title: t, secondsLeft: 0) }
             advance(auto: true)
         } else {

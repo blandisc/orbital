@@ -48,6 +48,9 @@ public struct UpNext: Sendable, Equatable {
     public var secondsLeft: Int
     /// La imagen del episodio (Cinemeta), si la trae.
     public var thumbnail: String? = nil
+    /// Real-Debrid lo está bajando (R8): cuánto lleva. Entonces la tarjeta no cuenta hacia atrás: dice «Real-Debrid lo está
+    /// bajando · 63 %» con «Avisarme» y «Ver créditos».
+    public var downloading: Int? = nil
 }
 
 public enum PlayerNotice: Sendable, Equatable {

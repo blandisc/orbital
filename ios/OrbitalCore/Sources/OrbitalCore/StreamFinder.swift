@@ -58,6 +58,13 @@ public actor StreamFinder {
     }
     /// Se comprobó el audio de una versión: lo que estaba ordenado con lo que se suponía ya no vale.
     public func forgetSorted() { cache = [:] }
+    /// Real-Debrid terminó de bajar un pedido (o lo empezó): lo guardado de ese video ya no vale; la versión pedida sale
+    /// «Al instante» en la siguiente búsqueda.
+    public func forget(kind: String, videoID: String) {
+        let prefix = "\(kind):\(videoID):"
+        cache = cache.filter { !$0.key.hasPrefix(prefix) }
+        answers["\(kind):\(videoID)"] = nil
+    }
 
     private func fetch(_ addon: Addon, kind: String, videoID: String) async -> [JSON]? {
         // nil si la red falló (para no recordar «no hay» 10 minutos)

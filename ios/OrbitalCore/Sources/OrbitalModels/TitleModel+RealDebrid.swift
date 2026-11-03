@@ -1,0 +1,64 @@
+import Foundation
+import OrbitalCore
+import OrbitalAddons
+
+/// «Pedirlo y avisarme» en la ficha (R2-A, R4): qué torrent existe para lo que Real-Debrid todavía no tiene, en qué idioma,
+/// y si otro idioma sí arranca al instante («Verlo en inglés al instante»).
+public struct DebridOffer: Equatable, Sendable {
+    public var torrent: TorrentID
+    /// El idioma de lo que se pediría («es-419»), si se sabe.
+    public var language: String?
+    public var release: String?
+    /// Otro idioma que sí arranca al instante («en»), si hay, y esa versión («Verlo en inglés al instante»).
+    public var instantLanguage: String?
+    public var instantSource: Source?
+}
+
+extension TitleModel {
+    /// La ficha guarda si la última vez Torrentio sin Real-Debrid contestó «no hay ninguno» (causa 11).
+    var lastLookupEmpty: Bool { lookupEmpty[metaID] ?? false }
+
+    /// Lo que se puede pedir de ese video: la versión «por bajar» de tu lista (Real-Debrid ya la conoce) o el mejor torrent que
+    /// existe sin Real-Debrid (R4). nil sin clave, sin Torrentio o si nada existe.
+    func offerToRequest(videoID: String, prefs: Preferences, found: [Source]) async -> DebridOffer? {
+        let requests = services.debridRequests
+        guard requests.canRequest else { lookupEmpty[metaID] = false; return nil }
+        let instant = found.first(where: \.instant)
+        let instantLanguage = instant.flatMap { Streams.playingLanguage($0, prefs)?.code }
+        // La de tu lista que todavía no está (Torrentio la conoce con Real-Debrid): esa misma.
+        if let pending = found.first(where: { !$0.instant }), let torrent = pending.torrent {
+            lookupEmpty[metaID] = false
+            let language = Streams.playingLanguage(pending, prefs)?.code
+            let other = instantLanguage == language ? nil : instantLanguage
+            return DebridOffer(torrent: torrent, language: language, release: pending.release.isEmpty ? nil : pending.release,
+                               instantLanguage: other, instantSource: other == nil ? nil : instant)
+        }
+        guard let torrents = await requests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { lookupEmpty[metaID] = false; return nil }
+        lookupEmpty[metaID] = torrents.isEmpty && found.isEmpty
+        guard let best = torrents.first, let torrent = best.torrent else { return nil }
+        let language = Streams.playingLanguage(best, prefs)?.code
+        // Si la que arranca ya está en tu idioma, no hace falta pedir nada.
+        if let instant, Streams.playingLanguage(instant, prefs)?.code == language || language == nil { return nil }
+        return DebridOffer(torrent: torrent, language: language, release: best.release.isEmpty ? nil : best.release,
+                           instantLanguage: instantLanguage, instantSource: instant)
+    }
+
+    /// El pedido del video que toca (película o el episodio del botón), si hay.
+    public var debridRequest: DebridRequest? {
+        guard let videoID = continueVideoID else { return nil }
+        return services.debridRequests.request(metaID: metaID, videoID: videoID)
+    }
+
+    /// «Pedirlo y avisarme» desde la ficha: el torrent de `debridOffer` (o el mejor que exista).
+    public func requestFromDebrid(onCellular: Bool = false) async -> DebridRequestsModel.Outcome? {
+        guard let videoID = continueVideoID else { return nil }
+        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
+        let numbers = kind == "series" ? episode(videoID).map { ($0.0, $0.1.episode) } : nil
+        let outcome = await services.debridRequests.request(kind: kind, metaID: metaID, videoID: videoID, title: title.isEmpty ? originalTitle : title,
+                                                            season: numbers?.0, episode: numbers?.1, prefs: prefs, preferred: debridOffer?.torrent,
+                                                            language: debridOffer?.language, release: debridOffer?.release)
+        if case .requested(let request) = outcome { unavailableCause = request.state.isActive ? .downloading(percent: request.percent) : unavailableCause }
+        if case .nobodyHasIt = outcome { unavailableCause = .nobodyHasIt }
+        return outcome
+    }
+}

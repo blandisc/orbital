@@ -153,6 +153,10 @@ public final class PlayerModel: ObservableModel {
     public var debridSaved: (@Sendable () -> DebridStatus?)?
     /// El idioma que se buscaba («es-419»), para decir «de preferencia en latino».
     var wantedLanguage = ""
+    /// Tus pedidos a Real-Debrid (la app pone `services.debridRequests`): R5 a R8.
+    public var debridRequests: DebridRequestsModel?
+    /// Lo de Real-Debrid de este video (`PlayerDebridState`): la versión pedida, por qué no se pudo buscar, R4 y R8.
+    var rd = PlayerDebridState() { didSet { changed() } }
 
     /// Ya sonó este video (el motor llegó a reproducir): hasta entonces la pantalla enseña la carga, no el play.
     public internal(set) var hasPlayed = false { didSet { if oldValue != hasPlayed { changed() } } }
@@ -320,7 +324,7 @@ public final class PlayerModel: ObservableModel {
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; skipAnchor = nil; reachedEnd = false; finalReported = false
         pendingResumeFraction = nil
-        notice = nil; attempts = 0; lastNotice = nil; debridHealth = nil; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
+        notice = nil; attempts = 0; lastNotice = nil; debridHealth = nil; rd = PlayerDebridState(); lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []; search = nil
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
         // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
         foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; subtitlesOffline = false; searchTask = nil; scares = nil
@@ -399,21 +403,28 @@ public final class PlayerModel: ObservableModel {
                     found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: family, skip: failedSources,
                                                   instantOnly: !failedSources.isEmpty)
                 }
-            } catch { guard mine == generation else { return }; return fail("Sin conexión: no pude buscar dónde verlo.", .network) }
+            } catch {
+                guard mine == generation else { return }
+                // Con internet y sin que fuera la red (leer tus complementos falló): no se pudo ni buscar (la causa 3).
+                if !(error is StreamFinderError), !(error is NetworkError), !Degraded.isOffline(error) { return cannotSearch(error) }
+                return fail("Sin conexión: no pude buscar dónde verlo.", .network)
+            }
             guard mine == generation, !closing else { return }
-            guard let found else { return failedSources.isEmpty ? fail("No hay versiones en Real-Debrid para este título.", .noSources) : fail("Ninguna versión funcionó.", .noneWorked) }
+            guard let found else { return failedSources.isEmpty ? await noSources(generation: mine) : fail("Ninguna versión funcionó.", .noneWorked) }
             source = found
             var start = startAt ?? 0
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
             // Ya se le pidió a Real-Debrid hace poco (se abrió y mandó su «descargando»): no se pide otra vez, se dice.
-            if !found.instant, queued.contains(found.key, now: clock()) {
+            if !found.instant, queued.contains(found.key, now: clock()) || alreadyRequested(found) {
                 lastNotice = .downloading
+                rd.pendingSource = found
                 return fail("Real-Debrid todavía no lo tiene.", .noSources)
             }
             startLoading()
-            if !found.instant { queued.mark(found.key, at: clock()) }   // abrirla le pide a Real-Debrid que la baje
+            // Abrirla le pide a Real-Debrid que la baje: se anota en la libreta para seguirla (R12).
+            if !found.instant { queued.mark(found.key, at: clock()); noteOpenedOnDebrid(found) }
             do { try await loadVideo(url, at: start); return }
             catch {
                 guard mine == generation else { return }

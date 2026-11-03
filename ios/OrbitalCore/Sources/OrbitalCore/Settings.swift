@@ -69,6 +69,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var oneDriveFolder = ""             // la carpeta de OneDrive con tus películas y series («Videos/Películas»)
     public var videoZoom = VideoZoom.fit.rawValue   // cómo llena la pantalla el video del reproductor (`VideoZoom`); se recuerda
     public var simpsonsSeasons = Array(5...15)     // de qué temporadas sale «Un Simpson al azar» (por omisión, las clásicas)
+    /// «Pedir solo el siguiente episodio» (R8, R9-B): si Real-Debrid aún no tiene el que sigue, se le pide 3 min antes del
+    /// final del que ves. Prendido por omisión, igual que la TV (`rd_auto_request`).
+    public var autoRequestNextEpisode = true
 
     public init() {}
 
@@ -108,6 +111,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         oneDriveFolder = try c.decodeIfPresent(String.self, forKey: .oneDriveFolder) ?? oneDriveFolder
         videoZoom = try c.decodeIfPresent(String.self, forKey: .videoZoom) ?? videoZoom
         simpsonsSeasons = try c.decodeIfPresent([Int].self, forKey: .simpsonsSeasons) ?? simpsonsSeasons
+        autoRequestNextEpisode = try c.decodeIfPresent(Bool.self, forKey: .autoRequestNextEpisode) ?? autoRequestNextEpisode
         orbitalEnabled = try c.decodeIfPresent(Bool.self, forKey: .orbitalEnabled) ?? !orbitalAddress.isEmpty
     }
 
@@ -116,6 +120,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case deleteWhenWatched, warnCellularOverGB, region, regionChosen, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
         case avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle, orbitalEnabled
+        case autoRequestNextEpisode
     }
 
     /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).

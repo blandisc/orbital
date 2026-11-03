@@ -36,6 +36,13 @@ public enum PlaybackRules {
         return nil
     }
 
+    /// «Pedir solo el siguiente episodio» (R8, R9-B, como la TV): a `upNextLookahead` s del final (3 min), si el ajuste está
+    /// prendido, el siguiente existe pero no arranca al instante y no está pedido ya, se le pide a Real-Debrid. Solo uno: el
+    /// que sigue (no la temporada).
+    public static func shouldRequestNext(remaining: TimeInterval, enabled: Bool, nextHasInstant: Bool, alreadyRequested: Bool) -> Bool {
+        enabled && remaining <= upNextLookahead && !nextHasInstant && !alreadyRequested
+    }
+
     /// ¿Toca mostrar «Siguiente episodio»? A `upNextAt` s del final, o al empezar los créditos.
     public static func shouldShowUpNext(position: TimeInterval, duration: TimeInterval, inCredits: Bool = false) -> Bool {
         guard duration > 0 else { return false }
