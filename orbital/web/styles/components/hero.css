@@ -99,7 +99,10 @@
 /* Películas y series (.hero--steady): al pasar de un título a otro (el carrusel de Destacados, o tú) nada cambia de alto, así
    «Todo · Películas · Series», el porqué y los botones no brincan (Fernando, 2 nov 2026: antes subían y bajaban unos px según
    lo alto del logo o si el título traía año). El logo y el nombre ocupan siempre la misma caja; los datos, su renglón. */
-.hero--steady .hero__logo { height: 6rem; max-height: none; flex-shrink: 0; }
+.hero--steady .hero__logo { height: 6rem; max-height: none; min-height: 3rem; }
+/* Si no cabe (pantalla baja, letra grande), cede el logo y no los botones; lo demás siempre mide lo mismo, así que se encoge
+   igual en todos los títulos y nada brinca. Las pestañas van fuera del bloque: este toma solo lo que queda. */
+.hero--steady .hero__content { flex: 0 1 auto; max-height: none; }
 .hero--steady .hero__title { height: 6rem; margin: var(--space-3) 0 var(--space-4); display: -webkit-box; align-content: end; }
 .hero--steady .hero__facts:empty::before { content: "\200b"; } /* sin datos: el renglón queda, vacío */
 :is([data-text-size="large"], [data-text-size="xlarge"]) .hero--steady :is(.hero__logo, .hero__title) { height: 5rem; margin: var(--space-2) 0; }
