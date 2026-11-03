@@ -83,7 +83,7 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Lo de Orbital | `--color-orbital` (la luna) | El ícono de un rótulo de sección |
 | En vivo · bien | `--color-live`, `--color-ok` | Turquesa |
 | Aviso · peligro | `--color-warning`, `--color-danger` | Ámbar · rojo |
-| Nuevo | `--color-new` | El listón «Nuevo», «Hoy» |
+| Nuevo | `--color-new` | El listón «Nuevo», «Hoy»: el turquesa del puntito del logo (`DS.fresh`), no el verde |
 | Acento por categoría | `--rainbow-*` | El arcoíris del azul de Orbital: categorías de TV en vivo (filtros, después) |
 | Marcas | `--platform-*`, `--brand-*`, `--system-*`, `--color-source-*` | El color de cada plataforma, consola o fuente; nunca para la interfaz |
 
@@ -330,8 +330,8 @@ serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).
 (`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en
 grande (Lo que ves, Colecciones).
 
-**Acentos.** Turquesa: el porqué y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`:
-lo que ya se puede ver («HOY», «Nuevo»). El color del arte: el botón principal de un título y su fondo.
+**Acentos.** Turquesa: el porqué, lo nuevo y lo de hoy («Nuevo», «Hoy») y lo que está en vivo; nunca decoración (ni íconos de
+rótulo, ni fondos, ni orillas). Ámbar: las estrellas de calificar y los avisos. El verde de `success`: solo «listo, conectado». El color del arte: el botón principal de un título y su fondo.
 
 **Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
 (ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
@@ -365,8 +365,10 @@ vigila.
 | Nada en mayúsculas: todo en letra normal (también el listón «Nuevo», «Top», «✓ En la TV»). Única excepción: el sello del mazo de Match, que imita un sello físico | sin `dsCaps()` fuera de `MazoMatch` | `testNoSpacedCaps` |
 | Títulos: dos niveles (sección y subsección). La subsección tiene dos pesos solo en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): lo de descubrir un paso más chico. Explorar, que es todo descubrir, lleva el tamaño normal | `DSSectionHead(quiet:)` | — |
 
-**Pendiente de Fernando:** si la TV sigue al iPhone (rótulos sin mayúsculas, lo nuevo en turquesa, el turquesa sin
-decoración); hoy la TV sigue en mayúsculas y lo nuevo en verde (registro de paridad).
+**En la TV (Fernando, 2 nov 2026: «aplica las reglas»):** igual. Rótulos y listón «Nuevo» en letra normal; lo nuevo y «Hoy» en
+turquesa (`--color-new` = la luna); el ícono del rótulo de sección y el de las tarjetas de Colecciones en gris; sin reflejo bajo
+la fila centrada; Trakt ya no es sello junto al título de una fila (`shelf.js`). Se quedan en turquesa el porqué, lo nuevo, «En
+vivo», el logo de Orbital y el tono «orbital» de las categorías de TV en vivo (es el color de su categoría, como los otros tonos).
 
 ### Tabla espejo (iPhone ↔ TV)
 
@@ -377,7 +379,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 
 | Papel | Pieza de la TV | Estado | Nota |
 |---|---|---|---|
-| Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono en `--color-orbital`, mayúsculas chicas y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
+| Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono gris, letra normal en negrita y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
 | Arranque de una parte grande | El rótulo de sección de cada grupo (`shelf__heading--section`) | Distinto a propósito: con el mando, un renglón menos (el título grande lo pone el destacado de arriba, que cambia con el foco) | Los grupos de Películas y series (Plataformas, Estudios, Premios, Temporadas, Años…). |
 | Renglón de lista | Tarjetas de lista en fila (`collection-card`) y `sheet__item` en las hojas | Distinto a propósito: con el mando, tus listas son tarjetas en una fila (Listas de Trakt, de Stremio) | En las hojas (☰, Opciones, Guardar en…), el renglón es `sheet__item`. |
 | Porqué | `SectionHead(title, { reason })` y `--color-reason` | Igual | Solo cuando el porqué dice algo que el título no; un dato nunca va en turquesa. |
@@ -608,7 +610,7 @@ letras que bajan: g, p, j, y).
 
 - **Fuentes**: todo el texto es Segoe UI Variable, la del sistema (`--font-sans` para títulos, `--font-text` para cuerpo); no se carga ninguna con `@font-face` porque Orbital corre en Windows. Solo el nombre de un premio (`--font-award`) pide una con remate: Didot (que Windows no trae), luego Bodoni MT y Palatino Linotype; en esta máquina sale Bodoni MT.
 - Español, frases normales. **Sin mayúsculas espaciadas** (se ven «de IA»): ni en etiquetas, ni pestañas, ni insignias, ni en el rótulo de
-  sección, que desde el 2 nov 2026 va en minúsculas y negrita («Tus consolas», IN-1); solo el sello del mazo y el listón «Nuevo» (ver Excepciones).
+  sección, que desde el 2 nov 2026 va en minúsculas y negrita («Tus consolas», IN-1), ni en el listón «Nuevo»; solo el sello del mazo (ver Excepciones).
 - **Nada se corta en su lugar**: un nombre que no cabe en su tarjeta se achica antes de cortarse («GeForce NOW», IN-3); una hora con
   «a. m.» o «p. m.» va con espacios que no se parten (`format.js · clock`, TV-3). En el reproductor, una línea de datos con « · » que no cabe
   suelta primero los datos del final, enteros (`player_ui.fit`), y la variante de un idioma va pegada a él («Español latino · Estéreo», RE-1). Una sinopsis que no cabe termina en la última frase
@@ -629,7 +631,6 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 | logotipo en mayúsculas | `collection-card.js` (`AwardWordmark`, `SourceBadge`), `hero.js` y `list-screen.js` (el nombre de un premio) | Un premio (ÓSCAR, EMMY) y el sello de origen (TRAKT, STREMIO, ORBITAL) son **logotipos**, como en el iPhone: el JS los pone en mayúsculas (con `--tracking-award` / `--tracking-label`). No es una etiqueta de la interfaz. |
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
 | sello del mazo | `match-deck.css` (`.match__stamp`) | El sello que asoma al decidir en «¿Qué vemos hoy?» (PASO, GUARDAR, ★ PARA HOY) va en mayúsculas, como el de `MatchCard` del iPhone y el de Tinder. |
-| listón «Nuevo» | `ui.css` (`.corner-ribbon__band`) | El listón en diagonal de la esquina de un póster dice NUEVO en mayúsculas, como `DSCornerRibbon` del iPhone. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)
 

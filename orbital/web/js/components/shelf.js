@@ -118,8 +118,8 @@ export function createShelf({ onPick, onSwipe }) {
     // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
     const logo = row.logo && h("img", { class: "shelf__logo", src: row.logo, alt: row.label || "", decoding: "async" });
     logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
-    // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
-    const seal = row.seal ? SourceBadge(row.seal) : null;
+    // De dónde viene (Stremio, tu Orbital): el sello junto al título, como en el iPhone. Trakt no es sello: lo dice el porqué.
+    const seal = row.seal && row.seal !== "trakt" ? SourceBadge(row.seal) : null;
     // Una fila de tarjetas de colección (Tus plataformas, Premios, Estudios, Temporadas…) es una sección: su rótulo con
     // ícono y línea, y cuántas a la derecha. Las demás son subsecciones: el título blanco con su sello.
     const heading = row.cards

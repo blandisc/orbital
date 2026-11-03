@@ -71,7 +71,7 @@
   --rainbow-lavanda: oklch(.804 .110 270);
   --rainbow-rosa: oklch(.804 .110 320);
   --color-success: var(--palette-pad-green); /* lo que salió bien o ya se puede (DS.success, el verde del sistema) */
-  --color-new: var(--color-success); /* lo que ya se puede ver: el listón «Nuevo» (en el iPhone, DS.success, el verde del sistema) */
+  --color-new: var(--color-brand-moon); /* lo nuevo y lo de hoy: el listón «Nuevo», «Hoy» (DS.fresh, el turquesa del puntito del logo); el verde es solo «listo, conectado» */
   --color-brand-moon: var(--palette-teal-300); /* la luna de «orbital»: el único color fijo de la marca (la luna del logotipo) */
   --color-orbital: var(--color-brand-moon); /* «el azul de Orbital» (el de la luna): el ícono del rótulo de una sección, lo que es de Orbital (como DS.orbitalBlue) */
   --color-reason: var(--palette-teal-300); /* el porqué de una fila o un título, arriba de él; solo porqués, nunca un dato (DS.eyebrow del iPhone) */
