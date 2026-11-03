@@ -15,8 +15,16 @@ final class ScreensUITests: XCTestCase {
         app.launchArguments = ["-demo", "-demo-console", "-demo-tab", "1", "-demo-mode", "lists", "-demo-no-idle"]
         app.launch()
         let netflix = app.buttons["platform-netflix"]
-        XCTAssertTrue(netflix.waitForExistence(timeout: 20), "la tarjeta de Netflix")
-        XCTAssertTrue(app.buttons["platform-disney"].waitForExistence(timeout: 10), "y la de Disney+")
+        // Explorar es perezoso: Plataformas se arma al acercarse (bajo la portada y «Lo que se ve hoy»).
+        _ = app.buttons["paraTi-sections"].waitForExistence(timeout: 20)
+        for _ in 0..<12 where !(netflix.exists && netflix.isHittable) { app.swipeUp(velocity: .slow) }
+        XCTAssertTrue(netflix.waitForExistence(timeout: 5), "la tarjeta de Netflix")
+        // El carrusel es perezoso: en iOS 27 la de al lado aún no existe hasta deslizar hacia ella.
+        let disney = app.buttons["platform-disney"]
+        if !disney.waitForExistence(timeout: 5) { netflix.swipeLeft() }
+        XCTAssertTrue(disney.waitForExistence(timeout: 10), "y la de Disney+")
+        if !netflix.isHittable { disney.swipeRight() }
+        XCTAssertTrue(waitUntil { netflix.exists && netflix.isHittable }, "Netflix otra vez a la mano")
         netflix.tap()
         let ranked = app.descendants(matching: .any).matching(identifier: "ranked-poster")
         XCTAssertTrue(ranked.firstMatch.waitForExistence(timeout: 20), "sus rankings, con la cifra grande")
@@ -41,8 +49,8 @@ final class ScreensUITests: XCTestCase {
     func testSearchBarHidesOnScroll() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
         app.launch()
-        let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 20), "la barra a la vista al abrir")
+        let field = revealSearchField()
+        XCTAssertTrue(field.exists, "la barra a la vista al abrir")
         XCTAssertTrue(field.isHittable)
         app.swipeUp()
         XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar, la barra se esconde")
@@ -84,6 +92,18 @@ final class ScreensUITests: XCTestCase {
         }
     }
 
+    /// El campo de Buscar al abrir. iOS 26 lo deja a la vista; iOS 27 lo abre guardado bajo el título (el cajón automático
+    /// del sistema) y sale con un tirón corto hacia abajo, como en las apps de Apple.
+    private func revealSearchField() -> XCUIElement {
+        let field = app.searchFields.firstMatch
+        _ = app.navigationBars["Buscar"].waitForExistence(timeout: 20)
+        if field.waitForExistence(timeout: 3) { return field }
+        let a = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)), b = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
+        a.press(forDuration: 0.05, thenDragTo: b, withVelocity: 300, thenHoldForDuration: 0.5)
+        _ = field.waitForExistence(timeout: 5)
+        return field
+    }
+
     /// Buscar hasta el fondo: la barra de abajo se queda escondida (antes brincaba entre salir y esconderse con el
     /// rebote del final) y vuelve al subir con el dedo. También con algo sonando en la TV (el accesorio sobre la barra).
     func testSearchBarStaysHiddenAtTheBottom() { searchBarAtTheBottom(tv: false) }
@@ -92,7 +112,7 @@ final class ScreensUITests: XCTestCase {
     private func searchBarAtTheBottom(tv: Bool) {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"] + (tv ? ["-demo-tv-now"] : [])
         app.launch()
-        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 20), "la barra a la vista al abrir")
+        XCTAssertTrue(revealSearchField().exists, "la barra a la vista al abrir")
         sleep(2)
         let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
         let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
@@ -158,8 +178,8 @@ final class ScreensUITests: XCTestCase {
     func testSearchBarHidesOnSlowScroll() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
         app.launch()
-        let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 20), "la barra a la vista al abrir")
+        let field = revealSearchField()
+        XCTAssertTrue(field.exists, "la barra a la vista al abrir")
         sleep(2)
         let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
         let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))

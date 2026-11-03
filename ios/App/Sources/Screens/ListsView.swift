@@ -16,6 +16,9 @@ struct ListsView: View {
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
+    /// Para saltar a un grupo desde el índice: con la lista perezosa, `ScrollViewReader.scrollTo` no encontraba uno que aún
+    /// no se armaba (el menú no bajaba a «Temporadas»); la posición del `ScrollView` sí lo encuentra.
+    @State private var position = ScrollPosition()
     /// Arriba del todo: la barra no pone su desvanecido (el mosaico sigue detrás del título sin un corte).
     @State private var atTop = true
     /// Saltos elegidos en el índice (el toque háptico es de esos, no de cada sección que pasa al deslizar).
@@ -110,7 +113,7 @@ struct ListsView: View {
         }
         if let name = Demo.section, let section = CollectionSection.allCases.first(where: { "\($0)" == name }) {
             try? await Task.sleep(for: .seconds(3))   // Demo: espera a que carguen las capturas
-            proxy.scrollTo(section, anchor: .top)
+            position.scrollTo(id: section, anchor: .top)
         }
         if let open = Demo.collection?.split(separator: ":"), open.count == 2 {
             try? await Task.sleep(for: .seconds(2))   // Demo: espera a que carguen las capturas
@@ -175,15 +178,17 @@ struct ListsView: View {
                     if model.needsSources { sourcesFallback }
                 }
                 .modifier(SectionSpy(section: .forYou, active: $activeSection))
-                // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
-                // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
-                // Cada colección es una sección: 40 entre rótulos, medido desde el reflejo (decisión 2, 31 oct 2026).
+                // Las colecciones (con su carácter: en carrusel y con peso), justo después de lo general.
+                // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas.
+                // Cada colección es una sección: 40 entre rótulos (decisión 2, 31 oct 2026).
                 if restReady { rest }
             }
+            .scrollTargetLayout()   // los grupos son destinos de `position` (sin `scrollTargetBehavior`, no cambia cómo se desliza)
             .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Layout.screenTop)   // el aire bajo el título (antes `ParaTiView` lo ponía afuera)
             .padding(.bottom, DS.Layout.screenBottom)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
+        .scrollPosition($position)
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top < DS.Size.barScrollHide } action: { _, top in
             atTop = top
             if !top { restReady = true }   // deslizaste: lo de abajo ya hace falta
@@ -222,9 +227,10 @@ struct ListsView: View {
         return items.filter { seen.insert($0).inserted }
     }
 
-    /// Plataformas, colecciones, premios, años, «Lo que ves» y tus listas: lo de abajo de la portada y lo general.
-    private var rest: some View {
-                VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+    /// Plataformas, colecciones, premios, años, «Lo que ves» y tus listas: lo de abajo de la portada y lo general. Sin caja
+    /// propia: cada grupo es hijo directo de la lista perezosa (el mismo aire entre ellos), para que el índice de arriba salte a
+    /// uno que aún no se ha armado (dentro de una caja, `scrollTo` no lo encontraba y «Temporadas» no bajaba).
+    @ViewBuilder private var rest: some View {
                     if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                     if collections.model.tmdbReady {
                         studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection))
@@ -256,7 +262,6 @@ struct ListsView: View {
                         listRows(label: CollectionSection.addons.title, symbol: CollectionSection.addons.symbol, cards: addonCards)
                             .modifier(SectionSpy(section: .addons, active: $activeSection))
                     }
-                }
     }
 
     // MARK: tus plataformas
@@ -264,11 +269,11 @@ struct ListsView: View {
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Plataformas"), symbol: CollectionSection.platforms.symbol)
-            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { hub in
+            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width) { hub in
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
                                     tint: DS.PlatformTint.color(hub.brand))
-                        .rowReflection(weight: DS.PlatformTint.color(hub.brand))
+                        .cardWeight(DS.PlatformTint.color(hub.brand))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("platform-\(hub.brand)")
@@ -288,11 +293,11 @@ struct ListsView: View {
                 Button {
                     activeSection = section
                     jumps += 1
-                    if restReady { withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) } }
+                    if restReady { withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
                     else {
                         // Lo de abajo aún no estaba armado: primero se arma y en el siguiente cuadro se salta.
                         restReady = true
-                        Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) } }
+                        Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
                     }
                 } label: {
                     // Cada sección con su ícono; la que ves, con ✓ al lado.
@@ -339,7 +344,7 @@ struct ListsView: View {
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Estudios"), symbol: CollectionSection.studios.symbol)
-            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width, reflected: true) { studio in
+            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
                                    posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio, captioned: false) {
@@ -374,7 +379,7 @@ struct ListsView: View {
                 .padding(.top, DS.Space.s3)
             // Una línea de tiempo (Fernando, 31 oct 2026, decisión 7A): un punto por temporada con cuánto falta, la línea las une.
             CenteredCarousel(items: countdown.dropFirst().map { SeasonStop(season: $0.season, days: $0.days) }, id: \.season.slug,
-                             cardWidth: DS.PlatformFan.width, reflected: true,
+                             cardWidth: DS.PlatformFan.width,
                              header: { AnyView(SeasonTimelineStop(days: $0.days)) }) { stop in
                 let season = stop.season
                 let name = Strings.tr(season.title, language: language)
@@ -438,12 +443,12 @@ struct ListsView: View {
         let language = env.services.appSettings.uiLanguage
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Géneros"), symbol: CollectionSection.genres.symbol)
-            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width, reflected: true) { genre in
+            CenteredCarousel(items: collections.model.genres, id: \.slug, cardWidth: DS.PlatformFan.width) { genre in
                 let name = Strings.tr(genre.title, language: language)
                 NavigationLink(value: CollectionRoute(kind: .genre, id: genre.slug)) {
                     CollectionCard(title: Text(verbatim: name), detail: Text("Las mejor calificadas del año"), name: name,
                                    posters: (collections.model.genreCharts[genre.slug]?.items ?? []).prefix(3).map { Optional($0.poster) },
-                                   tint: DS.Collections.studio, captioned: false) {
+                                   tint: DS.Collections.genre(genre.slug), captioned: false) {
                         CollectionIconEmblem(slug: genre.slug, name: name)
                     }
                 }
@@ -458,9 +463,9 @@ struct ListsView: View {
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSChapterHead(label: Text("Años"), symbol: CollectionSection.years.symbol)
-            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth, reflected: true) { year in
+            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth) { year in
                 NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
-                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).rowReflection()
+                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? [])
                 }
                 .buttonStyle(.plain)
                 .task { await collections.model.loadYearPosters(year) }
@@ -485,10 +490,9 @@ struct ListsView: View {
 
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
-        // El porqué arriba del título (como una revista) y los pósters con su reflejo: los renglones con más carácter.
+        // El porqué arriba del título (como una revista).
         return Shelf(title: shelfTitle(plan),
-                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan),
-                     reflected: plan.style != .top10) {   // el Top 10 no lleva reflejo: abajo van su ▲ ▼ y la cifra
+                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan)) {
             ForEach(items) { s in
                 PlanPoster(suggestion: s, plan: plan, model: model, style: plan.style, badge: model.badges[s.imdb])
             }
@@ -500,7 +504,7 @@ struct ListsView: View {
     /// Sin ninguna fuente tuya: lo que está en tendencia en Trakt y una invitación (un botón, no una tarjeta gris).
     @ViewBuilder private var sourcesFallback: some View {
         if !model.mosaic.isEmpty {
-            Shelf(title: Text("En tendencia"), meta: Text("Lo que más se está viendo ahora"), source: .trakt) {
+            Shelf(title: Text("En tendencia"), meta: Text("Lo más visto ahora en Trakt")) {
                 ForEach(model.mosaic) { s in
                     ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }

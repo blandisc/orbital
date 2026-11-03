@@ -91,19 +91,12 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
     let items: [Item]
     let id: KeyPath<Item, ID>
     let cardWidth: CGFloat
-    /// Con el reflejo de cada tarjeta debajo: el carrusel se lo pide a sus tarjetas (`rowReflection`) y ajusta el aire con lo que
-    /// sigue (`reflectionTail`). La pantalla no ajusta nada a mano.
-    var reflected = false
     /// Lo que va arriba de cada tarjeta sin encogerse con ella (la línea de tiempo de «Próximas temporadas»: si se encogía, el
     /// punto y la línea de las de los lados quedaban más abajo y adentro que los de la primera).
     var header: ((Item) -> AnyView)? = nil
     @ViewBuilder var card: (Item) -> Card
 
     var body: some View {
-        if reflected { carousel.environment(\.railReflected, true).reflectionTail() } else { carousel }
-    }
-
-    private var carousel: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                 ForEach(items, id: id) { item in
@@ -127,70 +120,10 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
     }
 }
 
-/// `rowReflection`: el reflejo si la fila lo pide.
-private struct RowReflection: ViewModifier {
-    var weight: Color?
-    @Environment(\.railReflected) private var on
-    func body(content: Content) -> some View {
-        if on { content.modifier(Reflection(weight: weight)) } else { content }
-    }
-}
-
-/// El reflejo de una tarjeta sobre el piso (la tarjeta volteada, corta, un poco desenfocada y que se desvanece) y su peso:
-/// una sombra de su color solo bajo la tarjeta (en el reflejo dibujaba esquinas que no existen).
-struct Reflection: ViewModifier {
-    var weight: Color?
-    func body(content: Content) -> some View {
-        content
-            .shadow(DS.Elevation.floating.color((weight ?? .clear).opacity(DS.Collections.weightTint)))
-            // La copia volteada va encima del mismo tamaño que el original (un `overlay` le da su ancho y alto): antes se le daban
-            // 44 pt de alto y un póster, que guarda su proporción, se encogía a lo ancho (el reflejo «estrecho»). Su borde de
-            // arriba se pega al de abajo del original y solo se ve una franja que se desvanece.
-            .overlay(alignment: .bottom) {
-                content
-                    .scaleEffect(x: 1, y: -1)
-                    .blur(radius: DS.Collections.reflectionBlur)
-                    .mask(alignment: .top) {
-                        LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom)
-                            .frame(height: DS.Collections.reflection)
-                    }
-                    .alignmentGuide(.bottom) { d in d[.top] - DS.Collections.reflectionGap }
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
-            .padding(.bottom, DS.Collections.reflection + DS.Collections.reflectionGap)
-    }
-}
-
 extension View {
-    /// El reflejo de un póster (solo el arte, no la tarjeta con su texto, sus marcas ni su punto de zoom): una franja volteada
-    /// que se desvanece, del ancho del póster.
-    func posterReflection(_ url: String?, title: String, width: CGFloat) -> some View {
-        overlay(alignment: .bottom) {
-            PosterView(url: url, title: title).frame(width: width)
-                .scaleEffect(x: 1, y: -1)
-                .blur(radius: DS.Collections.reflectionBlur)
-                .mask(alignment: .top) {
-                    LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom)
-                        .frame(height: DS.Collections.reflection)
-                }
-                // Volteado, desenfocado y recortado en una sola imagen: al desplazar la fila (y al animar la barra o el zoom)
-                // se mueve esa imagen, sin volver a desenfocar el póster entero en cada cuadro.
-                .drawingGroup()
-                .alignmentGuide(.bottom) { d in d[.top] - DS.Collections.reflectionGap }
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        }
-        .padding(.bottom, DS.Collections.reflection + DS.Collections.reflectionGap)
+    /// El peso de una tarjeta de colección: una sombra de su color solo bajo la tarjeta (Plataformas, Estudios, Premios).
+    /// Antes iba junto con el reflejo; los reflejos se quitaron de toda la app (Fernando, 2 nov 2026).
+    func cardWeight(_ tint: Color?) -> some View {
+        shadow(DS.Elevation.floating.color((tint ?? .clear).opacity(DS.Collections.weightTint)))
     }
-
-    /// Una fila que termina en reflejo (sin texto debajo): lo que sigue se monta sobre la parte desvanecida. Lo aplican solas
-    /// las filas con `reflected: true` (`Rail`, `Shelf`, `CenteredCarousel`); una pantalla no lo pone a mano.
-    func reflectionTail() -> some View { padding(.bottom, -DS.Collections.reflectionTail) }
-
-    /// El reflejo de una tarjeta, solo si su fila lo pide (`reflected: true`): la fila decide, no cada tarjeta.
-    func rowReflection(weight: Color? = nil) -> some View { modifier(RowReflection(weight: weight)) }
-
-    /// Con su reflejo debajo y, si se da, el peso de su color (Colecciones).
-    func reflected(weight: Color? = nil) -> some View { modifier(Reflection(weight: weight)) }
 }

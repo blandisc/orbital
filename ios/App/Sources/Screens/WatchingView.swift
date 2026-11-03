@@ -122,7 +122,7 @@ struct WatchingView: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Solo tus horas en azul (Fernando, 31 oct 2026); el periodo, en el gris del arte.
                 periodPhrase(s.period).recipe(.label, color: DS.onArtSecondary).lineLimit(1)
-                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.stat.font).foregroundStyle(DS.orbitalBlue)
+                Text(s.minutes >= 60 ? "\(s.hours) h" : "\(s.minutes) min").font(DS.TextRecipe.stat.font).foregroundStyle(DS.text)
                     .lineLimit(1).minimumScaleFactor(DS.Size.statScale).contentTransition(.numericText())
                 heroFacts(s).recipe(.footnote, color: DS.onArtSecondary).lineLimit(2)
             }

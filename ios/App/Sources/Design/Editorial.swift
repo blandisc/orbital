@@ -99,9 +99,9 @@ struct WatchlistCard: View {
     }
 }
 
-/// «En Netflix», «En Disney+»: la píldora de una plataforma en su color, con su logo chico (el ícono de la app) y el texto en
-/// blanco. Con `rank`, su puesto en esa plataforma: el logo ya dice dónde, así que solo lleva «N.º 1» (en un póster, chica).
-/// Si no es una plataforma conocida, la cápsula de vidrio de siempre: «En Max» o, con `rank`, solo «N.º 3» (el texto completo
+/// «En Netflix», «En Disney+»: la placa oscura de las etiquetas sobre el arte, con el logo chico de la plataforma (el ícono de
+/// la app) y el texto en blanco. Con `rank`, su puesto en esa plataforma: el logo ya dice dónde, así que solo lleva «N.º 1»
+/// (en un póster, chica). Si no es una plataforma conocida, la misma placa sin logo: «En Max» o, con `rank`, solo «N.º 3» (el texto completo
 /// no cabía en un póster y se cortaba en «N.º 3 e…»); VoiceOver sí dice de dónde.
 struct PlatformBadge: View {
     let name: String
@@ -118,12 +118,15 @@ struct PlatformBadge: View {
                 styled(short)
             }
             .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s2).padding(.vertical, DS.Space.s1)
-            .background(DS.PlatformTint.color(brand), in: Capsule())
+            // La placa oscura de las demás etiquetas sobre el arte, con el logo chico: el color de la plataforma ya lo pone su
+            // logo (Fernando, 2 nov 2026, G1: antes una cápsula roja de Netflix que gritaba sobre el póster).
+            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(spoken)
         } else {
             styled(short)
-                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1).background(DS.badgeBackground, in: Capsule())   // sin vidrio (D20)
+                .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+                .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))   // sin vidrio (D20)
                 .accessibilityLabel(spoken)
         }
     }

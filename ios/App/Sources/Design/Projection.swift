@@ -14,7 +14,7 @@ extension Text {
 extension DS.TextRecipe {
     var defaultColor: Color {
         switch self {
-        case .display, .title, .section, .cardTitle, .body, .stat: DS.text
+        case .display, .title, .section, .sectionQuiet, .cardTitle, .body, .stat: DS.text
         case .secondary, .footnote, .caption, .eyebrow, .data, .label, .labelLarge, .badge, .groupLabel: DS.textMuted
         }
     }
@@ -113,7 +113,7 @@ struct MovementBadge: View {
 
     var body: some View {
         Group {
-            if isNew { Text("Nuevo").recipe(.eyebrow, color: DS.accent) }
+            if isNew { DSFreshMark(text: "Nuevo") }   // el punto turquesa y «Nuevo» en gris (2 nov 2026, D3)
             // Sin cambio: nada a la vista (un «=» suelto bajo el póster parecía un error); el renglón guarda su alto.
             else if let movement, movement == 0 { Text("Nuevo").recipe(.eyebrow).hidden().accessibilityHidden(true) }
             else if let movement, movement > 0 { Label { Text(verbatim: "\(movement)") } icon: { Image(systemName: "arrowtriangle.up.fill") }.recipe(.data, color: DS.accent) }

@@ -23,7 +23,9 @@
     { "texto": "¿Cuándo la viste?", "en": ["tv", "ios"], "nota": "La hoja de marcar como vista con su fecha para Trakt." },
     { "texto": "Top 10 en", "en": ["tv", "ios"] },
     { "texto": "En vivo", "en": ["tv", "ios"], "evitar": ["En Vivo", "EN VIVO"] },
-    { "texto": "Nuevo", "en": ["tv", "ios"] }
+    { "texto": "Nuevo", "en": ["tv", "ios"] },
+    { "texto": "Familia", "en": ["tv", "ios"], "evitar": ["Familiar"], "pendiente": { "tv": "«Por género» y el nombre del género en la TV todavía dicen «Familiar» (core/format.js, core/curation.js); ola de la TV" }, "nota": "El género, igual en Buscar › Por género y en Búsqueda avanzada (Fernando, 2 nov 2026, L1)." },
+    { "texto": "Fama", "en": ["tv", "ios"], "evitar": ["Qué tan conocida"], "nota": "El filtro de qué tan vista es (fama × calificación), en el filtro avanzado y en Decide por mí (Fernando, 2 nov 2026, K3)." }
   ],
   "formatos": [
     { "texto": "termina a las", "en": ["tv", "ios"], "evitar": ["acaba a las", "Termina a las"] },

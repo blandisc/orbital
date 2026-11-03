@@ -159,3 +159,44 @@ struct ConfirmIconButton: View {
         }
     }
 }
+
+/// Todo interruptor de la app (Fernando, 2 nov 2026, J3): prendido en el turquesa de la marca (`DS.switchOn`), apagado en el
+/// gris del sistema. Se pone una vez arriba (`OrbitalApp`) y llega a todas las pantallas y hojas: así ningún interruptor
+/// hereda el tinte de la app (casi blanco, con la bolita blanca no se notaba si estaba prendido) ni trae un verde suelto.
+/// `Toggle(configuration)` respeta el estilo de su lugar (en un menú sigue siendo palomita; `.button` sigue siendo botón).
+struct DSSwitchStyle: ToggleStyle {   // ds-exception: no dibuja nada propio, es el interruptor nativo con el tinte de la marca
+    func makeBody(configuration: Configuration) -> some View { Toggle(configuration).tint(DS.switchOn) }
+}
+
+extension ToggleStyle where Self == DSSwitchStyle {
+    static var orbital: DSSwitchStyle { DSSwitchStyle() }
+}
+
+/// Un interruptor con nombre corto y, si hace falta, su explicación abajo en gris (Fernando, 2 nov 2026, J2: «Bajar el
+/// siguiente episodio» y abajo «Cuando acabas de ver uno», en vez de un nombre largo que se parte en dos renglones). El ícono,
+/// opcional, como en los renglones de Ajustes.
+struct DSToggleRow: View {
+    let title: LocalizedStringKey
+    var detail: LocalizedStringKey?
+    var symbol: String?
+    @Binding var isOn: Bool
+
+    init(_ title: LocalizedStringKey, detail: LocalizedStringKey? = nil, symbol: String? = nil, isOn: Binding<Bool>) {
+        self.title = title; self.detail = detail; self.symbol = symbol; _isOn = isOn
+    }
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            if let symbol {
+                Label { text } icon: { Image(systemName: symbol) }
+            } else { text }
+        }
+    }
+
+    @ViewBuilder private var text: some View {
+        VStack(alignment: .leading, spacing: 0) {   // como el subtítulo de un renglón del sistema
+            Text(title).foregroundStyle(DS.text)
+            if let detail { Text(detail).recipe(.footnote, color: DS.textMuted) }
+        }
+    }
+}

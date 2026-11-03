@@ -7,7 +7,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const read = (path) => readFileSync(path, "utf8");
+// Sin el «\r» de Windows (el checkout de la CI): con él, `#.*$` no quitaba los comentarios de Python y los contaba como texto.
+const read = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 const walk = (dir, ext) => readdirSync(dir).flatMap((name) => {
   const path = join(dir, name);
   if (statSync(path).isDirectory()) return name === "vendor" || name === "__pycache__" ? [] : walk(path, ext);

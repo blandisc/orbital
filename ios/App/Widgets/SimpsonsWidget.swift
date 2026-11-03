@@ -149,11 +149,10 @@ private struct SimpsonsTV: View {
 
     /// La pantalla con la imagen del episodio (o la estática verde de la tele vieja si aún no la hay).
     private var screen: some View {
-        ZStack {
-            DS.Simpsons.knob
-            if let file = day?.imageFile, let url = WidgetStore.simpsonsImageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()
-            } else {
+        // Recortada al centro y reducida al tamaño exacto de la pantalla (`WidgetImage.fill`).
+        WidgetFillImage(url: day?.imageFile.flatMap { WidgetStore.simpsonsImageURL($0) }, anchor: .center) {
+            ZStack {
+                DS.Simpsons.knob
                 Image("simpsons.donut").font(DS.font(.lg)).foregroundStyle(DS.Simpsons.amarillo)
             }
         }

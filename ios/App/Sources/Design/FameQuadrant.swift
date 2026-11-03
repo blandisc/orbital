@@ -54,3 +54,18 @@ struct FameQuadrant: View {
         .accessibilityIdentifier("filter-fame-\(fame.rawValue)")
     }
 }
+
+/// El cuadro chiquito de «Fama»: cuatro esquinas, la elegida en su verde.
+struct MiniQuadrant: View {
+    let selected: AdvancedFilter.Fame
+    var body: some View {
+        Grid(horizontalSpacing: DS.Stroke.selected, verticalSpacing: DS.Stroke.selected) {
+            GridRow { cell(.gems); cell(.classics) }
+            GridRow { cell(.niche); cell(.blockbusters) }
+        }
+        .aspectRatio(DS.Poster.aspect * 2, contentMode: .fit)
+    }
+    private func cell(_ fame: AdvancedFilter.Fame) -> some View {
+        RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous).fill(selected == fame ? DS.Filter.meadow : DS.fillStrong)
+    }
+}

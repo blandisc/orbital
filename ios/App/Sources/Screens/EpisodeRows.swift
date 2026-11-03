@@ -17,6 +17,14 @@ struct EpisodeRowView: View {
     /// Tus estrellas de este capítulo (en Trakt) y calificarlo: solo se ofrecen en los que ya viste.
     var rating: Double?
     var rate: ((Double?) -> Void)?
+    /// El color del arte de la ficha: «quedan 20 min» del episodio que vas viendo va en él.
+    var accent: Color = DS.accent
+    @Environment(\.colorScheme) private var scheme
+
+    /// El que vas viendo (con avance y sin terminar): se distingue en la lista (O1).
+    private var inProgress: Bool { row.progress != nil && !row.watched && row.airs == nil }
+    /// En claro, el color del arte se oscurece para leerse sobre el papel (como en `ActionTileLabel`).
+    private var ink: Color { scheme == .light ? accent.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : accent }
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
@@ -27,7 +35,15 @@ struct EpisodeRowView: View {
                 HStack(alignment: .center, spacing: DS.Space.s3) {
                     ZStack(alignment: .bottom) {
                         PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
-                        if let progress = row.progress { DSProgress(fraction: progress) }
+                        if let progress = row.progress {
+                            // El que vas viendo: el ▶ sobre la imagen y la barra al doble de gruesa (O1).
+                            DSProgress(fraction: progress, height: inProgress ? DS.Space.s2 : DS.Space.s1)
+                        }
+                        if inProgress {
+                            Image(systemName: "play.fill").font(DS.TextRecipe.badge.font).foregroundStyle(DS.paper)
+                                .frame(width: DS.EpisodeRow.play, height: DS.EpisodeRow.play).glassEffect(.regular, in: Circle())
+                                .frame(maxHeight: .infinity).accessibilityHidden(true)
+                        }
                         // Visto: la imagen se apaga y lleva un ojito (sin escribir «Visto»; la palomita va a la derecha).
                         if row.watched {
                             DS.scrim
@@ -39,7 +55,7 @@ struct EpisodeRowView: View {
                     .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(2)
-                        if hasStatus { status.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted) }
+                        if hasStatus { status.font(inProgress ? DS.TextRecipe.badge.font : DS.TextRecipe.caption.font).foregroundStyle(inProgress ? ink : DS.textMuted) }
                         if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
                     }
                     Spacer(minLength: 0)
@@ -103,12 +119,8 @@ struct EpisodeRowView: View {
                 .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
         }
         else if row.download == .paused || row.download == .failed {
-            // En pausa o falló: seguir donde iba (no empezar de cero con otra fuente).
-            Button(action: resumeDownload) {
-                Image(systemName: row.download == .failed ? "arrow.clockwise" : "play.circle").foregroundStyle(row.download == .failed ? DS.warning : DS.textMuted)
-                    .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-            }
-            .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar") : Text("Reanudar"))
+            // En pausa o falló: seguir donde iba (no empezar de cero con otra fuente). El mismo anillo con «Seguir» de Descargas.
+            DownloadRingButton(fraction: downloadFraction ?? 0, action: row.download == .failed ? .retry : .resume, perform: resumeDownload)
         }
         else {
             // «⋯» a la vista: Descargar, Elegir versión, Marcar como visto y Ver en la TV (antes solo la flecha de descargar, y

@@ -32,7 +32,7 @@ struct FanCard<Emblem: View>: View {
         ZStack(alignment: .topLeading) {
             RadialGradient(colors: [tint.opacity(DS.PlatformFan.tintTop), .clear], center: .bottom, startRadius: 0,
                            endRadius: DS.PlatformFan.height)
-            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).dsCaps().padding(DS.Space.s3) }
+            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).padding(DS.Space.s3) }
             fan.frame(maxWidth: .infinity)
             VStack { Spacer(); emblem().padding(.bottom, DS.Space.s3) }.frame(maxWidth: .infinity)
         }
@@ -95,8 +95,7 @@ struct PlatformLogoTile: View {
     }
 }
 
-/// Una plataforma en cápsula (su logo y su nombre) para elegir de cuál es una lista: la elegida, con el color de la
-/// plataforma de fondo tenue y su borde (el Top 10 de Inicio).
+/// Una plataforma para elegir de cuál es una lista: su logo redondo, la elegida con el anillo (el Top 10 de Inicio).
 struct PlatformPill: View {
     let name: String
     let logo: String?
@@ -105,22 +104,18 @@ struct PlatformPill: View {
     let action: () -> Void
 
     var body: some View { bodyContent.pointerHover(.highlight) }
+    // Solo el logo redondo, sin el nombre en una cápsula de texto (Fernando, 2 nov 2026, D2): la elegida lleva el anillo de lo
+    // elegido. El nombre va para VoiceOver.
     @ViewBuilder private var bodyContent: some View {
-        let tint = DS.PlatformTint.color(brand)
         Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
-                // El logo en círculo, concéntrico con la cápsula y con el mismo aire alrededor: antes era un cuadrito de esquinas
-                // rectas que casi tocaba el borde redondo y parecía cortado.
-                PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.pillLogo, radius: DS.PlatformFan.pillLogo / 2, tint: tint, glow: 0)
-                    .overlay(Circle().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
-                // El mismo peso elegida o no: antes la elegida pasaba a negritas, se ensanchaba y empujaba a las demás.
-                Text(verbatim: name).font(DS.TextRecipe.label.font).lineLimit(1).fixedSize()
-            }
+            PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.pickLogo, radius: DS.PlatformFan.pickLogo / 2,
+                             tint: DS.PlatformTint.color(brand), glow: 0)
+                .overlay(Circle().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
+                .opacity(selected ? 1 : DS.Opacity.dimmed)
         }
-        // El botón secundario de siempre; la elegida, con el anillo de lo elegido en el color del texto (D5, D9). Antes una
-        // cápsula a mano con el borde del color de la plataforma.
-        .dsSecondaryButton()
-        .dsSelectionRing(selected, in: Capsule())
+        .buttonStyle(.plain)   // ds-exception: el logo es el botón (un círculo con su anillo), no un botón con texto
+        .dsSelectionRing(selected, in: Circle())
+        .accessibilityLabel(Text(verbatim: name))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

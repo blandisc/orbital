@@ -19,9 +19,6 @@ extension View {
         background(fill ?? (translucent ? DS.fill : DS.surface), in: RoundedRectangle(cornerRadius: level.radius, style: .continuous))
     }
 
-    /// La única manera de escribir en mayúsculas (rótulos, sellos, listones): el texto se escribe normal y se traduce normal.
-    func dsCaps() -> some View { textCase(.uppercase) }
-
     /// Receta: el anillo de lo elegido (un avatar, una opción, una plataforma), en el color del texto y del grueso de lo
     /// elegido (`DS.Stroke.selected`); sin elegir, nada (el lugar no cambia). Por dentro de la forma: no la agranda.
     func dsSelectionRing<S: InsettableShape>(_ selected: Bool, in shape: S, width: CGFloat = DS.Stroke.selected) -> some View {
@@ -98,7 +95,9 @@ struct DSGroupLabel: View {
     var color: Color = DS.textMuted
 
     var body: some View {
-        title.recipe(.groupLabel, color: color).dsCaps().tracking(DS.Chapter.tracking)
+        // En letra normal, sin mayúsculas espaciadas (Fernando, 2 nov 2026, E3/G2/H2: «que todos los títulos de ese mismo estilo
+        // tengan una regla en el sistema de diseño y que si cambiamos uno, cambiamos todos»).
+        title.recipe(.groupLabel, color: color)
             .accessibilityAddTraits(.isHeader)
     }
 }

@@ -96,7 +96,7 @@ struct VersionChip: View {
 
     static func speedColor(_ speed: SourceSpeed) -> Color? {
         switch speed {
-        case .inRealDebrid: DS.brandMoon
+        case .inRealDebrid: DS.success   // listo al instante: el verde de «listo», no el turquesa
         case .realDebridMustDownload: DS.warning
         case .unknown: nil
         }
@@ -138,7 +138,7 @@ struct VersionEvidence: View {
     }
 
     private var color: Color {
-        switch evidence { case .checked, .name, .site: DS.brandMoon; case .original, .unknown: DS.textMuted; case .maybe: DS.warning }
+        switch evidence { case .checked, .name, .site: DS.success; case .original, .unknown: DS.textMuted; case .maybe: DS.warning }
     }
 
     private var title: Text {

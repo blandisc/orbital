@@ -13,6 +13,9 @@ extension DS {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64
         /// La puerta A de Buscar (Fernando, 31 oct 2026): los mismos mosaicos del cajón en chiquito, tres por renglón.
         static let miniTileHeight: CGFloat = 70
+        /// Sin ningún filtro puesto, los mosaicos sin renglón de valor (Fernando, 2 nov 2026, K5): más bajos, en la puerta y
+        /// en el cajón.
+        static let miniTileCompact: CGFloat = 52, tileCompact: CGFloat = 76
         /// El dibujo arriba de cada mosaico (regla, logos, cuadro) en el cajón y en la puerta.
         static let artHeight: CGFloat = 30, miniArtHeight: CGFloat = 20
         /// La flechita del panel que se abre bajo su mosaico.
@@ -32,7 +35,7 @@ extension DS {
         static let dot: CGFloat = 7
         /// Lo más angosto de la ventana de la regla chiquita (un año o dos se leen igual).
         static let miniWindow: CGFloat = 12, windowMin: CGFloat = 32
-        /// «Qué tan conocida»: el alto de cada cuadrante y el velo verde del elegido. Género: cuántos géneros caben en su mosaico.
+        /// «Fama»: el alto de cada cuadrante y el velo verde del elegido. Género: cuántos géneros caben en su mosaico.
         static let quadrantCell: CGFloat = 96, genreMosaicMax = 6
         static let meadowFill = meadow.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el verde de este filtro
         /// El logo de TMDB en el mosaico de Calificación (chico: el número manda).
@@ -44,10 +47,10 @@ extension DS {
         static let ratingRuler: CGFloat = 60, trackY: CGFloat = 18, track: CGFloat = 4, tickY: CGFloat = 32, rulerNumberY: CGFloat = 50
         static let thumbWidth: CGFloat = 44, thumbHeight: CGFloat = 26, star: CGFloat = 40
         static let starGap = DS.Space.s2
-        /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte azul y su orilla (otra cosa que buscar por nombre).
+        /// La puerta de «Búsqueda avanzada» en Buscar: su círculo, su tinte turquesa y su orilla (otra cosa que buscar por nombre).
         static let doorIcon: CGFloat = 36
-        static let doorFill = DS.orbitalBlue.opacity(0.1)   // ds-exception: el tinte de la búsqueda avanzada, apenas azul
-        static let doorStroke = DS.orbitalBlue.opacity(0.35)   // ds-exception: su orilla, en el mismo azul
+        static let doorFill = DS.orbitalBlue.opacity(0.1)   // ds-exception: el tinte de la búsqueda avanzada, apenas turquesa
+        static let doorStroke = DS.orbitalBlue.opacity(0.35)   // ds-exception: su orilla, en el mismo turquesa
         /// Al cambiar de filtro: la pausa entre cerrar el de antes y abrir el nuevo, y cuándo se sube la lista para que se vea.
         static let switchPause: Duration = .milliseconds(180), revealAfter: Duration = .milliseconds(320)
         static let tickFaint = DS.text.opacity(0.22), tickMid = DS.text.opacity(0.36), tickStrong = DS.text.opacity(0.62)   // ds-exception: las rayitas de la regla, de tenue a firme

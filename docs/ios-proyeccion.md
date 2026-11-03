@@ -66,7 +66,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `display` | largeTitle bold | Títulos grandes fuera de la barra |
 | `title` | title bold | El título de una hoja (`DSSheetHeader`) |
 | `section` | title2 bold | **Subsección**: el título de una fila o estante (`DSSectionHead`, `Shelf`, `Rail`), con su porqué turquesa arriba si ayuda |
-| `groupLabel` | caption bold, en mayúsculas | **Sección**: `DSSectionHead(level: .section)` pinta `DSChapterLabel` (el rótulo con su línea), sola, sin porqué; dentro de una hoja o panel, `DSGroupLabel` |
+| `groupLabel` | footnote negrita, en letra normal (2 nov 2026) | **Sección**: `DSSectionHead(level: .section)` pinta `DSChapterLabel` (el rótulo con su línea), sola, sin porqué; dentro de una hoja o panel, `DSGroupLabel` |
 | `eyebrow` | footnote semibold, turquesa | El porqué arriba de una subsección o de una portada (≤ 38 letras, sin cifras) |
 | `cardTitle` | headline | Nombre en una pieza o renglón |
 | `body` | body | Texto de lectura |
@@ -116,12 +116,14 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | `ActionTileLabel` | Acción de la ficha: rectángulo que llena su parte del renglón, ícono arriba y nombre abajo; activa con el color del arte; con anillo de avance alrededor del ícono (Descargar). Tocar hace lo principal, mantener presionado el resto (`Menu` con `primaryAction`) | Ficha (Guardar, Descargar, Tráiler, Fuente) |
 | `Glyphs/donut` (catálogo de imágenes) | La dona de Los Simpson, con el trazo de los íconos propios (solo iPhone; los de `Icons/` vienen de la TV) | Inicio › un Simpson al azar (el dado es «¿Qué vemos?») |
 | `DSKindFilter` | El filtro de tipo de toda la app: Todo · Películas · Series (o Películas · Series). Segmentado a lo ancho; `compact`, el switch chico junto al título (dos opciones, Top 10); `menu`, la lista que se despliega en cápsula (tres opciones junto al título: En tendencia, Destacado) | Inicio (destacado y Top 10), Para ti › Listas, plataforma, colección por año, Buscar (con cuántas), «¿Qué vemos?» |
-| `DSCapsuleLabel` / `SeeAllLabel` | La cápsula tenue a la derecha del título de una sección, a la altura del título: «Ver todo ›», «📅 Octubre», «Todo ⌄» | Todo encabezado con «Ver todo», Sale hoy (calendario), los filtros desplegables |
+| `Text.withTitleChevron()` / `DSTitleChevron` | «Ver todo»: la flecha gris al final del título, dentro del mismo texto (centrada con su renglón y al final del último si se parte); junto a un rótulo de sección, `DSTitleChevron` a la derecha de su línea; todo el encabezado abre la lista (2 nov 2026: sin cápsula de texto, como Música y la App Store) | Todo encabezado que abre su lista completa, la tarjeta de «La temporada» |
+| `DSCapsuleLabel` | La cápsula tenue de un filtro desplegable a la derecha de un título: «Todo ⌄», «Filtrar · 2» | Los filtros desplegables (un calendario o una acción de un solo ícono van en `DSIconButton`) |
 | `DownloadVersionSheet` | «Ya la tienes»: la versión que tienes y la que elegiste lado a lado (mismo alto) y tres salidas del mismo tamaño: bajar también esta, cambiarla o dejarla | Descargar una fuente de algo que ya tienes (ficha) |
 | `PlayerFailureView` | Cuando el reproductor no puede: ícono, qué pasó desde tu lado y solo las salidas que sirven (sin fuentes: Cerrar; ninguna sirvió o se cortó: Intentar de nuevo, Infuse, Cerrar; sin red: Intentar de nuevo). Reemplaza los controles | Reproductor |
 | `SubtitleButton` | El botón de subtítulos del reproductor: con subtítulos, el idioma en corto («ES») en una placa sólida dentro del círculo (como el «CC»); apagados, la burbuja vacía; un toque abre los subtítulos rápidos (`SubtitleDock`), mantener presionado los apaga o prende | Barra del reproductor |
 | `SubtitleDock` | Subtítulos rápidos: un panel chico sobre el video (abajo en vertical, arriba en horizontal para que se vean los subtítulos) con idioma (Apagados · Español · Inglés · Otro…), versión con ‹ ›, su etiqueta honesta («Hecho para tu copia» por el nombre de la copia, «Misma fuente», «Del video», descargas) y «N de M»; al cambiar de versión, «¿Va a tiempo? Sí, va bien / Probar otra» con las probadas tachadas; Tiempo «− Antes · A tiempo · Después +», «Sincronizar con una línea», Tamaño y Listo. Tocar la versión abre la media hoja con todas | Reproductor |
 | `SubtitleSyncView` | «Sincronizar con una línea»: tres frases que vienen; tocas la que oyes y el tiempo se ajusta solo (se recuerda por versión); «¿Ya van bien? Sí / Otra vez» | Reproductor (dentro del panel de subtítulos) |
+| `DSCornerRibbon` (`Design/CornerRibbon.swift`) | «Nuevo»: el listón verde en diagonal en la esquina del póster (nunca un punto ni una cápsula). `compact`, el de los pósters chicos del widget. Vive aparte para que la extensión de widgets lo compile | Inicio › Lo nuevo de lo tuyo, Descargas, widget «Lo nuevo de lo tuyo» (mediano: en el póster; chico: en la esquina del widget) |
 | `DownloadSpeedTestView` | «Probar la velocidad»: tu internet, Real-Debrid con 1 y con 8 conexiones, y como baja la app en segundo plano; qué quiere decir y «Copiar resultados» | Ajustes › Descargas |
 | `SubtitlePreview` | Una escena de muestra con «— Así se van a ver.» dibujada con tu estilo (fondo, tamaño, posición, estilo del iPhone) | Ajustes › Idioma y subtítulos |
 | `subtitleLook(_:size:)` | El estilo de una línea de subtítulo: contorno oscuro o caja (oscura, translúcida o la del iPhone); lo comparten el reproductor y la muestra de Ajustes | `AetherSubtitleOverlay`, `SubtitlePreview` |
@@ -149,11 +151,14 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |
 | `DSSegmented`, `DSChipRow`, `DSIconButton`, `DSNotice`, `DSProgress` | Controles nativos con los tokens de Orbital | Varias |
-| `DSSectionHead` | El encabezado de toda sección («Editorial»): título grande, «Ver todo» si abre la lista completa (o un dato corto) y una línea gris solo si ayuda; sin íconos | Todas las pantallas (también `Shelf` y las listas de Descargas) |
+| `DSSectionHead` | El encabezado de toda sección («Editorial»): título grande, la flecha de «Ver todo» pegada al título si abre la lista completa (o un dato corto a la derecha); de dónde viene una lista (Trakt) lo dice el porqué, no un sello y una línea gris solo si ayuda; sin íconos | Todas las pantallas (también `Shelf` y las listas de Descargas) |
 | `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en turquesa) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
 | `posterCaptions` (entorno) | El nombre bajo el póster: sí en cuadrículas, no en las tiras de una sección | Tiras y cuadrículas |
 | `ProfileButton` | Tu avatar arriba a la derecha de cada pestaña: abre Ajustes | Inicio, Para ti, Buscar, Descargas |
-| `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
+| `StorageBar` | El espacio del iPhone: arriba «Orbital usa 7,2 GB» y «75,0 GB libres» (ámbar con poco espacio); la barra con series, películas, otras apps y libre, y la leyenda con la cifra de cada una, «Otras apps» incluida (2 nov 2026, I1) | Descargas |
+| `DownloadRingButton` | El anillo de una descarga con lo que hace: ‖ pausa; en pausa, la flecha y «Seguir» debajo; si falló, ↻ y «Reintentar» (2 nov 2026, I3) | Descargas, ficha › fila de un episodio |
+| `DSToggleRow` · `DSSwitchStyle` | Un interruptor con nombre corto y su explicación en gris abajo (ícono opcional); todo interruptor prendido en el turquesa de la marca (`DS.switchOn`), puesto una vez en `OrbitalApp` | Descargas › Descarga inteligente, Ajustes |
+| `listHeadRow()` · `listHeadRows()` | El rótulo de una sección como renglón de una lista agrupada: a ~20 pt de su tarjeta y ~40 entre secciones | Descargas |
 | `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
 | `SimpsonsSeasonsSection` | De qué temporadas sale «Un Simpson al azar» (`SimpsonsSeasonsPicker` con lo guardado) | Ajustes › Un Simpson al azar |
 | `PlayerCircleButton`, `PlayerMenuRow` | «Barra limpia», la misma en vertical y en horizontal: arriba ✕, el nombre, subtítulos, AirPlay y «⋯»; el «⋯» abre un globo con un renglón por acción (Audio y subtítulos, Zoom con el puesto a la derecha, Ventana, Ver en la TV, Descargar y, aparte, Bloquear pantalla) | Reproductor |
@@ -202,6 +207,8 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 - `.onArt()`: lo que va sobre el arte, como en la sala oscura.
 - `.bottomAccessory(isEnabled:)`: el accesorio de la barra solo cuando hay algo (iOS 26.1+; en 26.0, la tarjeta en Inicio).
 - `.tint(DS.accent)` en listas y formularios: lo interactivo (interruptores, botones de la lista) en el acento.
+
+- Saltar a un grupo dentro de una lista perezosa (`LazyVStack`): cada grupo es **hijo directo** de la lista (sin caja que los junte) y su `.id` va **por fuera** de los demás modificadores; con `.scrollTargetLayout()` y `ScrollPosition.scrollTo(id:)`. Si no, el salto no encuentra un grupo que aún no se arma (Explorar › índice › «Temporadas» no bajaba, 2 nov 2026).
 
 ### Regla de íconos
 

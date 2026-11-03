@@ -33,6 +33,24 @@ enum WidgetStore {
 
     static func imageURL(_ name: String) -> URL? { directory?.appendingPathComponent(name) }
 
+    /// La versión de las imágenes guardadas. Al subirla (cambió el tamaño con que se guardan), la primera publicación borra
+    /// las de antes y las vuelve a bajar: sin esto, las de 300 px se quedaban para siempre (se reutilizan si ya están).
+    static let imagesVersion = 2
+
+    /// Borra las imágenes de una versión anterior de `folder` (cada widget tiene la suya) y apunta la actual; true si borró
+    /// (hay que volver a escribir y recargar aunque lo demás no haya cambiado). Lo llaman los que publican.
+    @discardableResult
+    static func discardOutdatedImages(in folder: URL) -> Bool {
+        let marker = folder.appendingPathComponent("images-v\(imagesVersion)")
+        guard !FileManager.default.fileExists(atPath: marker.path) else { return false }
+        for file in (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+        where file.hasSuffix(".jpg") || file.hasSuffix(".png") || file.hasPrefix("images-v") {
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent(file))
+        }
+        FileManager.default.createFile(atPath: marker.path, contents: Data())
+        return true
+    }
+
     // MARK: Un Simpson del día
 
     static let simpsonsKind = "mx.iracheta.orbital.simpsons-day"

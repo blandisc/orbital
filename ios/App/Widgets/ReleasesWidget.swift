@@ -69,11 +69,10 @@ struct ReleasesView: View {
 private struct ReleasePoster: View {
     var airing: WidgetSnapshot.UpcomingEpisode
     var body: some View {
-        ZStack {
-            DS.surface
-            if let file = airing.imageFile, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()   // en la pantalla de inicio tintada, el arte sigue siendo foto
-            } else {
+        // Recortado y reducido al tamaño exacto del póster (`WidgetImage.fill`).
+        WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }) {
+            ZStack {
+                DS.surface
                 Text(verbatim: airing.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
                     .multilineTextAlignment(.center).padding(DS.Space.s1)
             }
@@ -103,10 +102,9 @@ private struct ReleaseWhen {
         return Text(verbatim: airing.date.formatted(.dateTime.weekday(.wide).locale(locale)).capitalized(with: locale))
     }
 
-    /// Lo que va en el renglón de arriba de cada póster, corto para que todos midan igual: «Nuevo», la hora de hoy («21:00»),
-    /// «Ayer», «Mañana» o el día abreviado («Vie»).
+    /// Lo que va en el renglón de arriba de cada póster, corto para que todos midan igual: la hora de hoy («21:00»), «Hoy»,
+    /// «Ayer», «Mañana» o el día abreviado («Vie»). «Nuevo» no va aquí: es el listón del póster, como en Inicio.
     var label: Text {
-        if isNew { return Text("Nuevo") }
         if !isOut, calendar.isDate(airing.date, inSameDayAs: now) { return hour }
         if calendar.isDate(airing.date, inSameDayAs: now) { return Text("Hoy") }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(airing.date, inSameDayAs: yesterday) { return Text("Ayer") }
@@ -121,13 +119,14 @@ private struct ReleaseWhen {
     }
 }
 
-/// El punto: verde lo que ya salió (se puede ver), gris lo que viene.
+/// El punto del rótulo, como en la línea de Inicio: turquesa (`DS.fresh`, el punto del logo) lo que ya salió (se puede ver), gris lo
+/// que viene.
 private struct ReleaseDot: View {
     var out: Bool
     /// Sobre el arte (el chico): lo que viene en papel, que el gris no se ve.
     var onArt = false
     var body: some View {
-        Circle().fill(out ? DS.success : onArt ? DS.onArtSecondary : DS.ink500).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
+        Circle().fill(out ? DS.fresh : onArt ? DS.onArtSecondary : DS.ink500).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
     }
 }
 
@@ -172,11 +171,12 @@ private struct ReleasesLine: View {
         .widgetURL(URL(string: "\(WidgetLink.scheme)://"))
     }
 
-    /// La marca HOY: una línea verde delgada con «Hoy» arriba (la de Inicio).
+    /// La marca HOY: una línea turquesa delgada que se desvanece hacia abajo, con «Hoy» arriba (la de Inicio, `HomeTimeline`).
     private var todayMark: some View {
         VStack(spacing: DS.Space.s1) {
-            Text("Hoy").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.success)
-            Capsule().fill(DS.success).frame(width: DS.HomeTimeline.markLine).frame(maxHeight: .infinity)
+            Text("Hoy").font(DS.font(.xs, weight: .bold)).foregroundStyle(DS.fresh)
+            Capsule().fill(LinearGradient(colors: [DS.fresh, .clear], startPoint: .top, endPoint: .bottom))
+                .frame(width: DS.HomeTimeline.markLine).frame(maxHeight: .infinity)
         }
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityHidden(true)
@@ -194,6 +194,7 @@ private struct ReleasesLine: View {
                 .fixedSize()
                 .frame(width: DS.Widget.releasePoster, alignment: .leading)
                 ReleasePoster(airing: airing).opacity(when.isOut ? 1 : DS.Opacity.dimmed)
+                    .overlay(alignment: .topLeading) { if when.isNew { DSCornerRibbon(text: "Nuevo", compact: true) } }
                 Text(verbatim: airing.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
                     .minimumScaleFactor(DS.Widget.labelShrink)
             }
@@ -218,9 +219,12 @@ private struct ReleasesSpotlight: View {
         if let airing = pick {
             let when = ReleaseWhen(airing: airing, now: entry.date, language: entry.language)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                HStack(spacing: DS.Space.s1) {
-                    ReleaseDot(out: when.isOut, onArt: true)
-                    (when.isNew ? Text("Nuevo") : Text("\(when.day) · \(when.hour)")).font(DS.font(.xs, weight: .semibold)).lineLimit(1)
+                // Lo nuevo lleva el listón en la esquina (el de Inicio); lo que viene, su punto y cuándo.
+                if !when.isNew {
+                    HStack(spacing: DS.Space.s1) {
+                        ReleaseDot(out: when.isOut, onArt: true)
+                        Text("\(when.day) · \(when.hour)").font(DS.font(.xs, weight: .semibold)).lineLimit(1)
+                    }
                 }
                 Spacer(minLength: 0)
                 Text(verbatim: airing.title).font(DS.font(.md, weight: .bold)).lineLimit(2)
@@ -235,12 +239,14 @@ private struct ReleasesSpotlight: View {
             .containerBackground(for: .widget) {
                 ZStack {
                     DS.bg
-                    if let file = airing.imageFile, let url = WidgetStore.imageURL(file), let image = UIImage(contentsOfFile: url.path) {
-                        Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill() }.clipped()
-                            .opacity(when.isOut ? 1 : DS.Opacity.dimmed)
-                    }
+                    WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }, anchor: .top)
+                        .opacity(when.isOut ? 1 : DS.Opacity.dimmed)
                     LinearGradient(stops: [.init(color: .clear, location: DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],   // ds-exception: el widget es otro programa y no trae ArtVeil
                                    startPoint: .top, endPoint: .bottom)
+                }
+                .overlay(alignment: .topLeading) {
+                    // El fondo no hereda el idioma del widget (salía «NEW»): se le pasa aquí.
+                    if when.isNew { DSCornerRibbon(text: "Nuevo").environment(\.locale, Locale(identifier: entry.language)) }
                 }
             }
         } else {

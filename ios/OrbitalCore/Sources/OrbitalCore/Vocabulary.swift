@@ -74,7 +74,7 @@ public enum Vocabulary {
 
     private static let spanishGenres: [String: String] = [
         "action": "Acción", "adventure": "Aventura", "animation": "Animación", "biography": "Biografía", "comedy": "Comedia",
-        "crime": "Crimen", "documentary": "Documental", "drama": "Drama", "family": "Familiar", "fantasy": "Fantasía",
+        "crime": "Crimen", "documentary": "Documental", "drama": "Drama", "family": "Familia", "fantasy": "Fantasía",
         "history": "Historia", "horror": "Terror", "music": "Música", "musical": "Musical", "mystery": "Misterio", "romance": "Romance",
         "sci fi": "Ciencia ficción", "science fiction": "Ciencia ficción", "sport": "Deportes", "sports": "Deportes", "thriller": "Suspenso",
         "war": "Bélica", "western": "Western", "reality tv": "Reality", "reality": "Reality", "talk show": "Talk show", "game show": "Concurso",
@@ -104,6 +104,22 @@ public enum Artwork {
         }
         if pixels <= 780, url.contains("image.tmdb.org/t/p/w1280/") {
             return url.replacingOccurrences(of: "/t/p/w1280/", with: "/t/p/w780/")
+        }
+        return url
+    }
+
+    /// Lo contrario de `variant`, para los widgets (se bajan una vez y se ven a pantalla de iPhone): el póster «large» de metahub
+    /// (780×1170) en vez del «medium» (500×750), y de TMDB w780 en vez de w342 o w500, cuando se piden más pixeles de los que
+    /// trae la variante de la URL. Lo demás, tal cual.
+    public static func sharper(_ url: String, pixels: Int) -> String {
+        if pixels > 750, url.contains("images.metahub.space/poster/medium/") || url.contains("images.metahub.space/poster/small/") {
+            return url.replacingOccurrences(of: "/poster/medium/", with: "/poster/large/").replacingOccurrences(of: "/poster/small/", with: "/poster/large/")
+        }
+        if pixels > 600, url.contains("images.metahub.space/background/small/") {
+            return url.replacingOccurrences(of: "/background/small/", with: "/background/medium/")
+        }
+        for small in ["/t/p/w342/", "/t/p/w500/"] where url.contains("image.tmdb.org" + small) && pixels > 500 {
+            return url.replacingOccurrences(of: small, with: "/t/p/w780/")
         }
         return url
     }

@@ -101,7 +101,9 @@ extension DS {
         /// (el nombre ya no se mete debajo de ellos; 31 oct 2026).
         static let barTitleLeading: CGFloat = 72, barButton: CGFloat = 50, barGroupPadding = DS.Space.s6
         /// Recogido el arte, en la barra va el logo de la serie o película (31 oct 2026): su alto (el ancho lo dan ‹ y los botones).
-        static let barLogo: CGFloat = 26   // el logo ya recortado (sin su margen vacío): cabe entero en la barra
+        static let barLogo: CGFloat = 24   // el logo ya recortado (sin su margen vacío): cabe entero en la barra
+        /// El aire entre el logo y los botones de la derecha (Fernando, 2 nov 2026, N1: «the office» quedaba a 3 pt de ellos).
+        static let barLogoGap = DS.Space.s3
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720
@@ -270,6 +272,16 @@ extension DS {
     enum Deck { static let veilStart: CGFloat = 0.38 }
 
     /// La ficha rica (como Infuse): caras del reparto, insignias de calidad, calificaciones, tráiler y logos.
+    /// Las listas con el rótulo de cada sección como renglón (`listHeadRow`): del rótulo a su tarjeta (Fernando, 2 nov 2026, I2).
+    /// `headPad` más los 8 entre renglones y el aire del rótulo dan unos 20 pt (medido en el simulador).
+    enum ListSection { static let headPad = DS.Space.s2 }
+
+    /// El episodio que vas viendo en una lista de episodios (Fernando, 2 nov 2026, O1): la barra de avance más gruesa (el doble
+    /// de la de siempre) y el ▶ en vidrio sobre su imagen.
+    enum EpisodeRow {
+        static let play: CGFloat = 28
+    }
+
     enum Rich {
         static let face: CGFloat = 72, faceColumn: CGFloat = 84
         static let badgeStroke = DS.Stroke.regular, badgeRadius = DS.Radius.tag
@@ -391,9 +403,6 @@ extension DS {
         static let closeWarning: TimeInterval = 600
     }
 
-    /// El arranque de una sección (`DSChapterHead`): el interletrado del rótulo en mayúsculas.
-    enum Chapter { static let tracking: CGFloat = 1.6 }
-
     enum Collections {
         /// «Por lo que viste» en Inicio (`BecauseCard(artBackdrop:)`): cuánto se desenfoca el póster de fondo y cuánto se ve.
         static let becauseBlur: CGFloat = 30, becauseArtOpacity: Double = 0.9, becauseArtScale: CGFloat = 1.3
@@ -421,17 +430,10 @@ extension DS {
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
         static let spyLine: CGFloat = 70
 
-        static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
-        static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
-        /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
+        static let gold = Color(red: 0.83, green: 0.65, blue: 0.25)
+        /// El carrusel centrado: cuánto se encogen y apagan las de los lados, y el peso de su color bajo cada tarjeta.
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
-        static let reflection: CGFloat = 44, reflectionGap = DS.Space.s1, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
-        /// Lo que la sección siguiente puede montarse sobre el reflejo de la última fila (su parte ya desvanecida): sin esto,
-        /// entre una fila con reflejo y la siguiente quedaba el reflejo entero más el aire entre secciones (un hueco vacío).
-        static let reflectionTail: CGFloat = 24
         static let weightTint: Double = 0.35
-        /// El nombre de un premio sube sobre la cola del reflejo; y el aire después de Premios.
-        static let captionLift: CGFloat = 36
         /// La línea de tiempo de «Próximas temporadas»: el punto, el grueso y lo tenue de la línea, y desde cuántos días se
         /// dice en meses.
         static let timelineDot: CGFloat = 8, timelineStroke: CGFloat = 2, timelineLine = 0.5, timelineMonths = 45
@@ -440,7 +442,7 @@ extension DS {
         /// El logo del estudio en su cápsula.
         static let studioLogoWidth: CGFloat = 96, studioLogoHeight: CGFloat = 26
         /// El halo de cada temporada de «Temporadas»: Halloween naranja, Día de Muertos rosa mexicano, Navidad verde, San Valentín
-        /// guinda y Verano ámbar. Los géneros usan el neutro de los estudios.
+        /// guinda y Verano ámbar.
         static let halloween = Color(red: 0.95, green: 0.47, blue: 0.12), muertos = Color(red: 0.89, green: 0.0, blue: 0.49)
         static let navidad = Color(red: 0.13, green: 0.58, blue: 0.32), sanValentin = Color(red: 0.62, green: 0.11, blue: 0.25)
         static let verano = Color(red: 0.96, green: 0.71, blue: 0.16)
@@ -451,8 +453,19 @@ extension DS {
         static let iconEmblem: CGFloat = 40, iconHeader: CGFloat = 56   // antes 22: al pie de la tarjeta se perdía
         /// El resplandor detrás del ícono de una temporada o género (cuánto tapa y de qué tamaño).
         static let iconBackdrop = 0.85, iconBackdropScale: CGFloat = 1.3
-        static func tint(_ award: String) -> Color {
-            switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
+        /// El halo de un premio: siempre dorado (Fernando, 2 nov 2026; antes el Emmy en plata y BAFTA y Ariel en bronce).
+        static func tint(_ award: String) -> Color { gold }
+        /// El halo de cada género, su color (Fernando, 2 nov 2026: «en géneros, asignan un color dependiendo del género»; antes
+        /// todos en el neutro de los estudios). Uno por género, de lo que evoca: Acción rojo, Terror sangre, Romance rosa…
+        static let genreHex: [String: (Double, Double, Double)] = [
+            "accion": (0.93, 0.33, 0.22), "aventura": (0.30, 0.68, 0.36), "animacion": (0.98, 0.60, 0.18), "comedia": (0.98, 0.80, 0.20),
+            "crimen": (0.36, 0.45, 0.62), "documental": (0.78, 0.66, 0.45), "drama": (0.55, 0.36, 0.75), "familia": (0.55, 0.80, 0.38),
+            "fantasia": (0.62, 0.42, 0.95), "terror": (0.70, 0.10, 0.14), "misterio": (0.35, 0.32, 0.75), "romance": (0.93, 0.40, 0.62),
+            "ciencia-ficcion": (0.20, 0.72, 0.86), "suspenso": (0.18, 0.52, 0.55), "historia": (0.62, 0.44, 0.28), "belica": (0.50, 0.55, 0.28),
+            "western": (0.78, 0.42, 0.20), "musical": (0.85, 0.30, 0.80), "biografia": (0.55, 0.62, 0.78), "deportes": (0.20, 0.55, 0.95),
+        ]
+        static func genre(_ slug: String) -> Color {
+            genreHex[slug].map { Color(red: $0.0, green: $0.1, blue: $0.2) } ?? studio
         }
     }
 
@@ -465,8 +478,8 @@ extension DS {
         static let maxWidth: CGFloat = 168, height: CGFloat = 176, radius = DS.Radius.xxl
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius = DS.Radius.logo(34), glow: CGFloat = 18
-        /// La pastilla de una plataforma (el Top 10 de Inicio): el logo (en círculo), el aire alrededor y el borde de la elegida.
-        static let pillLogo: CGFloat = 26
+        /// El logo redondo con que eliges plataforma (el Top 10 de Inicio): 40 pt, con el anillo en la elegida.
+        static let pickLogo: CGFloat = 40
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44

@@ -16,11 +16,16 @@ final class RemoteUITests: XCTestCase {
         app.buttons["remote-back"].tap()
         XCTAssertTrue(app.buttons["remote-alt"].label.contains("Mi lista"), "rotulada con la leyenda de la TV")
         XCTAssertTrue(app.buttons["Dile a Orbital"].exists, "y el micrófono")
-        // Junto al micrófono, lo que puedes decir: dónde hablarle, lo del iPhone y las frases de la consola.
+        // Junto al micrófono, lo que puedes decir: dónde hablarle y, en «Más frases, por tema», lo del iPhone y las frases
+        // de la consola (la guía se rehízo en tarjetas: «Con Siri» ya no es un rótulo; la tarjeta de Siri vive en «Dónde hablarle»).
         app.buttons["remote-voice-guide"].tap()
         XCTAssertTrue(app.navigationBars["Lo que puedes decir"].waitForExistence(timeout: 5), "abre la guía de voz")
-        XCTAssertTrue(app.staticTexts["Con Siri"].exists)
-        XCTAssertTrue(app.staticTexts["«descárgalo»"].exists, "con lo que solo hace el iPhone")
+        let more = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Más frases, por tema'")).firstMatch
+        for _ in 0..<4 where !(more.exists && more.isHittable) { app.swipeUp() }
+        XCTAssertTrue(more.exists, "las frases por tema")
+        more.tap()
+        XCTAssertTrue(app.staticTexts["«descárgalo»"].waitForExistence(timeout: 5), "con lo que solo hace el iPhone")
+        app.navigationBars.buttons.firstMatch.tap()
         app.navigationBars["Lo que puedes decir"].buttons["Listo"].tap()
         XCTAssertTrue(app.buttons["Dile a Orbital"].waitForExistence(timeout: 5), "y regresa al control")
         XCTAssertFalse(app.staticTexts["Actualiza tu Orbital para usar el control completo."].exists, "la consola (demo) sí tiene el control completo")

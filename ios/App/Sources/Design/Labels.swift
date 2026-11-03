@@ -15,12 +15,27 @@ extension VerticalAlignment {
     static let sectionTitle = VerticalAlignment(SectionTitle.self)
 }
 
-/// «Ver todo ›»: en una cápsula tenue, a la altura del título (la misma en toda la app).
-struct SeeAllLabel: View {
-    var body: some View { DSCapsuleLabel(title: Text("Ver todo"), symbol: "chevron.forward", symbolFirst: false) }
+extension Text {
+    /// «Ver todo»: la flecha al final del título, dentro del mismo texto (un carácter más, unida a la última palabra), así
+    /// queda centrada con las letras de su renglón y, si el título se parte, va al final del último renglón (Fernando, 2 nov
+    /// 2026: «que todas las flechitas de los títulos estén bien centradas respecto al renglón»). En el gris de los datos.
+    func withTitleChevron() -> Text {
+        self + Text(verbatim: "\u{00A0}") + Text(Image(systemName: "chevron.forward")).foregroundStyle(DS.textMuted)
+    }
 }
 
-/// La cápsula tenue de lo que va a la derecha de un título de sección («Ver todo ›», «📅 Octubre», «Todo ⌄»).
+/// La flecha de «Ver todo» junto a un rótulo de sección (`DSSectionHead(level: .section)`), a la derecha de su línea y
+/// centrada con ella. En un título, `Text.withTitleChevron()`.
+struct DSTitleChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.forward")
+            .font(DS.TextRecipe.groupLabel.font)
+            .foregroundStyle(DS.textMuted)
+            .accessibilityLabel(Text("Ver todo"))
+    }
+}
+
+/// La cápsula tenue de lo que va a la derecha de un título de sección («Todo ⌄»). «Ver todo» ya no es cápsula: es la flecha del título (`DSSectionHead`).
 struct DSCapsuleLabel: View {
     let title: Text
     let symbol: String

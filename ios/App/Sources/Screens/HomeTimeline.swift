@@ -4,7 +4,7 @@ import OrbitalModels
 
 /// «Lo nuevo de lo tuyo» (Inicio, docs/producto/inicio-benchmark/): lo que ya salió de tus series en los últimos días y lo
 /// que viene, en una sola línea de tiempo con la marca HOY entre los dos (por hora: lo de hoy más tarde va después). Lo que ya
-/// salió va con su punto verde (ya se puede ver; lo de hoy, «Nuevo»); lo que viene, más apagado y con cuánto falta. Abre en HOY (lo de antes a la izquierda). El calendario del mes
+/// salió va con su punto turquesa (`DS.fresh`) (ya se puede ver; lo de hoy, «Nuevo»); lo que viene, más apagado y con cuánto falta. Abre en HOY (lo de antes a la izquierda). El calendario del mes
 /// completo, en el botón del encabezado.
 struct ReleaseTimeline: View {
     let airings: [Airing]
@@ -25,14 +25,13 @@ struct ReleaseTimeline: View {
             let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2))
                                                       : AnyLayout(HStackLayout(alignment: .sectionTitle))
             layout {
-                DSSectionHead(title: Text("Lo nuevo de lo tuyo"), source: .trakt, eyebrow: Text("Ya salió y lo que viene"))
+                DSSectionHead(title: Text("Lo nuevo de lo tuyo"), eyebrow: Text("Ya salió y lo que viene"))
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
-                Button(action: onCalendar) {
-                    DSCapsuleLabel(title: Text(verbatim: Date().formatted(Date.FormatStyle(locale: env.uiLocale).month(.wide)).capitalized(with: env.uiLocale)), symbol: "calendar")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Calendario del mes"))
-                .accessibilityIdentifier("release-calendar")
+                // El calendario es un ícono redondo, como el «+» de Canales (Fernando, 2 nov 2026, B3: sin la cápsula «Noviembre»;
+                // el mes ya se ve al abrirlo).
+                DSIconButton(symbol: "calendar", label: "Calendario del mes", size: .regular, action: onCalendar)
+                    .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+                    .accessibilityIdentifier("release-calendar")
             }
             .padding(.horizontal, DS.Space.gutter)
             ScrollViewReader { proxy in
@@ -79,7 +78,8 @@ struct ReleaseTimeline: View {
                     SpringKeyframe(DS.HomeTimeline.pulseScale, duration: DesignTokens.Motion.base)
                     SpringKeyframe(1, duration: DesignTokens.Motion.slow)
                 }
-            Capsule().fill(DS.success).frame(width: DS.HomeTimeline.markLine)
+            Capsule().fill(LinearGradient(colors: [DS.fresh, .clear], startPoint: .top, endPoint: .bottom))
+                .frame(width: DS.HomeTimeline.markLine)
                 .frame(maxHeight: .infinity)
         }
         .frame(height: DS.HomeTimeline.width / DS.Poster.aspect + DS.HomeTimeline.labelRow)
@@ -92,7 +92,7 @@ struct ReleaseTimeline: View {
         return Button { onOpen(a.series.route) } label: {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
-                    Circle().fill(soon ? DS.ink500 : DS.success).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
+                    Circle().fill(soon ? DS.ink500 : DS.fresh).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
                     when(a.day).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1)
                 }
                 .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)

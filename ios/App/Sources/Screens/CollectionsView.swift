@@ -33,11 +33,11 @@ struct SectionSpy: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .id(section)
             .onGeometryChange(for: Bool.self) { proxy in
                 let frame = proxy.frame(in: .scrollView)
                 return frame.minY <= DS.Collections.spyLine && frame.maxY > DS.Collections.spyLine
             } action: { inside in if inside { active = section } }
+            .id(section)   // por fuera de todo: una lista perezosa solo encuentra (para saltar) el `id` de afuera
     }
 }
 
@@ -147,7 +147,7 @@ struct CollectionGridView: View {
         case .genre:
             guard let genre = Tmdb.genres.first(where: { $0.slug == route.id }) else { return nil }
             let name = Strings.tr(genre.title, language: language)
-            guard let chart = collections.model.genreCharts[genre.slug] else { return (Text(verbatim: name), nil, DS.Collections.studio) }
+            guard let chart = collections.model.genreCharts[genre.slug] else { return (Text(verbatim: name), nil, DS.Collections.genre(genre.slug)) }
             let asked = String(chart.asked), used = String(chart.year)
             let meta: Text = switch chart.basis {
             case .votes: Text("Las mejor calificadas del año")
@@ -155,7 +155,7 @@ struct CollectionGridView: View {
             case .previous: Text("Pocas de \(asked): las mejor calificadas de \(used)")
             case .previousPopular: Text("Pocas de \(asked): lo más visto en \(used)")
             }
-            return (Text("Lo mejor de \(name) en \(used)"), meta, DS.Collections.studio)
+            return (Text("Lo mejor de \(name) en \(used)"), meta, DS.Collections.genre(genre.slug))
         default: return nil
         }
     }

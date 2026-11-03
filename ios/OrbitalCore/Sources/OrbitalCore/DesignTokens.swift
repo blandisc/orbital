@@ -7,7 +7,7 @@ public enum DesignTokens {
     /// Paleta única: los mismos valores que `orbital/web/styles/palette.json`.
     public static let palette: [String: String] = [
         "ink-1000": "#070708", "ink-950": "#0c0c0e", "ink-900": "#131316", "ink-850": "#18181c", "ink-800": "#1e1e23",
-        "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-200": "#cdcdd3", "paper": "#f5f4f0",
+        "ink-700": "#2a2a30", "ink-500": "#55555d", "ink-300": "#a3a3ab", "ink-250": "#babac1", "ink-200": "#cdcdd3", "paper": "#f5f4f0",
         "red-400": "#f0574d", "amber-300": "#f4c24d", "teal-300": "#5fd6c6",
         "pad-green": "#5cbf6d", "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
     ]
@@ -42,7 +42,7 @@ public enum DesignTokens {
             case .surface: (palette["ink-850"]!, "#ffffff")
             case .surfaceRaised: (palette["ink-800"]!, "#ebe9e3")
             case .label: (palette["paper"]!, "#111113")
-            case .secondaryLabel: (palette["ink-300"]!, "#5c5c64")
+            case .secondaryLabel: (palette["ink-250"]!, "#4c4c53")   // un paso más legible que ink-300 (2 nov 2026)
             case .tertiaryLabel: ("#868687", "#6b6b72")
             case .decorative: (palette["ink-500"]!, "#9a9aa1")
             case .primary: (palette["paper"]!, "#111113")
@@ -62,7 +62,7 @@ public enum DesignTokens {
             case .surface: (palette["ink-800"]!, "#ffffff")
             case .surfaceRaised: (palette["ink-700"]!, "#dddbd4")
             case .label: ("#ffffff", "#000000")
-            case .secondaryLabel: ("#d4d4da", "#3a3a40")
+            case .secondaryLabel: ("#dcdce1", "#34343a")
             case .tertiaryLabel: ("#b4b4bb", "#48484f")
             case .decorative: ("#6e6e76", "#85858c")
             case .primary: ("#ffffff", "#000000")
@@ -84,11 +84,17 @@ public enum DesignTokens {
         /// texto sobre él. En oscuro, el verde de la tecla A del mando; en claro, el mismo verde más oscuro y la letra en
         /// papel, para que se lea sobre el papel (antes era el verde del sistema con letra clara: ≈ 2:1).
         case success, onSuccess
+        /// Lo nuevo y lo de hoy («Hoy» y su línea en «Lo nuevo de lo tuyo», el listón «Nuevo», el «Nuevo» del Top 10): el
+        /// turquesa del puntito del logo de Orbital, la firma de la app (Fernando, 2 nov 2026, B4 y D3: antes era el verde de
+        /// «listo», un segundo acento junto al turquesa de los porqués). En claro, el mismo turquesa oscurecido para leerse.
+        case fresh, onFresh
 
         public var hex: (dark: String, light: String) {
             switch self {
             case .success: (palette["pad-green"]!, "#1f7a3a")
             case .onSuccess: (palette["ink-1000"]!, palette["paper"]!)
+            case .fresh: (palette["teal-300"]!, "#0b7a6e")
+            case .onFresh: (palette["ink-1000"]!, palette["paper"]!)
             }
         }
 
@@ -96,6 +102,8 @@ public enum DesignTokens {
             switch self {
             case .success: ("#86efac", "#14532d")
             case .onSuccess: ("#000000", "#ffffff")
+            case .fresh: ("#99f6e4", "#065a51")
+            case .onFresh: ("#000000", "#ffffff")
             }
         }
     }
@@ -215,19 +223,28 @@ public enum DesignTokens {
     /// tono del arte (como `ArtTint`), la calidad del JPEG, cada cuánto se pide recarga si la app no avisa, el alto de la barra de
     /// avance y el ancho de la miniatura de los renglones del widget mediano (puntos).
     public enum Widget {
-        public static let maxImagePixels = 300.0, jpegQuality = 0.7, tintMix = 0.55, fallbackRefreshHours = 6.0
+        /// Con cuánto se guarda cada imagen (lado largo, pixeles): un poco más de lo que pide el hueco más grande donde sale, en
+        /// un iPhone Pro Max (× 3). El widget la lee ya recortada al tamaño exacto de su hueco (`WidgetImage.fill`), así que
+        /// guardar más no pasa del límite de WidgetKit. Antes todas a 300 px y JPEG 0,7: borrosas (Fernando, 2 nov 2026).
+        /// - Póster: el chico lo pinta a lo ancho (170 pt → 510 px de ancho, 765 de alto): el «large» de metahub (780×1170).
+        /// - Ancha: el grande la pinta a lo ancho (364 pt → 1092 px): el fondo «medium» de metahub (1920×1080) reducido.
+        /// - Logo: hasta 28 pt de alto y ~180 de ancho (540 px).
+        public static let posterPixels = 900.0, widePixels = 1280.0, logoPixels = 600.0
+        public static let jpegQuality = 0.82, tintMix = 0.55, fallbackRefreshHours = 6.0
         /// Segundos que el app espera antes de preparar el widget (no compite con la pantalla que se está abriendo).
         public static let publishDelay = 2.0
         public static let progressHeight = 3.0, thumbWidth = 44.0
         /// Dónde empieza el velo inferior del póster (fracción de su alto) para que el título se lea.
         public static let scrimStart = 0.25, scrimStartWide = 0.05
         /// Alto del logo del título y radio de la sombra del texto sobre el arte (contraste del dato, como en el destacado de Inicio).
-        public static let logoHeight = 28.0, textShadowRadius = 3.0
+        public static let logoHeight = 28.0, logoWidth = 180.0, textShadowRadius = 3.0
         /// «Un Simpson del día»: la imagen del episodio (más grande que un póster: llena el mediano) y cuántos días por delante
         /// debe haber armados antes de volver a armar la semana.
-        public static let simpsonsImagePixels = 600.0, simpsonsAheadDays = 3
-        /// «Mosaico de una lista»: los pósters del muro son chicos (hasta 24 por lista).
-        public static let listImagePixels = 220.0
+        /// La imagen del episodio se guarda completa (w780 de TMDB): la pantalla de la tele la recorta a 4:3 al centro.
+        public static let simpsonsImagePixels = 780.0, simpsonsAheadDays = 3
+        /// «Mosaico de una lista»: los pósters del muro (hasta 24 por lista). En el grande cada uno mide ~73 × 110 pt (330 px
+        /// de alto); antes 220 px y se veían borrosos.
+        public static let listImagePixels = 450.0
         /// «Viendo en la TV»: cuánto salta cada botón (lo mismo que el control: 10 s) y cuántos segundos de diferencia con lo
         /// esperado justifican mandar otra actualización.
         public static let tvSkip = 10.0, tvDrift = 5.0

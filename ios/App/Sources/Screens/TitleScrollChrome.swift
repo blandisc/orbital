@@ -42,7 +42,7 @@ struct TitleScrollChrome: ViewModifier {
                 BarLogo(url: logo, title: title)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, DS.TitleAction.barTitleLeading)
-                    .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons))
+                    .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons) + DS.TitleAction.barLogoGap)
                     .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
                     .offset(y: -DS.Size.touchTarget - DS.Space.s2)
                     .opacity(shown)

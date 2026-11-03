@@ -193,7 +193,7 @@ enum Demo {
 
     /// `-demo-voice "pon dune"`: esa frase como pista del renglón de la voz; al tocarla se manda como si la hubieras dicho
     /// (para ver la respuesta, las varias o la guía en las pruebas de interfaz). Con `-demo-voice-fail tunnel|orbital|token|offline`, la orden no llega y
-    /// el diagnóstico dice ese tramo.
+    /// el diagnóstico dice ese tramo; con `hang`, tu Orbital no contesta y la orden se queda esperando (para cancelarla).
     static var voice: String? { value(after: "-demo-voice") }
     static var voiceFail: String? { value(after: "-demo-voice-fail") }
 

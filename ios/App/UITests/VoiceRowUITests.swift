@@ -71,12 +71,30 @@ final class VoiceRowUITests: XCTestCase {
         sleep(1); shot("estirado-no-llego")
     }
 
+    /// Sin respuesta de tu Orbital (apagada, otra red), la espera se corta con la X y con el botón de detener (antes se
+    /// quedaba en «Preguntándole a tu Orbital» hasta 20 s sin dejar salir).
+    func testWaitingForAnAnswerCanBeCancelled() {
+        for way in ["voice-close", "voice-stop"] {
+            say("pon The Office", full: true, extra: ["-demo-voice-fail", "hang"])
+            let waiting = app.staticTexts.matching(NSPredicate(format: "label ==[c] 'Preguntándole a tu Orbital'")).firstMatch
+            XCTAssertTrue(waiting.waitForExistence(timeout: 5), "espera la respuesta (\(way))")
+            sleep(1); shot("estirado-esperando")
+            let button = app.buttons[way]
+            XCTAssertTrue(button.exists, "con su botón (\(way))")
+            button.tap()
+            XCTAssertTrue(app.buttons["voice-mic"].waitForExistence(timeout: 2), "\(way) la corta al momento")
+            XCTAssertFalse(waiting.exists, "y deja de esperar (\(way))")
+        }
+    }
+
     func testTheGuideFromTheQuestionMark() {
         open(["-demo-open", "remote"])
         let guide = app.buttons["remote-voice-guide"]
         XCTAssertTrue(guide.waitForExistence(timeout: 30))
         guide.tap()
-        XCTAssertTrue(app.staticTexts["Lo esencial"].waitForExistence(timeout: 10), "la guía no abre en Lo esencial")
+        // El rótulo va en mayúsculas («LO ESENCIAL») desde que la guía se rehízo en tarjetas.
+        let essentials = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] 'Lo esencial'")).firstMatch
+        XCTAssertTrue(essentials.waitForExistence(timeout: 10), "la guía no abre en Lo esencial")
         sleep(1); shot("guia")
     }
 }

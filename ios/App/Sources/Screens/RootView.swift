@@ -307,8 +307,9 @@ struct MainTabs: View {
         .inspector(isPresented: sidePanelShown) { sidePanel }
         .environment(\.titlePanel, titleOpener)
         .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
-        // En Buscar iOS no encoge la barra (lleva el campo): ahí se esconde entera al bajar (BrowseView).
-        .tabBarMinimizeBehavior(tab == 2 ? .never : .onScrollDown)
+        // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
+        // (Fernando, 2 nov 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»).
+        .tabBarMinimizeBehavior(.never)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
         .task {
             let downloads = env.services.downloads
