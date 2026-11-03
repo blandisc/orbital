@@ -467,8 +467,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let listStepMinutes = 20.0, listSteps = 18
         /// Los pósters que le faltan al mosaico los baja el widget: cuántos a la vez y cuánto espera cada uno (segundos).
         static let listDownloadsAtOnce = 6, listDownloadTimeout: TimeInterval = 8
-        /// Cuánto se corre el orden con cada «Revolver» (un primo: cada número da otro orden).
-        static let listShuffleJump = 11
     }
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.

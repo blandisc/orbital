@@ -26,7 +26,14 @@ struct ListMosaicProvider: AppIntentTimelineProvider {
     func timeline(for configuration: ChooseListIntent, in context: Context) async -> Timeline<ListMosaicEntry> {
         // El muro sube una fila cada 20 minutos (Fernando, 2 nov 2026): los cuadros ya quedan listos y iOS anima el paso de uno
         // al otro, sin gastar batería ni internet. La app pide recarga cuando cambian las listas; si no, al acabarse los cuadros.
-        let now = Date(), list = await ListMosaicImages.complete(WidgetStore.loadLists()?.list(configuration.list?.id))
+        // Se pinta al momento con lo que ya está en el disco; lo que falte se baja aparte y, si llegó algo, se vuelve a pintar.
+        // Antes se esperaba a bajarlo todo y «Revolver» tardaba en responder (Fernando, 3 nov 2026: «le picas y no reacciona»).
+        let now = Date(), list = ListMosaicImages.onDisk(WidgetStore.loadLists()?.list(configuration.list?.id))
+        if let list, list.posters.contains(where: { $0.imageFile == nil }) {
+            Task.detached(priority: .utility) {
+                if await ListMosaicImages.downloadMissing(list) { WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.listsKind) }
+            }
+        }
         let entries = (0..<DS.Widget.listSteps).map { step in
             ListMosaicEntry(date: now.addingTimeInterval(Double(step) * DS.Widget.listStepMinutes * 60), list: list, step: step)
         }
@@ -39,18 +46,26 @@ struct ListMosaicProvider: AppIntentTimelineProvider {
 /// lo demás en gris (Fernando, 3 nov 2026: «sigue sin cargar»). Aquí solo los de la lista elegida, unos cuantos a la vez, y
 /// se guardan con el mismo nombre que usa la app (no se vuelven a bajar).
 enum ListMosaicImages {
-    static func complete(_ list: WidgetLists.List?) async -> WidgetLists.List? {
+    /// La lista con `imageFile` según lo que de verdad está en el disco (lo bajara la app o el widget).
+    static func onDisk(_ list: WidgetLists.List?) -> WidgetLists.List? {
         guard var list else { return nil }
-        let missing = list.posters.indices.filter { list.posters[$0].imageFile.flatMap(WidgetStore.listImageURL).map { !exists($0) } ?? true }
-        let found: [Int: String] = await withTaskGroup(of: (Int, String?).self) { group in
-            var next = missing.makeIterator(), result: [Int: String] = [:]
-            func add() { if let i = next.next() { let poster = list.posters[i]; group.addTask { (i, await fetch(poster)) } } }
-            for _ in 0..<DS.Widget.listDownloadsAtOnce { add() }
-            for await (i, name) in group { if let name { result[i] = name }; add() }
-            return result
+        for i in list.posters.indices {
+            let name = WidgetLists.imageFileName(for: list.posters[i].metaID)
+            list.posters[i].imageFile = WidgetStore.listImageURL(name).map(exists) == true ? name : nil
         }
-        for (i, name) in found { list.posters[i].imageFile = name }
         return list
+    }
+
+    /// Baja los pósters sin archivo, unos cuantos a la vez; true si llegó alguno (hay que volver a pintar).
+    static func downloadMissing(_ list: WidgetLists.List) async -> Bool {
+        let missing = list.posters.filter { $0.imageFile == nil }
+        return await withTaskGroup(of: Bool.self) { group in
+            var next = missing.makeIterator(), any = false
+            func add() { if let poster = next.next() { group.addTask { await fetch(poster) != nil } } }
+            for _ in 0..<DS.Widget.listDownloadsAtOnce { add() }
+            for await got in group { any = any || got; add() }
+            return any
+        }
     }
 
     private static func exists(_ url: URL) -> Bool { FileManager.default.fileExists(atPath: url.path) }
@@ -94,7 +109,7 @@ struct ListMosaicView: View {
         Group {
             if let list = entry.list, !list.posters.isEmpty {
                 ZStack(alignment: .bottomLeading) {
-                    wall(list)
+                    wall(list).invalidatableContent()   // al tocar «Revolver» se atenúa hasta que llega el nuevo orden
                     LinearGradient(stops: [.init(color: .clear, location: DS.Widget.listVeilStart), .init(color: DS.scrimStrong, location: 1)],   // ds-exception: el widget es otro programa y no trae ArtVeil
                                    startPoint: .top, endPoint: .bottom)
                         .allowsHitTesting(false)
@@ -136,6 +151,7 @@ struct ListMosaicView: View {
     private func wall(_ list: WidgetLists.List) -> some View {
         let columns = family == .systemLarge ? DS.Widget.listColumnsLarge : DS.Widget.listColumnsMedium
         let perColumn = family == .systemLarge ? DS.Widget.listRowsLarge : DS.Widget.listRowsMedium
+        let order = Self.shuffled(list.posters, seed: entry.seed)
         return GeometryReader { proxy in
             let width = (proxy.size.width * DS.Widget.listWallOverscan - DS.Space.s2 * CGFloat(columns - 1)) / CGFloat(columns)
             let height = width / DS.Poster.aspect
@@ -148,9 +164,8 @@ struct ListMosaicView: View {
                 ForEach(0..<columns, id: \.self) { c in
                     VStack(spacing: DS.Space.s2) {
                         ForEach(0..<perColumn, id: \.self) { r in
-                            // Cada cuadro sube el muro una fila (`step`) y «Revolver» lo empieza en otro lugar (`seed`).
-                            let start = entry.seed * DS.Widget.listShuffleJump + entry.step
-                            let poster = list.posters[(start + c * perColumn + r) % list.posters.count]
+                            // Cada cuadro sube el muro una fila (`step`); «Revolver» baraja los pósters en otro orden (`seed`).
+                            let poster = order[(entry.step + c * perColumn + r) % order.count]
                             Link(destination: poster.link ?? URL(fileURLWithPath: "/")) { tile(poster, size: CGSize(width: width, height: height), scale: tileScale).frame(width: width, height: height) }
                         }
                     }
@@ -163,6 +178,18 @@ struct ListMosaicView: View {
             .id("\(entry.seed)-\(entry.step)")
             .transition(.push(from: .bottom))
         }
+    }
+
+    /// Los pósters barajados con `seed` (el mismo número da siempre el mismo orden; 0, el de la lista). Antes «Revolver» solo
+    /// corría la lista 11 lugares: con 24 pósters el muro casi no cambiaba (Fernando, 3 nov 2026).
+    static func shuffled(_ posters: [WidgetLists.Poster], seed: Int) -> [WidgetLists.Poster] {
+        guard seed != 0 else { return posters }
+        func key(_ id: String) -> UInt64 {   // FNV-1a: estable entre ejecuciones (`hashValue` no lo es)
+            var h: UInt64 = 0xcbf29ce484222325
+            for byte in "\(seed):\(id)".utf8 { h = (h ^ UInt64(byte)) &* 0x100000001b3 }
+            return h
+        }
+        return posters.sorted { key($0.metaID) < key($1.metaID) }
     }
 
     private func tile(_ poster: WidgetLists.Poster, size: CGSize, scale: CGFloat) -> some View {
