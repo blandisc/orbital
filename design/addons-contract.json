@@ -13,9 +13,40 @@
     }
   },
   "devices": {
-    "_": "`enabled` va por aparato, con su id: «tv» para la consola y, para cada iPhone, iPad o Mac, el id que recibe al emparejarse (su llave por aparato, AD-3). Un aparato que no aparece en `enabled` usa el valor de fábrica de la entrada. Lo que vive en la computadora de la TV (Archivos de la TV) se marca `only_on: \"tv\"` y nunca se prende en otro aparato.",
-    "platforms": ["tv", "iphone", "ipad", "mac"],
-    "interim": "Hasta las llaves por aparato (AD-3, K1) la llave de `enabled` es la plataforma: «iphone», «ipad», «mac»; la TV solo cambia «tv» y nunca acepta «tv» de otro aparato"
+    "_": "Llaves por aparato (AD-3, K1-A; Fernando, 3 nov 2026; acordado entre las sesiones de la TV y del iPhone tras la revisión adversarial de la TV, K1-1 a K1-13). La TV las reparte y guarda solo su huella. `enabled` va por aparato: «tv» para la consola y, para cada iPhone, iPad o Mac, su `device_id`. Lo que vive en la computadora de la TV (Archivos de la TV) se marca `only_on: \"tv\"` y nunca se prende en otro aparato.",
+    "platforms": [
+      "tv",
+      "iphone",
+      "ipad",
+      "mac"
+    ],
+    "qr": "orbital-ios://pair?v=2&u=<dirección del túnel>&c=<código>. Ya no lleva el token del túnel. Código: 32 bytes al azar en base64url, de una sola vez, 10 min, uno vigente a la vez; nace al abrir «Conectar iPhone» y muere al cerrarlo. El QR v1 (con `t`, el token) solo vale con una TV que no anuncia \"pairing\": 2 en GET /api/companion",
+    "POST /api/devices/pair": "sin token: {code, name ≤60, platform: iphone|ipad|mac} → 200 {device_id, key, tv_name}. 404 «Este código ya no sirve» para todo lo que falla (vencido, usado, desconocido; cuenta como intento fallido, con espera creciente y 429). 409 con 10 aparatos («Quita uno en Ajustes › Cuentas de la TV»)",
+    "key": "«od1.<device_id>.<secreto>»: device_id 16 bytes en hex que pone la TV (nunca el que manda el aparato; X-Orbital-Device-Id se ignora con llave); secreto 32 bytes en base64url. Viaja en Authorization: Bearer; la TV la distingue del token de Alexa por «od1.»",
+    "tv_store": "cifrado con DPAPI junto a las otras claves: {device_id: {name, platform, hash: sha256 del secreto en hex, paired_at, seen}}. Nunca el secreto. Comparación en tiempo constante",
+    "device_store": "llavero con kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly, sin iCloud (si no, el iPad tendría la llave del iPhone). Al emparejar con v=2 se borra el token del túnel que tenía",
+    "enabled": "llave = device_id. Leer: enabled[device_id] ?? enabled[plataforma] ?? valor de fábrica (lo de «iphone» de antes sigue sirviendo hasta que cada aparato cambie lo suyo; no hay migración al «primer iPhone»). Escribir: un aparato con llave solo cambia enabled[su device_id]; con el token del túnel (mientras dure), solo su plataforma. La TV solo «tv» y nunca acepta «tv» de otro aparato. `changed_by` es el device_id de quien cambió (o la plataforma, con el token del túnel)",
+    "GET /api/devices": "con llave de aparato (o en el puerto local de la TV): [{device_id, name, platform, paired_at, seen, this}]",
+    "DELETE /api/devices/{device_id}": "«Quitar» (TV: Ajustes › Cuentas; iPhone: Tu Orbital), con confirmación y sin Deshacer: borra la huella y su `enabled`. Un aparato puede quitarse a sí mismo (borra su llave del llavero y vuelve al estado sin Orbital) o a otro. Lo quitado recibe 401 {code: \"device_removed\"}",
+    "errors": "401 {code: \"device_key_required\" | \"device_removed\", detail}: el iPhone, el iPad y la Mac lo dicen en una línea con una acción: «Vuelve a escanear el código de tu TV · Escanear»",
+    "access": "Sin aparatos emparejados, el token del túnel abre lo de siempre. Con el primero emparejado (K1-13), el token del túnel solo abre lo de Alexa (/api/ping, /api/voice, /api/voice/hints) y todo lo del iPhone pide llave de aparato: el token estuvo a la vista en el QR v1 de la pantalla"
+  },
+  "secrets": {
+    "_": "Lo que lleva una clave: la de Real-Debrid y las direcciones de Stremio con clave. Fernando: nada de claves en claro, ni en disco ni en el camino.",
+    "who": "solo la llave de aparato. El token de Alexa nunca; el puerto local de la TV nunca (la interfaz de la TV no las necesita)",
+    "transport": "solo por el puerto público, que escucha en 127.0.0.1 detrás de Tailscale Serve o Funnel (TLS); la TV rechaza una petición con clave que no venga de loopback",
+    "routes": [
+      "GET /api/addons?full=1",
+      "PUT /api/addons con una dirección que trae clave",
+      "GET /api/realdebrid?full=1",
+      "PUT /api/realdebrid"
+    ],
+    "GET /api/realdebrid": "con llave de aparato: {linked, user, premium, expires, days, problem, ends_with}; con ?full=1 suma `token`, la clave completa («Usar la de la TV»)",
+    "PUT /api/realdebrid": "{token}: se prueba con GET /user de Real-Debrid antes de guardarlo; 422 «Real-Debrid no reconoce esa clave» y la de antes se queda; 503 si Real-Debrid no contesta. Si sirve, se guarda con DPAPI, se rearman Torrentio y Comet y se responde como el GET sin ?full=1, nunca con la clave («Pasar a la TV»)",
+    "without_key": "401 {code: \"device_key_required\", detail: \"Vuelve a escanear el código de tu TV\"}",
+    "limits": "por aparato: 20 lecturas con clave por hora y 5 PUT /api/realdebrid por hora; después 429",
+    "never": "en bitácoras (ni cuerpo ni Authorization), en la URL, en caché (Cache-Control: no-store) ni en el iPhone fuera del llavero",
+    "notice": "la TV avisa con «Tu iPhone tomó la clave de Real-Debrid» o «Tu iPhone cambió la clave de Real-Debrid» (con el nombre del aparato), para que nada pase sin que se vea"
   },
   "entry": {
     "id": "fijo: «torrentio», «comet» (apagado de fábrica, armado con tu clave como el iPhone) u «opensubtitles» para lo que viene con Orbital; un uuid asignado al traerlo para lo de Stremio. Nunca un hash de una dirección con clave.",
@@ -101,10 +132,10 @@
     "forget": "lo terminado (ready, refused, too_many, gone) se olvida 7 días después de `updated`; lo que sigue en camino, nunca. Excepción: lo de otra cuenta, que nadie aquí puede seguir, se olvida 7 días después de su último `updated` aunque siga en camino. Un GET no devuelve lo olvidado y un POST no lo reaviva",
     "limits": { "entries": 200, "post_body_bytes": 16384, "_": "`post_body_bytes` es solo para el cuerpo de un POST; el GET devuelve todo lo guardado (hasta 200 entradas, unos 80 KB). Más de 200: se olvida primero lo terminado más viejo; nunca lo que sigue en camino. Un campo fuera de su forma = 422" },
     "other_account": "Una entrada con otra `account` se enseña («Lo pidió la TV · …» en el iPhone, «Lo pidió el <by>» en la TV) pero no se sigue, no se cancela y no sale como versión: ese enlace no existe en tu cuenta",
-    "access": "Por ahora, con el token del puerto del túnel (el mismo de Alexa), porque no lleva claves ni enlaces; el iPhone solo llega por https o por Tailscale. Pasa a «solo llave de aparato» cuando existan (AD-3). Nada de lo que traiga una clave usa este acceso"
+    "access": "Con el token del puerto del túnel mientras no haya aparatos emparejados; con el primero, solo con llave de aparato (devices › access, K1-13). No lleva claves ni enlaces"
   },
   "routes": {
-    "GET /api/addons": "la lista con su revision; las direcciones que traen clave van tapadas («•••»). Con ?full=1 las da completas, solo con llave de aparato (nunca con la de Alexa) y nunca en el puerto local de la TV.",
+    "GET /api/addons": "la lista con su revision; las direcciones que traen clave van tapadas («•••»). Con ?full=1 las da completas, solo con llave de aparato (ver secrets).",
     "PUT /api/addons": "{base_revision, changed_at, changed_by, addons, removed}: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (una máscara, un origin que no existe, un complemento agregado a mano).",
     "PUT /api/realdebrid": "{token}: la clave fija, aparte de la lista y solo al oprimir «Pasar a la TV» en el iPhone. Responde con el usuario y el vencimiento, nunca con la clave.",
     "GET /api/realdebrid": "usuario, Premium, vencimiento y la clave tapada («termina en ••••3F2A»); con ?full=1 y llave de aparato, la clave completa (para «Usar la de la TV» en el iPhone).",

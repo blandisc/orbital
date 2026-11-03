@@ -1,8 +1,8 @@
 """La app del iPhone: cómo se conecta con esta consola (un QR) y qué se lleva de ella.
 
-El QR de «Conectar iPhone» lleva `orbital-ios://pair?u=<dirección de Tailscale>&t=<token>`: lo escaneas con la cámara
-del iPhone y la app queda conectada sin escribir nada. Esa dirección es la del túnel de Alexa (el puerto público, que
-siempre pide el token). Con eso la app toma de aquí las claves de «Para ti» y la sesión de Trakt (la renueva la
+El QR de «Conectar iPhone» lleva `orbital-ios://pair?v=2&u=<dirección de Tailscale>&c=<código>`: lo escaneas con la
+cámara del iPhone y la app cambia el código por su llave propia (devices.py, K1-A), sin escribir nada. Esa dirección es
+la del túnel de Alexa (el puerto público). Antes (v1) llevaba el token del túnel: ya no sale de la consola. Con eso la app toma de aquí las claves de «Para ti» y la sesión de Trakt (la renueva la
 consola: el iPhone nunca guarda la parte que la renueva, así que las dos no se pisan).
 """
 
@@ -19,8 +19,8 @@ from .qrcodegen import QrCode
 SCHEME = "orbital-ios://pair"
 
 
-def pair_link(url: str, token: str) -> str:
-    return f"{SCHEME}?{urlencode({'u': url, 't': token}, quote_via=quote)}"
+def pair_link(url: str, code: str) -> str:
+    return f"{SCHEME}?{urlencode({'v': 2, 'u': url, 'c': code}, quote_via=quote)}"
 
 
 DEVICE_KEEP = 6  # aparatos recordados en Cuentas (los más recientes)
@@ -63,15 +63,16 @@ def devices(state, live: dict) -> list[dict]:
     return sorted(out, key=lambda d: d["seen"], reverse=True)
 
 
-def pair_info(config, tailscale_url=None) -> dict:
-    """Si se puede conectar el iPhone y, si no, qué falta (en palabras)."""
+def pair_info(config, tailscale_url=None, code: str | None = None) -> dict:
+    """Si se puede conectar el iPhone y, si no, qué falta (en palabras). Con `code` (el de devices.Devices), el QR."""
     token = config.server.token
     if not token or config.server.token_is_ephemeral:
         return {"ready": False, "reason": "Primero configura Alexa (Ajustes › Tele y voz): el iPhone usa el mismo token."}
     url = (tailscale_url or alexa_setup.tailscale_url)()
     if not url:
         return {"ready": False, "reason": "No encontré Tailscale. El iPhone entra por el mismo túnel que Alexa: enciéndelo y vuelve a intentar."}
-    return {"ready": True, "host": url.removeprefix("https://"), "link": pair_link(url, token)}
+    info = {"ready": True, "host": url.removeprefix("https://")}
+    return {**info, "link": pair_link(url, code)} if code else info
 
 
 # La TV pregunta seguido si hay iPhone (cada vez que abre un menú); `tailscale status` tarda: se recuerda un rato.

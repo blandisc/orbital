@@ -1,6 +1,6 @@
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
-export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
+export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
   const addons = (status) => applySettings({ ...state.settings, addons: status });
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
@@ -64,6 +64,19 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, addonM
       return openMenu(debridRequestMenu(req, { account: found.account }), nested(context));
     },
     "rd-cancel-ask": async (command, context) => openMenu(debridCancelMenu(command), nested(context)),
+    // Ajustes › Cuentas: un aparato con su llave (K1-A) y «Quitar», que pide confirmar
+    "device-menu": async (command, context) => {
+      const device = (state.settings?.paired_devices || []).find((d) => d.device_id === command.id);
+      return device && openMenu(deviceMenu(device), nested(context));
+    },
+    "device-remove-ask": async (command, context) => openMenu(deviceRemoveMenu(command), nested(context)),
+    "device-remove": async (command) => {
+      const res = await api.deviceRemove(command.id);
+      applySettings({ ...state.settings, paired_devices: res.devices || [] });
+      sound.play("select");
+      ui.toast.show(`Quité ${command.name}`, { detail: "Para volver, escanea el código de la TV" });
+      return ui.sheet.close();
+    },
     "rd-cancel": async (command, context) => {
       const res = await api.debridCancel(command.hash);
       applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });

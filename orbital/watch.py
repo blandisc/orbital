@@ -584,7 +584,7 @@ class Watch:
         raw = self.addon_list._raw()
         return {"source": self.addon_list.source, "imported_at": self.addon_list.imported_at,
                 "stremio_linked": self.stremio_linked, "entries": entries,
-                "changed_by": raw.get("changed_by"), "changed_at": raw.get("changed_at")}
+                "changed_by": raw.get("changed_by_name") or raw.get("changed_by"), "changed_at": raw.get("changed_at")}
 
     def import_addons(self) -> dict:
         """«Traer de tu Stremio» / «Volver a traer»: tus complementos de la cuenta, una vez; desde ahí son tuyos aquí."""
@@ -625,9 +625,10 @@ class Watch:
         self.addons.forget()
         return self.addon_status()
 
-    def receive_addons(self, body: dict, device: str) -> dict:
-        """PUT /api/addons (corte S6): la lista que cambiaste en el iPhone; la TV la junta y deja de leer la de Stremio."""
-        saved = self.addon_list.receive(body, device)
+    def receive_addons(self, body: dict, device: str, keyed: dict | None = None) -> dict:
+        """PUT /api/addons (corte S6): la lista que cambiaste en el iPhone; la TV la junta y deja de leer la de Stremio.
+        `keyed`: el aparato de la llave (K1-A), que solo cambia su propio prendido y puede traer direcciones con clave."""
+        saved = self.addon_list.receive(body, device, keyed)
         self.addons.forget()
         self.streams.forget_all()
         self.events.publish({"type": "settings-changed"})
@@ -657,6 +658,29 @@ class Watch:
         self.addons.forget()
         self.streams.forget_all()
         return {**self.addon_status(), "previous": before}
+
+    def set_rd_token(self, token: str, by: str) -> dict:
+        """«Pasar a la TV» desde el iPhone (K1-A): se prueba con Real-Debrid antes de guardarla; si no sirve, la de antes
+        se queda. ValueError si Real-Debrid no la reconoce y ConnectionError si no contesta."""
+        try:
+            realdebrid.RealDebrid(token).user()
+        except realdebrid.RealDebridError as exc:
+            if exc.bad_key:
+                raise ValueError("Real-Debrid no reconoce esa clave") from exc
+            if not exc.no_premium:
+                raise ConnectionError("Real-Debrid no contestó. Inténtalo en un momento.") from exc
+        changed = self.credentials.get(RD_KEY) != token
+        self.credentials.set(RD_KEY, token)
+        self.state.set_pref(RD_ACCOUNT, "source", "iphone")
+        self._rd_status = (0.0, None, {})
+        self.addons.forget()
+        self.streams.forget_all()
+        if changed:
+            self.events.publish({"type": "toast", "ok": True, "message": f"Tu {by} cambió la clave de Real-Debrid",
+                                 "detail": "Si no fuiste tú, quítalo en Ajustes › Cuentas"})
+        self.events.publish({"type": "settings-changed"})
+        status = self.debrid_status(fresh=True)
+        return {k: v for k, v in status.items() if k != "token"}
 
     def _rd_key_brought(self, key: str) -> None:
         """La clave que venía en el Torrentio que trajiste de Stremio: la consola la guarda como suya y lo dice."""

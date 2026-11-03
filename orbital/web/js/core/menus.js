@@ -1205,8 +1205,19 @@ export function onedriveFolderMenu(path, folders) {
 }
 
 /** Cuentas: un renglón por iPhone o iPad que conoce Orbital (la app dice quién es), el abierto ahora con «✓ Conectado»,
- *  y al final «Conectar otro» con el QR. Sin aparatos con nombre (app vieja): el renglón de siempre. */
+ *  y al final «Conectar otro» con el QR. Con llaves por aparato (K1-A) salen los emparejados, y cada uno abre su hoja
+ *  con «Quitar». Sin aparatos con nombre (app vieja): el renglón de siempre. */
 export function phoneRows(settings, now = Date.now()) {
+  const paired = settings.paired_devices || [];
+  if (paired.length) {
+    const rows = paired.map((device) => {
+      const row = phoneRow(device.seen, now, device.live);
+      return { ...row, label: device.name || PLATFORM_NAMES[device.platform] || "iPhone", value: row.ok ? row.value : "",
+        hint: row.ok ? row.hint : row.hint === "Con un código QR" ? "Con su propia llave" : row.hint,
+        command: { type: "device-menu", id: device.device_id } };
+    });
+    return [...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone, iPad o Mac, con un código QR", command: { type: "phone-link" } }];
+  }
   const known = settings.companion_devices || [];
   if (!known.length) return [phoneRow(settings.companion_seen, now, settings.companion_live)];
   const rows = known.map((device) => {
@@ -1215,6 +1226,34 @@ export function phoneRows(settings, now = Date.now()) {
     return { ...phoneRow(device.seen, now, device.live), label };
   });
   return [...rows, { icon: "phone", label: "Conectar otro", value: "", hint: "iPhone o iPad, con un código QR", command: { type: "phone-link" } }];
+}
+
+const PLATFORM_NAMES = { iphone: "iPhone", ipad: "iPad", mac: "Mac" };
+
+/** Un aparato emparejado (K1-A): «Quitar» pide confirmar y «Cancelar» va primero. */
+export function deviceMenu(device) {
+  const name = device.name || PLATFORM_NAMES[device.platform] || "iPhone";
+  return {
+    title: name,
+    subtitle: "Tiene su propia llave para entrar a esta TV.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "minus", label: "Quitar", danger: true, hint: "Para volver, escanea el código de la TV",
+        command: { type: "device-remove-ask", id: device.device_id, name } },
+    ],
+  };
+}
+
+/** «¿Quitar el aparato?»: no hay Deshacer (su llave deja de existir), por eso se pregunta. */
+export function deviceRemoveMenu(command) {
+  return {
+    title: `¿Quitar ${command.name}?`,
+    subtitle: "Su llave deja de servir al instante. Para volver, escanea el código de la TV otra vez.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "minus", label: "Quitar", danger: true, command: { type: "device-remove", id: command.id, name: command.name } },
+    ],
+  };
 }
 
 export const PHONE_LIVE = 120; // s: la app abierta pregunta cada 5 s; dos minutos sin saber de ella ya no es «conectado»

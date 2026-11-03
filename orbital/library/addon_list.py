@@ -23,6 +23,7 @@ from . import torrentio
 
 LIST_KEY = "addon_list"
 DEVICE = "tv"
+PLATFORMS = ("iphone", "ipad", "mac")  # la llave de `enabled` con el token del túnel (antes de las llaves por aparato)
 OPENSUBTITLES = "https://opensubtitles-v3.strem.io/manifest.json"
 # Lo que viene con Orbital (como AddonTemplates del iPhone). Torrentio se arma con tus opciones y tu clave de Real-Debrid
 # (corte S3): su dirección no se guarda, se arma cada vez. Si traes uno de tu Stremio, sus opciones pasan a este.
@@ -199,6 +200,7 @@ class AddonList:
                 item["url"] = None  # la dirección de lo de Orbital (con tu clave) se arma, no se guarda
             saved.append(item)
         changed_by = extra.pop("changed_by", DEVICE)
+        extra.setdefault("changed_by_name", None)  # el nombre va con quien cambió; un cambio de la TV lo borra
         self.store.set(LIST_KEY, {**data, **extra, "revision": self.revision + 1, "changed_at": time.time(),
                                   "changed_by": changed_by, "entries": saved,
                                   "removed": list(dict.fromkeys(r for r in removed if isinstance(r, str)))})
@@ -339,8 +341,9 @@ class AddonList:
             self._save(self.entries(), source=source)
 
     # --- lo que viaja con el iPhone (corte S6; design/addons-contract.json, `store`, GET/PUT /api/addons) ----------
-    def shared(self) -> dict:
-        """La lista como la lee el iPhone: con su revisión y las direcciones con clave tapadas («•••»)."""
+    def shared(self, full: bool = False) -> dict:
+        """La lista como la lee el iPhone: con su revisión y las direcciones con clave tapadas («•••»). `full`: completas
+        (?full=1, solo con llave de aparato; contrato, secrets)."""
         data = self._raw()
         out = []
         for e in self.entries():
@@ -348,7 +351,7 @@ class AddonList:
             if e.template:
                 item["template"] = e.template
             if e.origin == "stremio" and e.url:
-                item["url"] = masked(e.url)
+                item["url"] = e.url if full else masked(e.url)
             if e.only_on:
                 item["only_on"] = e.only_on
             if e.options is not None:
@@ -361,9 +364,10 @@ class AddonList:
         return {"revision": self.revision, "changed_at": iso, "changed_by": data.get("changed_by") or DEVICE,
                 "addons": out, "removed": list(data.get("removed") or [])}
 
-    def receive(self, body: dict, device: str) -> dict:
+    def receive(self, body: dict, device: str, keyed: dict | None = None) -> dict:
         """PUT /api/addons: la lista que cambió otro aparato. Lanza Conflict (409, con la actual) si partió de otra
-        revisión y ValueError (422) si algo no cuadra. Cada aparato cambia solo su propio prendido o apagado."""
+        revisión y ValueError (422) si algo no cuadra. Cada aparato cambia solo su propio prendido o apagado: con llave
+        (`keyed`, K1-A) el de su device_id; con el token del túnel, el de las plataformas."""
         if not isinstance(body, dict) or not isinstance(body.get("base_revision"), int):
             raise ValueError("Falta la revisión de la que partiste")
         items = body.get("addons")
@@ -388,13 +392,14 @@ class AddonList:
                 if mine is None:
                     if got.origin != "stremio" or not isinstance(url, str) or not url.startswith("https://"):
                         raise ValueError("No se agregan complementos a mano")
-                    if masked(url) != url:
-                        raise ValueError("Espera las llaves por aparato: esa dirección lleva una clave")
+                    if masked(url) != url and keyed is None:
+                        raise ValueError("Vuelve a escanear el código de tu TV: esa dirección lleva una clave")
                     mine = Entry(id=got.id, origin="stremio", name=got.name or host(url), url=url, order=i,
                                  only_on=DEVICE if host(url) in LOCAL_HOSTS else None)
                 if mine in seen:
                     continue
-                theirs = {k: v for k, v in got.enabled.items() if k != DEVICE}  # el prendido de la TV es de la TV
+                # El prendido de la TV es de la TV, y el de cada aparato, suyo.
+                theirs = {k: v for k, v in got.enabled.items() if (k == keyed["device_id"] if keyed else k in PLATFORMS)}
                 mine.enabled = {**mine.enabled, **theirs}
                 mine.order = i
                 if got.name:
@@ -414,9 +419,20 @@ class AddonList:
             for k, e in enumerate(seen):
                 e.order = k
             raw_by = body.get("changed_by")
-            changed_by = raw_by if isinstance(raw_by, str) else device
-            self._save(seen, removed=removed, changed_by=changed_by[:60], source="own")
+            changed_by = keyed["device_id"] if keyed else raw_by if isinstance(raw_by, str) else device
+            name = keyed["name"] if keyed else changed_by
+            self._save(seen, removed=removed, changed_by=changed_by[:60], changed_by_name=name[:60], source="own")
             return self.shared()
+
+    def forget_device(self, device_id: str) -> None:
+        """«Quitar» un aparato: su prendido o apagado se va con él."""
+        with self._lock:
+            entries = self.entries()
+            if not any(device_id in e.enabled for e in entries):
+                return
+            for e in entries:
+                e.enabled.pop(device_id, None)
+            self._save(entries)
 
     @staticmethod
     def _find(entries: list[Entry], ident: str) -> Entry:

@@ -16,12 +16,12 @@ def config(token="secreto", ephemeral=False):
     return SimpleNamespace(server=SimpleNamespace(token=token, token_is_ephemeral=ephemeral))
 
 
-def test_pair_link_carries_the_tunnel_and_the_token():
-    info = companion.pair_info(config(), tailscale_url=lambda: "https://legion.tail1.ts.net")
+def test_pair_link_carries_the_tunnel_and_a_code_never_the_token():
+    info = companion.pair_info(config(), tailscale_url=lambda: "https://legion.tail1.ts.net", code="CODIGO")
     assert info["ready"] and info["host"] == "legion.tail1.ts.net"
     link = urlsplit(info["link"])
     assert (link.scheme, link.netloc) == ("orbital-ios", "pair")
-    assert parse_qs(link.query) == {"u": ["https://legion.tail1.ts.net"], "t": ["secreto"]}
+    assert parse_qs(link.query) == {"v": ["2"], "u": ["https://legion.tail1.ts.net"], "c": ["CODIGO"]}  # K1-A
 
 
 def test_pair_explains_what_is_missing():
