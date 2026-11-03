@@ -12,6 +12,10 @@ import OrbitalCore
 struct ListMosaicEntry: TimelineEntry {
     var date: Date
     var list: WidgetLists.List?
+    /// Cuántas filas ha subido el muro (una cada `listStepMinutes`).
+    var step = 0
+    /// El orden elegido con «Revolver».
+    var seed = WidgetStore.mosaicSeed
 }
 
 struct ListMosaicProvider: AppIntentTimelineProvider {
@@ -20,8 +24,13 @@ struct ListMosaicProvider: AppIntentTimelineProvider {
         ListMosaicEntry(date: Date(), list: WidgetStore.loadLists()?.list(configuration.list?.id))
     }
     func timeline(for configuration: ChooseListIntent, in context: Context) async -> Timeline<ListMosaicEntry> {
-        // La app pide recarga cuando cambian las listas; si no, cada 6 horas.
-        Timeline(entries: [await snapshot(for: configuration, in: context)], policy: .after(Date().addingTimeInterval(DS.Widget.fallbackRefresh)))
+        // El muro sube una fila cada 20 minutos (Fernando, 2 nov 2026): los cuadros ya quedan listos y iOS anima el paso de uno
+        // al otro, sin gastar batería ni internet. La app pide recarga cuando cambian las listas; si no, al acabarse los cuadros.
+        let now = Date(), list = WidgetStore.loadLists()?.list(configuration.list?.id)
+        let entries = (0..<DS.Widget.listSteps).map { step in
+            ListMosaicEntry(date: now.addingTimeInterval(Double(step) * DS.Widget.listStepMinutes * 60), list: list, step: step)
+        }
+        return Timeline(entries: entries, policy: .atEnd)
     }
 }
 
@@ -59,6 +68,17 @@ struct ListMosaicView: View {
                     .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
                     .padding(DS.Space.s4)
                 }
+                // «Revolver»: otro orden al momento, sin abrir la app (un ícono, no una cápsula de texto).
+                .overlay(alignment: .bottomTrailing) {
+                    Button(intent: ShuffleMosaicIntent()) {
+                        Image(systemName: "shuffle").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.paper)
+                            .frame(width: DS.Widget.button, height: DS.Widget.button)
+                            .background(Circle().fill(DS.scrimStrong))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Revolver"))
+                    .padding(DS.Space.s3)
+                }
             } else {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Mosaico de una lista").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text)
@@ -85,7 +105,9 @@ struct ListMosaicView: View {
                 ForEach(0..<columns, id: \.self) { c in
                     VStack(spacing: DS.Space.s2) {
                         ForEach(0..<perColumn, id: \.self) { r in
-                            let poster = list.posters[(c * perColumn + r) % list.posters.count]
+                            // Cada cuadro sube el muro una fila (`step`) y «Revolver» lo empieza en otro lugar (`seed`).
+                            let start = entry.seed * DS.Widget.listShuffleJump + entry.step
+                            let poster = list.posters[(start + c * perColumn + r) % list.posters.count]
                             Link(destination: poster.link ?? URL(fileURLWithPath: "/")) { tile(poster).frame(width: width, height: height) }
                         }
                     }
@@ -94,6 +116,9 @@ struct ListMosaicView: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
+            // Entre un cuadro y el siguiente, el muro sube (iOS lo anima).
+            .id("\(entry.seed)-\(entry.step)")
+            .transition(.push(from: .bottom))
         }
     }
 

@@ -30150,6 +30150,28 @@
           }
         }
       }
+    },
+    "Revolver el mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shuffle the mosaic"
+          }
+        }
+      }
+    },
+    "Revolver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shuffle"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

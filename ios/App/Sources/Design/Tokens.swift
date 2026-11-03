@@ -462,6 +462,11 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// el muro (inclinado no deja huecos en las esquinas), cuánto baja una columna sí y una no, y dónde empieza el velo.
         static let listColumnsMedium = 7, listRowsMedium = 3, listColumnsLarge = 6, listRowsLarge = 5
         static let listWallOverscan: CGFloat = 1.25, listStagger: CGFloat = 0.5, listVeilStart = 0.45
+        /// El mosaico avanza solo una fila cada `listStepMinutes` (iOS lo anima entre un cuadro y el siguiente; un widget no
+        /// puede moverse de forma continua). Se dejan listos `listSteps` cuadros: seis horas.
+        static let listStepMinutes = 20.0, listSteps = 18
+        /// Cuánto se corre el orden con cada «Revolver» (un primo: cada número da otro orden).
+        static let listShuffleJump = 11
     }
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.

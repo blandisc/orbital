@@ -95,4 +95,8 @@ enum WidgetStore {
     }
 
     static func listImageURL(_ name: String) -> URL? { listsDirectory?.appendingPathComponent(name) }
+
+    /// El orden del mosaico: cambia con «Revolver» (cada número es un orden distinto de los mismos pósters).
+    static var mosaicSeed: Int { UserDefaults(suiteName: groupID)?.integer(forKey: "mosaic.seed") ?? 0 }
+    static func shuffleMosaic() { UserDefaults(suiteName: groupID)?.set(mosaicSeed + 1, forKey: "mosaic.seed") }
 }
