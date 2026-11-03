@@ -236,7 +236,7 @@ private struct ReleasesSpotlight: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .environment(\.colorScheme, .dark)
             .widgetURL(airing.link)
-            .containerBackground(for: .widget) {
+            .widgetArtBackground {   // también en la pantalla tintada
                 ZStack {
                     DS.bg
                     WidgetFillImage(url: airing.imageFile.flatMap { WidgetStore.imageURL($0) }, anchor: .top)

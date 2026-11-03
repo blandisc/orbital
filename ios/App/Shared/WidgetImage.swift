@@ -96,3 +96,50 @@ struct WidgetFillImage<Placeholder: View>: View {
 extension WidgetFillImage where Placeholder == Color {
     init(url: URL?, anchor: WidgetImage.Anchor = .top) { self.init(url: url, anchor: anchor) { Color.clear } }
 }
+
+/// Una imagen del App Group completa dentro de su hueco, sin recortar (`WidgetImage.fit`): lo que sobra queda en `bars` (las
+/// franjas negras de una tele vieja). Sin archivo, enseña `placeholder`.
+struct WidgetFitImage<Placeholder: View>: View {
+    var url: URL?
+    var bars: Color
+    @ViewBuilder var placeholder: () -> Placeholder
+    @Environment(\.displayScale) private var scale
+
+    var body: some View {
+        GeometryReader { proxy in
+            if let url, let image = WidgetImage.fit(url, box: proxy.size, scale: scale) {
+                ZStack {
+                    bars
+                    Image(uiImage: image).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFit()
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+            } else {
+                placeholder().frame(width: proxy.size.width, height: proxy.size.height)
+            }
+        }
+    }
+}
+
+/// El arte de un widget chico como fondo. En la pantalla de inicio normal va de fondo del widget; en la tintada o transparente
+/// (iOS 26) iOS quita ese fondo y el widget se quedaba sin imagen: ahí va detrás del contenido, a todo el widget (Fernando,
+/// 2 nov 2026).
+private struct WidgetArtBackground<Art: View>: ViewModifier {
+    @ViewBuilder var art: () -> Art
+    @Environment(\.widgetRenderingMode) private var mode
+    @Environment(\.widgetContentMargins) private var margins
+
+    func body(content: Content) -> some View {
+        if mode == .fullColor {
+            content.containerBackground(for: .widget) { art() }
+        } else {
+            content
+                .background { art().padding(EdgeInsets(top: -margins.top, leading: -margins.leading, bottom: -margins.bottom, trailing: -margins.trailing)) }
+                .containerBackground(for: .widget) { Color.clear }
+        }
+    }
+}
+
+extension View {
+    /// El arte de fondo de un widget que también se ve en la pantalla tintada (`WidgetArtBackground`).
+    func widgetArtBackground<Art: View>(@ViewBuilder _ art: @escaping () -> Art) -> some View { modifier(WidgetArtBackground(art: art)) }
+}
