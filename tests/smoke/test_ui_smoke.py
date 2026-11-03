@@ -207,8 +207,9 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     assert page.locator(".tv__cat").count() > 1  # las categorías, siempre a la vista
     assert page.locator(".tv__cat--on").inner_text().startswith("Todos")
     assert page.locator(".tv__tile").count() == 47 and page.locator(".tv__tile.tile--focused").count() == 1  # 42 de la lista y los 5 de «Tus canales» (las de arranque)
-    # Los canales de Orbital (una serie al aire todo el día) van primero, con «24/7» en vez de número.
-    assert "Los Simpson 24/7" in page.locator(".tv__tile").first.inner_text() and "24/7" in page.locator(".tv__number").first.inner_text()
+    # Los canales de Orbital (una serie al aire todo el día) van primero, sin número ni «24/7» encima (TV-2).
+    first = page.locator(".tv__tile").first
+    assert "Los Simpson 24/7" in first.inner_text() and first.locator(".tv__number").count() == 0
     # Un canal que ya falló una vez sale atenuado y con su aviso; los que nadie ha revisado, normales.
     assert page.locator(".tv__tile.tile--dimmed").count() >= 1
     assert page.locator(".tv__flag", has_text="Sin señal reciente").count() >= 1
