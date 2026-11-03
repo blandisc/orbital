@@ -89,7 +89,7 @@ struct AllSourcesList: View {
                 .pickerStyle(.inline)
             }
             Section("Mostrar") {
-                Toggle("Solo las que ya están en Real-Debrid", isOn: $filter.onlyInRealDebrid)
+                Toggle("Solo las que ya están en Real-Debrid", isOn: $filter.onlyInRealDebrid).toggleStyle(.automatic)   // en el menú, la palomita del sistema
                 Picker("Idioma", selection: $filter.language) {
                     Text("Todos").tag(String?.none)
                     ForEach(AllSources.languages(in: sources), id: \.self) { code in
@@ -97,7 +97,7 @@ struct AllSourcesList: View {
                     }
                 }
                 .pickerStyle(.menu)
-                Toggle("Grabaciones de cine y tráileres", isOn: $filter.showHidden)
+                Toggle("Grabaciones de cine y tráileres", isOn: $filter.showHidden).toggleStyle(.automatic)
             }
         } label: {
             DSCapsuleLabel(title: count == 0 ? Text("Filtrar") : Text("Filtrar · \(count)"),

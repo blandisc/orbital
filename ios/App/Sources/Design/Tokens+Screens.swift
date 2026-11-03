@@ -101,7 +101,9 @@ extension DS {
         /// (el nombre ya no se mete debajo de ellos; 31 oct 2026).
         static let barTitleLeading: CGFloat = 72, barButton: CGFloat = 50, barGroupPadding = DS.Space.s6
         /// Recogido el arte, en la barra va el logo de la serie o película (31 oct 2026): su alto (el ancho lo dan ‹ y los botones).
-        static let barLogo: CGFloat = 26   // el logo ya recortado (sin su margen vacío): cabe entero en la barra
+        static let barLogo: CGFloat = 24   // el logo ya recortado (sin su margen vacío): cabe entero en la barra
+        /// El aire entre el logo y los botones de la derecha (Fernando, 2 nov 2026, N1: «the office» quedaba a 3 pt de ellos).
+        static let barLogoGap = DS.Space.s3
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720
@@ -270,6 +272,16 @@ extension DS {
     enum Deck { static let veilStart: CGFloat = 0.38 }
 
     /// La ficha rica (como Infuse): caras del reparto, insignias de calidad, calificaciones, tráiler y logos.
+    /// Las listas con el rótulo de cada sección como renglón (`listHeadRow`): del rótulo a su tarjeta (Fernando, 2 nov 2026, I2).
+    /// `headPad` más los 8 entre renglones y el aire del rótulo dan unos 20 pt (medido en el simulador).
+    enum ListSection { static let headPad = DS.Space.s2 }
+
+    /// El episodio que vas viendo en una lista de episodios (Fernando, 2 nov 2026, O1): la barra de avance más gruesa (el doble
+    /// de la de siempre) y el ▶ en vidrio sobre su imagen.
+    enum EpisodeRow {
+        static let progressScale: CGFloat = 2, play: CGFloat = 28
+    }
+
     enum Rich {
         static let face: CGFloat = 72, faceColumn: CGFloat = 84
         static let badgeStroke = DS.Stroke.regular, badgeRadius = DS.Radius.tag

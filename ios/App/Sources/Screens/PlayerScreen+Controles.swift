@@ -28,12 +28,12 @@ extension PlayerScreen {
         }
     }
 
-    /// «Latino · 1080p»: el idioma que va a sonar y la calidad de una versión. El idioma solo si la versión lo dice (o ya se
+    /// «🇲🇽 · 1080p»: el idioma que va a sonar (su bandera; sin bandera, su nombre: M2, como bajo «Continuar» en la ficha) y la calidad de una versión. El idioma solo si la versión lo dice (o ya se
     /// comprobó): si nada lo dice, se suponía inglés y luego el archivo traía español («Elegimos Inglés» y sonaba latino).
     func versionText(_ src: Source, _ model: PlayerModel) -> String {
         let ui = env.services.appSettings.uiLanguage
         let playing = Streams.playingLanguage(src, heardPrefs(model)).flatMap { AllSources.EvidenceKind($0.evidence) == .assumed ? nil : $0 }
-        let language = playing.map { LanguageFlags.flagged(Streams.versionLanguageName($0.code, in: ui), $0.code) }
+        let language = playing.map { LanguageFlags.flagOnly(Streams.versionLanguageName($0.code, in: ui), $0.code) }
         return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 

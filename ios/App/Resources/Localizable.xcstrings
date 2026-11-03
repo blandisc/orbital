@@ -1,6 +1,61 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Orbital usa %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital uses %@"
+          }
+        }
+      }
+    },
+    "%@ libres": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free"
+          }
+        }
+      }
+    },
+    "Bajar el siguiente episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the next episode"
+          }
+        }
+      }
+    },
+    "Cuando acabas de ver uno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you finish one"
+          }
+        }
+      }
+    },
+    "Fama": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fame"
+          }
+        }
+      }
+    },
     " y ": {
       "extractionState": "manual",
       "localizations": {
@@ -19601,17 +19656,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "What each tag means"
-          }
-        }
-      }
-    },
-    "Qué tan conocida": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How well known"
           }
         }
       }

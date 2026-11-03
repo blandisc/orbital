@@ -70,8 +70,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static let brandMoon = role(.brandMoon)
     /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
     static let good = role(.accent)
-    /// Un interruptor prendido que tiene que leerse de lejos (los avisos de estrenos): el verde del sistema.
-    static let switchOn = Color.green
+    /// Todo interruptor prendido de la app: el turquesa de la marca (Fernando, 2 nov 2026, J3: «prendido se ve turquesa;
+    /// apagado sigue gris»). Antes, el tinte de la app lo dejaba casi blanco con la bolita blanca y Ajustes usaba el verde.
+    /// Lo pone `DSSwitchStyle` en toda la app (`OrbitalApp`), no cada pantalla.
+    static let switchOn = brandMoon
     /// Lo que ya está o salió bien («conectado», «Este va bien» de los subtítulos) y la letra sobre
     /// él: cambian con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
     static let success = role(.success)

@@ -294,6 +294,8 @@ nombres viejos.
 | Decide por mí | ¿Qué vemos? | el sorteo de una propuesta |
 | ¿Qué vemos hoy? | Tinder | el mazo «Encuentra tu match perfecto» |
 | Reintentar | Intentar de nuevo | el botón tras un error |
+| Familia | Familiar | el género (Por género y el filtro avanzado; 2 nov 2026) |
+| Fama | Qué tan conocida | el filtro de qué tan vista es (fama × calificación; 2 nov 2026) |
 
 **Textos cortos y que no mienten.** Un porqué cabe en un renglón en un iPhone SE (38 letras como máximo) y no lleva cifras
 fijas («Más de 50 formas» mentía si había menos). Sin jerga («Al instante»). La prueba los mide.
@@ -306,6 +308,23 @@ Colecciones, Mi media, una persona, la hoja de Canales. Del encabezado a su cont
 tarjetas de una lista, `DS.Space.s2`. A los lados, `DS.Space.gutter`. Los grupos dentro de una misma lista (las décadas de una
 colección) van más juntos (`s5`): no son secciones. En Para ti, las colecciones en carrusel se separan con `groupGap` porque su
 reflejo ya pone el resto del aire.
+
+**Listas con rótulo por sección (Descargas, 2 nov 2026, I2).** Cuando el rótulo de una sección es el primer renglón de una
+lista agrupada, va con `listHeadRow()` y la lista con `listHeadRows()`: el rótulo a unos 20 pt de su tarjeta y unos 40 entre
+secciones (antes 34 y 67, por el alto mínimo de renglón del sistema).
+
+**Interruptores (2 nov 2026, J2–J4).** Todos con el estilo nativo y prendidos en el turquesa de la marca (`DS.switchOn`, puesto
+una vez en `OrbitalApp` con `DSSwitchStyle`); apagados, el gris del sistema. Dentro de un menú siguen siendo palomita
+(`.toggleStyle(.automatic)`). Nombre corto en un renglón y, si hace falta, la explicación abajo en gris (`DSToggleRow`); un ajuste
+que vive en Ajustes y se usa en otra pantalla va ahí también como interruptor (el mismo ajuste), no como una nota.
+
+**Íconos que dicen una idea.** «Automático» son dos flechas en círculo (`DS.Symbol.automatic`), nunca la chispa de la IA. Un
+ícono que no dice solo lo que hace lleva su nombre debajo: el anillo de una descarga en pausa dice «Seguir»
+(`DownloadRingButton`, el mismo en Descargas y en la fila de un episodio).
+
+**La versión en un renglón.** «🇲🇽 · 1080p»: la bandera sola, sin el nombre del idioma (la bandera ya distingue latino de
+castellano; sin bandera conocida, el nombre). VoiceOver lee el nombre. Bajo «Continuar», en la cápsula de la versión de la
+serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).
 
 **Títulos de navegación.** Las pestañas (Para ti, Descargas, Buscar) llevan el título grande en el renglón de los botones
 (`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en

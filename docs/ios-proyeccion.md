@@ -155,7 +155,10 @@ fila o estante y lleva su porqué en turquesa solo si ayuda. Nada de torcer una 
 | `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en turquesa) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
 | `posterCaptions` (entorno) | El nombre bajo el póster: sí en cuadrículas, no en las tiras de una sección | Tiras y cuadrículas |
 | `ProfileButton` | Tu avatar arriba a la derecha de cada pestaña: abre Ajustes | Inicio, Para ti, Buscar, Descargas |
-| `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
+| `StorageBar` | El espacio del iPhone: arriba «Orbital usa 7,2 GB» y «75,0 GB libres» (ámbar con poco espacio); la barra con series, películas, otras apps y libre, y la leyenda con la cifra de cada una, «Otras apps» incluida (2 nov 2026, I1) | Descargas |
+| `DownloadRingButton` | El anillo de una descarga con lo que hace: ‖ pausa; en pausa, la flecha y «Seguir» debajo; si falló, ↻ y «Reintentar» (2 nov 2026, I3) | Descargas, ficha › fila de un episodio |
+| `DSToggleRow` · `DSSwitchStyle` | Un interruptor con nombre corto y su explicación en gris abajo (ícono opcional); todo interruptor prendido en el turquesa de la marca (`DS.switchOn`), puesto una vez en `OrbitalApp` | Descargas › Descarga inteligente, Ajustes |
+| `listHeadRow()` · `listHeadRows()` | El rótulo de una sección como renglón de una lista agrupada: a ~20 pt de su tarjeta y ~40 entre secciones | Descargas |
 | `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
 | `SimpsonsSeasonsSection` | De qué temporadas sale «Un Simpson al azar» (`SimpsonsSeasonsPicker` con lo guardado) | Ajustes › Un Simpson al azar |
 | `PlayerCircleButton`, `PlayerMenuRow` | «Barra limpia», la misma en vertical y en horizontal: arriba ✕, el nombre, subtítulos, AirPlay y «⋯»; el «⋯» abre un globo con un renglón por acción (Audio y subtítulos, Zoom con el puesto a la derecha, Ventana, Ver en la TV, Descargar y, aparte, Bloquear pantalla) | Reproductor |

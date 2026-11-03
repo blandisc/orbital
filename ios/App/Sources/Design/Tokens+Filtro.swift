@@ -13,6 +13,9 @@ extension DS {
         static let tileHeight: CGFloat = 96, choiceHeight: CGFloat = 84, genreTile: CGFloat = 64
         /// La puerta A de Buscar (Fernando, 31 oct 2026): los mismos mosaicos del cajón en chiquito, tres por renglón.
         static let miniTileHeight: CGFloat = 70
+        /// Sin ningún filtro puesto, los mosaicos sin renglón de valor (Fernando, 2 nov 2026, K5): más bajos, en la puerta y
+        /// en el cajón.
+        static let miniTileCompact: CGFloat = 52, tileCompact: CGFloat = 76
         /// El dibujo arriba de cada mosaico (regla, logos, cuadro) en el cajón y en la puerta.
         static let artHeight: CGFloat = 30, miniArtHeight: CGFloat = 20
         /// La flechita del panel que se abre bajo su mosaico.
@@ -32,7 +35,7 @@ extension DS {
         static let dot: CGFloat = 7
         /// Lo más angosto de la ventana de la regla chiquita (un año o dos se leen igual).
         static let miniWindow: CGFloat = 12, windowMin: CGFloat = 32
-        /// «Qué tan conocida»: el alto de cada cuadrante y el velo verde del elegido. Género: cuántos géneros caben en su mosaico.
+        /// «Fama»: el alto de cada cuadrante y el velo verde del elegido. Género: cuántos géneros caben en su mosaico.
         static let quadrantCell: CGFloat = 96, genreMosaicMax = 6
         static let meadowFill = meadow.opacity(0.2)   // ds-exception: el velo del cuadrante elegido, en el verde de este filtro
         /// El logo de TMDB en el mosaico de Calificación (chico: el número manda).

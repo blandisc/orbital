@@ -359,8 +359,9 @@ struct TitleView: View {
     @ViewBuilder private func seriesVersion(_ model: TitleModel, wanted: String) -> some View {
         if let next = model.continueVideoID {
             Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
+                // La bandera y el idioma, sin el ícono de lista (Fernando, 2 nov 2026, N2: la bandera ya dice qué es, como en el
+                // renglón bajo «Continuar»).
                 HStack(spacing: DS.Space.s2) {
-                    Image(systemName: "list.bullet.rectangle").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                     // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
                     Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
                         .recipe(.labelLarge, color: DS.text).lineLimit(1)
@@ -409,7 +410,7 @@ struct TitleView: View {
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil,
-                               rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id))
+                               rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id), accent: artAccent)
                 Divider().overlay(DS.hairline)
             }
         }

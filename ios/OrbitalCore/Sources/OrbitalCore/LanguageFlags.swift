@@ -45,6 +45,11 @@ public enum LanguageFlags {
     }
     public static func flagged(_ name: String, _ code: String?) -> String { flagged(name, code.map { [$0] } ?? []) }
 
+    /// El idioma en el renglón de una versión («🇲🇽 · 1080p»): solo la bandera, que ya distingue latino de castellano
+    /// (Fernando, 2 nov 2026, M2: «quita la palabra, deja la bandera»). Sin bandera conocida, el nombre. VoiceOver lee el
+    /// nombre aparte.
+    public static func flagOnly(_ name: String, _ code: String?) -> String { flag(code) ?? name }
+
     /// El texto sin las banderas (para VoiceOver: lee el nombre, no «bandera de México»).
     public static func withoutFlags(_ text: String) -> String {
         var out = String.UnicodeScalarView()

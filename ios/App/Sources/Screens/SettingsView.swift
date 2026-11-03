@@ -281,8 +281,9 @@ struct SettingsView: View {
     @ViewBuilder private func downloads(_ model: SettingsModel) -> some View {
         let s = model.settings
         Section {
-            Toggle("Descargar solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
-            Toggle("Bajar el siguiente episodio al terminar uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
+            // Los mismos tres interruptores que Descargas › Descarga inteligente, con los mismos nombres.
+            DSToggleRow("Solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
+            DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
             Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
         }
         .listRowBackground(DS.surface)
@@ -309,7 +310,6 @@ struct SettingsView: View {
                     } }
                 }
             }))
-            .tint(DS.switchOn)
             .accessibilityIdentifier("release-alerts")
         } footer: {
             Text("De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")
