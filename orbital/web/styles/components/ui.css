@@ -134,7 +134,7 @@
 /* Sección: el rótulo (ícono en el azul de Orbital, nombre en minúsculas y negrita, línea fina hasta la orilla y el dato). Antes en
    mayúsculas espaciadas (IN-1, 2 nov 2026: se veían «de IA»). */
 .section-head--section { align-items: center; gap: var(--space-2); }
-.section-head__icon { display: grid; place-items: center; flex: none; width: 1.15em; height: 1.15em; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+.section-head__icon { display: grid; place-items: center; flex: none; width: 1.15em; height: 1.15em; color: var(--color-orbital); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .section-head__icon svg { width: 100%; height: 100%; }
 .section-head__label {
   margin: 0; color: var(--color-text-muted); font-family: var(--font-sans); font-size: var(--type-group-label); font-weight: var(--type-group-label-weight);

@@ -330,8 +330,7 @@ serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).
 (`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en
 grande (Lo que ves, Colecciones).
 
-**Acentos.** Turquesa: el porqué, lo nuevo y lo de hoy («Nuevo», «Hoy») y lo que está en vivo; nunca decoración (ni íconos de
-rótulo, ni fondos, ni orillas). Ámbar: las estrellas de calificar y los avisos. El verde de `success`: solo «listo, conectado». El color del arte: el botón principal de un título y su fondo.
+**Acentos.** Turquesa: el porqué, lo nuevo y lo de hoy («Nuevo», «Hoy») y lo que está en vivo. Ámbar: las estrellas de calificar y los avisos. El verde de `success`: solo «listo, conectado». El color del arte: el botón principal de un título y su fondo.
 
 **Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
 (ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
@@ -366,9 +365,9 @@ vigila.
 | Títulos: dos niveles (sección y subsección). La subsección tiene dos pesos solo en una pantalla que mezcla lo tuyo con lo que descubres (Inicio): lo de descubrir un paso más chico. Explorar, que es todo descubrir, lleva el tamaño normal | `DSSectionHead(quiet:)` | — |
 
 **En la TV (Fernando, 2 nov 2026: «aplica las reglas»):** igual. Rótulos y listón «Nuevo» en letra normal; lo nuevo y «Hoy» en
-turquesa (`--color-new` = la luna); el ícono del rótulo de sección y el de las tarjetas de Colecciones en gris; sin reflejo bajo
-la fila centrada; Trakt ya no es sello junto al título de una fila (`shelf.js`). Se quedan en turquesa el porqué, lo nuevo, «En
-vivo», el logo de Orbital y el tono «orbital» de las categorías de TV en vivo (es el color de su categoría, como los otros tonos).
+turquesa (`--color-new` = la luna); sin reflejo bajo la fila centrada; Trakt ya no es sello junto al título de una fila
+(`shelf.js`). **«El turquesa no es decoración» no se aplica en la TV por ahora** (Fernando, 2 nov: «ahorita la turquesa no hagas
+caso»): el turquesa se queda donde estaba (ícono del rótulo, Colecciones, «✓ Conectada», «Al instante»); solo lo nuevo y «Hoy» pasan a él.
 
 ### Tabla espejo (iPhone ↔ TV)
 
@@ -379,7 +378,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 
 | Papel | Pieza de la TV | Estado | Nota |
 |---|---|---|---|
-| Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono gris, letra normal en negrita y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
+| Encabezado | `SectionHead(title, { level })` (`ui.js`) y el rótulo de las filas de tarjetas (`shelf__heading--section`) | Igual | Sección = rótulo con ícono en `--color-orbital`, letra normal en negrita y línea, el dato a la derecha (Tus consolas, Día por día, Premios, Estudios…); subsección = título blanco. |
 | Arranque de una parte grande | El rótulo de sección de cada grupo (`shelf__heading--section`) | Distinto a propósito: con el mando, un renglón menos (el título grande lo pone el destacado de arriba, que cambia con el foco) | Los grupos de Películas y series (Plataformas, Estudios, Premios, Temporadas, Años…). |
 | Renglón de lista | Tarjetas de lista en fila (`collection-card`) y `sheet__item` en las hojas | Distinto a propósito: con el mando, tus listas son tarjetas en una fila (Listas de Trakt, de Stremio) | En las hojas (☰, Opciones, Guardar en…), el renglón es `sheet__item`. |
 | Porqué | `SectionHead(title, { reason })` y `--color-reason` | Igual | Solo cuando el porqué dice algo que el título no; un dato nunca va en turquesa. |
