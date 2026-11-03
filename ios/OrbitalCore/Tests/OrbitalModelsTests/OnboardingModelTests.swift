@@ -65,8 +65,16 @@ final class OnboardingModelTests: XCTestCase {
         await addons.setEnabled("opensubtitles", false)
         XCTAssertEqual(addons.items.first { $0.id == "opensubtitles" }?.enabled, false)
         XCTAssertTrue(addons.missingRecommended.isEmpty)
-        await addons.remove("torrentio")
-        XCTAssertEqual(addons.missingRecommended.map(\.id), ["torrentio"], "se puede volver a agregar")
+        let removedBuiltIn = await addons.remove("torrentio")
+        XCTAssertFalse(removedBuiltIn, "Torrentio viene con Orbital: solo se apaga")
+        let imported = try XCTUnwrap(addons.items.first { !$0.isBuiltIn })
+        XCTAssertTrue(addons.canRemove(imported))
+        let removed = await addons.remove(imported.id)
+        XCTAssertTrue(removed)
+        XCTAssertFalse(addons.items.contains { $0.id == imported.id })
+        let undone = await addons.undoRemove(imported.id)
+        XCTAssertTrue(undone, "«Deshacer» lo regresa")
+        XCTAssertTrue(addons.items.contains { $0.id == imported.id })
     }
 
     func testDebridSummaryInWords() {

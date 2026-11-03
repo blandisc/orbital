@@ -22,6 +22,8 @@ public enum AddonKeys {
     /// Copia de una lista que no se pudo leer (no se escribe encima de ella).
     static let installedUnreadable = "addons-installed.unreadable"
     static let importedFromStremio = "addons-imported-from-stremio"
+    /// Los que quitaste (su huella; su dirección solo mientras dura «Deshacer»).
+    static let removed = "addons-removed"
     static let debridStatus = "debrid-status"
     /// De dónde salió tu clave de Real-Debrid (si se tomó de tu Torrentio importado).
     static let debridKeySource = "debrid-key-source"

@@ -29,6 +29,7 @@ public final class AddonList: @unchecked Sendable {
             if vault.data(AddonKeys.installedUnreadable) == nil { vault.setData(AddonKeys.installedUnreadable, raw) }
             readFailed = true
         }
+        purgeRemoved()   // si la app se cerró durante «Deshacer», la dirección de lo quitado no se queda
     }
 
     /// Las opciones de hoy, escritas (T10): «sin opciones» ya no quiere decir «las que traiga la app».
@@ -97,9 +98,63 @@ public final class AddonList: @unchecked Sendable {
         return "a" + String(hash, radix: 36)
     }
 
-    public func remove(_ id: String) {
+    /// Quita uno traído de Stremio (o pegado antes). Los que vienen con Orbital no se quitan: solo se apagan (C7). Queda
+    /// guardado aparte (con su dirección en el llavero) mientras dura «Deshacer» (`undoWindow`), y su huella para siempre:
+    /// «Volver a traer» no lo regresa. Devuelve false si no se puede quitar.
+    @discardableResult
+    public func remove(_ id: String, now: Date = Date()) -> Bool {
+        guard let index = installed.firstIndex(where: { $0.id == id }), !installed[index].isBuiltIn else { return false }
+        let entry = installed[index]
         update { $0.removeAll { $0.id == id } }
-        vault.setSecret(AddonKeys.addonURL(id), nil)
+        var stones = tombstones.filter { $0.entry.id != id }
+        stones.append(Tombstone(entry: entry, index: index, removedAt: now, purged: false))
+        tombstones = stones
+        purgeRemoved(now: now)
+        return true
+    }
+
+    /// «Deshacer»: vuelve a su lugar con todo (su dirección y sus opciones). false si ya pasó el tiempo o no estaba.
+    @discardableResult
+    public func undoRemove(_ id: String, now: Date = Date()) -> Bool {
+        guard let stone = tombstones.first(where: { $0.entry.id == id }), !stone.purged,
+              now.timeIntervalSince(stone.removedAt) <= Self.undoWindow, vault.secret(AddonKeys.addonURL(id)) != nil else { return false }
+        update { list in list.insert(stone.entry, at: min(stone.index, list.count)) }
+        tombstones = tombstones.filter { $0.entry.id != id }
+        return true
+    }
+
+    /// Lo que dura «Deshacer» (algo más que el aviso): después se borra su dirección del llavero.
+    public static let undoWindow: TimeInterval = 60
+
+    /// Borra del llavero la dirección de los quitados hace más de `undoWindow` (se queda su huella, sin la dirección).
+    public func purgeRemoved(now: Date = Date()) {
+        var stones = tombstones, changed = false
+        for i in stones.indices where !stones[i].purged && now.timeIntervalSince(stones[i].removedAt) > Self.undoWindow {
+            vault.setSecret(AddonKeys.addonURL(stones[i].entry.id), nil)
+            stones[i].purged = true; stones[i].entry.options = nil; changed = true
+        }
+        if changed { tombstones = stones }
+    }
+
+    /// Los ids de los que quitaste (para no traerlos otra vez de Stremio).
+    public var removedIDs: Set<String> { Set(tombstones.map(\.entry.id)) }
+
+    struct Tombstone: Codable, Equatable {
+        var entry: InstalledAddon
+        var index: Int
+        var removedAt: Date
+        var purged: Bool
+    }
+
+    private var tombstones: [Tombstone] {
+        get { vault.data(AddonKeys.removed).flatMap { try? JSONDecoder().decode([Tombstone].self, from: $0) } ?? [] }
+        set { vault.setData(AddonKeys.removed, try? JSONEncoder().encode(newValue)) }
+    }
+
+    /// Es la última fuente de video prendida: apagarla o quitarla te deja sin versiones (se pregunta antes, C7).
+    public func isLastSource(_ id: String) -> Bool {
+        let sources = installed.filter { $0.enabled && $0.resources.contains("stream") && resolvedURL($0) != nil }
+        return sources.count == 1 && sources[0].id == id
     }
 
     public func setEnabled(_ id: String, _ enabled: Bool) {
@@ -144,13 +199,14 @@ public final class AddonList: @unchecked Sendable {
     }
 
     /// Trae una vez tus complementos de Stremio (los que no estén ya), en su orden, después de los que ya tengas. La segunda
-    /// vez no hace nada (devuelve 0); `again` lo vuelve a hacer (un botón «Volver a importar»). Devuelve cuántos agregó.
+    /// vez no hace nada (devuelve 0); `again` lo vuelve a hacer («Volver a traer»), sin los que quitaste. Devuelve cuántos agregó.
     @discardableResult
     public func importOnce(_ addons: [Imported], again: Bool = false) -> Int {
         guard again || !hasImported else { return 0 }
         if !isConfigured { update { _ in } }
         var added = 0
-        for addon in addons {
+        let removed = removedIDs
+        for addon in addons where !removed.contains(Self.newID(addon.url)) {   // lo que quitaste no regresa solo
             let before = installed.count
             add(url: addon.url, name: addon.name, resources: addon.resources, origin: .imported)
             if installed.count > before { added += 1 }

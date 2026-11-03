@@ -77,12 +77,11 @@ final class AccountsModelTests: XCTestCase {
 
     func testVolverAImportarSinRedDiceQuePasoYLaListaSeQueda() async throws {
         let rig = try ServicesRig(signedIn: true)
-        let model = AddonsModel(rig.services)
         rig.services.addonList.startWithRecommended()
+        let model = AddonsModel(rig.services)
         let template = try XCTUnwrap(AddonCatalog.recommended.first)
-        await model.remove(template.id)
-        XCTAssertEqual(model.missingRecommended.map(\.id), [template.id])
-        await model.add(template)
+        let removed = await model.remove(template.id)
+        XCTAssertFalse(removed, "los que vienen con Orbital no se quitan, solo se apagan")
         XCTAssertTrue(model.missingRecommended.isEmpty)
         let before = model.items
         rig.http.offline = true

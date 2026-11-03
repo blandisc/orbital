@@ -457,6 +457,14 @@ TRANSLATIONS = {
     # Real-Debrid y complementos, Fase 1 (3 nov 2026).
     "Venció hoy": "Expired today", "Tomé tu clave de Real-Debrid de tu Torrentio": "I took your Real-Debrid key from your Torrentio",
     "Real-Debrid todavía no lo tiene.": "Real-Debrid doesn't have it yet.",
+    # Quitar complementos (C7): solo los traídos de Stremio, con «Deshacer»; la última fuente se avisa.
+    "Quitar complemento": "Remove add-on", "¿Quitar «%@»?": "Remove “%@”?", "Quitar de todos modos": "Remove anyway",
+    "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it.",
+    "Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": "Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it.",
+    "¿Apagar tu última fuente?": "Turn off your last source?", "Apagar de todos modos": "Turn off anyway",
+    "Sin ella no habrá versiones para ver hasta que prendas otra.": "Without it there won't be versions to watch until you turn on another.",
+    "Quitaste el complemento": "Add-on removed",
+    "Se preguntan en este orden. Toca «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando.": "They're asked in this order. Tap “Reorder” and drag to change it. Built into Orbital: Torrentio, Comet and OpenSubtitles; they turn on and off. Brought from your Stremio: swipe to remove them.",
     # Las causas, en el orden de design/vocabulario.json › causas (la tabla común con la TV).
     "Bajando en Real-Debrid · %lld %%": "Downloading on Real-Debrid · %lld %%", "Te aviso cuando esté listo": "I'll let you know when it's ready",
     "Aún no se estrena · sale %@": "Not out yet · comes out %@", "Cuando salga, aparece aquí": "When it comes out, it shows up here",
@@ -1078,7 +1086,7 @@ TRANSLATIONS = {
     "Tu clave de Real-Debrid": "Your Real-Debrid key", "Tu cuenta es gratuita: necesitas Premium para ver.": "Your account is free: you need Premium to watch.",
     "Tus películas y series en tu bolsillo.": "Your movies and shows in your pocket.",
     "Usa tu Real-Debrid": "Uses your Real-Debrid", "Vence hoy": "Expires today", "Venció hace %@ días": "Expired %@ days ago", "Venció": "Expired",
-    "Volver a importar": "Import again", "Vuelve aquí y pégalo": "Come back here and paste it", "Ya dejamos listos estos": "We set these up for you",
+    "Volver a traer": "Bring back again", "Vuelve aquí y pégalo": "Come back here and paste it", "Ya dejamos listos estos": "We set these up for you",
     "Ya la conecté": "I connected it", "Ya puedes ver lo que quieras.": "You can watch whatever you want.", "Ya tengo cuenta": "I already have an account",
     "¿Usas Stremio?": "Do you use Stremio?", "%@ sustos por delante": "%@ scares ahead", "Configurar": "Set up",
 }

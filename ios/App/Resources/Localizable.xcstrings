@@ -11833,17 +11833,6 @@
         }
       }
     },
-    "La dirección completa del complemento.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The add-on's full address."
-          }
-        }
-      }
-    },
     "La distribución habitual del emulador.": {
       "extractionState": "manual",
       "localizations": {
@@ -18073,17 +18062,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paste your key"
-          }
-        }
-      }
-    },
-    "Pegar dirección": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paste address"
           }
         }
       }
@@ -28152,17 +28130,6 @@
         }
       }
     },
-    "Volver a importar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import again"
-          }
-        }
-      }
-    },
     "Volver a intentar": {
       "extractionState": "manual",
       "localizations": {
@@ -30521,6 +30488,289 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reconnect Real-Debrid"
+          }
+        }
+      }
+    },
+    "Apagar de todos modos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off anyway"
+          }
+        }
+      }
+    },
+    "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPad, con su configuración; «Volver a traer» no lo regresa."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de esta Mac, con su configuración; «Volver a traer» no lo regresa."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPad, with its settings; “Bring back again” won't restore it."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be any versions. Its address is deleted from this Mac, with its settings; “Bring back again” won't restore it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Quitar complemento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove add-on"
+          }
+        }
+      }
+    },
+    "Quitar de todos modos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove anyway"
+          }
+        }
+      }
+    },
+    "Quitaste el complemento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add-on removed"
+          }
+        }
+      }
+    },
+    "Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra su dirección de este iPad, con su configuración; «Volver a traer» no lo regresa."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra su dirección de esta Mac, con su configuración; «Volver a traer» no lo regresa."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Its address is deleted from this iPad, with its settings; “Bring back again” won't restore it."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Its address is deleted from this Mac, with its settings; “Bring back again” won't restore it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Se preguntan en este orden. Toca «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se preguntan en este orden. Toca «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se preguntan en este orden. Toca «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se preguntan en este orden. Haz clic en «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se preguntan en este orden. Toca «Ordenar» y arrastra para cambiarlo. Vienen con Orbital: Torrentio, Comet y OpenSubtitles; se prenden y se apagan. Traídos de tu Stremio: se quitan deslizando."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They're asked in this order. Tap “Reorder” and drag to change it. Built into Orbital: Torrentio, Comet and OpenSubtitles; they turn on and off. Brought from your Stremio: swipe to remove them."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They're asked in this order. Tap “Reorder” and drag to change it. Built into Orbital: Torrentio, Comet and OpenSubtitles; they turn on and off. Brought from your Stremio: swipe to remove them."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They're asked in this order. Click “Reorder” and drag to change it. Built into Orbital: Torrentio, Comet and OpenSubtitles; they turn on and off. Brought from your Stremio: swipe to remove them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "They're asked in this order. Tap “Reorder” and drag to change it. Built into Orbital: Torrentio, Comet and OpenSubtitles; they turn on and off. Brought from your Stremio: swipe to remove them."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Sin ella no habrá versiones para ver hasta que prendas otra.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without it there won't be versions to watch until you turn on another."
+          }
+        }
+      }
+    },
+    "Volver a traer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring back again"
+          }
+        }
+      }
+    },
+    "¿Apagar tu última fuente?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off your last source?"
+          }
+        }
+      }
+    },
+    "¿Quitar «%@»?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove “%@”?"
           }
         }
       }

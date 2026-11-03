@@ -115,9 +115,25 @@ public final class AddonsModel: ObservableModel {
         reload(); await services.resetAccountCaches()
     }
 
-    public func remove(_ id: String) async {
-        services.addonList.remove(id)
+    /// Se puede quitar: solo los traídos de Stremio (o pegados antes); los que vienen con Orbital solo se apagan (C7).
+    public func canRemove(_ addon: InstalledAddon) -> Bool { !addon.isBuiltIn }
+
+    /// Es tu última fuente de video prendida: apagarla o quitarla te deja sin versiones (se avisa antes).
+    public func isLastSource(_ id: String) -> Bool { services.addonList.isLastSource(id) }
+
+    /// Quita uno traído de Stremio; «Deshacer» (`undoRemove`) lo regresa con todo mientras dura el aviso.
+    @discardableResult
+    public func remove(_ id: String) async -> Bool {
+        guard services.addonList.remove(id) else { return false }
         reload(); await services.resetAccountCaches()
+        return true
+    }
+
+    @discardableResult
+    public func undoRemove(_ id: String) async -> Bool {
+        guard services.addonList.undoRemove(id) else { return false }
+        reload(); await services.resetAccountCaches()
+        return true
     }
 
     public func add(_ template: AddonTemplate) async {
@@ -125,7 +141,7 @@ public final class AddonsModel: ObservableModel {
         reload(); await services.resetAccountCaches()
     }
 
-    /// «Volver a importar de Stremio».
+    /// «Volver a traer» de Stremio (sin los que quitaste).
     public func importAgain() async {
         working = true
         defer { working = false }

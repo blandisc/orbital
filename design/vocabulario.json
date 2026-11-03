@@ -12,7 +12,7 @@
     { "texto": "Pasar a la TV", "en": ["ios"], "nota": "Manda tu clave de Real-Debrid a la TV (Cuentas › Real-Debrid). «Mandar a la TV» se evita (ver «Ver en la TV»).", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } },
     { "texto": "Usar la de la TV", "en": ["ios"], "nota": "Trae la clave de Real-Debrid de la TV al iPhone.", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } },
     { "texto": "Mándala desde tu iPhone", "en": ["tv"], "nota": "En la TV, en lugar de «Usar la de mi iPhone»: la TV no puede pedirle nada al iPhone.", "pendiente": { "tv": "La TV todavía no lo dice: lo trae «La TV sin Stremio» (S1 a S4), acordado con el iPhone el 3 nov 2026" } },
-    { "texto": "Volver a traer", "en": ["tv", "ios"], "evitar": ["Volver a importar"], "nota": "Traer otra vez tus complementos de Stremio.", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } }
+    { "texto": "Volver a traer", "en": ["tv", "ios"], "evitar": ["Volver a importar"], "nota": "Traer otra vez tus complementos de Stremio." }
   ],
   "nombres": [
     { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista", "Tu watchlist", "tu watchlist", "Tu Watchlist", "tu Watchlist"], "nota": "Lo que dejaste pendiente: tu watchlist de Trakt (sin Trakt, tu biblioteca de Stremio). Un solo nombre, siempre con M (glosario del iPhone, 31 oct 2026)." },
@@ -30,8 +30,8 @@
     { "texto": "Nuevo", "en": ["tv", "ios"] },
     { "texto": "Familia", "en": ["tv", "ios"], "evitar": ["Familiar"], "nota": "El género, igual en Buscar › Por género y en Búsqueda avanzada (Fernando, 2 nov 2026, L1)." },
     { "texto": "Fama", "en": ["tv", "ios"], "evitar": ["Qué tan conocida"], "nota": "El filtro de qué tan vista es (fama × calificación), en el filtro avanzado y en Decide por mí (Fernando, 2 nov 2026, K3)." },
-    { "texto": "Vienen con Orbital", "en": ["tv", "ios"], "nota": "Torrentio, Comet y OpenSubtitles: se prenden y apagan, no se agregan.", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } },
-    { "texto": "Traídos de tu Stremio", "en": ["tv", "ios"], "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } },
+    { "texto": "Vienen con Orbital", "en": ["tv", "ios"], "nota": "Torrentio, Comet y OpenSubtitles: se prenden y apagan, no se agregan." },
+    { "texto": "Traídos de tu Stremio", "en": ["tv", "ios"] },
     { "texto": "Archivos de la TV", "en": ["tv", "ios"], "nota": "Local Files: «Archivos de la TV · Solo en la TV»; en la TV, además, «Necesita Stremio abierto».", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } },
     { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta».", "pendiente": { "ios": "El iPhone todavía no lo dice: lo trae su etapa 1 a 3 (desacoplar Stremio, 3 nov 2026)" } }
   ],

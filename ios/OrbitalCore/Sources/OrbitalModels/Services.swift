@@ -398,7 +398,7 @@ public final class Services: ObservableModel {
     }
 
     /// Trae una vez tus complementos de Stremio a la lista del teléfono (no se escribe de vuelta). Devuelve cuántos llegaron;
-    /// sin cuenta de Stremio solo trae los que pegaste en Ajustes. `again`: «Volver a importar».
+    /// sin cuenta de Stremio solo trae los que pegaste en Ajustes. `again`: «Volver a traer».
     @discardableResult
     public func importAddonsFromStremio(again: Bool = false) async throws -> Int {
         let own = (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init)

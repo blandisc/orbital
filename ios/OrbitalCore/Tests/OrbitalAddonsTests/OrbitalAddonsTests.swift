@@ -67,8 +67,9 @@ final class AddonListTests: XCTestCase {
         XCTAssertEqual(list.enabledURLs(), ["https://comet.example/abc/manifest.json", "https://opensubtitles-v3.strem.io/manifest.json"], "apagado no se pregunta")
         XCTAssertEqual(AddonList(vault: vault).installed.map(\.name), ["Comet", "Torrentio", "OpenSubtitles"], "se guarda")
         XCTAssertNil(String(data: vault.data("addons-installed") ?? Data(), encoding: .utf8)?.range(of: "comet.example"), "la URL va al llavero, no a los ajustes")
-        list.remove(comet)
-        XCTAssertNil(vault.secret(AddonKeys.addonURL(comet)))
+        list.remove(comet, now: Date(timeIntervalSince1970: 0))
+        list.purgeRemoved(now: Date(timeIntervalSince1970: AddonList.undoWindow + 1))
+        XCTAssertNil(vault.secret(AddonKeys.addonURL(comet)), "pasado «Deshacer», su dirección se borra")
         XCTAssertEqual(list.installed.count, 2)
     }
 
@@ -84,6 +85,33 @@ final class AddonListTests: XCTestCase {
         XCTAssertNotEqual(list.fingerprint(), before, "la caché de manifiestos sabe que cambió")
         vault.setSecret(AddonKeys.realDebridToken, nil)
         XCTAssertEqual(list.enabledURLs(), ["https://opensubtitles-v3.strem.io/manifest.json"], "sin clave, Torrentio se salta")
+    }
+
+    /// C7: solo se quitan los traídos de Stremio; «Deshacer» los regresa con todo; pasado su tiempo se borra su dirección;
+    /// «Volver a traer» no los revive; y se sabe cuándo es tu última fuente.
+    func testRemovingKeepsATombstoneForUndoAndReimportDoesNotReviveIt() {
+        let vault = InMemoryAddonVault()
+        vault.setSecret(AddonKeys.realDebridToken, token)
+        let list = AddonList(vault: vault)
+        list.startWithRecommended([AddonCatalog.torrentio])
+        let stremio = [AddonList.Imported(name: "Listas", url: "https://listas.example/KEY123/manifest.json", resources: ["catalog"]),
+                       AddonList.Imported(name: "Otro", url: "https://otro.example/manifest.json", resources: ["stream"])]
+        list.importOnce(stremio)
+        let listas = list.installed[1]
+        let now = Date(timeIntervalSince1970: 1_793_000_000)
+        XCTAssertFalse(list.remove("torrentio", now: now), "viene con Orbital: solo se apaga")
+        XCTAssertTrue(list.remove(listas.id, now: now))
+        XCTAssertNotNil(vault.secret(AddonKeys.addonURL(listas.id)), "mientras dura «Deshacer», su dirección se queda")
+        XCTAssertTrue(list.undoRemove(listas.id, now: now.addingTimeInterval(5)))
+        XCTAssertEqual(list.installed.map(\.name), ["Torrentio", "Listas", "Otro"], "en su lugar")
+        XCTAssertTrue(list.remove(listas.id, now: now))
+        list.purgeRemoved(now: now.addingTimeInterval(AddonList.undoWindow + 1))
+        XCTAssertNil(vault.secret(AddonKeys.addonURL(listas.id)), "pasado el tiempo se borra")
+        XCTAssertFalse(list.undoRemove(listas.id, now: now.addingTimeInterval(AddonList.undoWindow + 2)))
+        XCTAssertEqual(list.importOnce(stremio, again: true), 0, "«Volver a traer» no lo revive")
+        XCTAssertFalse(list.isLastSource("torrentio"), "hay otra fuente prendida")
+        list.setEnabled(list.installed.first { $0.name == "Otro" }!.id, false)
+        XCTAssertTrue(list.isLastSource("torrentio"))
     }
 
     func testImportFromStremioOnlyOnce() {
