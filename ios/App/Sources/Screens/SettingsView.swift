@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State private var showsYear = false
     @State private var showsTrakt = false
     @State private var showsFollowed = false
+    @State private var showsRequests = false
+    @State private var showsPlayback = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State private var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
@@ -138,6 +140,10 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
         .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
+        .navigationDestination(isPresented: $showsRequests) { DebridRequestsView() }   // `-demo-settings-page requests`: Tus pedidos (D3)
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { showsRequests = true } }
+        .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
         #endif
     }
 
@@ -275,6 +281,13 @@ struct SettingsView: View {
         } header: { Text("Reproductor") } footer: {
             Text("En las películas de terror, puntos rojos (fuertes) y ámbar (leves) en la barra de avance, de Where's The Jump.")
         }
+        .listRowBackground(DS.surface)
+        // R8, R9-B: el mismo nombre y el mismo momento que en la TV (Ajustes › Ver › «Pedir solo el siguiente episodio»).
+        Section {
+            DSToggleRow("Pedir solo el siguiente episodio", detail: "Si Real-Debrid aún no lo tiene, se lo pide 3 min antes del final del que ves.",
+                        isOn: Binding(get: { s.autoRequestNextEpisode }, set: { v in model.update { $0.autoRequestNextEpisode = v } }))
+                .accessibilityIdentifier("settings-auto-request-next")
+        } header: { Text(verbatim: "Real-Debrid") }
         .listRowBackground(DS.surface)
     }
 

@@ -39,6 +39,14 @@ extension SettingsView {
         .listRowBackground(DS.surface)
     }
 
+    /// «2 bajando» o nada.
+    private var requestsValue: Text? {
+        let requests = env.services.debridRequests
+        let _ = requests.track()
+        let active = requests.active.count
+        return active == 0 ? nil : Text("\(active) bajando")
+    }
+
     private var letterboxdValue: Text {
         let model = AppEnvironment.shared.letterboxd
         let _ = model.track()
@@ -60,6 +68,11 @@ extension SettingsView {
                     Text("Tomé tu clave de Real-Debrid de tu Torrentio").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }
                 Link(destination: model.renewURL) { Label("Renovar", systemImage: "arrow.up.right") }
+                // D3: lo que Real-Debrid está bajando para ti (tus pedidos), con «Cancelar».
+                NavigationLink { DebridRequestsView() } label: {
+                    SettingsRow(title: "Tus pedidos", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: requestsValue)
+                }
+                .accessibilityIdentifier("settings-debrid-requests")
                 NavigationLink { page("Cambiar clave") { Section { DebridKeyField(debrid: model) }.listRowBackground(DS.surface) } } label: {
                     Text("Cambiar clave")
                 }

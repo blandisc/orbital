@@ -46,6 +46,9 @@ enum ThisDevice {
     /// Las descargas en la pantalla bloqueada y la Dynamic Island. En la Mac no existen.
     static let supportsLiveActivities = !ProcessInfo.processInfo.isiOSAppOnMac
 
+    /// El nombre de este aparato en lo que se anota (quién pidió algo a Real-Debrid, R12): «iPhone», «iPad» o «Mac».
+    @MainActor static var name: String { ProcessInfo.processInfo.isiOSAppOnMac ? "Mac" : UIDevice.current.name }
+
     @MainActor static var forOrbital: OrbitalRemote.Device {
         let device = UIDevice.current
         return OrbitalRemote.Device(name: device.name, kind: device.userInterfaceIdiom == .pad ? "ipad" : "iphone",

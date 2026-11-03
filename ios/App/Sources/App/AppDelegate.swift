@@ -24,6 +24,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         ControlCenter.shared.reloadAllControls()
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage, tv: AppEnvironment.shared.services.orbitalOn)
         DownloadFailureNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
+        // «Ya está T1 E2» de tus pedidos a Real-Debrid (R10): sus botones, y quién avisa cuando uno queda listo.
+        DebridRequestNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage, tv: AppEnvironment.shared.services.orbitalOn)
+        DebridRequestNotifier.connect(AppEnvironment.shared)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
         UNUserNotificationCenter.current().delegate = self
         return true
@@ -36,14 +39,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         completionHandler([.banner, .sound])
     }
 
-    /// Tocar un aviso o uno de sus botones («Ya está para ver»: Ver, Ver en la TV, Descargar).
+    /// Tocar un aviso o uno de sus botones («Ya está para ver»: Ver, Ver en la TV, Descargar; «Ya está T1 E2»: Ver ahora, Ver en la TV).
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         // iOS no marca estos valores como seguros entre hilos; solo se leen una vez en el hilo principal.
         nonisolated(unsafe) let response = response
         nonisolated(unsafe) let completionHandler = completionHandler
         Task { @MainActor in
-            if await !DownloadFailureNotifier.handle(response) { await ReleaseNotifier.handle(response) }
+            if await !DownloadFailureNotifier.handle(response), await !DebridRequestNotifier.handle(response) { await ReleaseNotifier.handle(response) }
             completionHandler()
         }
     }

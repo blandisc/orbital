@@ -239,6 +239,8 @@ extension DS {
         static let fastForwardStart = 0.3
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
         static let inboxRefresh: TimeInterval = 15 * 60
+        /// Con la app abierta y algo bajando en Real-Debrid: cada cuánto se pregunta cuánto lleva (R10; la TV, igual: 20 s).
+        static let debridPoll: TimeInterval = 20
         /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.
         static let releaseRefresh: TimeInterval = 30 * 60
         /// Revisar estrenos: lo más pronto que se pide la siguiente y cuánto después de que sale un episodio (para que ya tenga fuente).

@@ -15,8 +15,11 @@ enum InboxBackgroundTask {
             let work = Task { @MainActor in
                 // De paso, los estrenos: iOS da pocas oportunidades en segundo plano y cada una cuenta.
                 async let releases: Void = ReleaseNotifier.check(origin: "ios-buzon")
+                // Y tus pedidos a Real-Debrid: si alguno quedó listo, el aviso «Ya está…» (R10, mejor esfuerzo).
+                async let requests: Void = DebridRequestNotifier.checkInBackground()
                 await AppEnvironment.shared.checkTVInbox()
                 await releases
+                await requests
                 task.setTaskCompleted(success: !Task.isCancelled)
             }
             task.expirationHandler = { work.cancel() }

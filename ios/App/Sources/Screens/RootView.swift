@@ -127,6 +127,8 @@ struct RootView: View {
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
+        // Tus pedidos a Real-Debrid: mientras la app está abierta y algo baja, cada 20 s (R10); al volver, en cuanto se abre.
+        .task(id: scenePhase == .active) { if scenePhase == .active { await env.services.debridRequests.follow(every: DS.Timing.debridPoll) } }
         // Las colecciones (una para toda la app): lo visto se vuelve a preguntar y otra cuenta no hereda nada.
         .onChange(of: env.watchedSomething) { env.collections.forgetWatched(); Task { await env.ratings.refresh(force: true) } }
         .onChange(of: env.services.generation) { env.collections.resetAccount() }
@@ -146,6 +148,7 @@ struct RootView: View {
             await env.catalog.load()
             if env.catalog.popular.first?.poster != before { await warm() }
         }
+        .onChange(of: env.services.orbitalOn) { _, on in DebridRequestNotifier.registerCategory(language: env.services.appSettings.uiLanguage, tv: on) }
         .onChange(of: scenePhase) { _, phase in
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).

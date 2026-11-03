@@ -26,10 +26,11 @@ enum AppComposition {
                                     downloadTransport: transport, downloadsRoot: Demo.demoDownloadsRoot,
                                     savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },
                                     cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil,
-                                    allowsOrbital: ThisDevice.talksToOrbital,
+                                    deviceName: ThisDevice.name, allowsOrbital: ThisDevice.talksToOrbital,
                                     // La demostración no escribe en la memoria de TMDB de tu iPhone (era global hasta el 31 oct 2026).
                                     detailsMemo: Demo.persist ? TmdbDetailsMemo(file: AppFiles.swrCache.appendingPathComponent("demo/tmdb-details.json")) : nil)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
+            Demo.seedRequests(services)   // `-demo-rd-request`: tus pedidos a Real-Debrid de mentira
             services.isOnline = { !Demo.offline }
             return services
         }
@@ -39,7 +40,7 @@ enum AppComposition {
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), library: LocalLibrary(url: AppFiles.library),
             downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
-            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: ThisDevice.forOrbital,
+            cacheRoot: AppFiles.swrCache, onDownloadsChange: { DownloadIndex.save($0) }, device: ThisDevice.forOrbital, deviceName: ThisDevice.name,
             allowsOrbital: ThisDevice.talksToOrbital,
             // Lo de TMDB ya pedido (el mismo archivo de Caches de antes): no se pide otra vez en cada arranque.
             detailsMemo: TmdbDetailsMemo(file: AppFiles.swrCache.deletingLastPathComponent().appendingPathComponent("tmdb-details.json")))
