@@ -213,7 +213,7 @@ const SIDES = {
   ios: [...walk(join(ROOT, "ios", "App"), [".swift", ".xcstrings"]), ...walk(join(ROOT, "ios", "OrbitalCore", "Sources"), [".swift"])].flatMap(literals),
 };
 
-const TERMS = [...VOCAB.verbos, ...VOCAB.nombres, ...VOCAB.formatos];
+const TERMS = [...VOCAB.verbos, ...VOCAB.nombres, ...VOCAB.formatos, ...(VOCAB.causas ?? [])];
 /** Lo que un lado todavía dice mal de un término: que no lo diga (si le toca) o que diga lo que se evita. */
 function faults(term, side) {
   const out = [];

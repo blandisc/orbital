@@ -399,7 +399,7 @@ class SyntheticTV:
         finally:
             self.coverage.save()
         if picked is None:
-            raise LookupError(f"No encontré {channel.name} en español latino en tus complementos de Stremio.")
+            raise LookupError(f"No encontré {channel.name} en español latino en tus complementos.")
         episode, source, picked_cycle, picked_place = picked
         start = offset if (picked_cycle, picked_place) == (cycle, place) else 0.0  # se saltó uno: el siguiente desde el principio
         meta = self._meta(channel, episode, picked_cycle, picked_place, source, [source.index])

@@ -829,7 +829,7 @@ class Watch:
         out = {"why": "ok", "message": "", "detail": "", "can_request": False, "request": self.rd.status(video_id)}
         if out["request"] and out["request"]["state"] == "downloading":
             pct = out["request"].get("percent") or 0
-            return {**out, "why": "requested", "message": f"Pedido a Real-Debrid · lleva {pct} %",
+            return {**out, "why": "requested", "message": f"Bajando en Real-Debrid · {pct} %",
                     "detail": "Te aviso cuando esté listo"}
         when = self._release_of(kind, meta_id, video_id)
         if when and when > time.time():
@@ -1048,10 +1048,10 @@ class Watch:
         """Por qué no hay dónde verlo, con qué hacer: sin Internet, sin complementos o de verdad no hay."""
         why = self.streams.outcome.get(f"{kind}:{video_id}")
         if why == "offline":
-            return "No pude conectar con tus complementos de Stremio. Revisa Internet e inténtalo de nuevo."
+            return "No pude conectar con tus complementos. Revisa Internet e inténtalo de nuevo."
         if why == "no-addons":
             return "Tu cuenta de Stremio no tiene complementos de video (como Torrentio). Instálalos en Stremio."
-        return "No encontré dónde ver esto: tus complementos de Stremio no lo tienen."
+        return "No encontré dónde ver esto: tus complementos no lo tienen."
 
     def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,
                   from_start: bool = False, handoff: dict | None = None) -> dict:

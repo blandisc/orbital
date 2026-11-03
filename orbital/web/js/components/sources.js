@@ -182,7 +182,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       start = { ...at };
       subtitle.textContent = "«Al instante»: arranca en segundos. «Tarda en empezar»: Real-Debrid primero la descarga.";
       status.hidden = !!rows.length;
-      status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
+      status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos no lo tienen.";
       failed = !rows.length;
       renderRows();
     } catch (err) {

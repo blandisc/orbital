@@ -211,7 +211,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(409, stremio_message(exc))
         except Exception as exc:  # noqa: BLE001 - nunca «Internal Server Error» en la pantalla de fuentes
             log.exception("No pude buscar fuentes")
-            raise HTTPException(502, "No pude conectar con tus complementos de Stremio. Revisa Internet e inténtalo de nuevo.") from exc
+            raise HTTPException(502, "No pude conectar con tus complementos. Revisa Internet e inténtalo de nuevo.") from exc
         if not found:
             raise HTTPException(404, catalog.watch.no_sources_message(kind, video or id))
         try:  # título, póster y fondo para la pantalla (de caché casi siempre)
