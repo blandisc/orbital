@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from . import companion, flags, player, player_ui, rd_requests, remote_art, ytdlp
+from . import companion, flags, playback, player, player_ui, rd_requests, remote_art, ytdlp
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -170,6 +170,8 @@ def ready_now(source: streams.Source) -> bool:
     """Arranca ya y es de verdad este título: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que
     bajarla» solo da el video de aviso de 30 s de Real-Debrid; una grabada en el cine, un tráiler o una que parece de otro
     título no cuentan («El viento tiene miedo»: se ofrecía «Verlo al instante» con una que no era)."""
+    if playback.needs_stremio(source.stream) and not playback.stremio_server_up():
+        return False  # un torrent sin Real-Debrid solo arranca con Stremio abierto (el respaldo, 4 nov)
     return (source.cached or not source.debrid) and not ({"CAM", "Tráiler"} & set(source.tags)) and not source.doubtful
 
 
@@ -464,6 +466,8 @@ class Watch:
                                                key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought,
                                                stremio=lambda: self.stremio_linked or bool(self.own_addons()))
         self.addon_list.adopt_torrentio()  # el Torrentio que ya habías traído de Stremio pasa al de Orbital (corte S3)
+        if self.addon_list.needs_copy:  # 4 nov: las fuentes salían de tu cuenta de Stremio; se copian una vez a tu lista
+            threading.Thread(target=self._copy_stremio_addons, daemon=True, name="addons-copy").start()
         self._removed_addons: dict[str, dict] = {}
         self.addons = addons.AddonRegistry(
             self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY), own=self.own_addons,
@@ -600,8 +604,19 @@ class Watch:
                 "stremio_linked": self.stremio_linked, "entries": entries,
                 "changed_by": raw.get("changed_by_name") or raw.get("changed_by"), "changed_at": raw.get("changed_at")}
 
+    def _copy_stremio_addons(self) -> None:
+        """Lo que salía de tu cuenta de Stremio pasa a tu lista, una sola vez y sin preguntar (Fernando, 4 nov: Stremio ya
+        no es para traer complementos). Sin internet o sin la cuenta se intenta en el siguiente arranque; mientras, las
+        fuentes salen de tu lista (Torrentio de Orbital)."""
+        try:
+            done = self.import_addons()
+            log.info("Copié tus complementos de Stremio a tu lista: %s", done)
+        except Exception as exc:  # noqa: BLE001 — sin internet, sin cuenta o una respuesta rara: se intenta en el siguiente arranque
+            log.info("Todavía no pude copiar tus complementos de Stremio: %s", exc)
+
     def import_addons(self) -> dict:
-        """«Traer de tu Stremio» / «Volver a traer»: tus complementos de la cuenta, una vez; desde ahí son tuyos aquí."""
+        """Copia tus complementos de la cuenta de Stremio a tu lista (solo para no perder nada al dejar de leerlos de ahí:
+        `_copy_stremio_addons`). Ya no hay botón para esto."""
         key = self.credentials.get(STREMIO_KEY)
         if not key:
             raise ValueError("Primero conecta tu cuenta de Stremio")
@@ -724,7 +739,7 @@ class Watch:
                              "detail": "La ves en Ajustes › Cuentas › Real-Debrid"})
 
     def set_addon_source(self, source: str) -> dict:
-        """«Volver a los de Stremio» (stremio) o «Usar los tuyos» (own): tu lista se queda en los dos casos."""
+        """Solo «own» (4 nov: ya no se regresa a los de tu cuenta de Stremio). ValueError con otra cosa."""
         self.addon_list.set_source(source)
         self.addons.forget()
         return self.addon_status()
@@ -776,6 +791,8 @@ class Watch:
         if not found:
             raise ValueError("Ese complemento no da fuentes, subtítulos, fichas ni catálogos")
         self.credentials.set(ADDONS_KEY, [*self.own_addons(), clean])
+        self.addon_list.import_from_stremio([(found.name, clean, None)])  # 4 nov: las fuentes salen de tu lista
+        self.addons.forget()
         return found
 
     def remove_addon(self, number: int) -> str:
@@ -785,6 +802,10 @@ class Watch:
             raise ValueError(f"No hay complemento {number}: tienes {len(own)}")
         gone = own.pop(number - 1)
         self.credentials.set(ADDONS_KEY, own or None)
+        entry = next((e for e in self.addon_list.entries() if e.url == gone and e.origin != "orbital"), None)
+        if entry is not None:
+            self.addon_list.remove(entry.id)
+        self.addons.forget()
         return addons.redact(gone)
 
     def _load_stremio_cache(self) -> list[LibraryItem]:
@@ -1187,6 +1208,10 @@ class Watch:
             return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
                     "detail": "Ajustes › Complementos"}
         if self.rd.client() is None:
+            # Hay torrents pero Stremio está cerrado: el respaldo para verlos sin Real-Debrid (Fernando, 4 nov).
+            if any(playback.needs_stremio(s.stream) and not s.doubtful for s in found):
+                return {**out, "why": "stremio", "message": "Necesita Stremio abierto",
+                        "detail": "Para ver torrents sin Real-Debrid · o conecta Real-Debrid en Ajustes › Cuentas"}
             # Sin clave no hay qué pedir ni cómo saber si alguien lo tiene: la salida es conectar Real-Debrid, nunca
             # «Nadie lo tiene» sin salida (análisis de fondo con el iPhone, escenario 16).
             return {**out, "why": "debrid-account", "message": "Vuelve a conectar Real-Debrid",

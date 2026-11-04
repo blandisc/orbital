@@ -167,8 +167,7 @@ test("tu consola: dos renglones, y películas y series abren su guía, sin Strem
   const guide = moviesSetupMenu({ realdebrid: { linked: true }, trakt: { configured: true, linked: false },
     addons: { entries: [{ origin: "orbital", name: "Torrentio", on: true }, { origin: "orbital", name: "OpenSubtitles", on: true }] } });
   assert.deepEqual(guide.options.map((o) => [o.label, o.value]), [["1 · Real-Debrid", "✓ Conectada"], ["2 · Complementos", "✓ 2 prendidos"],
-    ["3 · Trakt", "Conectar"], ["Tu iPhone · opcional", "Conectar"], ["¿Ya tienes Stremio?", undefined]]);
-  assert.deepEqual(guide.options[4].command, { type: "stremio-login" });
+    ["3 · Trakt", "Conectar"], ["Tu iPhone · opcional", "Conectar"]]); // 4 nov: sin «¿Ya tienes Stremio?»
 });
 
 test("cómo se usa: una hoja, con el mando que tienes", () => {
@@ -648,8 +647,8 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
     { id: "l", name: "Local Files", origin: "stremio", on: false, only_on: "tv", gives: "", health: { state: "off" } },
   ] };
   const rows = addonRows(status); // OpenSubtitles (el de Orbital y el traído) ya no sale: vive en Ajustes › Ver (3 nov)
-  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
-    "Volver a traer", "De dónde salen", "Volver a los de Stremio", "¿Qué es esto?"]);
+  // Fernando, 4 nov: lo que no vino con Orbital es «Agregado por ti»; ni «Volver a traer» ni «Volver a los de Stremio».
+  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Agregado por ti", "Torrentio RD", "Archivos de la TV", "¿Qué es esto?"]);
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
   assert.equal(rows[4].value, "Apagado");
@@ -657,8 +656,8 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
   assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
-  // Sin traer todavía: primero «Traer de tu Stremio».
-  assert.equal(addonRows({ source: "stremio", stremio_linked: true, entries: [] })[0].label, "Traer de tu Stremio");
+  // Sin nada agregado: ni el encabezado (y nunca «Traer de tu Stremio»).
+  assert.deepEqual(addonRows({ source: "own", stremio_linked: true, entries: [] }).map((r) => r.label), ["Vienen con Orbital", "¿Qué es esto?"]);
 });
 
 test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y «Tus pedidos» (corte S2)", () => {
