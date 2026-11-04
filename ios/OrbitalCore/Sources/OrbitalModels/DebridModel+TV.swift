@@ -14,7 +14,12 @@ extension DebridModel {
     public func passToTV() async {
         guard canShareWithTV, let key = services.addonList.debridToken else { return }
         tvShare = .working
-        do { tvShare = .passed(try await services.orbital.putRealDebrid(token: key)); await compareWithTV() }
+        do {
+            tvShare = .passed(try await services.orbital.putRealDebrid(token: key))
+            // RC1: con código la llave se renueva; la TV recibe cada renovación.
+            services.kv.set(Services.tvFollowsDebridKey, data: services.debrid.connectedByCode ? Data("1".utf8) : nil)
+            await compareWithTV()
+        }
         catch let failure as OrbitalRemote.Failure { tvShare = .failed(failure.description) }
         catch { tvShare = .failed(OrbitalRemote.Failure.unreachable.description) }
     }

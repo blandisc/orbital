@@ -14,6 +14,13 @@ public final class DebridModel: ObservableModel {
         case failed(String)
     }
     public internal(set) var check: Check = .idle { didSet { changed() } }
+
+    /// RC1 · conectar con un código (como Trakt): esperando que lo apruebes en real-debrid.com/device, conectando, o por qué no.
+    public enum CodeFlow: Equatable, Sendable { case idle, asking, waiting(code: String, url: URL), connecting, failed(String) }
+    public private(set) var codeFlow: CodeFlow = .idle { didSet { if oldValue != codeFlow { changed() } } }
+    private var codeTask: Task<Void, Never>?
+    /// ¿Esta conexión fue con código (se renueva sola)?
+    public var connectedByCode: Bool { services.debrid.connectedByCode }
     /// Lo que se sabe de la clave guardada (nil sin clave).
     public internal(set) var status: DebridStatus? { didSet { changed() } }
     /// P6-A · si tu clave sirve, según Real-Debrid en esta visita (`recheck`). Mientras pregunta, `checking`: la página enseña
@@ -66,6 +73,41 @@ public final class DebridModel: ObservableModel {
         } catch let error as DebridError {
             check = .failed(error.description)
         } catch { check = .failed(DebridError.unexpected.description) }
+    }
+
+    /// RC1 · pide un código y espera a que lo apruebes; en cuanto lo apruebas, queda conectado (sin copiar ni pegar).
+    public func connectWithCode() {
+        codeTask?.cancel()
+        codeTask = Task { await runCode() }
+    }
+
+    public func cancelCode() { codeTask?.cancel(); codeTask = nil; codeFlow = .idle }
+
+    private func runCode() async {
+        guard let rd = services.debrid.provider as? RealDebrid else { return codeFlow = .failed(DebridError.unexpected.description) }
+        codeFlow = .asking
+        do {
+            let code = try await rd.deviceCode()
+            codeFlow = .waiting(code: code.userCode, url: code.verificationURL)
+            let deadline = services.now().addingTimeInterval(code.expiresIn)
+            while !Task.isCancelled, services.now() < deadline {
+                try await Task.sleep(for: .milliseconds(Int(code.interval * 1000)))
+                guard !Task.isCancelled else { return }
+                guard let pair = try await rd.deviceCredentials(code) else { continue }
+                codeFlow = .connecting
+                let found = try await services.debrid.connect(code: code, clientID: pair.clientID, clientSecret: pair.clientSecret)
+                guard found.isPremium else { check = .free(found); codeFlow = .idle; return }
+                services.addonList.startWithRecommended()
+                await services.resetAccountCaches()
+                status = found; keyCheck = .confirmed; check = .ok(found); codeFlow = .idle
+                return
+            }
+            if !Task.isCancelled { codeFlow = .failed("El código venció. Pide otro.") }
+        } catch let error as DebridError {
+            codeFlow = .failed(error.description)
+        } catch is CancellationError {
+            codeFlow = .idle
+        } catch { codeFlow = .failed(DebridError.unexpected.description) }
     }
 
     /// Guarda una clave que Real-Debrid ya aceptó (Premium): la pegada o la de tu TV.

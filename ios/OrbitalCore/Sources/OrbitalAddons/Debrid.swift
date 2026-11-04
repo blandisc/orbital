@@ -106,7 +106,7 @@ public struct RealDebrid: DebridProvider {
     public let name = "Real-Debrid"
     public let renewURL = URL(string: "https://real-debrid.com/premium")!
     public let tokenURL = URL(string: "https://real-debrid.com/apitoken")!
-    private let fetch: DebridFetch
+    let fetch: DebridFetch
     private let clock: @Sendable () -> Date
 
     public init(fetch: @escaping DebridFetch, clock: @escaping @Sendable () -> Date = { Date() }) { self.fetch = fetch; self.clock = clock }
@@ -289,6 +289,7 @@ public actor DebridAccount {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard vault.storeSecret(AddonKeys.realDebridToken, clean) else { return false }
         vault.setData(AddonKeys.debridKeySource, nil)   // la pegaste tú
+        vault.setSecret(AddonKeys.realDebridOAuth, nil)  // una pegada no se renueva (la de código vuelve a anotar su conexión)
         lastTrouble = nil
         remember(status)
         if share { publishShared(clean) }
@@ -302,12 +303,15 @@ public actor DebridAccount {
         let old = vault.secret(AddonKeys.realDebridToken) ?? ""
         if everywhere { retireShared(old) } else if let shared = sharedKey, !shared.key.isEmpty { markSharedSeen(shared.key) }
         vault.setSecret(AddonKeys.realDebridToken, nil)
+        vault.setSecret(AddonKeys.realDebridOAuth, nil)
         vault.setData(AddonKeys.debridStatus, nil)
         vault.setData(AddonKeys.reminders, nil)
         // La quitaste tú: no se vuelve a tomar sola de tu Torrentio importado.
         vault.setData(AddonKeys.debridKeySource, Data(Self.removedByYou.utf8))
         lastTrouble = nil
     }
+
+    func now() -> Date { clock() }
 
     private func remember(_ status: DebridStatus) { vault.setData(AddonKeys.debridStatus, try? Self.encoder.encode(status)) }
 

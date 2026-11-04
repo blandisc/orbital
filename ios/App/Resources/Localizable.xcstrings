@@ -1,6 +1,105 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Conectar con un código": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect with a code"
+          }
+        }
+      }
+    },
+    "Pidiendo un código…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting a code…"
+          }
+        }
+      }
+    },
+    "Escribe este código en real-debrid.com/device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter this code at real-debrid.com/device"
+          }
+        }
+      }
+    },
+    "Pedir otro código": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get another code"
+          }
+        }
+      }
+    },
+    "El código venció. Pide otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The code expired. Get another one."
+          }
+        }
+      }
+    },
+    "Escribes un código corto en real-debrid.com/device y listo, sin copiar ni pegar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a short code at real-debrid.com/device and you're done, no copying or pasting."
+          }
+        }
+      }
+    },
+    "O pega tu clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or paste your key"
+          }
+        }
+      }
+    },
+    "Con un código": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With a code"
+          }
+        }
+      }
+    },
+    "Otra forma: pegar la clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another way: paste the key"
+          }
+        }
+      }
+    },
     "Tu turno: inténtalo": {
       "extractionState": "manual",
       "localizations": {

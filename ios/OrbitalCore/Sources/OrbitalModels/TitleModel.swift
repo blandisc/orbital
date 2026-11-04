@@ -224,6 +224,7 @@ public final class TitleModel: ObservableModel {
         guard let videoID = continueVideoID else { return }
         let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
         do {
+            await services.freshenDebrid()   // RC1: con código, la llave al día antes de pedir versiones
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             listedHashes[videoID] = Set(found.compactMap { $0.torrent?.hash })

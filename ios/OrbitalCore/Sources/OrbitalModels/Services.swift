@@ -446,7 +446,19 @@ public final class Services: ObservableModel {
     public func now() -> Date { clock() }
     /// Al abrir, al volver a la app o al deslizar: primero sube lo de aquí (para que no regrese como estaba), luego trae de
     /// Trakt lo que cambió en tus otros aparatos.
+    /// RC1 · si conectaste Real-Debrid con código, su llave vence: se renueva antes y se pone al día lo que la usa (los
+    /// complementos la toman sola del llavero; la TV, si le pasaste la de este iPhone, la vuelve a recibir).
+    public func freshenDebrid() async {
+        guard await debrid.renewIfNeeded() else { return }
+        await resetAccountCaches()
+        if kv.data(Self.tvFollowsDebridKey) != nil, canShareKeysWithTV, let key = addonList.debridToken {
+            _ = try? await orbital.putRealDebrid(token: key)
+        }
+    }
+    public static let tvFollowsDebridKey = "debrid-tv-follows-code"
+
     public func syncLibrary(force: Bool = false) async {
+        await freshenDebrid()
         await traktOutbox.flush(trakt)
         await watch.flushPending()
         await sync.pull(force: force)

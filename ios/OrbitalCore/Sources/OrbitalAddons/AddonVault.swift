@@ -20,6 +20,8 @@ public extension AddonVault {
 public enum AddonKeys {
     /// Tu clave de Real-Debrid (sale de real-debrid.com/apitoken). Un solo secreto: las URLs de los recomendados se derivan.
     public static let realDebridToken = "realdebrid_token"
+    /// RC1 · la conexión con código: credenciales propias y la llave para renovar (`DebridOAuth`, en el llavero).
+    public static let realDebridOAuth = "realdebrid_oauth"
     /// CX2-A · la copia de tu clave que comparten tus aparatos Apple (llavero de iCloud, si lo usas): `SharedDebridKey`.
     /// La de arriba es la de este aparato y es la que se usa; esta solo sirve para ofrecerla o preguntar si cambió.
     public static let sharedRealDebridToken = "realdebrid_token.shared"

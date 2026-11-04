@@ -8,6 +8,8 @@ import OrbitalAddons
 /// historia «Ver al instante»). Un solo botón: «Abrir Real-Debrid y copiar clave»; al volver, si copiaste algo, «Pegar tu
 /// clave» con un toque. Escribirla a mano queda en «Otra forma». Pagar no detiene la guía: «Cuando quiera ver algo».
 struct OnboardingSeeHere: View {
+    private func isFailed(_ flow: DebridModel.CodeFlow) -> Bool { if case .failed = flow { return true }; return false }
+
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
     let next: () -> Void
@@ -29,9 +31,10 @@ struct OnboardingSeeHere: View {
         let model = debrid.model
         GuidePage(title: Text("Ve todo al instante, aquí"),
                   step: step,
-                  primary: model.ready ? Text("Seguir") : Text("Abrir Real-Debrid y copiar clave"),
+                  primary: model.ready ? Text("Seguir") : Text("Conectar con un código"),
+                  primaryEnabled: model.ready || model.codeFlow == .idle || isFailed(model.codeFlow),
                   secondary: model.ready ? nil : Text("Cuando quiera ver algo"),
-                  next: { if model.ready { next() } else { opened = true; openURL(model.tokenURL) } },
+                  next: { if model.ready { next() } else { model.connectWithCode() } },
                   skip: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 StorySceneView(scene: .titlePlay, tint: DS.ListTint.flame)
@@ -49,7 +52,8 @@ struct OnboardingSeeHere: View {
                 if case .ok(let status) = model.check {
                     GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text(verbatim: "\(status.username) · Premium"), detail: DebridWords.text(status))
                 } else {
-                    if canPaste || opened {
+                    DebridCodeConnect(debrid: model, showsStart: false)
+                    if byHand && (canPaste || opened) {
                         Button {
                             if let text = UIPasteboard.general.string { model.token = text; Task { await model.verify() } }
                         } label: { Label("Pegar tu clave", systemImage: "doc.on.clipboard").frame(maxWidth: .infinity) }
@@ -65,7 +69,7 @@ struct OnboardingSeeHere: View {
                         case .failed(let message): DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
                         default: EmptyView()
                         }
-                        Button { withAnimation(DS.Motion.fade) { byHand = true } } label: { Text("Otra forma: escribirla").recipe(.footnote, color: DS.textMuted) }
+                        Button { withAnimation(DS.Motion.fade) { byHand = true; opened = true } } label: { Text("Otra forma: pegar la clave").recipe(.footnote, color: DS.textMuted) }
                             .buttonStyle(.borderless)
                             .accessibilityIdentifier("debrid-by-hand")
                     }
@@ -76,12 +80,48 @@ struct OnboardingSeeHere: View {
             }
         }
         .sensoryFeedback(.success, trigger: model.ready)
+        .onDisappear { model.cancelCode() }
         .task { await model.checkShared(); canPaste = UIPasteboard.general.hasStrings }
         // De regreso de la página de Real-Debrid: si copiaste algo, «Pegar tu clave» a la vista.
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             canPaste = UIPasteboard.general.hasStrings
         }
+    }
+}
+
+/// RC1 · conectar con un código, como Trakt (la guía y Ajustes › Real-Debrid): el código grande para real-debrid.com/device,
+/// el botón que la abre y la espera; en cuanto lo apruebas, queda conectado solo. `showsStart`: con su propio botón para
+/// empezar (en Ajustes; en la guía lo empieza el botón de abajo).
+struct DebridCodeConnect: View {
+    @State private var observer: ModelObserver<DebridModel>
+    var showsStart = true
+    @Environment(\.openURL) private var openURL
+
+    init(debrid: DebridModel, showsStart: Bool = true) { _observer = State(wrappedValue: ModelObserver(debrid)); self.showsStart = showsStart }
+
+    var body: some View {
+        let model = observer.model
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            switch model.codeFlow {
+            case .idle:
+                if showsStart {
+                    Button("Conectar con un código", systemImage: "qrcode") { model.connectWithCode() }.dsGlassButton()
+                        .accessibilityIdentifier("debrid-code-start")
+                }
+            case .asking: DSInlineProgress(text: Text("Pidiendo un código…"))
+            case .waiting(let code, let url):
+                Text("Escribe este código en real-debrid.com/device").recipe(.secondary, color: DS.textMuted)
+                GuideCode(code: code).accessibilityIdentifier("debrid-code")
+                Button("Abrir Real-Debrid", systemImage: "arrow.up.right") { openURL(url) }.dsGlassButton()
+                DSInlineProgress(text: Text("Esperando a que lo apruebes…"))
+            case .connecting: DSInlineProgress(text: Text("Conectando…"))
+            case .failed(let message):
+                DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
+                Button("Pedir otro código", systemImage: "arrow.clockwise") { model.connectWithCode() }.dsGlassButton()
+            }
+        }
+        .onDisappear { if case .waiting = model.codeFlow { model.cancelCode() } }
     }
 }
 

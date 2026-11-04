@@ -61,6 +61,9 @@ class GuideUITestCase: XCTestCase {
         let field = app.textFields["debrid-token"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         for _ in 0..<3 where !field.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        // Los botones de abajo flotan sobre la lista: XCUITest da el campo por tocable aunque quede debajo (en el SE, con RC1).
+        let bar = app.buttons["guide-next"]
+        for _ in 0..<3 where bar.exists && field.frame.maxY > bar.frame.minY { app.scrollViews.firstMatch.swipeUp() }
         field.tap()
         if let current = field.value as? String, !current.isEmpty, current != "Pega tu clave" {
             field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 2))
@@ -128,5 +131,19 @@ final class OnboardingUITests: GuideUITestCase {
         for _ in 0..<4 where !(guide.exists && guide.isHittable) { app.swipeUp() }
         guide.tap()
         wait("Todo lo que quieres ver, en un solo lugar.")
+    }
+
+    /// RC1 · Real-Debrid con código: sin copiar ni pegar, el código grande y, al aprobarlo, conectado solo.
+    func testRealDebridConnectsWithACode() {
+        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
+        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
+        next(); wait("¿Qué te gusta?")
+        next(); wait("¿Qué ya tienes?")
+        next(); wait("Ve todo al instante, aquí")
+        next()   // «Conectar con un código»
+        wait("Escribe este código en real-debrid.com/device")
+        XCTAssertTrue(app.descendants(matching: .any)["debrid-code"].firstMatch.waitForExistence(timeout: 5))
+        wait("fernando · Premium", 20)
+        XCTAssertTrue(nextButton().isEnabled, "conectada: «Seguir»")
     }
 }

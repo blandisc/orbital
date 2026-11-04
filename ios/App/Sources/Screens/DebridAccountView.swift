@@ -275,11 +275,16 @@ struct DebridAccountView: View {
     }
 
     @ViewBuilder private func connect(_ model: DebridModel) -> some View {
+        // RC1: lo más fácil primero, con un código como Trakt; pegar la clave queda abajo.
+        Section {
+            DebridCodeConnect(debrid: model)
+        } header: { Text("Conectar") } footer: { Text("Escribes un código corto en real-debrid.com/device y listo, sin copiar ni pegar.") }
+        .listRowBackground(DS.surface)
         Section {
             DebridKeyField(debrid: model)
             Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
             DebridSharedOffer(debrid: model)   // CX2-A: junto a «Pega tu clave», nunca en su lugar
-        } header: { Text("Tu clave") } footer: { Self.keyFooter }
+        } header: { Text("O pega tu clave") } footer: { Self.keyFooter }
         .listRowBackground(DS.surface)
         DebridTVSection(debrid: model)   // K1: sin clave aquí, «Usar la de la TV»
     }
@@ -322,6 +327,8 @@ private struct DebridChangeKeyPage: View {
     var body: some View {
         let model = observer.model
         Form {
+            Section { DebridCodeConnect(debrid: model) } header: { Text("Con un código") }
+                .listRowBackground(DS.surface)
             Section {
                 DebridKeyField(debrid: model)
                 Link(destination: model.tokenURL) { Label("Sacar tu clave en real-debrid.com/apitoken", systemImage: "arrow.up.right") }
@@ -335,5 +342,6 @@ private struct DebridChangeKeyPage: View {
         .onAppear { model.token = "" }
         .sensoryFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }
         .onChange(of: model.check) { _, new in if case .ok = new { dismiss() } }
+        .onDisappear { model.cancelCode() }
     }
 }
