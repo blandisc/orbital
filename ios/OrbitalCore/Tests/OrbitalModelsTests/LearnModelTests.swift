@@ -15,9 +15,9 @@ final class LearnModelTests: XCTestCase {
         let learn = LearnModel(rig.services)
         let rings = learn.rings()
         XCTAssertEqual(rings.count, LearnModel.ringLimit)
-        XCTAssertEqual(rings.first?.id, "pay", "sin Real-Debrid, primero cómo pagarlo")
-        learn.markSeen("pay")
-        XCTAssertFalse(learn.rings().contains { $0.id == "pay" }, "lo visto se va")
+        XCTAssertEqual(rings.first?.id, "instant", "sin Real-Debrid, primero ver al instante")
+        learn.markSeen("instant")
+        XCTAssertFalse(learn.rings().contains { $0.id == "instant" }, "lo visto se va")
     }
 
     func testRingsLeaveInicioAfterTwoWeeksExceptWhenRealDebridExpired() throws {
@@ -27,8 +27,8 @@ final class LearnModelTests: XCTestCase {
         XCTAssertFalse(learn.rings().isEmpty)
         rig.clock.now = rig.clock.now.addingTimeInterval(15 * 86400)
         XCTAssertTrue(learn.rings().isEmpty, "a los 14 días viven solo en Ajustes")
-        learn.markSeen("pay")
-        XCTAssertEqual(learn.rings(debridExpired: true).map(\.id), ["pay"], "si venció, «Cómo pagar» vuelve sola")
+        learn.markSeen("instant")
+        XCTAssertEqual(learn.rings(debridExpired: true).map(\.id), ["instant"], "si venció, «Ver al instante» vuelve sola")
     }
 
     func testNoRingsOrCoachWhileTheGuideIsPending() throws {
@@ -71,8 +71,9 @@ final class LearnModelTests: XCTestCase {
 
     func testEveryStoryHasThreeToFiveCards() {
         for story in LearnContent.all {
-            XCTAssertTrue((2...5).contains(story.cards.count), story.id)
-            XCTAssertEqual(story.cards.first?.template, .cover, "\(story.id) empieza con su portada")
+            XCTAssertTrue((4...6).contains(story.cards.count), story.id)
+            XCTAssertEqual(story.cards.filter { $0.mark == .trick }.count, 1, "\(story.id): un truco")
+            XCTAssertEqual(Set(story.cards.map(\.seconds)).count > 1, true, "\(story.id): el ritmo cambia")
         }
         XCTAssertEqual(Set(LearnContent.all.map(\.id)).count, LearnContent.all.count)
     }

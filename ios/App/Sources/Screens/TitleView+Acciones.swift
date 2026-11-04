@@ -15,7 +15,7 @@ extension TitleView {
             if let cause = model.unavailableCause { tell(cause, model) }
             // Sin tu clave de Real-Debrid en la app casi no hay versiones que se vean aquí: la causa de la tabla común.
             // D1: la primera vez, en vez del aviso, la historia de Real-Debrid (termina en «Conectar Real-Debrid»).
-            else if !env.services.debrid.hasToken, !LearnModel(env.services).seen(LearnContent.debrid.id) { env.ui.openStory = LearnContent.debrid.id }
+            else if !env.services.debrid.hasToken, !LearnModel(env.services).seen(LearnContent.instant.id) { env.ui.openStory = LearnContent.instant.id }
             else if !env.services.debrid.hasToken { tell(.reconnectDebrid, model) }
             else { tell(.notInDebrid(language: model.recommendedLanguage ?? env.services.appSettings.audio), model) }
         case .offline:

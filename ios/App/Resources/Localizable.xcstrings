@@ -1,6 +1,897 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "4K · Latino · Por pedir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4K · Latin American · To request"
+          }
+        }
+      }
+    },
+    "Al terminar uno, baja el que sigue.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When one ends, the next one downloads."
+          }
+        }
+      }
+    },
+    "Arranca con el primero que haya.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It starts with the first one available."
+          }
+        }
+      }
+    },
+    "Arrastra para cambiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag to change"
+          }
+        }
+      }
+    },
+    "Años 90": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 90s"
+          }
+        }
+      }
+    },
+    "Bajando en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading in the cloud"
+          }
+        }
+      }
+    },
+    "Cada toque extra suma otros 10.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each extra tap adds another 10."
+          }
+        }
+      }
+    },
+    "Calidad, idioma y si ya está lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality, language and whether it's ready."
+          }
+        }
+      }
+    },
+    "Castellano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Castilian Spanish"
+          }
+        }
+      }
+    },
+    "Ciérralos para verla completa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch them to see it whole."
+          }
+        }
+      }
+    },
+    "Comedias de los 90, en Netflix, con más de 7.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "90s comedies, on Netflix, rated over 7."
+          }
+        }
+      }
+    },
+    "Descarga y sigue sin internet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download and keep watching offline."
+          }
+        }
+      }
+    },
+    "Desde cualquier ficha, un toque.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From any title page, one tap."
+          }
+        }
+      }
+    },
+    "Desde unos 3 €": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From about €3"
+          }
+        }
+      }
+    },
+    "Desliza el mazo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe the deck"
+          }
+        }
+      }
+    },
+    "Doble toque: 10 s": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double tap: 10 s"
+          }
+        }
+      }
+    },
+    "El control eres tú": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're the remote"
+          }
+        }
+      }
+    },
+    "El reproductor responde a tus dedos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The player responds to your fingers."
+          }
+        }
+      }
+    },
+    "El segundo abre la ficha.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The second one opens its page."
+          }
+        }
+      }
+    },
+    "El truco": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The trick"
+          }
+        }
+      }
+    },
+    "Empieza aquí, termina en otro aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start here, finish on another device."
+          }
+        }
+      }
+    },
+    "En Ajustes › Avisos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Settings › Alerts."
+          }
+        }
+      }
+    },
+    "En Inicio, el calendario.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On Home, the calendar."
+          }
+        }
+      }
+    },
+    "En tu idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your language"
+          }
+        }
+      }
+    },
+    "En «Más». Nada la toca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In “More”. Nothing touches it."
+          }
+        }
+      }
+    },
+    "Espacio en tu iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space on your iPhone"
+          }
+        }
+      }
+    },
+    "Gratis: lo visto, tu lista, dónde ibas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free: what you've seen, your list, where you were."
+          }
+        }
+      }
+    },
+    "Habla como tú": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speaks like you"
+          }
+        }
+      }
+    },
+    "Igual": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unchanged"
+          }
+        }
+      }
+    },
+    "Inglés": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        }
+      }
+    },
+    "La nube lo tiene": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud has it"
+          }
+        }
+      }
+    },
+    "Lista para ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to watch"
+          }
+        }
+      }
+    },
+    "Lo que ves y tu Wrapped.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch and your Wrapped."
+          }
+        }
+      }
+    },
+    "Maneja la TV y háblale.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control the TV and talk to it."
+          }
+        }
+      }
+    },
+    "Mantén presionado y súbelo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch and hold, then move it up."
+          }
+        }
+      }
+    },
+    "Más de 7": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over 7"
+          }
+        }
+      }
+    },
+    "Netflix": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netflix"
+          }
+        }
+      }
+    },
+    "No a un lado, sí al otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No one way, yes the other."
+          }
+        }
+      }
+    },
+    "No hay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not available"
+          }
+        }
+      }
+    },
+    "No perder el hilo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never lose the thread"
+          }
+        }
+      }
+    },
+    "Noviembre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "November"
+          }
+        }
+      }
+    },
+    "Orbital te propone, tú eliges.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital suggests, you choose."
+          }
+        }
+      }
+    },
+    "Ordenar tus idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Order your languages"
+          }
+        }
+      }
+    },
+    "Para el avión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the plane"
+          }
+        }
+      }
+    },
+    "Pasa al iPhone en el mismo minuto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moves to the iPhone at the same minute."
+          }
+        }
+      }
+    },
+    "Pellizca y llena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch to fill"
+          }
+        }
+      }
+    },
+    "Por 15 días, y no se renueva solo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For 15 days, and it doesn't renew on its own."
+          }
+        }
+      }
+    },
+    "Porque viste Coco": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Because you watched Coco"
+          }
+        }
+      }
+    },
+    "Porque viste Interestelar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Because you watched Interstellar"
+          }
+        }
+      }
+    },
+    "Pídela a la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request it to the cloud"
+          }
+        }
+      }
+    },
+    "Real-Debrid guarda el video; Orbital lo encuentra.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid keeps the video; Orbital finds it."
+          }
+        }
+      }
+    },
+    "Sale hoy: The Bear T4 · E1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out today: The Bear S4 · E1"
+          }
+        }
+      }
+    },
+    "Se ve desde la nube, no ocupa espacio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It plays from the cloud, it takes no space."
+          }
+        }
+      }
+    },
+    "Si dos la usan a la vez, se corta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If two use it at once, it cuts off."
+          }
+        }
+      }
+    },
+    "Sigue en el minuto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick up at the minute"
+          }
+        }
+      }
+    },
+    "Sigue una serie y te avisamos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow a show and we'll let you know."
+          }
+        }
+      }
+    },
+    "Sin botones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No buttons"
+          }
+        }
+      }
+    },
+    "Sin descargar, sin esperar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No downloading, no waiting."
+          }
+        }
+      }
+    },
+    "Te avisamos cuando esté.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll let you know when it's ready."
+          }
+        }
+      }
+    },
+    "Te quedan 3 días · Renovar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 days left · Renew"
+          }
+        }
+      }
+    },
+    "Toca y ya": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just tap"
+          }
+        }
+      }
+    },
+    "Trakt lo recuerda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt remembers"
+          }
+        }
+      }
+    },
+    "Tres carteles, cada uno con su porqué.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three posters, each with its why."
+          }
+        }
+      }
+    },
+    "Tu año, en números": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your year, in numbers"
+          }
+        }
+      }
+    },
+    "Tu iPhone, igual": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone, unchanged"
+          }
+        }
+      }
+    },
+    "Tu mes de estrenos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your month of releases"
+          }
+        }
+      }
+    },
+    "Tu orden manda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your order rules"
+          }
+        }
+      }
+    },
+    "Tú decides cuáles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You decide which ones"
+          }
+        }
+      }
+    },
+    "Un toque acerca": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One tap zooms in"
+          }
+        }
+      }
+    },
+    "Una cuenta, una persona": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One account, one person"
+          }
+        }
+      }
+    },
+    "Ver a tu manera": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch your way"
+          }
+        }
+      }
+    },
+    "Ver al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch instantly"
+          }
+        }
+      }
+    },
+    "%@ días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ days"
+          }
+        }
+      }
+    },
+    "horas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hours"
+          }
+        }
+      }
+    },
+    "«Pon la siguiente de The Bear»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Play the next one of The Bear”"
+          }
+        }
+      }
+    },
+    "«Pon la siguiente de The Bear».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Play the next one of The Bear”."
+          }
+        }
+      }
+    },
+    "«Ver» elige tu idioma y tu calidad.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Watch” picks your language and quality."
+          }
+        }
+      }
+    },
+    "¿No sabes qué ver?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't know what to watch?"
+          }
+        }
+      }
+    },
+    "Bloqueado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locked"
+          }
+        }
+      }
+    },
+    "Cada día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every day"
+          }
+        }
+      }
+    },
+    "Con tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your TV"
+          }
+        }
+      }
+    },
     "Ver la guía de bienvenida": {
       "extractionState": "manual",
       "localizations": {

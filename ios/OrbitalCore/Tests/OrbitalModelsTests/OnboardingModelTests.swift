@@ -82,9 +82,9 @@ final class OnboardingModelTests: XCTestCase {
         let rig = try ServicesRig(signedIn: false)
         OnboardingModel(rig.services).finish(explained: [.debrid])
         let learn = LearnModel(rig.services)
-        XCTAssertTrue(learn.seen("debrid"))
+        XCTAssertTrue(learn.seen("instant"))
         XCTAssertNotNil(rig.kv.data("learn.seen.debrid-flow"))
-        XCTAssertFalse(learn.seen("trakt"))
+        XCTAssertFalse(learn.seen("thread"))
     }
 
     func testAddonsCanBeReorderedAndSwitchedOff() async throws {

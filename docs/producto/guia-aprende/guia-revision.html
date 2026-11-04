@@ -1,0 +1,171 @@
+<title>Guía de bienvenida, revisión</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Una columna para el celular: diagnóstico, siete pantallas con su escena (tres animadas), qué se quita, cómo se construye y los avisos. */
+:root {
+  --bg: #0c0c0e; --card: #18181c; --raised: #2a2a30; --fg: #f5f4f0; --muted: #babac1; --voz: #5fd6c6; --ink: #070708; --amber: #f4c24d;
+  --sans: -apple-system, "SF Pro Text", system-ui, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.45; }
+main { max-width: 620px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; }
+h1 { margin: 0; font-size: 28px; line-height: 1.12; text-wrap: balance; }
+h2 { margin: 0; font-size: 20px; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.code { font-family: var(--mono); color: var(--voz); font-weight: 700; margin-right: 4px; }
+.box { background: var(--card); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+ul, ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.g { border-top: 1px solid var(--raised); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.g p { font-size: 14px; }
+.g .now { color: var(--muted); }
+.g .k { font-size: 12px; color: var(--muted); display: inline-block; min-width: 64px; }
+.g .say { color: var(--voz); }
+.demos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.demo { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
+.demo p { font-size: 12px; color: var(--muted); text-align: center; }
+.ph { width: 100%; max-width: 180px; aspect-ratio: 9 / 16; border-radius: 20px; background: var(--bg); border: 1px solid var(--raised); position: relative; overflow: hidden; }
+.ttl { position: absolute; left: 12px; right: 12px; top: 22px; font-size: 13px; font-weight: 700; }
+
+/* G2 · la órbita que se llena con lo que eliges. */
+.grid { position: absolute; left: 12px; right: 12px; top: 46px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.grid i { aspect-ratio: 2 / 3; border-radius: 5px; display: block; }
+.grid i:nth-child(2) { animation: pick 6s infinite; } .grid i:nth-child(4) { animation: pick 6s infinite 1s; } .grid i:nth-child(6) { animation: pick 6s infinite 2s; }
+@keyframes pick { 0%, 8% { transform: none } 12% { transform: scale(.92) rotateY(90deg) } 18%, 100% { transform: none; outline: 2px solid var(--fg) } }
+.orb { position: absolute; left: 50%; bottom: 22px; width: 90px; height: 30px; margin-left: -45px; border: 2px solid #3a3a44; border-radius: 50%; }
+.orb::before { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px; border-radius: 50%; border: 2px solid var(--fg); }
+.mini { position: absolute; width: 8px; height: 12px; border-radius: 2px; opacity: 0; }
+.m1 { background: #23405a; animation: fly1 6s infinite; } .m2 { background: #2a4d3b; animation: fly2 6s infinite 1s; } .m3 { background: #4d2a3a; animation: fly3 6s infinite 2s; }
+@keyframes fly1 { 0%, 12% { left: 50%; top: 60px; opacity: 0 } 16% { opacity: 1 } 30%, 100% { left: 30%; top: calc(100% - 42px); opacity: 1 } }
+@keyframes fly2 { 0%, 12% { left: 18%; top: 120px; opacity: 0 } 16% { opacity: 1 } 30%, 100% { left: 62%; top: calc(100% - 40px); opacity: 1 } }
+@keyframes fly3 { 0%, 12% { left: 80%; top: 120px; opacity: 0 } 16% { opacity: 1 } 30%, 100% { left: 46%; top: calc(100% - 30px); opacity: 1 } }
+.moon { position: absolute; right: 52px; bottom: 44px; width: 9px; height: 9px; border-radius: 50%; background: var(--voz); animation: moonin 6s infinite; }
+@keyframes moonin { 0%, 52% { transform: scale(0) } 58% { transform: scale(1.3) } 64%, 100% { transform: scale(1) } }
+.cnt { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 9px; color: var(--muted); }
+
+/* G3 · tres objetos que se encienden. */
+.objs { position: absolute; left: 10px; right: 10px; top: 70px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+.obj { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--muted); }
+.obj svg { width: 54px; height: 38px; }
+.cloud path { stroke: var(--fg); fill: transparent; animation: cfill 6s infinite; }
+@keyframes cfill { 0%, 20% { fill: transparent } 30%, 100% { fill: rgba(95,214,198,.45); stroke: var(--voz) } }
+.thread line { stroke: var(--voz); stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw 6s infinite 1.2s; }
+@keyframes draw { 0%, 15% { stroke-dashoffset: 40 } 35%, 100% { stroke-dashoffset: 0 } }
+.tvs rect.scr { fill: #111; animation: tvon 6s infinite 2.4s; }
+@keyframes tvon { 0%, 15% { fill: #111 } 25%, 100% { fill: #2f4a5a } }
+
+/* G7 · tu Inicio que se arma con lo que elegiste. */
+.home { position: absolute; left: 12px; right: 12px; top: 48px; display: flex; flex-direction: column; gap: 8px; }
+.home b { font-size: 9px; color: var(--voz); font-weight: 600; }
+.rowp { display: flex; gap: 5px; }
+.rowp i { width: 30%; aspect-ratio: 2 / 3; border-radius: 4px; display: block; animation: land 6s infinite; opacity: 0; }
+.rowp i:nth-child(2) { animation-delay: .07s } .rowp i:nth-child(3) { animation-delay: .14s }
+.r2 i { animation-delay: .5s !important; } .r2 i:nth-child(2) { animation-delay: .57s !important } .r2 i:nth-child(3) { animation-delay: .64s !important }
+@keyframes land { 0% { transform: translateY(-60px) scale(.6); opacity: 0 } 20% { transform: none; opacity: 1 } 90%, 100% { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important } .mini, .rowp i { opacity: 1 } }
+</style>
+
+<main>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <p class="muted">Orbital en el iPhone · 4 nov 2026 · la guía de bienvenida</p>
+    <h1>La guía, con escenas en lugar de formularios</h1>
+    <p class="muted">La misma revisión que se hizo con las historias, por un director de onboarding y animación. La bienvenida ya es una escena; desde la segunda pantalla la guía se vuelve una encuesta. La idea: que cada pantalla tenga una sola cosa viva que cuente lo que pasa, y que la luna sea el hilo que cruza de una a otra.</p>
+  </div>
+
+  <div class="box">
+    <h2>Lo que se siente plano hoy</h2>
+    <ul>
+      <li><b>¿Qué te gusta?</b> Elegir no produce nada: una palomita y «Llevas 1 de 3» en gris. Las plataformas son renglones de texto, aunque la app ya tiene sus logos.</li>
+      <li><b>¿Qué ya tienes?</b> Tres tarjetas iguales con hasta 8 botones: parece encuesta.</li>
+      <li><b>Ver aquí mismo.</b> Dos pantallas de lectura en una (tres pasos, tres renglones, tres pasos numerados y un campo).</li>
+      <li><b>Trakt y Tu TV.</b> Un código grande; un ícono de TV en un recuadro. No se ve qué ganas.</li>
+      <li><b>Listo.</b> Termina en una lista de «Conectado / Después, en Ajustes»: un resumen administrativo.</li>
+      <li><b>El hilo.</b> La luna solo avanza en el arco de arriba; nunca baja a la escena.</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h2>Tres escenas, en vivo</h2>
+    <div class="demos">
+      <div class="demo">
+        <div class="ph" role="img" aria-label="Al elegir pósters, una copia vuela a la órbita de un planeta; al tercero, llega la luna">
+          <div class="ttl">¿Qué te gusta?</div>
+          <div class="grid"><i style="background:#5a3a2a"></i><i style="background:#23405a"></i><i style="background:#3d2a55"></i><i style="background:#2a4d3b"></i><i style="background:#55402a"></i><i style="background:#4d2a3a"></i></div>
+          <div class="orb"></div><i class="mini m1"></i><i class="mini m2"></i><i class="mini m3"></i><i class="moon"></i>
+          <div class="cnt">3 en tu órbita</div>
+        </div>
+        <p><b>G2</b> lo que eliges entra en tu órbita</p>
+      </div>
+      <div class="demo">
+        <div class="ph" role="img" aria-label="Tres objetos de línea: la nube se llena, el hilo entre aparatos se dibuja, la TV prende">
+          <div class="ttl">¿Qué ya tienes?</div>
+          <div class="objs">
+            <div class="obj"><svg class="cloud" viewBox="0 0 54 38" aria-hidden="true"><path d="M14 32h26a9 9 0 0 0 0-18 13 13 0 0 0-25 3 8 8 0 0 0-1 15z" stroke-width="2"></path></svg>Real-Debrid</div>
+            <div class="obj"><svg class="thread" viewBox="0 0 54 38" aria-hidden="true"><rect x="4" y="8" width="12" height="22" rx="3" fill="none" stroke="#f5f4f0" stroke-width="2"></rect><rect x="38" y="10" width="13" height="18" rx="2" fill="none" stroke="#f5f4f0" stroke-width="2"></rect><line x1="16" y1="19" x2="38" y2="19" stroke-width="2"></line></svg>Trakt</div>
+            <div class="obj"><svg class="tvs" viewBox="0 0 54 38" aria-hidden="true"><rect class="scr" x="5" y="4" width="44" height="26" rx="3" stroke="#f5f4f0" stroke-width="2"></rect><line x1="20" y1="35" x2="34" y2="35" stroke="#f5f4f0" stroke-width="2"></line></svg>Tu TV</div>
+          </div>
+        </div>
+        <p><b>G3</b> un toque enciende lo que tienes</p>
+      </div>
+      <div class="demo">
+        <div class="ph" role="img" aria-label="Tus pósters bajan y arman tu Inicio en miniatura, con sus dos filas">
+          <div class="ttl">Tu Orbital ya está lista</div>
+          <div class="home">
+            <b>Porque te gustó Dune</b><div class="rowp"><i style="background:#5a3a2a"></i><i style="background:#23405a"></i><i style="background:#3d2a55"></i></div>
+            <b>Nuevo en Netflix</b><div class="rowp r2"><i style="background:#2a4d3b"></i><i style="background:#55402a"></i><i style="background:#4d2a3a"></i></div>
+          </div>
+        </div>
+        <p><b>G7</b> tus pósters arman tu Inicio</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <h2>Pantalla por pantalla</h2>
+    <p class="muted">Una sola cosa viva por pantalla. Al tocar «Seguir», la luna sale del botón, viaja al arco y cae en la escena siguiente, donde se vuelve la protagonista.</p>
+    <div class="g"><p><span class="code">G1</span><b>Bienvenida</b> · se queda.</p><p><span class="k">Nuevo</span>Al salir, los siete pósters de la órbita se desenrollan y caen en su lugar de la cuadrícula de G2: la segunda pantalla nace de la primera.</p><p class="say">«Todo lo que quieres ver, aquí.»</p></div>
+    <div class="g"><p><span class="code">G2</span><b>¿Qué te gusta?</b></p><p class="now"><span class="k">Hoy</span>Palomita, borde y «Llevas 1 de 3»; plataformas en renglones de texto.</p><p><span class="k">Propuesta</span>Al tocar un póster se voltea y una copia vuela a la órbita de un planeta chico abajo; con tres, el anillo se cierra y llega la luna (vibración firme). Las plataformas, con sus logos reales en gris que se encienden a color.</p><p class="say">«¿Qué te gusta?» · «3 en tu órbita»</p></div>
+    <div class="g"><p><span class="code">G3</span><b>¿Qué ya tienes?</b></p><p class="now"><span class="k">Hoy</span>Tres tarjetas y hasta 8 botones.</p><p><span class="k">Propuesta</span>Tres objetos de línea: una nube, dos aparatos unidos por un hilo y una TV. Un toque los enciende (la nube se llena, el hilo se dibuja, la TV prende). Lo ya conectado sale encendido con la luna encima. Mantener presionado explica qué es.</p><p class="say">«¿Qué ya tienes?» · «Seguir»</p></div>
+    <div class="g"><p><span class="code">G4</span><b>Ver aquí mismo</b></p><p class="now"><span class="k">Hoy</span>Dos pantallas de lectura y un campo de texto.</p><p><span class="k">Propuesta</span>Una escena viva: la ficha, el dedo toca «Ver», el póster sube a la nube y de ella baja el video, que arranca. Abajo, una línea: «Unos 3 € cada 15 días · una cuenta por persona». Un solo botón, «Abrir Real-Debrid y copiar clave»; al volver, se ofrece pegarla con un toque y la clave vuela a la nube.</p><p class="say">«Ve todo al instante, aquí.»</p></div>
+    <div class="g"><p><span class="code">G5</span><b>Trakt</b></p><p class="now"><span class="k">Hoy</span>Un código grande y «Esperando a que lo apruebes…».</p><p><span class="k">Propuesta</span>Un iPhone y un iPad: del iPhone sale «T2 · E5 · 32 min» y viaja en arco al iPad; el código va entre los dos. Al aprobar, «128 vistos» sube con los números.</p><p class="say">«Sigue donde te quedaste.»</p></div>
+    <div class="g"><p><span class="code">G6</span><b>Tu TV</b></p><p class="now"><span class="k">Hoy</span>Un ícono de TV en un recuadro.</p><p><span class="k">Propuesta</span>El iPhone se inclina y lanza un póster que vuela a la TV, que lo recibe con un brillo. Solo si dijiste que la tienes.</p><p class="say">«Tu iPhone, control de tu TV.»</p></div>
+    <div class="g"><p><span class="code">G7</span><b>Listo</b></p><p class="now"><span class="k">Hoy</span>Pósters en fila y una lista de piezas.</p><p><span class="k">Propuesta</span>Tus pósters salen de la órbita y arman un Inicio en miniatura de verdad («Porque te gustó…», «Nuevo en tus plataformas»); luego ese Inicio crece a pantalla completa y se vuelve el real. La luna sube al primer círculo de Aprende.</p><p class="say">«Tu Orbital ya está lista.» · «Ir a Inicio»</p></div>
+  </div>
+
+  <div class="box">
+    <h2>Más corta</h2>
+    <ul>
+      <li><span class="code">Q1</span>Sin «¿Qué es?» y «Después» como botones en G3: lo que no tienes, no se marca.</li>
+      <li><span class="code">Q2</span>En G4, precio, cuenta y espacio en una sola línea; el detalle vive en la historia «Ver al instante».</li>
+      <li><span class="code">Q3</span>Si tienes Trakt y TV, G5 y G6 en una sola escena de «tus aparatos».</li>
+      <li><span class="code">Q4</span>Sin el resumen de piezas en G7.</li>
+    </ul>
+    <p class="muted">Queda en 4 pasos en Orbital, 5 en Plus y 5 o 6 en tu Ultra.</p>
+  </div>
+
+  <div class="box">
+    <h2>Cómo se construye</h2>
+    <ul>
+      <li><span class="code">E1</span>La luna que viaja entre pantallas, G2 con la órbita y los logos, y G7 con tu Inicio en miniatura (lo de más impacto).</li>
+      <li><span class="code">E2</span>G3 con los tres objetos y G4 con la escena de la nube y la clave en un toque.</li>
+      <li><span class="code">E3</span>G5 y G6 con los aparatos animados, Q3, y Real-Debrid con código cuando lo pruebes con tu cuenta.</li>
+    </ul>
+    <p class="muted">Cuidados: una sola cosa en bucle por pantalla; en el iPhone SE las escenas se encogen; con «Reducir movimiento», cada escena en su cuadro final; VoiceOver lee una frase por escena («3 en tu órbita», «Real-Debrid, lo tengo»).</p>
+  </div>
+
+  <div class="box">
+    <h2>Y los avisos dentro de la app, cómo quedaron</h2>
+    <ul>
+      <li><b>Dónde salen:</b> con foco (oscurece todo menos el botón) en «Ver» de la ficha y en los cuadros de la búsqueda avanzada; aviso chico en Explorar y en Biblioteca.</li>
+      <li><b>Cuándo:</b> solo a quien hizo la guía nueva, nunca el mismo día de la guía, uno por vez que abres la app y nunca si ya usaste esa función. «Saltar avisos» los apaga; Ajustes › Aprende Orbital › «Volver a ver los avisos» los reinicia.</li>
+      <li><b>Cómo se ven:</b> el anillo turquesa se dibuja una vez alrededor del botón y no late; la burbuja dice qué hace, «Ver la historia» abre la historia de esa función y «Entendido» cierra.</li>
+      <li><b>Lo que les falta</b> (mi revisión): el del reproductor (en pausa, con los gestos) no está; y con las historias nuevas, sus botones «Ver la historia» ya llevan a la nueva («Ver a tu manera», «Encontrar qué ver»). Propongo <span class="code">A1</span>: agregar el del reproductor y que la burbuja tenga la misma miniatura con dedo fantasma que las historias, en chico.</li>
+    </ul>
+    <p class="muted">Como tienes Real-Debrid y Trakt, no los has visto: para verlos, recorre la guía desde Ajustes y vuelve a abrir la app.</p>
+  </div>
+
+  <div class="box">
+    <p style="color: var(--voz)">Mi recomendación: todo sí, en el orden E1, E2, E3, más A1.</p>
+    <p class="muted">Para dictar: «todo sí», o un código con lo que quieras cambiar («G3: deja los botones», «sin Q3»).</p>
+  </div>
+</main>
