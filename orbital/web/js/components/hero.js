@@ -72,7 +72,8 @@ export function createHero({ onAction, onKind = null }) {
     const collectionIcon = item.source === "collection" ? (item.collection?.type === "award" ? "trophy" : "list") : null;
     // El porqué de un título (N.º 1 en Netflix, Nuevo en tus plataformas, Porque viste…) va en turquesa, como el iPhone; lo que
     // solo dice qué es (un premio, una plataforma, «Serie · T8 E23») se queda tenue.
-    eyebrow.classList.toggle("hero__eyebrow--reason", !!extra.eyebrow && item.source !== "collection");
+    // PT22: la fila de la nube no es un porqué (es lo tuyo): su nombre va en blanco, no en turquesa.
+    eyebrow.classList.toggle("hero__eyebrow--reason", !!extra.eyebrow && item.source !== "collection" && item.category !== "cloud");
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
       : collectionIcon ? svg(ICONS[collectionIcon]) : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
       h("span", {}, above));
@@ -99,7 +100,8 @@ export function createHero({ onAction, onKind = null }) {
     const watchable = isWatchable(item);
     const said = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
     const left = said && !above.includes(said) ? said : null;
-    const list = item.source === "cinemeta" ? [
+    const list = item.category === "cloud" ? [h("span", {}, item.subtitle || "")] // PT22: «Bajando en la nube · 42 % · Lo acabas de pedir aquí»
+      : item.source === "cinemeta" ? [
       extra.year, extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "), runtime(extra.runtime),
     ].filter(Boolean).map((text) => h("span", {}, text)) : item.source === "stremio" ? [
       left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "),

@@ -23,6 +23,7 @@
 .sheet__item--focused .sheet__icon.sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
 /* Los tres pasos de un pedido: se enciende uno cada 1,6 s (los encendidos a 1, los demás a 0,92) y su símbolo brinca. Solo
    mientras la hoja está abierta; con «Reducir movimiento», quietos y encendidos (base.css deja cada animación en su final). */
+.sheet__meter { padding: 0 var(--space-2) var(--space-6); margin-top: calc(-1 * var(--space-3)); } /* PT9: la barra del pedido, bajo su texto */
 .sheet__steps { display: flex; align-items: flex-start; justify-content: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-6); }
 .sheet__step { display: grid; justify-items: center; gap: var(--space-2); width: 7.5rem; text-align: center; transform-origin: 50% 40%; }
 .sheet__step-tile { display: grid; place-items: center; width: var(--explain-step); height: var(--explain-step); border-radius: var(--radius-lg);
@@ -69,6 +70,7 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 .sheet__item:hover { background: var(--color-glass); }
+.sheet__item--info, .sheet__item--info:hover { background: transparent; cursor: default; } /* PT12: solo informa, no se marca */
 /* Ícono en su casilla redondeada (se lee como un botón de consola, no como un dibujo suelto). */
 .sheet__icon {
   display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: var(--radius-md);

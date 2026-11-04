@@ -372,7 +372,7 @@ test("cuentas: el iPhone dice «Conectado» solo si la app habló hace un moment
   const recent = phoneRow(now / 1000 - 2 * 3600, now, now / 1000 - 2 * 3600);
   assert.equal(recent.value, "Conectar");
   assert.ok(!recent.ok);
-  assert.equal(recent.hint, "Lo usaste hace 2 h");
+  assert.equal(recent.hint, "Lo usaste hace 2 horas");
   assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
   assert.equal(phoneRow(now / 1000 - 90 * 86400, now).hint, "Con un código QR"); // hace meses: como si no
 });
@@ -392,7 +392,7 @@ test("cuentas: un renglón por iPhone o iPad (la app dice quién es), y «Conect
   assert.deepEqual(rows.map((r) => r.label), ["iPad", "iPhone de Fernando", "Conectar un aparato"]);
   assert.equal(rows[0].value, "✓ Conectado"); // el iPad está abierto
   assert.equal(rows[1].value, "Conectar"); // el iPhone, no: ya no dice «Conectado» por el iPad
-  assert.equal(rows[1].hint, "Lo usaste hace 3 h");
+  assert.equal(rows[1].hint, "Lo usaste hace 3 horas");
   assert.equal(rows[2].command.type, "phone-link");
 });
 
@@ -408,7 +408,7 @@ test("cuentas: los emparejados con su llave (K1-A) abren su hoja, y «Quitar» p
   const rows = all.slice(1);
   assert.deepEqual(rows.map((r) => r.label), ["iPhone de Fernando", "iPad", "Conectar un aparato"]); // los de antes ya no entran
   assert.equal(rows[0].value, "✓ Conectado");
-  assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 h"]); // emparejado: nunca «Conectar»
+  assert.deepEqual([rows[1].value, rows[1].hint], ["", "Lo usaste hace 2 horas"]); // emparejado: nunca «Conectar»
   assert.deepEqual(rows[0].command, { type: "device-menu", id: "a1" });
   const sheet = deviceMenu({ device_id: "a1", name: "iPhone de Fernando", platform: "iphone" });
   assert.deepEqual(sheet.options.map((o) => o.label), ["Cancelar", "Quitar"]);
@@ -678,7 +678,14 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   const account = debridAccountMenu({ linked: true, user: "fer", ends_with: "3F2A", source: "torrentio", expires: in18, days: 18,
     requests: [{ hash: "a", state: "downloading", percent: 42 }] });
   assert.equal(account.subtitle, "Conectada como fer · Tomada de tu Torrentio · termina en ••3F2A"); // de dónde salió la clave
-  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined]]);
+  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined], ["¿Qué es esto?", undefined]]);
+  assert.deepEqual(account.options.at(-1).command, { type: "explain", topic: "realdebrid" }); // PT13: los cuatro puntos
+  // PT14: vencida, el aviso primero y con su fecha; nunca «Conectada».
+  const ago = Date.UTC(2026, 10, 2, 18) / 1000;
+  const expired = debridAccountMenu({ linked: true, user: "fer", ends_with: "3F2A", source: "torrentio", expires: ago, problem: "expired" });
+  assert.equal(expired.options[0].label, "Tu Real-Debrid venció");
+  assert.match(expired.options[0].hint, /^Venció el 2 nov · /);
+  assert.ok(!/Conectada/.test(expired.subtitle));
   const list = debridRequestsMenu([
     { hash: "a", title: "Nocturne · T1 E1", state: "downloading", percent: 42, by: "TV" },
     { hash: "b", title: "Severance · T2 E1", state: "no_peers", by: "iPhone de Fernando" },
@@ -694,7 +701,7 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     video_ids: ["tt1:1:1"] }, { account: "7" });
   assert.equal(one.subtitle, "Muchas descargas activas · Lo pediste aquí");
   // P2-B: «Probar otra versión», «Abrir la ficha» y «Cancelar pedido»
-  assert.deepEqual(one.options.map((o) => o.label), ["Abrir la ficha", "Cancelar pedido", "Seguir esperando"]); // muchas descargas: otra versión no ayuda
+  assert.deepEqual(one.options.map((o) => o.label), ["Abrir la ficha", "Cancelar pedido", "¿Qué es esto?", "Seguir esperando"]); // muchas descargas: otra versión no ayuda
   assert.deepEqual(one.options[1].command, { type: "rd-cancel-ask", hash: "a", title: "Nocturne · T1 E1" });
   const stuck = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "downloading", kind: "series", meta_id: "tt1", video_ids: ["tt1:1:1"],
     progress_at: 1000 }, { now: (1000 + 86400) * 1000 });
@@ -780,7 +787,7 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
   assert.ok(!labels.includes("Volver a los de Stremio") && !labels.includes("Traídos de tu Stremio") && !labels.includes("De dónde salen"));
   // TV-4: lo que ya terminó se ve, y quitarlo de Real-Debrid lo dice.
   const ready = debridRequestMenu({ hash: "h", state: "ready", title: "Midsommar", meta_id: "tt1", kind: "movie", by: "TV" });
-  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "Cancelar"]);
+  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Cancelar"]);
   assert.equal(debridCancelMenu(ready.options[2].command).title, "¿Quitarlo de tu Real-Debrid?");
   // TV-5: los emparejados cuentan como iPhone (antes Resumen decía «Sin iPhone»).
   assert.ok(hasPhone({ paired_devices: [{ device_id: "a" }] }));
@@ -790,9 +797,13 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
 test("AU1-A y AU2-A (Fernando, 3 nov): «¿Qué es esto?» con los textos del iPhone, y «Sin iPhone» deja de avisar con Real-Debrid", async () => {
   const { explainerMenu, settingsMissing } = await import("../../orbital/web/js/core/menus.js");
   assert.deepEqual(explainerMenu("requests").options.map((o) => o.label),
-    ["Tus complementos buscan dónde verlo", "Real-Debrid es la nube", "Pedir a la nube es que lo baje por ti", "Te avisamos cuando esté"]);
+    ["Tus complementos buscan dónde verlo", "Real-Debrid es la nube", "Pedir a la nube es que lo baje por ti", "Te avisamos cuando esté", "Entendido"]);
   assert.equal(explainerMenu("torrentio").options[0].hint.slice(0, 40), "Cuando eliges un título, revisa sitios d");
-  assert.ok(explainerMenu("addons").options.every((o) => o.command.type === "stay")); // solo se leen
+  // PT12 (4 nov): las ideas solo se leen y el foco se las salta; lo único que se marca es «Entendido».
+  const addons = explainerMenu("addons").options;
+  assert.ok(addons.slice(0, -1).every((o) => o.info && !o.command));
+  assert.deepEqual(addons.at(-1), { icon: "check", label: "Entendido", command: { type: "back" } });
+  assert.match(explainerMenu("torrentio").options[1].hint, /«por pedir»/); // PT13: nunca «por bajar»
   assert.ok(settingsMissing({}).some((m) => m.label === "Sin iPhone"));
   assert.ok(!settingsMissing({ realdebrid: { linked: true } }).some((m) => m.label === "Sin iPhone"));
 });
@@ -854,4 +865,22 @@ test("RX2-A y RX3-A (Fernando, 3 nov): la hoja de un pedido dice cuánto falta, 
   assert.deepEqual(flow.steps.map((s) => s.label), ["Tú lo pides", "La nube lo baja", "Arranca al instante"]);
   assert.deepEqual(flow.options.map((o) => o.label), ["No ocupa espacio en la TV.", "Entendido"]);
   assert.equal(requestLabel({ state: "downloading", percent: 42 }), "Bajando en la nube · 42 %");
+});
+
+test("PT9 (Fernando, 4 nov): la hoja del pedido trae su barra, cuánto falta, quién y cuándo, y «¿Qué es esto?»", () => {
+  const now = Date.UTC(2026, 10, 4, 12);
+  const sheet = debridRequestMenu({ hash: "a", title: "Interstellar", state: "downloading", percent: 42, by: "TV", since: now / 1000 - 1800,
+    kind: "movie", meta_id: "tt0816692" }, { now });
+  assert.equal(sheet.meter, 0.42);
+  assert.match(sheet.subtitle, /^Bajando en la nube · 42 % · Lo pediste aquí hace 30 min\. A este paso, falta menos de una hora\./);
+  assert.ok(sheet.options.some((o) => o.label === "¿Qué es esto?"));
+  assert.equal(debridRequestMenu({ hash: "a", state: "queued" }).meter, null); // en cola no hay barra
+});
+
+test("PT17 y PT18 (Fernando, 4 nov): Torrentio enseña tus idiomas y Tus idiomas lleva banderas («Idioma original» sin bandera)", async () => {
+  const { torrentioMenu, languagesMenu } = await import("../../orbital/web/js/core/menus.js");
+  const row = torrentioMenu({ options: {} }, ["es-419", "original", "en", "es-ES"]).options.find((o) => o.label === "Se usan tus idiomas");
+  assert.equal(row.hint, "Latino, Idioma original, Inglés, Castellano");
+  assert.deepEqual(languagesMenu(["es-419", "original", "en"]).options.slice(0, 3).map((o) => o.mark || o.icon),
+    ["img/flags/mx.svg", "captions", "img/flags/us.svg"]);
 });

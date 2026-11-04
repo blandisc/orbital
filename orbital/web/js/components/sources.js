@@ -40,6 +40,8 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   let fromHere = false; // «Desde aquí»: la serie sigue con el idioma de la versión que elijas
   let found = [];
   let rows = []; // versionRows(found): [{ code, name, role, options: [{ res, source, proof, all }] }]
+  let groups = { now: [], ask: [] }; // las filas de cada grupo (Al instante / Hay que pedirlas), antes de esconder «Más idiomas»
+  let opened = { now: false, ask: false }; // PT-V: «Más idiomas» abierto en ese grupo
   let at = { row: 0, col: 0 };
   let cells = []; // los botones, rows × options
   let cell = null; // X: la fila y calidad abiertas (todas las de ahí); null = las filas
@@ -57,8 +59,11 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   const askState = (src) => {
     const known = asked(src);
     // RX2-A: lo ya pedido dice cómo va («Bajando · 42 %»), no «Por pedir».
-    if (known?.state === "downloading") return [`Bajando · ${Math.round(known.percent || 0)} %`, "warn"];
-    return known ? [requestLabel(known), known.state === "ready" ? "good" : "warn"] : ["↓ Por pedir", "warn"];
+    // PT4 (Fernando, 4 nov): ámbar solo para lo que necesita tu atención; pedir, en cola o bajando van en gris.
+    // PT11: «Bajando en la nube · 42 %» en todos lados.
+    if (known?.state === "downloading") return [`Bajando en la nube · ${Math.round(known.percent || 0)} %`, null];
+    if (known) return [requestLabel(known), known.state === "ready" ? "good" : ["refused", "no_peers", "too_many"].includes(known.state) ? "warn" : null];
+    return ["↓ Por pedir", null];
   };
   const isAsk = (r) => !!rows[r]?.ask;
 
@@ -66,7 +71,41 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   // La recomendada es la que pone «Ver» (con «Continuar», la de antes); si el servidor no lo dice, la primera.
   const best = () => found.find((s) => s.id === recommended) || found[0];
 
+  /** PT-V (Fernando, 4 nov): tus idiomas arriba y, en cada grupo, una fila «Más idiomas» que abre el resto (como el iPhone).
+   *  Si un grupo no trae nada de tus idiomas, o la recomendada está en lo demás, se ven todas. */
+  function compose() {
+    const out = [];
+    for (const g of ["now", "ask"]) {
+      const list = groups[g].map((row) => (g === "ask" ? { ...row, ask: true } : row));
+      const main = list.filter((row) => !row.more), extra = list.filter((row) => row.more);
+      const all = opened[g] || !main.length || extra.length < 2 || extra.some((row) => row.options.some((o) => o.source === best()));
+      out.push(...(all ? list : main));
+      if (!all) out.push({ code: "more", name: "Más idiomas", role: `${extra.length} idiomas`, ask: g === "ask", moreOf: g,
+        names: extra.map((row) => row.name), options: [{ res: "Más idiomas", more: true, source: null, all: [] }] });
+    }
+    return out;
+  }
+
+  /** A en «Más idiomas»: se abren los de ese grupo y el foco va al primero que apareció. */
+  function openMore(r) {
+    const g = rows[r]?.moreOf;
+    if (!g) return;
+    opened[g] = true;
+    rows = compose();
+    at = { row: Math.min(r, rows.length - 1), col: 0 };
+    renderRows();
+    cells[at.row]?.[at.col]?.scrollIntoView({ block: "nearest", behavior: motion() });
+    onChange?.();
+  }
+
   function option(opt, r, c) {
+    if (opt.more) {
+      return h("button", { class: ["version", "version--more", r === at.row && c === at.col && "version--focused"], type: "button",
+        "aria-label": `Más idiomas: ${rows[r].names.join(", ")}`,
+        onClick: () => (r === at.row && c === at.col ? openMore(r) : focus({ row: r, col: c })) },
+      h("span", { class: "version__res" }, "Ver los demás"),
+      h("span", { class: "version__facts" }, rows[r].names.slice(0, 3).join(", ") + (rows[r].names.length > 3 ? "…" : "")));
+    }
     const [label, tone] = rows[r].ask ? askState(opt.source) : state(opt.source);
     const button = h("button", {
       class: ["version", r === at.row && c === at.col && "version--focused"], type: "button",
@@ -90,7 +129,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       h("span", { class: "versions__ask-hint" }, DEBRID_CLOUD)),
     h("div", { class: "versions__row", role: "group", "aria-label": row.name },
       h("div", { class: "versions__lang" },
-        h("span", { class: "versions__name" }, Flag(row.code), row.name),
+        h("span", { class: "versions__name" }, row.moreOf ? null : Flag(row.code), row.name),
         (row.role || row.options.every((o) => o.proof === "maybe")) &&
           h("span", { class: "versions__role" }, row.role || "Tal vez")),
       h("div", { class: "versions__options" }, cells[r]))].filter(Boolean)));
@@ -104,6 +143,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   function describe() {
     const opt = rows[at.row]?.options[at.col];
     if (!opt) return mount(why);
+    if (opt.more) return mount(why, h("span", { class: "sources__why-langs" }, rows[at.row].names.join(", ")));
     const src = opt.source;
     const more = opt.all.length > 1 ? `X: las ${opt.all.length} de aquí` : "";
     mount(why,
@@ -214,8 +254,9 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
       const prefs = { audio: data.audio, spanish: data.spanish, plan: data.plan || [], recommended: data.recommended?.id }; // su SD nunca se esconde
       const later = (s) => s.debrid && !s.cached && !isOwnSource(s); // Real-Debrid aún no la tiene: se pide
-      rows = [...versionRows(found.filter((s) => !later(s)), prefs),
-        ...versionRows(found.filter(later), prefs).map((row) => ({ ...row, ask: true }))];
+      groups = { now: versionRows(found.filter((s) => !later(s)), prefs), ask: versionRows(found.filter(later), prefs) };
+      opened = { now: false, ask: false };
+      rows = compose();
       at = versionStart(rows, best());
       start = { ...at };
       subtitle.textContent = rows.some((row) => row.ask)
@@ -266,13 +307,14 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       renderScope();
       onChange?.(); // el pie: «Solo este episodio» / «Desde aquí»
     } else if (["up", "down", "left", "right"].includes(action) && rows.length) focus(versionStep(rows, at, action));
-    else if (action === "alt" && rows[at.row]?.options[at.col]) {
+    else if (action === "alt" && rows[at.row]?.options[at.col]?.all.length) {
       cell = { ...at };
       index = 0;
       renderCell();
       onChange?.(); // el pie: «Volver a los idiomas»
     } else if (action === "select") {
       if (failed && request) open(request); // sin fuentes o con error: A reintenta
+      else if (rows[at.row]?.moreOf) openMore(at.row);
       else act(rows[at.row]?.options[at.col]?.source, isAsk(at.row));
     }
     return true;
@@ -280,7 +322,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
 
   /** Pistas del pie mientras el panel está abierto. */
   const hints = (g) => {
-    const verb = (r, src) => (!isAsk(r) ? "Ver con esta" : asked(src) ? "Ver su pedido" : "Pedir a la nube");
+    const verb = (r, src) => (rows[r]?.moreOf ? "Ver más idiomas" : !isAsk(r) ? "Ver con esta" : asked(src) ? "Ver su pedido" : "Pedir a la nube");
     if (cell) {
       return [{ glyph: g.select, label: verb(cell.row, items[index]) }, items.length > 1 && { glyph: g.rows, label: "Otra" },
         { glyph: g.back, label: "Volver a los idiomas", end: true }].filter(Boolean);

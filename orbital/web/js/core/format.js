@@ -28,6 +28,16 @@ export function shortAgo(ts, now = Date.now()) {
   return new Date(ts * 1000).toLocaleDateString("es", { day: "numeric", month: "short" });
 }
 
+/** PT20 (Fernando, 4 nov): en una frase («Lo usaste hace 3 horas»), como el iPhone: horas y días completos; «min» se
+ *  queda. Las tarjetas siguen con la corta (shortAgo: «3 h»). */
+export function sentenceAgo(ts, now = Date.now()) {
+  const short = shortAgo(ts, now);
+  const m = /^(\d+) (h|d)$/.exec(short || "");
+  if (!m) return short;
+  const n = Number(m[1]);
+  return m[2] === "h" ? `${n} ${n === 1 ? "hora" : "horas"}` : `${n} ${n === 1 ? "día" : "días"}`;
+}
+
 export const percent = (fraction) => (fraction >= .005 ? `${Math.round(fraction * 100)} %` : null); // "0 %" no dice nada
 
 /** Lo que dura una película o un episodio como lo dice Orbital: «169 min» (Cinemeta) → «2 h 49 min». */

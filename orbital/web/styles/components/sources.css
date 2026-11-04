@@ -82,6 +82,7 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .version:hover { background: var(--color-glass-hover); }
+.version--more { grid-column: span 2; } /* PT-V: «Más idiomas», un poco más ancha: los nombres que guarda */
 .version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
 .version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }

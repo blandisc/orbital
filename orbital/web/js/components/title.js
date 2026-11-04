@@ -50,6 +50,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   const progress = h("div", { class: "title__progress", hidden: true }, progressBar, progressLabel);
   const actions = h("div", { class: "title__actions", role: "toolbar" });
   const status = h("div", { class: "title__status", role: "status" });
+  // PT2–PT4 (Fernando, 4 nov): lo de la nube, en un renglón corto debajo de los botones, como el iPhone: «Todavía no está
+  // en la nube» o «Bajando en la nube · 42 %» con su barra, en gris; ámbar solo si algo necesita tu atención.
+  const cloudText = h("span", { class: "title__cloud-text" });
+  const cloudBar = h("span", { class: "title__cloud-bar" });
+  const cloud = h("div", { class: "title__cloud", role: "status", hidden: true }, cloudBar, cloudText);
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
   tabs.addEventListener("scroll", () => markTabEdges(), { passive: true });
   const list = h("div", { class: "title__episodes", role: "group" });
@@ -84,7 +89,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   // tuya; la sinopsis y quién la hizo; lo disponible y dónde ibas; y los botones.
   const el = h("section", { class: ["screen", "title"], hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, meta, episodeHead, description, readMore, credits, avail, progress, actions, status),
+    h("div", { class: "title__info" }, logo, name, meta, episodeHead, description, readMore, credits, avail, progress, actions, cloud, status),
     browser, more);
 
   let item = null;
@@ -162,8 +167,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
     // Sin «★ 8.1»: la de IMDb va en su renglón, con TMDB y Trakt (como el iPhone).
     const kindName = (info.kind || item?.kind) === "series" ? "Serie" : (info.kind || item?.kind) === "movie" ? "Película" : null;
-    mount(facts, [kindName, extras?.certification, info.year, genres(info.genres || []).slice(0, 2).join(", "), length]
-      .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
+    // PT1 (Fernando, 4 nov): el orden del iPhone, año · tipo · género · duración, y la clasificación al final en su cajita.
+    const parts = [info.year, kindName, genres(info.genres || []).slice(0, 2).join(", "), length].filter(Boolean)
+      .map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t));
+    if (extras?.certification) parts.push(h("span", { class: ["title__fact", "title__fact--cert"] }, h("span", { class: "title__cert", "aria-label": `Clasificación ${extras.certification}` }, extras.certification)));
+    mount(facts, parts);
     requestAnimationFrame(() => {
       let top = null;
       for (const fact of facts.children) {
@@ -681,6 +689,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       details = null;
       avail.hidden = true; // las de la ficha anterior no se quedan
       mount(avail);
+      cloud.hidden = true;
       status.textContent = "Cargando…";
       status.classList.remove("title__status--error");
       status.hidden = false;
@@ -748,6 +757,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
    */
   async function prefetch(mine) {
     avail.hidden = true;
+    cloud.hidden = true;
     plays = null;
     instead = null;
     ask = null;
@@ -804,8 +814,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       return;
     }
     ask = why;
-    mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, `${why.message} · ${why.detail}`));
-    avail.hidden = false;
+    showCloud(why);
     renderActions();
     onChange();
     if (why.why === "requested") askTimer = setTimeout(() => mine === token && explain(mine, t), 20_000); // cuánto lleva
@@ -821,16 +830,32 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
         hash: ask.offer?.hash });
       if (mine !== token) return;
       ask = res.availability;
-      mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, `${ask.message} · ${ask.detail}`));
-      avail.hidden = false;
+      showCloud(ask);
       renderActions();
       onChange();
       if (ask.why === "requested") askTimer = setTimeout(() => mine === token && explain(mine, t), 20_000);
     } catch (err) {
       if (mine !== token) return;
-      mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, err.message || "Real-Debrid no pudo con ese pedido"));
-      avail.hidden = false;
+      showCloud({ why: "error", message: err.message || "Real-Debrid no pudo con ese pedido" });
     }
+  }
+
+  /** PT2–PT4: el renglón de la nube bajo los botones. Lo normal en gris y corto (la explicación ya está en «Así funciona»
+   *  y en la hoja del pedido); en ámbar, con qué hacer, solo lo que necesita tu atención. */
+  function showCloud(why) {
+    const req = why?.request;
+    const going = why?.why === "requested" && req?.state === "downloading";
+    const calm = going || why?.why === "unreleased" || (why?.why === "requested" && req?.state === "queued" && !/^Sigue sin bajar/.test(why.detail || ""))
+      || (why?.why === "debrid" && !(req?.mine && ["refused", "too_many"].includes(req.state)));
+    let text = why?.message || "";
+    if (going) text = `Bajando en la nube · ${Math.round(req.percent || 0)} %`;
+    else if (why?.why === "unreleased" && why.detail) text = `${why.message} · ${why.detail}`;
+    else if (!calm && why?.detail) text = `${why.message} · ${why.detail}`;
+    cloudText.textContent = text;
+    mount(cloudBar, going ? Progress((req.percent || 0) / 100, { label: "Cuánto lleva en la nube" }) : null);
+    cloudBar.hidden = !going;
+    cloud.classList.toggle("title__cloud--warn", !calm);
+    cloud.hidden = !text;
   }
 
   /**

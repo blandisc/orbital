@@ -51,7 +51,7 @@ export function debridAction(request) {
   // FQ1-A: ya arranca en otro idioma; al lado de «Ver», pedir el tuyo («Pedir a la nube en latino»).
   if (request?.label) return { id: "rd-request", icon: "download", label: request.label, short: "Pedirla" };
   if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedir a la nube", short: "Pedir" };
-  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en la nube · ${request} %`, short: `${request} %`, active: true };
+  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en la nube · ${request} %`, short: "Tu pedido", active: true }; // PT3: el % va en su renglón, con barra
   return null;
 }
 
@@ -276,6 +276,8 @@ export function versionRows(sources = [], prefs = {}) {
       return {
         code: row.code, name: row.name,
         role: mine.includes(row.code) ? "Tu idioma" : row.code === "es" ? "No dice si latino o castellano" : row.original ? "Original" : "",
+        // PT-V (Fernando, 4 nov): lo que no es de tus idiomas va en «Más idiomas», como el iPhone (version_layout: rank 30).
+        more: rank(row) >= 30,
         options,
       };
     })

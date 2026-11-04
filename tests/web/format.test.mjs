@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { duration, lastPlayed, shortAgo, softHyphens } from "../../orbital/web/js/core/format.js";
+import { duration, lastPlayed, sentenceAgo, shortAgo, softHyphens } from "../../orbital/web/js/core/format.js";
 
 const NOW = 1_800_000_000_000;
 const ago = (seconds) => NOW / 1000 - seconds;
@@ -128,4 +128,14 @@ test("la batería: sin el cargador siempre se ve; cargando, solo debajo de 95 % 
   assert.equal(batteryHidden(94, true), false); // cargando y debajo de 95: se ve
   assert.equal(batteryHidden(95, true), true); // cargando y casi llena: no dice nada
   assert.equal(batteryHidden(100, true), true);
+});
+
+test("PT20 (4 nov): en una frase, horas y días completos; «min» se queda", () => {
+  const now = 1_800_000_000_000;
+  const ago = (s) => now / 1000 - s;
+  assert.equal(sentenceAgo(ago(3 * 3600), now), "3 horas");
+  assert.equal(sentenceAgo(ago(3600), now), "1 hora");
+  assert.equal(sentenceAgo(ago(4 * 86400), now), "4 días");
+  assert.equal(sentenceAgo(ago(15 * 60), now), "15 min");
+  assert.equal(sentenceAgo(ago(26 * 3600), now), "ayer");
 });

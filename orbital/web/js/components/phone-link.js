@@ -16,8 +16,9 @@ export function createPhoneLink({ onMove, onClose }) {
       ScreenHead({ eyebrow: "Cuentas", title: "Conectar un aparato" }),
       qr, status,
       h("ol", { class: "phone-link__steps" },
-        h("li", {}, "Abre la cámara de tu iPhone o iPad y apunta a este código"),
-        h("li", {}, "Toca «Abrir en Orbital»: queda conectado, sin escribir nada"),
+        // PT21 (Fernando, 4 nov): primero el camino del iPhone (lo que dice su pantalla); la cámara también sirve.
+        h("li", {}, "En Orbital toca «Escanear el código» (o usa la cámara) y apunta a este código"),
+        h("li", {}, "Queda conectado, sin escribir nada"),
         h("li", {}, "Tu Trakt y tus claves de Explorar pasan solos al iPhone"))));
   let attempt = 0;
   let cancelExit = () => {};

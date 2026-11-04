@@ -2,6 +2,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { Flag, Flags } from "./flag.js";
+import { Progress } from "./ui.js";
 
 /**
  * Menú lateral navegable con mando (entra desde la derecha). Recibe un menú como datos
@@ -13,14 +14,19 @@ import { Flag, Flags } from "./flag.js";
 /** ¿La pista es una descripción (va debajo) o un dato corto como «1» o «Ryujinx» (va a la derecha)? */
 const longHint = (hint) => !!hint && String(hint).length > 12;
 
+/** Lo que el foco se salta: los encabezados y los renglones que solo informan (`info`). */
+const skips = (option) => !!option && (option.heading || option.info);
+
 export function createSheet({ onCommand, onMove, onClose }) {
   const back = h("div", { class: "sheet__back", "aria-hidden": "true" });
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
   const subtitle = h("div", { class: "sheet__subtitle" });
   // «¿Qué es esto?» de un pedido: tres pasos que se encienden uno tras otro (sheet.css · explain-step).
   const steps = h("div", { class: "sheet__steps", hidden: true, "aria-hidden": "true" });
+  // PT9 (Fernando, 4 nov): cuánto lleva algo (un pedido a la nube), con su barra bajo el texto (`meter`: 0–1).
+  const meter = h("div", { class: "sheet__meter", hidden: true });
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
-  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, steps, list);
+  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, meter, steps, list);
   const el = h("div", { class: ["side-panel", "sheet"], hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
   // AU4-A (Fernando, 3 nov): si hay más abajo, la orilla se difumina en vez de partir el último renglón a la mitad.
   const more = () => panel.classList.toggle("sheet__panel--more", panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2);
@@ -67,18 +73,20 @@ export function createSheet({ onCommand, onMove, onClose }) {
     subtitle.textContent = menu.subtitle || "";
     subtitle.hidden = !menu.subtitle;
     steps.hidden = !menu.steps?.length;
+    mount(meter, menu.meter > 0 ? Progress(menu.meter, { label: menu.meterLabel || "Cuánto lleva" }) : null);
+    meter.hidden = !meter.firstChild;
     mount(steps, ...(menu.steps || []).flatMap((step, i) => [i > 0 && h("span", { class: "sheet__step-arrow" }, "›"),
       h("span", { class: "sheet__step", "data-step": String(i + 1) },
         h("span", { class: "sheet__step-tile", "data-tint": step.tint }, ICONS[step.icon] ? svg(ICONS[step.icon]) : null),
         h("span", { class: "sheet__step-label" }, step.label))]).filter(Boolean));
-    mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h("button", {
-      class: ["sheet__item", i === index && "sheet__item--focused", option.danger && "sheet__item--danger",
+    mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h(option.info ? "div" : "button", {
+      // PT12 (Fernando, 4 nov): un renglón que solo informa («No ocupa espacio en la TV») no parece botón ni se marca.
+      class: ["sheet__item", option.info && "sheet__item--info", i === index && !option.info && "sheet__item--focused", option.danger && "sheet__item--danger",
         option.value !== undefined && "sheet__item--setting",
         // «Cancelar» / «Cerrar menú» van al final, separados del resto por una línea.
         option.command?.type === "close" && "sheet__item--dismiss"],
-      type: "button",
-      role: "menuitem",
-      onClick: (event) => tapReady(event) && !busy() && press(i),
+      ...(option.info ? { role: "presentation" } : { type: "button", role: "menuitem",
+        onClick: (event) => tapReady(event) && !busy() && press(i) }),
     }, // Una cuenta o servicio lleva su logotipo real (Stremio, Trakt, TMDB); lo demás, su ícono.
     h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark", option.tint && "sheet__icon--tint"], "data-tint": option.tint },
       option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
@@ -112,7 +120,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     menu = next;
     stack = from;
     index = Math.max(0, Math.min(at, next.options.length - 1));
-    if (menu.options[index]?.heading) index = step(index, 1);
+    if (skips(menu.options[index])) index = step(index, 1);
     cancelExit();
     render();
     el.hidden = false;
@@ -125,7 +133,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     let i = from;
     for (let k = 0; k < n; k++) {
       i = (i + delta + n) % n;
-      if (!menu.options[i].heading) return i;
+      if (!skips(menu.options[i])) return i;
     }
     return from;
   }
@@ -137,7 +145,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     const node = list.children[index];
     if (!node) return;
     // La primera opción: arriba del todo, con el título a la vista (al dar la vuelta quedaba cortado).
-    if (!menu.options.slice(0, index).some((o) => !o.heading)) return panel.scrollTo({ top: 0, behavior });
+    if (!menu.options.slice(0, index).some((o) => !skips(o))) return panel.scrollTo({ top: 0, behavior });
     const top = node.offsetTop - panel.offsetTop;
     const room = panel.clientHeight;
     const pad = 96;

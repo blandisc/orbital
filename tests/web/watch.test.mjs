@@ -221,3 +221,11 @@ test("nada al instante: «Pedir a la nube» toma el lugar de «Ver» (vocabulari
   const pending = titleActions({ title: "Interstellar" }, { kind: "movie", request: 42 });
   assert.deepEqual([pending[0].id, pending[1].label], ["play", "Bajando en la nube · 42 %"]); // con algo al instante, al lado
 });
+
+test("PT-V (Fernando, 4 nov): las filas que no son de tus idiomas van a «Más idiomas», como el iPhone", async () => {
+  const { versionRows } = await import("../../orbital/web/js/core/watch.js");
+  const src = (id, code, proof = "name") => ({ id, resolution: "1080p", audio_langs: [{ code, name: code, proof }], tags: [] });
+  const rows = versionRows([src(1, "es-419"), src(2, "en", "original"), src(3, "it"), src(4, "de")],
+    { audio: "es", spanish: "es-419", plan: ["original", "en", "es-ES"] });
+  assert.deepEqual(rows.map((r) => [r.code, r.more]), [["es-419", false], ["en", false], ["it", true], ["de", true]]);
+});

@@ -2,7 +2,8 @@
  * Definición de menús como datos (puros y probables). Cada opción lleva un `command`
  * que ejecuta el controlador de la app; así la vista no conoce la lógica.
  */
-import { lastPlayed, shortAgo } from "./format.js";
+import { flagFor } from "./flags.js";
+import { lastPlayed, sentenceAgo } from "./format.js";
 import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
 
 /**
@@ -715,6 +716,11 @@ export const LANGUAGE_NAMES = { "es-419": "Latino", "es-ES": "Castellano", origi
   pt: "Portugués", it: "Italiano", de: "Alemán", ja: "Japonés", ko: "Coreano" };
 export const LANGUAGES_LEAD = "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.";
 const langName = (code) => LANGUAGE_NAMES[code] || code;
+// PT18: la bandera en la casilla del ícono (como el iPhone); «Idioma original» no tiene país: su ícono de idioma.
+const langIcon = (code) => {
+  const flag = code !== "original" && flagFor(code);
+  return flag ? { mark: `img/flags/${flag}.svg` } : { icon: "captions" };
+};
 // «Idioma original» no puede ir primero (depende de cada título): si quedaría ahí, el siguiente sube y él queda segundo.
 const fixLanguages = (list) => (list[0] === "original" && list.length > 1 ? [list[1], "original", ...list.slice(2)] : list);
 const validLanguages = (list) => list.length > 0 && list[0] !== "original";
@@ -725,7 +731,8 @@ export function languagesMenu(languages = []) {
     title: "Tus idiomas",
     subtitle: LANGUAGES_LEAD,
     options: [
-      ...languages.map((code, i) => ({ icon: "captions", label: `${i + 1}. ${langName(code)}`,
+      // PT18 (Fernando, 4 nov): cada uno con su bandera, como el iPhone; «Idioma original» sin bandera (es el de cada título).
+      ...languages.map((code, i) => ({ ...langIcon(code), label: `${i + 1}. ${langName(code)}`,
         hint: i === 0 ? "Con este arranca si lo hay" : code === "original" ? "El de cada película o serie (japonés en un anime)" : "",
         command: { type: "language", code } })),
       Object.keys(LANGUAGE_NAMES).some((c) => !languages.includes(c)) &&
@@ -757,7 +764,7 @@ export function languageMenu(languages = [], code) {
 export function languageAddMenu(languages = []) {
   return {
     title: "Agregar idioma",
-    options: Object.keys(LANGUAGE_NAMES).filter((c) => !languages.includes(c)).map((c) => ({ icon: "captions", label: langName(c),
+    options: Object.keys(LANGUAGE_NAMES).filter((c) => !languages.includes(c)).map((c) => ({ ...langIcon(c), label: langName(c),
       command: { type: "languages-set", languages: [...languages, c], back: true } })),
   };
 }
@@ -1359,7 +1366,7 @@ export function phoneRow(seen, now = Date.now(), live = 0) {
   const row = { icon: "phone", label: "iPhone", command: { type: "phone-link" } };
   if (Number(live) > 0 && now / 1000 - Number(live) < PHONE_LIVE) return { ...row, value: "✓ Conectado", ok: true, hint: "Abierto ahora" };
   if (!(Number(seen) > 0 && now / 1000 - Number(seen) < 60 * 86400)) return { ...row, value: "Conectar", hint: "Con un código QR" };
-  const ago = shortAgo(seen, now);
+  const ago = sentenceAgo(seen, now);
   return { ...row, value: "Conectar", hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
 }
 
@@ -1441,6 +1448,8 @@ export function cloudRow(requests = [], { now = Date.now() } = {}) {
     meta_id: req.meta_id, image: `https://images.metahub.space/poster/medium/${req.meta_id}/img`, request: req,
     subtitle: [req.state === "ready" ? "Al instante · la pediste" : requestLabel(req), requestedBy(req, now)].join(" · "),
     progress: req.state === "downloading" ? Math.max(0, Math.min(1, (req.percent || 0) / 100)) : null,
+    // PT22 (Fernando, 4 nov): cada tarjeta dice su estado con un ícono en la esquina (los de «Tus pedidos»).
+    state_icon: REQUEST_ICONS[req.state] || "download", state_label: req.state === "ready" ? "Al instante · la pediste" : requestLabel(req),
     extra: { kind: req.kind || "movie", meta_id: req.meta_id, video_id: req.video_ids?.[0] || req.meta_id, eyebrow: CLOUD_ROW,
       description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : DEBRID_CLOUD },
   }));
@@ -1452,7 +1461,7 @@ export function requestedBy(req, now = Date.now()) {
   const here = !req.by || req.by === "TV";
   const who = here ? "Lo pediste aquí" : `Lo pidió el ${req.by}`;
   if (!req.since) return who;
-  const ago = shortAgo(req.since, now); // TV-11: cuándo
+  const ago = sentenceAgo(req.since, now); // TV-11: cuándo (PT20: «hace 3 horas»)
   if (ago === "ahora") return here ? "Lo acabas de pedir aquí" : `Lo acaba de pedir el ${req.by}`;
   return `${who} ${ago === "ayer" ? "ayer" : `hace ${ago}`}`;
 }
@@ -1490,17 +1499,21 @@ export function debridAccountMenu(rd) {
     ] };
   }
   const problem = DEBRID_PROBLEMS[rd.problem];
+  // PT14 (Fernando, 4 nov): con un problema, el aviso va primero (vencida: con su fecha) y no se dice «Conectada».
+  const expiredOn = rd.problem === "expired" && rd.expires && rd.expires * 1000 <= Date.now() ? `Venció el ${dayMonth(rd.expires)} · ` : "";
   return {
     title: "Real-Debrid",
-    subtitle: [rd.user && `Conectada como ${rd.user}`, `${from} · termina en ••${rd.ends_with || ""}`].filter(Boolean).join(" · "),
+    subtitle: [!problem && rd.user && `Conectada como ${rd.user}`, problem && rd.user && `Cuenta ${rd.user}`,
+      `${from} · termina en ••${rd.ends_with || ""}`].filter(Boolean).join(" · "),
     options: [
+      problem && { icon: "warning", label: problem.label, hint: `${expiredOn}${problem.hint}`, warn: true, command: problem.command },
       { icon: "download", label: "Tus pedidos", value: active ? `${active} en camino` : requests.length ? `${requests.length}` : "Ninguno",
         hint: "Lo que le pediste desde la TV o tu iPhone", command: { type: "rd-requests" } },
-      problem ? { icon: "warning", label: problem.label, hint: problem.hint, warn: true, command: problem.command }
-        : rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
+      !problem && rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
       { icon: "refresh", label: "Cambiar la clave", hint: "Pégala aquí o desde cualquier celular, o mándala desde tu iPhone", command: { type: "rd-connect" } },
+      explainRow("realdebrid"), // PT13: los cuatro puntos del iPhone
     ].filter(Boolean),
   };
 }
@@ -1536,14 +1549,21 @@ export function debridRemoteMenu(event) {
 const EXPLAINERS = {
   requests: [
     ["search", "library", "Tus complementos buscan dónde verlo", "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."],
-    ["bolt", "series", "Real-Debrid es la nube", "Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."],
+    ["cloud", "series", "Real-Debrid es la nube", "Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."],
     ["download", "calendar", "Pedir a la nube es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja allá, no en la TV. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
     ["bell", "trend", "Te avisamos cuando esté", "Aquí en la TV, en cuanto Real-Debrid termina de bajar lo que pediste desde la TV."],
   ],
   torrentio: [
     ["search", "library", "Torrentio es un buscador", "Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."],
-    ["bolt", "series", "Real-Debrid las sirve", "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días."],
+    ["cloud", "series", "Real-Debrid las sirve", "Si ya tiene la versión, arranca en segundos («al instante»). Si no, se la pides y la baja por ti («por pedir»): de minutos a días."],
     ["settings", "spark", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
+  ],
+  // PT13 (Fernando, 4 nov): «¿Qué es Real-Debrid?», los cuatro puntos del iPhone.
+  realdebrid: [
+    ["cloud", "series", "Guarda copias en sus servidores", "Real-Debrid es un servicio de pago que guarda películas y series; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."],
+    ["download", "calendar", "Lo que no tiene, lo baja por ti", "Se lo pides desde la ficha o desde «Versión» y lo baja allá, no en la TV. Suele tardar de minutos a horas; a veces días."],
+    ["star", "trend", "Cuesta y vence", "Pagas por días de Premium. Cuando vence, nada arranca al instante hasta que lo renuevas en real-debrid.com."],
+    ["bolt", "library", "Tu clave", "Con ella Orbital le pide videos a tu cuenta. Se queda en esta TV y nunca se enseña completa."],
   ],
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
@@ -1552,7 +1572,8 @@ const EXPLAINERS = {
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
-const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "La nube lo baja" },
+// PT12 (Fernando, 4 nov): los dibujos del iPhone: la mano, la nube y ▶.
+const EXPLAIN_STEPS = [{ icon: "hand", tint: "library", label: "Tú lo pides" }, { icon: "cloud", tint: "calendar", label: "La nube lo baja" },
   { icon: "play", tint: "flame", label: "Arranca al instante" }];
 
 /** RX3-A · «Así funciona», una sola vez: la primera vez que sale una versión «↓ Por pedir» (en «Versión»). Los tres pasos,
@@ -1563,7 +1584,7 @@ export function debridFlowMenu() {
     subtitle: "La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti.",
     steps: EXPLAIN_STEPS,
     options: [
-      { icon: "tv", tint: "calendar", label: "No ocupa espacio en la TV.", hint: "Cuando termine, arranca al instante aquí y en tu iPhone.", command: { type: "stay" } },
+      { icon: "tv", tint: "calendar", label: "No ocupa espacio en la TV.", hint: "Cuando termine, arranca al instante aquí y en tu iPhone.", info: true },
       { icon: "check", label: "Entendido", command: { type: "close" } },
     ],
   };
@@ -1573,7 +1594,9 @@ export function explainerMenu(topic) {
   return {
     title: "¿Qué es esto?",
     steps: topic === "requests" ? EXPLAIN_STEPS : undefined,
-    options: (EXPLAINERS[topic] || []).map(([icon, tint, label, hint]) => ({ icon, tint, label, hint, command: { type: "stay" } })),
+    // PT12: cada idea solo se lee (no se marca); el foco va a «Entendido», como el iPhone.
+    options: [...(EXPLAINERS[topic] || []).map(([icon, tint, label, hint]) => ({ icon, tint, label, hint, info: true })),
+      { icon: "check", label: "Entendido", command: { type: "back" } }],
   };
 }
 
@@ -1632,7 +1655,7 @@ export function debridRequestMenu(req, { account = null, now = Date.now(), inste
   // cuenta solo trae «Abrir la ficha».
   const open = ref && { icon: "info", label: "Abrir la ficha", command: { type: "title-ref", ref } };
   if (theirs) {
-    return { title: req.title || "Tu pedido", subtitle: `${requestLabel(req)} · ${requestedBy(req)} · con otra cuenta de Real-Debrid`,
+    return { title: req.title || "Tu pedido", subtitle: `${requestLabel(req)} · ${requestedBy(req, now)} · con otra cuenta de Real-Debrid`,
       options: [open || { icon: "info", label: "Es de otra cuenta de Real-Debrid", command: { type: "close" } }] };
   }
   const stuck = ["queued", "downloading"].includes(req.state) && req.progress_at && now / 1000 - req.progress_at >= 86400;
@@ -1642,8 +1665,9 @@ export function debridRequestMenu(req, { account = null, now = Date.now(), inste
     // RX2-A: cuánto falta, honesto, y dónde (sin «Suele tardar…» repetido: ya lo dice cuánto falta). Atorado (24 h sin
     // avanzar) dice lo de siempre, con «Probar otra versión» abajo.
     subtitle: ["queued", "downloading"].includes(req.state)
-      ? `${requestLabel(req)} · ${requestedBy(req)}. ${stuck ? "Lleva un día sin avanzar." : requestPace(req, now)} ${DEBRID_WHERE}`
-      : `${requestLabel(req)} · ${requestedBy(req)}`,
+      ? `${requestLabel(req)} · ${requestedBy(req, now)}. ${stuck ? "Lleva un día sin avanzar." : requestPace(req, now)} ${DEBRID_WHERE}`
+      : `${requestLabel(req)} · ${requestedBy(req, now)}`,
+    meter: req.state === "downloading" ? (req.percent || 0) / 100 : null, meterLabel: "Cuánto lleva en la nube", // PT9
     options: [
       // RX2-A: mientras baja, la que ya arranca en tus idiomas (la misma regla que «Ver») y, junto, «Esperar a que llegue».
       going && { icon: "play", label: `Ver ${instead.label}, ya arranca`, command: { type: "watch", play: instead.play } },
@@ -1659,6 +1683,7 @@ export function debridRequestMenu(req, { account = null, now = Date.now(), inste
       req.state !== "ready" && req.state !== "refused"
         ? { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
         : { icon: "exit", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true } },
+      explainRow("requests"), // PT9: como el iPhone
       !going && { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Cancelar" : "Seguir esperando", command: { type: "close" } },
     ].filter(Boolean),
   };
@@ -1742,7 +1767,7 @@ export function addonRows(status, now = Date.now()) {
   // Stremio ya no es para traer complementos; no hay «Volver a traer» ni «Volver a los de Stremio».
   const brought = shownAddons(status.entries).filter((e) => e.origin !== "orbital");
   // Corte S6: si la cambiaste en el iPhone, se dice arriba (la lista es la misma en los dos).
-  const ago = status.changed_at ? shortAgo(status.changed_at, now) : null;
+  const ago = status.changed_at ? sentenceAgo(status.changed_at, now) : null;
   const fromPhone = status.changed_by && status.changed_by !== "tv" && {
     icon: "phone", label: `Vienen de tu ${/^(iphone|ipad|mac)/i.test(status.changed_by) ? status.changed_by.replace(/^(iPhone|iPad|Mac).*/i, "$1") : "iPhone"}`,
     hint: ago ? `Cambiado ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`} · se configura una vez y la TV lo toma` : "Se configura una vez y la TV lo toma" };
@@ -1826,7 +1851,7 @@ const isRecommended = (o = {}) => JSON.stringify([o.language || [], o.qualityfil
   === JSON.stringify([TORRENTIO_RECOMMENDED.language, TORRENTIO_RECOMMENDED.qualityfilter, "quality", undefined, undefined, [], []]);
 
 /** Ajustes › Complementos › Torrentio (SS-6, T1 del iPhone): cada cambio se guarda al hacerlo, con «Deshacer». */
-export function torrentioMenu(entry) {
+export function torrentioMenu(entry, languages = []) {
   const o = entry?.options || {};
   const only = (o.debridoptions || []).includes("nodownloadlinks");
   const set = (patch) => ({ type: "torrentio-set", options: { ...o, ...patch }, reopen: "main" });
@@ -1837,7 +1862,8 @@ export function torrentioMenu(entry) {
     options: [
       entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true, command: { type: "rd-connect" } },
       // N4-A: Torrentio no tiene lista propia; usa Ajustes › Ver › Tus idiomas.
-      { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: "Ajustes › Ver › Tus idiomas",
+      // PT17 (Fernando, 4 nov): tus idiomas, no el camino (como el iPhone); A los cambia.
+      { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: languagesLine(languages) || "Ajustes › Ver › Tus idiomas",
         command: { type: "languages" } },
       { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },
       { icon: "bolt", label: "Solo lo que ya está en Real-Debrid", value: only ? "Sí" : "No",
