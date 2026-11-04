@@ -1487,6 +1487,23 @@ export function debridRow(rd) {
     hint: rd.expires ? `Premium · vence el ${dayMonth(rd.expires)}${days}` : "Premium" };
 }
 
+/** VE1-A (Fernando, 4 nov): como el iPhone, un aviso en pantalla 14 días antes, 3 días antes y el día que vence (o ya
+ *  vencida), una sola vez por cada fecha. `seen`: el último que salió («<vence>:<etapa>», ajuste rd_expiry_notice). Si
+ *  llegas tarde (te quedan 2 días), sale el de 3 y no el de 14. null si no toca ninguno. */
+export function debridExpiryNotice(rd, seen = "") {
+  if (!rd?.linked) return null;
+  const expired = rd.problem === "expired";
+  const stage = expired || (rd.days != null && rd.days <= 0) ? 0 : rd.days == null ? null : rd.days <= 3 ? 3 : rd.days <= 14 ? 14 : null;
+  if (stage === null) return null;
+  const [when, shown] = String(seen || "").split(":");
+  if (when === String(rd.expires || 0) && shown !== undefined && Number(shown) <= stage) return null;
+  const message = expired ? "Tu Real-Debrid venció" : stage === 0 ? "Tu Real-Debrid vence hoy"
+    : rd.days === 1 ? "Tu Real-Debrid vence mañana" : `Tu Real-Debrid vence en ${rd.days} días`;
+  return { key: `${rd.expires || 0}:${stage}`, message,
+    detail: expired ? "Nada arranca al instante hasta que lo renueves · real-debrid.com, desde tu celular o tu computadora"
+      : "No se renueva solo · real-debrid.com, desde tu celular o tu computadora" };
+}
+
 /** Real-Debrid conectado: de dónde salió tu clave, tu Premium, «Tus pedidos» y cómo renovar. */
 export function debridAccountMenu(rd) {
   const requests = rd?.requests || [];
@@ -1562,7 +1579,7 @@ const EXPLAINERS = {
   realdebrid: [ // los textos exactos del iPhone (Explainer.swift, tema realDebrid)
     ["cloud", "series", "Guarda copias por ti", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca en segundos."],
     ["calendar", "calendar", "Lo que no tiene, lo baja", "Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte."],
-    ["card", "trend", "Cuesta y vence", "Se paga por días en real-debrid.com y no se renueva solo. En la TV, Ajustes te avisa desde una semana antes y el día que vence."],
+    ["card", "trend", "Cuesta y vence", "Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence."],
     ["key", "trophy", "Tu clave", "Conecta Orbital con tu cuenta. Vive guardada en esta TV y nunca se muestra completa."],
   ],
   addons: [

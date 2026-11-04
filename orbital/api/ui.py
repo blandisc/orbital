@@ -44,6 +44,9 @@ VIEWS = ("buscar", "serie", "seccion", "fuentes")
 
 def valid_setting(key, value) -> bool:
     """¿Ese valor sirve para ese ajuste? Mismo tipo que los permitidos (bool no pasa por número)."""
+    if key == "rd_expiry_notice":  # VE1-A: el último aviso de vencimiento que ya salió, «<vence>:<14|3|0>»
+        import re
+        return isinstance(value, str) and re.fullmatch(r"\d{1,12}:(14|3|0)", value) is not None
     if key == "languages":  # N4-A: tu orden de idiomas (una lista)
         from ..library.streams import valid_languages
         return valid_languages(value)
