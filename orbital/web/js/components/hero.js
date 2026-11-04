@@ -37,6 +37,7 @@ export function createHero({ onAction, onKind = null }) {
   function fit() {
     description.classList.remove("hero__description--short");
     title.classList.remove("hero__title--short");
+    title.classList.toggle("hero__title--long", title.dataset.long === "1");
     description.style.display = "";
     // También si el nombre (sin logo) cedió alto y ya no le caben sus renglones: entonces va en uno.
     const overflows = () => content.scrollHeight > content.clientHeight + 1 || (!title.hidden && title.scrollHeight > title.clientHeight + 1);
@@ -44,6 +45,10 @@ export function createHero({ onAction, onKind = null }) {
     description.classList.add("hero__description--short");
     if (!overflows()) return;
     description.style.display = "none";
+    if (!overflows()) return;
+    // Antes de cortarlo en un renglón con «…», la letra del nombre largo: «Hasta el viento tiene miedo» (27 letras) en la
+    // caja fija de Películas y series salía «Hasta el viento tien…» (4 nov). Y si aun así no cabe, en un renglón ya entero.
+    title.classList.add("hero__title--long");
     if (!overflows()) return;
     title.classList.add("hero__title--short");
   }
@@ -73,6 +78,7 @@ export function createHero({ onAction, onKind = null }) {
       h("span", {}, above));
 
     title.textContent = item.title;
+    title.dataset.long = item.title.length > 28 ? "1" : "";
     title.classList.toggle("hero__title--long", item.title.length > 28);
     // Un premio: su nombre con remate y su metal, como el logo de un título (Óscar en oro, Emmy en plata…).
     const award = item.source === "collection" && item.collection?.type === "award" ? item.collection.tint || "gold" : null;

@@ -22,7 +22,7 @@ import unicodedata
 import zlib
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from urllib.parse import quote
 
 from ..net import NET_ERRORS
@@ -483,6 +483,15 @@ class Preferences:
     audio: str = "en"  # idioma de audio preferido
     quality: str = "1080p"  # resolución preferida ("4K" en la TV si quieres)
     spanish: str = ""  # con audio en español: "es-419" (latino), "es-ES" (castellano) o "" (cualquiera)
+    original: str = ""  # el idioma original del título ("ja", "en"…): lo pone find(), no Ajustes
+
+
+# Sin tu español al instante, el plan B (Fernando, 4 nov 2026: «latino, idioma original, luego inglés y luego castellano»):
+# cuánto baja cada escalón desde lo que vale tu doblaje. Lo de al instante (+1000) le sigue ganando a lo que hay que bajar.
+STEP_UNSURE_SPANISH = 100  # «Español (no dice cuál)»
+STEP_ORIGINAL = 350
+STEP_ENGLISH = 450
+STEP_OTHER_DUB = 550
 
 
 def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
@@ -535,15 +544,23 @@ def language_score(src: Source, prefs: Preferences) -> float:
         how = langs.get(prefs.audio)
         return LANG_POINTS[how] if how else WRONG_LANGUAGE
     wanted = prefs.spanish if prefs.spanish in SPANISH_VARIANTS else None
+    original = prefs.original if prefs.original and not prefs.original.startswith("es") else ""
     best = float(WRONG_LANGUAGE)
-    for code in SPANISH:
-        if code not in langs:
+    for code, how in langs.items():
+        points = float(LANG_POINTS[how])
+        if code in SPANISH:
+            if wanted and code == "es":
+                points -= STEP_UNSURE_SPANISH  # español sin saber cuál: justo después del que pediste
+            elif wanted and code != wanted:
+                points -= STEP_OTHER_DUB  # el otro doblaje: al final, después del original y del inglés
+        elif not wanted:
+            continue  # «Español (cualquiera)»: como siempre, otro idioma no cuenta
+        elif original and code == original:
+            points -= STEP_ORIGINAL  # el idioma original de la obra
+        elif code == "en":
+            points -= STEP_ENGLISH
+        else:
             continue
-        points = LANG_POINTS[langs[code]]
-        if wanted and code == "es":
-            points -= 100  # español sin saber cuál: después del que pediste, antes que otro idioma
-        elif wanted and code != wanted:
-            points -= 250  # el otro doblaje
         best = max(best, points)
     return best
 
@@ -724,7 +741,8 @@ class StreamFinder:
                     log.info("Fuente rara de %s: %s", addon.name, exc)
                     continue
                 seen.add(index)
-        ranked = rank(sources, prefs, kind)
+        # El plan B de idiomas sabe cuál es el original de este título (latino → original → inglés → castellano).
+        ranked = rank(sources, replace(prefs, original=original or ""), kind)
         # «Sin conexión» solo si nadie contestó: un complemento muerto (ThePirateBay+ ya no existe, «Local Files» apagado)
         # hacía decir «No pude conectar con tus complementos» aunque Torrentio sí respondiera que no lo tiene.
         answered = any(streams is not None for _, streams in results)

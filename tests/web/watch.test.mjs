@@ -116,9 +116,10 @@ test("Versión: una fila por idioma con solo las calidades que hay; tu idioma, l
   ];
   const rows = versionRows(sources, { audio: "es", spanish: "es-419" });
   assert.deepEqual(rows.map((r) => [r.code, r.role, r.options.map((o) => `${o.res}:${o.source.id}`).join(" ")]), [
-    ["es-419", "Tu idioma", "1080p:b"], ["es", "No dice si latino o castellano", "720p:g"], ["es-ES", "", "4K:d"], ["en", "Original", "4K:a 1080p:b SD:e"],
+    // Fernando, 4 nov: latino, el que no dice cuál, el original (aquí inglés) y al final castellano.
+    ["es-419", "Tu idioma", "1080p:b"], ["es", "No dice si latino o castellano", "720p:g"], ["en", "Original", "4K:a 1080p:b SD:e"], ["es-ES", "", "4K:d"],
   ]); // la grabada en el cine (f) no sale; la dual (b) sale en latino y en inglés
-  assert.deepEqual(rows[3].options[1].all.map((x) => x.id), ["b", "c"]); // X: todas las de esa fila y calidad
+  assert.deepEqual(rows[2].options[1].all.map((x) => x.id), ["b", "c"]); // X: todas las de esa fila y calidad (la del inglés)
   const english = versionRows(sources, { audio: "en" });
   assert.deepEqual(english.map((r) => r.code), ["en", "es-419", "es-ES", "es"]); // el español antes que los demás
   assert.deepEqual(versionStart(english, sources[0]), { row: 0, col: 0 });
@@ -126,9 +127,9 @@ test("Versión: una fila por idioma con solo las calidades que hay; tu idioma, l
   const two = [s("r", "4K", [en]), s("y", "4K", [lang("en", "Inglés", "name"), lang("es", "Español", "name")])];
   assert.equal(versionRows(two, { audio: "en" })[0].options[0].source.id, "r");
   // ↓ se queda en la misma calidad si la hay; si no, en la más cercana.
-  assert.deepEqual(versionStep(rows, { row: 3, col: 1 }, "up"), { row: 2, col: 0 });
+  assert.deepEqual(versionStep(rows, { row: 3, col: 0 }, "up"), { row: 2, col: 0 }); // 4K → 4K
   assert.deepEqual(versionStep(rows, { row: 0, col: 0 }, "right"), { row: 0, col: 0 });
-  assert.deepEqual(versionStep(rows, { row: 2, col: 0 }, "down"), { row: 3, col: 0 });
+  assert.deepEqual(versionStep(rows, { row: 2, col: 1 }, "down"), { row: 3, col: 0 }); // 1080p → la más cercana (4K)
   assert.deepEqual(versionRows([]), []);
   // Solo grabadas en el cine: salen (mejor algo que nada).
   assert.equal(versionRows([s("x", "1080p", [en], { tags: ["CAM"] })], { audio: "en" }).length, 1);

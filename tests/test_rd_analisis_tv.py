@@ -155,3 +155,16 @@ def test_fq1_ver_en_castellano_y_al_lado_pedir_la_latina(library, monkeypatch):
     assert "offer" not in w.availability("movie", "tt15239678", "tt15239678")
     monkeypatch.setattr(w, "stream_sources", lambda kind, video_id, prefs=None: [source(2, "Dune.Part.Two.2024.1080p.Latino"), lat])
     assert "offer" not in w.availability("movie", "tt15239678", "tt15239678")  # ya arranca en latino: nada que pedir
+
+
+def test_orden_de_idiomas_latino_original_ingles_castellano():
+    """Fernando, 4 nov 2026: «El orden sería latino, idioma original, luego inglés y luego castellano»."""
+    prefs = streams.Preferences(audio="es", spanish="es-419", original="ja")
+    lat = source(0, "Frieren.S01E01.1080p.Latino", name="[RD download] Torrentio\n1080p")
+    ja = source(1, "Frieren.S01E01.1080p.Japanese")
+    en = source(2, "Frieren.S01E01.1080p.English")
+    cast = source(3, "Frieren.S01E01.1080p.Castellano")
+    score = lambda s: streams.language_score(s, prefs)  # noqa: E731
+    assert score(lat) > score(ja) > score(en) > score(cast) > streams.WRONG_LANGUAGE
+    # Al instante: sin latino al instante, «Ver» pone el japonés antes que el castellano (y el latino se pide al lado, FQ1).
+    assert [s.index for s in streams.rank([cast, en, ja, lat], prefs, "series")][:3] == [1, 2, 3]
