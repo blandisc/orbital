@@ -95,17 +95,6 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
         local_only(request)
         return watch.addon_status()
 
-    @r.post("/api/addons/import")
-    async def bring(request: Request) -> dict:
-        local_only(request)
-        try:
-            done = await run_in_threadpool(watch.import_addons)
-        except ValueError as exc:
-            raise HTTPException(409, str(exc)) from exc
-        except stremio_api.StremioError as exc:
-            raise HTTPException(502, "No pude leer tus complementos de Stremio. Revisa Internet e inténtalo de nuevo.") from exc
-        return {**watch.addon_status(), "done": done}
-
     @r.post("/api/addons/change")
     def change(body: ChangeRequest, request: Request) -> dict:
         local_only(request)
@@ -158,7 +147,10 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
     @r.post("/api/addons/source")
     def source(body: SourceRequest, request: Request) -> dict:
         local_only(request)
-        return watch.set_addon_source(body.source)
+        try:
+            return watch.set_addon_source(body.source)
+        except ValueError as exc:  # 4 nov: ya no se regresa a los complementos de tu cuenta de Stremio
+            raise HTTPException(422, "Tus complementos ya salen siempre de tu lista") from exc
 
     # La libreta de pedidos a Real-Debrid (design/addons-contract.json, «requests»): la lee «Tus pedidos» y el iPhone.
     @r.get("/api/realdebrid/requests")

@@ -32,12 +32,12 @@ def keyed():
 
 def test_traer_de_stremio_una_vez_y_desde_ahi_es_tuya():
     lst, keys = keyed()
-    assert lst.source == "stremio" and lst.urls() == [addon_list.OPENSUBTITLES]  # sin clave, Torrentio no se arma
+    assert lst.source == "own" and lst.needs_copy and lst.urls() == [addon_list.OPENSUBTITLES]  # sin clave, Torrentio no se arma
     done = lst.import_from_stremio(brought())
     # Cinemeta no (Orbital ya la usa: apagarla rompería las fichas), OpenSubtitles ya viene con Orbital y tu Torrentio
     # pasa al de Orbital (corte S3), con sus opciones y su clave.
     assert done == {"added": 2, "kept": 1, "skipped": 2}
-    assert lst.source == "own" and lst.revision == 1 and lst.imported_at and keys["rd"] == "KEY"
+    assert lst.source == "own" and not lst.needs_copy and lst.revision == 1 and lst.imported_at and keys["rd"] == "KEY"
     names = [(e.name, e.origin) for e in lst.entries()]
     assert names == [("Torrentio", "orbital"), ("Comet", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio"),
                      ("Local Files", "stremio")]
@@ -77,13 +77,15 @@ def test_quitar_deshacer_y_lo_de_orbital_solo_se_apaga():
     assert addon_list.OPENSUBTITLES not in lst.urls()
 
 
-def test_volver_a_los_de_stremio_deja_tu_lista():
+def test_ya_no_se_regresa_a_los_de_stremio():
+    """Fernando, 4 nov 2026: Stremio ya no es para traer complementos; las fuentes salen siempre de tu lista."""
     lst = AddonList(Store())
     lst.import_from_stremio(brought())
-    lst.set_source("stremio")
-    assert lst.source == "stremio" and len(lst.entries()) == 5
-    lst.set_source("own")
-    assert lst.source == "own"
+    with pytest.raises(ValueError):
+        lst.set_source("stremio")
+    assert lst.source == "own" and len(lst.entries()) == 5
+    lst.store[addon_list.LIST_KEY]["source"] = "stremio"  # una TV que salía de su cuenta (antes del 4 nov)
+    assert lst.source == "own" and lst.needs_copy  # sale de tu lista ya; se copia una vez al arrancar
 
 
 def test_con_tu_lista_ya_no_se_le_pregunta_a_tu_cuenta(monkeypatch):
@@ -101,10 +103,6 @@ def test_con_tu_lista_ya_no_se_le_pregunta_a_tu_cuenta(monkeypatch):
     lst.import_from_stremio([("Torrentio", TORRENTIO, None)])
     registry = addons.AddonRegistry(Account(), auth=lambda: "key", listing=lst)
     assert [a.name for a in registry.addons()] == ["Torrentio", "OpenSubtitles"] and Account.asked == 0
-    lst.set_source("stremio")
-    registry.forget()
-    registry.addons()
-    assert Account.asked == 1  # «Volver a los de Stremio»: como antes
 
 
 def test_el_torrentio_que_ya_habias_traido_pasa_al_de_orbital_y_sus_opciones_se_cambian_aqui():
@@ -188,8 +186,9 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
                         "stremio": {"executable": "stremio-test"}})
     watch = Catalog(cfg, FakeLauncher(), credentials=Credentials(tmp_path / "secrets.json"), stremio_client=Account()).watch
     watch.credentials.set("stremio_auth_key", "clave")
-    assert watch.addon_status()["source"] == "stremio"
-    assert watch.import_addons() == {"added": 1, "kept": 1, "skipped": 1}
+    assert watch.addon_status()["source"] == "own" and watch.addon_list.needs_copy  # salía de tu cuenta: se copia una vez
+    watch._copy_stremio_addons()
+    assert not watch.addon_list.needs_copy
     status = watch.addon_status()
     # Tu Torrentio pasó al de Orbital, con sus opciones y tu clave (corte S3).
     assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "Local Files"]
@@ -205,19 +204,20 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
     assert changed["previous"]["sort"] == "seeders"  # para «Deshacer»
     assert watch.addon_list.urls()[0] == ("https://torrentio.strem.fun/sort=seeders|language=latino|qualityfilter=cam|limit=5|"
                                           "sizefilter=10GB,2GB|debridoptions=nodownloadlinks|realdebrid=KEY/manifest.json")
-    assert watch.set_addon_source("stremio")["source"] == "stremio"
+    with pytest.raises(ValueError):  # 4 nov: ya no se regresa a los de tu cuenta de Stremio
+        watch.set_addon_source("stremio")
 
 
 def test_sin_cuenta_de_stremio_la_tv_usa_su_lista():
-    """Corte S4: una TV nueva funciona sin Stremio; con la cuenta conectada (y sin haber elegido) sigue como antes."""
+    """Corte S4: una TV nueva funciona sin Stremio. Desde el 4 nov, con la cuenta conectada también sale de tu lista; si
+    nunca elegiste, lo de tu cuenta se copia una vez (`needs_copy`)."""
     linked = [False]
     lst = AddonList(Store(), key=lambda: "KEY", stremio=lambda: linked[0])
-    assert lst.source == "own" and lst.urls()[0].startswith("https://torrentio.strem.fun/language=latino,spanish|")
+    assert lst.source == "own" and not lst.needs_copy and lst.urls()[0].startswith("https://torrentio.strem.fun/language=latino,spanish|")
     linked[0] = True
-    assert lst.source == "stremio"
+    assert lst.source == "own" and lst.needs_copy
     lst.set_source("own")
-    linked[0] = False
-    assert lst.source == "own"
+    assert not lst.needs_copy
 
 
 def test_la_lista_viaja_con_el_iphone_por_revision_y_sin_claves():

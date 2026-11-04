@@ -1490,7 +1490,7 @@ const EXPLAINERS = {
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
     ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
-    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
+    ["trophy", "trophy", "Vienen con Orbital o los agregaste tú", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
@@ -1663,15 +1663,15 @@ const shownAddons = (entries) => (entries || []).filter((e) => !isOpenSubtitles(
 
 /** El dato de Complementos en el riel: «4 de 5 contestan», o de dónde salen si aún no son tuyos. */
 function addonsMeta(status) {
-  if (!status || status.source !== "own") return "Los de tu cuenta de Stremio";
+  if (!status) return "";
   const on = shownAddons(status.entries).filter((e) => e.on);
   if (!on.length) return "Ninguno prendido";
   const answering = on.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
   return `${answering} de ${on.length} contestan`;
 }
 
-/** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital, los traídos de tu Stremio y de dónde
- * salen las fuentes. A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
+/** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital y los que agregaste tú («Agregado por
+ * ti»). A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
 export function addonRows(status, now = Date.now()) {
   if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
   const entry = (e) => {
@@ -1687,18 +1687,9 @@ export function addonRows(status, now = Date.now()) {
       command: { type: "addon-menu", id: e.id } };
   };
   const ours = shownAddons(status.entries).filter((e) => e.origin === "orbital");
+  // Lo que no vino con Orbital (antes traído de tu Stremio): «Agregado por ti», como el iPhone (E1, 3 nov). Fernando, 4 nov:
+  // Stremio ya no es para traer complementos; no hay «Volver a traer» ni «Volver a los de Stremio».
   const brought = shownAddons(status.entries).filter((e) => e.origin !== "orbital");
-  const imported = status.imported_at ? `Traídos el ${new Date(status.imported_at * 1000).toLocaleDateString("es", { day: "numeric", month: "short" })}` : "";
-  if (status.source !== "own" && !status.imported_at) {
-    return [
-      status.stremio_linked
-        ? { icon: "download", label: "Traer de tu Stremio", hint: "Tus complementos, una sola vez · tu cuenta no se toca", value: "Traer",
-          command: { type: "addons-import" } }
-        : { icon: "trailer", label: "Por ahora salen de tu cuenta de Stremio", hint: "Conéctala en Ajustes › Cuentas para traerlos" },
-      { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
-      explainRow("addons"),
-    ];
-  }
   // Corte S6: si la cambiaste en el iPhone, se dice arriba (la lista es la misma en los dos).
   const ago = status.changed_at ? shortAgo(status.changed_at, now) : null;
   const fromPhone = status.changed_by && status.changed_by !== "tv" && {
@@ -1707,14 +1698,7 @@ export function addonRows(status, now = Date.now()) {
   return [
     fromPhone,
     { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
-    (brought.length || status.stremio_linked) && { heading: true, label: "Traídos de tu Stremio" }, ...brought.map(entry),
-    status.stremio_linked && { icon: "refresh", label: "Volver a traer", hint: [imported, "tu cuenta no se toca"].filter(Boolean).join(" · "),
-      command: { type: "addons-import" } },
-    // TV-2: volver a Stremio solo con su cuenta conectada (sin ella, un toque te dejaba sin versiones).
-    (status.stremio_linked || status.source !== "own") && { heading: true, label: "De dónde salen" },
-    status.source === "own"
-      ? status.stremio_linked && { icon: "swap", label: "Volver a los de Stremio", hint: "Tu lista se queda: regresas cuando quieras", command: { type: "addons-source", source: "stremio" } }
-      : { icon: "swap", label: "Usar tu lista", hint: "Ahora salen de tu cuenta de Stremio", value: "Usar", command: { type: "addons-source", source: "own" } },
+    brought.length > 0 && { heading: true, label: "Agregado por ti" }, ...brought.map(entry),
     explainRow("addons"), // AU1-A
   ].filter(Boolean);
 }
@@ -1955,7 +1939,7 @@ export function setupMenu(status = {}) {
 }
 
 /** Películas y series, la primera vez (SS-7, corte S4): tres pasos, cada uno se puede dejar para después y se reabre
- * desde «Tu consola» o Ajustes › Resumen. Sin Stremio: si ya lo tienes, «Traer de tu Stremio» va al final. */
+ * desde «Tu consola» o Ajustes › Resumen. Sin Stremio (Fernando, 4 nov: ya no se traen complementos de ahí). */
 export function moviesSetupMenu(settings = {}) {
   const rd = settings.realdebrid;
   const ours = (settings.addons?.entries || []).filter((e) => e.origin === "orbital");
@@ -1974,8 +1958,6 @@ export function moviesSetupMenu(settings = {}) {
         ok: !!settings.trakt?.linked, command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
       { icon: "phone", label: "Tu iPhone · opcional", hint: "Configuras ahí y la TV lo toma", value: phones ? "✓ Conectado" : "Conectar",
         ok: phones, command: { type: "phone-link" } },
-      !settings.addons?.imported_at && { icon: "download", label: "¿Ya tienes Stremio?", hint: "Trae tus complementos una vez · opcional",
-        command: { type: settings.stremio_linked ? "addons-import" : "stremio-login" } },
     ].filter(Boolean),
   };
 }

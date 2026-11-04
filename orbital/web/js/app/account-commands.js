@@ -5,14 +5,6 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
     // Ajustes › Complementos («La TV sin Stremio», S1)
-    "addons-import": async () => {
-      const res = await api.addonsImport();
-      addons(res);
-      sound.play("select");
-      const n = res.done?.added ?? 0;
-      return ui.toast.show(n ? `Traje ${n} ${n === 1 ? "complemento" : "complementos"} de tu Stremio` : "Ya estaban todos",
-        { tone: "success", detail: "Desde ahora salen de tu lista; tu cuenta de Stremio no se tocó" });
-    },
     "addon-menu": async (command, context) => {
       const entries = state.settings?.addons?.entries || [];
       const entry = entries.find((e) => e.id === command.id);
@@ -35,12 +27,6 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       if (command.action !== "remove") return;
       ui.toast.show(`Quité ${command.name || "el complemento"}`, { duration: UNDO_MS, action: { label: "Deshacer",
         onPress: async () => addons(await api.addonRestore(command.id)) } });
-    },
-    "addons-source": async (command) => {
-      addons(await api.addonsSource(command.source));
-      sound.play("select");
-      return ui.toast.show(command.source === "own" ? "Ahora salen de tu lista" : "Ahora salen de tu cuenta de Stremio",
-        { detail: command.source === "own" ? "" : "Tu lista se quedó: regresas en Ajustes › Complementos" });
     },
     // Películas y series, la primera vez (SS-7, corte S4): con lo de ahora (Real-Debrid, complementos, Trakt, iPhone)
     "movies-setup": async (command, context) => {

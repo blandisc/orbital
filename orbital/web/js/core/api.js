@@ -108,10 +108,8 @@ export const api = {
   stremioLogout: () => post("/api/stremio/logout"),
   // Ajustes › Complementos (S1): tu lista, traerla de Stremio, prender, ordenar, quitar y de dónde salen.
   addonsStatus: () => request("/api/addons/status"),
-  addonsImport: () => post("/api/addons/import", {}, { timeout: 30000 }),
   addonChange: (id, action) => post("/api/addons/change", { id, action }),
   addonRestore: (id) => post("/api/addons/restore", { id }),
-  addonsSource: (source) => post("/api/addons/source", { source }),
   torrentioOptions: (options) => post("/api/addons/torrentio", { options }),
   stremioBring: () => post("/api/stremio/bring", {}, { timeout: 60000 }),
   // Tus pedidos a Real-Debrid (corte S2): la libreta común con el iPhone, y «Cancelar pedido».

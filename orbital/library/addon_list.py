@@ -2,9 +2,9 @@
 
 La lista vive en la consola, cifrada como la sesión de Stremio (las direcciones de lo traído llevan claves): en su orden,
 cada uno prendido o apagado por aparato («tv» aquí; el iPhone pone el suyo con S6). Se trae de tu Stremio una vez
-(«Traer de tu Stremio», «Volver a traer»); desde ahí es tuya y tu cuenta no se toca. `source` dice de dónde salen las
-fuentes: «stremio» (como antes: los de tu cuenta) o «own» (esta lista). «Volver a los de Stremio» solo cambia `source`:
-tu lista se queda.
+(antes con «Traer de tu Stremio»); desde ahí es tuya y tu cuenta no se toca. Desde el 4 nov 2026 (Fernando) las fuentes
+salen siempre de esta lista: lo que salía de tu cuenta se copia una vez al arrancar (`needs_copy`) y ya no se trae ni se
+regresa a Stremio. Stremio queda solo como respaldo para ver torrents sin Real-Debrid (su servidor local).
 
 No se agregan complementos a mano (Fernando, 3 nov 2026): solo lo que viene con Orbital y lo traído de Stremio.
 """
@@ -149,12 +149,16 @@ class AddonList:
 
     @property
     def source(self) -> str:
-        """«own» o «stremio». Si nunca elegiste: tu cuenta de Stremio si está conectada (como antes) y, sin ella, tu lista
-        (corte S4: una TV nueva funciona sin cuenta de Stremio)."""
+        """Siempre «own»: las fuentes salen de tu lista de Orbital (Fernando, 4 nov 2026: Stremio ya no es para traer
+        complementos; igual que el iPhone). Lo que salía de tu cuenta se copia una vez (`needs_copy`)."""
+        return "own"
+
+    @property
+    def needs_copy(self) -> bool:
+        """Las fuentes salían de tu cuenta de Stremio (elegido, o sin elegir y con la cuenta conectada) y todavía no se
+        copiaron a tu lista: Watch la copia una sola vez al arrancar, para no perder ninguno."""
         saved = self._raw().get("source")
-        if saved in ("own", "stremio"):
-            return saved
-        return "stremio" if self.stremio() else "own"
+        return saved == "stremio" or (saved not in ("own", "stremio") and self.stremio() and self.imported_at is None)
 
     @property
     def revision(self) -> int:
@@ -339,8 +343,8 @@ class AddonList:
             return back
 
     def set_source(self, source: str) -> None:
-        """«own»: las fuentes salen de esta lista; «stremio»: de tu cuenta, como antes (la lista se queda)."""
-        if source not in ("own", "stremio"):
+        """Solo «own» (desde el 4 nov las fuentes ya no salen de tu cuenta de Stremio)."""
+        if source != "own":
             raise ValueError(source)
         with self._lock:
             self._save(self.entries(), source=source)
