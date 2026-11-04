@@ -40,9 +40,20 @@ contesta cada servicio y la salida en claves; el texto que debe ser idéntico sa
 Fernando, 3 nov: **latino → el idioma original de la obra («natal») → inglés → castellano**, el orden por omisión con latino
 (es-MX): `["es-419", "original", "en", "es-ES"]`. `original` es un renglón: el idioma original de cada título (japonés en un
 anime, inglés en «Dune», castellano en «Mar adentro»). Tus «Idiomas primero» de Torrentio se suman al final, sin repetir.
-El español que no dice cuál (`es`) va justo después del tuyo (puede ser el tuyo).
+El español que no dice cuál (`es`: «Spanish», 🇪🇸 sin decir latino ni castellano) va **justo después del latino y antes
+del original** (acordado con la TV, 3 nov: es español y muchas veces sí es latino); la fila «Español (no dice cuál)» va en ese
+mismo lugar. Escenario `26`.
 
-Cómo pesa (las dos apps igual): el tuyo arriba; cada renglón de tu orden debajo, en su orden, **a 600 o más del tuyo** (más
+Los pesos exactos del idioma (lo demás de la puntuación no cambia), con latino:
+
+| Idioma de la versión | Puntos |
+| --- | --- |
+| Latino (`es-419`) | lo que vale su prueba: 340 comprobado, 300 nombre / sitio / original, 260 supuesto, 60 «tal vez» |
+| Español que no dice cuál (`es`) | lo mismo − 100 (200 si lo dice el nombre) |
+| Renglón *n* de tu orden (0 = original, 1 = inglés, 2 = castellano, luego los de Torrentio) | −300 − 40·*n* + (su prueba − 300) |
+| Fuera de tu orden | −1600 |
+
+Una versión con varios idiomas vale lo de su mejor idioma. Cómo pesa (las dos apps igual): el tuyo arriba; cada renglón de tu orden debajo, en su orden, **a 600 o más del tuyo** (más
 que lo que baja un nombre que no dice el título, −500: en tu idioma le sigue ganando, FQ3-A) y **a menos de 1400** (lo que
 separa arrancar al instante, +1000, de tener que pedirla, −400): la que arranca ya en tu orden le gana a la tuya por pedir
 (FQ1-A). Un idioma fuera de tu orden pesa más que arrancar al instante. Las filas de «Versión» van en ese mismo orden.
