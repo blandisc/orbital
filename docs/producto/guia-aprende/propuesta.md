@@ -1,120 +1,192 @@
-# Guía de inicio, recorrido y «Aprende Orbital» · propuesta (3 nov 2026)
+# Guía de inicio, avisos y «Aprende Orbital» · plan (versión 2, 3 nov 2026)
 
-Pedido de Fernando (3 nov 2026), en el iPhone:
+Pedido de Fernando (3 nov 2026), en el iPhone: una guía al abrir con elementos que caen en el lenguaje visual de Orbital;
+una presentación que sirva a quien tiene o no la TV y que explique Real-Debrid; vitrina («attract»); ningún Stremio; avisos
+sobre la pantalla la primera vez que entras a algo nuevo; y un centro de conocimiento con historias como las de Instagram.
 
-1. Una guía al abrir la app por primera vez, con elementos animados que caen y que hablan el lenguaje visual de Orbital.
-2. Una presentación fácil, que sirva a quien tiene o no tiene la TV (la consola), y que explique qué es Real-Debrid.
-3. Que tenga «attract» (modo vitrina: la app se enseña sola si no la tocas).
-4. Ningún elemento de Stremio en la app.
-5. Un recorrido con avisos sobre la pantalla (coach marks) la primera vez que entras a algo nuevo.
-6. Un centro de conocimiento con historias, como las de Instagram, que recuerda la guía y profundiza en cada función.
+- Página para el celular, pantalla por pantalla: `guia-celular.html` · https://claude.ai/artifact/9yLoYYTAMN4R2NdqxtLQUz
+- Canvas de la primera propuesta: https://claude.ai/artifact/TX7vDeisfAjGp8HcorSg9A
 
-Lo que todos entienden (tocar un póster abre la ficha) no se explica. Lo que sí: Real-Debrid, ver al instante y las
-versiones, la búsqueda avanzada, Explorar y Decide, Lo que ves, Trakt, los gestos del reproductor, Descargas y, en Ultra,
-la TV.
+## Decidido (Fernando, 3 nov)
 
-Canvas con las pantallas y las decisiones: https://claude.ai/artifact/TX7vDeisfAjGp8HcorSg9A
-Versión para el celular, pantalla por pantalla: `guia-celular.html` · https://claude.ai/artifact/9yLoYYTAMN4R2NdqxtLQUz
+**A1 · B1 · C1 · D1 · E1 · F3 · G3 · H1.** A1 «mucho más estilizado», y pidió ver una variante con el mosaico detrás
+(abajo, A1-M). Luego pidió pasarlo por dos expertos (viaje de onboarding; animación, diseño visual y storytelling) y
+cambiar el plan con lo que dijeran. Esta versión ya lo trae.
 
-Parte de las maquetas del 30 oct (`docs/producto/orbital-y-plus/guia-maquetas.html`), que no se construyeron, y de sus
-cuatro decisiones pendientes.
+Queda abierto: **A1 sola o A1-M** y el OK para probar una vez el código de Real-Debrid con su cuenta (D1).
 
-## La guía (unos 60 segundos, nada obligatorio)
+## La idea en una frase
 
-| # | Paso | Qué pasa |
-|---|---|---|
-| 1 | Bienvenida | Lluvia de pósters que caen y entran en órbita alrededor del planeta de la marca. «Todo lo que ves, en un solo lugar.» Si no la tocas, a los 8 s arranca la vitrina (attract). |
-| 2 | ¿Qué te gusta? | Cuadrícula de pósters populares; tocar uno rebota y se enciende. Son gustos, no vistos. |
-| 3 | Tus plataformas | Logos que se encienden; país automático. |
-| 4 | ¿Qué ya tienes? | Tres tarjetas: Real-Debrid, Trakt y (solo Ultra) Orbital en la TV. «Sí, ya tengo» / «No, ¿qué es?» / «Después». Decide qué pasos siguen. |
-| 5 | Ver aquí mismo (Real-Debrid) | Solo en Plus y Ultra. Qué es (3 pasos animados), cuánto cuesta y cómo se paga, una cuenta por persona. Conectar con código; pegar la clave en «Otra forma». |
-| 6 | Trakt | Opcional, código grande. |
-| 7 | Tu TV | Solo Ultra y solo si dijo que la tiene. |
-| 8 | Avisos | Una notificación de ejemplo cae desde arriba antes de pedir el permiso. |
-| 9 | Listo | Tus pósters giran y aterrizan en Inicio; aparecen los círculos de «Aprende». |
+La luna turquesa de la marca es tu guía: atrapa los pósters en la bienvenida, avanza por la órbita en cada paso, señala en
+los avisos y se vuelve el primer círculo de «Aprende». Todos llegan a un primer «ajá» (un Inicio hecho a su gusto) en menos
+de un minuto; ver el primer video aquí mismo es el segundo, cuando hay ganas de ver algo concreto.
 
-## Decisiones (códigos para dictar)
+## La guía, por versión
 
-- **A · Qué cae en la bienvenida.** A1 pósters que caen y entran en órbita (recomendado: enseña el contenido desde el primer
-  segundo). A2 lunas y estrellas del Cielo nocturno que se juntan en la marca (más calmado, no enseña nada de la app).
-- **B · Vitrina (attract).** B1 si no tocas la bienvenida 8 s, se reproduce sola en bucle: elegir un póster → ficha → «Ver»
-  → arranca al instante; cualquier toque la detiene (recomendado). B2 sin vitrina.
-- **C · Presentación.** C1 «¿Qué ya tienes?» arma la guía a tu medida (recomendado: quien ya tiene todo termina en 4 pasos;
-  quien no tiene nada entiende cada pieza). C2 la misma guía para todos.
-- **D · Conectar Real-Debrid.** D1 con código, como Trakt (recomendado; requiere tu OK para probarlo una vez con tu cuenta).
-  D2 pegar la clave, guiado.
-- **E · Stremio fuera.** E1 de las tres versiones, también de Ultra: sin iniciar sesión, sin copia, sin «Traídos de tu
-  Stremio» (los complementos que ya trajiste se quedan como tuyos) y sin mensajes que lo nombren (recomendado: es lo que
-  pediste y Trakt ya hace el trabajo). E2 fuera de Plus y Orbital, y la copia sigue en Ultra.
-- **F · Recorrido sobre la pantalla.** F1 foco: oscurece todo menos el botón y una burbuja dice qué hace, 1 a 3 pasos, la
-  primera vez que entras (recomendado para las 6 pantallas difíciles). F2 avisos chicos sin oscurecer (TipKit de Apple),
-  uno a la vez.
-- **G · Dónde viven las historias.** G1 círculos arriba de Inicio siempre. G2 solo en Ajustes › «Aprende Orbital». G3
-  arriba de Inicio mientras haya alguna sin ver (anillo turquesa = nuevo) y después en Ajustes; vuelven a Inicio cuando sale
-  una historia nueva (recomendado).
-- **H · Los pósters que eliges.** H1 solo gustos (recomendado: no ensucia tu historial de Trakt). H2 cuentan como vistos.
-
-## Recorrido (dónde aparece la primera vez)
-
-| Pantalla | Qué señala |
+| Versión | Pasos |
 |---|---|
-| Inicio | Los círculos de Aprende; el porqué en turquesa |
-| Explorar | Para ti y Decide (deslizar para elegir entre dos) |
-| Buscar | La búsqueda avanzada (filtros que se combinan) |
-| Ficha | «Ver», «Versión» y pedirle a Real-Debrid |
-| Reproductor | Gestos: deslizar brillo/volumen, doble toque, candado |
-| Descargas | Qué se baja y dónde queda |
+| Orbital (App Store) | Bienvenida · Lo que te gusta · Trakt · Listo (4; nunca nombra Real-Debrid) |
+| Plus | Bienvenida · Lo que te gusta · ¿Qué ya tienes? · Ver aquí mismo · Trakt · Listo (hasta 6) |
+| Ultra | Lo de Plus + Tu TV, solo si dijiste que la tienes (hasta 7) |
 
-Cada burbuja termina con «Ver la historia completa», que abre la historia de esa función. Se ven una vez; Ajustes ›
-Aprende › «Volver a ver los avisos» los reinicia.
+iPad: los mismos pasos en dos columnas. Mac: sin vitrina, todo con teclado, y el código de Real-Debrid abre el navegador
+de la misma Mac.
 
-## Historias (cada una de 3 a 5 tarjetas animadas)
+### 1 · Bienvenida (A1): siete pósters que el planeta atrapa
 
-Real-Debrid · Ver al instante y versiones · Búsqueda avanzada · Explorar y Decide · Lo que ves y tu Wrapped · Trakt ·
-El reproductor · Descargas · Calendario de estrenos · (Ultra) Orbital en la TV.
+Ya no es una lluvia: son 7 pósters, y el planeta los atrapa (coreografía del experto en animación):
 
-Se tocan a los lados para cambiar, se mantiene para pausar, se baja para cerrar. La última tarjeta tiene un botón que te
-lleva a la función («Probar la búsqueda avanzada»).
+| Tiempo | Qué pasa |
+|---|---|
+| 0–400 ms | Casi negro. El planeta aparece en el centro alto (fundido, escala 0.96 → 1). Sin anillo. |
+| 300–1 400 ms | Caen 7 pósters chicos desde arriba, cada 90 ms, con gravedad, girados ±8° que se enderezan. Sin rebote. |
+| 900–2 200 ms | Al llegar a la altura del planeta, cada uno se curva y entra en órbita: elipse inclinada 18° (la del anillo), escala 0.7, resorte 600 ms. Detrás del planeta se tapa y baja a 40 % de brillo; delante, 100 %. Esa es la profundidad, sin brillos. |
+| 1 600–2 400 ms | El anillo se dibuja como pincelada (el `OrbitalWordmark` animado que ya existe), del extremo delgado al grueso, y barre la órbita de los pósters. |
+| 2 400 ms | Entra la luna turquesa con un resorte pop y un toque háptico suave. Es el primer turquesa de la app. |
+| 2 600–3 100 ms | «Todo lo que quieres ver, en un solo lugar.» sube 16 pt con fundido; la línea de abajo, 80 ms después. |
+| 3 200 ms | «Empezar» y «Saltar» (ícono). |
+| En reposo | La órbita da una vuelta cada 40 s y la luna cada 24 s. |
 
-## Alineado con la sesión de Real-Debrid (3 nov)
+**A1-M, la variante con el mosaico detrás:** tres capas. Fondo: el mosaico de «Para ti» a 0.6 de escala, desenfocado 24 pt,
+18 % de opacidad, a media velocidad, con una sombra del color del fondo detrás del planeta; entra a los 1 200 ms y ninguna
+pieza crece. Medio: la órbita. Frente: el texto. Giroscopio solo en el fondo (4 pt, `SkyTilt`). El primer día el mosaico
+se arma con los 20 pósters que trae la app (aún no hay gustos).
 
-- La página de Real-Debrid de la guía y su historia usan la pieza de tres pasos de `Design/Explainer.swift`
-  (`DebridFlowStrip`) y sus textos (RX3-A): Orbital la encuentra › Real-Debrid la consigue en su nube › la ves al instante.
-- Palabras (RX4-A): «nube» para Real-Debrid («Pedir a la nube», «Bajando en la nube»); «Descargar» solo para guardar en el
-  iPhone.
-- La tarjeta «Así funciona» de las versiones «Por pedir» no sale si ya viste esa página o esa historia; se recuerda con la
-  llave `learn.seen.debrid-flow`, que lee `LearnModel`.
+**Lo que recomiendan los expertos: A1 sola.** El mosaico cuenta «mucho contenido», pero le quita protagonismo a lo único
+de la marca (los pósters que el planeta atrapa); además, el mosaico es la cara de «Para ti» y repetirlo en la bienvenida le
+quita sorpresa después, y son dos cosas moviéndose (batería y ruido en el iPhone SE). El mosaico luce más como fondo de la
+vitrina.
 
-## Cómo se construye (resumen técnico)
+### 1b · Vitrina (B1): una película de 11 s
 
-- Piezas nuevas al catálogo: `DSFallingPosters` (lluvia y órbita), `DSAttractLoop`, `DSCoachMark` (foco y burbuja,
-  `anchorPreference`), `DSStoryRing` y `StoryPlayer` (sale de `WrappedView`, que se reusa), `DSOrbitProgress`.
-- Modelo en OrbitalCore: `LearnModel` (qué historias y avisos ya viste, en `kv`), contenido de las historias como datos.
-- Con «Reducir movimiento», nada cae ni gira: fundidos.
-- Pruebas: `OnboardingUITests` (SE, mini, Pro Max, iOS 27), `LearnModelTests`, `DesignTests` sin «Stremio» en textos.
-- La TV: la guía de la TV ya existe; se le avisa de las historias y el recorrido para paridad (registro en
-  `docs/producto/paridad-registro.md`).
+Arranca a los 12 s sin tocar. Corre dos vueltas y se detiene en «Empezar» (un bucle sin fin parece una app trabada). No
+sale con VoiceOver, ni con Reducir movimiento, ni si abriste la app desde un widget o un enlace. Cualquier toque la detiene
+(fundido de 220 ms). No vibra.
 
-## Ajustes tras las dos revisiones (producto y técnica, 3 nov)
+1. 0–1,5 s: la órbita se abre y aparece el mosaico al frente.
+2. 1,5–3 s: la luna se posa sobre un póster, que crece con resorte.
+3. 3–5 s: el póster se expande y se vuelve la ficha (zoom de Apple).
+4. 5–8,5 s: los tres pasos de la nube (`DebridFlowStrip`), uno cada 1,1 s. En Orbital, «Dónde verla».
+5. 8,5–10 s: «Ver» se presiona y la pantalla se va a negro.
+6. 10–11 s: regresa a la órbita.
 
-- La guía queda en 7 pasos: gustos y plataformas en una pantalla; el permiso de avisos sale de la guía y se pide en el
-  momento (al seguir una serie o pedir algo a la nube). «Saltar» con ícono, siempre visible.
-- Real-Debrid: «Ya pagué, revisar» al volver de pagar, la guía recuerda el paso, historia propia «Cómo pagar y renovar».
-  En Orbital (App Store) no se nombra Real-Debrid en ningún paso.
-- Quien ya usa la app (guía terminada, o Real-Debrid o Trakt conectados) no ve la guía ni los avisos; solo los círculos.
-- Vitrina (B1): a los 12 s, no 8; sin prometer «al instante» donde no hay Real-Debrid; no existe en la Mac. Un revisor
-  prefería B2.
-- D1 solo si la clave renovada se reescribe sola en la dirección de los buscadores y en la copia de la TV
-  (`DebridModel+TV.swift`); si no, D2. Hoy solo se usa la clave fija (`OrbitalAddons/Debrid.swift`).
-- F3: foco en la ficha y en la búsqueda avanzada (`overlayPreferenceValue` dentro de cada `NavigationStack`, anclas
-  `Equatable`); TipKit en lo demás, también para las pestañas (la barra es del sistema) y el reproductor (solo en pausa).
-  Uno por visita, nunca justo después de la guía ni si ya usaste la función; «Saltar avisos».
-- Historias suman «Cómo pagar y renovar» y «Cuando no hay versiones»; el calendario va dentro de «Avisos y estrenos».
-- Pósters que caen: un solo `TimelineView` con `Canvas`, pausa en segundo plano y con Reducir movimiento; unos 20 pósters
-  dentro de la app para que la bienvenida no salga vacía sin red ni clave de TMDB.
-- `StoryPlayer` genérico sale de `WrappedView` (`Design/Stories.swift`); VoiceOver: no avanza sola; Mac: flechas y Escape.
-- Archivos de menos de 600 líneas (`FileBudgetTests`); pruebas `OnboardingUITests` ampliada, `CoachMarkUITests`,
-  `StoriesUITests`, banderas `-demo-onboarding`, `-demo-coach`, y el simulador de iPad.
-- Stremio (E1): fuera `StremioAPI`, `SecretKey.stremioAuth`, `LoginView`, la copia y la fusión en `LibraryMerge`; Cinemeta y
-  subtítulos siguen (dominios públicos, sin nombre a la vista); `StremioLibrary.*` se renombra. `DesignTests` busca el
-  nombre en `Localizable.xcstrings`.
+### 2 · Lo que te gusta (H1)
+
+«¿Qué te gusta? Elige 3 o más.», con contador, y «¿Dónde ves hoy?» para las plataformas, en la misma pantalla. Son gustos,
+no vistos. Se puede saltar: entonces Inicio muestra populares y la tarjeta «Dime qué te gusta y lo armo para ti». Vibración
+de selección al elegir.
+
+### 3 · ¿Qué ya tienes? (C1)
+
+«Así te explico solo lo que te falta.» Tarjetas de Real-Debrid, Trakt y (Ultra) la TV, con «Ya lo tengo», «¿Qué es?» y
+«Después» como botones completos, no cápsulas.
+
+### 4 · Ver aquí mismo (D1): el pago ya no bloquea
+
+- «Ver aquí mismo, sin esperar.» Los tres pasos animados, «Cuesta unos 3 € cada 15 días y lo pagas en su página.», una
+  cuenta por persona, no ocupa espacio en tu iPhone.
+- Dos salidas: **«Conectar ahora»** o **«Cuando quiera ver algo»**. Quien elige la segunda termina la guía; la primera vez
+  que toca «Ver» sin Real-Debrid, la hoja de conectar sale ahí mismo.
+- «Abrir Real-Debrid» copia el código. Al volver a la app, revisa solo: «Revisando tu cuenta…» → «Listo, ya puedes ver
+  aquí mismo.» o «Aún no veo el pago. Te espero aquí.». «Ya pagué, revisar» queda de respaldo. Si el código vence, sale
+  uno nuevo solo.
+- D1 se construye solo si la clave que se renueva sola se reescribe también en los buscadores y en la TV; si la prueba con
+  tu cuenta falla, se queda pegar la clave (D2), guiado.
+
+### 5 a 7 · Trakt, Tu TV, Listo
+
+- Trakt: «Guarda lo que ves en todos tus aparatos. Gratis.» y el código grande. Opcional.
+- Tu TV: solo Ultra y solo si dijiste que la tienes.
+- Listo (1,6 s): «Tu Orbital ya está lista.» Los pósters elegidos salen de la órbita y aterrizan en su lugar en Inicio
+  (resorte de 600 ms, cada 60 ms); la luna se encoge y se vuelve el anillo del primer círculo de Aprende. Vibración de éxito.
+  «Ir a Inicio».
+- El permiso de avisos no se pide en la guía: se pide al seguir una serie o al pedir algo a la nube.
+
+### Entre pasos
+
+- La barra de avance es un arco fino con una marca por paso; la luna avanza una marca (resorte de 320 ms). Sin texto.
+- Lo que sale se encoge a 0.96 y se desvanece (220 ms); lo que entra sube 16 pt (520 ms). La luna es lo único que viaja de
+  una pantalla a otra: va del arco a lo nuevo de esa pantalla (el código, la tarjeta que eliges).
+- Si cierras la app a medias: antes de 24 h sigues donde ibas; después, nunca se vuelve a imponer, y Inicio muestra
+  «Termina de preparar Orbital · 2 de 4».
+
+## Avisos sobre la pantalla (F3)
+
+- Foco solo en la ficha («Ver» y «Versión») y en la búsqueda avanzada: el velo oscurece al 75 % en 320 ms, el hueco se
+  abre del tamaño del botón más 8 pt, un anillo turquesa de 2 pt se dibuja una vez en 520 ms y no late, y la burbuja sube
+  8 pt 120 ms después. «"Ver" elige la mejor versión en tu idioma.» · «Entendido» · «Ver la historia».
+- Aviso chico de Apple (TipKit) en lo demás, también en las pestañas y en el reproductor (solo en pausa).
+- Ninguno en la misma sesión de la guía; como máximo uno por visita; nunca si ya usaste la función; «Saltar avisos».
+
+## Aprende Orbital (G3)
+
+- Máximo 4 círculos en Inicio, ordenados por lo que te falta: «Cómo pagar» (si no conectaste Real-Debrid), «Búsqueda
+  avanzada», «El reproductor»… Se van a Ajustes › Aprende Orbital cuando los viste todos o a los 14 días; vuelve uno solo
+  si hay una función nueva o si tu cuenta venció.
+- El anillo de lo no visto es un trazo fijo turquesa que se dibuja una vez al entrar a Inicio (700 ms), sin girar; al verla,
+  se vacía y queda gris (320 ms).
+- Lo que ya viste en la guía (Real-Debrid, Trakt) cuenta como visto en su historia, y la tarjeta «Así funciona» de la
+  sesión de Real-Debrid se recuerda con la misma llave (`learn.seen.debrid-flow`).
+- Las 11 historias: Real-Debrid · Cómo pagar y renovar · Trakt · Búsqueda avanzada · Explorar y Decide · Avisos y estrenos ·
+  Ver al instante y versiones · Cuando no hay versiones · El reproductor · Descargas y la nube · Lo que ves y tu Wrapped. En
+  Ultra, también la TV.
+- Cinco plantillas de tarjeta, como datos: portada (planeta chico y una frase), tres pasos (`DebridFlowStrip`), gesto (una
+  mano fantasma de 44 pt lo repite dos veces), antes y ahora (un deslizador que se mueve solo) y botón final que lleva a la
+  función. Una idea por tarjeta; 5 s cada una (7 s con texto largo).
+- Encadenado: el aviso lleva a la historia y la historia lleva a probar la función; nunca al revés.
+
+## Quien vuelve y las pantallas vacías
+
+- Quien ya usaba la app no ve la guía ni los avisos; solo los círculos.
+- Si vuelves después de semanas con Real-Debrid vencido: barra arriba «Tu Real-Debrid venció · Renovar», que abre «Cómo
+  pagar y renovar». Arriba de todo, «Sigue viendo».
+- Pantallas vacías con salida: ficha sin Real-Debrid («Conecta Real-Debrid para verla aquí»), Descargas («Lo que guardes
+  para ver sin internet aparece aquí»), Lo que ves («Ve tu primera película y empieza tu año»).
+
+## Stremio fuera (E1)
+
+Fuera `StremioAPI`, `SecretKey.stremioAuth`, `LoginView`, la sección de Ajustes, «¿Usas Stremio?», la copia y la fusión en
+`LibraryMerge`, y los mensajes que mandan a Stremio. «Traídos de tu Stremio» → «Agregados por ti» (los complementos se
+quedan). La información de títulos (Cinemeta) y los subtítulos siguen: son servicios públicos en dominios de Stremio, sin
+nombre a la vista. `StremioLibrary.*` se renombra. `DesignTests` revisa que ningún texto diga «Stremio».
+
+## Movimiento, rendimiento y accesibilidad
+
+- Un solo `TimelineView` con `Canvas` para la órbita, la caída y la luna; pósters dibujados una vez; 60 cuadros por segundo
+  en la entrada y 30 en reposo (como el horario del Cielo); pausa en segundo plano y fuera de la pantalla.
+- Vibración solo en 3 momentos: llega la luna, eliges un gusto, «Listo».
+- Reducir movimiento: fundidos de 220 ms, la órbita quieta y armada, sin vitrina, historias que no avanzan solas.
+- VoiceOver: los avisos se anuncian y se cierran con el gesto de escape; los pósters dicen su título; las historias no
+  avanzan solas. Letra grande sin cortes.
+- 20 pósters dentro de la app para que la bienvenida y la vitrina no salgan vacías sin internet ni clave de TMDB.
+
+## Qué medimos
+
+Guía: `onboarding_step_viewed`, `onboarding_skipped` (con el paso), `onboarding_completed` (con la duración).
+Real-Debrid: `rd_explained`, `rd_open_site`, `rd_returned`, `rd_connected` (minutos desde que abrió la página),
+`rd_code_expired`. Primer video: `first_play` (minutos desde la instalación). Avisos e historias: `coach_shown`,
+`coach_dismissed`, `story_opened`, `story_completed`, `story_cta_tapped`. Regreso: `d1_return`, `d7_return`.
+
+Las tres cifras que importan: de los que abren la página de Real-Debrid, cuántos conectan; cuánto tardan en ver el primer
+video; cuántos vuelven a la semana. Se guardan solo en el iPhone (bitácora), sin mandarse a ningún servicio.
+
+## Cómo se construye
+
+- Piezas nuevas al catálogo: `DSOrbitCatch` (los 7 pósters y la luna, `TimelineView` + `Canvas`), `DSOrbitProgress`,
+  `DSAttractFilm`, `DSCoachMark` (`overlayPreferenceValue` dentro de cada `NavigationStack`, anclas `Equatable`),
+  `StoryPlayer` (sale de `WrappedView`, que pasa a ser su primer uso) y `DSStoryRing`. Archivos de menos de 600 líneas.
+- Modelos en OrbitalCore: `OnboardingModel` sin pasos obligatorios, con el paso guardado y la guía por versión;
+  `LearnModel` (visto, orden por lo que falta, 14 días) con el contenido de las historias en `LearnContent`.
+- Pruebas: `OnboardingUITests` ampliada (las rutas de C1, saltar, la vitrina se detiene, reanudar), `CoachMarkUITests`,
+  `StoriesUITests`, `LearnModelTests`, `DesignTests` sin «Stremio»; banderas `-demo-onboarding`, `-demo-coach`,
+  `-demo-no-idle`; SE, mini, Pro Max, iOS 27 y el iPad.
+- La TV: su guía ya existe; los avisos y las historias entran al registro de paridad.
+
+## Orden de construcción
+
+1. Stremio fuera (E1): no depende de nada y limpia la guía.
+2. `OnboardingModel` nuevo y las pantallas 2 a 7 (sin animación fina).
+3. La bienvenida A1 (o A1-M) y la vitrina.
+4. `StoryPlayer`, `LearnModel` y los círculos.
+5. Los avisos sobre la pantalla.
+6. Real-Debrid con código, tras la prueba con tu cuenta.
