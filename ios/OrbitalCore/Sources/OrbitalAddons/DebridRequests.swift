@@ -92,6 +92,9 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
     public var pack: Bool
     /// Cambió aquí y la TV todavía no lo tiene (se manda en el siguiente vistazo).
     public var pending: Bool
+    /// N3-A: «Muchas descargas activas» ya se volvió a pedir solo una vez (en el siguiente vistazo con lugar libre). Con
+    /// esto en true ya no se reintenta solo: queda «Pedir a la nube» a mano.
+    public var retried = false
 
     public var id: String { hash }
 
@@ -123,7 +126,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case hash, files, account, legacyFileIdx = "file_idx", rdID = "rd_id", title, kind, metaID = "meta_id", videoIDs = "video_ids", season,
              episode, language, release, device = "by", createdAt = "since", updatedAt = "updated", rdStatus = "rd_status", percent, seeders,
-             state, progressAt = "progress_at", notified, nudged, pack = "all_files", legacyPack = "pack", pending
+             state, progressAt = "progress_at", notified, nudged, pack = "all_files", legacyPack = "pack", pending, retried
     }
 
     /// Con `true` en el `userInfo` del codificador se escribe todo (la libreta de este aparato); sin él, solo lo que viaja a
@@ -160,6 +163,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         nudged = (try? c.decodeIfPresent(Bool.self, forKey: .nudged)) ?? false
         pack = ((try? c.decodeIfPresent(Bool.self, forKey: .pack)) ?? nil ?? (try? c.decodeIfPresent(Bool.self, forKey: .legacyPack)) ?? nil) ?? false
         pending = (try? c.decodeIfPresent(Bool.self, forKey: .pending)) ?? false
+        retried = (try? c.decodeIfPresent(Bool.self, forKey: .retried)) ?? false
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -191,6 +195,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         try c.encode(notified, forKey: .notified)
         try c.encode(nudged, forKey: .nudged)
         try c.encode(pending, forKey: .pending)
+        try c.encode(retried, forKey: .retried)
     }
 
     /// Los topes del contrato (`entry`).
@@ -220,6 +225,9 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
 
     /// Lo que se espera antes de decir «Sigue sin bajar · ¿probar otra versión?» (R13).
     public static let stallAfter: TimeInterval = 24 * 3600
+
+    /// N3-A: «Muchas descargas activas» que se vuelve a pedir solo, una vez, cuando se libere un lugar.
+    public var retriesWhenFree: Bool { state == .tooMany && !retried }
 
     /// Lleva `stallAfter` sin avanzar.
     public func isStalled(now: Date) -> Bool { state.isActive && now.timeIntervalSince(progressAt) >= Self.stallAfter }
@@ -279,7 +287,7 @@ public struct DebridRequest: Codable, Equatable, Sendable, Identifiable {
         out.videoIDs = videos
         out.files = files
         out.updatedAt = max(stored.updatedAt, incoming.updatedAt)
-        out.notified = stored.notified; out.nudged = stored.nudged; out.pending = stored.pending
+        out.notified = stored.notified; out.nudged = stored.nudged; out.pending = stored.pending; out.retried = stored.retried
         return out
     }
 }

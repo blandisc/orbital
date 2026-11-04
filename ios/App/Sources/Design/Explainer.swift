@@ -173,7 +173,7 @@ struct DebridExplainer: View {
         card("tortoise.fill", DS.ListTint.flame, Text("El que no contesta se salta"),
              Text("Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."))
         card("shippingbox.fill", DS.ListTint.trophy, Text("Vienen con Orbital o los agregas tú"),
-             Text("Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idioma y subtítulos."))
+             Text("Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas y subtítulos."))
     }
 
     @ViewBuilder private var realDebrid: some View {

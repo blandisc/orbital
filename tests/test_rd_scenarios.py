@@ -197,6 +197,10 @@ def cause_of(got: dict) -> str | None:
 @pytest.mark.parametrize("path", SCENARIOS, ids=[p.stem for p in SCENARIOS])
 def test_escenario(path, run):
     scn = load(path)
+    if scn.get("act") == "request_and_check":
+        # N3-A, escenarios 34 y 35 (iPhone, 4 nov): pedir y luego el siguiente vistazo con `rd.slots` y `rd.retry_error`.
+        # El arnés de la TV todavía no simula ese vistazo (registro de paridad).
+        pytest.skip("«request_and_check»: el siguiente vistazo, pendiente en el arnés de la TV")
     exp = scn["expected"]
     skip = TV_DIFFERS.get(scn["id"], ("", ""))[0].split()
     out = run(scn)

@@ -35,6 +35,8 @@ final class AppUI {
     var openSimpsons = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
     var openSettings = false
+    /// Abrir Ajustes › Tus idiomas (N4-A; la historia «Tus idiomas» de la guía termina aquí). Se apaga sola al abrirla.
+    var openLanguages = false
     /// La guía de la primera vez a la vista (al abrir la primera vez, o desde Ajustes › Aprende Orbital).
     var showingGuide = false
     /// Una historia de «Aprende Orbital» a pantalla completa (su id), desde los círculos de Inicio, Ajustes o un aviso.

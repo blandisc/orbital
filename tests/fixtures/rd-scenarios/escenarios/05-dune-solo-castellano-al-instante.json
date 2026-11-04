@@ -13,7 +13,17 @@
       "en",
       "es-ES"
     ],
-    "quality": "1080p"
+    "quality": "1080p",
+    "device": {
+      "max_gb": {
+        "4K": 60,
+        "1440p": 40,
+        "1080p": 40,
+        "": 20
+      },
+      "episode_share": 0.3,
+      "cannot_decode": []
+    }
   },
   "title": {
     "kind": "movie",
@@ -77,7 +87,7 @@
     "error": null
   },
   "expected": {
-    "_note": "FQ1-A: no hay latino al instante; «Ver» es la mejor que arranca ya según tu orden (castellano: la inglesa al instante es un REMUX 4K de 64 GB solo Dolby Vision y pierde por eso) y al lado, «Pedir a la nube en latino» con la de Cinecalidad.",
+    "_note": "FQ1-A: no hay latino al instante; «Ver» es la mejor que arranca ya según tu orden y al lado, «Pedir a la nube en latino» con la de Cinecalidad. N5-A (Fernando, 4 nov): la inglesa al instante va antes en tu orden, pero es un REMUX 4K de 64 GB y en este aparato (`app.device`: un iPhone, 60 GB en 4K) no se ve bien: gana la castellana y la ficha lo dice («La de inglés pesa 64 GB y aquí no se ve bien», `plays_poorly`). En la fila de inglés, el 4K que encabeza es el que se ve bien aquí (la de 64 GB queda en «Otras»).",
     "title": "Dune: Parte dos",
     "logo": true,
     "video_id": "tt15239678",
@@ -133,9 +143,9 @@
       },
       {
         "code": "en",
-        "hash": "eee7f700c17bb89a63d0991ebb5f0b20de1b1d69",
+        "hash": "62c6429f039d61f4a9b1663305d86d0fa649cbb1",
         "res": "4K",
-        "state": "instant",
+        "state": "to_request",
         "recommended": false,
         "other": false
       },
@@ -215,6 +225,13 @@
     "hidden": 10,
     "play_now": "eca99591be0c9d5961688422a1457671bb20b92f",
     "request": null,
-    "other_account": null
+    "other_account": null,
+    "plays_poorly": {
+      "hash": "eee7f700c17bb89a63d0991ebb5f0b20de1b1d69",
+      "language": "en",
+      "res": "4K",
+      "why": "heavy",
+      "gb": 64
+    }
   }
 }

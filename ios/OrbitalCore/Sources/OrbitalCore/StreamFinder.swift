@@ -152,7 +152,7 @@ public actor StreamFinder {
         // Lo que quedó listo entra en la llave: un pedido que termina no se queda con la lista de antes (10 min).
         let readyNow = ready(kind, videoID)
         let refusedNow = refusedHashes(Self.metaID(of: videoID))
-        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(prefs.fallback.joined(separator: ",")):\(purpose):\(onlyPlayable):"
+        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(prefs.order.joined(separator: ",")):\(prefs.device.maxGB.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")):\(purpose):\(onlyPlayable):"
             + readyNow.map(\.hash).sorted().joined(separator: ",") + ":" + refusedNow.sorted().joined(separator: ",")
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).

@@ -11,6 +11,7 @@ import OrbitalModels
 /// - `ready`: ya pediste la de YTS 1080p y Real-Debrid la terminó, pero Torrentio la sigue llamando «[RD download]»: «Ver»
 ///   pone esa y «Versión» dice «Al instante · la pediste».
 /// - `ready-unlisted`: igual, pero Torrentio ni la lista (con «solo lo que ya está»): se ve con el enlace de tu Real-Debrid.
+/// - `downloading` (N2-A, 4 nov): la de YTS 1080p va en 40 %: su tarjeta de «Versión» dice «Bajando · 40 %», no «↓ Por pedir».
 enum DemoViento {
     static var mode: String? { Demo.value(after: "-demo-viento") }
     static let id = "tt0061752"
@@ -65,10 +66,12 @@ enum DemoViento {
 
     /// La libreta con el pedido ya listo (`ready`, `ready-unlisted`).
     @MainActor static func seed(_ services: Services) {
-        guard let mode, mode.hasPrefix("ready") else { return }
+        guard let mode, mode.hasPrefix("ready") || mode == "downloading" else { return }
+        let ready = mode != "downloading"
         var request = DebridRequest(hash: yts1080, fileIdx: 0, rdID: "DEMOVIENTO", title: "Hasta el viento tiene miedo", kind: "movie", metaID: id,
                                     videoIDs: [id], language: "es-419", release: "Even the Wind Is afraid 1968 1080p BluRay", device: services.deviceName,
-                                    createdAt: Date().addingTimeInterval(-3 * 3600), rdStatus: "downloaded", percent: 100, state: .ready)
+                                    createdAt: Date().addingTimeInterval(-3 * 3600), rdStatus: ready ? "downloaded" : "downloading", percent: ready ? 100 : 40,
+                                    seeders: ready ? nil : 12, state: ready ? .ready : .downloading)
         request.notified = true; request.nudged = true; request.pending = false
         services.debridRequests.requester.book.put(request)
         services.debridRequests.reloadForDemo()

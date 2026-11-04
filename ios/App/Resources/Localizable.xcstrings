@@ -272,17 +272,6 @@
         }
       }
     },
-    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idioma y subtítulos.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Language and subtitles."
-          }
-        }
-      }
-    },
     "Abre los dedos para llenar la pantalla; ciérralos para verla completa.": {
       "extractionState": "manual",
       "localizations": {
@@ -39935,6 +39924,259 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your TV has it with another account"
+          }
+        }
+      }
+    },
+    "Idioma original": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original language"
+          }
+        }
+      }
+    },
+    "Se usan tus idiomas · Cambiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your languages are used · Change"
+          }
+        }
+      }
+    },
+    "Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Tus idiomas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versions in your languages come first, in your order. Change them in Settings › Your languages."
+          }
+        }
+      }
+    },
+    "La de %@ pesa %@ GB y aquí no se ve bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %@ one is %@ GB and won't play well here"
+          }
+        }
+      }
+    },
+    "La de %@ viene en %@ y aquí no se ve bien": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %@ one comes in %@ and won't play well here"
+          }
+        }
+      }
+    },
+    "Lo vuelvo a pedir cuando se libere un lugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll request it again when a slot frees up"
+          }
+        }
+      }
+    },
+    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas y subtítulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Languages and subtitles."
+          }
+        }
+      }
+    },
+    "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versions are searched in this order, and the first one decides what plays. If the first isn't there, the next one is tried."
+          }
+        }
+      }
+    },
+    "Con este arranca si lo hay": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts with this one if it's there"
+          }
+        }
+      }
+    },
+    "El de cada película o serie (japonés en un anime)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each movie or show's own (Japanese in an anime)"
+          }
+        }
+      }
+    },
+    "Guardé tus idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved your languages"
+          }
+        }
+      }
+    },
+    "La próxima búsqueda ya los usa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next search already uses them"
+          }
+        }
+      }
+    },
+    "Idiomas y subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Languages and subtitles"
+          }
+        }
+      }
+    },
+    "Letra de los subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle lettering"
+          }
+        }
+      }
+    },
+    "Buscar subtítulos en internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for subtitles online"
+          }
+        }
+      }
+    },
+    "Si el video no los trae en tu idioma, se buscan en OpenSubtitles.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the video doesn't have them in your language, they're searched on OpenSubtitles."
+          }
+        }
+      }
+    },
+    "Idioma de la app": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App language"
+          }
+        }
+      }
+    },
+    "El audio de las películas y series se elige en Tus idiomas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The audio of movies and shows is chosen in Your languages."
+          }
+        }
+      }
+    },
+    "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The language, version and timing adjustment are remembered for each show or movie."
+          }
+        }
+      }
+    },
+    "El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The iPhone style is changed in Settings › Accessibility › Subtitles."
+          }
+        }
+      }
+    },
+    "Muchas descargas activas · Lo vuelvo a pedir cuando se libere un lugar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many active downloads · I'll request it again when a slot frees up"
+          }
+        }
+      }
+    },
+    "Volví a pedir %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requested %@ again"
+          }
+        }
+      }
+    },
+    "Ya se liberó un lugar en tu Real-Debrid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A slot freed up in your Real-Debrid"
           }
         }
       }

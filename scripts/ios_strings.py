@@ -30,6 +30,25 @@ TRANSLATIONS = {
     # «Ver» y FQ5-A lo que tu TV ya tiene con otra cuenta.
     "Pedir a la nube en %@": "Request it to the cloud in %@", "Pedir a la nube aquí": "Request it to the cloud here",
     "Lo tiene tu TV con otra cuenta": "Your TV has it with another account",
+    # N2-A…N5-A y «Tus idiomas» (Fernando, 4 nov: «ve con tus sugerencias… que sea fácil cambiar tus idiomas preferidos»).
+    "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.": "Versions are searched in this order, and the first one decides what plays. If the first isn't there, the next one is tried.",
+    "Idioma original": "Original language",
+    "El de cada película o serie (japonés en un anime)": "Each movie or show's own (Japanese in an anime)", "Con este arranca si lo hay": "Starts with this one if it's there",
+    "Idioma de la app": "App language", "Idiomas y subtítulos": "Languages and subtitles", "Letra de los subtítulos": "Subtitle lettering",
+    "Buscar subtítulos en internet": "Search for subtitles online",
+    "El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película.": "The language, version and timing adjustment are remembered for each show or movie.",
+    "El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.": "The iPhone style is changed in Settings › Accessibility › Subtitles.",
+    "Si el video no los trae en tu idioma, se buscan en OpenSubtitles.": "If the video doesn't have them in your language, they're searched on OpenSubtitles.",
+    "El audio de las películas y series se elige en Tus idiomas.": "The audio of movies and shows is chosen in Your languages.",
+    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idiomas y subtítulos.": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Languages and subtitles.",
+    "Volví a pedir %@": "Requested %@ again", "Ya se liberó un lugar en tu Real-Debrid": "A slot freed up in your Real-Debrid",
+    "Guardé tus idiomas": "Saved your languages", "La próxima búsqueda ya los usa": "The next search already uses them",
+    "Se usan tus idiomas · Cambiar": "Your languages are used · Change",
+    "Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Tus idiomas.": "Versions in your languages come first, in your order. Change them in Settings › Your languages.",
+    "La de %@ pesa %@ GB y aquí no se ve bien": "The %@ one is %@ GB and won't play well here",
+    "La de %@ viene en %@ y aquí no se ve bien": "The %@ one comes in %@ and won't play well here",
+    "Lo vuelvo a pedir cuando se libere un lugar": "I'll request it again when a slot frees up",
+    "Muchas descargas activas · Lo vuelvo a pedir cuando se libere un lugar": "Too many active downloads · I'll request it again when a slot frees up",
     # CX (3 nov, Fernando: «CX2A, CX3A, CX4A… la Mac no habla con la TV», CX5, CX7A, CX8A): tu clave entre tus aparatos Apple,
     # quitarla solo aquí o de todos, la invitación del iPhone al iPad, el nombre al conectar y «Darle su propia conexión».
     # OpenSubtitles deja de ser complemento (Fernando, 3 nov): «Buscar en internet» en Idioma y subtítulos.

@@ -17,7 +17,11 @@ extension PlayerModel {
             // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
             let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
             let choice = request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)
-            let audio = [choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap { $0 }.filter { !$0.isEmpty }
+            // Y si no trae ninguno de esos, «Tus idiomas» en su orden (N4-A): «original» es el idioma original de esta versión.
+            let order = langs.prefs.order.compactMap { $0 == "original" ? source?.originalLanguage : $0 }
+            var audio: [String] = []
+            for code in [choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap({ $0 }) + order
+            where !code.isEmpty && !audio.contains(code) { audio.append(code) }
             let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
         }

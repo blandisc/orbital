@@ -424,6 +424,8 @@ struct MainTabs: View {
             ui.openSettings = false
             paths[tab].append(SettingsRoute())
         }
+        // Ajustes › Tus idiomas (N4-A): Ajustes encima y ella abre su página (y apaga la bandera).
+        .onChange(of: ui.openLanguages) { _, open in if open { paths[tab].append(SettingsRoute()) } }
         // «Un Simpson al azar» del Centro de control: a Inicio, que abre la ruleta (y apaga la bandera).
         .onChange(of: ui.openSimpsons, initial: true) { _, wants in if wants { tab = 0 } }
         .onChange(of: ui.openRemote, initial: true) { _, wants in

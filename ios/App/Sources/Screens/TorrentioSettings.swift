@@ -11,6 +11,8 @@ struct TorrentioSettings: View {
     @State private var torrentio = ModelObserver(TorrentioSettingsModel(AppEnvironment.shared.services))
     @State private var explaining = false
     @State private var confirmReset = false
+    /// «Tus idiomas» (N4-A), para cambiarlos desde aquí sin otra lista.
+    @State private var yourSettings = ModelObserver(SettingsModel(AppEnvironment.shared.services))
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -90,56 +92,20 @@ struct TorrentioSettings: View {
         .accessibilityIdentifier("torrentio-settings")
     }
 
-    /// T2: idiomas primero, en orden. El orden también es el plan B del reproductor (R6). Subir y bajar con el menú de cada
-    /// uno, el arrastre o VoiceOver.
+    /// T2 → N4-A (Fernando, 4 nov): los «Idiomas primero» de Torrentio son «Tus idiomas» de Ajustes, en su orden (sin
+    /// «Idioma original», que Torrentio no conoce). Aquí no hay otra lista que compita: se dice cuáles y se cambian allá.
     @ViewBuilder private func languages(_ model: TorrentioSettingsModel, _ options: AddonOptions) -> some View {
-        let ui = env.services.appSettings.uiLanguage
+        let mine = yourSettings.model.settings
+        let names = Text(verbatim: mine.yourLanguages.map { YourLanguagesView.name($0, mine.uiLanguage) }.joined(separator: ", "))
         Section {
-            ForEach(Array(options.languages.enumerated()), id: \.element) { index, key in
-                HStack(spacing: DS.Space.s3) {
-                    Text(verbatim: "\(index + 1)").font(DS.TextRecipe.footnote.font.monospacedDigit()).foregroundStyle(DS.textMuted)
-                        .frame(width: DS.SettingsLook.rowIcon)
-                    TorrentioWords.language(key, uiLanguage: ui).foregroundStyle(DS.text)
-                    Spacer(minLength: DS.Space.s2)
-                    Menu {
-                        if index > 0 { Button("Subir", systemImage: "arrow.up") { move(model, key, by: -1) } }
-                        if index < options.languages.count - 1 { Button("Bajar", systemImage: "arrow.down") { move(model, key, by: 1) } }
-                        Button("Quitar", systemImage: "minus.circle", role: .destructive) { model.change { $0.languages.removeAll { $0 == key } } }
-                    } label: {
-                        Image(systemName: "ellipsis.circle").foregroundStyle(DS.textMuted).frame(minWidth: DS.Size.touchTarget)
-                    }
-                    .accessibilityLabel(Text("Opciones"))
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityActions {
-                    if index > 0 { Button("Subir") { move(model, key, by: -1) } }
-                    if index < options.languages.count - 1 { Button("Bajar") { move(model, key, by: 1) } }
-                    Button("Quitar") { model.change { $0.languages.removeAll { $0 == key } } }   // lo mismo que el menú y el deslizar
-                }
-                .swipeActions { Button("Quitar", role: .destructive) { model.change { $0.languages.removeAll { $0 == key } } }.tint(DS.danger) }
+            NavigationLink { YourLanguagesView(settings: yourSettings) } label: {
+                TorrentioRowLabel(title: Text("Se usan tus idiomas · Cambiar"), detail: names, action: true)
             }
-            .onMove { from, to in model.change { $0.languages.move(fromOffsets: from, toOffset: to) } }
-            if options.languages.isEmpty {
-                Text("Ninguno: las versiones salen sin importar el idioma.").recipe(.footnote, color: DS.textMuted)
-            }
-            // Con los 41 ya en tu lista no queda qué agregar (antes abría una página vacía).
-            if options.languages.count < TorrentioConfig.languages.count {
-                NavigationLink { TorrentioLanguagePicker(model: torrentio) } label: {
-                    Label("Agregar idioma", systemImage: "plus.circle").foregroundStyle(DS.text)
-                }
-                .accessibilityIdentifier("torrentio-add-language")
-            }
+            .accessibilityIdentifier("torrentio-your-languages")
         } header: { Text("Idiomas primero") } footer: {
-            Text("Las versiones en estos idiomas salen arriba. Si no hay en el primero, se prueba el siguiente.")
+            Text("Las versiones en tus idiomas salen arriba, en tu orden. Se cambian en Ajustes › Tus idiomas.")
         }
         .listRowBackground(DS.surface)
-    }
-
-    private func move(_ model: TorrentioSettingsModel, _ key: String, by step: Int) {
-        model.change { o in
-            guard let i = o.languages.firstIndex(of: key), o.languages.indices.contains(i + step) else { return }
-            o.languages.swapAt(i, i + step)
-        }
     }
 }
 
@@ -160,31 +126,5 @@ struct TorrentioRowLabel: View {
             title.foregroundStyle(action ? DS.accent : DS.text)
             detail.recipe(.footnote, color: DS.textMuted)
         }
-    }
-}
-
-/// T2 · «Agregar idioma»: los 41 de Torrentio que todavía no están, con el tuyo arriba.
-struct TorrentioLanguagePicker: View {
-    let model: ModelObserver<TorrentioSettingsModel>
-    @Environment(AppEnvironment.self) private var env
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        let ui = env.services.appSettings.uiLanguage
-        let chosen = Set(model.model.options.languages)
-        Form {
-            Section {
-                ForEach(TorrentioConfig.languages.filter { !chosen.contains($0) }, id: \.self) { key in
-                    Button { model.model.change { $0.languages.append(key) }; dismiss() } label: {
-                        TorrentioWords.language(key, uiLanguage: ui).foregroundStyle(DS.text)
-                    }
-                }
-            } footer: { Text("Se agrega al final de tu lista.") }
-            .listRowBackground(DS.surface)
-        }
-        .tint(DS.accent)
-        .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Agregar idioma").navigationBarTitleDisplayMode(.inline)
-        .readableListWidth()
     }
 }
