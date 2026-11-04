@@ -8,7 +8,8 @@ import UserNotifications
 /// explicación de los avisos que al pedir algo (P4-A); sin permiso no se promete avisar; y ya activado, tocarlo abre su hoja.
 extension TitleView {
     func appearContinueAction(_ model: TitleModel) -> ContinueAction? {
-        guard model.unavailableCause == .nobodyHasIt, model.sourceCheck == .none, let videoID = model.continueVideoID else { return nil }
+        // «Nadie lo tiene» o «Aún no se estrena» (una película): el modelo decide (`TitleModel.primary`).
+        guard model.primary() == .notifyWhenAppears, let videoID = model.continueVideoID else { return nil }
         let watch = env.services.appearWatch
         let _ = watch.track()
         let ui = env.services.appSettings.uiLanguage
@@ -22,8 +23,9 @@ extension TitleView {
                                   version: notifies ? Text("Reviso una vez al día, hasta el \(until)") : Text("Avisos apagados · actívalos"), play: { debridSheet = .appear },
                                   aside: notifies ? stop : opensNotificationSettings, warn: !notifies, tint: artAccent)
         }
+        let why = model.unavailableCause.map { cause in Text(verbatim: cause.title { Strings.tr($0, language: ui) }) } ?? Text("Nadie lo tiene todavía en internet")
         return ContinueAction(title: Text("Avisarme cuando aparezca"), symbol: "bell",
-                              version: Text("Nadie lo tiene todavía en internet"),
+                              version: why,
                               play: { watchForIt(model) }, tint: artAccent)
     }
 

@@ -24,8 +24,12 @@ extension TitleView {
     func debridContinueAction(_ model: TitleModel) -> ContinueAction? {
         let requests = env.services.debridRequests
         let _ = requests.track()   // el avance de un pedido vuelve a pintar el botón
-        guard model.continueAirs == nil, model.recommendedSource?.instant != true else { return nil }
+        // Qué botón va lo decide el modelo (`TitleModel.primary`, lo mismo que leen los escenarios comunes con la TV).
         let now = Date()
+        switch model.primary(now: now) {
+        case .request?, .requested?, .otherVersion?: break
+        default: return nil
+        }
         if let request = model.debridRequest, request.state != .ready {
             let alternative = model.debridOffer.flatMap(instantAside)
             // IOS-7: el mismo «¿Cancelar el pedido?» con «Seguir esperando» que la hoja y la lista (antes cancelaba sin preguntar).
@@ -44,7 +48,7 @@ extension TitleView {
                                   version: Text(verbatim: [episode, detail].compactMap { $0 }.joined(separator: " · ")),
                                   play: { debridSheet = .request }, aside: alternative ?? cancel, tint: artAccent)
         }
-        guard let offer = model.debridOffer, model.sourceCheck != .offline else { return nil }
+        guard let offer = model.debridOffer else { return nil }
         // IOS-19: si la TV ya lo pide con otra cuenta, se dice; pedirlo aparte (con la tuya) sigue a un toque.
         let others = model.otherAccountRequest.map { _ in tr("La TV lo está pidiendo con otra cuenta") }
         return ContinueAction(title: Text("Pedirlo y avisarme"), symbol: "arrow.down.circle",
