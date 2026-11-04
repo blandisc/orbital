@@ -14,6 +14,7 @@ struct TitleView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.openURL) private var openURL
     /// Lo que dice Letterboxd de la película (su promedio y sus reseñas populares); las series casi nunca están.
     @State var letterboxdInfo: LetterboxdFilmInfo?
@@ -51,7 +52,10 @@ struct TitleView: View {
 
     var body: some View {
         let model = observer.model
-        oneColumnLayout(model)
+        Group {
+            // iPad y Mac (Fernando, 4 nov 2026, FE1): la ficha de la TV como esqueleto; el iPhone sigue en una columna.
+            if sizeClass == .regular { wideLayout(model) } else { oneColumnLayout(model) }
+        }
         #if DEBUG
         .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazada (capturas del arte a medio recoger)
         #endif
@@ -59,11 +63,14 @@ struct TitleView: View {
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
         // Lo de arriba que sigue al desplazamiento va aparte (`TitleScrollChrome`): antes cada cuadro del desplazamiento
         // volvía a pintar toda la ficha (capítulos, detalles), y regresar con el gesto se trababa.
-        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: model.logo,
-                                    title: model.title,
+        // En el iPad y la Mac la barra de pestañas ocupa ese renglón: el nombre no sube a la barra (se encimaba).
+        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: sizeClass == .regular ? nil : model.logo,
+                                    title: sizeClass == .regular ? "" : model.title,
                                     buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
+        // iPad y Mac (FE1): siempre oscura, como la sala de la TV; el arte no se corta contra un fondo claro.
+        .environment(\.colorScheme, sizeClass == .regular ? .dark : scheme)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
@@ -160,8 +167,39 @@ struct TitleView: View {
         }
     }
 
+    /// La ficha ancha (iPad, Mac; FE1), como la de la TV: el arte llena la pantalla con un velo a la izquierda y, encima,
+    /// el logo, los datos, «Ver», las acciones y la sinopsis; lo demás (episodios, reparto, parecidas, detalles) debajo.
+    private func wideLayout(_ model: TitleModel) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo
+                ZStack(alignment: .bottomLeading) {
+                    BleedArt(url: model.background ?? model.poster, title: model.title, fallback: model.poster, fadesTop: false) { EmptyView() }
+                        .overlay { ArtVeil(kind: .leading, strength: .deep) }
+                        .overlay { ArtVeil(kind: .bottom, at: DS.TitleAction.wideVeilFrom, strength: .deep) }
+                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                        TitleLogo(url: model.logo, title: model.title, size: .hero)
+                            .frame(maxWidth: DS.TitleAction.wideLogoWidth, alignment: .leading)
+                        facts(model, leading: true)
+                        actions(model)
+                        synopsis(model)
+                    }
+                    .frame(maxWidth: DS.TitleAction.wideColumn, alignment: .leading)
+                    .padding(.horizontal, DS.Space.s10).padding(.bottom, DS.Layout.betweenSections)
+                }
+                // El arte sube detrás del reloj y de la barra, como en la TV.
+                .frame(height: viewport.height * DS.TitleAction.wideHeroShare + topInset)
+                .padding(.top, -topInset)
+                VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                    readingSections(model, withSynopsis: false)
+                }
+                .modifier(TitleEntrance())
+                .padding(.horizontal, DS.Space.s10).padding(.top, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
+            }
+        }
+    }
+
     /// Lo que se lee bajo las acciones: avisos, sinopsis, créditos, episodios, la ficha rica y los detalles.
-    @ViewBuilder private func readingSections(_ model: TitleModel) -> some View {
+    @ViewBuilder private func readingSections(_ model: TitleModel, withSynopsis: Bool = true) -> some View {
         if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
         if let error = model.error, !model.isLoading {
             // No cargó (sin red, Cinemeta caído): lo dice y deja reintentar (antes «Cargando» se quedaba para siempre).
@@ -171,7 +209,7 @@ struct TitleView: View {
                     .dsGlassButton().accessibilityIdentifier("title-retry")
             }
         }
-        synopsis(model)
+        if withSynopsis { synopsis(model) }
         creditLine(model)
         yourRating(model)
         // Tu reseña en Letterboxd (si la conectaste y la reseñaste o calificaste).

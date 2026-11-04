@@ -33,22 +33,23 @@ extension TitleView {
     /// Bajo el arte, al centro, un bloque chico de datos en gris: un renglón con año · Serie/Película · géneros · duración y la
     /// clasificación («TV-MA») como insignia con contorno al final; pegadas debajo, las calificaciones, discretas (logos chicos,
     /// números en gris). El año va sin el guion colgante («2026–» parecía un error). La calidad de la que va a sonar vive bajo «Ver».
-    func facts(_ model: TitleModel) -> some View {
+    /// `leading`: a la izquierda, sobre el arte (la ficha ancha del iPad y la Mac, como la TV).
+    func facts(_ model: TitleModel, leading: Bool = false) -> some View {
         let language = env.services.appSettings.uiLanguage
         let minutes = Int(CinemetaParsing.runtimeSeconds(model.info.runtime) / 60)
         let runtime = Vocabulary.runtimeText(minutes: minutes > 0 ? minutes : nil) ?? model.info.runtime
         let year = model.info.year.trimmingCharacters(in: CharacterSet(charactersIn: "–- "))
         let facts = Vocabulary.titleFacts(year: Vocabulary.factLine([year, Strings.kind(model.kind, language: language)]),
                                           genres: Vocabulary.genres(model.info.genres, language: language), runtime: runtime, rating: "")
-        return VStack(spacing: DS.Space.s2) {
+        return VStack(alignment: leading ? .leading : .center, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
-                Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+                Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(leading ? .leading : .center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
                 if let certification = model.extras?.certification {
                     QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
                 }
             }
-            RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, letterboxd: letterboxdInfo?.average, centered: true)
+            RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, letterboxd: letterboxdInfo?.average, centered: !leading)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: leading ? .leading : .center)
     }
 }

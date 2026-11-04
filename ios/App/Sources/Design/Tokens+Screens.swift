@@ -109,9 +109,9 @@ extension DS {
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720
-        /// La ficha en el iPad y la Mac: una app del tamaño del iPhone a la izquierda, como el multitasking del iPad
-        /// (Fernando, 4 nov 2026); el ancho de un iPhone Pro Max.
-        static let floatingWidth: CGFloat = 440
+        /// La ficha ancha del iPad y la Mac (FE1, como la TV): lo alto del arte (parte de la pantalla), el ancho de la columna
+        /// de la izquierda, el del logo y dónde empieza a oscurecer abajo.
+        static let wideHeroShare: CGFloat = 0.82, wideColumn: CGFloat = 520, wideLogoWidth: CGFloat = 360, wideVeilFrom = 0.55
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
         /// tanto rebota el resorte al llegar.
         static let panelArtTop: CGFloat = 70

@@ -274,7 +274,8 @@ struct MainTabs: View {
     private var remoteAsPanel: Bool { sizeClass == .regular && WindowMetrics.size.width >= DS.Remote.panelWindowWidth }
 
     /// La ficha como panel a la derecha: con ancho regular (iPad de pie o acostado, Mac). En el iPhone, a pantalla completa.
-    private var titleAsPanel: Bool { sizeClass == .regular }
+    /// Ya no: desde FE1 (4 nov 2026) la ficha del iPad y la Mac se abre a pantalla completa, como en el iPhone.
+    private var titleAsPanel: Bool { false }
 
     /// ¿Hay algo en el panel de la derecha? (El control en ventana ancha o una ficha.)
     private var sidePanelShown: Binding<Bool> {
@@ -287,11 +288,6 @@ struct MainTabs: View {
         RemoteSheet(tvNow: tvNow, large: .constant(true), onContinueHere: { now in showRemote = false; openNowPlaying(now) },
                     close: { showRemote = false })
         .inspectorColumnWidth(min: DS.Remote.panelMin, ideal: DS.Remote.panelIdeal, max: DS.Remote.panelMax)
-    }
-
-    /// La ficha que flota en su tarjeta (iPad, Mac).
-    private var floatingTitle: Binding<TitleRoute?> {
-        Binding(get: { titleAsPanel ? panelTitle : nil }, set: { panelTitle = $0 })
     }
 
     /// Abrir fichas en el panel (iPad, Mac); en el iPhone no existe y navegan a pantalla completa.
@@ -335,9 +331,6 @@ struct MainTabs: View {
         // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
         // cierra el otro.
         .inspector(isPresented: sidePanelShown) { sidePanel }
-        // La ficha en el iPad y la Mac (Fernando, 4 nov 2026): del tamaño del iPhone a la izquierda, sobre la pantalla de donde
-        // venías; se cierra con la X o tocando afuera.
-        .modifier(FloatingTitle(item: floatingTitle))
         .environment(\.titlePanel, titleOpener)
         .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
         // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
@@ -534,27 +527,4 @@ struct BannerView: View {
 /// La barra de pestañas arriba de entrada en el iPad (DK1); aparte, para que el cuerpo de la raíz compile a tiempo.
 private struct TabBarFirst: ViewModifier {
     func body(content: Content) -> some View { content.defaultAdaptableTabBarPlacement(.tabBar) }
-}
-
-/// La ficha en el iPad y la Mac: del tamaño del iPhone, a la izquierda, sobre la pantalla oscurecida (como el multitasking).
-private struct FloatingTitle: ViewModifier {
-    @Binding var item: TitleRoute?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    func body(content: Content) -> some View {
-        content.overlay(alignment: .leading) {
-            if let route = item {
-                ZStack(alignment: .leading) {
-                    // Tocar afuera la cierra; la pantalla de atrás se ve, oscurecida.
-                    DS.scrim.ignoresSafeArea().onTapGesture { item = nil }.accessibilityHidden(true)
-                    TitlePanel(route: route, close: { item = nil })
-                        .frame(width: DS.TitleAction.floatingWidth)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
-                        .shadow(DS.Elevation.medium)
-                        .padding(DS.Space.s3)
-                        .transition(.move(edge: .leading))
-                }
-            }
-        }
-        .animation(DS.Motion.spring(reduceMotion), value: item)
-    }
 }

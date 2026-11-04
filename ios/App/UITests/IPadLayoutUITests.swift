@@ -69,20 +69,14 @@ final class IPadLayoutUITests: XCTestCase {
     }
 
     /// Tocar una serie o película abre su ficha en el panel de la derecha (de pie y acostado): lo de atrás sigue a la vista
-    /// y se puede usar, y la ✕ la cierra.
-    func testTitleOpensInAFloatingCard() {
+    /// La ficha del iPad (FE1, 4 nov 2026): a pantalla completa, como la de la TV, con «Ver» a la vista; ‹ regresa.
+    func testTitleOpensFullScreen() {
         for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
-            open(["-demo-tab", "2"], orientation)
-            let poster = app.buttons["title-link"].firstMatch
-            XCTAssertTrue(poster.waitForExistence(timeout: 30), "\(orientation.rawValue): no hay pósters en Buscar")
-            poster.tap()
-            let close = app.buttons["title-panel-close"]
-            XCTAssertTrue(close.waitForExistence(timeout: 20), "\(orientation.rawValue): la ficha no abrió en el panel")
-            XCTAssertTrue(app.buttons["title-play"].waitForExistence(timeout: 20), "\(orientation.rawValue): el panel no enseña la ficha")
-            // 4 nov 2026: la ficha flota a la izquierda, del tamaño del iPhone; la pantalla de atrás espera hasta cerrarla.
-            shot("ficha-panel-\(orientation == .portrait ? "v" : "h")")
-            close.tap()
-            XCTAssertFalse(close.waitForExistence(timeout: 3), "\(orientation.rawValue): la ✕ no cierra el panel")
+            open(["-demo-tmdb", "-demo-title", "movie:tt1160419"], orientation)
+            let play = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Continuar' OR label BEGINSWITH 'Ver'")).firstMatch
+            XCTAssertTrue(play.waitForExistence(timeout: 30), "\(orientation.rawValue): la ficha no abrió")
+            XCTAssertTrue(play.isHittable, "\(orientation.rawValue): «Ver» queda fuera de la vista")
+            shot("ficha-\(orientation == .portrait ? "v" : "h")")
         }
     }
 
