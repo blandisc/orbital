@@ -19,7 +19,7 @@ import { DEBRID_CLOUD, requestLabel } from "../core/menus.js";
  * las reproduce (solo daría el video de aviso de Real-Debrid), las pide y avisa; si ya están pedidas, dicen cómo van.
  *   ↑/↓ idioma · ◀/▶ calidad · A ver (o pedir) · X todas las de aquí · LB/RB alcance · B volver a la ficha
  */
-export function createSources({ onPlay, onAsk, requests = () => [], onMove, onClose, onChange }) {
+export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], onMove, onClose, onChange }) {
   const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
@@ -56,6 +56,8 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
   const asked = (src) => (src?.hash ? (requests() || []).find((q) => q.hash === src.hash && q.state !== "gone") : null);
   const askState = (src) => {
     const known = asked(src);
+    // RX2-A: lo ya pedido dice cómo va («Bajando · 42 %»), no «Por pedir».
+    if (known?.state === "downloading") return [`Bajando · ${Math.round(known.percent || 0)} %`, "warn"];
     return known ? [requestLabel(known), known.state === "ready" ? "good" : "warn"] : ["↓ Por pedir", "warn"];
   };
   const isAsk = (r) => !!rows[r]?.ask;
@@ -158,7 +160,17 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
   function act(src, ask) {
     if (!ask) return play(src);
     if (!src || !request) return;
-    onAsk?.({ ...request, hash: src.hash, known: asked(src) });
+    const known = asked(src);
+    onAsk?.({ ...request, hash: src.hash, known, instead: known ? readyInstead() : null });
+  }
+
+  /** RX2-A: la que ya arranca en tus idiomas, la misma que pondría «Ver» (la recomendada, si arranca ya): «Latino · 720p». */
+  function readyInstead() {
+    const src = best();
+    const r = rows.findIndex((row) => !row.ask && row.options.some((o) => o.source === src));
+    if (!src || r < 0 || !(src.cached || isOwnSource(src))) return null;
+    const opt = rows[r].options.find((o) => o.source === src);
+    return { label: `${rows[r].name} · ${opt.res}`, play: { ...request, source: src.id } };
   }
 
   let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
@@ -213,6 +225,7 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
       status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos no lo tienen.";
       failed = !rows.length;
       renderRows();
+      if (rows.some((row) => row.ask)) onFirstAsk?.(); // RX3-A: «Así funciona», una sola vez
     } catch (err) {
       if (mine !== token) return;
       await settle();

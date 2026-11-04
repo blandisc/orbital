@@ -69,7 +69,7 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       if (!(found?.requests || []).some((r) => r.hash === command.hash)) found = await api.debridRequests(); // desde la ficha
       const req = (found?.requests || []).find((r) => r.hash === command.hash);
       if (!req) return;
-      return openMenu(debridRequestMenu(req, { account: found.account }), nested(context));
+      return openMenu(debridRequestMenu(req, { account: found.account, instead: command.instead || null }), nested(context));
     },
     "rd-cancel-ask": async (command, context) => openMenu(debridCancelMenu(command), nested(context)),
     "explain": async (command, context) => openMenu(explainerMenu(command.topic), nested(context)), // AU1-A

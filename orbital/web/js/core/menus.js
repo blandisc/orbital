@@ -1347,7 +1347,24 @@ const REQUEST_ICONS = { queued: "calendar", downloading: "download", no_peers: "
 
 /** Un pedido en una línea: «Bajando en la nube · 42 %», «En cola»… */
 /** Dónde, cómo y por qué de un pedido: el mismo texto del iPhone, adaptado a la TV (rd_requests.CLOUD). */
-export const DEBRID_CLOUD = "La nube es tu Real-Debrid: lo baja por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso.";
+export const DEBRID_WHERE = "La nube es tu Real-Debrid: lo baja por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone.";
+export const DEBRID_CLOUD = `${DEBRID_WHERE} Suele tardar de minutos a horas; te aviso.`;
+
+/** RX2-A · qué tan lejos está, sin prometer de más (DebridRequestWords.pace del iPhone): del avance desde que se pidió (el
+ *  promedio cuenta lo que esperó en cola: nunca promete menos). Con poco avance (menos de 3 % o de un minuto) o en cola, no
+ *  se sabe: «Suele tardar de minutos a horas.». «Te aviso.» solo si lo pidió la TV (avisa quien lo pidió). */
+export function requestPace(req, now = Date.now()) {
+  const secs = now / 1000;
+  const pct = req.percent || 0;
+  const elapsed = secs - (req.since || secs);
+  let pace = "Suele tardar de minutos a horas.";
+  if (req.state === "downloading" && pct >= 3 && pct < 100 && elapsed >= 60) {
+    const left = elapsed * (100 - pct) / pct;
+    pace = left < 900 ? "A este paso, faltan unos minutos." : left < 3600 ? "A este paso, falta menos de una hora."
+      : left < 86400 ? "A este paso, faltan unas horas." : "A este paso, falta más de un día.";
+  }
+  return !req.by || req.by === "TV" ? `${pace} Te aviso.` : pace;
+}
 
 export function requestLabel(req) {
   return req.state === "downloading" ? `Bajando en la nube · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
@@ -1480,6 +1497,20 @@ const EXPLAINERS = {
 const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "La nube lo baja" },
   { icon: "play", tint: "flame", label: "Arranca al instante" }];
 
+/** RX3-A · «Así funciona», una sola vez: la primera vez que sale una versión «↓ Por pedir» (en «Versión»). Los tres pasos,
+ *  que no ocupa espacio y «Entendido» (DebridFlowIntro del iPhone). Cerrarla con B también cuenta como vista. */
+export function debridFlowMenu() {
+  return {
+    title: "Así funciona",
+    subtitle: "La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti.",
+    steps: EXPLAIN_STEPS,
+    options: [
+      { icon: "tv", tint: "calendar", label: "No ocupa espacio en la TV.", hint: "Cuando termine, arranca al instante aquí y en tu iPhone.", command: { type: "stay" } },
+      { icon: "check", label: "Entendido", command: { type: "close" } },
+    ],
+  };
+}
+
 export function explainerMenu(topic) {
   return {
     title: "¿Qué es esto?",
@@ -1535,7 +1566,7 @@ export function debridRequestsMenu(requests = []) {
 }
 
 /** Un pedido: «Cancelar pedido» lo quita de tu Real-Debrid (pide confirmar; «Cancelar» va primero). */
-export function debridRequestMenu(req, { account = null, now = Date.now() } = {}) {
+export function debridRequestMenu(req, { account = null, now = Date.now(), instead = null } = {}) {
   const theirs = req.account && account && req.account !== account;
   const ref = req.meta_id && { kind: req.kind || "movie", meta_id: req.meta_id, title: req.title };
   const video = req.video_ids?.[0] || req.meta_id;
@@ -1546,11 +1577,19 @@ export function debridRequestMenu(req, { account = null, now = Date.now() } = {}
     return { title: req.title || "Tu pedido", subtitle: `${requestLabel(req)} · ${requestedBy(req)} · con otra cuenta de Real-Debrid`,
       options: [open || { icon: "info", label: "Es de otra cuenta de Real-Debrid", command: { type: "close" } }] };
   }
+  const stuck = ["queued", "downloading"].includes(req.state) && req.progress_at && now / 1000 - req.progress_at >= 86400;
+  const going = !!instead && ["queued", "downloading", "no_peers", "too_many"].includes(req.state);
   return {
     title: req.title || "Tu pedido",
-    subtitle: ["queued", "downloading"].includes(req.state) ? `${requestLabel(req)} · ${requestedBy(req)}. ${DEBRID_CLOUD}`
+    // RX2-A: cuánto falta, honesto, y dónde (sin «Suele tardar…» repetido: ya lo dice cuánto falta). Atorado (24 h sin
+    // avanzar) dice lo de siempre, con «Probar otra versión» abajo.
+    subtitle: ["queued", "downloading"].includes(req.state)
+      ? `${requestLabel(req)} · ${requestedBy(req)}. ${stuck ? "Lleva un día sin avanzar." : requestPace(req, now)} ${DEBRID_WHERE}`
       : `${requestLabel(req)} · ${requestedBy(req)}`,
     options: [
+      // RX2-A: mientras baja, la que ya arranca en tus idiomas (la misma regla que «Ver») y, junto, «Esperar a que llegue».
+      going && { icon: "play", label: `Ver ${instead.label}, ya arranca`, command: { type: "watch", play: instead.play } },
+      going && { icon: "calendar", label: "Esperar a que llegue", command: { type: "close" } },
       // TV-4: listo es para verlo (como «Ver ahora» del iPhone).
       req.state === "ready" && ref && { icon: "play", label: "Ver ahora", command: { type: "rd-other-version", play: {
         kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
@@ -1562,7 +1601,7 @@ export function debridRequestMenu(req, { account = null, now = Date.now() } = {}
       req.state !== "ready" && req.state !== "refused"
         ? { icon: "exit", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
         : { icon: "exit", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true } },
-      { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Cancelar" : "Seguir esperando", command: { type: "close" } },
+      !going && { icon: "close", label: req.state === "ready" || req.state === "refused" ? "Cancelar" : "Seguir esperando", command: { type: "close" } },
     ].filter(Boolean),
   };
 }
