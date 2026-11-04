@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -75,6 +81,7 @@
     "cause_arg": null,
     "fix": "renew",
     "offer": null,
+    "request_aside": null,
     "instant_aside": null,
     "recommended": null,
     "rows": [],

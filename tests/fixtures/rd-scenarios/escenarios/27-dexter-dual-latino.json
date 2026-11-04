@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -55,6 +61,7 @@
     "cause_arg": null,
     "fix": null,
     "offer": null,
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
@@ -70,6 +77,22 @@
         "state": "instant",
         "recommended": true,
         "other": true
+      },
+      {
+        "code": "es",
+        "hash": "320e70007e2a406cd16cee287e3df3ec794efa00",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "es",
+        "hash": "bead8c3dac2cb0f6ea64ae00912e023fb34d6e69",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
       },
       {
         "code": "en",
@@ -118,33 +141,12 @@
         "state": "to_request",
         "recommended": false,
         "other": true
-      },
-      {
-        "code": "es",
-        "hash": "320e70007e2a406cd16cee287e3df3ec794efa00",
-        "res": "1080p",
-        "state": "to_request",
-        "recommended": false,
-        "other": true
-      },
-      {
-        "code": "es",
-        "hash": "bead8c3dac2cb0f6ea64ae00912e023fb34d6e69",
-        "res": "720p",
-        "state": "to_request",
-        "recommended": false,
-        "other": false
       }
     ],
     "to_request": [
       {
         "code": "en",
         "hash": "8c132db0fd1345a5e9166a66dfeb7e21e6faebcf",
-        "res": "1080p"
-      },
-      {
-        "code": "ru",
-        "hash": "eb4d44a47e44d47b19af3f37ed9a0adab94a133a",
         "res": "1080p"
       },
       {
@@ -158,13 +160,18 @@
         "res": "SD"
       },
       {
+        "code": "ru",
+        "hash": "eb4d44a47e44d47b19af3f37ed9a0adab94a133a",
+        "res": "1080p"
+      },
+      {
         "code": "fr",
         "hash": "44209a7c30abc9a8579139e3fac5e26612f49a96",
         "res": "SD"
       },
       {
         "code": "ru",
-        "hash": "73afcd3091373b13b564abd975e384420e23b017",
+        "hash": "53aad80160fed122c510c50d986c9a11f1e829c9",
         "res": "SD"
       }
     ],

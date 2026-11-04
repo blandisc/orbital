@@ -1,0 +1,217 @@
+{
+  "id": "33-dune-ingles-y-castellano-al-instante",
+  "name": "«Dune: Parte dos»: inglés y castellano al instante, latino no",
+  "why": "Tu orden es latino → el original (inglés) → inglés → castellano. Real-Debrid tiene la de YTS en inglés y la castellana de MejorTorrent; la latina de Cinecalidad hay que pedirla.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt15239678",
+    "video_id": "tt15239678"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 693134,
+          "title": "Dune: Parte dos",
+          "original_title": "Dune: Part Two",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 693134,
+      "title": "Dune: Parte dos",
+      "original_title": "Dune: Part Two",
+      "original_language": "en",
+      "origin_country": [
+        "US"
+      ],
+      "overview": "Paul Atreides se une…"
+    }
+  },
+  "cinemeta": "cinemeta/tt15239678.json",
+  "torrentio": {
+    "file": "torrentio/tt15239678.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt15239678.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [
+      "2770fe270845674966e184be60ed1be0fe494f3a",
+      "eca99591be0c9d5961688422a1457671bb20b92f"
+    ],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
+  },
+  "expected": {
+    "_note": "Tu orden con inglés y castellano al instante y la latina por pedir: «Ver» en inglés (el original, antes que el castellano) y al lado «Pedir a la nube en latino» (FQ1-A).",
+    "title": "Dune: Parte dos",
+    "logo": true,
+    "video_id": "tt15239678",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "request_aside": {
+      "hash": "9006fbf91001e7053c648dfe71836ffd2f2ca0f4",
+      "language": "es-419",
+      "res": "1080p"
+    },
+    "instant_aside": null,
+    "recommended": {
+      "hash": "2770fe270845674966e184be60ed1be0fe494f3a",
+      "file": 0,
+      "language": "en",
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "62c6429f039d61f4a9b1663305d86d0fa649cbb1",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-419",
+        "hash": "9006fbf91001e7053c648dfe71836ffd2f2ca0f4",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "da04ded9922d3304005334649ca809ab85d36b83",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "1f8581f9e81a422287459ac6489323dc305590f5",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "62c6429f039d61f4a9b1663305d86d0fa649cbb1",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "2770fe270845674966e184be60ed1be0fe494f3a",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "8ebfe94bff95c7895a1cea35dc35f3f8072beffc",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "9cf3225d39f3a46c34cc149101dd8560c574a21b",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "eca99591be0c9d5961688422a1457671bb20b92f",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "23797e65de4c6ddce5a95686ea3d478b2b48095b",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      }
+    ],
+    "to_request": [
+      {
+        "code": "en",
+        "hash": "b1caf2a9c5cabc705b056c06dc5365f1eaf4c098",
+        "res": "1080p"
+      },
+      {
+        "code": "en",
+        "hash": "4950a74e1461e71a356c1919026e8c0bbdc4d2ed",
+        "res": "4K"
+      },
+      {
+        "code": "en",
+        "hash": "96e0cf8e546c9ac7bf36e64be1aa6b88b51f6a0a",
+        "res": "SD"
+      },
+      {
+        "code": "fr",
+        "hash": "cdefe7ef45615ac9e864f49f77b52de16ee47950",
+        "res": "1080p"
+      },
+      {
+        "code": "ru",
+        "hash": "9ee8bcb8e870c1b8cdb4b49713b217fd02bdb198",
+        "res": "1080p"
+      },
+      {
+        "code": "fr",
+        "hash": "71e5f9df109886fa7bc220d7362049bcf16998a5",
+        "res": "4K"
+      }
+    ],
+    "hidden": 10,
+    "play_now": "2770fe270845674966e184be60ed1be0fe494f3a",
+    "request": null,
+    "other_account": null
+  }
+}

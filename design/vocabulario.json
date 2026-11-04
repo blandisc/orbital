@@ -30,7 +30,9 @@
     { "texto": "Avisarme cuando esté", "en": ["tv", "ios"], "nota": "Ya pedido: el aviso cuando Real-Debrid termine (el reproductor al rendirse; la tarjeta del siguiente episodio)." },
     { "texto": "Ver créditos", "en": ["tv", "ios"], "nota": "La tarjeta del siguiente episodio cuando Real-Debrid lo está bajando: quitarla y seguir viendo." },
     { "texto": "Cancelar pedido", "en": ["tv", "ios"], "nota": "Quita el pedido de tu Real-Debrid (DELETE /torrents/delete) y de la libreta (R13)." },
-    { "texto": "Volver a traer", "en": ["tv", "ios"], "evitar": ["Volver a importar"], "nota": "Traer otra vez tus complementos de Stremio." }
+    { "texto": "Volver a traer", "en": ["tv", "ios"], "evitar": ["Volver a importar"], "nota": "Traer otra vez tus complementos de Stremio." },
+    { "texto": "Pedir a la nube en ", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ1-A (Fernando, 3 nov: «todo con tus sugerencias»): al lado de «Ver», cuando arranca ya en otro idioma de tu orden y el tuyo existe pero hay que pedirlo. Sigue el idioma que prefieres: «Pedir a la nube en latino»." },
+    { "texto": "Pedir a la nube aquí", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ5-A: al lado de «Ver en la TV» cuando tu TV ya lo tiene con otra cuenta de Real-Debrid." }
   ],
   "nombres": [
     { "texto": "Real-Debrid · bajando para ti", "en": ["tv", "ios"], "evitar": ["En la nube · Real-Debrid"], "nota": "RX1-A (3 nov): la primera parte de Descargas (antes de «En este iPhone · sin internet»), lo que pediste a la nube. No «En la nube»: se confundiría con Mi media (OneDrive, Plex, Jellyfin), cuyo ícono ya no es una nube (Fernando, 3 nov) (los grupos «Bajando» y «Ya terminaron»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» queda como atajo que lleva ahí. Solo donde hay Real-Debrid." },
@@ -63,7 +65,9 @@
     { "texto": "La nube lo recibió y espera turno", "en": ["tv", "ios"], "evitar": ["Real-Debrid lo recibió"], "nota": "El renglón de abajo de «En cola» (RX4-A). Antes «Real-Debrid lo recibió y espera turno»." },
     { "texto": "Sin gente que lo comparta", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): baja sin nadie que lo comparta; puede tardar días." },
     { "texto": "Muchas descargas activas", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): tu cuenta llegó a su máximo a la vez (error 21 de Real-Debrid)." },
-    { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta»." }
+    { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta»." },
+    { "texto": "Lo tiene tu TV con otra cuenta", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ5-A: lo que tu TV pidió con su cuenta de Real-Debrid y ya está; «Ver en la TV» manda el título y el episodio, nunca el enlace." },
+    { "texto": "Reviso una vez al día, hasta el ", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ4-A: «Avisarme cuando aparezca» revisa hasta el estreno más 14 días (sin estreno por delante, 14 días desde hoy). Sigue la fecha: «hasta el 1 de enero»." }
   ],
   "formatos": [
     { "texto": "termina a las", "en": ["tv", "ios"], "evitar": ["acaba a las", "Termina a las"] },

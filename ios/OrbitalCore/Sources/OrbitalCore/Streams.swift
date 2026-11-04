@@ -27,6 +27,11 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var dub = ""
     /// El nombre no menciona el título (TMDB y Cinemeta): Torrentio a veces trae otro («La casa de la pradera»). Baja, no se esconde.
     public var otherTitle = false
+    /// El idioma original del título («ja», «es-ES»…), si se sabe: el renglón «original» de tu orden de idiomas.
+    public var originalLanguage: String?
+    /// Real-Debrid no la dejó bajar (la pediste y la rechazó: error 35, derechos…): «Real-Debrid no lo dejó bajar», nunca la
+    /// recomendada ni la ofrecida (FQ2-A, Fernando, 3 nov).
+    public var refused = false
     /// No es una versión: es el aviso de Torrentio en su lugar («RD error» o su video de «descargando», R5).
     public var notice: StreamNotice?
     /// M3: lo que el enlace pide que mande el reproductor (`behaviorHints.proxyHeaders.request`): algunos de MediaFusion y
@@ -115,6 +120,16 @@ public struct Preferences: Sendable, Equatable {
     public init(audio: String = "en", quality: String = "1080p", spanish: String = "") { self.audio = audio; self.quality = quality; self.spanish = spanish }
     /// El idioma que se busca, con su variante («es-419» si quieres latino).
     public var wanted: String { audio == "es" && !spanish.isEmpty ? spanish : audio }
+    /// Lo que sigue después del que quieres, en orden. Fernando, 3 nov: latino → el idioma original de la obra («natal») →
+    /// inglés → castellano: el orden por omisión con latino (es-MX). `original` es un renglón: el idioma original de cada
+    /// título. Tus «Idiomas primero» de Torrentio (T2) se suman al final, sin repetir. Igual en la TV.
+    public var order: [String] {
+        let base = audio == "es" && spanish == "es-419" ? Self.latinOrder : []
+        var out = base
+        for code in fallback where code != wanted && !out.contains(code) { out.append(code) }
+        return out
+    }
+    public static let latinOrder = ["original", "en", "es-ES"]
 }
 
 /// Un idioma de audio de una versión y cómo lo sabemos (las mismas pruebas que la TV, de la más segura a la menos).
@@ -490,6 +505,7 @@ public enum Streams {
         src.tags = tagPatterns.filter { matches($0.1, blob) }.map(\.0)
         // El audio y cómo lo sabemos; lo comprobado al verla (sus pistas reales) gana a todo. Pone «Latino» / «Castellano» primero.
         src.setAudio(checked ?? audio(name: name, description: description, filename: filename, site: src.site, origin: origin))
+        src.originalLanguage = origin?.originalCode
         if Self.otherTitle(release: first, year: origin?.year) { src.tags.append(Self.otherTitleTag) }
         return src
     }
@@ -526,6 +542,7 @@ public enum Streams {
         if src.tags.contains(otherTitleTag) || src.tags.contains(otherEpisodeTag) { s -= 1500 }   // otra película u otro episodio: nunca la recomendada
         if src.tags.contains("3D") { s -= 1500 }
         if src.tags.contains("Reescalada") { s -= 150 }
+        if src.refused { s -= 1500 }   // Real-Debrid no la dejó bajar: nunca la recomendada (FQ2-A)
         if src.otherTitle { s -= 500 }   // el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)
         s += Double(min(src.seeders, 500)) / 10
         if purpose == .download {
@@ -539,37 +556,6 @@ public enum Streams {
         return s
     }
 
-    /// Cuánto vale el idioma que quieres según qué tan seguro es (`LANG_POINTS` de la TV): lo comprobado, lo que se dice y el
-    /// original van arriba; lo que se supone, poco menos; «tal vez», apenas.
-    static let languagePoints: [AudioLanguage.Evidence: Double] = [.checked: 340, .name: 300, .site: 300, .original: 300, .unknown: 260, .maybe: 60]
-    /// Otro idioma pesa más que arrancar al instante (+1000): una en ruso lista no le gana a una en tu idioma que tarda.
-    static let wrongLanguage = -1600.0
-
-    /// Cuánto suma el idioma según qué tan seguro es (`language_score` de la TV). Una dual con tu idioma vale lo mismo que la
-    /// que solo trae ese. Con una variante de español elegida (Ajustes, la voz, el título): el doblaje pedido primero, luego el
-    /// español que no dice cuál y al final el otro.
-    static func languageScore(_ src: Source, _ prefs: Preferences) -> Double {
-        let audio = src.audio.isEmpty ? src.languages.map { AudioLanguage($0, .name) } : src.audio
-        func points(_ code: String) -> Double? { audio.filter { $0.code == code }.compactMap { languagePoints[$0.evidence] }.max() }
-        guard prefs.audio == "es" else { return points(prefs.audio) ?? fallbackScore(audio, prefs) }
-        let wanted = spanishVariants.contains(prefs.spanish) ? prefs.spanish : nil
-        var best = wrongLanguage
-        for code in spanish {
-            guard var value = points(code) else { continue }
-            if wanted != nil && code == "es" { value -= 100 }   // español sin saber cuál: después del que pediste, antes que otro idioma
-            else if let wanted, code != wanted { value -= 250 }   // el otro doblaje
-            best = max(best, value)
-        }
-        return best == wrongLanguage ? fallbackScore(audio, prefs) : best
-    }
-
-    /// Otro idioma que está en tu plan B (T2): arriba de los demás idiomas, en tu orden, pero siempre debajo del que quieres
-    /// (aunque ese tarde): el plan B no le gana a tu idioma.
-    static func fallbackScore(_ audio: [AudioLanguage], _ prefs: Preferences) -> Double {
-        let codes = Set(audio.map(\.code))
-        guard let place = prefs.fallback.firstIndex(where: { code in codes.contains(code) || (code.hasPrefix("es") && codes.contains("es")) }) else { return wrongLanguage }
-        return wrongLanguage + 300 - 40 * Double(min(place, 6))
-    }
 
     /// El nombre de un idioma de versión: «Latino», «Castellano», «Español (no dice cuál)» o el del idioma («Inglés»).
     public static func versionLanguageName(_ code: String, in uiLanguage: String) -> String {
@@ -584,7 +570,8 @@ public enum Streams {
 
     /// En qué idioma se va a oír esta versión con tus preferencias: el de los suyos que mejor te queda («es-419» si trae latino).
     public static func playingLanguage(_ src: Source, _ prefs: Preferences) -> AudioLanguage? {
-        let single = Source(index: 0, addon: "", stream: .null, transportURL: "")
+        var single = Source(index: 0, addon: "", stream: .null, transportURL: "")
+        single.originalLanguage = src.originalLanguage
         return src.audio.max { a, b in
             var x = single, y = single; x.setAudio([a]); y.setAudio([b])
             return languageScore(x, prefs) < languageScore(y, prefs)

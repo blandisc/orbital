@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -98,6 +104,7 @@
     "cause_arg": null,
     "fix": null,
     "offer": null,
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3",
@@ -123,6 +130,22 @@
         "other": false
       },
       {
+        "code": "es",
+        "hash": "da04ded9922d3304005334649ca809ab85d36b83",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "1f8581f9e81a422287459ac6489323dc305590f5",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
         "code": "en",
         "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3",
         "res": "4K",
@@ -142,22 +165,6 @@
         "code": "en",
         "hash": "8ebfe94bff95c7895a1cea35dc35f3f8072beffc",
         "res": "720p",
-        "state": "to_request",
-        "recommended": false,
-        "other": false
-      },
-      {
-        "code": "es",
-        "hash": "da04ded9922d3304005334649ca809ab85d36b83",
-        "res": "4K",
-        "state": "to_request",
-        "recommended": false,
-        "other": false
-      },
-      {
-        "code": "es",
-        "hash": "1f8581f9e81a422287459ac6489323dc305590f5",
-        "res": "1080p",
         "state": "to_request",
         "recommended": false,
         "other": false
@@ -199,9 +206,14 @@
         "res": "1080p"
       },
       {
-        "code": "ru",
-        "hash": "420a1035496cdab32f06fb5bc175e8a25dd8e857",
-        "res": "1080p"
+        "code": "en",
+        "hash": "4950a74e1461e71a356c1919026e8c0bbdc4d2ed",
+        "res": "4K"
+      },
+      {
+        "code": "en",
+        "hash": "96e0cf8e546c9ac7bf36e64be1aa6b88b51f6a0a",
+        "res": "SD"
       },
       {
         "code": "fr",
@@ -209,14 +221,9 @@
         "res": "1080p"
       },
       {
-        "code": "en",
-        "hash": "4950a74e1461e71a356c1919026e8c0bbdc4d2ed",
-        "res": "4K"
-      },
-      {
-        "code": "fr",
-        "hash": "71e5f9df109886fa7bc220d7362049bcf16998a5",
-        "res": "4K"
+        "code": "ru",
+        "hash": "9ee8bcb8e870c1b8cdb4b49713b217fd02bdb198",
+        "res": "1080p"
       }
     ],
     "hidden": 10,

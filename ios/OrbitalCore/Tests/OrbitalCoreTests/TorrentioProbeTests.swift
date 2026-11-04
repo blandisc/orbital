@@ -85,7 +85,8 @@ final class OtherAddonsTests: XCTestCase {
         XCTAssertEqual(parse(torrentio, addon: "Torrentio", url: "https://torrentio.strem.fun/manifest.json").size, 1_500_000_000, "lo que escribe Torrentio manda")
     }
 
-    /// T2 → R6: si no hay en tu idioma, el siguiente de tu lista antes que cualquier otro; nunca arriba del tuyo.
+    /// T2 → R6: si no hay en tu idioma, el siguiente de tu lista antes que cualquier otro. FQ1-A (Fernando, 3 nov): uno de tu
+    /// lista que arranca ya le gana al tuyo que hay que pedir (la ficha ofrece pedir el tuyo al lado); a la par, el tuyo gana.
     func testTheLanguageOrderIsThePlanB() {
         var prefs = Preferences(audio: "es", quality: "1080p", spanish: "es-419")
         func src(_ code: String, cached: Bool = true) -> Source {
@@ -96,6 +97,8 @@ final class OtherAddonsTests: XCTestCase {
         XCTAssertEqual(Streams.score(japanese, prefs: prefs), Streams.score(russian, prefs: prefs), "sin plan B, iguales")
         prefs.fallback = ["es-419", "es-ES", "ja"]
         XCTAssertGreaterThan(Streams.score(japanese, prefs: prefs), Streams.score(russian, prefs: prefs), "japonés está en tu lista")
-        XCTAssertGreaterThan(Streams.score(src("es-419", cached: false), prefs: prefs), Streams.score(japanese, prefs: prefs), "tu idioma, aunque tarde, gana")
+        XCTAssertGreaterThan(Streams.score(japanese, prefs: prefs), Streams.score(src("es-419", cached: false), prefs: prefs), "el de tu lista que arranca ya gana (FQ1-A)")
+        XCTAssertGreaterThan(Streams.score(src("es-419"), prefs: prefs), Streams.score(japanese, prefs: prefs), "a la par, tu idioma gana")
+        XCTAssertGreaterThan(Streams.score(src("es-419", cached: false), prefs: prefs), Streams.score(src("ru"), prefs: prefs), "fuera de tu lista, ni al instante")
     }
 }

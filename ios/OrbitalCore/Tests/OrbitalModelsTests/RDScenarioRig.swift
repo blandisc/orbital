@@ -247,7 +247,7 @@ final class RDScenarioRig {
         func res(_ s: Source) -> JSON { .string(card(s.index)?.quality ?? SourcesModel.quality(s)) }
         func hash(_ index: Int) -> JSON { list.source(index)?.torrent.map { .string($0.hash) } ?? .string("#\(index)") }
         func state(_ o: VersionOption) -> String {
-            o.requested ? "requested_ready" : o.speed == .inRealDebrid ? "instant" : o.speed == .realDebridMustDownload ? "to_request" : "direct"
+            o.refused ? "refused" : o.requested ? "requested_ready" : o.speed == .inRealDebrid ? "instant" : o.speed == .realDebridMustDownload ? "to_request" : "direct"
         }
         var out: [String: JSON] = [:]
         out["title"] = .string(title.title)
@@ -265,6 +265,10 @@ final class RDScenarioRig {
         out["fix"] = Self.fix(primary, cause: title.unavailableCause).map(JSON.string) ?? .null
         let source = { (hash: String) in list.ranked.first { $0.torrent?.hash == hash } }
         out["offer"] = title.debridOffer.map { o in
+            ["hash": .string(o.torrent.hash), "language": o.language.map(JSON.string) ?? .null, "res": source(o.torrent.hash).map(res) ?? .null]
+        } ?? .null
+        // FQ1-A: «Pedir a la nube en latino» al lado de «Ver».
+        out["request_aside"] = title.wantedOffer.map { o in
             ["hash": .string(o.torrent.hash), "language": o.language.map(JSON.string) ?? .null, "res": source(o.torrent.hash).map(res) ?? .null]
         } ?? .null
         out["instant_aside"] = title.debridOffer?.instantSource.map { s in
@@ -294,7 +298,16 @@ final class RDScenarioRig {
         out["request"] = title.debridRequest.map { r in
             ["hash": .string(r.hash), "state": .string(r.state.rawValue), "percent": .int(r.percent), "stuck": .bool(r.isStalled(now: now))]
         } ?? .null
-        out["other_account"] = title.otherAccountRequest.map { ["state": .string($0.state.rawValue)] } ?? .null
+        out["other_account"] = (title.otherAccountRequest ?? title.otherAccountReady).map { ["state": .string($0.state.rawValue)] } ?? .null
+        // FQ4-A: «Avisarme cuando aparezca» revisa hasta el estreno más 14 días (o 14 desde hoy).
+        if case .notifyWhenAppears? = primary {
+            let f = ISO8601DateFormatter(); f.formatOptions = [.withFullDate]
+            out["notify_until"] = .string(f.string(from: AppearWatch.until(since: now, releases: title.upcomingRelease)))
+        }
+        // Tu orden de idiomas (`app.languages`): el que quieres y lo que sigue.
+        if let languages = scenario["app"]?["languages"]?.array?.compactMap(\.string) {
+            XCTAssertEqual([list.prefs.wanted] + list.prefs.order, languages, "\(file): el orden de idiomas")
+        }
         // El siguiente episodio (serie): cuál es y si un pedido tuyo ya lo trae (un paquete con todos sus videos).
         if kind == "series" {
             let meta = try? await services.cinemeta.meta(kind: "series", id: metaID)
@@ -318,6 +331,7 @@ final class RDScenarioRig {
         case .watch?: "play"
         case .request?: "request"
         case .requested?: "requested"
+        case .onTV?: "play_on_tv"
         case .otherVersion?, .notifyWhenAppears?, .airs?, .unavailable?: "fix"
         case nil: "loading"
         }

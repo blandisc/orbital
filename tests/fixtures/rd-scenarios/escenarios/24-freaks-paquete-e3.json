@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -207,6 +213,7 @@
       "language": "en",
       "res": "1080p"
     },
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",

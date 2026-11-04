@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -43,7 +49,7 @@
     "error": null
   },
   "expected": {
-    "_note": "Salió hoy: nada al instante. Se pide la castellana («Farsante», su nombre en España, marcada «¿Otro título?» porque sin TMDB no se sabe ese nombre; FQ3).",
+    "_note": "Salió hoy: nada al instante y no hay latino. Por tu orden, el original (inglés) antes que el castellano: «Pedirlo y avisarme» la inglesa de 1080p. «Farsante» (castellano) sigue marcada «¿Otro título?» (FQ3-A, sin cambios).",
     "title": "Phony",
     "logo": true,
     "video_id": "tt21952924:1:4",
@@ -52,15 +58,16 @@
     "cause_arg": null,
     "fix": "request",
     "offer": {
-      "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
-      "language": "es-ES",
+      "hash": "013a048ef2f75939921dd32486b77901a70f7b15",
+      "language": "en",
       "res": "1080p"
     },
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
-      "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
+      "hash": "013a048ef2f75939921dd32486b77901a70f7b15",
       "file": 0,
-      "language": "es-ES",
+      "language": "en",
       "res": "1080p"
     },
     "rows": [
@@ -77,7 +84,7 @@
         "hash": "013a048ef2f75939921dd32486b77901a70f7b15",
         "res": "1080p",
         "state": "to_request",
-        "recommended": false,
+        "recommended": true,
         "other": false
       },
       {
@@ -93,7 +100,7 @@
         "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
         "res": "1080p",
         "state": "to_request",
-        "recommended": true,
+        "recommended": false,
         "other": true
       },
       {
@@ -113,7 +120,7 @@
       }
     ],
     "hidden": 0,
-    "play_now": "2f2676a576af21a0490590fcc23f2a2532b8905a",
+    "play_now": "013a048ef2f75939921dd32486b77901a70f7b15",
     "request": null,
     "other_account": null,
     "next_episode": null

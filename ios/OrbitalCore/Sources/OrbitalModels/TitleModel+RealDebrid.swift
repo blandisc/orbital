@@ -28,21 +28,44 @@ extension TitleModel {
         let instant = Self.shownInstant(found, prefs: prefs)
         let instantLanguage = instant.flatMap { Streams.playingLanguage($0, prefs)?.code }
         // La de tu lista que todavía no está (Torrentio la conoce con Real-Debrid): esa misma.
-        if let pending = found.first(where: { !$0.instant && !SourcesModel.hidden($0) }), let torrent = pending.torrent {
+        if let pending = found.first(where: { !$0.instant && !SourcesModel.hidden($0) && !$0.refused }), let torrent = pending.torrent {
             lookupEmpty[metaID] = false
             let language = Streams.playingLanguage(pending, prefs)?.code
             let other = instantLanguage == language ? nil : instantLanguage
             return DebridOffer(torrent: torrent, language: language, release: pending.release.isEmpty ? nil : pending.release,
                                instantLanguage: other, instantSource: other == nil ? nil : instant)
         }
-        guard let torrents = await requests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { lookupEmpty[metaID] = false; return nil }
-        lookupEmpty[metaID] = torrents.isEmpty && found.isEmpty
+        guard let all = await requests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { lookupEmpty[metaID] = false; return nil }
+        lookupEmpty[metaID] = all.isEmpty && found.isEmpty
+        // Lo que Real-Debrid no dejó bajar no se vuelve a ofrecer (FQ2-A).
+        let refused = services.debridRequests.requester.refused(metaID: metaID)
+        let torrents = all.filter { !refused.contains($0.torrent?.hash ?? "") }
         guard let best = torrents.first, let torrent = best.torrent else { return nil }
         let language = Streams.playingLanguage(best, prefs)?.code
         // Si la que arranca ya está en tu idioma, no hace falta pedir nada.
         if let instant, Streams.playingLanguage(instant, prefs)?.code == language || language == nil { return nil }
         return DebridOffer(torrent: torrent, language: language, release: best.release.isEmpty ? nil : best.release,
                            instantLanguage: instantLanguage, instantSource: instant)
+    }
+
+    /// FQ1-A: si «Ver» arranca ya en otro idioma de tu orden (castellano, inglés, el original) y tu idioma existe pero Real-Debrid
+    /// no lo tiene, la mejor de tu idioma para pedirla aparte («Pedir a la nube en latino»). nil si «Ver» ya va en tu idioma,
+    /// no arranca al instante o no se puede pedir.
+    func wantedAside(videoID: String, prefs: Preferences, found: [Source]) async -> DebridOffer? {
+        guard let playing = recommendedSource, playing.instant, recommendedLanguage != prefs.wanted, services.debridRequests.canRequest else { return nil }
+        let refused = services.debridRequests.requester.refused(metaID: metaID)
+        func mine(_ s: Source) -> Bool {
+            guard let audio = Streams.playingLanguage(s, prefs), audio.code == prefs.wanted, audio.evidence.solid else { return false }
+            return !SourcesModel.hidden(s) && !s.refused && !refused.contains(s.torrent?.hash ?? "") && !s.tags.contains(Streams.otherTitleTag)
+                && !s.tags.contains(Streams.otherEpisodeTag) && !s.tags.contains("3D")
+        }
+        func offer(_ s: Source) -> DebridOffer? {
+            s.torrent.map { DebridOffer(torrent: $0, language: prefs.wanted, release: s.release.isEmpty ? nil : s.release) }
+        }
+        if let listed = found.first(where: { !$0.instant && $0.debrid && mine($0) }) { return offer(listed) }
+        guard let torrents = await services.debridRequests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { return nil }
+        let instant = Set(found.filter(\.instant).compactMap { $0.torrent?.hash })
+        return torrents.first { mine($0) && !instant.contains($0.torrent?.hash ?? "") }.flatMap(offer)
     }
 
     /// La mejor versión que arranca al instante y que la lista de versiones enseña con «Al instante»: una tarjeta de un idioma
@@ -67,10 +90,18 @@ extension TitleModel {
         return services.debridRequests.otherAccountRequest(metaID: metaID, videoID: videoID)
     }
 
+    /// FQ5-A · lo que tu TV ya tiene listo con otra cuenta de este mismo video (si aquí no hay pedido tuyo).
+    public var otherAccountReady: DebridRequest? {
+        guard let videoID = continueVideoID, debridRequest == nil else { return nil }
+        return services.debridRequests.otherAccountReady(metaID: metaID, videoID: videoID)
+    }
+
     /// «Pedirlo y avisarme» desde la ficha: el torrent de `debridOffer` (o el mejor que exista). Con `source`, esa versión de
     /// la lista («Versión» › una que Real-Debrid aún no tiene › «Pedirlo y avisarme»), del video `videoID`.
-    public func requestFromDebrid(source: Source? = nil, videoID: String? = nil, onCellular: Bool = false) async -> DebridRequestsModel.Outcome? {
+    /// `inYourLanguage`: «Pedir a la nube en latino» de al lado de «Ver» (FQ1-A): la de `wantedOffer`.
+    public func requestFromDebrid(source: Source? = nil, videoID: String? = nil, inYourLanguage: Bool = false, onCellular: Bool = false) async -> DebridRequestsModel.Outcome? {
         guard let videoID = videoID ?? continueVideoID else { return nil }
+        let debridOffer = inYourLanguage ? wantedOffer : debridOffer
         let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
         let numbers = kind == "series" ? episode(videoID).map { ($0.0, $0.1.episode) } : nil
         let picked = source.flatMap { s in s.torrent.map { (torrent: $0, language: Streams.playingLanguage(s, prefs)?.code, release: s.release.isEmpty ? nil : s.release) } }

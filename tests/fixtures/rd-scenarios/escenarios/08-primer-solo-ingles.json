@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -67,37 +73,38 @@
     "error": null
   },
   "expected": {
-    "_note": "Tu idioma no está al instante: «Pedirlo y avisarme» la española (DVDRip) y, al lado, «Verlo en inglés al instante» (la que «Versión» enseña como «Al instante»).",
+    "_note": "Tu orden: latino → original (inglés) → inglés → castellano. No hay latino; la inglesa (el original) arranca ya: «Ver» en inglés. La española DVDRip no dice cuál y no es latino: sin «Pedir a la nube en latino».",
     "title": "Primer",
     "logo": true,
     "video_id": "tt0390384",
-    "primary": "request",
-    "cause": "not_in_rd",
+    "primary": "play",
+    "cause": null,
     "cause_arg": null,
-    "fix": "request",
-    "offer": {
-      "hash": "08b4304c6d849daf472854b3d9487b2375411035",
-      "language": "es",
-      "res": "SD"
-    },
-    "instant_aside": {
+    "fix": null,
+    "offer": null,
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": {
       "hash": "297b0244679203dea8d2cbd5eb966fb021771019",
+      "file": 0,
       "language": "en",
       "res": "1080p"
     },
-    "recommended": {
-      "hash": "08b4304c6d849daf472854b3d9487b2375411035",
-      "file": null,
-      "language": "es",
-      "res": "SD"
-    },
     "rows": [
+      {
+        "code": "es",
+        "hash": "08b4304c6d849daf472854b3d9487b2375411035",
+        "res": "SD",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
       {
         "code": "en",
         "hash": "297b0244679203dea8d2cbd5eb966fb021771019",
         "res": "1080p",
         "state": "instant",
-        "recommended": false,
+        "recommended": true,
         "other": false
       },
       {
@@ -107,25 +114,12 @@
         "state": "to_request",
         "recommended": false,
         "other": false
-      },
-      {
-        "code": "es",
-        "hash": "08b4304c6d849daf472854b3d9487b2375411035",
-        "res": "SD",
-        "state": "to_request",
-        "recommended": true,
-        "other": false
       }
     ],
     "to_request": [
       {
         "code": "en",
         "hash": "313932275ca07fea9e520f0fcf0f49c29d0ce9e0",
-        "res": "1080p"
-      },
-      {
-        "code": "ru",
-        "hash": "b6d40b362707c81f11851948d4cfa6cf8f63a509",
         "res": "1080p"
       },
       {
@@ -145,7 +139,7 @@
       }
     ],
     "hidden": 0,
-    "play_now": "08b4304c6d849daf472854b3d9487b2375411035",
+    "play_now": "297b0244679203dea8d2cbd5eb966fb021771019",
     "request": null,
     "other_account": null
   }

@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -90,19 +96,20 @@
     "error": null
   },
   "expected": {
-    "_note": "Listo en otra cuenta: en la tuya no existe; no se marca ni se ofrece «Ver» (PREGUNTA ABIERTA FQ5).",
+    "_note": "FQ5-A: listo en la cuenta de tu TV, no en la tuya: «Lo tiene tu TV con otra cuenta» con «Ver en la TV» (`play_on_tv`: manda el título, nunca el enlace) y aparte «Pedir a la nube aquí» (`offer`).",
     "title": "El origen",
     "logo": true,
     "video_id": "tt1375666",
-    "primary": "request",
-    "cause": "not_in_rd",
+    "primary": "play_on_tv",
+    "cause": null,
     "cause_arg": null,
-    "fix": "request",
+    "fix": null,
     "offer": {
       "hash": "2849211f150e966ef7924f43aec22727a644e10d",
       "language": "es",
       "res": "4K"
     },
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "2849211f150e966ef7924f43aec22727a644e10d",
@@ -125,6 +132,14 @@
         "res": "1080p",
         "state": "to_request",
         "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": true,
         "other": false
       },
       {
@@ -152,14 +167,6 @@
         "other": false
       },
       {
-        "code": "es",
-        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
-        "res": "4K",
-        "state": "to_request",
-        "recommended": true,
-        "other": false
-      },
-      {
         "code": "es-ES",
         "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
         "res": "4K",
@@ -178,29 +185,29 @@
     ],
     "to_request": [
       {
-        "code": "es-ES",
-        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be",
-        "res": "SD"
-      },
-      {
         "code": "en",
         "hash": "1c6b2179bcd73efd07fb8018268598c062cf95af",
-        "res": "1080p"
-      },
-      {
-        "code": "fr",
-        "hash": "ba0f85023f176099796288cc21d49f57030fe7a7",
-        "res": "1080p"
-      },
-      {
-        "code": "ru",
-        "hash": "513ec652eea0844f470583c18428b23e3cf43e5e",
         "res": "1080p"
       },
       {
         "code": "en",
         "hash": "43e3691dc6f4172841e32b25b349e2b7a980b9c5",
         "res": "4K"
+      },
+      {
+        "code": "en",
+        "hash": "0dfd3ebe4f3f38909307a918f0eef920e4bbc603",
+        "res": "SD"
+      },
+      {
+        "code": "es-ES",
+        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be",
+        "res": "SD"
+      },
+      {
+        "code": "fr",
+        "hash": "ba0f85023f176099796288cc21d49f57030fe7a7",
+        "res": "1080p"
       },
       {
         "code": "fr",
@@ -211,6 +218,8 @@
     "hidden": 1,
     "play_now": "2849211f150e966ef7924f43aec22727a644e10d",
     "request": null,
-    "other_account": null
+    "other_account": {
+      "state": "ready"
+    }
   }
 }

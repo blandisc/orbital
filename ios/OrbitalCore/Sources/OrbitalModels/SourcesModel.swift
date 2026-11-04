@@ -118,7 +118,9 @@ public final class SourcesModel: ObservableModel {
     /// errores»: la de «Continuar» le ganaba a la que pediste); luego la versión con que lo dejaste, la de su misma familia
     /// en el siguiente episodio y, al final, la recomendada (nunca una de cine o un tráiler si hay otra).
     public static func toPlay(_ found: [Source], resume: String?, family: String?) -> Source? {
-        let usable = found.contains { !hidden($0) } ? found.filter { !hidden($0) } : found
+        // Ni de cine ni tráiler, ni lo que Real-Debrid no dejó bajar (FQ2-A), si hay otra.
+        let usable = found.contains { !hidden($0) && !$0.refused } ? found.filter { !hidden($0) && !$0.refused }
+            : found.contains { !hidden($0) } ? found.filter { !hidden($0) } : found
         if let ready = usable.first(where: \.requested) { return ready }
         if let resume, let same = found.first(where: { $0.key == resume }) { return same }
         let first = usable.first
@@ -155,6 +157,8 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var debrid = false
     /// La pediste y Real-Debrid ya la terminó: «Al instante · la pediste».
     public var requested = false
+    /// Real-Debrid no la dejó bajar (FQ2-A): «Real-Debrid no lo dejó bajar», nunca la recomendada ni «por pedir».
+    public var refused = false
     /// Qué tan rápido arranca, sin prometer de más.
     public var speed: SourceSpeed { cached ? .inRealDebrid : debrid ? .realDebridMustDownload : .unknown }
 }
@@ -209,7 +213,7 @@ extension SourcesModel {
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
                       otherTitle: s.tags.contains(Streams.otherTitleTag) || s.tags.contains(Streams.otherEpisodeTag) || s.otherTitle,
-                      otherEpisode: s.tags.contains(Streams.otherEpisodeTag), debrid: s.debrid, requested: s.requested)
+                      otherEpisode: s.tags.contains(Streams.otherEpisodeTag), debrid: s.debrid, requested: s.requested, refused: s.refused)
     }
 
     /// Lo que se puede pedir y no se ve ya como chip: una por idioma y calidad (la mejor), en el orden de la recomendación,
@@ -217,7 +221,7 @@ extension SourcesModel {
     public static func toRequest(_ ranked: [Source], shown: [LanguageRow], prefs: Preferences, limitGB: Double, limit: Int = 6) -> [RequestableVersion] {
         let onChips = Set(shown.flatMap { $0.options.filter { $0.speed == .realDebridMustDownload }.map(\.id) })
         var seen = Set<String>(), out: [RequestableVersion] = []
-        for s in ranked where !s.cached && s.debrid && !hidden(s) && s.torrent != nil {
+        for s in ranked where !s.cached && s.debrid && !hidden(s) && !s.refused && s.torrent != nil {
             let audio = Streams.playingLanguage(s, prefs) ?? s.audio.first
             let code = audio.map(rowCode) ?? "und"
             guard seen.insert("\(code)|\(quality(s))").inserted, !onChips.contains(s.index) else { continue }
@@ -251,7 +255,7 @@ extension SourcesModel {
                 if cells[code] == nil { order.append(code) }
                 if placed.insert(code).inserted { cells[code, default: [:]][quality(source), default: []].append(source) }
                 if evidence[code, default: [:]][source.index].map({ audio.evidence < $0 }) ?? true { evidence[code, default: [:]][source.index] = audio.evidence }
-                if audio.evidence == .original { originals.insert(code) }
+                if audio.evidence == .original || source.originalLanguage.map({ rowCode(AudioLanguage($0, .name)) }) == code { originals.insert(code) }
             }
         }
         let want = prefs.wanted
@@ -273,19 +277,24 @@ extension SourcesModel {
             return LanguageRow(code: code, yours: yours, original: originals.contains(code), options: options)
         }
         let rows = order.map(row).filter { !$0.options.isEmpty }
+        // Tu orden de idiomas (Fernando, 3 nov: latino → el original → inglés → castellano): las filas van en ese orden.
+        let languageOrder = prefs.order
         func rank(_ r: LanguageRow) -> Int {
             // Con «cualquier español» las que dicen cuál van antes que la que no lo dice.
             if r.code == want, want.count > 2 || !want.hasPrefix("es") { return 0 }
             if r.yours { return r.code == "es" ? 2 : 1 }
-            if r.original { return 2 }
-            if r.code.hasPrefix("es") { return 3 }   // latino, castellano y español, aunque prefieras otro idioma (como la TV)
-            return 4
+            // El español que no dice cuál, si quieres una variante: puede ser la tuya (después de ella, antes que lo demás).
+            if r.code == "es", want.hasPrefix("es") { return 2 }
+            if let place = languageOrder.firstIndex(where: { $0 == "original" ? r.original : $0 == r.code }) { return 3 + place }
+            if r.original { return 15 }
+            if r.code.hasPrefix("es") { return 20 }   // latino, castellano y español, aunque prefieras otro idioma (como la TV)
+            return 30
         }
         let count = { (r: LanguageRow) in r.options.reduce(0) { $0 + 1 + $1.others.count } }
         let sorted = rows.enumerated().sorted { a, b in
             let ra = rank(a.element), rb = rank(b.element)
             return ra != rb ? ra < rb : count(a.element) != count(b.element) ? count(a.element) > count(b.element) : a.offset < b.offset
         }.map(\.element)
-        return (sorted.filter { rank($0) < 4 }, sorted.filter { rank($0) == 4 }, ranked.count - visible.count)
+        return (sorted.filter { rank($0) < 30 }, sorted.filter { rank($0) == 30 }, ranked.count - visible.count)
     }
 }

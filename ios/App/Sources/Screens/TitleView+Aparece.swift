@@ -41,12 +41,17 @@ extension TitleView {
     /// apagado y su arreglo; con «Ahora no», que se revisa pero no hay aviso.
     func startWatching(_ model: TitleModel, permission: UNAuthorizationStatus) {
         guard let videoID = model.continueVideoID else { return }
-        env.services.appearWatch.watch(kind: model.kind, metaID: model.metaID, videoID: videoID, title: model.title.isEmpty ? model.originalTitle : model.title)
+        let watch = env.services.appearWatch
+        watch.watch(kind: model.kind, metaID: model.metaID, videoID: videoID, title: model.title.isEmpty ? model.originalTitle : model.title,
+                    releases: model.upcomingRelease)
+        let until = watch.entry(kind: model.kind, videoID: videoID).map { Strings.date($0.until, .dayMonth, language: env.services.appSettings.uiLanguage) } ?? ""
         if permission == .denied {
             env.notify("Avisos apagados · actívalos", detail: "Lo reviso una vez al día; sin avisos no te puedo decir cuando aparezca.", tone: .warn,
                        actionTitle: "Ajustes") { DebridRequestNotifier.openSystemSettings() }
         } else if DebridRequestNotifier.allows(permission) {
-            env.notify("Te aviso cuando aparezca", detail: "Reviso una vez al día durante 14 días", tone: .success)
+            // FQ4-A: hasta su estreno más 14 días, con la fecha («hasta el 1 de enero»).
+            env.notify("Te aviso cuando aparezca", detail: String(format: Strings.tr("Reviso una vez al día, hasta el %@", language: env.services.appSettings.uiLanguage), until),
+                       tone: .success)
         } else {
             env.notify("Lo reviso una vez al día", detail: "Ábrelo aquí para ver si ya apareció", tone: .info)
         }

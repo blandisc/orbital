@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -43,7 +49,7 @@
     "error": null
   },
   "expected": {
-    "_note": "Aún no se estrena (18 dic) y nadie lo tiene: la causa es «Aún no se estrena · sale el viernes 18 de diciembre» (el día de Cinemeta, en UTC) y la salida, «Avisarme cuando aparezca».",
+    "_note": "Aún no se estrena (18 dic) y nadie lo tiene: «Aún no se estrena · sale el viernes 18 de diciembre» (el día de Cinemeta, en UTC) con «Avisarme cuando aparezca», que revisa hasta el estreno más 14 días: hasta el 1 de enero (FQ4-A).",
     "title": "Avengers: Doomsday",
     "logo": true,
     "video_id": "tt21357150",
@@ -52,6 +58,7 @@
     "cause_arg": "el viernes 18 de diciembre",
     "fix": "notify",
     "offer": null,
+    "request_aside": null,
     "instant_aside": null,
     "recommended": null,
     "rows": [],
@@ -59,6 +66,7 @@
     "hidden": 0,
     "play_now": null,
     "request": null,
-    "other_account": null
+    "other_account": null,
+    "notify_until": "2027-01-01"
   }
 }

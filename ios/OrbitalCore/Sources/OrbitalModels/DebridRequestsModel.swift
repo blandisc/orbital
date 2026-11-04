@@ -66,6 +66,11 @@ public final class DebridRequestsModel: ObservableModel {
         requests.first { $0.covers(metaID: metaID, videoID: videoID) && isOtherAccount($0) && DebridRequestWords.group($0.state) == .pending }
     }
 
+    /// FQ5-A · lo que otra cuenta (la de tu TV) ya tiene listo de ese video: aquí no existe ese enlace, pero se ve en la TV.
+    public func otherAccountReady(metaID: String, videoID: String?) -> DebridRequest? {
+        requests.first { $0.covers(metaID: metaID, videoID: videoID) && isOtherAccount($0) && $0.state == .ready }
+    }
+
     /// El pedido de ese torrent en tu cuenta (nunca una lápida).
     public func request(hash: String) -> DebridRequest? {
         guard let found = requester.book.find(hash: hash), found.state != .gone, !isOtherAccount(found) else { return nil }
@@ -111,7 +116,8 @@ public final class DebridRequestsModel: ObservableModel {
         var pick = preferred.map { (torrent: $0, language: language, release: release) }
         if pick == nil {
             guard let found = await torrents(kind: kind, videoID: videoID, prefs: prefs) else { return .failed(nil, .network) }
-            guard let best = found.first, let torrent = best.torrent else { return .nobodyHasIt }
+            let refused = requester.refused(metaID: metaID)
+            guard let best = found.first(where: { !refused.contains($0.torrent?.hash ?? "") }), let torrent = best.torrent else { return .nobodyHasIt }
             pick = (torrent, Streams.playingLanguage(best, prefs)?.code, best.release.isEmpty ? nil : best.release)
         }
         guard let pick else { return .nobodyHasIt }

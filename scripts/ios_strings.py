@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Escenarios comunes con la TV (3 nov, Fernando: «todo con tus sugerencias»): FQ1-A «Pedir a la nube en latino» al lado de
+    # «Ver» y FQ5-A lo que tu TV ya tiene con otra cuenta.
+    "Pedir a la nube en %@": "Request it to the cloud in %@", "Pedir a la nube aquí": "Request it to the cloud here",
+    "Lo tiene tu TV con otra cuenta": "Your TV has it with another account",
     # CX (3 nov, Fernando: «CX2A, CX3A, CX4A… la Mac no habla con la TV», CX5, CX7A, CX8A): tu clave entre tus aparatos Apple,
     # quitarla solo aquí o de todos, la invitación del iPhone al iPad, el nombre al conectar y «Darle su propia conexión».
     # OpenSubtitles deja de ser complemento (Fernando, 3 nov): «Buscar en internet» en Idioma y subtítulos.

@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -90,7 +96,7 @@
     "error": null
   },
   "expected": {
-    "_note": "Real-Debrid rechazó la pedida: «Probar otra versión». La rechazada sigue en la lista por pedir (PREGUNTA ABIERTA FQ2).",
+    "_note": "Real-Debrid rechazó la latina REMUX: «Probar otra versión». La rechazada sale «Real-Debrid no lo dejó bajar» (`state: refused`) y nunca se recomienda ni se ofrece (FQ2-A).",
     "title": "El origen",
     "logo": true,
     "video_id": "tt1375666",
@@ -103,6 +109,7 @@
       "language": "es",
       "res": "4K"
     },
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "2849211f150e966ef7924f43aec22727a644e10d",
@@ -123,8 +130,16 @@
         "code": "es-419",
         "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
         "res": "1080p",
-        "state": "to_request",
+        "state": "refused",
         "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": true,
         "other": false
       },
       {
@@ -137,7 +152,7 @@
       },
       {
         "code": "en",
-        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "hash": "1c6b2179bcd73efd07fb8018268598c062cf95af",
         "res": "1080p",
         "state": "to_request",
         "recommended": false,
@@ -152,14 +167,6 @@
         "other": false
       },
       {
-        "code": "es",
-        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
-        "res": "4K",
-        "state": "to_request",
-        "recommended": true,
-        "other": false
-      },
-      {
         "code": "es-ES",
         "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
         "res": "4K",
@@ -171,21 +178,26 @@
         "code": "es-ES",
         "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
         "res": "1080p",
-        "state": "to_request",
+        "state": "refused",
         "recommended": false,
         "other": false
       }
     ],
     "to_request": [
       {
-        "code": "es-ES",
-        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be",
-        "res": "SD"
+        "code": "en",
+        "hash": "43e3691dc6f4172841e32b25b349e2b7a980b9c5",
+        "res": "4K"
       },
       {
         "code": "en",
-        "hash": "1c6b2179bcd73efd07fb8018268598c062cf95af",
-        "res": "1080p"
+        "hash": "0dfd3ebe4f3f38909307a918f0eef920e4bbc603",
+        "res": "SD"
+      },
+      {
+        "code": "es-ES",
+        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be",
+        "res": "SD"
       },
       {
         "code": "fr",
@@ -193,19 +205,14 @@
         "res": "1080p"
       },
       {
-        "code": "ru",
-        "hash": "513ec652eea0844f470583c18428b23e3cf43e5e",
-        "res": "1080p"
-      },
-      {
-        "code": "en",
-        "hash": "43e3691dc6f4172841e32b25b349e2b7a980b9c5",
-        "res": "4K"
-      },
-      {
         "code": "fr",
         "hash": "ca7c2e3866eece3378b3cbefab30b6298a4fd0bf",
         "res": "4K"
+      },
+      {
+        "code": "ru",
+        "hash": "61190300e8e40e561790e33806f0db89d89ab24a",
+        "res": "SD"
       }
     ],
     "hidden": 1,

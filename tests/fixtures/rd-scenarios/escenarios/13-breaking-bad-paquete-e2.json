@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -82,6 +88,7 @@
     "cause_arg": null,
     "fix": null,
     "offer": null,
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
@@ -97,6 +104,14 @@
         "state": "to_request",
         "recommended": false,
         "other": true
+      },
+      {
+        "code": "es",
+        "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+        "res": "1080p",
+        "state": "requested_ready",
+        "recommended": true,
+        "other": false
       },
       {
         "code": "en",
@@ -121,14 +136,6 @@
         "state": "to_request",
         "recommended": false,
         "other": false
-      },
-      {
-        "code": "es",
-        "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
-        "res": "1080p",
-        "state": "requested_ready",
-        "recommended": true,
-        "other": false
       }
     ],
     "to_request": [
@@ -138,14 +145,9 @@
         "res": "1080p"
       },
       {
-        "code": "ru",
-        "hash": "6f94a7407500e57b623c2c385be52bb1f228a896",
-        "res": "1080p"
-      },
-      {
-        "code": "pl",
-        "hash": "01bb15bbfc6516c4aa0152f92342445b15dcfdd7",
-        "res": "1080p"
+        "code": "en",
+        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
+        "res": "SD"
       },
       {
         "code": "ru",
@@ -153,13 +155,13 @@
         "res": "720p"
       },
       {
-        "code": "en",
-        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
+        "code": "fr",
+        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
         "res": "SD"
       },
       {
-        "code": "fr",
-        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
+        "code": "ru",
+        "hash": "05eda18c517fa200d72e69476169b04354b1db4e",
         "res": "SD"
       }
     ],

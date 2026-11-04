@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -77,6 +83,7 @@
     "cause_arg": null,
     "fix": null,
     "offer": null,
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "7afd6bcecab38837927561748e11a21ec82f7967",
@@ -85,6 +92,14 @@
       "res": "1080p"
     },
     "rows": [
+      {
+        "code": "es",
+        "hash": "4afc59f096dd509b26ef13752d8b481d26eb9989",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
       {
         "code": "es-ES",
         "hash": "7afd6bcecab38837927561748e11a21ec82f7967",
@@ -102,8 +117,16 @@
         "other": false
       },
       {
-        "code": "es",
-        "hash": "4afc59f096dd509b26ef13752d8b481d26eb9989",
+        "code": "en",
+        "hash": "02b69ed97414779fda55827574ea0ca951313f90",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "db4a9d808b25b5489c8ec0f737e2b2771dce006f",
         "res": "720p",
         "state": "to_request",
         "recommended": false,

@@ -7,6 +7,12 @@
     "language": "es-MX",
     "audio": "es",
     "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
     "quality": "1080p"
   },
   "title": {
@@ -123,6 +129,7 @@
       "language": "es-419",
       "res": "1080p"
     },
+    "request_aside": null,
     "instant_aside": null,
     "recommended": {
       "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
@@ -149,6 +156,14 @@
       },
       {
         "code": "es",
+        "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "en",
         "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
         "res": "1080p",
         "state": "to_request",

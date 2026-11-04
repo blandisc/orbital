@@ -28,6 +28,13 @@ extension TitleView {
         let now = Date()
         switch model.primary(now: now) {
         case .request?, .requested?, .otherVersion?: break
+        case .onTV?:
+            // FQ5-A: lo tiene tu TV con otra cuenta; se manda el título y el episodio (nunca el enlace) y aparte se puede pedir aquí.
+            let here: (title: Text, symbol: String, action: () -> Void)? = model.debridOffer.map { _ in (Text("Pedir a la nube aquí"), "arrow.down.circle", { requestFromDebrid(model) }) }
+            return ContinueAction(title: Text("Ver en la TV"), symbol: "tv", version: Text("Lo tiene tu TV con otra cuenta"),
+                                  play: { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.kind == "series" ? model.continueVideoID : nil,
+                                                                    title: model.title.isEmpty ? model.originalTitle : model.title) } },
+                                  aside: here, tint: artAccent)
         default: return nil
         }
         if let request = model.debridRequest, request.state != .ready, request.state != .tooMany {
@@ -91,8 +98,9 @@ extension TitleView {
 
     /// Lo pide y dice en segundos qué contestó Real-Debrid (sin prometer que lo logrará, R2).
     /// Con `source`, esa versión de «Versión» › «Hay que pedirlas · tardan» (T8-A), del video `videoID`.
-    func sendRequest(_ model: TitleModel, source: Source? = nil, videoID: String? = nil) async {
-        guard let outcome = await model.requestFromDebrid(source: source, videoID: videoID, onCellular: env.connectivity.isCellular) else { return }
+    func sendRequest(_ model: TitleModel, source: Source? = nil, videoID: String? = nil, inYourLanguage: Bool = false) async {
+        guard let outcome = await model.requestFromDebrid(source: source, videoID: videoID, inYourLanguage: inYourLanguage,
+                                                          onCellular: env.connectivity.isCellular) else { return }
         switch outcome {
         case .requested(let request):
             switch request.state {
@@ -117,6 +125,13 @@ extension TitleView {
         case .nobodyHasIt: tell(.nobodyHasIt, model)
         }
         await model.loadBestSource(onCellular: env.connectivity.isCellular)
+    }
+
+    /// FQ1-A · «Pedir a la nube en latino» al lado de «Ver» (que arranca ya en otro idioma de tu orden). nil si no aplica.
+    func wantedAside(_ model: TitleModel) -> (title: Text, symbol: String, action: () -> Void)? {
+        guard model.wantedOffer != nil, model.primary() == .watch, let code = model.wantedOffer?.language else { return nil }
+        let name = Streams.versionLanguageName(code, in: language).lowercased()
+        return (Text("Pedir a la nube en \(name)"), "arrow.down.circle", { Task { await sendRequest(model, inYourLanguage: true) } })
     }
 
     /// «Cancelar pedido».

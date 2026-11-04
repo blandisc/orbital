@@ -15,7 +15,7 @@ import XCTest
 final class RDScenarioTests: XCTestCase {
     func testEveryScenarioDecidesWhatItSays() async throws {
         let files = try RDScenarioRig.all()
-        XCTAssertGreaterThanOrEqual(files.count, 32)
+        XCTAssertGreaterThanOrEqual(files.count, 33)
         let record = ProcessInfo.processInfo.environment["RD_SCENARIOS_RECORD"]
         for file in files {
             let rig = try await RDScenarioRig(file)
@@ -163,6 +163,6 @@ final class RDScenarioTests: XCTestCase {
     /// la ofrecida (si hay otra). Un nombre que no menciona el título (`otherTitle`) solo baja: puede ser su nombre en otro
     /// país («Farsante» es «Phony» en España), y en tu idioma le gana a otro idioma (pregunta abierta en el README).
     static func bad(_ s: Source) -> Bool {
-        SourcesModel.hidden(s) || s.tags.contains(Streams.otherTitleTag) || s.tags.contains(Streams.otherEpisodeTag) || s.tags.contains("3D")
+        SourcesModel.hidden(s) || s.refused || s.tags.contains(Streams.otherTitleTag) || s.tags.contains(Streams.otherEpisodeTag) || s.tags.contains("3D")
     }
 }
