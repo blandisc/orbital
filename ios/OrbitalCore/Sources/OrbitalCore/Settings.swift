@@ -54,7 +54,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
-    public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
+    public var subtitleSize = "medium"         // «small» | «medium» | «large» | «xlarge»: el tamaño de la letra de los subtítulos
     public var subtitleBackground = "outline"  // «outline» (contorno) | «box» (caja oscura) | «translucent»
     public var subtitlePosition = "normal"     // «normal» | «raised» (más arriba)
     public var subtitlesOnSkipBack = true      // al regresar 10 s con subtítulos apagados, se ven un momento
@@ -133,7 +133,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
 
     /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).
-    public var subtitleHeightFraction: Double { ["small": 0.042, "large": 0.068][subtitleSize] ?? 0.054 }
+    /// Cuatro medidas, como la TV (Pequeño ×0,85 · Normal · Grande ×1,25 · Muy grande ×1,5; Fernando, 4 nov 2026, PT19).
+    public var subtitleHeightFraction: Double { ["small": 0.046, "large": 0.068, "xlarge": 0.081][subtitleSize] ?? 0.054 }
+
+    /// Las medidas de la letra de los subtítulos, de chica a grande (los nombres: «Pequeño», «Normal», «Grande», «Muy grande»).
+    public static let subtitleSizes = ["small", "medium", "large", "xlarge"]
 
     /// Preferencias de fuentes para ver (en datos móviles se limita la calidad).
     public func preferences(onCellular: Bool = false) -> Preferences {

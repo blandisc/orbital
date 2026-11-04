@@ -14,7 +14,7 @@ struct DebridAccountView: View {
     @State private var confirmRemove = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var changingKey = false
-    /// Ya se le preguntó a Real-Debrid en esta visita: al volver de «Tus pedidos» o «Cambiar clave» no se pregunta otra vez
+    /// Ya se le preguntó a Real-Debrid en esta visita: al volver de «Tus pedidos» o «Cambiar la clave» no se pregunta otra vez
     /// (antes «Conectada ✓» parpadeaba a «Guardada · Revisando…»).
     @State private var checked = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -178,10 +178,10 @@ struct DebridAccountView: View {
         Section {
             // D3 y RX1-A: tus pedidos viven en Descargas › Real-Debrid · bajando para ti; aquí queda el atajo de siempre, que lleva ahí.
             Button { env.openTab = AppEnvironment.downloadsTab } label: {
-                SettingsRow(title: "Tus pedidos", symbol: "icloud.and.arrow.down", tint: DS.ListTint.calendar, value: requestsValue, linked: false)
+                SettingsRow(title: "Tus pedidos", symbol: DS.Symbol.cloud, tint: DS.ListTint.calendar, value: requestsValue, linked: false)
             }
             .accessibilityIdentifier("settings-debrid-requests")
-        } footer: { Text("Están en Descargas, arriba de lo que guardas en este aparato.") }
+        } footer: { Text("Están en Biblioteca › Descargas, arriba de lo que guardas en este aparato.") }   // PT15: la pestaña ya es Biblioteca
         .listRowBackground(DS.surface)
     }
 
@@ -212,8 +212,8 @@ struct DebridAccountView: View {
             if model.keyCameFromImport {
                 Text("Tomé tu clave de Real-Debrid de tu Torrentio").recipe(.footnote, color: DS.textMuted)
             }
-            if key != .rejected {   // rechazada, «Cambiar clave» ya es el arreglo de arriba
-                NavigationLink { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar clave").foregroundStyle(DS.text) }
+            if key != .rejected {   // rechazada, «Cambiar la clave» ya es el arreglo de arriba
+                NavigationLink { DebridChangeKeyPage(debrid: model) } label: { Text("Cambiar la clave").foregroundStyle(DS.text) }
             }
             Button("Quitar", role: .destructive) { confirmRemove = true }
                 // CX3-A: solo de este aparato o de todos tus aparatos Apple (los que usaban esta misma clave la quitan al abrir
@@ -241,7 +241,7 @@ struct DebridAccountView: View {
             DSProblem(title: Text(verbatim: UnavailableCause.reconnectDebrid.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }),
                       detail: Text("Tu clave ya no sirve. Pega la nueva de real-debrid.com/apitoken.")) {
                 // Un botón (no NavigationLink: en una lista, el enlace ignora el estilo y no se veía).
-                Button { changingKey = true } label: { Label("Cambiar clave", systemImage: "key").frame(maxWidth: .infinity) }
+                Button { changingKey = true } label: { Label("Cambiar la clave", systemImage: "key").frame(maxWidth: .infinity) }
                     .dsProblemFix(primary: true)
                     .accessibilityIdentifier("debrid-change-key")
             }
@@ -284,11 +284,11 @@ struct DebridAccountView: View {
         DebridTVSection(debrid: model)   // K1: sin clave aquí, «Usar la de la TV»
     }
 
-    /// «Vence el sábado 21 de noviembre · quedan 18 días»; «Vence hoy»; «Venció el …»; sin fecha, lo de siempre.
+    /// «Vence el 21 nov · quedan 18 días»; «Vence hoy»; «Venció el 2 nov»; sin fecha, lo de siempre. La fecha corta, como la TV (PT15).
     private func expiry(_ status: DebridStatus) -> Text {
         let ui = env.services.appSettings.uiLanguage
         guard let expires = status.expires else { return DebridWords.text(status) }
-        let day = Strings.date(expires, .weekdayDayMonth, language: ui)
+        let day = Strings.date(expires, .dayMonthShort, language: ui)
         let (state, days) = DebridModel.summary(status, now: Date())
         switch state {
         case .active, .expiringSoon:
@@ -302,16 +302,16 @@ struct DebridAccountView: View {
         switch status.state(now: Date()) { case .active: false; default: true }
     }
 
-    /// «2 bajando» o nada.
+    /// «4 en camino» (todo lo que sigue: bajando, en cola, sin gente…), como la TV (PT15), o nada.
     private var requestsValue: Text? {
         let requests = env.services.debridRequests
         let _ = requests.track()
         let active = requests.active.count
-        return active == 0 ? nil : Text("\(active) bajando")
+        return active == 0 ? nil : Text("\(active) en camino")
     }
 }
 
-/// «Cambiar clave»: el campo siempre empieza vacío (la clave nunca se muestra completa, ni la que pegaste la vez pasada) y,
+/// «Cambiar la clave» (como la TV, PT15): el campo siempre empieza vacío (la clave nunca se muestra completa, ni la que pegaste la vez pasada) y,
 /// en cuanto Real-Debrid acepta la nueva, regresa a tu cuenta, que ya dice «Conectada ✓».
 private struct DebridChangeKeyPage: View {
     @State private var observer: ModelObserver<DebridModel>
@@ -330,7 +330,7 @@ private struct DebridChangeKeyPage: View {
         }
         .tint(DS.accent)
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Cambiar clave").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Cambiar la clave").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
         .onAppear { model.token = "" }
         .sensoryFeedback(.success, trigger: model.check) { _, new in if case .ok = new { true } else { false } }

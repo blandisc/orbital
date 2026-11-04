@@ -63,7 +63,7 @@ struct DebridWhereLine: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            IconBeside(symbol: "icloud.and.arrow.down") {
+            IconBeside(symbol: DS.Symbol.cloud) {
                 Text("\(DeviceWords.text("La nube es tu Real-Debrid: lo baja por ti, no en este iPhone.", mac: "La nube es tu Real-Debrid: lo baja por ti, no en esta Mac."))\(Text(verbatim: " "))\(tv ? Text("Cuando termine, arranca al instante aquí y en tu TV.") : Text("Cuando termine, arranca al instante aquí."))\(Text(verbatim: paced ? "" : " "))\(paced ? Text(verbatim: "") : notifies ? Text("Suele tardar de minutos a horas; te aviso.") : Text("Suele tardar de minutos a horas."))")
                     .recipe(.footnote).fixedSize(horizontal: false, vertical: true)
             }
@@ -163,7 +163,7 @@ struct DebridRequestSheet: View {
                 }
                 if cancel != nil {
                     Button(role: .destructive) { confirmingCancel = true } label: {
-                        Label(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? "trash" : "xmark.circle").frame(maxWidth: .infinity)
+                        Label(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? DS.Symbol.removeRequest : DS.Symbol.cancelRequest).frame(maxWidth: .infinity)
                     }
                     .dsSecondaryButton().controlSize(.large)
                     .accessibilityIdentifier(finished ? "debrid-remove-finished" : "debrid-cancel")

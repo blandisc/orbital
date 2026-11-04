@@ -21,6 +21,10 @@ extension PlayerScreen {
         switch outcome {
         case .requested(let request):
             let warn = [.refused, .tooMany].contains(request.state)
+            // PT24: la pantalla del pedido deja de preguntar y dice lo que va a pasar (sin prometer si no hay permiso).
+            if !warn, let videoID = model.request?.videoID {
+                notices.notifyAnswer = off ? (videoID, .off) : notifies ? (videoID, .promised) : nil
+            }
             // P5-A: «Avisos apagados» trae su arreglo, «Ajustes», como en la ficha.
             show(PlayerNotice(title: DebridRequestWords.title(request, tr),
                               detail: off && !warn ? tr("Avisos apagados · actívalos") : DebridRequestWords.detail(request, now: Date(), notifies: notifies, tr),

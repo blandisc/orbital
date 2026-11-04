@@ -86,13 +86,13 @@ struct SourcesSheet: View {
         guard let hash = observer.model.source(id)?.torrent?.hash, let found = requests.request(hash: hash) else { return nil }
         let tr = { (key: String) in Strings.tr(key, language: env.services.appSettings.uiLanguage) }
         let notifies = DebridRequestNotifier.canNotify && requests.isFromHere(found)
-        return DebridRequestStatus(symbol: DebridRequestWords.symbol(found.state), title: full ? DebridRequestWords.title(found, tr) : DebridRequestWords.short(found, tr),
+        return DebridRequestStatus(symbol: DebridRequestWords.symbol(found.state), title: DebridRequestWords.title(found, tr),
                                    detail: full ? DebridRequestWords.paceLine(found, now: Date(), notifies: notifies, tr) : nil,
                                    fraction: found.state == .downloading ? Double(found.percent) / 100 : nil,
                                    warn: DebridRequestWords.isTrouble(found, now: Date()), ok: found.state == .ready)
     }
 
-    /// RX2-A · la cápsula de una versión ya pedida: «Bajando · 42 %» en lugar de «Por pedir».
+    /// RX2-A · la cápsula de una versión ya pedida: «Bajando en la nube · 42 %» en lugar de «Por pedir» (PT11).
     private func cloudWords(_ option: VersionOption) -> String? {
         option.speed == .realDebridMustDownload ? requestStatus(option.id)?.title : nil
     }
@@ -252,7 +252,7 @@ struct VersionCard: View {
         let language = Streams.versionLanguageName(row.code, in: uiLanguage)
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
+                let facts = [VersionChip.size(option, locale: Locale(identifier: uiLanguage)), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
                 DSSheetHeader(title: Text("\(Text.flag(row.code))\(Text(verbatim: "\(language) · \(option.quality)"))"),
                               subtitle: VersionCard.withSpeed(facts, option.speed))
                 if option.otherEpisode {
@@ -276,7 +276,7 @@ struct VersionCard: View {
                                 .dsSecondaryButton().controlSize(.large).accessibilityIdentifier("version-wait")
                         }
                     } else {
-                        Button { request(option.id) } label: { Label("Pedir a la nube", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                        Button { request(option.id) } label: { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
                             .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-request")
                     }
                 } else {
@@ -333,14 +333,14 @@ struct VersionCard: View {
     private func otherRow(_ other: VersionOption) -> some View {
         HStack(alignment: .top, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                VersionCard.withSpeed(VersionChip.facts(other), other.speed).recipe(.footnote, color: DS.text)
+                VersionCard.withSpeed(VersionChip.facts(other, locale: Locale(identifier: uiLanguage)), other.speed).recipe(.footnote, color: DS.text)
                 Text(verbatim: other.release).font(DS.TextRecipe.caption.font.monospaced()).foregroundStyle(DS.textMuted).lineLimit(2)
                 if other.otherEpisode { Text("¿Otro episodio?").recipe(.caption, color: DS.warning) }
                 else if other.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if other.speed == .realDebridMustDownload, let request {   // T8-A: se pide, nunca se reproduce
-                Button { request(other.id) } label: { Image(systemName: "arrow.down.circle").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
+                Button { request(other.id) } label: { Image(systemName: DS.Symbol.cloud).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
                     .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Pedir a la nube"))
             } else {
             Button { act(other.id, .watch) } label: { Image(systemName: "play.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }

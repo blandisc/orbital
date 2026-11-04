@@ -445,6 +445,22 @@ nada a quien no lo conoce. Cada palabra dice dónde pasa:
 | **Tocar lo que baja en la nube dice cuánto falta, honesto,** y deja elegir: «A este paso, falta menos de una hora. Te aviso.» (del avance desde que se pidió; sin qué medir, «Suele tardar de minutos a horas.»; «Te aviso» solo con permiso), «Ver Inglés · 1080p, ya arranca» (la mejor que ya arranca en tus idiomas, la regla de «Ver») y «Esperar a que llegue». Sin otra al instante, solo cuánto lleva | `DebridRequestWords.paceLine` · `VersionCard` · `DebridRequestSheet` | `testThePaceComesFromTheProgressRateOrSaysMinutesToHours` |
 | **«Así funciona», una sola vez:** la primera vez que ves «↓ Por pedir» (en «Versión» o en la ficha), los tres pasos animados, «No ocupa espacio en este iPhone» y «Entendido». Se recuerda en `learn.seen.debrid-flow`, la llave que también escribe la guía de bienvenida | `DebridFlowIntro` · `DebridFlowIntroHost` | — |
 
+### Paridad TV ↔ iPhone (PT, 4 nov 2026; las dos)
+
+Fernando, 4 nov, sobre las capturas lado a lado (https://claude.ai/artifact/1hb5WZZxkB8bgVZhnhczje): «de acuerdo a tu
+recomendación» en todos, salvo PT6 («déjala como está»). Lo pendiente de la TV, en el registro de paridad.
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| **La nube con flecha es Real-Debrid; la flecha sola es «Descargar» (PT5).** Todo lo de la nube (Pedir a la nube, Bajando en la nube, Tus pedidos, el grupo «Real-Debrid · bajando para ti», el paso «La nube lo baja») lleva `icloud.and.arrow.down`; la flecha hacia abajo (`arrow.down.circle`) es solo guardar en este aparato | `DS.Symbol.cloud` / `cloudFill` (sale de `DebridRequestWords.Icon.cloud`), `DS.Symbol.download` | `testRealDebridIsTheCloudArrow` |
+| **Un ícono por estado y por acción de un pedido (PT10),** igual en la TV: ⊗ `xmark.circle` cancelar · `trash` quitar · `clock` en cola · nube con flecha bajando · `person.2.slash` sin gente · `exclamationmark.triangle` **solo** «Real-Debrid no lo dejó bajar» · `square.stack.3d.up` «Muchas descargas activas» · `checkmark.circle` listo. Nadie escribe estos nombres a mano | `DebridRequestWords.Icon` y `.symbol(_:)`, `DS.Symbol.cancelRequest` / `removeRequest` | `testRequestIconsComeFromTheCatalog`, `ParityPTTests.testEachRequestStateHasItsOwnIcon` |
+| **«Bajando en la nube · 42 %» en todos lados (PT11):** la ficha, «Versión», Tus pedidos, «Seguir viendo» (ahí el estado va primero para que, si no cabe, se suelte el episodio y no el avance) y el reproductor. Nunca «Bajando · 42 %» suelto | `DebridRequestWords.title` (ya no hay `short`) | `testDownloadingInTheCloudIsNeverBare` y el vocabulario |
+| **Cuánto tarda un pedido, una frase (PT7):** «La nube las baja por ti: suele tardar de minutos a horas.»; los días solo en «¿Qué es esto?», como peor caso («…; si poca gente lo comparte, hasta días.») | `VersionRequestGroup`, `DebridExplainer` | el vocabulario |
+| **Un tamaño, un formato (PT8):** «1,2 GB» con la coma del español y «1.2 GB» en inglés; GB y TB con un decimal, MB y KB sin decimales | `ByteSize.text` (OrbitalCore), con el idioma de la app | `testSizesAreWrittenWithByteSize`, `ParityPTTests.testSizesUseTheAppLanguageSeparator` |
+| **Letra de los subtítulos: Pequeño · Normal · Grande · Muy grande (PT19)**, las cuatro de la TV | `AppSettings.subtitleSizes` | `ParityPTTests.testFourSubtitleSizesLikeTheTV` |
+| **Complementos (PT16):** el grupo «Se preguntan en este orden»; cada renglón dice lo que aporta y cómo contesta («Contesta en 0,3 s»); solo se marca «Apagado» | `AddonRowLabel`, `AddonHealthLine` | `testAddonsOnlySayOff` |
+| **Preguntar antes de prometer (PT24):** con el episodio bajando en la nube, «¿Te aviso cuando esté listo?» y «Sí, avísame»; después de tocar, «Te aviso cuando esté listo» (o «Avisos apagados · actívalos» con «Ajustes») | `PlayerFailureView.notifyAnswer` | `testAProblemAlwaysBringsItsFix` |
+
 ### Biblioteca: Descargas · Mi media · Guardado (BI, 3 nov 2026, iPhone; la TV decide aparte)
 
 Fernando, 3 nov («Vamos con tu recomendación de BI1A y BI2A. Y pon el mismo filtro que ponemos en otras listas…»; canvas

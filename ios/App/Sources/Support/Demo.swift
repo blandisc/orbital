@@ -48,7 +48,7 @@ enum Demo {
     @MainActor static func showNotice(_ env: AppEnvironment) {
         switch notice {
         case "ya": env.notify("Ya está descargada", detail: "En el iPhone, para ver sin conexión", tone: .info, actionTitle: "Ver", actionSymbol: "play.fill") {}
-        case "bajando": env.notify("Bajando la recomendada", detail: "1080p · 2.4 GB", tone: .success, actionTitle: "Otra") {}
+        case "bajando": env.notify("Bajando la recomendada", detail: "1080p · 2,4 GB", tone: .success, actionTitle: "Otra") {}
         case "trakt": env.notify("Tu sesión de Trakt se cerró", detail: "Sin ella no llegan tus recomendaciones", tone: .warn, actionTitle: "Conectar") {}
         case "cola":
             env.notify("Quitada de Mi lista", detail: "Oppenheimer", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {}

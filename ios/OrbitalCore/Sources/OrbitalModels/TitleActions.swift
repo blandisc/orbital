@@ -66,10 +66,10 @@ public final class TitleActions {
         await services.watch.markWatched(kind: s.kind, metaID: s.imdb, videoID: s.imdb, name: s.title, at: date)
     }
 
-    /// Lo que se está bajando de una sugerencia, para decirlo («1080p · 2.4 GB»), si la cola ya lo sabe.
+    /// Lo que se está bajando de una sugerencia, para decirlo («1080p · 2,4 GB»), si la cola ya lo sabe.
     public func downloadDetail(_ s: Suggestion) async -> String? {
         let item = await services.downloads.item(DownloadItem.makeID(metaID: s.imdb, videoID: videoID(for: s)))
-        let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
+        let size = item?.expectedBytes.map { ByteSize.text($0, language: services.appSettings.uiLanguage) }
         let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
         return detail.isEmpty ? nil : detail
     }

@@ -81,10 +81,30 @@ public final class SavedModel: ObservableModel {
             guard id == selected, !Task.isCancelled else { return }   // cambiaste de lista mientras llegaba
             items = found
             failed = false
+            // Los nombres en tu idioma (PT23: «Dune: Parte dos», como la TV), por el mismo `Localizer` de las fichas. Primero
+            // salen como los manda Trakt y se cambian al llegar (lo que ya se tradujo antes sale de su caché, sin esperar).
+            let named = await localized(found)
+            guard id == selected, !Task.isCancelled, items == found else { return }
+            items = named
         } catch {
             guard id == selected else { return }
             failed = items.isEmpty
         }
+    }
+
+    /// Los títulos con su nombre en el idioma de la app (sin TMDB, tal cual).
+    private func localized(_ found: [Suggestion]) async -> [Suggestion] {
+        var out = found
+        for kind in ["movie", "series"] {
+            let at = out.indices.filter { out[$0].kind == kind }
+            guard !at.isEmpty else { continue }
+            let metas = at.map { JSON.object(["id": .string(out[$0].imdb), "name": .string(out[$0].title)]) }
+            let translated = await services.localizer.catalog(kind: kind, metas: metas)
+            for (i, meta) in zip(at, translated) {
+                if let name = meta["name"]?.string, !name.isEmpty { out[i].title = name }
+            }
+        }
+        return out
     }
 
     /// Cómo vas con un título: vista (Trakt), a medias (Trakt o el avance de este aparato) o por ver.

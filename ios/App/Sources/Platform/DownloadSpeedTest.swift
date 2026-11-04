@@ -81,7 +81,7 @@ final class DownloadSpeedTest {
             return
         }
         sourceName = [source.resolution, source.cached ? "Al instante" : "No está al instante",
-                      ByteCountFormatter.string(fromByteCount: target.total, countStyle: .file), target.url.host ?? "",
+                      ByteSize.text(target.total, language: AppEnvironment.shared.services.appSettings.uiLanguage), target.url.host ?? "",
                       skipped > 0 ? "\(skipped) sin archivo antes" : nil].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
         await measure(.single) { await Self.parallel(url: target.url, connections: 1, total: target.total) }
         await measure(.eight) { await Self.parallel(url: target.url, connections: 8, total: target.total) }

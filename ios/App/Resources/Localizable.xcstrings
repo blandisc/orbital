@@ -5989,17 +5989,6 @@
         }
       }
     },
-    "Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You request it and it downloads it: minutes to days, depending on how many people share it."
-          }
-        }
-      }
-    },
     "Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence.": {
       "extractionState": "manual",
       "localizations": {
@@ -6040,17 +6029,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "If you check too many, the test with a title warns you."
-          }
-        }
-      }
-    },
-    "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "If it already has the version, it starts in seconds (“instant”). If not, it can download it for you (“to download”): minutes to days."
           }
         }
       }
@@ -6593,17 +6571,6 @@
         }
       }
     },
-    "%lld bajando": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld downloading"
-          }
-        }
-      }
-    },
     "Abrir la ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -6611,17 +6578,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open the title page"
-          }
-        }
-      }
-    },
-    "Avisarme cuando esté": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notify me when it's ready"
           }
         }
       }
@@ -6655,17 +6611,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Downloading for you · %lld of %lld"
-          }
-        }
-      }
-    },
-    "Bajando · %lld %%": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading · %lld %%"
           }
         }
       }
@@ -11026,17 +10971,6 @@
         }
       }
     },
-    "Cambiar clave": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change key"
-          }
-        }
-      }
-    },
     "Cambiar lo que quiero": {
       "extractionState": "manual",
       "localizations": {
@@ -11330,17 +11264,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Certified Fresh"
-          }
-        }
-      }
-    },
-    "Chico": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Small"
           }
         }
       }
@@ -20989,17 +20912,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "I skipped the others"
-          }
-        }
-      }
-    },
-    "Mediano": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medium"
           }
         }
       }
@@ -39870,17 +39782,6 @@
         }
       }
     },
-    "La nube las baja por ti: de minutos a días.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The cloud downloads them for you: minutes to days."
-          }
-        }
-      }
-    },
     "Bajando en la nube · %@": {
       "extractionState": "manual",
       "localizations": {
@@ -40132,7 +40033,7 @@
         }
       }
     },
-    "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos.": {
+    "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos.": {
       "extractionState": "manual",
       "localizations": {
         "es": {
@@ -40141,25 +40042,25 @@
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
                 }
               },
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPad. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPad. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en esta Mac. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en esta Mac. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
                 }
               }
             }
@@ -40171,25 +40072,25 @@
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPhone. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPhone. It usually takes minutes to hours; if few people share it, up to days. Sometimes it won't allow it (copyright) and we'll tell you."
                 }
               },
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPad. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPad. It usually takes minutes to hours; if few people share it, up to days. Sometimes it won't allow it (copyright) and we'll tell you."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this Mac. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this Mac. It usually takes minutes to hours; if few people share it, up to days. Sometimes it won't allow it (copyright) and we'll tell you."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPhone. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPhone. It usually takes minutes to hours; if few people share it, up to days. Sometimes it won't allow it (copyright) and we'll tell you."
                 }
               }
             }
@@ -40629,17 +40530,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid · downloading for you"
-          }
-        }
-      }
-    },
-    "Están en Descargas, arriba de lo que guardas en este aparato.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "They're in Downloads, above what you save on this device."
           }
         }
       }
@@ -41123,6 +41013,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel another download or request it again later"
+          }
+        }
+      }
+    },
+    "Pequeño": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small"
+          }
+        }
+      }
+    },
+    "Muy grande": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra large"
+          }
+        }
+      }
+    },
+    "Cambiar la clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the key"
+          }
+        }
+      }
+    },
+    "%lld en camino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld on the way"
+          }
+        }
+      }
+    },
+    "Están en Biblioteca › Descargas, arriba de lo que guardas en este aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They're in Library › Downloads, above what you save on this device."
+          }
+        }
+      }
+    },
+    "¿Te aviso cuando esté listo?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shall I let you know when it's ready?"
+          }
+        }
+      }
+    },
+    "Sí, avísame": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, let me know"
+          }
+        }
+      }
+    },
+    "La nube las baja por ti: suele tardar de minutos a horas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud downloads them for you: it usually takes minutes to hours."
+          }
+        }
+      }
+    },
+    "Se lo pides y lo baja: suele tardar de minutos a horas; si poca gente lo comparte, hasta días.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You ask for it and it downloads it: it usually takes minutes to hours; if few people share it, up to days."
+          }
+        }
+      }
+    },
+    "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por pedir»): suele tardar de minutos a horas; si poca gente la comparte, hasta días.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it already has the version, it starts in seconds (\"instant\"). If not, it can download it for you (\"to request\"): it usually takes minutes to hours; if few people share it, up to days."
           }
         }
       }

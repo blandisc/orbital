@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalCore
 
 /// Los íconos propios de Orbital (los mismos de la TV: orbital/web/js/core/icons.js, copiados al catálogo por
 /// scripts/list_icons.mjs). Regla de íconos del iPhone: las secciones no llevan ícono (el color lo pone el arte); los
@@ -19,5 +20,13 @@ extension DS {
         static let automatic = "arrow.triangle.2.circlepath"
         /// Seguir una descarga en pausa: la flecha hacia abajo, siempre con «Seguir» debajo (`DownloadRingButton`).
         static let resumeDownload = "arrow.down"
+        /// PT5 (Fernando, 4 nov 2026): todo lo de Real-Debrid (pedir a la nube, bajando en la nube, tus pedidos) es la nube con
+        /// flecha; la flecha en círculo es solo «Descargar» a este aparato. Los estados de un pedido: `DebridRequestWords.Icon`.
+        static let cloud = DebridRequestWords.Icon.cloud
+        static let cloudFill = DebridRequestWords.Icon.cloud + ".fill"
+        static let download = "arrow.down.circle"
+        /// PT10: cancelar un pedido en camino (⊗) y quitar de tu Real-Debrid lo que ya terminó (basura).
+        static let cancelRequest = DebridRequestWords.Icon.cancel
+        static let removeRequest = DebridRequestWords.Icon.remove
     }
 }
