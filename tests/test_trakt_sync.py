@@ -85,8 +85,13 @@ class FakeTrakt:
     linked = True
 
     def __init__(self):
-        self.stamps = {"paused": "a", "watched": "a", "watchlist": "a"}
+        self.stamps = {"paused": "a", "watched": "a", "watchlist": "a", "hidden": "a"}
         self.calls = []
+        self.hidden = set()
+
+    def hidden_shows(self):
+        self.calls.append("hidden")
+        return set(self.hidden)
 
     def last_activities(self):
         self.calls.append("activities")
@@ -117,7 +122,7 @@ def test_only_what_changed_is_downloaded_again():
     fake = FakeTrakt()
     lib = TraktLibrary(lambda: fake, clock=lambda: NOW)
     assert lib.refresh() is True
-    assert fake.calls == ["activities", "playback", "movies", "shows", "progress:tt9", "watchlist"]
+    assert fake.calls == ["activities", "playback", "movies", "shows", "progress:tt9", "watchlist", "hidden"]
     fake.calls.clear()
     assert lib.refresh() is False and fake.calls == ["activities"]
     fake.stamps["paused"] = "b"
@@ -220,3 +225,19 @@ def test_the_console_rows_and_title_page_read_trakt(library, monkeypatch):
 
     library.watch.set_in_library("series", "tt9", True)  # sin cuenta de Stremio: solo Trakt
     assert saved == [("series", "tt9", True)]
+
+
+def test_a_show_hidden_in_trakt_leaves_continue_watching_and_up_next():
+    """SS1-A (Fernando, 3 nov): «Esconder» una serie en el iPhone la esconde en Trakt; la TV la lee cuando cambia
+    shows.hidden_at y la quita de Seguir viendo y de «Sigue: T2 E6» (/sync/playback y /sync/history no la quitan solos)."""
+    fake = FakeTrakt()
+    fake.playback_rows = lambda: [paused("tt1", NOW), {**paused("tt9", NOW), "kind": "series", "meta_id": "tt9"}]
+    lib = TraktLibrary(lambda: fake, clock=lambda: NOW)
+    lib.refresh()
+    playback, shows, _, _ = lib.snapshot()
+    assert "tt9" in shows and any(r.get("meta_id") == "tt9" for r in playback)
+    fake.hidden, fake.stamps = {"tt9"}, {**fake.stamps, "hidden": "b"}
+    assert lib.refresh() is True and fake.calls[-1] == "hidden"
+    playback, shows, _, _ = lib.snapshot()
+    assert "tt9" not in shows and not any(r.get("meta_id") == "tt9" for r in playback)
+    assert any(r.get("meta_id") == "tt1" for r in playback)  # lo demás se queda

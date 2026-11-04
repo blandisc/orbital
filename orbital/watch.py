@@ -1132,7 +1132,7 @@ class Watch:
         req = out["request"]
         if req and req.get("mine") and req["state"] in rd_requests.ACTIVE:
             return {**out, "why": "requested", "message": req["message"],
-                    "detail": req["detail"] if req["state"] != rd_requests.DOWNLOADING else "Te aviso cuando esté listo"}
+                    "detail": req["detail"] if req["state"] not in (rd_requests.DOWNLOADING, rd_requests.QUEUED) else rd_requests.CLOUD}
         when = self._release_of(kind, meta_id, video_id)
         if when and when > time.time():
             day = player_ui_day(when)

@@ -7,6 +7,37 @@
   width: min(var(--sheet-width), 100vw); overflow-y: auto;
   padding: var(--space-8) var(--space-6) var(--space-6);
 }
+/* «¿Qué es esto?» (paridad con DSExplainerCard/DSIconTile del iPhone): cada idea con su cuadro de color, el símbolo en su
+   color sobre ese color al 18 %, más grande que el ícono de siempre y centrado con el título y la explicación. */
+[data-tint="library"] { --tint: var(--tint-library); }
+[data-tint="series"] { --tint: var(--tint-series); }
+[data-tint="calendar"] { --tint: var(--tint-calendar); }
+[data-tint="trend"] { --tint: var(--tint-trend); }
+[data-tint="spark"] { --tint: var(--tint-spark); }
+[data-tint="addon"] { --tint: var(--tint-addon); }
+[data-tint="flame"] { --tint: var(--tint-flame); }
+[data-tint="trophy"] { --tint: var(--tint-trophy); }
+.sheet__icon--tint { width: var(--explain-tile); height: var(--explain-tile); align-self: center; border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--tint) 18%, transparent); color: var(--tint); }
+.sheet__icon--tint .icon, .sheet__icon--tint svg { width: var(--icon-lg); height: var(--icon-lg); }
+.sheet__item--focused .sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
+/* Los tres pasos de un pedido: se enciende uno cada 1,6 s (los encendidos a 1, los demás a 0,92) y su símbolo brinca. Solo
+   mientras la hoja está abierta; con «Reducir movimiento», quietos y encendidos (base.css deja cada animación en su final). */
+.sheet__steps { display: flex; align-items: flex-start; justify-content: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-6); }
+.sheet__step { display: grid; justify-items: center; gap: var(--space-2); width: 7.5rem; text-align: center; transform-origin: 50% 40%; }
+.sheet__step-tile { display: grid; place-items: center; width: var(--explain-step); height: var(--explain-step); border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--tint) 18%, transparent); color: var(--tint); }
+.sheet__step-tile svg { width: var(--icon-xl); height: var(--icon-xl); animation: explain-pop calc(3 * var(--duration-explain-step)) var(--ease-spring) infinite; }
+.sheet__step-label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
+.sheet__step-arrow { align-self: center; margin-top: calc(-1 * var(--space-6)); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+.sheet__step[data-step="2"] { animation: explain-on-2 calc(3 * var(--duration-explain-step)) var(--ease-spring) infinite; }
+.sheet__step[data-step="3"] { animation: explain-on-3 calc(3 * var(--duration-explain-step)) var(--ease-spring) infinite; }
+.sheet__step[data-step="2"] .sheet__step-tile svg { animation-delay: var(--duration-explain-step); }
+.sheet__step[data-step="3"] .sheet__step-tile svg { animation-delay: calc(2 * var(--duration-explain-step)); }
+@keyframes explain-on-2 { 0%, 31% { transform: scale(.92); opacity: .55; } 36%, 100% { transform: scale(1); opacity: 1; } }
+@keyframes explain-on-3 { 0%, 64% { transform: scale(.92); opacity: .55; } 69%, 100% { transform: scale(1); opacity: 1; } }
+@keyframes explain-pop { 0% { transform: scale(1); } 5% { transform: scale(1.2); } 11%, 100% { transform: scale(1); } }
+
 /* AU4-A: con más opciones abajo, la orilla se difumina (nunca un renglón partido a la mitad). */
 .sheet__panel--more {
   -webkit-mask-image: linear-gradient(to bottom, var(--mask-solid) calc(100% - var(--space-10)), transparent);

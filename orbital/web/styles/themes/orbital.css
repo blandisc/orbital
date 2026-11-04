@@ -155,6 +155,15 @@
   --shadow-drop-lg: drop-shadow(0 .7rem .9rem rgba(0, 0, 0, .6));
   /* Máscaras (mask-image): opaco = se ve; transparente = se desvanece. No es un color de la interfaz. */
   --mask-solid: #000;
+  /* Los colores de las listas, los mismos del iPhone en oscuro (DesignTokens.ListTint): «¿Qué es esto?» y sus pasos. */
+  --tint-library: #59c7fa;
+  --tint-series: #7aa3ff;
+  --tint-calendar: #2ec4a6;
+  --tint-trend: #ff7a59;
+  --tint-spark: #b58cff;
+  --tint-addon: #c9a1ff;
+  --tint-flame: #ff9e0a;
+  --tint-trophy: #ffd166;
   --color-star: #fff; /* estrellas del fondo y de la pantalla de carga */
   --color-video-bg: #000; /* detrás de un video o una captura: negro de verdad */
   --on-color-fill: rgba(0, 0, 0, .12); /* relleno tenue sobre un fondo de color (opción peligrosa enfocada) */

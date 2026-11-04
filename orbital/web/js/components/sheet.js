@@ -17,8 +17,10 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const back = h("div", { class: "sheet__back", "aria-hidden": "true" });
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
   const subtitle = h("div", { class: "sheet__subtitle" });
+  // «¿Qué es esto?» de un pedido: tres pasos que se encienden uno tras otro (sheet.css · explain-step).
+  const steps = h("div", { class: "sheet__steps", hidden: true, "aria-hidden": "true" });
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
-  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, list);
+  const panel = h("div", { class: ["side-panel__panel", "sheet__panel"] }, back, title, subtitle, steps, list);
   const el = h("div", { class: ["side-panel", "sheet"], hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
   // AU4-A (Fernando, 3 nov): si hay más abajo, la orilla se difumina en vez de partir el último renglón a la mitad.
   const more = () => panel.classList.toggle("sheet__panel--more", panel.scrollTop + panel.clientHeight < panel.scrollHeight - 2);
@@ -64,6 +66,11 @@ export function createSheet({ onCommand, onMove, onClose }) {
     title.classList.toggle("sheet__title--question", /^¿/.test(String(menu.title || "")));
     subtitle.textContent = menu.subtitle || "";
     subtitle.hidden = !menu.subtitle;
+    steps.hidden = !menu.steps?.length;
+    mount(steps, ...(menu.steps || []).flatMap((step, i) => [i > 0 && h("span", { class: "sheet__step-arrow" }, "›"),
+      h("span", { class: "sheet__step", "data-step": String(i + 1) },
+        h("span", { class: "sheet__step-tile", "data-tint": step.tint }, ICONS[step.icon] ? svg(ICONS[step.icon]) : null),
+        h("span", { class: "sheet__step-label" }, step.label))]).filter(Boolean));
     mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h("button", {
       class: ["sheet__item", i === index && "sheet__item--focused", option.danger && "sheet__item--danger",
         option.value !== undefined && "sheet__item--setting",
@@ -73,7 +80,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
       role: "menuitem",
       onClick: (event) => tapReady(event) && !busy() && press(i),
     }, // Una cuenta o servicio lleva su logotipo real (Stremio, Trakt, TMDB); lo demás, su ícono.
-    h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark"] },
+    h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark", option.tint && "sheet__icon--tint"], "data-tint": option.tint },
       option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, ...Flags(option.flags), option.label),

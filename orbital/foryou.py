@@ -848,8 +848,11 @@ class ForYou:
         self.trakt.set_rating(kind, imdb, None if stars is None else max(1, min(5, int(stars))) * 2)
 
     def unfollowed(self) -> set[str]:
-        """Las series que dejaste de seguir desde aquí (se recuerdan al momento; Trakt también las oculta)."""
-        return set(self.catalog.state.settings().get("unfollowed_shows") or [])
+        """Las series que dejaste de seguir desde aquí (se recuerdan al momento; Trakt también las oculta) y las que
+        escondiste en Trakt desde el iPhone (SS1-A): ninguna sale en el calendario ni en Lo nuevo de lo tuyo."""
+        local = set(self.catalog.state.settings().get("unfollowed_shows") or [])
+        library = getattr(getattr(self.catalog, "watch", None), "trakt_library", None)
+        return local | set(getattr(library, "hidden", None) or ())
 
     def set_following(self, imdb: str, following: bool) -> None:
         """Seguir o dejar de seguir una serie (la campana de la ficha, como el iPhone): la que dejas ya no sale en tus estrenos
@@ -857,7 +860,13 @@ class ForYou:
         if not self.trakt.linked:
             raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para seguir o dejar de seguir una serie.")
         self.trakt.set_following(imdb, following)
-        gone = self.unfollowed() - {imdb} if following else self.unfollowed() | {imdb}
+        library = getattr(getattr(self.catalog, "watch", None), "trakt_library", None)
+        if library is not None:  # lo escondido en Trakt se vuelve a leer (SS1-A); volver a seguirla la saca de ahí
+            library.forget("hidden")
+            if following:
+                library.hidden.discard(imdb)
+        local = set(self.catalog.state.settings().get("unfollowed_shows") or [])
+        gone = local - {imdb} if following else local | {imdb}
         self.catalog.state.set_setting("unfollowed_shows", sorted(gone) or None)
         self.cache.clear("trakt:calendar")
         self.publish({"type": "foryou-changed"})

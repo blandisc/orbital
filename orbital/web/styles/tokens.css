@@ -155,6 +155,7 @@
   --duration-base: 220ms;
   --duration-slow: 320ms;
   --duration-tint: 700ms;
+  --duration-explain-step: 1.6s; /* «¿Qué es esto?»: cada cuánto se enciende el siguiente paso (DebridFlowStrip del iPhone) */
   --duration-exit: 160ms;
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-in: cubic-bezier(.5, 0, .75, 0);
@@ -265,6 +266,9 @@
   --icon-sm: 1rem;
   --icon-md: 1.25rem;
   --icon-lg: 1.4rem;
+  --icon-xl: 1.75rem; /* el símbolo de un paso de «¿Qué es esto?» */
+  --explain-tile: 3rem; /* «¿Qué es esto?»: el cuadro de color de cada idea (DSIconTile del iPhone, 44 pt, a escala de TV) */
+  --explain-step: 3.75rem; /* y el de cada uno de los tres pasos (56 pt en el iPhone) */
   --ribbon-corner: 4.6rem; /* el listón «Nuevo»: el cuadro de la esquina del póster que lo recorta (DS.Ribbon.corner del iPhone, a escala de TV) */
   --ribbon-length: 8rem; /* su largo, de orilla a orilla en diagonal */
   --ribbon-center: 1.7rem; /* qué tan adentro de la esquina pasa su centro */

@@ -6,7 +6,7 @@ import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { Flag, Flags } from "./flag.js";
-import { requestLabel } from "../core/menus.js";
+import { DEBRID_CLOUD, requestLabel } from "../core/menus.js";
 
 /**
  * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
@@ -55,7 +55,7 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
   const asked = (src) => (src?.hash ? (requests() || []).find((q) => q.hash === src.hash && q.state !== "gone") : null);
   const askState = (src) => {
     const known = asked(src);
-    return known ? [requestLabel(known), known.state === "ready" ? "good" : "warn"] : ["Pedirlo y avisarme", "warn"];
+    return known ? [requestLabel(known), known.state === "ready" ? "good" : "warn"] : ["↓ Por pedir", "warn"];
   };
   const isAsk = (r) => !!rows[r]?.ask;
 
@@ -83,7 +83,7 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
     const firstAsk = rows.findIndex((row) => row.ask);
     mount(list, rows.flatMap((row, r) => [r === firstAsk && h("div", { class: "versions__ask", role: "presentation" },
       h("span", { class: "versions__ask-title" }, "Hay que pedirlas · tardan"),
-      h("span", { class: "versions__ask-hint" }, "Real-Debrid las baja y te avisa cuando estén")),
+      h("span", { class: "versions__ask-hint" }, DEBRID_CLOUD)),
     h("div", { class: "versions__row", role: "group", "aria-label": row.name },
       h("div", { class: "versions__lang" },
         h("span", { class: "versions__name" }, Flag(row.code), row.name),

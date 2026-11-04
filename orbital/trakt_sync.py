@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 
 CHECK_EVERY = 60  # s: cada cuánto se pregunta a Trakt si cambió algo (se pregunta al abrir Inicio, no hay sondeo aparte)
 SHOWS = 15  # las últimas series que viste: de ellas sale «Sigue: T2 E6»
-PARTS = ("paused", "watched", "watchlist")
+PARTS = ("paused", "watched", "watchlist", "hidden")
 
 
 def _time_left(seconds: float) -> str:
@@ -158,6 +158,7 @@ class TraktLibrary:
         self.shows: dict[str, dict] = {}
         self.movies: dict[str, float] = {}
         self.watchlist: list[dict] | None = None
+        self.hidden: set[str] = set()  # SS1-A: las series que escondiste en Trakt (no salen en Seguir viendo)
         self._stamps: dict[str, str] = {}
         self._checked = 0.0
         self.error: str | None = None
@@ -178,8 +179,12 @@ class TraktLibrary:
         return self.clock() - self._checked >= CHECK_EVERY
 
     def snapshot(self) -> tuple[list[dict], dict[str, dict], dict[str, float], list[dict] | None]:
+        """Lo tuyo, sin las series que escondiste (SS1-A): ni su avance ni «Sigue: T2 E6»."""
         with self._lock:
-            return list(self.playback), dict(self.shows), dict(self.movies), self.watchlist
+            hidden = set(self.hidden)
+            playback = [r for r in self.playback if r.get("kind") != "series" or r.get("meta_id") not in hidden]
+            shows = {k: v for k, v in self.shows.items() if k not in hidden}
+            return playback, shows, dict(self.movies), self.watchlist
 
     def merged(self, items: list[LibraryItem]) -> list[LibraryItem]:
         if not self.active:
@@ -194,6 +199,7 @@ class TraktLibrary:
             with self._lock:
                 had = bool(self.playback or self.shows or self.movies or self.watchlist is not None)
                 self.playback, self.shows, self.movies, self.watchlist, self._stamps = [], {}, {}, None, {}
+                self.hidden = set()
             return had
         try:
             stamps = t.last_activities()
@@ -201,7 +207,8 @@ class TraktLibrary:
             self.error = str(exc)
             log.info("Trakt: no pude ver qué cambió: %s", exc)
             return False
-        loaders = {"paused": self._load_playback, "watched": self._load_watched, "watchlist": self._load_watchlist}
+        loaders = {"paused": self._load_playback, "watched": self._load_watched, "watchlist": self._load_watchlist,
+                   "hidden": self._load_hidden}
         changed = False
         for part in PARTS:
             if not force and part in self._stamps and self._stamps[part] == stamps.get(part):
@@ -227,6 +234,11 @@ class TraktLibrary:
         rows = t.playback_rows()
         with self._lock:
             self.playback = rows
+
+    def _load_hidden(self, t: trakt_api.Trakt) -> None:
+        found = t.hidden_shows()
+        with self._lock:
+            self.hidden = found
 
     def _load_watchlist(self, t: trakt_api.Trakt) -> None:
         rows = t.watchlist_rows()

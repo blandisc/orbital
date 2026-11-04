@@ -43,6 +43,9 @@ WORDS = {QUEUED: "En cola", NO_PEERS: "Sin gente que lo comparta", REFUSED: "Rea
 DETAILS = {QUEUED: "Real-Debrid lo recibió y espera turno", NO_PEERS: "Puede tardar días · Prueba otra versión",
            REFUSED: "Prueba otra versión", TOO_MANY: "Cancela otra descarga para hacer lugar", READY: "Ya arranca al instante"}
 
+# Dónde, cómo y por qué de un pedido (Fernando, 3 nov: «¿descargando dónde?»; el mismo texto del iPhone, adaptado: la TV
+# siempre avisa en pantalla). Va en la ficha mientras baja, en la hoja del pedido y antes del primer pedido.
+CLOUD = "Real-Debrid lo baja en su nube por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso."
 HASH = re.compile(r"^[0-9a-f]{40}$")
 LOCAL_ONLY = ("notified", "nudged")  # nunca viajan: avisa solo el aparato que lo pidió
 TEXT_LIMITS = {"title": 120, "by": 60, "meta_id": 100, "language": 20, "release": 200, "rd_status": 40, "account": 40,

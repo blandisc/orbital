@@ -188,7 +188,9 @@ def activity_stamps(data) -> dict[str, str]:
 
     return {"paused": stamp(("movies", "paused_at"), ("episodes", "paused_at")),
             "watched": stamp(("movies", "watched_at"), ("episodes", "watched_at")),
-            "watchlist": stamp(("watchlist", "updated_at"), ("movies", "watchlisted_at"), ("shows", "watchlisted_at"))}
+            "watchlist": stamp(("watchlist", "updated_at"), ("movies", "watchlisted_at"), ("shows", "watchlisted_at")),
+            # SS1-A: «Esconder» en el iPhone (o «Dejar de seguir» aquí) cambia esta marca.
+            "hidden": stamp(("shows", "hidden_at"))}
 
 
 class TraktError(Exception):
@@ -725,6 +727,17 @@ class Trakt:
     def last_activities(self) -> dict[str, str]:
         """Cuándo cambió por última vez tu avance, lo visto y tu watchlist (una llamada chica)."""
         return activity_stamps(self._get("/sync/last_activities"))
+
+    def hidden_shows(self) -> set[str]:
+        """Las series que escondiste (SS1-A: «Esconder» en el iPhone, «Dejar de seguir» aquí): {IMDb}. Algunas rutas de
+        Trakt ya las quitan solas y otras no (/sync/playback, /sync/history), así que la consola las quita ella."""
+        rows = self._get("/users/hidden/progress_watched", type="show", limit=1000)
+        found = set()
+        for row in rows if isinstance(rows, list) else []:
+            imdb = _dict(_dict(_dict(row).get("show")).get("ids")).get("imdb")
+            if isinstance(imdb, str) and imdb.startswith("tt"):
+                found.add(imdb)
+        return found
 
     def playback_rows(self) -> list[dict]:
         """Todo lo que tienes a medias en Trakt (entre 1 y 79 %), con su nombre, lo más reciente primero."""

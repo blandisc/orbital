@@ -1344,6 +1344,9 @@ const REQUEST_WORDS = { queued: "En cola", no_peers: "Sin gente que lo comparta"
 const REQUEST_ICONS = { queued: "calendar", downloading: "download", no_peers: "players", refused: "warning", too_many: "list", ready: "check" };
 
 /** Un pedido en una línea: «Bajando en Real-Debrid · 42 %», «En cola»… */
+/** Dónde, cómo y por qué de un pedido: el mismo texto del iPhone, adaptado a la TV (rd_requests.CLOUD). */
+export const DEBRID_CLOUD = "Real-Debrid lo baja en su nube por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso.";
+
 export function requestLabel(req) {
   return req.state === "downloading" ? `Bajando en Real-Debrid · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
 }
@@ -1431,29 +1434,34 @@ export function debridRemoteMenu(event) {
 
 /** «¿Qué es esto?» (AU1-A, Fernando 3 nov): los mismos textos del iPhone (DebridExplainer), por tema. Solo se leen: A no hace
  *  nada y B regresa. El aviso de «Ya está» cambia de lado: en la TV llega aquí mismo, no cuando iOS revisa. */
+// Cada idea con su cuadro de color (los de las listas, `--tint-*`, como DS.ListTint del iPhone; nunca turquesa: no es la voz).
 const EXPLAINERS = {
   requests: [
-    ["search", "Tus complementos buscan dónde verlo", "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."],
-    ["bolt", "Real-Debrid lo guarda", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante."],
-    ["download", "Pedirlo es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
-    ["bell", "Te avisamos cuando esté", "Aquí en la TV, en cuanto Real-Debrid termina de bajar lo que pediste desde la TV."],
+    ["search", "library", "Tus complementos buscan dónde verlo", "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."],
+    ["bolt", "series", "Real-Debrid lo guarda", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante."],
+    ["download", "calendar", "Pedirlo es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
+    ["bell", "trend", "Te avisamos cuando esté", "Aquí en la TV, en cuanto Real-Debrid termina de bajar lo que pediste desde la TV."],
   ],
   torrentio: [
-    ["search", "Torrentio es un buscador", "Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."],
-    ["bolt", "Real-Debrid las sirve", "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días."],
-    ["settings", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
+    ["search", "library", "Torrentio es un buscador", "Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."],
+    ["bolt", "series", "Real-Debrid las sirve", "Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días."],
+    ["settings", "spark", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
   ],
   addons: [
-    ["addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
-    ["pulse", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
-    ["library", "Vienen con Orbital o de tu Stremio", "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan."],
+    ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
+    ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
+    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan."],
   ],
 };
+// Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
+const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "Real-Debrid lo baja" },
+  { icon: "play", tint: "flame", label: "Arranca al instante" }];
 
 export function explainerMenu(topic) {
   return {
     title: "¿Qué es esto?",
-    options: (EXPLAINERS[topic] || []).map(([icon, label, hint]) => ({ icon, label, hint, command: { type: "stay" } })),
+    steps: topic === "requests" ? EXPLAIN_STEPS : undefined,
+    options: (EXPLAINERS[topic] || []).map(([icon, tint, label, hint]) => ({ icon, tint, label, hint, command: { type: "stay" } })),
   };
 }
 
@@ -1517,7 +1525,8 @@ export function debridRequestMenu(req, { account = null, now = Date.now() } = {}
   }
   return {
     title: req.title || "Tu pedido",
-    subtitle: `${requestLabel(req)} · ${requestedBy(req)}`,
+    subtitle: ["queued", "downloading"].includes(req.state) ? `${requestLabel(req)} · ${requestedBy(req)}. ${DEBRID_CLOUD}`
+      : `${requestLabel(req)} · ${requestedBy(req)}`,
     options: [
       // TV-4: listo es para verlo (como «Ver ahora» del iPhone).
       req.state === "ready" && ref && { icon: "play", label: "Ver ahora", command: { type: "rd-other-version", play: {
