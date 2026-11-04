@@ -203,6 +203,6 @@ Fernando, 4 nov: «ve con tus sugerencias [N2-A, N3-A, N4-A, N5-A]»
 - **N3-A · «Muchas descargas activas»** (`28`, `34`, `35`): «Muchas descargas activas · Lo vuelvo a pedir cuando se libere un
   lugar» con «Pedir a la nube». En el siguiente vistazo, si ya hay lugar (`activeCount`: menos activos que tu máximo), el
   aparato que lo pidió lo vuelve a pedir solo, **una vez** (`auto_retry` pasa a `false`); si Real-Debrid vuelve a decir 21,
-  queda «Muchas descargas activas · Cancela otra descarga para hacer lugar» y «Pedir a la nube» a mano.
+  queda «Muchas descargas activas · Cancela otra descarga o pídelo otra vez más tarde» y «Pedir a la nube» a mano.
 - **N4-A · «Idioma original» en Ajustes**: «Tus idiomas», arriba.
 - **N5-A · Lo que no se ve bien aquí** (`05`): la regla de arriba.

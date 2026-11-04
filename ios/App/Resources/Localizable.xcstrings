@@ -40213,6 +40213,17 @@
           }
         }
       }
+    },
+    "Cancela otra descarga o pídelo otra vez más tarde": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel another download or request it again later"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

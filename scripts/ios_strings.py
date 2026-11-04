@@ -231,7 +231,7 @@ TRANSLATIONS = {
     "Muchas descargas activas": "Too many active downloads",
     "Real-Debrid lo recibió y espera turno": "Real-Debrid got it and is waiting its turn",
     "Puede tardar días · prueba otra versión": "It may take days · try another version",
-    "Cancela otra descarga para hacer lugar": "Cancel another download to make room", "Ya arranca al instante": "Starts instantly now",
+    "Cancela otra descarga o pídelo otra vez más tarde": "Cancel another download or request it again later", "Cancela otra descarga para hacer lugar": "Cancel another download to make room", "Ya arranca al instante": "Starts instantly now",
     "Sigue sin bajar · ¿probar otra versión?": "Still not downloading · try another version?",
     "Real-Debrid pide esperar un momento": "Real-Debrid asks to wait a moment",
     "No pude hablar con Real-Debrid": "I couldn't reach Real-Debrid", "Lo pediste en %@ · %@": "You requested it on %@ · %@",
