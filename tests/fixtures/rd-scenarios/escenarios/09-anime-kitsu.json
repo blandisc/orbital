@@ -1,124 +1,154 @@
 {
   "id": "09-anime-kitsu",
-  "nombre": "«Cowboy Bebop» por Kitsu (numeración corrida)",
-  "por_que": "Un anime con id de Kitsu («kitsu:1:1»): su idioma original es japonés; la latina de 1440p y una dual (japonés + inglés) están al instante.",
-  "titulo": {
-    "tipo": "series",
-    "meta_id": "kitsu:1",
-    "video_id": "kitsu:1:1",
-    "cinemeta": "cinemeta/kitsu_1.json",
-    "tmdb": null,
-    "ficha_de": "anime-kitsu.strem.fun"
+  "name": "«Cowboy Bebop» por Kitsu (numeración corrida)",
+  "why": "Un anime con id de Kitsu («kitsu:1:1»): su idioma original es japonés; la latina de 1440p y una dual (japonés + inglés) están al instante.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
   },
+  "title": {
+    "kind": "series",
+    "id": "kitsu:1",
+    "video_id": "kitsu:1:1"
+  },
+  "tmdb": null,
+  "kitsu": "cinemeta/kitsu_1.json",
+  "cinemeta": "cinemeta/tt0213338.json",
   "torrentio": {
-    "archivo": "torrentio/kitsu_1_1.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/series/kitsu:1:1.json"
+    "file": "torrentio/kitsu_1_1.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/kitsu:1:1.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
   },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
-      "id": "A",
-      "estado": "premium"
-    },
-    "al_instante": [
+  "addons": [
+    "torrentio",
+    "kitsu"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [
       "14089d3216abf964ee8564b6204ab66967bc283c",
       "03a8fd687b49d69f8e7112d8803e83ed8c9ec37b"
     ],
-    "torrents": []
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
   },
-  "libreta": [],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "Kitsu: su idioma original es japonés (fila «Japonés (original)»); la latina 1440p cuenta como 1080p y va primera.",
-    "titulo": "Cowboy Bebop",
+  "expected": {
+    "_note": "Kitsu: su idioma original es japonés (fila «Japonés (original)»); la latina 1440p cuenta como 1080p y va primera.",
+    "title": "Cowboy Bebop",
     "logo": true,
-    "video": "kitsu:1:1",
-    "boton": "ver",
-    "boton_version": "es-419 · 1440p",
-    "causa": null,
-    "pedir": null,
-    "al_instante_aparte": null,
-    "recomendada": {
+    "video_id": "kitsu:1:1",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": {
       "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
-      "archivo": 0
+      "file": 0,
+      "language": "es-419",
+      "res": "1080p"
     },
-    "recomendada_idioma": "es-419",
-    "filas": [
+    "rows": [
       {
-        "opciones": [
-          {
-            "otro_titulo": false,
-            "velocidad": "al_instante",
-            "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
-            "calidad": "1080p",
-            "recomendada": true
-          }
-        ],
-        "idioma": "es-419"
+        "code": "es-419",
+        "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "calidad": "4K",
-            "velocidad": "por_pedir",
-            "hash": "625c297f0bd93eeb4ff2f51e34a2b0f3d685f867",
-            "recomendada": false,
-            "otro_titulo": false
-          },
-          {
-            "velocidad": "al_instante",
-            "recomendada": true,
-            "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
-            "otro_titulo": false,
-            "calidad": "1080p"
-          },
-          {
-            "velocidad": "por_pedir",
-            "recomendada": false,
-            "otro_titulo": false,
-            "hash": "ea55ba3decb7e929bcb112b6b52882e3ddd1ec46",
-            "calidad": "720p"
-          }
-        ],
-        "idioma": "ja"
+        "code": "ja",
+        "hash": "625c297f0bd93eeb4ff2f51e34a2b0f3d685f867",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "ja",
+        "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "ja",
+        "hash": "ea55ba3decb7e929bcb112b6b52882e3ddd1ec46",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "625c297f0bd93eeb4ff2f51e34a2b0f3d685f867",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "ea55ba3decb7e929bcb112b6b52882e3ddd1ec46",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
       }
     ],
-    "hay_que_pedirlas": [
+    "to_request": [
       {
+        "code": "ja",
         "hash": "9fb439a81e07747607a8266376afae6dbe0b78ee",
-        "idioma": "ja",
-        "calidad": "1080p"
+        "res": "1080p"
       },
       {
-        "hash": "d9db844378b8255956436a8102994fad03f55b65",
-        "idioma": "en",
-        "calidad": "1080p"
-      },
-      {
-        "hash": "3ab456edecaed3a984ca24e6658d88da8f82def6",
-        "idioma": "ja",
-        "calidad": "720p"
-      },
-      {
+        "code": "ja",
         "hash": "7f9a76166d2abfdcb7896012fee44c8bcc4a0692",
-        "idioma": "ja",
-        "calidad": "SD"
+        "res": "SD"
       }
     ],
-    "ver_ahora": {
-      "hash": "14089d3216abf964ee8564b6204ab66967bc283c",
-      "archivo": 0
-    },
-    "escondidas": 0
+    "hidden": 0,
+    "play_now": "14089d3216abf964ee8564b6204ab66967bc283c",
+    "request": null,
+    "other_account": null,
+    "next_episode": {
+      "video_id": "kitsu:1:2",
+      "request": null,
+      "ready": false
+    }
   }
 }

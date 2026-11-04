@@ -10,7 +10,7 @@ struct AppCommands: Commands {
         CommandMenu("Ir") {
             Button("Inicio") { open(tab: 0) }.keyboardShortcut("1")
             Button("Explorar") { open(tab: 1) }.keyboardShortcut("2")
-            Button("Descargas") { open(tab: AppEnvironment.downloadsTab) }.keyboardShortcut("3")
+            Button("Biblioteca") { open(tab: AppEnvironment.downloadsTab) }.keyboardShortcut("3")   // donde la dejaste
             Button("Buscar") { open(tab: 2); AppEnvironment.shared.ui.focusSearch = true }.keyboardShortcut("f")
             Divider()
             Button("Atrás") { AppEnvironment.shared.ui.goBack = true }.keyboardShortcut("[")

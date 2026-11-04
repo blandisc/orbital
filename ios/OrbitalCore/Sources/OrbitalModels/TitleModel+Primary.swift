@@ -15,6 +15,10 @@ public enum TitlePrimary: Equatable, Sendable {
     case requested(DebridRequest)
     /// Lo pedido se atoró o Real-Debrid no lo dejó bajar: «Probar otra versión».
     case otherVersion(DebridRequest)
+    /// FQ5-A (Fernando, 3 nov): tu TV ya lo tiene listo, pedido con otra cuenta de Real-Debrid (aquí no existe ese enlace): «Lo
+    /// tiene tu TV con otra cuenta» con «Ver en la TV» (manda el título y el episodio, nunca el enlace) y aparte «Pedir a la
+    /// nube aquí».
+    case onTV(DebridRequest)
     /// «Avisarme cuando aparezca» (R15): nadie lo tiene todavía en internet.
     case notifyWhenAppears
     /// Un episodio que todavía no sale: «Sale el …».
@@ -28,9 +32,12 @@ extension TitleModel {
     public func primary(now: Date = Date()) -> TitlePrimary? {
         guard continueVideoID != nil else { return nil }
         if continueAirs == nil, recommendedSource?.instant != true {
-            if let request = debridRequest, request.state != .ready {
+            // «Muchas descargas activas» (error 21): Real-Debrid no lo agregó y nadie lo vuelve a pedir solo. Se ofrece pedirlo
+            // otra vez (con esa línea), como la TV; antes quedaba «en camino» para siempre (escenarios comunes, 3 nov).
+            if let request = debridRequest, request.state != .ready, request.state != .tooMany {
                 return DebridRequestWords.suggestsOtherVersion(request, now: now) ? .otherVersion(request) : .requested(request)
             }
+            if let tv = otherAccountReady { return .onTV(tv) }
             if debridOffer != nil, sourceCheck != .offline { return .request }
         }
         // Nadie lo tiene o aún no se estrena: «Avisarme cuando aparezca» es su salida (antes, una película por estrenarse no

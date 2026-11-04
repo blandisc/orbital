@@ -65,9 +65,13 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   // y Detalles. Cada parte con el encabezado de toda la app (su título y, a la derecha, lo que dice: «Quién sale y quién la
   // hizo»). El tráiler es un botón de arriba (con el mando no hay tira de clips: distinto a propósito).
   const PANEL = ["cast", "saga", "more", "reviews", "details"];
+  // Como las filas del Inicio y de Películas y series (Fernando, 4 nov): si hay más a la derecha, esa orilla se desvanece;
+  // al llegar al final, el último se ve entero.
+  const markMoreEdge = (row) => row.classList.toggle("title__more-row--edge", row.scrollLeft + row.clientWidth < row.scrollWidth - 2);
   const panel = Object.fromEntries(PANEL.map((id) => {
     const head = h("div", { class: "title__more-head" });
     const row = h("div", { class: ["title__more-row", `title__more-row--${id}`], role: "group" });
+    row.addEventListener("scroll", () => markMoreEdge(row), { passive: true });
     return [id, { head, row, box: h("section", { class: ["title__more-section", `title__more-section--${id}`], hidden: true }, head, row), items: [], index: 0 }];
   }));
   const track = h("div", { class: "title__more-track" }, PANEL.map((id) => panel[id].box));
@@ -226,6 +230,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     mount(p.head, SectionHead(title, { end }));
     mount(p.row, items.map(draw));
     p.box.hidden = !items.length;
+    requestAnimationFrame(() => markMoreEdge(p.row)); // ya con su ancho (oculto, no mide)
   }
 
   /** Tocar (o A sobre) una pieza de abajo: la primera vez la enfoca; ya enfocada, la abre. */
@@ -313,6 +318,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       [...p.row.children].forEach((node, i) => node.classList.toggle(focused, zone === id && i === p.index && id !== "details"));
       const node = p.row.children[p.index];
       if (node && zone === id && id !== "details") p.row.scrollTo({ left: Math.max(0, node.offsetLeft - p.row.clientWidth * .3), behavior: motion("smooth") });
+      markMoreEdge(p.row); // también si no se movió (al aparecer la parte)
     }
     const box = inPanel() ? panel[zone].box : null;
     const shift = box ? Math.max(0, Math.min(box.offsetTop - track.offsetTop, track.scrollHeight - clip.clientHeight)) : 0;

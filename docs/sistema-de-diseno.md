@@ -333,7 +333,7 @@ que vive en Ajustes y se usa en otra pantalla va ahí también como interruptor 
 castellano; sin bandera conocida, el nombre). VoiceOver lee el nombre. Bajo «Continuar», en la cápsula de la versión de la
 serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).
 
-**Títulos de navegación.** Las pestañas (Para ti, Descargas, Buscar) llevan el título grande en el renglón de los botones
+**Títulos de navegación.** Las pestañas (Explorar, Biblioteca, Buscar) llevan el título grande en el renglón de los botones
 (`.inlineLarge`); Inicio, el logotipo. Lo que se abre encima va en `.inline`, salvo las pantallas con su propio encabezado en
 grande (Lo que ves, Colecciones).
 
@@ -443,6 +443,19 @@ nada a quien no lo conoce. Cada palabra dice dónde pasa:
 | **Lo que pides vive en Descargas**, en dos partes: «Real-Debrid · bajando para ti» (los grupos «Bajando» y «Ya terminaron», la misma fila y la misma hoja de siempre) y «En este iPhone · sin internet», bajo la pestaña de texto «Descargas»; la otra, «Mi media» (OneDrive, luego Plex y Jellyfin), lleva carpeta, nunca nube: la nube es solo Real-Debrid. El grupo no se llama «En la nube» para no confundirlo con Mi media (Fernando, 3 nov). Cada parte con su vacío y su única salida. Ajustes › Cuentas › Real-Debrid › «Tus pedidos» es un atajo que lleva ahí. La pestaña cuenta también lo que baja en la nube. Sin Real-Debrid no hay nube (Plus, App Store) | `DownloadsCloudPart` · `CloudSheetsHost` | — |
 | **Tocar lo que baja en la nube dice cuánto falta, honesto,** y deja elegir: «A este paso, falta menos de una hora. Te aviso.» (del avance desde que se pidió; sin qué medir, «Suele tardar de minutos a horas.»; «Te aviso» solo con permiso), «Ver Inglés · 1080p, ya arranca» (la mejor que ya arranca en tus idiomas, la regla de «Ver») y «Esperar a que llegue». Sin otra al instante, solo cuánto lleva | `DebridRequestWords.paceLine` · `VersionCard` · `DebridRequestSheet` | `testThePaceComesFromTheProgressRateOrSaysMinutesToHours` |
 | **«Así funciona», una sola vez:** la primera vez que ves «↓ Por pedir» (en «Versión» o en la ficha), los tres pasos animados, «No ocupa espacio en este iPhone» y «Entendido». Se recuerda en `learn.seen.debrid-flow`, la llave que también escribe la guía de bienvenida | `DebridFlowIntro` · `DebridFlowIntroHost` | — |
+
+### Biblioteca: Descargas · Mi media · Guardado (BI, 3 nov 2026, iPhone; la TV decide aparte)
+
+Fernando, 3 nov («Vamos con tu recomendación de BI1A y BI2A. Y pon el mismo filtro que ponemos en otras listas…»; canvas
+https://claude.ai/artifact/Ko68NmPSKW11puvFaU6Pct): la pestaña Descargas pasa a llamarse **Biblioteca** y junta lo tuyo en
+tres partes. Solo el iPhone, el iPad y la Mac; la TV lo decide en su sesión (registro de paridad).
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| **Biblioteca, con tres pestañas de texto** en este orden: «Descargas» (Real-Debrid · bajando para ti y lo de este aparato) · «Mi media» (OneDrive; luego Plex y Jellyfin) · «Guardado». Abre donde la dejaste, en ese aparato; la primera vez, en Guardado. Un aviso de descargas, «Ver en Descargas» o «Tus pedidos» abren «Descargas». Si algo baja (en la nube o aquí), la pestaña lo dice: «Descargas · 2» | `DownloadsView` (`Part`, `library.part`), `AppUI.showDownloads`; el ícono de la pestaña, `books.vertical`; ⌘3 «Biblioteca» en el menú | `SavedModelTests` |
+| **Guardado es tu referencia rápida (BI1-A):** Mi lista de Trakt por omisión y, con un toque en «Mi lista ⌃⌄», cualquiera de tus listas de Trakt (las mismas de Para ti; la elegida se recuerda). Cuadrícula de pósters con su barra de avance (vista: completa; una serie: sus capítulos vistos; una película: dónde te quedaste); tocar abre la ficha | `LibrarySavedView`, `SavedModel`, `DSChoiceMenu`, `TitleLink(progress:)` | `SavedModelTests` |
+| **El mismo filtro que las otras listas (BI3-A):** Todo · Películas · Series (`DSKindFilter`) y «Ordenar y filtrar» de toda lista abierta (`SortableGrid` › `ListFilterMenu`, `ListFilterChips`) con **«Estado»: Por ver · A medias · Vistas** (en lugar de «Ocultar lo que ya vi» donde se sabe cuánto llevas), género, calificación, década y orden. No hay filtro propio de Guardado: lo que faltaba («Estado») entró a la pieza compartida | `ListFilter.state`, `WatchStateName` | — |
+| **Cada parte con su vacío y su única salida:** sin Trakt, «Conectar Trakt»; lista vacía, «Explorar»; Trakt no contestó, «Reintentar» | `LibrarySavedView` | — |
 
 ### Tabla espejo (iPhone ↔ TV)
 

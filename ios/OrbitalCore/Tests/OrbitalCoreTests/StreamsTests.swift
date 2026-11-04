@@ -23,6 +23,22 @@ final class StreamsTests: XCTestCase {
         }
     }
 
+    private func recordLatinGolden() throws {
+        let url = Fixtures.root.appendingPathComponent("ios/streams_spanish.json")
+        var cases = try XCTUnwrap(Fixtures.json("ios/streams_spanish.json").array)
+        for (i, c) in cases.enumerated() where c["spanish"]?.string == "es-419" {
+            let prefs = Preferences(audio: c["audio"]!.string!, quality: c["quality"]!.string!, spanish: "es-419")
+            let samples = try XCTUnwrap(c["streams"]?.array)
+            let sources = samples.enumerated().map { Streams.parse($1, addon: "Torrentio", transportURL: "https://t.example/manifest.json", index: $0) }
+            let ranked = Streams.rank(sources, prefs: prefs, kind: c["kind"]!.string!)
+            var o = c.object ?? [:]
+            o["order"] = .array(ranked.map { .int($0.index) })
+            o["scores"] = .object(Dictionary(uniqueKeysWithValues: ranked.map { (String($0.index), JSON.double($0.score)) }))
+            cases[i] = .object(o)
+        }
+        try JSON.array(cases).serialized().write(to: url)
+    }
+
     /// El audio como lo da la TV: idioma → qué tan seguro es («seen», «name», «site», «original», «assumed», «maybe»).
     func audioLangs(_ s: Source) -> [String: String] {
         Dictionary(s.audio.map { ($0.code, $0.evidence.tv) }, uniquingKeysWith: { a, _ in a })
@@ -42,8 +58,11 @@ final class StreamsTests: XCTestCase {
         }
     }
 
-    /// Latino, castellano o cualquiera: el mismo orden y los mismos puntos que la TV (`streams.language_score`).
+    /// Latino, castellano o cualquiera: el mismo orden y los mismos puntos que la TV (`streams.language_score`). Con latino, el
+    /// orden de idiomas de Fernando (3 nov: latino → original → inglés → castellano) se acordó antes de que la TV lo tuviera:
+    /// `IOS_GOLDEN_RECORD=1` reescribe esos casos con lo del iPhone, y la TV los regenera igual con `scripts/ios_golden.py`.
     func testSpanishVariantRankMatchesPython() throws {
+        if ProcessInfo.processInfo.environment["IOS_GOLDEN_RECORD"] != nil { try recordLatinGolden() }
         for c in try XCTUnwrap(Fixtures.json("ios/streams_spanish.json").array) {
             let prefs = Preferences(audio: c["audio"]!.string!, quality: c["quality"]!.string!, spanish: c["spanish"]!.string!)
             let kind = c["kind"]!.string!

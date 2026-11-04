@@ -56,7 +56,11 @@ def test_con_latino_primero_el_doblaje_pedido_luego_el_que_no_dice_y_al_final_el
     # Sin variante: cualquier español solo vale lo mismo (gana el que tenga más a favor, no el doblaje).
     anyone = streams.Preferences(audio="es")
     assert streams.language_score(source(0, CASTELLANO), anyone) == streams.language_score(source(1, LATINO), anyone)
-    assert streams.language_score(source(0, ENGLISH), latino) == streams.WRONG_LANGUAGE
+    # Fernando, 4 nov: «latino, idioma original, luego inglés y luego castellano»: el inglés ya no es «otro idioma».
+    english = streams.language_score(source(0, ENGLISH), latino)
+    castilian = streams.language_score(source(1, CASTELLANO), latino)
+    assert streams.language_score(source(2, LATINO), latino) > english > castilian > streams.WRONG_LANGUAGE
+    assert streams.language_score(source(0, ENGLISH), anyone) == streams.WRONG_LANGUAGE  # «cualquiera»: como siempre
 
 
 def test_la_bandera_de_espana_sola_no_es_castellano():

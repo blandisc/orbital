@@ -1,0 +1,327 @@
+{
+  "awards": "Won 1 Primetime Emmy. 4 wins & 16 nominations total",
+  "cast": [
+    "Linda Cardellini",
+    "John Francis Daley",
+    "James Franco"
+  ],
+  "country": "United States",
+  "description": "A high school mathlete starts hanging out with a group of burnouts while her younger brother navigates his freshman year.",
+  "director": null,
+  "dvdRelease": null,
+  "genre": [
+    "Comedy",
+    "Drama"
+  ],
+  "imdbRating": "8.7",
+  "imdb_id": "tt0193676",
+  "name": "Freaks and Geeks",
+  "popularity": 0.6777166666666666,
+  "poster": "https://images.metahub.space/poster/small/tt0193676/img",
+  "released": "1999-09-25T00:00:00.000Z",
+  "runtime": "44 min",
+  "status": "Ended",
+  "tvdb_id": "76321",
+  "type": "series",
+  "writer": [
+    "Paul Feig"
+  ],
+  "year": "1999–2000",
+  "logo": "https://images.metahub.space/logo/medium/tt0193676/img",
+  "popularities": {
+    "SCM": 1,
+    "PXS_TEST": 0,
+    "EXMD": 0,
+    "ALLIANCE": 0,
+    "EJD": 0,
+    "moviedb": 20.3315,
+    "trakt": 14,
+    "stremio": 0.6777166666666666,
+    "stremio_lib": 0
+  },
+  "moviedb_id": 2382,
+  "background": "https://images.metahub.space/background/medium/tt0193676/img",
+  "slug": "series/freaks-and-geeks-0193676",
+  "trailers": [
+    {
+      "source": "E0oJ-uYWakw",
+      "type": "Trailer"
+    }
+  ],
+  "id": "tt0193676",
+  "genres": [
+    "Comedy",
+    "Drama"
+  ],
+  "releaseInfo": "1999–2000",
+  "videos": [
+    {
+      "name": "Pilot",
+      "season": 1,
+      "number": 1,
+      "firstAired": "1999-09-25T00:00:00.000Z",
+      "tvdb_id": 190249,
+      "rating": "7.8",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/1/w780.jpg",
+      "id": "tt0193676:1:1",
+      "released": "1999-09-25T00:00:00.000Z",
+      "episode": 1
+    },
+    {
+      "name": "Beers and Weirs",
+      "season": 1,
+      "number": 2,
+      "firstAired": "1999-10-02T00:00:00.000Z",
+      "tvdb_id": 190250,
+      "rating": "8.4",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/2/w780.jpg",
+      "id": "tt0193676:1:2",
+      "released": "1999-10-02T00:00:00.000Z",
+      "episode": 2
+    },
+    {
+      "name": "Tricks and Treats",
+      "season": 1,
+      "number": 3,
+      "firstAired": "1999-10-30T00:00:00.000Z",
+      "tvdb_id": 190251,
+      "rating": "7.4",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/3/w780.jpg",
+      "id": "tt0193676:1:3",
+      "released": "1999-10-30T00:00:00.000Z",
+      "episode": 3
+    },
+    {
+      "name": "Tests and Breasts",
+      "season": 1,
+      "number": 4,
+      "firstAired": "1999-11-06T00:00:00.000Z",
+      "tvdb_id": 190252,
+      "rating": "7.7",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/4/w780.jpg",
+      "id": "tt0193676:1:4",
+      "released": "1999-11-06T00:00:00.000Z",
+      "episode": 4
+    },
+    {
+      "name": "I'm With the Band",
+      "season": 1,
+      "number": 5,
+      "firstAired": "1999-11-13T00:00:00.000Z",
+      "tvdb_id": 190253,
+      "rating": "7.8",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/5/w780.jpg",
+      "id": "tt0193676:1:5",
+      "released": "1999-11-13T00:00:00.000Z",
+      "episode": 5
+    },
+    {
+      "name": "Carded and Discarded",
+      "season": 1,
+      "number": 6,
+      "firstAired": "2000-01-10T00:00:00.000Z",
+      "tvdb_id": 190254,
+      "rating": "8.3",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/6/w780.jpg",
+      "id": "tt0193676:1:6",
+      "released": "2000-01-10T00:00:00.000Z",
+      "episode": 6
+    },
+    {
+      "name": "Girlfriends and Boyfriends",
+      "season": 1,
+      "number": 7,
+      "firstAired": "2000-01-17T00:00:00.000Z",
+      "tvdb_id": 190255,
+      "rating": "8.2",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/7/w780.jpg",
+      "id": "tt0193676:1:7",
+      "released": "2000-01-17T00:00:00.000Z",
+      "episode": 7
+    },
+    {
+      "name": "We've Got Spirit",
+      "season": 1,
+      "number": 8,
+      "firstAired": "2000-01-24T00:00:00.000Z",
+      "tvdb_id": 190256,
+      "rating": "8.3",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/8/w780.jpg",
+      "id": "tt0193676:1:8",
+      "released": "2000-01-24T00:00:00.000Z",
+      "episode": 8
+    },
+    {
+      "name": "The Diary",
+      "season": 1,
+      "number": 9,
+      "firstAired": "2000-01-31T00:00:00.000Z",
+      "tvdb_id": 190257,
+      "rating": "8.4",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/9/w780.jpg",
+      "id": "tt0193676:1:9",
+      "released": "2000-01-31T00:00:00.000Z",
+      "episode": 9
+    },
+    {
+      "name": "Looks and Books",
+      "season": 1,
+      "number": 10,
+      "firstAired": "2000-02-07T00:00:00.000Z",
+      "tvdb_id": 190258,
+      "rating": "8.0",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/10/w780.jpg",
+      "id": "tt0193676:1:10",
+      "released": "2000-02-07T00:00:00.000Z",
+      "episode": 10
+    },
+    {
+      "name": "The Garage Door (a.k.a. Tries and Lies)",
+      "season": 1,
+      "number": 11,
+      "firstAired": "2000-03-13T00:00:00.000Z",
+      "tvdb_id": 190259,
+      "rating": "8.9",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/11/w780.jpg",
+      "id": "tt0193676:1:11",
+      "released": "2000-03-13T00:00:00.000Z",
+      "episode": 11
+    },
+    {
+      "name": "Chokin' and Tokin'",
+      "season": 1,
+      "number": 12,
+      "firstAired": "2000-03-20T00:00:00.000Z",
+      "tvdb_id": 190260,
+      "rating": "9.0",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/12/w780.jpg",
+      "id": "tt0193676:1:12",
+      "released": "2000-03-20T00:00:00.000Z",
+      "episode": 12
+    },
+    {
+      "name": "Smooching and Mooching",
+      "season": 1,
+      "number": 13,
+      "firstAired": "2000-07-08T00:00:00.000Z",
+      "tvdb_id": 190261,
+      "rating": "8.9",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/13/w780.jpg",
+      "id": "tt0193676:1:13",
+      "released": "2000-07-08T00:00:00.000Z",
+      "episode": 13
+    },
+    {
+      "name": "The Little Things",
+      "season": 1,
+      "number": 14,
+      "firstAired": "2000-07-08T00:00:00.000Z",
+      "tvdb_id": 190262,
+      "rating": "8.5",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/14/w780.jpg",
+      "id": "tt0193676:1:14",
+      "released": "2000-07-08T00:00:00.000Z",
+      "episode": 14
+    },
+    {
+      "name": "Discos and Dragons",
+      "season": 1,
+      "number": 15,
+      "firstAired": "2000-07-08T00:00:00.000Z",
+      "tvdb_id": 190263,
+      "rating": "9.0",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/15/w780.jpg",
+      "id": "tt0193676:1:15",
+      "released": "2000-07-08T00:00:00.000Z",
+      "episode": 15
+    },
+    {
+      "name": "Kim Kelly Is My Friend",
+      "season": 1,
+      "number": 16,
+      "firstAired": "2000-09-05T00:00:00.000Z",
+      "tvdb_id": 190264,
+      "rating": "7.6",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/16/w780.jpg",
+      "id": "tt0193676:1:16",
+      "released": "2000-09-05T00:00:00.000Z",
+      "episode": 16
+    },
+    {
+      "name": "Dead Dogs and Gym Teachers",
+      "season": 1,
+      "number": 17,
+      "firstAired": "2000-10-10T00:00:00.000Z",
+      "tvdb_id": 190265,
+      "rating": "8.0",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/17/w780.jpg",
+      "id": "tt0193676:1:17",
+      "released": "2000-10-10T00:00:00.000Z",
+      "episode": 17
+    },
+    {
+      "name": "Noshing and Moshing",
+      "season": 1,
+      "number": 18,
+      "firstAired": "2000-10-17T00:00:00.000Z",
+      "tvdb_id": 190266,
+      "rating": "8.0",
+      "thumbnail": "https://episodes.metahub.space/tt0193676/1/18/w780.jpg",
+      "id": "tt0193676:1:18",
+      "released": "2000-10-17T00:00:00.000Z",
+      "episode": 18
+    }
+  ],
+  "trailerStreams": [
+    {
+      "title": "Freaks and Geeks",
+      "ytId": "E0oJ-uYWakw"
+    }
+  ],
+  "links": [
+    {
+      "name": "8.7",
+      "category": "imdb",
+      "url": "https://imdb.com/title/tt0193676"
+    },
+    {
+      "name": "Freaks and Geeks",
+      "category": "share",
+      "url": "https://www.strem.io/s/series/freaks-and-geeks-0193676"
+    },
+    {
+      "name": "Comedy",
+      "category": "Genres",
+      "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Comedy"
+    },
+    {
+      "name": "Drama",
+      "category": "Genres",
+      "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Drama"
+    },
+    {
+      "name": "Linda Cardellini",
+      "category": "Cast",
+      "url": "stremio:///search?search=Linda%20Cardellini"
+    },
+    {
+      "name": "John Francis Daley",
+      "category": "Cast",
+      "url": "stremio:///search?search=John%20Francis%20Daley"
+    },
+    {
+      "name": "James Franco",
+      "category": "Cast",
+      "url": "stremio:///search?search=James%20Franco"
+    },
+    {
+      "name": "Paul Feig",
+      "category": "Writers",
+      "url": "stremio:///search?search=Paul%20Feig"
+    }
+  ],
+  "behaviorHints": {
+    "defaultVideoId": null,
+    "hasScheduledVideos": true
+  }
+}

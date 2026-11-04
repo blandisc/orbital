@@ -319,8 +319,8 @@ struct MainTabs: View {
                         .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
                 }.tint(DS.primary)
             }
-            // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
-            Tab("Descargas", systemImage: "arrow.down.to.line", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+            // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas».
+            Tab("Biblioteca", systemImage: "books.vertical", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
                 .badge(pendingDownloads + cloudPending)
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }

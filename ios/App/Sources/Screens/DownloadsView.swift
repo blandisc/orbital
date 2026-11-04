@@ -3,10 +3,14 @@ import UniformTypeIdentifiers
 import OrbitalCore
 import OrbitalModels
 
-/// Descargas, en dos partes (RX1-A, 3 nov): «Real-Debrid · bajando para ti» (lo que pediste a la nube, `DownloadsCloudPart`) y
-/// «En este iPhone · sin internet»: lo que se está bajando a este aparato (con su avance), lo listo para ver sin conexión
-/// agrupado por título y la descarga inteligente. Sin Real-Debrid (Plus, App Store) solo hay la segunda y no lleva rótulo.
-/// El fondo toma el color de lo que se está bajando.
+/// La pestaña Biblioteca (Fernando, 3 nov 2026: BI2-A), con tres pestañas de texto arriba: «Descargas» · «Mi media» ·
+/// «Guardado». Abre donde la dejaste (en este aparato); la primera vez, en Guardado. Un aviso de descargas abre «Descargas».
+///
+/// «Descargas», en dos partes (RX1-A, 3 nov): «Real-Debrid · bajando para ti» (lo que pediste a la nube,
+/// `DownloadsCloudPart`) y «En este iPhone · sin internet»: lo que se está bajando a este aparato (con su avance), lo listo
+/// para ver sin conexión agrupado por título y la descarga inteligente. Sin Real-Debrid (Plus, App Store) solo hay la segunda
+/// y no lleva rótulo. El fondo toma el color de lo que se está bajando. «Mi media» es tu OneDrive (luego Plex y Jellyfin) y
+/// «Guardado», Mi lista y tus listas de Trakt (`LibrarySavedView`).
 struct DownloadsView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -16,30 +20,47 @@ struct DownloadsView: View {
     @State private var subtitlesFor: DownloadItem?
     /// Mi media (tu OneDrive como biblioteca) junto a lo que ya está en el iPhone.
     @State private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
-    enum Part: Hashable { case phone, media }
-    @State private var part: Part = .phone
+    /// Las tres partes de Biblioteca, en su orden.
+    enum Part: String, Hashable { case phone = "downloads", media, saved }
+    @State private var part: Part = DownloadsView.lastPart
+    /// Mi lista y tus listas de Trakt (Guardado).
+    @State private var saved = ModelObserver(SavedModel(AppEnvironment.shared.services))
     @State private var cloud = CloudSheets()
+    /// Lo que baja en la nube (Real-Debrid): «Descargas · 2» en la pestaña de texto.
+    @State private var cloudActive = 0
+    @State private var cloudWatch: ObservableModel.Subscription?
+    static let partKey = "library.part"
+
+    /// Donde la dejaste en este aparato; la primera vez, Guardado (BI2-A). En la demostración, siempre igual: Guardado, o lo
+    /// que pida `-demo-library` (`-demo-media` y `-demo-downloads` abren su parte).
+    private static var lastPart: Part {
+        #if DEBUG
+        if Demo.isOn { return Demo.libraryPart.flatMap(Part.init(rawValue:)) ?? (Demo.media ? .media : ProcessInfo.processInfo.arguments.contains("-demo-downloads") ? .phone : .saved) }
+        #endif
+        return UserDefaults.standard.string(forKey: partKey).flatMap(Part.init(rawValue:)) ?? .saved
+    }
 
     init() {
         _observer = State(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
     }
 
-    /// «En el iPhone | Mi media» siempre arriba: sin OneDrive, Mi media explica cómo conectarlo (antes no se veía en absoluto).
-    private var showsMedia: Bool { true }
-
     var body: some View {
         let model = observer.model
         Group {
-            if showsMedia && part == .media { MiMediaView(observer: media) { EmptyView() } } else { phoneList(model) }
+            switch part {
+            // iPad y Mac: la lista al centro, no estirada a todo lo ancho. Guardado es una cuadrícula: llena el ancho (más columnas).
+            case .media: MiMediaView(observer: media) { EmptyView() }.readableListWidth()
+            case .phone: phoneList(model).readableListWidth()
+            case .saved: LibrarySavedView(observer: saved)
+            }
         }
-        .readableListWidth()   // iPad y Mac: la lista al centro, no estirada a todo lo ancho
-        // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las dos vistas,
+        // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las tres vistas,
         // así al cambiar no brinca ni se mueve nada.
         .safeAreaBar(edge: .top) {
-            if showsMedia { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
+            switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
         }
-        .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)
-        .learnCoach(.downloads, title: "Descargas", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .navigationTitle("Biblioteca").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .learnCoach(.downloads, title: "Biblioteca", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -47,11 +68,19 @@ struct DownloadsView: View {
         .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
         .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
         .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
-        .task {
+        .task { await model.run() }
+        .onChange(of: part) { _, new in
             #if DEBUG
-            if Demo.isOn, Demo.media { part = .media }
+            if Demo.isOn { return }
             #endif
-            await model.run()
+            UserDefaults.standard.set(new.rawValue, forKey: Self.partKey)
+        }
+        // Un aviso de descargas, «Ver en Descargas» o «Tus pedidos»: a «Descargas», aunque la dejaras en otra parte.
+        .onChange(of: env.ui.showDownloads, initial: true) { _, wants in if wants { part = .phone; env.ui.showDownloads = false } }
+        .task {
+            let requests = env.services.debridRequests
+            cloudActive = requests.active.count
+            cloudWatch = requests.onChange { let count = requests.active.count; if count != cloudActive { cloudActive = count } }
         }
         .task(id: model.items.map { "\($0.id)\($0.state)" }) { await media.model.refreshPhone() }   // lo que bajas de Mi media se marca allá
         .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
@@ -61,11 +90,15 @@ struct DownloadsView: View {
         }
     }
 
-    /// «Descargas | Mi media».
+    /// «Descargas · Mi media · Guardado».
     private var switcher: some View {
-        // «Descargas» (Real-Debrid y este aparato, RX1-A) y Mi media (tu OneDrive; luego Plex y Jellyfin), con carpeta: la nube
-        // es solo Real-Debrid (Fernando, 3 nov).
-        DSTextTabs(options: [.init(id: Part.phone, title: Text("Descargas"), symbol: "arrow.down.to.line"), .init(id: .media, title: Text("Mi media"), symbol: "folder")], selection: $part)
+        // «Descargas» (Real-Debrid y este aparato, RX1-A; dice cuántas bajan), Mi media (tu OneDrive; luego Plex y Jellyfin), con
+        // carpeta: la nube es solo Real-Debrid (Fernando, 3 nov), y Guardado (Mi lista y tus listas de Trakt, BI1-A).
+        let bajando = cloudActive + observer.model.active.count
+        let downloads = bajando > 0 ? Text("Descargas · \(bajando)") : Text("Descargas")
+        return DSTextTabs(options: [.init(id: Part.phone, title: downloads, symbol: "arrow.down.to.line"), .init(id: .media, title: Text("Mi media"), symbol: "folder"),
+                                    .init(id: .saved, title: Text("Guardado"), symbol: "bookmark")], selection: $part)
+            .accessibilityIdentifier("library-parts")
     }
 
     private func phoneList(_ model: DownloadsModel) -> some View {

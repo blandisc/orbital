@@ -263,6 +263,11 @@
   padding: var(--space-3) calc(var(--page-gutter) + var(--space-2)) var(--space-14); margin: 0 calc(-1 * var(--page-gutter)) calc(var(--space-3) - var(--space-14));
 }
 .title__more-row > .card { flex: none; }
+/* Hay más a la derecha: esa orilla se desvanece (como home.css · home__viewport--more y shelf.css · shelf__edge--more). */
+.title__more-row--edge {
+  -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) 0, var(--mask-solid) 86%, transparent 100%);
+  mask-image: linear-gradient(90deg, var(--mask-solid) 0, var(--mask-solid) 86%, transparent 100%);
+}
 /* Las portadas crecen hacia arriba al enfocarlas (desde la esquina de abajo): arriba les queda ese lugar (antes el anillo
    de la enfocada se cortaba). */
 .title__more-row:is(.title__more-row--saga, .title__more-row--more) { padding-top: calc(var(--card-height) * (var(--card-focus-scale) - 1) + .35rem + var(--space-2)); }

@@ -1,0 +1,94 @@
+{
+  "id": "32-origen-solo-opensubtitles",
+  "name": "«El origen»: solo tienes prendido OpenSubtitles",
+  "why": "Tu único complemento da subtítulos, no versiones.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt1375666",
+    "video_id": "tt1375666"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 27205,
+          "title": "El origen",
+          "original_title": "Inception",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 27205,
+      "title": "El origen",
+      "original_title": "Inception",
+      "original_language": "en",
+      "origin_country": [
+        "US",
+        "GB"
+      ],
+      "overview": "Dom Cobb es un ladrón…"
+    }
+  },
+  "cinemeta": "cinemeta/tt1375666.json",
+  "torrentio": {
+    "file": "torrentio/tt1375666.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
+  },
+  "addons": [
+    "opensubtitles"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
+  },
+  "expected": {
+    "_note": "Solo OpenSubtitles en tu lista: «No tienes complementos prendidos» con «Ajustes»; no se ofrece pedir.",
+    "title": "El origen",
+    "logo": true,
+    "video_id": "tt1375666",
+    "primary": "fix",
+    "cause": "no_addons",
+    "cause_arg": null,
+    "fix": "settings",
+    "offer": null,
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": null,
+    "rows": [],
+    "to_request": [],
+    "hidden": 0,
+    "play_now": null,
+    "request": null,
+    "other_account": null
+  }
+}

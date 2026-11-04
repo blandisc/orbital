@@ -16,6 +16,7 @@ import threading
 import time
 import zlib
 from collections.abc import Callable
+from dataclasses import replace
 
 from .library import addons, realdebrid, streams
 from .net import NET_ERRORS
@@ -224,7 +225,8 @@ class RdRequests:
                 found.append(streams.parse(stream, addon.name, base, i, original))
             except streams.PARSE_ERRORS:
                 continue
-        return [s for s in streams.rank(found, prefs, kind) if not {"CAM", "Tráiler"} & set(s.tags)]
+        ranked = streams.rank(found, replace(prefs, original=original or ""), kind)  # el mismo plan B de idiomas
+        return [s for s in ranked if not {"CAM", "Tráiler"} & set(s.tags)]
 
     # --- la libreta ----------------------------------------------------------------------------------------------
     def _all(self) -> dict[str, dict]:

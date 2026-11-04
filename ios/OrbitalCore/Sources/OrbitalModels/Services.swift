@@ -301,7 +301,8 @@ public final class Services: ObservableModel {
                     return ReadyTorrent(hash: r.hash, fileIdx: r.files[videoID] ?? (asked && r.videoIDs.count == 1 ? r.fileIdx : nil), release: r.release,
                                         listedOnly: !asked || (r.coversWholeTorrent && r.files[videoID] == nil))
                 }
-            }, link: { hash, videoID in await requester.streamLink(hash: hash, videoID: videoID) })
+            }, link: { hash, videoID in await requester.streamLink(hash: hash, videoID: videoID) },
+               refused: { metaID in requester.refused(metaID: metaID) })
         }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),

@@ -1,0 +1,184 @@
+{
+  "id": "31-breaking-bad-otro-archivo",
+  "name": "«Breaking Bad» T1 E2: del paquete pediste solo E1",
+  "why": "Un pedido viejo del paquete de PHDTeam con un solo archivo (E1), ya listo. E2 viene en ese torrent pero no se bajó: no es «la pediste».",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "series",
+    "id": "tt0903747",
+    "video_id": "tt0903747:1:2"
+  },
+  "tmdb": null,
+  "cinemeta": "cinemeta/tt0903747.json",
+  "torrentio": {
+    "file": "torrentio/tt0903747_1_2.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:2.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    },
+    "next": {
+      "file": "torrentio/tt0903747_1_3.json",
+      "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:3.json"
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [
+      {
+        "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+        "files": {
+          "tt0903747:1:1": 26
+        },
+        "account": "A",
+        "rd_id": "R1",
+        "title": "Breaking Bad",
+        "kind": "series",
+        "meta_id": "tt0903747",
+        "video_ids": [
+          "tt0903747:1:1"
+        ],
+        "season": 1,
+        "episode": 1,
+        "language": "es",
+        "release": "Breaking Bad (S01)(2008)(1080p)(VP9)(WebDL)( EN 5.1+SPA 2.0)(Complete) PHDTeam",
+        "by": "iPhone",
+        "since": 1793721600,
+        "updated": 1793728200,
+        "rd_status": "downloaded",
+        "percent": 100,
+        "seeders": null,
+        "progress_at": 1793728200,
+        "state": "ready",
+        "all_files": false
+      }
+    ],
+    "error": null
+  },
+  "expected": {
+    "_note": "Del paquete se pidió solo E1 (sin `all_files`): E2 no es «la pediste» ni lo trae ese pedido; se pide aparte.",
+    "title": "Breaking Bad",
+    "logo": true,
+    "video_id": "tt0903747:1:2",
+    "primary": "request",
+    "cause": "not_in_rd",
+    "cause_arg": null,
+    "fix": "request",
+    "offer": {
+      "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+      "language": "es",
+      "res": "1080p"
+    },
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": {
+      "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+      "file": 1,
+      "language": "es",
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "aa1fa3a7209b67db16a8bdcc3f647809e45b3f0a",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "es",
+        "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "f0fd1cad0e24b69ff6aaadb9df40c50286327188",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "72a391645b5ea76dd6f5ade169ffda943aa81649",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      }
+    ],
+    "to_request": [
+      {
+        "code": "en",
+        "hash": "6bbad06245a0d631b0a5e47c8cd6e5abc9a70211",
+        "res": "1080p"
+      },
+      {
+        "code": "en",
+        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "5f265e068307cb42f548eac3aa8dddcc26655fb9",
+        "res": "720p"
+      },
+      {
+        "code": "fr",
+        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "05eda18c517fa200d72e69476169b04354b1db4e",
+        "res": "SD"
+      }
+    ],
+    "hidden": 0,
+    "play_now": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+    "request": null,
+    "other_account": null,
+    "next_episode": {
+      "video_id": "tt0903747:1:3",
+      "request": null,
+      "ready": false
+    }
+  }
+}

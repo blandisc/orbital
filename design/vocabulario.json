@@ -23,14 +23,16 @@
     { "texto": "La nube lo baja", "en": ["tv", "ios"], "evitar": ["Real-Debrid lo baja"], "nota": "El segundo paso animado (RX4-A). Antes «Real-Debrid lo baja»." },
     { "texto": "Arranca al instante", "en": ["tv", "ios"], "nota": "El tercer paso animado de «¿Qué es esto?»." },
     { "texto": "Pedir a la nube", "en": ["tv", "ios"], "evitar": ["Pedirlo y avisarme", "Pedirlo a Real-Debrid"], "nota": "RX4-A (3 nov): Real-Debrid baja lo que todavía no tiene y avisa al terminar (R2-A, RD-1). Antes «Pedirlo y avisarme» (y en la propuesta «Pedirlo a Real-Debrid»). En la ficha toma el lugar de «Ver»; también en «Versión» y en el reproductor al rendirse (R7). No promete que lo logrará. «Descargar» es solo guardar en este aparato." },
-    { "texto": "Esperar a que llegue", "en": ["tv", "ios"], "pendiente": { "tv": "RX4-A (Fernando, 3 nov): la TV todavía dice el texto de antes; se iguala en su sesión." }, "nota": "RX2-A (3 nov): la hoja de una versión que baja en la nube, junto a «Ver <idioma · calidad>, ya arranca» (la mejor que ya arranca en tus idiomas, la misma regla que «Ver»). Sin otra al instante, solo cuánto lleva." },
-    { "texto": ", ya arranca", "en": ["tv", "ios"], "pendiente": { "tv": "RX4-A (Fernando, 3 nov): la TV todavía dice el texto de antes; se iguala en su sesión." }, "nota": "RX2-A: «Ver Inglés · 1080p, ya arranca»." },
-    { "texto": "Así funciona", "en": ["tv", "ios"], "pendiente": { "tv": "RX4-A (Fernando, 3 nov): la TV todavía dice el texto de antes; se iguala en su sesión." }, "nota": "RX3-A (3 nov): la tarjeta de una sola vez, la primera vez que ves «↓ Por pedir»: los tres pasos, «No ocupa espacio en este iPhone» y «Entendido». Se recuerda con `learn.seen.debrid-flow` (la comparte la guía de bienvenida)." },
+    { "texto": "Esperar a que llegue", "en": ["tv", "ios"], "nota": "RX2-A (3 nov): la hoja de una versión que baja en la nube, junto a «Ver <idioma · calidad>, ya arranca» (la mejor que ya arranca en tus idiomas, la misma regla que «Ver»). Sin otra al instante, solo cuánto lleva." },
+    { "texto": ", ya arranca", "en": ["tv", "ios"], "nota": "RX2-A: «Ver Inglés · 1080p, ya arranca»." },
+    { "texto": "Así funciona", "en": ["tv", "ios"], "nota": "RX3-A (3 nov): la tarjeta de una sola vez, la primera vez que ves «↓ Por pedir»: los tres pasos, «No ocupa espacio en este iPhone» y «Entendido». Se recuerda con `learn.seen.debrid-flow` (la comparte la guía de bienvenida)." },
     { "texto": "Avisarme cuando aparezca", "en": ["ios"], "nota": "R15 (iPhone, Fase 4): con «Nadie lo tiene todavía en internet», revisa una vez al día durante 14 días y avisa «Ya apareció…». R14-B (3 nov): el iPhone también avisa lo que pidió la TV con tu cuenta, cuando lo nota." },
     { "texto": "Avisarme cuando esté", "en": ["tv", "ios"], "nota": "Ya pedido: el aviso cuando Real-Debrid termine (el reproductor al rendirse; la tarjeta del siguiente episodio)." },
     { "texto": "Ver créditos", "en": ["tv", "ios"], "nota": "La tarjeta del siguiente episodio cuando Real-Debrid lo está bajando: quitarla y seguir viendo." },
     { "texto": "Cancelar pedido", "en": ["tv", "ios"], "nota": "Quita el pedido de tu Real-Debrid (DELETE /torrents/delete) y de la libreta (R13)." },
-    { "texto": "Volver a traer", "en": ["tv"], "evitar": ["Volver a importar"], "nota": "Traer otra vez tus complementos de Stremio. Solo en la TV: el iPhone ya no habla con Stremio (E1, Fernando, 3 nov 2026)." }
+    { "texto": "Volver a traer", "en": ["tv"], "evitar": ["Volver a importar"], "nota": "Traer otra vez tus complementos de Stremio. Solo en la TV: el iPhone ya no habla con Stremio (E1, Fernando, 3 nov 2026)." },
+    { "texto": "Pedir a la nube en ", "en": ["tv", "ios"], "nota": "FQ1-A (Fernando, 3 nov: «todo con tus sugerencias»): al lado de «Ver», cuando arranca ya en otro idioma de tu orden y el tuyo existe pero hay que pedirlo. Sigue el idioma que prefieres: «Pedir a la nube en latino»." },
+    { "texto": "Pedir a la nube aquí", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ5-A: al lado de «Ver en la TV» cuando tu TV ya lo tiene con otra cuenta de Real-Debrid." }
   ],
   "nombres": [
     { "texto": "Real-Debrid · bajando para ti", "en": ["tv", "ios"], "evitar": ["En la nube · Real-Debrid"], "nota": "RX1-A (3 nov): la primera parte de Descargas (antes de «En este iPhone · sin internet»), lo que pediste a la nube. No «En la nube»: se confundiría con Mi media (OneDrive, Plex, Jellyfin), cuyo ícono ya no es una nube (Fernando, 3 nov) (los grupos «Bajando» y «Ya terminaron»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» queda como atajo que lleva ahí. Solo donde hay Real-Debrid." },
@@ -41,6 +43,10 @@
     { "texto": "Tu TV es nueva: vuelve a escanear su código", "en": ["tv", "ios"], "nota": "TEC-30, UX-8 (3 nov): 401 `device_unknown` o un `tv_id` distinto. Nunca «Esta TV te quitó» (es falso y asusta). Siempre con «Escanear». Los dos lo dicen desde el 3 nov (TV 96408144)." },
     { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista", "Tu watchlist", "tu watchlist", "Tu Watchlist", "tu Watchlist"], "nota": "Lo que dejaste pendiente: tu watchlist de Trakt (sin Trakt, tu biblioteca de Stremio). Un solo nombre, siempre con M (glosario del iPhone, 31 oct 2026)." },
     { "texto": "En Mi lista", "en": ["tv", "ios"] },
+    { "texto": "Biblioteca", "en": ["ios"], "evitar": ["Mi biblioteca"], "nota": "BI2-A (Fernando, 3 nov): la pestaña que antes era Descargas, con tres pestañas de texto: «Descargas» · «Mi media» · «Guardado». La TV lo decide en su sesión (registro de paridad); allá «Biblioteca» ya nombra la de juegos." },
+    { "texto": "Guardado", "en": ["ios"], "nota": "BI1-A (3 nov): la parte de Biblioteca con Mi lista de Trakt y tus listas (un toque en «Mi lista ⌃⌄»). También el botón de un título ya guardado." },
+    { "texto": "Por ver", "en": ["ios"], "nota": "BI3-A (3 nov): «Estado» en «Ordenar y filtrar» de una lista donde se sabe cuánto llevas: Por ver · A medias · Vistas." },
+    { "texto": "A medias", "en": ["ios"], "evitar": ["En progreso"], "nota": "BI3-A: lo empezado (Trakt o el avance de este aparato)." },
     { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando", "Donde te quedaste"] },
     { "texto": "Para ti", "en": [], "evitar": ["Para Ti", "Para tí"], "nota": "Ya no es el nombre de una sección (es «Explorar», 31 oct 2026). Se vale en frases («Sugerencias para ti») y como lo que dices a la voz." },
     { "texto": "Explorar", "en": ["tv", "ios"], "nota": "La sección de descubrir (antes «Para ti») en los dos (Fernando, 31 oct 2026). La voz entiende las dos." },
@@ -63,7 +69,9 @@
     { "texto": "La nube lo recibió y espera turno", "en": ["tv", "ios"], "evitar": ["Real-Debrid lo recibió"], "nota": "El renglón de abajo de «En cola» (RX4-A). Antes «Real-Debrid lo recibió y espera turno»." },
     { "texto": "Sin gente que lo comparta", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): baja sin nadie que lo comparta; puede tardar días." },
     { "texto": "Muchas descargas activas", "en": ["tv", "ios"], "nota": "Estado de un pedido (R13): tu cuenta llegó a su máximo a la vez (error 21 de Real-Debrid)." },
-    { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta»." }
+    { "texto": "Contesta en ", "en": ["tv", "ios"], "nota": "«Contesta en 0,6 s» (coma decimal); «Contesta lento · 4,2 s» desde 3 s; «No contesta desde el sábado · se salta»." },
+    { "texto": "Lo tiene tu TV con otra cuenta", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ5-A: lo que tu TV pidió con su cuenta de Real-Debrid y ya está; «Ver en la TV» manda el título y el episodio, nunca el enlace." },
+    { "texto": "Reviso una vez al día, hasta el ", "en": ["tv", "ios"], "pendiente": { "tv": "Escenarios comunes v2 (3 nov): la TV lo construye con el mismo `expected`; ver docs/producto/paridad-registro.md" }, "nota": "FQ4-A: «Avisarme cuando aparezca» revisa hasta el estreno más 14 días (sin estreno por delante, 14 días desde hoy). Sigue la fecha: «hasta el 1 de enero»." }
   ],
   "formatos": [
     { "texto": "termina a las", "en": ["tv", "ios"], "evitar": ["acaba a las", "Termina a las"] },

@@ -11,7 +11,7 @@ import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceT
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { cloudRow, DEBRID_FORM, debridCancelMenu, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
-import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -159,16 +159,17 @@ const ui = {
   }),
   sources: createSources({
     onPlay: (play) => watch(play),
-    // T8-A: «Pedirlo y avisarme» justo esa versión (o, si ya está pedida, su hoja con cómo va y «Cancelar pedido»).
+    // T8-A: «Pedir a la nube» justo esa versión (o, si ya está pedida, su hoja con cuánto falta, «Ver …, ya arranca» y
+    // «Esperar a que llegue», RX2-A).
     onAsk: async (ask) => {
       if (ask.known) {
         ui.sources.close();
-        return runCommand({ type: "rd-request-menu", hash: ask.known.hash });
+        return runCommand({ type: "rd-request-menu", hash: ask.known.hash, instead: ask.instead || null });
       }
       try {
         const res = await api.stremioRequest({ kind: ask.kind, id: ask.id, video: ask.video_id || ask.id, title: ask.title, hash: ask.hash });
         sound.play("select");
-        ui.toast.show(`Le pedí ${ask.title || "esto"} a Real-Debrid`, { tone: "success", detail: res?.availability?.detail || "Te aviso cuando esté" });
+        ui.toast.show(`Le pedí ${ask.title || "esto"} a la nube`, { tone: "success", detail: res?.availability?.detail || "Te aviso cuando esté" });
         api.settings().then(applySettings).catch(() => {});
         ui.sources.close();
       } catch (err) {
@@ -176,6 +177,13 @@ const ui = {
       }
     },
     requests: () => state.settings?.realdebrid?.requests || [],
+    // RX3-A: la primera vez que sale «↓ Por pedir», «Así funciona» encima de «Versión» (se recuerda en la consola).
+    onFirstAsk: () => {
+      if (!state.settings || state.settings.learn_debrid_flow) return;
+      state.settings.learn_debrid_flow = true;
+      api.setSettings({ learn_debrid_flow: true }).catch(() => {});
+      setTimeout(() => openMenu(debridFlowMenu()), 600); // que se vea primero lo que la trajo
+    },
     onMove: () => { sound.play("move"); renderHints(); },
     onChange: () => renderHints(),
     onClose: () => { sound.play("back"); renderHints(); },

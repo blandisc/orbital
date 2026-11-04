@@ -258,7 +258,7 @@ test("nube = Real-Debrid; descargar = a este aparato (RX4-A, 3 nov): las palabra
     [/Real-Debrid (aún|todavía) no (lo|la) tiene/, "«Todavía no está en la nube»"],
     [/[Dd]escarg\w* (a|en) (la nube|Real-Debrid)/, "«Descargar» es solo a este aparato; a la nube se pide"],
   ];
-  const problems = SIDES.ios.flatMap((text) => rules.filter(([re]) => re.test(text)).map(([, why]) => `${why}: ${text.slice(0, 90)}`));
+  const problems = [...SIDES.ios, ...SIDES.tv].flatMap((text) => rules.filter(([re]) => re.test(text)).map(([, why]) => `${why}: ${text.slice(0, 90)}`));
   assert.deepEqual(problems, [], problems.join("\n"));
 });
 

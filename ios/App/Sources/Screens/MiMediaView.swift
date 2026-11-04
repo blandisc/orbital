@@ -7,7 +7,7 @@ struct MiMediaTitleRoute: Hashable { let id: String }
 /// Una carpeta de tu OneDrive, tal cual (la vista de carpetas).
 struct MiMediaFolderRoute: Hashable { let path: String }
 
-/// Descargas › Mi media: tu carpeta de OneDrive como biblioteca (como Infuse). Lo recién agregado, filtros, sagas, todas
+/// Biblioteca › Mi media: tu carpeta de OneDrive como biblioteca (como Infuse). Lo recién agregado, filtros, sagas, todas
 /// tus películas y series, y lo que no se reconoció para corregirlo. Lo que bajas al iPhone sale en «En el iPhone».
 struct MiMediaView<Top: View>: View {
     var observer: ModelObserver<MiMediaModel>

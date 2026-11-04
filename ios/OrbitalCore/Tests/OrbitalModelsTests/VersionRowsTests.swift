@@ -26,14 +26,14 @@ final class VersionRowsTests: XCTestCase {
         let prefs = Preferences(audio: "es", quality: "1080p", spanish: "es-419")
         let ranked = Streams.rank(all, prefs: prefs, kind: "movie")
         let rows = SourcesModel.languageRows(ranked, prefs: prefs, limitGB: 5)
-        XCTAssertEqual(rows.main.map(\.code), ["es-419", "en", "es-ES", "es"], "latino, el original, castellano, español que no dice cuál")
+        XCTAssertEqual(rows.main.map(\.code), ["es-419", "es", "en", "es-ES"], "latino, español que no dice cuál y tu orden: el original (inglés) y castellano")
         let latino = rows.main[0]
         XCTAssertTrue(latino.yours)
         XCTAssertEqual(latino.options.map(\.quality), ["4K", "1080p"], "solo las calidades que hay")
         let latino1080 = latino.options[1]
         XCTAssertEqual(latino1080.others.count, 1, "la otra latina de 1080p va en «Otras»")
-        XCTAssertTrue(rows.main[1].original)
-        XCTAssertEqual(rows.main[2].options.first?.evidence, .site, "[Esp] de Wolfmax4k: castellano, lo dice el sitio")
+        XCTAssertTrue(rows.main[2].original)
+        XCTAssertEqual(rows.main[3].options.first?.evidence, .site, "[Esp] de Wolfmax4k: castellano, lo dice el sitio")
         XCTAssertEqual(Set(rows.more.map(\.code)), ["fr", "hr"], "los demás idiomas, aparte")
         XCTAssertTrue(rows.main.flatMap(\.options).contains { $0.recommended }, "la recomendada se marca")
         XCTAssertEqual(ranked.first.flatMap { Streams.playingLanguage($0, prefs)?.code }, "es-419", "la recomendada suena en latino")

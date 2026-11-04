@@ -1,170 +1,183 @@
 {
   "id": "13-breaking-bad-paquete-e2",
-  "nombre": "«Breaking Bad»: el siguiente episodio del paquete pedido",
-  "por_que": "T1 E2 viene en el mismo paquete (ya bajado): es «Al instante · la pediste» sin volver a pedirlo, con SU archivo.",
-  "titulo": {
-    "tipo": "series",
-    "meta_id": "tt0903747",
-    "video_id": "tt0903747:1:2",
-    "cinemeta": "cinemeta/tt0903747.json",
-    "tmdb": null
+  "name": "«Breaking Bad»: el siguiente episodio del paquete pedido",
+  "why": "T1 E2 viene en el mismo paquete (ya bajado): es «Al instante · la pediste» sin volver a pedirlo, con SU archivo.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
   },
+  "title": {
+    "kind": "series",
+    "id": "tt0903747",
+    "video_id": "tt0903747:1:2"
+  },
+  "tmdb": null,
+  "cinemeta": "cinemeta/tt0903747.json",
   "torrentio": {
-    "archivo": "torrentio/tt0903747_1_2.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:2.json"
-  },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
-      "id": "A",
-      "estado": "premium"
+    "file": "torrentio/tt0903747_1_2.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:2.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
     },
-    "al_instante": [],
-    "torrents": []
+    "next": {
+      "file": "torrentio/tt0903747_1_3.json",
+      "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:3.json"
+    }
   },
-  "libreta": [
-    {
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [
+      {
+        "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+        "files": {
+          "tt0903747:1:1": 26
+        },
+        "account": "A",
+        "rd_id": "R1",
+        "title": "Breaking Bad",
+        "kind": "series",
+        "meta_id": "tt0903747",
+        "video_ids": [
+          "tt0903747:1:1"
+        ],
+        "language": "es",
+        "release": "Breaking Bad (S01)(2008)(1080p)(VP9)(WebDL)( EN 5.1+SPA 2.0)(Complete) PHDTeam",
+        "by": "iPhone",
+        "since": 1793707200,
+        "state": "ready",
+        "percent": 100,
+        "all_files": true,
+        "season": 1,
+        "episode": 1,
+        "updated": 1793728200,
+        "progress_at": 1793728200
+      }
+    ],
+    "error": null
+  },
+  "expected": {
+    "_note": "T1 E2 del mismo paquete: «Al instante · la pediste» sin pedirlo otra vez, con el archivo de E2 (24) que dice Torrentio; el pedido de E2 es el paquete.",
+    "title": "Breaking Bad",
+    "logo": true,
+    "video_id": "tt0903747:1:2",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": {
       "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
-      "files": {
-        "tt0903747:1:1": 26
-      },
-      "account": "A",
-      "rd_id": "R1",
-      "title": "Breaking Bad",
-      "kind": "series",
-      "meta_id": "tt0903747",
-      "video_ids": [
-        "tt0903747:1:1"
-      ],
+      "file": 24,
       "language": "es",
-      "release": "Breaking Bad (S01)(2008)(1080p)(VP9)(WebDL)( EN 5.1+SPA 2.0)(Complete) PHDTeam",
-      "by": "iPhone",
-      "since": 1759996400,
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "aa1fa3a7209b67db16a8bdcc3f647809e45b3f0a",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "es",
+        "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+        "res": "1080p",
+        "state": "requested_ready",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "f0fd1cad0e24b69ff6aaadb9df40c50286327188",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+        "res": "1080p",
+        "state": "requested_ready",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "72a391645b5ea76dd6f5ade169ffda943aa81649",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      }
+    ],
+    "to_request": [
+      {
+        "code": "en",
+        "hash": "6bbad06245a0d631b0a5e47c8cd6e5abc9a70211",
+        "res": "1080p"
+      },
+      {
+        "code": "en",
+        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "5f265e068307cb42f548eac3aa8dddcc26655fb9",
+        "res": "720p"
+      },
+      {
+        "code": "fr",
+        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "05eda18c517fa200d72e69476169b04354b1db4e",
+        "res": "SD"
+      }
+    ],
+    "hidden": 0,
+    "play_now": "e81e125021b52d5ecd34249a356574eae14b23ed",
+    "request": {
+      "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
       "state": "ready",
       "percent": 100,
-      "all_files": true,
-      "season": 1,
-      "episode": 1
+      "stuck": false
+    },
+    "other_account": null,
+    "next_episode": {
+      "video_id": "tt0903747:1:3",
+      "request": "e81e125021b52d5ecd34249a356574eae14b23ed",
+      "ready": true
     }
-  ],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "viendo": {
-    "video": "tt0903747:1:1",
-    "terminado": true
-  },
-  "esperado": {
-    "_nota": "T1 E2 del mismo paquete: «Al instante · la pediste» sin pedirlo otra vez, con el archivo de E2 (24) que dice Torrentio.",
-    "titulo": "Breaking Bad",
-    "logo": true,
-    "video": "tt0903747:1:2",
-    "boton": "ver",
-    "boton_version": "es · 1080p · 5.1",
-    "causa": null,
-    "pedir": null,
-    "al_instante_aparte": null,
-    "recomendada": {
-      "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
-      "archivo": 24
-    },
-    "recomendada_idioma": "es",
-    "filas": [
-      {
-        "idioma": "es-419",
-        "opciones": [
-          {
-            "otro_titulo": true,
-            "recomendada": false,
-            "hash": "aa1fa3a7209b67db16a8bdcc3f647809e45b3f0a",
-            "velocidad": "por_pedir",
-            "calidad": "720p"
-          }
-        ]
-      },
-      {
-        "opciones": [
-          {
-            "otro_titulo": false,
-            "hash": "f0fd1cad0e24b69ff6aaadb9df40c50286327188",
-            "recomendada": false,
-            "velocidad": "por_pedir",
-            "calidad": "4K"
-          },
-          {
-            "otro_titulo": false,
-            "recomendada": true,
-            "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
-            "velocidad": "al_instante_la_pediste",
-            "calidad": "1080p"
-          },
-          {
-            "otro_titulo": false,
-            "hash": "72a391645b5ea76dd6f5ade169ffda943aa81649",
-            "recomendada": false,
-            "velocidad": "por_pedir",
-            "calidad": "720p"
-          }
-        ],
-        "idioma": "en"
-      },
-      {
-        "opciones": [
-          {
-            "otro_titulo": false,
-            "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
-            "recomendada": true,
-            "velocidad": "al_instante_la_pediste",
-            "calidad": "1080p"
-          }
-        ],
-        "idioma": "es"
-      }
-    ],
-    "hay_que_pedirlas": [
-      {
-        "hash": "6bbad06245a0d631b0a5e47c8cd6e5abc9a70211",
-        "idioma": "en",
-        "calidad": "1080p"
-      },
-      {
-        "hash": "6f94a7407500e57b623c2c385be52bb1f228a896",
-        "idioma": "ru",
-        "calidad": "1080p"
-      },
-      {
-        "hash": "01bb15bbfc6516c4aa0152f92342445b15dcfdd7",
-        "idioma": "pl",
-        "calidad": "1080p"
-      },
-      {
-        "hash": "5f265e068307cb42f548eac3aa8dddcc26655fb9",
-        "idioma": "ru",
-        "calidad": "720p"
-      },
-      {
-        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
-        "idioma": "en",
-        "calidad": "SD"
-      },
-      {
-        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
-        "idioma": "fr",
-        "calidad": "SD"
-      }
-    ],
-    "ver_ahora": {
-      "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
-      "archivo": 24
-    },
-    "escondidas": 0
   }
 }

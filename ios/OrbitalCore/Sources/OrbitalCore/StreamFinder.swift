@@ -96,10 +96,13 @@ public actor StreamFinder {
     /// Fernando, 3 nov, con «El viento tiene miedo»: llegó «Ya está» y la versión seguía «Real-Debrid aún no la tiene» (Torrentio
     /// no se entera de lo que bajó tu cuenta). Con esto, lo que pediste y ya está sale «Al instante · la pediste» y se recomienda.
     public func configureReady(_ ready: @escaping @Sendable (_ kind: String, _ videoID: String) -> [ReadyTorrent],
-                               link: @escaping @Sendable (_ hash: String, _ videoID: String) async -> URL?) {
-        self.ready = ready; self.readyLink = link
+                               link: @escaping @Sendable (_ hash: String, _ videoID: String) async -> URL?,
+                               refused: @escaping @Sendable (_ metaID: String) -> Set<String> = { _ in [] }) {
+        self.ready = ready; self.readyLink = link; self.refusedHashes = refused
         cache = [:]
     }
+    /// Lo que Real-Debrid no dejó bajar en tu cuenta (FQ2-A): se marca y nunca se recomienda.
+    private var refusedHashes: @Sendable (_ metaID: String) -> Set<String> = { _ in [] }
     /// De dónde es un título (lo mismo con que se ordenan las versiones): para leer igual lo que existe sin Real-Debrid.
     public func origin(kind: String, metaID: String) async -> TitleOrigin? { await origin(kind, metaID) }
 
@@ -148,8 +151,9 @@ public actor StreamFinder {
         if prefs.fallback.isEmpty { prefs.fallback = fallback() }
         // Lo que quedó listo entra en la llave: un pedido que termina no se queda con la lista de antes (10 min).
         let readyNow = ready(kind, videoID)
+        let refusedNow = refusedHashes(Self.metaID(of: videoID))
         let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(prefs.fallback.joined(separator: ",")):\(purpose):\(onlyPlayable):"
-            + readyNow.map(\.hash).sorted().joined(separator: ",")
+            + readyNow.map(\.hash).sorted().joined(separator: ",") + ":" + refusedNow.sorted().joined(separator: ",")
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).
         let metaID = Self.metaID(of: videoID)
@@ -174,6 +178,9 @@ public actor StreamFinder {
                 if purpose == .download, let ext = source.playbackURL?.pathExtension.lowercased(), ["m3u8", "mpd"].contains(ext) { continue }
                 sources.append(source); seen.insert(index)
             }
+        }
+        for i in sources.indices where !sources[i].requested {
+            if let hash = sources[i].torrent?.hash, refusedNow.contains(hash) { sources[i].refused = true }
         }
         for missing in Self.markReady(&sources, readyNow) where !missing.listedOnly {
             // Torrentio no la lista (con «solo lo que ya está» o por su límite): se ve con el enlace de tu Real-Debrid.
