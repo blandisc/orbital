@@ -287,9 +287,16 @@ public final class Services: ObservableModel {
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
         let origins = OriginBook(tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) }, cinemeta: cinemeta)
         let prefs = titlePrefs
-        Task { await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
-                                      checked: { key in prefs.checkedAudio(key) },
-                                      fallback: { TorrentioConfig.fallbackCodes(addonList.torrentio?.options) }) }   // T2 → R6
+        Task {
+            await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
+                                   checked: { key in prefs.checkedAudio(key) },
+                                   fallback: { TorrentioConfig.fallbackCodes(addonList.torrentio?.options) })   // T2 → R6
+            // Lo que pediste y ya está: «Al instante · la pediste», aunque Torrentio diga otra cosa o ni lo liste.
+            await finder.configureReady({ kind, videoID in
+                requester.ready(kind: kind, videoID: videoID).map { ReadyTorrent(hash: $0.hash, fileIdx: $0.files[videoID] ?? ($0.videoIDs.count == 1 ? $0.fileIdx : nil),
+                                                                                 release: $0.release) }
+            }, link: { hash, videoID in await requester.streamLink(hash: hash, videoID: videoID) })
+        }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
                                    otherSource: Services.otherSource(finder: finder, settings: settings, titlePrefs: titlePrefs),

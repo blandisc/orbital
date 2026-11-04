@@ -138,6 +138,8 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var otherTitle: Bool
     /// Pasa por Real-Debrid (si no está en `cached`, Real-Debrid aún la tiene que bajar).
     public var debrid = false
+    /// La pediste y Real-Debrid ya la terminó: «Al instante · la pediste».
+    public var requested = false
     /// Qué tan rápido arranca, sin prometer de más.
     public var speed: SourceSpeed { cached ? .inRealDebrid : debrid ? .realDebridMustDownload : .unknown }
 }
@@ -191,7 +193,7 @@ extension SourcesModel {
                       alsoHas: s.audio.map(rowCode).filter { $0 != code }, release: s.release, site: s.site,
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
-                      otherTitle: s.tags.contains(Streams.otherTitleTag) || s.otherTitle, debrid: s.debrid)
+                      otherTitle: s.tags.contains(Streams.otherTitleTag) || s.otherTitle, debrid: s.debrid, requested: s.requested)
     }
 
     /// Lo que se puede pedir y no se ve ya como chip: una por idioma y calidad (la mejor), en el orden de la recomendación,

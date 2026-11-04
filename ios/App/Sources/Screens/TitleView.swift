@@ -59,7 +59,7 @@ struct TitleView: View {
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { topInset = $0 }
         // Lo de arriba que sigue al desplazamiento va aparte (`TitleScrollChrome`): antes cada cuadro del desplazamiento
         // volvía a pintar toda la ficha (capítulos, detalles), y regresar con el gesto se trababa.
-        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: model.info.logo ?? Artwork.logoURL(metaID: model.metaID),
+        .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: model.logo,
                                     title: model.title,
                                     buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.

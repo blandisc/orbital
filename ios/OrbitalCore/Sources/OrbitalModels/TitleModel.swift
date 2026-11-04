@@ -192,6 +192,9 @@ public final class TitleModel: ObservableModel {
         }
     }
 
+    /// El logo; nil (va el nombre) si está hecho en tu idioma: el de metahub dice «Even the Wind Is Afraid» (Fernando, 3 nov).
+    public var logo: String? { localized?[Localizer.nativeKey]?.bool == true ? nil : info.logo ?? Artwork.logoURL(metaID: metaID) }
+
     /// La sinopsis de la ficha: la que el iPhone tradujo con TMDB (en el idioma de la app); la de tu Orbital solo si aquí no
     /// hay clave de TMDB; si no, la de Cinemeta de siempre. Antes la de la consola ganaba siempre (y siempre en español).
     public var overview: String { services.tmdb.configured ? info.description : consoleOverview ?? info.description }

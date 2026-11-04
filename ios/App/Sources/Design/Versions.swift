@@ -70,7 +70,7 @@ struct VersionChip: View {
                 if option.speed == .realDebridMustDownload {
                     Label { Text("Por pedir") } icon: { Image(systemName: "arrow.down.circle") }
                         .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
-                } else if let speed = Self.speedText(option.speed), let color = Self.speedColor(option.speed) {
+                } else if let speed = Self.speedText(option), let color = Self.speedColor(option.speed) {
                     HStack(spacing: DS.Space.s1) {
                         Circle().fill(color).frame(width: DS.Version.dot, height: DS.Version.dot)
                         speed.recipe(.caption).lineLimit(1)
@@ -85,7 +85,7 @@ struct VersionChip: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option.speed).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))"))
+        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))"))
         .accessibilityIdentifier("version-\(option.quality)")
     }
 
@@ -96,6 +96,11 @@ struct VersionChip: View {
         case .realDebridMustDownload: Text("Real-Debrid aún no la tiene")
         case .unknown: nil
         }
+    }
+
+    /// La de una versión: lo que pediste y ya está lo dice («Al instante · la pediste»).
+    static func speedText(_ option: VersionOption) -> Text? {
+        option.requested && option.speed == .inRealDebrid ? Text("Al instante · la pediste") : speedText(option.speed)
     }
 
     static func speedColor(_ speed: SourceSpeed) -> Color? {

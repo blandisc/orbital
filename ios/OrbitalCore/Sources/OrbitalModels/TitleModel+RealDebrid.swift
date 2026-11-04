@@ -23,10 +23,12 @@ extension TitleModel {
     func offerToRequest(videoID: String, prefs: Preferences, found: [Source]) async -> DebridOffer? {
         let requests = services.debridRequests
         guard requests.canRequest else { lookupEmpty[metaID] = false; return nil }
-        let instant = found.first(where: \.instant)
+        // «Verlo en X al instante» solo ofrece lo que «Versión» enseña como «Al instante» (Fernando, 3 nov, con «El viento tiene
+        // miedo»: la ficha prometía otra versión que sí la tiene y en la lista no aparecía ninguna).
+        let instant = Self.shownInstant(found, prefs: prefs)
         let instantLanguage = instant.flatMap { Streams.playingLanguage($0, prefs)?.code }
         // La de tu lista que todavía no está (Torrentio la conoce con Real-Debrid): esa misma.
-        if let pending = found.first(where: { !$0.instant }), let torrent = pending.torrent {
+        if let pending = found.first(where: { !$0.instant && !SourcesModel.hidden($0) }), let torrent = pending.torrent {
             lookupEmpty[metaID] = false
             let language = Streams.playingLanguage(pending, prefs)?.code
             let other = instantLanguage == language ? nil : instantLanguage
@@ -41,6 +43,15 @@ extension TitleModel {
         if let instant, Streams.playingLanguage(instant, prefs)?.code == language || language == nil { return nil }
         return DebridOffer(torrent: torrent, language: language, release: best.release.isEmpty ? nil : best.release,
                            instantLanguage: instantLanguage, instantSource: instant)
+    }
+
+    /// La mejor versión que arranca al instante y que la lista de versiones enseña con «Al instante»: una tarjeta de un idioma
+    /// de arriba (el tuyo, el original o un español), no escondida en «Otras», en «Más idiomas» ni marcada «¿Otro título?».
+    /// Un enlace que no pasa por Real-Debrid arranca, pero la lista no lo llama «Al instante»: tampoco cuenta.
+    static func shownInstant(_ found: [Source], prefs: Preferences) -> Source? {
+        let main = SourcesModel.languageRows(found, prefs: prefs, limitGB: .infinity).main
+        let shown = Set(main.flatMap { $0.options.filter { $0.cached && !$0.otherTitle }.map(\.id) })
+        return found.first { shown.contains($0.index) }
     }
 
     /// El pedido del video que toca (película o el episodio del botón), si hay.

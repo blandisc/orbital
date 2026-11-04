@@ -18,8 +18,10 @@ public struct Translation: Sendable, Equatable {
         public init(name: String, overview: String) { self.name = name; self.overview = overview } }
     public var title = "", overview = "", genres: [String] = []
     public var episodes: [Key: EpisodeText] = [:]
-    public init(title: String = "", overview: String = "", genres: [String] = [], episodes: [Key: EpisodeText] = [:]) {
-        self.title = title; self.overview = overview; self.genres = genres; self.episodes = episodes
+    /// Hecho en este idioma: `title` es su título original (el logo de metahub, en inglés, no le queda).
+    public var native = false
+    public init(title: String = "", overview: String = "", genres: [String] = [], episodes: [Key: EpisodeText] = [:], native: Bool = false) {
+        self.title = title; self.overview = overview; self.genres = genres; self.episodes = episodes; self.native = native
     }
     public var isEmpty: Bool { title.isEmpty && overview.isEmpty && genres.isEmpty && episodes.isEmpty }
 }
@@ -271,6 +273,13 @@ public struct Tmdb: Sendable {
         return try await details(kind: kind, tmdbID: id)
     }
 
+    /// El título original si el título está hecho en el idioma pedido («es» para «es-MX»); nil si es de otro idioma.
+    static func originalTitle(_ raw: JSON, language: String) -> String? {
+        let base = language.split(separator: "-").first.map { String($0).lowercased() } ?? language.lowercased()
+        guard raw["original_language"]?.string?.lowercased() == base else { return nil }
+        return (raw["original_title"]?.nonEmptyString ?? raw["original_name"]?.nonEmptyString)?.trimmingCharacters(in: .whitespaces)
+    }
+
     /// De `/translations` (envuelto en `translations`): la traducción de otro país del mismo idioma que sí tiene sinopsis.
     static func sameLanguage(_ raw: JSON, language: String) -> (title: String, overview: String)? {
         let base = language.split(separator: "-").first.map { String($0).lowercased() } ?? language
@@ -296,6 +305,9 @@ public struct Tmdb: Sendable {
             found.overview = other.overview
             if !other.title.isEmpty { found.title = other.title }
         }
+        // Hecha en tu idioma: su título original. TMDB no traduce al mismo idioma y en «es-MX» da el inglés (Fernando, 3 nov:
+        // «El viento tiene miedo», mexicana, salía «Even the Wind Is Afraid» y las series sí en español).
+        if let original = Tmdb.originalTitle(raw, language: language) { found.title = original; found.native = true }
         guard episodes, kind == "series" else { return found }
         let numbers = (raw["seasons"]?.array ?? []).compactMap { $0["season_number"]?.intValue }.filter { $0 >= 0 }
         for start in stride(from: 0, to: numbers.count, by: 20) {  // TMDB: 20 por consulta
@@ -340,8 +352,9 @@ public actor Localizer {
     private let store: KeyValueStore?
     private var disk: [String: Saved]?
     private var saveScheduled = false
-    private struct Saved: Codable { var t: String; var o: String; var g: [String]; var d: Double }
-    static let diskKey = "tmdb-translations", diskSeconds: TimeInterval = 7 * 24 * 3600, diskLimit = 3000
+    private struct Saved: Codable { var t: String; var o: String; var g: [String]; var d: Double; var n: Bool? }
+    /// `-v2` (3 nov): lo guardado antes traía en inglés las películas hechas en español; se vuelve a pedir una vez.
+    static let diskKey = "tmdb-translations-v2", diskSeconds: TimeInterval = 7 * 24 * 3600, diskLimit = 3000
     /// Cuántas traducciones a la vez (antes, cientos juntas: TMDB contestaba 429 y se quedaban en inglés).
     static let concurrency = 8
 
@@ -352,13 +365,13 @@ public actor Localizer {
     private func saved(_ key: String) -> Translation? {
         if disk == nil { disk = store?.data(Self.diskKey).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:] }
         guard let s = disk?[key], clock().timeIntervalSince1970 - s.d < Self.diskSeconds else { return nil }
-        return Translation(title: s.t, overview: s.o, genres: s.g)
+        return Translation(title: s.t, overview: s.o, genres: s.g, native: s.n ?? false)
     }
 
     private func remember(_ key: String, _ t: Translation) {
         guard store != nil else { return }
         if disk == nil { _ = saved(key) }
-        disk?[key] = Saved(t: t.title, o: t.overview, g: t.genres, d: clock().timeIntervalSince1970)
+        disk?[key] = Saved(t: t.title, o: t.overview, g: t.genres, d: clock().timeIntervalSince1970, n: t.native ? true : nil)
         if let count = disk?.count, count > Self.diskLimit, let oldest = disk?.sorted(by: { $0.value.d < $1.value.d }).prefix(count - Self.diskLimit).map(\.key) {
             for k in oldest { disk?[k] = nil }
         }
@@ -371,6 +384,9 @@ public actor Localizer {
         saveScheduled = false
         if let disk, let data = try? JSONEncoder().encode(disk) { store?.set(Self.diskKey, data: data) }
     }
+
+    /// En la ficha traducida: el título está hecho en tu idioma (su logo de metahub, en inglés, no le queda).
+    public static let nativeKey = "orbital_native_title"
 
     public var active: String? { tmdb.configured ? Localizer.tmdbLanguage(language()) : nil }
 
@@ -454,6 +470,7 @@ public actor Localizer {
     public static func apply(_ meta: JSON, _ found: Translation) -> JSON {
         guard var out = meta.object else { return meta }
         if !found.title.isEmpty { out["name"] = .string(found.title) }
+        if found.native { out[Localizer.nativeKey] = .bool(true) }
         if !found.overview.isEmpty { out["description"] = .string(found.overview) }
         if !found.genres.isEmpty { out["genres"] = .array(found.genres.map(JSON.string)) }
         if !found.episodes.isEmpty, let videos = meta["videos"]?.array {

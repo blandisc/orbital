@@ -16,10 +16,25 @@ public struct RDTorrent: Equatable, Sendable {
     public var seeders: Int?
     /// Los archivos (solo en `info`).
     public var files: [RDFile] = []
+    /// Los enlaces de lo ya bajado (solo en `info`): uno por archivo elegido, en el orden de sus ids. Se «liberan» con
+    /// `unrestrict` para verlos.
+    public var links: [String] = []
 
-    public init(id: String, hash: String, filename: String, status: String, progress: Int, seeders: Int? = nil, files: [RDFile] = []) {
+    public init(id: String, hash: String, filename: String, status: String, progress: Int, seeders: Int? = nil, files: [RDFile] = [],
+                links: [String] = []) {
         self.id = id; self.hash = hash.lowercased(); self.filename = filename; self.status = status; self.progress = progress
-        self.seeders = seeders; self.files = files
+        self.seeders = seeders; self.files = files; self.links = links
+    }
+
+    /// El enlace del archivo `fileIdx` (el de Torrentio, desde 0) entre lo bajado; sin saber cuál, el del video más grande.
+    /// nil si no está bajado o ese archivo no se eligió.
+    public func link(fileIdx: Int?) -> String? {
+        let chosen = files.filter(\.selected).sorted { $0.id < $1.id }
+        guard !links.isEmpty else { return nil }
+        guard !chosen.isEmpty, chosen.count == links.count else { return links.count == 1 ? links[0] : nil }
+        let target = fileIdx.map { $0 + 1 } ?? chosen.filter(\.isVideo).max { $0.bytes < $1.bytes }?.id
+        guard let target, let at = chosen.firstIndex(where: { $0.id == target }) else { return nil }
+        return links[at]
     }
 
     init?(_ json: [String: Any]) {
@@ -27,7 +42,8 @@ public struct RDTorrent: Equatable, Sendable {
         let progress = (json["progress"] as? NSNumber)?.doubleValue ?? 0
         let files = (json["files"] as? [[String: Any]] ?? []).compactMap(RDFile.init)
         self.init(id: id, hash: json["hash"] as? String ?? "", filename: json["filename"] as? String ?? "", status: json["status"] as? String ?? "",
-                  progress: Int(progress.rounded()), seeders: (json["seeders"] as? NSNumber)?.intValue, files: files)
+                  progress: Int(progress.rounded()), seeders: (json["seeders"] as? NSNumber)?.intValue, files: files,
+                  links: json["links"] as? [String] ?? [])
     }
 }
 
@@ -123,6 +139,14 @@ public struct RealDebridTorrents: Sendable {
         let body = try await call("torrents/info/\(id)", token: token)
         guard let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any], let torrent = RDTorrent(json) else { throw RDRequestError.unexpected }
         return torrent
+    }
+
+    /// `POST /unrestrict/link`: el enlace para ver un archivo ya bajado (caduca en unas horas; no se guarda).
+    public func unrestrict(link: String, token: String) async throws -> URL {
+        let body = try await call("unrestrict/link", method: "POST", form: ["link": link], token: token)
+        guard let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any], let text = json["download"] as? String,
+              let url = URL(string: text), url.scheme?.lowercased() == "https" else { throw RDRequestError.unexpected }
+        return url
     }
 
     /// `GET /torrents`: los más recientes de tu cuenta, en una sola consulta (cuánto lleva cada pedido).

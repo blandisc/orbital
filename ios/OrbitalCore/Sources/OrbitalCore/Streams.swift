@@ -13,6 +13,7 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var seeders = 0
     public var site = ""
     public var cached = false      // [RD+]: ya está en Real-Debrid, arranca al instante
+    public var requested = false   // la pediste y ya está: «Al instante · la pediste», aunque Torrentio diga «[RD download]»
     public var debrid = false
     public var languages: [String] = []
     /// El audio de esta versión con cómo lo sabemos («es-419» lo dice el nombre, «en» es el original…). `languages` es lo
@@ -507,6 +508,7 @@ public enum Streams {
     public static func score(_ src: Source, prefs: Preferences, kind: String = "movie", purpose: Purpose = .watch) -> Double {
         var s = 0.0
         if src.cached { s += 1000 } else if src.debrid { s -= 400 }  // [RD+] arranca al instante; si no, Real-Debrid aún la descarga
+        if src.requested { s += 2500 }   // la pediste y ya está: «Ya está» y al abrirla, esa (sobre idioma y calidad)
         s += languageScore(src, prefs)
         let order = ["4K", "1080p", "720p", "480p", ""]
         let want = order.firstIndex(of: prefs.quality) ?? 1
