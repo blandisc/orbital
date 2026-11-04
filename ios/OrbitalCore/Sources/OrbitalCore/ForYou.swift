@@ -176,7 +176,8 @@ public actor ForYou {
     // MARK: contenido de una lista
     public func items(listID: String, kind: String? = nil) async throws -> [Suggestion] {
         let kind = kind == "movie" ? "movie" : "series"
-        return try await raw(listID: listID, kind: kind).filter { !dismissed.contains($0.imdb) }
+        let hidden = listID == "mine" ? Self.hidden(kv) : []   // «Las que estás viendo», sin las que escondiste (SS1-A)
+        return try await raw(listID: listID, kind: kind).filter { !dismissed.contains($0.imdb) && !hidden.contains($0.imdb) }
     }
 
     /// «Porque viste X»: lo último que viste (película o serie) y lo que Trakt relaciona con él, sin lo que ya descartaste.
@@ -425,8 +426,9 @@ public actor ForYou {
         let now = clock()
         // Trakt va en hora universal: se pide desde un día antes para no perder lo de hoy.
         let start = Self.dayString(calendar.date(byAdding: .day, value: skip - 1, to: calendar.startOfDay(for: now))!, calendar: calendar)
+        let off = Self.unfollowed(kv).union(Self.hidden(kv))
         let rows = try await remember("trakt:calendar:\(start):\(days)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: days + 2) }
-        return Self.airings(rows, now: now, calendar: calendar, skip: skip, days: days).filter { !dismissed.contains($0.series.imdb) && !Self.unfollowed(kv).contains($0.series.imdb) }   // ni las que dejaste de seguir
+        return Self.airings(rows, now: now, calendar: calendar, skip: skip, days: days).filter { !dismissed.contains($0.series.imdb) && !off.contains($0.series.imdb) }   // ni las que dejaste de seguir o escondiste
     }
 
     static func dayString(_ date: Date, calendar: Calendar) -> String {

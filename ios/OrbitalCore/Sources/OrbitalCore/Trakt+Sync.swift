@@ -9,8 +9,10 @@ public struct TraktActivities: Sendable, Equatable, Codable {
     public var watched: String?
     /// La watchlist (`watchlist.updated_at`, o lo último que entró o salió de ella).
     public var watchlist: String?
-    public init(playback: String? = nil, watched: String? = nil, watchlist: String? = nil) {
-        self.playback = playback; self.watched = watched; self.watchlist = watchlist
+    /// Lo que escondiste (`shows.hidden_at`): «Esconder» en otro aparato o en trakt.tv (SS1-A).
+    public var hidden: String?
+    public init(playback: String? = nil, watched: String? = nil, watchlist: String? = nil, hidden: String? = nil) {
+        self.playback = playback; self.watched = watched; self.watchlist = watchlist; self.hidden = hidden
     }
 
     static func parse(_ json: JSON?) -> TraktActivities {
@@ -19,7 +21,8 @@ public struct TraktActivities: Sendable, Equatable, Codable {
         return TraktActivities(
             playback: latest([movies?["paused_at"], episodes?["paused_at"]]),
             watched: latest([movies?["watched_at"], episodes?["watched_at"]]),
-            watchlist: latest([json?["watchlist"]?["updated_at"], movies?["watchlisted_at"], shows?["watchlisted_at"], episodes?["watchlisted_at"]]))
+            watchlist: latest([json?["watchlist"]?["updated_at"], movies?["watchlisted_at"], shows?["watchlisted_at"], episodes?["watchlisted_at"]]),
+            hidden: shows?["hidden_at"]?.nonEmptyString)
     }
 }
 

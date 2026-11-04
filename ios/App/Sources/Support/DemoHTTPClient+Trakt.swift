@@ -111,10 +111,22 @@ extension DemoHTTPClient {
             }
         }
         // Las series que viste (Ajustes › Avisos › Series que sigues) y seguir o dejar de seguir una (se acepta sin más).
+        let shows = [("tt0386676", "The Office", 2), ("tt11280740", "Severance", 20), ("tt0903747", "Breaking Bad", 70),
+                     ("tt14452776", "The Bear", 200), ("tt5753856", "Dark", 400), ("tt7366338", "Chernobyl", 900)]
         if path == "/sync/watched/shows" {
-            let shows = [("tt0386676", "The Office", 2), ("tt11280740", "Severance", 20), ("tt0903747", "Breaking Bad", 70),
-                         ("tt14452776", "The Bear", 200), ("tt5753856", "Dark", 400), ("tt7366338", "Chernobyl", 900)]
             return json(.array(shows.map { ["last_watched_at": iso(Double($0.2)), "show": ["title": .string($0.1), "year": 2020, "ids": ["imdb": .string($0.0), "trakt": 1]]] }))
+        }
+        // Esconder una serie (SS1-A): `progress_watched` se recuerda (sale en «Escondidas»); el calendario se acepta sin más.
+        if path == "/users/hidden/progress_watched", !post {
+            return lock.withLock {
+                json(.array(shows.filter { traktHidden.contains($0.0) }.map {
+                    ["hidden_at": iso(1), "type": "show", "show": ["title": .string($0.1), "year": 2020, "ids": ["imdb": .string($0.0), "trakt": 1]]]
+                }))
+            }
+        }
+        if path.hasPrefix("/users/hidden/progress_watched"), post {
+            lock.withLock { if path.hasSuffix("/remove") { traktHidden.subtract(imdbs(body)) } else { traktHidden.formUnion(imdbs(body)) } }
+            return json(["added": [:]], status: 201)
         }
         if path.hasPrefix("/users/hidden/") { return json(["added": [:]], status: 201) }
         if path.hasPrefix("/sync/watchlist") {

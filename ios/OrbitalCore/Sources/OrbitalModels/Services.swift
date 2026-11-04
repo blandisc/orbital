@@ -117,8 +117,11 @@ public final class Services: ObservableModel {
         if let airings { widgetAirings = airings }
         if let recent { widgetRecent = recent }
         guard let publish = onWidgetSnapshot else { return }
-        let upcoming = WidgetSnapshot.timeline(recent: widgetRecent, upcoming: widgetAirings, now: now(), episode: episodeLabel)
-        publish(WidgetSnapshot.make(continueWatching: widgetContinue, labels: widgetLabels, language: appSettings.uiLanguage,
+        // Ni lo que dejaste de seguir ni lo que escondiste (SS1-A), aunque venga de una carga de antes.
+        let hidden = ForYou.hidden(kv), off = ForYou.unfollowed(kv).union(hidden)
+        let upcoming = WidgetSnapshot.timeline(recent: widgetRecent.filter { !off.contains($0.series.imdb) },
+                                               upcoming: widgetAirings.filter { !off.contains($0.series.imdb) }, now: now(), episode: episodeLabel)
+        publish(WidgetSnapshot.make(continueWatching: widgetContinue.filter { !hidden.contains($0.metaID) }, labels: widgetLabels, language: appSettings.uiLanguage,
                                     upcoming: upcoming.isEmpty ? nil : upcoming))
     }
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).

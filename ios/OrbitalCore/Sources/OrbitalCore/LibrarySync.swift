@@ -52,8 +52,12 @@ public actor LibrarySync {
         if force || now.watchlist != saved.watchlist || now.watchlist == nil {
             if await pullWatchlist(trakt) { saved.watchlist = now.watchlist }
         }
+        var hiddenChanged = false
+        if force || now.hidden != saved.hidden {   // sin marca (nunca escondiste nada): no se pregunta
+            if let found = await pullHidden(trakt) { saved.hidden = now.hidden; hiddenChanged = found }
+        }
         kv.set(Self.stampsKey, data: try? JSONEncoder().encode(saved))
-        let changed = library.all.sorted { $0.metaID < $1.metaID } != before.sorted { $0.metaID < $1.metaID }
+        let changed = hiddenChanged || library.all.sorted { $0.metaID < $1.metaID } != before.sorted { $0.metaID < $1.metaID }
         if changed { NotificationCenter.default.post(name: LocalLibrary.changed, object: nil) }
         return changed
     }
@@ -90,6 +94,17 @@ public actor LibrarySync {
                 if let merged = LibraryMerge.playback(entries[item.target.imdb], item) { entries[item.target.imdb] = merged }
             }
         }
+        return true
+    }
+
+    /// Las series que escondiste (en otro aparato o en trakt.tv): salen de «Sigue viendo», de tus estrenos y de los avisos
+    /// también aquí (SS1-A). Devuelve si cambió algo, o nil si Trakt no contestó.
+    private func pullHidden(_ trakt: Trakt) async -> Bool? {
+        guard let shows = try? await trakt.hiddenShows() else { return nil }
+        let before = ForYou.hidden(kv)
+        let after = ForYou.hiddenFrom(trakt: shows.map(\.imdb), kv: kv)
+        guard after != before else { return false }
+        ForYou.setHidden(after, kv: kv)
         return true
     }
 

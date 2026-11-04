@@ -1,6 +1,72 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Escóndela y deja de salir aquí, en tus estrenos y en Sigue viendo. Lo que viste se queda.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide it and it stops showing here, in your releases and in Continue watching. What you watched stays."
+          }
+        }
+      }
+    },
+    "Escondidas · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden · %lld"
+          }
+        }
+      }
+    },
+    "Escondidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden"
+          }
+        }
+      }
+    },
+    "Mostrar otra vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show again"
+          }
+        }
+      }
+    },
+    "No has escondido ninguna serie.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't hidden any series."
+          }
+        }
+      }
+    },
+    "Vuelve a tu lista, a tus estrenos y a Sigue viendo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It comes back to your list, your releases and Continue watching."
+          }
+        }
+      }
+    },
     "Solo tu iPhone o la TV pueden quitar otro aparato.": {
       "extractionState": "manual",
       "localizations": {
@@ -33620,17 +33686,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "You haven't watched any series on Trakt yet."
-          }
-        }
-      }
-    },
-    "Apagada, ya no sale en tus estrenos ni te avisa. Lo que viste no cambia; la vuelves a prender aquí o en su ficha.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turned off, it no longer shows in your releases or notifies you. What you watched doesn't change; turn it back on here or on its page."
           }
         }
       }

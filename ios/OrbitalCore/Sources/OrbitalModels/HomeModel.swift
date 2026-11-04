@@ -114,7 +114,8 @@ public final class HomeModel: ObservableModel {
         topBrand = services.kv.data(Self.topBrandKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { b in Self.topServices.contains { $0.brand == b } ? b : nil } ?? "netflix"
         super.init()
         if let data = services.caches.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
-            continueWatching = cache.continueWatching; myList = cache.myList
+            let hidden = ForYou.hidden(services.kv)
+            continueWatching = cache.continueWatching.filter { !hidden.contains($0.metaID) }; myList = cache.myList
         }
         defer {
             // Lo tuyo cambió (lo viste, lo guardaste, llegó algo de Trakt): Inicio se vuelve a armar con lo del teléfono.
@@ -261,7 +262,10 @@ public final class HomeModel: ObservableModel {
         async let continued = items(continueItems), saved = items(mine)   // las dos traducciones a la vez
         let (c, m) = await (continued, saved)
         guard !Task.isCancelled else { return }
-        continueWatching = c.filter { !dismissed.contains($0.metaID) }
+        let hidden = ForYou.hidden(services.kv)   // las series que escondiste (SS1-A) tampoco, ni en los estrenos ya cargados
+        continueWatching = c.filter { !dismissed.contains($0.metaID) && !hidden.contains($0.metaID) }
+        if upcoming.contains(where: { hidden.contains($0.series.imdb) }) { upcoming.removeAll { hidden.contains($0.series.imdb) } }
+        if recentAirings.contains(where: { hidden.contains($0.series.imdb) }) { recentAirings.removeAll { hidden.contains($0.series.imdb) } }
         myList = m
         offline = !services.isOnline(); error = nil   // sin red se enseña lo del teléfono y se dice (el corte A lo había apagado)
         dressList()
