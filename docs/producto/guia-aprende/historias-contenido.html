@@ -1,0 +1,259 @@
+<title>Contenido de las historias</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Una columna para el celular: cómo se cuentan, tres ejemplos animados y las 13 historias, tarjeta por tarjeta. */
+:root {
+  --bg: #0c0c0e; --card: #18181c; --raised: #2a2a30; --fg: #f5f4f0; --muted: #babac1; --voz: #5fd6c6; --ink: #070708; --amber: #f4c24d;
+  --sans: -apple-system, "SF Pro Text", system-ui, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.45; }
+main { max-width: 620px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; }
+h1 { margin: 0; font-size: 28px; line-height: 1.12; text-wrap: balance; }
+h2 { margin: 0; font-size: 20px; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.code { font-family: var(--mono); color: var(--voz); font-weight: 700; margin-right: 4px; }
+.box { background: var(--card); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.sh { display: flex; flex-direction: column; gap: 2px; }
+.card { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; border-top: 1px solid var(--raised); padding-top: 12px; }
+.cn { font-family: var(--mono); color: var(--muted); font-size: 13px; padding-top: 2px; }
+.cb { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cb p { font-size: 14px; }
+.cb span { display: inline-block; min-width: 72px; font-size: 12px; color: var(--muted); }
+.was { color: var(--muted); }
+.was b { color: var(--muted); font-weight: 600; }
+.scene { color: var(--fg); }
+.scene span { color: var(--voz) !important; }
+ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.demos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.demo { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
+.demo p { font-size: 12px; color: var(--muted); text-align: center; }
+.ph { width: 100%; max-width: 180px; aspect-ratio: 9 / 16; border-radius: 20px; background: #1a120c; border: 1px solid var(--raised); position: relative; overflow: hidden; }
+.bars { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 3px; }
+.bars i { flex: 1; height: 2px; background: rgba(245,244,240,.25); border-radius: 1px; }
+.bars i.on { background: var(--fg); }
+.t { position: absolute; left: 12px; right: 12px; bottom: 16px; display: flex; flex-direction: column; gap: 3px; }
+.t b { font-size: 14px; } .t small { font-size: 10px; color: var(--muted); }
+.stage { position: absolute; left: 12px; right: 12px; top: 30px; height: 58%; border-radius: 12px; overflow: hidden; background: #0d0d10; }
+.finger { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: rgba(245,244,240,.5); border: 1.5px solid var(--fg); }
+
+/* 1 · Pellizca para llenar: el video con franjas; dos dedos se abren y llena. */
+.vid { position: absolute; left: 0; right: 0; top: 34%; height: 32%; background: linear-gradient(120deg,#2f4a5a,#5a3a2a); animation: fill 4s ease-in-out infinite; }
+@keyframes fill { 0%, 30% { top: 34%; height: 32%; left: 0; right: 0 } 55%, 85% { top: 0; height: 100%; left: -30%; right: -30% } 100% { top: 34%; height: 32%; left: 0; right: 0 } }
+.f1 { left: 42%; top: 46%; animation: spreadA 4s ease-in-out infinite; } .f2 { left: 50%; top: 46%; animation: spreadB 4s ease-in-out infinite; }
+@keyframes spreadA { 0%, 15% { transform: none; opacity: 0 } 22% { opacity: 1 } 50% { transform: translate(-34px, -26px); opacity: 1 } 58%, 100% { transform: translate(-34px, -26px); opacity: 0 } }
+@keyframes spreadB { 0%, 15% { transform: none; opacity: 0 } 22% { opacity: 1 } 50% { transform: translate(34px, 26px); opacity: 1 } 58%, 100% { transform: translate(34px, 26px); opacity: 0 } }
+
+/* 2 · Junta filtros: tres cuadros que se encienden con el dedo y el contador que baja. */
+.tiles { position: absolute; inset: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-content: start; }
+.tiles div { height: 34px; border-radius: 8px; background: #22222a; font-size: 9px; display: flex; align-items: center; padding: 0 6px; color: var(--muted); }
+.tiles div:nth-child(1) { animation: lit 6s infinite; } .tiles div:nth-child(2) { animation: lit 6s infinite 1s; } .tiles div:nth-child(3) { animation: lit 6s infinite 2s; }
+@keyframes lit { 0%, 10% { background: #22222a; color: var(--muted) } 15%, 85% { background: #3d3460; color: var(--fg) } 100% { background: #22222a; color: var(--muted) } }
+.count { position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: var(--voz); font-family: var(--mono); }
+.count::after { content: "2 400 títulos"; animation: count 6s infinite steps(1); }
+@keyframes count { 0% { content: "2 400 títulos" } 17% { content: "640 títulos" } 34% { content: "92 títulos" } 50% { content: "37 títulos" } 88% { content: "2 400 títulos" } }
+.f3 { animation: taps 6s infinite; }
+@keyframes taps { 0% { left: 20%; top: 18px; opacity: 0 } 8% { opacity: 1 } 14% { left: 20%; top: 18px } 22% { left: 66%; top: 18px } 30% { left: 20%; top: 58px } 40%, 100% { left: 20%; top: 58px; opacity: 0 } }
+
+/* 3 · Pedir a la nube: «Por pedir» → bajando → lista. */
+.row { position: absolute; left: 10px; right: 10px; top: 30%; height: 40px; border-radius: 10px; background: #22222a; padding: 6px 8px; box-sizing: border-box; font-size: 10px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.row .st::after { content: "4K · Latino · Por pedir"; animation: st 6s infinite steps(1); }
+@keyframes st { 0% { content: "4K · Latino · Por pedir" } 30% { content: "Bajando en la nube · 42 %" } 70% { content: "Lista para ver ▶" } }
+.row .pb { height: 3px; border-radius: 2px; background: rgba(245,244,240,.15); overflow: hidden; }
+.row .pb i { display: block; height: 3px; width: 0; background: #f08c46; animation: pb 6s infinite; }
+@keyframes pb { 0%, 28% { width: 0 } 68% { width: 100% } 100% { width: 100% } }
+.f4 { left: 70%; top: 36%; animation: tap1 6s infinite; }
+@keyframes tap1 { 0%, 12% { opacity: 0; transform: scale(1) } 18% { opacity: 1 } 24% { transform: scale(.75) } 30%, 100% { opacity: 0; transform: scale(1) } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important } }
+</style>
+
+<main>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <p class="muted">Aprende Orbital · 4 nov 2026 · para revisar</p>
+    <h1>Las 13 historias, tarjeta por tarjeta</h1>
+    <p class="muted">Ya instalado (1815): no truena al cerrar abajo, van en fila como Instagram y la guía está en Ajustes. Esta página es para el contenido.</p>
+  </div>
+
+  <div class="box">
+    <h2>Cómo se cuentan ahora</h2>
+    <ol>
+      <li><b>Se ve, no se explica.</b> Cada tarjeta enseña la pantalla real en miniatura (la ficha, el reproductor, Buscar) y un dedo fantasma hace el gesto. Lo que pasa, pasa ahí: el video llena la pantalla, el contador baja.</li>
+      <li><b>El texto solo nombra la acción.</b> Un título corto y una línea. La escena hace el resto.</li>
+      <li><b>Mira, hazlo, listo.</b> La escena dura lo que el gesto: aparece la pantalla, el dedo actúa, se ve el resultado, y vuelve a empezar una vez.</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h2>Tres ejemplos del estilo</h2>
+    <div class="demos">
+      <div class="demo">
+        <div class="ph" role="img" aria-label="Reproductor: dos dedos se abren y el video llena la pantalla">
+          <div class="bars"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <div class="stage"><div class="vid"></div><div class="finger f1"></div><div class="finger f2"></div></div>
+          <div class="t"><b>Abre los dedos</b><small>Llena la pantalla; ciérralos para verla completa.</small></div>
+        </div>
+        <p><b>H9.3</b> El reproductor</p>
+      </div>
+      <div class="demo">
+        <div class="ph" role="img" aria-label="Búsqueda avanzada: el dedo enciende tres cuadros y el contador baja" style="background: #14101f">
+          <div class="bars"><i class="on"></i><i></i><i></i></div>
+          <div class="stage"><div class="tiles"><div>Comedia</div><div>Años 90</div><div>Netflix</div><div>Más de 7</div></div><div class="count"></div><div class="finger f3"></div></div>
+          <div class="t"><b>Junta filtros</b><small>Comedias de los 90, en Netflix, con más de 7.</small></div>
+        </div>
+        <p><b>H5.1</b> Búsqueda avanzada</p>
+      </div>
+      <div class="demo">
+        <div class="ph" role="img" aria-label="Versiones: el dedo toca una versión por pedir, baja en la nube y queda lista" style="background: #0d1626">
+          <div class="bars"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="stage"><div class="row"><span class="st"></span><div class="pb"><i></i></div></div><div class="finger f4"></div></div>
+          <div class="t"><b>Pedir a la nube</b><small>Si dice «Por pedir», tócala y te avisamos.</small></div>
+        </div>
+        <p><b>H7.3</b> Versiones</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="box"><div class="sh"><h2><span class="code">H1</span> Real-Debrid</h2><p class="muted">4 tarjetas · botón final: Conectar Real-Debrid</p></div><div class="card"><div class="cn">H1.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Ver aquí mismo, sin esperar</b> · Real-Debrid es un servicio de pago que guarda los videos en su nube.</p>
+<p class="new"><span>Propuesta</span> <b>Ver aquí mismo</b> · Real-Debrid es la nube que te entrega los videos.</p>
+<p class="scene"><span>Se ve</span> La ficha de Dune. El dedo toca «Ver» y el video arranca en el mismo cuadro.</p></div></div><div class="card"><div class="cn">H1.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Así funciona</b> · Orbital la encuentra, Real-Debrid la consigue en su nube y la ves al instante.</p>
+<p class="new"><span>Propuesta</span> <b>Así funciona</b> · Orbital la busca, la nube la tiene y la ves.</p>
+<p class="scene"><span>Se ve</span> Una lupa barre pósters, una nube se enciende con la versión adentro y una flecha la baja al iPhone, que empieza a reproducir.</p></div></div><div class="card"><div class="cn">H1.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>No ocupa espacio</b> · El video llega desde la nube mientras lo ves. Tu iPhone no guarda nada.</p>
+<p class="new"><span>Propuesta</span> <b>No ocupa espacio</b> · Se ve desde la nube. Tu iPhone queda igual.</p>
+<p class="scene"><span>Se ve</span> La barra de espacio del iPhone se queda quieta mientras el video corre.</p></div></div><div class="card"><div class="cn">H1.4</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Una cuenta por persona</b> · Si dos la usan a la vez, Real-Debrid la corta. Cada quien con la suya.</p>
+<p class="new"><span>Propuesta</span> <b>Una cuenta por persona</b> · Si dos la usan a la vez, se corta.</p>
+<p class="scene"><span>Se ve</span> Dos iPhone con la misma cuenta: los dos videos se congelan con un aviso.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H2</span> Cómo pagar</h2><p class="muted">3 tarjetas · botón final: Abrir Real-Debrid</p></div><div class="card"><div class="cn">H2.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Cómo pagar y renovar</b> · Se paga en la página de Real-Debrid, por adelantado y por días.</p>
+<p class="new"><span>Propuesta</span> <b>Se paga por días</b> · En su página, por adelantado.</p>
+<p class="scene"><span>Se ve</span> La página de Real-Debrid en miniatura: el dedo elige «15 días» y toca pagar.</p></div></div><div class="card"><div class="cn">H2.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Desde unos 3 € cada 15 días</b> · Eliges cuántos días quieres. El precio lo confirma su página.</p>
+<p class="new"><span>Propuesta</span> <b>Desde unos 3 €</b> · Por 15 días. Su página dice el precio exacto.</p>
+<p class="scene"><span>Se ve</span> Tres planes en fila; el de 15 días se ilumina.</p></div></div><div class="card"><div class="cn">H2.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>No se renueva solo</b> · Orbital te avisa antes de que se acabe, y cuando vence te dice cómo renovar.</p>
+<p class="new"><span>Propuesta</span> <b>Te avisamos antes</b> · No se renueva solo: te decimos cuándo.</p>
+<p class="scene"><span>Se ve</span> Un aviso baja desde arriba: «Te quedan 3 días de Real-Debrid · Renovar».</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H3</span> Tus idiomas</h2><p class="muted">3 tarjetas · botón final: Cambiar tus idiomas</p></div><div class="card"><div class="cn">H3.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Tus idiomas</b> · En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.</p>
+<p class="new"><span>Propuesta</span> <b>Tus idiomas, en orden</b> · Arranca con el primero que haya.</p>
+<p class="scene"><span>Se ve</span> La lista Latino · Original · Inglés · Castellano. Latino se tacha (no hay) y arranca en Original.</p></div></div><div class="card"><div class="cn">H3.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Con este arranca si lo hay</b> · Por omisión: latino, el idioma original, inglés y castellano. Arrastra para cambiar el orden.</p>
+<p class="new"><span>Propuesta</span> <b>Arrástralos</b> · Cambia el orden cuando quieras.</p>
+<p class="scene"><span>Se ve</span> El dedo mantiene presionado «Inglés» y lo sube al primer lugar; los demás se recorren.</p></div></div><div class="card"><div class="cn">H3.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Idioma original</b> · El de cada película o serie (japonés en un anime). Puedes subirlo o bajarlo como los demás.</p>
+<p class="new"><span>Propuesta</span> <b>El idioma original</b> · El de cada título: japonés en un anime.</p>
+<p class="scene"><span>Se ve</span> Un póster de anime con su bandera de Japón junto a «Original».</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H4</span> Trakt</h2><p class="muted">3 tarjetas · botón final: Conectar Trakt</p></div><div class="card"><div class="cn">H4.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Lo que ves, en todos tus aparatos</b> · Trakt guarda dónde te quedaste, lo que ya viste y tu lista. Es gratis.</p>
+<p class="new"><span>Propuesta</span> <b>Lo tuyo, en todos lados</b> · Gratis: dónde te quedaste, lo visto y tu lista.</p>
+<p class="scene"><span>Se ve</span> «Seguir viendo» en el iPhone con la barrita al 40 %.</p></div></div><div class="card"><div class="cn">H4.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Sigue donde ibas</b> · Empieza en el iPhone y sigue en otro aparato, justo en el minuto.</p>
+<p class="new"><span>Propuesta</span> <b>Sigue en el minuto</b> · Empieza aquí, termina en otro aparato.</p>
+<p class="scene"><span>Se ve</span> La barrita al 40 % viaja del iPhone a un iPad y sigue desde ahí.</p></div></div><div class="card"><div class="cn">H4.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Mejores recomendaciones</b> · Con tu historial, «Porque viste» y Para ti aciertan más.</p>
+<p class="new"><span>Propuesta</span> <b>Te conoce más</b> · Con tu historial, aciertan las recomendaciones.</p>
+<p class="scene"><span>Se ve</span> «Porque viste Interestelar» y tres pósters que caen en su fila.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H5</span> Búsqueda avanzada</h2><p class="muted">3 tarjetas · botón final: Probar la búsqueda avanzada</p></div><div class="card"><div class="cn">H5.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Junta filtros</b> · Comedias de los 90, en Netflix, con más de 7. Todo a la vez.</p>
+<p class="new"><span>Propuesta</span> <b>Junta filtros</b> · Comedias de los 90, en Netflix, con más de 7.</p>
+<p class="scene"><span>Se ve</span> Los cuadros de filtros reales: el dedo toca Comedia, luego 90s, luego Netflix; cada toque los enciende.</p></div></div><div class="card"><div class="cn">H5.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Arriba de todo en Buscar</b> · Los cuadros de filtros: toca uno para empezar y suma los que quieras.</p>
+<p class="new"><span>Propuesta</span> <b>Están arriba de Buscar</b> · Toca uno para empezar.</p>
+<p class="scene"><span>Se ve</span> La pestaña Buscar en miniatura con los cuadros arriba; el dedo baja hasta ellos.</p></div></div><div class="card"><div class="cn">H5.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Cada filtro achica la lista</b> · Género, año, calificación, plataforma e idioma. Quita uno y vuelve a crecer.</p>
+<p class="new"><span>Propuesta</span> <b>Cada filtro achica la lista</b> · Quita uno y vuelve a crecer.</p>
+<p class="scene"><span>Se ve</span> El contador baja de 2,400 a 37 con cada toque, y sube al quitar uno.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H6</span> Explorar y Decide</h2><p class="muted">4 tarjetas · botón final: Abrir Explorar</p></div><div class="card"><div class="cn">H6.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Para cuando no sabes qué ver</b> · Explorar te enseña lo que va contigo, en un mosaico que se mueve.</p>
+<p class="new"><span>Propuesta</span> <b>Cuando no sabes qué ver</b> · Un mosaico de lo que va contigo.</p>
+<p class="scene"><span>Se ve</span> El mosaico de Explorar moviéndose lento.</p></div></div><div class="card"><div class="cn">H6.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Toca para acercar</b> · Un toque agranda un póster; el segundo abre su ficha.</p>
+<p class="new"><span>Propuesta</span> <b>Toca para acercar</b> · El segundo toque abre su ficha.</p>
+<p class="scene"><span>Se ve</span> El dedo toca un póster, crece con su etiqueta; un segundo toque abre la ficha.</p></div></div><div class="card"><div class="cn">H6.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>¿Qué vemos hoy?</b> · Elige un ánimo y desliza el mazo: a un lado lo que no, al otro lo que sí.</p>
+<p class="new"><span>Propuesta</span> <b>¿Qué vemos hoy?</b> · Desliza: no a la izquierda, sí a la derecha.</p>
+<p class="scene"><span>Se ve</span> El mazo: una carta sale a la izquierda con ✕ y la siguiente a la derecha con ✓.</p></div></div><div class="card"><div class="cn">H6.4</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Decide por mí</b> · Tres carteles con su porqué. ¿Ninguno? «Barajar» y salen otros.</p>
+<p class="new"><span>Propuesta</span> <b>Decide por mí</b> · Tres opciones. ¿Ninguna? Baraja.</p>
+<p class="scene"><span>Se ve</span> Tres carteles; el dedo toca «Barajar» y se revuelven.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H7</span> Versiones</h2><p class="muted">3 tarjetas · botón final: ninguno</p></div><div class="card"><div class="cn">H7.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>«Ver» elige por ti</b> · Busca la mejor versión en tu idioma y con la calidad que pediste, y arranca.</p>
+<p class="new"><span>Propuesta</span> <b>«Ver» elige por ti</b> · La mejor en tu idioma y tu calidad.</p>
+<p class="scene"><span>Se ve</span> El botón «Ver» de la ficha con «🇲🇽 Latino · 1080p» debajo; el dedo lo toca y arranca.</p></div></div><div class="card"><div class="cn">H7.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>¿Otra? Toca «Versión»</b> · Ves todas: calidad, idioma y si ya está en la nube.</p>
+<p class="new"><span>Propuesta</span> <b>¿Otra? Toca «Versión»</b> · Calidad, idioma y si ya está lista.</p>
+<p class="scene"><span>Se ve</span> Se abre la lista de versiones con sus banderas y «Al instante» en las primeras.</p></div></div><div class="card"><div class="cn">H7.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Pedir a la nube</b> · Si dice «Por pedir», tócala: la nube la baja y te avisamos cuando esté.</p>
+<p class="new"><span>Propuesta</span> <b>Pedir a la nube</b> · Si dice «Por pedir», tócala y te avisamos.</p>
+<p class="scene"><span>Se ve</span> Una versión «Por pedir»; el dedo la toca, aparece «Bajando en la nube · 42 %» y luego «Lista para ver».</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H8</span> Sin versiones</h2><p class="muted">3 tarjetas · botón final: ninguno</p></div><div class="card"><div class="cn">H8.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Cuando no hay versiones</b> · Pasa con estrenos muy nuevos o títulos raros. No es tu internet.</p>
+<p class="new"><span>Propuesta</span> <b>Cuando no hay versiones</b> · Pasa con estrenos muy nuevos.</p>
+<p class="scene"><span>Se ve</span> La ficha con «Nadie lo tiene todavía en internet».</p></div></div><div class="card"><div class="cn">H8.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Prueba mañana</b> · Las versiones aparecen solas con los días. Guárdala en tu lista para no perderla.</p>
+<p class="new"><span>Propuesta</span> <b>Guárdala</b> · Las versiones llegan solas con los días.</p>
+<p class="scene"><span>Se ve</span> El dedo toca «Mi lista» y el ícono se llena.</p></div></div><div class="card"><div class="cn">H8.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>O mírala en tu plataforma</b> · En la ficha, «Dónde verla» dice en cuál de tus plataformas está.</p>
+<p class="new"><span>Propuesta</span> <b>O mírala en tu plataforma</b> · «Dónde verla» te dice dónde.</p>
+<p class="scene"><span>Se ve</span> «Dónde verla» con el logo de Netflix encendido.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H9</span> El reproductor</h2><p class="muted">4 tarjetas · botón final: ninguno</p></div><div class="card"><div class="cn">H9.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Todo con los dedos</b> · Sin buscar botones: el reproductor responde a gestos.</p>
+<p class="new"><span>Propuesta</span> <b>Todo con los dedos</b> · Sin buscar botones.</p>
+<p class="scene"><span>Se ve</span> El reproductor en miniatura, con un video en pausa.</p></div></div><div class="card"><div class="cn">H9.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Doble toque a los lados</b> · Adelanta o regresa 10 segundos. Cada toque más del mismo lado suma otros 10.</p>
+<p class="new"><span>Propuesta</span> <b>Doble toque: 10 segundos</b> · Cada toque más suma otros 10.</p>
+<p class="scene"><span>Se ve</span> Dos toques en la orilla derecha: «+10», luego «+20»; la barrita avanza.</p></div></div><div class="card"><div class="cn">H9.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Pellizca para llenar</b> · Abre los dedos para llenar la pantalla; ciérralos para verla completa.</p>
+<p class="new"><span>Propuesta</span> <b>Abre los dedos</b> · Llena la pantalla; ciérralos para verla completa.</p>
+<p class="scene"><span>Se ve</span> Dos dedos se abren sobre el video y las franjas negras desaparecen.</p></div></div><div class="card"><div class="cn">H9.4</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>El candado</b> · En «Más», bloquea la pantalla para que nada la toque mientras ves.</p>
+<p class="new"><span>Propuesta</span> <b>El candado</b> · Nada la toca mientras ves.</p>
+<p class="scene"><span>Se ve</span> El dedo abre «Más», toca el candado y un toque en la pantalla ya no hace nada.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H10</span> Descargas</h2><p class="muted">3 tarjetas · botón final: Abrir Descargas</p></div><div class="card"><div class="cn">H10.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Para ver sin internet</b> · «Descargar» guarda el video en tu iPhone, para el avión o la carretera.</p>
+<p class="new"><span>Propuesta</span> <b>Para ver sin internet</b> · Para el avión o la carretera.</p>
+<p class="scene"><span>Se ve</span> El dedo toca «Descargar»; un anillo se llena y aparece en Biblioteca.</p></div></div><div class="card"><div class="cn">H10.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>La nube no es lo mismo</b> · Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPhone.</p>
+<p class="new"><span>Propuesta</span> <b>La nube no es tu iPhone</b> · Descargar sí ocupa espacio.</p>
+<p class="scene"><span>Se ve</span> Dos columnas: la nube (sin espacio) y el iPhone (la barra de espacio sube).</p></div></div><div class="card"><div class="cn">H10.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>El siguiente, solo</b> · Al terminar un episodio, Orbital puede bajar el siguiente por ti.</p>
+<p class="new"><span>Propuesta</span> <b>El siguiente, solo</b> · Al terminar uno, baja el que sigue.</p>
+<p class="scene"><span>Se ve</span> El episodio 4 se marca visto y el 5 empieza a bajar solo.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H11</span> Estrenos</h2><p class="muted">3 tarjetas · botón final: Ver el calendario</p></div><div class="card"><div class="cn">H11.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Avisos y estrenos</b> · Sigue una serie y te avisamos cuando salga su episodio.</p>
+<p class="new"><span>Propuesta</span> <b>Te avisamos cuando sale</b> · Sigue una serie y listo.</p>
+<p class="scene"><span>Se ve</span> Una notificación baja: «Sale hoy: The Bear T4 · E1».</p></div></div><div class="card"><div class="cn">H11.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>El calendario</b> · En Inicio, el calendario junta los estrenos del mes de lo que sigues.</p>
+<p class="new"><span>Propuesta</span> <b>Tu mes de estrenos</b> · En Inicio, el calendario.</p>
+<p class="scene"><span>Se ve</span> El calendario en miniatura con pósters en sus días.</p></div></div><div class="card"><div class="cn">H11.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Tú eliges de cuáles</b> · En Ajustes › Avisos decides de qué series te llegan.</p>
+<p class="new"><span>Propuesta</span> <b>Tú eliges de cuáles</b> · En Ajustes › Avisos.</p>
+<p class="scene"><span>Se ve</span> Tres interruptores; el dedo apaga uno.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H12</span> Lo que ves</h2><p class="muted">2 tarjetas · botón final: Abrir Lo que ves</p></div><div class="card"><div class="cn">H12.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Tu año en películas y series</b> · Horas, rachas, géneros y lo que más viste.</p>
+<p class="new"><span>Propuesta</span> <b>Tu año, en números</b> · Horas, rachas y lo que más viste.</p>
+<p class="scene"><span>Se ve</span> Un número sube de 0 a 214 horas y aparecen tus tres géneros.</p></div></div><div class="card"><div class="cn">H12.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Tu Wrapped</b> · Como estas historias: tu semana, tu mes o tu año, para compartir.</p>
+<p class="new"><span>Propuesta</span> <b>Tu Wrapped</b> · Tu semana, tu mes o tu año.</p>
+<p class="scene"><span>Se ve</span> La primera tarjeta de tu Wrapped y el botón de compartir.</p></div></div></section>
+<section class="box"><div class="sh"><h2><span class="code">H13</span> Tu TV</h2><p class="muted">3 tarjetas · botón final: Conectar tu TV</p></div><div class="card"><div class="cn">H13.1</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Tu iPhone, el control de la TV</b> · Con Orbital en la TV, el iPhone la maneja y le habla.</p>
+<p class="new"><span>Propuesta</span> <b>Tu iPhone, el control</b> · Maneja y háblale a la TV.</p>
+<p class="scene"><span>Se ve</span> El control en el iPhone y la TV que responde.</p></div></div><div class="card"><div class="cn">H13.2</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>«Ver en la TV»</b> · Desde cualquier ficha, mándala a la TV con un toque.</p>
+<p class="new"><span>Propuesta</span> <b>«Ver en la TV»</b> · Desde cualquier ficha.</p>
+<p class="scene"><span>Se ve</span> El dedo toca el botón de la TV en la ficha y el póster vuela a la pantalla de la TV.</p></div></div><div class="card"><div class="cn">H13.3</div><div class="cb">
+<p class="was"><span>Hoy</span> <b>Sigue aquí</b> · Lo que suena en la TV pasa al iPhone en el mismo minuto.</p>
+<p class="new"><span>Propuesta</span> <b>Sigue aquí</b> · En el mismo minuto.</p>
+<p class="scene"><span>Se ve</span> El video baja de la TV al iPhone con su barrita en el mismo punto.</p></div></div></section>
+
+  <div class="box">
+    <h2>Para dictar</h2>
+    <p class="muted">«Todo sí» para quedarte con todas las propuestas. Para cambiar una tarjeta, su código y lo que quieres (por ejemplo, «H2.2: sin precio»). Para quitar una historia completa, su código («quita H8»).</p>
+    <p style="color: var(--voz)">Recomiendo: todo sí, y juntar H8 (Sin versiones) dentro de H7 (Versiones) como su última tarjeta: es el mismo tema y una historia menos.</p>
+  </div>
+</main>
