@@ -57,6 +57,13 @@ final class LearnModelTests: XCTestCase {
         XCTAssertTrue(learn.shouldCoach("title-play"), "«Volver a ver los avisos»")
     }
 
+    func testSomeoneWhoAlreadyUsedTheAppSeesRingsButNoCoach() throws {
+        let rig = try ServicesRig(signedIn: false, traktLinked: true, traktClientID: "CID")
+        let learn = LearnModel(rig.services)
+        XCTAssertFalse(learn.rings().isEmpty, "los círculos sí")
+        XCTAssertFalse(learn.shouldCoach("title-play"), "los avisos no, hasta que haga la guía")
+    }
+
     func testTheTVStoryOnlyWhereThereIsTV() throws {
         XCTAssertFalse(LearnModel(try ServicesRig(allowsOrbital: false).services).stories.contains { $0.id == "tv" })
         XCTAssertTrue(LearnModel(try ServicesRig().services).stories.contains { $0.id == "tv" })

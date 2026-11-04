@@ -6,7 +6,8 @@ import OrbitalCore
 ///
 /// Los círculos de Inicio: hasta 4 sin ver, ordenados por lo que te falta. Se van a Ajustes cuando los viste todos o a los
 /// 14 días de aparecer; «Cómo pagar» vuelve sola si tu Real-Debrid venció. Los avisos: nunca el mismo día de la guía, como
-/// máximo uno cada vez que abres la app, nunca si ya usaste esa función, y «Saltar avisos» los apaga todos.
+/// máximo uno cada vez que abres la app, nunca si ya usaste esa función, solo a quien hizo la guía nueva (quien ya usaba la
+/// app ve los círculos, no los avisos; «Ver la guía otra vez» los prende), y «Saltar avisos» los apaga todos.
 @MainActor
 public final class LearnModel: ObservableModel {
     public static let debridFlowKey = "debrid-flow"
@@ -81,8 +82,8 @@ public final class LearnModel: ObservableModel {
     /// ¿Sale este aviso ahora? `used`: ya usaste la función (no hace falta explicarla).
     public func shouldCoach(_ id: String, used: Bool = false) -> Bool {
         guard !coachOff, !Self.coachShownThisLaunch, !used, !seen("coach.\(id)") else { return false }
-        guard services.kv.data(Self.guideDoneKey) != nil || !OnboardingModel.shouldShow(services) else { return false }
-        return true
+        // Solo quien hizo la guía nueva: quien ya usaba la app ve los círculos, no los avisos (plan v2).
+        return services.kv.data(Self.guideDoneKey) != nil
     }
 
     /// Salió un aviso: no se repite y no sale otro hasta que vuelvas a abrir la app.
