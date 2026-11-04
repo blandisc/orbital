@@ -157,3 +157,19 @@ def test_trakt_lee_todas_las_paginas_de_una_lista(monkeypatch):
 
     monkeypatch.setattr(client, "_get", get)
     assert len(client.list_items("38004492")) == 210 and pages == [1, 2, 3]
+
+
+def test_mi_lista_de_trakt_se_lee_completa(monkeypatch):
+    """4 nov 2026: la watchlist de Fernando tiene 318 y Mi lista enseñaba 100 (Trakt da cien por página)."""
+    from orbital.library import trakt as trakt_api
+
+    client = trakt_api.Trakt("id", "secreto", credentials=None)
+    rows = [{"type": "movie", "listed_at": f"2026-01-01T00:{i // 60:02d}:{i % 60:02d}Z",
+             "movie": {"title": f"P{i}", "year": 2000, "ids": {"imdb": f"tt{i:07d}"}}} for i in range(318)]
+
+    def get(path, auth=True, **params):
+        start = (params["page"] - 1) * params["limit"]
+        return rows[start:start + params["limit"]]
+
+    monkeypatch.setattr(client, "_get", get)
+    assert len(client.watchlist()) == 318 and len(client.watchlist_rows()) == 318
