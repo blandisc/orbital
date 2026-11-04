@@ -14,6 +14,7 @@ versiones, la búsqueda avanzada, Explorar y Decide, Lo que ves, Trakt, los gest
 la TV.
 
 Canvas con las pantallas y las decisiones: https://claude.ai/artifact/TX7vDeisfAjGp8HcorSg9A
+Versión para el celular, pantalla por pantalla: `guia-celular.html` · https://claude.ai/artifact/9yLoYYTAMN4R2NdqxtLQUz
 
 Parte de las maquetas del 30 oct (`docs/producto/orbital-y-plus/guia-maquetas.html`), que no se construyeron, y de sus
 cuatro decisiones pendientes.
