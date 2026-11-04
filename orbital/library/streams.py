@@ -515,8 +515,8 @@ DEFAULT_LANGUAGES = ("es-419", "original", "en", "es-ES")
 def languages_from_audio(audio: str) -> tuple[str, ...]:
     """Tu orden a partir del «Idioma» de antes (un solo valor): latino o castellano con el plan B de siempre; otro, solo él
     y luego el original."""
-    if audio in ("es-ES",):
-        return ("es-ES", "original", "en", "es-419")
+    if audio == "es-ES":  # la regla de siempre con castellano (como el iPhone): castellano y luego latino
+        return ("es-ES", "es-419")
     if audio in ("es-419", "es"):
         return DEFAULT_LANGUAGES
     return (audio or "en", "original")
@@ -602,10 +602,19 @@ def language_score(src: Source, prefs: Preferences) -> float:
             if code in langs:
                 best = max(best, float(LANG_POINTS[langs[code]]))
         return best
+    if not prefs.plan and wanted == "es-ES":
+        # Con castellano y sin tu lista, la regla de antes (la del iPhone): el español que no dice cuál −100, el latino −250
+        # y otro idioma no cuenta. El orden latino → original → inglés → castellano es el de quien prefiere latino.
+        best = float(WRONG_LANGUAGE)
+        for code in SPANISH:
+            if code in langs:
+                drop = 0 if code == wanted else STEP_UNSURE_SPANISH if code == "es" else 250
+                best = max(best, float(LANG_POINTS[langs[code]] - drop))
+        return best
     if prefs.plan:
         steps = [prefs.original if c == "original" else c for c in prefs.plan]
     else:
-        steps = [prefs.original, "en", "es-ES" if wanted == "es-419" else "es-419"]
+        steps = [prefs.original, "en", "es-ES"]  # quien prefiere latino (es-MX): el orden de Fernando, 4 nov
     # Los lugares son fijos (README: original 0, inglés 1, castellano 2): sin saber el original, su renglón queda vacío y el
     # inglés sigue siendo el 1 (antes subía al 0 y valía 40 de más que en el iPhone). Si un idioma está en dos renglones
     # (el original es el inglés), cuenta el primero.
