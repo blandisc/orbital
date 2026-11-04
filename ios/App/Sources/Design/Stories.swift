@@ -79,7 +79,7 @@ struct StoryPlayer: View {
 
     private func tick() async {
         guard autoAdvance, active, !paused, scenePhase == .active else { return }
-        let length = card.body.count > DS.Story.longText || (last && story.action != nil) ? DS.Story.longCard : DS.Story.card
+        let length = Duration.milliseconds(Int(card.seconds * 1000)) + (last && story.action != nil ? DS.Story.lastExtra : .zero)
         for i in 0..<DS.Story.ticks {
             try? await Task.sleep(for: length / DS.Story.ticks)
             if Task.isCancelled { return }
@@ -156,104 +156,33 @@ struct StoryDeck: View {
     }
 }
 
-/// Una tarjeta de historia con su plantilla: portada (el planeta chico), tres pasos de la nube, gesto (una mano fantasma lo
-/// repite dos veces), antes y ahora (un deslizador que se mueve solo) o el símbolo grande en su color.
+/// Una tarjeta de historia: arriba la escena (la pantalla en miniatura con su dedo fantasma) y abajo su título y su línea, que
+/// llegan después del gesto («primero se ve, luego se nombra»). El truco de la historia lleva su marca.
 struct StoryCardView: View {
     let card: LearnStory.Card
     let tint: Color
+    @State private var named = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s5) {
-            art.frame(maxWidth: .infinity)
+            StorySceneView(scene: card.scene, tint: tint)
+                .frame(maxWidth: .infinity, maxHeight: DS.Scene.maxHeight)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
+                if card.mark == .trick {
+                    Label("El truco", systemImage: "sparkle").recipe(.label, color: DS.warning)
+                }
                 Text(LocalizedStringKey(card.title)).recipe(.display, color: DS.paper).fixedSize(horizontal: false, vertical: true)
-                Text(LocalizedStringKey(card.body)).recipe(.body, color: DS.paper).fixedSize(horizontal: false, vertical: true)
+                Text(LocalizedStringKey(card.line)).recipe(.body, color: DS.paper).fixedSize(horizontal: false, vertical: true)
             }
+            .opacity(named || reduceMotion ? 1 : 0)
+            .offset(y: named || reduceMotion ? 0 : DS.Welcome.rise)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder private var art: some View {
-        switch card.template {
-        case .cover: OrbitalMark(size: DS.Story.symbol, animated: true).foregroundStyle(DS.paper)
-        case .threeSteps: DebridFlowStrip()
-        case .gesture(let symbol, let motion): StoryGesture(symbol: symbol, motion: motion, tint: tint)
-        case .beforeAfter(let before, let after): StoryBeforeAfter(before: before, after: after, tint: tint)
-        case .symbol(let symbol):
-            Image(systemName: symbol).font(.system(size: DS.Story.symbol)).symbolRenderingMode(.hierarchical).foregroundStyle(tint)   // ds-exception: un dibujo, no texto: no crece con Dynamic Type
-                .accessibilityHidden(true)
-        }
-    }
-}
-
-/// La mano fantasma: un círculo del tamaño de un dedo que repite el gesto dos veces sobre el símbolo.
-struct StoryGesture: View {
-    let symbol: String
-    let motion: LearnStory.Motion
-    let tint: Color
-    @State private var round = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        ZStack {
-            Image(systemName: symbol).font(.system(size: DS.Story.symbol)).symbolRenderingMode(.hierarchical).foregroundStyle(tint)   // ds-exception: un dibujo, no texto: no crece con Dynamic Type
-            Circle().fill(DS.paper.opacity(DS.Opacity.faint)).frame(width: DS.Story.hand, height: DS.Story.hand)
-                .keyframeAnimator(initialValue: Finger(), trigger: round) { finger, value in
-                    finger.scaleEffect(value.scale).offset(x: value.x, y: value.y).opacity(value.shown)
-                } keyframes: { _ in
-                    KeyframeTrack(\.scale) {
-                        CubicKeyframe(1, duration: 0.2); CubicKeyframe(motion == .pinch ? 1.6 : 0.8, duration: 0.3)   // ds-exception: la coreografía de un gesto
-                        CubicKeyframe(1, duration: 0.3)
-                    }
-                    KeyframeTrack(\.x) {
-                        CubicKeyframe(0, duration: 0.2); CubicKeyframe(motion == .swipeSide ? DS.Story.handTravel : 0, duration: 0.5)   // ds-exception: la coreografía de un gesto
-                        CubicKeyframe(0, duration: 0.1)
-                    }
-                    KeyframeTrack(\.y) {
-                        CubicKeyframe(0, duration: 0.2); CubicKeyframe(motion == .swipeUp ? -DS.Story.handTravel : 0, duration: 0.5)   // ds-exception: la coreografía de un gesto
-                        CubicKeyframe(0, duration: 0.1)
-                    }
-                    KeyframeTrack(\.shown) { CubicKeyframe(1, duration: 0.7); CubicKeyframe(0, duration: 0.1) }   // ds-exception: la coreografía de un gesto
-                }
-        }
-        .accessibilityHidden(true)
         .task {
-            guard !reduceMotion else { return }
-            for _ in 0..<2 { round += 1; try? await Task.sleep(for: DS.Attract.scene) }
-        }
-    }
-
-    struct Finger { var scale: CGFloat = 1, x: CGFloat = 0, y: CGFloat = 0, shown: Double = 0 }
-}
-
-/// Antes y ahora: dos estados y un deslizador que va de uno al otro solo.
-struct StoryBeforeAfter: View {
-    let before: String
-    let after: String
-    let tint: Color
-    @State private var moved = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        VStack(spacing: DS.Space.s3) {
-            HStack {
-                Text(LocalizedStringKey(before)).recipe(.label, color: moved ? DS.paper.opacity(DS.Opacity.dimmed) : DS.paper)
-                Spacer()
-                Text(LocalizedStringKey(after)).recipe(.label, color: moved ? DS.paper : DS.paper.opacity(DS.Opacity.dimmed))
-            }
-            GeometryReader { geo in
-                Capsule().fill(DS.paper.opacity(DS.Watching.barTrack)).overlay(alignment: .leading) {
-                    Capsule().fill(tint).frame(width: moved ? geo.size.width : geo.size.width * DS.Watching.backZone)
-                }
-            }
-            .frame(height: DS.Space.s2)
-        }
-        .padding(DS.Space.s4)
-        .accessibilityHidden(true)
-        .task {
-            guard !reduceMotion else { moved = true; return }
-            try? await Task.sleep(for: DS.Attract.scene)
-            withAnimation(DS.Motion.spring(reduceMotion)) { moved = true }
+            try? await Task.sleep(for: .milliseconds(Int(card.seconds * DS.Scene.textAt * 1000)))
+            withAnimation(DS.Motion.enter(reduceMotion)) { named = true }
         }
     }
 }

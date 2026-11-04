@@ -1,28 +1,37 @@
 import Foundation
 
-/// «Aprende Orbital» (G3, Fernando, 3 nov 2026): las historias, como datos. Cada una tiene de 3 a 5 tarjetas con una de las
-/// cinco plantillas (portada, tres pasos, gesto, antes y ahora, botón final) y una idea por tarjeta. Los textos son la clave
-/// del catálogo (`Localizable.xcstrings`), como los de la pantalla. Palabras de Real-Debrid: «nube» (RX4-A).
+/// «Aprende Orbital», versión final (Fernando, 4 nov 2026: «que no sean tantas, pero que haya buen contenido»; revisión de un
+/// director de contenido visual, `docs/producto/guia-aprende/historias-contenido.html`). Seis historias por lo que quieres
+/// lograr, cada una con el mismo arco: gancho → cómo funciona → el gesto → el truco → un botón para probarlo. Cada tarjeta es
+/// una escena: la pantalla de la app en miniatura, un dedo fantasma que hace el gesto y el resultado ocurriendo («se ve, no
+/// se explica»). Los textos son la clave del catálogo (`Localizable.xcstrings`). Palabras de Real-Debrid: «nube» (RX4-A).
 public struct LearnStory: Sendable, Identifiable, Equatable {
-    public enum Template: Sendable, Equatable {
-        /// El planeta chico y una frase.
-        case cover
-        /// Los tres pasos de la nube (`DebridFlowStrip`).
-        case threeSteps
-        /// Una mano fantasma repite el gesto dos veces sobre el símbolo.
-        case gesture(symbol: String, motion: Motion)
-        /// Un deslizador que se mueve solo entre dos estados.
-        case beforeAfter(before: String, after: String)
-        /// El símbolo grande en su color.
-        case symbol(String)
+    /// Las escenas (cada una la dibuja `StorySceneView` en la app).
+    public enum Scene: String, Sendable, Equatable {
+        // H1 · Ver al instante
+        case titlePlay, versionLight, storageStill, payPlans, twoPhones
+        // H2 · En tu idioma
+        case typedVersion, languageOrder, languageDrag, versionsSheet, cloudRequest
+        // H3 · Encontrar qué ver
+        case mosaicDrift, mosaicZoom, deckSwipe, decideShuffle, filterTiles
+        // H4 · Ver a tu manera
+        case playerBare, playerDoubleTap, playerPinch, playerLock, downloadRing, nextEpisode
+        // H5 · No perder el hilo
+        case handoff, becauseRow, lockScreenAlert, releaseCalendar, alertToggles, yearCount
+        // H6 · Tu TV
+        case remoteFocus, sendToTV, continueHere, voiceAsk
     }
 
-    public enum Motion: Sendable, Equatable { case tap, doubleTap, swipeUp, swipeSide, pinch, hold }
+    /// «El truco»: lo que pocos saben (la tarjeta más larga de cada historia).
+    public enum Mark: Sendable, Equatable { case none, trick }
 
     public struct Card: Sendable, Equatable {
-        public var template: Template
+        public var scene: Scene
         public var title: String
-        public var body: String
+        public var line: String
+        /// Cuánto dura (el ritmo cambia dentro de cada historia: una rápida, una larga para el truco).
+        public var seconds: Double
+        public var mark: Mark = .none
     }
 
     /// Adónde lleva el botón de la última tarjeta.
@@ -36,7 +45,7 @@ public struct LearnStory: Sendable, Identifiable, Equatable {
     public var id: String
     public var title: String
     public var symbol: String
-    /// El color de su ícono: una clave de `DS.ListTint` («flame», «chart»…).
+    /// El color de la historia (su ícono y el tinte leve de su fondo): una clave de `DS.ListTint`.
     public var tint: String
     public var cards: [Card]
     public var action: (title: String, destination: Destination)?
@@ -46,88 +55,55 @@ public struct LearnStory: Sendable, Identifiable, Equatable {
 }
 
 public enum LearnContent {
-    public static let debrid = LearnStory(id: "debrid", title: "Real-Debrid", symbol: "cloud.fill", tint: "flame", cards: [
-        .init(template: .cover, title: "Ver aquí mismo, sin esperar", body: "Real-Debrid es un servicio de pago que guarda los videos en su nube."),
-        .init(template: .threeSteps, title: "Así funciona", body: "Orbital la encuentra, Real-Debrid la consigue en su nube y la ves al instante."),
-        .init(template: .symbol("iphone"), title: "No ocupa espacio", body: "El video llega desde la nube mientras lo ves. Tu iPhone no guarda nada."),
-        .init(template: .symbol("person.fill"), title: "Una cuenta por persona", body: "Si dos la usan a la vez, Real-Debrid la corta. Cada quien con la suya."),
+    public static let instant = LearnStory(id: "instant", title: "Ver al instante", symbol: "cloud.fill", tint: "flame", cards: [
+        .init(scene: .titlePlay, title: "Toca y ya", line: "Sin descargar, sin esperar.", seconds: 5),
+        .init(scene: .versionLight, title: "La nube lo tiene", line: "Real-Debrid guarda el video; Orbital lo encuentra.", seconds: 4),
+        .init(scene: .storageStill, title: "Tu iPhone, igual", line: "Se ve desde la nube, no ocupa espacio.", seconds: 3),
+        .init(scene: .payPlans, title: "Desde unos 3 €", line: "Por 15 días, y no se renueva solo.", seconds: 5, mark: .trick),
+        .init(scene: .twoPhones, title: "Una cuenta, una persona", line: "Si dos la usan a la vez, se corta.", seconds: 4),
     ], action: ("Conectar Real-Debrid", .connectDebrid))
 
-    public static let pay = LearnStory(id: "pay", title: "Cómo pagar", symbol: "creditcard.fill", tint: "watching", cards: [
-        .init(template: .cover, title: "Cómo pagar y renovar", body: "Se paga en la página de Real-Debrid, por adelantado y por días."),
-        .init(template: .symbol("calendar"), title: "Desde unos 3 € cada 15 días", body: "Eliges cuántos días quieres. El precio lo confirma su página."),
-        .init(template: .symbol("bell.badge.fill"), title: "No se renueva solo", body: "Orbital te avisa antes de que se acabe, y cuando vence te dice cómo renovar."),
-    ], action: ("Abrir Real-Debrid", .renewDebrid))
+    public static let language = LearnStory(id: "language", title: "En tu idioma", symbol: "character.bubble.fill", tint: "watching", cards: [
+        .init(scene: .typedVersion, title: "Habla como tú", line: "«Ver» elige tu idioma y tu calidad.", seconds: 4),
+        .init(scene: .languageOrder, title: "Tu orden manda", line: "Arranca con el primero que haya.", seconds: 4),
+        .init(scene: .languageDrag, title: "Arrastra para cambiar", line: "Mantén presionado y súbelo.", seconds: 5),
+        .init(scene: .versionsSheet, title: "¿Otra? Toca «Versión»", line: "Calidad, idioma y si ya está lista.", seconds: 4),
+        .init(scene: .cloudRequest, title: "Pídela a la nube", line: "Te avisamos cuando esté.", seconds: 6, mark: .trick),
+    ], action: ("Ordenar tus idiomas", .languages))
 
-    public static let trakt = LearnStory(id: "trakt", title: "Trakt", symbol: "checkmark.seal.fill", tint: "chart", cards: [
-        .init(template: .cover, title: "Lo que ves, en todos tus aparatos", body: "Trakt guarda dónde te quedaste, lo que ya viste y tu lista. Es gratis."),
-        .init(template: .symbol("arrow.triangle.2.circlepath"), title: "Sigue donde ibas", body: "Empieza en el iPhone y sigue en otro aparato, justo en el minuto."),
-        .init(template: .symbol("sparkles"), title: "Mejores recomendaciones", body: "Con tu historial, «Porque viste» y Para ti aciertan más."),
-    ], action: ("Conectar Trakt", .connectTrakt))
-
-    public static let advanced = LearnStory(id: "advanced", title: "Búsqueda avanzada", symbol: "slider.horizontal.3", tint: "spark", cards: [
-        .init(template: .cover, title: "Junta filtros", body: "Comedias de los 90, en Netflix, con más de 7. Todo a la vez."),
-        .init(template: .gesture(symbol: "slider.horizontal.3", motion: .tap), title: "Arriba de todo en Buscar", body: "Los cuadros de filtros: toca uno para empezar y suma los que quieras."),
-        .init(template: .beforeAfter(before: "Todo", after: "Lo tuyo"), title: "Cada filtro achica la lista", body: "Género, año, calificación, plataforma e idioma. Quita uno y vuelve a crecer."),
-    ], action: ("Probar la búsqueda avanzada", .advancedSearch))
-
-    public static let explore = LearnStory(id: "explore", title: "Explorar y Decide", symbol: "sparkles", tint: "bookmark", cards: [
-        .init(template: .cover, title: "Para cuando no sabes qué ver", body: "Explorar te enseña lo que va contigo, en un mosaico que se mueve."),
-        .init(template: .gesture(symbol: "square.grid.2x2.fill", motion: .tap), title: "Toca para acercar", body: "Un toque agranda un póster; el segundo abre su ficha."),
-        .init(template: .gesture(symbol: "rectangle.stack.fill", motion: .swipeSide), title: "¿Qué vemos hoy?", body: "Elige un ánimo y desliza el mazo: a un lado lo que no, al otro lo que sí."),
-        .init(template: .symbol("shuffle"), title: "Decide por mí", body: "Tres carteles con su porqué. ¿Ninguno? «Barajar» y salen otros."),
+    public static let discover = LearnStory(id: "discover", title: "Encontrar qué ver", symbol: "sparkles", tint: "spark", cards: [
+        .init(scene: .mosaicDrift, title: "¿No sabes qué ver?", line: "Orbital te propone, tú eliges.", seconds: 4),
+        .init(scene: .mosaicZoom, title: "Un toque acerca", line: "El segundo abre la ficha.", seconds: 5),
+        .init(scene: .deckSwipe, title: "Desliza el mazo", line: "No a un lado, sí al otro.", seconds: 3),
+        .init(scene: .decideShuffle, title: "Decide por mí", line: "Tres carteles, cada uno con su porqué.", seconds: 5),
+        .init(scene: .filterTiles, title: "Junta filtros", line: "Comedias de los 90, en Netflix, con más de 7.", seconds: 6, mark: .trick),
     ], action: ("Abrir Explorar", .explore))
 
-    public static let versions = LearnStory(id: "versions", title: "Versiones", symbol: "play.rectangle.fill", tint: "series", cards: [
-        .init(template: .cover, title: "«Ver» elige por ti", body: "Busca la mejor versión en tu idioma y con la calidad que pediste, y arranca."),
-        .init(template: .gesture(symbol: "list.bullet", motion: .tap), title: "¿Otra? Toca «Versión»", body: "Ves todas: calidad, idioma y si ya está en la nube."),
-        .init(template: .beforeAfter(before: "Por pedir", after: "Al instante"), title: "Pedir a la nube", body: "Si dice «Por pedir», tócala: la nube la baja y te avisamos cuando esté."),
-    ])
-
-    public static let noVersions = LearnStory(id: "no-versions", title: "Sin versiones", symbol: "exclamationmark.bubble.fill", tint: "trend", cards: [
-        .init(template: .cover, title: "Cuando no hay versiones", body: "Pasa con estrenos muy nuevos o títulos raros. No es tu internet."),
-        .init(template: .symbol("clock.arrow.circlepath"), title: "Prueba mañana", body: "Las versiones aparecen solas con los días. Guárdala en tu lista para no perderla."),
-        .init(template: .symbol("tv"), title: "O mírala en tu plataforma", body: "En la ficha, «Dónde verla» dice en cuál de tus plataformas está."),
-    ])
-
-    public static let player = LearnStory(id: "player", title: "El reproductor", symbol: "hand.tap.fill", tint: "library", cards: [
-        .init(template: .cover, title: "Todo con los dedos", body: "Sin buscar botones: el reproductor responde a gestos."),
-        .init(template: .gesture(symbol: "goforward.10", motion: .doubleTap), title: "Doble toque a los lados", body: "Adelanta o regresa 10 segundos. Cada toque más del mismo lado suma otros 10."),
-        .init(template: .gesture(symbol: "arrow.up.left.and.arrow.down.right", motion: .pinch), title: "Pellizca para llenar", body: "Abre los dedos para llenar la pantalla; ciérralos para verla completa."),
-        .init(template: .gesture(symbol: "lock.fill", motion: .hold), title: "El candado", body: "En «Más», bloquea la pantalla para que nada la toque mientras ves."),
-    ])
-
-    public static let downloads = LearnStory(id: "downloads", title: "Descargas", symbol: "arrow.down.circle.fill", tint: "calendar", cards: [
-        .init(template: .cover, title: "Para ver sin internet", body: "«Descargar» guarda el video en tu iPhone, para el avión o la carretera."),
-        .init(template: .beforeAfter(before: "En la nube", after: "En el iPhone"), title: "La nube no es lo mismo", body: "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPhone."),
-        .init(template: .symbol("forward.end.fill"), title: "El siguiente, solo", body: "Al terminar un episodio, Orbital puede bajar el siguiente por ti."),
+    public static let watch = LearnStory(id: "watch", title: "Ver a tu manera", symbol: "hand.tap.fill", tint: "library", cards: [
+        .init(scene: .playerBare, title: "Sin botones", line: "El reproductor responde a tus dedos.", seconds: 3),
+        .init(scene: .playerDoubleTap, title: "Doble toque: 10 s", line: "Cada toque extra suma otros 10.", seconds: 5),
+        .init(scene: .playerPinch, title: "Pellizca y llena", line: "Ciérralos para verla completa.", seconds: 3),
+        .init(scene: .playerLock, title: "El candado", line: "En «Más». Nada la toca.", seconds: 4),
+        .init(scene: .downloadRing, title: "Para el avión", line: "Descarga y sigue sin internet.", seconds: 5),
+        .init(scene: .nextEpisode, title: "El siguiente, solo", line: "Al terminar uno, baja el que sigue.", seconds: 4, mark: .trick),
     ], action: ("Abrir Descargas", .downloads))
 
-    public static let alerts = LearnStory(id: "alerts", title: "Estrenos", symbol: "calendar", tint: "calendar", cards: [
-        .init(template: .cover, title: "Avisos y estrenos", body: "Sigue una serie y te avisamos cuando salga su episodio."),
-        .init(template: .symbol("calendar"), title: "El calendario", body: "En Inicio, el calendario junta los estrenos del mes de lo que sigues."),
-        .init(template: .symbol("bell.fill"), title: "Tú eliges de cuáles", body: "En Ajustes › Avisos decides de qué series te llegan."),
-    ], action: ("Ver el calendario", .calendar))
-
-    public static let watching = LearnStory(id: "watching", title: "Lo que ves", symbol: "chart.bar.fill", tint: "watching", cards: [
-        .init(template: .cover, title: "Tu año en películas y series", body: "Horas, rachas, géneros y lo que más viste."),
-        .init(template: .gesture(symbol: "play.square.stack.fill", motion: .tap), title: "Tu Wrapped", body: "Como estas historias: tu semana, tu mes o tu año, para compartir."),
-    ], action: ("Abrir Lo que ves", .watching))
+    public static let thread = LearnStory(id: "thread", title: "No perder el hilo", symbol: "arrow.triangle.2.circlepath", tint: "calendar", cards: [
+        .init(scene: .handoff, title: "Sigue en el minuto", line: "Empieza aquí, termina en otro aparato.", seconds: 5),
+        .init(scene: .becauseRow, title: "Trakt lo recuerda", line: "Gratis: lo visto, tu lista, dónde ibas.", seconds: 4),
+        .init(scene: .lockScreenAlert, title: "Sale hoy", line: "Sigue una serie y te avisamos.", seconds: 5),
+        .init(scene: .releaseCalendar, title: "Tu mes de estrenos", line: "En Inicio, el calendario.", seconds: 3),
+        .init(scene: .alertToggles, title: "Tú decides cuáles", line: "En Ajustes › Avisos.", seconds: 3),
+        .init(scene: .yearCount, title: "Tu año, en números", line: "Lo que ves y tu Wrapped.", seconds: 6, mark: .trick),
+    ], action: ("Conectar Trakt", .connectTrakt))
 
     public static let tv = LearnStory(id: "tv", title: "Tu TV", symbol: "tv.fill", tint: "series", cards: [
-        .init(template: .cover, title: "Tu iPhone, el control de la TV", body: "Con Orbital en la TV, el iPhone la maneja y le habla."),
-        .init(template: .gesture(symbol: "tv", motion: .tap), title: "«Ver en la TV»", body: "Desde cualquier ficha, mándala a la TV con un toque."),
-        .init(template: .gesture(symbol: "iphone", motion: .swipeUp), title: "Sigue aquí", body: "Lo que suena en la TV pasa al iPhone en el mismo minuto."),
+        .init(scene: .remoteFocus, title: "El control eres tú", line: "Maneja la TV y háblale.", seconds: 4),
+        .init(scene: .sendToTV, title: "«Ver en la TV»", line: "Desde cualquier ficha, un toque.", seconds: 4),
+        .init(scene: .continueHere, title: "Sigue aquí", line: "Pasa al iPhone en el mismo minuto.", seconds: 4),
+        .init(scene: .voiceAsk, title: "Háblale", line: "«Pon la siguiente de The Bear».", seconds: 5, mark: .trick),
     ], action: ("Conectar tu TV", .tv), needs: .tv)
 
-    /// Tus idiomas (Fernando, 4 nov 2026, con la sesión de Real-Debrid): los textos son los de Ajustes › Tus idiomas y la TV.
-    public static let languages = LearnStory(id: "languages", title: "Tus idiomas", symbol: "character.bubble.fill", tint: "chart", cards: [
-        .init(template: .cover, title: "Tus idiomas", body: "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente."),
-        .init(template: .beforeAfter(before: "Latino", after: "Idioma original"), title: "Con este arranca si lo hay",
-              body: "Por omisión: latino, el idioma original, inglés y castellano. Arrastra para cambiar el orden."),
-        .init(template: .symbol("globe"), title: "Idioma original", body: "El de cada película o serie (japonés en un anime). Puedes subirlo o bajarlo como los demás."),
-    ], action: ("Cambiar tus idiomas", .languages))
-
     /// Todas, en el orden de Ajustes › Aprende Orbital.
-    public static let all: [LearnStory] = [debrid, pay, trakt, languages, advanced, explore, alerts, versions, noVersions, player, downloads, watching, tv]
+    public static let all: [LearnStory] = [instant, language, discover, watch, thread, tv]
 }

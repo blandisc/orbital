@@ -40,13 +40,14 @@ public final class LearnModel: ObservableModel {
         changed()
     }
 
-    /// Lo que te falta, primero: sin Real-Debrid, cómo pagarlo; luego lo propio de Orbital que más se usa.
+    /// Lo que te falta, primero (revisión del director, 4 nov 2026): sin Real-Debrid, ver al instante; con Real-Debrid y sin
+    /// Trakt, descubrir y no perder el hilo; con todo, lo de cada día. La TV, al final y solo donde hay TV.
     var priority: [String] {
-        var out: [String] = []
-        if !services.debrid.hasToken { out += ["pay", "debrid"] }
-        out += ["advanced", "player", "versions", "explore"]
-        if services.trakt?.linked != true { out.append("trakt") }
-        return out + stories.map(\.id)
+        let debrid = services.debrid.hasToken, trakt = services.trakt?.linked == true
+        let order = !debrid ? ["instant", "language", "discover", "watch", "thread"]
+            : !trakt ? ["discover", "thread", "language", "watch", "instant"]
+            : ["discover", "watch", "language", "thread", "instant"]
+        return order + stories.map(\.id)
     }
 
     /// Todas, en el orden de lo que te falta (el mazo: una tras otra, como Instagram).
@@ -62,7 +63,7 @@ public final class LearnModel: ObservableModel {
         let byID = Dictionary(stories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         var order: [String] = []
         for id in priority where !order.contains(id) { order.append(id) }
-        if debridExpired { return byID["pay"].map { [$0] } ?? [] }   // vuelve sola, aunque ya la hayas visto
+        if debridExpired { return byID["instant"].map { [$0] } ?? [] }   // vuelve sola, aunque ya la hayas visto
         guard services.kv.data(Self.guideDoneKey) != nil || !OnboardingModel.shouldShow(services) else { return [] }
         let since = ringsSince()
         guard services.now().timeIntervalSince1970 - since < Self.ringWindow else { return [] }
@@ -124,11 +125,9 @@ public final class LearnModel: ObservableModel {
         /// La historia que abre «Ver la historia».
         public var story: String {
             switch self {
-            case .titlePlay: "versions"
-            case .advancedSearch: "advanced"
-            case .explore: "explore"
-            case .downloads: "downloads"
-            case .playerGestures: "player"
+            case .titlePlay: "language"
+            case .advancedSearch, .explore: "discover"
+            case .downloads, .playerGestures: "watch"
             }
         }
     }

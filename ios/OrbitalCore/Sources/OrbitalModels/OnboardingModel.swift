@@ -174,8 +174,8 @@ public final class OnboardingModel: ObservableModel {
         services.kv.set(Self.seenKey, data: Data("1".utf8))
         services.kv.set(Self.progressKey, data: nil)
         let learn = LearnModel(services)
-        if explained.contains(.debrid) { learn.markSeen(LearnContent.debrid.id); learn.markSeen(LearnModel.debridFlowKey) }
-        if explained.contains(.trakt) { learn.markSeen(LearnContent.trakt.id) }
+        if explained.contains(.debrid) { learn.markSeen(LearnContent.instant.id); learn.markSeen(LearnModel.debridFlowKey) }
+        if explained.contains(.trakt) { learn.markSeen(LearnContent.thread.id) }
         learn.guideFinished()
     }
 }

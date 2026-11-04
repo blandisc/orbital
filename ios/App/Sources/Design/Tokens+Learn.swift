@@ -52,12 +52,12 @@ extension DS {
     /// Las historias de «Aprende Orbital» (G3). La barra, el toque para regresar y mantener para pausar son los del Wrapped
     /// (`DS.Watching`).
     enum Story {
-        /// Cuánto dura cada tarjeta: 5 s, o 7 si su texto es largo (más de `longText` letras); avanza en `ticks` pasos.
-        static let card: Duration = .seconds(5), longCard: Duration = .seconds(7)
-        static let longText = 90, ticks = 60
-        /// El símbolo grande de una tarjeta y la mano fantasma que repite el gesto.
-        static let symbol: CGFloat = 96, hand: CGFloat = 44
-        static let handTravel: CGFloat = 40
+        /// Cada tarjeta dura lo suyo (`LearnStory.Card.seconds`); la última con botón, esto más para alcanzar a tocarlo. Avanza
+        /// en `ticks` pasos.
+        static let lastExtra: Duration = .seconds(2)
+        static let ticks = 60
+        /// El ícono de la historia arriba y la mano fantasma.
+        static let hand: CGFloat = 44
         /// El cubo entre historias: cuánto gira una cara al irse entera y qué tan honda se ve.
         static let cubeAngle: Double = 90, cubePerspective: CGFloat = 0.6   // ds-exception: grados y profundidad del cubo (como Instagram)
         /// Bajar más que esto la cierra.
@@ -119,5 +119,26 @@ extension DS {
         /// Cuánto hay que bajar para que el encabezado se encoja, y hasta dónde hay que subir para que vuelva a crecer: el margen
         /// es más grande que lo que cambia de alto el encabezado, así nunca rebota entre los dos.
         static let collapseAt: CGFloat = 96, expandAt: CGFloat = 16
+    }
+}
+
+/// Las escenas de las historias (versión final, 4 nov 2026): la pantalla de la app en miniatura, un dedo fantasma y lo que
+/// pasa. Medidas en proporción de la escena; el ritmo, en compases.
+extension DS {
+    enum Scene {
+        /// El ancho de la miniatura sobre su alto (un iPhone).
+        static let phoneAspect: CGFloat = 0.52   // ds-exception: proporción de un iPhone
+        /// Lo más alta que crece la escena en la tarjeta.
+        static let maxHeight: CGFloat = 420
+        /// El dedo fantasma: un círculo del tamaño de una yema.
+        static let finger: CGFloat = 26
+        /// Un compás: cada cuánto pasa lo siguiente dentro de la escena.
+        static let beat: Duration = .milliseconds(900)
+        /// Lo que se toca se hunde a esto; lo que se levanta crece a esto.
+        static let pressed: CGFloat = 0.94, lifted: CGFloat = 1.06   // ds-exception: escala del toque (física de la escena)
+        /// Los renglones de texto fingido (las líneas grises de una ficha).
+        static let line: CGFloat = 6
+        /// El texto llega después del gesto: el título aparece a esta fracción de la tarjeta.
+        static let textAt = 0.35
     }
 }

@@ -131,6 +131,10 @@ struct RootView: View {
             if Demo.isOn, let at = Demo.handoff { env.handoff = .init(request: Demo.handoffRequest, position: at) }
             if Demo.isOn { Demo.showNotice(env) }
             if Demo.isOn { ui.showingGuide = Demo.firstRun } else if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
+            // `-demo-story <id>`: una historia de «Aprende» abierta (capturas de sus escenas).
+            if Demo.isOn, let i = ProcessInfo.processInfo.arguments.firstIndex(of: "-demo-story"), i + 1 < ProcessInfo.processInfo.arguments.count {
+                ui.openStory = ProcessInfo.processInfo.arguments[i + 1]
+            }
             #else
             if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
             #endif
