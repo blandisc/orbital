@@ -400,9 +400,9 @@ final class RDScenarioRig {
         }
     }
 
-    /// Las llaves de las causas, en el orden de `design/vocabulario.json › causas` (README); la de la TV («Necesita Stremio
-    /// abierto», `needs_stremio`) no existe en el iPhone.
-    static let causeOrder = ["downloading", "unreleased", "cannot_search", "expired", "no_premium", "bad_key", "refused", "needs_stremio",
+    /// Las llaves de las causas, en el orden de `design/vocabulario.json › causas` (README). «Necesita Stremio abierto»
+    /// (`needs_stremio`) ya no existe en ninguna de las dos: la TV la quitó el 4 nov (6d82d5ab) y el iPhone nunca la tuvo.
+    static let causeOrder = ["downloading", "unreleased", "cannot_search", "expired", "no_premium", "bad_key", "refused",
                              "addons_offline", "no_addons", "not_in_rd", "nobody_has_it"]
 
     /// Las llaves de las causas, en el orden de `design/vocabulario.json › causas` (README).

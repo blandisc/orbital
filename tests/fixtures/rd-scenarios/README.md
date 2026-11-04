@@ -122,7 +122,6 @@ llaves que trae; una lista va completa y en orden.
 | `no_premium` | «Tu cuenta no tiene Premium» |
 | `bad_key` | «Vuelve a conectar Real-Debrid» |
 | `refused` | «Real-Debrid no lo dejó bajar» |
-| `needs_stremio` | «Necesita Stremio abierto» (solo la TV) |
 | `addons_offline` | «No pude conectar con tus complementos» |
 | `no_addons` | «No tienes complementos prendidos» |
 | `not_in_rd` | «Todavía no está en la nube» |
