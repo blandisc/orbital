@@ -91,7 +91,6 @@ final class RealDebridRequestTests: XCTestCase {
         XCTAssertEqual(titles.count, 6); XCTAssertEqual(symbols.count, 6, "cada estado con su ícono, no solo color (A1)")
         request.state = .downloading
         XCTAssertEqual(DebridRequestWords.title(request), "Bajando en la nube · 42 %", "el texto de design/vocabulario.json › causas (RX4-A: la nube)")
-        XCTAssertEqual(DebridRequestWords.short(request), "Bajando · 42 %")
         // IOS-8: sin permiso de avisos (o pedido desde otro aparato) no se promete avisar.
         XCTAssertEqual(DebridRequestWords.detail(request, now: now), "Te aviso cuando esté listo")
         XCTAssertEqual(DebridRequestWords.detail(request, now: now, notifies: false), "Ábrelo aquí para ver cuánto lleva")

@@ -25,6 +25,8 @@ extension PlayerScreen {
                               openSettings: { Task { await close(); env.ui.openSettings = true } },
                               uiLanguage: env.services.appSettings.uiLanguage,
                               request: model.debridRequests?.canRequest == true ? { Task { await requestFromPlayer(model) } } : nil,
+                              notifyAnswer: notices.notifyAnswer.flatMap { $0.videoID == model.request?.videoID ? $0.answer : nil },
+                              openNotificationSettings: { DebridRequestNotifier.openSystemSettings() },
                               close: { Task { await close() } })
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:

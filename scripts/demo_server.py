@@ -321,7 +321,8 @@ def build(tmp: Path):
 
 def demo_debrid(catalog) -> None:
     """Real-Debrid sin internet (corte S2): una cuenta Premium que vence en 18 días y «Tus pedidos» con uno de cada estado,
-    del demo y de un iPhone. `ORBITAL_DEMO_RD=expired|no_premium|bad_key` enseña esa causa en su lugar."""
+    del demo y de un iPhone. `ORBITAL_DEMO_RD=expired|no_premium|bad_key` enseña esa causa en su lugar
+    y `ORBITAL_DEMO_RD_DAYS` cuántos días le quedan."""
     from orbital import rd_requests
 
     watch, now = catalog.watch, time.time()
@@ -343,9 +344,12 @@ def demo_debrid(catalog) -> None:
 
     watch.rd.rd_factory = DemoRD
     watch.rd._account = (now + 10**9, "DEMODEMO3F2A", "7")
+    # VE1-A: `ORBITAL_DEMO_RD_DAYS=14|3|0` para ver el aviso de vencimiento; vencida, con su fecha de hace dos días.
+    days = int(os.environ.get("ORBITAL_DEMO_RD_DAYS") or 18)
+    expires = now - 2 * 86400 if problem == "expired" else now + days * 86400 - 3600
     watch._rd_status = (now + 10**9, "DEMODEMO3F2A", {
-        "linked": True, "source": "torrentio", "user": "fernando", "premium": problem is None, "expires": now + 18 * 86400 - 3600,
-        "days": 18, "problem": problem, "ends_with": "3F2A"})
+        "linked": True, "source": "torrentio", "user": "fernando", "premium": problem is None, "expires": expires,
+        "days": None if problem == "expired" else days, "problem": problem, "ends_with": "3F2A"})
     watch.debrid_status = lambda fresh=False: watch._rd_status[2]  # «Revisar» la cuenta no sale a internet
     rows = [("Shōgun · T1 E2", "tt2788316:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
             ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),

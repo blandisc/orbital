@@ -32,6 +32,12 @@ struct PlayerFailureView: View {
     var uiLanguage = "es"
     /// «Pedirlo y avisarme» (R7): Real-Debrid lo baja y avisa; nil si no se puede pedir (sin clave, sin Torrentio).
     var request: (() -> Void)? = nil
+    /// PT24 (Fernando, 4 nov 2026): con el pedido ya bajando, primero se pregunta «¿Te aviso cuando esté listo?» y solo después
+    /// de tocar se dice «Te aviso cuando esté listo» (y solo si iOS deja avisar; si no, «Avisos apagados · actívalos»).
+    var notifyAnswer: NotifyAnswer? = nil
+    enum NotifyAnswer: Equatable { case promised, off }
+    /// «Ajustes» de los avisos del iPhone, cuando están apagados (un problema siempre trae su arreglo).
+    var openNotificationSettings: (() -> Void)? = nil
     let close: () -> Void
     /// «¿Qué es esto?» (O2), en las causas de Real-Debrid.
     @State private var explaining = false
@@ -85,9 +91,12 @@ struct PlayerFailureView: View {
                 if let action = cause.action, let perform = perform(action) {
                     option(Text(verbatim: UnavailableCause.label(action, tr)), primary: true, action: perform)
                     option(Text("Cerrar"), primary: false, action: close)
-                } else if case .downloading = cause, let request {
-                    // Ya pedido: el mismo pedido (nunca otro) y el permiso de avisos, si falta.
-                    option(Text("Avisarme cuando esté"), primary: true, action: request)
+                } else if case .downloading = cause, let request, notifyAnswer == nil {
+                    // Ya pedido: el mismo pedido (nunca otro) y el permiso de avisos, si falta. Contesta la pregunta de arriba.
+                    option(Text("Sí, avísame"), primary: true, action: request)
+                    option(Text("Cerrar"), primary: false, action: close)
+                } else if case .downloading = cause, notifyAnswer == .off, let openNotificationSettings {
+                    option(Text("Ajustes"), primary: true, action: openNotificationSettings)
                     option(Text("Cerrar"), primary: false, action: close)
                 } else {
                     option(Text("Cerrar"), primary: true, action: close)
@@ -131,8 +140,8 @@ struct PlayerFailureView: View {
     private var symbol: String {
         switch cause {
         case .debridExpired?, .noPremium?, .reconnectDebrid?: return "person.crop.circle.badge.exclamationmark"
-        case .debridRefused?: return "nosign"
-        case .notInDebrid?, .downloading?: return "arrow.down.circle"
+        case .debridRefused?: return DebridRequestWords.Icon.refused   // PT10: el triángulo, como en Tus pedidos
+        case .notInDebrid?, .downloading?: return DS.Symbol.cloud
         case .nobodyHasIt?: return "magnifyingglass"
         default: break
         }
@@ -156,6 +165,13 @@ struct PlayerFailureView: View {
     }
 
     private var message: Text {
+        if case .downloading = cause, request != nil {
+            switch notifyAnswer {
+            case .promised?: return Text("Te aviso cuando esté listo")
+            case .off?: return Text("Avisos apagados · actívalos")   // con su botón «Ajustes» (opensNotificationSettings)
+            case nil: return Text("¿Te aviso cuando esté listo?")
+            }
+        }
         if let cause, let detail = cause.detail(tr, languageName: { Streams.versionLanguageName($0, in: uiLanguage).lowercased() }) {
             return Text(verbatim: detail)
         }

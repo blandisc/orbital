@@ -7,7 +7,7 @@ import OrbitalModels
 struct VersionLanguageRow: View {
     let row: LanguageRow
     let uiLanguage: String
-    /// RX2-A · lo que ya pediste y baja en la nube dice cómo va («Bajando · 42 %»), no «Por pedir». nil: no está pedida.
+    /// RX2-A · lo que ya pediste y baja en la nube dice cómo va («Bajando en la nube · 42 %»), no «Por pedir». nil: no está pedida.
     var cloud: (VersionOption) -> String? = { _ in nil }
     let pick: (VersionOption) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -55,9 +55,10 @@ struct VersionLanguageRow: View {
 struct VersionChip: View {
     let option: VersionOption
     let language: String
-    /// Ya pedida: cómo va en la nube («Bajando · 42 %»).
+    /// Ya pedida: cómo va en la nube («Bajando en la nube · 42 %»).
     var cloud: String?
     let action: () -> Void
+    @Environment(\.locale) private var locale   // el idioma de la app («2,9 GB»)
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
@@ -68,18 +69,18 @@ struct VersionChip: View {
                     Text(verbatim: option.quality).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
                     if option.recommended { Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon) }
                 }
-                Text(verbatim: Self.facts(option)).recipe(.caption).lineLimit(1)
+                Text(verbatim: Self.facts(option, locale: locale)).recipe(.caption).lineLimit(1)
                 // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
                 // T8-A: la que hay que pedir lo dice corto y con su flecha (antes «Real-Debrid aún no la t…», cortado).
                 if option.refused {
                     // FQ2-A: Real-Debrid no la dejó bajar; nunca la recomendada (escenarios comunes con la TV, 3 nov).
-                    Label { Text("Real-Debrid no lo dejó bajar") } icon: { Image(systemName: "nosign") }
+                    Label { Text("Real-Debrid no lo dejó bajar") } icon: { Image(systemName: DebridRequestWords.Icon.refused) }
                         .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
                 } else if option.speed == .realDebridMustDownload, let cloud {
-                    Label { Text(verbatim: cloud) } icon: { Image(systemName: "icloud.and.arrow.down") }
+                    Label { Text(verbatim: cloud) } icon: { Image(systemName: DS.Symbol.cloud) }
                         .recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon).lineLimit(1)
                 } else if option.speed == .realDebridMustDownload {
-                    Label { Text("Por pedir") } icon: { Image(systemName: "arrow.down.circle") }
+                    Label { Text("Por pedir") } icon: { Image(systemName: DS.Symbol.cloud) }
                         .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
                 } else if let speed = Self.speedText(option), let color = Self.speedColor(option.speed) {
                     HStack(spacing: DS.Space.s1) {
@@ -96,7 +97,7 @@ struct VersionChip: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))"))
+        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option, locale: locale)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))"))
         .accessibilityIdentifier("version-\(option.quality)")
     }
 
@@ -123,13 +124,13 @@ struct VersionChip: View {
         }
     }
 
-    static func size(_ option: VersionOption) -> String? {
-        option.sizeGB.map { $0 >= 1 ? String(format: "%.1f GB", $0) : String(format: "%.0f MB", $0 * 1000) }
+    static func size(_ option: VersionOption, locale: Locale) -> String? {
+        option.sizeGB.map { ByteSize.text(Int64($0 * 1e9), locale: locale) }
     }
 
-    /// «2.9 GB · DV · Atmos».
-    static func facts(_ option: VersionOption) -> String {
-        ([size(option)] + option.badges.prefix(2).map { $0 == "Dolby Vision" ? "DV" : $0 }).compactMap { $0 }.joined(separator: " · ")
+    /// «2,9 GB · DV · Atmos».
+    static func facts(_ option: VersionOption, locale: Locale) -> String {
+        ([size(option, locale: locale)] + option.badges.prefix(2).map { $0 == "Dolby Vision" ? "DV" : $0 }).compactMap { $0 }.joined(separator: " · ")
     }
 }
 

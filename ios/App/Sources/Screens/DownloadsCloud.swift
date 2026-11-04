@@ -29,7 +29,7 @@ struct DownloadsCloudPart: View {
         if groups.isEmpty {
             Section {
                 chapter
-                DSEmptyState(symbol: "icloud", title: Text("Nada en la nube"),
+                DSEmptyState(symbol: DS.Symbol.cloud, title: Text("Nada en la nube"),
                              message: DeviceWords.text("Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPhone.",
                                                        mac: "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en esta Mac.")) {
                     Button("¿Qué es esto?") { sheets.explaining = true }.accessibilityIdentifier("cloud-empty-explain")
@@ -54,7 +54,7 @@ struct DownloadsCloudPart: View {
     /// «Real-Debrid · bajando para ti» (Fernando, 3 nov): no «En la nube», que se confundiría con Mi media (tu OneDrive, Plex…);
     /// la palabra «nube» queda en los textos del pedido («Pedir a la nube», «Bajando en la nube · 42 %»).
     private var chapter: some View {
-        DSSectionHead(title: Text("Real-Debrid · bajando para ti"), level: .section, symbol: "icloud").listHeadRow()
+        DSSectionHead(title: Text("Real-Debrid · bajando para ti"), level: .section, symbol: DS.Symbol.cloud).listHeadRow()
             .accessibilityIdentifier("downloads-cloud")
     }
 
@@ -76,7 +76,7 @@ struct DownloadsCloudPart: View {
         let tr = CloudWords(env).tr
         return Button { sheets.opened = .init(id: request.hash) } label: {
             DebridRequestStatus(symbol: DebridRequestWords.symbol(request.state), title: CloudWords(env).name(request),
-                                detail: [DebridRequestWords.short(request, tr), DebridRequestWords.detail(request, now: now, notifies: DebridRequestNotifier.canNotify && model.isFromHere(request), tr)].joined(separator: " · ")
+                                detail: [DebridRequestWords.title(request, tr), DebridRequestWords.detail(request, now: now, notifies: DebridRequestNotifier.canNotify && model.isFromHere(request), tr)].joined(separator: " · ")
                                     + "\n" + DebridRequestWords.since(request, now: now, otherAccount: other, tr),
                                 fraction: request.state == .downloading ? Double(request.percent) / 100 : nil,
                                 warn: DebridRequestWords.isTrouble(request, now: now), ok: request.state == .ready)
@@ -89,7 +89,7 @@ struct DownloadsCloudPart: View {
         .contextMenu {
             Button("Abrir la ficha", systemImage: "info.circle") { CloudWords(env).open(request) }
             if !other {
-                Button(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? "trash" : "xmark.circle", role: .destructive) { sheets.cancelling = request }
+                Button(finished ? "Quitar de tu Real-Debrid" : "Cancelar pedido", systemImage: finished ? DebridRequestWords.Icon.remove : DebridRequestWords.Icon.cancel, role: .destructive) { sheets.cancelling = request }
             }
         }
         .accessibilityIdentifier("debrid-request-\(request.hash.prefix(8))")

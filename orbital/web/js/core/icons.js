@@ -81,6 +81,15 @@ export const ICONS = {
   series: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3l3 3 3-3"/><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M9 21h6"/><circle cx="16.5" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>',
   movie: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="10" width="17" height="10.2" rx="2"/><path d="M3.9 9.2 18.6 5.4a1 1 0 0 1 1.2.7l.5 1.9-16 4.1-.5-1.8a1 1 0 0 1 .1-1.1z"/><path d="m8.4 8 2.3 2.2M12.9 6.9l2.3 2.2"/></svg>',
   cloud: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.6 4.5 4.5 0 0 0 7 18.5z"/></svg>',
+  // PT5 y PT10 (Fernando, 4 nov), los del iPhone: la nube con flecha es todo lo de Real-Debrid (pedir, bajando, tus pedidos);
+  // la flecha sola queda solo para «Descargar». Y un ícono por estado o acción de un pedido.
+  cloudDownload: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 17.5H7a4.5 4.5 0 0 1-.5-8.98A6 6 0 0 1 18.1 9.55 4 4 0 0 1 17.5 17.5h-.5"/><path d="M12 11.5v8M9 16.5l3 3 3-3"/></svg>',
+  xCircle: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/></svg>',
+  trash: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15M9.5 6.5V4.8a.8.8 0 0 1 .8-.8h3.4a.8.8 0 0 1 .8.8v1.7M6.5 6.5l.9 12.1a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12.1M10.25 10.5v6M13.75 10.5v6"/></svg>',
+  clock: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  playersOff: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.25 19.5c.7-3.2 2.9-5 5.75-5s5.05 1.8 5.75 5"/><circle cx="16.75" cy="9.25" r="2.5"/><path d="M15.9 14.55c2.5-.2 4.3 1.4 4.85 4.45M3.5 3.5l17 17"/></svg>',
+  stack: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 8.5 4.5-8.5 4.5L3.5 8z"/><path d="m3.5 12 8.5 4.5 8.5-4.5M3.5 16l8.5 4.5 8.5-4.5"/></svg>',
+  checkCircle: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.25 12.25 2.5 2.5 5-5.25"/></svg>',
   // «¿Qué es Real-Debrid?» (los del iPhone: creditcard.fill y key.fill).
   card: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/></svg>',
   key: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.9 12.1 19 4M16 7l2.5 2.5M14 9l2 2"/></svg>',

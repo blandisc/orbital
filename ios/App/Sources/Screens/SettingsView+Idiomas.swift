@@ -34,7 +34,8 @@ extension SettingsView {
     }
 
     private func sizeName(_ size: String) -> Text {
-        switch size { case "small": Text("Chico"); case "large": Text("Grande"); default: Text("Mediano") }
+        // Los mismos cuatro nombres que la TV (PT19): «Normal», no «Mediano».
+        switch size { case "small": Text("Pequeño"); case "large": Text("Grande"); case "xlarge": Text("Muy grande"); default: Text("Normal") }
     }
 
     /// «Idioma de la app»: el de los menús y las fichas (el del audio está en «Tus idiomas»).
@@ -73,7 +74,7 @@ extension SettingsView {
         Section {
             SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s3, leading: DS.Space.s4, bottom: DS.Space.s3, trailing: DS.Space.s4))
             Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
-                Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
+                ForEach(AppSettings.subtitleSizes, id: \.self) { sizeName($0).tag($0) }
             }
             Picker("Fondo", selection: Binding(get: { s.subtitleBackground }, set: { v in model.update { $0.subtitleBackground = v } })) {
                 Text("Contorno").tag("outline"); Text("Caja oscura").tag("box"); Text("Translúcido").tag("translucent")

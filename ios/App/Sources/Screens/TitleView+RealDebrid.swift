@@ -30,7 +30,7 @@ extension TitleView {
         case .request?, .requested?, .otherVersion?: break
         case .onTV?:
             // FQ5-A: lo tiene tu TV con otra cuenta; se manda el título y el episodio (nunca el enlace) y aparte se puede pedir aquí.
-            let here: (title: Text, symbol: String, action: () -> Void)? = model.debridOffer.map { _ in (Text("Pedir a la nube aquí"), "arrow.down.circle", { requestFromDebrid(model) }) }
+            let here: (title: Text, symbol: String, action: () -> Void)? = model.debridOffer.map { _ in (Text("Pedir a la nube aquí"), DS.Symbol.cloud, { requestFromDebrid(model) }) }
             return ContinueAction(title: Text("Ver en la TV"), symbol: "tv", version: Text("Lo tiene tu TV con otra cuenta"),
                                   play: { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.kind == "series" ? model.continueVideoID : nil,
                                                                     title: model.title.isEmpty ? model.originalTitle : model.title) } },
@@ -40,7 +40,7 @@ extension TitleView {
         if let request = model.debridRequest, request.state != .ready, request.state != .tooMany {
             let alternative = model.debridOffer.flatMap(instantAside)
             // IOS-7: el mismo «¿Cancelar el pedido?» con «Seguir esperando» que la hoja y la lista (antes cancelaba sin preguntar).
-            let cancel: (title: Text, symbol: String, action: () -> Void) = (Text("Cancelar pedido"), "xmark.circle", { cancelling = request })
+            let cancel: (title: Text, symbol: String, action: () -> Void) = (Text("Cancelar pedido"), DebridRequestWords.Icon.cancel, { cancelling = request })
             // IOS-17: en una serie, qué episodio («T1 E2 · Te aviso cuando esté listo»).
             let episode = DebridRequestNotifier.episodeName(request, language: language)
             let detail = DebridRequestWords.detail(request, now: now, notifies: DebridRequestNotifier.canNotify, tr)   // IOS-8
@@ -61,7 +61,7 @@ extension TitleView {
             // «Muchas descargas activas · lo vuelvo a pedir cuando se libere un lugar» (N3-A) o, ya reintentado, «· Cancela otra
             // descarga para hacer lugar»: lo que contestó la última vez.
             ?? model.debridRequest.flatMap { $0.state == .tooMany ? DebridRequestWords.tooManyLine($0, tr) : nil }
-        return ContinueAction(title: Text("Pedir a la nube"), symbol: "arrow.down.circle",
+        return ContinueAction(title: Text("Pedir a la nube"), symbol: DS.Symbol.cloud,
                               version: Text(verbatim: others ?? UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
                               play: { requestFromDebrid(model) }, aside: instantAside(offer), tint: artAccent)
     }
@@ -132,7 +132,7 @@ extension TitleView {
     func wantedAside(_ model: TitleModel) -> (title: Text, symbol: String, action: () -> Void)? {
         guard model.wantedOffer != nil, model.primary() == .watch, let code = model.wantedOffer?.language else { return nil }
         let name = Streams.versionLanguageName(code, in: language).lowercased()
-        return (Text("Pedir a la nube en \(name)"), "arrow.down.circle", { Task { await sendRequest(model, inYourLanguage: true) } })
+        return (Text("Pedir a la nube en \(name)"), DS.Symbol.cloud, { Task { await sendRequest(model, inYourLanguage: true) } })
     }
 
     /// «Cancelar pedido».

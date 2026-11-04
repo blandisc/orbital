@@ -115,8 +115,8 @@ extension DS {
         static let widthShare: CGFloat = 0.55
         /// «Episodios»: el ancho de la imagen de cada episodio y qué tan tenue se ve uno que no se puede poner (sin descargar).
         static let episodeThumb: CGFloat = 112
-        /// El ancho del nombre del tamaño de subtítulos («Mediano») entre − y +: no brinca al cambiar.
-        static let sizeValue: CGFloat = 72
+        /// El ancho del nombre del tamaño de subtítulos («Muy grande») entre − y +: no brinca al cambiar.
+        static let sizeValue: CGFloat = 88
         /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando; < 0 es arriba, bajo el área segura).
         /// En el iPad de pie (ancho regular) el video abre a media pantalla: arriba dejaba ~600 pt de negro abajo.
         static let regularCenter = 0.5
