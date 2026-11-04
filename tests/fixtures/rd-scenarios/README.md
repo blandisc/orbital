@@ -33,7 +33,7 @@ contesta cada servicio y la salida en claves; el texto que debe ser idéntico sa
 | `torrentio` | `file` (lo capturado sin Real-Debrid), `captured`, `url`; `status`: `ok`, `down` (HTTP 503: caído o bloqueado) o `rd_error` (en lugar de versiones, una sola: `{"name": "[RD error] Torrentio", "url": ".../videos/failed_access_v2.mp4"}`); `options`: `only_instant` (`debridoptions=nodownloadlinks`) y `languages_first` (`language=latino,spanish…`, tu plan B); `next`: lo capturado del siguiente episodio, si el escenario lo usa. |
 | `addons` | Lo prendido en tu lista de complementos: `torrentio`, `kitsu`, `opensubtitles` (solo subtítulos). Sin `torrentio`, tu lista está armada sin nada que dé versiones. |
 | `rd` | Tu Real-Debrid (ver abajo). |
-| `act` | Lo que haces antes de mirar: `"request"` = tocas «Pedirlo y avisarme» una vez (y Real-Debrid contesta lo que diga `rd.error`). Sin `act`, solo abres la ficha. |
+| `act` | Lo que haces antes de mirar: `"request"` = tocas «Pedir a la nube» una vez (y Real-Debrid contesta lo que diga `rd.error`). Sin `act`, solo abres la ficha. |
 
 ### Tu orden de idiomas (`app.languages`)
 
@@ -80,10 +80,10 @@ llaves que trae; una lista va completa y en orden.
 | --- | --- |
 | `title`, `logo` | El nombre de la ficha (texto exacto) y si lleva el logo de metahub (en inglés; no si está hecha en tu idioma). |
 | `video_id` | El video del botón principal. |
-| `primary` | El botón principal: `play` («Ver»), `request` («Pedirlo y avisarme»), `requested` (ya pedido y en camino: «En cola», «Bajando en Real-Debrid · 42 %»…), `play_on_tv` («Ver en la TV»: tu TV lo tiene listo con otra cuenta, FQ5-A) o `fix` (un problema con su salida en `fix`). |
+| `primary` | El botón principal: `play` («Ver»), `request` («Pedir a la nube»), `requested` (ya pedido y en camino: «En cola», «Bajando en la nube · 42 %»…), `play_on_tv` («Ver en la TV»: tu TV lo tiene listo con otra cuenta, FQ5-A) o `fix` (un problema con su salida en `fix`). |
 | `cause`, `cause_arg` | La causa que se ve (la clave de la tabla de abajo) y lo que cambia en su texto (`"el viernes 18 de diciembre"`, `"42 %"`), o `null`. Con `request`, la causa es `not_in_rd` (su renglón). |
-| `fix` | La salida de cada problema: `renew` («Renovar»), `settings` («Ajustes»), `retry` («Reintentar»), `other_version` («Probar otra versión» / «Elegir otra versión»), `request` («Pedirlo y avisarme») o `notify` («Avisarme cuando aparezca»); `null` si no hay problema. |
-| `offer` | Lo que pediría «Pedirlo y avisarme»: `{hash, language, res}`, o `null`. |
+| `fix` | La salida de cada problema: `renew` («Renovar»), `settings` («Ajustes»), `retry` («Reintentar»), `other_version` («Probar otra versión» / «Elegir otra versión»), `request` («Pedir a la nube») o `notify` («Avisarme cuando aparezca»); `null` si no hay problema. |
+| `offer` | Lo que pediría «Pedir a la nube»: `{hash, language, res}`, o `null`. |
 | `request_aside` | Al lado de «Ver», «Pedir a la nube en latino» (FQ1-A): «Ver» arranca ya en otro idioma de tu orden y el tuyo existe pero hay que pedirlo (solo si su nombre o su sitio dicen tu idioma, sin «¿Otro título?» ni rechazada). `{hash, language, res}`, o `null`. |
 | `instant_aside` | «Verlo en X al instante»: `{hash, language, res}`, o `null`. |
 | `recommended` | Lo que pone «Ver»: `{hash, file, language, res}` (`file`: su `fileIdx`), o `null`. |
@@ -100,7 +100,7 @@ llaves que trae; una lista va completa y en orden.
 
 | Clave | Texto |
 | --- | --- |
-| `downloading` | «Bajando en Real-Debrid · » + `cause_arg` |
+| `downloading` | «Bajando en la nube · » + `cause_arg` |
 | `unreleased` | «Aún no se estrena · sale » + `cause_arg` (el día de estreno de Cinemeta, dicho en UTC: es un día, no una hora) |
 | `cannot_search` | «No puedo buscar versiones» |
 | `expired` | «Tu Real-Debrid venció» |
@@ -110,7 +110,7 @@ llaves que trae; una lista va completa y en orden.
 | `needs_stremio` | «Necesita Stremio abierto» (solo la TV) |
 | `addons_offline` | «No pude conectar con tus complementos» |
 | `no_addons` | «No tienes complementos prendidos» |
-| `not_in_rd` | «Real-Debrid todavía no lo tiene» |
+| `not_in_rd` | «Todavía no está en la nube» |
 | `nobody_has_it` | «Nadie lo tiene todavía en internet» |
 
 El texto exacto es el de `vocabulario.json` (si cambia ahí, cambia en las dos apps y aquí no hay que tocar nada): la
@@ -122,7 +122,7 @@ En el iPhone, `RDScenarioTests.testInvariantsHoldInEveryScenario` (la 4 cuenta t
 
 1. La ficha y «Versión» no se contradicen: lo que la ficha ofrece existe en la lista con la misma etiqueta, y la recomendada
    de la lista es la que pone «Ver».
-2. Nada dice «al instante» si no arrancaría ya; nada dice «Real-Debrid no lo tiene» (ni «Pedirlo y avisarme») si hay una al
+2. Nada dice «al instante» si no arrancaría ya; nada dice «Todavía no está en la nube» (ni «Pedir a la nube») si hay una al
    instante en tu idioma.
 3. Lo que pediste y ya está va primero y es lo que ponen «Ver» y «Ver ahora».
 4. Nunca una de cine, un tráiler, en 3D, de otro año («¿Otro título?») o de otra temporada («¿Otro episodio?») como
