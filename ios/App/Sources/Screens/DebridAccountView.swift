@@ -4,7 +4,7 @@ import OrbitalAddons
 import OrbitalModels
 
 /// Ajustes › Cuentas › Real-Debrid (D1): quién eres, Premium hasta cuándo y cuántos días quedan, «Renovar», canjear tus
-/// puntos (D4, solo aquí y solo si tienes), tu clave («termina en ••••3F2A · nunca se muestra completa»), «Tus pedidos» (D3, un atajo a Descargas › En la nube, RX1-A)
+/// puntos (D4, solo aquí y solo si tienes), tu clave («termina en ••••3F2A · nunca se muestra completa»), «Tus pedidos» (D3, un atajo a Descargas › Real-Debrid · bajando para ti, RX1-A)
 /// y «¿Qué es Real-Debrid?». Sin clave: el campo para pegarla.
 struct DebridAccountView: View {
     @Environment(AppEnvironment.self) private var env
@@ -176,12 +176,12 @@ struct DebridAccountView: View {
     /// «Tus pedidos» antes que tu clave: «Quitar» (lo destructivo) va al final de la página, como en iOS.
     private func requestsSection() -> some View {
         Section {
-            // D3 y RX1-A: tus pedidos viven en Descargas › En la nube; aquí queda el atajo de siempre, que lleva ahí.
+            // D3 y RX1-A: tus pedidos viven en Descargas › Real-Debrid · bajando para ti; aquí queda el atajo de siempre, que lleva ahí.
             Button { env.openTab = AppEnvironment.downloadsTab } label: {
                 SettingsRow(title: "Tus pedidos", symbol: "icloud.and.arrow.down", tint: DS.ListTint.calendar, value: requestsValue, linked: false)
             }
             .accessibilityIdentifier("settings-debrid-requests")
-        } footer: { Text("Están en Descargas › En la nube.") }
+        } footer: { Text("Están en Descargas, arriba de lo que guardas en este aparato.") }
         .listRowBackground(DS.surface)
     }
 

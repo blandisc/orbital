@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import OrbitalCore
 import OrbitalModels
 
-/// Descargas, en dos partes (RX1-A, 3 nov): «En la nube · Real-Debrid» (lo que pediste a la nube, `DownloadsCloudPart`) y
+/// Descargas, en dos partes (RX1-A, 3 nov): «Real-Debrid · bajando para ti» (lo que pediste a la nube, `DownloadsCloudPart`) y
 /// «En este iPhone · sin internet»: lo que se está bajando a este aparato (con su avance), lo listo para ver sin conexión
 /// agrupado por título y la descarga inteligente. Sin Real-Debrid (Plus, App Store) solo hay la segunda y no lleva rótulo.
 /// El fondo toma el color de lo que se está bajando.
@@ -62,7 +62,8 @@ struct DownloadsView: View {
 
     /// «Descargas | Mi media».
     private var switcher: some View {
-        // «Descargas» (la nube y este aparato, RX1-A) y Mi media (tu OneDrive). Sin nube en su ícono: «la nube» es Real-Debrid.
+        // «Descargas» (Real-Debrid y este aparato, RX1-A) y Mi media (tu OneDrive; luego Plex y Jellyfin), con carpeta: la nube
+        // es solo Real-Debrid (Fernando, 3 nov).
         DSTextTabs(options: [.init(id: Part.phone, title: Text("Descargas"), symbol: "arrow.down.to.line"), .init(id: .media, title: Text("Mi media"), symbol: "folder")], selection: $part)
     }
 

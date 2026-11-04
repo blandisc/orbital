@@ -37382,17 +37382,6 @@
         }
       }
     },
-    "En la nube · Real-Debrid": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In the cloud · Real-Debrid"
-          }
-        }
-      }
-    },
     "En este iPhone · sin internet": {
       "extractionState": "manual",
       "localizations": {
@@ -37545,17 +37534,6 @@
         }
       }
     },
-    "Están en Descargas › En la nube.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "They're in Downloads › In the cloud."
-          }
-        }
-      }
-    },
     "Así funciona": {
       "extractionState": "manual",
       "localizations": {
@@ -37672,6 +37650,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "If the cloud doesn't have it yet, it requests it 3 min before the end of the one you're watching."
+          }
+        }
+      }
+    },
+    "Real-Debrid · bajando para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid · downloading for you"
+          }
+        }
+      }
+    },
+    "Están en Descargas, arriba de lo que guardas en este aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They're in Downloads, above what you save on this device."
           }
         }
       }

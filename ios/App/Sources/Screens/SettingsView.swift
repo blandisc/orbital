@@ -77,7 +77,7 @@ struct SettingsView: View {
                 }
                 // Tus películas y series de OneDrive como una fuente más (como en la TV).
                 NavigationLink { OneDriveSettings() } label: {
-                    SettingsRow(title: "OneDrive", symbol: "cloud", tint: DS.ListTint.library,
+                    SettingsRow(title: "OneDrive", symbol: "folder", tint: DS.ListTint.library,
                                 value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
                 }
             } header: { Text("Conexiones") }
@@ -142,7 +142,7 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
         .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
-        // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › En la nube (RX1-A).
+        // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › Real-Debrid · bajando para ti (RX1-A).
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { env.openTab = AppEnvironment.downloadsTab } }
         .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }

@@ -27,7 +27,7 @@ struct MiMediaView<Top: View>: View {
                         NavigationLink { OneDriveSettings() } label: { Text("Elegir carpeta") }.dsPrimaryButton()
                     }
                 } else if !model.ready {
-                    DSEmptyState(symbol: "cloud", title: Text("Conecta tu OneDrive"),
+                    DSEmptyState(symbol: "folder", title: Text("Conecta tu OneDrive"),
                                  message: Text("Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPhone.")) {
                         NavigationLink { OneDriveSettings() } label: { Text("Conectar OneDrive") }.dsPrimaryButton()
                     }
@@ -38,7 +38,7 @@ struct MiMediaView<Top: View>: View {
                         VStack(alignment: .leading, spacing: DS.Space.s2) {
                             DSNotice(verbatim: env.message(error), tone: .warn)
                             if error.localizedCaseInsensitiveContains("caduc") || error.localizedCaseInsensitiveContains("sesión") {
-                                NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "cloud") }.dsGlassButton()
+                                NavigationLink { OneDriveSettings() } label: { Label("Volver a conectar", systemImage: "folder") }.dsGlassButton()
                             } else {
                                 Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.rescan() } }.dsGlassButton()
                             }
