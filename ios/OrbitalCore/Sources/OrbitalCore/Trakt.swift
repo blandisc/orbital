@@ -162,6 +162,20 @@ public actor Trakt {
         return components.url
     }
 
+    /// Una lista completa, página por página: Trakt da 100 por página y una lista puede tener más («Mi lista Stremio» de
+    /// Fernando tiene 210; la TV solo leía la primera, 4 nov). Hasta `maxPages` páginas, por si una lista no termina nunca.
+    func allPages(_ path: String, _ params: [(String, String)] = [], pageSize: Int = 100, maxPages: Int = 20) async throws -> [JSON] {
+        // La primera, como siempre (sin página: Trakt da las primeras 100); las demás, solo si se llenó.
+        var out = try await get(path, params)?.array ?? []
+        guard out.count >= pageSize else { return out }
+        for page in 2...max(2, maxPages) {
+            let rows = try await get(path, params + [("page", String(page)), ("limit", String(pageSize))])?.array ?? []
+            out += rows
+            if rows.count < pageSize { break }
+        }
+        return out
+    }
+
     func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
         var (status, data) = try await call("GET", path, auth: auth, params: params)
         if status == 401 && auth {
@@ -222,8 +236,8 @@ public actor Trakt {
     }
 
     public func watchlist() async throws -> [TraktEntry] {
-        let rows = try await get("/sync/watchlist", [("extended", "full"), ("sort_by", "added"), ("sort_how", "desc")])
-        let sorted = (rows?.array ?? []).filter { $0.object != nil }.sorted { ($0["listed_at"]?.string ?? "") > ($1["listed_at"]?.string ?? "") }
+        let rows = try await allPages("/sync/watchlist", [("extended", "full"), ("sort_by", "added"), ("sort_how", "desc")])
+        let sorted = rows.filter { $0.object != nil }.sorted { ($0["listed_at"]?.string ?? "") > ($1["listed_at"]?.string ?? "") }
         return TraktParsing.typed(sorted)
     }
 
@@ -281,7 +295,7 @@ public actor Trakt {
     /// Qué títulos (IMDb) tiene una de tus listas: para marcar ✓ en «Guardar en…» (sin datos extra: es rápido).
     public func listMembers(_ id: String) async throws -> Set<String> {
         guard Self.isListID(id) else { throw TraktError.invalid("Lista inválida") }
-        let rows = try await get("/users/me/lists/\(id)/items")?.array ?? []
+        let rows = try await allPages("/users/me/lists/\(id)/items")
         return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
     }
 
@@ -307,7 +321,7 @@ public actor Trakt {
 
     public func listItems(_ id: String) async throws -> [TraktEntry] {
         guard !id.isEmpty, id.allSatisfy(\.isASCII), id.allSatisfy(\.isNumber) else { throw TraktError.invalid("Lista inválida") }
-        return TraktParsing.typed(try await get("/users/me/lists/\(id)/items", [("extended", "full")])?.array)
+        return TraktParsing.typed(try await allPages("/users/me/lists/\(id)/items", [("extended", "full")]))
     }
 
     /// Los títulos de una lista pública de otra persona (sin tu sesión): las series de «Aprobadas por la crítica».
