@@ -31,6 +31,7 @@ enum AppComposition {
                                     // La demostración no escribe en la memoria de TMDB de tu iPhone (era global hasta el 31 oct 2026).
                                     detailsMemo: Demo.persist ? TmdbDetailsMemo(file: AppFiles.swrCache.appendingPathComponent("demo/tmdb-details.json")) : nil)
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
+            Demo.seedLibrary(services)    // «Seguir viendo» de la demo (antes llegaba con Stremio)
             Demo.seedRequests(services)   // `-demo-rd-request`: tus pedidos a Real-Debrid de mentira
             Demo.seedDebrid(services)     // `-demo-rd revoked`: una cuenta confirmada ayer cuya clave ya no sirve
             DemoViento.seed(services)     // `-demo-viento ready`: el pedido de «El viento tiene miedo» ya listo

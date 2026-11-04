@@ -270,7 +270,10 @@ final class ChaosRegressionUITests: XCTestCase {
         if app.buttons["filter-rating"].exists {
             app.buttons["filter-rating"].tap(); sleep(1)
             let slider = any("filter-tmdb-slider")   // el deslizador del público, hasta Excelente
-            if slider.waitForExistence(timeout: 3) { slider.adjust(toNormalizedSliderPosition: 0.9) }
+            // Es una regla propia (no un deslizador del sistema): se arrastra hasta casi el final.
+            if slider.waitForExistence(timeout: 3) {
+                slider.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).press(forDuration: 0.05, thenDragTo: slider.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+            }
         }
         let genres = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'browse-filter-genre' OR identifier == 'filter-genre'"))
         if genres.firstMatch.exists {

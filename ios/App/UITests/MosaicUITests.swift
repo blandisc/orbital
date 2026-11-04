@@ -199,7 +199,8 @@ final class MosaicUITests: XCTestCase {
         launch(idle: true)
         let p = probe()
         sleep(8)
-        XCTAssertGreaterThan(rise(of: p), 20, "quieto unos segundos, el mosaico sube solo")
+        // Una columna sube y la de junto baja («Marea lenta», 1 nov 2026): cuenta que se mueva, no hacia dónde.
+        XCTAssertGreaterThan(abs(rise(of: p)), 20, "quieto unos segundos, el mosaico se mueve solo")
     }
 
     /// Elegida una pieza, su pie dice cómo abrir la ficha («Más › Ver la ficha», y tocar su nombre); «Ver en la TV» avisa al

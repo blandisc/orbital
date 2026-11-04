@@ -39,7 +39,11 @@ final class RemoteUITests: XCTestCase {
         app.launch()
         let pad = app.descendants(matching: .any)["Pad de la TV"]
         XCTAssertTrue(pad.waitForExistence(timeout: 20), "sin nada en la TV abre el control completo")
-        let top = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12))
+        // Desde el título de la hoja (antes era un punto fijo de la pantalla, justo encima de la hoja: con el aire de arriba
+        // de 32 de las hojas, 4 nov, la hoja subió y ese punto quedó en la orilla).
+        let title = app.staticTexts["Tu Orbital"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        let top = title.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         top.press(forDuration: 0.05, thenDragTo: app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
         sleep(2)
         XCTAssertFalse(pad.exists, "se cerró")
