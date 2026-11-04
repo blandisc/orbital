@@ -264,6 +264,8 @@ struct LearnRing: View {
             if !compact {
                 Text(LocalizedStringKey(story.title)).recipe(.footnote, color: unseen ? DS.text : DS.textMuted)
                     .lineLimit(2).multilineTextAlignment(.center)
+                    // Con la letra más grande, «Ver a tu manera» empujaba la ✕ fuera de la pantalla: el nombre crece hasta aquí.
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .transition(.opacity)
             }
         }
