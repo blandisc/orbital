@@ -69,7 +69,8 @@ struct ParaTiView: View {
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         // El mismo encabezado que Inicio (Fernando, 31 oct 2026): «Para ti» a la izquierda, donde va el logo, y los pósters debajo.
         .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
-        .learnCoach(.explore, title: "Explorar", detail: "Un toque acerca un póster; el segundo abre su ficha.")
+        // Solo en el mosaico: en las listas no hay pósters que acercar.
+        .learnCoach(.explore, title: "Explorar", detail: "Un toque acerca un póster; el segundo abre su ficha.", active: m.mode == .mosaic)
         .toolbar {
             // En el mosaico, regresar a las listas a la izquierda (antes solo el botón de la derecha, que no se entendía);
             // en las listas, el logo.

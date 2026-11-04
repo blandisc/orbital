@@ -22,6 +22,7 @@ enum AppComposition {
                 if Demo.oneDrive == "linked" { $0.oneDriveFolder = "Películas" }
             }
             Demo.prefillScrobble(kv)
+            if Demo.coach { kv.set(LearnModel.guideDoneKey, data: Data("1".utf8)) }
             let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                                     downloadTransport: transport, downloadsRoot: Demo.demoDownloadsRoot,
                                     savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },

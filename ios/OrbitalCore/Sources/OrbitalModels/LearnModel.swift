@@ -13,7 +13,7 @@ public final class LearnModel: ObservableModel {
     public static let debridFlowKey = "debrid-flow"
     static let ringsSinceKey = "learn.rings-since"
     static let coachOffKey = "learn.coach-off"
-    static let guideDoneKey = "learn.guide-done"
+    public static let guideDoneKey = "learn.guide-done"
     static let ringWindow: TimeInterval = 14 * 86400
     public static let ringLimit = 4
 

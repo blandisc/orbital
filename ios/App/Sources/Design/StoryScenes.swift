@@ -79,7 +79,8 @@ struct SceneScreen<Content: View>: View {
 
     var body: some View {
         content
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Con mínimo cero la pantallita mide lo que le dan y recorta lo que sobre (sin él, una escena alta se salía).
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)   // ds-exception: cero es «sin mínimo», no una medida
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
             .background(DS.bg, in: RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
             .overlay { RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous).strokeBorder(DS.fill, lineWidth: DS.Stroke.regular) }

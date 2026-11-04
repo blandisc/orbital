@@ -3,7 +3,7 @@ import OrbitalModels
 
 /// Los avisos sobre la pantalla (F3, Fernando, 3 nov 2026), la primera vez que entras a algo propio de Orbital. Dos formas:
 /// con foco (el velo oscurece todo menos el botón señalado, un anillo se dibuja una vez y no late, y la burbuja sube junto
-/// a él) para «Ver» en la ficha y la búsqueda avanzada; y el aviso chico, sin oscurecer, arriba de la pantalla. Cada uno
+/// a él) para «Ver» en la ficha y la búsqueda avanzada; y el aviso chico, sin oscurecer, abajo, sobre la barra de pestañas. Cada uno
 /// dice qué hace, lleva «Ver la historia» (la de esa función en «Aprende») y se cierra con «Entendido»; «Saltar avisos» los
 /// apaga todos. VoiceOver lo anuncia y se cierra con el gesto de escape. Recibe sus datos: no lee el estado de la app.
 struct CoachContent: Equatable {
@@ -65,6 +65,7 @@ struct CoachOverlay: View {
     let done: () -> Void
     let skipAll: () -> Void
     @State private var shown = false
+    @State private var bubbleHeight: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -85,6 +86,7 @@ struct CoachOverlay: View {
             }
             bubble
                 .frame(maxWidth: min(DS.Coach.bubble, size.width - 2 * DS.Space.gutter))
+                .onGeometryChange(for: CGFloat.self, of: \.size.height) { bubbleHeight = $0 }
                 .position(x: size.width / 2, y: bubbleY(hole))
                 .offset(y: shown || reduceMotion ? 0 : DS.Space.s2)
                 .opacity(shown || reduceMotion ? 1 : 0)
@@ -93,17 +95,27 @@ struct CoachOverlay: View {
         .onAppear { UIAccessibility.post(notification: .announcement, argument: nil) }
     }
 
-    /// Debajo de lo señalado si cabe; si no, arriba. El aviso chico va arriba de la pantalla.
+    /// Debajo de lo señalado si cabe; si no, arriba; si tampoco, abajo de la pantalla. El aviso chico va abajo, sobre la barra
+    /// de pestañas: arriba tapaba el título y la hora (4 nov). Se acomoda por su alto real, no por un número fijo.
     private func bubbleY(_ hole: CGRect?) -> CGFloat {
-        guard let hole else { return DS.Space.s14 }
-        let below = hole.maxY + DS.Space.s4 + DS.Space.s14
-        return below < size.height - DS.Space.s14 ? below : hole.minY - DS.Space.s4 - DS.Space.s14
+        let half = bubbleHeight / 2, gap = DS.Space.s4
+        let bottom = size.height - gap - half
+        guard let hole else { return bottom }
+        if hole.maxY + gap + bubbleHeight <= size.height - gap { return hole.maxY + gap + half }
+        if hole.minY - gap - bubbleHeight >= gap { return hole.minY - gap - half }
+        return bottom
     }
 
     private var bubble: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             if let scene = coach.scene {
-                StorySceneView(scene: scene, tint: DS.ListTint.spark).frame(height: DS.Coach.scene).accessibilityHidden(true)
+                // La escena se arma a su tamaño de la historia y se encoge entera (antes se apretaba a 130 y cortaba sus textos).
+                StorySceneView(scene: scene, tint: DS.ListTint.spark)
+                    .frame(width: DS.Scene.maxHeight * DS.Scene.phoneAspect, height: DS.Scene.maxHeight)
+                    .scaleEffect(DS.Coach.scene / DS.Scene.maxHeight)
+                    .frame(width: DS.Coach.scene * DS.Scene.phoneAspect, height: DS.Coach.scene)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
             }
             Text(coach.title).recipe(.cardTitle, color: DS.text).fixedSize(horizontal: false, vertical: true)
             Text(coach.detail).recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
