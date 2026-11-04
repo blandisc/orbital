@@ -884,3 +884,17 @@ test("PT17 y PT18 (Fernando, 4 nov): Torrentio enseña tus idiomas y Tus idiomas
   assert.deepEqual(languagesMenu(["es-419", "original", "en"]).options.slice(0, 3).map((o) => o.mark || o.icon),
     ["img/flags/mx.svg", "captions", "img/flags/us.svg"]);
 });
+
+test("VE1-A (Fernando, 4 nov): el aviso de vencimiento sale 14 días antes, 3 días antes y el día que vence, una vez cada uno", async () => {
+  const { debridExpiryNotice } = await import("../../orbital/web/js/core/menus.js");
+  const rd = (days, extra = {}) => ({ linked: true, expires: 1_800_000_000, days, ...extra });
+  assert.equal(debridExpiryNotice(rd(20)), null);
+  assert.deepEqual([debridExpiryNotice(rd(14)).key, debridExpiryNotice(rd(14)).message], ["1800000000:14", "Tu Real-Debrid vence en 14 días"]);
+  assert.equal(debridExpiryNotice(rd(9), "1800000000:14"), null); // ya salió el de 14
+  assert.equal(debridExpiryNotice(rd(2), "1800000000:14").key, "1800000000:3"); // llegas tarde: el de 3, no los dos
+  assert.equal(debridExpiryNotice(rd(1), "1800000000:3"), null);
+  assert.equal(debridExpiryNotice(rd(0), "1800000000:3").message, "Tu Real-Debrid vence hoy");
+  assert.equal(debridExpiryNotice(rd(0, { problem: "expired" }), "1800000000:3").message, "Tu Real-Debrid venció");
+  assert.equal(debridExpiryNotice(rd(14, { expires: 1_900_000_000 }), "1800000000:0").key, "1900000000:14"); // renovaste: vuelve a avisar
+  assert.equal(debridExpiryNotice({ linked: false, days: 2 }), null);
+});

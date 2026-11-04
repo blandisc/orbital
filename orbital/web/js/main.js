@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
-import { cloudRow, DEBRID_FORM, debridCancelMenu, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
+import { cloudRow, DEBRID_FORM, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
@@ -604,6 +604,18 @@ function applySettings(settings) {
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
   ui.settings.update({ settings }); // Ajustes abierto: el valor nuevo se ve en su lugar
+  warnDebridExpiry(settings);
+}
+
+/** VE1-A: el aviso de que tu Real-Debrid vence (14, 3 y 0 días), una vez por fecha; «Renovar» abre tu cuenta (dice cómo).
+ *  El ámbar de Ajustes y Cuentas sigue igual. */
+function warnDebridExpiry(settings) {
+  const notice = debridExpiryNotice(settings.realdebrid, settings.rd_expiry_notice);
+  if (!notice) return;
+  settings.rd_expiry_notice = notice.key; // ya salió: no se repite aunque lleguen otros ajustes antes de guardarse
+  api.setSettings({ rd_expiry_notice: notice.key }).catch(() => {});
+  ui.toast.show(notice.message, { tone: "warn", detail: notice.detail,
+    action: { label: "Renovar", onPress: () => runCommand({ type: "rd-account" }) } });
 }
 
 /** ¿En la pantalla de la consola (sin tele)? La de la Legion Go es 16:10 y una tele 16:9. Ahí las frases para Alexa junto a
