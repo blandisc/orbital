@@ -115,11 +115,19 @@ final class IPadLayoutUITests: XCTestCase {
             ("descargas", ["-demo-tab", "3", "-demo-downloads"]), ("control", ["-demo-tv-now", "-demo-open", "remote"]),
             ("decidir", ["-demo-tab", "1", "-demo-open", "decide"]), ("fuentes", ["-demo-title", "series:tt0386676", "-demo-open", "sources"]),
             ("reproductor", ["-demo-title", "series:tt0386676", "-demo-open", "play"]), ("ajustes", ["-demo-open", "settings"]),
+            // Las pantallas que llegaron después del 29 oct (Inicio nuevo, el mazo, Lo que ves, Colecciones, la consola).
+            ("buscar-dune", ["-demo-tab", "2", "-demo-search", "dune"]), ("biblioteca", ["-demo-tab", "3", "-demo-trakt"]),
+            ("ficha-peli", ["-demo-title", "movie:tt1160419"]), ("guardar", ["-demo-title", "movie:tt1160419", "-demo-open", "save"]),
+            ("match", ["-demo-tab", "1", "-demo-open", "match"]), ("lo-que-ves", ["-demo-tab", "1", "-demo-open", "watching"]),
+            ("colecciones", ["-demo-tab", "1", "-demo-open", "repisa"]), ("anio", ["-demo-open", "year"]),
+            ("filtro", ["-demo-tab", "2", "-demo-open", "filter-genre"]), ("calificar", ["-demo-rate"]),
+            ("consola", ["-demo-game", "-demo-open", "game"]), ("simpsons", ["-demo-open", "simpsons"]),
+            ("primera-vez", ["-demo-first-run"]),
         ]
         let only = ProcessInfo.processInfo.environment["ORBITAL_TOUR_ONLY"]?.split(separator: ",").map(String.init)
         for (name, args) in screens where only?.contains(name) ?? true {
             open(args, name.hasSuffix("-pie") ? .portrait : .landscapeLeft)
-            sleep(name.hasPrefix("reproductor") || name == "decidir" ? 12 : 8)
+            sleep(name.hasPrefix("reproductor") || ["decidir", "match"].contains(name) ? 12 : 8)
             if name.hasPrefix("reproductor") { app.tap(); sleep(1) }
             if name == "subtitulos-pie" { sleep(4) }
             FileManager.default.createFile(atPath: "\(dir)/ready_\(name)", contents: nil)

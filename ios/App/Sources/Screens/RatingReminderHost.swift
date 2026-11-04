@@ -22,6 +22,7 @@ struct RatingReminderHost: View {
                                onDismiss: { model.dismiss(item.imdb) },
                                onOpenQueue: { showQueue = true })
                     .id(item.imdb)
+                    .frame(maxWidth: DS.Toast.maxWidth)   // en el iPad y la Mac no cruza la pantalla, como los avisos
                     .padding(.horizontal, DS.Space.gutter)
                     .transition(DS.Motion.notice(reduceMotion))
             }

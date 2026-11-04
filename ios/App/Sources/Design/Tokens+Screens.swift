@@ -178,6 +178,9 @@ extension DS {
         static let threshold: CGFloat = 0.32, flyOut: Duration = .milliseconds(220)
         /// La carta es un póster: alto entre ancho.
         static let cardAspect: CGFloat = 1.5
+        /// Lo menos alta que queda la carta (alto entre ancho) cuando el mazo es más ancho que cualquier iPhone (`wideDeck`: iPad,
+        /// Mac). En el iPhone la carta sigue llenando el ancho, como siempre (en el SE es más baja que esto).
+        static let cardAspectMin: CGFloat = 1.3, wideDeck: CGFloat = 500
         /// La carta: cuántos géneros, su relleno, el logo de Trakt y el sello («MI LISTA», «PASO»): su giro, orilla e interletrado.
         static let genres = 3, chipFill = 0.18, ratingLogo: CGFloat = 16
         static let stampTilt: Double = 12, stampLine: CGFloat = 3, stampTracking: CGFloat = 1.5

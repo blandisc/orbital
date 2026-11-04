@@ -136,7 +136,9 @@ struct MatchDeck: View {
                               rise: top ? Double(max(0, -drag.height) / (geo.size.height / 2)) : 0,
                               onPlay: top ? onPlay.map { play in { play(s) } } : nil)
                         // Un tamaño fijo dentro del mazo: el póster a sangre no la estira más allá de la pantalla.
-                        .frame(width: geo.size.width, height: min(geo.size.height, geo.size.width * DS.Match.cardAspect))
+                        // En el iPad y la Mac (mazo ancho y bajo) la carta no se ensancha más que un póster: se angosta y se centra.
+                        .frame(width: geo.size.width > DS.Match.wideDeck ? min(geo.size.width, geo.size.height / DS.Match.cardAspectMin) : geo.size.width,
+                               height: min(geo.size.height, geo.size.width * DS.Match.cardAspect))
                         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
                         .scaleEffect(top ? 1 : 1 - CGFloat(i) * DS.Match.behindShrink)
                         .offset(y: top ? 0 : CGFloat(i) * DS.Match.behindDrop)
