@@ -51,4 +51,17 @@ final class CoachMarkUITests: XCTestCase {
         sleep(4)
         XCTAssertFalse(coach("explore").exists, "en las listas no hay pósters que acercar")
     }
+
+    /// Fer, 4 nov: el botón de Ajustes los trae de vuelta, aunque no hayas hecho la guía nueva.
+    func testSettingsButtonBringsThemBack() {
+        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-free-tabs", "-demo-tab", "3", "-demo-open", "settings"]
+        app.launch()
+        let reset = app.buttons["settings-coach-reset"]
+        XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 20))
+        for _ in 0..<6 where !(reset.exists && reset.isHittable) { app.swipeUp() }
+        reset.tap()
+        app.buttons["Volver a verlos"].firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(coach("downloads").waitForExistence(timeout: 15), "de vuelta en Biblioteca, su aviso")
+    }
 }

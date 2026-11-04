@@ -77,6 +77,8 @@ extension DS {
         static let bubble: CGFloat = 300
         /// La escena en miniatura dentro de la burbuja.
         static let scene: CGFloat = 130
+        /// Lo alto que debe medir la pantalla entera para que la burbuja lleve su miniatura (el SE, 667, no llega).
+        static let roomForScene: CGFloat = 700
     }
 }
 

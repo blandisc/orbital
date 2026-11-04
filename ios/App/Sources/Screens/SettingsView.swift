@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var tmdbKey = ""
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
+    @State private var confirmCoachReset = false
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
@@ -103,6 +104,11 @@ struct SettingsView: View {
                     SettingsRow(title: "Ver la guía de bienvenida", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
                 }
                 .accessibilityIdentifier("settings-welcome")
+                // Fer, 4 nov: «un botoncito en ajustes donde se reinicien ese tipo de tutoriales para verlos».
+                Button { confirmCoachReset = true } label: {
+                    SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.counterclockwise", tint: DS.ListTint.addon, linked: false)
+                }
+                .accessibilityIdentifier("settings-coach-reset")
             }
             .listRowBackground(DS.surface)
         }
@@ -117,6 +123,10 @@ struct SettingsView: View {
         .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
             Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
         } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
+        .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmCoachReset, titleVisibility: .visible) {
+            Button("Volver a verlos") { LearnModel(env.services).reset() }
+            Button("Cancelar", role: .cancel) {}
+        } message: { Text("Las historias vuelven a decir que no las has visto.") }
         .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
             Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
         } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }

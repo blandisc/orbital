@@ -113,6 +113,8 @@ public final class LearnModel: ObservableModel {
         for id in CoachID.allCases { services.kv.set("learn.seen.coach.\(id.rawValue)", data: nil) }
         services.kv.set(Self.coachOffKey, data: nil)
         services.kv.set(Self.ringsSinceKey, data: nil)
+        // Quien no hizo la guía nueva tampoco los veía (Fer, 4 nov: «que se reinicien para verlos»): pedirlos también cuenta.
+        services.kv.set(Self.guideDoneKey, data: Data("1".utf8))
         Self.coachShownThisLaunch = false
         changed()
     }

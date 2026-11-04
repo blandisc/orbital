@@ -50,7 +50,8 @@ extension View {
         environment(\.coachShowing, coach?.id).overlayPreferenceValue(CoachAnchorKey.self) { anchors in
             if let coach {
                 GeometryReader { geo in
-                    CoachOverlay(coach: coach, target: anchors[coach.id].map { geo[$0] }, size: geo.size, story: story, done: done, skipAll: skipAll)
+                    CoachOverlay(coach: coach, target: anchors[coach.id].map { geo[$0] }, size: geo.size, insets: geo.safeAreaInsets,
+                                 story: story, done: done, skipAll: skipAll)
                 }
             }
         }
@@ -61,6 +62,8 @@ struct CoachOverlay: View {
     let coach: CoachContent
     let target: CGRect?
     let size: CGSize
+    /// El velo llega bajo la hora y las barras (`ignoresSafeArea`): su hueco se corre esto para caer sobre el botón.
+    var insets = EdgeInsets()
     let story: () -> Void
     let done: () -> Void
     let skipAll: () -> Void
@@ -74,7 +77,9 @@ struct CoachOverlay: View {
             if coach.spotlight, let hole {
                 // El velo con el hueco del botón; tocar el velo cierra (como «Entendido»).
                 Rectangle().fill(DS.backdropDeep.opacity(DS.Coach.veil))
-                    .reverseMask { RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).frame(width: hole.width, height: hole.height).position(x: hole.midX, y: hole.midY) }
+                    // Fer, 4 nov: «Ver» salía oscurecido y la búsqueda avanzada cortada: el hueco quedaba arriba por lo que mide la barra.
+                    .reverseMask { RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).frame(width: hole.width, height: hole.height)
+                        .position(x: hole.midX + insets.leading, y: hole.midY + insets.top) }
                     .ignoresSafeArea()
                     .onTapGesture(perform: done)
                     .accessibilityHidden(true)
@@ -108,7 +113,8 @@ struct CoachOverlay: View {
 
     private var bubble: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            if let scene = coach.scene {
+            // En pantallas chicas (el SE), sin miniatura: con ella la burbuja tapaba lo señalado o el texto (Fer, 4 nov).
+            if let scene = coach.scene, size.height + insets.top + insets.bottom >= DS.Coach.roomForScene {
                 // La escena se arma a su tamaño de la historia y se encoge entera (antes se apretaba a 130 y cortaba sus textos).
                 StorySceneView(scene: scene, tint: DS.ListTint.spark)
                     .frame(width: DS.Scene.maxHeight * DS.Scene.phoneAspect, height: DS.Scene.maxHeight)
