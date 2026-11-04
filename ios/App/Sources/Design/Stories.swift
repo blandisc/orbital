@@ -206,52 +206,107 @@ struct StoryBeforeAfter: View {
     }
 }
 
-/// Los círculos de «Aprende Orbital» arriba de Inicio (G3): hasta cuatro historias sin ver, con su anillo de «nuevo» que se
-/// dibuja una vez al aparecer (no gira). Tocar uno la abre. Recibe sus datos: no lee el estado de la app.
+/// La fila de historias de «Aprende Orbital» (G3) en el encabezado de Inicio (HE1-B): hasta cuatro sin ver, con su anillo de
+/// «nuevo». `compact`: al bajar, cada círculo se achica en su mismo lugar y su nombre se va. Recibe sus datos.
 struct LearnRings: View {
     let stories: [LearnStory]
+    var compact = false
     let open: (LearnStory) -> Void
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top, spacing: DS.Space.s4) {
-                ForEach(stories) { story in
-                    Button { open(story) } label: { LearnRing(story: story, unseen: true) }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("learn-ring-\(story.id)")
-                }
+        // Repartidos a lo ancho: caben cuatro en un iPhone SE y se quedan en su lugar al encogerse.
+        HStack(alignment: .top, spacing: DS.Space.s2) {
+            ForEach(stories) { story in
+                Button { open(story) } label: { LearnRing(story: story, unseen: true, compact: compact).frame(maxWidth: .infinity) }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("learn-ring-\(story.id)")
             }
-            .padding(.horizontal, DS.Space.gutter)
         }
-        .scrollIndicators(.hidden)
     }
 }
 
-/// Un círculo: el cuadro de color de la historia y, si no la has visto, el anillo de «nuevo».
+/// Un círculo: el cuadro de color de la historia y, si no la has visto, el anillo de «nuevo». `compact`: al bajar, se achica
+/// en su mismo lugar y su nombre se desvanece (HE1-B).
 struct LearnRing: View {
     let story: LearnStory
     let unseen: Bool
+    var compact = false
     @State private var drawn = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        let ring = compact ? DS.HomeStories.compactRing : DS.Story.ring
+        let tile = compact ? DS.HomeStories.compactTile : DS.Story.tile
         VStack(spacing: DS.Space.s2) {
-            ZStack {
-                Circle().trim(from: 0, to: unseen ? (drawn || reduceMotion ? 1 : 0) : 1)
-                    .stroke(unseen ? DS.fresh : DS.fill, style: StrokeStyle(lineWidth: DS.Story.ringStroke, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                Circle().fill(DS.ListTint.named(story.tint).opacity(DS.Explainer.tileFill))
-                    .frame(width: DS.Story.tile, height: DS.Story.tile)
-                Image(systemName: story.symbol).font(DS.TextRecipe.section.font).symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(DS.ListTint.named(story.tint))
+            LearnRingMark(story: story, unseen: unseen, drawn: drawn || reduceMotion, ring: ring, tile: tile)
+            if !compact {
+                Text(LocalizedStringKey(story.title)).recipe(.footnote, color: unseen ? DS.text : DS.textMuted)
+                    .lineLimit(2).multilineTextAlignment(.center)
+                    .transition(.opacity)
             }
-            .frame(width: DS.Story.ring, height: DS.Story.ring)
-            Text(LocalizedStringKey(story.title)).recipe(.footnote, color: unseen ? DS.text : DS.textMuted)
-                .lineLimit(2).multilineTextAlignment(.center)
-                .frame(width: DS.Story.ring + DS.Space.s4)
         }
-        .accessibilityElement(children: .combine)
+        .frame(minWidth: DS.Story.ring)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(LocalizedStringKey(story.title)))
         .accessibilityHint(unseen ? Text("Sin ver") : Text(verbatim: ""))
         .task { withAnimation(DS.Motion.tint(reduceMotion)) { drawn = true } }
+    }
+}
+
+/// El dibujo del círculo: el anillo (de «nuevo», que se dibuja una vez) y el cuadro de color con su símbolo.
+struct LearnRingMark: View {
+    let story: LearnStory
+    let unseen: Bool
+    var drawn = true
+    var ring: CGFloat = DS.Story.ring
+    var tile: CGFloat = DS.Story.tile
+
+    var body: some View {
+        ZStack {
+            Circle().fill(DS.bg)
+            Circle().trim(from: 0, to: unseen ? (drawn ? 1 : 0) : 1)
+                .stroke(unseen ? DS.fresh : DS.fill, style: StrokeStyle(lineWidth: DS.Story.ringStroke * ring / DS.Story.ring, lineCap: .round))   // más fino en los chicos
+                .rotationEffect(.degrees(-90))
+            Circle().fill(DS.ListTint.named(story.tint).opacity(DS.Explainer.tileFill))
+                .frame(width: tile, height: tile)
+            Image(systemName: story.symbol).font(DS.TextRecipe.section.font).symbolRenderingMode(.hierarchical)
+                .foregroundStyle(DS.ListTint.named(story.tint))
+                .scaleEffect(tile / DS.Story.tile)
+        }
+        .frame(width: ring, height: ring)
+    }
+}
+
+/// Lo que se asoma en la orilla derecha de Inicio (HE1-B): dos círculos encimados, el segundo medio escondido tras la orilla.
+/// El primero da un empujoncito cada tanto, como invitando a deslizar. Es un botón: con el puntero o el teclado se toca.
+struct LearnPeek: View {
+    let stories: [LearnStory]
+    let open: () -> Void
+    @State private var nudged = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: -DS.HomeStories.peekOverlap) {
+                ForEach(Array(stories.prefix(2).enumerated()), id: \.element.id) { i, story in
+                    LearnRingMark(story: story, unseen: true, ring: DS.HomeStories.peekRing, tile: DS.HomeStories.peekRing - DS.Space.s2)
+                        .offset(x: i == 0 && nudged ? -DS.HomeStories.nudge : 0)
+                        .zIndex(Double(2 - i))
+                }
+            }
+            .offset(x: DS.HomeStories.peekRing * DS.HomeStories.peekHidden)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Historias de Aprende Orbital: \(String(stories.count)) sin ver"))
+        .accessibilityIdentifier("home-stories-peek")
+        .task(id: reduceMotion) {
+            guard !reduceMotion else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: DS.HomeStories.nudgeEvery)
+                withAnimation(DS.Motion.pop(reduceMotion)) { nudged = true }
+                try? await Task.sleep(for: DS.Explainer.step / 4)
+                withAnimation(DS.Motion.spring(reduceMotion)) { nudged = false }
+            }
+        }
     }
 }

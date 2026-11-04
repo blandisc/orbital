@@ -61,14 +61,12 @@ struct LearnView: View {
     }
 }
 
-/// Arriba de Inicio: los círculos de «Aprende Orbital» (G3) y, si la guía quedó a medias hace más de un día, la invitación a
-/// terminarla (sin obligar). Se vuelven a leer al cerrar una historia.
+/// Arriba de Inicio, si la guía quedó a medias hace más de un día: la invitación a terminarla (sin obligar). Los círculos de
+/// «Aprende» viven en el encabezado (`HomeHeader`).
 struct HomeLearnTop: View {
     @Environment(AppEnvironment.self) private var env
 
     var body: some View {
-        let _ = env.ui.openStory
-        let rings = LearnModel(env.services).rings()
         if OnboardingModel.unfinished(env.services) {
             HStack(spacing: DS.Space.s3) {
                 DSIconTile(symbol: "sparkles", tint: DS.ListTint.spark)
@@ -83,9 +81,6 @@ struct HomeLearnTop: View {
             .padding(DS.Space.s4)
             .dsCard()
             .padding(.horizontal, DS.Space.gutter)
-        }
-        if !rings.isEmpty {
-            LearnRings(stories: rings) { env.ui.openStory = $0.id }
         }
     }
 }

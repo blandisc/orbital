@@ -96,3 +96,25 @@ extension DS.Coach {
     /// Cuánto espera un aviso a que la pantalla se acomode antes de salir.
     static let wait: Duration = .milliseconds(1200)
 }
+
+/// Las historias en el encabezado de Inicio (HE1-B, Fernando, 4 nov 2026): en reposo, dos círculos se asoman en la orilla
+/// derecha a la altura de «Todo · Películas · Series»; al deslizar a la izquierda, las historias ocupan todo el encabezado; al
+/// bajar, se achican en su mismo lugar y pierden el nombre.
+extension DS {
+    enum HomeStories {
+        /// El círculo encogido al bajar (el normal es `DS.Story.ring`).
+        static let compactRing: CGFloat = 40, compactTile: CGFloat = 32
+        /// Los dos círculos asomados: su tamaño, cuánto se enciman y qué parte queda fuera de la pantalla.
+        static let peekRing: CGFloat = 30, peekOverlap: CGFloat = 12
+        static let peekHidden: CGFloat = 0.42   // ds-exception: la fracción del segundo círculo que queda tras la orilla
+        /// Cada cuánto da su empujoncito el primero, y cuánto.
+        static let nudgeEvery: Duration = .seconds(6)
+        static let nudge: CGFloat = 6
+        /// Deslizar más de esta fracción del ancho (o rápido) abre o cierra.
+        static let commit: CGFloat = 0.28   // ds-exception: fracción del ancho, no un espacio
+        /// Lo que sale se aleja un poco y se apaga, para que se lea la profundidad (no se va entero de golpe).
+        static let away: CGFloat = 0.35   // ds-exception: fracción del ancho del encabezado
+        /// Cuánto hay que bajar para que el encabezado se encoja.
+        static let collapseAt: CGFloat = 24
+    }
+}

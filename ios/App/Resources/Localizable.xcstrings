@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Historias de Aprende Orbital: %@ sin ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Learn Orbital stories: %@ unseen"
+          }
+        }
+      }
+    },
     "Se quita de este iPhone.": {
       "extractionState": "manual",
       "localizations": {

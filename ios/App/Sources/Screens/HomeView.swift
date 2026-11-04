@@ -35,6 +35,8 @@ struct HomeView: View {
     @Environment(\.openRemote) private var openRemote
     @Environment(\.scenePhase) private var scenePhase
 
+    /// Bajaste: el encabezado se encoge (las historias se achican en su lugar).
+    @State private var collapsed = false
     /// Ya se vio una vez: al volver, la recarga espera a que termine el cambio de pestaña.
     @State private var appeared = false
 
@@ -130,6 +132,9 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
+        // Un Bool (Equatable): el encabezado solo se vuelve a pintar al cruzar la línea, no en cada cuadro del desplazamiento.
+        .scrollEdgeEffectStyle(.hard, for: .top)   // el encabezado propio (HE1-B) tapa lo que pasa por debajo, como la barra de antes
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.HomeStories.collapseAt } action: { _, now in collapsed = now }
         #if DEBUG
         .modifier(DemoScroll())
         .orbitalRefreshable { await reload() }   // tirar para actualizar, con la luna de Orbital   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
@@ -161,31 +166,15 @@ struct HomeView: View {
             await env.simpsons.prefetch()
             await SimpsonsWidgetPublisher.publishIfNeeded(env.simpsons, seasons: env.services.appSettings.simpsonsSeasons)   // el widget «Un Simpson del día»
         }
-        // Todo · Películas · Series para toda la página, bajo la barra.
+        // El encabezado propio de Inicio (HE1-B): el logo, la cápsula y los tipos, o las historias de «Aprende» al deslizar.
+        .toolbar(.hidden, for: .navigationBar)
         .safeAreaBar(edge: .top) {
-            HomeKindBar(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }))
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) { AppMark() }
-                .sharedBackgroundVisibility(.hidden)
-            // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
-            // Sin accesorio (iOS 26.0) el botón se queda siempre: era la única entrada al control con algo sonando.
-            if let openRemote, tvNow.model.now == nil || !Self.hasTabAccessory {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { openRemote() } label: { Image(systemName: "av.remote") }
-                        .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
-                }
-            }
-            // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone (las temporadas, en Ajustes).
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { rollingSimpsons = true } label: { Image("Glyphs/donut").renderingMode(.original) }
-                    .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
-                    .accessibilityLabel(Text("Un Simpson al azar"))
-                    .accessibilityIdentifier("home-random-simpsons")
-            }
-            // Sin separadores: el control, la dona y tu foto en una sola cápsula, como la barra de Para ti (Fernando, 30 oct
-            // 2026: tres círculos sueltos se veían llenos).
-            ToolbarItem(placement: .topBarTrailing) { ProfileButton(avatar: look.avatar) }
+            HomeHeader(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }),
+                       collapsed: collapsed,
+                       // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
+                       showsRemote: openRemote != nil && (tvNow.model.now == nil || !Self.hasTabAccessory),
+                       remote: { openRemote?() }, simpsons: { rollingSimpsons = true }, simpsonsZoom: simpsonsZoom,
+                       avatar: look.avatar)
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
