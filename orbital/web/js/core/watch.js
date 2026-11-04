@@ -246,6 +246,16 @@ export function versionRows(sources = [], prefs = {}) {
   const wanted = prefs.audio === "es" ? [...mine, "es", "es-419", "es-ES"] : mine;
   const spanish = ["es-419", "es-ES", "es"];
   const rank = (row) => {
+    if (row.code === "own") return -1;
+    // Fernando, 4 nov: con un doblaje elegido, «latino, idioma original, luego inglés y luego castellano» (el español que
+    // no dice cuál, justo después del tuyo). Lo mismo que streams.language_score y version_grid en el servidor.
+    if (prefs.audio === "es" && dub) {
+      const plan = [dub, "es"].indexOf(row.code);
+      if (plan >= 0) return plan;
+      if (row.original && !spanish.includes(row.code)) return 2;
+      if (row.code === "en") return 3;
+      return spanish.includes(row.code) ? 4 : 20;
+    }
     const i = wanted.filter(Boolean).indexOf(row.code);
     if (i >= 0) return i;
     if (row.code === "own") return -1;

@@ -236,6 +236,15 @@ def version_grid(found: list[streams.Source], prefs: streams.Preferences, curren
 
     def rank(row: dict) -> tuple[int, int]:
         code = row["code"]
+        if dub:  # Fernando, 4 nov: tu doblaje, el español que no dice cuál, el original, el inglés y al final el otro doblaje
+            plan = [dub, "es"]
+            if code in plan:
+                return plan.index(code), -row["size"]
+            if row["original"] and code not in streams.SPANISH:
+                return 2, -row["size"]
+            if code == "en":
+                return 3, -row["size"]
+            return (4 if code in streams.SPANISH else 20), -row["size"]
         if code in wanted:
             first = wanted.index(code)
         elif row["original"]:
