@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, languageAddMenu, languageMenu, languagesMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -99,14 +99,25 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
 });
 
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
-  const page = settingsCategory("watch", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
+  const languages = ["es-419", "original", "en", "es-ES"];
+  const page = settingsCategory("watch", { languages, subtitles: "forced", quality: "1080p", sub_scale: 1 });
+  // Fernando, 4 nov: idiomas y subtítulos juntos y arriba; «Tus idiomas» es una sola lista en orden (N4-A).
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
+    ["Idiomas y subtítulos", undefined], ["Tus idiomas", "Latino, Idioma original, Inglés, Castellano"],
+    ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Letra de los subtítulos", "Normal"],
+    ["Imagen y reproducción", undefined], ["Calidad", "1080p"],
     ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Lo que recuerda cada título", undefined]]);
-  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "watch" });
-  // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
-  assert.equal(settingsCategory("watch", { audio: "es" }).options[0].value, "Español (cualquiera)");
-  assert.equal(settingsCategory("watch", { audio: "es-ES" }).options[0].value, "Español de España");
+  assert.deepEqual(page.options[1].command, { type: "languages" });
+  assert.match(page.options[1].help, /En este orden busca versiones/);
+  // La lista: subir, bajar, quitar y agregar; «Idioma original» nunca queda primero.
+  const list = languagesMenu(languages);
+  assert.deepEqual(list.options.map((o) => o.label), ["1. Latino", "2. Idioma original", "3. Inglés", "4. Castellano", "Agregar idioma"]);
+  assert.deepEqual(languageMenu(languages, "original").options.map((o) => o.label), ["Bajar", "Quitar", "Cancelar"]);
+  // Quitar Latino dejaría «original» primero: el siguiente sube y él queda segundo. Bajarlo no cambiaría nada: no sale.
+  assert.deepEqual(languageMenu(languages, "es-419").options.map((o) => o.label), ["Quitar", "Cancelar"]);
+  assert.deepEqual(languageMenu(languages, "es-419").options[0].command.languages, ["en", "original", "es-ES"]);
+  assert.deepEqual(languageMenu(languages, "en").options[0].command, { type: "languages-set", languages: ["es-419", "en", "original", "es-ES"], back: true });
+  assert.ok(languageAddMenu(languages).options.every((o) => !languages.includes(o.command.languages.at(-1)) && o.command.languages.length === 5));
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
   assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "Conectar"]]);
@@ -714,7 +725,7 @@ test("ajustes › Complementos › Torrentio: cada opción con su valor y su cam
   assert.equal(addonRows({ source: "own", imported_at: 1, entries: [{ ...entry, needs_key: true }] }).find((r) => r.label === "Torrentio").warn, true);
   assert.equal(addonMenu(entry).options[0].label, "Configurar");
   const menu = torrentioMenu(entry);
-  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Idiomas primero", "Latino"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
+  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Se usan tus idiomas", "Cambiar"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
     ["Solo lo que ya está en Real-Debrid", "No"], ["Orden", "Las más compartidas primero"], ["Cuántas por calidad", "Todas"],
     ["Tamaño máximo", "Sin límite"], ["Sitios donde busca", "25 de 25"], ["Volver a lo recomendado", undefined], ["¿Qué es esto?", undefined]]);
   const order = menu.options[3].command;

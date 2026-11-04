@@ -168,3 +168,29 @@ def test_orden_de_idiomas_latino_original_ingles_castellano():
     assert score(lat) > score(ja) > score(en) > score(cast) > streams.WRONG_LANGUAGE
     # Al instante: sin latino al instante, «Ver» pone el japonés antes que el castellano (y el latino se pide al lado, FQ1).
     assert [s.index for s in streams.rank([cast, en, ja, lat], prefs, "series")][:3] == [1, 2, 3]
+
+
+def test_error_3_nuevo_el_dia_de_estreno_se_dice_en_utc(monkeypatch):
+    """Cinemeta: «2026-12-18T00:00:00.000Z» es el viernes 18, también en México (antes decía «el jueves 17»)."""
+    from datetime import datetime
+    monkeypatch.setattr(time, "time", lambda: datetime(2026, 11, 3, 18).timestamp())
+    assert watch.player_ui_day(cinemeta.released_at("2026-12-18T00:00:00.000Z")) == "el viernes 18"
+
+
+def test_n4_tus_idiomas_es_la_unica_fuente(library):
+    """N4-A (Fernando, 4 nov): una lista en orden con «Idioma original»; de ahí leen la búsqueda y Torrentio."""
+    w = library.watch
+    w.state.set_setting("audio", "es-419")
+    assert w.languages == ["es-419", "original", "en", "es-ES"]  # sin tocarla: la de siempre con latino
+    w.set_languages(["en", "original", "es-419"])
+    prefs = w.stream_prefs
+    assert (prefs.audio, prefs.spanish, prefs.plan) == ("en", "", ("original", "es-419"))
+    assert w.addon_list.torrentio().options["language"] == ["latino"]  # Torrentio sigue a tus idiomas
+    ja = source(0, "Frieren.S01E01.1080p.Japanese")
+    lat = source(1, "Frieren.S01E01.1080p.Latino")
+    en = source(2, "Frieren.S01E01.1080p.English")
+    with_original = streams.Preferences(audio="en", plan=("original", "es-419"), original="ja")
+    s = lambda x: streams.language_score(x, with_original)  # noqa: E731
+    assert s(en) > s(ja) > s(lat) > streams.WRONG_LANGUAGE
+    for bad in (["original", "en"], [], ["en", "en"], ["xx"]):
+        assert not streams.valid_languages(bad)

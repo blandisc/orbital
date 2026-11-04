@@ -212,7 +212,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       found = data.sources;
       recommended = data.recommended?.id ?? null;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      const prefs = { audio: data.audio, spanish: data.spanish };
+      const prefs = { audio: data.audio, spanish: data.spanish, plan: data.plan || [] };
       const later = (s) => s.debrid && !s.cached && !isOwnSource(s); // Real-Debrid aún no la tiene: se pide
       rows = [...versionRows(found.filter((s) => !later(s)), prefs),
         ...versionRows(found.filter(later), prefs).map((row) => ({ ...row, ask: true }))];

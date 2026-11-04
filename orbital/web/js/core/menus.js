@@ -709,6 +709,62 @@ const SETTING_TEXT = {
   voice_tips: ["Frases en pantalla", "Al pedir algo por voz, el aviso dice qué más puedes decir en ese momento."],
 };
 
+/** Ajustes › Ver › Tus idiomas (N4-A, Fernando 4 nov): una sola lista en orden; «Idioma original» es un renglón (el de cada
+ *  título). De ahí leen «Ver», «Versión», el reproductor y Torrentio. Por omisión: Latino, Idioma original, Inglés, Castellano. */
+export const LANGUAGE_NAMES = { "es-419": "Latino", "es-ES": "Castellano", original: "Idioma original", en: "Inglés", fr: "Francés",
+  pt: "Portugués", it: "Italiano", de: "Alemán", ja: "Japonés", ko: "Coreano" };
+export const LANGUAGES_LEAD = "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.";
+const langName = (code) => LANGUAGE_NAMES[code] || code;
+// «Idioma original» no puede ir primero (depende de cada título): si quedaría ahí, el siguiente sube y él queda segundo.
+const fixLanguages = (list) => (list[0] === "original" && list.length > 1 ? [list[1], "original", ...list.slice(2)] : list);
+const validLanguages = (list) => list.length > 0 && list[0] !== "original";
+
+/** La lista: cada idioma con su lugar (A: subir, bajar o quitar) y «Agregar idioma». */
+export function languagesMenu(languages = []) {
+  return {
+    title: "Tus idiomas",
+    subtitle: LANGUAGES_LEAD,
+    options: [
+      ...languages.map((code, i) => ({ icon: "captions", label: `${i + 1}. ${langName(code)}`,
+        hint: i === 0 ? "Con este arranca si lo hay" : code === "original" ? "El de cada película o serie (japonés en un anime)" : "",
+        command: { type: "language", code } })),
+      Object.keys(LANGUAGE_NAMES).some((c) => !languages.includes(c)) &&
+        { icon: "plus", label: "Agregar idioma", hint: "Se agrega al final de tu lista", command: { type: "language-add" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Uno de tus idiomas: subir, bajar o quitar. «Idioma original» no puede ir primero (no es un idioma, depende del título). */
+export function languageMenu(languages = [], code) {
+  const i = languages.indexOf(code);
+  const moved = (j) => { const list = [...languages]; list.splice(i, 1); list.splice(j, 0, code); return list; };
+  const set = (list) => ({ type: "languages-set", languages: list, back: true });
+  const up = i > 0 && fixLanguages(moved(i - 1)), down = i < languages.length - 1 && fixLanguages(moved(i + 1));
+  const removed = fixLanguages(languages.filter((c) => c !== code));
+  const same = (list) => list && list.join() === languages.join();
+  return {
+    title: langName(code),
+    options: [
+      up && validLanguages(up) && !same(up) && { icon: "back", label: "Subir", command: set(up) },
+      down && validLanguages(down) && !same(down) && { icon: "chevron", label: "Bajar", command: set(down) },
+      validLanguages(removed) && { icon: "close", label: "Quitar", danger: true, command: set(removed) },
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Agregar idioma: los que todavía no están en tu lista. */
+export function languageAddMenu(languages = []) {
+  return {
+    title: "Agregar idioma",
+    options: Object.keys(LANGUAGE_NAMES).filter((c) => !languages.includes(c)).map((c) => ({ icon: "captions", label: langName(c),
+      command: { type: "languages-set", languages: [...languages, c], back: true } })),
+  };
+}
+
+/** Tus idiomas en una línea, para el renglón de Ajustes: «Latino, Idioma original, Inglés, Castellano». */
+export const languagesLine = (languages = []) => languages.map(langName).join(", ");
+
 /** ¿Todos sus valores caben a la vista (valores segmentados)? Hasta cuatro y cortos; si no, uno a la vez con ‹ ›. */
 export function segmentable(key) {
   const values = SETTING_VALUES[key] || [];
@@ -826,7 +882,7 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
       const n = settingsMissing(settings, { voice, now }).length;
       return n ? `${n} ${n === 1 ? "cosa" : "cosas"} por hacer` : "Todo listo";
     }
-    case "watch": return `${settingLabel("audio", settings.audio)} · ${settingLabel("quality", settings.quality)}`;
+    case "watch": return `${langName((settings.languages || [])[0] || settings.audio)} · ${settingLabel("quality", settings.quality)}`;
     case "addons": return addonsMeta(settings.addons);
     case "play": return settings.game_idle_minutes ? `En pausa, se cierran en ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "En pausa, no se cierran";
     case "voice": return voice ? `Voz: ${sinceVoice(lastVoice(voice), now).toLowerCase()}` : "La tele, Alexa y el iPhone";
@@ -850,7 +906,13 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   const row = (key) => settingRow(key, settings, id);
   switch (id) {
     case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
-      row("audio"), row("subtitles"), row("internet_subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
+      // Lo de idiomas y subtítulos junto y arriba (Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»).
+      { heading: true, label: "Idiomas y subtítulos" },
+      { icon: "sound", label: "Tus idiomas", value: languagesLine(settings.languages), help: LANGUAGES_LEAD,
+        command: { type: "languages" } },
+      row("subtitles"), row("internet_subtitles"), row("sub_scale"),
+      { heading: true, label: "Imagen y reproducción" },
+      row("quality"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
       { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
     ] };
     case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [
@@ -1786,8 +1848,9 @@ export function torrentioMenu(entry) {
     subtitle: "Aquí decides qué versiones te enseña y en qué orden. Lo de fábrica ya viene bien; cada cambio se guarda al hacerlo.",
     options: [
       entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true, command: { type: "rd-connect" } },
-      { icon: "captions", label: "Idiomas primero", value: (o.language || []).map((k) => TORRENTIO_LANGUAGES[k] || k).join(", ") || "Ninguno",
-        command: { type: "torrentio-languages" } },
+      // N4-A: Torrentio no tiene lista propia; usa Ajustes › Ver › Tus idiomas.
+      { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: "Ajustes › Ver › Tus idiomas",
+        command: { type: "languages" } },
       { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },
       { icon: "bolt", label: "Solo lo que ya está en Real-Debrid", value: only ? "Sí" : "No",
         hint: only ? "Solo lo que arranca al instante" : "También lo que se puede pedir",
