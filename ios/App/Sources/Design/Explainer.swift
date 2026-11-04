@@ -172,8 +172,8 @@ struct DebridExplainer: View {
              Text("Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."))
         card("tortoise.fill", DS.ListTint.flame, Text("El que no contesta se salta"),
              Text("Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."))
-        card("shippingbox.fill", DS.ListTint.trophy, Text("Vienen con Orbital o de tu Stremio"),
-             Text("Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan."))
+        card("shippingbox.fill", DS.ListTint.trophy, Text("Vienen con Orbital o los agregas tú"),
+             Text("Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan."))
     }
 
     @ViewBuilder private var realDebrid: some View {

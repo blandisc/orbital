@@ -11,7 +11,6 @@ struct SettingsView: View {
     /// Tu Real-Debrid (Ajustes › Cuentas).
     @State var debrid: ModelObserver<DebridModel>
     @State private var tmdbKey = ""
-    @State var confirmSignOut = false
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
     @State private var editingAvatar = false
@@ -109,9 +108,6 @@ struct SettingsView: View {
         .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
             Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
         } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
-        .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
-            Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
-        } message: { Text("Lo tuyo se queda en el iPhone y en Trakt; Stremio deja de recibir la copia.") }
         .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
             Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
         } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }

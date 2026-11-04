@@ -105,19 +105,4 @@ final class AccountsModelTests: XCTestCase {
         XCTAssertEqual(offline.keyCheck, .unreachable)
     }
 
-    func testVolverAImportarSinRedDiceQuePasoYLaListaSeQueda() async throws {
-        let rig = try ServicesRig(signedIn: true)
-        rig.services.addonList.startWithRecommended()
-        let model = AddonsModel(rig.services)
-        let template = try XCTUnwrap(AddonCatalog.recommended.first)
-        let removed = await model.remove(template.id)
-        XCTAssertFalse(removed, "los que vienen con Orbital no se quitan, solo se apagan")
-        XCTAssertTrue(model.missingRecommended.isEmpty)
-        let before = model.items
-        rig.http.offline = true
-        await model.importAgain()
-        XCTAssertNotNil(model.error, "sin red, el aviso dice qué pasó")
-        XCTAssertFalse(model.working)
-        XCTAssertEqual(model.items, before, "lo que tenías se queda")
-    }
 }

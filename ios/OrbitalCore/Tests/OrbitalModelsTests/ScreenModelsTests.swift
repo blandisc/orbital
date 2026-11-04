@@ -4,29 +4,10 @@ import XCTest
 
 @MainActor
 final class ScreenModelsTests: XCTestCase {
-    // MARK: sesión
-    func testSignInStoresOnlyTheSessionKey() async throws {
-        let rig = try ServicesRig(signedIn: false)
-        rig.http.json["https://api.strem.io/api/login"] = ["result": ["authKey": "NEWKEY", "user": ["email": "a@b.c"]]]
-        let session = SessionModel(rig.services)
-        XCTAssertEqual(session.state, .signedOut)
-        await session.signIn(email: " a@b.c ", password: "secreta")
-        XCTAssertEqual(session.state, .signedIn)
-        XCTAssertEqual(rig.secrets.get(SecretKey.stremioAuth), "NEWKEY")
-        let sent = String(data: rig.http.bodies("https://api.strem.io/api/login").first ?? Data(), encoding: .utf8) ?? ""
-        XCTAssertTrue(sent.contains("secreta"))
-        XCTAssertNil(rig.kv.data("password"), "la contraseña no se guarda")
-    }
-
-    func testSignInFailureShowsStremioMessage() async throws {
-        let rig = try ServicesRig(signedIn: false)
-        rig.http.json["https://api.strem.io/api/login"] = ["error": ["message": "User not found"]]
-        let session = SessionModel(rig.services)
-        await session.signIn(email: "a@b.c", password: "x")
-        XCTAssertEqual(session.state, .failed("User not found"))
-        XCTAssertNil(rig.secrets.get(SecretKey.stremioAuth))
-        await session.signIn(email: "", password: "")
-        if case .failed(let message) = session.state { XCTAssertTrue(message.contains("correo")) } else { XCTFail() }
+    // MARK: Stremio fuera (E1)
+    func testAStoredStremioSessionIsForgottenOnLaunch() throws {
+        let rig = try ServicesRig()
+        XCTAssertNil(rig.secrets.get(SecretKey.stremioAuth), "Stremio fuera: la sesión guardada se borra y nada la usa")
     }
 
     func testAddingAnAddonValidatesItsManifestAndSavesItEncrypted() async throws {
@@ -261,8 +242,8 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(TitleModel.continueVideoID(kind: "movie", metaID: "tt0816692", entry: nil, seasons: []), "tt0816692")
     }
 
-    /// Mi lista: cambia en el teléfono al instante, viaja a tu watchlist de Trakt y a Stremio solo como copia (sin tocar el avance).
-    func testMyListToggleIsLocalTravelsToTraktAndCopiesToStremio() async throws {
+    /// Mi lista: cambia en el teléfono al instante y viaja a tu watchlist de Trakt. A Stremio ya no va nada (E1).
+    func testMyListToggleIsLocalAndTravelsToTrakt() async throws {
         let rig = try titleRig()
         rig.secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#)
         rig.services.settings.update { $0.traktClientID = "CID" }
@@ -277,14 +258,7 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(rig.services.library.entry("tt0386676")?.inList, false)
         let sent = try XCTUnwrap(rig.http.bodies("https://api.trakt.tv/sync/watchlist/remove").first.flatMap(JSON.parse))
         XCTAssertEqual(sent["shows"]?.array?.first?["ids"]?["imdb"]?.string, "tt0386676")
-        let copy = try XCTUnwrap(rig.http.bodies(stremioPut).last.flatMap(JSON.parse)?["changes"]?.array?.first)
-        XCTAssertEqual(copy["removed"]?.bool, true)
-        XCTAssertEqual(copy["state"]?["video_id"]?.string, "tt0386676:1:3", "el avance de Stremio no se toca")
-        // Stremio falla: Mi lista cambia igual (la copia no manda) y no hay error en pantalla.
-        rig.http.statuses[stremioPut] = 500
-        await title.toggleLibrary()
-        XCTAssertTrue(title.inLibrary)
-        XCTAssertNil(title.message)
+        XCTAssertTrue(rig.http.bodies(stremioPut).isEmpty, "Stremio fuera: no se le manda copia")
     }
 
     /// Tocar «Mi lista» mientras la ficha todavía lee lo tuyo (al abrirla llegan los episodios de Trakt y se vuelve a leer):
@@ -305,20 +279,15 @@ final class ScreenModelsTests: XCTestCase {
         }
     }
 
-    /// Marcar visto: ✓ en el teléfono, a Trakt (`/sync/history`) y copia en Stremio (el bitfield), con el título original.
-    func testMarkingWatchedIsLocalAndCopiesTheBitfieldToStremio() async throws {
+    /// Marcar visto: ✓ en el teléfono y pasa al siguiente. A Stremio ya no va nada (E1).
+    func testMarkingWatchedIsLocal() async throws {
         let rig = try ServicesRig()
-        rig.http.json[stremioGet] = ["result": []]
-        rig.http.json[stremioPut] = ["result": ["success": true]]
         let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
         await title.load()
         await title.markWatched("tt0386676:1:1")
         XCTAssertTrue(title.rows.first { $0.id == "tt0386676:1:1" }?.watched == true)
         XCTAssertEqual(rig.services.library.entry("tt0386676")?.videoID, "tt0386676:1:2", "pasa al siguiente")
-        let item = try XCTUnwrap(rig.http.bodies(stremioPut).last.flatMap(JSON.parse)?["changes"]?.array?.first)
-        let ids = CinemetaParsing.seasonVideoIDs(try Fixtures.json("cinemeta/meta_series_tt0386676.json"))
-        XCTAssertEqual(StremioLibrary.parseWatched(item["state"]?["watched"]?.string, videoIDs: ids), ["tt0386676:1:1"])
-        XCTAssertEqual(item["name"]?.string, "The Office", "con el título original")
+        XCTAssertTrue(rig.http.bodies(stremioPut).isEmpty, "Stremio fuera: no se le manda copia")
         await title.unmarkWatched("tt0386676:1:1")
         XCTAssertFalse(title.rows.first { $0.id == "tt0386676:1:1" }?.watched == true)
     }

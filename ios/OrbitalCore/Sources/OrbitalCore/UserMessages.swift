@@ -3,16 +3,10 @@ import Foundation
 /// Los mensajes que ve la gente: sin códigos ni errores del sistema.
 public enum UserMessages {
     /// Lo técnico no llega a la pantalla: códigos HTTP, errores del sistema (en el idioma del sistema, no de la app) y los
-    /// mensajes en inglés de Stremio se vuelven una frase normal. Se queda lo que ya decía en español antes de los dos puntos
-    /// («No pude cambiar tu lista de Stremio: HTTP 503» → «No pude cambiar tu lista de Stremio. Revisa tu conexión.»).
+    /// mensajes en inglés se vuelven una frase normal. Se queda lo que ya decía en español antes de los dos puntos
+    /// («No pude cambiar tu lista: HTTP 503» → «No pude cambiar tu lista. Revisa tu conexión.»).
     public static func humanize(_ text: String) -> String {
-        let known: [String: String] = [
-            "user not found": "Ese correo no tiene cuenta de Stremio.",
-            "wrong passphrase": "La contraseña no coincide.",
-            "session does not exist": "Tu sesión de Stremio se cerró: vuelve a entrar.",
-        ]
         let lower = text.lowercased()
-        for (english, spanish) in known where lower.contains(english) { return spanish }
         // Se llenó el iPhone a media descarga: el texto del sistema (en el idioma del iPhone) no decía qué hacer.
         if ["enough space", "suficiente espacio", "no space left", "out of space"].contains(where: lower.contains) {
             return "Se llenó el iPhone. Libera espacio y toca Reintentar."

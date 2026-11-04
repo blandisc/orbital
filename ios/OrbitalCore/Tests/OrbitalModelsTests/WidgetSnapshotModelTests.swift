@@ -23,8 +23,9 @@ final class WidgetSnapshotModelTests: XCTestCase {
 
     func testHomeRefreshPublishesTheSnapshotAndDismissingUpdatesIt() async throws {
         let rig = try ServicesRig()
-        rig.http.json[stremioGet] = ["result": [
-            ["_id": "tt0386676", "name": "The Office", "type": "series", "removed": true, "temp": true, "state": ["video_id": "tt0386676:2:5", "timeOffset": 600_000, "duration": 1_320_000, "lastWatched": "2025-01-02T00:00:00.000Z"]]]]
+        rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
+            $0.videoID = "tt0386676:2:5"; $0.position = 600; $0.duration = 1320; $0.updatedAt = 1_735_776_000
+        }
         var published: [WidgetSnapshot] = []
         rig.services.onWidgetSnapshot = { published.append($0) }
         let home = HomeModel(rig.services)

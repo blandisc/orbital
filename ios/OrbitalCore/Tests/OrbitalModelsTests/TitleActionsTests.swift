@@ -39,13 +39,11 @@ final class TitleActionsTests: XCTestCase {
         XCTAssertEqual(TitleActions(try ServicesRig().services).preferredDestination(for: suggestion()), .myList)
     }
 
-    func testSavingKeepsItOnThePhoneAndCopiesToStremio() async throws {
+    func testSavingKeepsItOnThePhone() async throws {
         let rig = try ServicesRig()
-        rig.http.json[stremioGet] = ["result": []]
-        rig.http.json[stremioPut] = ["result": ["success": true]]
         try await TitleActions(rig.services).setSaved(suggestion(), add: true)
         XCTAssertEqual(rig.services.library.entry(suggestion().imdb)?.inList, true)
-        XCTAssertEqual(rig.http.bodies(stremioPut).count, 1, "una copia a la biblioteca de Stremio")
+        XCTAssertTrue(rig.http.bodies(stremioPut).isEmpty, "Stremio fuera: no se le manda copia")
     }
 
     func testFavoritesNeedTrakt() async throws {

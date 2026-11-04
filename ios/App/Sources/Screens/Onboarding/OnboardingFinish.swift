@@ -1,12 +1,11 @@
 import SwiftUI
 import OrbitalModels
 
-/// 9 · Todo listo: el resumen y, aparte y en tono bajo, la invitación a conectar Stremio (opcional) y, si tienes TV, dónde
+/// 9 · Todo listo: el resumen y, si tienes TV, dónde
 /// conectarla (IOS-18).
 struct OnboardingDone: View {
     let finish: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
-    @State private var connectingStremio = false
     @State private var connectingTV = false
     @Environment(AppEnvironment.self) private var env
 
@@ -22,16 +21,6 @@ struct OnboardingDone: View {
                            detail: model.debrid.status.map { DebridWords.text($0) })
                 GuidePiece(symbol: "checkmark.seal", tint: DS.ListTint.chart, title: Text(verbatim: "Trakt"),
                            tag: model.traktName.map { Text(verbatim: $0) } ?? Text("Sin conectar"))
-                if env.session.state != .signedIn {
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        Text("¿Usas Stremio?").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-                        Text("Conéctalo para traer tu historial y que siga al día mientras probamos. Es opcional.")
-                            .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
-                        Button("Conectar Stremio") { connectingStremio = true }.dsGlassButton()
-                    }
-                    .padding(DS.Space.s4)
-                    .padding(.top, DS.Space.s4)
-                }
                 // IOS-18 (como la guía de la TV, que menciona el iPhone como opcional): en el iPad con la invitación de tu
                 // iPhone, la tarjeta CX4-A aquí mismo; si no, una línea opcional. Nunca en la Mac (CX1-B).
                 if env.services.allowsOrbital {
@@ -45,7 +34,6 @@ struct OnboardingDone: View {
                 }
             }
         }
-        .sheet(isPresented: $connectingStremio) { NavigationStack { LoginView(session: env.session) } }
         .sheet(isPresented: $connectingTV) { OrbitalSetupView() }
     }
 }

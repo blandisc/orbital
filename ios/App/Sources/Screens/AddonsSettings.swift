@@ -48,9 +48,7 @@ struct AddonsSettings: View {
                 }
                 .onMove { from, to in Task { await model.move(fromOffsets: from, toOffset: to) } }
                 if model.items.isEmpty {
-                    // Sin sesión de Stremio no hay «Volver a traer»: se dice la salida que sí está («Agregar», arriba).
-                    (env.session.state == .signedIn ? Text("Sin complementos: vuelve a traer los de tu Stremio.")
-                                                    : Text("Sin complementos: agrega los que vienen con Orbital con «Agregar», arriba."))
+                    Text("Sin complementos: agrega los que vienen con Orbital con «Agregar», arriba.")
                         .foregroundStyle(DS.textMuted)
                 }
             } header: { Text("Se preguntan en este orden") } footer: {
@@ -61,14 +59,6 @@ struct AddonsSettings: View {
                 Section {
                     ForEach(tv.model.tvOnly, id: \.id) { AddonTVOnlyRow(addon: $0) }
                 } header: { Text("En tu TV") } footer: { Text("Viven en tu TV; este iPhone no los usa.") }
-                .listRowBackground(DS.surface)
-            }
-            if env.session.state == .signedIn {
-                Section {
-                    Button { Task { await model.importAgain() } } label: { Label("Volver a traer", systemImage: "arrow.down.circle") }
-                        .disabled(model.working)
-                        .accessibilityIdentifier("addons-reimport")
-                } header: { Text("Traídos de tu Stremio") } footer: { Text("Tu Stremio no se toca. Lo que quitaste no regresa solo.") }
                 .listRowBackground(DS.surface)
             }
         }
@@ -114,19 +104,19 @@ struct AddonsSettings: View {
         .accessibilityIdentifier("addons-settings")
     }
 
-    /// C5: dos Torrentio (el de Orbital y el de tu Stremio, o dos traídos): cuál se queda, con lo que trae cada uno.
+    /// C5: dos Torrentio (el de Orbital y uno que agregaste, o dos agregados): cuál se queda, con lo que trae cada uno.
     @ViewBuilder private func torrentioChoice(_ model: AddonsModel) -> some View {
         let ui = env.services.appSettings.uiLanguage
         Section {
             ForEach(model.torrentioChoice) { candidate in
                 Button { Task { await model.keepTorrentio(candidate) } } label: {
-                    TorrentioRowLabel(title: candidate.addonID == nil ? Text("Quedarme con el de Orbital") : Text("Quedarme con el de tu Stremio"),
+                    TorrentioRowLabel(title: candidate.addonID == nil ? Text("Quedarme con el de Orbital") : Text("Quedarme con el que agregaste"),
                                       detail: TorrentioWords.summary(candidate.options, uiLanguage: ui), action: true)
                 }
                 .accessibilityIdentifier("addons-keep-\(candidate.id)")
             }
         } header: { Text("Tienes \(model.torrentioChoice.count) Torrentio") } footer: {
-            Text("Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone; tu Stremio no se toca.")
+            Text("Se queda uno, con tu clave de Real-Debrid de Cuentas. El otro se quita de este iPhone.")
         }
         .listRowBackground(DS.surface)
     }
