@@ -8,9 +8,14 @@ import OrbitalModels
 /// última tarjeta lleva su botón a la función («Probar la búsqueda avanzada»). Recibe sus datos: no lee el estado de la app.
 struct StoryPlayer: View {
     let story: LearnStory
+    /// La que se ve en el mazo (las de los lados esperan quietas).
+    var active = true
     /// Llegó a la última tarjeta (ya cuenta como vista).
     var onFinish: () -> Void = {}
     var onAction: (LearnStory.Destination) -> Void = { _ in }
+    /// Pasar de la última tarjeta lleva a la historia siguiente, y regresar de la primera a la anterior (como Instagram).
+    var onNextStory: (() -> Void)?
+    var onPreviousStory: (() -> Void)?
     let close: () -> Void
     @State private var index = 0
     @State private var progress: Double = 0
@@ -55,11 +60,11 @@ struct StoryPlayer: View {
         .contentShape(Rectangle())
         .gesture(SpatialTapGesture().onEnded { g in step(g.location.x < width * DS.Watching.backZone ? -1 : 1) })
         .onLongPressGesture(minimumDuration: DS.Watching.holdToPause, perform: {}, onPressingChanged: { paused = $0 })
-        .simultaneousGesture(DragGesture().onChanged { drag = $0.translation.height }.onEnded { g in
+        .simultaneousGesture(DragGesture().onChanged { g in if abs(g.translation.height) > abs(g.translation.width) { drag = g.translation.height } }.onEnded { g in
             if g.translation.height > DS.Story.closeDrag { close() } else { withAnimation(DS.Motion.spring(reduceMotion)) { drag = 0 } }
         })
         .animation(DS.Motion.base(reduceMotion), value: index)
-        .task(id: "\(index)|\(paused)|\(scenePhase == .active)") { await tick() }
+        .task(id: "\(index)|\(paused)|\(active)|\(scenePhase == .active)") { await tick() }
         .onChange(of: index) { _, _ in if last { onFinish() } }
         .onAppear { if story.cards.count == 1 { onFinish() } }
         .onKeyPress(.leftArrow) { step(-1); return .handled }
@@ -73,20 +78,21 @@ struct StoryPlayer: View {
     }
 
     private func tick() async {
-        guard autoAdvance, !paused, scenePhase == .active else { return }
-        let length = card.body.count > DS.Story.longText ? DS.Story.longCard : DS.Story.card
+        guard autoAdvance, active, !paused, scenePhase == .active else { return }
+        let length = card.body.count > DS.Story.longText || (last && story.action != nil) ? DS.Story.longCard : DS.Story.card
         for i in 0..<DS.Story.ticks {
             try? await Task.sleep(for: length / DS.Story.ticks)
             if Task.isCancelled { return }
             progress = Double(i + 1) / Double(DS.Story.ticks)
         }
-        if !last { step(1) }
+        step(1)
     }
 
     private func step(_ by: Int) {
         let next = index + by
-        if next >= story.cards.count { if story.action == nil { close() }; return }
-        index = max(0, next); progress = 0
+        if next >= story.cards.count { if let onNextStory { onNextStory() } else { close() }; return }
+        if next < 0 { onPreviousStory?(); return }
+        index = next; progress = 0
     }
 
     private var bars: some View {
@@ -101,6 +107,52 @@ struct StoryPlayer: View {
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// Las historias en fila, como Instagram: se abre en la que tocaste y, al terminar una (o al deslizar a la izquierda), sigue
+/// la próxima; a la derecha, la anterior. El paso es un cubo que gira con el dedo y se acomoda con su resorte (física del
+/// desplazamiento por páginas). Con «Reducir movimiento», páginas planas. Recibe sus datos.
+struct StoryDeck: View {
+    let stories: [LearnStory]
+    let start: String
+    var onSeen: (LearnStory) -> Void = { _ in }
+    var onAction: (LearnStory.Destination) -> Void = { _ in }
+    let close: () -> Void
+    @State private var current: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        GeometryReader { geo in
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
+                    ForEach(Array(stories.enumerated()), id: \.element.id) { i, story in
+                        StoryPlayer(story: story, active: current == story.id, onFinish: { onSeen(story) }, onAction: onAction,
+                                    onNextStory: { go(i + 1) }, onPreviousStory: i > 0 ? { go(i - 1) } : nil, close: close)
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .visualEffect { content, proxy in
+                                // -1…1: cuánto se fue a la izquierda o a la derecha; gira sobre la orilla que comparte con la otra.
+                                let shift = proxy.frame(in: .scrollView(axis: .horizontal)).minX / max(proxy.size.width, 1)
+                                return content.rotation3DEffect(.degrees(reduceMotion ? 0 : Double(shift) * DS.Story.cubeAngle), axis: (x: 0, y: 1, z: 0),
+                                                                anchor: shift < 0 ? .trailing : .leading, perspective: DS.Story.cubePerspective)
+                            }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $current)
+            .scrollIndicators(.hidden)
+        }
+        .background(DS.backdropDeep.ignoresSafeArea())
+        .onAppear { current = start }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("story-deck")
+    }
+
+    private func go(_ i: Int) {
+        guard stories.indices.contains(i) else { return close() }
+        withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { current = stories[i].id }
     }
 }
 

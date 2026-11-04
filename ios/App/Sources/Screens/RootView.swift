@@ -84,15 +84,13 @@ struct RootView: View {
         .fullScreenCover(isPresented: Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 })) { OnboardingView { ui.showingGuide = false } }
         // Una historia de «Aprende Orbital» (G3): desde los círculos de Inicio, Ajustes o «Ver la historia» de un aviso.
         .fullScreenCover(item: Binding(get: { ui.openStory.map(StoryRoute.init) }, set: { ui.openStory = $0?.id })) { route in
-            if let story = LearnContent.all.first(where: { $0.id == route.id }) {
-                StoryPlayer(story: story, onFinish: { LearnModel(env.services).markSeen(story.id) },
-                            onAction: { destination in
-                                LearnModel(env.services).markSeen(story.id)
-                                ui.openStory = nil
-                                Task { try? await Task.sleep(for: DS.Motion.tabSettle); env.open(destination) }
-                            },
-                            close: { ui.openStory = nil })
-            }
+            StoryDeck(stories: LearnModel(env.services).deck, start: route.id,
+                      onSeen: { LearnModel(env.services).markSeen($0.id) },
+                      onAction: { destination in
+                          ui.openStory = nil
+                          Task { try? await Task.sleep(for: DS.Motion.tabSettle); env.open(destination) }
+                      },
+                      close: { ui.openStory = nil })
         }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {

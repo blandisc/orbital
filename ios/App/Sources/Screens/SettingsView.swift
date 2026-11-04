@@ -98,6 +98,11 @@ struct SettingsView: View {
                     SettingsRow(title: "Aprende Orbital", symbol: "sparkles", tint: DS.ListTint.spark)
                 }
                 .accessibilityIdentifier("settings-learn")
+                // Vivir otra vez la guía de bienvenida (Fernando, 4 nov: «que el onboarding sea accesible a través de ajustes»).
+                Button { env.ui.showingGuide = true } label: {
+                    SettingsRow(title: "Ver la guía de bienvenida", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
+                }
+                .accessibilityIdentifier("settings-welcome")
             }
             .listRowBackground(DS.surface)
         }

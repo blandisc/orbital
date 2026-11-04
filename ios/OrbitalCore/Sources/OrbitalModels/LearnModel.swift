@@ -49,6 +49,14 @@ public final class LearnModel: ObservableModel {
         return out + stories.map(\.id)
     }
 
+    /// Todas, en el orden de lo que te falta (el mazo: una tras otra, como Instagram).
+    public var deck: [LearnStory] {
+        let byID = Dictionary(stories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var order: [String] = []
+        for id in priority where !order.contains(id) && byID[id] != nil { order.append(id) }
+        return order.compactMap { byID[$0] }
+    }
+
     /// Los círculos de arriba de Inicio (vacío: ya viven solo en Ajustes). `debridExpired`: tu cuenta venció.
     public func rings(debridExpired: Bool = false) -> [LearnStory] {
         let byID = Dictionary(stories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })

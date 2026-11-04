@@ -58,6 +58,8 @@ extension DS {
         /// El símbolo grande de una tarjeta y la mano fantasma que repite el gesto.
         static let symbol: CGFloat = 96, hand: CGFloat = 44
         static let handTravel: CGFloat = 40
+        /// El cubo entre historias: cuánto gira una cara al irse entera y qué tan honda se ve.
+        static let cubeAngle: Double = 90, cubePerspective: CGFloat = 0.6   // ds-exception: grados y profundidad del cubo (como Instagram)
         /// Bajar más que esto la cierra.
         static let closeDrag: CGFloat = 120
         /// El círculo de Inicio: su anillo y el cuadro de adentro.
@@ -114,7 +116,8 @@ extension DS {
         static let commit: CGFloat = 0.28   // ds-exception: fracción del ancho, no un espacio
         /// Lo que sale se aleja un poco y se apaga, para que se lea la profundidad (no se va entero de golpe).
         static let away: CGFloat = 0.35   // ds-exception: fracción del ancho del encabezado
-        /// Cuánto hay que bajar para que el encabezado se encoja.
-        static let collapseAt: CGFloat = 24
+        /// Cuánto hay que bajar para que el encabezado se encoja, y hasta dónde hay que subir para que vuelva a crecer: el margen
+        /// es más grande que lo que cambia de alto el encabezado, así nunca rebota entre los dos.
+        static let collapseAt: CGFloat = 96, expandAt: CGFloat = 16
     }
 }

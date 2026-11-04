@@ -134,7 +134,13 @@ struct HomeView: View {
         }
         // Un Bool (Equatable): el encabezado solo se vuelve a pintar al cruzar la línea, no en cada cuadro del desplazamiento.
         .scrollEdgeEffectStyle(.hard, for: .top)   // el encabezado propio (HE1-B) tapa lo que pasa por debajo, como la barra de antes
-        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.HomeStories.collapseAt } action: { _, now in collapsed = now }
+        // Con margen (se encoge pasando `collapseAt` y crece hasta volver bajo `expandAt`): al encogerse, el encabezado cambia de
+        // alto y eso mueve un poco el desplazamiento; sin margen, encoger y crecer se alternaban sin fin y el iPhone cerraba la app
+        // (Fernando, 4 nov: «cuando bajas y le picas X, truenan»).
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, scrolled in
+            if !collapsed, scrolled > DS.HomeStories.collapseAt { collapsed = true }
+            else if collapsed, scrolled < DS.HomeStories.expandAt { collapsed = false }
+        }
         #if DEBUG
         .modifier(DemoScroll())
         .orbitalRefreshable { await reload() }   // tirar para actualizar, con la luna de Orbital   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)

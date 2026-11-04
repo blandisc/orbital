@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Ver la guía de bienvenida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the welcome guide"
+          }
+        }
+      }
+    },
     "Por omisión: latino, el idioma original, inglés y castellano. Arrastra para cambiar el orden.": {
       "extractionState": "manual",
       "localizations": {
