@@ -144,6 +144,21 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
             raise HTTPException(502, "No pude leer tu Stremio. Revisa Internet e inténtalo de nuevo.") from exc
         return {**watch.addon_status(), "done": done}
 
+    @r.post("/api/stremio/to-trakt-list")
+    async def stremio_to_trakt_list(request: Request) -> dict:
+        """«Pasar a Trakt y desconectar» (Fernando, 4 nov): tu Mi lista de Stremio a la lista «Mi lista Stremio» de Trakt;
+        solo si llegó todo se desconecta la cuenta."""
+        local_only(request)
+        try:
+            done = await run_in_threadpool(watch.move_stremio_to_trakt_list)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        except stremio_api.StremioError as exc:
+            raise HTTPException(502, "No pude leer tu Stremio. Revisa Internet e inténtalo de nuevo.") from exc
+        except Exception as exc:  # noqa: BLE001 — TraktError, sin internet: no se desconectó nada
+            raise HTTPException(502, f"No pude pasar tu lista a Trakt: {exc}") from exc
+        return {**watch.addon_status(), "done": done}
+
     @r.post("/api/addons/source")
     def source(body: SourceRequest, request: Request) -> dict:
         local_only(request)

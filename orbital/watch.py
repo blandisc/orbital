@@ -801,6 +801,38 @@ class Watch:
         self.refresh_stremio(background=True)
         return {"addons": brought.get("added", 0), "my_list": added, "already": already}
 
+    STREMIO_LIST = "Mi lista Stremio"
+
+    def move_stremio_to_trakt_list(self) -> dict:
+        """Fernando, 4 nov 2026: «Crear una nueva lista en Trakt que se llame Mi lista Stremio. Pásalo todo y luego
+        quítala.» Todo lo de tu Mi lista de Stremio (películas y series) va a esa lista personal de Trakt (no a tu
+        watchlist; en Stremio no se borra nada). Se comprueba leyendo la lista de vuelta y, solo si llegó todo, se
+        desconecta tu cuenta de Stremio de la TV (queda como respaldo para ver torrents). ValueError sin Trakt o sin la
+        cuenta. Devuelve {"stremio", "in_list", "missing", "unlinked", "list_id"}."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth:
+            raise ValueError("Tu cuenta de Stremio ya no está conectada")
+        trakt = self.trakt_library.client()
+        if trakt is None:
+            raise ValueError("Primero conecta Trakt: ahí va tu lista")
+        raw = self.stremio_client.library(auth)
+        mine = [w for w in stremio_api.parse_library(raw) if w.in_library and w.type in ("movie", "series")]
+        list_id = trakt.named_list(self.STREMIO_LIST, create=True)
+        if not list_id:
+            raise ValueError("Trakt no creó la lista")
+        trakt.add_list_items(list_id, [(w.type, w.id) for w in mine])
+        have = {str(e.get("imdb")) for e in trakt.list_items(list_id) if isinstance(e, dict)}
+        missing = [w.id for w in mine if w.id not in have]  # también lo que no tiene IMDb (Trakt no lo acepta)
+        unlinked = not missing
+        if unlinked:
+            self.unlink_stremio()
+            self.state.set_setting("stremio_role", "backup")
+            self.refresh_trakt(background=True)
+        log.info("Mi lista de Stremio a Trakt: %d de %d (faltan %s); cuenta %s", len(mine) - len(missing), len(mine),
+                 missing[:10], "desconectada" if unlinked else "conectada")
+        return {"stremio": len(mine), "in_list": len(mine) - len(missing), "missing": missing, "unlinked": unlinked,
+                "list_id": list_id}
+
     def own_addons(self) -> list[str]:  # los de `orbital stremio addon add`, de antes de tu lista (S1)
         return addons.clean_urls(self.credentials.get(ADDONS_KEY))
 

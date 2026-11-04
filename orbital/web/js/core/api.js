@@ -111,7 +111,7 @@ export const api = {
   addonChange: (id, action) => post("/api/addons/change", { id, action }),
   addonRestore: (id) => post("/api/addons/restore", { id }),
   torrentioOptions: (options) => post("/api/addons/torrentio", { options }),
-  stremioBring: () => post("/api/stremio/bring", {}, { timeout: 60000 }),
+  stremioToTrakt: () => post("/api/stremio/to-trakt-list", {}, { timeout: 60000 }),
   // Tus pedidos a Real-Debrid (corte S2): la libreta común con el iPhone, y «Cancelar pedido».
   debridRequests: () => request("/api/realdebrid/requests"),
   debridStatus: () => request("/api/realdebrid"),

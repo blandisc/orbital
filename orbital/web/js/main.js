@@ -1885,11 +1885,6 @@ async function runCommand(command, context = null) {
         captureFrom = context ? { options: { stack: context.stack }, first: context.index - command.index } : null;
         ui.viewer.open(state.captures || [], command.index);
         return renderHints();
-      case "stremio-login":
-        sound.play("open");
-        loginFrom = { context };
-        ui.login.open();
-        return renderHints();
       case "trakt-link": // un código para escribir en trakt.tv/activate (el aviso llega por SSE)
         sound.play("open");
         traktFrom = { context };

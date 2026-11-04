@@ -120,14 +120,12 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.ok(languageAddMenu(languages).options.every((o) => !languages.includes(o.command.languages.at(-1)) && o.command.languages.length === 5));
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
-  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "Conectar"]]);
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""]]); // 4 nov: Stremio ya no se conecta
   assert.deepEqual(accounts.options[0].command, { type: "rd-connect" }); // Real-Debrid primero (SS-1); sin cuenta, directo a pegar la clave (UX-1)
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
-  assert.deepEqual(accounts.options[2].command, { type: "stremio-login" }); // corte S4: Stremio al final, opcional
-  assert.ok(!accounts.options[2].warn);
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "✓ Conectada"], ["Claves de Explorar", undefined],
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio", "Pasar a Trakt"], ["Claves de Explorar", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Letterboxd", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[5].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
@@ -591,7 +589,7 @@ test("Ajustes › Resumen: lo que falta primero (la voz que no llega, cuentas), 
   const settings = { alexa: true, stremio_linked: true, trakt: { configured: true, linked: false }, companion_devices: [{ seen: 1 }], tv: { configured: true } };
   assert.deepEqual(settingsMissing(settings, { voice, now }).map((o) => o.label), ["La voz no ha llegado en 8 días", "Trakt sin conectar"]);
   const page = settingsCategory("summary", settings, { voice, now });
-  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "Stremio", "La tele"]);
+  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "La tele"]);
   assert.equal(settingsMeta("summary", settings, { voice, now }), "2 cosas por hacer");
   // Sin saber de la voz (el servidor no contestó), no se inventa que falla.
   assert.deepEqual(settingsMissing(settings, { now }).map((o) => o.label), ["Trakt sin conectar"]);
@@ -758,16 +756,11 @@ test("resumen sin Stremio: lo que falta para películas y series (corte S4, AD-1
   assert.deepEqual(labels({ addons: { entries: [{ template: "torrentio", on: true, health: { state: "down" } }] } }), ["Torrentio no contesta"]);
 });
 
-test("cuentas › Stremio de respaldo: traer una vez, la copia y volver a leerlo (corte S5, SS-8)", () => {
-  const before = stremioAccountMenu({ trakt: { linked: true } });
-  assert.deepEqual(before.options.map((o) => [o.label, o.value]), [["Traer de tu Stremio", undefined], ["Seguir mandándole copia", "Sí"],
-    ["Desconectar", undefined], ["Cancelar", undefined]]);
-  assert.deepEqual(before.options[0].command, { type: "stremio-bring" });
+test("cuentas › Stremio (Fernando, 4 nov): pasar tu Mi lista a «Mi lista Stremio» de Trakt y desconectar", () => {
+  const menu = stremioAccountMenu({ trakt: { linked: true } });
+  assert.deepEqual(menu.options.map((o) => o.label), ["Pasar a Trakt y desconectar", "Desconectar sin pasarla", "Cancelar"]);
+  assert.deepEqual(menu.options[0].command, { type: "stremio-to-trakt" });
   assert.equal(stremioAccountMenu({ trakt: { configured: true } }).options[0].command.type, "trakt-link"); // sin Trakt, primero Trakt
-  const after = stremioAccountMenu({ stremio_role: "backup", stremio_copy: false, trakt: { linked: true } });
-  assert.deepEqual(after.options.map((o) => [o.label, o.value]), [["Seguir mandándole copia", "No"], ["Volver a leer tu Stremio", undefined],
-    ["Desconectar", undefined], ["Cancelar", undefined]]);
-  assert.deepEqual(after.options[0].command, { type: "setting", key: "stremio_copy", value: true });
 });
 
 test("complementos: si la lista la cambiaste en el iPhone, se dice arriba (corte S6)", () => {

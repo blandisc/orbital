@@ -118,16 +118,22 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
     "stremio-account": async (command, context) => {
       return openMenu(stremioAccountMenu(state.settings), nested(context));
     },
-    // Traer de tu Stremio una vez (SS-8, corte S5): desde ahí Stremio es respaldo
-    "stremio-bring": async (command, context) => {
-      ui.toast.show("Trayendo lo tuyo de Stremio…");
-      const res = await api.stremioBring();
+    // Fernando, 4 nov: tu Mi lista de Stremio a «Mi lista Stremio» de Trakt; si llegó todo, se desconecta la cuenta.
+    "stremio-to-trakt": async () => {
+      ui.toast.show("Pasando tu Mi lista de Stremio a Trakt…");
+      const res = await api.stremioToTrakt();
       addons(res);
       applySettings(await api.settings());
-      sound.play("select");
+      ui.sheet.close();
       const d = res.done || {};
-      ui.toast.show(`Traje ${d.my_list || 0} de Mi lista a Trakt${d.addons ? ` y ${d.addons} ${d.addons === 1 ? "complemento" : "complementos"}` : ""}`,
-        { tone: "success", detail: "Desde ahora Stremio es respaldo · lo cambias en Cuentas › Stremio" });
+      if (!d.unlinked) {
+        sound.play("error");
+        return ui.toast.show(`Llegaron ${d.in_list} de ${d.stremio} a Trakt`, { error: true,
+          detail: "No desconecté Stremio: faltan algunos (sin IMDb o Trakt no los aceptó)" });
+      }
+      state.stremioLinked = false;
+      sound.play("select");
+      ui.toast.show(`Pasé ${d.stremio} a «Mi lista Stremio» en Trakt`, { tone: "success", detail: "Stremio quedó desconectado; sigue de respaldo para torrents" });
       return loadLibrary();
     },
     "stremio-logout-ask": async (command, context) => openMenu(stremioLogoutMenu(command), nested(context)),

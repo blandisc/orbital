@@ -799,13 +799,10 @@ function accountRows(settings) {
         command: { type: "keys", service: "trakt" } },
     ...phoneRows(settings),
     onedriveRow(settings.onedrive),
-    // Corte S4: Stremio ya no hace falta; queda al final, opcional, para traer lo tuyo y como respaldo.
-    { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio · respaldo", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
-      ok: !!settings.stremio_linked,
-      command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-      hint: !settings.stremio_linked ? "Opcional: para traer tus complementos y Mi lista"
-        : settings.stremio_role === "backup" ? (settings.stremio_copy !== false ? "De respaldo · recibe copia de tu avance" : "De respaldo · ya no se lee")
-          : "Opcional: tus complementos y Mi lista, mientras no tengas Trakt" },
+    // Fernando, 4 nov: Stremio ya no se conecta (como el iPhone); solo queda de respaldo para ver torrents. Una cuenta que
+    // ya estaba conectada sale aquí hasta que pases tu Mi lista a Trakt y se desconecte.
+    settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "Pasar a Trakt",
+      warn: true, command: { type: "stremio-account" }, hint: "Tu Mi lista va a «Mi lista Stremio» en Trakt y se desconecta" },
     settings.para_ti && { heading: true, label: "Claves de Explorar" },
     ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
   ].filter(Boolean);
@@ -889,7 +886,7 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
     case "display": return `Texto ${settingLabel("text_size", settings.text_size ?? "normal").toLowerCase()}`;
     case "accounts": {
       const rows = accountRows(settings).filter((r) => !r.heading && !["phone-link", "keys", "device-menu"].includes(r.command?.type)
-        && !(r.label?.startsWith("Stremio") && !settings.stremio_linked));
+        && !r.label?.startsWith("Stremio"));
       return `${rows.filter((r) => r.ok).length} de ${rows.length} conectadas`;
     }
     default: return "Revisar y actualizar";
@@ -953,7 +950,6 @@ function summary(settings, voice, now) {
     sources.length > 0 && { icon: "addon", label: "Complementos", value: `✓ ${sources.map((e) => e.name).join(", ")}`, ok: true,
       command: { type: "settings", page: "addons" } },
     paired > 0 && { icon: "phone", label: "Aparatos conectados", value: `✓ ${paired}`, ok: true, command: { type: "settings", page: "accounts" } },
-    settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "✓ Conectada", ok: true, command: { type: "stremio-account" } },
     settings.trakt?.linked && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "✓ Conectada", ok: true, command: { type: "trakt-account" } },
     settings.tv?.configured && { icon: "tv", label: "La tele", value: "✓ Se prende con Orbital", ok: true, command: { type: "settings", page: "voice" } },
     last && now / 1000 - last <= 2 * DAY && { icon: "assistant", label: "La voz", value: `✓ ${sinceVoice(last, now)}`, ok: true, command: { type: "voice-log" } },
@@ -1680,28 +1676,23 @@ export function stremioLogoutMenu(command = {}) {
   };
 }
 
-/** Stremio en Cuentas (SS-8, corte S5): traer lo tuyo una vez y dejarlo de respaldo; si quieres, sigue recibiendo copia. */
+/** Stremio en Cuentas, solo si quedó conectada de antes (Fernando, 4 nov: «Crear una nueva lista en Trakt que se llame
+ *  Mi lista Stremio. Pásalo todo y luego quítala»). Desde ahí Stremio es solo el respaldo para ver torrents. */
 export function stremioAccountMenu(settings = {}) {
-  const backup = settings.stremio_role === "backup";
-  const copy = settings.stremio_copy !== false;
   const trakt = !!settings.trakt?.linked;
   return {
     title: "Stremio",
-    subtitle: backup ? "De respaldo: ya no se lee; lo tuyo sale de Trakt y de tu lista de complementos."
-      : "Hoy Orbital todavía lee tu Seguir viendo y Mi lista de aquí.",
+    subtitle: "Stremio ya no se conecta: queda solo para ver torrents sin Real-Debrid. Tu Mi lista pasa a Trakt, sin borrar nada en Stremio.",
     options: [
-      !backup && (trakt
-        ? { icon: "download", label: "Traer de tu Stremio", hint: "Tus complementos y Mi lista, a Trakt · una sola vez", command: { type: "stremio-bring" } }
-        : { icon: "spark", label: "Traer de tu Stremio", hint: "Primero conecta Trakt: tu avance y Mi lista van ahí", warn: true,
-          command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } }),
-      { icon: "swap", label: "Seguir mandándole copia", hint: "Tu avance y Mi lista, por si lo usas en otro lado", value: copy ? "Sí" : "No",
-        command: { type: "setting", key: "stremio_copy", value: !copy } },
-      backup && { icon: "refresh", label: "Volver a leer tu Stremio", hint: "Seguir viendo y Mi lista otra vez desde aquí",
-        command: { type: "setting", key: "stremio_role", value: "both" } },
-      { icon: "exit", label: "Desconectar", danger: true, hint: backup ? "No se pierde nada: lo tuyo ya está en Trakt" : "Dejarás de ver tu Seguir viendo de Stremio",
-        command: { type: "stremio-logout-ask", backup } },
+      trakt
+        ? { icon: "download", label: "Pasar a Trakt y desconectar", hint: "A tu lista «Mi lista Stremio» · se desconecta solo si llegó todo",
+          command: { type: "stremio-to-trakt" } }
+        : { icon: "spark", label: "Pasar a Trakt y desconectar", hint: "Primero conecta Trakt: ahí va tu lista", warn: true,
+          command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
+      { icon: "exit", label: "Desconectar sin pasarla", danger: true, hint: "Dejarás de ver tu Mi lista y tu Seguir viendo de Stremio",
+        command: { type: "stremio-logout-ask", backup: false } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
-    ].filter(Boolean),
+    ],
   };
 }
 
