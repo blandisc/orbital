@@ -767,8 +767,10 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       const warns = found.filter((c) => c.warn);
       mount(avail, warns.map((c) => h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, c.warn)));
       avail.hidden = !warns.length;
-      // Ninguna arranca ya (todas «Hay que bajarla»): por qué y qué hacer, como cuando no hay ninguna.
-      if (!list.some((s) => s.cached || !s.debrid)) explain(mine, t);
+      // Siempre se pregunta: sin nada al instante, por qué y qué hacer; con algo al instante, si lo tuyo va en camino
+      // («Bajando en la nube · 42 %») o si tu idioma se puede pedir al lado de «Ver» (FQ1-A). Antes solo sin nada al
+      // instante, y esos dos nunca salían.
+      explain(mine, t);
     } catch (err) {
       if (mine === token) explain(mine, t, err);
     }

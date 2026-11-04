@@ -106,7 +106,10 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   }
   // Bajo «Ver», cómo va a sonar («Latino · 1080p · Sin subtítulos»), si es lo que ese botón pone (el mismo episodio).
   if (out[0] && plays?.line && (!out[0].video_id || out[0].video_id === plays.video_id)) out[0].hint = plays.line;
-  if (ask) out.push(ask);
+  // Nada arranca al instante: «Pedir a la nube» toma el lugar de «Ver» (vocabulario.json; como el iPhone). «Ver» solo
+  // pondría el video de aviso de Real-Debrid. Con algo al instante, el pedido va al lado («Pedir a la nube en latino»).
+  if (ask && request === "ask" && out[0]?.id === "play") out[0] = { ...ask, primary: true, video_id: out[0].video_id };
+  else if (ask) out.push(ask);
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(saved

@@ -105,7 +105,7 @@ def test_voice_exit_and_reopen(library):
 def test_exit_endpoint(library):
     kiosk = FakeKiosk()
     with TestClient(create_app(library.config, library, kiosk), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
-        assert c.get("/api/ui").json() | {"alexa": None} == {"can_exit": True, "stremio_linked": False, "player": "stremio", "alexa": None}
+        assert c.get("/api/ui").json() | {"alexa": None} == {"can_exit": True, "stremio_linked": False, "sources": False, "player": "stremio", "alexa": None}
         assert c.post("/api/ui/exit").json() == {"ok": True}
         for _ in range(40):
             if kiosk.calls:
@@ -113,7 +113,7 @@ def test_exit_endpoint(library):
             time.sleep(0.05)
         assert kiosk.calls == ["close"]
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
-        assert c.get("/api/ui").json() | {"alexa": None} == {"can_exit": False, "stremio_linked": False, "player": "stremio", "alexa": None}
+        assert c.get("/api/ui").json() | {"alexa": None} == {"can_exit": False, "stremio_linked": False, "sources": False, "player": "stremio", "alexa": None}
         assert c.post("/api/ui/exit").status_code == 409
 
 

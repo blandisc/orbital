@@ -213,3 +213,11 @@ test("FQ1-A (Fernando, 3 nov): ya arranca en otro idioma y, al lado de «Ver», 
   assert.equal(ids[0].label, "Ver");
   assert.deepEqual([ids[1].id, ids[1].label], ["rd-request", "Pedir a la nube en latino"]);
 });
+
+test("nada al instante: «Pedir a la nube» toma el lugar de «Ver» (vocabulario.json, como el iPhone)", () => {
+  const ids = titleActions({ title: "Interstellar" }, { kind: "movie", request: "ask" });
+  assert.deepEqual([ids[0].id, ids[0].label, ids[0].primary], ["rd-request", "Pedir a la nube", true]);
+  assert.ok(!ids.some((b) => b.id === "play")); // «Ver» solo pondría el aviso de Real-Debrid
+  const pending = titleActions({ title: "Interstellar" }, { kind: "movie", request: 42 });
+  assert.deepEqual([pending[0].id, pending[1].label], ["play", "Bajando en la nube · 42 %"]); // con algo al instante, al lado
+});

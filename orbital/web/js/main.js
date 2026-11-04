@@ -2546,12 +2546,16 @@ refreshPhone();
 setInterval(() => (onScreen() ? refreshPhone() : null), 60_000); // si enciendes Tailscale o conectas el iPhone, las opciones aparecen solas
 loadLibrary();
 api.settings().then(applySettings).catch(() => {});
-api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {
+api.ui().then(({ can_exit: canExit, stremio_linked: linked, sources, player, alexa }) => {
   state.canExit = canExit;
   state.alexa = !!alexa;
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
-  state.stremioLinked = !!linked;
+  // «Hay de dónde sacar versiones»: tu lista de complementos (o, de antes, la cuenta de Stremio). Sin esto, desde que la
+  // TV ya no usa Stremio (4 nov) la ficha no buscaba versiones: ni «Pedir a la nube» ni cómo suena «Ver».
+  state.stremioLinked = !!linked || !!sources;
   state.player = player || "stremio";
+  // Una ficha que se abrió antes de saberlo (un enlace directo, «Pasar a la TV»): ahora sí busca sus versiones.
+  if (state.stremioLinked) ui.title.refresh?.();
 }).catch(() => {});
 
 // Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 su ficha.

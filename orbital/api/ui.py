@@ -74,7 +74,9 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/api/ui")
     def ui_info() -> dict:
-        return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked,
+        # `sources`: hay complementos que dan versiones (tu lista de Orbital). Desde que la TV ya no usa la cuenta de
+        # Stremio (4 nov), eso y no la cuenta decide si la ficha busca versiones y si «Ver» las elige Orbital.
+        return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked, "sources": catalog.watch.has_addons,
                 "player": "orbital" if catalog.native_player else "stremio",
                 # Alexa configurada (token fijo): la interfaz enseña frases que puedes decirle.
                 "alexa": d.alexa_ready}
