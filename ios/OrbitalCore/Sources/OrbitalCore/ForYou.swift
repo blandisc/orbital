@@ -120,6 +120,9 @@ public actor ForYou {
         return (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
     }
 
+    /// Tus listas de Trakt (las mismas de Para ti, recordadas un rato): Biblioteca › Guardado las ofrece junto a Mi lista.
+    public func ownTraktLists() async -> [(id: String, name: String)] { await traktListsRemembered(trakt?.linked == true) }
+
     /// Los estantes posibles. `includeOwn: false` deja fuera tus listas de Trakt (una petición más, que tarda): Para ti
     /// arma primero lo general con eso y agrega tus listas cuando llegan (van al final, en «Tuyo»).
     public func lists(includeOwn: Bool = true) async -> [ForYouList] {

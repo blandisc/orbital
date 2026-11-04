@@ -61,11 +61,11 @@ final class ScreensUITests: XCTestCase {
 
     /// Descargas vacía: no hay nada que bajar, así que deslizar no mueve nada (antes el título se encogía).
     func testEmptyDownloadsDoesNotScroll() {
-        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-no-idle"]
+        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-library", "downloads", "-demo-no-idle"]
         app.launch()
         let empty = app.staticTexts["Nada descargado"]
         XCTAssertTrue(empty.waitForExistence(timeout: 20), "el vacío de Descargas")
-        let title = app.navigationBars.staticTexts["Descargas"].firstMatch
+        let title = app.navigationBars.staticTexts["Biblioteca"].firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 5), "el título")
         sleep(1)
         let before = title.frame
@@ -75,12 +75,33 @@ final class ScreensUITests: XCTestCase {
         XCTAssertEqual(title.frame, before, "el título se queda igual mientras deslizas")
     }
 
+    /// Biblioteca abre en Guardado la primera vez (BI2-A): Mi lista en cuadrícula, «Mi lista ⌃⌄» para cambiar de lista y el
+    /// mismo «Ordenar y filtrar» de toda lista, con «Estado» (BI3-A): elegir «Vistas» deja la cápsula para quitarlo.
+    func testBibliotecaAbreEnGuardadoConElFiltroDeLasListas() {
+        app.launchArguments = ["-demo", "-demo-trakt", "-demo-tab", "3", "-demo-no-idle"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars.staticTexts["Biblioteca"].firstMatch.waitForExistence(timeout: 20), "el título")
+        XCTAssertTrue(app.buttons["saved-list-menu"].waitForExistence(timeout: 20), "«Mi lista ⌃⌄»")
+        XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 20), "los pósters de Mi lista")
+        let filter = app.buttons["list-controls"].firstMatch
+        XCTAssertTrue(filter.waitForExistence(timeout: 10), "«Ordenar y filtrar», el de toda lista")
+        filter.tap()
+        let state = app.buttons["Estado"].firstMatch
+        XCTAssertTrue(state.waitForExistence(timeout: 5), "«Estado» en el menú")
+        XCTAssertFalse(app.buttons["Ocultar lo que ya vi"].exists, "con «Estado» no hace falta «Ocultar lo que ya vi»")
+        state.tap()
+        let watched = app.buttons["Vistas"].firstMatch
+        XCTAssertTrue(watched.waitForExistence(timeout: 5), "Por ver · A medias · Vistas")
+        watched.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch.waitForExistence(timeout: 5), "la cápsula de lo filtrado")
+    }
+
     /// Mi media sin carpeta (todo cabe): deslizar no mueve nada ni encoge el título (antes rebotaba siempre).
     func testShortMiMediaDoesNotScroll() {
         for drive in ["unlinked"] {
             app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-media", "-demo-onedrive", drive, "-demo-no-idle"]
             app.launch()
-            let title = app.navigationBars.staticTexts["Descargas"].firstMatch
+            let title = app.navigationBars.staticTexts["Biblioteca"].firstMatch
             XCTAssertTrue(title.waitForExistence(timeout: 20), "el título (\(drive))")
             sleep(3)
             let before = title.frame

@@ -27,6 +27,8 @@ final class AppUI {
     /// dos veces y VoiceOver los leería dos veces).
     var coverShowsNotices = false
     var openTab: Int?
+    /// Un aviso de descargas, «Ver en Descargas» o «Tus pedidos»: Biblioteca abre en su parte «Descargas» (no donde la dejaste).
+    var showDownloads = false
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
     /// El Centro de control pidió «Un Simpson al azar»: Inicio abre la ruleta.

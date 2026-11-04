@@ -127,11 +127,17 @@ final class AppEnvironment {
         }
     }
 
-    /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
-    var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
+    /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»). Biblioteca pedida así abre en «Descargas».
+    var openTab: Int? {
+        get { ui.openTab }
+        set { if newValue == Self.downloadsTab { ui.showDownloads = true }; ui.openTab = newValue }
+    }
+    /// Biblioteca (Descargas · Mi media · Guardado): `downloadsTab` desde un aviso o «Ver en Descargas» abre su parte «Descargas».
     static let downloadsTab = 3
     /// Buscar (el vacío de Descargas lleva ahí).
     static let searchTab = 2
+    /// Explorar (el vacío de Guardado lleva ahí).
+    static let exploreTab = 1
 
     /// Las imágenes de tu Orbital (logos de canales, arte de juegos) se piden con la llave de este aparato (K1) o, sin ella,
     /// con el token del túnel: tras el primer emparejado v2 el token ya no abre `/api/art` ni `/api/tv/logo` (K1-13).

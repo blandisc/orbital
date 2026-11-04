@@ -114,3 +114,30 @@ extension Trakt {
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
     }
 }
+
+/// Lo que viste según Trakt, con cuánto llevas de cada serie (Biblioteca › Guardado: «Por ver · A medias · Vistas» y la
+/// barra de avance de cada póster).
+public struct TraktWatchedState: Sendable, Equatable {
+    /// Las películas que viste (IMDb).
+    public var movies: Set<String>
+    /// Cada serie con al menos un capítulo visto: los vistos entre los que han salido, de 0 a 1 (1: al día).
+    public var shows: [String: Double]
+    public init(movies: Set<String> = [], shows: [String: Double] = [:]) { self.movies = movies; self.shows = shows }
+    /// Lo visto completo: las películas y las series al día (una a la mitad no cuenta).
+    public var completed: Set<String> { movies.union(shows.filter { $0.value >= 1 }.keys) }
+}
+
+extension Trakt {
+    /// Las películas que viste y cuánto llevas de cada serie (dos consultas a la vez).
+    public func watchedState() async throws -> TraktWatchedState {
+        async let movies = get("/sync/watched/movies")
+        async let shows = get("/sync/watched/shows", [("extended", "full")])   // con sus temporadas y cuántos capítulos han salido
+        let movieRows: JSON? = try await movies   // cada espera en su línea (compilador de la CI, 31 oct 2026)
+        let showRows: JSON? = try await shows
+        var state = TraktWatchedState(movies: Set((movieRows?.array ?? []).compactMap { $0["movie"]?["ids"]?["imdb"]?.string }))
+        for row in showRows?.array ?? [] {
+            if let imdb = row["show"]?["ids"]?["imdb"]?.string { state.shows[imdb] = Self.showFraction(row) }
+        }
+        return state
+    }
+}

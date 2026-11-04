@@ -73,6 +73,19 @@ extension DemoHTTPClient {
         return HTTPResponse(status: 200, data: user.serialized())
     }
 
+    /// Los nombres de lo que hay en tus listas de mentira, y cuáles son series.
+    static let demoTitles = ["tt7366338": "Chernobyl", "tt0068646": "The Godfather", "tt0111161": "The Shawshank Redemption", "tt0386676": "The Office",
+                             "tt0108778": "Friends", "tt1591095": "Insidious", "tt15239678": "Dune: Part Two"]
+    static let demoShows: Set<String> = ["tt7366338", "tt0386676", "tt0108778"]
+
+    /// Los géneros y la calificación de Trakt de lo que hay en la watchlist de mentira.
+    static let watchlistFacts: [String: (genres: [String], rating: Double)] = [
+        "tt11280740": (["drama", "science-fiction"], 8.6), "tt15239678": (["science-fiction", "adventure"], 8.3), "tt0903747": (["drama", "crime"], 9.2),
+        "tt0386676": (["comedy"], 8.6), "tt0816692": (["science-fiction", "drama"], 8.6), "tt1160419": (["science-fiction", "adventure"], 7.9),
+        "tt14452776": (["comedy", "drama"], 8.4), "tt1375666": (["science-fiction", "action"], 8.4), "tt7366338": (["drama", "history"], 9.0),
+        "tt5753856": (["science-fiction", "mystery"], 8.7), "tt0068646": (["crime", "drama"], 9.2),
+    ]
+
     /// Trakt de mentira para «Guardar en…»: la watchlist, tus listas (tardan ~1,5 s, como la red) y lo que escribes en ellas.
     func traktDemo(_ request: HTTPRequest) async -> HTTPResponse? {
         let path = request.url.path, post = request.method == "POST"
@@ -107,14 +120,29 @@ extension DemoHTTPClient {
                     traktLists[i].updated = 0
                     return json(["added": [:]], status: 201)
                 }
-                return json(.array(traktLists[i].items.sorted().map { ["type": "movie", "movie": ["ids": ["imdb": .string($0)]]] }))
+                // Con su nombre y su año (Biblioteca › Guardado las enseña; «Guardar en…» solo mira los IMDb).
+                return json(.array(traktLists[i].items.sorted().map { imdb in
+                    let kind = Self.demoShows.contains(imdb) ? "show" : "movie"
+                    return ["type": .string(kind), kind: ["title": .string(Self.demoTitles[imdb] ?? imdb), "year": 2020, "ids": ["imdb": .string(imdb), "trakt": 1]]]
+                }))
             }
         }
         // Las series que viste (Ajustes › Avisos › Series que sigues) y seguir o dejar de seguir una (se acepta sin más).
         let shows = [("tt0386676", "The Office", 2), ("tt11280740", "Severance", 20), ("tt0903747", "Breaking Bad", 70),
                      ("tt14452776", "The Bear", 200), ("tt5753856", "Dark", 400), ("tt7366338", "Chernobyl", 900)]
+        // Cuántos capítulos han salido y cuántos viste (Biblioteca › Guardado: «A medias» con su barra, «Vistas»).
+        let episodes: [String: (aired: Int, seen: Int)] = ["tt0386676": (201, 27), "tt11280740": (19, 9), "tt0903747": (62, 62),
+                                                           "tt14452776": (38, 10), "tt5753856": (26, 26), "tt7366338": (5, 5)]
         if path == "/sync/watched/shows" {
-            return json(.array(shows.map { ["last_watched_at": iso(Double($0.2)), "show": ["title": .string($0.1), "year": 2020, "ids": ["imdb": .string($0.0), "trakt": 1]]] }))
+            return json(.array(shows.map { show in
+                let count = episodes[show.0] ?? (1, 1)
+                let seen: JSON = .array((1...max(1, count.seen)).map { ["number": .int($0)] })
+                return ["last_watched_at": iso(Double(show.2)), "seasons": [["number": 1, "episodes": seen]],
+                        "show": ["title": .string(show.1), "year": 2020, "aired_episodes": .int(count.aired), "ids": ["imdb": .string(show.0), "trakt": 1]]]
+            }))
+        }
+        if path == "/sync/watched/movies" {   // Dune y El origen, vistas
+            return json(.array(["tt1160419", "tt1375666"].map { ["last_watched_at": iso(100), "movie": ["ids": ["imdb": .string($0), "trakt": 1]]] }))
         }
         // Esconder una serie (SS1-A): `progress_watched` se recuerda (sale en «Escondidas»); el calendario se acepta sin más.
         if path == "/users/hidden/progress_watched", !post {
@@ -129,6 +157,7 @@ extension DemoHTTPClient {
             return json(["added": [:]], status: 201)
         }
         if path.hasPrefix("/users/hidden/") { return json(["added": [:]], status: 201) }
+        if path.hasPrefix("/sync/watchlist"), !post, Demo.savedEmpty { return json([]) }   // Guardado vacío (`-demo-saved-empty`)
         if path.hasPrefix("/sync/watchlist") {
             return lock.withLock {
                 if post {
@@ -138,8 +167,11 @@ extension DemoHTTPClient {
                     return json(["added": [:]], status: 201)
                 }
                 return json(.array(traktWatchlist.map { w in
-                    ["listed_at": iso(w.hoursAgo), "type": .string(w.kind),
-                     w.kind: ["title": .string(w.title), "year": 2022, "ids": ["imdb": .string(w.imdb), "trakt": 1]]]
+                    // Con géneros y calificación, como Trakt (`extended=full`): «Género» y «Calificación» del filtro tienen qué usar.
+                    let facts = Self.watchlistFacts[w.imdb] ?? (["drama"], 7.5)
+                    return ["listed_at": iso(w.hoursAgo), "type": .string(w.kind),
+                            w.kind: ["title": .string(w.title), "year": 2022, "genres": .array(facts.genres.map { .string($0) }), "rating": .double(facts.rating),
+                                     "ids": ["imdb": .string(w.imdb), "trakt": 1]]]
                 }))
             }
         }

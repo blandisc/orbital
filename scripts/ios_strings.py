@@ -19,6 +19,13 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Biblioteca (Fernando, 3 nov: «BI1A… BI2A… el mismo filtro…»): Descargas · Mi media · Guardado, y «Estado» en las listas.
+    "Biblioteca": "Library", "Descargas · %@": "Downloads · %@", "Descargas · %lld": "Downloads · %lld",
+    "Por ver": "To watch", "A medias": "In progress", "Vistas": "Watched",
+    "No pude traer tu lista": "I couldn't get your list", "Trakt no contestó.": "Trakt didn't answer.",
+    "Nada guardado todavía": "Nothing saved yet", "En una ficha, toca Guardar y aparece aquí.": "On a title, tap Save and it shows up here.",
+    "Lo que guardas vive en Trakt": "What you save lives on Trakt",
+    "Conéctalo y aquí ves Mi lista y tus listas, con cuánto llevas de cada título.": "Connect it and see My list and your lists here, with how far along you are in each title.",
     # CX (3 nov, Fernando: «CX2A, CX3A, CX4A… la Mac no habla con la TV», CX5, CX7A, CX8A): tu clave entre tus aparatos Apple,
     # quitarla solo aquí o de todos, la invitación del iPhone al iPad, el nombre al conectar y «Darle su propia conexión».
     # OpenSubtitles deja de ser complemento (Fernando, 3 nov): «Buscar en internet» en Idioma y subtítulos.

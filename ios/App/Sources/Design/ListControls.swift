@@ -15,16 +15,19 @@ enum ListSort: String, CaseIterable {
 }
 
 /// Lo que se filtra en una lista abierta: series o películas, un género, una calificación mínima, una década y ocultar lo
-/// que ya viste. El mismo filtro en todo «Ver todo».
+/// que ya viste (o, donde se sabe cuánto llevas de cada uno, cómo vas: por ver, a medias o vistas). El mismo filtro en todo
+/// «Ver todo» y en Biblioteca › Guardado.
 struct ListFilter: Equatable {
     var kind: String?
+    /// «Por ver», «A medias» o «Vistas» (Biblioteca › Guardado, Fernando, 3 nov 2026: BI3-A).
+    var state: WatchState?
     var genre: String?
     /// «De 7 para arriba»: la calificación unida (IMDb y Trakt) mínima.
     var minRating: Double?
     /// «Los 90»: el primer año de la década.
     var decade: Int?
     var hideWatched = false
-    var isActive: Bool { kind != nil || genre != nil || minRating != nil || decade != nil || hideWatched }
+    var isActive: Bool { kind != nil || state != nil || genre != nil || minRating != nil || decade != nil || hideWatched }
 
     /// La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt); nil si ninguno.
     static func rating(_ s: Suggestion, imdb: [String: Double]) -> Double? {
@@ -33,8 +36,9 @@ struct ListFilter: Equatable {
     }
 
     /// ¿Pasa este título? Lo mismo para una lista y para una colección de la repisa (que no trae `Suggestion`).
-    func keeps(kind itemKind: String, genres: [String], rating: Double?, year: Int?, watched isWatched: Bool) -> Bool {
+    func keeps(kind itemKind: String, genres: [String], rating: Double?, year: Int?, watched isWatched: Bool, state itemState: WatchState? = nil) -> Bool {
         (kind == nil || itemKind == kind)
+            && (state == nil || (itemState ?? (isWatched ? .watched : .unwatched)) == state)
             && (genre == nil || genres.contains { $0.lowercased() == genre })
             && (minRating == nil || (rating ?? 0) >= minRating!)
             && (decade == nil || year.map { $0 / 10 * 10 == decade } == true)
@@ -51,9 +55,10 @@ struct ListFilter: Equatable {
     /// Las décadas que hay, de la más nueva a la más vieja.
     static func decades(_ years: [Int?]) -> [Int] { Array(Set(years.compactMap { $0.map { $0 / 10 * 10 } })).sorted(by: >) }
 
-    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:], letterboxd: [String: Double] = [:]) -> [Suggestion] {
+    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:], letterboxd: [String: Double] = [:],
+               states: [String: WatchState] = [:]) -> [Suggestion] {
         let kept = items.filter { s in
-            keeps(kind: s.kind, genres: s.genres, rating: Self.rating(s, imdb: imdb), year: s.year, watched: watched.contains(s.imdb))
+            keeps(kind: s.kind, genres: s.genres, rating: Self.rating(s, imdb: imdb), year: s.year, watched: watched.contains(s.imdb), state: states[s.imdb])
         }
         switch sort {
         case .added: return kept
@@ -89,6 +94,9 @@ struct SortableGrid<Cell: View>: View {
     var showsKindFilter = true
     /// La lista todavía viene en camino: la ruedita al centro en lugar del vacío.
     var loading = false
+    /// Cómo vas con cada título (por IMDb), donde se sabe: el menú ofrece «Estado» (Por ver · A medias · Vistas) en lugar de
+    /// «Ocultar lo que ya vi» (Biblioteca › Guardado).
+    var states: [String: WatchState]?
     /// Cada póster recibe el ancho de su columna (`DSPosterGrid`).
     @ViewBuilder var cell: (Suggestion, CGFloat) -> Cell
     @State private var sort: ListSort
@@ -104,9 +112,10 @@ struct SortableGrid<Cell: View>: View {
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
-         @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
+         states: [String: WatchState]? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
         let shared = collections
-        self.hideWatchedAvailable = collections.traktLinked
+        self.states = states
+        self.hideWatchedAvailable = collections.traktLinked && states == nil
         self.listID = listID; self.items = items; self.cell = cell
         self.showsKindFilter = showsKindFilter; self.loading = loading
         self.watched = watched ?? { await shared.watchedIDs() }
@@ -116,7 +125,7 @@ struct SortableGrid<Cell: View>: View {
     }
 
     var body: some View {
-        let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd)
+        let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd, states: states ?? [:])
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if filter.isActive { ListFilterChips(filter: $filter) }
             // Letterboxd se pregunta película por película: en una lista larga solo las primeras; se dice (antes una muy bien
@@ -138,7 +147,7 @@ struct SortableGrid<Cell: View>: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 ListFilterMenu(sort: $sort, filter: $filter, sorts: sorts, genres: genres, decades: decades, showsKindFilter: showsKindFilter,
-                               hideWatchedAvailable: hideWatchedAvailable, loading: rating)
+                               showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating)
             }
         }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
@@ -190,6 +199,8 @@ struct ListFilterMenu: View {
     var genres: [String]
     var decades: [Int]
     var showsKindFilter = true
+    /// «Estado»: Por ver · A medias · Vistas (donde se sabe cuánto llevas de cada título).
+    var showsStateFilter = false
     var hideWatchedAvailable = true
     /// Mientras llegan las calificaciones o los géneros: la ruedita en el botón.
     var loading = false
@@ -214,6 +225,15 @@ struct ListFilterMenu: View {
                     Label("Películas", systemImage: KindGlyph.movie).tag(String?.some("movie"))
                     Label("Series", systemImage: KindGlyph.series).tag(String?.some("series"))
                 } label: { Label("Series o películas", systemImage: KindGlyph.symbol(filter.kind)) }
+                .pickerStyle(.menu)
+            }
+            if showsStateFilter {
+                Picker(selection: $filter.state) {
+                    Text("Todos").tag(WatchState?.none)
+                    ForEach(WatchState.allCases, id: \.self) { state in
+                        Label { WatchStateName.text(state) } icon: { Image(systemName: WatchStateName.symbol(state)) }.tag(WatchState?.some(state))
+                    }
+                } label: { Label("Estado", systemImage: WatchStateName.symbol(filter.state)) }
                 .pickerStyle(.menu)
             }
             if !genres.isEmpty {
@@ -264,6 +284,7 @@ struct ListFilterChips: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
                 if let kind = filter.kind { chip(Text("\(Text(Image(systemName: KindGlyph.symbol(kind))))\(Text(verbatim: " "))\((kind == "movie" ? Text("Películas") : Text("Series")))")) { filter.kind = nil } }
+                if let state = filter.state { chip(Text("\(Text(Image(systemName: WatchStateName.symbol(state))))\(Text(verbatim: " "))\(WatchStateName.text(state))")) { filter.state = nil } }
                 if let genre = filter.genre { chip(Text(verbatim: genreName(genre, language: language))) { filter.genre = nil } }
                 if let min = filter.minRating { chip(ratingName(min)) { filter.minRating = nil } }
                 if let decade = filter.decade { chip(decadeName(decade)) { filter.decade = nil } }
@@ -285,6 +306,17 @@ struct ListFilterChips: View {
         }
         .dsPrimaryButton(size: .small)
         .buttonBorderShape(.capsule)
+    }
+}
+
+/// Cómo se llama y qué ícono lleva cada estado (el menú y la cápsula de lo filtrado): un círculo vacío, a medias o con ✓.
+enum WatchStateName {
+    static func text(_ state: WatchState) -> Text {
+        switch state { case .unwatched: Text("Por ver"); case .inProgress: Text("A medias"); case .watched: Text("Vistas") }
+    }
+    /// nil: cualquier estado.
+    static func symbol(_ state: WatchState?) -> String {
+        switch state { case .unwatched: "circle"; case .inProgress: "circle.lefthalf.filled"; case .watched: "checkmark.circle"; case nil: "circle.dashed" }
     }
 }
 
