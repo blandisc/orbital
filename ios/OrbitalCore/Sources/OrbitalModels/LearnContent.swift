@@ -27,7 +27,7 @@ public struct LearnStory: Sendable, Identifiable, Equatable {
 
     /// Adónde lleva el botón de la última tarjeta.
     public enum Destination: String, Sendable, Equatable {
-        case connectDebrid, renewDebrid, connectTrakt, advancedSearch, explore, decide, downloads, watching, calendar, tv
+        case connectDebrid, renewDebrid, connectTrakt, advancedSearch, explore, decide, downloads, watching, calendar, tv, languages
     }
 
     /// Cuándo tiene sentido la historia.
@@ -120,6 +120,14 @@ public enum LearnContent {
         .init(template: .gesture(symbol: "iphone", motion: .swipeUp), title: "Sigue aquí", body: "Lo que suena en la TV pasa al iPhone en el mismo minuto."),
     ], action: ("Conectar tu TV", .tv), needs: .tv)
 
+    /// Tus idiomas (Fernando, 4 nov 2026, con la sesión de Real-Debrid): los textos son los de Ajustes › Tus idiomas y la TV.
+    public static let languages = LearnStory(id: "languages", title: "Tus idiomas", symbol: "character.bubble.fill", tint: "chart", cards: [
+        .init(template: .cover, title: "Tus idiomas", body: "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente."),
+        .init(template: .beforeAfter(before: "Latino", after: "Idioma original"), title: "Con este arranca si lo hay",
+              body: "Por omisión: latino, el idioma original, inglés y castellano. Arrastra para cambiar el orden."),
+        .init(template: .symbol("globe"), title: "Idioma original", body: "El de cada película o serie (japonés en un anime). Puedes subirlo o bajarlo como los demás."),
+    ], action: ("Cambiar tus idiomas", .languages))
+
     /// Todas, en el orden de Ajustes › Aprende Orbital.
-    public static let all: [LearnStory] = [debrid, pay, trakt, advanced, explore, alerts, versions, noVersions, player, downloads, watching, tv]
+    public static let all: [LearnStory] = [debrid, pay, trakt, languages, advanced, explore, alerts, versions, noVersions, player, downloads, watching, tv]
 }

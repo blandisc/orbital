@@ -1,6 +1,39 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Por omisión: latino, el idioma original, inglés y castellano. Arrastra para cambiar el orden.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By default: Latin American Spanish, the original language, English and Castilian Spanish. Drag to change the order."
+          }
+        }
+      }
+    },
+    "El de cada película o serie (japonés en un anime). Puedes subirlo o bajarlo como los demás.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each movie's or show's own (Japanese in an anime). You can move it up or down like the others."
+          }
+        }
+      }
+    },
+    "Cambiar tus idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change your languages"
+          }
+        }
+      }
+    },
     "Historias de Aprende Orbital: %@ sin ver": {
       "extractionState": "manual",
       "localizations": {

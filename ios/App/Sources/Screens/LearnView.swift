@@ -11,7 +11,7 @@ struct LearnView: View {
     init() { _learn = State(wrappedValue: ModelObserver(LearnModel(AppEnvironment.shared.services))) }
 
     private static let groups: [(title: LocalizedStringKey, ids: [String])] = [
-        ("Para empezar", ["debrid", "pay", "trakt", "tv"]),
+        ("Para empezar", ["debrid", "pay", "trakt", "languages", "tv"]),
         ("Encontrar qué ver", ["advanced", "explore", "alerts"]),
         ("Ver", ["versions", "no-versions", "player", "downloads", "watching"]),
     ]
