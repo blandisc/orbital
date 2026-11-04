@@ -25,6 +25,8 @@ extension DS {
         static let introFrame = 1.0 / 60, restFrame = 1.0 / 30
         /// Cuánto giran al caer (se enderezan al llegar) y de qué tan arriba vienen.
         static let fallTwist: Double = 8, fallFrom: CGFloat = 420   // ds-exception: grados y puntos de la caída (coreografía A1)
+        /// El alto de toda la escena (la órbita de la luna incluida): en un iPhone chico se encoge a lo que quepa.
+        static let sceneHeight: CGFloat = 354
         /// La frase sube esto al aparecer.
         static let rise: CGFloat = 16
     }

@@ -25,11 +25,18 @@ struct OnboardingWelcome: View {
         VStack(spacing: DS.Space.s5) {
             HStack { Spacer(); GuideSkip(action: skip) }
             Spacer(minLength: DS.Space.s4)
-            ZStack {
-                OrbitCatch(posters: model.candidates) { moon += 1 }
-                    .opacity(attract ? 0 : 1)
-                if attract { AttractFilm(posters: model.candidates) { attract = false } }
+            // En un iPhone chico (SE) la escena se encoge para que el texto y «Empezar» quepan.
+            GeometryReader { geo in
+                let scale = min(1, geo.size.height / DS.Welcome.sceneHeight)
+                ZStack {
+                    OrbitCatch(posters: model.candidates) { moon += 1 }
+                        .opacity(attract ? 0 : 1)
+                    if attract { AttractFilm(posters: model.candidates) { attract = false } }
+                }
+                .scaleEffect(scale)
+                .frame(width: geo.size.width, height: geo.size.height)
             }
+            .frame(maxHeight: DS.Welcome.sceneHeight)
             Spacer(minLength: DS.Space.s4)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text("Todo lo que quieres ver, en un solo lugar.").recipe(.display, color: DS.text)
