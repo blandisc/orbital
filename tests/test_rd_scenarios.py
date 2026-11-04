@@ -169,7 +169,7 @@ def run(library, monkeypatch):
             w.rd.tick()
         got = w.availability(title["kind"], title["id"], title["video_id"])
         chosen = w.choose_source(title["kind"], title["video_id"], prefs) if got["why"] != "no-addons" else None
-        return {"availability": got, "chosen": chosen, "prefs": prefs}
+        return {"availability": got, "chosen": chosen, "prefs": prefs, "watch": w}
     return go
 
 
@@ -235,3 +235,36 @@ def test_escenario(path, run):
     if (aside or {}).get("hash") != (offer or {}).get("hash"):
         problems.append(f"«Pedir a la nube en latino»: {offer}, se esperaba {aside}")
     assert not problems, "\n".join(problems)
+
+
+# Filas de «Versión» (las de tu orden de idiomas, `expected.rows`): idioma, calidad y la huella de cada tarjeta. Las que
+# todavía difieren con el iPhone, casilla por casilla, con su porqué (registro de paridad).
+ROWS_DIFFER = {
+    # N5-A: el iPhone no ofrece un REMUX 4K de 64 GB solo Dolby Vision porque ahí no se ve bien; la TV (mpv) sí.
+    ("05-dune-solo-castellano-al-instante", "en", "4K"): "N5-A, a propósito",
+    # Abierto con el iPhone (4 nov): la dual rusa con «Original + Sub (Eng)» (Goblin, Rutracker) le gana en la TV a una solo
+    # en inglés más compartida; en el iPhone, al revés.
+    **{(s, "en", "720p"): "dual rusa, abierto" for s in ("11-breaking-bad-antes", "12-breaking-bad-paquete-e1",
+                                                      "13-breaking-bad-paquete-e2", "24-freaks-paquete-e3",
+                                                      "31-breaking-bad-otro-archivo")},
+    ("18-inception-error-35", "en", "1080p"): "REMUX multilingüe en la fila de inglés, abierto",
+}
+
+
+@pytest.mark.parametrize("path", SCENARIOS, ids=[p.stem for p in SCENARIOS])
+def test_filas_de_version(path, run):
+    scn = load(path)
+    exp = scn["expected"]
+    if not exp.get("rows"):
+        pytest.skip("sin filas")
+    out = run(scn)
+    w, title = out["watch"], scn["title"]
+    found = w.stream_sources(title["kind"], title["video_id"], out["prefs"])
+    main, _, _ = watch.version_layout(found, out["prefs"], w.rd.refused())
+    mine = {(r["code"], o["res"]): o["source"].info_hash for r in main for o in r["options"]}
+    order = [(r["code"], o["res"]) for r in main for o in r["options"]]
+    want = [(r["code"], r["res"]) for r in exp["rows"]]
+    assert order == want, "las filas y sus calidades, en orden"
+    wrong = [f"{c} {res}: {mine[(c, res)]}, se esperaba {r['hash']}" for r in exp["rows"]
+             for c, res in [(r["code"], r["res"])] if mine[(c, res)] != r["hash"] and (scn["id"], c, res) not in ROWS_DIFFER]
+    assert not wrong, "\n".join(wrong)

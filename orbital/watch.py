@@ -212,63 +212,111 @@ def version_rows(found: list[streams.Source], prefs: streams.Preferences, curren
             for row in version_grid(found, prefs, current) for cell in row["cells"]]
 
 
-def version_grid(found: list[streams.Source], prefs: streams.Preferences, current: int | None = None) -> list[dict]:
-    """Y › Versión en el reproductor, lo mismo que «Versión» de la ficha (core/watch.js versionRows): un renglón
-    por idioma de audio con solo las calidades que hay y la mejor de cada una, tu idioma primero, luego el original, el
-    español que quede y los demás. Antes era la lista entera de fuentes (40+, casi iguales). La puesta se marca en su
-    idioma y calidad. Sin grabaciones de cine, tráileres ni 3D (salvo que no haya otra cosa).
-    [{"label": "Latino", "cells": [{"id", "label": "1080p", "hint": "Al instante", "size", "doubt", "current"}]}]"""
-    usable = [s for s in found if not JUNK_TAGS & set(s.tags)] or found
-    rows: dict[str, dict] = {}
-    for src in usable:  # ya van de mejor a peor
-        langs = src.audio_langs or {code: "assumed" for code in src.languages} or {"": "maybe"}
-        res = streams.res_class(src.resolution)  # 1440p va con las de 1080p
-        res = res if res in VERSION_RES else "SD"
+QUALITY_ORDER = ("4K", "1080p", "720p", "SD")
+LATIN_ORDER = ("original", "en", "es-ES")  # el orden por omisión con latino (Fernando, 3 nov), como Preferences.latinOrder
+
+
+def _quality(src: streams.Source) -> str:
+    res = streams.res_class(src.resolution)
+    return res if res in QUALITY_ORDER else "SD"
+
+
+def _row_code(code: str, how: str) -> str:
+    """La fila de un idioma (como SourcesModel.rowCode del iPhone): el español «tal vez» va a «Español (no dice cuál)»."""
+    base = code.split("-")[0]
+    if base == "es":
+        return code if how != "maybe" else "es"
+    return base
+
+
+def version_layout(found: list[streams.Source], prefs: streams.Preferences,
+                   refused: set[str] | frozenset[str] = frozenset()) -> tuple[list[dict], list[dict], int]:
+    """«Versión», con las reglas del iPhone (SourcesModel.languageRows; los escenarios comunes lo comparan): una fila por
+    idioma; en cada calidad, la mejor según el orden general (nunca una de otro título u otro episodio si hay otra); SD solo
+    si ese idioma no tiene nada mejor (salvo la recomendada); las filas en tu orden. Devuelve (las de tu orden, «más
+    idiomas», cuántas se esconden). Cada fila: {"code", "original", "options": [{"res", "source", "how", "all"}]}."""
+    visible = [s for s in found if not {"CAM", "Tráiler"} & set(s.tags)] or found
+    recommended = visible[0].index if visible else None
+    cells: dict[str, dict[str, list[streams.Source]]] = {}
+    how_of: dict[tuple[str, int], str] = {}
+    order: list[str] = []
+    originals: set[str] = set()
+    original_row = _row_code(prefs.original, "name") if prefs.original else None
+    for src in visible:
+        placed: set[str] = set()
+        langs = src.audio_langs or {code: "assumed" for code in src.languages}
         for code, how in langs.items():
-            row = rows.setdefault(code, {"code": code, "original": False, "cells": {}, "size": 0})
-            row["original"] |= how == "original"
-            row["size"] += 1
-            cell = row["cells"].setdefault(res, {"source": src, "how": how, "all": []})
-            if (not _sure(cell["how"]) and _sure(how)) or (cell["source"].doubtful and not src.doubtful):
-                cell.update(source=src, how=how)
-            cell["all"].append(src.index)
-    dub = prefs.spanish if prefs.spanish in streams.SPANISH_VARIANTS else None
-    mine = ([dub] if dub else ["es-419", "es-ES"]) if prefs.audio == "es" else [prefs.audio]
-    wanted = [*mine, "es", "es-419", "es-ES"] if prefs.audio == "es" else mine
+            row = _row_code(code, how)
+            if row not in cells:
+                order.append(row)
+                cells[row] = {}
+            if row not in placed:
+                placed.add(row)
+                cells[row].setdefault(_quality(src), []).append(src)
+            key = (row, src.index)
+            if key not in how_of or streams.EVIDENCE.get(how, 0) > streams.EVIDENCE.get(how_of[key], 0):
+                how_of[key] = how
+            if how == "original" or row == original_row:
+                originals.add(row)
+    want = prefs.spanish if prefs.audio == "es" and prefs.spanish in streams.SPANISH_VARIANTS else prefs.audio
+    plan = list(prefs.plan) if prefs.plan else list(LATIN_ORDER) if want == "es-419" else []
+    plan = [c for c in dict.fromkeys(plan) if c != want]
 
-    def rank(row: dict) -> tuple[int, int]:
+    def build(code: str) -> dict:
+        options = []
+        for q in QUALITY_ORDER:
+            # Estable: lo dudoso y lo que Real-Debrid no dejó bajar (FQ2-A), al final de su casilla.
+            listed = sorted(cells[code].get(q, []), key=lambda s: (s.doubtful, not s.cached and s.info_hash in refused))
+            if listed:
+                best = listed[0]
+                options.append({"res": q, "source": best, "how": how_of.get((code, best.index), "maybe"),
+                                "all": [s.index for s in listed]})
+        if len(options) > 1:
+            options = [o for o in options if o["res"] != "SD" or o["source"].index == recommended]
+        return {"code": code, "original": code in originals, "options": options}
+
+    def rank(row: dict) -> int:
         code = row["code"]
-        if dub:  # Fernando, 4 nov: tu doblaje, el español que no dice cuál, el original, el inglés y al final el otro doblaje
-            plan = [dub, "es"]
-            if code in plan:
-                return plan.index(code), -row["size"]
-            if row["original"] and code not in streams.SPANISH:
-                return 2, -row["size"]
-            if code == "en":
-                return 3, -row["size"]
-            return (4 if code in streams.SPANISH else 20), -row["size"]
-        if code in wanted:
-            first = wanted.index(code)
-        elif row["original"]:
-            first = 10
-        else:
-            first = 11 + streams.SPANISH.index(code) if code in streams.SPANISH else 20
-        return first, -row["size"]
+        yours = code == want or (len(want) == 2 and code.startswith(want))
+        if code == want and (len(want) > 2 or not want.startswith("es")):
+            return 0
+        if yours:
+            return 2 if code == "es" else 1
+        if code == "es" and want.startswith("es"):
+            return 2
+        place = next((i for i, c in enumerate(plan) if (row["original"] if c == "original" else c == code)), None)
+        if place is not None:
+            return 3 + place
+        if row["original"]:
+            return 15
+        if code.startswith("es"):
+            return 20
+        return 30
 
+    rows = [r for r in (build(code) for code in order) if r["options"]]
+    count = {id(r): sum(len(o["all"]) for o in r["options"]) for r in rows}
+    ranked = sorted(enumerate(rows), key=lambda x: (rank(x[1]), -count[id(x[1])], x[0]))
+    rows = [r for _, r in ranked]
+    return [r for r in rows if rank(r) < 30], [r for r in rows if rank(r) == 30], len(found) - len(visible)
+
+
+def version_grid(found: list[streams.Source], prefs: streams.Preferences, current: int | None = None,
+                 refused: set[str] | frozenset[str] = frozenset()) -> list[dict]:
+    """Y › Versión en el reproductor, lo mismo que «Versión» de la ficha: las filas de version_layout (las de tu orden y
+    luego las demás), cada una con su mejor versión por calidad. La puesta se marca en su idioma y calidad.
+    [{"label": "Latino", "cells": [{"id", "label": "1080p", "hint": "Al instante", "size", "doubt", "current"}]}]"""
+    main, more, _ = version_layout(found, prefs, refused)
     out = []
-    for row in sorted(rows.values(), key=rank):
+    for row in [*main, *more]:
         name = streams.LANG_NAMES.get(row["code"], row["code"]) if row["code"] else "Sin idioma"
         cells = []
-        for res in VERSION_RES:
-            cell = row["cells"].get(res)
-            if cell is None:
-                continue
-            src = cell["source"]
-            cells.append({"id": src.index, "label": " ".join(p for p in (res, *src.hdr[:1]) if p),
+        for option in row["options"]:
+            src = option["source"]
+            cells.append({"id": src.index, "label": " ".join(p for p in (option["res"], *src.hdr[:1]) if p),
                           "hint": "Al instante" if src.cached else "Hay que bajarla",
                           "size": f"{src.size / 1e9:.1f} GB" if src.size else "",
-                          "doubt": "Idioma dudoso" if cell["how"] == "maybe" else "",
-                          "current": current is not None and current in cell["all"]})
+                          "doubt": "Idioma dudoso" if option["how"] == "maybe" else "",
+                          "current": current is not None and current in option["all"]})
         out.append({"label": name, "flag": flags.flag_for(row["code"]), "cells": cells})
     return out
 
@@ -1869,7 +1917,7 @@ class Watch:
         if meta.get("source") is None:
             return []
         prefs = self.asked_language(meta)[0]
-        return version_grid(self.stream_sources(meta["kind"], meta["video_id"], prefs), prefs, meta["source"])
+        return version_grid(self.stream_sources(meta["kind"], meta["video_id"], prefs), prefs, meta["source"], self.rd.refused())
 
     def _source_by_index(self, meta: dict, index: int, prefs: streams.Preferences) -> streams.Source | None:
         """Una fuente por su número (estable entre búsquedas), de la lista ya buscada; si ya caducó (10 min: llevabas
