@@ -97,7 +97,7 @@ struct DSTextTabs<ID: Hashable>: View {
             tabs(titles: true)
             tabs(titles: options.allSatisfy { $0.symbol == nil })
         }
-        .shadow(DS.Elevation.low)
+        // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
         .animation(DS.Motion.fade, value: selection)
         .sensoryFeedback(.selection, trigger: selection)
     }
