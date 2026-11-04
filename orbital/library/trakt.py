@@ -413,6 +413,19 @@ class Trakt:
             raise TraktError(f"Trakt respondió HTTP {status}")
         return data
 
+    def _all_pages(self, path: str, **params) -> list:
+        """Todas las páginas de una lectura que Trakt da de cien en cien (tu watchlist, tus listas, favoritos,
+        calificaciones). Sin `page`, Trakt solo da las primeras 100: Mi lista de Fernando tiene 318 y se veían 100
+        (4 nov 2026). Hasta 5 000."""
+        rows: list = []
+        for page in range(1, 51):
+            got = self._get(path, **params, page=page, limit=100)
+            got = got if isinstance(got, list) else []
+            rows += got
+            if len(got) < 100:
+                break
+        return rows
+
     def _renew(self) -> None:
         """Renueva la sesión ya (Trakt dijo 401 aunque aún no caducaba en nuestra cuenta)."""
         with self._lock:
@@ -501,7 +514,7 @@ class Trakt:
         stamp = self._favorites_stamp()
         rows = []
         for kind in ("movies", "shows"):
-            got = self._get(f"/sync/favorites/{kind}", extended="full")
+            got = self._all_pages(f"/sync/favorites/{kind}", extended="full")
             rows += [r for r in got if isinstance(r, dict)] if isinstance(got, list) else []
         items = _typed(sorted(rows, key=lambda r: str(r.get("listed_at") or ""), reverse=True))
         self._favorites = (now, stamp, items)
@@ -531,7 +544,7 @@ class Trakt:
         return [e for e in (entry(r, kind) for r in rows or []) if e] if isinstance(rows, list) else []
 
     def watchlist(self) -> list[dict]:
-        rows = self._get("/sync/watchlist", extended="full", sort_by="added", sort_how="desc")
+        rows = self._all_pages("/sync/watchlist", extended="full", sort_by="added", sort_how="desc")
         if isinstance(rows, list):
             rows = sorted((r for r in rows if isinstance(r, dict)), key=lambda r: str(r.get("listed_at") or ""), reverse=True)
         return _typed(rows)
@@ -589,7 +602,7 @@ class Trakt:
 
     def my_rating(self, kind: str, imdb: str) -> int | None:
         """Tu calificación de un título (1–10) o None si no lo has calificado."""
-        rows = self._get(f"/sync/ratings/{KINDS[kind]}")
+        rows = self._all_pages(f"/sync/ratings/{KINDS[kind]}")
         for row in rows if isinstance(rows, list) else []:
             item = row.get(KINDS[kind][:-1]) if isinstance(row, dict) else None
             if isinstance(item, dict) and (item.get("ids") or {}).get("imdb") == imdb:
@@ -601,14 +614,7 @@ class Trakt:
         una lista de 210 parecía de 100 (4 nov 2026, «Mi lista Stremio»)."""
         if not str(list_id).isdigit():
             raise TraktError("Lista inválida")
-        rows: list = []
-        for page in range(1, 51):  # hasta 5 000 títulos
-            got = self._get(f"/users/me/lists/{list_id}/items", extended="full", page=page, limit=100)
-            got = got if isinstance(got, list) else []
-            rows += got
-            if len(got) < 100:
-                break
-        return _typed(rows)
+        return _typed(self._all_pages(f"/users/me/lists/{list_id}/items", extended="full"))
 
     def public_list_items(self, user: str, slug: str) -> list[dict]:
         """Los títulos de la lista pública de otra persona (sin tu sesión): «Aprobadas por la crítica» de series."""
@@ -787,7 +793,7 @@ class Trakt:
 
     def watchlist_rows(self) -> list[dict]:
         """Tu watchlist (Mi lista) con cuándo guardaste cada título (`listed_at`, en segundos), lo último primero."""
-        rows = self._get("/sync/watchlist", extended="full", sort_by="added", sort_how="desc")
+        rows = self._all_pages("/sync/watchlist", extended="full", sort_by="added", sort_how="desc")
         found, seen = [], set()
         for row in rows if isinstance(rows, list) else []:
             name = str(_dict(row).get("type") or "")
