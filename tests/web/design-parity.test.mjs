@@ -245,6 +245,23 @@ test("un pendiente del vocabulario es de verdad y está en el registro de parida
   assert.deepEqual(problems, [], problems.join("\n"));
 });
 
+test("nube = Real-Debrid; descargar = a este aparato (RX4-A, 3 nov): las palabras del iPhone", () => {
+  // Fernando, 3 nov: «que no diga "Real-Debrid la está buscando", sino que se entienda que lo está descargando». Lo que pasa
+  // en Real-Debrid se dice «la nube» («Pedir a la nube», «Bajando en la nube · 42 %»); «Descargar» es solo guardar en este
+  // aparato. «Real-Debrid» queda para la cuenta y la marca (Ajustes › Cuentas › Real-Debrid, «Tu Real-Debrid venció»).
+  // La TV lo iguala en su sesión (pendiente en design/vocabulario.json); aquí se cuida el iPhone.
+  const rules = [
+    [/lo está buscando|la está buscando/, "nunca «lo está buscando»: lo está bajando, en la nube"],
+    [/Real-Debrid (lo|la|las|los) (está|baja|recibió|guarda)\b/, "lo que hace Real-Debrid con un pedido lo hace «la nube»"],
+    [/Pedirlo y avisarme|Pedirlo a Real-Debrid/, "el botón es «Pedir a la nube»"],
+    [/Bajando en Real-Debrid/, "«Bajando en la nube · 42 %»"],
+    [/Real-Debrid (aún|todavía) no (lo|la) tiene/, "«Todavía no está en la nube»"],
+    [/[Dd]escarg\w* (a|en) (la nube|Real-Debrid)/, "«Descargar» es solo a este aparato; a la nube se pide"],
+  ];
+  const problems = SIDES.ios.flatMap((text) => rules.filter(([re]) => re.test(text)).map(([, why]) => `${why}: ${text.slice(0, 90)}`));
+  assert.deepEqual(problems, [], problems.join("\n"));
+});
+
 // --- La tabla espejo: cada papel del iPhone tiene su pieza en la TV (o dice por qué no) ---------------------------
 test("cada papel del lenguaje del iPhone está en la tabla espejo de la TV", () => {
   const doc = read("docs", "sistema-de-diseno.md");

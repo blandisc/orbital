@@ -424,10 +424,25 @@ Fernando probó la compilación 1729 en su iPhone. Lo que se rompía y es patró
 | **Una hoja mide lo que trae.** Nunca media pantalla con un hueco abajo ni texto cortado: a la medida de su contenido y, si no cabe (letra de accesibilidad, iPhone SE), llega al tope y se desplaza. El margen de la barra de inicio no se cuenta dos veces | `fittedSheet()` (contenido fijo) · `fittedScrollSheet()` (raíz que se desplaza, también un `Form` en `NavigationStack`); las tres de antes con `.medium` quedan anotadas | `testSheetsFitTheirContent` |
 | **El ícono junto a su texto va centrado.** En su columna fija, con el símbolo centrado y a la altura del primer renglón (línea base del título, como `Label`); en «¿Qué es esto?», un cuadro de color centrado con el texto | `IconBeside` (`.firstTextBaseline`) · `DSExplainerCard` | `testIconsBesideTextAreCentered` |
 | **Una confirmación que hay que explicar va en su hoja.** Qué pasa, si se deshace y el botón; nunca una pregunta del sistema que diga «No se puede deshacer» | `DebridRedeemSheet` | `testImportantConfirmationsGoInTheirOwnSheet` |
-| **Lo que hay que pedir no se esconde detrás de lo que arranca al instante.** Su propio grupo, con su acción («Pedirlo y avisarme»), nunca «Ver» | `VersionRequestGroup` | `testWhatMustBeRequestedIsNotBuriedUnderTheInstantOnes` |
-| **Un pedido dice dónde y cómo.** «Real-Debrid lo baja en su nube por ti, no en tu iPhone. Cuando termine, arranca al instante aquí (y en tu TV). Suele tardar de minutos a horas (; te aviso).» con «¿Qué es esto?» | `DebridWhereLine` | — |
+| **Lo que hay que pedir no se esconde detrás de lo que arranca al instante.** Su propio grupo, con su acción («Pedir a la nube»; antes «Pedirlo y avisarme»), nunca «Ver» | `VersionRequestGroup` | `testWhatMustBeRequestedIsNotBuriedUnderTheInstantOnes` |
+| **Un pedido dice dónde y cómo.** «La nube es tu Real-Debrid: lo baja por ti, no en este iPhone. Cuando termine, arranca al instante aquí (y en tu TV). Suele tardar de minutos a horas (; te aviso).» con «¿Qué es esto?» | `DebridWhereLine` | — |
 | Lo que es de la TV no se queda en el iPhone: Local Files de Stremio (`127.0.0.1`) nunca se trae ni «se queda en este iPhone»; se ve como «Archivos de la TV · Solo en la TV». Nunca la descripción en inglés de un complemento: `AddonWhat` o nada | `AddonShare.livesOnTV` · `AddonList.dropTVOnly` | `testLocalFilesNeverLivesOnThisIPhone` |
 | Lo que ya no lleva a nada no se ofrece: sin «Avanzado › Conectar a mano» ni su botón en el lector de códigos (TEC-35: con la llave por aparato, el token solo abre Alexa) | `QRScanner` manda a la cámara del iPhone | — |
+
+### Nube = Real-Debrid; descargar = a este aparato (RX, 3 nov 2026, iPhone; la TV lo iguala)
+
+Fernando, 3 nov («RX1A… RX2A… RX4A», y RX3-A alineado con la guía de bienvenida; canvas
+https://claude.ai/artifact/BJGeSBJKrCsvRqbScXZdVh): «Pedir», «bajando» y «descargar» se confundían, y «Real-Debrid» no le dice
+nada a quien no lo conoce. Cada palabra dice dónde pasa:
+
+| Regla | Cómo | Prueba |
+|---|---|---|
+| **Lo que pasa en Real-Debrid se dice «la nube».** «Pedir a la nube», «Bajando en la nube · 42 %», «La nube lo recibió y espera turno», «Todavía no está en la nube». Nunca «Real-Debrid lo está buscando»: lo está bajando. Se explica una vez dónde se ve («En la nube · Real-Debrid», «La nube es tu Real-Debrid: …», «Real-Debrid es la nube» en «¿Qué es esto?») | `UnavailableCause`, `DebridRequestWords`, `DebridWhereLine` | `nube = Real-Debrid; descargar = a este aparato` (tests/web/design-parity.test.mjs) y el vocabulario |
+| **«Descargar» es solo guardar en este aparato** para verlo sin internet. A la nube se pide, nunca se «descarga» | `DownloadsView` (sus dos partes) | la misma |
+| **«Real-Debrid» queda donde se habla de la cuenta o la marca:** Ajustes › Cuentas › Real-Debrid, «Tu Real-Debrid venció», «Quitar de tu Real-Debrid», «Real-Debrid no lo dejó bajar» | — | — |
+| **Lo que pides vive en Descargas**, en dos partes: «En la nube · Real-Debrid» (los grupos «Bajando» y «Ya terminaron», la misma fila y la misma hoja de siempre) y «En este iPhone · sin internet». Cada parte con su vacío y su única salida. Ajustes › Cuentas › Real-Debrid › «Tus pedidos» es un atajo que lleva ahí. La pestaña cuenta también lo que baja en la nube. Sin Real-Debrid no hay nube (Plus, App Store) | `DownloadsCloudPart` · `CloudSheetsHost` | — |
+| **Tocar lo que baja en la nube dice cuánto falta, honesto,** y deja elegir: «A este paso, falta menos de una hora. Te aviso.» (del avance desde que se pidió; sin qué medir, «Suele tardar de minutos a horas.»; «Te aviso» solo con permiso), «Ver Inglés · 1080p, ya arranca» (la mejor que ya arranca en tus idiomas, la regla de «Ver») y «Esperar a que llegue». Sin otra al instante, solo cuánto lleva | `DebridRequestWords.paceLine` · `VersionCard` · `DebridRequestSheet` | `testThePaceComesFromTheProgressRateOrSaysMinutesToHours` |
+| **«Así funciona», una sola vez:** la primera vez que ves «↓ Por pedir» (en «Versión» o en la ficha), los tres pasos animados, «No ocupa espacio en este iPhone» y «Entendido». Se recuerda en `learn.seen.debrid-flow`, la llave que también escribe la guía de bienvenida | `DebridFlowIntro` · `DebridFlowIntroHost` | — |
 
 ### Tabla espejo (iPhone ↔ TV)
 

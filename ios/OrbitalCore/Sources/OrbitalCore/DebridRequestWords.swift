@@ -5,9 +5,10 @@ import OrbitalAddons
 /// el aviso. Cada estado lleva palabra e ícono, no solo color (A1). Todos los textos viven aquí: las pantallas piden `title`,
 /// `detail` y `symbol`. `tr` traduce al idioma de la app.
 public enum DebridRequestWords {
-    // pendiente: «Bajando en Real-Debrid · » y «Real-Debrid no lo dejó bajar» son de design/vocabulario.json › causas (los
-    // dice también la TV); los otros cuatro estados, de la propuesta v5 (R13), acordados con la TV como sus seis estados.
-    /// El renglón principal: «Bajando en Real-Debrid · 42 %», «En cola»…
+    // pendiente: «Bajando en la nube · » y «Real-Debrid no lo dejó bajar» son de design/vocabulario.json › causas (los
+    // dice también la TV; «la nube» va pendiente en la TV, RX4-A); los otros cuatro estados, de la propuesta v5 (R13),
+    // acordados con la TV como sus seis estados.
+    /// El renglón principal: «Bajando en la nube · 42 %», «En cola»…
     public static func title(_ request: DebridRequest, _ tr: (String) -> String = { $0 }) -> String {
         switch request.state {
         case .queued: tr("En cola")
@@ -30,7 +31,7 @@ public enum DebridRequestWords {
     public static func detail(_ request: DebridRequest, now: Date, notifies: Bool = true, _ tr: (String) -> String = { $0 }) -> String {
         if request.isStalled(now: now) { return tr("Sigue sin bajar · ¿probar otra versión?") }
         return switch request.state {
-        case .queued: tr("Real-Debrid lo recibió y espera turno")
+        case .queued: tr("La nube lo recibió y espera turno")
         case .downloading: notifies ? tr("Te aviso cuando esté listo") : tr("Ábrelo aquí para ver cuánto lleva")
         case .noPeers: tr("Puede tardar días · prueba otra versión")
         case .refused: tr("Prueba otra versión")
@@ -38,6 +39,41 @@ public enum DebridRequestWords {
         case .ready: tr("Ya arranca al instante")
         case .gone: ""
         }
+    }
+
+    /// RX2-A · qué tan lejos está, sin prometer de más: a partir de lo que ha avanzado desde que se pidió (el promedio, que
+    /// cuenta también lo que esperó en cola, así que nunca promete menos de lo que va a tardar). Sin avance suficiente que
+    /// medir (menos de 3 % o menos de un minuto), en cola o atorado: no se sabe.
+    public enum Pace: Equatable, Sendable { case minutes, underAnHour, hours, overADay, unknown }
+
+    public static func pace(_ request: DebridRequest, now: Date) -> Pace {
+        guard request.state == .downloading, (3..<100).contains(request.percent), !request.isStalled(now: now) else { return .unknown }
+        let elapsed = now.timeIntervalSince(request.createdAt)
+        guard elapsed >= 60 else { return .unknown }
+        let left = elapsed * Double(100 - request.percent) / Double(request.percent)
+        switch left {
+        case ..<(15 * 60): return .minutes
+        case ..<(60 * 60): return .underAnHour
+        case ..<(24 * 60 * 60): return .hours
+        default: return .overADay
+        }
+    }
+
+    /// RX2-A · el renglón de la hoja de un pedido en camino: «A este paso, falta menos de una hora. Te aviso.» o, si no se
+    /// puede medir, «Suele tardar de minutos a horas.». «Te aviso» solo si este aparato va a avisar (IOS-8). Lo que no va en
+    /// camino (sin gente, muchas descargas, atorado, listo) dice lo de siempre (`detail`).
+    public static func paceLine(_ request: DebridRequest, now: Date, notifies: Bool, _ tr: (String) -> String = { $0 }) -> String {
+        guard [.queued, .downloading].contains(request.state), !request.isStalled(now: now) else {
+            return detail(request, now: now, notifies: notifies, tr)
+        }
+        let pace = switch pace(request, now: now) {
+        case .minutes: tr("A este paso, faltan unos minutos.")
+        case .underAnHour: tr("A este paso, falta menos de una hora.")
+        case .hours: tr("A este paso, faltan unas horas.")
+        case .overADay: tr("A este paso, falta más de un día.")
+        case .unknown: tr("Suele tardar de minutos a horas.")
+        }
+        return notifies ? pace + " " + tr("Te aviso.") : pace
     }
 
     /// «Lo pediste en iPhone · hace 6 min» (quién y cuándo, R12). Lo de otra cuenta de Real-Debrid (`otherAccount`) nunca

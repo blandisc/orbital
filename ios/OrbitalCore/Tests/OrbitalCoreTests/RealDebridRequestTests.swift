@@ -52,6 +52,32 @@ final class RealDebridRequestTests: XCTestCase {
         XCTAssertNil(offline, "sin red no se puede decir «nadie lo tiene»")
     }
 
+    /// RX2-A · cuánto falta, honesto: del avance desde que se pidió; sin avance que medir, «de minutos a horas».
+    func testThePaceComesFromTheProgressRateOrSaysMinutesToHours() {
+        var request = DebridRequest(hash: infoHash, title: "Hasta el viento tiene miedo", kind: "movie", metaID: "tt0061752", videoIDs: ["tt0061752"],
+                                    device: "iPhone", createdAt: Date(timeIntervalSince1970: 0), percent: 42, state: .downloading)
+        request.progressAt = Date(timeIntervalSince1970: 600)
+        // 42 % en 10 min: faltan ~14 min.
+        XCTAssertEqual(DebridRequestWords.pace(request, now: Date(timeIntervalSince1970: 600)), .minutes)
+        XCTAssertEqual(DebridRequestWords.paceLine(request, now: Date(timeIntervalSince1970: 600), notifies: true), "A este paso, faltan unos minutos. Te aviso.")
+        // 42 % en 30 min: faltan ~41 min.
+        request.progressAt = Date(timeIntervalSince1970: 1800)
+        XCTAssertEqual(DebridRequestWords.paceLine(request, now: Date(timeIntervalSince1970: 1800), notifies: false), "A este paso, falta menos de una hora.")
+        // 42 % en 5 h: faltan ~7 h; 10 % en 10 h: faltan 90 h.
+        request.progressAt = Date(timeIntervalSince1970: 5 * 3600)
+        XCTAssertEqual(DebridRequestWords.pace(request, now: Date(timeIntervalSince1970: 5 * 3600)), .hours)
+        request.percent = 10; request.progressAt = Date(timeIntervalSince1970: 10 * 3600)
+        XCTAssertEqual(DebridRequestWords.pace(request, now: Date(timeIntervalSince1970: 10 * 3600)), .overADay)
+        // Sin qué medir: recién pedido, casi sin avance, o en cola.
+        request.percent = 1
+        XCTAssertEqual(DebridRequestWords.paceLine(request, now: Date(timeIntervalSince1970: 10 * 3600), notifies: true), "Suele tardar de minutos a horas. Te aviso.")
+        request.percent = 42; request.state = .queued
+        XCTAssertEqual(DebridRequestWords.pace(request, now: Date(timeIntervalSince1970: 600)), .unknown)
+        // Atorado (24 h sin avanzar): lo de siempre, no una promesa.
+        request.state = .downloading; request.progressAt = Date(timeIntervalSince1970: 0)
+        XCTAssertEqual(DebridRequestWords.paceLine(request, now: Date(timeIntervalSince1970: 30 * 3600), notifies: true), "Sigue sin bajar · ¿probar otra versión?")
+    }
+
     func testEachStateHasWordsAndAnIcon() {
         var request = DebridRequest(hash: infoHash, title: "The Office", kind: "series", metaID: "tt1", videoIDs: ["tt1:1:2"], device: "iPhone",
                                     createdAt: Date(timeIntervalSince1970: 0))
@@ -64,7 +90,7 @@ final class RealDebridRequestTests: XCTestCase {
         }
         XCTAssertEqual(titles.count, 6); XCTAssertEqual(symbols.count, 6, "cada estado con su ícono, no solo color (A1)")
         request.state = .downloading
-        XCTAssertEqual(DebridRequestWords.title(request), "Bajando en Real-Debrid · 42 %", "el texto de design/vocabulario.json › causas")
+        XCTAssertEqual(DebridRequestWords.title(request), "Bajando en la nube · 42 %", "el texto de design/vocabulario.json › causas (RX4-A: la nube)")
         XCTAssertEqual(DebridRequestWords.short(request), "Bajando · 42 %")
         // IOS-8: sin permiso de avisos (o pedido desde otro aparato) no se promete avisar.
         XCTAssertEqual(DebridRequestWords.detail(request, now: now), "Te aviso cuando esté listo")
@@ -112,9 +138,9 @@ final class RealDebridRequestTests: XCTestCase {
         XCTAssertEqual(UnavailableCause.from(.notPremium), .noPremium)
         XCTAssertNil(UnavailableCause.from(.tooManyActive), "es un estado del pedido, no una causa")
         XCTAssertEqual(RDRequestError.tooManyActive.words(), "Muchas descargas activas")
-        // La 10 dice «Lo puede bajar por ti»: ahora el botón existe.
+        // La 10 dice «La nube lo puede bajar por ti»: ahora el botón existe.
         XCTAssertEqual(UnavailableCause.notInDebrid(language: "es-419").action, .request)
-        XCTAssertEqual(UnavailableCause.label(.request), "Pedirlo y avisarme")
+        XCTAssertEqual(UnavailableCause.label(.request), "Pedir a la nube")
         XCTAssertNil(UnavailableCause.nobodyHasIt.action)
     }
 

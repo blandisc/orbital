@@ -78,15 +78,33 @@ struct SourcesSheet: View {
         }
     }
 
-    /// El pedido de esa versión en tu cuenta, si ya existe: su estado, nunca pedirla otra vez.
-    private func requestStatus(_ id: Int) -> DebridRequestStatus? {
+    /// El pedido de esa versión en tu cuenta, si ya existe: su estado, nunca pedirla otra vez. `full` (RX2-A, la tarjeta de
+    /// la versión): «Bajando en la nube · 42 %» y abajo cuánto falta, con «Te aviso» solo si este aparato va a avisar.
+    private func requestStatus(_ id: Int, full: Bool = false) -> DebridRequestStatus? {
         let requests = env.services.debridRequests
         let _ = requests.track()
         guard let hash = observer.model.source(id)?.torrent?.hash, let found = requests.request(hash: hash) else { return nil }
         let tr = { (key: String) in Strings.tr(key, language: env.services.appSettings.uiLanguage) }
-        return DebridRequestStatus(symbol: DebridRequestWords.symbol(found.state), title: DebridRequestWords.short(found, tr),
+        let notifies = DebridRequestNotifier.canNotify && requests.isFromHere(found)
+        return DebridRequestStatus(symbol: DebridRequestWords.symbol(found.state), title: full ? DebridRequestWords.title(found, tr) : DebridRequestWords.short(found, tr),
+                                   detail: full ? DebridRequestWords.paceLine(found, now: Date(), notifies: notifies, tr) : nil,
                                    fraction: found.state == .downloading ? Double(found.percent) / 100 : nil,
                                    warn: DebridRequestWords.isTrouble(found, now: Date()), ok: found.state == .ready)
+    }
+
+    /// RX2-A · la cápsula de una versión ya pedida: «Bajando · 42 %» en lugar de «Por pedir».
+    private func cloudWords(_ option: VersionOption) -> String? {
+        option.speed == .realDebridMustDownload ? requestStatus(option.id)?.title : nil
+    }
+
+    /// RX2-A · mientras la tuya baja en la nube: la mejor que ya arranca en tus idiomas (la primera de la misma lista que
+    /// usa «Ver»), «Ver Inglés · 1080p, ya arranca». nil si no hay ninguna.
+    private func instantInstead(_ model: SourcesModel, _ ui: String) -> (title: Text, action: () -> Void)? {
+        let instant = model.languageRows.flatMap { row in row.options.filter { $0.cached && !$0.otherTitle }.map { (row.code, $0) } }
+        guard let source = model.ranked.first(where: { s in instant.contains { $0.1.id == s.index } }),
+              let match = instant.first(where: { $0.1.id == source.index }) else { return nil }
+        let name = "\(Streams.versionLanguageName(match.0, in: ui)) · \(match.1.quality)"
+        return (Text("Ver \(LanguageFlags.flagged(name, match.0)), ya arranca"), { picked = nil; pick(source, .watch) })
     }
 
     var body: some View {
@@ -136,8 +154,22 @@ struct SourcesSheet: View {
             }
         }
         .dsSheetContent(sides: false)   // el carrusel llega a las orillas: cada parte pone su margen
-        .task { await model.load(onCellular: env.connectivity.isCellular) }
+        .task {
+            await model.load(onCellular: env.connectivity.isCellular)
+            #if DEBUG
+            // `-demo-open sources-card`: la tarjeta de la primera «↓ Por pedir» (RX2-A: ya pedida, cuánto falta y la que arranca).
+            if Demo.isOn, Demo.open == "sources-card" {
+                if let row = model.languageRows.first(where: { $0.options.contains { $0.speed == .realDebridMustDownload } }),
+                   let option = row.options.first(where: { $0.speed == .realDebridMustDownload }) {
+                    picked = PickedVersion(row: row, option: option)
+                } else if let item = model.toRequest.first {
+                    picked = PickedVersion(row: LanguageRow(code: item.code, yours: false, original: false, options: [item.option]), option: item.option)
+                }
+            }
+            #endif
+        }
         .sheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
+        .debridFlowIntro(when: request != nil && !model.toRequest.isEmpty && !showsAll)   // RX3-A: «↓ Por pedir» a la vista
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
         .sheet(item: $picked) { p in
             VersionCard(row: p.row, option: p.option, others: model.others(of: p.option, in: p.row), uiLanguage: ui,
@@ -146,7 +178,8 @@ struct SourcesSheet: View {
                             if let source = model.source(id) { pick(source, purpose) }
                         },
                         infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } },
-                        request: request == nil ? nil : { id in ask(id) }, requestStatus: requestStatus(p.option.id))
+                        request: request == nil ? nil : { id in ask(id) }, requestStatus: requestStatus(p.option.id, full: true),
+                        instead: p.option.speed == .realDebridMustDownload ? instantInstead(model, ui) : nil)
                 // Mide lo que dice (sin espacio muerto); al abrir «Otras», crece y, si no cabe, se desplaza.
         }
     }
@@ -154,13 +187,13 @@ struct SourcesSheet: View {
     /// «Por idioma»: una fila por idioma de audio, los demás idiomas plegados y cuántas se esconden.
     @ViewBuilder private func byLanguage(_ model: SourcesModel, _ ui: String) -> some View {
         ForEach(model.languageRows) { row in
-            VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
+            VersionLanguageRow(row: row, uiLanguage: ui, cloud: cloudWords) { picked = PickedVersion(row: row, option: $0) }
         }
         if !model.moreLanguages.isEmpty {
             DisclosureGroup(isExpanded: $showsMore) {
                 VStack(spacing: DS.Space.s2) {
                     ForEach(model.moreLanguages) { row in
-                        VersionLanguageRow(row: row, uiLanguage: ui) { picked = PickedVersion(row: row, option: $0) }
+                        VersionLanguageRow(row: row, uiLanguage: ui, cloud: cloudWords) { picked = PickedVersion(row: row, option: $0) }
                     }
                 }
                 .padding(.top, DS.Space.s2)
@@ -202,6 +235,9 @@ struct VersionCard: View {
     /// T8-A · la que Real-Debrid aún no tiene se pide, nunca se reproduce; ya pedida, su estado.
     var request: ((Int) -> Void)?
     var requestStatus: DebridRequestStatus?
+    /// RX2-A · ya pedida y bajando en la nube: la que sí arranca en tus idiomas («Ver Inglés · 1080p, ya arranca»), si hay.
+    var instead: (title: Text, action: () -> Void)?
+    @Environment(\.dismiss) private var dismiss
     @State private var showsOthers = false
     /// El alto de lo que dice la tarjeta: la hoja mide eso (medida por la zona desplazable dejaba un hueco al pie).
     @State private var contentHeight: CGFloat = DS.Size.touchTarget * 8
@@ -230,8 +266,17 @@ struct VersionCard: View {
                         .recipe(.footnote)
                 }
                 if option.speed == .realDebridMustDownload, let request {
-                    if let requestStatus { requestStatus } else {
-                        Button { request(option.id) } label: { Label("Pedirlo y avisarme", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                    if let requestStatus {
+                        requestStatus.padding(DS.Space.s4).dsCard(.card)
+                        // RX2-A: esperar la tuya o ver ya otra que arranca. Sin otra al instante, solo cuánto lleva.
+                        if let instead {
+                            Button(action: instead.action) { Label { instead.title } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity) }
+                                .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-instead")
+                            Button { dismiss() } label: { Text("Esperar a que llegue").frame(maxWidth: .infinity) }
+                                .dsSecondaryButton().controlSize(.large).accessibilityIdentifier("version-wait")
+                        }
+                    } else {
+                        Button { request(option.id) } label: { Label("Pedir a la nube", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
                             .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-request")
                     }
                 } else {
@@ -296,7 +341,7 @@ struct VersionCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             if other.speed == .realDebridMustDownload, let request {   // T8-A: se pide, nunca se reproduce
                 Button { request(other.id) } label: { Image(systemName: "arrow.down.circle").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
-                    .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Pedirlo y avisarme"))
+                    .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Pedir a la nube"))
             } else {
             Button { act(other.id, .watch) } label: { Image(systemName: "play.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
                 .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Ver"))
@@ -317,7 +362,7 @@ struct VersionCard: View {
 struct SourcesGlossary: View {
     private let entries: [(String, LocalizedStringKey, LocalizedStringKey)] = [
         ("sparkles", "Recomendada", "La que elegimos por calidad, idioma y tamaño. Es la que arranca sola."),
-        ("bolt.fill", "Al instante", "Ya está en tu Real-Debrid: empieza sin esperar."),
+        ("bolt.fill", "Al instante", "Ya está en la nube: empieza sin esperar."),
         ("4k.tv", "4K · 1080p · 720p", "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido."),
         ("sun.max", "HDR · DV", "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce."),
         ("hifispeaker.2", "Atmos · 5.1", "Sonido envolvente. Con audífonos AirPods, Atmos se oye espacial."),

@@ -138,7 +138,7 @@ extension PlayerModel {
             retrying = false
             let engine = engine
             Task { await engine.stop() }   // suelta lo que se quedó abriendo (no queda una carga trabada detrás)
-            if lastNotice == .downloading { fail("Real-Debrid todavía no lo tiene.", .noSources) } else { fail("Ninguna versión funcionó.", .noneWorked) }
+            if lastNotice == .downloading { fail("Todavía no está en la nube.", .noSources) } else { fail("Ninguna versión funcionó.", .noneWorked) }
             return nil
         }
         notice = triedAnother()

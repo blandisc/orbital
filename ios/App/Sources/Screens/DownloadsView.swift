@@ -3,8 +3,10 @@ import UniformTypeIdentifiers
 import OrbitalCore
 import OrbitalModels
 
-/// Descargas: lo que se está bajando (con su avance), lo listo para ver sin conexión agrupado por título y la descarga
-/// inteligente. El espacio va en el subtítulo de la barra; el fondo toma el color de lo que se está bajando.
+/// Descargas, en dos partes (RX1-A, 3 nov): «En la nube · Real-Debrid» (lo que pediste a la nube, `DownloadsCloudPart`) y
+/// «En este iPhone · sin internet»: lo que se está bajando a este aparato (con su avance), lo listo para ver sin conexión
+/// agrupado por título y la descarga inteligente. Sin Real-Debrid (Plus, App Store) solo hay la segunda y no lleva rótulo.
+/// El fondo toma el color de lo que se está bajando.
 struct DownloadsView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -16,6 +18,7 @@ struct DownloadsView: View {
     @State private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
     enum Part: Hashable { case phone, media }
     @State private var part: Part = .phone
+    @State private var cloud = CloudSheets()
 
     init() {
         _observer = State(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
@@ -57,13 +60,27 @@ struct DownloadsView: View {
         }
     }
 
-    /// «En el iPhone | Mi media» (con OneDrive conectado).
+    /// «Descargas | Mi media».
     private var switcher: some View {
-        DSTextTabs(options: [.init(id: Part.phone, title: Text("En el iPhone"), symbol: "iphone"), .init(id: .media, title: Text("Mi media"), symbol: "cloud")], selection: $part)
+        // «Descargas» (la nube y este aparato, RX1-A) y Mi media (tu OneDrive). Sin nube en su ícono: «la nube» es Real-Debrid.
+        DSTextTabs(options: [.init(id: Part.phone, title: Text("Descargas"), symbol: "arrow.down.to.line"), .init(id: .media, title: Text("Mi media"), symbol: "folder")], selection: $part)
     }
 
     private func phoneList(_ model: DownloadsModel) -> some View {
+        let showsCloud = DownloadsCloudPart.shows(env.services)
+        // Con la nube arriba, «Descargando», «Series»… son subsecciones de «En este iPhone» (dos niveles, nada más).
+        let level: DSSectionHead.Level = showsCloud ? .subsection : .section
+        let symbol = { (name: String) in showsCloud ? nil : name }
         return List {
+            if showsCloud {
+                DownloadsCloudPart(sheets: $cloud)
+                Section {
+                    DSSectionHead(title: DeviceWords.text("En este iPhone · sin internet", mac: "En esta Mac · sin internet"), level: .section, symbol: ThisDevice.symbol)
+                        .listHeadRow().accessibilityIdentifier("downloads-device")
+                    if model.items.isEmpty { deviceEmpty.listRowBackground(Color.clear) }
+                }
+                .downloadCard()
+            }
             if !model.items.isEmpty {
                 Section {
                     StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.readySeries.reduce(0) { $0 + $1.bytes }, color: DS.ListTint.series),
@@ -74,7 +91,7 @@ struct DownloadsView: View {
             }
             if !model.active.isEmpty {
                 Section {
-                    DSSectionHead(title: "Descargando", count: model.active.count, level: .section, symbol: "arrow.down.circle").listHeadRow()
+                    DSSectionHead(title: "Descargando", count: model.active.count, level: level, symbol: symbol("arrow.down.circle")).listHeadRow()
                     ForEach(model.active) { row($0, model) }
                 }
                 .downloadCard()
@@ -82,7 +99,7 @@ struct DownloadsView: View {
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
                 Section {
-                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), level: .section, symbol: "tv").listHeadRow()
+                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), level: level, symbol: symbol("tv")).listHeadRow()
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
                             .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { model.delete(g.items.map(\.id)) }.tint(DS.danger) }
@@ -92,7 +109,7 @@ struct DownloadsView: View {
             }
             if !model.readyMovies.isEmpty {
                 Section {
-                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: .section, symbol: "film").listHeadRow()
+                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), level: level, symbol: symbol("film")).listHeadRow()
                     // Un renglón por cada película, siempre (un `if` que a veces no pinta nada descuadra la lista al borrar).
                     ForEach(model.readyMovies.compactMap { g in g.items.first.map { (g, $0) } }, id: \.0.id) { g, item in
                         readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
@@ -103,7 +120,7 @@ struct DownloadsView: View {
             if !model.items.isEmpty {
                 Section {
                     // Dos flechas en círculo: «automático» (la chispa era el ícono típico de la IA; Fernando, 2 nov 2026, J1).
-                    DSSectionHead(title: "Descarga inteligente", level: .section, symbol: DS.Symbol.automatic).listHeadRow()
+                    DSSectionHead(title: "Descarga inteligente", level: level, symbol: symbol(DS.Symbol.automatic)).listHeadRow()
                     DSToggleRow("Bajar el siguiente episodio", detail: "Cuando acabas de ver uno", isOn: setting(\.autoNextDownload))
                     DSToggleRow("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
                     // El mismo ajuste de Ajustes › Descargas, aquí a la mano (antes era una nota que no se podía tocar; J4).
@@ -113,11 +130,10 @@ struct DownloadsView: View {
             }
         }
         .overlay {
-            // Sin nada en cola ni listo: el vacío nativo, con qué hacer.
-            if model.items.isEmpty {
-                DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin conexión."))
-            }
+            // Sin nube y sin nada en cola ni listo: el vacío nativo, con qué hacer (con nube, cada parte tiene el suyo).
+            if model.items.isEmpty && !showsCloud { deviceEmpty }
         }
+        .modifier(CloudSheetsHost(sheets: $cloud, active: showsCloud))
         .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen
         .listRowSpacing(DS.Space.s2)
         .listHeadRows()   // el rótulo a 20 de su tarjeta y unos 40 entre secciones (I2)
@@ -132,6 +148,13 @@ struct DownloadsView: View {
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         // Lo que termina pasa de «Descargando» a su lugar en Series o Películas deslizándose, no de golpe.
         .animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade, value: model.items.map { "\($0.id):\($0.state)" })
+    }
+
+    /// Nada descargado en este aparato: qué hacer y su única salida, buscar qué ver.
+    private var deviceEmpty: some View {
+        DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin internet.")) {
+            Button("Buscar qué ver") { env.openTab = AppEnvironment.searchTab }.accessibilityIdentifier("downloads-empty-search")
+        }
     }
 
     /// Lo que vino de tu OneDrive (Mi media), para distinguirlo de lo de Real-Debrid.

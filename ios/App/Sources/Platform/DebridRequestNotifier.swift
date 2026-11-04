@@ -30,7 +30,7 @@ enum DebridRequestNotifier {
                                  icon: UNNotificationActionIcon(systemImageName: "tv")),
         ].filter { tv || $0.identifier != Action.tv }
         let ready = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
-                                           hiddenPreviewsBodyPlaceholder: Strings.tr("Real-Debrid terminó tu pedido", language: language), options: [])
+                                           hiddenPreviewsBodyPlaceholder: Strings.tr("La nube terminó tu pedido", language: language), options: [])
         UNUserNotificationCenter.current().getNotificationCategories { existing in
             UNUserNotificationCenter.current().setNotificationCategories(existing.filter { $0.identifier != category }.union([ready]))
         }
@@ -82,7 +82,7 @@ enum DebridRequestNotifier {
         content.title = String(format: Strings.tr("Ya está %@", language: language), what)
         if request.kind == "series" { content.subtitle = request.title }
         content.body = request.device == DebridRequestsModel.tvDevice ? Strings.tr("Lo pediste desde la TV", language: language)
-                                                                      : Strings.tr("Real-Debrid terminó de bajarlo · ábrelo para verlo", language: language)
+                                                                      : Strings.tr("La nube terminó de bajarlo · ábrelo para verlo", language: language)
         content.threadIdentifier = thread
         content.categoryIdentifier = category
         content.sound = .default

@@ -18,7 +18,6 @@ struct SettingsView: View {
     @State private var showsYear = false
     @State private var showsTrakt = false
     @State private var showsFollowed = false
-    @State private var showsRequests = false
     @State private var showsPlayback = false
     @State private var showsOrbital = false
     @State private var showsDemoPage = false
@@ -143,8 +142,8 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
         .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
-        .navigationDestination(isPresented: $showsRequests) { DebridRequestsView() }   // `-demo-settings-page requests`: Tus pedidos (D3)
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { showsRequests = true } }
+        // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › En la nube (RX1-A).
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { env.openTab = AppEnvironment.downloadsTab } }
         .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
         .navigationDestination(isPresented: $showsOrbital) { page("Tu Orbital") { orbitalSection(model) } }   // `-demo-settings-page orbital` (K1)
@@ -302,7 +301,7 @@ struct SettingsView: View {
         .listRowBackground(DS.surface)
         // R8, R9-B: el mismo nombre y el mismo momento que en la TV (Ajustes › Ver › «Pedir solo el siguiente episodio»).
         Section {
-            DSToggleRow("Pedir solo el siguiente episodio", detail: "Si Real-Debrid aún no lo tiene, se lo pide 3 min antes del final del que ves.",
+            DSToggleRow("Pedir solo el siguiente episodio", detail: "Si la nube aún no lo tiene, se lo pide 3 min antes del final del que ves.",
                         isOn: Binding(get: { s.autoRequestNextEpisode }, set: { v in model.update { $0.autoRequestNextEpisode = v } }))
                 .accessibilityIdentifier("settings-auto-request-next")
         } header: { Text(verbatim: "Real-Debrid") }

@@ -160,7 +160,7 @@ extension PlayerModel {
             upNextDeadline = nil   // que no avance solo mientras se captura
             upNext = UpNext(videoID: next, label: label, title: title, secondsLeft: kind == "upnext" ? Int(PlaybackRules.upNextCountdown) - 3 : 0,
                             thumbnail: episodeThumbnail(next), downloading: kind == "upnext" ? nil : 63)
-        case "not-in-debrid": fail("Real-Debrid todavía no lo tiene.", .noSources); rd.lookupCause = (.notInDebrid(language: wantedLanguage.isEmpty ? "es-419" : wantedLanguage), nil)
+        case "not-in-debrid": fail("Todavía no está en la nube.", .noSources); rd.lookupCause = (.notInDebrid(language: wantedLanguage.isEmpty ? "es-419" : wantedLanguage), nil)
         default: break
         }
     }

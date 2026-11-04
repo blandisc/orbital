@@ -40,16 +40,17 @@ public enum UnavailableCause: Equatable, Sendable {
         case retry
         /// Elegir otra versión (Versión).
         case otherVersion
-        /// «Pedirlo y avisarme» (R2-A, R7): Real-Debrid lo baja y avisa al terminar.
+        /// «Pedir a la nube» (R2-A, R7, RX4-A): Real-Debrid (la nube) lo baja y avisa al terminar.
         case request
     }
 
-    // pendiente: texto de la tabla común con la TV — ya está en design/vocabulario.json › causas (3 nov 2026); si cambia ahí,
-    // cambia aquí y en la TV.
+    // pendiente: texto de la tabla común con la TV — design/vocabulario.json › causas (3 nov 2026). RX4-A (3 nov): «la nube»
+    // es Real-Debrid; la TV todavía dice «Bajando en Real-Debrid · » y «Real-Debrid todavía no lo tiene» (pendiente en el
+    // vocabulario). Si cambia ahí, cambia aquí y en la TV.
     /// El título, en español (la clave del catálogo de textos). `tr` traduce al idioma de la app.
     public func title(_ tr: (String) -> String = { $0 }) -> String {
         switch self {
-        case .downloading(let percent): String(format: tr("Bajando en Real-Debrid · %lld %%"), percent)
+        case .downloading(let percent): String(format: tr("Bajando en la nube · %lld %%"), percent)
         case .unreleased(let day): String(format: tr("Aún no se estrena · sale %@"), day)
         case .cannotSearch: tr("No puedo buscar versiones")
         case .debridExpired: tr("Tu Real-Debrid venció")
@@ -58,7 +59,7 @@ public enum UnavailableCause: Equatable, Sendable {
         case .debridRefused: tr("Real-Debrid no lo dejó bajar")
         case .addonsOffline: tr("No pude conectar con tus complementos")
         case .noAddonsOn: tr("No tienes complementos prendidos")
-        case .notInDebrid: tr("Real-Debrid todavía no lo tiene")
+        case .notInDebrid: tr("Todavía no está en la nube")
         case .nobodyHasIt: tr("Nadie lo tiene todavía en internet")
         }
     }
@@ -75,7 +76,7 @@ public enum UnavailableCause: Equatable, Sendable {
         case .addonsOffline: tr("Revisa Internet e inténtalo de nuevo")
         case .noAddonsOn: tr("Ajustes › Complementos")
         case .notInDebrid(let language):
-            String(format: tr("Lo puede bajar por ti, de preferencia en %@; tarda según cuánta gente lo comparte"), languageName(language))
+            String(format: tr("La nube lo puede bajar por ti, de preferencia en %@; tarda según cuánta gente lo comparte"), languageName(language))
         case .nobodyHasIt: tr("Suele aparecer en unas horas o días · vuelve a buscar más tarde")
         }
     }
@@ -86,7 +87,7 @@ public enum UnavailableCause: Equatable, Sendable {
         case .reconnectDebrid, .noAddonsOn: .settings
         case .debridRefused: .otherVersion
         case .addonsOffline, .cannotSearch: .retry
-        // La 10 dice «Lo puede bajar por ti»: el botón que lo hace (Fase 2).
+        // La 10 dice «La nube lo puede bajar por ti»: el botón que lo hace (Fase 2).
         case .notInDebrid: .request
         case .downloading, .unreleased, .nobodyHasIt: nil
         }
@@ -99,7 +100,7 @@ public enum UnavailableCause: Equatable, Sendable {
         case .settings: tr("Ajustes")
         case .retry: tr("Reintentar")
         case .otherVersion: tr("Elegir otra versión")
-        case .request: tr("Pedirlo y avisarme")
+        case .request: tr("Pedir a la nube")
         }
     }
 
