@@ -279,9 +279,7 @@ extension DS {
     /// La ficha rica (como Infuse): caras del reparto, insignias de calidad, calificaciones, tráiler y logos.
     /// Las listas con el rótulo de cada sección como renglón (`listHeadRow`): del rótulo a su tarjeta (Fernando, 2 nov 2026, I2).
     /// `headPad` más los 8 entre renglones y el aire del rótulo dan unos 20 pt (medido en el simulador).
-    /// `cornerClear`: el aire arriba del rótulo: con aire entre renglones la lista recorta las esquinas de cada renglón y se
-    /// comía la esquina del ícono («En este iPhone») y de la «B» de «Bajando» (Fernando, 4 nov 2026, la 1774). Se le quita
-    /// lo mismo al espacio entre secciones: el ritmo sigue igual.
+    /// `cornerClear`: aire arriba del rótulo, que la esquina redondeada de su celda no le coma el ícono (4 nov 2026, la 1774).
     enum ListSection { static let headPad = DS.Space.s2, cornerClear = DS.Space.s2 }
 
     /// El episodio que vas viendo en una lista de episodios (Fernando, 2 nov 2026, O1): la barra de avance más gruesa (el doble
