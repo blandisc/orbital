@@ -230,7 +230,20 @@ def test_holding_x_enters_the_trial_and_a_tap_opens_the_panel_on_release():
     q._subs_hold = None
 
 
-def test_keyboard_s_mouse_wheel_and_the_touch_button():
+def test_keyboard_s_mouse_wheel_and_the_touch_button(monkeypatch):
+    from orbital import player_screen
+
+    class Timer:  # los relojes de la pantalla del reproductor quietos: repintaban los botones a media prueba (fallaba a veces)
+        def __init__(self, *a, **kw):
+            self.daemon = True
+
+        def start(self):
+            pass
+
+        def cancel(self):
+            pass
+
+    monkeypatch.setattr(player_screen.threading, "Timer", Timer)
     p, mpv, _ = trial_player()
     p.HUD_TICK = 0  # sin su reloj: redibujaba su barra en segundo plano y a veces borraba los botones de la pausa de abajo
     p.key("subs")  # la tecla S

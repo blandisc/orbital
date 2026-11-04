@@ -68,20 +68,32 @@ class FakeRD:
     """Tu Real-Debrid de mentira: `GET /torrents/info` y `POST /unrestrict/link` con lo del escenario."""
 
     def __init__(self, rd: dict) -> None:
-        self.torrents = {t["id"]: t for t in rd.get("torrents") or []}
+        self.by_id = {t["id"]: t for t in rd.get("torrents") or []}
         self.error = rd.get("error")
+        self.retry_error = rd.get("retry_error")  # N3-A: lo que contesta al volver a pedirlo solo
+        self.slots = rd.get("slots")
+        self.calls = 0
 
     def add(self, info_hash, file_idx=None, pack=False):
-        """`POST /torrents/addMagnet`: lo que diga `rd.error` o lo acepta."""
-        if self.error:
-            raise realdebrid.RealDebridError(self.error["name"], self.error.get("http"), self.error.get("code"))
+        """`POST /torrents/addMagnet`: lo que diga `rd.error` (la primera vez) o `rd.retry_error` (después), o lo acepta."""
+        self.calls += 1
+        error = self.error if self.calls == 1 else self.retry_error
+        if error:
+            raise realdebrid.RealDebridError(error["name"], error.get("http"), error.get("code"))
         return "RNEW"
+
+    def active_count(self):
+        """`GET /torrents/activeCount` en el siguiente vistazo (`rd.slots`)."""
+        return (self.slots["active"], self.slots["limit"]) if self.slots else None
+
+    def torrents(self, limit=100):
+        return list(self.by_id.values())
 
     def select(self, rd_id, file_idx=None, pack=False):
         pass
 
     def info(self, rd_id):
-        return self.torrents[rd_id]
+        return self.by_id.get(rd_id) or {"id": rd_id, "status": "queued", "progress": 0}  # lo recién pedido
 
     def link(self, info, file_idx=None):
         links = info.get("links") or []
@@ -148,11 +160,13 @@ def run(library, monkeypatch):
         meta = load(HERE / scn["cinemeta"]) if scn.get("cinemeta") else {}
         meta = meta.get("meta", meta)
         monkeypatch.setattr(w.cinemeta, "meta", lambda kind, meta_id, localized=True: meta)
-        if scn.get("act") == "request":  # tocas «Pedir a la nube» una vez antes de mirar
+        if scn.get("act") in ("request", "request_and_check"):  # tocas «Pedir a la nube» una vez antes de mirar
             try:
                 w.request_debrid(title["kind"], title["id"], title["video_id"], "")
             except LookupError:
                 pass
+        if scn.get("act") == "request_and_check":  # y el siguiente vistazo a tus pedidos (N3-A)
+            w.rd.tick()
         got = w.availability(title["kind"], title["id"], title["video_id"])
         chosen = w.choose_source(title["kind"], title["video_id"], prefs) if got["why"] != "no-addons" else None
         return {"availability": got, "chosen": chosen, "prefs": prefs}
@@ -197,10 +211,6 @@ def cause_of(got: dict) -> str | None:
 @pytest.mark.parametrize("path", SCENARIOS, ids=[p.stem for p in SCENARIOS])
 def test_escenario(path, run):
     scn = load(path)
-    if scn.get("act") == "request_and_check":
-        # N3-A, escenarios 34 y 35 (iPhone, 4 nov): pedir y luego el siguiente vistazo con `rd.slots` y `rd.retry_error`.
-        # El arnés de la TV todavía no simula ese vistazo (registro de paridad).
-        pytest.skip("«request_and_check»: el siguiente vistazo, pendiente en el arnés de la TV")
     exp = scn["expected"]
     skip = TV_DIFFERS.get(scn["id"], ("", ""))[0].split()
     out = run(scn)

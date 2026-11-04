@@ -82,7 +82,7 @@
     { "texto": "Lo vuelvo a pedir cuando se libere un lugar", "en": ["tv", "ios"], "nota": "N3-A: «Muchas descargas activas · Lo vuelvo a pedir cuando se libere un lugar» debajo de «Pedir a la nube»; en el siguiente vistazo con lugar se vuelve a pedir solo una vez (escenarios 28, 34, 35). Al volver a pedirlo solo: «Volví a pedir …» con «Ya se liberó un lugar en tu Real-Debrid»." },
     { "texto": "Volví a pedir ", "en": ["tv", "ios"], "nota": "N3-A: el aviso cuando «Muchas descargas activas» se volvió a pedir solo (sigue el título); detalle «Ya se liberó un lugar en tu Real-Debrid». En el iPhone, solo con permiso de avisos." },
     { "texto": "Ya se liberó un lugar en tu Real-Debrid", "en": ["tv", "ios"], "nota": "N3-A: el detalle de «Volví a pedir …»." },
-    { "texto": " y aquí no se ve bien", "en": ["tv", "ios"], "pendiente": { "tv": "N2-A…N5-A y «Tus idiomas» (4 nov): la TV lo construye con los mismos `expected`; ver docs/producto/paridad-registro.md" }, "nota": "N5-A: debajo de «Ver», por qué no es la de un idioma que va antes en tu orden: «La de inglés pesa 64 GB y aquí no se ve bien» (o «viene en AV1»). Escenario 05, `plays_poorly`." }
+    {"texto": " y aquí no se ve bien", "en": ["ios"], "nota": "N5-A en la TV no aplica: el reproductor de la TV (mpv) ve REMUX 4K y Dolby Vision; no pone topes (4 nov). N5-A: debajo de «Ver», por qué no es la de un idioma que va antes en tu orden: «La de inglés pesa 64 GB y aquí no se ve bien» (o «viene en AV1»). Escenario 05, `plays_poorly`."}
   ],
   "formatos": [
     { "texto": "termina a las", "en": ["tv", "ios"], "evitar": ["acaba a las", "Termina a las"] },

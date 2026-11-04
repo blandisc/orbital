@@ -258,6 +258,8 @@ class RdRequests:
         out = {k: req.get(k) for k in ("state", "percent", "language", "by")}
         out["message"] = label(req)
         out["detail"] = DETAILS.get(str(req.get("state")), "")
+        if req.get("state") == TOO_MANY and req.get("retried"):  # N3-A: ya se volvió a pedir una vez; ahora es a mano
+            out["detail"] = "Cancela otra descarga o pídelo otra vez más tarde"
         out["mine"] = self._mine(req, self._account[2])
         out["hash"] = req.get("hash")
         if req.get("state") in ACTIVE and req.get("progress_at") and time.time() - req["progress_at"] >= STALL_AFTER:
