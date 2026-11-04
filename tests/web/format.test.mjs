@@ -120,3 +120,12 @@ test("guiones suaves: las palabras largas se parten por sílaba (una tarjeta ang
   assert.equal(show("Chernobyl"), "Chernobyl");
   assert.equal(softHyphens(""), "");
 });
+
+test("la batería: sin el cargador siempre se ve; cargando, solo debajo de 95 % (Fernando, 3 nov)", async () => {
+  const { batteryHidden } = await import("../../orbital/web/js/components/status-bar.js");
+  assert.equal(batteryHidden(100, false), false); // desconectada y llena: se ve
+  assert.equal(batteryHidden(40, false), false);
+  assert.equal(batteryHidden(94, true), false); // cargando y debajo de 95: se ve
+  assert.equal(batteryHidden(95, true), true); // cargando y casi llena: no dice nada
+  assert.equal(batteryHidden(100, true), true);
+});

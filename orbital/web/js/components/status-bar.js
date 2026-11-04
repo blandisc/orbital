@@ -13,6 +13,9 @@ const SECTION_ICONS = { foryou: "spark", home: "home", games: "gamepad", media: 
  * Barra superior: la marca (abre el menú), Buscar con su botón, las secciones como íconos —la activa se expande con su
  * nombre— entre LB y RB y, a la derecha, lo abierto, Alexa, Wi-Fi, la pila y la hora.
  */
+/** ¿Se esconde la batería? Sin el cargador nunca; cargando, de 95 % para arriba (ya casi llena, no dice nada). */
+export const batteryHidden = (pct, charging) => !!charging && pct >= 95;
+
 export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección.
   const searchGlyph = h("span", { class: "status-bar__search-glyph" });
@@ -205,7 +208,9 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
       const info = await navigator.getBattery();
       const update = () => {
         const pct = Math.round(info.level * 100);
-        battery.hidden = pct >= 95; // llena (o casi) no dice nada: sale cuando baja (Fernando, 2 nov)
+        // Sin el cargador siempre se ve, tenga lo que tenga; cargando, solo debajo de 95 (Fernando, 3 nov; antes se escondía
+        // de 95 para arriba también sin cargador).
+        battery.hidden = batteryHidden(pct, info.charging);
         battery.classList.toggle("battery--low", pct <= 15 && !info.charging);
         battery.classList.toggle("battery--charging", info.charging);
         level.style.setProperty("--battery-level", `${pct}%`);
