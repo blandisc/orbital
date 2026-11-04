@@ -385,6 +385,10 @@ class RdRequests:
             self._links.pop((info_hash, video_id), None)
             self._publish(video_id)
 
+    def refused(self) -> set[str]:
+        """Las huellas que Real-Debrid no dejó bajar: «Versión» lo dice y nunca son la recomendada (FQ2-A, 3 nov)."""
+        return {k for k, v in self._all().items() if HASH.match(k) and v.get("state") == REFUSED}
+
     def ready_packs(self, meta_id: str) -> set[str]:
         """Las huellas de los paquetes de temporada de esa serie que pediste con todos sus videos (`all_files`) y ya
         terminaron, de tu cuenta: otro episodio de ahí ya está («Al instante · la pediste») aunque no lo hayas pedido."""

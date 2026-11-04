@@ -126,3 +126,14 @@ def test_ready_packs_solo_lo_tuyo_listo_y_con_todos_sus_videos():
                "d" * 40: {**base, "all_files": False}, "e" * 40: {**base, "meta_id": "tt1"}}
     reqs._entries = lambda: [{**v, "hash": k} for k, v in entries.items()]
     assert reqs.ready_packs("tt0903747") == {"a" * 40}
+
+
+def test_fq2_la_que_real_debrid_no_dejo_bajar_nunca_es_la_recomendada(library, monkeypatch):
+    w = library.watch
+    no = source(0, "Inception.2010.1080p.Latino", name="[RD download] Torrentio\n1080p", infoHash="e" * 40)
+    yes = source(1, "Inception.2010.720p.Latino", name="[RD download] Torrentio\n720p", infoHash="f" * 40)
+    monkeypatch.setattr(w, "stream_sources", lambda kind, video_id, prefs=None: [no, yes])
+    monkeypatch.setattr(w.rd, "refused", lambda: {"e" * 40})
+    assert w.best_source("movie", "tt1375666") is yes
+    monkeypatch.setattr(w.rd, "refused", lambda: {"e" * 40, "f" * 40})
+    assert w.best_source("movie", "tt1375666") is no  # si todas, la primera (algo hay que ofrecer)

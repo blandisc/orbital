@@ -1352,7 +1352,10 @@ class Watch:
             return None
         # Nunca una de cine, un tráiler ni una que parece de otro título o de otra temporada si hay otra (invariante 4
         # de los escenarios comunes con el iPhone): al instante, una de otra temporada todavía puede sumar más.
-        clean = [s for s in found if not s.doubtful and not {"CAM", "Tráiler", "3D"} & set(s.tags)]
+        # Tampoco una que Real-Debrid no dejó bajar (FQ2-A): pedirla otra vez falla igual.
+        refused = self.rd.refused()
+        clean = [s for s in found if not s.doubtful and not {"CAM", "Tráiler", "3D"} & set(s.tags)
+                 and (s.cached or s.info_hash not in refused)]
         found = clean or found
         if binge:
             same = next((s for s in found if s.binge == binge and s.score > found[0].score - 700), None)
