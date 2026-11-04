@@ -70,7 +70,7 @@ struct DebridRequestsView: View {
             }
             #endif
         }
-        .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }).presentationDetents([.large]) }
+        .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }) }
         .sheet(item: $opened) { which in
             if let request = model.requests.first(where: { $0.hash == which.id }) { sheet(request, model) }
         }

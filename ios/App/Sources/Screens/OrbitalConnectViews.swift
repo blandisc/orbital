@@ -66,6 +66,9 @@ struct OrbitalUpgradeSheet: View {
             }
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
+            // Fernando, 3 nov, probando la 1729: la hoja quedaba a media pantalla con un hueco abajo. Mide lo que trae.
+            .contentMargins(.bottom, DS.Space.s2, for: .scrollContent)   // el pie de la lista no deja otro hueco
+            .fittedScrollSheet()
             .navigationTitle("Darle su propia conexión").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -73,7 +76,6 @@ struct OrbitalUpgradeSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
         .interactiveDismissDisabled(model.stage == .waiting)
         #if DEBUG
         .task { if Demo.isOn, Demo.cx?.hasPrefix("upgrade") == true { await model.start() } }

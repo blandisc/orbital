@@ -75,6 +75,11 @@ Cómo se mantiene:
 
 ## Textos pendientes (`design/vocabulario.json`)
 
+**Pulido de la 1729 (3 nov, noche), la TV los iguala en la ola 6:** «Por pedir» (la cápsula de una versión que Real-Debrid
+aún no tiene; el grupo «Hay que pedirlas · tardan» ya está en los dos, 22b7a092), «Real-Debrid lo baja en su nube por ti»
+(dónde y cómo de un pedido) y los tres pasos animados de «¿Qué es esto?»: «Tú lo pides», «Real-Debrid lo baja»,
+«Arranca al instante».
+
 Ninguno (3 nov, tarde): «Aparatos conectados» y «Darle su propia conexión» ya los dice la TV (1db06d4c), y «Conectar un aparato» es el nombre del renglón del código en los dos lados (IOS-3); «Tu TV es nueva: vuelve a escanear su código» ya lo dicen los dos (96408144). Antes (2 nov) no quedaba ninguno («Familia» ya en la TV también): «Mi lista», «Decide por mí», «Colecciones» y «Reintentar» ya se dicen igual en las dos apps; las traducciones viejas con «tu watchlist», «tu repisa», «Intentar de nuevo» y «¿Qué vemos?» salieron del iPhone.
 
 ## Olas de la TV

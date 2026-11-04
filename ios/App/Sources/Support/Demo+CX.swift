@@ -8,6 +8,8 @@ import OrbitalAddons
 /// - `shared-differs` (con `-demo-rd premium`): la copia de tus aparatos Apple es de otra cuenta (ana), puesta por tu iPad.
 /// - `shared-offer` (sin `-demo-rd`): sin clave aquí; tus aparatos Apple tienen una («Usar la clave de tus aparatos Apple»).
 /// - `remove-choice` (con `-demo-rd premium -demo-settings-page realdebrid`): «¿Quitar tu clave?» con sus dos salidas.
+/// - `explain` (igual): «¿Qué es Real-Debrid?» con sus tres pasos animados.
+/// - `redeem` (igual): la hoja «¿Canjear tus puntos?» (D4); canjear contesta la demo, nada sale a Real-Debrid.
 /// - `invite` · `invite-expired` (en el iPad, con `-demo-no-tv`): la tarjeta «¿Conectar con Orbital de la sala?».
 /// - `upgrade-wait` · `upgrade-ok` · `upgrade-no` (con `-demo-settings-page orbital`): «Darle su propia conexión».
 /// - `unknown-tv`: la TV no conoce este aparato: «Tu TV es nueva: vuelve a escanear su código».

@@ -66,7 +66,11 @@ struct VersionChip: View {
                 }
                 Text(verbatim: Self.facts(option)).recipe(.caption).lineLimit(1)
                 // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
-                if let speed = Self.speedText(option.speed), let color = Self.speedColor(option.speed) {
+                // T8-A: la que hay que pedir lo dice corto y con su flecha (antes «Real-Debrid aún no la t…», cortado).
+                if option.speed == .realDebridMustDownload {
+                    Label { Text("Por pedir") } icon: { Image(systemName: "arrow.down.circle") }
+                        .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
+                } else if let speed = Self.speedText(option.speed), let color = Self.speedColor(option.speed) {
                     HStack(spacing: DS.Space.s1) {
                         Circle().fill(color).frame(width: DS.Version.dot, height: DS.Version.dot)
                         speed.recipe(.caption).lineLimit(1)

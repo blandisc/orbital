@@ -535,6 +535,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             let rows: [(String, String, String, String)] = [
                 ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DV.HDR10.PLUS.ENG.LATINO.DDP5.1.Atmos.H265-BEN.THE.MEN", "17.72 GB", "TorrentGalaxy\n🇬🇧 🇲🇽"),
                 ("[RD+] Torrentio\n1080p", "IntensaMente.2.2024.1080p-Dual-Lat", "2.93 GB", "Cinecalidad\n🇲🇽"),
+                // T8-A: las que Real-Debrid aún no tiene, tapadas antes por las de al instante de su idioma y calidad.
+                ("[RD download] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.BluRay.REMUX.DV.HDR.LATINO.ENG.TrueHD.Atmos-FGT", "58.2 GB", "TorrentGalaxy\n🇬🇧 🇲🇽"),
+                ("[RD download] Torrentio\n1080p", "IntensaMente.2.2024.1080p.BluRay.REMUX.LATINO", "24.6 GB", "Cinecalidad\n🇲🇽"),
                 ("[RD+] Torrentio\n1080p", "IntensaMente 2 (2024) 1080p WEBDL LAT - ZeiZ", "12.32 GB", "Cinecalidad\n🇲🇽"),
                 ("[RD+] Torrentio\n1080p", "Inside.Out.2.2024.1080p.WEB-DL.ENG.LATINO.DDP5.1.Atmos.H264-BEN.THE.MEN", "7.5 GB", "TorrentGalaxy\n🇬🇧 🇪🇸 🇲🇽"),
                 ("[RD+] Torrentio\n4k DV | HDR", "Inside.Out.2.2024.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX[TGx]", "16.65 GB", "TorrentGalaxy"),
@@ -548,7 +551,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             ]
             let streams = rows.enumerated().map { i, r -> JSON in
                 let parts = r.3.components(separatedBy: "\n")
-                return ["name": .string(r.0), "title": .string("\(r.1)\n👤 \(40 - i) 💾 \(r.2) ⚙️ \(parts[0])\n\(parts.count > 1 ? parts[1] : "")"), "url": .string(video + "?v=\(i)")]
+                let url = r.0.hasPrefix("[RD download]") ? "https://demo.orbital.invalid/resolve/realdebrid/DEMO/\(String(repeating: String(i % 10), count: 40))/null/0/\(i).mkv" : video + "?v=\(i)"   // con huella: se piden
+                return ["name": .string(r.0), "title": .string("\(r.1)\n👤 \(40 - i) 💾 \(r.2) ⚙️ \(parts[0])\n\(parts.count > 1 ? parts[1] : "")"), "url": .string(url)]
             }
             return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
         }

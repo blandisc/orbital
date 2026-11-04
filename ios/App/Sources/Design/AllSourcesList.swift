@@ -23,6 +23,10 @@ struct AllSourcesList: View {
     var prefs: Preferences?
     /// Si la acción secundaria aplica a esa fuente (Descargar: solo un archivo, no una lista HLS).
     var offersSecondary: (Source) -> Bool = { _ in true }
+    /// T8-A · la que Real-Debrid aún no tiene se pide («Pedirlo y avisarme»), nunca se reproduce; ya pedida, su estado. nil:
+    /// no se puede pedir (el reproductor, sin clave): queda «Ver».
+    var request: ((Source) -> Void)?
+    var requestStatus: (Source) -> DebridRequestStatus? = { _ in nil }
 
     @State private var filter = AllSources.Filter()
     @State private var order = AllSources.Order.recommended
@@ -216,11 +220,18 @@ struct AllSourcesList: View {
             if source.tags.contains(Streams.otherTitleTag) {
                 Text("¿Otro título? El nombre dice otro año: puede ser otra película.").recipe(.footnote, color: DS.warning)
             }
+            if let request, SourceSpeed(source) == .realDebridMustDownload {
+                if let status = requestStatus(source) { status.padding(.top, DS.Space.s1) } else {
+                    Button { request(source) } label: { Label("Pedirlo y avisarme", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                        .dsPrimaryButton().controlSize(.large).padding(.top, DS.Space.s1).accessibilityIdentifier("all-sources-request")
+                }
+            } else {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Space.s2) { buttons(source) }
                 VStack(alignment: .leading, spacing: DS.Space.s2) { buttons(source) }
             }
             .padding(.top, DS.Space.s1)
+            }
         }
         .transition(.opacity)
     }

@@ -36878,6 +36878,312 @@
           }
         }
       }
+    },
+    "Hay que pedirlas · tardan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To request · they take a while"
+          }
+        }
+      }
+    },
+    "Tú lo pides": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You request it"
+          }
+        }
+      }
+    },
+    "Real-Debrid lo baja": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid downloads it"
+          }
+        }
+      }
+    },
+    "Arranca al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It starts instantly"
+          }
+        }
+      }
+    },
+    "Tú lo pides, Real-Debrid lo baja y arranca al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You request it, Real-Debrid downloads it and it starts instantly"
+          }
+        }
+      }
+    },
+    "%@ puntos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ points"
+          }
+        }
+      }
+    },
+    "Días de Premium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Days of Premium"
+          }
+        }
+      }
+    },
+    "Real-Debrid cambia todos tus puntos por días de Premium.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid turns all your points into days of Premium."
+          }
+        }
+      }
+    },
+    "No se puede deshacer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It can't be undone."
+          }
+        }
+      }
+    },
+    "Canjear %@ puntos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redeem %@ points"
+          }
+        }
+      }
+    },
+    "Ábrelo con la cámara del iPhone: apúntale al código de tu TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ábrelo con la cámara del iPhone: apúntale al código de tu TV."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ábrelo con la cámara del iPad: apúntale al código de tu TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ábrelo con la cámara de tu iPhone: apúntale al código de tu TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ábrelo con la cámara del iPhone: apúntale al código de tu TV."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Open it with the iPhone's camera: point it at your TV's code."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Open it with the iPad's camera: point it at your TV's code."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Open it with your iPhone's camera: point it at your TV's code."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Open it with the iPhone's camera: point it at your TV's code."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Real-Debrid lo baja en su nube por ti, no en tu iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid lo baja en su nube por ti, no en tu iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid lo baja en su nube por ti, no en tu iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid lo baja en su nube por ti, no en tu Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid lo baja en su nube por ti, no en tu iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid downloads it to its cloud for you, not to your iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid downloads it to its cloud for you, not to your iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid downloads it to its cloud for you, not to your Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Real-Debrid downloads it to its cloud for you, not to your iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Cuando termine, arranca al instante aquí y en tu TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When it's done, it starts instantly here and on your TV."
+          }
+        }
+      }
+    },
+    "Cuando termine, arranca al instante aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When it's done, it starts instantly here."
+          }
+        }
+      }
+    },
+    "Suele tardar de minutos a horas; te aviso.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It usually takes minutes to hours; I'll let you know."
+          }
+        }
+      }
+    },
+    "Suele tardar de minutos a horas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It usually takes minutes to hours."
+          }
+        }
+      }
+    },
+    "Por pedir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To request"
+          }
+        }
+      }
+    },
+    "Real-Debrid las baja en su nube por ti: de minutos a días.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid downloads them to its cloud for you: minutes to days."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

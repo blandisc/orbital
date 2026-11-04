@@ -30,6 +30,22 @@ public final class AddonList: @unchecked Sendable {
             readFailed = true
         }
         purgeRemoved()   // si la app se cerró durante «Deshacer», la dirección de lo quitado no se queda
+        dropTVOnly()
+    }
+
+    /// Lo traído de Stremio que solo vive en la computadora de la TV (Local Files, `AddonShare.livesOnTV`) no es de este
+    /// iPhone: se suelta en silencio, sin lápida (una lápida le diría a la TV que lo quite). Allá sigue; aquí se ve como
+    /// «Archivos de la TV · Solo en la TV» (S5). Antes decía «Local Files (without catalog support) se queda en este iPhone».
+    func dropTVOnly() {
+        guard !readFailed else { return }
+        let gone = installed.filter { !$0.isBuiltIn && resolvedURL($0).map(AddonShare.livesOnTV) == true }.map(\.id)
+        guard !gone.isEmpty else { return }
+        for id in gone { vault.setSecret(AddonKeys.addonURL(id), nil) }
+        let list: [InstalledAddon] = lock.withLock {
+            items = (items ?? []).filter { !gone.contains($0.id) }
+            return items ?? []
+        }
+        write(list)
     }
 
     /// Las opciones de hoy, escritas (T10): «sin opciones» ya no quiere decir «las que traiga la app».
@@ -222,7 +238,8 @@ public final class AddonList: @unchecked Sendable {
         if !isConfigured { update { _ in } }
         var added = 0
         let removed = removedIDs
-        for addon in addons where !removed.contains(Self.newID(addon.url)) {   // lo que quitaste no regresa solo
+        // Lo que quitaste no regresa solo; lo de la computadora de la TV (Local Files) nunca llega aquí.
+        for addon in addons where !removed.contains(Self.newID(addon.url)) && !AddonShare.livesOnTV(addon.url) {
             let before = installed.count
             add(url: addon.url, name: addon.name, resources: addon.resources, origin: .imported)
             if installed.count > before { added += 1 }

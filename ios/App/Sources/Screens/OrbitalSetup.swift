@@ -2,14 +2,11 @@ import SwiftUI
 import OrbitalModels
 
 /// Ajustes › «Usar con tu Orbital» (maquetas 2–7 de https://claude.ai/artifact/FwxKwFe1Y19tTu6LLv3Vhw): primero conectar con la
-/// consola (el código de la TV, leído dentro de la app, o a mano) y luego un mini tutorial de tres páginas. «Ahora no» la deja
+/// consola (el código de la TV, leído dentro de la app o con la cámara del iPhone) y luego un mini tutorial de tres páginas. «Ahora no» la deja
 /// apagada; «Ya lo sé» se salta el tutorial.
 struct OrbitalSetupView: View {
     @State private var setup: ModelObserver<OrbitalSetupModel>
     @State private var scanning = false
-    @State private var byHand = false
-    @State private var address = ""
-    @State private var token = ""
     @Environment(\.dismiss) private var dismiss
     @Environment(AppEnvironment.self) private var env
     @State private var debrid = DebridModel(AppEnvironment.shared.services)
@@ -32,7 +29,7 @@ struct OrbitalSetupView: View {
             QRScanner(prompt: Text("Apunta al código de la TV"), found: { code in
                 scanning = false
                 Task { await setup.model.scanned(code) }
-            }, fallback: { byHand = true })
+            })
         }
         #if DEBUG
         // `-demo-open orbital-setup -demo-scan [v2]`: lee un código de mentira (v1, o v2 con la llave de K1), sin cámara.
@@ -68,8 +65,8 @@ struct OrbitalSetupView: View {
 
     @ViewBuilder private func connect(_ model: OrbitalSetupModel) -> some View {
         GuidePage(title: Text("Conecta tu Orbital"), message: Text("El iPhone y la TV se reconocen una vez y ya."), step: (0, 2),
-                  primary: Text("Escanear el código"), primaryEnabled: !model.connecting, secondary: Text("Conectar a mano"),
-                  next: { scanning = true }, skip: { byHand.toggle() }) {
+                  // TEC-35 (3 nov, la 1729): sin «Conectar a mano»; con una llave por aparato (K1) el token ya no abre nada.
+                  primary: Text("Escanear el código"), primaryEnabled: !model.connecting, next: { scanning = true }) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 GuideNumberedStep(number: 1, text: Text("En la TV abre Ajustes › Cuentas › Conectar un aparato. Aparece un código.")) { EmptyView() }
                 GuideNumberedStep(number: 2, text: Text("Toca «Escanear el código» y apúntale.")) { EmptyView() }
@@ -77,18 +74,6 @@ struct OrbitalSetupView: View {
                     .padding(DS.Space.s3).dsCard(translucent: true)
                 if model.connecting { DSInlineProgress(text: Text("Conectando…")) }
                 if let problem = model.problem { DSNotice(verbatim: env.message(problem), tone: .warn) }   // IOS-9: ámbar
-                if byHand {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        TextField("Dirección (orbital.tudominio.com)", text: $address)
-                            .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
-                        SecureField("Token (el mismo de Alexa)", text: $token).textInputAutocapitalization(.never).autocorrectionDisabled()
-                        Button("Conectar") { Task { await model.connectByHand(address: address, token: token) } }
-                            .dsGlassButton().disabled(model.connecting)
-                    }
-                    .textFieldStyle(.roundedBorder)
-                    .padding(DS.Space.s4)
-                    .dsCard()
-                }
             }
         }
     }

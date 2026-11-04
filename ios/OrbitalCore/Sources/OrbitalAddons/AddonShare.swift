@@ -29,8 +29,9 @@ public struct SharedAddon: Equatable, Sendable {
         self.order = order; self.onlyOn = onlyOn; self.options = options; self.extra = extra
     }
 
-    /// Vive solo en la TV (Archivos de la TV): «Archivos de la TV · Solo en la TV» en los dos lados (S5).
-    public var isTVFiles: Bool { onlyOn == "tv" }
+    /// Vive solo en la TV (Archivos de la TV): «Archivos de la TV · Solo en la TV» en los dos lados (S5). También una TV
+    /// vieja que no manda `only_on`: su dirección es de la computadora de la TV (Local Files de Stremio, `127.0.0.1`).
+    public var isTVFiles: Bool { onlyOn == "tv" || url.map(AddonShare.livesOnTV) == true }
 
     /// Lo prendido para un aparato (K1, contrato «devices»): `enabled[<su id>]`, si no `enabled[<su plataforma>]`; nil si no
     /// dice nada (vale lo de fábrica de la entrada).
@@ -122,6 +123,13 @@ public enum AddonShare {
 
     public static func tvMasked(_ url: String) -> String {
         tvMaskPattern.stringByReplacingMatches(in: url, range: NSRange(url.startIndex..., in: url), withTemplate: "$1\(AddonRedaction.mask)")
+    }
+
+    /// Una dirección de la computadora misma (`127.0.0.1`, `localhost`, como `LOCAL_HOSTS` de la TV): Local Files de Stremio
+    /// («Local Files (without catalog support)»). Solo sirve en la TV; en el iPhone no es nada (Fernando, 3 nov, probando la 1729).
+    public static func livesOnTV(_ url: String) -> Bool {
+        guard let host = URL(string: url)?.host?.lowercased() else { return false }
+        return ["127.0.0.1", "localhost"].contains(host)
     }
 
     /// Una dirección que puede viajar a la TV sin las llaves por aparato: https, sin nada que parezca clave (lo que tapa la TV

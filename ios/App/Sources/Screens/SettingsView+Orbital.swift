@@ -5,7 +5,8 @@ import OrbitalModels
 /// Ajustes › Tu Orbital (auditoría IOS-2, IOS-3, IOS-5, IOS-14): lo que dice de tu TV es verdad al abrirla. Primero el
 /// problema de «Escanear», si lo hay; si no, se le pregunta a la TV y solo si contesta dice «Conectada a <nombre> ✓» (como la
 /// TV, que solo dice «✓ Conectado» de un aparato que habló hace menos de 2 min). Sin TV, «Escanear el código» es el botón
-/// principal; «Conectar a mano» (con token, para quien arma su consola) queda guardado en «Avanzado».
+/// principal. Sin «Avanzado › Conectar a mano» (TEC-35; Fernando, 3 nov, probando la 1729): con la llave por aparato (K1) el
+/// token de la consola ya solo abre Alexa, así que a mano no se llegaba a nada.
 extension SettingsView {
     /// El valor del renglón en Ajustes: el problema, «Revisando…», «Conectada», «No contesta» o «Sin conectar».
     var orbitalValue: Text {
@@ -43,29 +44,6 @@ extension SettingsView {
             .listRowBackground(DS.surface)
         }
         OrbitalDevicesSection()   // K1: los aparatos de tu TV
-        manualConnection(model)
-    }
-
-    /// «Avanzado › Conectar a mano»: la dirección y el token de tu consola, para quien la arma. Lo único de la app que dice
-    /// «token» (IOS-5); escondido, no compite con «Escanear el código».
-    private func manualConnection(_ model: SettingsModel) -> some View {
-        let connected = env.services.orbital.isConfigured
-        return Section {
-            DisclosureGroup(connected ? "Cambiar a mano" : "Conectar a mano") {
-                TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
-                    .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
-                if let problem = OrbitalRemote.addressProblem(model.settings.orbitalAddress) {
-                    Text(verbatim: env.message(problem)).recipe(.footnote, color: DS.warning)   // por qué no se conecta (IOS-9: ámbar)
-                }
-                SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                if !orbitalToken.isEmpty {
-                    Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } }
-                }
-            }
-            .accessibilityIdentifier("orbital-by-hand")
-        } header: { Text("Avanzado") } footer: { Text("Solo si armaste tu consola a mano. Lo normal es escanear el código.") }
-        .listRowBackground(DS.surface)
     }
 }
 
