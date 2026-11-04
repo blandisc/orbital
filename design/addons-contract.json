@@ -151,7 +151,9 @@
     "access": "Con el token del puerto del túnel mientras no haya aparatos emparejados; con el primero, solo con llave de aparato (devices › access, K1-13). No lleva claves ni enlaces"
   },
   "push": {
-    "_": "R14-A y R11-A (Fernando, 4 nov 2026): la TV avisa al iPhone al instante por APNs y lleva al día la actividad en vivo de un pedido. Acordado entre las sesiones de la TV y del iPhone tras la revisión adversarial de la TV (12 puntos); la del iPhone puede cambiar algo antes de construir. Si la TV está apagada no sale nada: el vistazo del iPhone (R10, R14-B) sigue de respaldo.",
+    "status": "parked",
+    "reason": "Requiere el Apple Developer Program de pago; Fernando, 4 nov 2026 (PU1-B): «No lo vamos a pagar… hay que apagar esa funcionalidad». Siguen R14-B y R11-B. Nada de esto está construido en ninguna app; si un día se retoma, antes se aplican los 11 cambios de la revisión del iPhone.",
+    "_": "R14-A y R11-A (sin construir): la TV avisaría al iPhone al instante por APNs y lleva al día la actividad en vivo de un pedido. Acordado entre las sesiones de la TV y del iPhone tras la revisión adversarial de la TV (12 puntos); la del iPhone puede cambiar algo antes de construir. Si la TV está apagada no sale nada: el vistazo del iPhone (R10, R14-B) sigue de respaldo.",
     "register": {
       "_": "POST /api/companion/push-token y DELETE con el mismo cuerpo. Solo con llave de aparato (od1): el device_id sale de la llave, nunca del cuerpo. El iPhone registra en cada arranque y en cada cambio de token (upsert, idempotente).",
       "body": {
@@ -272,7 +274,7 @@
     "transport": "HTTP/2 a api.sandbox.push.apple.com o api.push.apple.com según el env del token; JWT ES256 con la llave .p8 (kid = Key ID, iss = Team ID), reusado 20 a 50 min (APNs rechaza uno de más de 60 y responde TooManyProviderTokenUpdates si se renueva seguido). La TV usa httpx[http2] y cryptography."
   },
   "routes": {
-    "POST /api/companion/push-token": "R14-A: {kind, token, env, rd_account, hash?} con llave de aparato; DELETE con el mismo cuerpo. Ver push › register.",
+    "POST /api/companion/push-token": "No existe (push › status parked, PU1-B): R14-A, {kind, token, env, rd_account, hash?} con llave de aparato; DELETE con el mismo cuerpo.",
     "GET /api/addons": "la lista con su revision; las direcciones que traen clave van tapadas («•••»). Con ?full=1 las da completas, solo con llave de aparato (ver secrets).",
     "PUT /api/addons": "{base_revision, changed_at, changed_by, addons, removed}: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (una máscara, un origin que no existe, un complemento agregado a mano).",
     "PUT /api/realdebrid": "{token}: la clave fija, aparte de la lista y solo al oprimir «Pasar a la TV» en el iPhone. Responde con el usuario y el vencimiento, nunca con la clave.",

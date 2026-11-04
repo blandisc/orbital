@@ -1,5 +1,6 @@
 """R14-A / R11-A (4 nov 2026): la forma de los avisos al iPhone en design/addons-contract.json › push. Lo leen las pruebas de
-los dos lados; la TV aún no manda nada (falta la llave de Apple), pero lo acordado no puede moverse sin que esto truene."""
+los dos lados. Apagado (PU1-B, Fernando 4 nov: no se paga el programa de Apple): nada lo construye; si un día se retoma,
+esto cuida que el acuerdo no se mueva sin que alguien lo note."""
 
 import json
 from pathlib import Path
@@ -31,3 +32,7 @@ def test_registro_y_actividad():
     assert act["attributes_type"] == "DebridActivityAttributes"
     assert set(act["attributes"]) == {"hash", "title", "label"} and set(act["content_state"]) == {"percent", "state", "line"}
     assert PUSH["alerts"]["headers"]["apns-topic"] == "mx.iracheta.orbital"
+
+
+def test_apagado_sin_construir():
+    assert PUSH["status"] == "parked" and "PU1-B" in PUSH["reason"]
