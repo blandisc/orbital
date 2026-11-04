@@ -118,14 +118,13 @@ struct DebridExplainer: View {
     /// De qué se explica: los pedidos (O2), Torrentio (T1), los complementos (C1) o tu cuenta de Real-Debrid (D1).
     enum Topic { case requests, torrentio, addons, realDebrid }
     var topic: Topic = .requests
-    let close: () -> Void
     /// R14-B · este aparato también avisa lo que pidió la TV (solo el iPhone; lo pone la app con `debridTVNotices`).
     @Environment(\.debridTVNotices) private var tvNotices
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSheetHeader(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?") : Text("¿Qué es esto?"), close: close)
+                DSSheetHeader(title: topic == .realDebrid ? Text("¿Qué es Real-Debrid?") : Text("¿Qué es esto?"))
                     .padding(.bottom, DS.Space.s1)
                 switch topic {
                 case .requests: DebridFlowStrip(); requests

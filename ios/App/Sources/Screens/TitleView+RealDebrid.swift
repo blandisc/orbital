@@ -149,7 +149,7 @@ extension TitleView {
     @ViewBuilder func debridSheetContent(_ kind: TitleDebridSheet, _ model: TitleModel) -> some View {
         switch kind {
         case .explain:
-            DebridExplainer(close: { debridSheet = nil }).presentationDragIndicator(.visible)
+            DebridExplainer().presentationDragIndicator(.visible)
         case .notify:
             // La misma explicación que en el reproductor (P4-A): una sola pieza.
             DebridNotifyAsk { _ in debridSheet = nil; await sendRequest(model) }

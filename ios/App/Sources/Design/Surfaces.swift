@@ -47,12 +47,13 @@ struct DSCard<Content: View>: View {
     }
 }
 
-/// El encabezado de una hoja que no tiene barra de navegación: el título (siempre `title`), una línea debajo si hace falta,
-/// lo de la derecha y el botón de cerrar (`DSIconButton` con «xmark»). Va dentro de `dsSheetContent()`.
+/// El encabezado de una hoja que no tiene barra de navegación: el título (siempre `title`), una línea debajo si hace falta y
+/// lo de la derecha. Va dentro de `dsSheetContent()`. Sin botón de cerrar: una hoja con asa se cierra jalándola hacia abajo y
+/// la ✕ sobraba (Fernando, 4 nov 2026, la 1774: «tiene una X; quítala, ya tiene la barrita para jalarla»). La ✕ solo va
+/// donde no se puede deslizar para cerrar: pantalla completa (`fullScreenCover`) y paneles (DesignRulesTests lo vigila).
 struct DSSheetHeader<Trailing: View>: View {
     let title: Text
     var subtitle: Text?
-    var close: (() -> Void)?
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
@@ -63,14 +64,13 @@ struct DSSheetHeader<Trailing: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             trailing()
-            if let close { DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close).accessibilityIdentifier("sheet-close") }
         }
     }
 }
 
 extension DSSheetHeader where Trailing == EmptyView {
-    init(title: Text, subtitle: Text? = nil, close: (() -> Void)? = nil) {
-        self.init(title: title, subtitle: subtitle, close: close) { EmptyView() }
+    init(title: Text, subtitle: Text? = nil) {
+        self.init(title: title, subtitle: subtitle) { EmptyView() }
     }
 }
 

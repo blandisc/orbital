@@ -33,7 +33,7 @@ struct DebridRequestSheetHost: View {
                            cancel: cancel, explain: explain ?? { explaining = true }, close: close,
                            notifies: DebridRequestNotifier.canNotify, tv: AppEnvironment.shared.services.orbital.isConfigured)
             .task { notificationsOff = await DebridRequestNotifier.permission() == .denied }
-            .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }) }
+            .sheet(isPresented: $explaining) { DebridExplainer() }
     }
 }
 

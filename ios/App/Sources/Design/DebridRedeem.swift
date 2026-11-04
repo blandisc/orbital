@@ -12,7 +12,7 @@ struct DebridRedeemSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text("¿Canjear tus puntos?"), close: close)
+            DSSheetHeader(title: Text("¿Canjear tus puntos?"))
             HStack(alignment: .top, spacing: DS.Space.s2) {
                 side("gift.fill", DS.ListTint.trophy, Text("\(points) puntos"))
                 Image(systemName: "arrow.forward").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.textMuted)
@@ -40,7 +40,7 @@ struct DebridRedeemSheet: View {
                     .dsSecondaryButton().controlSize(.large)
             }
         }
-        .dsSheetContent()
+        .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último
         .fittedSheet()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-redeem-sheet")

@@ -37,7 +37,7 @@ struct OrbitalDevicesSection: View {
         .listRowBackground(DS.surface)
         .task { await model.refresh() }
         .sheet(item: $opened) { device in
-            OrbitalDeviceSheet(device: device, detail: detail(device)) { opened = nil; Task { await model.remove(device) } } close: { opened = nil }
+            OrbitalDeviceSheet(device: device, detail: detail(device)) { opened = nil; Task { await model.remove(device) } }
         }
         if let me {
             Section {
@@ -103,18 +103,17 @@ private struct OrbitalDeviceSheet: View {
     let device: OrbitalPairedDevice
     let detail: Text
     let remove: () -> Void
-    let close: () -> Void
     @State private var confirming = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text(verbatim: device.name), subtitle: detail, close: close)
+            DSSheetHeader(title: Text(verbatim: device.name), subtitle: detail)
             Text("Tiene su propia conexión con tu TV.").recipe(.secondary, color: DS.textMuted)
             Button(role: .destructive) { confirming = true } label: { Label("Quitar", systemImage: "minus.circle").frame(maxWidth: .infinity) }
                 .dsSecondaryButton().controlSize(.large)
                 .accessibilityIdentifier("orbital-device-remove")
         }
-        .dsSheetContent()
+        .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último
         .fittedSheet()
         .confirmationDialog(Text("¿Quitar \(device.name)?"), isPresented: $confirming, titleVisibility: .visible) {
             Button("Quitar", role: .destructive, action: remove)

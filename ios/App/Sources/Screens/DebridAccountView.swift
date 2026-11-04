@@ -56,7 +56,7 @@ struct DebridAccountView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: "Real-Debrid")).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid) { explaining = false } }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid) }
         .sheet(isPresented: $confirmRedeem) {   // D4: en su hoja, no en una pregunta del sistema (3 nov, la 1729)
             DebridRedeemSheet(points: Strings.count(model.status?.points ?? 0, language: env.services.appSettings.uiLanguage),
                               redeem: { confirmRedeem = false; Task { await model.redeemPoints() } }, close: { confirmRedeem = false })

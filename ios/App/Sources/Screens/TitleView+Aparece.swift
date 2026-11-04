@@ -63,7 +63,7 @@ extension TitleView {
             let until = Strings.date(entry.until, .dayMonth, language: env.services.appSettings.uiLanguage)
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 DSSheetHeader(title: DebridRequestNotifier.canNotify ? Text("Te aviso cuando aparezca") : Text("Lo reviso cada día"),
-                              subtitle: Text("Reviso una vez al día, hasta el \(until)"), close: { debridSheet = nil })
+                              subtitle: Text("Reviso una vez al día, hasta el \(until)"))
                 if !DebridRequestNotifier.canNotify {
                     Button { DebridRequestNotifier.openSystemSettings() } label: {
                         Label("Avisos apagados · actívalos", systemImage: "bell.slash").frame(maxWidth: .infinity)
@@ -76,7 +76,7 @@ extension TitleView {
                 .dsSecondaryButton().controlSize(.large)
                 .accessibilityIdentifier("appear-stop")
             }
-            .dsSheetContent()
+            .dsSheetContent(bottom: false)   // a la medida: el margen de la barra de inicio ya separa lo último
             .fittedSheet()
         }
     }

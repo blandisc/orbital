@@ -118,7 +118,7 @@ struct DebridRequestSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
-            DSSheetHeader(title: Text(verbatim: name), subtitle: Text(verbatim: since), close: close)
+            DSSheetHeader(title: Text(verbatim: name), subtitle: Text(verbatim: since))
             status.padding(DS.Space.s4).dsCard(.card)
             if !finished { DebridWhereLine(notifies: notifies && !notificationsOff, tv: tv, paced: true) }   // dónde y cómo (3 nov)
             if notificationsOff && !finished {
@@ -173,7 +173,9 @@ struct DebridRequestSheet: View {
                     .accessibilityIdentifier("debrid-explain")
             }
         }
-        .dsSheetContent()
+        // Quien la abre la mide (`fittedSheet`): sin el margen de abajo, que ya pone la barra de inicio (dejaba un hueco al pie;
+        // Fernando, 4 nov 2026, la 1774).
+        .dsSheetContent(bottom: false)
         .debridCancelConfirmation(isPresented: $confirmingCancel, name: name, finished: finished) { cancel?() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-request-sheet")

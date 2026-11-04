@@ -166,8 +166,9 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Margen lateral de las pantallas.
         static let gutter = s4
         /// De la orilla de arriba de una hoja (con su asa) al primer título, en toda hoja que arma su propio encabezado
-        /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital».
-        static let sheetTop = s6
+        /// (`dsSheetContent()`). Antes cada una tenía el suyo: 16 el calendario, 20 «Decide por mí», 24 «Tu Orbital». Con 24 el
+        /// título quedaba pegado al asa (Fernando, 4 nov 2026, la 1774, la hoja de un pedido: «muy poco espacio arriba»): 32.
+        static let sheetTop = s8
     }
 
     /// Las hojas: lo más que crece una hoja alta (por debajo de la altura completa, que iOS vuelve opaca).
