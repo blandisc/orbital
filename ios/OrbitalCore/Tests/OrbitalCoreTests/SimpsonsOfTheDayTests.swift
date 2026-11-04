@@ -4,22 +4,34 @@ import XCTest
 final class SimpsonsOfTheDayTests: XCTestCase {
     private var calendar: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "America/Mexico_City")!; return c }
 
-    /// El mismo día da el mismo episodio a cualquier hora, y no se repite uno hasta recorrer todos.
-    func testOneEpisodePerDayWithoutRepeatsUntilAllAreSeen() {
-        let count = 242, start = Date(timeIntervalSince1970: 1_793_600_000)
-        let morning = SimpsonsOfTheDay.index(for: start, count: count, calendar: calendar)
-        XCTAssertEqual(morning, SimpsonsOfTheDay.index(for: start.addingTimeInterval(3 * 3600), count: count, calendar: calendar))
-        let picks = (0..<count).map { SimpsonsOfTheDay.index(for: start.addingTimeInterval(Double($0) * 86_400), count: count, calendar: calendar) }
-        XCTAssertEqual(Set(picks).count, count)
-        XCTAssertTrue(zip(picks, picks.dropFirst()).allSatisfy { abs($0 - $1) > 1 }, "dos días seguidos no caen en episodios vecinos")
+    /// La tanda del día no cambia en el día, no repite episodios y, día tras día, no vuelve uno hasta recorrerlos todos.
+    func testDailyBatchHasNoRepeatsUntilAllAreSeen() {
+        let count = 240, take = 16, start = Date(timeIntervalSince1970: 1_793_600_000)
+        let morning = SimpsonsOfTheDay.indices(for: start, count: count, take: take, calendar: calendar)
+        XCTAssertEqual(morning, SimpsonsOfTheDay.indices(for: start.addingTimeInterval(3 * 3600), count: count, take: take, calendar: calendar))
+        XCTAssertEqual(Set(morning).count, take)
+        XCTAssertTrue(zip(morning, morning.dropFirst()).allSatisfy { abs($0 - $1) > 1 }, "dos seguidos no son episodios vecinos")
+        let days = count / take
+        let all = (0..<days).flatMap { SimpsonsOfTheDay.indices(for: start.addingTimeInterval(Double($0) * 86_400), count: count, take: take, calendar: calendar) }
+        XCTAssertEqual(Set(all).count, count)
+        XCTAssertEqual(SimpsonsOfTheDay.indices(for: start, count: 5, take: take, calendar: calendar).count, 5, "con pocos episodios, todos")
     }
 
-    func testDayFallsBackToTheLastOneBuilt() throws {
+    /// La tele cambia de episodio cada media hora, a la hora y a la media, y recorre la tanda en orden.
+    func testEpisodeChangesEveryTurnAndCycles() throws {
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_793_600_000))
-        let week = SimpsonsOfTheDay(days: [.init(day: day, season: 6, episode: 12, title: "Homer the Great", videoID: "tt0096697:6:12", still: "s")], seasons: [6])
-        XCTAssertEqual(week.day(for: day.addingTimeInterval(3 * 86_400), calendar: calendar)?.episode, 12)
-        XCTAssertEqual(week.days.first?.link, WidgetLink.play(kind: "series", id: "tt0096697", video: "tt0096697:6:12"))
+        let episodes = (1...3).map { SimpsonsOfTheDay.Episode(season: 6, episode: $0, title: "E\($0)", videoID: "tt0096697:6:\($0)", still: "s") }
+        let week = SimpsonsOfTheDay(episodes: episodes, day: day, seasons: [6])
+        func at(_ minutes: Double) -> Int? { week.episode(at: day.addingTimeInterval(minutes * 60), minutes: 30, calendar: calendar)?.episode }
+        XCTAssertEqual(at(0), at(29))
+        XCTAssertNotEqual(at(29), at(30))
+        XCTAssertEqual(Set([at(0), at(30), at(60)].compactMap { $0 }), [1, 2, 3])
+        XCTAssertEqual(at(0), at(90), "al acabarse la tanda vuelve a empezar")
+        let turn = SimpsonsOfTheDay.turn(for: day.addingTimeInterval(45 * 60), minutes: 30, calendar: calendar)
+        XCTAssertEqual(SimpsonsOfTheDay.start(ofTurn: turn, minutes: 30, calendar: calendar), day.addingTimeInterval(30 * 60))
+        XCTAssertEqual(week.episodes.first?.link, WidgetLink.play(kind: "series", id: "tt0096697", video: "tt0096697:6:1"))
         XCTAssertEqual(SimpsonsOfTheDay.decode(try week.encoded()), week)
+        XCTAssertNil(SimpsonsOfTheDay(episodes: [], day: day, seasons: [6]).episode(at: day, minutes: 30, calendar: calendar))
     }
 }
 

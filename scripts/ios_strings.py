@@ -252,7 +252,7 @@ TRANSLATIONS = {
     "Cuando salga algo de tus series, aparece aquí.": "When something from your shows comes out, it shows up here.",
     "Nuevo · ya se puede ver": "New · ready to watch", "%@ %@": "%@ %@", "Nada esta semana": "Nothing this week", "hoy": "today",
     "día": "day", "días": "days", "%@ %@ · %@ %@": "%@ %@ · %@ %@", "Nada nuevo esta semana": "Nothing new this week",
-    "Un Simpson del día": "Simpsons of the day", "Un episodio distinto cada día. Tócalo y lo pone.": "A different episode every day. Tap to play it.",
+    "Los Simpson en la tele": "The Simpsons on TV", "Un episodio distinto cada media hora. Tócalo y lo pone.": "A different episode every half hour. Tap to play it.",
     "Episodio del día": "Episode of the day", "Mosaico de una lista": "List mosaic",
     "Los pósters de la lista que elijas, como el muro de Explorar.": "The posters of the list you pick, like the Explore wall.",
     "Abre Explorar una vez y aquí salen tus listas.": "Open Explore once and your lists show up here.",

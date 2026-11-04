@@ -53,7 +53,7 @@ enum WidgetStore {
         return true
     }
 
-    // MARK: Un Simpson del día
+    // MARK: Los Simpson en la tele
 
     static let simpsonsKind = "mx.iracheta.orbital.simpsons-day"
     /// Su propia carpeta: la limpieza de «Lo siguiente para ti» no toca estas imágenes.

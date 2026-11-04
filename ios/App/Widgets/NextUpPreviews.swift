@@ -32,5 +32,5 @@ extension WidgetSnapshot {
 
 extension SimpsonsProvider {
     /// La galería y la vista previa, antes de que la app arme la semana.
-    static let sample = SimpsonsOfTheDay.Day(day: Date(), season: 6, episode: 12, title: "Homer the Great", videoID: "tt0096697:6:12", still: "")
+    static let sample = SimpsonsOfTheDay.Episode(season: 6, episode: 12, title: "Homer the Great", videoID: "tt0096697:6:12", still: "")
 }

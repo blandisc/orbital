@@ -238,10 +238,12 @@ public enum DesignTokens {
         public static let scrimStart = 0.25, scrimStartWide = 0.05
         /// Alto del logo del título y radio de la sombra del texto sobre el arte (contraste del dato, como en el destacado de Inicio).
         public static let logoHeight = 28.0, logoWidth = 180.0, textShadowRadius = 3.0
-        /// «Un Simpson del día»: la imagen del episodio (más grande que un póster: llena el mediano) y cuántos días por delante
-        /// debe haber armados antes de volver a armar la semana.
-        /// La imagen del episodio se guarda completa (w780 de TMDB): la pantalla de la tele la recorta a 4:3 al centro.
-        public static let simpsonsImagePixels = 780.0, simpsonsAheadDays = 3
+        /// «Los Simpson en la tele»: la imagen del episodio (más grande que un póster: llena el mediano) y cuántos episodios
+        /// trae la tanda de cada día (uno cada media hora: ocho horas sin repetir; luego vuelve a empezar hasta que la app
+        /// arme la del día siguiente). Cada imagen pesa ~60 KB en el disco; el widget pinta solo la del turno, reducida a la
+        /// pantalla de la tele, así que la tanda no cuenta para su límite de memoria.
+        /// La imagen del episodio se guarda completa (w780 de TMDB): la pantalla de la tele la deja con franjas.
+        public static let simpsonsImagePixels = 780.0, simpsonsEpisodes = 16
         /// «Mosaico de una lista»: los pósters del muro (hasta 24 por lista). En el grande cada uno mide ~73 × 110 pt: se guardan
         /// a 330 px de alto, justo lo que ocupan, y el widget los pinta tal cual (a 450 y recortados ahí, el grande pasaba el
         /// límite de memoria del widget y se quedaba sin imágenes). Antes 220 px, borrosos.

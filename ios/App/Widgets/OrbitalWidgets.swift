@@ -9,7 +9,7 @@ struct OrbitalWidgets: WidgetBundle {
     var body: some Widget {
         NextUpWidget()
         ReleasesWidget()   // «Lo nuevo de lo tuyo»: lo que ya salió de tus series y lo que viene
-        SimpsonsWidget()   // «Un Simpson del día»
+        SimpsonsWidget()   // «Los Simpson en la tele»
         ListMosaicWidget()   // «Mosaico de una lista»: la lista de Explorar que elijas
         DownloadLiveActivity()
         TVLiveActivity()   // «Viendo en la TV»: lo que pone tu Orbital, con pausa y ±10 s

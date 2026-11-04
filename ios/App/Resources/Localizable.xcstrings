@@ -32615,13 +32615,13 @@
         }
       }
     },
-    "Un Simpson del día": {
+    "Los Simpson en la tele": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Simpsons of the day"
+            "value": "The Simpsons on TV"
           }
         }
       }
@@ -32637,13 +32637,13 @@
         }
       }
     },
-    "Un episodio distinto cada día. Tócalo y lo pone.": {
+    "Un episodio distinto cada media hora. Tócalo y lo pone.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A different episode every day. Tap to play it."
+            "value": "A different episode every half hour. Tap to play it."
           }
         }
       }

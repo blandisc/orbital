@@ -4,8 +4,9 @@ import WidgetKit
 import OrbitalCore
 import OrbitalModels
 
-/// Le deja al widget «Un Simpson del día» la semana que viene: el episodio de cada día y su imagen ya reducida, en el App
-/// Group. Se arma de nuevo cuando quedan menos de tres días armados, falta alguna imagen o cambiaron las temporadas de Ajustes.
+/// Le deja al widget «Los Simpson en la tele» la tanda del día: los episodios que van pasando por la tele (uno cada media hora)
+/// y su imagen ya reducida, en el App Group. Se arma de nuevo cuando cambia el día, falta alguna imagen o cambiaron las
+/// temporadas de Ajustes.
 ///
 /// Corre en su propia tarea: antes vivía en el `.task` de Inicio y, si cambiabas de pestaña o salías de la app mientras bajaba
 /// (pasa unos segundos después de abrir: espera la ficha de ~650 KB y la fila de imágenes de Inicio), las descargas se
@@ -27,23 +28,21 @@ enum SimpsonsWidgetPublisher {
         guard let directory = WidgetStore.simpsonsDirectory else { return }
         let rebuilt = WidgetStore.discardOutdatedImages(in: directory)   // cambió el tamaño: se vuelven a bajar
         let stored = WidgetStore.loadSimpsons()
-        let calendar = Calendar.current
-        let ahead = calendar.date(byAdding: .day, value: DesignTokens.Widget.simpsonsAheadDays, to: calendar.startOfDay(for: now)) ?? now
-        if !rebuilt, let stored, stored.seasons == seasons.sorted(), stored.days.contains(where: { calendar.isDate($0.day, inSameDayAs: ahead) }),
-           stored.days.allSatisfy({ hasImage($0, in: directory) }) { return }
+        if !rebuilt, let stored, stored.seasons == seasons.sorted(), Calendar.current.isDate(stored.day, inSameDayAs: now),
+           stored.episodes.allSatisfy({ hasImage($0, in: directory) }) { return }
         guard var week = await model.week(from: now) else { return }
-        for index in week.days.indices {
-            let day = week.days[index]
-            let name = "\(day.season)-\(day.episode).jpg"
+        for index in week.episodes.indices {
+            let episode = week.episodes[index]
+            let name = "\(episode.season)-\(episode.episode).jpg"
             let target = directory.appendingPathComponent(name)
-            if FileManager.default.fileExists(atPath: target.path) { week.days[index].imageFile = name; continue }
-            guard let url = URL(string: day.still), let data = await ImagePipeline.shared.bytes(url),
+            if FileManager.default.fileExists(atPath: target.path) { week.episodes[index].imageFile = name; continue }
+            guard let url = URL(string: episode.still), let data = await ImagePipeline.shared.bytes(url),
                   let reduced = await Task.detached(priority: .utility, operation: { Self.reduce(data) }).value,
                   (try? reduced.write(to: target, options: .atomic)) != nil else { continue }
-            week.days[index].imageFile = name
+            week.episodes[index].imageFile = name
         }
-        // Las imágenes de días que ya no están en la semana se van.
-        let kept = Set(week.days.compactMap(\.imageFile))
+        // Las imágenes de episodios que ya no están en la tanda se van.
+        let kept = Set(week.episodes.compactMap(\.imageFile))
         for file in (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [] where file.hasSuffix(".jpg") && !kept.contains(file) {
             try? FileManager.default.removeItem(at: directory.appendingPathComponent(file))
         }
@@ -51,9 +50,9 @@ enum SimpsonsWidgetPublisher {
         else if rebuilt { WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.simpsonsKind) }
     }
 
-    /// El día tiene su imagen apuntada y el archivo sigue ahí.
-    private static func hasImage(_ day: SimpsonsOfTheDay.Day, in directory: URL) -> Bool {
-        day.imageFile.map { FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path) } ?? false
+    /// El episodio tiene su imagen apuntada y el archivo sigue ahí.
+    private static func hasImage(_ episode: SimpsonsOfTheDay.Episode, in directory: URL) -> Bool {
+        episode.imageFile.map { FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path) } ?? false
     }
 
     /// La imagen del episodio de a lo más `simpsonsImagePixels` (JPEG); el widget la recorta a la pantalla de la tele al pintarla.

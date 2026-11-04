@@ -8,7 +8,7 @@ final class WidgetGalleryUITests: XCTestCase {
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
     func testCaptureEveryWidgetInTheGallery() throws {
-        // Primero Inicio (deja «Lo siguiente para ti», «Lo nuevo de lo tuyo» y «Un Simpson del día») y luego Explorar (deja las
+        // Primero Inicio (deja «Lo siguiente para ti», «Lo nuevo de lo tuyo» y «Los Simpson en la tele») y luego Explorar (deja las
         // listas del mosaico). Cada uno espera a que se bajen y reduzcan las imágenes.
         let app = XCUIApplication()
         let base = ["-demo", "-demo-widget", "sample", "-demo-no-idle", "-demo-console", "-demo-trakt", "-demo-mode", "lists"]

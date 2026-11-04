@@ -453,11 +453,14 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let button: CGFloat = 30
         /// «Viendo en la TV»: el ancho de cada botón (−10 s, pausa, +10 s).
         static let tvKey: CGFloat = 64
-        /// «Un Simpson del día»: el ancho de la tele en el mediano, su proporción (con la antena), cuánto del ancho es pantalla,
+        /// «Los Simpson en la tele»: el ancho de la tele en el mediano, su proporción (con la antena), cuánto del ancho es pantalla,
         /// el marco y la esquina del mueble (fracciones del ancho) y la antena (alto, fracción del ancho; abertura en grados).
         static let simpsonsTV: CGFloat = 150, simpsonsTVAspect: CGFloat = 1.2, simpsonsScreenShare: CGFloat = 0.66
         static let simpsonsGap: CGFloat = 0.06, simpsonsBodyRadius: CGFloat = 0.12   // ds-exception: la tele de Los Simpson se dibuja como el aparato
         static let simpsonsAntenna: CGFloat = 0.22, simpsonsAntennaAngle: Double = 28
+        /// «Los Simpson en la tele» cambia de episodio cada `simpsonsTurnMinutes` (a la hora y a la media, como la tele; Fernando,
+        /// 4 nov 2026). Se dejan listos `simpsonsTurns` cuadros (seis horas) y, al acabarse, iOS pide los siguientes.
+        static let simpsonsTurnMinutes = 30.0, simpsonsTurns = 12
         /// «Mosaico de una lista»: columnas y pósters por columna del muro (mediano y grande), cuánto más ancho que el widget es
         /// el muro (inclinado no deja huecos en las esquinas), cuánto baja una columna sí y una no, y dónde empieza el velo.
         static let listColumnsMedium = 7, listRowsMedium = 3, listColumnsLarge = 6, listRowsLarge = 5
