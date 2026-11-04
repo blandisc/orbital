@@ -124,6 +124,18 @@ public enum TorrentioConfig {
     /// Lo que viene con Orbital: latino y español primero; sin cine, Screener ni sin calidad; todo lo demás como Torrentio.
     public static let recommended = AddonOptions()
 
+    /// «Tus idiomas» de Ajustes (N4-A) como los «Idiomas primero» de Torrentio, en tu orden y sin «original» (Torrentio no lo
+    /// conoce) ni inglés (Torrentio no lo tiene: es lo que sale sin pedir nada). El español sin variante es «spanish».
+    public static func keys(fromLanguages codes: [String]) -> [String] {
+        let byCode = Dictionary(languageCodes.map { ($0.code, $0.key) }, uniquingKeysWith: { first, _ in first })
+        var out: [String] = []
+        for code in codes {
+            guard let key = code == "es" ? "spanish" : byCode[code], !out.contains(key) else { continue }
+            out.append(key)
+        }
+        return out
+    }
+
     /// Los idiomas de tus opciones como códigos («latino» → «es-419»), en tu orden: el plan B del reproductor.
     public static func fallbackCodes(_ options: AddonOptions?) -> [String] {
         let codes = Dictionary(uniqueKeysWithValues: languageCodes.map { ($0.key, $0.code) })

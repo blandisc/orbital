@@ -76,7 +76,7 @@
   },
   "act": "request",
   "expected": {
-    "_note": "Error 21 al pedir: queda «Muchas descargas activas» y el botón vuelve a ser «Pedirlo y avisarme» (con esa línea), como la TV; nadie lo vuelve a pedir solo.",
+    "_note": "Error 21 al pedir (N3-A, Fernando, 4 nov): queda «Muchas descargas activas · Lo vuelvo a pedir cuando se libere un lugar» debajo de «Pedir a la nube» (la causa sigue siendo `not_in_rd`, como en la TV) y el pedido espera lugar (`auto_retry`): en el siguiente vistazo con lugar se vuelve a pedir solo, una vez («Volví a pedir …»; escenario 34); si otra vez no hay lugar, no se insiste (escenario 35).",
     "title": "Hasta el viento tiene miedo",
     "logo": false,
     "video_id": "tt0061752",
@@ -149,7 +149,8 @@
       "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
       "state": "too_many",
       "percent": 0,
-      "stuck": false
+      "stuck": false,
+      "auto_retry": true
     },
     "other_account": null
   }

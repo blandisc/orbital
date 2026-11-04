@@ -60,6 +60,15 @@ final class RDScenarioRig {
             $0.quality = app?["quality"]?.string ?? "1080p"
             $0.latinSpanish = app?["spanish"]?.string == "es-419"
             $0.castilianSpanish = app?["spanish"]?.string == "es-ES"
+            // «Tus idiomas» (N4-A): la lista del escenario es la única fuente, como en Ajustes.
+            if let languages = app?["languages"]?.array?.compactMap(\.string), !languages.isEmpty { $0.setLanguages(languages) }
+        }
+        // N5-A: el aparato del escenario (`app.device.max_gb`, como `PlaybackDevice`); sin él, sin límites: las dos apps deciden igual.
+        if let device = app?["device"], let limits = device["max_gb"]?.object {
+            services.titlePrefs.device = PlaybackDevice(maxGB: limits.compactMapValues(\.doubleValue), episodeShare: device["episode_share"]?.doubleValue ?? 0.3,
+                                                        cannotDecode: Set((device["cannot_decode"]?.array ?? []).compactMap(\.string)))
+        } else {
+            services.titlePrefs.device = .anything
         }
         let account = rd?["account"]?["id"]?.string
         if hasKey {
@@ -224,14 +233,31 @@ final class RDScenarioRig {
         var json: JSON
     }
 
-    /// `act: "request"`: tocas el botón principal («Pedirlo y avisarme») una vez antes de mirar.
+    /// `act: "request"`: tocas el botón principal («Pedirlo y avisarme») una vez antes de mirar. `"request_and_check"` (N3-A):
+    /// además, el siguiente vistazo a tus pedidos, con `rd.slots` (cuántas llevas de tu máximo) y `rd.retry_error` (lo que
+    /// contesta Real-Debrid al volver a pedirlo solo; null: lo acepta).
     func act() async {
-        guard scenario["act"]?.string == "request" else { return }
+        guard let act = scenario["act"]?.string, act.hasPrefix("request") else { return }
         let title = TitleModel(services, kind: kind, metaID: metaID)
         await title.load()
         await title.loadBestSource()
         XCTAssertEqual(title.primary(now: now), .request, "\(file): «act: request» sin «Pedirlo y avisarme»")
         _ = await title.requestFromDebrid()
+        if act == "request_and_check" { await check() }
+    }
+
+    /// N3-A · el siguiente vistazo a tus pedidos: Real-Debrid dice cuántas llevas (`rd.slots`) y contesta el reintento.
+    func check() async {
+        let slots = rd?["slots"]
+        http.json["\(Self.api)/torrents/activeCount"] = ["nb": slots?["active"] ?? 0, "limit": slots?["limit"] ?? 5]
+        http.statuses["\(Self.api)/torrents/addMagnet"] = nil
+        if let error = rd?["retry_error"], error.object != nil {
+            http.json["\(Self.api)/torrents/addMagnet"] = ["error": error["name"] ?? "error", "error_code": error["code"] ?? .null]
+            http.statuses["\(Self.api)/torrents/addMagnet"] = error["http"]?.intValue ?? 400
+        } else {
+            http.json["\(Self.api)/torrents/addMagnet"] = ["id": "RNEW", "uri": "https://api.real-debrid.com/rest/1.0/torrents/info/RNEW"]
+        }
+        await services.debridRequests.refresh()
     }
 
     /// Lo que decide la app, en la forma de `expected` (llaves neutras; README).
@@ -247,7 +273,8 @@ final class RDScenarioRig {
         func res(_ s: Source) -> JSON { .string(card(s.index)?.quality ?? SourcesModel.quality(s)) }
         func hash(_ index: Int) -> JSON { list.source(index)?.torrent.map { .string($0.hash) } ?? .string("#\(index)") }
         func state(_ o: VersionOption) -> String {
-            o.refused ? "refused" : o.requested ? "requested_ready" : o.speed == .inRealDebrid ? "instant" : o.speed == .realDebridMustDownload ? "to_request" : "direct"
+            o.refused ? "refused" : o.requested ? "requested_ready" : o.inCloud ? "requested_pending" : o.speed == .inRealDebrid ? "instant"
+                : o.speed == .realDebridMustDownload ? "to_request" : "direct"
         }
         var out: [String: JSON] = [:]
         out["title"] = .string(title.title)
@@ -296,7 +323,15 @@ final class RDScenarioRig {
         } ?? .null
         // El pedido de este video: el tuyo (estado del contrato y si lleva 24 h sin avanzar) o el de otra cuenta.
         out["request"] = title.debridRequest.map { r in
-            ["hash": .string(r.hash), "state": .string(r.state.rawValue), "percent": .int(r.percent), "stuck": .bool(r.isStalled(now: now))]
+            ["hash": .string(r.hash), "state": .string(r.state.rawValue), "percent": .int(r.percent), "stuck": .bool(r.isStalled(now: now)),
+             "auto_retry": .bool(r.retriesWhenFree)]
+        } ?? .null
+        // N5-A: la de un idioma que va antes en tu orden y aquí no se ve bien (la ficha dice por qué).
+        out["plays_poorly"] = title.poorFit.map { f -> JSON in
+            var o: [String: JSON] = ["hash": f.source.torrent.map { .string($0.hash) } ?? .null, "language": f.language.map(JSON.string) ?? .null,
+                                     "res": res(f.source), "why": .string(f.problem.key)]
+            if case .heavy(let gb) = f.problem { o["gb"] = .int(gb) }
+            return .object(o)
         } ?? .null
         out["other_account"] = (title.otherAccountRequest ?? title.otherAccountReady).map { ["state": .string($0.state.rawValue)] } ?? .null
         // FQ4-A: «Avisarme cuando aparezca» revisa hasta el estreno más 14 días (o 14 desde hoy).

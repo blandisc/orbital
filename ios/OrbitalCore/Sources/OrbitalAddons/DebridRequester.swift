@@ -64,12 +64,13 @@ public actor DebridRequester {
     ///
     /// Dos toques seguidos (o la ficha y el reproductor a la vez) no agregan el torrent dos veces: el segundo espera al
     /// primero y luego toma lo que quedó anotado (el actor se puede reentrar en cada `await`).
-    public func request(_ wish: DebridWish) async throws -> DebridRequest {
+    /// `auto` (N3-A): es el reintento solo de «Muchas descargas activas»; si vuelve a pasar, ya no se reintenta.
+    public func request(_ wish: DebridWish, auto: Bool = false) async throws -> DebridRequest {
         while let running = inFlight[wish.hash] {
             _ = try? await running.value
             if inFlight[wish.hash] == running { inFlight[wish.hash] = nil }   // ya terminó: sin esto se quedaría dando vueltas
         }
-        let task = Task { try await self.place(wish) }
+        let task = Task { try await self.place(wish, auto: auto) }
         inFlight[wish.hash] = task
         defer { if inFlight[wish.hash] == task { inFlight[wish.hash] = nil } }
         return try await task.value
@@ -78,7 +79,7 @@ public actor DebridRequester {
     /// Los pedidos que van a medio camino, por huella.
     private var inFlight: [String: Task<DebridRequest, Error>] = [:]
 
-    private func place(_ wish: DebridWish) async throws -> DebridRequest {
+    private func place(_ wish: DebridWish, auto: Bool) async throws -> DebridRequest {
         let mine = await currentAccount()
         var replacing: DebridRequest?
         if var known = book.find(hash: wish.hash), !known.isOther(account: mine), ![.refused, .tooMany, .gone].contains(known.state) {
@@ -100,6 +101,7 @@ public actor DebridRequester {
         var entry = DebridRequest(hash: wish.hash, files: wish.fileIdx.map { [wish.videoID: $0] } ?? [:], account: mine, title: wish.title, kind: wish.kind,
                                   metaID: wish.metaID, videoIDs: [wish.videoID], season: wish.season, episode: wish.episode, language: wish.language,
                                   release: wish.release, device: device(), createdAt: now)
+        entry.retried = auto
         if let replacing {
             entry.videoIDs = replacing.videoIDs + entry.videoIDs.filter { !replacing.videoIDs.contains($0) }
             entry.files = replacing.files.merging(entry.files) { _, new in new }
@@ -239,6 +241,27 @@ public actor DebridRequester {
             stored.pending = false
         }
         return true
+    }
+
+    /// N3-A · lo de este aparato que quedó en «Muchas descargas activas» y todavía no se reintenta solo.
+    public nonisolated func waitingForSlot(account mine: String?) -> [DebridRequest] {
+        book.all.filter { $0.retriesWhenFree && $0.device == device() && !$0.isOther(account: mine) }
+    }
+
+    /// N3-A · si ya hay lugar (`active < limit`, lo que se leyó de tu cuenta), se vuelve a pedir solo, una vez, cada uno que
+    /// quedó en «Muchas descargas activas»; si otra vez no hay lugar, queda «Pedir a la nube» a mano. Devuelve los que se pidieron.
+    @discardableResult
+    public func retryWhenFree(slots: (active: Int, limit: Int)) async -> [DebridRequest] {
+        var free = slots.limit - slots.active
+        var out: [DebridRequest] = []
+        for entry in waitingForSlot(account: knownAccount) where free > 0 {
+            let wish = DebridWish(hash: entry.hash, fileIdx: entry.fileIdx, title: entry.title, kind: entry.kind, metaID: entry.metaID,
+                                  videoID: entry.videoIDs.first ?? entry.metaID, season: entry.season, episode: entry.episode,
+                                  language: entry.language, release: entry.release)
+            if let made = try? await request(wish, auto: true) { out.append(made); if made.state.isActive { free -= 1 } }
+            else { book.update(hash: entry.hash) { $0.retried = true } }   // la red o tu cuenta: tampoco se insiste
+        }
+        return out
     }
 
     /// Cuántas descargas tienes a la vez y tu máximo (D3); nil si no contestó.

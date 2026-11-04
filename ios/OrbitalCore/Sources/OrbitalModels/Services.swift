@@ -292,7 +292,8 @@ public final class Services: ObservableModel {
         Task {
             await finder.configure(origin: { kind, metaID in await origins.origin(kind: kind, metaID: metaID) },
                                    checked: { key in prefs.checkedAudio(key) },
-                                   fallback: { TorrentioConfig.fallbackCodes(addonList.torrentio?.options) })   // T2 → R6
+                                   // T2 → R6; con «Tus idiomas» (N4-A) ya no: Torrentio sale de ahí, no al revés.
+                                   fallback: { settings.value.languages == nil ? TorrentioConfig.fallbackCodes(addonList.torrentio?.options) : [] })
             // Lo que pediste y ya está: «Al instante · la pediste», aunque Torrentio diga otra cosa o ni lo liste.
             await finder.configureReady({ kind, videoID in
                 requester.ready(kind: kind, videoID: videoID).map { r in
@@ -310,6 +311,7 @@ public final class Services: ObservableModel {
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    clock: clock, onChange: onDownloadsChange)
         super.init()
+        migrateLanguages()
         orbitalAuth.onChange = { [weak self] in Task { @MainActor in self?.changed() } }
     }
 

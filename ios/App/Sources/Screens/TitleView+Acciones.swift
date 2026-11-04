@@ -155,7 +155,18 @@ extension TitleView {
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
         return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,
                               versionLabel: spoken.isEmpty ? nil : Text("Se va a ver en: \(spoken.joined(separator: ", "))"),
-                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model), tint: artAccent)
+                              play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model),
+                              why: model.poorFit.map(poorFitReason), tint: artAccent)
+    }
+
+    /// N5-A · «La de inglés pesa 64 GB y aquí no se ve bien» (o «…viene en AV1…»).
+    func poorFitReason(_ fit: PoorFit) -> Text {
+        let ui = env.services.appSettings.uiLanguage
+        let name = VersionLanguageRow.inline(fit.language.map { Streams.versionLanguageName($0, in: ui) } ?? SourcesModel.quality(fit.source), ui)
+        switch fit.problem {
+        case .heavy(let gb): return Text("La de \(name) pesa \(String(gb)) GB y aquí no se ve bien")
+        case .format(let format): return Text("La de \(name) viene en \(format) y aquí no se ve bien")
+        }
     }
 
     func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {

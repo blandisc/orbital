@@ -200,7 +200,7 @@
     "error": null
   },
   "expected": {
-    "_note": "El paquete pedido desde E1 (todos sus videos) trae E3 y E4: E3 dice «Bajando en Real-Debrid · 40 %» (`requested`), nunca «Pedirlo y avisarme» otra vez; el siguiente episodio también es de ese pedido.",
+    "_note": "El paquete pedido desde E1 (todos sus videos) trae E3 y E4: E3 dice «Bajando en Real-Debrid · 40 %» (`requested`), nunca «Pedirlo y avisarme» otra vez; el siguiente episodio también es de ese pedido. N2-A (Fernando, 4 nov): su tarjeta en «Versión» dice lo mismo (`requested_pending`: «Bajando · 40 %»; tocarla abre el pedido), nunca «↓ Por pedir».",
     "title": "Freaks and Geeks",
     "logo": true,
     "video_id": "tt0193676:1:3",
@@ -226,7 +226,7 @@
         "code": "en",
         "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
         "res": "1080p",
-        "state": "to_request",
+        "state": "requested_pending",
         "recommended": true,
         "other": false
       },

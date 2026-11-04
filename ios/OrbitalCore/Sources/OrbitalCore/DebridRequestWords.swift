@@ -35,10 +35,17 @@ public enum DebridRequestWords {
         case .downloading: notifies ? tr("Te aviso cuando esté listo") : tr("Ábrelo aquí para ver cuánto lleva")
         case .noPeers: tr("Puede tardar días · prueba otra versión")
         case .refused: tr("Prueba otra versión")
-        case .tooMany: tr("Cancela otra descarga para hacer lugar")
+        case .tooMany: request.retriesWhenFree ? tr("Lo vuelvo a pedir cuando se libere un lugar") : tr("Cancela otra descarga para hacer lugar")
         case .ready: tr("Ya arranca al instante")
         case .gone: ""
         }
+    }
+
+    /// «Muchas descargas activas» en un renglón, debajo de «Pedir a la nube» (N3-A, Fernando, 4 nov): mientras se va a volver a
+    /// pedir solo, «· Lo vuelvo a pedir cuando se libere un lugar»; ya reintentado, «· Cancela otra descarga para hacer lugar».
+    public static func tooManyLine(_ request: DebridRequest, _ tr: (String) -> String = { $0 }) -> String {
+        request.retriesWhenFree ? tr("Muchas descargas activas · Lo vuelvo a pedir cuando se libere un lugar")
+            : title(request, tr) + " · " + tr("Cancela otra descarga para hacer lugar")
     }
 
     /// RX2-A · qué tan lejos está, sin prometer de más: a partir de lo que ha avanzado desde que se pidió (el promedio, que

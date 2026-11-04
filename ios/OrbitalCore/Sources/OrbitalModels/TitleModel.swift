@@ -71,6 +71,8 @@ public final class TitleModel: ObservableModel {
     public private(set) var recommendedSource: Source? { didSet { changed() } }
     /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
     public private(set) var recommendedLanguage: String? { didSet { changed() } }
+    /// N5-A: la de un idioma que va antes en tu orden y no ganó «Ver» porque aquí no se ve bien (la ficha lo dice en una línea).
+    public private(set) var poorFit: PoorFit? { didSet { if oldValue != poorFit { changed() } } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
     public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// Por qué no hay qué ver, si se sabe algo mejor que «no hay» (D5): «Tu Real-Debrid venció» con «Renovar», «No tienes
@@ -232,6 +234,7 @@ public final class TitleModel: ObservableModel {
             let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
             recommendedSource = SourcesModel.toPlay(found, resume: resume, family: family)
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
+            poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }
             sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
             // Lo que falta se pide (R4): si la recomendada no arranca al instante (o no hay ninguna), qué torrent existe.
             let wanted = recommendedSource.map { !$0.instant } ?? true

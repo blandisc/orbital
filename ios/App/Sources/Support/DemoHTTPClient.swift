@@ -103,6 +103,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if Demo.rdSlow, url.host == "api.real-debrid.com", url.path.hasSuffix("/user") { try? await Task.sleep(nanoseconds: 3_000_000_000) }   // ds-exception: demora de red simulada (solo modo demo)
         if let found = DemoCX.realDebrid(request) { return found }   // `-demo-cx`: la copia de tu clave en tus aparatos Apple
         if let found = Self.realDebridDemo(url) { return found }
+        if url.host == "torrentio.strem.fun", url.path.contains("/stream/"), let heavy = Self.heavyStreams(keyless: !url.absoluteString.contains("realdebrid")) { return heavy }   // `-demo-heavy` (N5-A)
         // Tu Torrentio sin Real-Debrid (R4) con `-demo-rd-request`: el torrent que existe (o ninguno, con `none`).
         if url.host == "torrentio.strem.fun", Demo.rdRequest != nil {
             let found: [JSON] = Demo.rdRequest == "none" ? [] : [["name": "Torrentio\n1080p", "title": "Demo.S02E06.1080p.WEB-DL.LATINO\n👤 12 💾 1.2 GB 🇲🇽",
@@ -514,6 +515,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
         }
         if let found = Self.requestStreams() { return found }   // `-demo-rd-request …` (DemoHTTPClient+RD)
+        if let heavy = Self.heavyStreams() { return heavy }   // `-demo-heavy` (N5-A, DemoHTTPClient+Heavy)
         // `-demo-video <url>` solo (sin `-demo-versions`): una sola versión con ese video, para cualquier título (p. ej. el MKV 4:3
         // de `scripts/ios_software_path.sh`, como los de Los Simpson). Antes solo valía junto con `-demo-versions`.
         if let video = Demo.value(after: "-demo-video"), !ProcessInfo.processInfo.arguments.contains("-demo-versions") {

@@ -6,7 +6,7 @@ import OrbitalModels
 /// está ahora: lo tuyo (apariencia, Un Simpson al azar, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
     @Environment(AppEnvironment.self) var env
-    @State private var settings: ModelObserver<SettingsModel>
+    @State var settings: ModelObserver<SettingsModel>
     @State var session: ModelObserver<SessionModel>
     /// Tu Real-Debrid (Ajustes › Cuentas).
     @State var debrid: ModelObserver<DebridModel>
@@ -20,6 +20,8 @@ struct SettingsView: View {
     @State private var showsPlayback = false
     @State private var showsOrbital = false
     @State private var showsDemoPage = false
+    /// Ajustes › Tus idiomas abierta desde otro lado (`AppUI.openLanguages`: la guía, la página de Torrentio).
+    @State var showsLanguages = false
     /// «Usar con tu Orbital»: la hoja de conectar (y luego el tutorial), o solo el tutorial ya conectada.
     @State var orbitalSetup: OrbitalSetupStart?
     @State private var confirmOrbitalOff = false
@@ -42,6 +44,9 @@ struct SettingsView: View {
                 // «Lo que ves» ya no está aquí: vive en Explorar (Fernando, 2 nov 2026: «ya tenemos otro acceso en Explorar»).
             }
             .listRowBackground(DS.surface)
+            // Idiomas y subtítulos, arriba y juntos (N4-A, Fernando, 4 nov: «que sea fácil configurar los subtítulos y los
+            // idiomas»; los mismos cuatro que la TV en Ajustes › Ver).
+            languagesSection(model)
             // Lo tuyo: cómo se ve y cómo se reproduce.
             Section {
                 NavigationLink { page("Apariencia") { appearance(model) } } label: {
@@ -50,8 +55,8 @@ struct SettingsView: View {
                 NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
                     SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
                 }
-                NavigationLink { page("Idioma y subtítulos") { language(model) } } label: {
-                    SettingsRow(title: "Idioma y subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
+                NavigationLink { page("Idioma de la app") { appLanguage(model) } } label: {
+                    SettingsRow(title: "Idioma de la app", symbol: "character.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
                 }
                 NavigationLink { page("Reproducción") { playback(model) } } label: {
                     SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
@@ -131,6 +136,12 @@ struct SettingsView: View {
             .presentationDetents([.medium])
         }
         .task { await model.loadTraktName(); await debrid.model.load() }
+        .navigationDestination(isPresented: $showsLanguages) { YourLanguagesView(settings: settings) }
+        .onChange(of: env.ui.openLanguages, initial: true) { _, open in
+            guard open else { return }
+            env.ui.openLanguages = false
+            showsLanguages = true
+        }
         #if DEBUG
         .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
@@ -142,6 +153,7 @@ struct SettingsView: View {
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { env.openTab = AppEnvironment.downloadsTab } }
         .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
+        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "languages" { showsLanguages = true } }   // N4-A
         .navigationDestination(isPresented: $showsOrbital) { page("Tu Orbital") { orbitalSection(model) } }   // `-demo-settings-page orbital` (K1)
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "orbital" { showsOrbital = true } }
         // `-demo-settings-page torrentio|addons|realdebrid`: Complementos, Torrentio y tu cuenta de Real-Debrid (Fase 3).
@@ -230,53 +242,6 @@ struct SettingsView: View {
         }
         .listRowBackground(DS.surface)
         Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface)
-    }
-
-    @ViewBuilder private func language(_ model: SettingsModel) -> some View {
-        let s = model.settings
-        Section {
-            Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
-                Text("Español").tag("es"); Text("English").tag("en")
-            }
-            // Latino o castellano: la versión y la pista de ese español primero; «cualquiera», el que haya. Las versiones que no
-            // dicen cuál van después de las que sí (y «Ver» en la ficha dice cuál va a sonar).
-            Picker("Audio", selection: Binding(get: { s.audio == "es" ? (s.latinSpanish ? "es-419" : s.castilianSpanish ? "es-ES" : "es") : s.audio },
-                                               set: { v in model.update { $0.audio = v.hasPrefix("es") ? "es" : v; $0.latinSpanish = v == "es-419"; $0.castilianSpanish = v == "es-ES" } })) {
-                (Text("\(Text.flag("es-419"))\(Text("Español latino"))")).tag("es-419"); (Text("\(Text.flag("es-ES"))\(Text("Español de España"))")).tag("es-ES")
-                Text("Español (cualquiera)").tag("es"); (Text("\(Text.flag("en"))\(Text("English"))")).tag("en")
-            }
-        }
-        .listRowBackground(DS.surface)
-        Section {
-            SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s3, leading: DS.Space.s4, bottom: DS.Space.s3, trailing: DS.Space.s4))
-            Picker("Idioma de siempre", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Apagados").tag("") }
-            Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
-            Toggle("Buscar en internet", isOn: Binding(get: { s.internetSubtitles }, set: { v in model.update { $0.internetSubtitles = v } }))
-            Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
-                Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
-            }
-            Picker("Fondo", selection: Binding(get: { s.subtitleBackground }, set: { v in model.update { $0.subtitleBackground = v } })) {
-                Text("Contorno").tag("outline"); Text("Caja oscura").tag("box"); Text("Translúcido").tag("translucent")
-            }
-            .disabled(s.subtitleSystemStyle)
-            Picker("Posición", selection: Binding(get: { s.subtitlePosition }, set: { v in model.update { $0.subtitlePosition = v } })) {
-                Text("Normal").tag("normal"); Text("Más arriba").tag("raised")
-            }
-        } header: { Text("Subtítulos") }
-        .listRowBackground(DS.surface)
-        Section {
-            Toggle("Mostrarlos al regresar 10 s", isOn: Binding(get: { s.subtitlesOnSkipBack }, set: { v in model.update { $0.subtitlesOnSkipBack = v } }))
-            Toggle("Carteles en tu idioma si el audio es otro", isOn: Binding(get: { s.forcedForForeignAudio }, set: { v in model.update { $0.forcedForForeignAudio = v } }))
-            Toggle("Usar el estilo del iPhone", isOn: Binding(get: { s.subtitleSystemStyle }, set: { v in model.update { $0.subtitleSystemStyle = v } }))
-        } footer: {
-            Text("El idioma, la versión y el ajuste de tiempo se recuerdan solos para cada serie o película. El estilo del iPhone se cambia en Ajustes › Accesibilidad › Subtítulos.")
-        }
-        .listRowBackground(DS.surface)
-        Section {
-            NavigationLink { RememberedTitlesView() } label: { Text("Lo que recuerda cada título") }
-                .accessibilityIdentifier("settings-remembered")
-        }
-        .listRowBackground(DS.surface)
     }
 
     @ViewBuilder private func playback(_ model: SettingsModel) -> some View {
@@ -374,7 +339,7 @@ struct SettingsView: View {
         .listRowBackground(DS.surface)
     }
 
-    @ViewBuilder private var languageOptions: some View {
+    @ViewBuilder var languageOptions: some View {
         (Text("\(Text.flag("es"))\(Text("Español"))")).tag("es"); (Text("\(Text.flag("en"))\(Text("English"))")).tag("en")
     }
 

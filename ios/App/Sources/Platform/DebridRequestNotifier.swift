@@ -63,6 +63,20 @@ enum DebridRequestNotifier {
         let requests = env.services.debridRequests
         requests.onReady = { request in Task { await post(ready: request, language: env.services.appSettings.uiLanguage) } }
         requests.onStalled = { request in Task { await post(stalled: request, language: env.services.appSettings.uiLanguage) } }
+        requests.onRetried = { request in Task { await post(retried: request, language: env.services.appSettings.uiLanguage) } }
+    }
+
+    /// N3-A · «Volví a pedir T1 E2» con «Ya se liberó un lugar en tu Real-Debrid»: «Muchas descargas activas» se volvió a pedir
+    /// solo (una vez). Solo con permiso de avisos. Tocarlo abre la ficha.
+    @MainActor static func post(retried request: DebridRequest, language: String) async {
+        guard await allowed() else { return }
+        let content = UNMutableNotificationContent()
+        let what = [request.title, episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
+        content.title = String(format: Strings.tr("Volví a pedir %@", language: language), what)
+        content.body = Strings.tr("Ya se liberó un lugar en tu Real-Debrid", language: language)
+        content.threadIdentifier = thread
+        content.userInfo = ["kind": request.kind, "id": request.metaID, "title": request.title, "open": "title"]
+        try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: prefix + "retried." + request.hash, content: content, trigger: nil))
     }
 
     /// Con la app cerrada (iOS la despierta un momento): una sola consulta a Real-Debrid por todos los pedidos en camino.

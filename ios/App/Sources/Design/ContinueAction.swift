@@ -25,6 +25,9 @@ struct ContinueAction: View {
     /// La otra salida a la derecha cuando no hay «Desde el principio» (Real-Debrid, R2-A y R13): «Verlo en inglés al
     /// instante» o «Cancelar pedido». Mismo lugar y mismo estilo: una acción en color.
     var aside: (title: Text, symbol: String, action: () -> Void)?
+    /// N5-A · por qué «Ver» no es la de un idioma que va antes en tu orden («La de inglés pesa 64 GB y aquí no se ve bien»):
+    /// un renglón aparte, debajo de la versión.
+    var why: Text?
     /// IOS-9 · el renglón de abajo dice un problema (atorado, rechazado): en ámbar, mientras el botón dice la acción.
     var warn = false
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
@@ -52,6 +55,10 @@ struct ContinueAction: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            if let why {
+                why.recipe(.footnote, color: DS.textMuted).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("title-why-version")
+            }
         }
     }
 
@@ -73,7 +80,9 @@ struct ContinueAction: View {
     /// «quedan 50 min · 🇺🇸 Inglés · 1080p»: cuánto falta y la versión, en un solo texto gris.
     @ViewBuilder private func status(_ left: Text?, _ version: Text?) -> some View {
         if let text = Self.join(left, version) {
-            text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(1)
+            // Solo la versión (sin «quedan…»): hasta dos renglones («Muchas descargas activas · Lo vuelvo a pedir cuando se
+            // libere un lugar» se cortaba a la mitad).
+            text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(left == nil ? 2 : 1)
                 .accessibilityLabel(version == nil ? text : Self.join(left, versionLabel ?? version) ?? text)
         }
     }

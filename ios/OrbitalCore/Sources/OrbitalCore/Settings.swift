@@ -32,6 +32,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var latinSpanish = false
     /// Español de España (castellano) antes que el latino; con `latinSpanish` en falso y este también, cualquiera.
     public var castilianSpanish = false
+    /// «Tus idiomas» (N4-A, Fernando, 4 nov): tu orden entero, el primero es el que quieres («es-419», «original», «en»,
+    /// «es-ES»…). Es la única fuente: la puntuación de las versiones, el plan B del reproductor y los «Idiomas primero» de
+    /// Torrentio salen de aquí. nil: todavía no se migra (vale `yourLanguages`, lo de antes). Se cambia con `setLanguages`.
+    public var languages: [String]?
     public var quality = "1080p"               // calidad al ver: «4K», «1080p», «720p»
     public var cellularQuality = "1080p"       // calidad máxima con datos móviles
     public var wifiOnlyDownloads = true
@@ -88,6 +92,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         onlyForcedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .onlyForcedSubtitles) ?? onlyForcedSubtitles
         latinSpanish = try c.decodeIfPresent(Bool.self, forKey: .latinSpanish) ?? latinSpanish
         castilianSpanish = try c.decodeIfPresent(Bool.self, forKey: .castilianSpanish) ?? castilianSpanish
+        languages = try c.decodeIfPresent([String].self, forKey: .languages)
         quality = try c.decodeIfPresent(String.self, forKey: .quality) ?? quality
         cellularQuality = try c.decodeIfPresent(String.self, forKey: .cellularQuality) ?? cellularQuality
         wifiOnlyDownloads = try c.decodeIfPresent(Bool.self, forKey: .wifiOnlyDownloads) ?? wifiOnlyDownloads
@@ -124,7 +129,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case deleteWhenWatched, warnCellularOverGB, region, regionChosen, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
         case avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle, orbitalEnabled
-        case autoRequestNextEpisode, internetSubtitles
+        case autoRequestNextEpisode, internetSubtitles, languages
     }
 
     /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).
@@ -134,7 +139,30 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public func preferences(onCellular: Bool = false) -> Preferences {
         var q = quality
         if onCellular, let want = ["4K", "1080p", "720p", "480p"].firstIndex(of: cellularQuality), let have = ["4K", "1080p", "720p", "480p"].firstIndex(of: q), have < want { q = cellularQuality }
-        return Preferences(audio: audio, quality: q, spanish: spanishVariant)
+        var prefs = Preferences(audio: audio, quality: q, spanish: spanishVariant)
+        prefs.languages = languages
+        return prefs
+    }
+
+    /// «Tus idiomas» como se ven en Ajustes: lo guardado o, sin migrar, lo de antes (tu audio y, con latino o sin variante
+    /// elegida, el orden de Fernando del 3 nov: latino → original → inglés → castellano).
+    public var yourLanguages: [String] {
+        if let languages, !languages.isEmpty { return languages }
+        // Sin variante elegida (lo de fábrica), el orden de Fernando para es-MX: Latino, Idioma original, Inglés, Castellano.
+        let first = audio == "es" ? (latinSpanish ? "es-419" : castilianSpanish ? "es-ES" : "es-419") : audio
+        return [first] + (first == "es-419" ? Preferences.latinOrder : [])
+    }
+
+    /// Cambia «Tus idiomas» y, de ahí, tu audio de siempre: el primero que no es «original» manda (Ajustes no deja subir
+    /// «original» hasta arriba: el primero es tu idioma). Una lista vacía o solo con «original» no se guarda.
+    public mutating func setLanguages(_ list: [String]) {
+        var clean: [String] = []
+        for code in list where !code.isEmpty && !clean.contains(code) { clean.append(code) }
+        guard let first = clean.first(where: { $0 != "original" }) else { return }
+        languages = clean
+        audio = first.hasPrefix("es") ? "es" : first
+        latinSpanish = first == "es-419"
+        castilianSpanish = first == "es-ES"
     }
 
     /// La variante de español que prefieres: «es-419» (latino), «es-ES» (castellano) o "" (cualquiera).
@@ -245,6 +273,12 @@ public final class TitlePreferences: @unchecked Sendable {
     static let key = "title-prefs"
     private let kv: KeyValueStore
     private let lock = NSLock()
+    /// N5-A: lo que se ve bien en este aparato (las pruebas de los escenarios comunes ponen el del escenario).
+    public var device: PlaybackDevice {
+        get { lock.withLock { storedDevice } }
+        set { lock.withLock { storedDevice = newValue } }
+    }
+    private var storedDevice = PlaybackDevice.apple
 
     /// Lo que se sincroniza con tu Orbital (el audio, la variante y los subtítulos de cada título valen en los dos lados).
     struct SyncState: Codable {
@@ -307,6 +341,7 @@ public final class TitlePreferences: @unchecked Sendable {
     public func languages(for metaID: String, settings: AppSettings, onCellular: Bool = false) -> (prefs: Preferences, subtitles: String) {
         let saved = lock.withLock { all[metaID] }
         var prefs = settings.preferences(onCellular: onCellular)
+        prefs.device = device
         if let audio = saved?.audio, !audio.isEmpty { prefs.audio = audio }
         if prefs.audio == "es", let variant = saved?.spanish, !variant.isEmpty { prefs.spanish = variant }
         // Este título lo pusiste en español aunque tu audio de siempre sea otro: la variante que elegiste en Ajustes vale igual.

@@ -54,6 +54,12 @@ public final class SettingsModel: ObservableModel {
 
     public func refreshScrobble() { scrobble = services.scrobbleLog.status }
 
+    /// «Tus idiomas» (N4-A): se guarda en un solo lugar y de ahí lo leen las versiones, el reproductor y Torrentio.
+    public func setLanguages(_ list: [String]) {
+        services.setLanguages(list)
+        settings = services.appSettings
+    }
+
     /// Tu sesión de Trakt en el iPhone está conectada (con el Client ID incluido en la app o el de Ajustes › Avanzado).
     public var traktLinked: Bool { if case .linked = trakt { return true } else { return false } }
 

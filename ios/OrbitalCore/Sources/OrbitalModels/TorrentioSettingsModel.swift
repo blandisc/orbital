@@ -54,6 +54,9 @@ public final class TorrentioSettingsModel: ObservableModel {
     public func resetToRecommended() { save(TorrentioProbe.recommended(keeping: options)) }
 
     private func save(_ next: AddonOptions) {
+        var next = next
+        // N4-A: los idiomas de Torrentio salen de «Tus idiomas» (Ajustes); aquí no se cambian.
+        if services.appSettings.languages != nil { next.languages = TorrentioConfig.keys(fromLanguages: services.appSettings.yourLanguages) }
         options = next
         if services.addonList.torrentio == nil { services.addonList.startWithRecommended() }
         if let id = services.addonList.torrentio?.id { services.addonList.setOptions(id, next) }

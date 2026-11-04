@@ -29,6 +29,8 @@ public final class DebridRequestsModel: ObservableModel {
     private let clock: @Sendable () -> Date
     /// Un pedido quedó listo (R10: el aviso «Ya está…»). Lo pone la app.
     public var onReady: (@MainActor (DebridRequest) -> Void)?
+    /// N3-A · «Muchas descargas activas» se volvió a pedir solo y Real-Debrid lo aceptó («Volví a pedir …»). Lo pone la app.
+    public var onRetried: (@MainActor (DebridRequest) -> Void)?
     /// Un pedido lleva 24 h sin avanzar (R13: «Sigue sin bajar · ¿probar otra versión?»). Lo pone la app.
     public var onStalled: (@MainActor (DebridRequest) -> Void)?
 
@@ -164,6 +166,7 @@ public final class DebridRequestsModel: ObservableModel {
                 onReady?(request)
             }
         }
+        await retryWhenFree()
         let now = clock()
         for request in active where request.isStalled(now: now) && !request.nudged && me.contains(request.device) {
             await requester.markNudged(hash: request.hash)
@@ -182,6 +185,25 @@ public final class DebridRequestsModel: ObservableModel {
         return true
     }
 
+    /// N3-A · «Muchas descargas activas» se vuelve a pedir solo una vez, en el vistazo en que ya hay lugar: cuántas llevas de
+    /// tu máximo (`activeCount`, D3) se lee en ese vistazo (si no contesta, vale lo último que se leyó). Si otra vez no hay
+    /// lugar, queda «Pedir a la nube» a mano.
+    func retryWhenFree() async {
+        guard hasKey(), !requester.waitingForSlot(account: requester.knownAccount).isEmpty else { return }
+        if let fresh = await requester.activeCount() { activeCount = fresh }
+        guard let slots = activeCount, slots.active < slots.limit else { return }
+        let made = await requester.retryWhenFree(slots: slots)
+        guard !made.isEmpty else { return }
+        reload()
+        for request in made {
+            for video in request.videoIDs { await finder().forget(kind: request.kind, videoID: video) }
+            if request.state != .tooMany { onRetried?(request) }   // si otra vez no hubo lugar, no se insiste ni se avisa
+        }
+    }
+
+    /// Lo de este aparato espera lugar para volver a pedirse solo (N3-A).
+    public var waitsForSlot: Bool { !requester.waitingForSlot(account: requester.knownAccount).isEmpty }
+
     /// D3: cuántos van de tu límite.
     public func loadActiveCount() async { activeCount = await requester.activeCount() }
 
@@ -189,7 +211,7 @@ public final class DebridRequestsModel: ObservableModel {
     public func follow(every: TimeInterval = 20) async {
         var first = notifiesTVRequests   // R14-B: al volver a la app se mira la libreta de la TV aunque aquí no baje nada
         while !Task.isCancelled {
-            if !active.isEmpty || first { await refresh() }
+            if !active.isEmpty || first || waitsForSlot { await refresh() }
             first = false
             try? await Task.sleep(nanoseconds: UInt64(every * 1_000_000_000))
         }

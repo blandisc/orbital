@@ -1,5 +1,6 @@
 import Foundation
 import OrbitalCore
+import OrbitalAddons
 
 /// Una fuente para mostrar en la lista (sin URL: lleva tu clave de Real-Debrid).
 public struct SourceRow: Equatable, Identifiable, Sendable {
@@ -86,9 +87,14 @@ public final class SourcesModel: ObservableModel {
         guard !Task.isCancelled, ticket == loadCount else { return }
         quiet = await services.finder.quiet(kind: kind, videoID: videoID)
         sources = found
-        let grouped = Self.languageRows(found, prefs: prefs, limitGB: settings.warnCellularOverGB)
+        // N2-A: lo que ya pediste y sigue en camino (un paquete pedido desde otro episodio también) dice cómo va, no «Por pedir».
+        let requests = services.debridRequests
+        let inCloud = Dictionary(found.compactMap { s in s.torrent.flatMap { t in requests.request(hash: t.hash).flatMap { $0.state.isActive ? (s.index, $0.percent) : nil } } },
+                                 uniquingKeysWith: { a, _ in a })
+        var grouped = Self.languageRows(found, prefs: prefs, limitGB: settings.warnCellularOverGB)
+        grouped.main = Self.marking(grouped.main, inCloud); grouped.more = Self.marking(grouped.more, inCloud)
         languageRows = grouped.main; moreLanguages = grouped.more; hiddenCount = grouped.hidden
-        toRequest = Self.toRequest(found, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB)
+        toRequest = Self.toRequest(found, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB, inCloud: Set(inCloud.keys))
         error = sources.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después." : nil
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         let canSave = { (s: Source) in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false }
@@ -157,6 +163,10 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var debrid = false
     /// La pediste y Real-Debrid ya la terminó: «Al instante · la pediste».
     public var requested = false
+    /// N2-A: la pediste (aquí, en la TV con tu cuenta o un paquete desde otro episodio) y sigue en camino: «Bajando · 40 %»;
+    /// tocarla abre el pedido, nunca lo pide otra vez. `cloudPercent`: cuánto lleva.
+    public var inCloud = false
+    public var cloudPercent = 0
     /// Real-Debrid no la dejó bajar (FQ2-A): «Real-Debrid no lo dejó bajar», nunca la recomendada ni «por pedir».
     public var refused = false
     /// Qué tan rápido arranca, sin prometer de más.
@@ -187,7 +197,7 @@ public struct LanguageRow: Identifiable, Equatable, Sendable {
 
 extension SourcesModel {
     static let qualityOrder = ["4K", "1080p", "720p", "SD"]
-    static func quality(_ s: Source) -> String {
+    public static func quality(_ s: Source) -> String {
         switch s.resolution.lowercased() {
         case "4k", "2160p": return "4K"
         case "1080p", "1440p": return "1080p"
@@ -218,8 +228,10 @@ extension SourcesModel {
 
     /// Lo que se puede pedir y no se ve ya como chip: una por idioma y calidad (la mejor), en el orden de la recomendación,
     /// hasta `limit`. Sin cine ni tráileres. Con Torrentio + Real-Debrid son las «[RD download]».
-    public static func toRequest(_ ranked: [Source], shown: [LanguageRow], prefs: Preferences, limitGB: Double, limit: Int = 6) -> [RequestableVersion] {
-        let onChips = Set(shown.flatMap { $0.options.filter { $0.speed == .realDebridMustDownload }.map(\.id) })
+    /// `inCloud` (N2-A): lo que ya pediste y sigue en camino no se vuelve a ofrecer (su lugar sí cuenta, como el de un chip).
+    public static func toRequest(_ ranked: [Source], shown: [LanguageRow], prefs: Preferences, limitGB: Double, limit: Int = 6,
+                                 inCloud: Set<Int> = []) -> [RequestableVersion] {
+        let onChips = Set(shown.flatMap { $0.options.filter { $0.speed == .realDebridMustDownload }.map(\.id) }).union(inCloud)
         var seen = Set<String>(), out: [RequestableVersion] = []
         for s in ranked where !s.cached && s.debrid && !hidden(s) && !s.refused && s.torrent != nil {
             let audio = Streams.playingLanguage(s, prefs) ?? s.audio.first
@@ -229,6 +241,18 @@ extension SourcesModel {
             if out.count == limit { break }
         }
         return out
+    }
+
+    /// N2-A: marca en las filas lo que ya pediste y sigue en camino (índice de la fuente → cuánto lleva).
+    static func marking(_ rows: [LanguageRow], _ inCloud: [Int: Int]) -> [LanguageRow] {
+        guard !inCloud.isEmpty else { return rows }
+        return rows.map { row in
+            var row = row
+            for i in row.options.indices where !row.options[i].cached {
+                if let percent = inCloud[row.options[i].id] { row.options[i].inCloud = true; row.options[i].cloudPercent = percent }
+            }
+            return row
+        }
     }
 
     /// Las demás versiones de ese idioma y calidad («Otras 2 en latino 1080p»), en orden.

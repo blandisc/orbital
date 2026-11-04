@@ -116,7 +116,7 @@
     "error": null
   },
   "expected": {
-    "_note": "25 h sin avanzar: «Probar otra versión» con «Sigue sin bajar» (`request.stuck`).",
+    "_note": "25 h sin avanzar: «Probar otra versión» con «Sigue sin bajar» (`request.stuck`). N2-A (Fernando, 4 nov): su tarjeta en «Versión» dice lo mismo (`requested_pending`: «Bajando · 40 %»; tocarla abre el pedido), nunca «↓ Por pedir».",
     "title": "Hasta el viento tiene miedo",
     "logo": false,
     "video_id": "tt0061752",
@@ -142,7 +142,7 @@
         "code": "es-419",
         "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
         "res": "1080p",
-        "state": "to_request",
+        "state": "requested_pending",
         "recommended": true,
         "other": false
       },

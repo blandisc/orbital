@@ -109,29 +109,6 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var audioLabel: String { ["Atmos", "5.1"].first(where: tags.contains) ?? "" }
 }
 
-public struct Preferences: Sendable, Equatable {
-    public var audio: String      // idioma de audio preferido
-    public var quality: String    // «4K», «1080p», «720p», «480p»
-    /// Con audio en español: «es-419» (latino), «es-ES» (castellano) o "" (cualquiera).
-    public var spanish: String
-    /// El plan B en orden (T2 → R6): tus «Idiomas primero» de Torrentio como códigos («es-419», «es-ES», «ja»). Si no hay en
-    /// el que quieres, se prueba el siguiente de esta lista antes que cualquier otro idioma.
-    public var fallback: [String] = []
-    public init(audio: String = "en", quality: String = "1080p", spanish: String = "") { self.audio = audio; self.quality = quality; self.spanish = spanish }
-    /// El idioma que se busca, con su variante («es-419» si quieres latino).
-    public var wanted: String { audio == "es" && !spanish.isEmpty ? spanish : audio }
-    /// Lo que sigue después del que quieres, en orden. Fernando, 3 nov: latino → el idioma original de la obra («natal») →
-    /// inglés → castellano: el orden por omisión con latino (es-MX). `original` es un renglón: el idioma original de cada
-    /// título. Tus «Idiomas primero» de Torrentio (T2) se suman al final, sin repetir. Igual en la TV.
-    public var order: [String] {
-        let base = audio == "es" && spanish == "es-419" ? Self.latinOrder : []
-        var out = base
-        for code in fallback where code != wanted && !out.contains(code) { out.append(code) }
-        return out
-    }
-    public static let latinOrder = ["original", "en", "es-ES"]
-}
-
 /// Un idioma de audio de una versión y cómo lo sabemos (las mismas pruebas que la TV, de la más segura a la menos).
 public struct AudioLanguage: Sendable, Equatable, Codable {
     /// «es-419» latino, «es-ES» castellano, «es» español que no dice cuál; los demás, ISO 639-1 («en», «ja»…).
@@ -536,6 +513,7 @@ public enum Streams {
         // Demasiado grande para transmitir con soltura (REMUX de 95 GB); en 4K lo normal ya es 15-60 GB.
         let tooBig = ["4K": 60.0, "1080p": 25.0][src.resolution, default: 15.0] * scale
         if gb > tooBig { s -= 150 }
+        if purpose == .watch, prefs.device.problem(src, kind: kind) != nil { s += poorFit }   // N5-A: aquí no se ve bien
         if src.size != 0 && gb < (kind == "movie" ? 0.7 : 0.12) { s -= 120 }  // sospechosamente pequeño: mala calidad
         if src.hdr.contains("DV") && !src.hdr.contains("HDR") && !src.hdr.contains("HDR10+") { s -= 200 }  // DV sin HDR de respaldo
         if src.tags.contains("Tráiler") || src.tags.contains("CAM") { s -= 2000 }
