@@ -137,7 +137,7 @@ struct CloudSheetsHost: ViewModifier {
                 }
                 #endif
             }
-            .sheet(isPresented: $sheets.explaining) { DebridExplainer(close: { sheets.explaining = false }) }
+            .sheet(isPresented: $sheets.explaining) { DebridExplainer() }
             .sheet(item: $sheets.opened) { which in
                 if let request = model.requests.first(where: { $0.hash == which.id }) { sheet(request, model) }
             }

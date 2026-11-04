@@ -319,9 +319,10 @@ struct MainTabs: View {
                         .navigationDestination(for: WatchingRoute.self) { _ in WatchingView { paths[1].append($0) } }   // Lo que ves
                 }.tint(DS.primary)
             }
-            // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas».
-            Tab("Biblioteca", systemImage: "books.vertical", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
-                .badge(pendingDownloads + cloudPending)
+            // Biblioteca: Descargas · Mi media · Guardado (Fernando, 3 nov 2026: BI2-A); antes «Descargas». Su ícono, una pila
+            // de tarjetas (tu colección), del mismo trazo que la casa y la lupa; los libros parecían de lectura (4 nov, la 1774).
+            Tab("Biblioteca", systemImage: "rectangle.stack", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
+                .badge(env.ui.seeingDownloads ? 0 : pendingDownloads + cloudPending)   // viéndola, sin marca
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }

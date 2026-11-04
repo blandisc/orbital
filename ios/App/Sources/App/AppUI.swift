@@ -29,6 +29,11 @@ final class AppUI {
     var openTab: Int?
     /// Un aviso de descargas, «Ver en Descargas» o «Tus pedidos»: Biblioteca abre en su parte «Descargas» (no donde la dejaste).
     var showDownloads = false
+    /// Tocaste el aviso «Ya está…» o «Sigue sin bajar» de un pedido a Real-Debrid: Biblioteca › Descargas abre con la hoja de
+    /// ese pedido (su huella).
+    var openCloudRequest: String?
+    /// Biblioteca › Descargas está a la vista: la marca de la pestaña no sale (ya lo estás viendo).
+    var seeingDownloads = false
     /// El Centro de control pidió el control de tu Orbital.
     var openRemote = false
     /// El Centro de control pidió «Un Simpson al azar»: Inicio abre la ruleta.

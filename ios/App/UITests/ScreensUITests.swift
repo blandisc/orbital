@@ -96,6 +96,30 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch.waitForExistence(timeout: 5), "la cápsula de lo filtrado")
     }
 
+    /// La 1774 (Fernando, 4 nov 2026): en Mi media sus selectores funcionan (Todo · Películas · Series · Sin ver y «Más ›
+    /// Ver carpetas») y la hoja de un pedido de Real-Debrid no trae ✕ (se jala hacia abajo).
+    func testMiMediaSelectorsAndRequestSheetWithoutClose() {
+        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-library", "media", "-demo-onedrive", "linked", "-demo-no-idle"]
+        app.launch()
+        let movies = app.buttons["Películas"].firstMatch
+        XCTAssertTrue(movies.waitForExistence(timeout: 20), "el filtro de Mi media")
+        movies.tap()
+        XCTAssertTrue(app.staticTexts["Películas"].firstMatch.waitForExistence(timeout: 5), "la sección de películas")
+        XCTAssertFalse(app.staticTexts["Severance"].exists, "con Películas no sale la serie")
+        app.buttons["Más"].firstMatch.tap()
+        let folders = app.buttons["Ver carpetas"].firstMatch
+        XCTAssertTrue(folders.waitForExistence(timeout: 5), "«Ver carpetas» en el menú")
+        folders.tap()
+        XCTAssertTrue(app.navigationBars.element(boundBy: 0).buttons.firstMatch.waitForExistence(timeout: 5), "abrió las carpetas")
+        app.terminate()
+
+        app.launchArguments = ["-demo", "-demo-tab", "3", "-demo-library", "downloads", "-demo-rd", "premium", "-demo-rd-request", "all",
+                               "-demo-rd-sheet", "ready", "-demo-no-idle"]
+        app.launch()
+        XCTAssertTrue(app.buttons["debrid-watch-now"].waitForExistence(timeout: 20), "la hoja del pedido listo")
+        XCTAssertFalse(app.buttons["sheet-close"].exists, "una hoja con asa no lleva ✕")
+    }
+
     /// Mi media sin carpeta (todo cabe): deslizar no mueve nada ni encoge el título (antes rebotaba siempre).
     func testShortMiMediaDoesNotScroll() {
         for drive in ["unlinked"] {

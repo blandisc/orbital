@@ -21,11 +21,10 @@ struct LibrarySavedView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                 if model.traktLinked {
-                    if model.lists.count > 1 { listMenu.padding(.horizontal, DS.Space.gutter) }
-                    if !isEmpty && !model.failed {   // sin nada en la lista, no hay qué filtrar (mientras llega, sí: no brinca)
-                        DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }))
-                            .padding(.horizontal, DS.Space.gutter)
-                    }
+                    // FG1-A (Fernando, 4 nov 2026): un solo renglón, «Mi lista ⌃⌄» a la izquierda y, a la derecha, Todo · Películas
+                    // · Series y el botón de ordenar y filtrar (el de toda lista abierta). Debajo, solo lo filtrado, en cápsulas que
+                    // se quitan con un toque. Con la lista vacía o sin respuesta, el renglón sin lo que no aplica.
+                    if !showsGrid { bar(menu: nil) }
                     content
                 } else {
                     noTrakt
@@ -47,7 +46,7 @@ struct LibrarySavedView: View {
         DSChoiceMenu(options: model.lists.map { list in
             list.id == SavedModel.watchlist ? .init(id: list.id, title: Text("Mi lista"), symbol: "bookmark")
                 : .init(id: list.id, title: Text(verbatim: list.name), symbol: "list.bullet")
-        }, selection: Binding(get: { model.selected }, set: { id in Task { await model.choose(id) } }), label: Text("Lista"))
+        }, selection: Binding(get: { model.selected }, set: { id in Task { await model.choose(id) } }), label: Text("Lista"), style: .title)
         .accessibilityIdentifier("saved-list-menu")
     }
 
@@ -65,11 +64,30 @@ struct LibrarySavedView: View {
             }
         } else {
             SortableGrid(listID: "saved:\(model.selected)", items: items, collections: collections.model, showsKindFilter: false,
-                         loading: model.loading || !model.loadedOnce, states: model.states) { s, width in
+                         loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) }) { s, width in
                 TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
             }
             .id(model.selected)   // otra lista: su propio orden y sus filtros
         }
+    }
+
+    /// La cuadrícula (con su renglón de arriba) está a la vista: ni vacía ni sin respuesta.
+    private var showsGrid: Bool { !model.failed && !isEmpty }
+
+    /// «Mi lista ⌃⌄» · Todo · Películas · Series · ordenar y filtrar.
+    private func bar(menu: ListFilterMenu?) -> some View {
+        HStack(alignment: .center, spacing: DS.Space.s3) {
+            if model.lists.count > 1 { listMenu }
+            Spacer(minLength: 0)
+            if showsGrid {   // sin nada en la lista, no hay qué filtrar (mientras llega, sí: no brinca)
+                DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), compact: true)
+            }
+            if let menu {
+                menu.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)
+                    .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
+            }
+        }
+        .padding(.horizontal, DS.Space.gutter)
     }
 
     /// Ya llegó y no trae nada.

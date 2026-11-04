@@ -108,12 +108,16 @@ struct DSTextTabs<ID: Hashable>: View {
                 let on = selection == option.id
                 Button { selection = option.id } label: {
                     VStack(spacing: DS.Space.s1) {
-                        HStack(spacing: DS.Space.s1) {
-                            if let symbol = option.symbol { Image(systemName: symbol).symbolVariant(on ? .fill : .none) }
-                            if titles { option.title.lineLimit(1) }
+                        // El ícono es siempre el mismo trazo (antes la elegida se rellenaba: «folder.fill» al lado de una flecha
+                        // que no tiene relleno) y el ancho es el de la letra gruesa en las dos: al cambiar de pestaña no cambia
+                        // ningún ícono ni se recorre nada (Fernando, 4 nov 2026, la 1774: «cambian los íconos»).
+                        ZStack {
+                            label(option, titles: titles, bold: true).hidden()
+                            label(option, titles: titles, bold: on)
                         }
+                        .accessibilityElement(children: .ignore)
                         .accessibilityLabel(option.title)
-                        .font(DS.TextRecipe.cardTitle.font.weight(on ? .bold : .medium))   // ds-exception: la pestaña elegida se distingue por el peso
+                        .font(DS.TextRecipe.cardTitle.font)
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
                     }
@@ -124,6 +128,22 @@ struct DSTextTabs<ID: Hashable>: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
+    }
+
+    /// El ícono con el mismo trazo siempre; solo el nombre cambia de peso.
+    private func label(_ option: Option, titles: Bool, bold: Bool) -> some View {
+        HStack(spacing: DS.Space.s1) {
+            if let symbol = option.symbol { Image(systemName: symbol).fontWeight(.semibold) }   // ds-exception: el trazo fijo del ícono de la pestaña
+            if titles { option.title.lineLimit(1).fontWeight(bold ? .bold : .medium) }   // ds-exception: la pestaña elegida se distingue por el peso
+        }
+    }
+}
+
+/// La cápsula del sistema (`.button`) o nada (`.title`: el menú sin el azul de iOS).
+private struct ChoiceMenuLook<ID: Hashable>: ViewModifier {
+    let style: DSChoiceMenu<ID>.Style
+    func body(content: Content) -> some View {
+        if style == .title { content.buttonStyle(.plain) } else { content.dsSecondaryButton() }   // ds-exception: el título que abre su menú no es un botón suelto
     }
 }
 
@@ -164,6 +184,10 @@ struct DSChoiceMenu<ID: Hashable>: View {
     @Binding var selection: ID
     /// Qué se elige (para VoiceOver): «Lista».
     let label: Text
+    /// `.button`: la cápsula con su ícono. `.title`: el nombre como título de la pantalla con ⌃⌄, sin cápsula, al ras del margen
+    /// (Guardado, «Mi lista ⌃⌄»; Fernando, 4 nov 2026: «estilízalo un poco más»; la cápsula lo metía del margen).
+    enum Style { case button, title }
+    var style: Style = .button
 
     private var current: Option? { options.first { $0.id == selection } }
 
@@ -175,15 +199,24 @@ struct DSChoiceMenu<ID: Hashable>: View {
                 }
             } label: { EmptyView() }
         } label: {
-            HStack(spacing: DS.Space.s2) {
-                if let symbol = current?.symbol {
-                    Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+            if style == .title {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                    (current?.title ?? Text(verbatim: "")).recipe(.section, color: DS.text).lineLimit(1)
+                    Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                 }
-                (current?.title ?? Text(verbatim: "")).recipe(.labelLarge, color: DS.text).lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+                .frame(minHeight: DS.Size.touchTarget)
+                .contentShape(Rectangle())
+            } else {
+                HStack(spacing: DS.Space.s2) {
+                    if let symbol = current?.symbol {
+                        Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                    }
+                    (current?.title ?? Text(verbatim: "")).recipe(.labelLarge, color: DS.text).lineLimit(1)
+                    Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+                }
             }
         }
-        .dsSecondaryButton()
+        .modifier(ChoiceMenuLook(style: style))
         .sensoryFeedback(.selection, trigger: selection)
         .accessibilityLabel(label)
         .accessibilityValue(current?.title ?? Text(verbatim: ""))

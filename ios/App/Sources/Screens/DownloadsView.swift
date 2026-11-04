@@ -6,9 +6,9 @@ import OrbitalModels
 /// La pestaña Biblioteca (Fernando, 3 nov 2026: BI2-A), con tres pestañas de texto arriba: «Descargas» · «Mi media» ·
 /// «Guardado». Abre donde la dejaste (en este aparato); la primera vez, en Guardado. Un aviso de descargas abre «Descargas».
 ///
-/// «Descargas», en dos partes (RX1-A, 3 nov): «Real-Debrid · bajando para ti» (lo que pediste a la nube,
-/// `DownloadsCloudPart`) y «En este iPhone · sin internet»: lo que se está bajando a este aparato (con su avance), lo listo
-/// para ver sin conexión agrupado por título y la descarga inteligente. Sin Real-Debrid (Plus, App Store) solo hay la segunda
+/// «Descargas», en dos partes (RX1-A, 3 nov): «En este iPhone · sin internet» arriba (lo que se está bajando a este aparato,
+/// con su avance, lo listo para ver sin conexión agrupado por título y la descarga inteligente) y, abajo, «Real-Debrid ·
+/// bajando para ti» (lo que pediste a la nube, `DownloadsCloudPart`; Fernando, 4 nov: primero el aparato). Sin Real-Debrid (Plus, App Store) solo hay la segunda
 /// y no lleva rótulo. El fondo toma el color de lo que se está bajando. «Mi media» es tu OneDrive (luego Plex y Jellyfin) y
 /// «Guardado», Mi lista y tus listas de Trakt (`LibrarySavedView`).
 struct DownloadsView: View {
@@ -54,6 +54,11 @@ struct DownloadsView: View {
             case .saved: LibrarySavedView(observer: saved)
             }
         }
+        // Un solo fondo para las tres partes, también mientras cargan y vacías: antes solo Descargas lo traía y Mi media y
+        // Guardado se quedaban en negro; al cambiar de parte cambiaba el fondo (Fernando, 4 nov 2026, la 1774). Toma el color
+        // de lo que se está bajando, sea cual sea la parte.
+        .scrollContentBackground(.hidden)
+        .background(Backdrop(tint: tint.colors))
         // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las tres vistas,
         // así al cambiar no brinca ni se mueve nada.
         .safeAreaBar(edge: .top) {
@@ -77,6 +82,18 @@ struct DownloadsView: View {
         }
         // Un aviso de descargas, «Ver en Descargas» o «Tus pedidos»: a «Descargas», aunque la dejaras en otra parte.
         .onChange(of: env.ui.showDownloads, initial: true) { _, wants in if wants { part = .phone; env.ui.showDownloads = false } }
+        // El aviso «Ya está…» de un pedido: aquí, con su hoja abierta.
+        .onChange(of: env.ui.openCloudRequest, initial: true) { _, hash in
+            guard let hash else { return }
+            part = .phone
+            cloud.opened = .init(id: hash)
+            env.ui.openCloudRequest = nil
+        }
+        // Viendo Descargas, lo que avisaba ya está a la vista: se quitan sus avisos y la marca de la pestaña (Fernando, 4 nov
+        // 2026, la 1774: «si ya estás en Descargas, el aviso y la marca deben morir»).
+        .onAppear { seeing(part == .phone) }
+        .onDisappear { seeing(false) }
+        .onChange(of: part) { _, new in seeing(new == .phone) }
         .task {
             let requests = env.services.debridRequests
             cloudActive = requests.active.count
@@ -90,13 +107,19 @@ struct DownloadsView: View {
         }
     }
 
+    /// Descargas está (o deja de estar) a la vista.
+    private func seeing(_ on: Bool) {
+        if env.ui.seeingDownloads != on { env.ui.seeingDownloads = on }
+        if on { Task { await DebridRequestNotifier.clearDelivered() } }
+    }
+
     /// «Descargas · Mi media · Guardado».
     private var switcher: some View {
         // «Descargas» (Real-Debrid y este aparato, RX1-A; dice cuántas bajan), Mi media (tu OneDrive; luego Plex y Jellyfin), con
         // carpeta: la nube es solo Real-Debrid (Fernando, 3 nov), y Guardado (Mi lista y tus listas de Trakt, BI1-A).
         let bajando = cloudActive + observer.model.active.count
         let downloads = bajando > 0 ? Text("Descargas · \(bajando)") : Text("Descargas")
-        return DSTextTabs(options: [.init(id: Part.phone, title: downloads, symbol: "arrow.down.to.line"), .init(id: .media, title: Text("Mi media"), symbol: "folder"),
+        return DSTextTabs(options: [.init(id: Part.phone, title: downloads, symbol: "arrow.down.circle"), .init(id: .media, title: Text("Mi media"), symbol: "folder"),
                                     .init(id: .saved, title: Text("Guardado"), symbol: "bookmark")], selection: $part)
             .accessibilityIdentifier("library-parts")
     }
@@ -107,8 +130,8 @@ struct DownloadsView: View {
         let level: DSSectionHead.Level = showsCloud ? .subsection : .section
         let symbol = { (name: String) in showsCloud ? nil : name }
         return List {
+            // Primero «En este iPhone · sin internet» y abajo «Real-Debrid · bajando para ti» (Fernando, 4 nov 2026, la 1774).
             if showsCloud {
-                DownloadsCloudPart(sheets: $cloud)
                 Section {
                     DSSectionHead(title: DeviceWords.text("En este iPhone · sin internet", mac: "En esta Mac · sin internet"), level: .section, symbol: ThisDevice.symbol)
                         .listHeadRow().accessibilityIdentifier("downloads-device")
@@ -163,6 +186,7 @@ struct DownloadsView: View {
                 }
                 .listRowBackground(DS.surface)
             }
+            if showsCloud { DownloadsCloudPart(sheets: $cloud) }
         }
         .overlay {
             // Sin nube y sin nada en cola ni listo: el vacío nativo, con qué hacer (con nube, cada parte tiene el suyo).
@@ -180,7 +204,7 @@ struct DownloadsView: View {
         // El espacio va pegado al selector (la lista agrupada dejaba un hueco grande arriba de su primera sección).
         .contentMargins(.top, DS.Space.s2, for: .scrollContent)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
-        .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
+        .scrollContentBackground(.hidden)   // el fondo lo pone la Biblioteca, el mismo en sus tres partes
         // Lo que termina pasa de «Descargando» a su lugar en Series o Películas deslizándose, no de golpe.
         .animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade, value: model.items.map { "\($0.id):\($0.state)" })
     }
@@ -496,7 +520,7 @@ extension View {
     func downloadCard() -> some View {
         listRowBackground(Color.clear.dsCard(.card))
             .listRowSeparator(.hidden)
-            .listSectionSpacing(DS.Layout.betweenSections)
+            .listSectionSpacing(DS.Layout.betweenSections - DS.ListSection.cornerClear)   // el rótulo ya trae `cornerClear` arriba
     }
 }
 

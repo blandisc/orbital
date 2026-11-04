@@ -37,7 +37,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         // La batería baja ya la dice el aviso de la app: con la app abierta no sale también el de iOS (salían los dos).
         if notification.request.identifier.hasPrefix(CompanionAlerts.batteryPrefix) { return completionHandler([]) }
-        completionHandler([.banner, .sound])
+        // Un pedido que termina mientras ves Biblioteca › Descargas: ya lo ves cambiar ahí, el aviso no sale (Fernando, 4 nov 2026).
+        let identifier = notification.request.identifier
+        nonisolated(unsafe) let completionHandler = completionHandler
+        Task { @MainActor in
+            let seen = DebridRequestNotifier.requestHash(identifier) != nil && AppEnvironment.shared.ui.seeingDownloads
+            completionHandler(seen ? [] : [.banner, .sound])
+        }
     }
 
     /// Tocar un aviso o uno de sus botones («Ya está para ver»: Ver, Ver en la TV, Descargar; «Ya está T1 E2»: Ver ahora, Ver en la TV).

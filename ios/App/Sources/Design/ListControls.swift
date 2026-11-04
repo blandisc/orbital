@@ -97,6 +97,10 @@ struct SortableGrid<Cell: View>: View {
     /// Cómo vas con cada título (por IMDb), donde se sabe: el menú ofrece «Estado» (Por ver · A medias · Vistas) en lugar de
     /// «Ocultar lo que ya vi» (Biblioteca › Guardado).
     var states: [String: WatchState]?
+    /// El renglón de arriba de la pantalla, con el botón de ordenar y filtrar adentro en vez de en la barra (Guardado, FG1-A:
+    /// «Mi lista ⌃⌄» a la izquierda y Todo · Películas · Series y el botón a la derecha; Fernando, 4 nov 2026). Debajo, solo
+    /// lo filtrado en cápsulas. nil: el botón va arriba a la derecha, en la barra, como en toda lista abierta.
+    var bar: ((ListFilterMenu) -> AnyView)?   // ds-exception: el renglón lo arma la pantalla
     /// Cada póster recibe el ancho de su columna (`DSPosterGrid`).
     @ViewBuilder var cell: (Suggestion, CGFloat) -> Cell
     @State private var sort: ListSort
@@ -112,9 +116,9 @@ struct SortableGrid<Cell: View>: View {
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
-         states: [String: WatchState]? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
+         states: [String: WatchState]? = nil, bar: ((ListFilterMenu) -> AnyView)? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
         let shared = collections
-        self.states = states
+        self.states = states; self.bar = bar
         self.hideWatchedAvailable = collections.traktLinked && states == nil
         self.listID = listID; self.items = items; self.cell = cell
         self.showsKindFilter = showsKindFilter; self.loading = loading
@@ -127,6 +131,7 @@ struct SortableGrid<Cell: View>: View {
     var body: some View {
         let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb, letterboxd: letterboxd, states: states ?? [:])
         VStack(alignment: .leading, spacing: DS.Space.s3) {
+            if let bar { bar(menu) }
             if filter.isActive { ListFilterChips(filter: $filter) }
             // Letterboxd se pregunta película por película: en una lista larga solo las primeras; se dice (antes una muy bien
             // calificada que estaba abajo nunca subía, sin saber por qué).
@@ -145,10 +150,7 @@ struct SortableGrid<Cell: View>: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                ListFilterMenu(sort: $sort, filter: $filter, sorts: sorts, genres: genres, decades: decades, showsKindFilter: showsKindFilter,
-                               showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating)
-            }
+            if bar == nil { ToolbarItem(placement: .topBarTrailing) { menu } }
         }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
@@ -165,6 +167,11 @@ struct SortableGrid<Cell: View>: View {
             defer { rating = false }
             letterboxd = await letterboxdRatings(items)
         }
+    }
+
+    private var menu: ListFilterMenu {
+        ListFilterMenu(sort: $sort, filter: $filter, sorts: sorts, genres: genres, decades: decades, showsKindFilter: showsKindFilter,
+                       showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating)
     }
 
     /// IMDb se pide solo si el orden o la calificación mínima la usan.
@@ -363,9 +370,11 @@ struct DSPosterSlot: Identifiable {
 /// regla de toda lista con rótulos así: `listHeadRow()` en el rótulo y `listHeadRows()` en la lista.
 extension View {
     /// El rótulo como renglón: sin fondo, sin sangría ni separador, y su aire hasta la tarjeta (`DS.ListSection.headPad` más
-    /// el espacio entre renglones y el del propio rótulo: unos 20 pt).
+    /// el espacio entre renglones y el del propio rótulo: unos 20 pt). Baja `cornerClear`: con aire entre renglones cada uno
+    /// es su propia celda redondeada y su esquina le cortaba el ícono y la primera letra al rótulo.
     func listHeadRow() -> some View {
-        padding(.bottom, DS.ListSection.headPad)
+        padding(.top, DS.ListSection.cornerClear)
+            .padding(.bottom, DS.ListSection.headPad)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)

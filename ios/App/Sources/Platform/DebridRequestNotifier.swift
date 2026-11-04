@@ -105,11 +105,18 @@ enum DebridRequestNotifier {
     /// Tocar el aviso o uno de sus botones. false si no es de los pedidos.
     @MainActor static func handle(_ response: UNNotificationResponse) async -> Bool {
         let info = response.notification.request.content.userInfo
-        guard response.notification.request.identifier.hasPrefix(prefix), let kind = info["kind"] as? String, let id = info["id"] as? String else { return false }
+        let identifier = response.notification.request.identifier
+        guard identifier.hasPrefix(prefix), let kind = info["kind"] as? String, let id = info["id"] as? String else { return false }
         let video = info["video"] as? String
         let title = info["title"] as? String ?? ""
         let env = AppEnvironment.shared
-        if response.actionIdentifier == Action.tv {
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier, let hash = requestHash(identifier) {
+            // Tocar el aviso (no un botón): Biblioteca › Descargas con la hoja de ese pedido, donde está «Ver ahora» y lo demás.
+            // Antes abría el reproductor y, si el enlace aún no estaba, no pasaba nada (Fernando, 4 nov 2026, la 1774: «tocar
+            // el aviso no funciona»).
+            env.ui.openCloudRequest = hash
+            env.openTab = AppEnvironment.downloadsTab
+        } else if response.actionIdentifier == Action.tv {
             // La TV busca su propio enlace: solo el título y el episodio.
             await env.playOnTV(kind: kind, metaID: id, videoID: video, title: title)
         } else if info["open"] as? String == "title" || video == nil {
@@ -118,6 +125,23 @@ enum DebridRequestNotifier {
             await env.handle(url: link)
         }
         return true
+    }
+
+    /// La huella del pedido de un aviso «Ya está…» o «Sigue sin bajar» (nil en «Ya apareció», que es de una ficha).
+    static func requestHash(_ identifier: String) -> String? {
+        guard identifier.hasPrefix(prefix) else { return nil }
+        let rest = identifier.dropFirst(prefix.count)
+        if rest.hasPrefix("appear.") { return nil }
+        let hash = rest.hasPrefix("stalled.") ? rest.dropFirst("stalled.".count) : rest
+        return hash.isEmpty ? nil : String(hash)
+    }
+
+    /// Ya estás viendo Biblioteca › Descargas: los avisos de pedidos que siguen en el Centro de notificaciones se quitan (lo
+    /// que decían ya está a la vista).
+    static func clearDelivered() async {
+        let center = UNUserNotificationCenter.current()
+        let ids = await center.deliveredNotifications().map(\.request.identifier).filter { requestHash($0) != nil }
+        if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
     }
 
     private static func allowed() async -> Bool {
