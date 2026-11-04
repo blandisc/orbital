@@ -821,3 +821,37 @@ test("RX1-TV-A (Fernando, 3 nov): «Real-Debrid · bajando para ti» solo cuando
   assert.equal(row.items[0].extra.video_id, "tt0903747:1:2");
   assert.match(row.items[1].subtitle, /^Al instante · la pediste · /);
 });
+
+test("RX2-A y RX3-A (Fernando, 3 nov): la hoja de un pedido dice cuánto falta, ofrece la que ya arranca, y «Así funciona»", async () => {
+  const { debridFlowMenu, requestPace } = await import("../../orbital/web/js/core/menus.js");
+  const now = 10_000 * 1000;
+  const going = (percent, minutes, extra = {}) => ({ hash: "a".repeat(40), title: "Dune", state: "downloading", percent, by: "TV",
+    since: now / 1000 - minutes * 60, progress_at: now / 1000 - 30, meta_id: "tt1", kind: "movie", video_ids: ["tt1"], ...extra });
+  // Del avance desde que se pidió; con poco que medir, no se promete nada. «Te aviso.» solo si lo pidió la TV.
+  assert.equal(requestPace(going(50, 4), now), "A este paso, faltan unos minutos. Te aviso.");
+  assert.equal(requestPace(going(50, 40), now), "A este paso, falta menos de una hora. Te aviso.");
+  assert.equal(requestPace(going(10, 60), now), "A este paso, faltan unas horas. Te aviso.");
+  assert.equal(requestPace(going(5, 120 * 60 / 60 * 10), now), "A este paso, falta más de un día. Te aviso.");
+  assert.equal(requestPace(going(2, 30), now), "Suele tardar de minutos a horas. Te aviso.");
+  assert.equal(requestPace(going(50, 4, { by: "iPhone de Fer" }), now), "A este paso, faltan unos minutos.");
+  assert.equal(requestPace({ ...going(0, 5), state: "queued" }, now), "Suele tardar de minutos a horas. Te aviso.");
+  // La hoja: cómo va, cuánto falta y dónde (sin «Suele tardar…» repetido); con una que ya arranca, ella y «Esperar a que llegue».
+  const play = { kind: "movie", id: "tt1", source: 7 };
+  const sheet = debridRequestMenu(going(50, 4), { now, instead: { label: "Latino · 720p", play } });
+  assert.match(sheet.subtitle, /^Bajando en la nube · 50 % · .+\. A este paso, faltan unos minutos\. Te aviso\. La nube es tu Real-Debrid/);
+  assert.doesNotMatch(sheet.subtitle, /Suele tardar/);
+  assert.deepEqual(sheet.options.slice(0, 2).map((o) => [o.label, o.command.type]),
+    [["Ver Latino · 720p, ya arranca", "watch"], ["Esperar a que llegue", "close"]]);
+  assert.deepEqual(sheet.options[0].command.play, play);
+  assert.ok(!sheet.options.some((o) => o.label === "Seguir esperando"));
+  // Sin otra al instante, solo cuánto lleva (como antes).
+  assert.ok(!debridRequestMenu(going(50, 4), { now }).options.some((o) => /ya arranca|Esperar a que llegue/.test(o.label)));
+  // Ya terminado: nada de «ya arranca».
+  assert.ok(!debridRequestMenu({ ...going(100, 4), state: "ready" }, { now, instead: { label: "x", play } }).options.some((o) => /ya arranca/.test(o.label)));
+  // «Así funciona»: los tres pasos, que no ocupa espacio y «Entendido».
+  const flow = debridFlowMenu();
+  assert.equal(flow.title, "Así funciona");
+  assert.deepEqual(flow.steps.map((s) => s.label), ["Tú lo pides", "La nube lo baja", "Arranca al instante"]);
+  assert.deepEqual(flow.options.map((o) => o.label), ["No ocupa espacio en la TV.", "Entendido"]);
+  assert.equal(requestLabel({ state: "downloading", percent: 42 }), "Bajando en la nube · 42 %");
+});

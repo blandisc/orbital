@@ -35,6 +35,7 @@ SETTINGS = {
     "game_resolution": {"lower", "native"},
     "eden_build": {"standard", "rog-ally"},  # qué versión de Eden baja el actualizador (emulator_updates.VARIANTS)  # los juegos a ~1080p (las películas siguen a 4K), o a la de la pantalla
     "welcomed": {True, False},
+    "learn_debrid_flow": {True, False},  # RX3-A: ya viste «Así funciona» (la primera vez que sale «↓ Por pedir»)
     "emulator_updates": {"avisar", "auto", "nunca"},
     "screensaver_minutes": {0, 5, 10, 20, 30},  # protector de pantalla: el mosaico de Para ti tras ese rato sin tocar nada  # versiones nuevas de los emuladores (emulator_updates.py)  # ya vio "Tu consola" (la pantalla de primer uso)
 }
