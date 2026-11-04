@@ -6,7 +6,7 @@ import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { Flag, Flags } from "./flag.js";
-import { DEBRID_CLOUD, requestLabel } from "../core/menus.js";
+import { requestLabel } from "../core/menus.js";
 
 /**
  * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
@@ -19,6 +19,9 @@ import { DEBRID_CLOUD, requestLabel } from "../core/menus.js";
  * las reproduce (solo daría el video de aviso de Real-Debrid), las pide y avisa; si ya están pedidas, dicen cómo van.
  *   ↑/↓ idioma · ◀/▶ calidad · A ver (o pedir) · X todas las de aquí · LB/RB alcance · B volver a la ficha
  */
+/** PT7: la misma frase corta que el iPhone (los días, solo en «¿Qué es esto?», como peor caso). */
+const ASK_WAIT = "La nube las baja por ti: suele tardar de minutos a horas.";
+
 export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], onMove, onClose, onChange }) {
   const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
@@ -126,7 +129,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     const firstAsk = rows.findIndex((row) => row.ask);
     mount(list, rows.flatMap((row, r) => [r === firstAsk && h("div", { class: "versions__ask", role: "presentation" },
       h("span", { class: "versions__ask-title" }, "Hay que pedirlas · tardan"),
-      h("span", { class: "versions__ask-hint" }, DEBRID_CLOUD)),
+      h("span", { class: "versions__ask-hint" }, ASK_WAIT)),
     h("div", { class: "versions__row", role: "group", "aria-label": row.name },
       h("div", { class: "versions__lang" },
         h("span", { class: "versions__name" }, row.moreOf ? null : Flag(row.code), row.name),
@@ -259,9 +262,11 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       rows = compose();
       at = versionStart(rows, best());
       start = { ...at };
-      subtitle.textContent = rows.some((row) => row.ask)
-        ? "«Al instante»: arranca en segundos. Las de abajo, la nube primero las baja: se piden y te avisa." // RX4-A
-        : "«Al instante»: arranca en segundos.";
+      // PT7 (Fernando, 4 nov): sin nada al instante, el aviso del iPhone arriba: «Real-Debrid aún no tiene este título.»
+      subtitle.textContent = !groups.now.length && rows.length ? "Real-Debrid aún no tiene este título. Se piden y te aviso cuando estén."
+        : rows.some((row) => row.ask)
+          ? "«Al instante»: arranca en segundos. Las de abajo, la nube primero las baja: se piden y te avisa." // RX4-A
+          : "«Al instante»: arranca en segundos.";
       status.hidden = !!rows.length;
       status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos no lo tienen.";
       failed = !rows.length;

@@ -656,14 +656,16 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   ] };
   const rows = addonRows(status); // OpenSubtitles (el de Orbital y el traído) ya no sale: vive en Ajustes › Ver (3 nov)
   // Fernando, 4 nov: lo que no vino con Orbital es «Agregado por ti»; ni «Volver a traer» ni «Volver a los de Stremio».
-  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Agregado por ti", "Torrentio RD", "¿Qué es esto?"]); // 4 nov: sin «Archivos de la TV»
+  assert.deepEqual(rows.map((r) => r.label), ["Se preguntan en este orden", "Comet", "Agregado por ti", "Torrentio RD", "¿Qué es esto?"]); // 4 nov: sin «Archivos de la TV»
+  assert.equal(rows[1].value, undefined); // PT16: lo prendido no lleva etiqueta; solo «Apagado»
+  assert.equal(addonRows({ ...status, entries: [{ ...status.entries[1], on: false }] })[1].value, "Apagado");
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
   assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
   // Sin nada agregado: ni el encabezado (y nunca «Traer de tu Stremio»).
-  assert.deepEqual(addonRows({ source: "own", stremio_linked: true, entries: [] }).map((r) => r.label), ["Vienen con Orbital", "¿Qué es esto?"]);
+  assert.deepEqual(addonRows({ source: "own", stremio_linked: true, entries: [] }).map((r) => r.label), ["Se preguntan en este orden", "¿Qué es esto?"]);
 });
 
 test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y «Tus pedidos» (corte S2)", () => {
@@ -692,14 +694,14 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     { hash: "c", title: "Midsommar", state: "gone", by: "TV" }]);
   assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
     ["Bajando", undefined, undefined], // P1-A: dos grupos; «Ya terminaron» no sale vacío
-    ["Nocturne · T1 E1", "Bajando en la nube · 42 % · Lo pediste aquí", "download"],
-    ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"], ["¿Qué es esto?", undefined, "info"]]); // la lápida no se enseña
+    ["Nocturne · T1 E1", "Bajando en la nube · 42 % · Lo pediste aquí", "cloudDownload"],
+    ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "playersOff"], ["¿Qué es esto?", undefined, "info"]]); // la lápida no se enseña
   assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }]).options.filter((o) => o.heading).map((o) => o.label),
     ["Bajando", "Ya terminaron"]);
   assert.equal(debridRequestsMenu([]).options[0].label, "Todavía no le pides nada");
   const one = debridRequestMenu({ hash: "a", title: "Nocturne · T1 E1", state: "too_many", by: "TV", account: "7", kind: "series", meta_id: "tt1",
     video_ids: ["tt1:1:1"] }, { account: "7" });
-  assert.equal(one.subtitle, "Muchas descargas activas · Lo pediste aquí");
+  assert.equal(one.subtitle, "Muchas descargas activas · Lo pediste aquí. Lo vuelvo a pedir cuando se libere un lugar."); // PT11
   // P2-B: «Probar otra versión», «Abrir la ficha» y «Cancelar pedido»
   assert.deepEqual(one.options.map((o) => o.label), ["Abrir la ficha", "Cancelar pedido", "¿Qué es esto?", "Seguir esperando"]); // muchas descargas: otra versión no ayuda
   assert.deepEqual(one.options[1].command, { type: "rd-cancel-ask", hash: "a", title: "Nocturne · T1 E1" });
@@ -723,7 +725,7 @@ test("ajustes › Complementos › Torrentio: cada opción con su valor y su cam
   assert.equal(torrentioSummary(entry.options), "Las más compartidas primero · Latino · Sin Remux, cine y Screener");
   assert.equal(torrentioHidden([]), "Ninguna: ves todas");
   const row = addonRows({ source: "own", imported_at: 1, entries: [entry] }).find((r) => r.label === "Torrentio");
-  assert.equal(row.hint, "Las más compartidas primero · Latino · Sin Remux, cine y Screener");
+  assert.equal(row.hint, "Fuentes de video · usa tu Real-Debrid"); // PT16: lo que aporta, como el iPhone
   assert.equal(addonRows({ source: "own", imported_at: 1, entries: [{ ...entry, needs_key: true }] }).find((r) => r.label === "Torrentio").warn, true);
   assert.equal(addonMenu(entry).options[0].label, "Configurar");
   const menu = torrentioMenu(entry);
@@ -771,7 +773,7 @@ test("complementos: si la lista la cambiaste en el iPhone, se dice arriba (corte
   const now = Date.UTC(2026, 10, 3, 12);
   const rows = addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "iPhone de Fernando", changed_at: now / 1000 - 120 }, now);
   assert.deepEqual([rows[0].label, rows[0].hint], ["Vienen de tu iPhone", "Cambiado hace 2 min · se configura una vez y la TV lo toma"]);
-  assert.equal(addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "tv" }, now)[0].label, "Vienen con Orbital");
+  assert.equal(addonRows({ source: "own", imported_at: 1, entries: [], changed_by: "tv" }, now)[0].label, "Se preguntan en este orden");
 });
 
 test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece volver a él, lo listo se ve y los aparatos cuentan", async () => {

@@ -49,9 +49,10 @@ export const episodesLed = (details, kind = "movie") =>
  * `request`: "ask" | un porcentaje | null. Las palabras son las de design/vocabulario.json. */
 export function debridAction(request) {
   // FQ1-A: ya arranca en otro idioma; al lado de «Ver», pedir el tuyo («Pedir a la nube en latino»).
-  if (request?.label) return { id: "rd-request", icon: "download", label: request.label, short: "Pedirla" };
-  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedir a la nube", short: "Pedir" };
-  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en la nube · ${request} %`, short: "Tu pedido", active: true }; // PT3: el % va en su renglón, con barra
+  // PT5: la nube con flecha (la flecha sola es «Descargar»).
+  if (request?.label) return { id: "rd-request", icon: "cloudDownload", label: request.label, short: "Pedirla" };
+  if (request === "ask") return { id: "rd-request", icon: "cloudDownload", label: "Pedir a la nube", short: "Pedir" };
+  if (typeof request === "number") return { id: "rd-request", icon: "cloudDownload", label: `Bajando en la nube · ${request} %`, short: "Tu pedido", active: true }; // PT3: el % va en su renglón, con barra
   return null;
 }
 
