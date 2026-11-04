@@ -42,7 +42,7 @@ PRECEDENCE = {GONE: 6, READY: 5, REFUSED: 4, NO_PEERS: 3, DOWNLOADING: 2, QUEUED
 WORDS = {QUEUED: "En cola", NO_PEERS: "Sin gente que lo comparta", REFUSED: "Real-Debrid no lo dejó bajar",
          TOO_MANY: "Muchas descargas activas", READY: "Listo"}
 DETAILS = {QUEUED: "La nube lo recibió y espera turno", NO_PEERS: "Puede tardar días · Prueba otra versión",
-           REFUSED: "Prueba otra versión", TOO_MANY: "Cancela otra descarga para hacer lugar", READY: "Ya arranca al instante"}
+           REFUSED: "Prueba otra versión", TOO_MANY: "Lo vuelvo a pedir cuando se libere un lugar", READY: "Ya arranca al instante"}
 
 # Dónde, cómo y por qué de un pedido (Fernando, 3 nov: «¿descargando dónde?»; el mismo texto del iPhone, adaptado: la TV
 # siempre avisa en pantalla). Va en la ficha mientras baja, en la hoja del pedido y antes del primer pedido.
@@ -447,7 +447,8 @@ class RdRequests:
     # --- el seguimiento ------------------------------------------------------------------------------------------
     def start(self) -> None:
         """Al arrancar Orbital: si quedó algo en camino (o sin migrar), se le vuelve a seguir."""
-        if any(not HASH.match(k) or v.get("state") in ACTIVE for k, v in self._all().items()):
+        if any(not HASH.match(k) or v.get("state") in ACTIVE or (v.get("state") == TOO_MANY and not v.get("retried"))
+               for k, v in self._all().items()):  # N3-A: lo que espera lugar también se sigue
             self.watch()
 
     def watch(self) -> None:
@@ -507,7 +508,7 @@ class RdRequests:
             log.info("No pude ver tus pedidos en Real-Debrid: %s", exc)
             return not exc.bad_key
         self._migrate(rd, torrents)
-        pending = False
+        pending = self._retry_too_many(rd, account)
         for req in self._entries():
             if req.get("state") not in ACTIVE or not self._mine(req, account):
                 continue
@@ -529,6 +530,33 @@ class RdRequests:
             pending = pending or self._all()[req["hash"]].get("state") in ACTIVE
         self.prune()
         return pending
+
+    def _retry_too_many(self, rd, account: str | None) -> bool:
+        """N3-A (Fernando, 4 nov): «Muchas descargas activas» se vuelve a pedir solo, una vez, en el siguiente vistazo en que
+        Real-Debrid tenga lugar. True mientras quede alguno esperando su lugar (el seguimiento no se detiene)."""
+        waiting = [r for r in self._entries() if r.get("state") == TOO_MANY and not r.get("retried")
+                   and r.get("by") == DEVICE and self._mine(r, account)]
+        if not waiting:
+            return False
+        try:
+            room = rd.active_count()
+        except realdebrid.RealDebridError as exc:
+            log.info("No pude ver cuántas descargas tienes activas: %s", exc)
+            return True
+        if not room or room[0] >= room[1]:
+            return True  # sigue lleno: se vuelve a ver en el siguiente vistazo
+        req = waiting[0]  # uno por vistazo: el lugar libre puede ser solo uno
+        files = req.get("files") or {}
+        try:
+            rd_id = rd.add(req["hash"], next(iter(files.values())) if len(files) == 1 else None, pack=req.get("kind") == "series")
+        except realdebrid.RealDebridError as exc:
+            log.info("Volví a pedir %s y no se pudo: %s", req.get("title"), exc)
+            self._update(req["hash"], {"retried": True, **({"state": REFUSED} if exc.refused else {})})
+            return len(waiting) > 1
+        self._update(req["hash"], {"retried": True, "rd_id": rd_id, "state": QUEUED, "progress_at": time.time()})
+        self.publish({"type": "toast", "ok": True, "message": f"Volví a pedir {req.get('title') or 'tu pedido'}",
+                      "detail": "Ya se liberó un lugar en tu Real-Debrid"})
+        return True
 
     def _update(self, info_hash: str, change: dict) -> dict:
         """Cambia una entrada releyéndola bajo el candado (un POST del iPhone puede llegar a la vez)."""

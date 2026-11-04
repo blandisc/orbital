@@ -17,7 +17,7 @@ from urllib.parse import quote
 import pytest
 
 from orbital import rd_requests, watch
-from orbital.library import addons, streams
+from orbital.library import addons, realdebrid, streams
 
 HERE = Path(__file__).parent / "fixtures" / "rd-scenarios"
 SCENARIOS = sorted((HERE / "escenarios").glob("*.json"))
@@ -69,6 +69,16 @@ class FakeRD:
 
     def __init__(self, rd: dict) -> None:
         self.torrents = {t["id"]: t for t in rd.get("torrents") or []}
+        self.error = rd.get("error")
+
+    def add(self, info_hash, file_idx=None, pack=False):
+        """`POST /torrents/addMagnet`: lo que diga `rd.error` o lo acepta."""
+        if self.error:
+            raise realdebrid.RealDebridError(self.error["name"], self.error.get("http"), self.error.get("code"))
+        return "RNEW"
+
+    def select(self, rd_id, file_idx=None, pack=False):
+        pass
 
     def info(self, rd_id):
         return self.torrents[rd_id]
@@ -138,6 +148,11 @@ def run(library, monkeypatch):
         meta = load(HERE / scn["cinemeta"]) if scn.get("cinemeta") else {}
         meta = meta.get("meta", meta)
         monkeypatch.setattr(w.cinemeta, "meta", lambda kind, meta_id, localized=True: meta)
+        if scn.get("act") == "request":  # tocas «Pedir a la nube» una vez antes de mirar
+            try:
+                w.request_debrid(title["kind"], title["id"], title["video_id"], "")
+            except LookupError:
+                pass
         got = w.availability(title["kind"], title["id"], title["video_id"])
         chosen = w.choose_source(title["kind"], title["video_id"], prefs) if got["why"] != "no-addons" else None
         return {"availability": got, "chosen": chosen, "prefs": prefs}
@@ -149,7 +164,10 @@ WHY = {"ok": "play", "requested": "requested", "debrid": "request", "unreleased"
 MESSAGES = {"Tu Real-Debrid venció": "expired", "Tu cuenta no tiene Premium": "no_premium",
             "Vuelve a conectar Real-Debrid": "bad_key", "Real-Debrid no lo dejó bajar": "refused",
             "No pude conectar con tus complementos": "addons_offline", "No tienes complementos prendidos": "no_addons",
-            "Todavía no está en la nube": "not_in_rd", "Nadie lo tiene todavía en internet": "nobody_has_it",
+            "Todavía no está en la nube": "not_in_rd",
+            # Error 21: el botón vuelve a ser «Pedir a la nube» con «Muchas descargas activas · Lo vuelvo a pedir cuando se
+            # libere un lugar» (N3-A); es la causa «todavía no está» con su renglón.
+            "Muchas descargas activas": "not_in_rd", "Nadie lo tiene todavía en internet": "nobody_has_it",
             "No puedo buscar versiones": "cannot_search"}
 
 
@@ -179,8 +197,6 @@ def cause_of(got: dict) -> str | None:
 @pytest.mark.parametrize("path", SCENARIOS, ids=[p.stem for p in SCENARIOS])
 def test_escenario(path, run):
     scn = load(path)
-    if scn.get("act"):
-        pytest.skip("con «act» (pedir antes de mirar): todavía no")
     exp = scn["expected"]
     skip = TV_DIFFERS.get(scn["id"], ("", ""))[0].split()
     out = run(scn)

@@ -35,6 +35,7 @@ class FakeRD:
         self.user_id = 7
         self.missing = set()  # rd_ids que dan 404
         self.fail_add = None
+        self.room = (0, 25)  # GET /torrents/activeCount: (activas, cuántas deja tu cuenta)
 
     def user(self):
         return {"id": self.user_id}
@@ -64,6 +65,9 @@ class FakeRD:
 
     def link(self, info, file_idx=None):
         return (f"https://download.real-debrid.com/{file_idx}.mkv", "Nocturno.S01E01.1080p.Dual-Lat.mkv")
+
+    def active_count(self):
+        return self.room
 
     def delete(self, rd_id):
         self.deleted.append(rd_id)
@@ -317,3 +321,20 @@ def test_a_finished_request_is_instant_and_first_and_one_from_the_iphone_refresh
     assert finder.forgot == []
     reqs.receive({**entry, "state": "ready", "percent": 100})
     assert finder.forgot == ["tt0061752"]
+
+
+def test_n3_too_many_is_asked_again_once_when_there_is_room(setup):
+    """N3-A (Fernando, 4 nov): «Muchas descargas activas» se vuelve a pedir solo, una vez, cuando haya lugar."""
+    reqs, rd, events, state, _, _ = setup
+    rd.fail_add = realdebrid.RealDebridError("Muchas descargas activas", 503, 21)
+    got = reqs.request("movie", "tt9", "Midsommar", streams.Preferences())
+    assert got["state"] == "too_many" and got["detail"] == "Lo vuelvo a pedir cuando se libere un lugar"
+    rd.fail_add, rd.room = None, (25, 25)
+    assert reqs.tick() is True and rd.added == []  # sigue lleno: espera, sin dejar de seguirlo
+    rd.room = (24, 25)
+    assert reqs.tick() is True and rd.added == [(H1, None, False)]
+    assert reqs.status("tt9")["state"] == "queued" and state.data[rd_requests.STATE_ID][H1]["retried"] is True
+    assert any(e.get("message") == "Volví a pedir Midsommar" for e in events)
+    state.data[rd_requests.STATE_ID][H1]["state"] = "too_many"
+    reqs.tick()
+    assert len(rd.added) == 1  # una sola vez
