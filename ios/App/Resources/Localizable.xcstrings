@@ -136,10 +136,64 @@
     "Así funciona: tocas «Ver», la nube lo tiene y lo ves": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Así funciona: tocas «Ver», la nube lo tiene y lo ves"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Así funciona: tocas «Ver», la nube lo tiene y lo ves"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Así funciona: haces clic en «Ver», la nube lo tiene y lo ves"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Así funciona: tocas «Ver», la nube lo tiene y lo ves"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How it works: you tap “Watch”, the cloud has it and you watch it"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "How it works: you tap “Watch”, the cloud has it and you watch it"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "How it works: you tap “Watch”, the cloud has it and you watch it"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "How it works: you click “Watch”, the cloud has it and you watch it"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "How it works: you tap “Watch”, the cloud has it and you watch it"
+                }
+              }
+            }
           }
         }
       }
@@ -279,10 +333,64 @@
     "Toca lo que ya tienes. Mantén presionado para saber qué es.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca lo que ya tienes. Mantén presionado para saber qué es."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca lo que ya tienes. Mantén presionado para saber qué es."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic en lo que ya tienes. Mantén el clic para saber qué es."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca lo que ya tienes. Mantén presionado para saber qué es."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap what you already have. Touch and hold to learn what it is."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap what you already have. Touch and hold to learn what it is."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap what you already have. Touch and hold to learn what it is."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click what you already have. Click and hold to learn what it is."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap what you already have. Touch and hold to learn what it is."
+                }
+              }
+            }
           }
         }
       }
@@ -312,10 +420,64 @@
     "Tu iPhone, control de tu TV": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone, control de tu TV"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad, control de tu TV"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone, control de tu TV"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone, control de tu TV"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your iPhone, your TV remote"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone, your TV remote"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad, your TV remote"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac, your TV remote"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone, your TV remote"
+                }
+              }
+            }
           }
         }
       }
@@ -378,10 +540,64 @@
     "Doble toque a los lados: 10 s": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble toque a los lados: 10 s"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble toque a los lados: 10 s"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble clic a los lados: 10 s"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble toque a los lados: 10 s"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Double tap the sides: 10 s"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double tap the sides: 10 s"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double tap the sides: 10 s"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double click the sides: 10 s"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double tap the sides: 10 s"
+                }
+              }
+            }
           }
         }
       }
@@ -466,10 +682,64 @@
     "Cada toque extra suma otros 10.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada toque extra suma otros 10."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada toque extra suma otros 10."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada clic extra suma otros 10."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cada toque extra suma otros 10."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Each extra tap adds another 10."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each extra tap adds another 10."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each extra tap adds another 10."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each extra click adds another 10."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Each extra tap adds another 10."
+                }
+              }
+            }
           }
         }
       }
@@ -565,10 +835,64 @@
     "Doble toque: 10 s": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble toque: 10 s"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble toque: 10 s"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble clic: 10 s"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doble toque: 10 s"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Double tap: 10 s"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double tap: 10 s"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double tap: 10 s"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double click: 10 s"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Double tap: 10 s"
+                }
+              }
+            }
           }
         }
       }
@@ -675,10 +999,64 @@
     "Espacio en tu iPhone": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Espacio en tu iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Espacio en tu iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Espacio en tu Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Espacio en tu iPhone"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Space on your iPhone"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Space on your iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Space on your iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Space on your Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Space on your iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -774,10 +1152,64 @@
     "Mantén presionado y súbelo.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mantén presionado y súbelo."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mantén presionado y súbelo."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mantén el clic y súbelo."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mantén presionado y súbelo."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touch and hold, then move it up."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Touch and hold, then move it up."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Touch and hold, then move it up."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click and hold, then move it up."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Touch and hold, then move it up."
+                }
+              }
+            }
           }
         }
       }
@@ -884,10 +1316,64 @@
     "Pasa al iPhone en el mismo minuto.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pasa al iPhone en el mismo minuto."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pasa al iPad en el mismo minuto."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pasa al iPhone en el mismo minuto."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pasa al iPhone en el mismo minuto."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moves to the iPhone at the same minute."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Moves to the iPhone at the same minute."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Moves to the iPad at the same minute."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Moves to the Mac at the same minute."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Moves to the iPhone at the same minute."
+                }
+              }
+            }
           }
         }
       }
@@ -1060,10 +1546,64 @@
     "Toca y ya": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca y ya"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca y ya"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un clic y ya"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca y ya"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Just tap"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Just tap"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Just tap"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Just click"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Just tap"
+                }
+              }
+            }
           }
         }
       }
@@ -1104,10 +1644,64 @@
     "Tu iPhone, igual": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone, igual"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPad, igual"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu Mac, igual"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu iPhone, igual"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your iPhone, unchanged"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone, unchanged"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPad, unchanged"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Mac, unchanged"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your iPhone, unchanged"
+                }
+              }
+            }
           }
         }
       }
@@ -1148,10 +1742,64 @@
     "Un toque acerca": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un toque acerca"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un toque acerca"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un clic acerca"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un toque acerca"
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One tap zooms in"
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One tap zooms in"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One tap zooms in"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One click zooms in"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One tap zooms in"
+                }
+              }
+            }
           }
         }
       }
@@ -2515,10 +3163,64 @@
     "Lo que guardes para ver sin internet vive aquí, en tu iPhone.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que guardes para ver sin internet vive aquí, en tu iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que guardes para ver sin internet vive aquí, en tu iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que guardes para ver sin internet vive aquí, en tu Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que guardes para ver sin internet vive aquí, en tu iPhone."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What you save to watch offline lives here, on your iPhone."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you save to watch offline lives here, on your iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you save to watch offline lives here, on your iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you save to watch offline lives here, on your Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you save to watch offline lives here, on your iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -2526,10 +3228,64 @@
     "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPhone.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Lo que pides a la nube está en Real-Debrid; lo descargado vive en tu iPhone."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What you request to the cloud is on Real-Debrid; what you download lives on your iPhone."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you request to the cloud is on Real-Debrid; what you download lives on your iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you request to the cloud is on Real-Debrid; what you download lives on your iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you request to the cloud is on Real-Debrid; what you download lives on your Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you request to the cloud is on Real-Debrid; what you download lives on your iPhone."
+                }
+              }
+            }
           }
         }
       }
@@ -3400,10 +4156,64 @@
     "Un toque acerca un póster; el segundo abre su ficha.": {
       "extractionState": "manual",
       "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un toque acerca un póster; el segundo abre su ficha."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un toque acerca un póster; el segundo abre su ficha."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un clic acerca un póster; el segundo abre su ficha."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Un toque acerca un póster; el segundo abre su ficha."
+                }
+              }
+            }
+          }
+        },
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One tap zooms a poster in; the second opens its page."
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One tap zooms a poster in; the second opens its page."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One tap zooms a poster in; the second opens its page."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One click zooms a poster in; the second opens its page."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "One tap zooms a poster in; the second opens its page."
+                }
+              }
+            }
           }
         }
       }
