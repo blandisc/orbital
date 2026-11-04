@@ -54,10 +54,11 @@ extension TitleModel {
         return found.first { shown.contains($0.index) }
     }
 
-    /// El pedido del video que toca (película o el episodio del botón), si hay.
+    /// El pedido del video que toca (película o el episodio del botón), si hay: el anotado para ese video o el paquete que lo
+    /// trae (Torrentio lista esa misma huella para este episodio).
     public var debridRequest: DebridRequest? {
         guard let videoID = continueVideoID else { return nil }
-        return services.debridRequests.request(metaID: metaID, videoID: videoID)
+        return services.debridRequests.request(metaID: metaID, videoID: videoID, listed: listedHashes[videoID] ?? [])
     }
 
     /// IOS-19 · lo que otra cuenta de Real-Debrid (la de tu TV) está pidiendo de este mismo video.
@@ -88,14 +89,14 @@ extension TitleModel {
     /// complementos apagados y lo que dijo Torrentio en lugar de versiones.
     func cause(videoID: String, language: String, offer: DebridOffer?) async -> UnavailableCause? {
         // 1 · Ya lo pediste y Real-Debrid lo está bajando: eso va primero.
-        if let request = services.debridRequests.request(metaID: metaID, videoID: videoID), request.state.isActive {
+        if let request = services.debridRequests.request(metaID: metaID, videoID: videoID, listed: listedHashes[videoID] ?? []), request.state.isActive {
             return .downloading(percent: request.percent)
         }
         // 2 · Una película que aún no se estrena (un episodio lo dice el botón: «Sale el …»). Antes decía «Nadie lo tiene».
-        if kind == "movie", offer == nil, let day = Self.airDate(meta?["released"]?.string) { return .unreleased(day: releaseDay(day)) }
+        if kind == "movie", offer == nil, let day = Self.airDate(meta?["released"]?.string, now: services.now()) { return .unreleased(day: releaseDay(day)) }
         let notices = await services.finder.notices(kind: kind, videoID: videoID)
         let health: DebridHealth? = notices.contains(where: \.aboutTheAccount) ? await services.debrid.refreshAfterTrouble() : nil
-        let account = UnavailableCause.Account.from(health, saved: services.debrid.saved, now: Date())
+        let account = UnavailableCause.Account.from(health, saved: services.debrid.saved, now: services.now())
         if let byAccount = UnavailableCause.first(notice: nil, account: account, language: language) { return byAccount }
         // Sin tu clave de Real-Debrid, casi nada se ve en el iPhone (Torrentio no da enlaces sin ella): esa es la causa, tengas
         // armada tu lista de complementos o no (antes, sin lista, «Sin versiones por ahora» sin salida).
@@ -114,6 +115,9 @@ extension TitleModel {
         let english = services.appSettings.uiLanguage.hasPrefix("en")
         let f = DateFormatter()
         f.locale = Locale(identifier: english ? "en_US" : "es_MX")
+        // El estreno de Cinemeta es un día (medianoche en UTC): dicho en tu huso, en México salía un día antes («jueves 17»
+        // por «viernes 18»; escenarios comunes con la TV, 3 nov).
+        f.timeZone = TimeZone(identifier: "UTC")
         f.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
         let text = f.string(from: date)
         return english ? text : "el " + text.replacingOccurrences(of: ",", with: "")

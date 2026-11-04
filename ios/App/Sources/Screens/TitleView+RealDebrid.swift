@@ -30,7 +30,7 @@ extension TitleView {
         case .request?, .requested?, .otherVersion?: break
         default: return nil
         }
-        if let request = model.debridRequest, request.state != .ready {
+        if let request = model.debridRequest, request.state != .ready, request.state != .tooMany {
             let alternative = model.debridOffer.flatMap(instantAside)
             // IOS-7: el mismo «¿Cancelar el pedido?» con «Seguir esperando» que la hoja y la lista (antes cancelaba sin preguntar).
             let cancel: (title: Text, symbol: String, action: () -> Void) = (Text("Cancelar pedido"), "xmark.circle", { cancelling = request })
@@ -51,6 +51,8 @@ extension TitleView {
         guard let offer = model.debridOffer else { return nil }
         // IOS-19: si la TV ya lo pide con otra cuenta, se dice; pedirlo aparte (con la tuya) sigue a un toque.
         let others = model.otherAccountRequest.map { _ in tr("La TV lo está pidiendo con otra cuenta") }
+            // «Muchas descargas activas · Cancela otra descarga para hacer lugar»: lo que contestó la última vez.
+            ?? model.debridRequest.flatMap { $0.state == .tooMany ? DebridRequestWords.title($0, tr) + " · " + DebridRequestWords.detail($0, now: now, notifies: false, tr) : nil }
         return ContinueAction(title: Text("Pedir a la nube"), symbol: "arrow.down.circle",
                               version: Text(verbatim: others ?? UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
                               play: { requestFromDebrid(model) }, aside: instantAside(offer), tint: artAccent)

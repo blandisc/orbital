@@ -85,6 +85,8 @@ public final class TitleModel: ObservableModel {
     let services: Services
     /// Si Torrentio sin Real-Debrid contestó que no hay ningún torrent (por título): la causa 11.
     var lookupEmpty: [String: Bool] = [:]
+    /// Las huellas que Torrentio dio para cada video (la última búsqueda): un paquete pedido desde otro episodio las comparte.
+    var listedHashes: [String: Set<String>] = [:]
     private(set) var meta: JSON?           // la ficha ORIGINAL
     private var localized: JSON?
     /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
@@ -219,6 +221,7 @@ public final class TitleModel: ObservableModel {
         do {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
+            listedHashes[videoID] = Set(found.compactMap { $0.torrent?.hash })
             bestSource = Source.best(found)
             // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
             // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
@@ -304,7 +307,7 @@ public final class TitleModel: ObservableModel {
                               watched: watched.contains(ep.id), progress: ongoing ? progress : nil,
                               timeLeft: ongoing ? PlaybackRules.timeLeft(left) : "",
                               leftMinutes: ongoing ? PlaybackRules.minutesLeft(left) : 0, download: downloadStates[ep.id],
-                              airs: Self.airDate(ep.released))
+                              airs: Self.airDate(ep.released, now: services.now()))
         }
     }
 
@@ -368,7 +371,7 @@ public final class TitleModel: ObservableModel {
     }
 
     /// El video de «Ver» todavía no sale: cuándo.
-    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0) } }
+    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0, now: services.now()) } }
 
     func episode(_ id: String) -> (Int, Episode)? {
         for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }

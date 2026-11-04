@@ -28,7 +28,9 @@ extension TitleModel {
     public func primary(now: Date = Date()) -> TitlePrimary? {
         guard continueVideoID != nil else { return nil }
         if continueAirs == nil, recommendedSource?.instant != true {
-            if let request = debridRequest, request.state != .ready {
+            // «Muchas descargas activas» (error 21): Real-Debrid no lo agregó y nadie lo vuelve a pedir solo. Se ofrece pedirlo
+            // otra vez (con esa línea), como la TV; antes quedaba «en camino» para siempre (escenarios comunes, 3 nov).
+            if let request = debridRequest, request.state != .ready, request.state != .tooMany {
                 return DebridRequestWords.suggestsOtherVersion(request, now: now) ? .otherVersion(request) : .requested(request)
             }
             if debridOffer != nil, sourceCheck != .offline { return .request }
