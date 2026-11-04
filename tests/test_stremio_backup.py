@@ -140,3 +140,20 @@ def test_trakt_agrega_de_cien_en_cien(monkeypatch):
     assert sent[0][:2] == ("POST", "/users/me/lists/100/items") and sent[1][2]["shows"] == [{"ids": {"imdb": "tt999"}}]
     with pytest.raises(trakt_api.TraktError):
         client.add_list_items("../x", items)
+
+
+def test_trakt_lee_todas_las_paginas_de_una_lista(monkeypatch):
+    """4 nov 2026: «Mi lista Stremio» tenía 210 y se leían 100 (Trakt da las listas de cien en cien)."""
+    from orbital.library import trakt as trakt_api
+
+    client = trakt_api.Trakt("id", "secreto", credentials=None)
+    rows = [{"type": "movie", "movie": {"title": f"P{i}", "year": 2000, "ids": {"imdb": f"tt{i:07d}"}}} for i in range(210)]
+    pages = []
+
+    def get(path, auth=True, **params):
+        pages.append(params["page"])
+        start = (params["page"] - 1) * params["limit"]
+        return rows[start:start + params["limit"]]
+
+    monkeypatch.setattr(client, "_get", get)
+    assert len(client.list_items("38004492")) == 210 and pages == [1, 2, 3]

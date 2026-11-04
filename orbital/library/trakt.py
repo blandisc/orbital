@@ -597,9 +597,18 @@ class Trakt:
         return None
 
     def list_items(self, list_id: str) -> list[dict]:
+        """Todos los títulos de tu lista. Trakt los da de cien en cien (con `page`): antes solo se leía la primera página y
+        una lista de 210 parecía de 100 (4 nov 2026, «Mi lista Stremio»)."""
         if not str(list_id).isdigit():
             raise TraktError("Lista inválida")
-        return _typed(self._get(f"/users/me/lists/{list_id}/items", extended="full"))
+        rows: list = []
+        for page in range(1, 51):  # hasta 5 000 títulos
+            got = self._get(f"/users/me/lists/{list_id}/items", extended="full", page=page, limit=100)
+            got = got if isinstance(got, list) else []
+            rows += got
+            if len(got) < 100:
+                break
+        return _typed(rows)
 
     def public_list_items(self, user: str, slug: str) -> list[dict]:
         """Los títulos de la lista pública de otra persona (sin tu sesión): «Aprobadas por la crítica» de series."""
