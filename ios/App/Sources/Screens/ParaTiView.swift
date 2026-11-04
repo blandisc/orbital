@@ -68,7 +68,10 @@ struct ParaTiView: View {
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         // El mismo encabezado que Inicio (Fernando, 31 oct 2026): «Para ti» a la izquierda, donde va el logo, y los pósters debajo.
-        .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
+        // En el iPad y la Mac, el título del sistema como Biblioteca: de pie la barra de pestañas va en ese renglón y iOS lo
+        // oculta; con el título a mano quedaba encimado a la hora y a la barra (4 nov 2026).
+        .navigationTitle(ThisDevice.platform == "iphone" ? Text(verbatim: "") : Text("Explorar"))
+        .toolbarTitleDisplayMode(ThisDevice.platform == "iphone" ? .inline : .inlineLarge)
         // Solo en el mosaico: en las listas no hay pósters que acercar.
         .learnCoach(.explore, title: "Explorar", detail: "Un toque acerca un póster; el segundo abre su ficha.", active: m.mode == .mosaic)
         .toolbar {
@@ -80,7 +83,7 @@ struct ParaTiView: View {
                         .accessibilityLabel(Text("Regresar a Explorar"))
                         .accessibilityIdentifier("paraTi-back")
                 }
-            } else {
+            } else if ThisDevice.platform == "iphone" {
                 ToolbarItem(placement: .topBarLeading) { ScreenMark(title: Text("Explorar")) }
                     .sharedBackgroundVisibility(.hidden)
             }
