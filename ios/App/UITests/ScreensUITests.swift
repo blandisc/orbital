@@ -45,17 +45,19 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(app.buttons["title-link"].firstMatch.waitForExistence(timeout: 15), "la lista del género aparece")
         print("GENRE-OPEN \(Date().timeIntervalSince(start)) s")
     }
-    /// Buscar: la barra se ve al abrir, se esconde al bajar y vuelve al subir.
-    func testSearchBarHidesOnScroll() {
+    /// Buscar: la barra se ve al abrir y se queda al bajar y al subir. La barra de pestañas ya no se encoge (Fernando, 2 nov
+    /// 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»); antes esta prueba pedía que se
+    /// escondiera.
+    func testSearchBarStaysOnScroll() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
         app.launch()
         let field = revealSearchField()
         XCTAssertTrue(field.exists, "la barra a la vista al abrir")
         XCTAssertTrue(field.isHittable)
-        app.swipeUp()
-        XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar, la barra se esconde")
+        app.swipeUp(); sleep(1)
+        XCTAssertTrue(field.exists && field.isHittable, "al bajar, la barra sigue")
         app.swipeDown(); app.swipeDown()
-        XCTAssertTrue(waitUntil { field.exists && field.isHittable && field.frame.width > 200 }, "al subir, vuelve")
+        XCTAssertTrue(waitUntil { field.exists && field.isHittable && field.frame.width > 200 }, "al subir, sigue completa")
         XCTAssertFalse(app.keyboards.firstMatch.exists, "sin teclado todavía")
     }
 
@@ -149,10 +151,10 @@ final class ScreensUITests: XCTestCase {
         return field
     }
 
-    /// Buscar hasta el fondo: la barra de abajo se queda escondida (antes brincaba entre salir y esconderse con el
-    /// rebote del final) y vuelve al subir con el dedo. También con algo sonando en la TV (el accesorio sobre la barra).
-    func testSearchBarStaysHiddenAtTheBottom() { searchBarAtTheBottom(tv: false) }
-    func testSearchBarStaysHiddenAtTheBottomWithTV() { searchBarAtTheBottom(tv: true) }
+    /// Buscar hasta el fondo: la barra de abajo se queda a la vista, sin brincar con el rebote del final (la barra ya no se
+    /// encoge, 2 nov 2026). También con algo sonando en la TV (el accesorio sobre la barra).
+    func testSearchBarStaysAtTheBottom() { searchBarAtTheBottom(tv: false) }
+    func testSearchBarStaysAtTheBottomWithTV() { searchBarAtTheBottom(tv: true) }
 
     private func searchBarAtTheBottom(tv: Bool) {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"] + (tv ? ["-demo-tv-now"] : [])
@@ -166,17 +168,17 @@ final class ScreensUITests: XCTestCase {
         // La barra de abajo: con la lupa (iOS 27) o con el campo (iOS 26).
         let tab = app.tabBars.buttons["Buscar"], field = app.searchFields.firstMatch
         let barShown = { (tab.exists && tab.isHittable) || (field.exists && field.isHittable && field.frame.minY > self.app.frame.midY) }
-        XCTAssertFalse(barShown(), "en el fondo, la barra escondida")
+        XCTAssertTrue(barShown(), "en el fondo, la barra sigue a la vista")
         to.press(forDuration: 0.05, thenDragTo: from, withVelocity: 400, thenHoldForDuration: 0.3)
-        XCTAssertTrue(waitUntil { barShown() }, "al subir con el dedo, vuelve")
+        XCTAssertTrue(waitUntil { barShown() }, "al subir con el dedo, sigue")
     }
 
     /// Buscar › «Ver todo» de lo más popular hoy: abre la lista completa, un título se abre y se regresa, y funciona otra vez.
     func testPopularSeeAllOpens() {
         app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
         app.launch()
-        // El encabezado entero es el botón: su nombre junta el título y «Ver todo».
-        let seeAll = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Ver todo'")).firstMatch
+        // El encabezado entero es el botón; «Ver todo» es la flecha junto al título (su pista, no su nombre).
+        let seeAll = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Lo más popular hoy'")).firstMatch
         XCTAssertTrue(seeAll.waitForExistence(timeout: 20), "el botón «Ver todo»")
         for round in 1...2 {
             seeAll.tap()
@@ -219,24 +221,11 @@ final class ScreensUITests: XCTestCase {
         XCTAssertTrue(waitUntil { !one.isSelected }, "«Las clásicas» la quita")
     }
 
-    /// Buscar: al bajar despacio (como con el dedo, a 120 cuadros por segundo cada cuadro avanza poco), la barra se va igual.
-    func testSearchBarHidesOnSlowScroll() {
-        app.launchArguments = ["-demo", "-demo-tab", "2", "-demo-no-idle"]
-        app.launch()
-        let field = revealSearchField()
-        XCTAssertTrue(field.exists, "la barra a la vista al abrir")
-        sleep(2)
-        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
-        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
-        from.press(forDuration: 0.1, thenDragTo: to, withVelocity: 300, thenHoldForDuration: 0.3)
-        XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar despacio, la barra se esconde")
-    }
+    /// Buscar con el campo abierto (vacío o con algo escrito): al bajar, el campo sigue ahí (la barra ya no se encoge, 2 nov).
+    func testOpenFieldStaysOnScroll() { openFieldStaysOnScroll(typing: nil) }
+    func testTypedFieldStaysOnScroll() { openFieldStaysOnScroll(typing: "the") }
 
-    /// Buscar con el campo abierto (vacío o con algo escrito): al bajar, la barra se esconde igual (antes se quedaba fija).
-    func testOpenFieldHidesOnScroll() { openFieldHidesOnScroll(typing: nil) }
-    func testTypedFieldHidesOnScroll() { openFieldHidesOnScroll(typing: "the") }
-
-    private func openFieldHidesOnScroll(typing text: String?) {
+    private func openFieldStaysOnScroll(typing text: String?) {
         app.launchArguments = ["-demo", "-demo-tab", "0", "-demo-free-tabs", "-demo-no-idle"]
         app.launch()
         let tab = app.tabBars.buttons["Buscar"]
@@ -248,7 +237,7 @@ final class ScreensUITests: XCTestCase {
         if let text { app.typeText(text); sleep(4) }
         let field = app.searchFields.firstMatch
         app.swipeUp(); sleep(1); app.swipeUp()
-        XCTAssertTrue(waitUntil { !field.exists || !field.isHittable || field.frame.width < 120 }, "al bajar, la barra se esconde")
+        XCTAssertTrue(waitUntil { field.exists && field.isHittable }, "al bajar, el campo sigue")
     }
 
     /// Tocar la lupa dos veces (desde otra pestaña): el primer toque abre Buscar, el segundo el campo con el teclado.

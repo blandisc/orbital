@@ -37,12 +37,13 @@ final class IPhoneUnchangedUITests: XCTestCase {
 
     func testBrowseShowsTwoGenresPerRow() {
         open(["-demo-tab", "2"])
-        let action = app.descendants(matching: .any)["art-tile-genre-action"], comedy = app.descendants(matching: .any)["art-tile-genre-comedy"]
-        let drama = app.descendants(matching: .any)["art-tile-genre-drama"]
+        // Los 20 géneros empiezan Acción, Aventura, Comedia (31 oct 2026).
+        let action = app.descendants(matching: .any)["art-tile-genre-action"], adventure = app.descendants(matching: .any)["art-tile-genre-adventure"]
+        let comedy = app.descendants(matching: .any)["art-tile-genre-comedy"]
         if !action.waitForExistence(timeout: 20) { app.swipeUp() }
-        XCTAssertTrue(drama.waitForExistence(timeout: 20), "no salen los géneros")
-        XCTAssertEqual(action.frame.minY, comedy.frame.minY, accuracy: 2, "Acción y Comedia en el mismo renglón")
-        XCTAssertGreaterThan(drama.frame.minY, action.frame.maxY - 2, "Drama ya en el siguiente: dos por renglón")
+        XCTAssertTrue(comedy.waitForExistence(timeout: 20), "no salen los géneros")
+        XCTAssertEqual(action.frame.minY, adventure.frame.minY, accuracy: 2, "Acción y Aventura en el mismo renglón")
+        XCTAssertGreaterThan(comedy.frame.minY, action.frame.maxY - 2, "Comedia ya en el siguiente: dos por renglón")
         XCTAssertGreaterThan(action.frame.width, width * 0.4, "cada género ocupa casi la mitad del ancho")
         shot("buscar")
         // Tocar un género abre su lista (las piezas del catálogo son enfocables para el teclado del iPad: el toque sigue igual).

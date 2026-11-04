@@ -84,7 +84,10 @@ final class PlayerStuckUITests: XCTestCase {
         app.launch()
         sleep(12)
         let close = app.buttons["player-close"]
-        for _ in 0..<3 where !close.exists { app.tap(); sleep(2) }   // un toque a la vez: dos seguidos los vuelven a esconder
+        // Un toque a la vez (dos seguidos los vuelven a esconder), sobre el video: el centro de la pantalla cae en la tarjeta
+        // de «Siguiente episodio», que no muestra los controles.
+        let video = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
+        for _ in 0..<3 where !close.exists { video.tap(); sleep(2) }
         XCTAssertTrue(close.exists, "con los controles a la vista")
         shot("c1-abajo")
         let screen = app.windows.firstMatch.frame
