@@ -176,6 +176,9 @@ public actor Trakt {
         return out
     }
 
+    /// Lo mismo que `allPages`, como un `JSON` (para quien antes leía `get` y luego `.array`).
+    func allPagesJSON(_ path: String, _ params: [(String, String)] = []) async throws -> JSON? { .array(try await allPages(path, params)) }
+
     func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
         var (status, data) = try await call("GET", path, auth: auth, params: params)
         if status == 401 && auth {
@@ -254,8 +257,8 @@ public actor Trakt {
         // La marca, las películas y las series, las tres a la vez. Sin marca (Trakt no la dio) se guardan igual, solo que la
         // próxima vez se bajan completas.
         async let stamp = try? favoritesStamp()
-        async let movies = get("/sync/favorites/movies", [("extended", "full")])
-        async let shows = get("/sync/favorites/shows", [("extended", "full")])
+        async let movies = allPagesJSON("/sync/favorites/movies", [("extended", "full")])
+        async let shows = allPagesJSON("/sync/favorites/shows", [("extended", "full")])
         // Cada `async let` se espera en su propia línea: esperarlo a media expresión (con `??`, `+` o un arreglo) rompía el
         // asignador de tareas con el compilador de la CI («freed pointer was not the last allocation», 31 oct 2026).
         let movieRows: JSON? = try await movies

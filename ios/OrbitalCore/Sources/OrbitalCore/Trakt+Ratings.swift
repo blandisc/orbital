@@ -6,9 +6,9 @@ import Foundation
 extension Trakt {
     /// Todo lo que calificaste: películas y series por IMDb, capítulos por video id → 1…10.
     public func myRatings() async throws -> [String: Int] {
-        async let movies = get("/sync/ratings/movies")
-        async let shows = get("/sync/ratings/shows")
-        async let episodes = get("/sync/ratings/episodes")
+        async let movies = allPagesJSON("/sync/ratings/movies")
+        async let shows = allPagesJSON("/sync/ratings/shows")
+        async let episodes = allPagesJSON("/sync/ratings/episodes")
         let eps: JSON? = (try? await episodes).flatMap { $0 }   // los capítulos son extra: si fallan, lo demás sigue
         // Cada `async let` se espera en su propia línea: esperarlo a media expresión (con `??`, `+` o un arreglo) rompía el
         // asignador de tareas con el compilador de la CI («freed pointer was not the last allocation», 31 oct 2026).
