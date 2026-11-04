@@ -152,6 +152,15 @@ enum ReleaseNotifier {
         return try? UNNotificationAttachment(identifier: id, url: file, options: [UNNotificationAttachmentOptionsTypeHintKey: "public.jpeg"])
     }
 
+    /// Los avisos de esa serie, fuera: los que ya llegaron y los que esperaban la mañana (al dejar de seguirla o esconderla).
+    @MainActor static func forget(_ metaID: String) async {
+        let center = UNUserNotificationCenter.current()
+        let delivered = await center.deliveredNotifications().filter { $0.request.content.threadIdentifier == thread(metaID) }.map(\.request.identifier)
+        center.removeDeliveredNotifications(withIdentifiers: delivered)
+        let waiting = await center.pendingNotificationRequests().filter { $0.content.threadIdentifier == thread(metaID) }.map(\.identifier)
+        center.removePendingNotificationRequests(withIdentifiers: waiting)
+    }
+
     /// Tocar el aviso o uno de sus botones.
     @MainActor static func handle(_ response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
@@ -164,10 +173,7 @@ enum ReleaseNotifier {
             await env.playOnTV(kind: kind, metaID: id, videoID: video, title: title)
         case Action.unfollow:
             _ = await env.follow.setFollowing(id, false)
-            // Los otros avisos de esa serie, fuera.
-            let center = UNUserNotificationCenter.current()
-            let delivered = await center.deliveredNotifications().filter { $0.request.content.threadIdentifier == thread(id) }.map(\.request.identifier)
-            center.removeDeliveredNotifications(withIdentifiers: delivered)
+            await forget(id)
         case Action.download:
             _ = await env.services.queueDownload(kind: kind, metaID: id, videoID: video ?? id, title: title, originalTitle: title, subtitle: "",
                                                  poster: String(format: ForYou.metahubPoster, id))

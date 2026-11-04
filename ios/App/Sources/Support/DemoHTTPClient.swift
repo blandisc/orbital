@@ -295,6 +295,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         ("tt11280740", "Severance", "show", 5), ("tt15239678", "Dune: Part Two", "movie", 30), ("tt0903747", "Breaking Bad", "show", 200),
     ]
     var nextTraktList = 106
+    /// Las series escondidas en Trakt (SS1-A). `-demo-hidden-shows` empieza con Chernobyl escondida, para ver «Escondidas».
+    var traktHidden: Set<String> = ProcessInfo.processInfo.arguments.contains("-demo-hidden-shows") ? ["tt7366338"] : []
 
     /// Lo que manda `orbital/foryou.py` para un `video_item`, con `rank` si es de un chart.
     private static func demoRow(_ imdb: String, _ title: String, _ year: Int, _ kind: String, rank: Int? = nil, why: String) -> JSON {

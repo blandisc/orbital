@@ -235,4 +235,17 @@ final class LibrarySyncTests: XCTestCase {
         let again = await r.watch.importFromStremio(kv: kv)
         XCTAssertEqual(again, 0, "una sola vez")
     }
+
+    /// SS1-A: lo que escondiste en la TV o en trakt.tv (`shows.hidden_at` cambió) se trae, y solo cuando cambió.
+    func testHiddenShowsArePulledWhenTheyChange() async throws {
+        let r = rig()
+        r.http.json["\(api)/sync/last_activities"] = ["shows": ["hidden_at": "2026-11-03T10:00:00.000Z"]]
+        r.http.json["\(api)/users/hidden/progress_watched?type=show&limit=1000"] = [["type": "show", "show": ["title": "Lost", "ids": ["imdb": "tt0411008", "trakt": 4]]]]
+        let changed = await r.sync.pull()
+        XCTAssertTrue(changed, "Inicio se vuelve a armar sin ella")
+        XCTAssertEqual(ForYou.hidden(r.kv), ["tt0411008"])
+        let calls = r.http.calls.filter { $0.contains("/users/hidden/") }.count
+        await r.sync.pull()
+        XCTAssertEqual(r.http.calls.filter { $0.contains("/users/hidden/") }.count, calls, "la marca no cambió: no se vuelve a preguntar")
+    }
 }
