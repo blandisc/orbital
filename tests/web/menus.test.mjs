@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { debridCancelMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { debridCancelMenu, debridRemoteMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -795,4 +795,12 @@ test("AU1-A y AU2-A (Fernando, 3 nov): «¿Qué es esto?» con los textos del iP
   assert.ok(explainerMenu("addons").options.every((o) => o.command.type === "stay")); // solo se leen
   assert.ok(settingsMissing({}).some((m) => m.label === "Sin iPhone"));
   assert.ok(!settingsMissing({ realdebrid: { linked: true } }).some((m) => m.label === "Sin iPhone"));
+});
+
+test("K1-A (Fernando, 3 nov): cerrar «¿Usar la cuenta?» sin contestar borra la clave que llegó del celular", () => {
+  const menu = debridRemoteMenu({ code: "abc", account: "fernando" });
+  assert.equal(menu.title, "¿Usar la cuenta fernando?");
+  assert.deepEqual(menu.cancel, { type: "rd-remote-cancel", code: "abc" }); // B o tocar fuera = Cancelar
+  assert.equal(menu.options[0].label, "Cancelar");
+  assert.match(menu.subtitle, /Si cierras, se borra/);
 });

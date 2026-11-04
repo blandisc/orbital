@@ -1426,11 +1426,13 @@ export const DEBRID_FORM = {
 export function debridRemoteMenu(event) {
   return {
     title: event.account ? `¿Usar la cuenta ${event.account}?` : "¿Usar esta clave?",
-    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige Cancelar.",
+    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige Cancelar. Si cierras, se borra.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "rd-remote-cancel", code: event.code } },
       { icon: "check", label: "Usar", command: { type: "rd-remote-confirm", code: event.code } },
     ],
+    // K1-A (Fernando, 3 nov): cerrar sin contestar (B, tocar fuera) la borra; antes se quedaba en memoria hasta 20 min.
+    cancel: { type: "rd-remote-cancel", code: event.code },
   };
 }
 
