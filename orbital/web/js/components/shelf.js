@@ -227,6 +227,7 @@ export function createShelf({ onPick, onSwipe }) {
       });
     });
     place();
+    rowEls.forEach((row, index) => index !== r && edges(row));
   }
 
   /** Cambia solo una fila (las demás se quedan como están): moverte por «Porque viste» ya no rehace toda la biblioteca. */
@@ -249,6 +250,8 @@ export function createShelf({ onPick, onSwipe }) {
       const widths = cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
       const x = c < 0 ? 0 : rowOffset(widths, c, { gap: metrics.gap, grow: (widths[c] ?? 0) * (metrics.scale - 1), visible: row.rest.clientWidth });
       row.track.style.transform = `translateX(${-x}px)`;
+      row.track.dataset.x = String(x);
+      edges(row);
       // La primera sugerida, al crecer, se salía por la izquierda del recorte: solo entonces se le deja ese lugar.
       row.rest.classList.toggle("shelf__stage-rest--first", c === 0 && x === 0);
       return;
@@ -258,6 +261,22 @@ export function createShelf({ onPick, onSwipe }) {
     const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);
     const x = (row.centered ? centeredOffset : rowOffset)(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
     row.track.style.transform = `translateX(${-x}px)`;
+    row.track.dataset.x = String(x);
+    edges(row);
+  }
+
+  /** Como en Inicio (Fernando, 4 nov): si hay más a la derecha, la orilla derecha de la fila se desvanece; al llegar al
+   *  final, el último se ve entero. También en las filas sin el foco (se calcula con lo que cada una ya se movió). */
+  function edges(row) {
+    if (!metrics) return;
+    const x = Number(row.track.dataset.x || 0);
+    const visible = row.rest ? row.rest.clientWidth : metrics.visible;
+    // El ancho como lo cuenta place() (una tarjeta ancha se dibuja más grande que su caja: scrollWidth no lo ve).
+    const cards = row.cards.slice(row.seeds || 0);
+    const widths = row.measured && !row.seeds ? row.els.map((node) => node.offsetWidth)
+      : cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+    const total = widths.reduce((sum, w) => sum + w, 0) + metrics.gap * Math.max(0, widths.length - 1);
+    (row.rest || row.rowEl).classList.toggle("shelf__edge--more", total - x - visible > 4);
   }
 
   /** Ya no hay más hacia ese lado: la tarjeta se empuja un poco para que se note. */

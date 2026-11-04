@@ -218,7 +218,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Lo enfocado de una fila siempre entero a la vista (crece al enfocarse: se cuenta lo que crece). */
   function keepVisible(viewport, track) {
     const node = track.querySelector(`[data-focus-id="${focusId}"]`);
-    if (!node) return;
+    // Sin el foco en esta fila, igual se dice si hay más a la derecha (Fernando, 4 nov: las consolas no se desvanecían
+    // porque el borde solo se calculaba en la fila enfocada).
+    if (!node) return edges(viewport, track, Number(track.dataset.shift || 0));
     const room = track.clientWidth;
     const grow = node.offsetWidth * .1;
     const left = node.offsetLeft - grow;
