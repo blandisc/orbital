@@ -70,7 +70,7 @@ final class IPadLayoutUITests: XCTestCase {
 
     /// Tocar una serie o película abre su ficha en el panel de la derecha (de pie y acostado): lo de atrás sigue a la vista
     /// y se puede usar, y la ✕ la cierra.
-    func testTitleOpensInTheSidePanel() {
+    func testTitleOpensInAFloatingCard() {
         for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
             open(["-demo-tab", "2"], orientation)
             let poster = app.buttons["title-link"].firstMatch
@@ -79,8 +79,7 @@ final class IPadLayoutUITests: XCTestCase {
             let close = app.buttons["title-panel-close"]
             XCTAssertTrue(close.waitForExistence(timeout: 20), "\(orientation.rawValue): la ficha no abrió en el panel")
             XCTAssertTrue(app.buttons["title-play"].waitForExistence(timeout: 20), "\(orientation.rawValue): el panel no enseña la ficha")
-            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Inicio")).firstMatch.isHittable,
-                          "\(orientation.rawValue): con la ficha abierta se sigue navegando")
+            // 4 nov 2026: la ficha flota a la izquierda, del tamaño del iPhone; la pantalla de atrás espera hasta cerrarla.
             shot("ficha-panel-\(orientation == .portrait ? "v" : "h")")
             close.tap()
             XCTAssertFalse(close.waitForExistence(timeout: 3), "\(orientation.rawValue): la ✕ no cierra el panel")
