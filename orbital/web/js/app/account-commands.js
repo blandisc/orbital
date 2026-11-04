@@ -1,3 +1,5 @@
+import { languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
+
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
 export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
@@ -141,6 +143,17 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
     },
     "trakt-account": async (command, context) => {
       return openMenu(traktAccountMenu(), nested(context));
+    },
+    // Ajustes › Ver › Tus idiomas (N4-A): cada cambio se guarda al hacerlo y regresa a la lista.
+    "languages": async (command, context) => openMenu(languagesMenu(state.settings?.languages || []), nested(context)),
+    "language": async (command, context) => openMenu(languageMenu(state.settings?.languages || [], command.code), nested(context)),
+    "language-add": async (command, context) => openMenu(languageAddMenu(state.settings?.languages || []), nested(context)),
+    "languages-set": async (command, context) => {
+      applySettings(await api.setSettings({ languages: command.languages }));
+      sound.play("select");
+      ui.toast.show("Guardé tus idiomas", { detail: "La próxima búsqueda ya los usa" });
+      const where = command.back && context?.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : context;
+      return openMenu(languagesMenu(state.settings?.languages || []), where);
     },
     "remembered": async (command, context) => {
       return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));

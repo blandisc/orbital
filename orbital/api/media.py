@@ -230,6 +230,7 @@ def router(d: Deps) -> APIRouter:
         if recommended and downloads is not None and downloads.file_for(video or id):
             recommended.update(line="Tu descarga · sin internet", lang="")  # «Ver» la pone del disco
         return {"sources": [s.public() for s in found], "audio": prefs.audio, "spanish": prefs.spanish,
+                "plan": list(prefs.plan),  # N4-A: el resto de Tus idiomas («original» incluido): el orden de las filas
                 "quality": prefs.quality, "meta": info, "recommended": recommended}
 
     @r.get("/availability")

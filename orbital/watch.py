@@ -151,10 +151,12 @@ def player_source_label(source: streams.Source) -> str:
 
 def player_ui_day(when: float) -> str:
     """«el viernes 6», «mañana», «hoy a las 9 p. m.»: cuándo sale algo, como lo dice la interfaz."""
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
-    day = datetime.fromtimestamp(when)
-    today = datetime.now().date()
+    # Cinemeta da el estreno como un día (medianoche UTC): en México eso era la tarde del día anterior y decía «sale el
+    # jueves 17» de lo que sale el viernes 18 (error 3 del iPhone). Un día se dice en UTC; una hora, en la tuya.
+    day = datetime.fromtimestamp(when, UTC).replace(tzinfo=None) if when % 86400 == 0 else datetime.fromtimestamp(when)
+    today = datetime.fromtimestamp(time.time()).date()
     if day.date() == today:
         return "hoy"
     if day.date() == today + timedelta(days=1):
@@ -688,6 +690,29 @@ class Watch:
         self.streams.forget_all()
         return {**self.addon_status(), "previous": before}
 
+    @property
+    def languages(self) -> list[str]:
+        """Ajustes › Tus idiomas (N4-A): lo guardado o, si nunca la tocaste, la que sale de tu «Idioma» de antes."""
+        langs = self.setting("languages")
+        if streams.valid_languages(langs):
+            return list(langs)
+        return list(streams.languages_from_audio(str(self.setting("audio", self.config.stremio.audio) or "en")))
+
+    def set_languages(self, langs: list[str]) -> None:
+        """Guarda tu orden y lo lleva a donde se usa (N4-A: la única fuente): el «Idioma» de antes (lo que todavía lo lee),
+        los «Idiomas primero» de Torrentio y las búsquedas ya hechas (se vuelven a ordenar)."""
+        if not streams.valid_languages(langs):
+            raise ValueError("Ese orden de idiomas no sirve")
+        self.state.set_setting("languages", list(langs))
+        if langs[0] in ("en", "es-419", "es-ES"):
+            self.state.set_setting("audio", langs[0])
+        codes = {v: k for k, v in torrentio.LANGUAGES.items()}
+        wanted = [codes[c] for c in langs if c in codes]
+        options = dict(self.addon_list.torrentio().options or {})
+        if options.get("language") != wanted:
+            self.set_torrentio({**options, "language": wanted})
+        self.streams.forget_all()
+
     @staticmethod
     def check_rd_token(token: str) -> str:
         """El usuario de Real-Debrid de esa clave (para «¿Usar la cuenta fernando?»). ValueError si no la reconoce y
@@ -1076,6 +1101,10 @@ class Watch:
     @property
     def stream_prefs(self) -> streams.Preferences:
         """Ajustes › Idioma: «en», «es» (cualquier español), «es-419» (latino) o «es-ES» (castellano)."""
+        quality = self.setting("quality", self.config.stremio.quality)
+        langs = self.setting("languages")
+        if streams.valid_languages(langs):  # N4-A: Ajustes › Tus idiomas manda
+            return streams.prefs_from_languages(langs, quality)
         audio = str(self.setting("audio", self.config.stremio.audio) or "en")
         variant = spanish_variant(audio)
         if audio == "es" and not variant:  # el ajuste de antes («Español» + «Latino» aparte)
@@ -1180,9 +1209,19 @@ class Watch:
         prefs = self.asked_language({"meta_id": meta_id})[0]
         out = {"why": "ok", "message": "", "detail": "", "can_request": False, "request": self.rd.status(video_id)}
         req = out["request"]
+        if not (req and req.get("mine")) and kind == "series":
+            try:  # un paquete tuyo que se sigue bajando y que Torrentio lista para este episodio: ya está pedido
+                listed = {s.info_hash for s in self.stream_sources(kind, video_id, prefs) if s.info_hash and not s.doubtful}
+            except stremio_api.StremioError:
+                listed = set()
+            pack = self.rd.pack_for(meta_id, listed) if listed else None
+            if pack:
+                out["request"] = req = pack
         if req and req.get("mine") and req["state"] in rd_requests.ACTIVE:
+            stuck = str(req.get("detail") or "").startswith("Sigue sin bajar")  # 24 h sin avanzar: su hoja ofrece otra
             return {**out, "why": "requested", "message": req["message"],
-                    "detail": req["detail"] if req["state"] not in (rd_requests.DOWNLOADING, rd_requests.QUEUED) else rd_requests.CLOUD}
+                    "detail": req["detail"] if stuck or req["state"] not in (rd_requests.DOWNLOADING, rd_requests.QUEUED)
+                    else rd_requests.CLOUD}
         when = self._release_of(kind, meta_id, video_id)
         if when and when > time.time():
             day = player_ui_day(when)
@@ -1727,11 +1766,15 @@ class Watch:
         if parts[0] == "kitsu":
             facts.setdefault("original", "ja")  # Anime Kitsu: sin IMDb ni TMDB, su idioma original es japonés
         try:
-            name = self.cinemeta.meta(kind, meta_id).get("name")
+            info = self.cinemeta.meta(kind, meta_id)
         except cinemeta.CinemetaError:
-            name = None
+            info = {}
+        name = info.get("name")
         if isinstance(name, str) and name:
             facts["titles"] = [*facts.get("titles", []), name]
+        year = re.match(r"(19|20)\d\d", str(info.get("year") or info.get("releaseInfo") or ""))
+        if year:
+            facts.setdefault("year", int(year.group()))  # una versión que dice otro año es otra película
         return facts
 
     def _tracks_seen(self, meta: dict, tracks: list[dict]) -> str | None:
