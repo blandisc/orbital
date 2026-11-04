@@ -52,9 +52,9 @@ enum Demo {
         case "trakt": env.notify("Tu sesión de Trakt se cerró", detail: "Sin ella no llegan tus recomendaciones", tone: .warn, actionTitle: "Conectar") {}
         case "cola":
             env.notify("Quitada de Mi lista", detail: "Oppenheimer", tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {}
-            env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+            env.notify("Todavía no está en la nube", detail: "Los estrenos suelen llegar unas horas después")
         case "perdido": env.notify("No cabe en el iPhone", detail: "Hacen falta 2400 MB y hay 1100 MB libres.", tone: .error, action: .downloads, actionTitle: "Descargas")
-        case "neutral": env.notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+        case "neutral": env.notify("Todavía no está en la nube", detail: "Los estrenos suelen llegar unas horas después")
         // El aviso al tocar «Ver» con tu Real-Debrid vencido (`TitleView+Acciones`), sin buscar fuentes de verdad.
         case "rd-vencido":
             let cause = UnavailableCause.debridExpired
@@ -228,7 +228,8 @@ enum Demo {
     static var rdRequest: String? { value(after: "-demo-rd-request") }
 
     @MainActor static func seedRequests(_ services: Services) {
-        guard let wanted = rdRequest else { return }
+        // `offer`: nada pedido todavía, la versión latina «↓ Por pedir» (RX3-A, «Así funciona» con `-demo-debrid-intro`).
+        guard let wanted = rdRequest, wanted != "offer" else { return }
         let book = services.debridRequests.requester.book
         let now = Date()
         func entry(_ hash: String, _ title: String, _ meta: String, _ video: String, _ season: Int?, _ episode: Int?, _ state: DebridRequest.State,
@@ -249,7 +250,7 @@ enum Demo {
         default: (.downloading, 42)
         }
         // T2 E5 es donde vas en la biblioteca de mentira (la ficha y «Seguir viendo»); el pedido trae también T2 E6 (la tarjeta del
-        // siguiente episodio). Antes era solo T2 E6 y la ficha decía «Pedirlo y avisarme» en lugar de «Bajando… 42 %».
+        // siguiente episodio). Antes era solo T2 E6 y la ficha decía «Pedir a la nube» en lugar de «Bajando… 42 %».
         book.put(entry("a", "The Office", "tt0386676", "tt0386676:2:5", 2, 5, office.0, office.1, ago: wanted == "stalled" ? 27 * 3600 : 360))
         if wanted == "all" {
             var tv = entry("b", "Nocturne", "tt1160419", "tt1160419", nil, nil, .queued, 0, ago: 1200, device: "TV")

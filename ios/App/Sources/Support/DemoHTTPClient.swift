@@ -509,17 +509,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
         }
-        // `-demo-rd-request …`: Real-Debrid todavía no tiene tu versión (latino, «por bajar») y otra en inglés sí arranca;
-        // con `none`, nadie lo tiene. Para ver «Pedirlo y avisarme» y los estados del pedido.
-        if let rd = Demo.rdRequest, rd != "ready" {
-            guard rd != "none" else { return HTTPResponse(status: 200, data: JSON.object(["streams": []]).serialized()) }
-            let pending = "https://demo.orbital.invalid/resolve/realdebrid/DEMO/\(Self.demoTorrent)/null/1/Demo.S02E06.1080p.LATINO.mkv"
-            return HTTPResponse(status: 200, data: JSON.object(["streams": [
-                ["name": "[RD download] Torrentio\n1080p", "title": "Demo.S02E06.1080p.WEB-DL.LATINO\n👤 12 💾 1.2 GB ⚙️ Cinecalidad\n🇲🇽", "url": .string(pending)],
-                ["name": "[RD+] Torrentio\n720p", "title": "Demo.S02E06.720p.WEB-DL.ENG\n👤 40 💾 700 MB ⚙️ EZTV",
-                 "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"],
-            ]]).serialized())
-        }
+        if let found = Self.requestStreams() { return found }   // `-demo-rd-request …` (DemoHTTPClient+RD)
         // `-demo-video <url>` solo (sin `-demo-versions`): una sola versión con ese video, para cualquier título (p. ej. el MKV 4:3
         // de `scripts/ios_software_path.sh`, como los de Los Simpson). Antes solo valía junto con `-demo-versions`.
         if let video = Demo.value(after: "-demo-video"), !ProcessInfo.processInfo.arguments.contains("-demo-versions") {

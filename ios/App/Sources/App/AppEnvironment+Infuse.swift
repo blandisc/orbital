@@ -34,7 +34,7 @@ extension AppEnvironment {
                     Task { await self?.playExternal(request, source: source) }
                 }
             }
-            return notify("Real-Debrid aún no lo tiene", detail: "Los estrenos suelen llegar unas horas después")
+            return notify("Todavía no está en la nube", detail: "Los estrenos suelen llegar unas horas después")
         }
         // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
         let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first

@@ -309,6 +309,7 @@ def test_subtitles_from_subtitle_addons_in_your_language(monkeypatch):
 
     monkeypatch.setattr(streams.StreamFinder, "_get_json", fake_get)
     finder = streams.StreamFinder(addons.AddonRegistry(Client(), auth=lambda: "key"))
+    finder.internet_subtitles = lambda: False  # solo los de la lista (OpenSubtitles de Orbital va aparte)
     assert finder.subtitles("movie", "tt0816692", "en") == ["https://subs/en.srt"]
     assert asked == [("OpenSubtitles", "subtitles/movie/tt0816692.json")]
     # Un addon solo de subtítulos no se usa para buscar fuentes.
@@ -975,8 +976,9 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
     assert mpv.props["pause"] is True
     placed.clear()
     placed.append((1287, 699, 576, 324))
+    before = len(mpv.sent)  # lo que manda desde aquí (antes, «los últimos 3»: un repintado de más lo sacaba y fallaba a veces)
     p._pip_tap(156, 156)  # volver a pantalla completa
-    assert not p.pip and placed[-1] == (0, 0, 1920, 1080) and ("set_property", "fullscreen", True) in mpv.sent[-3:]
+    assert not p.pip and placed[-1] == (0, 0, 1920, 1080) and ("set_property", "fullscreen", True) in mpv.sent[before:]
 
 
 def test_the_small_video_buttons_say_pause_while_it_plays(monkeypatch):
@@ -1346,17 +1348,32 @@ def test_watch_now_in_the_credits_saves_the_episode_as_seen():
     assert saved == [(2640.0, 2640.0)]  # visto: se guarda al final, no a 4 min
 
 
-def test_the_pause_fades_in_and_the_logo_waits_for_the_end():
+def test_the_pause_fades_in_and_the_logo_waits_for_the_end(monkeypatch):
     """En pausa todo entra con un fundido en pasos (no de golpe); el último paso es la pausa entera."""
+    from orbital import player_screen
+    steps = []
+
+    class Timer:  # los pasos del fundido se corren a mano, en orden (con el reloj de verdad, a veces el primero ya había
+        def __init__(self, delay, fn, args=()):  # pasado antes de mirarlo y la prueba fallaba sin razón)
+            self.delay, self.fn, self.args, self.daemon = delay, fn, args, True
+
+        def start(self):
+            steps.append(self)
+
+        def cancel(self):
+            pass
+
+    monkeypatch.setattr(player_screen.threading, "Timer", Timer)
     p, mpv = make_player(pause=True)
-    p.PAUSE_FADE_STEP = .01
     p.show_hud(paused=True)
     first = mpv.overlays[1]
     assert "En pausa" in first  # el texto ya está, pero más transparente
-    deadline = time.monotonic() + 2
-    while "\\1a&H70&" not in mpv.overlays[1] and time.monotonic() < deadline:  # el velo ya con su oscuridad entera
-        time.sleep(.01)
+    fades = sorted((s for s in steps if s.fn.__name__ == "step"), key=lambda s: s.delay)
+    assert len(fades) > 1
+    for s in fades:
+        s.fn(*s.args)
     final = mpv.overlays[1]
+    assert "\\1a&H70&" in final  # el velo ya con su oscuridad entera
     assert final != first and player_ui.fade(final, .35) == first
     p.show_hud(paused=True)  # ya en pausa, volver a pintarla no la funde otra vez
     assert mpv.overlays[1] == final
@@ -1419,3 +1436,24 @@ def test_the_bottom_line_shows_the_flag_instead_of_the_language():
     assert len(drawn) > 1 and "Sin subtítulos" in drawn[-1]  # la bandera (sus franjas) y después el texto
     assert player_ui.current_flag([{"type": "audio", "selected": True, "lang": "spa", "title": "Latino"}]) == "mx"
     assert player_ui.current_flag([]) is None
+
+
+def test_opensubtitles_comes_with_orbital_and_follows_the_setting(monkeypatch):
+    """OpenSubtitles ya no es complemento (Fernando, 3 nov 2026): el traído de Stremio no se pregunta, el de Orbital sí
+    mientras «Buscar subtítulos en internet» esté prendido."""
+    class Client:
+        def request(self, method, params):
+            return {"addons": [{"transportUrl": "https://opensubtitles-v3.strem.io/manifest.json",
+                                "manifest": {"name": "OpenSubtitles v3", "resources": ["subtitles"]}}]}
+
+    asked = []
+    monkeypatch.setattr(streams.StreamFinder, "_get_json", lambda self, addon, path: asked.append(addon.name) or {})
+    monkeypatch.setattr(streams.addons, "fetch_json",
+                        lambda url, timeout=0: asked.append(url) or {"subtitles": [{"url": "https://subs/es.srt", "lang": "spa"}]})
+    finder = streams.StreamFinder(addons.AddonRegistry(Client(), auth=lambda: "key"))
+    assert finder.subtitles("movie", "tt1", "es") == ["https://subs/es.srt"]
+    assert asked == ["https://opensubtitles-v3.strem.io/subtitles/movie/tt1.json"], "una sola vez, el de Orbital"
+    asked.clear()
+    finder.internet_subtitles = lambda: False
+    assert finder.subtitles("movie", "tt1", "es") == []
+    assert asked == []

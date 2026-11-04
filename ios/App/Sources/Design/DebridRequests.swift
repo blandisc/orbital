@@ -53,16 +53,18 @@ struct IconBeside<Content: View>: View {
 /// ¿descargando dónde? ¿cómo funciona esto?»): Real-Debrid lo baja en su nube, no en este iPhone (no ocupa espacio), y al
 /// terminar arranca al instante. «te aviso» solo si este aparato va a avisar (IOS-8); «y en tu TV» solo con TV. Con
 /// `explain`, «¿Qué es esto?» lleva a la explicación animada. En la hoja del pedido, en la ficha mientras baja y antes del
-/// primer «Pedirlo y avisarme».
+/// primer «Pedir a la nube».
 struct DebridWhereLine: View {
     var notifies = true
     var tv = false
+    /// RX2-A · arriba ya dice cuánto falta (la hoja del pedido): sin «Suele tardar…», que lo contradecía.
+    var paced = false
     var explain: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             IconBeside(symbol: "icloud.and.arrow.down") {
-                Text("\(Text("Real-Debrid lo baja en su nube por ti, no en tu iPhone."))\(Text(verbatim: " "))\(tv ? Text("Cuando termine, arranca al instante aquí y en tu TV.") : Text("Cuando termine, arranca al instante aquí."))\(Text(verbatim: " "))\(notifies ? Text("Suele tardar de minutos a horas; te aviso.") : Text("Suele tardar de minutos a horas."))")
+                Text("\(DeviceWords.text("La nube es tu Real-Debrid: lo baja por ti, no en este iPhone.", mac: "La nube es tu Real-Debrid: lo baja por ti, no en esta Mac."))\(Text(verbatim: " "))\(tv ? Text("Cuando termine, arranca al instante aquí y en tu TV.") : Text("Cuando termine, arranca al instante aquí."))\(Text(verbatim: paced ? "" : " "))\(paced ? Text(verbatim: "") : notifies ? Text("Suele tardar de minutos a horas; te aviso.") : Text("Suele tardar de minutos a horas."))")
                     .recipe(.footnote).fixedSize(horizontal: false, vertical: true)
             }
             if let explain {
@@ -93,6 +95,9 @@ struct DebridRequestSheet: View {
     let turnOnNotifications: () -> Void
     /// «Ver ahora» (listo).
     var watchNow: (() -> Void)?
+    /// RX2-A · mientras baja en la nube, la que ya arranca en tus idiomas («Ver Inglés · 1080p, ya arranca») y, junto,
+    /// «Esperar a que llegue» (cierra la hoja). nil sin otra al instante: solo cuánto lleva.
+    var instead: (title: Text, action: () -> Void)?
     let otherVersion: (() -> Void)?
     /// «Abrir la ficha» (desde «Tus pedidos»); nil en la ficha misma.
     let openTitle: (() -> Void)?
@@ -115,7 +120,7 @@ struct DebridRequestSheet: View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             DSSheetHeader(title: Text(verbatim: name), subtitle: Text(verbatim: since), close: close)
             status.padding(DS.Space.s4).dsCard(.card)
-            if !finished { DebridWhereLine(notifies: notifies && !notificationsOff, tv: tv) }   // dónde y cómo (3 nov)
+            if !finished { DebridWhereLine(notifies: notifies && !notificationsOff, tv: tv, paced: true) }   // dónde y cómo (3 nov)
             if notificationsOff && !finished {
                 Button(action: turnOnNotifications) {
                     Label("Avisos apagados · actívalos", systemImage: "bell.slash").font(DS.TextRecipe.footnote.font)
@@ -132,6 +137,14 @@ struct DebridRequestSheet: View {
                     Button(action: watchNow) { Label("Ver ahora", systemImage: "play.fill").frame(maxWidth: .infinity) }
                         .dsPrimaryButton(size: .large)
                         .accessibilityIdentifier("debrid-watch-now")
+                }
+                if let instead, !finished {
+                    Button(action: instead.action) { Label { instead.title } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity) }
+                        .dsPrimaryButton(size: .large)
+                        .accessibilityIdentifier("debrid-instead")
+                    Button(action: close) { Text("Esperar a que llegue").frame(maxWidth: .infinity) }
+                        .dsSecondaryButton().controlSize(.large)
+                        .accessibilityIdentifier("debrid-wait")
                 }
                 if let manageDownloads {
                     Link(destination: manageDownloads) { Label("Abrir tus descargas de Real-Debrid", systemImage: "arrow.up.right").frame(maxWidth: .infinity) }
@@ -196,8 +209,8 @@ struct DebridNotifyPrompt: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             DSSheetHeader(title: Text("Para avisarte cuando esté"),
-                          subtitle: Text("Orbital te manda un aviso cuando Real-Debrid termine. Solo eso: nada de promociones."))
-            DebridWhereLine(notifies: false, tv: tv)   // el primer «Pedirlo y avisarme»: dónde y cómo, antes de pedir permiso
+                          subtitle: Text("Orbital te manda un aviso cuando la nube termine. Solo eso: nada de promociones."))
+            DebridWhereLine(notifies: false, tv: tv)   // el primer «Pedir a la nube»: dónde y cómo, antes de pedir permiso
             VStack(spacing: DS.Space.s2) {
                 Button(action: allow) { Label("Permitir avisos", systemImage: "bell").frame(maxWidth: .infinity) }
                     .dsPrimaryButton(size: .large)
@@ -207,6 +220,30 @@ struct DebridNotifyPrompt: View {
             }
         }
         .dsSheetContent()
+    }
+}
+
+/// RX3-A (3 nov, alineado con la guía de bienvenida) · «Así funciona», una sola vez: la primera vez que ves una versión «↓ Por
+/// pedir» (en «Versión» o en la ficha). Los tres pasos animados, que no ocupa espacio en este aparato y «Entendido». Quién
+/// la enseña y cómo recuerda que ya se vio: `DebridFlowIntroHost`.
+struct DebridFlowIntro: View {
+    let done: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s4) {
+            DSSheetHeader(title: Text("Así funciona"),
+                          subtitle: Text("La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti."))
+            DebridFlowStrip()
+            IconBeside(symbol: "internaldrive") {
+                DeviceWords.text("No ocupa espacio en este iPhone.", mac: "No ocupa espacio en esta Mac.").recipe(.secondary, color: DS.text)
+            }
+            Button(action: done) { Text("Entendido").frame(maxWidth: .infinity) }
+                .dsPrimaryButton(size: .large)
+                .accessibilityIdentifier("debrid-flow-intro-done")
+        }
+        .dsSheetContent()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("debrid-flow-intro")
     }
 }
 

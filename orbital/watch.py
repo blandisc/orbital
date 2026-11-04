@@ -170,7 +170,7 @@ def ready_now(source: streams.Source) -> bool:
     """Arranca ya y es de verdad este título: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que
     bajarla» solo da el video de aviso de 30 s de Real-Debrid; una grabada en el cine, un tráiler o una que parece de otro
     título no cuentan («El viento tiene miedo»: se ofrecía «Verlo al instante» con una que no era)."""
-    return (source.cached or not source.debrid) and not ({"CAM", "Tráiler"} & set(source.tags)) and not source.other_title
+    return (source.cached or not source.debrid) and not ({"CAM", "Tráiler"} & set(source.tags)) and not source.doubtful
 
 
 def fallback_source(found: list[streams.Source], audio: str, native: bool = True) -> streams.Source | None:
@@ -187,10 +187,10 @@ def give_up_words(title: str, left: list[streams.Source], audio: str) -> tuple[s
     """Por qué no se pudo y qué hacer, en palabras (aviso con título y detalle)."""
     language = streams.LANG_NAMES.get(audio, audio)
     if any(audio in s.languages and s.debrid and not s.cached for s in left):
-        return (f"Real-Debrid aún no tiene {title} en {language.lower()}",
-                "Pídelo desde la ficha: lo baja y te aviso cuando esté")
+        return (f"{title} todavía no está en la nube en {language.lower()}",
+                "Pídelo a la nube desde la ficha: lo baja y te aviso cuando esté")
     if any(not s.cached and s.debrid for s in left):
-        return f"Real-Debrid aún no tiene {title}", "Pídelo desde la ficha: lo baja y te aviso cuando esté"
+        return f"{title} todavía no está en la nube", "Pídelo a la nube desde la ficha: lo baja y te aviso cuando esté"
     return f"No pude abrir ninguna versión de {title}", "Las que hay no abrieron · inténtalo más tarde o elige otra con Y"
 
 
@@ -220,13 +220,14 @@ def version_grid(found: list[streams.Source], prefs: streams.Preferences, curren
     rows: dict[str, dict] = {}
     for src in usable:  # ya van de mejor a peor
         langs = src.audio_langs or {code: "assumed" for code in src.languages} or {"": "maybe"}
-        res = src.resolution if src.resolution in VERSION_RES else "SD"
+        res = streams.res_class(src.resolution)  # 1440p va con las de 1080p
+        res = res if res in VERSION_RES else "SD"
         for code, how in langs.items():
             row = rows.setdefault(code, {"code": code, "original": False, "cells": {}, "size": 0})
             row["original"] |= how == "original"
             row["size"] += 1
             cell = row["cells"].setdefault(res, {"source": src, "how": how, "all": []})
-            if (not _sure(cell["how"]) and _sure(how)) or (cell["source"].other_title and not src.other_title):
+            if (not _sure(cell["how"]) and _sure(how)) or (cell["source"].doubtful and not src.doubtful):
                 cell.update(source=src, how=how)
             cell["all"].append(src.index)
     dub = prefs.spanish if prefs.spanish in streams.SPANISH_VARIANTS else None
@@ -474,6 +475,7 @@ class Watch:
         self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
                                   / "pistas-de-audio.json") if config.source else None)
         self.streams.tracks = self.heard.get
+        self.streams.internet_subtitles = lambda: bool(self.setting("internet_subtitles", True))
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes, live=False: self.events.publish({
@@ -1121,7 +1123,13 @@ class Watch:
         found = self.streams.find(kind, video_id, prefs or self.stream_prefs)
         req = self.rd.status(video_id)
         if not (req and req.get("mine") and req.get("state") == rd_requests.READY):
-            return found
+            # Otro episodio de un paquete de temporada que pediste y ya está: el archivo de este episodio lo dice
+            # Torrentio (solo se marca lo que lista; nunca se adivina el archivo). Error 1 del iPhone.
+            packs = self.rd.ready_packs(video_id.split(":")[0]) if kind == "series" else set()
+            same = [s for s in found if s.info_hash in packs and not s.doubtful]
+            for s in same:
+                s.cached, s.requested = True, True
+            return [*same, *[s for s in found if s not in same]] if same else found
         # Tu pedido ya terminó: Torrentio puede seguir marcando ese torrent «[RD download]» un rato. Cuenta como al
         # instante («Al instante · la pediste») y va primero; si Torrentio no lo lista, se arma con el archivo pedido.
         done = str(req.get("hash") or "").lower()
@@ -1154,8 +1162,10 @@ class Watch:
             found = self.stream_sources(kind, video_id, prefs)
         except stremio_api.StremioError as exc:
             return {**out, "why": "no-addons", "message": "No puedo buscar versiones", "detail": str(exc)}
-        if any(ready_now(s) for s in found):
-            return out
+        ready = [s for s in found if ready_now(s)]
+        if ready:
+            offer = self._dub_offer(kind, video_id, prefs, found, ready)
+            return {**out, "offer": offer} if offer else out
         outcome = self.streams.outcome.get(f"{kind}:{video_id}")
         if self.rd.client() is not None:  # tu cuenta va antes que lo de cada versión (el orden de vocabulario.json)
             cause = DEBRID_CAUSES.get(self.debrid_status(fresh=outcome == "debrid-account").get("problem") or "")
@@ -1167,16 +1177,36 @@ class Watch:
         if outcome == "no-addons":
             return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
                     "detail": "Ajustes › Complementos"}
+        if self.rd.client() is None:
+            # Sin clave no hay qué pedir ni cómo saber si alguien lo tiene: la salida es conectar Real-Debrid, nunca
+            # «Nadie lo tiene» sin salida (análisis de fondo con el iPhone, escenario 16).
+            return {**out, "why": "debrid-account", "message": "Vuelve a conectar Real-Debrid",
+                    "detail": "Ajustes › Cuentas › Real-Debrid"}
         exists = bool(found) or bool(self.rd.candidates(kind, video_id, prefs))
         if exists and self.rd.client() is not None and req and req.get("mine") and req["state"] in (
                 rd_requests.REFUSED, rd_requests.TOO_MANY):
             return {**out, "why": "debrid", "can_request": True, "message": req["message"], "detail": req["detail"]}
         if exists and self.rd.client() is not None:
             language = streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
-            return {**out, "why": "debrid", "can_request": True, "message": "Real-Debrid todavía no lo tiene",
-                    "detail": f"Lo puede bajar por ti, de preferencia en {language}; tarda según cuánta gente lo comparte"}
+            return {**out, "why": "debrid", "can_request": True, "message": "Todavía no está en la nube",
+                    "detail": f"La nube lo puede bajar por ti, de preferencia en {language}; tarda según cuánta gente lo comparte"}
         return {**out, "why": "none", "message": "Nadie lo tiene todavía en internet",
                 "detail": "Suele aparecer en unas horas o días · vuelve a buscar más tarde"}
+
+    def _dub_offer(self, kind: str, video_id: str, prefs: streams.Preferences, found: list[streams.Source],
+                   ready: list[streams.Source]) -> dict | None:
+        """FQ1-A (Fernando, 3 nov): quieres latino y lo que arranca ya es otro idioma. «Ver» pone la que arranca y, al lado,
+        «Pedir a la nube en latino» pide la tuya: {"label", "hash"}; None si ya arranca en tu doblaje o no hay cuál pedir."""
+        want = prefs.spanish if prefs.audio == "es" and prefs.spanish in streams.SPANISH_VARIANTS else None
+        if not want or self.rd.client() is None or any(want in s.audio_langs for s in ready):
+            return None
+        refused = self.rd.refused()
+        pool = [s for s in found if s.debrid and not s.cached] or self.rd.candidates(kind, video_id, prefs)
+        pick = next((s for s in pool if want in s.audio_langs and s.info_hash and s.info_hash not in refused
+                     and not s.doubtful and not {"CAM", "Tráiler", "3D"} & set(s.tags)), None)
+        if pick is None:
+            return None
+        return {"label": f"Pedir a la nube en {streams.LANG_NAMES.get(want, want).lower()}", "hash": pick.info_hash}
 
     def request_debrid(self, kind: str, meta_id: str, video_id: str, title: str = "", want: str | None = None) -> dict:
         """«Pedirlo y avisarme»: Real-Debrid empieza a bajarlo (RD-1); con `want`, justo esa versión (la huella que trae
@@ -1197,13 +1227,16 @@ class Watch:
             raise LookupError(str(exc)) from exc
 
     def _release_of(self, kind: str, meta_id: str, video_id: str) -> float | None:
-        """Cuándo sale ese episodio (None si ya salió o no se sabe)."""
-        if kind != "series":
+        """Cuándo sale esa película o ese episodio (None si no se sabe). Una película por estrenarse decía «Nadie lo
+        tiene» (análisis de fondo con el iPhone, escenario 14)."""
+        if kind not in ("movie", "series"):
             return None
         try:
-            info = self.cinemeta.meta("series", meta_id)
+            info = self.cinemeta.meta(kind, meta_id)
         except cinemeta.CinemetaError:
             return None
+        if kind == "movie":
+            return cinemeta.released_at(info.get("released"))
         for season in cinemeta.seasons(info):
             for episode in season["episodes"]:
                 if episode["id"] == video_id:
@@ -1334,6 +1367,13 @@ class Watch:
             found = [s for s in found if player.stream_url(s.stream) or s.stream.get("onedrive")]
         if not found:
             return None
+        # Nunca una de cine, un tráiler ni una que parece de otro título o de otra temporada si hay otra (invariante 4
+        # de los escenarios comunes con el iPhone): al instante, una de otra temporada todavía puede sumar más.
+        # Tampoco una que Real-Debrid no dejó bajar (FQ2-A): pedirla otra vez falla igual.
+        refused = self.rd.refused()
+        clean = [s for s in found if not s.doubtful and not {"CAM", "Tráiler", "3D"} & set(s.tags)
+                 and (s.cached or s.info_hash not in refused)]
+        found = clean or found
         if binge:
             same = next((s for s in found if s.binge == binge and s.score > found[0].score - 700), None)
             if same:
@@ -1364,8 +1404,14 @@ class Watch:
         """La que pone «Ver»: la fuente con la que lo dejaste («Continuar»), si sigue ahí; si no, la recomendada. La misma
         cuenta para reproducir y para decir en la ficha qué va a sonar (antes la ficha describía otra)."""
         if resume and resume.get("source"):
-            same = next((s for s in self.stream_sources(kind, video_id, prefs) if s.key == resume["source"]), None)
-            if same is not None:
+            found = self.stream_sources(kind, video_id, prefs)
+            # Lo que pediste y ya está le gana a la de «Continuar», y la de «Continuar» nunca es una de cine, un tráiler
+            # ni una que parece de otro título o episodio (análisis de fondo con el iPhone, error 9).
+            mine = next((s for s in found if s.requested), None)
+            same = next((s for s in found if s.key == resume["source"]), None)
+            if mine is not None and (same is None or not same.requested):
+                return mine
+            if same is not None and not same.doubtful and not {"CAM", "Tráiler"} & set(same.tags):
                 return same
         return self.best_source(kind, video_id, prefs=prefs)
 
@@ -1640,10 +1686,14 @@ class Watch:
 
     def _title_facts(self, kind: str, video_id: str) -> dict | None:
         """Idioma original y nombres del título (TMDB, recordado un día; también el de Cinemeta) para las fuentes."""
-        imdb = video_id.split(":", 1)[0]
-        facts = dict(self.localizer.facts(kind, imdb) or {})
+        # «kitsu:1:1» es el episodio 1 de «kitsu:1» (antes se buscaba la ficha «kitsu», que no existe).
+        parts = video_id.split(":")
+        meta_id = ":".join(parts[:2]) if parts[0] == "kitsu" and len(parts) > 1 else parts[0]
+        facts = dict(self.localizer.facts(kind, meta_id) or {})
+        if parts[0] == "kitsu":
+            facts.setdefault("original", "ja")  # Anime Kitsu: sin IMDb ni TMDB, su idioma original es japonés
         try:
-            name = self.cinemeta.meta(kind, imdb).get("name")
+            name = self.cinemeta.meta(kind, meta_id).get("name")
         except cinemeta.CinemetaError:
             name = None
         if isinstance(name, str) and name:
@@ -1696,7 +1746,7 @@ class Watch:
         have = set(current.audio_langs) if current else set()
         out, seen = [], set(have)
         for src in found:  # ya van de mejor a peor
-            if src.other_title or {"CAM", "Tráiler", "3D"} & set(src.tags):
+            if src.doubtful or {"CAM", "Tráiler", "3D"} & set(src.tags):
                 continue
             for code, how in src.audio_langs.items():
                 if code in seen or how == "maybe":

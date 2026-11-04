@@ -435,7 +435,7 @@ struct PlayerScreen: View {
                                          detail: Strings.tr("La anterior no respondió. Sigue en el mismo punto.", language: ui0), tone: .info))
             }
             if value == .notReadyOnRealDebrid {
-                return show(PlayerNotice(title: Strings.tr("Real-Debrid aún no la tiene", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))
+                return show(PlayerNotice(title: Strings.tr("Todavía no está en la nube", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))
             }
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
             let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }

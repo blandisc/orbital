@@ -12,6 +12,8 @@ struct DebridRequestSheetHost: View {
     let since: String
     let status: DebridRequestStatus
     var watchNow: (() -> Void)?
+    /// RX2-A · «Ver Inglés · 1080p, ya arranca» y «Esperar a que llegue» (ver `DebridRequestSheet.instead`).
+    var instead: (title: Text, action: () -> Void)?
     let otherVersion: (() -> Void)?
     var openTitle: (() -> Void)?
     var otherAccount = false
@@ -25,7 +27,7 @@ struct DebridRequestSheetHost: View {
 
     var body: some View {
         DebridRequestSheet(name: name, status: status, since: since, notificationsOff: notificationsOff,
-                           turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, watchNow: watchNow, otherVersion: otherVersion,
+                           turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, watchNow: watchNow, instead: instead, otherVersion: otherVersion,
                            openTitle: openTitle, finished: DebridRequestWords.group(request.state) == .finished, otherAccount: otherAccount,
                            manageDownloads: request.state == .tooMany && !otherAccount ? Self.downloadsURL : nil,
                            cancel: cancel, explain: explain ?? { explaining = true }, close: close,
@@ -52,4 +54,40 @@ struct DebridNotifyAsk: View {
         }, notNow: { dismiss(); Task { await done(.notDetermined) } }, tv: AppEnvironment.shared.services.orbital.isConfigured)
         .fittedSheet()
     }
+}
+
+/// RX3-A · enseña «Así funciona» (`DebridFlowIntro`) la primera vez que `when` se cumple (hay una versión «↓ Por pedir» a la
+/// vista) y nunca más: lo recuerda en `services.kv` con la llave que comparte con la guía de bienvenida
+/// (`learn.seen.debrid-flow`; la guía también la escribe al ver su página o su historia de Real-Debrid). Se anota al salir,
+/// no al tocar «Entendido»: deslizarla para cerrarla también cuenta. En la demostración solo sale con `-demo-debrid-intro`
+/// (las pruebas de interfaz no la esperan).
+struct DebridFlowIntroHost: ViewModifier {
+    static let seenKey = "learn.seen.debrid-flow"
+    let when: Bool
+    @Environment(AppEnvironment.self) private var env
+    @State private var showing = false
+
+    func body(content: Content) -> some View {
+        content
+            .task(id: when) {
+                guard when, allowed, env.services.kv.data(Self.seenKey) == nil else { return }
+                try? await Task.sleep(for: DS.Explainer.introDelay)
+                guard !Task.isCancelled, env.services.kv.data(Self.seenKey) == nil else { return }
+                env.services.kv.set(Self.seenKey, data: Data("1".utf8))
+                showing = true
+            }
+            .sheet(isPresented: $showing) { DebridFlowIntro { showing = false }.fittedSheet() }
+    }
+
+    private var allowed: Bool {
+        #if DEBUG
+        if Demo.isOn { return ProcessInfo.processInfo.arguments.contains("-demo-debrid-intro") }
+        #endif
+        return true
+    }
+}
+
+extension View {
+    /// RX3-A · «Así funciona», una sola vez, cuando aparece algo «↓ Por pedir».
+    func debridFlowIntro(when: Bool) -> some View { modifier(DebridFlowIntroHost(when: when)) }
 }

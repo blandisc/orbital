@@ -935,7 +935,7 @@ class OrbitalPlayer(PlayerScreen):
         retrying = False
         if self.on_failed:
             self.toast("Esa versión no abrió · regreso a la de antes…" if segment.meta.get("back_to") is not None
-                       else "Real-Debrid aún no tiene esa versión · probando otra…" if filler
+                       else "Esa versión todavía no está en la nube · probando otra…" if filler
                        else "Esa versión falló · probando otra…", 6)
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:

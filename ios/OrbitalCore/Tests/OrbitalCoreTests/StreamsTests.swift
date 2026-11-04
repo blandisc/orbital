@@ -147,8 +147,8 @@ final class UnavailableCauseTests: XCTestCase {
         XCTAssertEqual(UnavailableCause.label(.renew), "Renovar")
         XCTAssertNil(UnavailableCause.debridExpired.detail())
         XCTAssertEqual(UnavailableCause.notInDebrid(language: "es-419").detail(languageName: { $0 == "es-419" ? "latino" : $0 }),
-                       "Lo puede bajar por ti, de preferencia en latino; tarda según cuánta gente lo comparte")
-        XCTAssertEqual(UnavailableCause.downloading(percent: 42).title(), "Bajando en Real-Debrid · 42 %")
+                       "La nube lo puede bajar por ti, de preferencia en latino; tarda según cuánta gente lo comparte")
+        XCTAssertEqual(UnavailableCause.downloading(percent: 42).title(), "Bajando en la nube · 42 %")
         XCTAssertEqual(UnavailableCause.noAddonsOn.detail(), "Ajustes › Complementos")
         XCTAssertEqual(UnavailableCause.noAddonsOn.action, .settings)
         XCTAssertEqual(UnavailableCause.debridRefused.action, .otherVersion)

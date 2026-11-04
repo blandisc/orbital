@@ -78,7 +78,7 @@ struct AllSourcesList: View {
 
     @ViewBuilder private var legendItems: some View {
         HStack(spacing: DS.Space.s1) { dot(DS.AllSourcesList.ready); Text("en Real-Debrid").recipe(.caption) }
-        HStack(spacing: DS.Space.s1) { dot(DS.AllSourcesList.mustDownload); Text("Real-Debrid aún no la tiene").recipe(.caption) }
+        HStack(spacing: DS.Space.s1) { dot(DS.AllSourcesList.mustDownload); Text("Todavía no está en la nube").recipe(.caption) }
     }
 
     private var filterMenu: some View {
@@ -215,7 +215,7 @@ struct AllSourcesList: View {
             }
             switch SourceSpeed(source) {
             case .inRealDebrid: Text("Ya está en Real-Debrid").recipe(.footnote, color: DS.text)
-            case .realDebridMustDownload: Text("Real-Debrid aún no la tiene: puede tardar en abrir").recipe(.footnote, color: DS.warning)
+            case .realDebridMustDownload: Text("Todavía no está en la nube: puede tardar en abrir").recipe(.footnote, color: DS.warning)
             case .unknown: EmptyView()
             }
             if source.tags.contains(Streams.otherTitleTag) {
@@ -223,7 +223,7 @@ struct AllSourcesList: View {
             }
             if let request, SourceSpeed(source) == .realDebridMustDownload {
                 if let status = requestStatus(source) { status.padding(.top, DS.Space.s1) } else {
-                    Button { request(source) } label: { Label("Pedirlo y avisarme", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                    Button { request(source) } label: { Label("Pedir a la nube", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
                         .dsPrimaryButton().controlSize(.large).padding(.top, DS.Space.s1).accessibilityIdentifier("all-sources-request")
                 }
             } else {
@@ -323,7 +323,7 @@ struct AllSourcesList: View {
     private func speedText(_ source: Source) -> Text? {
         switch SourceSpeed(source) {
         case .inRealDebrid: Text("en Real-Debrid")
-        case .realDebridMustDownload: Text("Real-Debrid aún no la tiene")
+        case .realDebridMustDownload: Text("Todavía no está en la nube")
         case .unknown: nil
         }
     }

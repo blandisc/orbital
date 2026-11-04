@@ -72,9 +72,13 @@ public actor StreamFinder {
 
     /// M5: «kitsu:» y «tmdb:» al de IMDb, para preguntarle también a los que solo saben de IMDb.
     private let bridge: IDBridge?
+    /// Ajustes › Idioma y subtítulos › «Buscar en internet»: si se le pregunta a OpenSubtitles.
+    private let internetSubtitles: @Sendable () -> Bool
 
-    public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, bridge: IDBridge? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.registry = registry; self.health = health; self.bridge = bridge; self.clock = clock
+    public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, bridge: IDBridge? = nil,
+                internetSubtitles: @escaping @Sendable () -> Bool = { true }, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.registry = registry; self.health = health; self.bridge = bridge
+        self.internetSubtitles = internetSubtitles; self.clock = clock
     }
 
     /// De dónde es un título (su idioma original y país), para el audio de lo que no lo dice; y lo comprobado al ver una
@@ -333,6 +337,7 @@ public actor StreamFinder {
 
     /// OpenSubtitles (su complemento público de Stremio), siempre: los subtítulos no dependen de que tengas uno instalado.
     public static let builtInSubtitles = "https://opensubtitles-v3.strem.io"
+    static func isOpenSubtitles(_ base: String) -> Bool { base.lowercased().contains("opensubtitles") }
 
     /// Todos los subtítulos que hay para un video, de tus complementos y de OpenSubtitles; con la huella del archivo (una
     /// descarga), los que van sincronizados con esa copia exacta salen primero.
@@ -342,8 +347,10 @@ public actor StreamFinder {
 
     /// Lo mismo, pero nil si nadie contestó (sin red): así «no hay subtítulos» y «sin conexión» no se confunden.
     public func subtitleSearch(kind: String, videoID: String, file: FileFingerprint? = nil) async -> [SubtitleOption]? {
+        // OpenSubtitles viene con Orbital (no de la lista): el de la lista o el traído de Stremio no se pregunta dos veces.
         var bases = ((try? await registry.serving("subtitles", kind: kind, itemID: videoID)) ?? []).map(\.base)
-        if !bases.contains(where: { $0.contains("opensubtitles") }) { bases.append(Self.builtInSubtitles) }
+            .filter { !Self.isOpenSubtitles($0) }
+        if internetSubtitles() { bases.append(Self.builtInSubtitles) }
         let extra = file.map { "/videoHash=\($0.hash)&videoSize=\($0.size)" } ?? ""
         var out: [SubtitleOption] = []
         var answered = false

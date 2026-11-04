@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { debridCancelMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -101,7 +101,7 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
   const page = settingsCategory("watch", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
+    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
     ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Lo que recuerda cada título", undefined]]);
   assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "watch" });
   // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
@@ -641,12 +641,14 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.equal(addonHealth({ state: "down", since: Date.parse("2026-10-31T20:00:00") / 1000, skipped: true }, now), "No contesta desde el sábado · se salta");
   assert.equal(addonHealth({ state: "off" }), "");
   const status = { source: "own", stremio_linked: true, imported_at: Date.parse("2026-11-03T10:00:00") / 1000, entries: [
-    { id: "opensubtitles", name: "OpenSubtitles", origin: "orbital", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.3 } },
+    { id: "opensubtitles", name: "OpenSubtitles", origin: "orbital", template: "opensubtitles", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.3 } },
+    { id: "comet", name: "Comet", origin: "orbital", template: "comet", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
+    { id: "os2", name: "OpenSubtitles v3", origin: "stremio", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.4 } },
     { id: "t", name: "Torrentio RD", origin: "stremio", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
     { id: "l", name: "Local Files", origin: "stremio", on: false, only_on: "tv", gives: "", health: { state: "off" } },
   ] };
-  const rows = addonRows(status);
-  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "OpenSubtitles", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
+  const rows = addonRows(status); // OpenSubtitles (el de Orbital y el traído) ya no sale: vive en Ajustes › Ver (3 nov)
+  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
     "Volver a traer", "De dónde salen", "Volver a los de Stremio", "¿Qué es esto?"]);
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
@@ -654,7 +656,7 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
-  assert.deepEqual(addonMenu(status.entries[1], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
+  assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
   // Sin traer todavía: primero «Traer de tu Stremio».
   assert.equal(addonRows({ source: "stremio", stremio_linked: true, entries: [] })[0].label, "Traer de tu Stremio");
 });
@@ -678,7 +680,7 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     { hash: "c", title: "Midsommar", state: "gone", by: "TV" }]);
   assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
     ["Bajando", undefined, undefined], // P1-A: dos grupos; «Ya terminaron» no sale vacío
-    ["Nocturne · T1 E1", "Bajando en Real-Debrid · 42 % · Lo pediste aquí", "download"],
+    ["Nocturne · T1 E1", "Bajando en la nube · 42 % · Lo pediste aquí", "download"],
     ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"], ["¿Qué es esto?", undefined, "info"]]); // la lápida no se enseña
   assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }]).options.filter((o) => o.heading).map((o) => o.label),
     ["Bajando", "Ya terminaron"]);
@@ -788,9 +790,34 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
 test("AU1-A y AU2-A (Fernando, 3 nov): «¿Qué es esto?» con los textos del iPhone, y «Sin iPhone» deja de avisar con Real-Debrid", async () => {
   const { explainerMenu, settingsMissing } = await import("../../orbital/web/js/core/menus.js");
   assert.deepEqual(explainerMenu("requests").options.map((o) => o.label),
-    ["Tus complementos buscan dónde verlo", "Real-Debrid lo guarda", "Pedirlo es que lo baje por ti", "Te avisamos cuando esté"]);
+    ["Tus complementos buscan dónde verlo", "Real-Debrid es la nube", "Pedir a la nube es que lo baje por ti", "Te avisamos cuando esté"]);
   assert.equal(explainerMenu("torrentio").options[0].hint.slice(0, 40), "Cuando eliges un título, revisa sitios d");
   assert.ok(explainerMenu("addons").options.every((o) => o.command.type === "stay")); // solo se leen
   assert.ok(settingsMissing({}).some((m) => m.label === "Sin iPhone"));
   assert.ok(!settingsMissing({ realdebrid: { linked: true } }).some((m) => m.label === "Sin iPhone"));
+});
+
+test("K1-A (Fernando, 3 nov): cerrar «¿Usar la cuenta?» sin contestar borra la clave que llegó del celular", () => {
+  const menu = debridRemoteMenu({ code: "abc", account: "fernando" });
+  assert.equal(menu.title, "¿Usar la cuenta fernando?");
+  assert.deepEqual(menu.cancel, { type: "rd-remote-cancel", code: "abc" }); // B o tocar fuera = Cancelar
+  assert.equal(menu.options[0].label, "Cancelar");
+  assert.match(menu.subtitle, /Si cierras, se borra/);
+});
+
+test("RX1-TV-A (Fernando, 3 nov): «Real-Debrid · bajando para ti» solo cuando pediste algo; primero lo que baja", () => {
+  assert.deepEqual(cloudRow([]), []);
+  assert.deepEqual(cloudRow([{ hash: "a", meta_id: "tt1", state: "gone" }]), []); // lo cancelado no cuenta
+  const now = Date.now();
+  const [row] = cloudRow([
+    { hash: "a", meta_id: "tt0061752", title: "Hasta el viento tiene miedo", kind: "movie", state: "ready", by: "TV", since: now - 60_000 },
+    { hash: "b", meta_id: "tt0903747", title: "Breaking Bad · T1 E2", kind: "series", video_ids: ["tt0903747:1:2"], state: "downloading",
+      percent: 42, by: "iPhone de Fernando" },
+  ], { now });
+  assert.equal(row.title, CLOUD_ROW);
+  assert.deepEqual(row.items.map((i) => i.title), ["Breaking Bad · T1 E2", "Hasta el viento tiene miedo"]);
+  assert.match(row.items[0].subtitle, /^Bajando en la nube · 42 % · Lo pidió el iPhone de Fernando/);
+  assert.equal(row.items[0].progress, 0.42);
+  assert.equal(row.items[0].extra.video_id, "tt0903747:1:2");
+  assert.match(row.items[1].subtitle, /^Al instante · la pediste · /);
 });

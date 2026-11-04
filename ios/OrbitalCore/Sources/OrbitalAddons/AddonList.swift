@@ -36,9 +36,15 @@ public final class AddonList: @unchecked Sendable {
     /// Lo traído de Stremio que solo vive en la computadora de la TV (Local Files, `AddonShare.livesOnTV`) no es de este
     /// iPhone: se suelta en silencio, sin lápida (una lápida le diría a la TV que lo quite). Allá sigue; aquí se ve como
     /// «Archivos de la TV · Solo en la TV» (S5). Antes decía «Local Files (without catalog support) se queda en este iPhone».
+    /// Solo sirve en la computadora de la TV: por su dirección o, si no llegó, por su nombre («Local Files…»). Nunca se quita
+    /// desde aquí: quitarlo se lo borraba a la TV (Fernando, 3 nov 2026, lo quitó sin querer).
+    public func livesOnTV(_ addon: InstalledAddon) -> Bool {
+        resolvedURL(addon).map(AddonShare.livesOnTV) == true || addon.name.lowercased().contains("local files")
+    }
+
     func dropTVOnly() {
         guard !readFailed else { return }
-        let gone = installed.filter { !$0.isBuiltIn && resolvedURL($0).map(AddonShare.livesOnTV) == true }.map(\.id)
+        let gone = installed.filter { !$0.isBuiltIn && livesOnTV($0) }.map(\.id)
         guard !gone.isEmpty else { return }
         for id in gone { vault.setSecret(AddonKeys.addonURL(id), nil) }
         let list: [InstalledAddon] = lock.withLock {
@@ -135,7 +141,7 @@ public final class AddonList: @unchecked Sendable {
     /// «Volver a traer» no lo regresa. Devuelve false si no se puede quitar.
     @discardableResult
     public func remove(_ id: String, now: Date = Date()) -> Bool {
-        guard let index = installed.firstIndex(where: { $0.id == id }), !installed[index].isBuiltIn else { return false }
+        guard let index = installed.firstIndex(where: { $0.id == id }), !installed[index].isBuiltIn, !livesOnTV(installed[index]) else { return false }
         let entry = installed[index]
         update { $0.removeAll { $0.id == id } }
         var stones = tombstones.filter { $0.entry.id != id }

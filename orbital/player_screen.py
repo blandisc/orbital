@@ -127,11 +127,11 @@ class PlayerScreen(SubtitleTrial):
             if card["kind"] == "debrid":  # RD-4: el siguiente no arranca al instante (RD-6: ya se le pidió solo)
                 eyebrow = f"Siguiente episodio · {label}" if label else "Siguiente episodio"
                 if info.get("requested"):
-                    ass = player_ui.upnext_ass("Real-Debrid lo está bajando", eyebrow, actions=[("A", "Avisarme cuando esté"), ("B", "Ver créditos")],
+                    ass = player_ui.upnext_ass(f"Bajando en la nube · {int(info.get('percent') or 0)} %" if info.get("percent") is not None else "Bajando en la nube", eyebrow, actions=[("A", "Avisarme cuando esté"), ("B", "Ver créditos")],
                                                still=room, appear=appear)
                 else:
-                    ass = player_ui.upnext_ass("Real-Debrid todavía no lo tiene", eyebrow,
-                                               actions=[("A", "Pedirlo y avisarme"), ("B", "Ver créditos")], still=room, appear=appear)
+                    ass = player_ui.upnext_ass("Todavía no está en la nube", eyebrow,
+                                               actions=[("A", "Pedir a la nube"), ("B", "Ver créditos")], still=room, appear=appear)
             elif card["kind"] == "still":
                 ass = player_ui.upnext_ass("¿Sigues viendo?", " · ".join(p for p in (label, name) if p),
                                            actions=[("A", "Seguir viendo"), ("B", "Mantén: salir")], still=room, appear=appear)

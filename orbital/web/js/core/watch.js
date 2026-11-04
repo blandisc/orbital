@@ -48,8 +48,10 @@ export const episodesLed = (details, kind = "movie") =>
 /** «Pedirlo y avisarme» a Real-Debrid (RD-1) o, ya pedido, cuánto lleva (A abre el pedido, con «Cancelar pedido»).
  * `request`: "ask" | un porcentaje | null. Las palabras son las de design/vocabulario.json. */
 export function debridAction(request) {
-  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedirlo y avisarme", short: "Pedirlo" };
-  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en Real-Debrid · ${request} %`, short: `${request} %`, active: true };
+  // FQ1-A: ya arranca en otro idioma; al lado de «Ver», pedir el tuyo («Pedir a la nube en latino»).
+  if (request?.label) return { id: "rd-request", icon: "download", label: request.label, short: "Pedirla" };
+  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedir a la nube", short: "Pedir" };
+  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en la nube · ${request} %`, short: `${request} %`, active: true };
   return null;
 }
 
@@ -168,7 +170,7 @@ export function episodeStates(details, now = Date.now()) {
   return states;
 }
 
-const RES_ORDER = ["4K", "1080p", "720p", "480p"];
+const RES_ORDER = ["4K", "1440p", "1080p", "720p", "480p"];
 
 /**
  * Qué hay para ver, antes de elegir (como "4K · Dolby Vision · Atmos" de Apple TV): mejor
@@ -198,8 +200,14 @@ export const PROOF_LABELS = {
 };
 const VERSION_RES = ["4K", "1080p", "720p", "SD"];
 const PROOF_RANK = { seen: 5, name: 4, site: 4, original: 3, assumed: 2, maybe: 1 };
-const versionRes = (src) => (["4K", "1080p", "720p"].includes(src.resolution) ? src.resolution : "SD");
+// 1440p (algunas de anime) va con las de 1080p, como en el servidor (streams.res_class) y en el iPhone.
+const versionRes = (src) => {
+  const res = src.resolution === "1440p" ? "1080p" : src.resolution;
+  return ["4K", "1080p", "720p"].includes(res) ? res : "SD";
+};
 const JUNK = ["CAM", "Tráiler", "3D"];
+/** Parece de otro título («¿Otro título?») o de otra temporada («¿Otro episodio?»). */
+const doubtful = (src) => Boolean(src?.other_title || src?.other_episode);
 
 /**
  * «Versión»: una fila por IDIOMA DE AUDIO y, en cada una, solo las calidades que hay (la mejor de cada una,
@@ -225,7 +233,7 @@ export function versionRows(sources = [], prefs = {}) {
       // La primera del servidor (la mejor para ti), salvo que su idioma sea dudoso y haya otra que lo diga seguro.
       // Tampoco una que parece de otro título («La casa de la pradera») si hay una que sí es.
       const sure = (proof) => (PROOF_RANK[proof] || 0) >= PROOF_RANK.original;
-      if ((!sure(cell.proof) && sure(lang.proof)) || (cell.source.other_title && !src.other_title)) {
+      if ((!sure(cell.proof) && sure(lang.proof)) || (doubtful(cell.source) && !doubtful(src))) {
         Object.assign(cell, { source: src, proof: lang.proof });
       }
       cell.all.push(src);

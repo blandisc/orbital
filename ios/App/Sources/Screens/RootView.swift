@@ -232,6 +232,9 @@ struct MainTabs: View {
     @State private var tab: Int
     /// Cuántas descargas siguen bajando o en pausa: el globito de la pestaña Descargas.
     @State private var pendingDownloads = 0
+    /// RX1-A · lo que baja en la nube también cuenta en la pestaña Descargas (ahí vive).
+    @State private var cloudPending = 0
+    @State private var cloudWatch: ObservableModel.Subscription?
     @State private var finishedDownloads = 0
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
     /// Ventana ancha (iPad, Mac): las hojas son tarjetas sin alturas que estirar, así que el control abre completo.
@@ -318,7 +321,7 @@ struct MainTabs: View {
             }
             // «arrow.down.to.line» no tiene versión rellena: queda de contorno como las demás (el círculo salía siempre relleno).
             Tab("Descargas", systemImage: "arrow.down.to.line", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
-                .badge(pendingDownloads)
+                .badge(pendingDownloads + cloudPending)
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
@@ -335,6 +338,11 @@ struct MainTabs: View {
         // (Fernando, 2 nov 2026: «la barra siempre debería estar completa, siempre deberíamos poder ver todo»).
         .tabBarMinimizeBehavior(.never)
         .onChange(of: tab) { _, t in if t == 2 { Perf.begin("stab"); Perf.mark("stab.tap") } }
+        .task {
+            let requests = env.services.debridRequests
+            cloudPending = requests.active.count
+            cloudWatch = requests.onChange { let count = requests.active.count; if count != cloudPending { cloudPending = count } }
+        }
         .task {
             let downloads = env.services.downloads
             let all = await downloads.all
@@ -402,7 +410,8 @@ struct MainTabs: View {
         .onAppear(perform: openDemoScreen)
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
-        .onChange(of: ui.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
+        // Un aviso o «Tus pedidos» (RX1-A) abre la pestaña desde su principio: Descargas, no Ajustes encima.
+        .onChange(of: ui.openTab) { _, new in if let new { tab = new; paths[new] = NavigationPath(); env.openTab = nil } }
         .onChange(of: ui.goBack) { _, back in
             guard back else { return }
             ui.goBack = false

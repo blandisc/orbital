@@ -343,6 +343,17 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
     }
 
 
+def series_only(item: dict) -> dict:
+    """El mosaico propone series, nunca un episodio (Fernando, 4 nov 2026: «Puedes sugerir una serie, pero no un episodio
+    específico»): sin «Sigue T3 E5» ni el episodio en sus datos. La ficha sigue sabiendo en cuál vas."""
+    if item.get("kind") != "series" or not (item.get("episode") or str(item.get("detail") or "").startswith("Sigue ")):
+        return item
+    facts = [f for f in item.get("facts") or [] if f[0] not in ("Sigue", "Episodio")]
+    year = next((v for k, v in facts if k == "Año"), "")
+    detail = "" if str(item.get("detail") or "").startswith("Sigue ") else item.get("detail")
+    return {**item, "episode": None, "facts": facts, "detail": detail or year}
+
+
 def library_entry(item) -> dict | None:
     """Un título que Orbital ya tiene (tu Stremio o lo popular de Cinemeta), en la forma de video_item."""
     extra = item.extra or {}
@@ -1531,7 +1542,9 @@ class ForYou:
     def mosaic(self) -> list[dict]:
         """El mosaico de la caché (vencido o no, se renueva solo); solo la primera vez se espera a armarlo."""
         hidden = self.catalog.state.dismissed()
-        return [self._with_art(i) for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True) if i["key"] not in hidden]
+        # series_only también aquí: lo guardado antes de la regla no espera a que se vuelva a armar.
+        return [self._with_art(series_only(i)) for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True)
+                if i["key"] not in hidden]
 
     def warm(self) -> None:
         """Al arrancar Orbital, arma el mosaico y las listas con puesto en segundo plano: la primera vez que la TV o el
@@ -1616,7 +1629,7 @@ class ForYou:
         for item in mixed:
             if item["key"] not in seen:
                 seen.add(item["key"])
-                out.append(item)
+                out.append(series_only(item))
         return out[:MOSAIC_SIZE]
 
     @staticmethod

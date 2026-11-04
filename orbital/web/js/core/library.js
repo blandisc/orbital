@@ -119,6 +119,8 @@ export const primaryLabel = (item, runningId = null) => {
   if (item?.source === "search") return "Buscar";
   // Una descarga: lista, se ve (del disco); si no, cómo va. El avance de la barra es la descarga, no lo visto.
   if (item?.download) return item.download.status === "done" ? `Ver${item.download.detail ? ` ${item.download.detail}` : ""}` : "Cómo va";
+  // Lo pedido a la nube (RX1-TV-A): ya listo, se ve; si no, su hoja (cuánto lleva). La barra es lo bajado, no lo visto.
+  if (item?.request) return item.request.state === "ready" ? "Ver" : "Cómo va";
   if (item?.source === "genre") return "Ver títulos"; // Por género: abre su lista
   // Una tarjeta de colección (plataforma, premio, estudio, año, lista) abre su lista; «Porque viste X», su ficha.
   if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : "Ver la lista";

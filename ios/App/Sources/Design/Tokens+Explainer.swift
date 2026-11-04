@@ -11,5 +11,7 @@ extension DS {
         /// Los pasos que no son el de ahora, un poco más chicos: el de ahora «brinca» al frente.
         static let restScale: CGFloat = 0.92
         static let step: Duration = .seconds(1.6)
+        /// RX3-A · «Así funciona» espera esto antes de salir: que se vea primero lo que la trajo (la versión «↓ Por pedir»).
+        static let introDelay: Duration = .milliseconds(600)
     }
 }

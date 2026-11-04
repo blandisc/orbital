@@ -51,7 +51,7 @@ struct DSExplainerCard: View {
     }
 }
 
-/// «Tú lo pides → Real-Debrid lo baja → Arranca al instante»: tres pasos que se encienden uno tras otro, en bucle. Con
+/// «Tú lo pides → La nube lo baja → Arranca al instante» (RX4-A: la nube es Real-Debrid): tres pasos que se encienden uno tras otro, en bucle. Con
 /// «Reducir movimiento», los tres quietos y encendidos. El color es el de cada paso, nunca el turquesa (no es la voz).
 struct DebridFlowStrip: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -60,7 +60,7 @@ struct DebridFlowStrip: View {
 
     private let steps: [(symbol: String, tint: Color, label: LocalizedStringKey)] = [
         ("hand.tap.fill", DS.ListTint.library, "Tú lo pides"),
-        ("arrow.down.circle.fill", DS.ListTint.calendar, "Real-Debrid lo baja"),
+        ("icloud.and.arrow.down.fill", DS.ListTint.calendar, "La nube lo baja"),
         ("play.fill", DS.ListTint.flame, "Arranca al instante"),
     ]
 
@@ -81,7 +81,7 @@ struct DebridFlowStrip: View {
         .padding(DS.Space.s4)
         .dsCard(.card)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Tú lo pides, Real-Debrid lo baja y arranca al instante"))
+        .accessibilityLabel(Text("Tú lo pides, la nube lo baja y arranca al instante"))
         .accessibilityIdentifier("debrid-flow")
         .task(id: reduceMotion) {
             guard !reduceMotion else { return }
@@ -145,10 +145,10 @@ struct DebridExplainer: View {
     @ViewBuilder private var requests: some View {
         card("magnifyingglass", DS.ListTint.library, Text("Tus complementos buscan dónde verlo"),
              Text("Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."))
-        card("externaldrive.fill.badge.checkmark", DS.ListTint.series, Text("Real-Debrid lo guarda"),
-             Text("Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante."))
-        card("arrow.down.circle.fill", DS.ListTint.calendar, Text("Pedirlo es que lo baje por ti"),
-             Text("Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."))
+        card("icloud.fill", DS.ListTint.series, Text("Real-Debrid es la nube"),
+             Text("Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."))
+        card("arrow.down.circle.fill", DS.ListTint.calendar, Text("Pedir a la nube es que lo baje por ti"),
+             Text("Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."))
         card("bell.fill", DS.ListTint.trend, Text("Te avisamos cuando esté"),
              Text("Con la app abierta lo sabes al momento. Con la app cerrada, iOS decide cuándo revisar: el aviso puede tardar un rato."))
         // R14-B: lo que pides en la TV también avisa aquí, cuando la app puede mirar (solo en el iPhone).
@@ -173,7 +173,7 @@ struct DebridExplainer: View {
         card("tortoise.fill", DS.ListTint.flame, Text("El que no contesta se salta"),
              Text("Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."))
         card("shippingbox.fill", DS.ListTint.trophy, Text("Vienen con Orbital o los agregas tú"),
-             Text("Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan."))
+             Text("Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idioma y subtítulos."))
     }
 
     @ViewBuilder private var realDebrid: some View {

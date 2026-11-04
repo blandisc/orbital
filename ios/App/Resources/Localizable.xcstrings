@@ -1,6 +1,277 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Se quita de este iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de este iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de este iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de esta Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de este iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Se quita de este iPhone y de tu TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de este iPhone y de tu TV."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de este iPad y de tu TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de esta Mac y de tu TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se quita de este iPhone y de tu TV."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this iPhone and from your TV."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this iPad and from your TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this Mac and from your TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's removed from this iPhone and from your TV."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de esta Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPad y de tu TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de esta Mac y de tu TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPhone and from your TV."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPad and from your TV."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this Mac and from your TV."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's your last video source: without it there won't be versions. It's removed from this iPhone and from your TV."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idioma y subtítulos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrentio and Comet come with Orbital: they're turned on and off. The ones you added can also be removed. Internet subtitles already come with Orbital: they're in Settings › Language and subtitles."
+          }
+        }
+      }
+    },
     "Abre los dedos para llenar la pantalla; ciérralos para verla completa.": {
       "extractionState": "manual",
       "localizations": {
@@ -1222,7 +1493,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Request to the cloud"
+            "value": "Request from the cloud"
           }
         }
       }
@@ -5497,17 +5768,6 @@
         }
       }
     },
-    "Cuando pidas algo que Real-Debrid todavía no tiene, aquí ves cuánto lleva.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When you request something Real-Debrid doesn't have yet, you'll see its progress here."
-          }
-        }
-      }
-    },
     "Desliza un pedido para cancelarlo. Los que terminan se quedan una semana.": {
       "extractionState": "manual",
       "localizations": {
@@ -5515,17 +5775,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Swipe a request to cancel it. Finished ones stay for a week."
-          }
-        }
-      }
-    },
-    "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It's a paid service that keeps movies and shows on its servers. What it already has starts instantly."
           }
         }
       }
@@ -5574,17 +5823,6 @@
         }
       }
     },
-    "Orbital te manda un aviso cuando Real-Debrid termine. Solo eso: nada de promociones.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Orbital sends you a notification when Real-Debrid finishes. Just that: no promotions."
-          }
-        }
-      }
-    },
     "Para avisarte cuando esté": {
       "extractionState": "manual",
       "localizations": {
@@ -5614,28 +5852,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Request just the next episode"
-          }
-        }
-      }
-    },
-    "Pedirlo es que lo baje por ti": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Requesting it means it downloads it for you"
-          }
-        }
-      }
-    },
-    "Pedirlo y avisarme": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Request it and notify me"
           }
         }
       }
@@ -5684,39 +5900,6 @@
         }
       }
     },
-    "Real-Debrid lo está bajando · %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid is downloading it · %@"
-          }
-        }
-      }
-    },
-    "Real-Debrid lo guarda": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid keeps it"
-          }
-        }
-      }
-    },
-    "Real-Debrid lo recibió y espera turno": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid got it and is waiting its turn"
-          }
-        }
-      }
-    },
     "Real-Debrid pide esperar un momento": {
       "extractionState": "manual",
       "localizations": {
@@ -5724,50 +5907,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid asks to wait a moment"
-          }
-        }
-      }
-    },
-    "Real-Debrid terminó de bajarlo · ábrelo para verlo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid finished downloading it · open it to watch"
-          }
-        }
-      }
-    },
-    "Real-Debrid terminó tu pedido": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid finished your request"
-          }
-        }
-      }
-    },
-    "Si Real-Debrid aún no lo tiene, se lo pide 3 min antes del final del que ves.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "If Real-Debrid doesn't have it yet, it's requested 3 min before the end of the one you're watching."
-          }
-        }
-      }
-    },
-    "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "If it doesn't have it yet, you request it and it downloads it. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
           }
         }
       }
@@ -5790,17 +5929,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nobody is sharing it"
-          }
-        }
-      }
-    },
-    "Sin pedidos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No requests"
           }
         }
       }
@@ -8971,71 +9099,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Downloading %lld"
-          }
-        }
-      }
-    },
-    "Bajando en el iPhone": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Downloading on the iPad"
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Downloading on the iPhone"
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Downloading on the Mac"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Downloading on the iPhone"
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Bajando en el iPad"
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Bajando en el iPhone"
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Bajando en la Mac"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Bajando en el iPhone"
-                }
-              }
-            }
           }
         }
       }
@@ -15174,71 +15237,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "In one of your lists"
-          }
-        }
-      }
-    },
-    "En una ficha, toca Descargar y lo ves aquí sin conexión.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On a title, tap Download and watch it here offline."
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On a title, tap Download and watch it here offline."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On a title, click Download and watch it here offline."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On a title, tap Download and watch it here offline."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En una ficha, toca Descargar y lo ves aquí sin conexión."
-                }
-              },
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En una ficha, toca Descargar y lo ves aquí sin conexión."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En una ficha, haz clic en Descargar y lo ves aquí sin conexión."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En una ficha, toca Descargar y lo ves aquí sin conexión."
-                }
-              }
-            }
           }
         }
       }
@@ -25191,50 +25189,6 @@
         }
       }
     },
-    "Real-Debrid aún no la tiene": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid doesn't have it yet"
-          }
-        }
-      }
-    },
-    "Real-Debrid aún no la tiene: puede tardar en abrir": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid doesn't have it yet: it may take a while to open"
-          }
-        }
-      }
-    },
-    "Real-Debrid aún no lo tiene": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid doesn't have it yet"
-          }
-        }
-      }
-    },
-    "Real-Debrid aún no lo tiene. Los estrenos suelen aparecer unas horas después.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid doesn't have it yet. New releases usually show up a few hours later."
-          }
-        }
-      }
-    },
     "Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.": {
       "extractionState": "manual",
       "localizations": {
@@ -33958,17 +33912,6 @@
         }
       }
     },
-    "Ya está en tu Real-Debrid: empieza sin esperar.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Already in your Real-Debrid: starts right away."
-          }
-        }
-      }
-    },
     "Ya está para ver": {
       "extractionState": "manual",
       "localizations": {
@@ -35792,17 +35735,6 @@
         }
       }
     },
-    "Real-Debrid todavía no lo tiene.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid doesn't have it yet."
-          }
-        }
-      }
-    },
     "Tomé tu clave de Real-Debrid de tu Torrentio": {
       "extractionState": "manual",
       "localizations": {
@@ -35847,17 +35779,6 @@
         }
       }
     },
-    "Bajando en Real-Debrid · %lld %%": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading on Real-Debrid · %lld %%"
-          }
-        }
-      }
-    },
     "Cuando salga, aparece aquí": {
       "extractionState": "manual",
       "localizations": {
@@ -35865,17 +35786,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "When it comes out, it shows up here"
-          }
-        }
-      }
-    },
-    "Lo puede bajar por ti, de preferencia en %@; tarda según cuánta gente lo comparte": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It can download it for you, preferably in %@; how long depends on how many people share it"
           }
         }
       }
@@ -35942,17 +35852,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Real-Debrid wouldn't let it download"
-          }
-        }
-      }
-    },
-    "Real-Debrid todavía no lo tiene": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid doesn't have it yet"
           }
         }
       }
@@ -38784,17 +38683,6 @@
         }
       }
     },
-    "Real-Debrid lo baja": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Real-Debrid downloads it"
-          }
-        }
-      }
-    },
     "Arranca al instante": {
       "extractionState": "manual",
       "localizations": {
@@ -38802,17 +38690,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "It starts instantly"
-          }
-        }
-      }
-    },
-    "Tú lo pides, Real-Debrid lo baja y arranca al instante": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You request it, Real-Debrid downloads it and it starts instantly"
           }
         }
       }
@@ -38937,71 +38814,6 @@
         }
       }
     },
-    "Real-Debrid lo baja en su nube por ti, no en tu iPhone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "es": {
-          "variations": {
-            "device": {
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid lo baja en su nube por ti, no en tu iPhone."
-                }
-              },
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid lo baja en su nube por ti, no en tu iPad."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid lo baja en su nube por ti, no en tu Mac."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid lo baja en su nube por ti, no en tu iPhone."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid downloads it to its cloud for you, not to your iPhone."
-                }
-              },
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid downloads it to its cloud for you, not to your iPad."
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid downloads it to its cloud for you, not to your Mac."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Real-Debrid downloads it to its cloud for you, not to your iPhone."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Cuando termine, arranca al instante aquí y en tu TV.": {
       "extractionState": "manual",
       "localizations": {
@@ -39057,13 +38869,842 @@
         }
       }
     },
-    "Real-Debrid las baja en su nube por ti: de minutos a días.": {
+    "Bajando en la nube · %lld %%": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Real-Debrid downloads them to its cloud for you: minutes to days."
+            "value": "Downloading in the cloud · %lld %%"
+          }
+        }
+      }
+    },
+    "Todavía no está en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not in the cloud yet"
+          }
+        }
+      }
+    },
+    "Todavía no está en la nube.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not in the cloud yet."
+          }
+        }
+      }
+    },
+    "Todavía no está en la nube: puede tardar en abrir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not in the cloud yet: it may take a while to open"
+          }
+        }
+      }
+    },
+    "La nube lo puede bajar por ti, de preferencia en %@; tarda según cuánta gente lo comparte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud can download it for you, preferably in %@; how long depends on how many people share it"
+          }
+        }
+      }
+    },
+    "La nube lo recibió y espera turno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud got it and it's waiting its turn"
+          }
+        }
+      }
+    },
+    "La nube las baja por ti: de minutos a días.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud downloads them for you: minutes to days."
+          }
+        }
+      }
+    },
+    "Bajando en la nube · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading in the cloud · %@"
+          }
+        }
+      }
+    },
+    "en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in the cloud"
+          }
+        }
+      }
+    },
+    "La nube terminó tu pedido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud finished your request"
+          }
+        }
+      }
+    },
+    "La nube terminó de bajarlo · ábrelo para verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud finished downloading it · open it to watch"
+          }
+        }
+      }
+    },
+    "Descargando en este iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando en este iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando en este iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando en esta Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Descargando en este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on this iPhone"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on this iPad"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on this Mac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Downloading on this iPhone"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "La nube es tu Real-Debrid: lo baja por ti, no en este iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nube es tu Real-Debrid: lo baja por ti, no en este iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nube es tu Real-Debrid: lo baja por ti, no en este iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nube es tu Real-Debrid: lo baja por ti, no en esta Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La nube es tu Real-Debrid: lo baja por ti, no en este iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The cloud is your Real-Debrid: it downloads it for you, not on this iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The cloud is your Real-Debrid: it downloads it for you, not on this iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The cloud is your Real-Debrid: it downloads it for you, not on this Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The cloud is your Real-Debrid: it downloads it for you, not on this iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "La nube es tu Real-Debrid: lo baja por ti, no en esta Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud is your Real-Debrid: it downloads it for you, not on this Mac."
+          }
+        }
+      }
+    },
+    "Orbital te manda un aviso cuando la nube termine. Solo eso: nada de promociones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital sends you a notification when the cloud finishes. Just that: no promotions."
+          }
+        }
+      }
+    },
+    "La nube lo baja": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud downloads it"
+          }
+        }
+      }
+    },
+    "Tú lo pides, la nube lo baja y arranca al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You request it, the cloud downloads it and it starts instantly"
+          }
+        }
+      }
+    },
+    "Real-Debrid es la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid is the cloud"
+          }
+        }
+      }
+    },
+    "Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A paid service that keeps movies and shows on its servers; in Orbital we call it “the cloud”. What it already has starts instantly."
+          }
+        }
+      }
+    },
+    "Pedir a la nube es que lo baje por ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requesting from the cloud means it downloads it for you"
+          }
+        }
+      }
+    },
+    "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPad. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en esta Mac. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPhone. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPad. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this Mac. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "If it doesn't have it yet, you request it and it downloads it there, not on this iPhone. How long depends on how many people share it: minutes to days. Sometimes it won't allow it (copyright) and we'll tell you."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Ya está en la nube: empieza sin esperar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in the cloud: starts right away."
+          }
+        }
+      }
+    },
+    "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en esta Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en este iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Cuando pidas algo a la nube, aquí ves cuánto lleva. No ocupa espacio en esta Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you request something from the cloud, you'll see its progress here. It takes no space on this Mac."
+          }
+        }
+      }
+    },
+    "A este paso, faltan unos minutos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At this pace, a few minutes to go."
+          }
+        }
+      }
+    },
+    "A este paso, falta menos de una hora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At this pace, less than an hour to go."
+          }
+        }
+      }
+    },
+    "A este paso, faltan unas horas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At this pace, a few hours to go."
+          }
+        }
+      }
+    },
+    "A este paso, falta más de un día.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At this pace, more than a day to go."
+          }
+        }
+      }
+    },
+    "Te aviso.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll let you know."
+          }
+        }
+      }
+    },
+    "Ver %@, ya arranca": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch %@, it starts right away"
+          }
+        }
+      }
+    },
+    "Esperar a que llegue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wait for it"
+          }
+        }
+      }
+    },
+    "Nada en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in the cloud"
+          }
+        }
+      }
+    },
+    "En este iPhone · sin internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En este iPhone · sin internet"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En este iPad · sin internet"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En esta Mac · sin internet"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En este iPhone · sin internet"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On this iPhone · offline"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On this iPad · offline"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On this Mac · offline"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On this iPhone · offline"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "En esta Mac · sin internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this Mac · offline"
+          }
+        }
+      }
+    },
+    "En una ficha, toca Descargar y lo ves aquí sin internet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Descargar y lo ves aquí sin internet."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Descargar y lo ves aquí sin internet."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, haz clic en Descargar y lo ves aquí sin internet."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "En una ficha, toca Descargar y lo ves aquí sin internet."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Download and watch it here offline."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Download and watch it here offline."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, click Download and watch it here offline."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On a title, tap Download and watch it here offline."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Buscar qué ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find something to watch"
+          }
+        }
+      }
+    },
+    "La nube es tu Real-Debrid: lo que todavía no tiene, se lo pides y lo baja por ti.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cloud is your Real-Debrid: whatever it doesn't have yet, you request it and it downloads it for you."
+          }
+        }
+      }
+    },
+    "No ocupa espacio en este iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No ocupa espacio en este iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No ocupa espacio en este iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No ocupa espacio en esta Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No ocupa espacio en este iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It takes no space on this iPhone."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It takes no space on this iPad."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It takes no space on this Mac."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It takes no space on this iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "No ocupa espacio en esta Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It takes no space on this Mac."
+          }
+        }
+      }
+    },
+    "Si la nube aún no lo tiene, se lo pide 3 min antes del final del que ves.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the cloud doesn't have it yet, it requests it 3 min before the end of the one you're watching."
+          }
+        }
+      }
+    },
+    "Real-Debrid · bajando para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-Debrid · downloading for you"
+          }
+        }
+      }
+    },
+    "Están en Descargas, arriba de lo que guardas en este aparato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They're in Downloads, above what you save on this device."
           }
         }
       }

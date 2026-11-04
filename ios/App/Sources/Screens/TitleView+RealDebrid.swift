@@ -12,14 +12,14 @@ enum TitleDebridSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
-/// «Pedirlo y avisarme» en la ficha (R2-A), cuánto lleva (R3) y los estados del pedido (R13).
+/// «Pedir a la nube» en la ficha (R2-A, RX4-A), cuánto lleva (R3, RX2-A) y los estados del pedido (R13).
 extension TitleView {
     private var language: String { env.services.appSettings.uiLanguage }
     private func tr(_ key: String) -> String { Strings.tr(key, language: language) }
 
     /// El botón principal cuando entra Real-Debrid; nil si no aplica (y va el «Ver» de siempre).
-    /// - Ya pedido (y la recomendada no arranca al instante): «Bajando en Real-Debrid · 42 %», «En cola»… y tocarlo abre el pedido.
-    /// - Existe pero Real-Debrid no lo tiene: «Pedirlo y avisarme» toma el lugar de «Ver» (R2-A, igual que la TV), con una
+    /// - Ya pedido (y la recomendada no arranca al instante): «Bajando en la nube · 42 %», «En cola»… y tocarlo abre el pedido.
+    /// - Existe pero Real-Debrid no lo tiene: «Pedir a la nube» toma el lugar de «Ver» (R2-A, igual que la TV), con una
     ///   línea que no promete y, si otro idioma sí arranca, «Verlo en inglés al instante».
     func debridContinueAction(_ model: TitleModel) -> ContinueAction? {
         let requests = env.services.debridRequests
@@ -51,7 +51,7 @@ extension TitleView {
         guard let offer = model.debridOffer else { return nil }
         // IOS-19: si la TV ya lo pide con otra cuenta, se dice; pedirlo aparte (con la tuya) sigue a un toque.
         let others = model.otherAccountRequest.map { _ in tr("La TV lo está pidiendo con otra cuenta") }
-        return ContinueAction(title: Text("Pedirlo y avisarme"), symbol: "arrow.down.circle",
+        return ContinueAction(title: Text("Pedir a la nube"), symbol: "arrow.down.circle",
                               version: Text(verbatim: others ?? UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
                               play: { requestFromDebrid(model) }, aside: instantAside(offer), tint: artAccent)
     }
@@ -71,7 +71,15 @@ extension TitleView {
         return (Text("Verlo en \(name) al instante"), "play.fill", { start(observerModel, videoID: nil, source: source) })
     }
 
-    /// «Pedirlo y avisarme»: la primera vez, antes de la pregunta de iOS, una línea de para qué son los avisos (R10).
+    /// RX2-A · en la hoja del pedido: «Ver Inglés · 1080p, ya arranca», la misma versión de «Verlo en inglés al instante».
+    private func instantInstead(_ offer: DebridOffer) -> (title: Text, action: () -> Void)? {
+        guard let code = offer.instantLanguage, let source = offer.instantSource else { return nil }
+        let quality = AllSources.quality(source)
+        let name = [Streams.versionLanguageName(code, in: language), quality == "Otras" ? nil : quality].compactMap { $0 }.joined(separator: " · ")
+        return (Text("Ver \(LanguageFlags.flagged(name, code)), ya arranca"), { debridSheet = nil; start(observerModel, videoID: nil, source: source) })
+    }
+
+    /// «Pedir a la nube»: la primera vez, antes de la pregunta de iOS, una línea de para qué son los avisos (R10).
     func requestFromDebrid(_ model: TitleModel) {
         Task {
             if await DebridRequestNotifier.permission() == .notDetermined { debridSheet = .notify; return }
@@ -136,9 +144,10 @@ extension TitleView {
                 let name = [request.title, DebridRequestNotifier.episodeName(request, language: language)].compactMap { $0 }.joined(separator: " · ")
                 DebridRequestSheetHost(request: request, name: name, since: DebridRequestWords.since(request, now: Date(), tr),
                                        status: DebridRequestStatus(symbol: DebridRequestWords.symbol(request.state), title: DebridRequestWords.title(request, tr),
-                                                                   detail: DebridRequestWords.detail(request, now: Date(), notifies: DebridRequestNotifier.canNotify, tr),
+                                                                   detail: DebridRequestWords.paceLine(request, now: Date(), notifies: DebridRequestNotifier.canNotify, tr),
                                                                    fraction: request.state == .downloading ? Double(request.percent) / 100 : nil,
                                                                    warn: DebridRequestWords.isTrouble(request, now: Date()), ok: request.state == .ready),
+                                       instead: model.debridOffer.flatMap(instantInstead),
                                        otherVersion: DebridRequestWords.suggestsOtherVersion(request, now: Date())
                                            ? model.continueVideoID.map { video in { debridSheet = nil; openVersions(video) } } : nil,
                                        openTitle: nil, cancel: { Task { await cancelRequest(request) } },

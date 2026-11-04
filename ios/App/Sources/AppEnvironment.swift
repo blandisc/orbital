@@ -130,6 +130,8 @@ final class AppEnvironment {
     /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
     var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
     static let downloadsTab = 3
+    /// Buscar (el vacío de Descargas lleva ahí).
+    static let searchTab = 2
 
     /// Las imágenes de tu Orbital (logos de canales, arte de juegos) se piden con la llave de este aparato (K1) o, sin ella,
     /// con el token del túnel: tras el primer emparejado v2 el token ya no abre `/api/art` ni `/api/tv/logo` (K1-13).
@@ -283,7 +285,7 @@ final class AppEnvironment {
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.
     private func announce(_ event: InboxModel.Event) {
         switch event {
-        case .downloading(let name): notify(format: "La TV te mandó «%@»", name, detail: "Bajando en el iPhone", tone: .success, action: .downloads)
+        case .downloading(let name): notify(format: "La TV te mandó «%@»", name, detail: "Descargando en este iPhone", tone: .success, action: .downloads)
         case .received(let name): notify(format: "La TV te mandó «%@»", name)
         case .downloadFailed(let name, let reason):
             switch reason {

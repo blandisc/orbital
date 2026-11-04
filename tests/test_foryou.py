@@ -1276,3 +1276,16 @@ def test_a_list_that_comes_empty_or_half_is_shown_but_not_kept():
     assert len(calls) == 4  # a medias: tampoco
     assert cache.get("tmdb:z", 60, lambda: {"items": [1]}, whole=True) == {"items": [1]}
     assert cache.get("tmdb:z", 60, lambda: {"items": []}, whole=True) == {"items": [1]}  # entera: se guarda
+
+
+def test_the_mosaic_suggests_a_series_never_a_specific_episode():
+    """Fernando, 4 nov 2026: «Puedes sugerir una serie, pero no un episodio específico»."""
+    e = {"imdb": "tt0903747", "kind": "series", "title": "Breaking Bad", "year": 2008, "next": {"season": 3, "episode": 5}}
+    item = foryou_mod.video_item(e, "Seguir viendo")
+    assert item["detail"] == "Sigue T3 E5"  # las filas de lo tuyo sí lo dicen
+    tile = foryou_mod.series_only(item)
+    assert tile["episode"] is None and tile["detail"] == "2008"
+    assert all(k not in ("Sigue", "Episodio") for k, _ in tile["facts"]) and "T3 E5" not in json.dumps(tile, ensure_ascii=False)
+    assert tile["action"] == "Ver la serie"
+    movie = foryou_mod.video_item({"imdb": "tt1375666", "kind": "movie", "title": "El origen", "year": 2010}, "Para ti")
+    assert foryou_mod.series_only(movie) is movie

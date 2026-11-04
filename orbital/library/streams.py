@@ -115,8 +115,16 @@ LANG_CODES = {"en": "eng", "es": "spa", "fr": "fre", "it": "ita", "de": "ger", "
 SIZE = re.compile(r"💾\s*([\d.,]+)\s*(TB|GB|MB|KB)", re.I)
 SEEDERS = re.compile(r"👤\s*(\d+)")
 SITE = re.compile(r"⚙️\s*([^\n]+)")
-RES = [("4K", re.compile(r"\b(2160p|4k|uhd)\b", re.I)), ("1080p", re.compile(r"\b1080p\b", re.I)),
-       ("720p", re.compile(r"\b720p\b", re.I)), ("480p", re.compile(r"\b(480p|sd)\b", re.I))]
+# «1440p» (algunas de anime) se llama así pero cuenta como 1080p (`res_class`); antes quedaba sin calidad, al fondo de su
+# idioma (análisis de fondo con el iPhone, 3 nov 2026).
+RES = [("4K", re.compile(r"\b(2160p|4k|uhd)\b", re.I)), ("1440p", re.compile(r"\b1440p\b", re.I)),
+       ("1080p", re.compile(r"\b1080p\b", re.I)), ("720p", re.compile(r"\b720p\b", re.I)),
+       ("480p", re.compile(r"\b(480p|sd)\b", re.I))]
+
+
+def res_class(resolution: str) -> str:
+    """La calidad con que se ordena y se agrupa: 1440p cuenta como 1080p."""
+    return "1080p" if resolution == "1440p" else resolution
 UNITS = {"KB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12}
 
 
@@ -144,6 +152,12 @@ class Source:
     # tres: "es-419" (latino), "es-ES" (castellano) y "es" (no dice cuál). `languages` es lo mismo sin el doblaje.
     audio_langs: dict[str, str] = field(default_factory=dict)
     other_title: bool = False  # el nombre no menciona el título: Torrentio a veces trae otro («La casa de la pradera»)
+    other_episode: bool = False  # trae otra temporada («Breaking Bad T4 · 04 - CAPITULO 01» en T1 E1): «¿Otro episodio?»
+
+    @property
+    def doubtful(self) -> bool:
+        """Parece de otro título o de otro episodio: nunca la recomendada ni la ofrecida si hay otra."""
+        return self.other_title or self.other_episode
 
     @property
     def checked(self) -> bool:
@@ -181,7 +195,7 @@ class Source:
             # Para «Versión»: cada idioma con su código, su nombre y cómo lo sabemos.
             "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
                             for code, how in self.audio_langs.items()],
-            "other_title": self.other_title, "checked": self.checked, "requested": self.requested,
+            "other_title": self.other_title, "other_episode": self.other_episode, "checked": self.checked, "requested": self.requested,
             # T8-A: la que hay que pedir lleva su huella (no es secreta) para «Pedirlo y avisarme» justo esta.
             **({"hash": self.info_hash} if self.debrid and not self.cached and self.info_hash else {}),
         }
@@ -420,6 +434,38 @@ def mentions_title(titles: list[str], text: str) -> bool:
     return False
 
 
+# «¿Otro episodio?» (las mismas reglas que el iPhone, Streams+Episodes.swift): Torrentio a veces pone en un episodio el
+# archivo de otra temporada. Solo con temporada (los de Kitsu van de corrido).
+EPISODE_MARK = re.compile(r"\bs(\d{1,2})[ ._-]?e\d{1,3}\b|\b(\d{1,2})x\d{2,3}\b", re.I)
+SEASON_WORD = re.compile(r"\b(?:s|season|temporada|saison|stagione|staffel|sezon)[ ._-]?(\d{1,2})\b", re.I)
+SEASON_LETTER = re.compile(r"\bT(\d{1,2})\b")  # «T4» (temporada), solo en mayúscula
+SEASON_RANGE = re.compile(
+    r"\bs\d{1,2}[ ._]*(?:-|~|a|to)[ ._]*s?\d{1,2}\b|\b(?:seasons?|temporadas?)[ ._]*\d{1,2}[ ._]*(?:-|~|a|to|&|y)[ ._]*\d{1,2}\b|"
+    r"\bt\d{1,2}[ ._]*-[ ._]*t?\d{1,2}\b", re.I)
+
+
+def season_of(video_id: str) -> int | None:
+    """La temporada de un episodio de IMDb («tt0903747:1:2» → 1); None si no es de ese tipo."""
+    parts = video_id.split(":")
+    if len(parts) != 3 or not parts[0].startswith("tt") or not parts[1].isdigit():
+        return None
+    return int(parts[1])
+
+
+def other_episode(release: str, filename: str, season: int) -> bool:
+    """El archivo o el nombre dicen otra temporada (y ninguno dice esta)."""
+    def seasons(pattern: re.Pattern, text: str) -> list[int]:
+        return [int(next(g for g in m.groups() if g)) for m in pattern.finditer(text)]
+    for text in (filename, release):
+        marked = seasons(EPISODE_MARK, text)
+        if marked:
+            return season not in marked
+    if SEASON_RANGE.search(release):
+        return False
+    named = seasons(SEASON_WORD, release) + seasons(SEASON_LETTER, release)
+    return bool(named) and season not in named
+
+
 def spanish_dub(text: str) -> str:
     """"latino", "castellano" o "" según lo que diga el título de la fuente. Si dice los dos, "latino" (trae esa pista).
     🇪🇸 sola no lo dice: Torrentio la pone a cualquier «Spanish»."""
@@ -448,11 +494,12 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
     s += language_score(src, prefs)
     order = ["4K", "1080p", "720p", "480p", ""]
     want = order.index(prefs.quality) if prefs.quality in order else 1
-    have = order.index(src.resolution) if src.resolution in order else len(order) - 1
+    res = res_class(src.resolution)
+    have = order.index(res) if res in order else len(order) - 1
     s += 200 - 60 * abs(have - want) - (40 if have > want else 0)  # peor que lo pedido pesa más
     gb = src.size / 1e9
     # Demasiado grande para transmitir con soltura (REMUX de 95 GB); en 4K lo normal ya es 15-60 GB.
-    too_big = {"4K": 60, "1080p": 25}.get(src.resolution, 15) * (1 if kind == "movie" else .3)
+    too_big = {"4K": 60, "1080p": 25}.get(res, 15) * (1 if kind == "movie" else .3)
     if gb > too_big:
         s -= 150
     if src.size and gb < (0.7 if kind == "movie" else 0.12):
@@ -465,6 +512,8 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s -= 1500
     if "Reescalada" in src.tags:
         s -= 150
+    if src.other_episode:
+        s -= 1500  # otra temporada: nunca la recomendada (como el iPhone)
     if src.other_title:
         s -= 500  # el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)
     s += min(src.seeders, 500) / 10
@@ -527,6 +576,10 @@ def cache_key(kind: str, video_id: str, prefs: Preferences) -> str:
     return f"{kind}:{video_id}:{prefs.audio}:{prefs.spanish}:{prefs.quality}"
 
 
+def is_opensubtitles(base: str) -> bool:
+    return "opensubtitles" in base.lower()
+
+
 class StreamFinder:
     """Pide fuentes a los complementos que las dan (en paralelo) y las guarda unos minutos."""
 
@@ -543,6 +596,8 @@ class StreamFinder:
         # tracks(key) -> las pistas de audio que mpv vio al reproducir esa fuente, o None.
         self.facts: Callable[[str, str], dict | None] = lambda kind, video_id: None
         self.tracks: Callable[[str], list[dict] | None] = lambda key: None
+        # Ajustes › Ver › «Buscar subtítulos en internet»: OpenSubtitles viene con Orbital, ya no es complemento (3 nov 2026).
+        self.internet_subtitles: Callable[[], bool] = lambda: True
 
     def addons(self) -> list[addons.Addon]:
         return self.registry.addons()
@@ -563,28 +618,36 @@ class StreamFinder:
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
 
     def subtitles(self, kind: str, video_id: str, lang: str) -> list[str]:
-        """URLs de subtítulos en tu idioma de tus addons (OpenSubtitles…), por si el video no trae."""
+        """URLs de subtítulos en tu idioma de tus complementos y de OpenSubtitles (si está prendido), por si el video no trae."""
         codes = {lang, LANG_CODES.get(lang, lang)}
         urls = []
-        for addon in self.addons():
-            if not addon.handles("subtitles", kind, video_id):
-                continue
+
+        def get(addon: addons.Addon | None) -> list:
+            path = f"subtitles/{kind}/{quote(video_id, safe='')}.json"
             try:
-                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id, safe='')}.json").get("subtitles")
-                subs = subs if isinstance(subs, list) else []
+                data = self._get_json(addon, path) if addon else addons.fetch_json(f"{subtitle_lib.BUILTIN}/{path}", self.timeout)
             except NET_ERRORS as exc:
-                log.info("Sin subtítulos de %s: %s", addon.name, exc)
-                continue
-            urls += [s["url"] for s in subs if isinstance(s, dict) and isinstance(s.get("url"), str)
+                log.info("Sin subtítulos de %s: %s", addon.name if addon else "OpenSubtitles", exc)
+                return []
+            subs = data.get("subtitles")
+            return subs if isinstance(subs, list) else []
+
+        # OpenSubtitles viene con Orbital: el de la lista o el traído de Stremio no se pregunta dos veces.
+        ask: list[addons.Addon | None] = [a for a in self.addons() if a.handles("subtitles", kind, video_id) and not is_opensubtitles(a.base)]
+        if self.internet_subtitles():
+            ask.append(None)
+        for addon in ask:
+            urls += [s["url"] for s in get(addon) if isinstance(s, dict) and isinstance(s.get("url"), str)
                      and s["url"].startswith(("http://", "https://")) and s.get("lang") in codes]
         return urls
 
     def subtitle_options(self, kind: str, video_id: str, fingerprint: tuple[str, int] | None = None) -> list[dict] | None:
-        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (siempre, como el iPhone), con la copia
+        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (si está prendido en Ajustes › Ver, como el iPhone), con la copia
         para la que se hicieron y sus descargas. Con la huella del archivo, los de tu copia exacta salen primero. None si
         nadie contestó (sin internet): así «no hay» y «sin conexión» no se confunden."""
-        bases = [(a.base, a.name) for a in self.addons() if a.handles("subtitles", kind, video_id)]
-        if not any("opensubtitles" in b for b, _ in bases):
+        # OpenSubtitles viene con Orbital: el de la lista o el traído de Stremio no se pregunta dos veces.
+        bases = [(a.base, a.name) for a in self.addons() if a.handles("subtitles", kind, video_id) and not is_opensubtitles(a.base)]
+        if self.internet_subtitles():
             bases.append((subtitle_lib.BUILTIN, "OpenSubtitles"))
         extra = f"/videoHash={fingerprint[0]}&videoSize={fingerprint[1]}" if fingerprint else ""
 
@@ -652,6 +715,8 @@ class StreamFinder:
                     src = parse(stream, addon.name, addon.url, index, original)
                     hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
                     src.other_title = not mentions_title(titles, f"{src.release} {hints.get('filename') or ''}")
+                    if (season := season_of(video_id)) is not None:
+                        src.other_episode = other_episode(src.release, str(hints.get("filename") or ""), season)
                     if (tracks := self.tracks(src.key)):
                         heard(src, tracks)
                     sources.append(src)

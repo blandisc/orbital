@@ -422,7 +422,7 @@ public final class PlayerModel: ObservableModel {
             if !found.instant, queued.contains(found.key, now: clock()) || alreadyRequested(found) {
                 lastNotice = .downloading
                 rd.pendingSource = found
-                return fail("Real-Debrid todavía no lo tiene.", .noSources)
+                return fail("Todavía no está en la nube.", .noSources)
             }
             startLoading()
             // Abrirla le pide a Real-Debrid que la baje: se anota en la libreta para seguirla (R12).

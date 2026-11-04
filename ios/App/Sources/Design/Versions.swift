@@ -7,6 +7,8 @@ import OrbitalModels
 struct VersionLanguageRow: View {
     let row: LanguageRow
     let uiLanguage: String
+    /// RX2-A · lo que ya pediste y baja en la nube dice cómo va («Bajando · 42 %»), no «Por pedir». nil: no está pedida.
+    var cloud: (VersionOption) -> String? = { _ in nil }
     let pick: (VersionOption) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -40,7 +42,7 @@ struct VersionLanguageRow: View {
             LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: DS.Version.chipMinimum), spacing: DS.Space.s2)],
                       alignment: .leading, spacing: DS.Space.s2) {
                 ForEach(row.options) { option in
-                    VersionChip(option: option, language: Streams.versionLanguageName(row.code, in: uiLanguage)) { pick(option) }
+                    VersionChip(option: option, language: Streams.versionLanguageName(row.code, in: uiLanguage), cloud: cloud(option)) { pick(option) }
                 }
             }
         }
@@ -53,6 +55,8 @@ struct VersionLanguageRow: View {
 struct VersionChip: View {
     let option: VersionOption
     let language: String
+    /// Ya pedida: cómo va en la nube («Bajando · 42 %»).
+    var cloud: String?
     let action: () -> Void
 
     var body: some View { bodyContent.pointerHover(.highlight) }
@@ -67,7 +71,10 @@ struct VersionChip: View {
                 Text(verbatim: Self.facts(option)).recipe(.caption).lineLimit(1)
                 // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
                 // T8-A: la que hay que pedir lo dice corto y con su flecha (antes «Real-Debrid aún no la t…», cortado).
-                if option.speed == .realDebridMustDownload {
+                if option.speed == .realDebridMustDownload, let cloud {
+                    Label { Text(verbatim: cloud) } icon: { Image(systemName: "icloud.and.arrow.down") }
+                        .recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon).lineLimit(1)
+                } else if option.speed == .realDebridMustDownload {
                     Label { Text("Por pedir") } icon: { Image(systemName: "arrow.down.circle") }
                         .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
                 } else if let speed = Self.speedText(option), let color = Self.speedColor(option.speed) {
@@ -93,7 +100,7 @@ struct VersionChip: View {
     static func speedText(_ speed: SourceSpeed) -> Text? {
         switch speed {
         case .inRealDebrid: Text("Al instante")
-        case .realDebridMustDownload: Text("Real-Debrid aún no la tiene")
+        case .realDebridMustDownload: Text("Todavía no está en la nube")
         case .unknown: nil
         }
     }

@@ -205,3 +205,9 @@ test("«Ver» dice cómo va a sonar, y la lista dice latino o castellano", async
   assert.deepEqual(versionStart(rows, rows[0].options[0].source), { row: 0, col: 0 });
   assert.equal(rows[0].options[0].source.id, 7);
 });
+
+test("FQ1-A (Fernando, 3 nov): ya arranca en otro idioma y, al lado de «Ver», «Pedir a la nube en latino»", () => {
+  const ids = titleActions({ title: "Dune" }, { kind: "movie", request: { label: "Pedir a la nube en latino", hash: "a".repeat(40) } });
+  assert.equal(ids[0].label, "Ver");
+  assert.deepEqual([ids[1].id, ids[1].label], ["rd-request", "Pedir a la nube en latino"]);
+});

@@ -639,6 +639,7 @@ export const SETTING_VALUES = {
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
   rd_auto_request: [[true, "Sí"], [false, "No"]],
+  internet_subtitles: [[true, "Sí"], [false, "No"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   game_mode: [["heavy", "Consolas pesadas"], ["off", "Nunca"]],
   game_resolution: [["lower", "1080p"], ["native", "La de la pantalla"]],
@@ -682,7 +683,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "download",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "download", internet_subtitles: "captions",
   game_mode: "memory", game_resolution: "hd",
 };
 
@@ -692,9 +693,10 @@ const SETTING_TEXT = {
   subtitles: ["Subtítulos", "Los que salen solos al empezar. En el reproductor, X los cambia."],
   quality: ["Calidad", "La que se busca primero. 4K tarda más en empezar."],
   sub_scale: ["Letra de los subtítulos", "El tamaño de los subtítulos en el reproductor."],
+  internet_subtitles: ["Buscar subtítulos en internet", "Si el video no los trae en tu idioma, se buscan en OpenSubtitles. Viene con Orbital."],
   video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
   video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
-  rd_auto_request: ["Pedir solo el siguiente episodio", "Si Real-Debrid aún no lo tiene, se lo pide unos minutos antes de que acabe el que ves."],
+  rd_auto_request: ["Pedir solo el siguiente episodio", "Si todavía no está en la nube, se lo pide unos minutos antes de que acabe el que ves."],
   game_idle_minutes: ["Cerrar juegos olvidados en pausa", "Un juego en pausa se cierra solo después de ese rato. Lo no guardado se pierde."],
   close_previous: ["Abrir algo nuevo cierra lo anterior", "Así no se quedan dos juegos o videos abiertos gastando memoria."],
   game_mode: ["Cerrar Orbital al jugar", "Más memoria para Switch, Wii U y las consolas pesadas. Vuelve sola al salir del juego."],
@@ -848,7 +850,7 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   const row = (key) => settingRow(key, settings, id);
   switch (id) {
     case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
-      row("audio"), row("subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
+      row("audio"), row("subtitles"), row("internet_subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
       { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
     ] };
     case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [
@@ -1343,12 +1345,31 @@ const REQUEST_WORDS = { queued: "En cola", no_peers: "Sin gente que lo comparta"
   too_many: "Muchas descargas activas", ready: "Listo" };
 const REQUEST_ICONS = { queued: "calendar", downloading: "download", no_peers: "players", refused: "warning", too_many: "list", ready: "check" };
 
-/** Un pedido en una línea: «Bajando en Real-Debrid · 42 %», «En cola»… */
+/** Un pedido en una línea: «Bajando en la nube · 42 %», «En cola»… */
 /** Dónde, cómo y por qué de un pedido: el mismo texto del iPhone, adaptado a la TV (rd_requests.CLOUD). */
-export const DEBRID_CLOUD = "Real-Debrid lo baja en su nube por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso.";
+export const DEBRID_CLOUD = "La nube es tu Real-Debrid: lo baja por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso.";
 
 export function requestLabel(req) {
-  return req.state === "downloading" ? `Bajando en Real-Debrid · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
+  return req.state === "downloading" ? `Bajando en la nube · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
+}
+
+/** RX1-TV-A (Fernando, 3 nov): la fila «Real-Debrid · bajando para ti» de Películas y series, junto a Descargas, solo
+ *  cuando pediste algo. Primero lo que baja y luego lo que ya terminó (como «Tus pedidos»); A en lo listo abre su ficha y
+ *  en lo que baja, su hoja (la misma de «Tus pedidos»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» sigue ahí. */
+export const CLOUD_ROW = "Real-Debrid · bajando para ti";
+export function cloudRow(requests = [], { now = Date.now() } = {}) {
+  const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone");
+  if (!live.length) return [];
+  const order = (r) => (r.state === "ready" ? 1 : 0);
+  const items = [...live].sort((a, b) => order(a) - order(b) || (b.since || 0) - (a.since || 0)).map((req) => ({
+    id: `cloud:${req.hash}`, title: req.title || "Tu pedido", source: "stremio", category: "cloud", kind: req.kind || "movie",
+    meta_id: req.meta_id, image: `https://images.metahub.space/poster/medium/${req.meta_id}/img`, request: req,
+    subtitle: [req.state === "ready" ? "Al instante · la pediste" : requestLabel(req), requestedBy(req, now)].join(" · "),
+    progress: req.state === "downloading" ? Math.max(0, Math.min(1, (req.percent || 0) / 100)) : null,
+    extra: { kind: req.kind || "movie", meta_id: req.meta_id, video_id: req.video_ids?.[0] || req.meta_id, eyebrow: CLOUD_ROW,
+      description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : DEBRID_CLOUD },
+  }));
+  return [{ id: "curated:cloud", title: CLOUD_ROW, seal: "orbital", group: "downloads", items }];
 }
 
 /** Quién lo pidió: «Lo pediste aquí» o «Lo pidió el iPhone de Fernando». */
@@ -1424,11 +1445,13 @@ export const DEBRID_FORM = {
 export function debridRemoteMenu(event) {
   return {
     title: event.account ? `¿Usar la cuenta ${event.account}?` : "¿Usar esta clave?",
-    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige Cancelar.",
+    subtitle: "Llegó desde un celular, con las palabras que enseñó esta TV. Si no fuiste tú, elige Cancelar. Si cierras, se borra.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "rd-remote-cancel", code: event.code } },
       { icon: "check", label: "Usar", command: { type: "rd-remote-confirm", code: event.code } },
     ],
+    // K1-A (Fernando, 3 nov): cerrar sin contestar (B, tocar fuera) la borra; antes se quedaba en memoria hasta 20 min.
+    cancel: { type: "rd-remote-cancel", code: event.code },
   };
 }
 
@@ -1438,8 +1461,8 @@ export function debridRemoteMenu(event) {
 const EXPLAINERS = {
   requests: [
     ["search", "library", "Tus complementos buscan dónde verlo", "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."],
-    ["bolt", "series", "Real-Debrid lo guarda", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante."],
-    ["download", "calendar", "Pedirlo es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
+    ["bolt", "series", "Real-Debrid es la nube", "Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."],
+    ["download", "calendar", "Pedir a la nube es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja allá, no en la TV. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
     ["bell", "trend", "Te avisamos cuando esté", "Aquí en la TV, en cuanto Real-Debrid termina de bajar lo que pediste desde la TV."],
   ],
   torrentio: [
@@ -1450,11 +1473,11 @@ const EXPLAINERS = {
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
     ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
-    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan."],
+    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
-const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "Real-Debrid lo baja" },
+const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "La nube lo baja" },
   { icon: "play", tint: "flame", label: "Arranca al instante" }];
 
 export function explainerMenu(topic) {
@@ -1506,7 +1529,7 @@ export function debridRequestsMenu(requests = []) {
       ...(going.length ? [{ heading: true, label: "Bajando" }, ...going.map(row)] : []),
       ...(done.length ? [{ heading: true, label: "Ya terminaron" }, ...done.map(row)] : []),
       explainRow("requests"),
-    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } },
+    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedir a la nube» cuando todavía no está en la nube", command: { type: "close" } },
       explainRow("requests")],
   };
 }
@@ -1594,10 +1617,15 @@ export function addonHealth(health, now = Date.now()) {
   return `No contesta${day}${health.skipped ? " · se salta" : ""}`;
 }
 
+/** OpenSubtitles (el de Orbital o el traído de Stremio) ya no es complemento: los subtítulos de internet vienen con Orbital y
+ * se prenden en Ajustes › Ver (Fernando, 3 nov 2026; igual que el iPhone). */
+export const isOpenSubtitles = (e) => e.template === "opensubtitles" || /opensubtitles/i.test(e.name || "");
+const shownAddons = (entries) => (entries || []).filter((e) => !isOpenSubtitles(e));
+
 /** El dato de Complementos en el riel: «4 de 5 contestan», o de dónde salen si aún no son tuyos. */
 function addonsMeta(status) {
   if (!status || status.source !== "own") return "Los de tu cuenta de Stremio";
-  const on = (status.entries || []).filter((e) => e.on);
+  const on = shownAddons(status.entries).filter((e) => e.on);
   if (!on.length) return "Ninguno prendido";
   const answering = on.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
   return `${answering} de ${on.length} contestan`;
@@ -1619,8 +1647,8 @@ export function addonRows(status, now = Date.now()) {
       value: e.on ? "Prendido" : "Apagado", warn: e.on && e.health?.state === "down",
       command: { type: "addon-menu", id: e.id } };
   };
-  const ours = (status.entries || []).filter((e) => e.origin === "orbital");
-  const brought = (status.entries || []).filter((e) => e.origin !== "orbital");
+  const ours = shownAddons(status.entries).filter((e) => e.origin === "orbital");
+  const brought = shownAddons(status.entries).filter((e) => e.origin !== "orbital");
   const imported = status.imported_at ? `Traídos el ${new Date(status.imported_at * 1000).toLocaleDateString("es", { day: "numeric", month: "short" })}` : "";
   if (status.source !== "own" && !status.imported_at) {
     return [

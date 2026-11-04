@@ -12,7 +12,7 @@ struct VersionRequestGroup<Rows: View>: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 DSGroupLabel(title: Text("Hay que pedirlas · tardan"))
-                Text("Real-Debrid las baja en su nube por ti: de minutos a días.").recipe(.footnote)
+                Text("La nube las baja por ti: de minutos a días.").recipe(.footnote)
             }
             .padding(.top, DS.Space.s3)
             rows
@@ -46,7 +46,7 @@ struct VersionRequestRow: View {
             if let status {
                 status.accessibilityIdentifier("version-request-status")   // la misma pieza que la ficha y «Tus pedidos»
             } else {
-                Button(action: request) { Label("Pedirlo y avisarme", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                Button(action: request) { Label("Pedir a la nube", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
                     .dsSecondaryButton().controlSize(.large)
                     .accessibilityIdentifier("version-request")
             }
