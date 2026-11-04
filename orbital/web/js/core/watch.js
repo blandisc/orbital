@@ -199,7 +199,6 @@ export const PROOF_LABELS = {
   assumed: "No dice idioma", maybe: "Tal vez",
 };
 const VERSION_RES = ["4K", "1080p", "720p", "SD"];
-const PROOF_RANK = { seen: 5, name: 4, site: 4, original: 3, assumed: 2, maybe: 1 };
 // 1440p (algunas de anime) va con las de 1080p, como en el servidor (streams.res_class) y en el iPhone.
 const versionRes = (src) => {
   const res = src.resolution === "1440p" ? "1080p" : src.resolution;
@@ -219,60 +218,65 @@ const doubtful = (src) => Boolean(src?.other_title || src?.other_episode);
  * Devuelve [{ code, name, role, options: [{ res, source, proof, all }] }]; `all`: las de esa fila y calidad (X).
  */
 export function versionRows(sources = [], prefs = {}) {
+  // Las reglas del iPhone (SourcesModel.languageRows) y del servidor (watch.version_layout), que comparan los escenarios
+  // comunes: en cada casilla la primera del servidor (la mejor para ti), salvo una de otro título u otro episodio si hay
+  // otra; SD solo si ese idioma no tiene nada mejor (salvo la recomendada); las filas en tu orden.
   const usable = sources.filter((s) => !(s.tags || []).some((t) => JUNK.includes(t)));
   const pool = usable.length ? usable : sources;
+  const recommended = prefs.recommended ?? pool[0]?.id;
+  const rowCode = (lang) => (lang.code.startsWith("es") ? (lang.proof === "maybe" ? "es" : lang.code) : lang.code.split("-")[0]);
   const rows = new Map();
   for (const src of pool) {
     const langs = src.audio_langs?.length ? src.audio_langs
       : [{ code: isOwnSource(src) ? "own" : "other", name: isOwnSource(src) ? OWN_SOURCE : "Sin idioma", proof: "" }];
+    const placed = new Set(); // una versión, una vez por fila
     for (const lang of langs) {
-      const row = rows.get(lang.code) || { code: lang.code, name: lang.name, original: false, cells: new Map() };
+      const code = lang.code === "own" || lang.code === "other" ? lang.code : rowCode(lang);
+      const row = rows.get(code) || { code, name: code === lang.code ? lang.name : code === "es" ? "Español (no dice cuál)" : lang.name,
+        original: false, cells: new Map() };
       row.original ||= lang.proof === "original";
-      const res = versionRes(src);
-      const cell = row.cells.get(res) || { res, source: src, proof: lang.proof, all: [] };
-      // La primera del servidor (la mejor para ti), salvo que su idioma sea dudoso y haya otra que lo diga seguro.
-      // Tampoco una que parece de otro título («La casa de la pradera») si hay una que sí es.
-      const sure = (proof) => (PROOF_RANK[proof] || 0) >= PROOF_RANK.original;
-      if ((!sure(cell.proof) && sure(lang.proof)) || (doubtful(cell.source) && !doubtful(src))) {
-        Object.assign(cell, { source: src, proof: lang.proof });
+      if (!placed.has(code)) {
+        placed.add(code);
+        const res = versionRes(src);
+        const cell = row.cells.get(res) || { res, source: src, proof: lang.proof, all: [] };
+        if (doubtful(cell.source) && !doubtful(src)) Object.assign(cell, { source: src, proof: lang.proof });
+        cell.all.push(src);
+        row.cells.set(res, cell);
       }
-      cell.all.push(src);
-      row.cells.set(res, cell);
-      rows.set(lang.code, row);
+      rows.set(code, row);
     }
   }
   const dub = ["es-419", "es-ES"].includes(prefs.spanish) ? prefs.spanish : null;
-  const mine = prefs.audio === "es" ? (dub ? [dub] : ["es-419", "es-ES"]) : [prefs.audio || "en"];
-  const wanted = prefs.audio === "es" ? [...mine, "es", "es-419", "es-ES"] : mine;
-  const spanish = ["es-419", "es-ES", "es"];
+  const want = prefs.audio === "es" && dub ? dub : prefs.audio || "en";
+  const mine = prefs.audio === "es" ? (dub ? [dub] : ["es-419", "es-ES"]) : [want];
+  const plan = (prefs.plan?.length ? prefs.plan : want === "es-419" ? ["original", "en", "es-ES"] : []).filter((c) => c !== want);
   const rank = (row) => {
     if (row.code === "own") return -1;
-    // Fernando, 4 nov: con un doblaje elegido, «latino, idioma original, luego inglés y luego castellano» (el español que
-    // no dice cuál, justo después del tuyo). Lo mismo que streams.language_score y version_grid en el servidor.
-    // N4-A: con Tus idiomas, las filas en ese orden («original» es la fila del idioma original de la obra).
-    const first = prefs.audio === "es" ? dub : prefs.plan?.length ? prefs.audio : null;
-    if (first) {
-      const head = first === "es-419" || first === "es-ES" ? [first, "es"] : [first];
-      const at = head.indexOf(row.code);
-      if (at >= 0) return at;
-      const plan = prefs.plan?.length ? prefs.plan : ["original", "en", first === "es-419" ? "es-ES" : "es-419"];
-      const step = plan.findIndex((c) => (c === "original" ? row.original && !head.includes(row.code) : c === row.code));
-      return step >= 0 ? head.length + step : 20;
-    }
-    const i = wanted.filter(Boolean).indexOf(row.code);
-    if (i >= 0) return i;
-    if (row.code === "own") return -1;
-    // Luego el original y, como Orbital es en español, latino, castellano y «Español (no dice cuál)» antes que los demás.
-    return row.original ? 10 : spanish.includes(row.code) ? 11 + spanish.indexOf(row.code) : 20;
+    const yours = row.code === want || (want.length === 2 && row.code.startsWith(want));
+    if (row.code === want && (want.length > 2 || !want.startsWith("es"))) return 0;
+    if (yours) return row.code === "es" ? 2 : 1;
+    if (row.code === "es" && want.startsWith("es")) return 2;
+    const place = plan.findIndex((c) => (c === "original" ? row.original : c === row.code));
+    if (place >= 0) return 3 + place;
+    if (row.original) return 15;
+    if (row.code.startsWith("es")) return 20;
+    return 30;
   };
   const size = (row) => [...row.cells.values()].reduce((n, c) => n + c.all.length, 0);
-  return [...rows.values()]
-    .sort((a, b) => rank(a) - rank(b) || size(b) - size(a))
-    .map((row) => ({
-      code: row.code, name: row.name,
-      role: mine.includes(row.code) ? "Tu idioma" : row.code === "es" ? "No dice si latino o castellano" : row.original ? "Original" : "",
-      options: VERSION_RES.filter((r) => row.cells.has(r)).map((r) => row.cells.get(r)),
-    }));
+  const order = [...rows.values()];
+  return order
+    .map((row, i) => ({ row, i }))
+    .sort((a, b) => rank(a.row) - rank(b.row) || size(b.row) - size(a.row) || a.i - b.i)
+    .map(({ row }) => {
+      let options = VERSION_RES.filter((r) => row.cells.has(r)).map((r) => row.cells.get(r));
+      if (options.length > 1) options = options.filter((o) => o.res !== "SD" || o.source.id === recommended);
+      return {
+        code: row.code, name: row.name,
+        role: mine.includes(row.code) ? "Tu idioma" : row.code === "es" ? "No dice si latino o castellano" : row.original ? "Original" : "",
+        options,
+      };
+    })
+    .filter((row) => row.options.length);
 }
 
 /** Los idiomas de una versión en una línea: los seguros con su prueba y los «tal vez» resumidos (una de Crunchyroll trae

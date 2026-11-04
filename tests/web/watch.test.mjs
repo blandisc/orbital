@@ -117,7 +117,7 @@ test("Versión: una fila por idioma con solo las calidades que hay; tu idioma, l
   const rows = versionRows(sources, { audio: "es", spanish: "es-419" });
   assert.deepEqual(rows.map((r) => [r.code, r.role, r.options.map((o) => `${o.res}:${o.source.id}`).join(" ")]), [
     // Fernando, 4 nov: latino, el que no dice cuál, el original (aquí inglés) y al final castellano.
-    ["es-419", "Tu idioma", "1080p:b"], ["es", "No dice si latino o castellano", "720p:g"], ["en", "Original", "4K:a 1080p:b SD:e"], ["es-ES", "", "4K:d"],
+    ["es-419", "Tu idioma", "1080p:b"], ["es", "No dice si latino o castellano", "720p:g"], ["en", "Original", "4K:a 1080p:b"], ["es-ES", "", "4K:d"], // SD, solo si no hay nada mejor (como el iPhone)
   ]); // la grabada en el cine (f) no sale; la dual (b) sale en latino y en inglés
   assert.deepEqual(rows[2].options[1].all.map((x) => x.id), ["b", "c"]); // X: todas las de esa fila y calidad (la del inglés)
   const english = versionRows(sources, { audio: "en" });
@@ -157,7 +157,7 @@ test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhon
   assert.deepEqual(titleActions(movie, { download: null }).map((b) => b.id), ["play", "mylist", "download", "sources"]);
 });
 
-test("Versión: con «Cualquiera», latino y castellano son tu idioma; la casilla enseña la más segura", async () => {
+test("Versión: con «Cualquiera», latino y castellano son tu idioma; la casilla enseña la primera del servidor", async () => {
   const { versionRows, versionStep } = await import("../../orbital/web/js/core/watch.js");
   const lang = (code, name, proof) => ({ code, name, proof });
   const s = (id, resolution, langs) => ({ id, resolution, audio_langs: langs, tags: [] });
@@ -169,7 +169,8 @@ test("Versión: con «Cualquiera», latino y castellano son tu idioma; la casill
   assert.deepEqual(rows.map((r) => [r.code, r.role]), [
     ["es-419", "Tu idioma"], ["es-ES", "Tu idioma"], ["es", "No dice si latino o castellano"], ["en", ""]]);
   const english = rows.find((r) => r.code === "en").options[0];
-  assert.equal(english.source.id, "b"); // la dual que dice inglés, no la primera que es «tal vez»
+  // Como el iPhone (escenarios comunes, 4 nov): la primera del servidor, que ya viene ordenada por lo que te conviene.
+  assert.equal(english.source.id, "a");
   assert.deepEqual(english.all.map((x) => x.id), ["a", "b"]);
   // Sin filas, o con una fila vacía, moverse no truena.
   assert.deepEqual(versionStep([], { row: 0, col: 0 }, "right"), { row: 0, col: 0 });
