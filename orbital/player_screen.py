@@ -26,7 +26,7 @@ import threading
 import time
 
 from . import player_ui
-from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, VOLUME_BOOST_MAX, seek_step, track_variant
+from .playback import CHAPTER_SEEK, EXTRA_LABEL, UPNEXT_COUNTDOWN, VOLUME_BOOST_MAX, extra_filter, seek_step, track_variant
 from .player_subs import SubtitleTrial
 from .text import clock
 
@@ -823,6 +823,8 @@ class PlayerScreen(SubtitleTrial):
         self._quiet_episodes = 0
         if player_ui.set_touch(True):
             self._redraw_for_input()
+        if player_ui.targets.get("volume") and self.volume_tap(x, y):  # − o + de la cápsula del volumen (V2-A)
+            return
         if self._try is not None:  # probando subtítulos: solo sus botones (tocar el video no hace nada)
             action = player_ui.hit("try", x, y)
             if isinstance(action, str):
@@ -879,6 +881,9 @@ class PlayerScreen(SubtitleTrial):
             self._quit()
         elif action == "subs":
             self.try_subtitles()
+        elif action == "volume":  # V2-A: la cápsula con − y +
+            self.show_volume_now()
+            return
         elif action == "next":  # «⏭ Siguiente · E3»: lo mismo que RT
             action = "rt"
         if action in ("a", "x", "y", "left", "right", "up", "down", "rt"):
@@ -897,9 +902,11 @@ class PlayerScreen(SubtitleTrial):
         cierra lo abierto o pregunta «¿Salir de …?» (otro Esc sale; Espacio sigue viendo)."""
         if self.current is None:
             return
-        if button.startswith("wheel-"):  # la rueda del mouse: otro subtítulo mientras pruebas; si no, nada
+        if button.startswith("wheel-"):  # la rueda del mouse: otro subtítulo mientras pruebas; si no, el volumen (V2-A)
             if self._try is not None:
                 self._try_press(button)
+            elif self.menu is None:
+                self._change_volume(1 if button == "wheel-up" else -1)
             return
         if player_ui.set_input("keyboard"):
             self._redraw_for_input()
@@ -1061,14 +1068,14 @@ class PlayerScreen(SubtitleTrial):
             if (direction > 0 and current >= 100) or (direction < 0 and boost > 100):
                 boost = max(100, min(VOLUME_BOOST_MAX, boost + 5 * direction))
                 self.boost = boost
-                self.mpv.command("set_property", "volume", boost)
+                self._apply_extra(boost)
                 if direction > 0 and now.get("muted"):
                     system[1](level=current, muted=False)
-                self._show_notice(player_ui.volume_ass(boost, muted=False), 1.6, layer=self.VOLUME)
+                self._show_volume(boost, muted=False)
                 return
             level = max(0, min(100, current + 5 * direction))
             after = system[1](level=level, muted=False if direction > 0 else None) or {"level": level}
-            self._show_notice(player_ui.volume_ass(after.get("level", level), muted=bool(after.get("muted"))), 1.6, layer=self.VOLUME)
+            self._show_volume(after.get("level", level), muted=bool(after.get("muted")))
             return
         before = self._value("volume")
         if isinstance(before, (int, float)) and not isinstance(before, bool):
@@ -1077,10 +1084,44 @@ class PlayerScreen(SubtitleTrial):
             volume = max(0, min(top, before + 5 * direction))
             self.mpv.command("set_property", "volume", volume)
             self._ask("volume", volume)
-            self._show_notice(player_ui.volume_ass(volume, muted=self._muted()), 1.6, layer=self.VOLUME)
+            self._show_volume(volume, muted=self._muted())
         else:
             self.mpv.command("add", "volume", 5 * direction)
             self.toast("Volumen")
+
+    def _apply_extra(self, boost: float) -> None:
+        """V1-C: el Extra no es el volumen de mpv (que solo multiplica y truena): mpv se queda en 100 y el filtro empareja
+        y sube. Se cambia completo en cada paso de 5 (es un instante)."""
+        self.mpv.command("set_property", "volume", 100)
+        self.mpv.command("af", "remove", f"@{EXTRA_LABEL}")
+        extra = extra_filter(boost)
+        if extra:
+            self.mpv.command("af", "add", extra)
+
+    def _show_volume(self, level: float, muted: bool) -> None:
+        """La cápsula del volumen; con el dedo, con sus botones − y + (V2-A) y un rato más a la vista para tocarlos."""
+        touch = player_ui.TOUCH
+        self._show_notice(player_ui.volume_ass(level, muted=muted, touch=touch), 4.0 if touch else 1.6, layer=self.VOLUME)
+
+    def volume_tap(self, x: float, y: float) -> bool:
+        """Un toque en − o + de la cápsula (V2-A). True si tocó uno."""
+        action = player_ui.hit("volume", x, y)
+        if action not in ("up", "down"):
+            return False
+        self._change_volume(1 if action == "up" else -1)
+        return True
+
+    def show_volume_now(self) -> None:
+        """El botón «Volumen» de abajo (mouse y dedo, V2-A): enseña la cápsula con − y +, sin cambiar nada."""
+        system = getattr(self, "system_volume", None)
+        if system:
+            now = system[0]() or {}
+            boost = getattr(self, "boost", 100)
+            level = boost if boost > 100 else int(now.get("level") or 0)
+            self._show_volume(level, muted=bool(now.get("muted")))
+        else:
+            value = self._value("volume")
+            self._show_volume(value if isinstance(value, (int, float)) else 100, muted=self._muted())
 
     QUIT_HOLD = 1.5  # s con B mantenido para salir
     HOLD_SHOW_AFTER = .25  # s mantenido B antes de dibujar el anillo de salir

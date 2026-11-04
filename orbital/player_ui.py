@@ -41,7 +41,7 @@ KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del man
 KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LT": "[", "RT": "]", "LB RB": "RePág AvPág",
              "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
-targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": [], "try": []}
+targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": [], "try": [], "volume": []}
 # Dónde va lo que no es ASS (el logo del título en pausa: una imagen que mpv pone encima): (x, y, ancho, alto) en el lienzo.
 placed: dict[str, tuple[float, float, float, float]] = {}
 LOGO_BOX = (860, 190)  # lo más que mide el logo en pausa, en el lienzo
@@ -711,7 +711,7 @@ def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
     if paused:
         return [("−10 s", "left"), ("+10 s", "right"), *([(f"⏭ Siguiente · {hud.next}", "next")] if hud.next else []),
                 ("Probar subtítulos", "subs"), ("Salir", "quit")]
-    return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
+    return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Volumen", "volume"), ("Audio y subtítulos", "x"),
             *([] if hud.clip else [("Episodios y versión" if hud.series else "Versión", "y")]), ("Salir", "quit")]
 
 
@@ -1383,12 +1383,20 @@ def speaker(cx: float, cy: float, level: float, muted: bool = False, color: str 
     return "\n".join([body, *(arc(x + 19, cy, 9 + 7 * i, 3, -48, 48, color) for i in range(waves))])
 
 
-def volume_ass(volume: float, muted: bool = False) -> str:
+EXTRA = ass_color(PALETTE["amber-300"])  # la zona «Extra» del volumen (--color-warning: más de lo normal, no un error)
+VOLUME_TOP = 200  # playback.VOLUME_BOOST_MAX: el tope del Extra
+VOLUME_NORMAL = 2 / 3  # dónde queda el 100 en el riel: lo de arriba es el Extra
+
+
+def volume_ass(volume: float, muted: bool = False, touch: bool = False) -> str:
     """El volumen: una cápsula vertical en el borde derecho, a media altura (como en las TV): el nivel arriba, la barra
     que se llena de abajo arriba y la bocina abajo, con sus ondas según el nivel (o una ✕ en silencio: la barra se apaga).
+    El 100 (el de Windows) queda a dos tercios con una rayita; arriba, el «Extra» hasta 200 en ámbar y la palabra EXTRA
+    bajo el número (V1-C). Con el dedo, a su izquierda, + y − para tocarlos (V2-A).
     Arriba a la derecha van los avisos y antes se encimaban; abajo, la barra del video y los paneles."""
+    targets["volume"] = []
     try:
-        level = max(0.0, min(150.0, float(volume)))  # pasado 100, el reproductor amplifica (playback.VOLUME_BOOST_MAX)
+        level = max(0.0, min(float(VOLUME_TOP), float(volume)))  # pasado 100, el Extra (playback.extra_filter)
     except (TypeError, ValueError):
         level = 0.0
     if not math.isfinite(level):
@@ -1397,13 +1405,27 @@ def volume_ass(volume: float, muted: bool = False) -> str:
     x, y = W - MARGIN + 20 - w, BUFFER_Y + 80  # debajo de «Cargando…» y del anillo de «Salir»
     track_w, track_top, track_h = 14, y + 70, 170
     track_x = x + (w - track_w) / 2
-    fill = 0 if muted else max(track_w, track_h * min(level, 100) / 100)  # la barra llena en 100; el número dice cuánto más
+    normal_h = track_h * VOLUME_NORMAL
+    fill = 0 if muted else max(track_w, normal_h * min(level, 100) / 100)
+    extra = 0 if muted or level <= 100 else (track_h - normal_h) * (level - 100) / (VOLUME_TOP - 100)
     number = "—" if muted else f"{int(level)}"
     parts = [rrect(x, y, w, h, w / 2, PANEL, "38", blur=1),  # la cápsula, como los paneles (un poco de vidrio)
-             text(x + w / 2, y + 38, number, 30, TEXT, weight="semi", align=5, alpha="70" if muted else "00"),
+             text(x + w / 2, y + 34, number, 30, TEXT, weight="semi", align=5, alpha="70" if muted else "00"),
              rrect(track_x, track_top, track_w, track_h, track_w / 2, TEXT, "D0")]  # el riel
+    if extra:
+        parts.append(text(x + w / 2, y + 58, "EXTRA", 14, EXTRA, weight="semi", align=5))
     if fill:
         parts.append(rrect(track_x, track_top + track_h - fill, track_w, fill, track_w / 2, TEXT))
+    if extra:  # el Extra, en ámbar, encima de lo normal
+        parts.append(rrect(track_x, track_top + track_h - normal_h - extra, track_w, extra + track_w / 2, track_w / 2, EXTRA))
+    mark_y = track_top + track_h - normal_h  # la rayita del 100: hasta aquí es lo normal
+    parts.append(rrect(track_x - 7, mark_y - 1.5, track_w + 14, 3, 1.5, EXTRA, "40"))
+    if touch:  # V2-A: + arriba y − abajo, a la izquierda de la cápsula
+        for label, action, by in (("+", "up", y + 40), ("−", "down", y + h - 110)):
+            bx, size = x - 92, 72
+            parts.append(rrect(bx, by, size, size, size / 2, PANEL, GLASS_ALPHA, outline=TEXT, width=1.5, outline_alpha=GLASS_EDGE_ALPHA))
+            parts.append(text(bx + size / 2, by + size / 2, label, 40, TEXT, weight="semi", align=5))
+            targets["volume"].append((bx, by, size, size, action))
     parts.append(speaker(x + w / 2 + 4, y + h - 46, level, muted))
     return "\n".join(parts)
 

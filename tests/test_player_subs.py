@@ -241,7 +241,7 @@ def test_keyboard_s_mouse_wheel_and_the_touch_button():
     assert sids(mpv) == [5, 3]
     p.key("esc")  # Esc = Listo
     assert p._try is None
-    p.key("wheel-down")  # fuera de la franja la rueda no hace nada
+    p.key("wheel-down")  # fuera de la franja la rueda es el volumen (V2-A), no otro subtítulo
     assert sids(mpv) == [5, 3] and p.menu is None
     p.key("x")  # una tecla no avisa al soltar: X abre el panel directo
     assert p.menu is not None and p.menu.find("sub").options[0]["hint"] == "Tecla S"

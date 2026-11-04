@@ -243,7 +243,20 @@ def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
 
 # El volumen es el de Windows; pasado su 100, el reproductor amplifica hasta aquí (Fernando, 2 nov 2026: «el 100 es muy
 # bajo y tengo que subir mucho la tele, y al cambiar de aplicación está muy alto»). Ver player_screen._change_volume.
-VOLUME_BOOST_MAX = 150
+VOLUME_BOOST_MAX = 200  # V1-C (Fernando, 3 nov): pasado el 100 de Windows, el «Extra» sube hasta el doble
+EXTRA_LABEL = "orbital-extra"
+
+
+def extra_filter(volume: float) -> str | None:
+    """El «Extra» (V1-C): pasado 100, en vez de solo multiplicar el sonido (que en lo fuerte truena), se empareja: un
+    compresor sube lo bajito (los diálogos) más que lo fuerte, luego la ganancia y un limitador que no deja pasar de 0 dB.
+    Abajo de 100 no hay filtro: el sonido queda como viene. None si no hace falta."""
+    import math
+    if volume <= 100:
+        return None
+    gain = 20 * math.log10(min(VOLUME_BOOST_MAX, volume) / 100)
+    return (f"@{EXTRA_LABEL}:lavfi=[acompressor=threshold=-21dB:ratio=3:attack=15:release=250,"
+            f"volume={gain:.2f}dB,alimiter=limit=0.95]")
 
 
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
@@ -276,7 +289,9 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         # (DWM) y cada cambio de video ~100 MB más, sin devolverlos nunca (controlador AMD, tele 4K: llegó a 14 GB y
         # Windows se quedaba sin RAM). Medido en la tele: con flip, +578 MB en 4 ventanas; sin flip, 0 MB.
         "--d3d11-flip=no",
-        "--save-position-on-quit=no", f"--volume={volume}", f"--volume-max={VOLUME_BOOST_MAX}", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
+        "--save-position-on-quit=no", f"--volume={min(volume, 100)}", f"--volume-max={VOLUME_BOOST_MAX}",
+        *([f"--af={extra_filter(volume)}"] if extra_filter(volume) else []),  # V3-A: el siguiente arranca con el mismo Extra
+        "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
     ]
     if live:
         cmd.append(f"--user-agent={user_agent or LIVE_USER_AGENT}")

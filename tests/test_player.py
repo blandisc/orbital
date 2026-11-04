@@ -859,8 +859,9 @@ def test_one_volume_the_players_buttons_move_the_computers():
 
 
 def test_past_windows_100_the_player_turns_itself_up_and_the_next_video_starts_there():
-    """El 100 de Windows se oía bajo (Fernando, 2 nov 2026): pasado ese tope, ▲ sube el del reproductor hasta 150; ▼ lo baja
-    primero a 100 y después baja Windows. El siguiente video arranca con lo que dejaste."""
+    """El 100 de Windows se oía bajo (Fernando, 2 nov 2026): pasado ese tope, ▲ sube el «Extra» del reproductor hasta 200
+    (V1-C, 3 nov), que empareja el sonido con un filtro en vez de solo multiplicarlo; ▼ lo baja primero a 100 y después
+    baja Windows. El siguiente video arranca con lo que dejaste (V3-A)."""
     system = {"level": 95, "muted": False}
 
     def write(level=None, muted=None):
@@ -875,24 +876,34 @@ def test_past_windows_100_the_player_turns_itself_up_and_the_next_video_starts_t
     p.system_volume = (lambda: dict(system), write)
     p.press("up")
     assert system["level"] == 100 and p.boost == 100
-    for _ in range(12):
+    for _ in range(22):
         p.press("up")
-    assert system["level"] == 100 and p.boost == 150  # tope: playback.VOLUME_BOOST_MAX
-    assert ("set_property", "volume", 150) in [tuple(c[:3]) for c in mpv.sent]
+    assert system["level"] == 100 and p.boost == 200  # tope: playback.VOLUME_BOOST_MAX
+    sent = [tuple(c[:3]) for c in mpv.sent]
+    assert ("set_property", "volume", 200) not in sent  # mpv no multiplica: se queda en 100
+    added = [c[2] for c in mpv.sent if c[:2] == ["af", "add"] or tuple(c[:2]) == ("af", "add")]
+    assert added and "acompressor" in added[-1] and "volume=6.02dB" in added[-1] and "alimiter" in added[-1]
     p.press("down")
-    assert p.boost == 145 and system["level"] == 100  # al bajar, primero se quita lo amplificado
+    assert p.boost == 195 and system["level"] == 100  # al bajar, primero se quita el Extra
     cmd = player.build_command("mpv.exe", "u", "t", volume=p.boost)
-    assert "--volume=145" in cmd and "--volume-max=150" in cmd
+    assert "--volume=100" in cmd and "--volume-max=200" in cmd and any(c.startswith("--af=@orbital-extra:") for c in cmd)
+    assert not any(c.startswith("--af=") for c in player.build_command("mpv.exe", "u", "t", volume=100))
 
 
 def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
     from orbital import player_ui
 
     def waves(ass):  # cada onda es un tramo de anillo: una figura más después del cuerpo de la bocina
-        return ass.count("\p1}") - 4  # cápsula, riel, relleno y cuerpo de la bocina
+        return ass.count("\p1}") - 5  # cápsula, riel, relleno, la rayita del 100 y cuerpo de la bocina
     assert waves(player_ui.volume_ass(15)) == 1 and waves(player_ui.volume_ass(50)) == 2 and waves(player_ui.volume_ass(90)) == 3
     muted = player_ui.volume_ass(50, muted=True)
-    assert "—" in muted and muted.count("\p1}") == 4  # cápsula, riel (sin relleno), cuerpo y la ✕
+    assert "—" in muted and muted.count("\p1}") == 5  # cápsula, riel (sin relleno), la rayita, cuerpo y la ✕
+    extra = player_ui.volume_ass(160)
+    assert "EXTRA" in extra and player_ui.EXTRA in extra and "EXTRA" not in player_ui.volume_ass(100)  # V1-C
+    touch = player_ui.volume_ass(80, touch=True)  # V2-A: + y − tocables
+    assert [t[4] for t in player_ui.targets["volume"]] == ["up", "down"] and "+" in touch
+    player_ui.volume_ass(80)
+    assert player_ui.targets["volume"] == []
     assert player_ui.volume_ass(float("nan")) and player_ui.volume_ass("x")  # nunca truena
 
 
