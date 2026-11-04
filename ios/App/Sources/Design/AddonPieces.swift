@@ -106,7 +106,7 @@ struct AddonRowLabel: View {
     }
 }
 
-/// Qué aporta un complemento, en una línea: «Fuentes de video · usa tu Real-Debrid», «Subtítulos», «Listas · de Stremio».
+/// Qué aporta un complemento, en una línea: «Fuentes de video · usa tu Real-Debrid», «Subtítulos», «Listas · agregado por ti».
 struct AddonWhat: View {
     let addon: InstalledAddon
 
@@ -116,7 +116,7 @@ struct AddonWhat: View {
         let kinds = addon.resources.contains("stream") ? Text("Fuentes de video")
             : addon.resources.contains("subtitles") ? Text("Subtítulos") : Text("Listas")
         if addon.isBuiltIn { return addon.usesDebrid ? Text("\(kinds) · usa tu Real-Debrid") : kinds }
-        return addon.usesDebrid ? Text("\(kinds) · de Stremio · usa tu Real-Debrid") : Text("\(kinds) · de Stremio")
+        return addon.usesDebrid ? Text("\(kinds) · agregado por ti · usa tu Real-Debrid") : Text("\(kinds) · agregado por ti")
     }
 }
 
@@ -173,7 +173,7 @@ enum TorrentioWords {
         case nil: (Text("Todas"), Text("Lista larga, más para elegir"))
         case 5?: (Text("Hasta 5"), Text("Lista corta"))
         case 2?: (Text("Hasta 2"), Text("La más corta"))
-        case let n?: (Text("Hasta \(n)"), Text("Lo traías de tu Stremio"))
+        case let n?: (Text("Hasta \(n)"), Text("La que tenías"))
         }
     }
 
@@ -271,10 +271,10 @@ struct AddonRemoveMessage: View {
 
     var body: some View {
         switch (last, tv) {
-        case (false, false): Text("Se quita de este iPhone. Tu Stremio no cambia y «Volver a traer» no lo regresa.")
-        case (false, true): Text("Se quita de este iPhone y de tu TV. Tu Stremio no cambia y «Volver a traer» no lo regresa.")
-        case (true, false): Text("Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y tu Stremio no cambia.")
-        case (true, true): Text("Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV; tu Stremio no cambia.")
+        case (false, false): Text("Se quita de este iPhone.")
+        case (false, true): Text("Se quita de este iPhone y de tu TV.")
+        case (true, false): Text("Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone.")
+        case (true, true): Text("Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV.")
         }
     }
 }

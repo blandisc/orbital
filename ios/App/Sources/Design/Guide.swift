@@ -3,19 +3,52 @@ import SwiftUI
 /// Piezas de la guía de la primera vez (`Screens/Onboarding/`) y de Ajustes › Cuentas. No leen el estado de la app:
 /// reciben sus datos y avisan lo que se toca.
 
-/// Las rayitas de arriba: en qué paso vas.
+/// La barra de avance de la guía: un arco fino con una marca por paso; la luna turquesa avanza a la tuya con un resorte
+/// (la misma luna que atrapó los pósters en la bienvenida). Sin texto.
 struct GuideSteps: View {
     let current: Int
     let total: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: DS.Space.s1) {
-            ForEach(0..<max(total, 1), id: \.self) { i in
-                Capsule().fill(i <= current ? DS.accent : DS.fill).frame(height: DS.Guide.stepBar)
+        GeometryReader { geo in
+            let count = max(total, 2)
+            ZStack {
+                OrbitArcShape().stroke(DS.fill, lineWidth: DS.Stroke.regular)
+                ForEach(0..<count, id: \.self) { i in
+                    Circle().fill(i < current ? DS.textMuted : DS.fill)
+                        .frame(width: DS.OrbitArc.mark, height: DS.OrbitArc.mark)
+                        .position(OrbitArcShape.point(Double(i) / Double(count - 1), in: geo.size))
+                }
+                Circle().fill(DS.brandMoon)
+                    .frame(width: DS.OrbitArc.moon, height: DS.OrbitArc.moon)
+                    .position(OrbitArcShape.point(Double(min(current, count - 1)) / Double(count - 1), in: geo.size))
+                    .animation(DS.Motion.smooth(reduceMotion), value: current)
             }
         }
+        .frame(height: DS.OrbitArc.height)
         .accessibilityElement()
         .accessibilityLabel(Text("Paso \(String(current + 1)) de \(String(total))"))
+    }
+}
+
+/// El arco de la barra de avance: una curva suave, más alta al centro.
+struct OrbitArcShape: Shape {
+    static func point(_ f: Double, in size: CGSize) -> CGPoint {
+        let inset = DS.OrbitArc.moon / 2
+        let x = inset + (size.width - 2 * inset) * f
+        let lift = size.height * DS.OrbitArc.bend * (1 - pow(2 * f - 1, 2))
+        return CGPoint(x: x, y: size.height - inset - lift)
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let steps = 40
+        for i in 0...steps {
+            let p = Self.point(Double(i) / Double(steps), in: rect.size)
+            if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+        }
+        return path
     }
 }
 
@@ -30,12 +63,25 @@ struct GuidePage<Content: View>: View {
     var secondary: Text?
     let next: () -> Void
     var skip: (() -> Void)?
+    /// «Saltar» arriba a la derecha: termina la guía desde cualquier paso (nada es obligatorio).
+    var skipGuide: (() -> Void)?
+    /// La flecha de regresar, arriba a la izquierda (la guía no va en una pila de navegación).
+    var back: (() -> Void)?
     @ViewBuilder let content: Content
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
-                if let step { GuideSteps(current: step.current, total: step.total) }
+                if step != nil || skipGuide != nil {
+                    HStack(spacing: DS.Space.s4) {
+                        if let back {
+                            DSIconButton(symbol: "chevron.backward", label: "Atrás", size: .regular, action: back)
+                                .accessibilityIdentifier("guide-back")
+                        }
+                        if let step { GuideSteps(current: step.current, total: step.total) } else { Spacer() }
+                        if let skipGuide { GuideSkip(action: skipGuide) }
+                    }
+                }
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     title.font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
                     if let message { message.font(DS.TextRecipe.body.font).foregroundStyle(DS.textMuted) }
@@ -62,6 +108,17 @@ struct GuidePage<Content: View>: View {
         }
         .background(Backdrop())
         .navigationBarBackButtonHidden(step == nil)
+    }
+}
+
+/// «Saltar» de la guía: siempre a la vista, con su ícono.
+struct GuideSkip: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { Label("Saltar", systemImage: "forward.end").labelStyle(.titleAndIcon) }
+            .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+            .accessibilityIdentifier("guide-skip-all")
     }
 }
 

@@ -29,7 +29,7 @@ struct AddonDetail: View {
     @ViewBuilder private func content(_ addon: InstalledAddon, _ model: AddonsModel) -> some View {
         Form {
             Section {
-                LabeledContent { Text(addon.isBuiltIn ? "Viene con Orbital" : "Traído de tu Stremio").foregroundStyle(DS.textMuted) } label: {
+                LabeledContent { Text(addon.isBuiltIn ? "Viene con Orbital" : "Agregado por ti").foregroundStyle(DS.textMuted) } label: {
                     AddonWhat(addon: addon).foregroundStyle(DS.text)
                 }
                 if addon.enabled, model.health(addon) != .unknown {

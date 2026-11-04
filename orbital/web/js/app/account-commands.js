@@ -1,3 +1,5 @@
+import { languageAddMenu, languageMenu, languagesMenu } from "../core/menus.js";
+
 /** Comandos de cuentas y servicios: Stremio, Trakt, OneDrive, el iPhone, claves y lo recordado.
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
 export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, addonMenu, api, applySettings, moviesSetupMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, keysMenu, torrentioMenus, loadCuration, loadLibrary, nested, onedriveFolderMenu, onedriveMenu, openMenu, rememberedMenu, sound, state, stremioAccountMenu, traktAccountMenu, ui }) {
@@ -5,14 +7,6 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
   const torrentioEntry = () => (state.settings?.addons?.entries || []).find((e) => e.template === "torrentio");
   return {
     // Ajustes › Complementos («La TV sin Stremio», S1)
-    "addons-import": async () => {
-      const res = await api.addonsImport();
-      addons(res);
-      sound.play("select");
-      const n = res.done?.added ?? 0;
-      return ui.toast.show(n ? `Traje ${n} ${n === 1 ? "complemento" : "complementos"} de tu Stremio` : "Ya estaban todos",
-        { tone: "success", detail: "Desde ahora salen de tu lista; tu cuenta de Stremio no se tocó" });
-    },
     "addon-menu": async (command, context) => {
       const entries = state.settings?.addons?.entries || [];
       const entry = entries.find((e) => e.id === command.id);
@@ -35,12 +29,6 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       if (command.action !== "remove") return;
       ui.toast.show(`Quité ${command.name || "el complemento"}`, { duration: UNDO_MS, action: { label: "Deshacer",
         onPress: async () => addons(await api.addonRestore(command.id)) } });
-    },
-    "addons-source": async (command) => {
-      addons(await api.addonsSource(command.source));
-      sound.play("select");
-      return ui.toast.show(command.source === "own" ? "Ahora salen de tu lista" : "Ahora salen de tu cuenta de Stremio",
-        { detail: command.source === "own" ? "" : "Tu lista se quedó: regresas en Ajustes › Complementos" });
     },
     // Películas y series, la primera vez (SS-7, corte S4): con lo de ahora (Real-Debrid, complementos, Trakt, iPhone)
     "movies-setup": async (command, context) => {
@@ -130,16 +118,22 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
     "stremio-account": async (command, context) => {
       return openMenu(stremioAccountMenu(state.settings), nested(context));
     },
-    // Traer de tu Stremio una vez (SS-8, corte S5): desde ahí Stremio es respaldo
-    "stremio-bring": async (command, context) => {
-      ui.toast.show("Trayendo lo tuyo de Stremio…");
-      const res = await api.stremioBring();
+    // Fernando, 4 nov: tu Mi lista de Stremio a «Mi lista Stremio» de Trakt; si llegó todo, se desconecta la cuenta.
+    "stremio-to-trakt": async () => {
+      ui.toast.show("Pasando tu Mi lista de Stremio a Trakt…");
+      const res = await api.stremioToTrakt();
       addons(res);
       applySettings(await api.settings());
-      sound.play("select");
+      ui.sheet.close();
       const d = res.done || {};
-      ui.toast.show(`Traje ${d.my_list || 0} de Mi lista a Trakt${d.addons ? ` y ${d.addons} ${d.addons === 1 ? "complemento" : "complementos"}` : ""}`,
-        { tone: "success", detail: "Desde ahora Stremio es respaldo · lo cambias en Cuentas › Stremio" });
+      if (!d.unlinked) {
+        sound.play("error");
+        return ui.toast.show(`Llegaron ${d.in_list} de ${d.stremio} a Trakt`, { error: true,
+          detail: "No desconecté Stremio: faltan algunos (sin IMDb o Trakt no los aceptó)" });
+      }
+      state.stremioLinked = false;
+      sound.play("select");
+      ui.toast.show(`Pasé ${d.stremio} a «Mi lista Stremio» en Trakt`, { tone: "success", detail: "Stremio quedó desconectado; sigue de respaldo para torrents" });
       return loadLibrary();
     },
     "stremio-logout-ask": async (command, context) => openMenu(stremioLogoutMenu(command), nested(context)),
@@ -155,6 +149,17 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
     },
     "trakt-account": async (command, context) => {
       return openMenu(traktAccountMenu(), nested(context));
+    },
+    // Ajustes › Ver › Tus idiomas (N4-A): cada cambio se guarda al hacerlo y regresa a la lista.
+    "languages": async (command, context) => openMenu(languagesMenu(state.settings?.languages || []), nested(context)),
+    "language": async (command, context) => openMenu(languageMenu(state.settings?.languages || [], command.code), nested(context)),
+    "language-add": async (command, context) => openMenu(languageAddMenu(state.settings?.languages || []), nested(context)),
+    "languages-set": async (command, context) => {
+      applySettings(await api.setSettings({ languages: command.languages }));
+      sound.play("select");
+      ui.toast.show("Guardé tus idiomas", { detail: "La próxima búsqueda ya los usa" });
+      const where = command.back && context?.stack?.length ? { ...context, stack: context.stack.slice(0, -1) } : context;
+      return openMenu(languagesMenu(state.settings?.languages || []), where);
     },
     "remembered": async (command, context) => {
       return openMenu(rememberedMenu((await api.remembered()).titles || []), nested(context));

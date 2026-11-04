@@ -44,6 +44,9 @@ VIEWS = ("buscar", "serie", "seccion", "fuentes")
 
 def valid_setting(key, value) -> bool:
     """¿Ese valor sirve para ese ajuste? Mismo tipo que los permitidos (bool no pasa por número)."""
+    if key == "languages":  # N4-A: tu orden de idiomas (una lista)
+        from ..library.streams import valid_languages
+        return valid_languages(value)
     allowed = SETTINGS.get(key) if isinstance(key, str) else None
     if allowed is None or isinstance(value, (list, dict)):
         return False
@@ -114,6 +117,7 @@ def router(d: Deps) -> APIRouter:
                 "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, "video_home": "pip", "rd_auto_request": True, "internet_subtitles": True, "stremio_copy": True, "stremio_role": "both", "game_mode": "heavy",
                 "game_resolution": "lower",
                 **catalog.state.settings(),
+                "languages": catalog.watch.languages,  # N4-A: Ajustes › Tus idiomas
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
                 # Ajustes › Tele y voz: si la tele (Roku) se prende con Orbital y a qué entrada cambia («Probar» solo si está).
                 "tv": {"configured": bool(d.config.tv.host), "input": d.config.tv.input},
@@ -139,7 +143,10 @@ def router(d: Deps) -> APIRouter:
             if not valid_setting(key, value):
                 raise HTTPException(422, f"Ajuste inválido: {key}")
         for key, value in body.items():
-            catalog.state.set_setting(key, value)
+            if key == "languages":
+                catalog.watch.set_languages(value)  # también Torrentio y el «Idioma» de antes
+            else:
+                catalog.state.set_setting(key, value)
         return get_settings()
 
     ui_state = d.extra.setdefault("ui_state", {"screen": "home", "text_field": False})

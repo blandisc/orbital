@@ -60,6 +60,7 @@ struct DownloadsView: View {
             switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
         }
         .navigationTitle("Biblioteca").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .learnCoach(.downloads, title: "Biblioteca", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }

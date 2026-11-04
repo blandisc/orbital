@@ -960,6 +960,11 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
             pass
 
     monkeypatch.setattr(player.threading, "Timer", Timer)
+    # También los de la pantalla del reproductor (barra, botones, fundido): con el reloj de verdad, uno repintaba los
+    # botones de la barra completa a media prueba y fallaba a veces en la corrida completa.
+    from orbital import player_screen
+    monkeypatch.setattr(player_screen.threading, "Timer", Timer)
+    p.HUD_TICK = 0
     monkeypatch.setattr(player.threading, "Thread", lambda target, args=(), **kw: type("T", (), {"start": lambda self: target(*args)})())
     assert p.enter_pip() and p.pip
     geometry = mpv.sent.index(("set_property", "geometry", "1920x1080+0+0"))

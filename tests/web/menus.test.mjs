@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, languageAddMenu, languageMenu, languagesMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -99,24 +99,33 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
 });
 
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
-  const page = settingsCategory("watch", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
+  const languages = ["es-419", "original", "en", "es-ES"];
+  const page = settingsCategory("watch", { languages, subtitles: "forced", quality: "1080p", sub_scale: 1 });
+  // Fernando, 4 nov: idiomas y subtítulos juntos y arriba; «Tus idiomas» es una sola lista en orden (N4-A).
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
+    ["Idiomas y subtítulos", undefined], ["Tus idiomas", "Latino, Idioma original, Inglés, Castellano"],
+    ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Letra de los subtítulos", "Normal"],
+    ["Imagen y reproducción", undefined], ["Calidad", "1080p"],
     ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Lo que recuerda cada título", undefined]]);
-  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "watch" });
-  // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
-  assert.equal(settingsCategory("watch", { audio: "es" }).options[0].value, "Español (cualquiera)");
-  assert.equal(settingsCategory("watch", { audio: "es-ES" }).options[0].value, "Español de España");
+  assert.deepEqual(page.options[1].command, { type: "languages" });
+  assert.match(page.options[1].help, /En este orden busca versiones/);
+  // La lista: subir, bajar, quitar y agregar; «Idioma original» nunca queda primero.
+  const list = languagesMenu(languages);
+  assert.deepEqual(list.options.map((o) => o.label), ["1. Latino", "2. Idioma original", "3. Inglés", "4. Castellano", "Agregar idioma"]);
+  assert.deepEqual(languageMenu(languages, "original").options.map((o) => o.label), ["Bajar", "Quitar", "Cancelar"]);
+  // Quitar Latino dejaría «original» primero: el siguiente sube y él queda segundo. Bajarlo no cambiaría nada: no sale.
+  assert.deepEqual(languageMenu(languages, "es-419").options.map((o) => o.label), ["Quitar", "Cancelar"]);
+  assert.deepEqual(languageMenu(languages, "es-419").options[0].command.languages, ["en", "original", "es-ES"]);
+  assert.deepEqual(languageMenu(languages, "en").options[0].command, { type: "languages-set", languages: ["es-419", "en", "original", "es-ES"], back: true });
+  assert.ok(languageAddMenu(languages).options.every((o) => !languages.includes(o.command.languages.at(-1)) && o.command.languages.length === 5));
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsCategory("accounts", { stremio_linked: false });
-  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "Conectar"]]);
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Conectar un aparato", ""]]); // 4 nov: Stremio ya no se conecta
   assert.deepEqual(accounts.options[0].command, { type: "rd-connect" }); // Real-Debrid primero (SS-1); sin cuenta, directo a pegar la clave (UX-1)
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
-  assert.deepEqual(accounts.options[2].command, { type: "stremio-login" }); // corte S4: Stremio al final, opcional
-  assert.ok(!accounts.options[2].warn);
   const keys = settingsCategory("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio · respaldo", "✓ Conectada"], ["Claves de Explorar", undefined],
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Real-Debrid", "Conectar"], ["Trakt", "Configurar"], ["Conectar un aparato", ""], ["Stremio", "Pasar a Trakt"], ["Claves de Explorar", undefined],
     ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["MDBList", "Agregar"], ["SteamGridDB", "Agregar"], ["Letterboxd", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[5].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
@@ -167,8 +176,7 @@ test("tu consola: dos renglones, y películas y series abren su guía, sin Strem
   const guide = moviesSetupMenu({ realdebrid: { linked: true }, trakt: { configured: true, linked: false },
     addons: { entries: [{ origin: "orbital", name: "Torrentio", on: true }, { origin: "orbital", name: "OpenSubtitles", on: true }] } });
   assert.deepEqual(guide.options.map((o) => [o.label, o.value]), [["1 · Real-Debrid", "✓ Conectada"], ["2 · Complementos", "✓ 2 prendidos"],
-    ["3 · Trakt", "Conectar"], ["Tu iPhone · opcional", "Conectar"], ["¿Ya tienes Stremio?", undefined]]);
-  assert.deepEqual(guide.options[4].command, { type: "stremio-login" });
+    ["3 · Trakt", "Conectar"], ["Tu iPhone · opcional", "Conectar"]]); // 4 nov: sin «¿Ya tienes Stremio?»
 });
 
 test("cómo se usa: una hoja, con el mando que tienes", () => {
@@ -581,7 +589,7 @@ test("Ajustes › Resumen: lo que falta primero (la voz que no llega, cuentas), 
   const settings = { alexa: true, stremio_linked: true, trakt: { configured: true, linked: false }, companion_devices: [{ seen: 1 }], tv: { configured: true } };
   assert.deepEqual(settingsMissing(settings, { voice, now }).map((o) => o.label), ["La voz no ha llegado en 8 días", "Trakt sin conectar"]);
   const page = settingsCategory("summary", settings, { voice, now });
-  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "Stremio", "La tele"]);
+  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "La tele"]);
   assert.equal(settingsMeta("summary", settings, { voice, now }), "2 cosas por hacer");
   // Sin saber de la voz (el servidor no contestó), no se inventa que falla.
   assert.deepEqual(settingsMissing(settings, { now }).map((o) => o.label), ["Trakt sin conectar"]);
@@ -648,8 +656,8 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
     { id: "l", name: "Local Files", origin: "stremio", on: false, only_on: "tv", gives: "", health: { state: "off" } },
   ] };
   const rows = addonRows(status); // OpenSubtitles (el de Orbital y el traído) ya no sale: vive en Ajustes › Ver (3 nov)
-  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
-    "Volver a traer", "De dónde salen", "Volver a los de Stremio", "¿Qué es esto?"]);
+  // Fernando, 4 nov: lo que no vino con Orbital es «Agregado por ti»; ni «Volver a traer» ni «Volver a los de Stremio».
+  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Agregado por ti", "Torrentio RD", "Archivos de la TV", "¿Qué es esto?"]);
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
   assert.equal(rows[4].value, "Apagado");
@@ -657,8 +665,8 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
   assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
-  // Sin traer todavía: primero «Traer de tu Stremio».
-  assert.equal(addonRows({ source: "stremio", stremio_linked: true, entries: [] })[0].label, "Traer de tu Stremio");
+  // Sin nada agregado: ni el encabezado (y nunca «Traer de tu Stremio»).
+  assert.deepEqual(addonRows({ source: "own", stremio_linked: true, entries: [] }).map((r) => r.label), ["Vienen con Orbital", "¿Qué es esto?"]);
 });
 
 test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y «Tus pedidos» (corte S2)", () => {
@@ -715,7 +723,7 @@ test("ajustes › Complementos › Torrentio: cada opción con su valor y su cam
   assert.equal(addonRows({ source: "own", imported_at: 1, entries: [{ ...entry, needs_key: true }] }).find((r) => r.label === "Torrentio").warn, true);
   assert.equal(addonMenu(entry).options[0].label, "Configurar");
   const menu = torrentioMenu(entry);
-  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Idiomas primero", "Latino"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
+  assert.deepEqual(menu.options.map((o) => [o.label, o.value]), [["Se usan tus idiomas", "Cambiar"], ["Calidades que no quieres", "Sin Remux, cine y Screener"],
     ["Solo lo que ya está en Real-Debrid", "No"], ["Orden", "Las más compartidas primero"], ["Cuántas por calidad", "Todas"],
     ["Tamaño máximo", "Sin límite"], ["Sitios donde busca", "25 de 25"], ["Volver a lo recomendado", undefined], ["¿Qué es esto?", undefined]]);
   const order = menu.options[3].command;
@@ -748,16 +756,11 @@ test("resumen sin Stremio: lo que falta para películas y series (corte S4, AD-1
   assert.deepEqual(labels({ addons: { entries: [{ template: "torrentio", on: true, health: { state: "down" } }] } }), ["Torrentio no contesta"]);
 });
 
-test("cuentas › Stremio de respaldo: traer una vez, la copia y volver a leerlo (corte S5, SS-8)", () => {
-  const before = stremioAccountMenu({ trakt: { linked: true } });
-  assert.deepEqual(before.options.map((o) => [o.label, o.value]), [["Traer de tu Stremio", undefined], ["Seguir mandándole copia", "Sí"],
-    ["Desconectar", undefined], ["Cancelar", undefined]]);
-  assert.deepEqual(before.options[0].command, { type: "stremio-bring" });
+test("cuentas › Stremio (Fernando, 4 nov): pasar tu Mi lista a «Mi lista Stremio» de Trakt y desconectar", () => {
+  const menu = stremioAccountMenu({ trakt: { linked: true } });
+  assert.deepEqual(menu.options.map((o) => o.label), ["Pasar a Trakt y desconectar", "Desconectar sin pasarla", "Cancelar"]);
+  assert.deepEqual(menu.options[0].command, { type: "stremio-to-trakt" });
   assert.equal(stremioAccountMenu({ trakt: { configured: true } }).options[0].command.type, "trakt-link"); // sin Trakt, primero Trakt
-  const after = stremioAccountMenu({ stremio_role: "backup", stremio_copy: false, trakt: { linked: true } });
-  assert.deepEqual(after.options.map((o) => [o.label, o.value]), [["Seguir mandándole copia", "No"], ["Volver a leer tu Stremio", undefined],
-    ["Desconectar", undefined], ["Cancelar", undefined]]);
-  assert.deepEqual(after.options[0].command, { type: "setting", key: "stremio_copy", value: true });
 });
 
 test("complementos: si la lista la cambiaste en el iPhone, se dice arriba (corte S6)", () => {

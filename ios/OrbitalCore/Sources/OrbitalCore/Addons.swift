@@ -143,8 +143,9 @@ public actor AddonRegistry {
             do {
                 let manifest = try await http.getJSON(target)
                 if let addon = Addons.parseManifest(manifest, url: url) { found.append(addon); entries.append(["manifest": manifest ?? .null, "transportUrl": .string(url)]) }
-            } catch { failed = true }
+            } catch let thrown { failed = true; if error == nil { error = thrown } }
         }
+        // Ninguno contestó (sin red, o todos caídos): es «no responden», no «no tienes complementos».
         if let error, found.isEmpty { throw error }
         // Si algo no respondió (Wi‑Fi al despertar), la lista se recuerda solo unos segundos.
         let lifetime = failed ? Self.retryFailed : Self.cacheSeconds

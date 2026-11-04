@@ -3,57 +3,68 @@ import UIKit
 import OrbitalModels
 import OrbitalAddons
 
-/// 3 · Real-Debrid: qué es, cuánto cuesta y que no se renueva solo. «Ya tengo cuenta» o crearla en su web.
-struct OnboardingDebridIntro: View {
+/// 4 · Ver aquí mismo (D1, Fernando, 3 nov 2026): qué es Real-Debrid con los tres pasos de la nube (la misma pieza que la
+/// tarjeta «Así funciona» de las versiones), cuánto cuesta, que es una cuenta por persona y que no ocupa espacio. Pagar no
+/// detiene la guía: «Cuando quiera ver algo» sigue, y la hoja de conectar sale la primera vez que tocas «Ver». Al volver de
+/// la página de Real-Debrid, la clave pegada se revisa sola. Conectar con un código (sin copiar ni pegar) llega cuando se
+/// pruebe con una cuenta; mientras, la clave con sus tres pasos.
+struct OnboardingSeeHere: View {
     let step: (current: Int, total: Int)
-    let signUp: URL
+    let back: (() -> Void)?
     let next: () -> Void
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        GuidePage(title: Text(verbatim: "Real-Debrid"),
-                  message: Text("Es un servicio de pago que guarda los videos en sus servidores y te los entrega al instante, sin descargar nada de otras personas."),
-                  step: step, primary: Text("Ya tengo cuenta"), secondary: Text("Crear cuenta en real-debrid.com"), next: next,
-                  skip: { openURL(signUp) }) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                Label("Se paga por adelantado, por días.", systemImage: "calendar")
-                Label("No se renueva solo: Orbital te avisa antes de que se te acabe.", systemImage: "bell.badge")
-                GuidePiece(symbol: "eurosign.circle", tint: DS.ListTint.trophy, title: Text("Cuánto cuesta"),
-                           detail: Text("Desde unos 3 € por 15 días. El precio lo confirma su web."))
-            }
-            .font(DS.TextRecipe.body.font).foregroundStyle(DS.text)
-        }
-    }
-}
-
-/// 4 y 5 · Tu clave: abrir real-debrid.com/apitoken, copiar, pegar. Se comprueba al momento; con un problema (incompleta,
-/// no la reconoce, cuenta gratuita) dice qué hacer y «Continuar» se queda apagado.
-struct OnboardingDebridKey: View {
-    let step: (current: Int, total: Int)
-    let next: () -> Void
+    let skip: () -> Void
+    @State private var guide: ModelObserver<OnboardingModel>
     @State private var debrid: ModelObserver<DebridModel>
+    @State private var connecting = false
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
 
-    init(debrid: DebridModel, step: (current: Int, total: Int), next: @escaping () -> Void) {
-        _debrid = State(wrappedValue: ModelObserver(debrid)); self.step = step; self.next = next
+    init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
+        _guide = State(wrappedValue: ModelObserver(guide)); _debrid = State(wrappedValue: ModelObserver(guide.debrid))
+        self.step = step; self.back = back; self.next = next; self.skip = skip
+        _connecting = State(initialValue: guide.answers[.debrid] == .has)
     }
 
     var body: some View {
         let model = debrid.model
-        GuidePage(title: Text("Tu clave de Real-Debrid"), message: Text("Con ella Orbital puede pedir videos a tu cuenta."), step: step,
-                  primaryEnabled: model.ready, next: next) {
+        GuidePage(title: Text("Ver aquí mismo, sin esperar"),
+                  message: Text("Real-Debrid es un servicio de pago que guarda los videos en su nube y te los entrega al instante."),
+                  step: step,
+                  primary: connecting ? Text("Continuar") : Text("Conectar ahora"),
+                  primaryEnabled: !connecting || model.ready,
+                  secondary: Text("Cuando quiera ver algo"),
+                  next: { if connecting { next() } else { withAnimation(DS.Motion.fade) { connecting = true } } },
+                  skip: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
-                GuideNumberedStep(number: 1, text: Text(verbatim: "real-debrid.com/apitoken")) {
-                    Button("Abrir") { openURL(model.tokenURL) }.dsGlassButton()
+                DebridFlowStrip()
+                if connecting {
+                    GuideNumberedStep(number: 1, text: Text(verbatim: "real-debrid.com/apitoken")) {
+                        Button("Abrir") { openURL(model.tokenURL) }.dsGlassButton()
+                    }
+                    GuideNumberedStep(number: 2, text: Text("Copia el texto largo que aparece")) { EmptyView() }
+                    GuideNumberedStep(number: 3, text: Text("Vuelve aquí y pégalo")) { EmptyView() }
+                    DebridKeyField(debrid: model)
+                    DebridSharedOffer(debrid: model, carded: true)
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        GuidePiece(symbol: "calendar", tint: DS.ListTint.watching, title: Text("Desde unos 3 € cada 15 días"),
+                                   detail: Text("Lo pagas en su página, por adelantado. No se renueva solo: Orbital te avisa antes."))
+                        GuidePiece(symbol: "person.fill", tint: DS.ListTint.series, title: Text("Una cuenta por persona"),
+                                   detail: Text("Si dos la usan a la vez, Real-Debrid la corta."))
+                        GuidePiece(symbol: "iphone", tint: DS.ListTint.library, title: Text("No ocupa espacio"),
+                                   detail: Text("El video llega desde la nube mientras lo ves."))
+                    }
+                    Button("Crear cuenta y pagar", systemImage: "arrow.up.right") { openURL(model.renewURL) }
+                        .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
                 }
-                GuideNumberedStep(number: 2, text: Text("Copia el texto largo que aparece")) { EmptyView() }
-                GuideNumberedStep(number: 3, text: Text("Vuelve aquí y pégalo")) { EmptyView() }
-                DebridKeyField(debrid: model)
-                // CX2-A: si tu clave ya llegó de tus aparatos Apple, un toque (junto al campo, nunca en su lugar).
-                DebridSharedOffer(debrid: model, carded: true)
             }
         }
         .task { await model.checkShared() }
+        // De regreso de la página de Real-Debrid: si ya pegaste la clave, se revisa sola.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, connecting, !model.token.isEmpty, !model.ready else { return }
+            Task { await model.verify() }
+        }
     }
 }
 
@@ -124,36 +135,5 @@ enum DebridWords {
         case .expired: return Text("Venció")
         case .free: return Text("Cuenta gratuita")
         }
-    }
-}
-
-/// 6 · Complementos: ya vienen elegidos; quien no sabe qué es solo toca «Continuar».
-struct OnboardingAddons: View {
-    let step: (current: Int, total: Int)
-    let next: () -> Void
-    @State private var addons: ModelObserver<AddonsModel>
-
-    init(addons: AddonsModel, step: (current: Int, total: Int), next: @escaping () -> Void) {
-        _addons = State(wrappedValue: ModelObserver(addons)); self.step = step; self.next = next
-    }
-
-    var body: some View {
-        let model = addons.model
-        GuidePage(title: Text("De dónde salen las versiones"),
-                  message: Text("Los complementos son buscadores: encuentran versiones de cada película y Real-Debrid te las entrega."),
-                  step: step, next: next) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSGroupLabel(title: Text("Ya dejamos listos estos"))
-                ForEach(model.items) { addon in
-                    Toggle(isOn: Binding(get: { addon.enabled }, set: { on in Task { await model.setEnabled(addon.id, on) } })) {
-                        let what = AddonsModel.summary(addon)
-                        AddonLabel(name: addon.name, usesDebrid: what.usesDebrid, subtitles: what.subtitles, imported: what.imported)
-                    }
-                    .padding(DS.Space.s3).dsCard()
-                }
-                Text("Puedes cambiarlos cuando quieras en Ajustes › Complementos.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-            }
-        }
-        .task { await model.prepare() }
     }
 }

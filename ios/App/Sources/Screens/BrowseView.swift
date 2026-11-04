@@ -147,6 +147,12 @@ struct BrowseView: View {
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
         .advancedFilter(isPresented: $showFilter, start: filterStart) { showResults = true }
+        .learnCoach(.advancedSearch, title: "Búsqueda avanzada", detail: "Junta filtros: comedias de los 90, en Netflix, con más de 7.",
+                    used: env.advancedFilter.count != nil)
+        .onChange(of: env.ui.openAdvancedFilter, initial: true) { _, open in
+            guard open else { return }
+            env.ui.openAdvancedFilter = false; filterStart = nil; showFilter = true
+        }
         .navigationDestination(isPresented: $showResults) {
             FilterResultsView(model: env.advancedFilter) { page in
                 filterStart = page
@@ -266,6 +272,7 @@ struct BrowseView: View {
             filterStart = page
             showFilter = true
         }, clear: { withAnimation(DS.Motion.base(reduceMotion)) { model.clear() } })
+        .coachAnchor("advanced-search")   // F3: el aviso con foco de Buscar señala la puerta del filtro
         .padding(.horizontal, DS.Space.gutter)
     }
 

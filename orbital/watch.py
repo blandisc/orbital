@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from . import companion, flags, player, player_ui, rd_requests, remote_art, ytdlp
+from . import companion, flags, playback, player, player_ui, rd_requests, remote_art, ytdlp
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -151,10 +151,12 @@ def player_source_label(source: streams.Source) -> str:
 
 def player_ui_day(when: float) -> str:
     """«el viernes 6», «mañana», «hoy a las 9 p. m.»: cuándo sale algo, como lo dice la interfaz."""
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
-    day = datetime.fromtimestamp(when)
-    today = datetime.now().date()
+    # Cinemeta da el estreno como un día (medianoche UTC): en México eso era la tarde del día anterior y decía «sale el
+    # jueves 17» de lo que sale el viernes 18 (error 3 del iPhone). Un día se dice en UTC; una hora, en la tuya.
+    day = datetime.fromtimestamp(when, UTC).replace(tzinfo=None) if when % 86400 == 0 else datetime.fromtimestamp(when)
+    today = datetime.fromtimestamp(time.time()).date()
     if day.date() == today:
         return "hoy"
     if day.date() == today + timedelta(days=1):
@@ -170,6 +172,8 @@ def ready_now(source: streams.Source) -> bool:
     """Arranca ya y es de verdad este título: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que
     bajarla» solo da el video de aviso de 30 s de Real-Debrid; una grabada en el cine, un tráiler o una que parece de otro
     título no cuentan («El viento tiene miedo»: se ofrecía «Verlo al instante» con una que no era)."""
+    if playback.needs_stremio(source.stream) and not playback.stremio_server_up():
+        return False  # un torrent sin Real-Debrid solo arranca con Stremio abierto (el respaldo, 4 nov)
     return (source.cached or not source.debrid) and not ({"CAM", "Tráiler"} & set(source.tags)) and not source.doubtful
 
 
@@ -464,6 +468,8 @@ class Watch:
                                                key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought,
                                                stremio=lambda: self.stremio_linked or bool(self.own_addons()))
         self.addon_list.adopt_torrentio()  # el Torrentio que ya habías traído de Stremio pasa al de Orbital (corte S3)
+        if self.addon_list.needs_copy:  # 4 nov: las fuentes salían de tu cuenta de Stremio; se copian una vez a tu lista
+            threading.Thread(target=self._copy_stremio_addons, daemon=True, name="addons-copy").start()
         self._removed_addons: dict[str, dict] = {}
         self.addons = addons.AddonRegistry(
             self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY), own=self.own_addons,
@@ -600,8 +606,19 @@ class Watch:
                 "stremio_linked": self.stremio_linked, "entries": entries,
                 "changed_by": raw.get("changed_by_name") or raw.get("changed_by"), "changed_at": raw.get("changed_at")}
 
+    def _copy_stremio_addons(self) -> None:
+        """Lo que salía de tu cuenta de Stremio pasa a tu lista, una sola vez y sin preguntar (Fernando, 4 nov: Stremio ya
+        no es para traer complementos). Sin internet o sin la cuenta se intenta en el siguiente arranque; mientras, las
+        fuentes salen de tu lista (Torrentio de Orbital)."""
+        try:
+            done = self.import_addons()
+            log.info("Copié tus complementos de Stremio a tu lista: %s", done)
+        except Exception as exc:  # noqa: BLE001 — sin internet, sin cuenta o una respuesta rara: se intenta en el siguiente arranque
+            log.info("Todavía no pude copiar tus complementos de Stremio: %s", exc)
+
     def import_addons(self) -> dict:
-        """«Traer de tu Stremio» / «Volver a traer»: tus complementos de la cuenta, una vez; desde ahí son tuyos aquí."""
+        """Copia tus complementos de la cuenta de Stremio a tu lista (solo para no perder nada al dejar de leerlos de ahí:
+        `_copy_stremio_addons`). Ya no hay botón para esto."""
         key = self.credentials.get(STREMIO_KEY)
         if not key:
             raise ValueError("Primero conecta tu cuenta de Stremio")
@@ -673,6 +690,29 @@ class Watch:
         self.streams.forget_all()
         return {**self.addon_status(), "previous": before}
 
+    @property
+    def languages(self) -> list[str]:
+        """Ajustes › Tus idiomas (N4-A): lo guardado o, si nunca la tocaste, la que sale de tu «Idioma» de antes."""
+        langs = self.setting("languages")
+        if streams.valid_languages(langs):
+            return list(langs)
+        return list(streams.languages_from_audio(str(self.setting("audio", self.config.stremio.audio) or "en")))
+
+    def set_languages(self, langs: list[str]) -> None:
+        """Guarda tu orden y lo lleva a donde se usa (N4-A: la única fuente): el «Idioma» de antes (lo que todavía lo lee),
+        los «Idiomas primero» de Torrentio y las búsquedas ya hechas (se vuelven a ordenar)."""
+        if not streams.valid_languages(langs):
+            raise ValueError("Ese orden de idiomas no sirve")
+        self.state.set_setting("languages", list(langs))
+        if langs[0] in ("en", "es-419", "es-ES"):
+            self.state.set_setting("audio", langs[0])
+        codes = {v: k for k, v in torrentio.LANGUAGES.items()}
+        wanted = [codes[c] for c in langs if c in codes]
+        options = dict(self.addon_list.torrentio().options or {})
+        if options.get("language") != wanted:
+            self.set_torrentio({**options, "language": wanted})
+        self.streams.forget_all()
+
     @staticmethod
     def check_rd_token(token: str) -> str:
         """El usuario de Real-Debrid de esa clave (para «¿Usar la cuenta fernando?»). ValueError si no la reconoce y
@@ -724,7 +764,7 @@ class Watch:
                              "detail": "La ves en Ajustes › Cuentas › Real-Debrid"})
 
     def set_addon_source(self, source: str) -> dict:
-        """«Volver a los de Stremio» (stremio) o «Usar los tuyos» (own): tu lista se queda en los dos casos."""
+        """Solo «own» (4 nov: ya no se regresa a los de tu cuenta de Stremio). ValueError con otra cosa."""
         self.addon_list.set_source(source)
         self.addons.forget()
         return self.addon_status()
@@ -761,6 +801,38 @@ class Watch:
         self.refresh_stremio(background=True)
         return {"addons": brought.get("added", 0), "my_list": added, "already": already}
 
+    STREMIO_LIST = "Mi lista Stremio"
+
+    def move_stremio_to_trakt_list(self) -> dict:
+        """Fernando, 4 nov 2026: «Crear una nueva lista en Trakt que se llame Mi lista Stremio. Pásalo todo y luego
+        quítala.» Todo lo de tu Mi lista de Stremio (películas y series) va a esa lista personal de Trakt (no a tu
+        watchlist; en Stremio no se borra nada). Se comprueba leyendo la lista de vuelta y, solo si llegó todo, se
+        desconecta tu cuenta de Stremio de la TV (queda como respaldo para ver torrents). ValueError sin Trakt o sin la
+        cuenta. Devuelve {"stremio", "in_list", "missing", "unlinked", "list_id"}."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth:
+            raise ValueError("Tu cuenta de Stremio ya no está conectada")
+        trakt = self.trakt_library.client()
+        if trakt is None:
+            raise ValueError("Primero conecta Trakt: ahí va tu lista")
+        raw = self.stremio_client.library(auth)
+        mine = [w for w in stremio_api.parse_library(raw) if w.in_library and w.type in ("movie", "series")]
+        list_id = trakt.named_list(self.STREMIO_LIST, create=True)
+        if not list_id:
+            raise ValueError("Trakt no creó la lista")
+        trakt.add_list_items(list_id, [(w.type, w.id) for w in mine])
+        have = {str(e.get("imdb")) for e in trakt.list_items(list_id) if isinstance(e, dict)}
+        missing = [w.id for w in mine if w.id not in have]  # también lo que no tiene IMDb (Trakt no lo acepta)
+        unlinked = not missing
+        if unlinked:
+            self.unlink_stremio()
+            self.state.set_setting("stremio_role", "backup")
+            self.refresh_trakt(background=True)
+        log.info("Mi lista de Stremio a Trakt: %d de %d (faltan %s); cuenta %s", len(mine) - len(missing), len(mine),
+                 missing[:10], "desconectada" if unlinked else "conectada")
+        return {"stremio": len(mine), "in_list": len(mine) - len(missing), "missing": missing, "unlinked": unlinked,
+                "list_id": list_id}
+
     def own_addons(self) -> list[str]:  # los de `orbital stremio addon add`, de antes de tu lista (S1)
         return addons.clean_urls(self.credentials.get(ADDONS_KEY))
 
@@ -776,6 +848,8 @@ class Watch:
         if not found:
             raise ValueError("Ese complemento no da fuentes, subtítulos, fichas ni catálogos")
         self.credentials.set(ADDONS_KEY, [*self.own_addons(), clean])
+        self.addon_list.import_from_stremio([(found.name, clean, None)])  # 4 nov: las fuentes salen de tu lista
+        self.addons.forget()
         return found
 
     def remove_addon(self, number: int) -> str:
@@ -785,6 +859,10 @@ class Watch:
             raise ValueError(f"No hay complemento {number}: tienes {len(own)}")
         gone = own.pop(number - 1)
         self.credentials.set(ADDONS_KEY, own or None)
+        entry = next((e for e in self.addon_list.entries() if e.url == gone and e.origin != "orbital"), None)
+        if entry is not None:
+            self.addon_list.remove(entry.id)
+        self.addons.forget()
         return addons.redact(gone)
 
     def _load_stremio_cache(self) -> list[LibraryItem]:
@@ -1055,6 +1133,10 @@ class Watch:
     @property
     def stream_prefs(self) -> streams.Preferences:
         """Ajustes › Idioma: «en», «es» (cualquier español), «es-419» (latino) o «es-ES» (castellano)."""
+        quality = self.setting("quality", self.config.stremio.quality)
+        langs = self.setting("languages")
+        if streams.valid_languages(langs):  # N4-A: Ajustes › Tus idiomas manda
+            return streams.prefs_from_languages(langs, quality)
         audio = str(self.setting("audio", self.config.stremio.audio) or "en")
         variant = spanish_variant(audio)
         if audio == "es" and not variant:  # el ajuste de antes («Español» + «Latino» aparte)
@@ -1159,9 +1241,19 @@ class Watch:
         prefs = self.asked_language({"meta_id": meta_id})[0]
         out = {"why": "ok", "message": "", "detail": "", "can_request": False, "request": self.rd.status(video_id)}
         req = out["request"]
+        if not (req and req.get("mine")) and kind == "series":
+            try:  # un paquete tuyo que se sigue bajando y que Torrentio lista para este episodio: ya está pedido
+                listed = {s.info_hash for s in self.stream_sources(kind, video_id, prefs) if s.info_hash and not s.doubtful}
+            except stremio_api.StremioError:
+                listed = set()
+            pack = self.rd.pack_for(meta_id, listed) if listed else None
+            if pack:
+                out["request"] = req = pack
         if req and req.get("mine") and req["state"] in rd_requests.ACTIVE:
+            stuck = str(req.get("detail") or "").startswith("Sigue sin bajar")  # 24 h sin avanzar: su hoja ofrece otra
             return {**out, "why": "requested", "message": req["message"],
-                    "detail": req["detail"] if req["state"] not in (rd_requests.DOWNLOADING, rd_requests.QUEUED) else rd_requests.CLOUD}
+                    "detail": req["detail"] if stuck or req["state"] not in (rd_requests.DOWNLOADING, rd_requests.QUEUED)
+                    else rd_requests.CLOUD}
         when = self._release_of(kind, meta_id, video_id)
         if when and when > time.time():
             day = player_ui_day(when)
@@ -1187,6 +1279,10 @@ class Watch:
             return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
                     "detail": "Ajustes › Complementos"}
         if self.rd.client() is None:
+            # Hay torrents pero Stremio está cerrado: el respaldo para verlos sin Real-Debrid (Fernando, 4 nov).
+            if any(playback.needs_stremio(s.stream) and not s.doubtful for s in found):
+                return {**out, "why": "stremio", "message": "Necesita Stremio abierto",
+                        "detail": "Para ver torrents sin Real-Debrid · o conecta Real-Debrid en Ajustes › Cuentas"}
             # Sin clave no hay qué pedir ni cómo saber si alguien lo tiene: la salida es conectar Real-Debrid, nunca
             # «Nadie lo tiene» sin salida (análisis de fondo con el iPhone, escenario 16).
             return {**out, "why": "debrid-account", "message": "Vuelve a conectar Real-Debrid",
@@ -1702,11 +1798,15 @@ class Watch:
         if parts[0] == "kitsu":
             facts.setdefault("original", "ja")  # Anime Kitsu: sin IMDb ni TMDB, su idioma original es japonés
         try:
-            name = self.cinemeta.meta(kind, meta_id).get("name")
+            info = self.cinemeta.meta(kind, meta_id)
         except cinemeta.CinemetaError:
-            name = None
+            info = {}
+        name = info.get("name")
         if isinstance(name, str) and name:
             facts["titles"] = [*facts.get("titles", []), name]
+        year = re.match(r"(19|20)\d\d", str(info.get("year") or info.get("releaseInfo") or ""))
+        if year:
+            facts.setdefault("year", int(year.group()))  # una versión que dice otro año es otra película
         return facts
 
     def _tracks_seen(self, meta: dict, tracks: list[dict]) -> str | None:

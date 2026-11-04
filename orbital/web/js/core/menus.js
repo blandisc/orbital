@@ -709,6 +709,62 @@ const SETTING_TEXT = {
   voice_tips: ["Frases en pantalla", "Al pedir algo por voz, el aviso dice qué más puedes decir en ese momento."],
 };
 
+/** Ajustes › Ver › Tus idiomas (N4-A, Fernando 4 nov): una sola lista en orden; «Idioma original» es un renglón (el de cada
+ *  título). De ahí leen «Ver», «Versión», el reproductor y Torrentio. Por omisión: Latino, Idioma original, Inglés, Castellano. */
+export const LANGUAGE_NAMES = { "es-419": "Latino", "es-ES": "Castellano", original: "Idioma original", en: "Inglés", fr: "Francés",
+  pt: "Portugués", it: "Italiano", de: "Alemán", ja: "Japonés", ko: "Coreano" };
+export const LANGUAGES_LEAD = "En este orden busca versiones y elige con cuál arranca. Si no hay en el primero, prueba el siguiente.";
+const langName = (code) => LANGUAGE_NAMES[code] || code;
+// «Idioma original» no puede ir primero (depende de cada título): si quedaría ahí, el siguiente sube y él queda segundo.
+const fixLanguages = (list) => (list[0] === "original" && list.length > 1 ? [list[1], "original", ...list.slice(2)] : list);
+const validLanguages = (list) => list.length > 0 && list[0] !== "original";
+
+/** La lista: cada idioma con su lugar (A: subir, bajar o quitar) y «Agregar idioma». */
+export function languagesMenu(languages = []) {
+  return {
+    title: "Tus idiomas",
+    subtitle: LANGUAGES_LEAD,
+    options: [
+      ...languages.map((code, i) => ({ icon: "captions", label: `${i + 1}. ${langName(code)}`,
+        hint: i === 0 ? "Con este arranca si lo hay" : code === "original" ? "El de cada película o serie (japonés en un anime)" : "",
+        command: { type: "language", code } })),
+      Object.keys(LANGUAGE_NAMES).some((c) => !languages.includes(c)) &&
+        { icon: "plus", label: "Agregar idioma", hint: "Se agrega al final de tu lista", command: { type: "language-add" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Uno de tus idiomas: subir, bajar o quitar. «Idioma original» no puede ir primero (no es un idioma, depende del título). */
+export function languageMenu(languages = [], code) {
+  const i = languages.indexOf(code);
+  const moved = (j) => { const list = [...languages]; list.splice(i, 1); list.splice(j, 0, code); return list; };
+  const set = (list) => ({ type: "languages-set", languages: list, back: true });
+  const up = i > 0 && fixLanguages(moved(i - 1)), down = i < languages.length - 1 && fixLanguages(moved(i + 1));
+  const removed = fixLanguages(languages.filter((c) => c !== code));
+  const same = (list) => list && list.join() === languages.join();
+  return {
+    title: langName(code),
+    options: [
+      up && validLanguages(up) && !same(up) && { icon: "back", label: "Subir", command: set(up) },
+      down && validLanguages(down) && !same(down) && { icon: "chevron", label: "Bajar", command: set(down) },
+      validLanguages(removed) && { icon: "close", label: "Quitar", danger: true, command: set(removed) },
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Agregar idioma: los que todavía no están en tu lista. */
+export function languageAddMenu(languages = []) {
+  return {
+    title: "Agregar idioma",
+    options: Object.keys(LANGUAGE_NAMES).filter((c) => !languages.includes(c)).map((c) => ({ icon: "captions", label: langName(c),
+      command: { type: "languages-set", languages: [...languages, c], back: true } })),
+  };
+}
+
+/** Tus idiomas en una línea, para el renglón de Ajustes: «Latino, Idioma original, Inglés, Castellano». */
+export const languagesLine = (languages = []) => languages.map(langName).join(", ");
+
 /** ¿Todos sus valores caben a la vista (valores segmentados)? Hasta cuatro y cortos; si no, uno a la vez con ‹ ›. */
 export function segmentable(key) {
   const values = SETTING_VALUES[key] || [];
@@ -743,13 +799,10 @@ function accountRows(settings) {
         command: { type: "keys", service: "trakt" } },
     ...phoneRows(settings),
     onedriveRow(settings.onedrive),
-    // Corte S4: Stremio ya no hace falta; queda al final, opcional, para traer lo tuyo y como respaldo.
-    { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio · respaldo", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
-      ok: !!settings.stremio_linked,
-      command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-      hint: !settings.stremio_linked ? "Opcional: para traer tus complementos y Mi lista"
-        : settings.stremio_role === "backup" ? (settings.stremio_copy !== false ? "De respaldo · recibe copia de tu avance" : "De respaldo · ya no se lee")
-          : "Opcional: tus complementos y Mi lista, mientras no tengas Trakt" },
+    // Fernando, 4 nov: Stremio ya no se conecta (como el iPhone); solo queda de respaldo para ver torrents. Una cuenta que
+    // ya estaba conectada sale aquí hasta que pases tu Mi lista a Trakt y se desconecte.
+    settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "Pasar a Trakt",
+      warn: true, command: { type: "stremio-account" }, hint: "Tu Mi lista va a «Mi lista Stremio» en Trakt y se desconecta" },
     settings.para_ti && { heading: true, label: "Claves de Explorar" },
     ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
   ].filter(Boolean);
@@ -826,14 +879,14 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
       const n = settingsMissing(settings, { voice, now }).length;
       return n ? `${n} ${n === 1 ? "cosa" : "cosas"} por hacer` : "Todo listo";
     }
-    case "watch": return `${settingLabel("audio", settings.audio)} · ${settingLabel("quality", settings.quality)}`;
+    case "watch": return `${langName((settings.languages || [])[0] || settings.audio)} · ${settingLabel("quality", settings.quality)}`;
     case "addons": return addonsMeta(settings.addons);
     case "play": return settings.game_idle_minutes ? `En pausa, se cierran en ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "En pausa, no se cierran";
     case "voice": return voice ? `Voz: ${sinceVoice(lastVoice(voice), now).toLowerCase()}` : "La tele, Alexa y el iPhone";
     case "display": return `Texto ${settingLabel("text_size", settings.text_size ?? "normal").toLowerCase()}`;
     case "accounts": {
       const rows = accountRows(settings).filter((r) => !r.heading && !["phone-link", "keys", "device-menu"].includes(r.command?.type)
-        && !(r.label?.startsWith("Stremio") && !settings.stremio_linked));
+        && !r.label?.startsWith("Stremio"));
       return `${rows.filter((r) => r.ok).length} de ${rows.length} conectadas`;
     }
     default: return "Revisar y actualizar";
@@ -850,7 +903,13 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   const row = (key) => settingRow(key, settings, id);
   switch (id) {
     case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
-      row("audio"), row("subtitles"), row("internet_subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
+      // Lo de idiomas y subtítulos junto y arriba (Fernando, 4 nov: «que sea fácil configurar los subtítulos y los idiomas»).
+      { heading: true, label: "Idiomas y subtítulos" },
+      { icon: "sound", label: "Tus idiomas", value: languagesLine(settings.languages), help: LANGUAGES_LEAD,
+        command: { type: "languages" } },
+      row("subtitles"), row("internet_subtitles"), row("sub_scale"),
+      { heading: true, label: "Imagen y reproducción" },
+      row("quality"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
       { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
     ] };
     case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [
@@ -891,7 +950,6 @@ function summary(settings, voice, now) {
     sources.length > 0 && { icon: "addon", label: "Complementos", value: `✓ ${sources.map((e) => e.name).join(", ")}`, ok: true,
       command: { type: "settings", page: "addons" } },
     paired > 0 && { icon: "phone", label: "Aparatos conectados", value: `✓ ${paired}`, ok: true, command: { type: "settings", page: "accounts" } },
-    settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "✓ Conectada", ok: true, command: { type: "stremio-account" } },
     settings.trakt?.linked && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "✓ Conectada", ok: true, command: { type: "trakt-account" } },
     settings.tv?.configured && { icon: "tv", label: "La tele", value: "✓ Se prende con Orbital", ok: true, command: { type: "settings", page: "voice" } },
     last && now / 1000 - last <= 2 * DAY && { icon: "assistant", label: "La voz", value: `✓ ${sinceVoice(last, now)}`, ok: true, command: { type: "voice-log" } },
@@ -1490,7 +1548,7 @@ const EXPLAINERS = {
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
     ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
-    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
+    ["trophy", "trophy", "Vienen con Orbital o los agregaste tú", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los que agregaste tú también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
@@ -1618,28 +1676,23 @@ export function stremioLogoutMenu(command = {}) {
   };
 }
 
-/** Stremio en Cuentas (SS-8, corte S5): traer lo tuyo una vez y dejarlo de respaldo; si quieres, sigue recibiendo copia. */
+/** Stremio en Cuentas, solo si quedó conectada de antes (Fernando, 4 nov: «Crear una nueva lista en Trakt que se llame
+ *  Mi lista Stremio. Pásalo todo y luego quítala»). Desde ahí Stremio es solo el respaldo para ver torrents. */
 export function stremioAccountMenu(settings = {}) {
-  const backup = settings.stremio_role === "backup";
-  const copy = settings.stremio_copy !== false;
   const trakt = !!settings.trakt?.linked;
   return {
     title: "Stremio",
-    subtitle: backup ? "De respaldo: ya no se lee; lo tuyo sale de Trakt y de tu lista de complementos."
-      : "Hoy Orbital todavía lee tu Seguir viendo y Mi lista de aquí.",
+    subtitle: "Stremio ya no se conecta: queda solo para ver torrents sin Real-Debrid. Tu Mi lista pasa a Trakt, sin borrar nada en Stremio.",
     options: [
-      !backup && (trakt
-        ? { icon: "download", label: "Traer de tu Stremio", hint: "Tus complementos y Mi lista, a Trakt · una sola vez", command: { type: "stremio-bring" } }
-        : { icon: "spark", label: "Traer de tu Stremio", hint: "Primero conecta Trakt: tu avance y Mi lista van ahí", warn: true,
-          command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } }),
-      { icon: "swap", label: "Seguir mandándole copia", hint: "Tu avance y Mi lista, por si lo usas en otro lado", value: copy ? "Sí" : "No",
-        command: { type: "setting", key: "stremio_copy", value: !copy } },
-      backup && { icon: "refresh", label: "Volver a leer tu Stremio", hint: "Seguir viendo y Mi lista otra vez desde aquí",
-        command: { type: "setting", key: "stremio_role", value: "both" } },
-      { icon: "exit", label: "Desconectar", danger: true, hint: backup ? "No se pierde nada: lo tuyo ya está en Trakt" : "Dejarás de ver tu Seguir viendo de Stremio",
-        command: { type: "stremio-logout-ask", backup } },
+      trakt
+        ? { icon: "download", label: "Pasar a Trakt y desconectar", hint: "A tu lista «Mi lista Stremio» · se desconecta solo si llegó todo",
+          command: { type: "stremio-to-trakt" } }
+        : { icon: "spark", label: "Pasar a Trakt y desconectar", hint: "Primero conecta Trakt: ahí va tu lista", warn: true,
+          command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
+      { icon: "exit", label: "Desconectar sin pasarla", danger: true, hint: "Dejarás de ver tu Mi lista y tu Seguir viendo de Stremio",
+        command: { type: "stremio-logout-ask", backup: false } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
-    ].filter(Boolean),
+    ],
   };
 }
 
@@ -1663,15 +1716,15 @@ const shownAddons = (entries) => (entries || []).filter((e) => !isOpenSubtitles(
 
 /** El dato de Complementos en el riel: «4 de 5 contestan», o de dónde salen si aún no son tuyos. */
 function addonsMeta(status) {
-  if (!status || status.source !== "own") return "Los de tu cuenta de Stremio";
+  if (!status) return "";
   const on = shownAddons(status.entries).filter((e) => e.on);
   if (!on.length) return "Ninguno prendido";
   const answering = on.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
   return `${answering} de ${on.length} contestan`;
 }
 
-/** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital, los traídos de tu Stremio y de dónde
- * salen las fuentes. A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
+/** Ajustes › Complementos («La TV sin Stremio», S1): los que vienen con Orbital y los que agregaste tú («Agregado por
+ * ti»). A en uno abre lo que se le puede hacer (prender, ordenar, quitar). */
 export function addonRows(status, now = Date.now()) {
   if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
   const entry = (e) => {
@@ -1687,18 +1740,9 @@ export function addonRows(status, now = Date.now()) {
       command: { type: "addon-menu", id: e.id } };
   };
   const ours = shownAddons(status.entries).filter((e) => e.origin === "orbital");
+  // Lo que no vino con Orbital (antes traído de tu Stremio): «Agregado por ti», como el iPhone (E1, 3 nov). Fernando, 4 nov:
+  // Stremio ya no es para traer complementos; no hay «Volver a traer» ni «Volver a los de Stremio».
   const brought = shownAddons(status.entries).filter((e) => e.origin !== "orbital");
-  const imported = status.imported_at ? `Traídos el ${new Date(status.imported_at * 1000).toLocaleDateString("es", { day: "numeric", month: "short" })}` : "";
-  if (status.source !== "own" && !status.imported_at) {
-    return [
-      status.stremio_linked
-        ? { icon: "download", label: "Traer de tu Stremio", hint: "Tus complementos, una sola vez · tu cuenta no se toca", value: "Traer",
-          command: { type: "addons-import" } }
-        : { icon: "trailer", label: "Por ahora salen de tu cuenta de Stremio", hint: "Conéctala en Ajustes › Cuentas para traerlos" },
-      { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
-      explainRow("addons"),
-    ];
-  }
   // Corte S6: si la cambiaste en el iPhone, se dice arriba (la lista es la misma en los dos).
   const ago = status.changed_at ? shortAgo(status.changed_at, now) : null;
   const fromPhone = status.changed_by && status.changed_by !== "tv" && {
@@ -1707,14 +1751,7 @@ export function addonRows(status, now = Date.now()) {
   return [
     fromPhone,
     { heading: true, label: "Vienen con Orbital" }, ...ours.map(entry),
-    (brought.length || status.stremio_linked) && { heading: true, label: "Traídos de tu Stremio" }, ...brought.map(entry),
-    status.stremio_linked && { icon: "refresh", label: "Volver a traer", hint: [imported, "tu cuenta no se toca"].filter(Boolean).join(" · "),
-      command: { type: "addons-import" } },
-    // TV-2: volver a Stremio solo con su cuenta conectada (sin ella, un toque te dejaba sin versiones).
-    (status.stremio_linked || status.source !== "own") && { heading: true, label: "De dónde salen" },
-    status.source === "own"
-      ? status.stremio_linked && { icon: "swap", label: "Volver a los de Stremio", hint: "Tu lista se queda: regresas cuando quieras", command: { type: "addons-source", source: "stremio" } }
-      : { icon: "swap", label: "Usar tu lista", hint: "Ahora salen de tu cuenta de Stremio", value: "Usar", command: { type: "addons-source", source: "own" } },
+    brought.length > 0 && { heading: true, label: "Agregado por ti" }, ...brought.map(entry),
     explainRow("addons"), // AU1-A
   ].filter(Boolean);
 }
@@ -1802,8 +1839,9 @@ export function torrentioMenu(entry) {
     subtitle: "Aquí decides qué versiones te enseña y en qué orden. Lo de fábrica ya viene bien; cada cambio se guarda al hacerlo.",
     options: [
       entry?.needs_key && { icon: "warning", label: "Necesita tu clave de Real-Debrid", hint: "Pégala aquí o desde cualquier celular", warn: true, command: { type: "rd-connect" } },
-      { icon: "captions", label: "Idiomas primero", value: (o.language || []).map((k) => TORRENTIO_LANGUAGES[k] || k).join(", ") || "Ninguno",
-        command: { type: "torrentio-languages" } },
+      // N4-A: Torrentio no tiene lista propia; usa Ajustes › Ver › Tus idiomas.
+      { icon: "captions", label: "Se usan tus idiomas", value: "Cambiar", hint: "Ajustes › Ver › Tus idiomas",
+        command: { type: "languages" } },
       { icon: "hide", label: "Calidades que no quieres", value: torrentioHidden(o.qualityfilter), command: { type: "torrentio-qualities" } },
       { icon: "bolt", label: "Solo lo que ya está en Real-Debrid", value: only ? "Sí" : "No",
         hint: only ? "Solo lo que arranca al instante" : "También lo que se puede pedir",
@@ -1955,7 +1993,7 @@ export function setupMenu(status = {}) {
 }
 
 /** Películas y series, la primera vez (SS-7, corte S4): tres pasos, cada uno se puede dejar para después y se reabre
- * desde «Tu consola» o Ajustes › Resumen. Sin Stremio: si ya lo tienes, «Traer de tu Stremio» va al final. */
+ * desde «Tu consola» o Ajustes › Resumen. Sin Stremio (Fernando, 4 nov: ya no se traen complementos de ahí). */
 export function moviesSetupMenu(settings = {}) {
   const rd = settings.realdebrid;
   const ours = (settings.addons?.entries || []).filter((e) => e.origin === "orbital");
@@ -1974,8 +2012,6 @@ export function moviesSetupMenu(settings = {}) {
         ok: !!settings.trakt?.linked, command: { type: settings.trakt?.configured ? "trakt-link" : "keys", ...(settings.trakt?.configured ? {} : { service: "trakt" }) } },
       { icon: "phone", label: "Tu iPhone · opcional", hint: "Configuras ahí y la TV lo toma", value: phones ? "✓ Conectado" : "Conectar",
         ok: phones, command: { type: "phone-link" } },
-      !settings.addons?.imported_at && { icon: "download", label: "¿Ya tienes Stremio?", hint: "Trae tus complementos una vez · opcional",
-        command: { type: settings.stremio_linked ? "addons-import" : "stremio-login" } },
     ].filter(Boolean),
   };
 }

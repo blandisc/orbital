@@ -286,7 +286,7 @@ def test_library_json_gets_a_copy_of_extra():
 def test_sources_listed_and_played_with_the_series_language(library, monkeypatch):
     from orbital.library import streams
 
-    library.credentials.set("stremio_auth_key", "k")
+    library.credentials.set("realdebrid_token", "KEY")  # 4 nov: las fuentes salen de tu lista (Torrentio con tu clave)
     library.state.set_pref("stremio:tt1", "audio", "es")  # esta serie, en español (Ajustes: inglés)
     raw = [{"name": "A", "title": "Peli\n🇲🇽", "url": "https://cdn/0.mkv"}, {"name": "A", "title": "Peli", "url": "https://cdn/1.mkv"}]
     monkeypatch.setattr(streams.StreamFinder, "addons", lambda self: [addons.parse_manifest({"name": "A", "resources": ["stream"]}, "https://a/manifest.json")])

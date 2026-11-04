@@ -397,8 +397,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let titleShrink: CGFloat = 0.8
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)
-        /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
-        static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
+        /// El planeta solo, junto a un título o en el widget.
+        static let markSmall: CGFloat = 22
         /// Lo que una marca redonda (el jitomate) baja de la línea del título: como la «o», que cae un poco abajo de la línea,
         /// así su cuerpo queda centrado con las mayúsculas en vez de verse flotando.
         static let markOvershoot: CGFloat = 1.5

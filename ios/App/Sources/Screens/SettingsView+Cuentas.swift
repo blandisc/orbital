@@ -23,17 +23,6 @@ extension SettingsView {
         } header: { Text("Trakt · principal") } footer: { Text("Guarda dónde te quedaste, lo que viste y Mi lista, para todos tus aparatos.") }
         .listRowBackground(DS.surface)
         Section {
-            if session.model.state == .signedIn {
-                Label("Conectado", systemImage: "person.crop.circle.badge.checkmark")
-                Button("Cerrar sesión de Stremio", role: .destructive) { confirmSignOut = true }
-            } else {
-                NavigationLink { LoginView(session: session.model) } label: {
-                    SettingsRow(title: "Conectar", symbol: "arrow.triangle.2.circlepath", tint: DS.ListTint.addon, value: Text("No conectado"))
-                }
-            }
-        } header: { Text("Stremio · respaldo") } footer: { Text("Lo que ves también se guarda ahí, como copia.") }
-        .listRowBackground(DS.surface)
-        Section {
             NavigationLink { LetterboxdSettings() } label: {
                 SettingsRow(title: "Letterboxd", symbol: "star.bubble", tint: DS.Letterboxd.leaf, value: letterboxdValue)
             }

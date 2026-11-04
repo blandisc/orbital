@@ -72,6 +72,8 @@ def linked(tmp_path):
     fake = FakeStremio()
     cat = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=fake)
     cat.watch.link_stremio("clave-buena")
+    # 4 nov: las fuentes salen de tu lista (no de la cuenta de Stremio): con tu clave de Real-Debrid, el Torrentio de Orbital.
+    cat.watch.credentials.set("realdebrid_token", "KEY")
     cat.refresh()
     for _ in range(50):  # refresh() relanza la descarga en segundo plano
         if fake.calls >= 3:
@@ -422,14 +424,14 @@ def test_missing_title_is_404_not_a_network_error(make_client, library, monkeypa
 def test_own_addons_are_saved_encrypted_and_never_shown_whole(library, monkeypatch):
     from orbital.library import addons as addons_mod
 
-    url = "https://torrentio.strem.fun/realdebrid=SECRETO/manifest.json"
+    url = "https://mi-complemento.example/clave=SECRETO/manifest.json"
     monkeypatch.setattr(addons_mod, "fetch_json", lambda u, timeout=0: {"name": "Torrentio RD", "resources": ["stream"]})
-    assert library.watch.add_addon("stremio://torrentio.strem.fun/realdebrid=SECRETO/manifest.json").name == "Torrentio RD"
+    assert library.watch.add_addon("stremio://mi-complemento.example/clave=SECRETO/manifest.json").name == "Torrentio RD"
     assert library.credentials.get("stremio_addons") == [url]  # en secrets.json (cifrado en Windows), no en config.yaml
-    assert library.watch.has_addons and [a.name for a in library.watch.addons.addons()] == ["Torrentio RD"]
+    assert library.watch.has_addons and "mi-complemento.example" in str([a.url for a in library.watch.addons.addons()])  # va a tu lista
     with pytest.raises(ValueError):
         library.watch.add_addon("C:/addon")
-    assert library.watch.remove_addon(1) == "torrentio.strem.fun" and not library.watch.has_addons
+    assert library.watch.remove_addon(1) == "mi-complemento.example" and not library.watch.has_addons
 
 
 def test_voice_puts_any_title_even_said_in_spanish(linked, monkeypatch):

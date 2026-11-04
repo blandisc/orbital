@@ -45,10 +45,12 @@ final class FlowCaptureUITests: GuideUITestCase {
             app.tap(); sleep(1)
         }
         app.navigationBars.buttons.firstMatch.tap(); sleep(1)
+        let learn = app.buttons["settings-learn"]
+        for _ in 0..<6 where !(learn.exists && learn.isHittable) { app.swipeUp() }
+        learn.tap(); sleep(1); shot("25-aprende-orbital")
         let guide = app.buttons["settings-guide"]
-        for _ in 0..<6 where !(guide.exists && guide.isHittable) { app.swipeUp() }
-        sleep(1); shot("25-como-funciona-orbital")
-        guide.tap(); wait("Tus películas y series en tu bolsillo."); sleep(1); shot("26-guia-desde-ajustes")
+        for _ in 0..<4 where !(guide.exists && guide.isHittable) { app.swipeUp() }
+        guide.tap(); wait("Todo lo que quieres ver, en un solo lugar."); sleep(1); shot("26-guia-desde-ajustes")
     }
 
     func test3DebridSoonAndExpired() {

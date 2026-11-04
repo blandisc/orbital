@@ -153,11 +153,14 @@ class Source:
     audio_langs: dict[str, str] = field(default_factory=dict)
     other_title: bool = False  # el nombre no menciona el título: Torrentio a veces trae otro («La casa de la pradera»)
     other_episode: bool = False  # trae otra temporada («Breaking Bad T4 · 04 - CAPITULO 01» en T1 E1): «¿Otro episodio?»
+    # El nombre dice otro año («Даже ветер… [1977]» para la de 1968): es otra película. A diferencia de `other_title` (el nombre
+    # no menciona el título: solo baja, y en tu idioma sigue ganando, FQ3-A), esta nunca es la recomendada (como el iPhone).
+    other_year: bool = False
 
     @property
     def doubtful(self) -> bool:
-        """Parece de otro título o de otro episodio: nunca la recomendada ni la ofrecida si hay otra."""
-        return self.other_title or self.other_episode
+        """De otro año o de otro episodio: nunca la recomendada, la ofrecida ni «al instante» si hay otra."""
+        return self.other_year or self.other_episode
 
     @property
     def checked(self) -> bool:
@@ -195,7 +198,7 @@ class Source:
             # Para «Versión»: cada idioma con su código, su nombre y cómo lo sabemos.
             "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
                             for code, how in self.audio_langs.items()],
-            "other_title": self.other_title, "other_episode": self.other_episode, "checked": self.checked, "requested": self.requested,
+            "other_title": self.other_title or self.other_year, "other_episode": self.other_episode, "checked": self.checked, "requested": self.requested,
             # T8-A: la que hay que pedir lleva su huella (no es secreta) para «Pedirlo y avisarme» justo esta.
             **({"hash": self.info_hash} if self.debrid and not self.cached and self.info_hash else {}),
         }
@@ -444,6 +447,21 @@ SEASON_RANGE = re.compile(
     r"\bt\d{1,2}[ ._]*-[ ._]*t?\d{1,2}\b", re.I)
 
 
+YEAR = re.compile(r"\b(19[2-9]\d|20[0-4]\d)\b")
+
+
+def other_year(release: str, year: int | None) -> bool:
+    """El nombre dice un solo año y no es el de la película (como el iPhone, Streams.otherTitle): Cinemeta da el estreno en
+    EE. UU. y una extranjera puede llegar allá hasta 3 años después, así que un año anterior cuenta hasta 3."""
+    if not year:
+        return False
+    years = {int(y) for y in YEAR.findall(release)}
+    if len(years) != 1:
+        return False
+    only = years.pop()
+    return only - year > 1 or year - only > 3
+
+
 def season_of(video_id: str) -> int | None:
     """La temporada de un episodio de IMDb («tt0903747:1:2» → 1); None si no es de ese tipo."""
     parts = video_id.split(":")
@@ -484,14 +502,46 @@ class Preferences:
     quality: str = "1080p"  # resolución preferida ("4K" en la TV si quieres)
     spanish: str = ""  # con audio en español: "es-419" (latino), "es-ES" (castellano) o "" (cualquiera)
     original: str = ""  # el idioma original del título ("ja", "en"…): lo pone find(), no Ajustes
+    # Tu orden después del primero (N4-A, Ajustes › Tus idiomas): códigos y «original» (el idioma original de cada título).
+    # Vacío: el de siempre (con latino o castellano, original → inglés → el otro doblaje).
+    plan: tuple[str, ...] = ()
+
+
+# Ajustes › Tus idiomas (N4-A, Fernando 4 nov): una sola lista ordenada; «original» es un renglón. Por omisión, con latino.
+LANGUAGE_CHOICES = ("es-419", "es-ES", "original", "en", "fr", "pt", "it", "de", "ja", "ko")
+DEFAULT_LANGUAGES = ("es-419", "original", "en", "es-ES")
+
+
+def languages_from_audio(audio: str) -> tuple[str, ...]:
+    """Tu orden a partir del «Idioma» de antes (un solo valor): latino o castellano con el plan B de siempre; otro, solo él
+    y luego el original."""
+    if audio in ("es-ES",):
+        return ("es-ES", "original", "en", "es-419")
+    if audio in ("es-419", "es"):
+        return DEFAULT_LANGUAGES
+    return (audio or "en", "original")
+
+
+def valid_languages(value) -> bool:
+    return (isinstance(value, list) and 1 <= len(value) <= len(LANGUAGE_CHOICES) and len(set(value)) == len(value)
+            and all(isinstance(v, str) and v in LANGUAGE_CHOICES for v in value) and value[0] != "original")
+
+
+def prefs_from_languages(languages, quality: str = "1080p") -> Preferences:
+    """Las preferencias de búsqueda a partir de tu orden: el primero es tu idioma (con su doblaje) y lo demás, el plan B."""
+    first, rest = languages[0], tuple(languages[1:])
+    if first in SPANISH_VARIANTS:
+        return Preferences(audio="es", spanish=first, quality=quality, plan=rest)
+    return Preferences(audio=first, quality=quality, plan=rest)
 
 
 # Sin tu español al instante, el plan B (Fernando, 4 nov 2026: «latino, idioma original, luego inglés y luego castellano»):
 # cuánto baja cada escalón desde lo que vale tu doblaje. Lo de al instante (+1000) le sigue ganando a lo que hay que bajar.
-STEP_UNSURE_SPANISH = 100  # «Español (no dice cuál)»
-STEP_ORIGINAL = 350
-STEP_ENGLISH = 450
-STEP_OTHER_DUB = 550
+# Los pesos son los del iPhone (tests/fixtures/rd-scenarios/README.md): cada renglón n de tu orden (0 = original, 1 = inglés,
+# 2 = el otro doblaje) vale −300 − 40·n más lo que vale su prueba − 300: a 600 o más del tuyo (más que los −500 de un nombre
+# que no dice el título) y a menos de 1400 (arrancar al instante contra pedirla).
+STEP_UNSURE_SPANISH = 100  # «Español (no dice cuál)»: justo después del tuyo
+STEP_BASE, STEP_EACH = 300, 40
 
 
 def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
@@ -521,8 +571,8 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s -= 1500
     if "Reescalada" in src.tags:
         s -= 150
-    if src.other_episode:
-        s -= 1500  # otra temporada: nunca la recomendada (como el iPhone)
+    if src.other_episode or src.other_year:
+        s -= 1500  # otra temporada u otro año: nunca la recomendada (como el iPhone)
     if src.other_title:
         s -= 500  # el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)
     s += min(src.seeders, 500) / 10
@@ -540,25 +590,31 @@ def language_score(src: Source, prefs: Preferences) -> float:
     """Cuánto suma el idioma según qué tan seguro es. Con una variante de español elegida (Ajustes, la voz, la serie):
     el doblaje pedido primero, luego el español que no dice cuál y al final el otro (el mismo orden que el iPhone)."""
     langs = src.audio_langs or {code: "name" for code in src.languages}
-    if prefs.audio != "es":
+    wanted = prefs.spanish if prefs.audio == "es" and prefs.spanish in SPANISH_VARIANTS else None
+    if prefs.audio != "es" and not prefs.plan:  # solo tu idioma (lo de antes de «Tus idiomas»)
         how = langs.get(prefs.audio)
         return LANG_POINTS[how] if how else WRONG_LANGUAGE
-    wanted = prefs.spanish if prefs.spanish in SPANISH_VARIANTS else None
-    original = prefs.original if prefs.original and not prefs.original.startswith("es") else ""
+    if prefs.audio != "es":
+        wanted = prefs.audio
+    elif not wanted:  # «Español (cualquiera)»: como siempre, cualquier español vale lo mismo y otro idioma no cuenta
+        best = float(WRONG_LANGUAGE)
+        for code in SPANISH:
+            if code in langs:
+                best = max(best, float(LANG_POINTS[langs[code]]))
+        return best
+    if prefs.plan:
+        steps = [prefs.original if c == "original" else c for c in prefs.plan]
+    else:
+        steps = [prefs.original, "en", "es-ES" if wanted == "es-419" else "es-419"]
+    plan = [c for c in dict.fromkeys(steps) if c and c != wanted]
     best = float(WRONG_LANGUAGE)
     for code, how in langs.items():
-        points = float(LANG_POINTS[how])
-        if code in SPANISH:
-            if wanted and code == "es":
-                points -= STEP_UNSURE_SPANISH  # español sin saber cuál: justo después del que pediste
-            elif wanted and code != wanted:
-                points -= STEP_OTHER_DUB  # el otro doblaje: al final, después del original y del inglés
-        elif not wanted:
-            continue  # «Español (cualquiera)»: como siempre, otro idioma no cuenta
-        elif original and code == original:
-            points -= STEP_ORIGINAL  # el idioma original de la obra
-        elif code == "en":
-            points -= STEP_ENGLISH
+        if code == wanted:
+            points = float(LANG_POINTS[how])
+        elif code == "es" and wanted in SPANISH_VARIANTS:
+            points = float(LANG_POINTS[how] - STEP_UNSURE_SPANISH)
+        elif code in plan:
+            points = float(-STEP_BASE - STEP_EACH * plan.index(code) + LANG_POINTS[how] - 300)
         else:
             continue
         best = max(best, points)
@@ -590,7 +646,7 @@ def player_link(src: Source, meta_transport: str, kind: str, meta_id: str, video
 
 def cache_key(kind: str, video_id: str, prefs: Preferences) -> str:
     """La lista ordenada depende del idioma, la variante y la calidad: cada combinación se recuerda aparte."""
-    return f"{kind}:{video_id}:{prefs.audio}:{prefs.spanish}:{prefs.quality}"
+    return f"{kind}:{video_id}:{prefs.audio}:{prefs.spanish}:{prefs.quality}:{','.join(prefs.plan)}"
 
 
 def is_opensubtitles(base: str) -> bool:
@@ -732,6 +788,8 @@ class StreamFinder:
                     src = parse(stream, addon.name, addon.url, index, original)
                     hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
                     src.other_title = not mentions_title(titles, f"{src.release} {hints.get('filename') or ''}")
+                    if kind == "movie" and isinstance(facts.get("year"), int):
+                        src.other_year = other_year(src.release, facts["year"])
                     if (season := season_of(video_id)) is not None:
                         src.other_episode = other_episode(src.release, str(hints.get("filename") or ""), season)
                     if (tracks := self.tracks(src.key)):

@@ -42,7 +42,7 @@ PRECEDENCE = {GONE: 6, READY: 5, REFUSED: 4, NO_PEERS: 3, DOWNLOADING: 2, QUEUED
 WORDS = {QUEUED: "En cola", NO_PEERS: "Sin gente que lo comparta", REFUSED: "Real-Debrid no lo dejó bajar",
          TOO_MANY: "Muchas descargas activas", READY: "Listo"}
 DETAILS = {QUEUED: "La nube lo recibió y espera turno", NO_PEERS: "Puede tardar días · Prueba otra versión",
-           REFUSED: "Prueba otra versión", TOO_MANY: "Cancela otra descarga para hacer lugar", READY: "Ya arranca al instante"}
+           REFUSED: "Prueba otra versión", TOO_MANY: "Lo vuelvo a pedir cuando se libere un lugar", READY: "Ya arranca al instante"}
 
 # Dónde, cómo y por qué de un pedido (Fernando, 3 nov: «¿descargando dónde?»; el mismo texto del iPhone, adaptado: la TV
 # siempre avisa en pantalla). Va en la ficha mientras baja, en la hoja del pedido y antes del primer pedido.
@@ -387,6 +387,18 @@ class RdRequests:
             self._links.pop((info_hash, video_id), None)
             self._publish(video_id)
 
+    def pack_for(self, meta_id: str, hashes: set[str]) -> dict | None:
+        """Un paquete de temporada tuyo, en camino, que Torrentio también lista para este episodio (`hashes`): es su pedido,
+        no se ofrece pedirlo otra vez (error 1 nuevo del iPhone, escenario 24). Uno de otra temporada no cuenta: Torrentio no
+        lo lista aquí. Devuelve su `status` o None."""
+        account = self.account()
+        for r in self._entries():
+            if (r.get("all_files") and r.get("state") in ACTIVE and r.get("meta_id") == meta_id
+                    and str(r.get("hash") or "").lower() in hashes and self._mine(r, account)):
+                vid = (r.get("video_ids") or [None])[0]
+                return self.status(vid) if vid else None
+        return None
+
     def refused(self) -> set[str]:
         """Las huellas que Real-Debrid no dejó bajar: «Versión» lo dice y nunca son la recomendada (FQ2-A, 3 nov)."""
         return {k for k, v in self._all().items() if HASH.match(k) and v.get("state") == REFUSED}
@@ -419,14 +431,24 @@ class RdRequests:
                 return None
             url, name = got
             self._links[key] = (time.time(), url, name)
+        # Con su huella (es esa versión: «Ver ahora» y la ficha la reconocen) y el idioma original del título (una
+        # mexicana de YTS suena en latino, no «Inglés (se supone)»). Escenario 03 de los comunes con el iPhone.
+        idx = (req.get("files") or {}).get(video_id)
         stream = {"name": "[RD+] Real-Debrid\nTu pedido", "title": name or req.get("title") or "", "url": url,
+                  "infoHash": req["hash"], **({"fileIdx": idx} if isinstance(idx, int) else {}),
                   "behaviorHints": {"filename": name}}
-        return streams.parse(stream, "Real-Debrid", "realdebrid://pedido", zlib.crc32(video_id.encode()) % 2**31)
+        try:
+            facts = self.finder.facts(kind, video_id) if hasattr(self.finder, "facts") else {}
+        except Exception:  # noqa: BLE001 - sin TMDB, igual arranca
+            facts = {}
+        original = facts.get("original") if isinstance(facts, dict) and isinstance(facts.get("original"), str) else None
+        return streams.parse(stream, "Real-Debrid", "realdebrid://pedido", zlib.crc32(video_id.encode()) % 2**31, original)
 
     # --- el seguimiento ------------------------------------------------------------------------------------------
     def start(self) -> None:
         """Al arrancar Orbital: si quedó algo en camino (o sin migrar), se le vuelve a seguir."""
-        if any(not HASH.match(k) or v.get("state") in ACTIVE for k, v in self._all().items()):
+        if any(not HASH.match(k) or v.get("state") in ACTIVE or (v.get("state") == TOO_MANY and not v.get("retried"))
+               for k, v in self._all().items()):  # N3-A: lo que espera lugar también se sigue
             self.watch()
 
     def watch(self) -> None:
@@ -486,7 +508,7 @@ class RdRequests:
             log.info("No pude ver tus pedidos en Real-Debrid: %s", exc)
             return not exc.bad_key
         self._migrate(rd, torrents)
-        pending = False
+        pending = self._retry_too_many(rd, account)
         for req in self._entries():
             if req.get("state") not in ACTIVE or not self._mine(req, account):
                 continue
@@ -508,6 +530,33 @@ class RdRequests:
             pending = pending or self._all()[req["hash"]].get("state") in ACTIVE
         self.prune()
         return pending
+
+    def _retry_too_many(self, rd, account: str | None) -> bool:
+        """N3-A (Fernando, 4 nov): «Muchas descargas activas» se vuelve a pedir solo, una vez, en el siguiente vistazo en que
+        Real-Debrid tenga lugar. True mientras quede alguno esperando su lugar (el seguimiento no se detiene)."""
+        waiting = [r for r in self._entries() if r.get("state") == TOO_MANY and not r.get("retried")
+                   and r.get("by") == DEVICE and self._mine(r, account)]
+        if not waiting:
+            return False
+        try:
+            room = rd.active_count()
+        except realdebrid.RealDebridError as exc:
+            log.info("No pude ver cuántas descargas tienes activas: %s", exc)
+            return True
+        if not room or room[0] >= room[1]:
+            return True  # sigue lleno: se vuelve a ver en el siguiente vistazo
+        req = waiting[0]  # uno por vistazo: el lugar libre puede ser solo uno
+        files = req.get("files") or {}
+        try:
+            rd_id = rd.add(req["hash"], next(iter(files.values())) if len(files) == 1 else None, pack=req.get("kind") == "series")
+        except realdebrid.RealDebridError as exc:
+            log.info("Volví a pedir %s y no se pudo: %s", req.get("title"), exc)
+            self._update(req["hash"], {"retried": True, **({"state": REFUSED} if exc.refused else {})})
+            return len(waiting) > 1
+        self._update(req["hash"], {"retried": True, "rd_id": rd_id, "state": QUEUED, "progress_at": time.time()})
+        self.publish({"type": "toast", "ok": True, "message": f"Volví a pedir {req.get('title') or 'tu pedido'}",
+                      "detail": "Ya se liberó un lugar en tu Real-Debrid"})
+        return True
 
     def _update(self, info_hash: str, change: dict) -> dict:
         """Cambia una entrada releyéndola bajo el candado (un POST del iPhone puede llegar a la vez)."""

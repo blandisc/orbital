@@ -521,7 +521,12 @@ def test_stremio_addon_catalogs_join_para_ti(library, make_foryou, monkeypatch):
 
     fy = make_foryou(trakt_keys=False)
     library.credentials.set("stremio_auth_key", "auth")
-    library.watch.stremio_client = FakeAddons()
+    from orbital.library import addons as addons_mod
+
+    # 4 nov: los catálogos salen de tu lista de complementos (los que ya contestaron), nunca de tu cuenta de Stremio.
+    known = [addons_mod.parse_manifest({"resources": ["catalog"], **row["manifest"]}, row["transportUrl"])
+             for row in FakeAddons().request("", {})["addons"]]
+    monkeypatch.setattr(library.watch.addons, "known", lambda: known)
     served = []
 
     def urlopen(req, timeout=10):

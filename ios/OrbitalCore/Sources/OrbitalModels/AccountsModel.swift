@@ -201,16 +201,6 @@ public final class AddonsModel: ObservableModel {
         reload(); await services.resetAccountCaches()
     }
 
-    /// «Volver a traer» de Stremio (sin los que quitaste).
-    public func importAgain() async {
-        working = true
-        defer { working = false }
-        // El error puede traer la URL de un complemento con su clave (D2): nunca se enseña.
-        do { _ = try await services.importAddonsFromStremio(again: true); error = nil }
-        catch { self.error = AddonRedaction.redact(stripURLs("\(error)"), secrets: services.addonList.secretsToRedact()) }
-        reload()
-    }
-
     public func clearError() { error = nil }
 
     /// Tu lista y la de tu TV (S6): al abrir Complementos se lee la de la TV y se junta; lo que cambie aquí se le manda solo.

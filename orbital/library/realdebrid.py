@@ -130,6 +130,12 @@ class RealDebrid:
         got = self._call("GET", f"torrents?limit={limit}") or []
         return [t for t in got if isinstance(t, dict)] if isinstance(got, list) else []
 
+    def active_count(self) -> tuple[int, int] | None:
+        """(descargas activas, cuántas deja tu cuenta) de `GET /torrents/activeCount`; None si no contesta bien."""
+        got = self._call("GET", "torrents/activeCount") or {}
+        nb, limit = got.get("nb"), got.get("limit")
+        return (nb, limit) if isinstance(nb, int) and isinstance(limit, int) else None
+
     def delete(self, rd_id: str) -> None:
         """«Cancelar pedido». Si ya no estaba (404), cuenta como hecho."""
         try:

@@ -68,6 +68,9 @@ struct TitleView: View {
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
+        // F3: la primera vez que abres una ficha (si nunca has visto nada aquí), el foco en «Ver».
+        .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca «Versión».",
+                    used: env.services.library.all.contains { $0.position > 0 || !$0.seen.isEmpty })
         // De vuelta a la app (quizá viste algo en la TV): lo visto, por dónde vas y lo que sigue, al día.
         .onChange(of: appEnv?.ui.returnedToApp) { Task { await model.refreshState() } }
         .task(id: model.metaID) {   // Letterboxd es de películas: las series no se preguntan
