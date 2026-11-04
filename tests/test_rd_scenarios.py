@@ -115,7 +115,7 @@ def facts_of(scn: dict) -> dict:
     meta = meta.get("meta", meta)
     if meta.get("name"):
         titles.append(meta["name"])
-    original = detail.get("original_language")
+    original = detail.get("original_language") or streams.original_from_country(meta.get("country"))  # sin TMDB, su país
     if original == "es":
         original = "es-ES" if (detail.get("origin_country") or [""])[0] == "ES" else "es-419"
     if not original and str(scn["title"]["id"]).startswith("kitsu:"):
@@ -242,12 +242,6 @@ def test_escenario(path, run):
 ROWS_DIFFER = {
     # N5-A: el iPhone no ofrece un REMUX 4K de 64 GB solo Dolby Vision porque ahí no se ve bien; la TV (mpv) sí.
     ("05-dune-solo-castellano-al-instante", "en", "4K"): "N5-A, a propósito",
-    # Abierto con el iPhone (4 nov): la dual rusa con «Original + Sub (Eng)» (Goblin, Rutracker) le gana en la TV a una solo
-    # en inglés más compartida; en el iPhone, al revés.
-    **{(s, "en", "720p"): "dual rusa, abierto" for s in ("11-breaking-bad-antes", "12-breaking-bad-paquete-e1",
-                                                      "13-breaking-bad-paquete-e2", "24-freaks-paquete-e3",
-                                                      "31-breaking-bad-otro-archivo")},
-    ("18-inception-error-35", "en", "1080p"): "REMUX multilingüe en la fila de inglés, abierto",
 }
 
 

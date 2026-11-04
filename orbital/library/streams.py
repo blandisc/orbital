@@ -156,6 +156,7 @@ class Source:
     # El nombre dice otro año («Даже ветер… [1977]» para la de 1968): es otra película. A diferencia de `other_title` (el nombre
     # no menciona el título: solo baja, y en tu idioma sigue ganando, FQ3-A), esta nunca es la recomendada (como el iPhone).
     other_year: bool = False
+    refused: bool = False  # Real-Debrid no la dejó bajar (FQ2-A): −1500, como el iPhone; solo es la tarjeta si está sola
 
     @property
     def doubtful(self) -> bool:
@@ -469,6 +470,33 @@ def other_year(release: str, year: int | None) -> bool:
     return only - year > 1 or year - only > 3
 
 
+# El idioma original por el país de Cinemeta cuando TMDB no lo da (como TitleOrigin.originalCode del iPhone): el primer país
+# con idioma conocido; uno hispano da es-419 o es-ES según el primero de habla hispana que se nombre.
+SPAIN_NAMES = {"es", "spain", "españa"}
+LATIN_NAMES = {"mx", "mexico", "méxico", "ar", "argentina", "co", "colombia", "cl", "chile", "pe", "peru", "perú", "ve",
+               "venezuela", "uy", "uruguay", "ec", "ecuador", "bo", "bolivia", "py", "paraguay", "cu", "cuba", "do",
+               "dominican republic", "gt", "guatemala", "cr", "costa rica", "pa", "panama", "pr", "puerto rico"}
+COUNTRY_LANGUAGES = {
+    "united states": "en", "us": "en", "usa": "en", "united kingdom": "en", "uk": "en", "gb": "en", "canada": "en",
+    "australia": "en", "japan": "ja", "jp": "ja", "south korea": "ko", "korea": "ko", "kr": "ko", "france": "fr", "fr": "fr",
+    "germany": "de", "de": "de", "italy": "it", "it": "it", "brazil": "pt", "br": "pt", "portugal": "pt", "india": "hi",
+    "china": "zh", "cn": "zh", "russia": "ru"}
+
+
+def original_from_country(country: object) -> str | None:
+    countries = [c.strip() for c in re.split(r"[,/]", str(country or "").lower()) if c.strip()]
+    lang = next((COUNTRY_LANGUAGES.get(c) or ("es" if c in LATIN_NAMES or c in SPAIN_NAMES else None)
+                 for c in countries if COUNTRY_LANGUAGES.get(c) or c in LATIN_NAMES or c in SPAIN_NAMES), None)
+    if lang != "es":
+        return lang
+    for c in countries:
+        if c in LATIN_NAMES:
+            return "es-419"
+        if c in SPAIN_NAMES:
+            return "es-ES"
+    return "es"
+
+
 def season_of(video_id: str) -> int | None:
     """La temporada de un episodio de IMDb («tt0903747:1:2» → 1); None si no es de ese tipo."""
     parts = video_id.split(":")
@@ -578,7 +606,7 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s -= 1500
     if "Reescalada" in src.tags:
         s -= 150
-    if src.other_episode or src.other_year:
+    if src.other_episode or src.other_year or src.refused:
         s -= 1500  # otra temporada u otro año: nunca la recomendada (como el iPhone)
     if src.other_title:
         s -= 500  # el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)

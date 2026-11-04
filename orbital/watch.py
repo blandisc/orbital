@@ -1259,6 +1259,15 @@ class Watch:
         if not self.has_addons:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         found = self.streams.find(kind, video_id, prefs or self.stream_prefs)
+        refused = self.rd.refused()
+        if refused or any(s.refused for s in found):
+            # FQ2-A como el iPhone: lo que Real-Debrid no dejó bajar resta 1500 (solo es la tarjeta de su casilla si está
+            # sola). La lista viene de la caché: se quita lo de antes para no restarlo dos veces.
+            for s in found:
+                now = not s.cached and s.info_hash in refused
+                s.score += (1500 if s.refused else 0) - (1500 if now else 0)
+                s.refused = now
+            found = sorted(found, key=lambda s: s.score, reverse=True)
         req = self.rd.status(video_id)
         if not (req and req.get("mine") and req.get("state") == rd_requests.READY):
             # Otro episodio de un paquete de temporada que pediste y ya está: el archivo de este episodio lo dice
@@ -1847,6 +1856,8 @@ class Watch:
         name = info.get("name")
         if isinstance(name, str) and name:
             facts["titles"] = [*facts.get("titles", []), name]
+        if not facts.get("original") and (from_country := streams.original_from_country(info.get("country"))):
+            facts["original"] = from_country  # sin TMDB, el país de Cinemeta (como el iPhone)
         year = re.match(r"(19|20)\d\d", str(info.get("year") or info.get("releaseInfo") or ""))
         if year:
             facts.setdefault("year", int(year.group()))  # una versión que dice otro año es otra película

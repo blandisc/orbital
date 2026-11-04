@@ -194,3 +194,16 @@ def test_n4_tus_idiomas_es_la_unica_fuente(library):
     assert s(en) > s(ja) > s(lat) > streams.WRONG_LANGUAGE
     for bad in (["original", "en"], [], ["en", "en"], ["xx"]):
         assert not streams.valid_languages(bad)
+
+
+def test_sin_tmdb_el_original_sale_del_pais_de_cinemeta(library, monkeypatch):
+    """Como TitleOrigin.originalCode del iPhone: el primer país con idioma conocido; uno hispano, latino o de España."""
+    assert streams.original_from_country("United Kingdom, United States") == "en"
+    assert streams.original_from_country("Spain, France, Italy") == "es-ES"
+    assert streams.original_from_country("Mexico") == "es-419"
+    assert streams.original_from_country("Japan") == "ja"
+    assert streams.original_from_country("") is None
+    w = library.watch
+    monkeypatch.setattr(w.localizer, "facts", lambda kind, meta_id: None)
+    monkeypatch.setattr(w.cinemeta, "meta", lambda kind, meta_id: {"name": "Breaking Bad", "country": "United States"})
+    assert w._title_facts("series", "tt0903747:1:1")["original"] == "en"
