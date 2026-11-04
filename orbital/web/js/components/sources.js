@@ -219,7 +219,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       at = versionStart(rows, best());
       start = { ...at };
       subtitle.textContent = rows.some((row) => row.ask)
-        ? "«Al instante»: arranca en segundos. Las de abajo, Real-Debrid primero las baja: se piden y te avisa."
+        ? "«Al instante»: arranca en segundos. Las de abajo, la nube primero las baja: se piden y te avisa." // RX4-A
         : "«Al instante»: arranca en segundos.";
       status.hidden = !!rows.length;
       status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos no lo tienen.";

@@ -90,6 +90,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let item = null;
   let details = null;
   let plays = null; // { video_id, line, lang, dub }: cómo va a sonar «Ver» (lo dice el servidor)
+  let instead = null; // { label, play }: la que ya arranca, para la hoja de un pedido en camino (RX2-A)
   let ask = null; // por qué no hay versión que arranque ya y si se puede pedir a Real-Debrid (api.stremioAvailability)
   let askTimer = 0;
   let buttons = [];
@@ -748,6 +749,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   async function prefetch(mine) {
     avail.hidden = true;
     plays = null;
+    instead = null;
     ask = null;
     clearTimeout(askTimer);
     const t = canPrefetch() && target();
@@ -761,6 +763,10 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       if (data?.recommended?.note) found.unshift({ warn: data.recommended.note });
       const rec = data?.recommended;
       plays = rec?.line ? { video_id: t.video_id, line: rec.line, lang: rec.lang, dub: rec.dub } : null;
+      // RX2-A: la que pone «Ver», si arranca ya, para la hoja de un pedido en camino («Ver Latino · 1080p, ya arranca»).
+      const ready = rec && list.find((s) => s.id === rec.id && (s.cached || !s.debrid));
+      instead = ready && rec.line ? { label: rec.line.split(" · ").slice(0, 2).join(" · "),
+        play: { kind: t.kind, id: t.id, video_id: t.video_id, title: details?.title || item?.title || "", source: rec.id } } : null;
       renderActions(); // «Ver» dice cómo va a sonar
       // Un renglón de texto tenue (antes, cinco chips encima del arte): «4K · HDR · Inglés, Español · Al instante».
       // Solo lo que hay que saber: un aviso o que no hay versiones. Lo normal (calidad, idiomas) ya no ocupa un renglón.
@@ -807,7 +813,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   async function requestDebrid() {
     const t = target();
-    if (ask?.why === "requested" && ask.request?.hash) return onRequest(ask.request.hash); // ya pedido: su hoja, con «Cancelar pedido»
+    if (ask?.why === "requested" && ask.request?.hash) return onRequest(ask.request.hash, instead); // ya pedido: su hoja, con «Cancelar pedido»
     if (!t || !(ask?.can_request || ask?.offer)) return;
     const mine = token;
     try {

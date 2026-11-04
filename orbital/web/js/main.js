@@ -143,7 +143,7 @@ const ui = {
     onPerson: (person) => openPerson(person),
     onDownload: (body, job) => downloadTitle(body, job),
     onVersions: (play, versions) => openMenu(versionsMenu(play, versions)),
-    onRequest: (hash) => runCommand({ type: "rd-request-menu", hash }),
+    onRequest: (hash, instead = null) => runCommand({ type: "rd-request-menu", hash, instead }),
     onFix: (title) => fixTitle(title),
     hasTrakt: () => traktLinked(),
     onRate: (about) => runCommand({ type: "rate", ...about }),

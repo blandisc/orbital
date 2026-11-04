@@ -346,7 +346,7 @@ def demo_debrid(catalog) -> None:
         "linked": True, "source": "torrentio", "user": "fernando", "premium": problem is None, "expires": now + 18 * 86400 - 3600,
         "days": 18, "problem": problem, "ends_with": "3F2A"})
     watch.debrid_status = lambda fresh=False: watch._rd_status[2]  # «Revisar» la cuenta no sale a internet
-    rows = [("Nocturne · T1 E2", "tt29623480:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
+    rows = [("Shōgun · T1 E2", "tt2788316:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
             ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),
             ("Los Simpson · T36 E4", "tt0096697:36:4", "too_many", 0, "TV"), ("Oppenheimer", "tt15398776", "refused", 0, "TV")]
     demo_state = os.environ.get("ORBITAL_DEMO_STATE") or ""
@@ -378,6 +378,8 @@ def demo_sources(catalog) -> None:
         title = titles.get(video_id.split(":")[0]) or titles["tt15239678" if kind == "movie" else "tt0096697"]
         found = []
         for i, stream in enumerate(title["streams"]):
+            # Lo capturado no trae enlace (se quitó la clave): uno de mentira, para que «Ver» tenga recomendada.
+            stream = {**stream, "url": stream.get("url") or f"https://demo.invalid/{video_id}/{i}.mkv"}
             src = streams.parse(stream, "Torrentio", "https://torrentio.strem.fun/manifest.json", i, title["original"])
             src.other_title = not streams.mentions_title(title["titles"], src.release)
             if demo_state == "no_instant":  # nada al instante: «Pedir a la nube» y «Hay que pedirlas»
