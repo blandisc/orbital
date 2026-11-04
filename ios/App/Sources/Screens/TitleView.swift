@@ -83,7 +83,7 @@ struct TitleView: View {
             if let video = route.versionsFor { sourcesFor = SourcesTarget(videoID: video, purpose: .watch) }   // «Probar otra versión» desde «Tus pedidos»
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
-            if Demo.isOn, Demo.open == "sources" || Demo.open == "sources-all", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+            if Demo.isOn, ["sources", "sources-all", "sources-request"].contains(Demo.open ?? ""), let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             if Demo.isOn, Demo.open == "save" { saving = true }   // `-demo-open save`: la hoja «Guardar en…», para capturas
@@ -105,7 +105,7 @@ struct TitleView: View {
             }, infuse: { source in
                 sourcesFor = nil
                 if let request = model.playRequest(videoID: target.videoID) { Task { await env.playExternal(request, source: source) } }
-            })
+            }, request: env.services.debridRequests.canRequest ? { source in await sendRequest(model, source: source, videoID: target.videoID) } : nil)
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
@@ -242,6 +242,7 @@ struct TitleView: View {
     private func actions(_ model: TitleModel) -> some View {
         VStack(spacing: DS.Space.s4) {
             continueAction(model)
+            debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
             // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4) + (model.kind == "movie" || AppEnvironment.shared.follow.available ? 1 : 0)),
                       spacing: DS.Space.s2) {

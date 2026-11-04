@@ -14,7 +14,6 @@ struct SettingsView: View {
     @State var confirmSignOut = false
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
-    @State var orbitalToken = ""
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false

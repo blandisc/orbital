@@ -103,7 +103,7 @@ struct AddonsSettings: View {
                 ? Text("Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.")
                 : Text("Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.")
         }
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons) { explaining = false }.presentationDetents([.medium, .large]) }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .addons) { explaining = false } }
         .environment(\.editMode, $editMode)
         .task {
             await model.prepare()

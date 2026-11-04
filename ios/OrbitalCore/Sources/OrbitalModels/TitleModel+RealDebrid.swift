@@ -55,14 +55,19 @@ extension TitleModel {
         return services.debridRequests.otherAccountRequest(metaID: metaID, videoID: videoID)
     }
 
-    /// «Pedirlo y avisarme» desde la ficha: el torrent de `debridOffer` (o el mejor que exista).
-    public func requestFromDebrid(onCellular: Bool = false) async -> DebridRequestsModel.Outcome? {
-        guard let videoID = continueVideoID else { return nil }
+    /// «Pedirlo y avisarme» desde la ficha: el torrent de `debridOffer` (o el mejor que exista). Con `source`, esa versión de
+    /// la lista («Versión» › una que Real-Debrid aún no tiene › «Pedirlo y avisarme»), del video `videoID`.
+    public func requestFromDebrid(source: Source? = nil, videoID: String? = nil, onCellular: Bool = false) async -> DebridRequestsModel.Outcome? {
+        guard let videoID = videoID ?? continueVideoID else { return nil }
         let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings, onCellular: onCellular).prefs
         let numbers = kind == "series" ? episode(videoID).map { ($0.0, $0.1.episode) } : nil
+        let picked = source.flatMap { s in s.torrent.map { (torrent: $0, language: Streams.playingLanguage(s, prefs)?.code, release: s.release.isEmpty ? nil : s.release) } }
         let outcome = await services.debridRequests.request(kind: kind, metaID: metaID, videoID: videoID, title: title.isEmpty ? originalTitle : title,
-                                                            season: numbers?.0, episode: numbers?.1, prefs: prefs, preferred: debridOffer?.torrent,
-                                                            language: debridOffer?.language, release: debridOffer?.release)
+                                                            season: numbers?.0, episode: numbers?.1, prefs: prefs,
+                                                            preferred: picked?.torrent ?? debridOffer?.torrent,
+                                                            language: picked == nil ? debridOffer?.language : picked?.language,
+                                                            release: picked == nil ? debridOffer?.release : picked?.release)
+        guard videoID == continueVideoID else { return outcome }   // otro episodio: el botón de la ficha no cambia
         if case .requested(let request) = outcome { unavailableCause = request.state.isActive ? .downloading(percent: request.percent) : unavailableCause }
         if case .nobodyHasIt = outcome { unavailableCause = .nobodyHasIt }
         return outcome

@@ -13,6 +13,8 @@ struct SourcesSheet: View {
     let choose: (Source, Purpose) -> Void
     /// Abrir una fuente con Infuse (mantener presionada), si quien abre la hoja lo permite.
     var infuse: ((Source) -> Void)?
+    /// T8-A · «Pedirlo y avisarme» de una versión que Real-Debrid aún no tiene (el flujo de la ficha). nil: no se puede pedir.
+    var request: ((Source) async -> Void)?
     @Environment(AppEnvironment.self) private var env
 
     /// Un episodio: ¿esta versión es solo para él o la serie sigue así? («Solo este episodio | Desde aquí», como la TV).
@@ -20,7 +22,9 @@ struct SourcesSheet: View {
     private let metaID: String
     @State private var fromHere: Bool
 
-    init(model: TitleModel, videoID: String, fromHere: Bool = false, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
+    init(model: TitleModel, videoID: String, fromHere: Bool = false, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil,
+         request: ((Source) async -> Void)? = nil) {
+        self.request = request
         _observer = State(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
         self.choose = choose
         self.infuse = infuse
@@ -52,8 +56,38 @@ struct SourcesSheet: View {
         #endif
     }
     @State private var picked: PickedVersion?
+    private static var demoBottom: Bool {
+        #if DEBUG
+        Demo.isOn && Demo.open == "sources-request"
+        #else
+        false
+        #endif
+    }
 
     struct PickedVersion: Identifiable { let row: LanguageRow; let option: VersionOption; var id: String { "\(row.code)-\(option.id)" } }
+    /// La primera vez que se pide algo, antes de la pregunta de iOS: para qué son los avisos (P4-A, la misma en todos lados).
+    @State private var asking: AskingSource?
+    struct AskingSource: Identifiable { let source: Source; var id: Int { source.index } }
+
+    /// Pide esa versión; la primera vez, la línea de para qué son los avisos.
+    private func ask(_ id: Int) {
+        guard let request, let source = observer.model.source(id) else { return }
+        Task {
+            if await DebridRequestNotifier.permission() == .notDetermined { asking = AskingSource(source: source); return }
+            await request(source)
+        }
+    }
+
+    /// El pedido de esa versión en tu cuenta, si ya existe: su estado, nunca pedirla otra vez.
+    private func requestStatus(_ id: Int) -> DebridRequestStatus? {
+        let requests = env.services.debridRequests
+        let _ = requests.track()
+        guard let hash = observer.model.source(id)?.torrent?.hash, let found = requests.request(hash: hash) else { return nil }
+        let tr = { (key: String) in Strings.tr(key, language: env.services.appSettings.uiLanguage) }
+        return DebridRequestStatus(symbol: DebridRequestWords.symbol(found.state), title: DebridRequestWords.short(found, tr),
+                                   fraction: found.state == .downloading ? Double(found.percent) / 100 : nil,
+                                   warn: DebridRequestWords.isTrouble(found, now: Date()), ok: found.state == .ready)
+    }
 
     var body: some View {
         let model = observer.model
@@ -84,7 +118,8 @@ struct SourcesSheet: View {
                             AllSourcesList(sources: model.ranked, current: model.recommendedIndex,
                                            primary: ("Ver", { pick($0, .watch) }), secondary: ("Descargar", { pick($0, .download) }),
                                            uiLanguage: ui, prefs: env.services.titlePrefs.languages(for: metaID, settings: env.services.appSettings).prefs,
-                                           offersSecondary: { s in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false })
+                                           offersSecondary: { s in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false },
+                                           request: request == nil ? nil : { ask($0.index) }, requestStatus: { requestStatus($0.index) })
                         }
                     } else {
                         byLanguage(model, ui)
@@ -93,6 +128,7 @@ struct SourcesSheet: View {
                     if !model.isLoading, !model.quiet.isEmpty { AddonQuietLine(names: model.quiet).padding(.top, DS.Space.s1) }
                 }
             }
+            .defaultScrollAnchor(Self.demoBottom ? .bottom : nil)   // `-demo-open sources-request`: abre abajo, en «Hay que pedirlas»
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)
             .contentMargins(.vertical, DS.Space.s1, for: .scrollContent)
             if env.connectivity.isCellular {
@@ -101,6 +137,7 @@ struct SourcesSheet: View {
         }
         .dsSheetContent(sides: false)   // el carrusel llega a las orillas: cada parte pone su margen
         .task { await model.load(onCellular: env.connectivity.isCellular) }
+        .sheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
         .sheet(item: $picked) { p in
             VersionCard(row: p.row, option: p.option, others: model.others(of: p.option, in: p.row), uiLanguage: ui,
@@ -108,7 +145,8 @@ struct SourcesSheet: View {
                             picked = nil
                             if let source = model.source(id) { pick(source, purpose) }
                         },
-                        infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } })
+                        infuse: infuse.map { open in { id in picked = nil; if let s = model.source(id) { open(s) } } },
+                        request: request == nil ? nil : { id in ask(id) }, requestStatus: requestStatus(p.option.id))
                 // Mide lo que dice (sin espacio muerto); al abrir «Otras», crece y, si no cabe, se desplaza.
         }
     }
@@ -134,6 +172,16 @@ struct SourcesSheet: View {
             .dsCard(translucent: true)
             .tint(DS.textMuted)
         }
+        if request != nil, !model.toRequest.isEmpty {
+            VersionRequestGroup {
+                ForEach(model.toRequest) { item in
+                    let name = Streams.versionLanguageName(item.code, in: ui)
+                    VersionRequestRow(title: Text("\(Text.flag(item.code))\(Text(verbatim: "\(name) · \(item.option.quality)"))"), option: item.option,
+                                      status: requestStatus(item.id), request: { ask(item.id) },
+                                      open: { picked = PickedVersion(row: LanguageRow(code: item.code, yours: false, original: false, options: [item.option]), option: item.option) })
+                }
+            }
+        }
         if model.hiddenCount > 0 {
             (model.hiddenCount == 1 ? Text("1 oculta: grabada en el cine o tráiler") : Text("\(model.hiddenCount) ocultas: grabadas en el cine o tráileres"))
                 .recipe(.caption, color: DS.textFaint)
@@ -151,6 +199,9 @@ struct VersionCard: View {
     let uiLanguage: String
     let act: (Int, Purpose) -> Void
     var infuse: ((Int) -> Void)?
+    /// T8-A · la que Real-Debrid aún no tiene se pide, nunca se reproduce; ya pedida, su estado.
+    var request: ((Int) -> Void)?
+    var requestStatus: DebridRequestStatus?
     @State private var showsOthers = false
     /// El alto de lo que dice la tarjeta: la hoja mide eso (medida por la zona desplazable dejaba un hueco al pie).
     @State private var contentHeight: CGFloat = DS.Size.touchTarget * 8
@@ -176,6 +227,12 @@ struct VersionCard: View {
                     (Text("\(Text("También trae: "))\(Text(verbatim: option.alsoHas.map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: uiLanguage), $0) }.joined(separator: ", ")))"))
                         .recipe(.footnote)
                 }
+                if option.speed == .realDebridMustDownload, let request {
+                    if let requestStatus { requestStatus } else {
+                        Button { request(option.id) } label: { Label("Pedirlo y avisarme", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                            .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-request")
+                    }
+                } else {
                 HStack(spacing: DS.Space.s2) {
                     Button { act(option.id, .watch) } label: { Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }
                         .dsPrimaryButton().controlSize(.large).accessibilityIdentifier("version-watch")
@@ -183,6 +240,7 @@ struct VersionCard: View {
                         Button { act(option.id, .download) } label: { Label("Descargar", systemImage: "arrow.down").frame(maxWidth: .infinity) }
                             .dsGlassButton().controlSize(.large).accessibilityIdentifier("version-download")
                     }
+                }
                 }
                 if let infuse {
                     Button("Abrir con Infuse", systemImage: "arrow.up.forward.app") { infuse(option.id) }
@@ -233,8 +291,13 @@ struct VersionCard: View {
                 if other.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if other.speed == .realDebridMustDownload, let request {   // T8-A: se pide, nunca se reproduce
+                Button { request(other.id) } label: { Image(systemName: "arrow.down.circle").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
+                    .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Pedirlo y avisarme"))
+            } else {
             Button { act(other.id, .watch) } label: { Image(systemName: "play.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
                 .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Ver"))
+            }
             if other.downloadable {
                 Button { act(other.id, .download) } label: { Image(systemName: "arrow.down").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).background(DS.fillStrong, in: Circle()) }
                     .buttonStyle(.plain).foregroundStyle(DS.text).accessibilityLabel(Text("Descargar"))

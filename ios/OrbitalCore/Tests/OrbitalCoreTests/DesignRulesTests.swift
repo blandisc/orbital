@@ -402,5 +402,40 @@ final class DesignRulesTests: XCTestCase {
         check(problems, "Sin permiso no se promete avisar: DebridRequestWords.detail lleva `notifies:`")
     }
 
-}
 
+    // MARK: Pulido de la 1729 (Fernando, 3 nov 2026)
+
+    /// Una hoja mide lo que trae (`fittedSheet`, `fittedScrollSheet`): nunca media pantalla con un hueco abajo. Las de antes
+    /// con `.medium` quedan en la lista y solo puede bajar; «¿Qué es esto?» se mide sola (quien la abre no le pone alturas).
+    func testSheetsFitTheirContent() throws {
+        let files = try sources()
+        let before: Set<String> = ["SettingsView.swift", "PlayerScreen+Panel.swift", "RatingReminderHost.swift"]
+        var problems = hits(#"presentationDetents\(\[\.medium"#, in: files, skip: { before.contains($0.name) }).map { $0 + " (usa fittedSheet o fittedScrollSheet)" }
+        problems += hits(#"DebridExplainer\([^\n]*presentationDetents"#, in: files).map { $0 + " (DebridExplainer ya se mide sola)" }
+        check(problems, "Hoja con hueco abajo")
+    }
+
+    /// Una confirmación que hay que explicar («No se puede deshacer», qué pasa) va en su hoja con su botón (`DebridRedeemSheet`),
+    /// no en una pregunta del sistema. Un sí/no corto y destructivo («¿Quitar?») sigue siendo la pregunta de iOS.
+    func testImportantConfirmationsGoInTheirOwnSheet() throws {
+        var problems: [String] = []
+        for file in try sources() {
+            for (i, line) in file.lines.enumerated() where line.contains("confirmationDialog(") {
+                let window = file.lines[i..<min(file.lines.count, i + 8)].joined(separator: "\n")
+                if window.contains("No se puede deshacer") { problems.append("\(file.path):\(i + 1): explícalo en su hoja") }
+            }
+        }
+        check(problems, "Confirmación importante en una pregunta del sistema")
+    }
+
+    /// El ícono junto a su texto va en su columna, centrado y a la altura del primer renglón (`IconBeside`); las ideas de
+    /// «¿Qué es esto?», en `DSExplainerCard` (su cuadro de color, centrado con el texto).
+    func testIconsBesideTextAreCentered() throws {
+        let files = try sources(["Design"])
+        let beside = try XCTUnwrap(files.first { $0.name == "DebridRequests.swift" }).lines.joined(separator: "\n")
+        XCTAssertTrue(beside.contains("HStackLayout(alignment: .firstTextBaseline"), "IconBeside: a la altura del primer renglón")
+        let explainer = try XCTUnwrap(files.first { $0.name == "Explainer.swift" }).lines.joined(separator: "\n")
+        XCTAssertFalse(explainer.contains("IconBeside("), "«¿Qué es esto?» usa DSExplainerCard")
+        XCTAssertTrue(explainer.contains("accessibilityReduceMotion"), "la animación respeta «Reducir movimiento»")
+    }
+}

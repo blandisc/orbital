@@ -376,7 +376,9 @@ private struct FittedScrollSheet: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom } action: { _, h in height = h }
+            // Sin el margen de abajo: es el de la barra de inicio, e iOS ya lo suma al alto que se le pide a la hoja (con él
+            // quedaba un hueco al pie: «¿Qué es Real-Debrid?», 3 nov, la 1729). El de arriba sí (la barra de navegación).
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top } action: { _, h in height = h }
             .presentationDetents([.height(height)])
             .presentationDragIndicator(.visible)
             .fittedFormSizing(idealHeight: height)

@@ -44,6 +44,9 @@ public final class SourcesModel: ObservableModel {
     public private(set) var languageRows: [LanguageRow] = [] { didSet { changed() } }
     public private(set) var moreLanguages: [LanguageRow] = [] { didSet { changed() } }
     public private(set) var hiddenCount = 0 { didSet { changed() } }
+    /// «Hay que pedirlas · tardan»: las que Real-Debrid aún no tiene y no salen ya como la mejor de su idioma y calidad (ahí
+    /// las tapaba la que arranca al instante). Fernando, 3 nov, probando la 1729: «no encuentro nada que no esté al instante».
+    public private(set) var toRequest: [RequestableVersion] = [] { didSet { changed() } }
     /// C8: los complementos que no contestaron a tiempo o se saltaron (sus versiones no están en la lista), por su nombre.
     public private(set) var quiet: [String] = [] { didSet { if oldValue != quiet { changed() } } }
     /// Lo que pediste (para decir «tu idioma» y el nombre de cada uno).
@@ -72,7 +75,7 @@ public final class SourcesModel: ObservableModel {
         let found: [Source]
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch) }
         catch where !Task.isCancelled {
-            sources = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0
+            sources = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0; toRequest = []
             // Ningún complemento contestó: con internet son ellos, no tu conexión (`Degraded`).
             self.error = error is StreamFinderError
                 ? (services.isOnline() ? "Tus complementos no contestan: hay internet, pero ninguno respondió. Intenta en un rato." : StreamFinderError.unreachable.description)
@@ -85,6 +88,7 @@ public final class SourcesModel: ObservableModel {
         sources = found
         let grouped = Self.languageRows(found, prefs: prefs, limitGB: settings.warnCellularOverGB)
         languageRows = grouped.main; moreLanguages = grouped.more; hiddenCount = grouped.hidden
+        toRequest = Self.toRequest(found, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB)
         error = sources.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después." : nil
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         let canSave = { (s: Source) in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false }
@@ -138,6 +142,13 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var speed: SourceSpeed { cached ? .inRealDebrid : debrid ? .realDebridMustDownload : .unknown }
 }
 
+/// Una versión que Real-Debrid aún no tiene, con la fila de su idioma («Hay que pedirlas · tardan»).
+public struct RequestableVersion: Identifiable, Equatable, Sendable {
+    public var code: String
+    public var option: VersionOption
+    public var id: Int { option.id }
+}
+
 /// Una fila de «Elegir versión»: un idioma con sus calidades (solo las que existen).
 public struct LanguageRow: Identifiable, Equatable, Sendable {
     public var id: String { code }
@@ -147,6 +158,10 @@ public struct LanguageRow: Identifiable, Equatable, Sendable {
     /// Toda la fila es «tal vez» (ninguna versión lo dice seguro).
     public var allMaybe: Bool { options.allSatisfy { $0.evidence == .maybe } }
     public var options: [VersionOption]
+
+    public init(code: String, yours: Bool, original: Bool, options: [VersionOption]) {
+        self.code = code; self.yours = yours; self.original = original; self.options = options
+    }
 }
 
 extension SourcesModel {
@@ -177,6 +192,21 @@ extension SourcesModel {
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
                       otherTitle: s.tags.contains(Streams.otherTitleTag) || s.otherTitle, debrid: s.debrid)
+    }
+
+    /// Lo que se puede pedir y no se ve ya como chip: una por idioma y calidad (la mejor), en el orden de la recomendación,
+    /// hasta `limit`. Sin cine ni tráileres. Con Torrentio + Real-Debrid son las «[RD download]».
+    public static func toRequest(_ ranked: [Source], shown: [LanguageRow], prefs: Preferences, limitGB: Double, limit: Int = 6) -> [RequestableVersion] {
+        let onChips = Set(shown.flatMap { $0.options.filter { $0.speed == .realDebridMustDownload }.map(\.id) })
+        var seen = Set<String>(), out: [RequestableVersion] = []
+        for s in ranked where !s.cached && s.debrid && !hidden(s) && s.torrent != nil {
+            let audio = Streams.playingLanguage(s, prefs) ?? s.audio.first
+            let code = audio.map(rowCode) ?? "und"
+            guard seen.insert("\(code)|\(quality(s))").inserted, !onChips.contains(s.index) else { continue }
+            out.append(RequestableVersion(code: code, option: option(s, code: code, evidence: audio?.evidence ?? .maybe, limitGB: limitGB, recommended: false)))
+            if out.count == limit { break }
+        }
+        return out
     }
 
     /// Las demás versiones de ese idioma y calidad («Otras 2 en latino 1080p»), en orden.

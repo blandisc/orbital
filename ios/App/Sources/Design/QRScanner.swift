@@ -2,12 +2,11 @@ import SwiftUI
 import VisionKit
 
 /// El lector de códigos QR dentro de la app (VisionKit): la cámara a pantalla completa, el recuadro al centro y lo que se lee
-/// sale por `found` (una vez por código). Si el aparato no puede (el simulador, sin cámara o sin permiso), lo dice y ofrece
-/// `fallback` («Conectar a mano»).
+/// sale por `found` (una vez por código). Si el aparato no puede (el simulador, sin cámara o sin permiso), lo dice y manda a
+/// la cámara del iPhone (abre el mismo enlace). Sin «Conectar a mano» (TEC-35, 3 nov 2026).
 struct QRScanner: View {
     let prompt: Text
     let found: (String) -> Void
-    let fallback: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -21,7 +20,7 @@ struct QRScanner: View {
                 VStack(spacing: DS.Space.s4) {
                     Image(systemName: "camera.metering.unknown").font(DS.TextRecipe.display.font).foregroundStyle(DS.textMuted)
                     Text("Este aparato no puede leer el código.").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-                    Button("Conectar a mano") { dismiss(); fallback() }.dsGlassButton()
+                    Text("Ábrelo con la cámara del iPhone: apúntale al código de tu TV.").recipe(.secondary).multilineTextAlignment(.center)
                 }
                 .padding(DS.Space.s6)
             }

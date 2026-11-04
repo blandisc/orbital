@@ -52,6 +52,14 @@ extension TitleView {
                               play: { requestFromDebrid(model) }, aside: instantAside(offer), tint: artAccent)
     }
 
+    /// Debajo del botón mientras Real-Debrid lo baja: dónde (en su nube, no en el iPhone), cómo y «¿Qué es esto?».
+    @ViewBuilder func debridWhere(_ model: TitleModel) -> some View {
+        if let request = model.debridRequest, DebridRequestWords.group(request.state) == .pending {
+            DebridWhereLine(notifies: DebridRequestNotifier.canNotify, tv: env.services.orbital.isConfigured) { debridSheet = .explain }
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     /// «Verlo en inglés al instante»: la otra versión que sí arranca.
     private func instantAside(_ offer: DebridOffer) -> (title: Text, symbol: String, action: () -> Void)? {
         guard let code = offer.instantLanguage, let source = offer.instantSource else { return nil }
@@ -68,8 +76,9 @@ extension TitleView {
     }
 
     /// Lo pide y dice en segundos qué contestó Real-Debrid (sin prometer que lo logrará, R2).
-    func sendRequest(_ model: TitleModel) async {
-        guard let outcome = await model.requestFromDebrid(onCellular: env.connectivity.isCellular) else { return }
+    /// Con `source`, esa versión de «Versión» › «Hay que pedirlas · tardan» (T8-A), del video `videoID`.
+    func sendRequest(_ model: TitleModel, source: Source? = nil, videoID: String? = nil) async {
+        guard let outcome = await model.requestFromDebrid(source: source, videoID: videoID, onCellular: env.connectivity.isCellular) else { return }
         switch outcome {
         case .requested(let request):
             switch request.state {
@@ -111,7 +120,7 @@ extension TitleView {
     @ViewBuilder func debridSheetContent(_ kind: TitleDebridSheet, _ model: TitleModel) -> some View {
         switch kind {
         case .explain:
-            DebridExplainer(close: { debridSheet = nil }).presentationDetents([.large]).presentationDragIndicator(.visible)
+            DebridExplainer(close: { debridSheet = nil }).presentationDragIndicator(.visible)
         case .notify:
             // La misma explicación que en el reproductor (P4-A): una sola pieza.
             DebridNotifyAsk { _ in debridSheet = nil; await sendRequest(model) }

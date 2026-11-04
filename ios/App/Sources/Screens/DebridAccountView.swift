@@ -56,11 +56,11 @@ struct DebridAccountView: View {
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: "Real-Debrid")).navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
-        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid) { explaining = false }.presentationDetents([.medium, .large]) }
-        .confirmationDialog("¿Canjear tus puntos?", isPresented: $confirmRedeem, titleVisibility: .visible) {
-            Button("Canjear") { Task { await model.redeemPoints() } }
-            Button("Cancelar", role: .cancel) {}
-        } message: { Text("Real-Debrid cambia tus puntos por días de Premium. No se puede deshacer.") }
+        .sheet(isPresented: $explaining) { DebridExplainer(topic: .realDebrid) { explaining = false } }
+        .sheet(isPresented: $confirmRedeem) {   // D4: en su hoja, no en una pregunta del sistema (3 nov, la 1729)
+            DebridRedeemSheet(points: Strings.count(model.status?.points ?? 0, language: env.services.appSettings.uiLanguage),
+                              redeem: { confirmRedeem = false; Task { await model.redeemPoints() } }, close: { confirmRedeem = false })
+        }
         .animation(DS.Motion.base(reduceMotion), value: model.keyCheck)
         .navigationDestination(isPresented: $changingKey) { DebridChangeKeyPage(debrid: model) }
         .sensoryFeedback(.success, trigger: model.redeem) { _, new in new == .done }
@@ -69,6 +69,8 @@ struct DebridAccountView: View {
         .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await model.checkShared() } } }   // TEC-6
         #if DEBUG
         .task { if Demo.isOn, Demo.cx == "remove-choice" { try? await Task.sleep(for: .seconds(1)); confirmRemove = true } }
+        .task { if Demo.isOn, Demo.cx == "explain" { try? await Task.sleep(for: .seconds(1)); explaining = true } }
+        .task { if Demo.isOn, Demo.cx == "redeem" { try? await Task.sleep(for: .seconds(1)); confirmRedeem = true } }
         #endif
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("debrid-account")
@@ -140,13 +142,13 @@ struct DebridAccountView: View {
             .accessibilityIdentifier("debrid-redeem")
     }
 
-    /// «Canjear puntos» con su ícono, alineado con «Renovar» (IOS-17).
+    /// «Canjear puntos»: un botón del sistema de diseño (no el renglón azul de iOS) con cuántos tienes; abre su hoja (3 nov).
     private func redeemRow(_ points: Int, _ model: DebridModel) -> some View {
         Button { confirmRedeem = true } label: {
-            Label {
-                TorrentioRowLabel(title: Text("Canjear puntos"), detail: Text("\(Strings.count(points, language: env.services.appSettings.uiLanguage)) puntos · días de Premium"))
-            } icon: { Image(systemName: "gift") }
+            Label { Text("Canjear \(Strings.count(points, language: env.services.appSettings.uiLanguage)) puntos") } icon: { Image(systemName: "gift") }
+                .frame(maxWidth: .infinity)
         }
+        .dsSecondaryButton().controlSize(.large)
         .disabled(model.redeem == .working)
         .accessibilityIdentifier("debrid-redeem")
     }

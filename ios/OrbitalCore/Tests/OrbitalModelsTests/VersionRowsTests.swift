@@ -38,4 +38,32 @@ final class VersionRowsTests: XCTestCase {
         XCTAssertTrue(rows.main.flatMap(\.options).contains { $0.recommended }, "la recomendada se marca")
         XCTAssertEqual(ranked.first.flatMap { Streams.playingLanguage($0, prefs)?.code }, "es-419", "la recomendada suena en latino")
     }
+
+    /// Lo que hay que pedir no se esconde detrás de lo que arranca al instante (Fernando, 3 nov, probando la 1729: «no
+    /// encuentro nada que no esté al instante»): «Por idioma» solo enseñaba la mejor de cada idioma y calidad, y la que
+    /// arranca al instante siempre gana (+1000 contra −400). Las «[RD download]» van en su grupo, una por idioma y calidad.
+    func testWhatMustBeRequestedIsNotBuriedUnderTheInstantOnes() {
+        func pending(_ i: Int, _ res: String, _ first: String, flags: String) -> Source {
+            let hash = String(repeating: String(i), count: 40)
+            let stream: JSON = .object(["name": .string("[RD download] Torrentio\n\(res)"), "title": .string("\(first)\n👤 3 💾 40 GB ⚙️ 1337x\n\(flags)"),
+                                        "url": .string("https://torrentio.strem.fun/resolve/realdebrid/KEY/\(hash)/null/0/\(first).mkv")])
+            return Streams.parse(stream, addon: "Torrentio", transportURL: "", index: 100 + i, origin: TitleOrigin(language: "en", country: "United States", year: 2024))
+        }
+        let all = [
+            source(1, "4k", "Inside.Out.2.2024.2160p.WEB-DL.DV.HDR10.PLUS.ENG.LATINO.DDP5.1.Atmos.H265-BEN.THE.MEN", gb: 17.72, site: "TorrentGalaxy", flags: "🇬🇧 🇲🇽"),
+            source(2, "1080p", "IntensaMente.2.2024.1080p-Dual-Lat", gb: 2.93, site: "Cinecalidad", flags: "🇲🇽"),
+            pending(3, "4k", "Inside.Out.2.2024.2160p.BluRay.REMUX.LATINO.ENG.TrueHD.Atmos", flags: "🇬🇧 🇲🇽"),
+            pending(4, "1080p", "IntensaMente.2.2024.1080p.BluRay.LATINO", flags: "🇲🇽"),
+            pending(5, "720p", "Inside.Out.2.2024.720p.WEB.ENG", flags: "🇬🇧"),
+        ]
+        let prefs = Preferences(audio: "es", quality: "1080p", spanish: "es-419")
+        let ranked = Streams.rank(all, prefs: prefs, kind: "movie")
+        let rows = SourcesModel.languageRows(ranked, prefs: prefs, limitGB: 5)
+        XCTAssertTrue(rows.main[0].options.allSatisfy { $0.cached }, "en latino, las chips son las de al instante: las otras quedaban tapadas")
+        let request = SourcesModel.toRequest(ranked, shown: rows.main + rows.more, prefs: prefs, limitGB: 5)
+        XCTAssertEqual(request.map(\.option.id), [103, 104], "la inglesa de 720p ya es la chip de su fila: no se repite")
+        XCTAssertEqual(request.map(\.code), ["es-419", "es-419"])
+        XCTAssertTrue(request.allSatisfy { $0.option.speed == .realDebridMustDownload })
+        XCTAssertNotNil(ranked.first { $0.index == 103 }?.torrent, "se puede pedir esa misma")
+    }
 }

@@ -28,9 +28,10 @@ struct DebridRequestSheetHost: View {
                            turnOnNotifications: { DebridRequestNotifier.openSystemSettings() }, watchNow: watchNow, otherVersion: otherVersion,
                            openTitle: openTitle, finished: DebridRequestWords.group(request.state) == .finished, otherAccount: otherAccount,
                            manageDownloads: request.state == .tooMany && !otherAccount ? Self.downloadsURL : nil,
-                           cancel: cancel, explain: explain ?? { explaining = true }, close: close)
+                           cancel: cancel, explain: explain ?? { explaining = true }, close: close,
+                           notifies: DebridRequestNotifier.canNotify, tv: AppEnvironment.shared.services.orbital.isConfigured)
             .task { notificationsOff = await DebridRequestNotifier.permission() == .denied }
-            .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }).presentationDetents([.large]) }
+            .sheet(isPresented: $explaining) { DebridExplainer(close: { explaining = false }) }
     }
 }
 
@@ -48,7 +49,7 @@ struct DebridNotifyAsk: View {
                 let granted = await DebridRequestNotifier.requestPermission()
                 await done(granted ? .authorized : .denied)
             }
-        }, notNow: { dismiss(); Task { await done(.notDetermined) } })
+        }, notNow: { dismiss(); Task { await done(.notDetermined) } }, tv: AppEnvironment.shared.services.orbital.isConfigured)
         .fittedSheet()
     }
 }

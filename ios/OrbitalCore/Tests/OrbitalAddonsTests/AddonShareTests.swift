@@ -124,4 +124,30 @@ final class AddonShareTests: XCTestCase {
         XCTAssertEqual(list.installed.map(\.name), ["A", "OpenSubtitles", "Comet", "Torrentio"], "el orden cambió solo allá: se toma")
         XCTAssertTrue(merge.conflicts.isEmpty)
     }
+
+    /// Local Files de Stremio vive en la computadora de la TV: nunca llega a este iPhone, nunca «se queda en este iPhone» y,
+    /// si ya estaba, se suelta sin lápida (la TV no lo quita). Se ve como «Archivos de la TV · Solo en la TV» (Fernando, 3 nov,
+    /// probando la 1729: «Local files without catalog support … se queda en este iPhone»).
+    func testLocalFilesNeverLivesOnThisIPhone() {
+        let local = "http://127.0.0.1:11470/local-addon/manifest.json"
+        XCTAssertTrue(AddonShare.livesOnTV(local))
+        XCTAssertTrue(AddonShare.livesOnTV("http://localhost:11470/local-addon/manifest.json"))
+        XCTAssertFalse(AddonShare.livesOnTV("https://anime.strem.fun/manifest.json"))
+        let fresh = list()
+        fresh.importOnce([.init(name: "Local Files (without catalog support)", url: local, resources: ["stream", "meta"])])
+        XCTAssertFalse(fresh.installed.contains { $0.name.hasPrefix("Local Files") }, "no se trae de Stremio")
+
+        let vault = InMemoryAddonVault()
+        let before = AddonList(vault: vault)
+        _ = before.add(url: local, name: "Local Files (without catalog support)", resources: ["stream"], origin: .imported)
+        XCTAssertEqual(before.installed.count, 1)
+        let after = AddonList(vault: vault)   // la versión de antes lo había traído: al abrir, se suelta
+        XCTAssertTrue(after.installed.isEmpty)
+        XCTAssertTrue(after.removedIDs.isEmpty, "sin lápida: la TV no debe quitarlo")
+        let theirs = tv(addons: [SharedAddon(id: "uuid-local", origin: "stremio", url: local, name: "Local Files (without catalog support)", order: 0)])
+        let plan = after.plan(for: theirs, links: [:], device: "iphone", changedBy: "iPhone", now: Date())
+        XCTAssertEqual(plan.waitingForKeys, [], "nunca «se queda en este iPhone»")
+        XCTAssertEqual(plan.tvOnly.map(\.id), ["uuid-local"])
+        XCTAssertTrue(plan.tvOnly[0].isTVFiles, "una TV vieja sin only_on también: «Archivos de la TV»")
+    }
 }
