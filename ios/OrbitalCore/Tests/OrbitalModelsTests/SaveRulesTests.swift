@@ -69,6 +69,16 @@ final class SaveRulesTests: XCTestCase {
         XCTAssertEqual(SaveSheetPlan.reservedRows(loaded: 0, cached: 4, fallback: 3, cap: 5), 1)
     }
 
+    func testAListWithMoreThanAPageIsReadWhole() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        let first: [JSON] = (0..<100).map { i in ["movie": ["ids": ["imdb": .string("tt\(1000000 + i)")]]] }
+        let second: [JSON] = (0..<10).map { i in ["movie": ["ids": ["imdb": .string("tt\(2000000 + i)")]]] }
+        rig.http.json["https://api.trakt.tv/users/me/lists/7/items"] = .array(first)
+        rig.http.json["https://api.trakt.tv/users/me/lists/7/items?page=2&limit=100"] = .array(second)
+        let members = try await XCTUnwrap(rig.services.trakt).listMembers("7")
+        XCTAssertEqual(members.count, 110, "«Mi lista Stremio» tiene 210: la lista se lee completa, no solo la primera página")
+    }
+
     func testLoadedListsComeRecentFirstAndANewListGoesOnTop() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         rig.http.json["https://api.trakt.tv/users/me/lists"] = [
