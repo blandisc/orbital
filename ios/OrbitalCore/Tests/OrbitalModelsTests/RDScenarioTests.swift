@@ -159,6 +159,29 @@ final class RDScenarioTests: XCTestCase {
         }
     }
 
+    /// Invariante 1 cuando tu lista no trae nada que pedir: con «solo lo que ya está» (`debridoptions=nodownloadlinks`) y nada
+    /// en Real-Debrid, la ficha ofrece «Pedir a la nube» con lo que existe sin Real-Debrid. «Versión» salía vacía («Real-Debrid
+    /// aún no tiene este título») y sin «Hay que pedirlas · tardan» (capturas del 4 nov): ahí debe estar lo que la ficha pide.
+    func testWhatThePageRequestsIsInTheListWhenTheListOnlyHasInstant() async throws {
+        let rig = try await RDScenarioRig("01-viento-antes.json", torrentio: ["options": ["only_instant": true, "languages_first": []]])
+        let seen = await rig.observe()
+        let title = seen.title, list = seen.list
+        XCTAssertEqual(title.primary(now: rig.now), .request, "la ficha ofrece «Pedir a la nube»")
+        let offer = try XCTUnwrap(title.debridOffer)
+        XCTAssertTrue(list.ranked.isEmpty, "tu lista no trae nada (solo lo que ya está, y nada está)")
+        XCTAssertFalse(list.toRequest.isEmpty, "«Hay que pedirlas · tardan» no sale")
+        XCTAssertEqual(list.toRequest.first.flatMap { list.source($0.id) }?.torrent?.hash, offer.torrent.hash,
+                       "lo primero de «Hay que pedirlas» no es lo que pide la ficha")
+        XCTAssertEqual(list.toRequest.first?.code, offer.language)
+        for wanted in list.toRequest {
+            let s = try XCTUnwrap(list.source(wanted.id), "se puede pedir desde la lista")
+            XCTAssertFalse(s.instant, "«\(s.release)» no arranca al instante: hay que pedirla")
+            XCTAssertEqual(wanted.option.speed, .realDebridMustDownload)
+        }
+        XCTAssertEqual(list.error, "Real-Debrid aún no tiene este título.")
+        XCTAssertNil(SourcesModel.toPlay(list.ranked, resume: nil, family: nil), "nada que ver: lo de pedir nunca se reproduce")
+    }
+
     /// De cine, un tráiler, en 3D, de otro año («¿Otro título?») u otra temporada («¿Otro episodio?»): nunca la recomendada ni
     /// la ofrecida (si hay otra). Un nombre que no menciona el título (`otherTitle`) solo baja: puede ser su nombre en otro
     /// país («Farsante» es «Phony» en España), y en tu idioma le gana a otro idioma (pregunta abierta en el README).

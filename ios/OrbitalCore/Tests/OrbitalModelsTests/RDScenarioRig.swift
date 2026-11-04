@@ -36,9 +36,15 @@ final class RDScenarioRig {
         return try FileManager.default.contentsOfDirectory(atPath: dir.path).filter { $0.hasSuffix(".json") }.sorted()
     }
 
-    init(_ file: String) async throws {
+    /// `torrentio`: cambia lo de Torrentio del escenario (sus llaves de arriba) para una prueba que no es de las comunes.
+    init(_ file: String, torrentio: [String: JSON] = [:]) async throws {
         self.file = file
-        scenario = try Fixtures.json("\(Self.folder)/escenarios/\(file)")
+        var scenario = try Fixtures.json("\(Self.folder)/escenarios/\(file)")
+        if !torrentio.isEmpty, var all = scenario.object {
+            all["torrentio"] = .object((all["torrentio"]?.object ?? [:]).merging(torrentio) { $1 })
+            scenario = .object(all)
+        }
+        self.scenario = scenario
         rig = try ServicesRig(tmdbKey: scenario["tmdb"]?.object != nil ? "K" : "")
         if let text = scenario["now"]?.string, let date = ISO8601DateFormatter().date(from: text) { rig.clock.now = date }
         try await arm()

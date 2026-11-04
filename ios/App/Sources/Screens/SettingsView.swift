@@ -150,6 +150,8 @@ struct SettingsView: View {
         #if DEBUG
         .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
+        // `-demo-open orbital-setup`: «Conecta tu Orbital» (Escanear el código), para capturas; con `-demo-scan [v2]`, ya conectada.
+        .task { if Demo.isOn, Demo.open == "orbital-setup" { orbitalSetup = .connect } }
         .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
         .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
         .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas

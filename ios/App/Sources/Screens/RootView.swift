@@ -488,7 +488,7 @@ struct MainTabs: View {
         #if DEBUG
         guard Demo.isOn else { return }
         tab = Demo.tab
-        if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
+        if Demo.open == "settings" || Demo.open == "year" || Demo.open == "orbital-setup" { paths[tab].append(SettingsRoute()) }
         if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
         if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
         if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección

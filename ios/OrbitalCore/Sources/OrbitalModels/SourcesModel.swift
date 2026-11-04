@@ -54,6 +54,9 @@ public final class SourcesModel: ObservableModel {
     public private(set) var prefs = Preferences()
     var limitGB = 5.0
     private var sources: [Source] = []
+    /// Lo que existe para pedir y la lista de Real-Debrid no trae (Torrentio sin Real-Debrid, R4): solo para «Hay que
+    /// pedirlas · tardan» y para pedirlas, nunca para ver.
+    private var requestable: [Source] = []
     private let services: Services
     private var loadCount = 0
     private let kind: String, videoID: String, metaID: String
@@ -76,7 +79,7 @@ public final class SourcesModel: ObservableModel {
         let found: [Source]
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch) }
         catch where !Task.isCancelled {
-            sources = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0; toRequest = []
+            sources = []; requestable = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0; toRequest = []
             // Ningún complemento contestó: con internet son ellos, no tu conexión (`Degraded`).
             self.error = error is StreamFinderError
                 ? (services.isOnline() ? "Tus complementos no contestan: hay internet, pero ninguno respondió. Intenta en un rato." : StreamFinderError.unreachable.description)
@@ -94,8 +97,14 @@ public final class SourcesModel: ObservableModel {
         var grouped = Self.languageRows(found, prefs: prefs, limitGB: settings.warnCellularOverGB)
         grouped.main = Self.marking(grouped.main, inCloud); grouped.more = Self.marking(grouped.more, inCloud)
         languageRows = grouped.main; moreLanguages = grouped.more; hiddenCount = grouped.hidden
-        toRequest = Self.toRequest(found, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB, inCloud: Set(inCloud.keys))
-        error = sources.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después." : nil
+        // Invariante 1 (la ficha y «Versión» no se contradicen): si tu lista no trae nada que pedir (Real-Debrid no tiene nada o tu
+        // Torrentio solo da lo que ya está), la ficha ofrece «Pedir a la nube» con lo que existe sin Real-Debrid; aquí también.
+        let extra = await Self.requestableAside(found, services: services, kind: kind, videoID: videoID, metaID: metaID, prefs: prefs)
+        guard !Task.isCancelled, ticket == loadCount else { return }
+        requestable = extra
+        toRequest = Self.toRequest(found + extra, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB, inCloud: Set(inCloud.keys))
+        error = !sources.isEmpty ? nil : toRequest.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después."
+            : "Real-Debrid aún no tiene este título."   // y abajo, «Hay que pedirlas»
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         let canSave = { (s: Source) in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false }
         // Para guardar: el mismo puntaje que usa «Descargar» (1080p, HEVC, tamaño moderado), solo si no es la de ver.
@@ -112,7 +121,29 @@ public final class SourcesModel: ObservableModel {
     }
 
     /// La fuente elegida, para reproducir o descargar.
-    public func source(_ id: Int) -> Source? { sources.first { $0.index == id } }
+    public func source(_ id: Int) -> Source? { sources.first { $0.index == id } ?? requestable.first { $0.index == id } }
+
+    /// Lo que se puede pedir aparte de tu lista, en los mismos casos en que la ficha ofrece «Pedir a la nube» con lo que existe
+    /// sin Real-Debrid (`TitleModel.offerToRequest`, R4): tu lista no trae ninguna que pedir, nada arranca al instante y tu
+    /// cuenta puede pedir (vencida, sin Premium o con la clave vieja, la salida es otra). Los torrents de Torrentio sin
+    /// Real-Debrid que no están ya en tu lista ni los rechazó Real-Debrid, marcados «por bajar».
+    static func requestableAside(_ found: [Source], services: Services, kind: String, videoID: String, metaID: String, prefs: Preferences) async -> [Source] {
+        let requests = services.debridRequests
+        guard requests.canRequest, !found.contains(where: { !$0.instant && !hidden($0) && !$0.refused && $0.torrent != nil }),
+              !(toPlay(found, resume: nil, family: nil)?.instant ?? false) else { return [] }
+        let account = UnavailableCause.Account.from(nil, saved: services.debrid.saved, now: services.now())
+        guard account == .ok || account == .unknown,
+              !(await services.finder.notices(kind: kind, videoID: videoID)).contains(where: \.aboutTheAccount) else { return [] }
+        guard let all = await requests.torrents(kind: kind, videoID: videoID, prefs: prefs) else { return [] }
+        let known = Set(found.compactMap { $0.torrent?.hash }).union(requests.requester.refused(metaID: metaID))
+        let indices = Set(found.map(\.index))
+        return all.compactMap { s in
+            guard let hash = s.torrent?.hash, !known.contains(hash), !indices.contains(s.index), !hidden(s) else { return nil }
+            var s = s
+            s.debrid = true; s.cached = false
+            return s
+        }
+    }
 
     /// Todas, en el orden de la recomendación (incluidas las ocultas): «Todas las fuentes».
     public var ranked: [Source] { sources }
