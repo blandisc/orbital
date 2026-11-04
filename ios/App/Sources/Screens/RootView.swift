@@ -278,28 +278,26 @@ struct MainTabs: View {
 
     /// ¿Hay algo en el panel de la derecha? (El control en ventana ancha o una ficha.)
     private var sidePanelShown: Binding<Bool> {
-        Binding(get: { (showRemote && remoteAsPanel) || (panelTitle != nil && titleAsPanel) },
+        Binding(get: { showRemote && remoteAsPanel },
                 set: { if !$0 { showRemote = false; panelTitle = nil } })
     }
 
-    /// El panel de la derecha: la ficha (con el diseño del iPhone) o el control de la TV. Uno a la vez.
+    /// El panel de la derecha: el control de la TV. La ficha ya no va aquí: flota a la izquierda, del tamaño del iPhone.
     @ViewBuilder private var sidePanel: some View {
-        Group {
-            if let route = panelTitle, titleAsPanel {
-                TitlePanel(route: route, close: { panelTitle = nil })
-            } else {
-                RemoteSheet(tvNow: tvNow, large: .constant(true), onContinueHere: { now in showRemote = false; openNowPlaying(now) },
-                            close: { showRemote = false })
-            }
-        }
+        RemoteSheet(tvNow: tvNow, large: .constant(true), onContinueHere: { now in showRemote = false; openNowPlaying(now) },
+                    close: { showRemote = false })
         .inspectorColumnWidth(min: DS.Remote.panelMin, ideal: DS.Remote.panelIdeal, max: DS.Remote.panelMax)
+    }
+
+    /// La ficha que flota en su tarjeta (iPad, Mac).
+    private var floatingTitle: Binding<TitleRoute?> {
+        Binding(get: { titleAsPanel ? panelTitle : nil }, set: { panelTitle = $0 })
     }
 
     /// Abrir fichas en el panel (iPad, Mac); en el iPhone no existe y navegan a pantalla completa.
     private var titleOpener: TitlePanelOpener? {
-        titleAsPanel ? TitlePanelOpener { route, frame in
+        titleAsPanel ? TitlePanelOpener { route, _ in
             showRemote = false
-            launchPosterFlight($flight, route: route, from: frame, reduceMotion: reduceMotion)
             panelTitle = route
         } : nil
     }
@@ -330,11 +328,16 @@ struct MainTabs: View {
         }
         // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
         .tabViewStyle(.sidebarAdaptable)
+        // Como Apple (TV, Música): la barra arriba también acostado; la lateral, a un toque del botón de la barra (DK1, 4 nov 2026).
+        .modifier(TabBarFirst())
         // El control como panel fijo a la derecha en ventana ancha (el inspector de SwiftUI); si la ventana se angosta con
         // el panel abierto, pasa solo a la tarjeta (`remoteAsPanel`).
         // y la ficha (iPad, Mac): tocar una serie o película la abre ahí, con el diseño del iPhone. Un solo panel: abrir uno
         // cierra el otro.
         .inspector(isPresented: sidePanelShown) { sidePanel }
+        // La ficha en el iPad y la Mac (Fernando, 4 nov 2026): del tamaño del iPhone a la izquierda, sobre la pantalla de donde
+        // venías; se cierra con la X o tocando afuera.
+        .modifier(FloatingTitle(item: floatingTitle))
         .environment(\.titlePanel, titleOpener)
         .posterFlight($flight, panelWidth: DS.Remote.panelIdeal)
         // La barra de pestañas siempre completa, en todas las pestañas: siempre ves Inicio, Explorar, Descargas y Buscar
@@ -478,7 +481,7 @@ struct MainTabs: View {
         guard let route = env.pendingTitle else { return }
         env.pendingTitle = nil
         tab = 0
-        paths[0].append(route)
+        if titleAsPanel { panelTitle = route } else { paths[0].append(route) }   // iPad y Mac: flotando a la izquierda
     }
 
     /// Solo la pestaña (repetible: no abre nada encima dos veces).
@@ -496,7 +499,10 @@ struct MainTabs: View {
         if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
         if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
         if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
-        if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
+        if let title = Demo.title {
+            let route = TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)
+            if titleAsPanel { panelTitle = route } else { paths[tab].append(route) }
+        }
         if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
         if let id = Demo.playDownload { Task { await env.playDownloaded(metaID: String(id.split(separator: ":").first ?? ""), videoID: id) } }
         #endif
@@ -524,3 +530,31 @@ struct BannerView: View {
 }
 
 
+
+/// La barra de pestañas arriba de entrada en el iPad (DK1); aparte, para que el cuerpo de la raíz compile a tiempo.
+private struct TabBarFirst: ViewModifier {
+    func body(content: Content) -> some View { content.defaultAdaptableTabBarPlacement(.tabBar) }
+}
+
+/// La ficha en el iPad y la Mac: del tamaño del iPhone, a la izquierda, sobre la pantalla oscurecida (como el multitasking).
+private struct FloatingTitle: ViewModifier {
+    @Binding var item: TitleRoute?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .leading) {
+            if let route = item {
+                ZStack(alignment: .leading) {
+                    // Tocar afuera la cierra; la pantalla de atrás se ve, oscurecida.
+                    DS.scrim.ignoresSafeArea().onTapGesture { item = nil }.accessibilityHidden(true)
+                    TitlePanel(route: route, close: { item = nil })
+                        .frame(width: DS.TitleAction.floatingWidth)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+                        .shadow(DS.Elevation.medium)
+                        .padding(DS.Space.s3)
+                        .transition(.move(edge: .leading))
+                }
+            }
+        }
+        .animation(DS.Motion.spring(reduceMotion), value: item)
+    }
+}
