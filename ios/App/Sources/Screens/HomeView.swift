@@ -55,6 +55,7 @@ struct HomeView: View {
         let pending = model.traktPending.filter { fits($0.kind) }
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+                HomeLearnTop()   // los círculos de «Aprende» y «Termina de preparar Orbital»
                 if model.offline {
                     // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
                     DegradedNotice(state: .offline) { Task { await model.refresh() } }

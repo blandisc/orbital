@@ -35,7 +35,8 @@ struct DownloadsView: View {
         .safeAreaBar(edge: .top) {
             if showsMedia { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
-        .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)
+        .learnCoach(.downloads, title: "Descargas", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }

@@ -199,9 +199,12 @@ public actor ForYou {
 
     /// Lo último que viste (títulos distintos): de dónde sale «Porque viste» y lo que se puede elegir.
     public func recentSeeds() async -> [TraktEntry] {
-        guard let trakt, trakt.linked else { return [] }
+        // Sin historial en Trakt (o sin Trakt): lo que te gusta según la guía (H1).
+        let liked = Taste.seeds(kv).filter { !unseeded.contains($0.imdb) }
+        guard let trakt, trakt.linked else { return liked }
         let recent = (try? await remember("trakt:recent:\(Self.becauseChoices)", ttl: Self.mineTTL) { try await trakt.recentlyWatched(limit: Self.becauseChoices) }) ?? []
-        return recent.filter { !unseeded.contains($0.imdb) }
+        let seen = recent.filter { !unseeded.contains($0.imdb) }
+        return seen.isEmpty ? liked : seen
     }
 
     /// «Porque viste» con cualquier título (también uno que no esté en lo último que viste: desde su ficha).
@@ -348,10 +351,11 @@ public actor ForYou {
     public func newOnPlatforms(kind: String) async -> [Suggestion] {
         guard let tmdb, tmdb.configured else { return [] }
         let found = await platforms()
-        let available = Tmdb.platforms.filter { found[$0.brand] != nil }
+        let mine = Set(Taste.platforms(kv))   // las que elegiste en la guía; sin elegir, todas las de tu país
+        let available = Tmdb.platforms.filter { found[$0.brand] != nil && (mine.isEmpty || mine.contains($0.brand)) }
         let region = region(), now = clock()
         let platforms = available.compactMap { p in found[p.brand].map { (name: p.name, id: $0.id) } }
-        return (try? await remember("tmdb:new:\(kind):\(region)", ttl: Self.popularTTL) {
+        return (try? await remember("tmdb:new:\(kind):\(region):\(mine.sorted().joined(separator: ","))", ttl: Self.popularTTL) {
             let lists = await withTaskGroup(of: (Int, [Suggestion]).self) { group in
                 for (i, p) in platforms.enumerated() {
                     group.addTask {

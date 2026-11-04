@@ -33,8 +33,12 @@ final class AppUI {
     var openSimpsons = false
     /// Abrir Ajustes (desde un aviso, como «Tu sesión de Trakt se cerró · Conectar»).
     var openSettings = false
-    /// La guía de la primera vez a la vista (al abrir la primera vez, o desde Ajustes › «Cómo funciona Orbital»).
+    /// La guía de la primera vez a la vista (al abrir la primera vez, o desde Ajustes › Aprende Orbital).
     var showingGuide = false
+    /// Una historia de «Aprende Orbital» a pantalla completa (su id), desde los círculos de Inicio, Ajustes o un aviso.
+    var openStory: String?
+    /// Abrir la búsqueda avanzada (el botón final de su historia).
+    var openAdvancedFilter = false
     /// «Atrás» de la barra de menús (⌘[): regresa una pantalla en la pestaña que ves.
     var goBack = false
     /// Tocaste «Buscar» estando ya en Buscar: se abre el campo con el teclado listo.

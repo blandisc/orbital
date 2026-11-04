@@ -89,11 +89,11 @@ struct SettingsView: View {
                 NavigationLink { page("Avanzado") { suggestions(model) } } label: {
                     SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
                 }
-                // La guía de la primera vez, otra vez.
-                Button { env.ui.showingGuide = true } label: {
-                    SettingsRow(title: "Cómo funciona Orbital", symbol: "questionmark.circle", tint: DS.ListTint.spark, linked: false)
+                // Las historias, la guía otra vez y los avisos desde cero (G3).
+                NavigationLink { LearnView() } label: {
+                    SettingsRow(title: "Aprende Orbital", symbol: "sparkles", tint: DS.ListTint.spark)
                 }
-                .accessibilityIdentifier("settings-guide")
+                .accessibilityIdentifier("settings-learn")
             }
             .listRowBackground(DS.surface)
         }

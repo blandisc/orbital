@@ -38,6 +38,7 @@ struct ContinueAction: View {
             Button(action: play) { label }
                 .dsSolidPrimaryButton().disabled(!enabled)
                 .accessibilityIdentifier("title-play")
+                .coachAnchor("title-play")   // F3: el aviso con foco de la ficha señala este botón
             if let progress { DSProgress(fraction: progress).padding(.top, DS.Space.s1) }
             if left != nil || version != nil || restart != nil || aside != nil {
                 // Si no cabe todo en un renglón (versión larga, letra grande), «quedan…» y «Desde el principio» se quedan juntos

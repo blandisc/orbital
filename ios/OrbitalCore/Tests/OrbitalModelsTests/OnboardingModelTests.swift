@@ -9,48 +9,82 @@ final class OnboardingModelTests: XCTestCase {
     let user = "https://api.real-debrid.com/rest/1.0/user"
     let token = String(repeating: "QX7MZ2K9PL", count: 5) + "AB"
 
-    func testTheGuideShowsOnceAndNotWhenEverythingIsAlreadyConnected() throws {
+    func testTheGuideShowsOnceAndNotToSomeoneWhoAlreadyUsesTheApp() throws {
         let rig = try ServicesRig(signedIn: false)
         XCTAssertTrue(OnboardingModel.shouldShow(rig.services))
         OnboardingModel(rig.services).finish()
         XCTAssertFalse(OnboardingModel.shouldShow(rig.services), "una sola vez; se reabre desde Ajustes")
+        let trakt = try ServicesRig(signedIn: false, traktLinked: true, traktClientID: "CID")
+        XCTAssertFalse(OnboardingModel.shouldShow(trakt.services), "quien ya usaba la app (Trakt conectado) no la ve")
     }
 
-    func testRealDebridBlocksUntilTheKeyIsPremiumAndThenArmsTheRecommended() async throws {
-        let rig = try ServicesRig(signedIn: false)
-        let guide = OnboardingModel(rig.services)
-        XCTAssertFalse(guide.canContinue(.debridKey), "sin clave no se avanza")
-        guide.debrid.token = "QX7MZ2K9PLA4RT8W"
-        await guide.debrid.verify()
-        XCTAssertEqual(guide.debrid.check, .failed(DebridError.malformedToken.description), "incompleta: dice qué hacer")
-        XCTAssertFalse(guide.canContinue(.debridKey))
-        rig.http.json[user] = ["username": "fernando", "type": "free", "premium": 0]
-        guide.debrid.token = token
-        await guide.debrid.verify()
-        guard case .free = guide.debrid.check else { return XCTFail("cuenta gratuita") }
-        XCTAssertFalse(guide.debrid.hasToken, "una cuenta gratuita no se guarda")
-        rig.http.json[user] = ["username": "fernando", "type": "premium", "premium": .int(143 * 86400)]
-        await guide.debrid.verify()
-        guard case .ok(let status) = guide.debrid.check else { return XCTFail("Premium") }
-        XCTAssertEqual(status.username, "fernando")
-        XCTAssertTrue(guide.canContinue(.debridKey))
-        XCTAssertTrue(rig.services.debrid.hasToken)
-        XCTAssertEqual(rig.services.addonList.installed.map(\.id), ["torrentio", "comet", "opensubtitles"], "los recomendados, armados con tu clave")
-        XCTAssertEqual(rig.services.addonList.installed.filter(\.enabled).map(\.id), ["torrentio", "opensubtitles"], "Comet, apagado")
-        XCTAssertTrue(rig.services.addonList.enabledURLs().first?.contains("realdebrid=\(token)") == true)
-    }
-
-    func testTheGuideHasNoTVStepAndTraktDoneOnlyAfterLinking() throws {
+    /// C1: «¿Qué ya tienes?» arma la guía; nada la detiene (D1: «Cuando quiera ver algo»).
+    func testTheAnswersShapeThePlanAndNothingBlocks() throws {
         let rig = try ServicesRig(signedIn: false, traktClientID: "CID")
         let guide = OnboardingModel(rig.services)
-        XCTAssertEqual(OnboardingModel.Step.allCases.last, .done)
-        XCTAssertFalse(OnboardingModel.Step.allCases.map { "\($0)" }.contains("tv"), "la app es de una sola pieza: la TV se prende en Ajustes")
-        XCTAssertFalse(guide.canContinue(.trakt), "Trakt es obligatorio")
-        XCTAssertEqual(guide.next(after: .trakt), .done, "sin conectar no hay «Conectado como…»")
-        let linked = OnboardingModel(try ServicesRig(signedIn: false, traktLinked: true, traktClientID: "CID").services)
-        XCTAssertTrue(linked.canContinue(.trakt))
-        XCTAssertEqual(linked.next(after: .trakt), .traktDone)
-        XCTAssertNil(linked.next(after: .done))
+        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .trakt, .done], "sin contestar, la TV no entra")
+        XCTAssertTrue(OnboardingModel.Step.allCases.allSatisfy(guide.canContinue), "ningún paso es obligatorio")
+        guide.answer(.debrid, .later)
+        guide.answer(.tv, .has)
+        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .trakt, .tv, .done])
+        XCTAssertEqual(guide.next(after: .have), .trakt, "«Después» se salta Real-Debrid")
+        guide.answer(.trakt, .later)
+        XCTAssertEqual(guide.next(after: .have), .tv)
+        XCTAssertEqual(guide.next(after: .tv), .done)
+        XCTAssertNil(guide.next(after: .done))
+        XCTAssertEqual(guide.position(.tv).current, 3)
+    }
+
+    func testTheTVStepOnlyWhereThereIsTV() throws {
+        let rig = try ServicesRig(signedIn: false, traktClientID: "CID", allowsOrbital: false)
+        let guide = OnboardingModel(rig.services)
+        guide.answer(.tv, .has)
+        XCTAssertFalse(guide.plan.contains(.tv), "la Mac no habla con la TV")
+        XCTAssertFalse(guide.pieces.contains(.tv))
+    }
+
+    /// Si cierras la app a medias: antes de 24 h sigues donde ibas; después, Inicio lo dice sin obligar.
+    func testResumesWithinADayAndThenOnlySuggests() throws {
+        let rig = try ServicesRig(signedIn: false)
+        let guide = OnboardingModel(rig.services)
+        guide.reached(.have)
+        XCTAssertEqual(OnboardingModel(rig.services).resumeStep, .have)
+        XCTAssertFalse(OnboardingModel.unfinished(rig.services))
+        rig.clock.now = rig.clock.now.addingTimeInterval(25 * 3600)
+        XCTAssertNil(OnboardingModel(rig.services).resumeStep)
+        XCTAssertTrue(OnboardingModel.unfinished(rig.services), "«Termina de preparar Orbital»")
+        guide.finish()
+        XCTAssertFalse(OnboardingModel.unfinished(rig.services))
+    }
+
+    /// H1: son gustos (semillas de «Porque viste»), no vistos; las plataformas filtran «Nuevo en tus plataformas».
+    func testLikesAreTasteNotHistory() async throws {
+        let rig = try ServicesRig(signedIn: false)
+        let guide = OnboardingModel(rig.services)
+        let item = Suggestion(kind: "movie", imdb: "tt0816692", title: "Interestelar", year: 2014, runtime: nil, overview: "", poster: "p", wide: "", reason: .trending)
+        await guide.loadCandidates()
+        guide.toggleLike(item)
+        XCTAssertTrue(Taste.likes(rig.kv).isEmpty, "solo cuenta lo que se ofreció en la cuadrícula")
+        XCTAssertTrue(rig.services.library.all.isEmpty, "nada se marca visto")
+        guide.togglePlatform("netflix")
+        XCTAssertEqual(Taste.platforms(rig.kv), ["netflix"])
+        guide.togglePlatform("netflix")
+        XCTAssertTrue(Taste.platforms(rig.kv).isEmpty)
+        let seeds = await rig.services.forYou.recentSeeds()
+        XCTAssertTrue(seeds.isEmpty)
+        Taste.setLikes([.init(kind: "movie", imdb: "tt0816692", title: "Interestelar", year: 2014)], rig.kv)
+        let liked = await rig.services.forYou.recentSeeds()
+        XCTAssertEqual(liked.map(\.imdb), ["tt0816692"], "sin historial, tus gustos son las semillas")
+    }
+
+    /// Lo que se explicó en la guía cuenta como visto (también la tarjeta «Así funciona» de la sesión de Real-Debrid).
+    func testWhatTheGuideExplainedIsSeen() throws {
+        let rig = try ServicesRig(signedIn: false)
+        OnboardingModel(rig.services).finish(explained: [.debrid])
+        let learn = LearnModel(rig.services)
+        XCTAssertTrue(learn.seen("debrid"))
+        XCTAssertNotNil(rig.kv.data("learn.seen.debrid-flow"))
+        XCTAssertFalse(learn.seen("trakt"))
     }
 
     func testAddonsCanBeReorderedAndSwitchedOff() async throws {

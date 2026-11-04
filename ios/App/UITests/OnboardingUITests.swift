@@ -67,43 +67,63 @@ class GuideUITestCase: XCTestCase {
         field.typeText(token + "\n")
     }
 
-    /// La guía completa. Con `capture`, una captura de cada pantalla con el prefijo de su número.
+    /// La guía completa (versión 2: nada obligatorio). Con `capture`, una captura de cada pantalla con el prefijo de su número.
     func walkTheGuide(capture: Bool) {
         let c: (String) -> Void = { name in if capture { self.shot(name) } }
         launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
-        wait("Tus películas y series en tu bolsillo.", 20); c("01-bienvenida")
-        next(); wait("Orbital junta dos piezas"); XCTAssertFalse(app.staticTexts["Tu Orbital en la TV"].exists); c("02-como-funciona")
-        next(); wait("Es un servicio de pago"); c("03-real-debrid")
-        next(); wait("Con ella Orbital puede pedir videos")
-        XCTAssertFalse(nextButton().isEnabled, "sin clave no se avanza")
+        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4); c("01-bienvenida")
+        next(); wait("¿Qué te gusta?"); c("02-gustos")
+        next(); wait("¿Qué ya tienes?"); c("03-que-tienes")
+        app.buttons["have-debrid-has"].tap()
+        next(); wait("Ver aquí mismo, sin esperar")
+        XCTAssertFalse(nextButton().isEnabled, "con «Ya lo tengo», «Continuar» espera la clave")
+        XCTAssertTrue(app.buttons["guide-skip"].exists, "pero «Cuando quiera ver algo» siempre deja seguir")
         app.swipeDown(); c("04-clave-vacia")
-        enter(Self.badToken); usleep(400_000); c("05-clave-comprobando")
-        wait("no reconoce"); XCTAssertFalse(nextButton().isEnabled); c("07-clave-no-reconocida")
-        enter(Self.shortToken); wait("incompleta"); XCTAssertFalse(nextButton().isEnabled); c("06-clave-incompleta")
-        enter(Self.freeToken); wait("Tu cuenta es gratuita"); XCTAssertFalse(nextButton().isEnabled); c("08-cuenta-gratuita")
-        enter(Self.goodToken); wait("fernando · Premium"); XCTAssertTrue(nextButton().isEnabled); c("09-clave-buena")
-        next(); wait("De dónde salen las versiones"); wait("Torrentio"); c("10-complementos")
-        next(); wait("Esperando a que lo apruebes"); c("11-trakt-codigo")
-        wait("Conectado como fernando", 20); wait("Trajimos", 15); c("12-trakt-conectado")
+        enter(Self.badToken); wait("no reconoce"); XCTAssertFalse(nextButton().isEnabled); c("05-clave-no-reconocida")
+        enter(Self.shortToken); wait("incompleta"); XCTAssertFalse(nextButton().isEnabled)
+        enter(Self.freeToken); wait("Tu cuenta es gratuita"); XCTAssertFalse(nextButton().isEnabled)
+        enter(Self.goodToken); wait("fernando · Premium"); XCTAssertTrue(nextButton().isEnabled); c("06-clave-buena")
+        next(); wait("Esperando a que lo apruebes"); c("07-trakt-codigo")
+        wait("Conectado como fernando", 20); c("08-trakt-conectado")
         next()
-        XCTAssertFalse(app.staticTexts["Tu Orbital en la TV"].exists, "la guía no habla de la TV")
-        wait("Ya puedes ver lo que quieras"); wait("¿Usas Stremio?"); c("14-todo-listo")
+        XCTAssertFalse(app.staticTexts["Tu TV"].exists, "sin TV no hay paso de la TV")
+        wait("Tu Orbital ya está lista."); c("09-listo")
         next()
         XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 10) || app.buttons["Inicio"].waitForExistence(timeout: 5),
-                      "al terminar, la app (sin Stremio: «Ahora no»)")
+                      "al terminar, la app")
     }
 }
 
 final class OnboardingUITests: GuideUITestCase {
     func testCompleteTheGuideWithEveryKeyProblem() { walkTheGuide(capture: false) }
 
+    /// «Después» en todo: de «¿Qué ya tienes?» directo a «Listo» (C1, D1: nada detiene la guía).
+    func testLaterSkipsStraightToTheEnd() {
+        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
+        wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
+        next(); wait("¿Qué te gusta?")
+        next(); wait("¿Qué ya tienes?")
+        app.buttons["have-debrid-later"].tap()
+        app.buttons["have-trakt-later"].tap()
+        next(); wait("Tu Orbital ya está lista.")
+    }
+
+    func testSkipFromAnyStep() {
+        launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
+        wait("Todo lo que quieres ver, en un solo lugar.", 20)
+        app.buttons["guide-skip-all"].firstMatch.tap()
+        XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 10) || app.buttons["Inicio"].waitForExistence(timeout: 5))
+    }
+
     func testReopenTheGuideFromSettings() {
         launch(["-demo-open", "settings"])
-        let guide = app.buttons["settings-guide"]
+        let learn = app.buttons["settings-learn"]
         XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 20))
-        for _ in 0..<6 where !(guide.exists && guide.isHittable) { app.swipeUp() }   // la lista crea el renglón al llegar a él
+        for _ in 0..<6 where !(learn.exists && learn.isHittable) { app.swipeUp() }   // la lista crea el renglón al llegar a él
+        learn.tap()
+        let guide = app.buttons["settings-guide"]
+        for _ in 0..<4 where !(guide.exists && guide.isHittable) { app.swipeUp() }
         guide.tap()
-        wait("Tus películas y series en tu bolsillo.")
-        XCTAssertTrue(nextButton().isHittable)
+        wait("Todo lo que quieres ver, en un solo lugar.")
     }
 }

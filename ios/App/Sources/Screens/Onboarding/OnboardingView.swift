@@ -1,13 +1,19 @@
 import SwiftUI
 import OrbitalModels
 
-/// La guía de la primera vez (maquetas 1–10 de `docs/producto/desacoplar-stremio/maquetas.html`): un paso empuja al
-/// siguiente; Real-Debrid y Trakt no dejan avanzar sin quedar conectados; Stremio tiene «Ahora no». Nada de la TV: tu Orbital
-/// se prende en Ajustes.
+/// La guía de la primera vez, versión 2 (`docs/producto/guia-aprende/propuesta.md`; Fernando, 3 nov 2026): bienvenida (el
+/// planeta atrapa siete pósters), lo que te gusta, «¿Qué ya tienes?» y, según lo que contestes, Real-Debrid, Trakt y la TV;
+/// luego «Listo». Nada es obligatorio y «Saltar» siempre está arriba. Un paso empuja al siguiente con una sola transición
+/// (lo que sale se encoge y se desvanece, lo que entra sube); la luna avanza por el arco de arriba. Si cierras la app a
+/// medias, al volver (antes de 24 h) sigues donde ibas.
 struct OnboardingView: View {
     typealias Step = OnboardingModel.Step
     @State private var guide: ModelObserver<OnboardingModel>
-    @State private var path: [Step] = []
+    @State private var step: Step = .welcome
+    @State private var history: [Step] = []
+    /// Lo que la guía te explicó: su historia de «Aprende» ya cuenta como vista.
+    @State private var explained: Set<OnboardingModel.Piece> = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let done: () -> Void
 
     init(done: @escaping () -> Void) {
@@ -16,31 +22,49 @@ struct OnboardingView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
-            OnboardingWelcome { go(from: .welcome) }
-                .navigationDestination(for: Step.self) { step in page(step) }
+        ZStack {
+            page(step)
+                .id(step)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Welcome.rise)),
+                                        removal: .opacity.combined(with: .scale(scale: DS.Motion.leaveScale))))
         }
+        .animation(DS.Motion.enter(reduceMotion) ?? DS.Motion.fade, value: step)
         .tint(DS.accent)
         .interactiveDismissDisabled()
+        .task { if let resume = guide.model.resumeStep { step = resume } }
+        .onChange(of: step) { _, now in guide.model.reached(now) }
     }
 
     @ViewBuilder private func page(_ step: Step) -> some View {
         let model = guide.model
-        let position = (current: step.rawValue - 1, total: Step.allCases.count - 1)
+        let position = model.position(step)
+        let back: (() -> Void)? = history.isEmpty ? nil : { goBack() }
         switch step {
-        case .welcome: EmptyView()
-        case .howItWorks: OnboardingHowItWorks(step: position) { go(from: step) }
-        case .debridIntro: OnboardingDebridIntro(step: position, signUp: model.debrid.renewURL) { go(from: step) }
-        case .debridKey: OnboardingDebridKey(debrid: model.debrid, step: position) { go(from: step) }
-        case .addons: OnboardingAddons(addons: model.addons, step: position) { go(from: step) }
-        case .trakt: OnboardingTrakt(guide: model, step: position) { go(from: step) }
-        case .traktDone: OnboardingTraktDone(guide: model, step: position) { go(from: step) }
-        case .done: OnboardingDone(guide: model) { model.finish(); done() }
+        case .welcome: OnboardingWelcome(guide: model, next: { go(from: step) }, skip: finish)
+        case .likes: OnboardingLikes(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .have: OnboardingHave(guide: model, step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .debrid:
+            OnboardingSeeHere(guide: model, step: position, back: back, next: { explained.insert(.debrid); go(from: step) }, skip: finish)
+        case .trakt:
+            OnboardingTrakt(guide: model, step: position, back: back, next: { explained.insert(.trakt); go(from: step) }, skip: finish)
+        case .tv: OnboardingTV(step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .done: OnboardingDone(guide: model, finish: finish)
         }
     }
 
-    private func go(from step: Step) {
-        guard let next = guide.model.next(after: step) else { return }
-        path.append(next)
+    private func go(from current: Step) {
+        guard let next = guide.model.next(after: current) else { return finish() }
+        history.append(current)
+        step = next
+    }
+
+    private func goBack() {
+        guard let previous = history.popLast() else { return }
+        step = previous
+    }
+
+    private func finish() {
+        guide.model.finish(explained: explained)
+        done()
     }
 }
