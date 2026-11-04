@@ -246,6 +246,13 @@ _NOTICE_VIDEO = re.compile(r"/videos/([a-z_]+?)(?:_v\d+)?\.mp4$")
 ACCOUNT_NOTICES = {"failed_access", "blocked_access"}
 
 
+def is_link(stream: dict) -> bool:
+    """Una versión que se abre con un enlace (http): la de Real-Debrid o una directa. Un torrent suelto no: el respaldo con
+    el servidor de Stremio se quitó (Fernando, 4 nov 2026), como en el iPhone."""
+    url = stream.get("url")
+    return isinstance(url, str) and url.strip().lower().startswith(("http://", "https://"))
+
+
 def torrentio_notice(stream: dict) -> str | None:
     """El aviso que es esta «versión» («failed_access», «downloading»…) o None si es un video de verdad."""
     url = stream.get("url") if isinstance(stream.get("url"), str) else ""
@@ -794,6 +801,8 @@ class StreamFinder:
                 if isinstance(stream, dict) and (notice := torrentio_notice(stream)):
                     notices.add(notice)
                     continue
+                if isinstance(stream, dict) and not is_link(stream):
+                    continue  # un torrent suelto (sin Real-Debrid): ya no se reproduce en la tele (4 nov), como el iPhone
                 index = stable_index(addon.url, stream)
                 while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
                     index = (index + 1) % 2**31

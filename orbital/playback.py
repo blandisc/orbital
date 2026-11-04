@@ -7,7 +7,6 @@ import functools
 import logging
 import os
 import re
-import socket
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -42,30 +41,6 @@ log = logging.getLogger(__name__)
 CHAPTER_SEEK = 60  # LB/RB sin capítulos: ±1 min
 
 LB, RB = 0x0100, 0x0200
-STREMIO_SERVER = "http://127.0.0.1:11470"
-_STREMIO_UP: list[float] = [0.0, 0.0]  # [cuándo se preguntó, 1.0 si contestó]
-
-
-def stremio_server_up(now: float | None = None) -> bool:
-    """¿Está abierto el servidor de Stremio en esta computadora? Es el respaldo para ver torrents sin Real-Debrid (Fernando,
-    4 nov 2026: Stremio solo para eso). Se pregunta como mucho cada 10 s y sin esperar más de un cuarto de segundo."""
-    now = time.monotonic() if now is None else now
-    if now - _STREMIO_UP[0] < 10:
-        return bool(_STREMIO_UP[1])
-    try:
-        with socket.create_connection(("127.0.0.1", 11470), timeout=0.25):
-            up = True
-    except OSError:
-        up = False
-    _STREMIO_UP[:] = [now, 1.0 if up else 0.0]
-    return up
-
-
-def needs_stremio(stream: dict) -> bool:
-    """Un torrent sin enlace (sin Real-Debrid): solo lo reproduce el servidor de Stremio de esta computadora."""
-    url = stream.get("url")
-    return not (isinstance(url, str) and url.strip()) and isinstance(stream.get("infoHash"), str)
-
 STARTUP_TIMEOUT = 45.0  # s sin imagen: esa fuente no sirve, se prueba otra
 LIVE_STARTUP_TIMEOUT = 12.0  # s sin imagen en un canal de TV: sin señal, se pasa al siguiente (medido: abre en ~1,7 s)
 LIVE_SETTLE = 0.5  # s tras sintonizar en que las propiedades de mpv aún pueden ser las del canal anterior
@@ -142,15 +117,12 @@ def find_mpv() -> str | None:
 
 
 def stream_url(stream: dict) -> str | None:
-    """URL que mpv puede abrir: directa (Real-Debrid, http) o un torrent vía el servidor de Stremio."""
+    """URL que mpv puede abrir: solo directa (Real-Debrid, http). Un torrent suelto ya no se reproduce: el respaldo con el
+    servidor de Stremio se quitó (Fernando, 4 nov 2026: «Si quítalo»); con él la tele bajaba y compartía el archivo desde
+    tu internet. Un complemento tampoco puede mandar a mpv a abrir un archivo local ni una opción."""
     url = stream.get("url")
     if isinstance(url, str) and url.strip():
-        # Solo http(s) o magnet: un complemento no puede mandar a mpv a abrir un archivo local ni una opción.
-        return url if re.match(r"^(https?://|magnet:)", url, re.I) else None
-    info, idx = stream.get("infoHash"), stream.get("fileIdx")
-    if isinstance(info, str) and re.fullmatch(r"[0-9a-fA-F]{40}|[A-Za-z2-7]{32}", info):
-        idx = idx if isinstance(idx, int) and not isinstance(idx, bool) and idx >= -1 else -1
-        return f"{STREMIO_SERVER}/{info}/{idx}"
+        return url if re.match(r"^https?://", url, re.I) else None
     return None
 
 

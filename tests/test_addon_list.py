@@ -35,17 +35,15 @@ def test_traer_de_stremio_una_vez_y_desde_ahi_es_tuya():
     assert lst.source == "own" and lst.needs_copy and lst.urls() == [addon_list.OPENSUBTITLES]  # sin clave, Torrentio no se arma
     done = lst.import_from_stremio(brought())
     # Cinemeta no (Orbital ya la usa: apagarla rompería las fichas), OpenSubtitles ya viene con Orbital y tu Torrentio
-    # pasa al de Orbital (corte S3), con sus opciones y su clave.
-    assert done == {"added": 2, "kept": 1, "skipped": 2}
+    # pasa al de Orbital (corte S3), con sus opciones y su clave. Local Files tampoco (4 nov: sin el servidor de Stremio).
+    assert done == {"added": 1, "kept": 1, "skipped": 3}
     assert lst.source == "own" and not lst.needs_copy and lst.revision == 1 and lst.imported_at and keys["rd"] == "KEY"
     names = [(e.name, e.origin) for e in lst.entries()]
-    assert names == [("Torrentio", "orbital"), ("Comet", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio"),
-                     ("Local Files", "stremio")]
+    assert names == [("Torrentio", "orbital"), ("Comet", "orbital"), ("OpenSubtitles", "orbital"), ("ThePirateBay+", "stremio")]
     assert "comet.elfhosted.com" not in str(lst.urls())  # Comet viene apagado, como en el iPhone
     assert lst.urls()[0] == TORRENTIO  # la misma dirección: tus versiones no cambian
     assert "KEY" not in str(lst.store[addon_list.LIST_KEY]["entries"])  # la dirección con tu clave no se guarda
-    local = next(e for e in lst.entries() if e.url == LOCAL)
-    assert local.only_on == "tv" and local.on("tv") and not local.on("iphone")  # Archivos de la TV: solo en la TV
+    assert LOCAL not in str([e.url for e in lst.entries()])  # «Archivos de la TV» ya no entra (4 nov)
 
 
 def test_volver_a_traer_conserva_lo_tuyo():
@@ -55,7 +53,7 @@ def test_volver_a_traer_conserva_lo_tuyo():
     lst.set_enabled(tpb.id, False)
     lst.move(tpb.id, -1)
     done = lst.import_from_stremio(brought())
-    assert done["added"] == 0 and done["kept"] == 3
+    assert done["added"] == 0 and done["kept"] == 2
     again = next(e for e in lst.entries() if e.url == TPB)
     assert again.id == tpb.id and not again.on() and TPB not in lst.urls()
 
@@ -83,7 +81,7 @@ def test_ya_no_se_regresa_a_los_de_stremio():
     lst.import_from_stremio(brought())
     with pytest.raises(ValueError):
         lst.set_source("stremio")
-    assert lst.source == "own" and len(lst.entries()) == 5
+    assert lst.source == "own" and len(lst.entries()) == 4  # sin «Archivos de la TV» (4 nov)
     lst.store[addon_list.LIST_KEY]["source"] = "stremio"  # una TV que salía de su cuenta (antes del 4 nov)
     assert lst.source == "own" and lst.needs_copy  # sale de tu lista ya; se copia una vez al arrancar
 
@@ -179,7 +177,7 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
             assert method == "addonCollectionGet" and params["authKey"] == "clave"
             return {"addons": [{"transportUrl": TORRENTIO, "manifest": {"id": "t", "name": "Torrentio RD"}},
                                {"transportUrl": CINEMETA, "manifest": {"id": "com.linvo.cinemeta", "name": "Cinemeta"}},
-                               {"transportUrl": LOCAL, "manifest": {"id": "local", "name": "Local Files"}}]}
+                               {"transportUrl": TPB, "manifest": {"id": "tpb", "name": "ThePirateBay+"}}]}
 
     monkeypatch.setattr(addons, "fetch_json", lambda url, timeout=0: {"name": "x", "resources": ["stream"], "types": ["movie"]})
     cfg = parse_config({"steam": {"enabled": False}, "esde": {"enabled": False}, "detect": {"enabled": False},
@@ -191,14 +189,14 @@ def test_ajustes_complementos_de_punta_a_punta(tmp_path, monkeypatch):
     assert not watch.addon_list.needs_copy
     status = watch.addon_status()
     # Tu Torrentio pasó al de Orbital, con sus opciones y tu clave (corte S3).
-    assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "Local Files"]
+    assert status["source"] == "own" and [e["name"] for e in status["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "ThePirateBay+"]
     assert watch.credentials.get("realdebrid_token") == "KEY" and status["entries"][0]["options"]["sort"] == "seeders"
     assert not status["entries"][0]["needs_key"] and watch.addon_list.urls()[0] == TORRENTIO
     local = status["entries"][3]["id"]
     assert not watch.change_addon(local, "off")["entries"][3]["on"]
     gone = watch.change_addon(local, "remove")["removed"]
-    assert gone["url"] == LOCAL and len(watch.addon_status()["entries"]) == 3
-    assert [e["name"] for e in watch.restore_addon(local)["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "Local Files"]
+    assert gone["url"] == TPB and len(watch.addon_status()["entries"]) == 3
+    assert [e["name"] for e in watch.restore_addon(local)["entries"]] == ["Torrentio", "Comet", "OpenSubtitles", "ThePirateBay+"]
     changed = watch.set_torrentio({"language": ["latino", "klingon"], "qualityfilter": ["cam"], "sort": "seeders", "limit": 5,
                                    "sizefilter": "10gb,2gb", "debridoptions": ["nodownloadlinks"]})
     assert changed["previous"]["sort"] == "seeders"  # para «Deshacer»
@@ -241,7 +239,7 @@ def test_la_lista_viaja_con_el_iphone_por_revision_y_sin_claves():
             a["options"] = {**a["options"], "limit": 5}
     saved = lst.receive({"base_revision": 1, "changed_by": "iPhone de Fernando", "addons": changed, "removed": []}, "iPhone")
     assert saved["revision"] == 2 and saved["changed_by"] == "iPhone de Fernando"
-    assert [a["name"] for a in saved["addons"]][0] == "Local Files"
+    assert [a["name"] for a in saved["addons"]][0] == "ThePirateBay+"
     assert saved["changed_at"].endswith("+00:00")  # ISO 8601, como el contrato
     assert all(a["enabled"].get("tv", True) for a in saved["addons"])  # la TV sigue igual
     assert lst.torrentio().options["limit"] == 5 and any("limit=5" in u for u in lst.urls())
@@ -269,17 +267,18 @@ def test_comet_y_las_claves_escondidas_en_la_ruta():
         lst.receive({"base_revision": 0, "addons": [{"id": "x", "origin": "stremio", "name": "Comet viejo", "url": url, "order": 0}]}, "iPhone")
 
 
-def test_local_files_no_se_quita_desde_el_iphone():
-    """Fernando, 3 nov 2026: quitó Local Files sin querer en el iPhone y la TV lo borraba. Lo que vive en esta computadora
-    se queda aunque otro aparato lo mande en «removed»; lo demás sí se quita."""
+def test_archivos_de_la_tv_ya_no_existen():
+    """Fernando, 4 nov 2026 («Si quítalo»): sin el respaldo del servidor de Stremio, «Archivos de la TV» (Local Files) se
+    quita de la lista al arrancar y, si el iPhone todavía lo manda, no regresa."""
     lst = AddonList(Store())
     lst.import_from_stremio(brought())
+    entries = lst.entries()
+    entries.append(addon_list.Entry(id="local", origin="stremio", name="Local Files", url=LOCAL, order=len(entries),
+                                    enabled={"tv": True}, only_on="tv"))
+    lst._save(entries)  # una TV de antes del 4 nov
+    assert lst.drop_local() and LOCAL not in [e.url for e in lst.entries()] and not lst.drop_local()
     shared = lst.shared()
-    local = next(e for e in lst.entries() if e.url == LOCAL)
-    tpb = next(e for e in lst.entries() if e.url == TPB)
-    rest = [a for a in shared["addons"] if a["id"] not in (local.id, tpb.id)]
-    lst.receive({"base_revision": shared["revision"], "addons": rest, "removed": [local.id, tpb.id]}, device="iphone")
-    urls = [e.url for e in lst.entries()]
-    assert LOCAL in urls, "Local Files se queda en la TV"
-    assert TPB not in urls, "lo que sí se quiso quitar, se quita"
-    assert local.id not in lst.shared()["removed"]
+    back = {"id": "local", "origin": "stremio", "name": "Local Files", "url": LOCAL, "order": 0, "only_on": "tv"}
+    lst.receive({"base_revision": shared["revision"], "addons": [back, *shared["addons"]], "removed": []}, device="iphone")
+    assert LOCAL not in [e.url for e in lst.entries()]
+

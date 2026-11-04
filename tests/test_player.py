@@ -9,17 +9,15 @@ from orbital.library import addons, cinemeta, streams, stremio_api
 RD_URL = "https://real-debrid.example/d/abc/movie.mkv"
 
 
-def test_stream_url_direct_or_via_stremio_server():
+def test_stream_url_only_direct_links():
     assert player.stream_url({"url": RD_URL}) == RD_URL
-    assert player.stream_url({"infoHash": "abababababababababababababababababababab", "fileIdx": 2}) == "http://127.0.0.1:11470/abababababababababababababababababababab/2"
-    assert player.stream_url({"infoHash": "abababababababababababababababababababab"}) == "http://127.0.0.1:11470/abababababababababababababababababababab/-1"
-    # Lo que un complemento no debe poder colar: archivos locales, opciones de mpv, hashes raros.
+    # 4 nov 2026: un torrent suelto ya no se reproduce (se quitó el respaldo con el servidor de Stremio), ni un magnet.
+    assert player.stream_url({"infoHash": "abababababababababababababababababababab", "fileIdx": 2}) is None
+    assert player.stream_url({"url": "magnet:?xt=urn:btih:abababababababababababababababababababab"}) is None
+    # Lo que un complemento no debe poder colar: archivos locales, opciones de mpv.
     assert player.stream_url({"url": "C:/Windows/win.ini"}) is None
     assert player.stream_url({"url": "--script=x.lua"}) is None
-    assert player.stream_url({"infoHash": "../../x"}) is None
-    assert player.stream_url({"infoHash": "abababababababababababababababababababab", "fileIdx": "1/../x"}) == "http://127.0.0.1:11470/abababababababababababababababababababab/-1"
     assert player.stream_url({"ytId": "x"}) is None
-
 
 def test_command_full_screen_languages_and_resume():
     cmd = player.build_command("mpv.exe", RD_URL, "Interstellar", start=2530.4, audio="en", subtitles="en")

@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from . import companion, flags, playback, player, player_ui, rd_requests, remote_art, ytdlp
+from . import companion, flags, player, player_ui, rd_requests, remote_art, ytdlp
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -172,8 +172,6 @@ def ready_now(source: streams.Source) -> bool:
     """Arranca ya y es de verdad este título: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que
     bajarla» solo da el video de aviso de 30 s de Real-Debrid; una grabada en el cine, un tráiler o una que parece de otro
     título no cuentan («El viento tiene miedo»: se ofrecía «Verlo al instante» con una que no era)."""
-    if playback.needs_stremio(source.stream) and not playback.stremio_server_up():
-        return False  # un torrent sin Real-Debrid solo arranca con Stremio abierto (el respaldo, 4 nov)
     return (source.cached or not source.debrid) and not ({"CAM", "Tráiler"} & set(source.tags)) and not source.doubtful
 
 
@@ -468,6 +466,7 @@ class Watch:
                                                key=lambda: self.credentials.get(RD_KEY), on_key=self._rd_key_brought,
                                                stremio=lambda: self.stremio_linked or bool(self.own_addons()))
         self.addon_list.adopt_torrentio()  # el Torrentio que ya habías traído de Stremio pasa al de Orbital (corte S3)
+        self.addon_list.drop_local()  # 4 nov: sin el servidor de Stremio, «Archivos de la TV» ya no sirve
         if self.addon_list.needs_copy:  # 4 nov: las fuentes salían de tu cuenta de Stremio; se copian una vez a tu lista
             threading.Thread(target=self._copy_stremio_addons, daemon=True, name="addons-copy").start()
         self._removed_addons: dict[str, dict] = {}
@@ -1279,10 +1278,6 @@ class Watch:
             return {**out, "why": "no-addons", "message": "No tienes complementos prendidos",
                     "detail": "Ajustes › Complementos"}
         if self.rd.client() is None:
-            # Hay torrents pero Stremio está cerrado: el respaldo para verlos sin Real-Debrid (Fernando, 4 nov).
-            if any(playback.needs_stremio(s.stream) and not s.doubtful for s in found):
-                return {**out, "why": "stremio", "message": "Necesita Stremio abierto",
-                        "detail": "Para ver torrents sin Real-Debrid · o conecta Real-Debrid en Ajustes › Cuentas"}
             # Sin clave no hay qué pedir ni cómo saber si alguien lo tiene: la salida es conectar Real-Debrid, nunca
             # «Nadie lo tiene» sin salida (análisis de fondo con el iPhone, escenario 16).
             return {**out, "why": "debrid-account", "message": "Vuelve a conectar Real-Debrid",

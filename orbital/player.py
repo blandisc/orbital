@@ -75,7 +75,6 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     SKIP_VISIBLE,
     STARTUP_TIMEOUT,
     STILL_WATCHING_AFTER,
-    STREMIO_SERVER,
     TOUCH_BINDINGS,
     UPNEXT_AT,
     UPNEXT_COUNTDOWN,

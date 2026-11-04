@@ -653,14 +653,11 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
     { id: "comet", name: "Comet", origin: "orbital", template: "comet", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
     { id: "os2", name: "OpenSubtitles v3", origin: "stremio", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.4 } },
     { id: "t", name: "Torrentio RD", origin: "stremio", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
-    { id: "l", name: "Local Files", origin: "stremio", on: false, only_on: "tv", gives: "", health: { state: "off" } },
   ] };
   const rows = addonRows(status); // OpenSubtitles (el de Orbital y el traído) ya no sale: vive en Ajustes › Ver (3 nov)
   // Fernando, 4 nov: lo que no vino con Orbital es «Agregado por ti»; ni «Volver a traer» ni «Volver a los de Stremio».
-  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Agregado por ti", "Torrentio RD", "Archivos de la TV", "¿Qué es esto?"]);
+  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Agregado por ti", "Torrentio RD", "¿Qué es esto?"]); // 4 nov: sin «Archivos de la TV»
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
-  assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
-  assert.equal(rows[4].value, "Apagado");
   assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);

@@ -1728,14 +1728,12 @@ function addonsMeta(status) {
 export function addonRows(status, now = Date.now()) {
   if (!status) return [{ icon: "addon", label: "Cargando tus complementos…" }];
   const entry = (e) => {
-    const tv = e.only_on === "tv";
     if (e.template === "torrentio") { // corte S3: se configura aquí
       return { icon: "addon", label: e.name, value: e.on ? "Prendido" : "Apagado",
         hint: e.needs_key ? "Necesita tu clave de Real-Debrid · Ajustes › Cuentas" : [torrentioSummary(e.options), addonHealth(e.health)].filter(Boolean).join(" · "),
         warn: e.needs_key || (e.on && e.health?.state === "down"), command: { type: "addon-menu", id: e.id } };
     }
-    return { icon: "addon", label: tv ? "Archivos de la TV" : e.name,
-      hint: [e.gives, tv ? "Solo en la TV · Necesita Stremio abierto" : "", addonHealth(e.health)].filter(Boolean).join(" · "),
+    return { icon: "addon", label: e.name, hint: [e.gives, addonHealth(e.health)].filter(Boolean).join(" · "),
       value: e.on ? "Prendido" : "Apagado", warn: e.on && e.health?.state === "down",
       command: { type: "addon-menu", id: e.id } };
   };
@@ -1758,19 +1756,18 @@ export function addonRows(status, now = Date.now()) {
 
 /** A en un complemento: prender o apagar, subirlo o bajarlo en el orden, quitarlo (solo lo traído; lo de Orbital se apaga). */
 export function addonMenu(entry, { first = false, last = false, lastSource = false } = {}) {
-  const tv = entry.only_on === "tv";
   return {
-    title: tv ? "Archivos de la TV" : entry.name,
+    title: entry.name,
     subtitle: [entry.gives, addonHealth(entry.health)].filter(Boolean).join(" · ") || undefined,
     options: [
       entry.template === "torrentio" && { icon: "settings", label: "Configurar", hint: "Idiomas, calidades, orden y más", command: { type: "torrentio-menu" } },
       { icon: entry.on ? "stop" : "play", label: entry.on ? "Apagar" : "Prender", warn: entry.on && lastSource,
         hint: entry.on && lastSource ? "Te quedarás sin versiones de nada" : undefined,
-        command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on", name: tv ? "Archivos de la TV" : entry.name, lastSource } },
+        command: { type: "addon-change", id: entry.id, action: entry.on ? "off" : "on", name: entry.name, lastSource } },
       !first && { icon: "back", label: "Subir", hint: "Se le pregunta antes", command: { type: "addon-change", id: entry.id, action: "up" } },
       !last && { icon: "chevron", label: "Bajar", hint: "Se le pregunta después", command: { type: "addon-change", id: entry.id, action: "down" } },
       entry.origin !== "orbital" && { icon: "close", label: "Quitar", hint: "Solo en esta TV · se puede deshacer", danger: true,
-        command: { type: "addon-change", id: entry.id, action: "remove", name: tv ? "Archivos de la TV" : entry.name } },
+        command: { type: "addon-change", id: entry.id, action: "remove", name: entry.name } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
     ].filter(Boolean),
   };

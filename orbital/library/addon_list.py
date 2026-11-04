@@ -229,7 +229,8 @@ class AddonList:
                     continue
                 seen.add(url)
                 ident = manifest.get("id") if isinstance(manifest, dict) else None
-                if ident in SKIP_IDS or host(url) in SKIP_HOSTS:
+                # Local Files («Archivos de la TV») tampoco: vivía en el servidor de Stremio, que ya no se usa (4 nov).
+                if ident in SKIP_IDS or host(url) in SKIP_HOSTS or host(url) in LOCAL_HOSTS:
                     skipped += 1
                     continue
                 if url == OPENSUBTITLES or (isinstance(ident, str) and ident.startswith("org.stremio.opensubtitles")):
@@ -254,6 +255,17 @@ class AddonList:
                 added += 1
             self._save(entries, source="own", imported_at=time.time())
             return {"added": added, "kept": kept, "skipped": skipped}
+
+    def drop_local(self) -> bool:
+        """Quita «Archivos de la TV» (Local Files de Stremio): solo funcionaba con el servidor de Stremio abierto, y ese
+        respaldo se quitó (Fernando, 4 nov 2026: «Si quítalo»). Devuelve si había algo que quitar."""
+        with self._lock:
+            entries = self.entries()
+            keep = [e for e in entries if not lives_here(e)]
+            if len(keep) == len(entries):
+                return False
+            self._save(keep)
+            return True
 
     def _adopt(self, entries: list[Entry], url: str, place: Entry | None = None) -> None:
         """Un Torrentio de tu Stremio: el de Orbital toma sus opciones (si no las cambiaste aquí) y su lugar, y la clave
@@ -398,6 +410,9 @@ class AddonList:
                 if isinstance(url, str) and MASK in url:
                     raise ValueError("Una dirección tapada no se puede guardar")
                 mine = by_id.get(got.id) or (by_url.get(url) if isinstance(url, str) else None)
+                if mine is None and (got.only_on or (isinstance(url, str) and host(url) in LOCAL_HOSTS)
+                                     or "local files" in (got.name or "").lower()):
+                    continue  # «Archivos de la TV» que el iPhone todavía recuerda: ya no existe aquí (4 nov), no se regresa
                 if mine is None:
                     if got.origin != "stremio" or not isinstance(url, str) or not url.startswith("https://"):
                         raise ValueError("No se agregan complementos a mano")
