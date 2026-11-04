@@ -81,7 +81,11 @@ public final class DebridRequestsModel: ObservableModel {
     /// Los torrents que existen de ese video (R4), del mejor al peor; nil si no se pudo preguntar.
     public func torrents(kind: String, videoID: String, prefs: Preferences) async -> [Source]? {
         guard let base = keylessBase else { return nil }
-        return await lookup.torrents(base: base, kind: kind, videoID: videoID, prefs: prefs)
+        // Con el idioma original del título, como la lista de versiones: sin él, la de YTS de una película mexicana era
+        // «Inglés» aquí y «Latino (original)» allá (Fernando, 3 nov, con «El viento tiene miedo»).
+        let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
+        let origin = await finder().origin(kind: kind, metaID: metaID)
+        return await lookup.torrents(base: base, kind: kind, videoID: videoID, prefs: prefs, origin: origin)
     }
 
     public enum Outcome: Equatable, Sendable {

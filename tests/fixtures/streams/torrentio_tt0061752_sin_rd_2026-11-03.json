@@ -1,0 +1,207 @@
+{
+ "streams": [
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Even the Wind Is afraid 1968 1080p BluRay\n👤 11 💾 1.5 GB ⚙️ YTS",
+   "infoHash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "Even.The.Wind.Is.Afraid.1968.1080p.BluRay.x264.AAC-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Даже ветер от страха воет! / Hasta el viento tiene miedo / Even the Wind Is Afraid [1977 BDRemux 1080p] VO (Диктор D.F.V. ) + Sub Eng + Original Ita\n👤 5 💾 17.74 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇮🇹 / 🇪🇸",
+   "infoHash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX",
+    "filename": "Даже ветер от страха воет! (1968. Hasta el viento tiene miedo).mkv"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Even.the.Wind.Is.Afraid.1968.SPANISH.1080p.BluRay.x265-VXT\n👤 4 💾 1.4 GB ⚙️ RARBG\n🇪🇸",
+   "infoHash": "f43bffedb4b30be2967e5aec91588e0bf9688858",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265",
+    "filename": "Even.the.Wind.Is.Afraid.1968.SPANISH.1080p.BluRay.x265-VXT.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Even.the.Wind.Is.Afraid.1968.SPANISH.1080p.BluRay.x264.FLAC.2.0-NOGRP\n👤 2 💾 8.77 GB ⚙️ RARBG\n🇪🇸",
+   "infoHash": "312d2307172625c9d6875887bfb690e90c862d3c",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "Hasta.el.viento.tiene.miedo.1080p.BluRay.(1968).FLAC.2.0.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Even the Wind Is afraid 1968 720p BluRay\n👤 5 💾 826.66 MB ⚙️ YTS",
+   "infoHash": "71dba5d524b5c6dda7eeb5bc83e8118ae8fe9ad1",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BluRay|x264",
+    "filename": "Even.The.Wind.Is.Afraid.1968.720p.BluRay.x264.AAC-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\nHDRip",
+   "title": "Даже ветер от страха воет! / Даже ветер может бояться / Hasta el viento tiene miedo / Even the Wind Is Afraid [1968 HDRip] VO (liosaa) + Sub Rus Eng + Original Spa\n👤 4 💾 1.48 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇪🇸",
+   "infoHash": "88c1570543cf3cd00ce81874699059ebb3aa5774",
+   "fileIdx": 2,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDRip",
+    "filename": "Hasta.el.viento.tiene.miedo.1968.HDRip.RUS.liosaa.avi"
+   },
+   "sources": [
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "dht:88c1570543cf3cd00ce81874699059ebb3aa5774",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Даже ветер может бояться / Hasta el viento tiene miedo [1968 DVDRip] VO\n👤 3 💾 1.46 GB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "568ad8f0058b1faeab84044284d026b08fd75a1c",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip",
+    "filename": "Hasta el viento tiene miedo_RG_All_Films.avi"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:568ad8f0058b1faeab84044284d026b08fd75a1c",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Даже ветер может бояться / Hasta el viento tiene miedo [1968 VHSRip] VO cmert\n👤 3 💾 703.28 MB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "d71af54817e78f2ad06adade8d7470026aebe438",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip",
+    "filename": "Hasta el viento tiene miedo Релиз Смерта.avi"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:d71af54817e78f2ad06adade8d7470026aebe438",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Hasta El Viento Tiene Miedo Vhsrip Arana (1967)\n👤 2 💾 703.43 MB ⚙️ ThePirateBay",
+   "infoHash": "53f426f850901cc4fcb732d9aeea32732a8bc644",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip"
+   }
+  }
+ ],
+ "cacheMaxAge": 3600,
+ "staleRevalidate": 14400,
+ "staleError": 604800
+}

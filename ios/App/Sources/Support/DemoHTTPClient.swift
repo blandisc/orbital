@@ -77,7 +77,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
 
     /// La respuesta de mentira, o nada si la petición va a la red de verdad.
     private func fake(_ request: HTTPRequest) async throws -> HTTPResponse? {
-        let url = request.url
+        let url = request.url; if let found = DemoViento.respond(request) { return found }   // `-demo-viento` (3 nov)
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" {
             // `-demo-search-slow`: tres complementos que contestan a destiempo (0.8, 1.6 y 2.4 s), para ver la órbita de

@@ -14,6 +14,22 @@ public enum SearchEvent: Sendable, Equatable {
     case answered(addon: String, found: Int?)
 }
 
+/// Un pedido tuyo a Real-Debrid que ya terminó, de un video: su torrent y su archivo (la libreta de pedidos).
+public struct ReadyTorrent: Sendable, Equatable {
+    public var hash: String
+    public var fileIdx: Int?
+    /// El nombre de la versión que se pidió, si se sabe.
+    public var release: String?
+    public init(hash: String, fileIdx: Int?, release: String? = nil) { self.hash = hash.lowercased(); self.fileIdx = fileIdx; self.release = release }
+
+    /// ¿Es esta versión? La misma huella y, si los dos lo dicen, el mismo archivo.
+    func matches(_ source: Source) -> Bool {
+        guard let torrent = source.torrent, torrent.hash == hash else { return false }
+        guard let mine = fileIdx, let theirs = torrent.fileIdx else { return true }
+        return mine == theirs
+    }
+}
+
 /// Pide fuentes a los complementos que las dan (en paralelo) y las recuerda unos minutos.
 /// Los enlaces de Real-Debrid caducan: una caché vieja no se usa para reproducir.
 public actor StreamFinder {
@@ -65,6 +81,20 @@ public actor StreamFinder {
     private var checked: @Sendable (_ key: String) -> [AudioLanguage]? = { _ in nil }
     /// Tu plan B de idiomas (T2): los «Idiomas primero» de tu Torrentio, como códigos.
     private var fallback: @Sendable () -> [String] = { [] }
+    /// Lo que pediste y Real-Debrid ya terminó, por video (la libreta), y cómo verlo sin Torrentio si no lo lista.
+    private var ready: @Sendable (_ kind: String, _ videoID: String) -> [ReadyTorrent] = { _, _ in [] }
+    private var readyLink: @Sendable (_ hash: String, _ videoID: String) async -> URL? = StreamFinder.noLink
+    @Sendable static func noLink(_ hash: String, _ videoID: String) async -> URL? { nil }
+    /// Fernando, 3 nov, con «El viento tiene miedo»: llegó «Ya está» y la versión seguía «Real-Debrid aún no la tiene» (Torrentio
+    /// no se entera de lo que bajó tu cuenta). Con esto, lo que pediste y ya está sale «Al instante · la pediste» y se recomienda.
+    public func configureReady(_ ready: @escaping @Sendable (_ kind: String, _ videoID: String) -> [ReadyTorrent],
+                               link: @escaping @Sendable (_ hash: String, _ videoID: String) async -> URL?) {
+        self.ready = ready; self.readyLink = link
+        cache = [:]
+    }
+    /// De dónde es un título (lo mismo con que se ordenan las versiones): para leer igual lo que existe sin Real-Debrid.
+    public func origin(kind: String, metaID: String) async -> TitleOrigin? { await origin(kind, metaID) }
+
     public func configure(origin: @escaping @Sendable (_ kind: String, _ metaID: String) async -> TitleOrigin?,
                           checked: @escaping @Sendable (_ key: String) -> [AudioLanguage]?,
                           fallback: @escaping @Sendable () -> [String] = { [] }) {
@@ -108,7 +138,10 @@ public actor StreamFinder {
     public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true, fresh: Bool = false) async throws -> [Source] {
         var prefs = prefs
         if prefs.fallback.isEmpty { prefs.fallback = fallback() }
-        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(prefs.fallback.joined(separator: ",")):\(purpose):\(onlyPlayable)"
+        // Lo que quedó listo entra en la llave: un pedido que termina no se queda con la lista de antes (10 min).
+        let readyNow = ready(kind, videoID)
+        let key = "\(kind):\(videoID):\(prefs.wanted):\(prefs.quality):\(prefs.fallback.joined(separator: ",")):\(purpose):\(onlyPlayable):"
+            + readyNow.map(\.hash).sorted().joined(separator: ",")
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).
         let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
@@ -133,6 +166,13 @@ public actor StreamFinder {
                 sources.append(source); seen.insert(index)
             }
         }
+        for missing in Self.markReady(&sources, readyNow) {
+            // Torrentio no la lista (con «solo lo que ya está» o por su límite): se ve con el enlace de tu Real-Debrid.
+            guard let url = await readyLink(missing.hash, videoID) else { continue }
+            var source = Self.readySource(missing, url: url, origin: titleOrigin)
+            while seen.contains(source.index) { source.index = (source.index + 1) % (1 << 31) }
+            sources.append(source); seen.insert(source.index)
+        }
         let ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
         noticesSeen["\(kind):\(videoID)"] = notices
         quietSeen["\(kind):\(videoID)"] = (skippedByHealth["\(kind):\(videoID)"] ?? []) + zip(serving, results).filter { $0.1 == nil }.map(\.0.name)
@@ -142,6 +182,30 @@ public actor StreamFinder {
         if cache.count >= Self.cacheMax { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { cache[k] = nil } }
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)
         return ranked
+    }
+
+    /// Marca «Al instante · la pediste» las versiones de pedidos listos. Devuelve los pedidos que ninguna versión trae.
+    static func markReady(_ sources: inout [Source], _ ready: [ReadyTorrent]) -> [ReadyTorrent] {
+        var missing: [ReadyTorrent] = []
+        for torrent in ready {
+            var found = false
+            for i in sources.indices where torrent.matches(sources[i]) { sources[i].cached = true; sources[i].requested = true; found = true }
+            if !found { missing.append(torrent) }
+        }
+        return missing
+    }
+
+    /// Una versión hecha con el enlace de tu Real-Debrid para un pedido listo que Torrentio no lista.
+    static func readySource(_ torrent: ReadyTorrent, url: URL, origin: TitleOrigin?) -> Source {
+        var stream: [String: JSON] = ["name": .string("[RD+] Real-Debrid"), "title": .string(torrent.release ?? ""), "url": .string(url.absoluteString),
+                                      "infoHash": .string(torrent.hash)]
+        if let idx = torrent.fileIdx { stream["fileIdx"] = .int(idx) }
+        let json = JSON.object(stream)
+        // Su número sale de la huella, no del enlace (que cambia cada vez que se pide).
+        let index = Streams.stableIndex(addonURL: "realdebrid:ready", stream: .object(stream.filter { $0.key != "url" }))
+        var source = Streams.parse(json, addon: "Real-Debrid", transportURL: "", index: index, origin: origin)
+        source.cached = true; source.debrid = true; source.requested = true
+        return source
     }
 
     /// La búsqueda de un video mientras pasa. Si las fuentes ya estaban guardadas no llega nada (no hubo que preguntar).

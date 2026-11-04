@@ -1,0 +1,114 @@
+{
+ "imdb_id": "tt0061752",
+ "cast": [
+  "Marga López",
+  "Maricruz Olivier",
+  "Alicia Bonet"
+ ],
+ "country": "Mexico",
+ "description": "Girls that were punished to sat at a boarding school during Spring Break have no idea the school is haunted by the restless spirit of a former student seeking revenge.",
+ "director": [
+  "Carlos Enrique Taboada"
+ ],
+ "dvdRelease": "2005-07-12T00:00:00.000Z",
+ "genre": [
+  "Drama",
+  "Horror",
+  "Mystery"
+ ],
+ "imdbRating": "7.2",
+ "name": "Even the Wind Is Afraid",
+ "poster": "https://images.metahub.space/poster/small/tt0061752/img",
+ "released": "1968-05-30T00:00:00.000Z",
+ "runtime": "88 min",
+ "slug": "movie/even-the-wind-is-afraid-0061752",
+ "type": "movie",
+ "writer": [
+  "Carlos Enrique Taboada"
+ ],
+ "year": "1968",
+ "moviedb_id": 68627,
+ "popularities": {
+  "moviedb": 2.3091,
+  "stremio": 0.07697,
+  "stremio_lib": 0
+ },
+ "trailers": [
+  {
+   "source": "t7lR3C97sC0",
+   "type": "Trailer"
+  }
+ ],
+ "background": "https://images.metahub.space/background/medium/tt0061752/img",
+ "logo": "https://images.metahub.space/logo/medium/tt0061752/img",
+ "popularity": 0.07697,
+ "id": "tt0061752",
+ "genres": [
+  "Drama",
+  "Horror",
+  "Mystery"
+ ],
+ "releaseInfo": "1968",
+ "trailerStreams": [
+  {
+   "title": "Even the Wind Is Afraid",
+   "ytId": "t7lR3C97sC0"
+  }
+ ],
+ "links": [
+  {
+   "name": "7.2",
+   "category": "imdb",
+   "url": "https://imdb.com/title/tt0061752"
+  },
+  {
+   "name": "Even the Wind Is Afraid",
+   "category": "share",
+   "url": "https://www.strem.io/s/movie/even-the-wind-is-afraid-0061752"
+  },
+  {
+   "name": "Drama",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Drama"
+  },
+  {
+   "name": "Horror",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Horror"
+  },
+  {
+   "name": "Mystery",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Mystery"
+  },
+  {
+   "name": "Marga López",
+   "category": "Cast",
+   "url": "stremio:///search?search=Marga%20L%C3%B3pez"
+  },
+  {
+   "name": "Maricruz Olivier",
+   "category": "Cast",
+   "url": "stremio:///search?search=Maricruz%20Olivier"
+  },
+  {
+   "name": "Alicia Bonet",
+   "category": "Cast",
+   "url": "stremio:///search?search=Alicia%20Bonet"
+  },
+  {
+   "name": "Carlos Enrique Taboada",
+   "category": "Writers",
+   "url": "stremio:///search?search=Carlos%20Enrique%20Taboada"
+  },
+  {
+   "name": "Carlos Enrique Taboada",
+   "category": "Directors",
+   "url": "stremio:///search?search=Carlos%20Enrique%20Taboada"
+  }
+ ],
+ "behaviorHints": {
+  "defaultVideoId": "tt0061752",
+  "hasScheduledVideos": false
+ }
+}

@@ -43,7 +43,10 @@ public struct TorrentLookup: Sendable {
         catch { return nil }
         let found = streams.enumerated().compactMap { i, stream -> Source? in
             guard stream["infoHash"]?.nonEmptyString != nil else { return nil }
-            return Streams.parse(stream, addon: "Torrentio", transportURL: base, index: Streams.stableIndex(addonURL: base, stream: stream) ^ i, origin: origin)
+            var source = Streams.parse(stream, addon: "Torrentio", transportURL: base, index: Streams.stableIndex(addonURL: base, stream: stream) ^ i, origin: origin)
+            // Igual que la lista de versiones (`StreamFinder`): el nombre que no dice el título baja.
+            source.otherTitle = !Streams.mentionsTitle(origin?.titles ?? [], "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")")
+            return source
         }
         return Streams.rank(found, prefs: prefs, kind: kind).filter { $0.notice == nil && !$0.tags.contains("CAM") && !$0.tags.contains("Tráiler") }
     }
