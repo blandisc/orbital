@@ -8,10 +8,14 @@ extension DS {
         /// Ancho entre alto del arte: casi un póster en el iPhone; más bajo en pantallas cortas (el SE) y apaisado en ventana
         /// ancha (iPad, Mac), donde un póster quedaría altísimo.
         static let aspect: CGFloat = 0.78, aspectShort: CGFloat = 1.25, shortScreen: CGFloat = 700, aspectWide: CGFloat = 1.9
+        /// Desde qué ancho la ventana es «ancha» (el iPad mini de pie mide 744: antes el umbral era 800 y le tocaba la portada
+        /// del iPhone, de casi toda la pantalla). En ventana ancha y de pie (iPad vertical) la portada es menos apaisada que
+        /// acostada: con 1.9 quedaba en un tercio de la pantalla.
+        static let wideFrom: CGFloat = 700, aspectWidePortrait: CGFloat = 1.4
         /// La de esta ventana (la portada y su esqueleto, `HeroSkeleton`, miden lo mismo).
         static var current: CGFloat {
             let size = WindowMetrics.size
-            if size.width >= DS.Size.compactWidth * 2 { return aspectWide }
+            if size.width >= wideFrom { return size.height > size.width ? aspectWidePortrait : aspectWide }
             return size.height < shortScreen ? aspectShort : aspect
         }
         /// Cuánto se enciman «Seguir viendo» sobre el borde de abajo de la portada (se ve sin bajar).

@@ -606,15 +606,19 @@ def language_score(src: Source, prefs: Preferences) -> float:
         steps = [prefs.original if c == "original" else c for c in prefs.plan]
     else:
         steps = [prefs.original, "en", "es-ES" if wanted == "es-419" else "es-419"]
-    plan = [c for c in dict.fromkeys(steps) if c and c != wanted]
+    # Los lugares son fijos (README: original 0, inglés 1, castellano 2): sin saber el original, su renglón queda vacío y el
+    # inglés sigue siendo el 1 (antes subía al 0 y valía 40 de más que en el iPhone). Si un idioma está en dos renglones
+    # (el original es el inglés), cuenta el primero.
+    def slot(code: str) -> int | None:
+        return next((i for i, c in enumerate(steps) if c and c == code and c != wanted), None)
     best = float(WRONG_LANGUAGE)
     for code, how in langs.items():
         if code == wanted:
             points = float(LANG_POINTS[how])
         elif code == "es" and wanted in SPANISH_VARIANTS:
             points = float(LANG_POINTS[how] - STEP_UNSURE_SPANISH)
-        elif code in plan:
-            points = float(-STEP_BASE - STEP_EACH * plan.index(code) + LANG_POINTS[how] - 300)
+        elif (n := slot(code)) is not None:
+            points = float(-STEP_BASE - STEP_EACH * n + LANG_POINTS[how] - 300)
         else:
             continue
         best = max(best, points)
