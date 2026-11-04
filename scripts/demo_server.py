@@ -349,12 +349,19 @@ def demo_debrid(catalog) -> None:
     rows = [("Nocturne · T1 E2", "tt29623480:1:2", "downloading", 42, "TV"), ("Severance · T2 E3", "tt11280740:2:3", "no_peers", 3, "iPhone de Fernando"),
             ("Midsommar", "tt8772262", "ready", 100, "TV"), ("Dune: Parte dos", "tt15239678", "queued", 0, "iPhone de Fernando"),
             ("Los Simpson · T36 E4", "tt0096697:36:4", "too_many", 0, "TV"), ("Oppenheimer", "tt15398776", "refused", 0, "TV")]
-    for i, (title, video, state, pct, by) in enumerate(rows):
-        h = f"{i + 1:x}" * 40
+    demo_state = os.environ.get("ORBITAL_DEMO_STATE") or ""
+    if demo_state == "downloading":  # la ficha de Interstellar con su pedido en camino (y cuánto falta)
+        rows.insert(0, ("Interstellar", "tt0816692", "downloading", 42, "TV"))
+    if demo_state == "ready":  # Interstellar pedido y listo (demo_sources marca su versión latina como «la pediste»)
+        rows.insert(0, ("Interstellar", "tt0816692", "ready", 100, "TV"))
+    for i, row in enumerate(rows):
+        title, video, state, pct, by = row[:5]
+        h = row[5] if len(row) > 5 else f"{i + 1:x}" * 40
         catalog.state.set_pref(rd_requests.STATE_ID, h, {
             "hash": h, "account": "7", "rd_id": f"DEMO{i}", "title": title, "kind": "series" if ":" in video else "movie",
             "meta_id": video.split(":")[0], "video_ids": [video], "files": {}, "by": by, "since": now - i * 3600, "updated": now,
-            "percent": pct, "progress_at": now, "state": state, "notified": True, "nudged": True})
+            "percent": pct, "progress_at": now - (1800 if state == "downloading" else 0), "state": state, "notified": True,
+            "nudged": True})
 
 
 def demo_sources(catalog) -> None:
@@ -365,14 +372,25 @@ def demo_sources(catalog) -> None:
     fixture = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "streams" / "torrentio_rd_2026-10-20.json"
     titles = {t["video_id"].split(":")[0]: t for t in json.loads(fixture.read_text("utf-8"))["titles"]}
 
+    demo_state = os.environ.get("ORBITAL_DEMO_STATE") or ""  # capturas: no_instant | downloading | ready
+
     def stream_sources(kind, video_id, prefs=None):
         title = titles.get(video_id.split(":")[0]) or titles["tt15239678" if kind == "movie" else "tt0096697"]
         found = []
         for i, stream in enumerate(title["streams"]):
             src = streams.parse(stream, "Torrentio", "https://torrentio.strem.fun/manifest.json", i, title["original"])
             src.other_title = not streams.mentions_title(title["titles"], src.release)
+            if demo_state == "no_instant":  # nada al instante: «Pedir a la nube» y «Hay que pedirlas»
+                src.cached = False
             found.append(src)
-        return streams.rank(found, prefs or catalog.watch.stream_prefs, kind)
+        found = streams.rank(found, prefs or catalog.watch.stream_prefs, kind)
+        req = catalog.watch.rd.status(video_id)  # lo pedido y listo: «Al instante · la pediste», primero (como la TV)
+        if req and req.get("state") == "ready":  # las versiones capturadas no traen su huella: la primera latina
+            mine = [next((s for s in found if s.dub == "latino"), found[0])] if found else []
+            for s in mine:
+                s.cached = s.requested = True
+            found = [*mine, *[s for s in found if s not in mine]]
+        return found
 
     catalog.watch.stream_sources = stream_sources
 
