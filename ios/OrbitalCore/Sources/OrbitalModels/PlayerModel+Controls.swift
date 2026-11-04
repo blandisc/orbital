@@ -202,7 +202,7 @@ extension PlayerModel {
         guard let current = source else { return [] }
         var best: [String: (Source, Bool)] = [:]
         for choice in sourceChoices where choice.index != current.index && choice.playbackURL != nil && !failedSources.contains(choice.index)
-            && !choice.tags.contains("CAM") && !choice.tags.contains("Tráiler") && !choice.tags.contains(Streams.otherTitleTag) {
+            && !choice.tags.contains("CAM") && !choice.tags.contains("Tráiler") && !choice.tags.contains(Streams.otherTitleTag) && !choice.tags.contains(Streams.otherEpisodeTag) {
             let checked = titlePrefs.checkedAudio(choice.key)
             let languages: [(String, Bool)] = checked.map { $0.map { ($0.code, true) } }
                 ?? choice.audio.map { ($0.code, [.checked, .name, .site].contains($0.evidence)) }

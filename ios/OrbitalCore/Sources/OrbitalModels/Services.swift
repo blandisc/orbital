@@ -293,8 +293,12 @@ public final class Services: ObservableModel {
                                    fallback: { TorrentioConfig.fallbackCodes(addonList.torrentio?.options) })   // T2 → R6
             // Lo que pediste y ya está: «Al instante · la pediste», aunque Torrentio diga otra cosa o ni lo liste.
             await finder.configureReady({ kind, videoID in
-                requester.ready(kind: kind, videoID: videoID).map { ReadyTorrent(hash: $0.hash, fileIdx: $0.files[videoID] ?? ($0.videoIDs.count == 1 ? $0.fileIdx : nil),
-                                                                                 release: $0.release) }
+                requester.ready(kind: kind, videoID: videoID).map { r in
+                    // Otro episodio de un paquete listo: su archivo lo dice Torrentio (solo se marca lo que lista).
+                    let asked = r.videoIDs.contains(videoID)
+                    return ReadyTorrent(hash: r.hash, fileIdx: r.files[videoID] ?? (asked && r.videoIDs.count == 1 ? r.fileIdx : nil), release: r.release,
+                                        listedOnly: !asked || (r.coversWholeTorrent && r.files[videoID] == nil))
+                }
             }, link: { hash, videoID in await requester.streamLink(hash: hash, videoID: videoID) })
         }
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
@@ -519,7 +523,7 @@ actor OriginBook {
 
     func origin(kind: String, metaID: String) async -> TitleOrigin? {
         if let hit = known[metaID] { return hit }
-        guard metaID.hasPrefix("tt") else { return nil }
+        guard metaID.hasPrefix("tt") else { return await foreign(kind: kind, metaID: metaID) }
         let client = tmdb()
         async let facts = client.configured ? (try? await client.original(imdb: metaID, kind: kind)) : nil
         async let meta = try? await cinemeta.meta(kind: kind, id: metaID)
@@ -533,5 +537,20 @@ actor OriginBook {
         let found = TitleOrigin(language: tmdb?.language, country: info?["country"]?.nonEmptyString, year: year, titles: titles)
         if found.language != nil || found.country != nil { known[metaID] = found }
         return found
+    }
+
+    /// Un id que no es de IMDb (`kitsu:…`, `tmdb:…`): su ficha (del complemento que la da) dice su IMDb, y de ahí lo mismo
+    /// que un título de IMDb. Kitsu es solo anime: sin nada mejor, japonés. Antes no había origen y lo que no dice su idioma
+    /// salía «Inglés (se supone)» (análisis de fondo con la TV, 3 nov: «Cowboy Bebop» por Kitsu).
+    private func foreign(kind: String, metaID: String) async -> TitleOrigin? {
+        let info = try? await cinemeta.meta(kind: kind, id: metaID)
+        var found = TitleOrigin()
+        if let imdb = info?["imdb_id"]?.nonEmptyString, imdb.hasPrefix("tt"), let mapped = await origin(kind: kind, metaID: imdb) { found = mapped }
+        if found.language == nil, metaID.hasPrefix("kitsu:") { found.language = "ja" }
+        for name in [info?["name"]?.nonEmptyString].compactMap({ $0 }) + (info?["aliases"]?.array ?? []).compactMap(\.nonEmptyString) where !found.titles.contains(name) {
+            found.titles.append(name)
+        }
+        if found.language != nil || found.country != nil { known[metaID] = found }
+        return found.language == nil && found.country == nil && found.titles.isEmpty ? nil : found
     }
 }

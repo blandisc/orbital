@@ -219,7 +219,9 @@ struct VersionCard: View {
                 let facts = [VersionChip.size(option), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")].compactMap { $0 }.joined(separator: " · ")
                 DSSheetHeader(title: Text("\(Text.flag(row.code))\(Text(verbatim: "\(language) · \(option.quality)"))"),
                               subtitle: VersionCard.withSpeed(facts, option.speed))
-                if option.otherTitle {
+                if option.otherEpisode {
+                    DSNotice(text: "¿Otro episodio? El nombre dice otra temporada.", tone: .warn)
+                } else if option.otherTitle {
                     DSNotice(text: "¿Otro título? El nombre dice otro año: puede ser otra película.", tone: .warn)
                 }
                 VersionEvidence(evidence: option.evidence, language: language, release: option.release, site: option.site)
@@ -288,7 +290,8 @@ struct VersionCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 VersionCard.withSpeed(VersionChip.facts(other), other.speed).recipe(.footnote, color: DS.text)
                 Text(verbatim: other.release).font(DS.TextRecipe.caption.font.monospaced()).foregroundStyle(DS.textMuted).lineLimit(2)
-                if other.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
+                if other.otherEpisode { Text("¿Otro episodio?").recipe(.caption, color: DS.warning) }
+                else if other.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if other.speed == .realDebridMustDownload, let request {   // T8-A: se pide, nunca se reproduce

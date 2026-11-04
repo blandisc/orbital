@@ -393,6 +393,8 @@ public final class PlayerModel: ObservableModel {
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
+                // Lo que pediste y ya está, antes que la de «Continuar» (la misma regla que «Ver» de la ficha, `SourcesModel.toPlay`).
+                else if failedSources.isEmpty, let ready = SourcesModel.toPlay(sourceChoices, resume: nil, family: nil), ready.requested { found = ready }
                 // «Continuar»: la fuente con la que lo dejaste, si sigue ahí (como en la TV).
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
                         let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }

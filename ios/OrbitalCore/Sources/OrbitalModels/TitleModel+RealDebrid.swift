@@ -83,4 +83,39 @@ extension TitleModel {
         if case .nobodyHasIt = outcome { unavailableCause = .nobodyHasIt }
         return outcome
     }
+
+    /// La causa en el orden de la tabla común: tu cuenta (preguntándole ya a Real-Debrid si Torrentio dijo «RD error»),
+    /// complementos apagados y lo que dijo Torrentio en lugar de versiones.
+    func cause(videoID: String, language: String, offer: DebridOffer?) async -> UnavailableCause? {
+        // 1 · Ya lo pediste y Real-Debrid lo está bajando: eso va primero.
+        if let request = services.debridRequests.request(metaID: metaID, videoID: videoID), request.state.isActive {
+            return .downloading(percent: request.percent)
+        }
+        // 2 · Una película que aún no se estrena (un episodio lo dice el botón: «Sale el …»). Antes decía «Nadie lo tiene».
+        if kind == "movie", offer == nil, let day = Self.airDate(meta?["released"]?.string) { return .unreleased(day: releaseDay(day)) }
+        let notices = await services.finder.notices(kind: kind, videoID: videoID)
+        let health: DebridHealth? = notices.contains(where: \.aboutTheAccount) ? await services.debrid.refreshAfterTrouble() : nil
+        let account = UnavailableCause.Account.from(health, saved: services.debrid.saved, now: Date())
+        if let byAccount = UnavailableCause.first(notice: nil, account: account, language: language) { return byAccount }
+        // Sin tu clave de Real-Debrid, casi nada se ve en el iPhone (Torrentio no da enlaces sin ella): esa es la causa, tengas
+        // armada tu lista de complementos o no (antes, sin lista, «Sin versiones por ahora» sin salida).
+        if !services.debrid.hasToken { return .reconnectDebrid }
+        let list = services.addonList
+        if list.isConfigured, !list.installed.contains(where: { $0.enabled && $0.resources.contains("stream") }) { return .noAddonsOn }
+        if let said = UnavailableCause.first(notice: notices.first(where: \.aboutTheAccount) ?? notices.first, account: account, language: language) { return said }
+        // R4: con tu Torrentio sin Real-Debrid se sabe si existe (10, se puede pedir) o si nadie lo tiene (11).
+        if let offer { return .notInDebrid(language: offer.language ?? language) }
+        if lastLookupEmpty { return .nobodyHasIt }
+        return nil
+    }
+
+    /// «el viernes 18 de diciembre» / «Friday, December 18»: el día de estreno para «Aún no se estrena · sale …».
+    func releaseDay(_ date: Date) -> String {
+        let english = services.appSettings.uiLanguage.hasPrefix("en")
+        let f = DateFormatter()
+        f.locale = Locale(identifier: english ? "en_US" : "es_MX")
+        f.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
+        let text = f.string(from: date)
+        return english ? text : "el " + text.replacingOccurrences(of: ",", with: "")
+    }
 }

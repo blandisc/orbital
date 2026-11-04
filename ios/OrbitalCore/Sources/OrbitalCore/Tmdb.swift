@@ -303,7 +303,10 @@ public struct Tmdb: Sendable {
         if found.overview.isEmpty, let all = try? await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)/translations"),
            let other = Tmdb.sameLanguage(["translations": all], language: language) {
             found.overview = other.overview
-            if !other.title.isEmpty { found.title = other.title }
+            // El título de otro país solo si aquí no hay (TMDB pone el original cuando no está traducido): «Eterno resplandor de
+            // una mente sin recuerdos» no se vuelve «¡Olvídate de mí!» (el de España) por faltar la sinopsis. Análisis de fondo, 3 nov.
+            let untranslated = found.title.isEmpty || found.title == (raw["original_title"]?.string ?? raw["original_name"]?.string)
+            if !other.title.isEmpty, untranslated { found.title = other.title }
         }
         // Hecha en tu idioma: su título original. TMDB no traduce al mismo idioma y en «es-MX» da el inglés (Fernando, 3 nov:
         // «El viento tiene miedo», mexicana, salía «Even the Wind Is Afraid» y las series sí en español).

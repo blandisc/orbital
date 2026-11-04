@@ -193,7 +193,8 @@ struct AllSourcesList: View {
             if let tag = AllSources.hiddenTag(source) {
                 (tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")).recipe(.caption, color: DS.warning)
             }
-            if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
+            if source.tags.contains(Streams.otherEpisodeTag) { Text("¿Otro episodio?").recipe(.caption, color: DS.warning) }
+            else if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
         }
     }
 
@@ -332,7 +333,8 @@ struct AllSourcesList: View {
         if let speed = speedText(source) { label = Text("\(label)\(Text(verbatim: ", "))\(speed)") }
         if let marker = marker(source) { label = Text("\(label)\(Text(verbatim: ", "))\(marker)") }
         if let tag = AllSources.hiddenTag(source) { label = Text("\(label)\(Text(verbatim: ", "))\((tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")))") }
-        if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { label = Text("\(label)\(Text(verbatim: ", "))\(Text("¿Otro título?"))") }
+        if source.tags.contains(Streams.otherEpisodeTag) { label = Text("\(label)\(Text(verbatim: ", "))\(Text("¿Otro episodio?"))") }
+        else if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { label = Text("\(label)\(Text(verbatim: ", "))\(Text("¿Otro título?"))") }
         return label
     }
 

@@ -83,7 +83,7 @@ public final class DebridRequestsModel: ObservableModel {
         guard let base = keylessBase else { return nil }
         // Con el idioma original del título, como la lista de versiones: sin él, la de YTS de una película mexicana era
         // «Inglés» aquí y «Latino (original)» allá (Fernando, 3 nov, con «El viento tiene miedo»).
-        let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
+        let metaID = StreamFinder.metaID(of: videoID)
         let origin = await finder().origin(kind: kind, metaID: metaID)
         return await lookup.torrents(base: base, kind: kind, videoID: videoID, prefs: prefs, origin: origin)
     }

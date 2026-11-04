@@ -36,7 +36,7 @@ extension PlayerModel {
         // Ni una que ya falló, ni una que ya se comprobó en otro idioma, ni una de cine, un tráiler u otra película.
         let better = sourceChoices.first { choice in
             guard choice.index != current.index, choice.playbackURL != nil, !failedSources.contains(choice.index),
-                  !choice.tags.contains("CAM"), !choice.tags.contains("Tráiler"), !choice.tags.contains(Streams.otherTitleTag) else { return false }
+                  !choice.tags.contains("CAM"), !choice.tags.contains("Tráiler"), !choice.tags.contains(Streams.otherTitleTag), !choice.tags.contains(Streams.otherEpisodeTag) else { return false }
             if let checked = titlePrefs.checkedAudio(choice.key) { return checked.contains { $0.code == want } }
             return choice.audio.contains { $0.code == want && $0.evidence.solid }
         }

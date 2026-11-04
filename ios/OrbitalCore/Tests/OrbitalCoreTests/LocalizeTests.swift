@@ -44,7 +44,7 @@ final class LocalizeTests: XCTestCase {
     func testMissingMexicanOverviewFallsBackToSpainBeforeEnglish() async throws {
         let http = FakeHTTP()
         http.json["https://api.themoviedb.org/3/find/tt0000001?external_source=imdb_id&api_key=K&language=es-MX"] = ["movie_results": [["id": 7]]]
-        http.json["https://api.themoviedb.org/3/movie/7?language=es-MX&api_key=K"] = ["title": "Dune", "overview": ""]
+        http.json["https://api.themoviedb.org/3/movie/7?language=es-MX&api_key=K"] = ["title": "Dune", "original_title": "Dune", "overview": ""]   // sin traducir: TMDB da el original
         http.json["https://api.themoviedb.org/3/movie/7/translations?api_key=K&language=es-MX"] = ["translations": [
             ["iso_639_1": "en", "data": ["overview": "English text."]],
             ["iso_639_1": "es", "iso_3166_1": "ES", "data": ["title": "Dune: Parte uno", "overview": "Texto en español."]]]]

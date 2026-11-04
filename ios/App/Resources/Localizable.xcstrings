@@ -33284,6 +33284,28 @@
         }
       }
     },
+    "¿Otro episodio?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another episode?"
+          }
+        }
+      }
+    },
+    "¿Otro episodio? El nombre dice otra temporada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another episode? The name says another season."
+          }
+        }
+      }
+    },
     "¿Otro título?": {
       "extractionState": "manual",
       "localizations": {

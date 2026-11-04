@@ -265,7 +265,8 @@ public enum Streams {
     static let seedersPattern = r(#"👤\s*(\d+)"#, caseInsensitive: false)
     static let sitePattern = r("\u{2699}\u{FE0F}?\\s*([^\\r\\n]+)", caseInsensitive: false)
     static let resolutions: [(String, NSRegularExpression)] = [
-        ("4K", r(#"\b(2160p|4k|uhd)\b"#)), ("1080p", r(#"\b1080p\b"#)), ("720p", r(#"\b720p\b"#)), ("480p", r(#"\b(480p|sd)\b"#)),
+        // «1440p» (algunas de anime): antes no se reconocía y quedaba como SD, al fondo de su idioma (análisis de fondo, 3 nov).
+        ("4K", r(#"\b(2160p|4k|uhd)\b"#)), ("1440p", r(#"\b1440p\b"#)), ("1080p", r(#"\b1080p\b"#)), ("720p", r(#"\b720p\b"#)), ("480p", r(#"\b(480p|sd)\b"#)),
     ]
     static let units: [String: Double] = ["KB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12]
     static let hdrPatterns: [(String, NSRegularExpression)] = [
@@ -512,7 +513,7 @@ public enum Streams {
         s += languageScore(src, prefs)
         let order = ["4K", "1080p", "720p", "480p", ""]
         let want = order.firstIndex(of: prefs.quality) ?? 1
-        let have = order.firstIndex(of: src.resolution) ?? order.count - 1
+        let have = order.firstIndex(of: src.resolution == "1440p" ? "1080p" : src.resolution) ?? order.count - 1   // 1440p cuenta como 1080p
         s += 200 - 60 * Double(abs(have - want)) - (have > want ? 40 : 0)  // peor que lo pedido pesa más
         let gb = Double(src.size) / 1e9
         let scale = kind == "movie" ? 1.0 : 0.3
@@ -522,7 +523,7 @@ public enum Streams {
         if src.size != 0 && gb < (kind == "movie" ? 0.7 : 0.12) { s -= 120 }  // sospechosamente pequeño: mala calidad
         if src.hdr.contains("DV") && !src.hdr.contains("HDR") && !src.hdr.contains("HDR10+") { s -= 200 }  // DV sin HDR de respaldo
         if src.tags.contains("Tráiler") || src.tags.contains("CAM") { s -= 2000 }
-        if src.tags.contains(otherTitleTag) { s -= 1500 }   // otra película con el mismo nombre: nunca la recomendada
+        if src.tags.contains(otherTitleTag) || src.tags.contains(otherEpisodeTag) { s -= 1500 }   // otra película u otro episodio: nunca la recomendada
         if src.tags.contains("3D") { s -= 1500 }
         if src.tags.contains("Reescalada") { s -= 150 }
         if src.otherTitle { s -= 500 }   // el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)

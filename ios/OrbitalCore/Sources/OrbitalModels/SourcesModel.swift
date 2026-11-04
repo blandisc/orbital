@@ -112,6 +112,19 @@ public final class SourcesModel: ObservableModel {
     public var ranked: [Source] { sources }
     /// La recomendada (la primera que no es de cine ni tráiler; si todas lo son, la primera).
     public var recommendedIndex: Int? { (sources.first { !Self.hidden($0) } ?? sources.first)?.index }
+
+    /// Lo que pone «Ver» de la ficha y el reproductor sin una versión elegida («Ver ahora» del aviso de listo): una sola regla
+    /// para los dos. Lo que pediste y ya está va primero (Fernando, 3 nov: «análisis de fondo… para que no encuentre yo más
+    /// errores»: la de «Continuar» le ganaba a la que pediste); luego la versión con que lo dejaste, la de su misma familia
+    /// en el siguiente episodio y, al final, la recomendada (nunca una de cine o un tráiler si hay otra).
+    public static func toPlay(_ found: [Source], resume: String?, family: String?) -> Source? {
+        let usable = found.contains { !hidden($0) } ? found.filter { !hidden($0) } : found
+        if let ready = usable.first(where: \.requested) { return ready }
+        if let resume, let same = found.first(where: { $0.key == resume }) { return same }
+        let first = usable.first
+        if let family, let same = usable.first(where: { $0.binge == family && $0.score > (first?.score ?? 0) - 700 }) { return same }
+        return first
+    }
 }
 
 // MARK: «Elegir versión»: por idioma y calidad
@@ -134,8 +147,10 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var recommended: Bool
     /// Las demás de este idioma y calidad (sus índices), en orden.
     public var others: [Int]
-    /// «¿Otro título?»: el nombre dice otro año.
+    /// «¿Otro título?»: el nombre dice otro año (o «¿Otro episodio?»: trae otra temporada, `otherEpisode`).
     public var otherTitle: Bool
+    /// «¿Otro episodio?»: el archivo o el nombre dicen otra temporada.
+    public var otherEpisode = false
     /// Pasa por Real-Debrid (si no está en `cached`, Real-Debrid aún la tiene que bajar).
     public var debrid = false
     /// La pediste y Real-Debrid ya la terminó: «Al instante · la pediste».
@@ -193,7 +208,8 @@ extension SourcesModel {
                       alsoHas: s.audio.map(rowCode).filter { $0 != code }, release: s.release, site: s.site,
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
-                      otherTitle: s.tags.contains(Streams.otherTitleTag) || s.otherTitle, debrid: s.debrid, requested: s.requested)
+                      otherTitle: s.tags.contains(Streams.otherTitleTag) || s.tags.contains(Streams.otherEpisodeTag) || s.otherTitle,
+                      otherEpisode: s.tags.contains(Streams.otherEpisodeTag), debrid: s.debrid, requested: s.requested)
     }
 
     /// Lo que se puede pedir y no se ve ya como chip: una por idioma y calidad (la mejor), en el orden de la recomendación,
@@ -244,7 +260,8 @@ extension SourcesModel {
             var options: [VersionOption] = qualityOrder.compactMap { q in
                 // La de otro título nunca va de primera si hay otra.
                 guard let list = byQuality[q]?.sorted(by: { a, b in
-                    let x = a.tags.contains(Streams.otherTitleTag), y = b.tags.contains(Streams.otherTitleTag)
+                    let x = a.tags.contains(Streams.otherTitleTag) || a.tags.contains(Streams.otherEpisodeTag)
+                    let y = b.tags.contains(Streams.otherTitleTag) || b.tags.contains(Streams.otherEpisodeTag)
                     return x == y ? false : !x
                 }), let best = list.first else { return nil }
                 return option(best, code: code, evidence: evidence[code]?[best.index] ?? .maybe, limitGB: limitGB,

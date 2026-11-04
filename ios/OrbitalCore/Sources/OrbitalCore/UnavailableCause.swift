@@ -27,6 +27,10 @@ public enum UnavailableCause: Equatable, Sendable {
     /// 11 · Nadie lo tiene todavía en internet.
     case nobodyHasIt
 
+    /// Lo de tu cuenta (vencida, sin Premium, la clave vieja): con eso no se puede pedir nada a Real-Debrid.
+    public var blocksRequests: Bool { self == .debridExpired || self == .noPremium || self == .reconnectDebrid }
+    public var isUnreleased: Bool { if case .unreleased = self { true } else { false } }
+
     /// La única salida de cada causa.
     public enum Action: Equatable, Sendable {
         /// Abre real-debrid.com en el navegador.

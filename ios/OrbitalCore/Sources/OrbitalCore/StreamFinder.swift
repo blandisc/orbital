@@ -20,7 +20,11 @@ public struct ReadyTorrent: Sendable, Equatable {
     public var fileIdx: Int?
     /// El nombre de la versión que se pidió, si se sabe.
     public var release: String?
-    public init(hash: String, fileIdx: Int?, release: String? = nil) { self.hash = hash.lowercased(); self.fileIdx = fileIdx; self.release = release }
+    /// Solo se marca la versión que Torrentio lista (otro episodio de un paquete: no se sabe su archivo para armar el enlace).
+    public var listedOnly: Bool
+    public init(hash: String, fileIdx: Int?, release: String? = nil, listedOnly: Bool = false) {
+        self.hash = hash.lowercased(); self.fileIdx = fileIdx; self.release = release; self.listedOnly = listedOnly
+    }
 
     /// ¿Es esta versión? La misma huella y, si los dos lo dicen, el mismo archivo.
     func matches(_ source: Source) -> Bool {
@@ -144,7 +148,7 @@ public actor StreamFinder {
             + readyNow.map(\.hash).sorted().joined(separator: ",")
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         // De dónde es el título, a la vez que se pregunta a los complementos (no después: no se espera de más).
-        let metaID = String(videoID.split(separator: ":").first ?? Substring(videoID))
+        let metaID = Self.metaID(of: videoID)
         let lookup = origin
         let originTask = Task { await lookup(kind, metaID) }
         let (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
@@ -157,6 +161,7 @@ public actor StreamFinder {
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
                 var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
                 source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")")
+                Streams.markOtherEpisode(&source, videoID: videoID, filename: stream["behaviorHints"]?["filename"]?.string ?? "")
                 if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión
                 if let real = checked(source.key) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
@@ -166,7 +171,7 @@ public actor StreamFinder {
                 sources.append(source); seen.insert(index)
             }
         }
-        for missing in Self.markReady(&sources, readyNow) {
+        for missing in Self.markReady(&sources, readyNow) where !missing.listedOnly {
             // Torrentio no la lista (con «solo lo que ya está» o por su límite): se ve con el enlace de tu Real-Debrid.
             guard let url = await readyLink(missing.hash, videoID) else { continue }
             var source = Self.readySource(missing, url: url, origin: titleOrigin)
@@ -182,6 +187,14 @@ public actor StreamFinder {
         if cache.count >= Self.cacheMax { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { cache[k] = nil } }
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)
         return ranked
+    }
+
+    /// El título de un video: «tt0903747:1:2» → «tt0903747»; «kitsu:1:5» → «kitsu:1» (antes «kitsu», y un anime por Kitsu
+    /// se quedaba sin su idioma original).
+    public static func metaID(of videoID: String) -> String {
+        let parts = videoID.split(separator: ":", omittingEmptySubsequences: false)
+        guard let first = parts.first else { return videoID }
+        return first.hasPrefix("tt") || parts.count < 2 ? String(first) : parts.prefix(2).joined(separator: ":")
     }
 
     /// Marca «Al instante · la pediste» las versiones de pedidos listos. Devuelve los pedidos que ninguna versión trae.

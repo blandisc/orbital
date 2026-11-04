@@ -250,17 +250,25 @@ public actor DebridRequester {
     /// Los pedidos de tu cuenta que Real-Debrid ya terminó y traen ese video (Fernando, 3 nov, con «El viento tiene miedo»:
     /// «ya está» y al abrirlo «no llega a ningún lado»). Torrentio puede seguir diciendo «[RD download]» de ellos: la lista
     /// de versiones los marca «Al instante · la pediste» con esto.
+    ///
+    /// Un paquete (todos sus videos) trae también los demás episodios de ese título aunque no se hayan pedido uno por uno: el
+    /// siguiente episodio sale «Al instante · la pediste» sin pedirlo otra vez (análisis de fondo con la TV, 3 nov).
     public nonisolated func ready(kind: String, videoID: String) -> [DebridRequest] {
         let mine = knownAccount
-        return book.all.filter { $0.state == .ready && $0.kind == kind && $0.videoIDs.contains(videoID) && !$0.isOther(account: mine) }
+        return book.all.filter { r in
+            r.state == .ready && r.kind == kind && !r.isOther(account: mine)
+                && (r.videoIDs.contains(videoID) || (r.coversWholeTorrent && videoID.hasPrefix(r.metaID + ":")))
+        }
     }
 
     /// El enlace para ver ese video de un pedido listo, sin pasar por Torrentio (que puede ni listarlo, con «solo lo que ya
     /// está»): `torrents/info` → el enlace de su archivo → `unrestrict/link`. nil si no se puede.
     public func streamLink(hash: String, videoID: String) async -> URL? {
-        guard let request = book.find(hash: hash), request.state == .ready, let id = request.rdID, let token = try? key(),
-              let info = try? await api.info(id: id, token: token), info.status == "downloaded",
-              let link = info.link(fileIdx: request.files[videoID] ?? (request.videoIDs.count == 1 ? request.fileIdx : nil)) else { return nil }
+        // El archivo de ESE video: de un paquete sin saber cuál, nada (el más grande sería otro episodio).
+        guard let request = book.find(hash: hash), request.state == .ready, let id = request.rdID, let token = try? key() else { return nil }
+        let file = request.files[videoID] ?? (request.videoIDs == [videoID] && !request.coversWholeTorrent ? request.fileIdx : nil)
+        guard file != nil || (request.videoIDs == [videoID] && !request.coversWholeTorrent),
+              let info = try? await api.info(id: id, token: token), info.status == "downloaded", let link = info.link(fileIdx: file) else { return nil }
         return try? await api.unrestrict(link: link, token: token)
     }
 
