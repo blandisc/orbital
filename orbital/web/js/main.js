@@ -159,6 +159,23 @@ const ui = {
   }),
   sources: createSources({
     onPlay: (play) => watch(play),
+    // T8-A: «Pedirlo y avisarme» justo esa versión (o, si ya está pedida, su hoja con cómo va y «Cancelar pedido»).
+    onAsk: async (ask) => {
+      if (ask.known) {
+        ui.sources.close();
+        return runCommand({ type: "rd-request-menu", hash: ask.known.hash });
+      }
+      try {
+        const res = await api.stremioRequest({ kind: ask.kind, id: ask.id, video: ask.video_id || ask.id, title: ask.title, hash: ask.hash });
+        sound.play("select");
+        ui.toast.show(`Le pedí ${ask.title || "esto"} a Real-Debrid`, { tone: "success", detail: res?.availability?.detail || "Te aviso cuando esté" });
+        api.settings().then(applySettings).catch(() => {});
+        ui.sources.close();
+      } catch (err) {
+        ui.toast.show(err.message || "Real-Debrid no pudo con ese pedido", { tone: "warn" });
+      }
+    },
+    requests: () => state.settings?.realdebrid?.requests || [],
     onMove: () => { sound.play("move"); renderHints(); },
     onChange: () => renderHints(),
     onClose: () => { sound.play("back"); renderHints(); },

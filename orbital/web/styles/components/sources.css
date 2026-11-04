@@ -68,6 +68,11 @@
 .versions__name { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); }
 .versions__role { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .versions__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+/* T8-A: el grupo de las que hay que pedirlas, separado de las que arrancan ya. */
+.versions__ask { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); flex-shrink: 0;
+  margin-top: var(--space-3); padding: var(--space-3) var(--space-2) 0; border-top: 1px solid var(--color-hairline); }
+.versions__ask-title { font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
+.versions__ask-hint { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 
 .version {
   position: relative; display: grid; align-content: center; gap: var(--space-1);

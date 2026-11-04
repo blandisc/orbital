@@ -159,6 +159,17 @@ class Source:
         name = self.release or str(self.stream.get("title") or self.stream.get("name") or "")
         return f"{self.addon}|{name}|{self.size}"
 
+    @property
+    def info_hash(self) -> str | None:
+        """La huella del torrent (40 hexadecimales): la de Torrentio sin Real-Debrid, o la que va en su dirección de
+        Real-Debrid (/resolve/realdebrid/<clave>/<huella>/…). Con ella se pide justo esta versión (T8-A)."""
+        raw = self.stream.get("infoHash")
+        if isinstance(raw, str) and re.fullmatch(r"[0-9a-fA-F]{40}", raw):
+            return raw.lower()
+        url = self.stream.get("url")
+        found = re.search(r"/resolve/realdebrid/[^/]+/([0-9a-fA-F]{40})(?:/|$)", url) if isinstance(url, str) else None
+        return found.group(1).lower() if found else None
+
     def public(self) -> dict:
         """Lo que ve la interfaz: nada de URLs ni claves."""
         return {
@@ -170,6 +181,8 @@ class Source:
             "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
                             for code, how in self.audio_langs.items()],
             "other_title": self.other_title, "checked": self.checked,
+            # T8-A: la que hay que pedir lleva su huella (no es secreta) para «Pedirlo y avisarme» justo esta.
+            **({"hash": self.info_hash} if self.debrid and not self.cached and self.info_hash else {}),
         }
 
     @property

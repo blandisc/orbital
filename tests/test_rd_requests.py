@@ -286,3 +286,21 @@ def test_what_the_iphone_sends_with_unknowns_numbers_and_all_files(setup):
     reqs.account()
     reqs.request("series", "tt5:2:2", "Severance · T2 E2", streams.Preferences(), meta_id="tt5")
     assert rd.added == [] and state.data[rd_requests.STATE_ID][H2]["video_ids"] == ["tt5:2:1", "tt5:2:2"]  # el mismo paquete
+
+
+def test_t8a_the_version_you_chose_is_the_one_requested(setup):
+    """T8-A (plan v5): en «Versión», «Pedirlo y avisarme» pide justo esa versión (su huella), no la mejor que encuentre;
+    si ya no aparece, se dice. La huella sale de la dirección de Real-Debrid de Torrentio."""
+    reqs, rd, _, _, _, found = setup
+    other = "b" * 40
+    found["streams"] = [stream(H1), stream(other)]
+    got = reqs.request("movie", "tt9", "Midsommar", streams.Preferences(), want=other.upper())
+    assert rd.added[-1][0] == other and got["state"] == "queued"
+    with pytest.raises(realdebrid.RealDebridError, match="ya no aparece"):
+        reqs.request("movie", "tt8", "Otra", streams.Preferences(), want="c" * 40)
+    src = streams.Source(stream={"url": f"https://torrentio.strem.fun/resolve/realdebrid/KEY/{other.upper()}/null/0/x.mkv"},
+                         addon="Torrentio", transport_url="", index=0)
+    src.debrid, src.cached = True, False
+    assert src.info_hash == other and src.public()["hash"] == other
+    src.cached = True
+    assert "hash" not in src.public()  # lo que ya arranca no se pide

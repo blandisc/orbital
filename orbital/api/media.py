@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException
@@ -246,7 +247,9 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(400, "Falta qué pedir")
         meta_id, video = str(meta_id), str(video)
         try:
-            request = catalog.watch.request_debrid(kind, meta_id, video, str(body.get("title") or "")[:200])
+            want = body.get("hash")
+            want = want.lower() if isinstance(want, str) and re.fullmatch(r"[0-9a-fA-F]{40}", want) else None
+            request = catalog.watch.request_debrid(kind, meta_id, video, str(body.get("title") or "")[:200], want=want)
         except LookupError as exc:
             raise HTTPException(409, str(exc)) from exc
         return {"request": request, "availability": catalog.watch.availability(kind, meta_id, video)}

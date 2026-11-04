@@ -1166,8 +1166,9 @@ class Watch:
         return {**out, "why": "none", "message": "Nadie lo tiene todavía en internet",
                 "detail": "Suele aparecer en unas horas o días · vuelve a buscar más tarde"}
 
-    def request_debrid(self, kind: str, meta_id: str, video_id: str, title: str = "") -> dict:
-        """«Pedirlo y avisarme»: Real-Debrid empieza a bajarlo (RD-1). Lanza LookupError con el motivo en palabras."""
+    def request_debrid(self, kind: str, meta_id: str, video_id: str, title: str = "", want: str | None = None) -> dict:
+        """«Pedirlo y avisarme»: Real-Debrid empieza a bajarlo (RD-1); con `want`, justo esa versión (la huella que trae
+        «Versión», T8-A). Lanza LookupError con el motivo en palabras."""
         prefs = self.asked_language({"meta_id": meta_id})[0]
         if not title:
             try:
@@ -1179,7 +1180,7 @@ class Watch:
             parts = video_id.split(":")
             season, episode = (int(parts[1]), int(parts[2])) if kind == "series" and len(parts) == 3 and                 parts[1].isdigit() and parts[2].isdigit() else (None, None)
             return self.rd.request(kind, video_id, title or "tu pedido", prefs, meta_id=meta_id, season=season,
-                                   episode=episode)
+                                   episode=episode, want=want)
         except realdebrid.RealDebridError as exc:
             raise LookupError(str(exc)) from exc
 

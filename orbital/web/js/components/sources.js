@@ -6,6 +6,7 @@ import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { Flag, Flags } from "./flag.js";
+import { requestLabel } from "../core/menus.js";
 
 /**
  * «Versión» (Y en la ficha): un panel que sube desde abajo, encima de la ficha. Lo normal es no necesitarlo: «Ver»
@@ -14,9 +15,11 @@ import { Flag, Flags } from "./flag.js";
  * de la enfocada (lo dice el nombre, el sitio, es el original, tal vez, comprobado). X enseña todas las de esa fila y
  * calidad con su nombre técnico, como el iPhone.
  * En un episodio, LB/RB: «Solo este episodio» o «Desde aquí» (la serie sigue con el idioma de la que elijas).
- *   ↑/↓ idioma · ◀/▶ calidad · A ver · X todas las de aquí · LB/RB alcance · B volver a la ficha
+ * Las que Real-Debrid todavía no tiene van abajo, en su propio grupo «Hay que pedirlas · tardan» (T8-A, plan v5): A no
+ * las reproduce (solo daría el video de aviso de Real-Debrid), las pide y avisa; si ya están pedidas, dicen cómo van.
+ *   ↑/↓ idioma · ◀/▶ calidad · A ver (o pedir) · X todas las de aquí · LB/RB alcance · B volver a la ficha
  */
-export function createSources({ onPlay, onMove, onClose, onChange }) {
+export function createSources({ onPlay, onAsk, requests = () => [], onMove, onClose, onChange }) {
   const heading = h("div", { class: "sources__heading" }, "Versión");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
@@ -48,17 +51,24 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   const facts = (src) => [bytes(src.size), ...(src.hdr || []).map((t) => (t === "DV" ? "Dolby Vision" : t)),
     src.audio && (src.audio === "Atmos" ? "Dolby Atmos" : src.audio)].filter(Boolean);
   const state = (src) => (isOwnSource(src) || src.cached ? ["Al instante", "good"] : src.debrid ? ["Tarda en empezar", "warn"] : [src.addon, null]);
+  // T8-A: ¿ya se pidió? (la libreta, por la huella de la versión). Lo olvidado y la lápida no cuentan.
+  const asked = (src) => (src?.hash ? (requests() || []).find((q) => q.hash === src.hash && q.state !== "gone") : null);
+  const askState = (src) => {
+    const known = asked(src);
+    return known ? [requestLabel(known), known.state === "ready" ? "good" : "warn"] : ["Pedirlo y avisarme", "warn"];
+  };
+  const isAsk = (r) => !!rows[r]?.ask;
 
   let start = { row: 0, col: 0 }; // dónde está la recomendada (una versión con dos idiomas sale en dos filas: se marca una)
   // La recomendada es la que pone «Ver» (con «Continuar», la de antes); si el servidor no lo dice, la primera.
   const best = () => found.find((s) => s.id === recommended) || found[0];
 
   function option(opt, r, c) {
-    const [label, tone] = state(opt.source);
+    const [label, tone] = rows[r].ask ? askState(opt.source) : state(opt.source);
     const button = h("button", {
       class: ["version", r === at.row && c === at.col && "version--focused"], type: "button",
       "aria-label": `${rows[r].name} · ${opt.res}`,
-      onClick: () => (r === at.row && c === at.col ? play(opt.source) : focus({ row: r, col: c })),
+      onClick: () => (r === at.row && c === at.col ? act(opt.source, rows[r].ask) : focus({ row: r, col: c })),
     },
     h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res),
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
@@ -70,12 +80,16 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
 
   function renderRows() {
     cells = rows.map((row, r) => row.options.map((opt, c) => option(opt, r, c)));
-    mount(list, rows.map((row, r) => h("div", { class: "versions__row", role: "group", "aria-label": row.name },
+    const firstAsk = rows.findIndex((row) => row.ask);
+    mount(list, rows.flatMap((row, r) => [r === firstAsk && h("div", { class: "versions__ask", role: "presentation" },
+      h("span", { class: "versions__ask-title" }, "Hay que pedirlas · tardan"),
+      h("span", { class: "versions__ask-hint" }, "Real-Debrid las baja y te avisa cuando estén")),
+    h("div", { class: "versions__row", role: "group", "aria-label": row.name },
       h("div", { class: "versions__lang" },
         h("span", { class: "versions__name" }, Flag(row.code), row.name),
         (row.role || row.options.every((o) => o.proof === "maybe")) &&
           h("span", { class: "versions__role" }, row.role || "Tal vez")),
-      h("div", { class: "versions__options" }, cells[r]))));
+      h("div", { class: "versions__options" }, cells[r]))].filter(Boolean)));
     describe();
   }
 
@@ -99,9 +113,9 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     mount(list, h("div", { class: "sources__group", role: "group", "aria-label": `${rows[cell.row].name} · ${opt.res}` },
       h("div", { class: "sources__group-title" }, Flag(rows[cell.row].code), `${rows[cell.row].name} · ${opt.res}`),
       ...items.map((src, i) => {
-        const [label, tone] = state(src);
+        const [label, tone] = isAsk(cell.row) ? askState(src) : state(src);
         return h("button", { class: ["source", i === index && "source--focused"], type: "button", role: "listitem",
-          onClick: () => (i === index ? play(src) : setIndex(i)) },
+          onClick: () => (i === index ? act(src, isAsk(cell.row)) : setIndex(i)) },
         h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
         h("span", { class: "source__main" },
           h("span", { class: "source__chips" }, Chip(label, { tone }), ...facts(src).map((f) => Chip(f))),
@@ -136,6 +150,13 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   function play(src) {
     if (!src || !request) return;
     onPlay({ ...request, source: src.id, remember: isEpisode() && fromHere });
+  }
+
+  /** A en una versión: verla o, si hay que pedirla (T8-A), pedir justo esa (o ver cómo va su pedido). */
+  function act(src, ask) {
+    if (!ask) return play(src);
+    if (!src || !request) return;
+    onAsk?.({ ...request, hash: src.hash, known: asked(src) });
   }
 
   let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
@@ -177,10 +198,15 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       found = data.sources;
       recommended = data.recommended?.id ?? null;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      rows = versionRows(found, { audio: data.audio, spanish: data.spanish });
+      const prefs = { audio: data.audio, spanish: data.spanish };
+      const later = (s) => s.debrid && !s.cached && !isOwnSource(s); // Real-Debrid aún no la tiene: se pide
+      rows = [...versionRows(found.filter((s) => !later(s)), prefs),
+        ...versionRows(found.filter(later), prefs).map((row) => ({ ...row, ask: true }))];
       at = versionStart(rows, best());
       start = { ...at };
-      subtitle.textContent = "«Al instante»: arranca en segundos. «Tarda en empezar»: Real-Debrid primero la descarga.";
+      subtitle.textContent = rows.some((row) => row.ask)
+        ? "«Al instante»: arranca en segundos. Las de abajo, Real-Debrid primero las baja: se piden y te avisa."
+        : "«Al instante»: arranca en segundos.";
       status.hidden = !!rows.length;
       status.textContent = rows.length ? "" : "No encontré dónde ver esto: tus complementos no lo tienen.";
       failed = !rows.length;
@@ -216,7 +242,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       } else if (action === "options") close();
       else if (action === "up") setIndex(index - 1);
       else if (action === "down") setIndex(index + 1);
-      else if (action === "select") play(items[index]);
+      else if (action === "select") act(items[index], isAsk(cell.row));
       return true;
     }
     if (action === "back" || action === "options") close();
@@ -232,20 +258,21 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       onChange?.(); // el pie: «Volver a los idiomas»
     } else if (action === "select") {
       if (failed && request) open(request); // sin fuentes o con error: A reintenta
-      else play(rows[at.row]?.options[at.col]?.source);
+      else act(rows[at.row]?.options[at.col]?.source, isAsk(at.row));
     }
     return true;
   }
 
   /** Pistas del pie mientras el panel está abierto. */
   const hints = (g) => {
+    const verb = (r, src) => (!isAsk(r) ? "Ver con esta" : asked(src) ? "Ver su pedido" : "Pedirlo y avisarme");
     if (cell) {
-      return [{ glyph: g.select, label: "Ver con esta" }, items.length > 1 && { glyph: g.rows, label: "Otra" },
+      return [{ glyph: g.select, label: verb(cell.row, items[index]) }, items.length > 1 && { glyph: g.rows, label: "Otra" },
         { glyph: g.back, label: "Volver a los idiomas", end: true }].filter(Boolean);
     }
     if (!rows.length) return [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);
     const many = rows[at.row]?.options[at.col]?.all.length > 1;
-    return [{ glyph: g.select, label: "Ver con esta" }, rows.length > 1 && { glyph: g.rows, label: "Idioma" },
+    return [{ glyph: g.select, label: verb(at.row, rows[at.row]?.options[at.col]?.source) }, rows.length > 1 && { glyph: g.rows, label: "Idioma" },
       rows.some((r) => r.options.length > 1) && { glyph: g.rows === "↑↓" ? "← →" : "◀ ▶", label: "Calidad" },
       many && { glyph: g.alt, label: "Todas las de aquí", secondary: true },
       isEpisode() && { glyph: g.section, label: fromHere ? "Desde aquí" : "Solo este episodio", secondary: true },

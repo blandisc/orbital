@@ -135,7 +135,7 @@ export const api = {
   // Por qué no hay una versión que arranque ya, y «Pedirlo y avisarme» a Real-Debrid (orbital/rd_requests.py).
   stremioAvailability: (kind, id, video) =>
     request(`/api/stremio/availability?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
-  stremioRequest: ({ kind, id, video, title }) => post("/api/stremio/request", { kind, id, video, title }),
+  stremioRequest: ({ kind, id, video, title, hash }) => post("/api/stremio/request", { kind, id, video, title, hash }),
   focusWindow: (id) => post("/api/windows/focus", { id }),
   // «Para ti»
   voiceCommands: () => request("/api/voice/commands"),

@@ -303,8 +303,9 @@ class RdRequests:
 
     # --- pedir ---------------------------------------------------------------------------------------------------
     def request(self, kind: str, video_id: str, title: str, prefs: streams.Preferences, meta_id: str = "",
-                season: int | None = None, episode: int | None = None) -> dict:
-        """Pide a Real-Debrid la mejor versión que existe de ese video. Lanza RealDebridError (en palabras) si no se pudo."""
+                season: int | None = None, episode: int | None = None, want: str | None = None) -> dict:
+        """Pide a Real-Debrid la mejor versión que existe de ese video, o justo la de huella `want` (la que elegiste en
+        «Versión», T8-A). Lanza RealDebridError (en palabras) si no se pudo."""
         current = self.status(video_id)
         if current and current["state"] in (*ACTIVE, READY) and current.get("mine"):
             return current
@@ -315,6 +316,12 @@ class RdRequests:
         if not picks:
             raise realdebrid.RealDebridError("Nadie lo tiene todavía en internet · vuelve a buscar más tarde")
         refused = {k for k, v in self._all().items() if v.get("state") == REFUSED}
+        if want:  # la que elegiste en «Versión»
+            picks = [p for p in picks if p.stream["infoHash"].lower() == want.lower()]
+            if not picks:
+                raise realdebrid.RealDebridError("Esa versión ya no aparece · elige otra en «Versión»")
+            if want.lower() in refused:
+                raise realdebrid.RealDebridError("Real-Debrid no dejó bajar esa versión · elige otra")
         pick = next((p for p in picks if p.stream["infoHash"].lower() not in refused), None)  # «Prueba otra versión»
         if pick is None:
             raise realdebrid.RealDebridError("Real-Debrid no lo dejó bajar · no queda otra versión que pedir")
