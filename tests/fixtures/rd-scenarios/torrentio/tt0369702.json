@@ -1,0 +1,556 @@
+{
+ "streams": [
+  {
+   "name": "Torrentio\n1080p",
+   "title": "The Sea Inside (2004) [1080p] [BluRay] [5.1] [YTS] [YIFY]\n👤 29 💾 2.32 GB ⚙️ 1337x",
+   "infoHash": "7afd6bcecab38837927561748e11a21ec82f7967",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "The.Sea.Inside.2004.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Море внутри / Mar adentro / The Sea Inside [2004 BDRemux 1080p] MVO (R5) + MVO (СВ-Дубль) + Sub Rus + Original Spa\n👤 6 💾 30 GB ⚙️ Rutracker\n🇷🇺 / 🇪🇸",
+   "infoHash": "5ff6de316134b35c99359fa65078828305cd8ff4",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX",
+    "filename": "Mar.Adentro.2004.Universum.Film.BDRemux.1080p.mkv"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:5ff6de316134b35c99359fa65078828305cd8ff4",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "The Sea Inside (2004) (1080p BluRay x265 HEVC 10bit AAC 5.1 Spanish afm72) [QxR]\n👤 3 💾 4.74 GB ⚙️ TorrentGalaxy\n🇪🇸",
+   "infoHash": "1edf44c026efa3838cdbf8cecf43dd16d1d96f41",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|hevc|10bit",
+    "filename": "The Sea Inside (2004) (1080p BluRay x265 afm72).mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Mar.Adentro.2004.BDRip.1080p.x264.[ExYu-Subs HC]\n👤 2 💾 1.71 GB ⚙️ ThePirateBay",
+   "infoHash": "73d2c54e209661b0ff346c22aa291e5e05ac3731",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip|x264"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Mar adentro (2004)BDRIP.1080p.H264.Castellano.AAC.5.1.Subt\n👤 1 💾 2.32 GB ⚙️ EXT\n🇬🇧 / 🇪🇸",
+   "infoHash": "02b69ed97414779fda55827574ea0ca951313f90",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip|h264",
+    "filename": "Mar adentro (2004)BDRIP.1080p.H264.Castellano.AAC.5.1.Subt.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Море внутри / Mar adentro / Sea Inside [2004 HDTVRip 720p] MVO + Original Spa + Sub Rus Eng\n👤 7 💾 4.64 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇪🇸",
+   "infoHash": "db4a9d808b25b5489c8ec0f737e2b2771dce006f",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|HDTV",
+    "filename": "Mar.adentro.2004.HDTVRip.720p.mkv"
+   },
+   "sources": [
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:db4a9d808b25b5489c8ec0f737e2b2771dce006f"
+   ]
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "The Sea Inside (2004) [720p] [BluRay] [YTS] [YIFY]\n👤 5 💾 1.13 GB ⚙️ 1337x",
+   "infoHash": "91fb1360c4117fdea2fc46d80dd6da8508bc5ade",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BluRay|x264",
+    "filename": "The.Sea.Inside.2004.720p.BluRay.x264.AAC-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Mar adentro [2004] [720P] [WEBRIP] [H264] [AAC] [LEKTOR-PL]\n👤 4 💾 3.27 GB ⚙️ BestTorrents\n🇵🇱",
+   "infoHash": "cdc3106fff102fbf264a32f56fa776b8c39a8b89",
+   "fileIdx": 2,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|WEBRip|h264",
+    "filename": "Mar adentro 2004.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Море внутри / Mar adentro (2004) BDRip 720p от msltel | P\n👤 4 💾 6.71 GB ⚙️ Rutor\n🇷🇺 / 🇮🇹 / 🇪🇸",
+   "infoHash": "4afc59f096dd509b26ef13752d8b481d26eb9989",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BDRip",
+    "filename": "Море внутри.2004.BDRip 720p msltel.mkv"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:4afc59f096dd509b26ef13752d8b481d26eb9989",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Mare dentro (2004) 720p h264 AAC 5.1 ITA SPA\n👤 1 💾 2.1 GB ⚙️ ilCorSaRoNeRo\n🇮🇹 / 🇪🇸",
+   "infoHash": "e0228714b7a2d612e616daea2573d2542764a19a",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|h264",
+    "filename": "Mare Dentro 2004 ITA-SPA 720p x264.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Mar.adentro.2004.720p.HDTV.x264-HBHD\n👤 1 💾 4.26 GB ⚙️ ThePirateBay",
+   "infoHash": "1c33bb294d5c920c26083f950f2047b8a66eff3d",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|HDTV|x264"
+   }
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Море внутри / The Sea Inside / Mar adentro [2004 BDRip-AVC] MVO + Original Spa + Sub (Rus Eng)\n👤 21 💾 2.74 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇪🇸",
+   "infoHash": "3b0fb97651752ce81762e6b1b789e12643f6ab09",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Mar.adentro.2004.BDRip-AVC.OIV.mkv"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:3b0fb97651752ce81762e6b1b789e12643f6ab09",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Море внутри / Mar adentro / Sea Inside [2004 DVDRip] MVO\n👤 4 💾 699.9 MB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "4d7f7103d9e8c24fe36b905c0dea299564421547",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip",
+    "filename": "More.Vnutri.avi"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:4d7f7103d9e8c24fe36b905c0dea299564421547",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nHDTV",
+   "title": "Море внутри / Mar adentro / Sea Inside [2004 HDTVRip] MVO + Original Spa + Sub Rus\n👤 4 💾 1.46 GB ⚙️ Rutracker\n🇷🇺 / 🇪🇸",
+   "infoHash": "b86dae8e327f460c29e3bd072e151709cbcf4cfc",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDTV",
+    "filename": "More_vnutri.avi"
+   },
+   "sources": [
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "dht:b86dae8e327f460c29e3bd072e151709cbcf4cfc",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Море внутри / Mar adentro / Sea Inside [2004 DVDRip-AVC] MVO + Original Spa + Sub Rus Eng\n👤 4 💾 1.76 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇪🇸",
+   "infoHash": "59cea5dc04a7253fdd428985338d41c181cf288a",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip|avc",
+    "filename": "More.Vnutri.2004.RUS.SPA.2xSub.DVDRip.x264.AAC.-[tRuAVC].mkv"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:59cea5dc04a7253fdd428985338d41c181cf288a",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Море внутри / The Sea Inside / Mar adentro [2004 BDRip-AVC] DVO (СВ-Дубль) + Original (Spa) + Sub (Rus Eng)\n👤 2 💾 2.17 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇪🇸",
+   "infoHash": "640678c78b16456396ea5c346a4f4045301f1abf",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Море внутри (2004) BDRip-AVC [СВ-Дубль].mkv"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:640678c78b16456396ea5c346a4f4045301f1abf",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Море внутри / The Sea Inside / Mar adentro [2004 BDRip] MVO + Sub Rus Eng + Original Spa\n👤 2 💾 2.18 GB ⚙️ Rutracker\nDual Audio / 🇬🇧 / 🇷🇺 / 🇪🇸",
+   "infoHash": "32762cd97f1253ed3ed9cd0daf17b0d51ed9d821",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|xvid",
+    "filename": "More.vnutri.2004.DUAL.BDRip.XviD.AC3.-HQCLUB.avi"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:32762cd97f1253ed3ed9cd0daf17b0d51ed9d821",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nHDTV",
+   "title": "Море внутри / Mar adentro (2004) HDRip от Scarabey | Р\n👤 2 💾 1.45 GB ⚙️ Rutor\n🇷🇺",
+   "infoHash": "d6e811d1ebcdbb8d0496288df4e48507575740a5",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDTV|HDRip",
+    "filename": "Mar.adentro.2004._HDTVRip__[scarabey.org].avi"
+   },
+   "sources": [
+    "tracker:http://retracker.local/announce",
+    "tracker:udp://opentor.org:2710",
+    "dht:d6e811d1ebcdbb8d0496288df4e48507575740a5",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nHDTV",
+   "title": "Море внутри / Mar adentro / Sea Inside [2004 HDTVRip] MVO\n👤 2 💾 745.26 MB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "5582c850bfdad3228d0e086d854cb4c82f8dda3b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDTV",
+    "filename": "More vnutri.avi"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:5582c850bfdad3228d0e086d854cb4c82f8dda3b",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Море внутри / Mar adentro (2004) BDRip-AVC от msltel | P\n👤 1 💾 3.6 GB ⚙️ Rutor\n🇷🇺 / 🇮🇹 / 🇪🇸",
+   "infoHash": "8c52ff55f55456855d5bc8492496ee71f050cf75",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Море внутри.2004.BDRip AVC msltel.mkv"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:8c52ff55f55456855d5bc8492496ee71f050cf75",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDivX",
+   "title": "Das Meer In Mir (Mar Adentro) German Deutsch DivX\n👤 1 💾 702.7 MB ⚙️ ThePirateBay",
+   "infoHash": "4a4461cdb7983ed2d5612c77422948c03c115a32",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DivX|divx"
+   }
+  },
+  {
+   "name": "Torrentio",
+   "title": "Mar.Adentro[2004]XviD.AC3.6Chn.Cody'sDVDrip\n👤 3 💾 1.15 GB ⚙️ ThePirateBay",
+   "infoHash": "12d82c237e93106d57d85a2d32048753eb70a69b"
+  }
+ ],
+ "cacheMaxAge": 3600,
+ "staleRevalidate": 14400,
+ "staleError": 604800
+}

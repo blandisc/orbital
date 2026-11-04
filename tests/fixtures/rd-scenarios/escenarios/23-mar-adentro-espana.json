@@ -1,0 +1,123 @@
+{
+  "id": "23-mar-adentro-espana",
+  "nombre": "«Mar adentro»: película de España",
+  "por_que": "Su idioma original es el español de España: el título es el original y su audio, castellano (original).",
+  "titulo": {
+    "tipo": "movie",
+    "meta_id": "tt0369702",
+    "video_id": "tt0369702",
+    "cinemeta": "cinemeta/tt0369702.json",
+    "tmdb": {
+      "original_language": "es",
+      "title_es_MX": "The Sea Inside",
+      "original_title": "Mar adentro",
+      "title_en": "The Sea Inside",
+      "overview_es_MX": "Ramón Sampedro…",
+      "fuente": "a mano"
+    }
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt0369702.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt0369702.json"
+  },
+  "torrentio_estado": "ok",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "premium"
+    },
+    "al_instante": [
+      "1edf44c026efa3838cdbf8cecf43dd16d1d96f41",
+      "7afd6bcecab38837927561748e11a21ec82f7967"
+    ],
+    "torrents": []
+  },
+  "libreta": [],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "Película de España: su título original y su audio castellano (original) primero.",
+    "titulo": "Mar adentro",
+    "logo": false,
+    "video": "tt0369702",
+    "boton": "ver",
+    "boton_version": "es-ES · 1080p · 5.1",
+    "causa": null,
+    "pedir": null,
+    "al_instante_aparte": null,
+    "recomendada": {
+      "hash": "7afd6bcecab38837927561748e11a21ec82f7967",
+      "archivo": 0
+    },
+    "recomendada_idioma": "es-ES",
+    "filas": [
+      {
+        "opciones": [
+          {
+            "velocidad": "al_instante",
+            "recomendada": true,
+            "otro_titulo": false,
+            "calidad": "1080p",
+            "hash": "7afd6bcecab38837927561748e11a21ec82f7967"
+          },
+          {
+            "recomendada": false,
+            "velocidad": "por_pedir",
+            "otro_titulo": false,
+            "calidad": "720p",
+            "hash": "db4a9d808b25b5489c8ec0f737e2b2771dce006f"
+          }
+        ],
+        "idioma": "es-ES"
+      },
+      {
+        "opciones": [
+          {
+            "hash": "4afc59f096dd509b26ef13752d8b481d26eb9989",
+            "recomendada": false,
+            "otro_titulo": false,
+            "calidad": "720p",
+            "velocidad": "por_pedir"
+          }
+        ],
+        "idioma": "es"
+      }
+    ],
+    "hay_que_pedirlas": [
+      {
+        "hash": "73d2c54e209661b0ff346c22aa291e5e05ac3731",
+        "idioma": "es-ES",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "3b0fb97651752ce81762e6b1b789e12643f6ab09",
+        "idioma": "es-ES",
+        "calidad": "SD"
+      },
+      {
+        "hash": "8c52ff55f55456855d5bc8492496ee71f050cf75",
+        "idioma": "es",
+        "calidad": "SD"
+      },
+      {
+        "hash": "d6e811d1ebcdbb8d0496288df4e48507575740a5",
+        "idioma": "ru",
+        "calidad": "SD"
+      }
+    ],
+    "ver_ahora": {
+      "hash": "7afd6bcecab38837927561748e11a21ec82f7967",
+      "archivo": 0
+    },
+    "escondidas": 0
+  }
+}

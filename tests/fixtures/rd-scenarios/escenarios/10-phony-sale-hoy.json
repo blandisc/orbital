@@ -1,0 +1,115 @@
+{
+  "id": "10-phony-sale-hoy",
+  "nombre": "«Phony» T1 E4: salió hoy",
+  "por_que": "El episodio salió hoy (3 nov): Real-Debrid todavía no tiene ninguno y solo hay en inglés.",
+  "titulo": {
+    "tipo": "series",
+    "meta_id": "tt21952924",
+    "video_id": "tt21952924:1:4",
+    "cinemeta": "cinemeta/tt21952924.json",
+    "tmdb": null
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt21952924_1_4.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt21952924:1:4.json"
+  },
+  "torrentio_estado": "ok",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "premium"
+    },
+    "al_instante": [],
+    "torrents": []
+  },
+  "libreta": [],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "Salió hoy: nada al instante. Se pide la castellana («Farsante», su nombre en España, marcada «¿Otro título?» porque sin TMDB no se sabe ese nombre).",
+    "titulo": "Phony",
+    "logo": true,
+    "video": "tt21952924:1:4",
+    "boton": "pedirlo_y_avisarme",
+    "boton_version": "Real-Debrid todavía no lo tiene",
+    "causa": null,
+    "pedir": {
+      "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
+      "idioma": "es-ES"
+    },
+    "al_instante_aparte": null,
+    "recomendada": {
+      "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
+      "archivo": 0
+    },
+    "recomendada_idioma": "es-ES",
+    "filas": [
+      {
+        "opciones": [
+          {
+            "recomendada": false,
+            "calidad": "4K",
+            "otro_titulo": false,
+            "velocidad": "por_pedir",
+            "hash": "9d660a8ffa7f14dc3160e898d53b75b793e10b7a"
+          },
+          {
+            "velocidad": "por_pedir",
+            "calidad": "1080p",
+            "otro_titulo": false,
+            "recomendada": false,
+            "hash": "013a048ef2f75939921dd32486b77901a70f7b15"
+          },
+          {
+            "hash": "469fcd1ca781ac8ad09622998caf776740ba6c28",
+            "velocidad": "por_pedir",
+            "otro_titulo": false,
+            "recomendada": false,
+            "calidad": "720p"
+          }
+        ],
+        "idioma": "en"
+      },
+      {
+        "opciones": [
+          {
+            "calidad": "1080p",
+            "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
+            "otro_titulo": true,
+            "velocidad": "por_pedir",
+            "recomendada": true
+          },
+          {
+            "recomendada": false,
+            "velocidad": "por_pedir",
+            "otro_titulo": true,
+            "calidad": "720p",
+            "hash": "7e5effc4a112ed448ac68b54286fcbad31ccff78"
+          }
+        ],
+        "idioma": "es-ES"
+      }
+    ],
+    "hay_que_pedirlas": [
+      {
+        "hash": "e7ddcc4e5353f408a7f4f48175b2f9bca295af29",
+        "idioma": "en",
+        "calidad": "SD"
+      }
+    ],
+    "ver_ahora": {
+      "hash": "2f2676a576af21a0490590fcc23f2a2532b8905a",
+      "archivo": 0
+    },
+    "escondidas": 0
+  }
+}

@@ -1,0 +1,956 @@
+{
+ "streams": [
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 UHD BDRemux 2160p HDR10 Dolby Vision] [Kino Lorber] 2x Dub + 3x DVO + 5x AVO + VO + 3x Ukr + Sub Rus Ukr Eng + Original Eng\n👤 53 💾 74.22 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇺🇦",
+   "infoHash": "55af83cd0e15aa63819d6d8b407ca40e8a7d42f6",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay REMUX|10bit|DV|HDR",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.Kino.Lorber.UHD.BDRemux.2160p-rutracker.mkv"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:55af83cd0e15aa63819d6d8b407ca40e8a7d42f6",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n4k DV",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.2160p.UHD.BluRay.REMUX.DV.HEVC.DTS-HD\n👤 51 💾 70.69 GB ⚙️ ThePirateBay\n🇬🇧 / 🇫🇷",
+   "infoHash": "e2acb821266609ddc85d80e0c142c8260e263b8c",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay REMUX|hevc|DV",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.2160p.UHD.BluRay.REMUX.DV.HEVC.DTS-HD.MA.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k HDR",
+   "title": "Eternal Sunshine of the Spotless Mind (2004) (2160p BluRay x265 HEVC 10bit HDR AAC 5.1 Tigole) [QxR]\n👤 42 💾 10.85 GB ⚙️ 1337x",
+   "infoHash": "61625e843310ec538197da898a1b9eb667c6579d",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay|hevc|10bit|HDR",
+    "filename": "Eternal Sunshine of the Spotless Mind (2004) (2160p BluRay x265 10bit HDR Tigole).mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.4K.HDR.DV.2160p BDRemux Ita Eng x265-NAHOM\n👤 26 💾 67.46 GB ⚙️ TorrentGalaxy\n🇬🇧 / 🇮🇹",
+   "infoHash": "95846657b487a69d163541612c1c4a93d98437e9",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay REMUX|x265|DV|HDR",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.4K.HDR.DV.2160p BDRemux Ita Eng x265-NAHOM.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 UHD BluRay 2160p HDR10 DV HEVC DTS-HD MA 5.1 x265-E\n👤 16 💾 24.02 GB ⚙️ 1337x",
+   "infoHash": "ef810b19e98492b387ceee007e47b40738af7ebe",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay|hevc|10bit|DV|HDR",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.MULTI.2160p.UHD.BluRay.REMUX.DV.HEVC\n👤 5 💾 70.69 GB ⚙️ ThePirateBay\nMulti Audio",
+   "infoHash": "63e3ea479d0cf67e96000b2244d70dc2d07b6944",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay REMUX|hevc|DV",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.MULTI.2160p.UHD.BluRay.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 2160p BluRay\n👤 100 💾 4.98 GB ⚙️ YTS",
+   "infoHash": "da0b800aba813eff6bf00ae2ed48fdf162c34efd",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay|x265|10bit",
+    "filename": "Eternal.Sunshine.Of.The.Spotless.Mind.2004.2160p.4K.BluRay.x265.10bit.AAC5.1-[YTS.MX].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.5.1-FGT\n👤 6 💾 70.2 GB ⚙️ RARBG",
+   "infoHash": "ad713fff47adefab0505dd3f8e0c4893492c91f7",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|BluRay REMUX|hevc",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.5.1-FGT.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p DV | HDR",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 REPACK2 UHD BluRay 1080p DDP 5 1 DoVi HDR10 x265-SM737\n👤 163 💾 6.29 GB ⚙️ ThePirateBay\n🇬🇧 / 🇯🇵 / 🇮🇹 / 🇪🇸 / 🇰🇷 / 🇨🇳 / 🇫🇷 / 🇩🇪 / 🇩🇰 / 🇸🇪 / 🇳🇴",
+   "infoHash": "37b7381d653f72b15fc74e448a2d7686ab6a9166",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265|10bit|DV|HDR",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 REPACK2 UHD BluRay 1080p DDP 5 1 DoVi HDR10 x265-SM737.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p HDR",
+   "title": "Eternal Sunshine of the Spotless Mind (2004) (1080p DS4K BluRay x265 10-bit HDR AAC 5.1) [WeSLeY]\n👤 19 💾 5.73 GB ⚙️ 1337x",
+   "infoHash": "471e219da40170271b6756408f10eecef5a32aab",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265|10bit|HDR",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 (1080p DS4K BluRay x265 10-bit HDR AAC 5.1) [WeSLeY].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p DV | HDR",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 REPACK UHD BluRay 1080p DDP 5 1 DoVi HDR10 x265-SM737\n👤 9 💾 6.28 GB ⚙️ ThePirateBay",
+   "infoHash": "61d35c1cf5100b3459632d6fc6fd2e953559313a",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265|10bit|DV|HDR",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 REPACK UHD BluRay 1080p DDP 5 1 DoVi HDR10 x265-SM737.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of The Spotless Mind 2004 REMASTERED 1080p BluRay HEVC x265 5.1\n👤 318 💾 1.88 GB ⚙️ ThePirateBay",
+   "infoHash": "e288ac7aeebc21b2098a0db453029c55a2645ae7",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|hevc",
+    "filename": "Eternal Sunshine of The Spotless Mind 2004 REMASTERED 1080p BluRay HEVC x265 5.1 BONE.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind (2004) RM4K (1080p BluRay x265 HEVC 10bit AAC 5.1 Tigole) [QxR]\nEternal Sunshine of the Spotless Mind (2004) RM4K (1080p BluRay x265 10bit Tigole).mkv\n👤 139 💾 5.59 GB ⚙️ 1337x",
+   "infoHash": "c490a5a7abc06715d2155d5e886f576db43cd85b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|hevc|10bit",
+    "filename": "Eternal Sunshine of the Spotless Mind (2004) RM4K (1080p BluRay x265 10bit Tigole).mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind (2004) 1080p BrRip x264 - YIFY\n👤 100 💾 1.5 GB ⚙️ ThePirateBay",
+   "infoHash": "4c6c84e56453b0a45b2dee6e8e552b119d170883",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BRRip|x264",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.1080p.BrRip.x264.BOKUTOX.YIFY.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 BluRay 1080p DDP 5 1 x264-hallowed\n👤 51 💾 8.11 GB ⚙️ EXT\n🇬🇧 / 🇯🇵 / 🇪🇸 / 🇨🇳 / 🇫🇷",
+   "infoHash": "2cc3dd11060fb4708fb27b17a72fc1e7890b7660",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 BluRay 1080p DDP 5 1 x264-hallowed.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 BDRemux 1080p] [Remastered / Kino Lorber] 2x Dub + 4x DVO + 6x AVO + VO + 3x Ukr + Original Eng + Sub (Rus Ukr Eng)\n👤 38 💾 39.8 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇺🇦",
+   "infoHash": "5840cf54175080ab9b1294ef46235ee57ece5e04",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.Kino.Lorber.BDRemux.1080p.mkv"
+   },
+   "sources": [
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "dht:5840cf54175080ab9b1294ef46235ee57ece5e04",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 1080p AMZN WEB-DL DDP5 1 H 264-BLOOM\n👤 26 💾 7.71 GB ⚙️ ThePirateBay",
+   "infoHash": "0c47b0bf3a65f8a18cd8a6a184192443a62f3f10",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEB-DL|h264",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 1080p AMZN WEB-DL DDP5 1 H 264-BLOOM.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind (2004) BDRip 1080p\n👤 19 💾 7.76 GB ⚙️ Rutor\n🇬🇧 / 🇷🇺",
+   "infoHash": "50b4e839ca2db14a81a7f37375157b47966f494b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip",
+    "filename": "Eternals.Sunshine.of.the.Spotless.Mind.2004.BDRip.1080p.Rus.Eng.mkv"
+   },
+   "sources": [
+    "tracker:http://retracker.local/announce",
+    "tracker:udp://opentor.org:2710",
+    "dht:50b4e839ca2db14a81a7f37375157b47966f494b",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.1080p.10bit.BluRay.6CH.x265.HEVC-PSA\n👤 17 💾 1.63 GB ⚙️ 1337x",
+   "infoHash": "7c883ae9505ad9d6f76a483f57008660fb8d74bc",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|hevc|10bit",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.1080p.10bit.BluRay.6CH.x265.HEVC-PSA.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.Of.The.Spotless.Mind.2004.1080p.BluRay.H264.AAC [CheerfulTomato]\n👤 16 💾 2.05 GB ⚙️ 1337x",
+   "infoHash": "2ce68a903d93c13b4be75f6203930addb07cd8d2",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|h264",
+    "filename": "Eternal.Sunshine.Of.The.Spotless.Mind.2004.1080p.BluRay.H264.AAC.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.REMASTERED.1080p.BluRay.x265-RARBG\n👤 16 💾 1.68 GB ⚙️ RARBG",
+   "infoHash": "9e2c5062002530f56d0cfc83def981093002a5fa",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.REMASTERED.1080p.BluRay.x265-RARBG.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Se mi lasci ti cancello-Eternal sunshine of sportless mind (2004) ITA-ENG Ac3 5.1 BDRip 1080p H264 [\n👤 13 💾 3.29 GB ⚙️ ilCorSaRoNeRo\n🇬🇧 / 🇮🇹 / 🇸🇪",
+   "infoHash": "05bfadf30dc755ed329a77733f41389812ec4a61",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip|h264",
+    "filename": "Se mi lasci ti cancello-Eternal sunshine of sportless mind (2004) ITA-ENG Ac3 5.1 BDRip 1080p H264 [ArMor].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Se mi lasci ti cancello (2004 ITA/ENG) [1080p x265] [Paso77]\n👤 12 💾 6.29 GB ⚙️ ilCorSaRoNeRo\n🇬🇧 / 🇮🇹 / 🇸🇪",
+   "infoHash": "fa8a75d20aa4be83f68fb6acd3e5a14186467337",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip|x265",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 BDRip ITA ENG 1080p x265 Paso77.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 1080p MAX WEB-DL DDP5 1 H 264-GPRS\n👤 11 💾 5.31 GB ⚙️ ThePirateBay",
+   "infoHash": "d38f972d07b052edf24d027e761b79bb317c09bf",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEB-DL|h264",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 1080p MAX WEB-DL DDP5 1 H 264-GPRS.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 1080p BluRay AV1 DDP 5.1 Multi3 [dAV1nci]\n👤 11 💾 3.46 GB ⚙️ TorrentGalaxy",
+   "infoHash": "a6727185750352b0fc806ee2c0b71bfced76bb25",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|av1",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.1080p.BluRay.AV1.DDP.5.1.Multi3-dAV1nci.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Amazing Films 6 - Mp4 x264 AC3 1080p\nEternal Sunshine Of The Spotless Mind (2004) 1080p Surround.mp4\n👤 11 💾 3.05 GB ⚙️ ThePirateBay",
+   "infoHash": "7ce45b28c6f09395dac9f63b23f3cfac5093f59e",
+   "fileIdx": 20,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|x264",
+    "filename": "Eternal Sunshine Of The Spotless Mind (2004) 1080p Surround.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.REMASTERED.1080p.BluRay.H264.AAC-RARBG\n👤 11 💾 2.05 GB ⚙️ RARBG",
+   "infoHash": "4d748809295d9541cd46f73f1726eca7f6487059",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|h264",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.REMASTERED.1080p.BluRay.H264.AAC-RARBG.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind (2004) Extras (1080p BluRay x265 HEVC 10bit AAC 5.1 Silence) [QxR]\nEternal Sunshine of the Spotless Mind (2004) (1080p BluRay x265 Silence).mkv\n👤 11 💾 4.1 GB ⚙️ 1337x",
+   "infoHash": "d8b39e787ed565888c22259a09061b2a26509254",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|hevc|10bit",
+    "filename": "Eternal Sunshine of the Spotless Mind (2004) (1080p BluRay x265 Silence).mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 1080p BluRay x264-BARC0DE \n👤 10 💾 8.5 GB ⚙️ 1337x",
+   "infoHash": "1426c32c99b903fde3f1ddcd8e41009b99b5f810",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 Blu-ray disc 1080p] Dub + Sub Rus + Original Eng\n👤 10 💾 15.47 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "abcd33a37b2f59fd08159aac064e3d434ec93057",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:abcd33a37b2f59fd08159aac064e3d434ec93057",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "IMDB TOP 051-100 BluRay 1080p x265 10bit MNHD-FRDS\n089.暖暖内含光.Eternal.Sunshine.of.the.Spotless.Mind.2004.BluRay.1080p.x265.10bit.2Audio.MNHD-FRDS/Eternal.Sunshine.of.the.Spotless.Mind.2004.BluRay.1080p.x265.10bit.2Audio.MNHD-FRDS.mkv\n👤 9 💾 5.4 GB ⚙️ EXT",
+   "infoHash": "e6d934fd7e96efcb009c3372198360262bca2b65",
+   "fileIdx": 269,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265|10bit",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.BluRay.1080p.x265.10bit.2Audio.MNHD-FRDS.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.Bluray.1080p-Grym.mkv\n👤 9 💾 13.5 GB ⚙️ ThePirateBay",
+   "infoHash": "63a5eb9d1d4eab6aa2eca07814067922731ce10c",
+   "fileIdx": 8,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.Bluray.1080p-Grym.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind (2004) BDRip-HEVC 1080p от RIPS CLUB | D P2 A | Kino Lorber\n👤 8 💾 11.98 GB ⚙️ Rutor\n🇬🇧 / 🇷🇺 / 🇺🇦",
+   "infoHash": "63a4a0262ace71bd515b0237e9453fb1e7ebe7d3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip|hevc",
+    "filename": "Вечное.сияние.чистого.разума.Eternal.Sunshine.of.the.Spotless.Mind.2004.Kino.Lorber.BDRip-HEVC.1080p.mkv"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:63a4a0262ace71bd515b0237e9453fb1e7ebe7d3",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.BluRay.1080p.Latino.DD.2.0-Madopolan\n👤 8 💾 2.01 GB ⚙️ TorrentGalaxy\n🇪🇸 / 🇲🇽",
+   "infoHash": "ccde38f5425d19d278b80ed5059beea943a07c73",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay",
+    "filename": "Eternal Sunshine of the Spotless Mind (2004) Español Latino.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 1080p HULU WEB-DL DDP 5 1 H 264-PiRaTeS\n👤 7 💾 5.72 GB ⚙️ ThePirateBay",
+   "infoHash": "f09eee5562712e7cac87c9dc1ffeccb6047ab04b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEB-DL|h264",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 1080p HULU WEB-DL DDP 5 1 H 264-PiRaTeS.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.REMASTERED.1080p.BluRay.REMUX.AVC.DTS-HD.MA.5.1-FGT\n👤 7 💾 31.41 GB ⚙️ RARBG",
+   "infoHash": "2665e09713a97c28ef7be2da6618276b3c2392d0",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX|avc",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.REMASTERED.1080p.BluRay.REMUX.AVC.DTS-HD.MA.5.1-FGT.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.1080p.BluRay.10bit.x265-HazMatt.mkv\n👤 7 💾 2.65 GB ⚙️ 1337x",
+   "infoHash": "36144725af248575e8afd0a55a0a30209a1e5df1",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265|10bit",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.1080p.BluRay.10bit.x265-HazMatt.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.Of.The.Spotless.Mind.2004.1080p.BluRay.x265-RARBG\n👤 6 💾 1.68 GB ⚙️ RARBG",
+   "infoHash": "cdfd0a70a95a6bf6d87afcca3b80daf7ce282616",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265",
+    "filename": "Eternal.Sunshine.Of.The.Spotless.Mind.2004.1080p.BluRay.x265-RARBG.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal.Sunshine.of.the.Spotless.Mind.2004.BLuRay.1080p.DUAL\n👤 6 💾 2.19 GB ⚙️ BluDV\nDual Audio / 🇬🇧 / 🇵🇹",
+   "infoHash": "84ff17e885a72ba99e3fe153489f10d584925372",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay",
+    "filename": "Brilho Eterno de uma Mente sem Lembranças (2004) BluRay 1080p Dual Áudio.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Se mi lasci ti cancello - Eternal Sunshine of the Spotless Mind (2004) 1080p H265 AC3 5.1 ITA ENG sub ita eng Ph4nt0mX\n👤 5 💾 2.47 GB ⚙️ EXT\n🇬🇧 / 🇮🇹 / 🇸🇪",
+   "infoHash": "9ffbf3a006b7156ebf6913542080e92cd9bcf0da",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|h265"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Eternal Sunshine of the Spotless Mind 2004 1080p BluRay x265-YAWNTiC\n👤 5 💾 7.36 GB ⚙️ ThePirateBay",
+   "infoHash": "cf362f1dcd314ce8ea09225054301d9af2f87370",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265",
+    "filename": "Eternal Sunshine of the Spotless Mind 2004 1080p BluRay x265-YAWNTiC.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Eternal Sunshine of the Spotless Mind (2004) 720p BrRip x264 - Y\n👤 61 💾 700.11 MB ⚙️ ThePirateBay",
+   "infoHash": "7398a344fd17b0aaf7d91458bd4a100b2306dc6e",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BRRip|x264",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.720p.BrRip.x264.BOKUTOX.YIFY.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 BDRip 720p] 2 x Dub (АРК-ТВ Мосфильм) + 4 x DVO + 6 x AVO + VO + Sub Rus Ukr Eng + Original Eng\n👤 16 💾 11.59 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺 / 🇺🇦",
+   "infoHash": "da093e429d011323b7464aaa290ba1ef426847d3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BDRip",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2024.Kino.Lorber.BDRip.720p.mkv"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:da093e429d011323b7464aaa290ba1ef426847d3",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 BDRip] Dub\n👤 39 💾 1.46 GB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "6115c1152496484d93495e855844b4524f4dc074",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip",
+    "filename": "Vechnoe_sijanie_chistogo_razuma.avi"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:6115c1152496484d93495e855844b4524f4dc074",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 BDRip] Dub (АРК-ТВ)\n👤 22 💾 1.46 GB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "022304b1eaf485d15e26a914053a956ecf4663a8",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.DUB.ARK-TV.avi"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:022304b1eaf485d15e26a914053a956ecf4663a8",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Вечное сияние чистого разума / Вечное сияние страсти / Eternal Sunshine of the Spotless Mind [2004 VHSRip] [FullScreen] Dub (Мосфильм)\n👤 10 💾 1.46 GB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "fa2d98ac2e48c482cfa1376eabccf2941469e189",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip",
+    "filename": "Вечное сияние чистого разума - Eternal Sunshine of the Spotless Mind [by alenavova].avi"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:fa2d98ac2e48c482cfa1376eabccf2941469e189",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nHDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 HDRip-AVC] 3x AVO (Алексеев Горчаков Рудой) + Dub + Sub Rus Eng + Original Eng\nEternal.Sunshine.of.the.Spotless.Mind.2004.HDRip-AVC.mkv\n👤 9 💾 2.94 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "1e4e2ce3ce90124b7d023397285f89f59230adfd",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDRip|avc",
+    "filename": "Eternal.Sunshine.of.the.Spotless.Mind.2004.HDRip-AVC.mkv"
+   },
+   "sources": [
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "dht:1e4e2ce3ce90124b7d023397285f89f59230adfd",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 BDRip-AVC] Dub + Original Eng + Sub Rus Eng\n👤 9 💾 1.46 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "2e780046a9761964423f293ff44590fa80945b80",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Vechnoe.Siyanie.Chistogo.Razuma.2004.BDRip-AVC.All.Films.mkv"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:2e780046a9761964423f293ff44590fa80945b80",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 BDRip-AVC] [JPN] 4x AVO (Алексеев Горчаков Рудой Королёв) + Dub + Original (Eng) + Sub (Rus Eng)\nВечное сияние чистого разума [Eternal Sunshine of the Spotless Mind] '04 [Just_TeMa].mkv\n👤 8 💾 4.28 GB ⚙️ Rutracker\n🇬🇧 / 🇯🇵 / 🇷🇺",
+   "infoHash": "f30f287f49308b1a339da4ff61b98d6cf5c1f1c5",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Вечное сияние чистого разума [Eternal Sunshine of the Spotless Mind] '04 [Just_TeMa].mkv"
+   },
+   "sources": [
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "dht:f30f287f49308b1a339da4ff61b98d6cf5c1f1c5",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Hammer Films and House of Horror Collection [Napisy PL]\nSuspense-Thriller Films/Demons.of.the.Mind.1971.DVDRip.XviD-KamuiX.avi\n👤 5 💾 700.16 MB ⚙️ ThePirateBay\n🇬🇧 / 🇵🇱",
+   "infoHash": "015c03432083334e22aef6ab0d975ad009740832",
+   "fileIdx": 29,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip|xvid",
+    "filename": "Demons.of.the.Mind.1971.DVDRip.XviD-KamuiX.avi"
+   }
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind (2004) BDRip-AVC от Mr. Movier\n👤 5 💾 1.46 GB ⚙️ Rutor\n🇬🇧 / 🇷🇺",
+   "infoHash": "886bb37fd7e31d5aa53a0512f7a6be5f6c1bac99",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Eternals.Sunshine.of.the.Spotless.Mind.2004.BDRip-AVC_by_Mr.Movier.mkv"
+   },
+   "sources": [
+    "tracker:http://retracker.local/announce",
+    "tracker:udp://opentor.org:2710",
+    "dht:886bb37fd7e31d5aa53a0512f7a6be5f6c1bac99",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nHDRip",
+   "title": "Вечное сияние чистого разума / Eternal Sunshine of the Spotless Mind [2004 HDRip-AVC] Dub + Sub Rus Eng + Original Eng\n👤 5 💾 746.48 MB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "3b349fd84ba2c84c3ea7f1307ee952826832e145",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDRip|avc",
+    "filename": "Вечное сияние чистого разума.mkv"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:3b349fd84ba2c84c3ea7f1307ee952826832e145",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Вечное сияние чистого разума / Eterнal Sunshiнe of the Spotlecc Mind [2004 DVDRip]\n👤 5 💾 744.59 MB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "dc628335378de09178c4089abd1d02d269549870",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip",
+    "filename": "Eternal_Sunshine_of_the_Spotless_Mind.avi"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:dc628335378de09178c4089abd1d02d269549870",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:http://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://retracker01-msk-virt.corbina.net:80/announce",
+    "tracker:udp://mail.segso.net:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  }
+ ],
+ "cacheMaxAge": 3600,
+ "staleRevalidate": 14400,
+ "staleError": 604800
+}

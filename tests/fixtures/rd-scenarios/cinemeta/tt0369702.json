@@ -1,0 +1,122 @@
+{
+ "awards": "Won 1 Oscar. 69 wins & 38 nominations total",
+ "cast": [
+  "Javier Bardem",
+  "Belén Rueda",
+  "Lola Dueñas"
+ ],
+ "country": "Spain, France, Italy",
+ "description": "The factual story of Spaniard Ramon Sampedro, who fought a 28-year campaign in favor of euthanasia and his own right to die.",
+ "director": [
+  "Alejandro Amenábar"
+ ],
+ "dvdRelease": "2016-11-21T00:00:00.000Z",
+ "genre": [
+  "Biography",
+  "Drama"
+ ],
+ "imdbRating": "7.9",
+ "imdb_id": "tt0369702",
+ "moviedb_id": 1913,
+ "name": "The Sea Inside",
+ "popularity": 0.16448000000000002,
+ "poster": "https://images.metahub.space/poster/small/tt0369702/img",
+ "released": "2005-03-04T00:00:00.000Z",
+ "runtime": "126 min",
+ "trailers": [
+  {
+   "source": "0qqvyzamlns",
+   "type": "Trailer"
+  },
+  {
+   "source": "dVRnG1MddAM",
+   "type": "Trailer"
+  }
+ ],
+ "type": "movie",
+ "writer": [
+  "Alejandro Amenábar",
+  "Mateo Gil"
+ ],
+ "year": "2005",
+ "popularities": {
+  "moviedb": 4.9344,
+  "stremio": 0.16448000000000002,
+  "stremio_lib": 0
+ },
+ "background": "https://images.metahub.space/background/medium/tt0369702/img",
+ "logo": "https://images.metahub.space/logo/medium/tt0369702/img",
+ "slug": "movie/the-sea-inside-0369702",
+ "id": "tt0369702",
+ "genres": [
+  "Biography",
+  "Drama"
+ ],
+ "releaseInfo": "2005",
+ "trailerStreams": [
+  {
+   "title": "The Sea Inside",
+   "ytId": "0qqvyzamlns"
+  },
+  {
+   "title": "The Sea Inside",
+   "ytId": "dVRnG1MddAM"
+  }
+ ],
+ "links": [
+  {
+   "name": "7.9",
+   "category": "imdb",
+   "url": "https://imdb.com/title/tt0369702"
+  },
+  {
+   "name": "The Sea Inside",
+   "category": "share",
+   "url": "https://www.strem.io/s/movie/the-sea-inside-0369702"
+  },
+  {
+   "name": "Biography",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Biography"
+  },
+  {
+   "name": "Drama",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Drama"
+  },
+  {
+   "name": "Javier Bardem",
+   "category": "Cast",
+   "url": "stremio:///search?search=Javier%20Bardem"
+  },
+  {
+   "name": "Belén Rueda",
+   "category": "Cast",
+   "url": "stremio:///search?search=Bel%C3%A9n%20Rueda"
+  },
+  {
+   "name": "Lola Dueñas",
+   "category": "Cast",
+   "url": "stremio:///search?search=Lola%20Due%C3%B1as"
+  },
+  {
+   "name": "Alejandro Amenábar",
+   "category": "Writers",
+   "url": "stremio:///search?search=Alejandro%20Amen%C3%A1bar"
+  },
+  {
+   "name": "Mateo Gil",
+   "category": "Writers",
+   "url": "stremio:///search?search=Mateo%20Gil"
+  },
+  {
+   "name": "Alejandro Amenábar",
+   "category": "Directors",
+   "url": "stremio:///search?search=Alejandro%20Amen%C3%A1bar"
+  }
+ ],
+ "behaviorHints": {
+  "defaultVideoId": "tt0369702",
+  "hasScheduledVideos": false
+ }
+}

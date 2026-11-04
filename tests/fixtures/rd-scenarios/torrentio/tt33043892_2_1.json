@@ -1,0 +1,779 @@
+{
+ "streams": [
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Dexter.Resurrection.S02E01.Il.rischio.del.mestiere.ITA.ENG.2160p.ATV.WEB-DL.DDP5.1.DV.HDR.H.265-MeM.GP.mkv\n👤 170 💾 9.1 GB ⚙️ 1337x\n🇬🇧 / 🇮🇹",
+   "infoHash": "9af62efb85b9e663b3f8cd28592989dd9b7a9fb2",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|DV|HDR",
+    "filename": "Dexter.Resurrection.S02E01.Il.rischio.del.mestiere.ITA.ENG.2160p.ATV.WEB-DL.DDP5.1.DV.HDR.H.265-MeM.GP.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV | HDR10+",
+   "title": "�������: ����������� / Dexter: Resurrection / �����: 2 / �����: 1 �� 10 [2026 ��� �������� ����� HDR10+ Dolby Vision WEB-DL 2160p 4k] [Hybrid] MVO + Original + Sub (Rus Eng)\n👤 63 💾 8.99 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "563a6382d7097cf4438dfa90fa0fbc80daa25951",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|DV|HDR",
+    "filename": "Dexter.Resurrection.S02E01.Risky.Business.AMZN.DV.HDR.WEB-DL.2160p.by.AKTEP.mkv"
+   },
+   "sources": [
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:563a6382d7097cf4438dfa90fa0fbc80daa25951"
+   ]
+  },
+  {
+   "name": "Torrentio\n4k DV",
+   "title": "Dexter Resurrection S02E01 Risky Business 2160p ATV WEB-DL DDP5 1 Atmos DV H 265-Kitsune\n👤 22 💾 5.35 GB ⚙️ EXT",
+   "infoHash": "ad5b72ee70d279b372200356def92afa5eaed9b0",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|DV|Kitsune",
+    "filename": "Dexter Resurrection S02E01 Risky Business 2160p ATV WEB-DL DDP5 1 Atmos DV H 265-Kitsune.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Dexter.Resurrection.2026.S02E01.Risky.Business.2160p.ATV.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX_EniaHD\n👤 17 💾 9.03 GB ⚙️ EXT",
+   "infoHash": "b4125d7dfc79050cf83ecc40d5431b11cb6940a1",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|DV|HDR",
+    "filename": "Dexter.Resurrection.2026.S02E01.Risky.Business.2160p.ATV.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX_EniaHD.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k",
+   "title": "�������: ����������� / Dexter: Resurrection / �����: 2 / �����: 1 �� 10 [2026 ��� �������� ����� SDR WEB-DL 2160p 4k] MVO + Original + Sub (Rus Eng)\n👤 31 💾 5.6 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "9b72c7e895069ce0332b56c63d95550ebfbf311b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k",
+    "filename": "Dexter.Resurrection.S02E01.Risky.Business.AMZN.SDR.WEB-DL.2160p.by.AKTEP.mkv"
+   },
+   "sources": [
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:9b72c7e895069ce0332b56c63d95550ebfbf311b"
+   ]
+  },
+  {
+   "name": "Torrentio\n4k",
+   "title": "Dexter Resurrection S02E01 Risky Business 2160p AMZN WEB-DL DDP5 1 H 265-NTb\n👤 31 💾 5.49 GB ⚙️ EXT",
+   "infoHash": "3aeed31e7990ca2e94348041e2dba0cbf5aa0339",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|NTb",
+    "filename": "Dexter Resurrection S02E01 Risky Business 2160p AMZN WEB-DL DDP5 1 H 265-NTb.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k",
+   "title": "Dexter Resurrection S02E01 Risky Business 2160p AMZN WEB-DL DDP5 1 H 265-NTb_Morgann23\n👤 20 💾 5.62 GB ⚙️ EXT",
+   "infoHash": "59ec6bf64472a0014858880b38c7b99ace3f6912",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k",
+    "filename": "Dexter Resurrection S02E01 Risky Business 2160p AMZN WEB-DL DDP5 1 H 265-NTb_Morgann23.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k",
+   "title": "Dexter Resurrection [4k 2160p][Cap.201]\n👤 9 💾 9.1 GB ⚙️ Wolfmax4k\n🇪🇸",
+   "infoHash": "f7d8cfe4611411922d823756ec50974fef8165ce",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k",
+    "filename": "Dexter Resurrection [4k  2160p][Cap.201].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection S02E01 1080p WEB H264-CAKES\n👤 2511 💾 2.99 GB ⚙️ EZTV",
+   "infoHash": "8c132db0fd1345a5e9166a66dfeb7e21e6faebcf",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|cakes",
+    "filename": "dexter.resurrection.s02e01.1080p.web.h264-cakes[EZTVx.to].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection S02E01 1080p HEVC x265-MeGusta\n👤 1516 💾 651.08 MB ⚙️ EZTV",
+   "infoHash": "f44fe9c3f8b697ad3a67668ce6f94bb701ae9a53",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|MeGusta",
+    "filename": "Dexter.Resurrection.S02E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.Risky.Business.1080p.PMTP.WEB-DL.ENG.Atmos.ITA.DDP5.1.H264-TBK\n👤 630 💾 3.1 GB ⚙️ 1337x\n🇬🇧 / 🇮🇹",
+   "infoHash": "5787cc22b10333e6aeae95f1290be65d60ea1126",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|TBK",
+    "filename": "Dexter.Resurrection.S02E01.Risky.Business.1080p.PMTP.WEB-DL.ENG.Atmos.ITA.DDP5.1.H264-TBK.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir\n👤 541 💾 624.02 MB ⚙️ 1337x",
+   "infoHash": "fd638652f0a7e91030c693baa1fe3e5527651c66",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|NeoNoir",
+    "filename": "Dexter.Resurrection.S02E01.Risky.Business.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.x265-ELiTE\n👤 395 💾 723.63 MB ⚙️ 1337x\n🇮🇹",
+   "infoHash": "d76a7f20665acd877352ac925dfe4b4c55114016",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|ELiTE",
+    "filename": "Dexter.Resurrection.S02E01.1080p.x265-ELiTE.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.x265-ELiTE\n👤 322 💾 723.63 MB ⚙️ EXT",
+   "infoHash": "8561039a1f67aeefd0c28018c3a6aaf140d71951",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|ELiTE",
+    "filename": "Dexter.Resurrection.S02E01.1080p.x265-ELiTE.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection S02E01 1080p AMZN WEB-DL DDP5 1 H 264 DUAL-BiOMA\n👤 187 💾 2.84 GB ⚙️ Comando\nDual Audio",
+   "infoHash": "d04143eb2335594fa4e53e62f7b07cc3be9593b8",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BiOMA",
+    "filename": "Dexter Resurrection S02E01 1080p AMZN WEB-DL DDP5 1 H 264 DUAL-BiOMA.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "�������: ����������� / Dexter: Resurrection / �����: 2 / �����: 1 �� 10 [2026 ��� �������� ����� WEB-DL 1080p] MVO (HDRezka Studio) + Original + Sub (Rus Eng)\n👤 165 💾 3.15 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "b1a149475a2399570b1e977397ada711d66760d4",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.1080p.WEB-DL.RGzsRutracker.mkv"
+   },
+   "sources": [
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:b1a149475a2399570b1e977397ada711d66760d4"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter : Resurrection S02E01 - Saison 2 TRUEFRENCH HDTV 1080p 2026\n👤 124 💾 1.27 GB ⚙️ Torrent9\n🇫🇷",
+   "infoHash": "9a82f6007653de6affeab3bace4b33ee1526bbc6",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|FRQC",
+    "filename": "Dexter.Resurrection.S02E01.VFF.1080p.WEB.AAC.2.0.H264-FRQC.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Ressurreição.S02E01.WEB-DL.1080p.x264.DUAL.5.1-STARCKFILMES\n👤 111 💾 1.59 GB ⚙️ EXT\nDual Audio",
+   "infoHash": "a84fae3540f8ad0d09dcdc92f11e2a86a9cfe3c7",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|STARCKFILMES",
+    "filename": "Dexter.Ressurreição.S02E01.WEB-DL.1080p.x264.DUAL.5.1-STARCKFILMES.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.Il.rischio.del.mestiere.ITA.ENG.1080p.AMZN.WEB-DL.DDP5.1.H.264-MeM.GP.mkv\n👤 105 💾 2.84 GB ⚙️ 1337x\n🇬🇧 / 🇮🇹",
+   "infoHash": "d38d7cf4203df852117e718efa8f838d6c7f5d0a",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.Il.rischio.del.mestiere.ITA.ENG.1080p.AMZN.WEB-DL.DDP5.1.H.264-MeM.GP.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.10bit.WEBRip.6CH.x265.HEVC-PSA\n👤 70 💾 588.25 MB ⚙️ EXT",
+   "infoHash": "bbdcf383478286077732a630a4d432d23fca1fc2",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|PSA",
+    "filename": "Dexter.Resurrection.S02E01.1080p.10bit.WEBRip.6CH.x265.HEVC-PSA.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Декстер: Воскрешение / Dexter: Resurrection [02x01 из 10] (2026) WEBRip 1080p от Kerob | L2\n👤 69 💾 1.79 GB ⚙️ Rutor\n🇷🇺",
+   "infoHash": "eb4d44a47e44d47b19af3f37ed9a0adab94a133a",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.1080p.Kerob.mkv"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:eb4d44a47e44d47b19af3f37ed9a0adab94a133a",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.HEVC.x265-MeGusta\n👤 56 💾 651.08 MB ⚙️ 1337x",
+   "infoHash": "022ac3f95ecd3edc18df19b33658bef95dba1411",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|MeGusta",
+    "filename": "Dexter.Resurrection.S02E01.1080p.HEVC.x265-MeGusta.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter - Ressurreição S02E01 WEB-DL 1080p x264 DUAL 5.1\n👤 47 💾 1.77 GB ⚙️ BluDV\nDual Audio / 🇬🇧 / 🇵🇹 / 🇪🇸",
+   "infoHash": "320e70007e2a406cd16cee287e3df3ec794efa00",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter - Ressurreição S02E01 WEB-DL 1080p x264 DUAL 5.1.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.PL.Ai.1080p.WEB-DL.H264-XuploaD\n👤 40 💾 2.99 GB ⚙️ EXT\n🇵🇱",
+   "infoHash": "706712c5cd440374318ed7405c38681d7eb3d873",
+   "fileIdx": 2,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|XuploaD",
+    "filename": "Dexter.Resurrection.S02E01.PL.Ai.1080p.WEB-DL.H264-XuploaD.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.10Bit.x265.Ita.Eng.Ger.Aac.Sub.Ita.Eng.Ger-Eddie\n👤 26 💾 839.21 MB ⚙️ EXT\n🇬🇧 / 🇮🇹 / 🇩🇪",
+   "infoHash": "c606d925f762589115e1780f8173f0d32eb6593b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.Il.rischio.del.mestiere.ITA.ENG.GER.AAC.1080p.x265.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection S02E01 1080p TOD WEB-DL AAC2 0 H 264-TURG\n👤 24 💾 1.14 GB ⚙️ EXT\n🇬🇧 / 🇹🇷",
+   "infoHash": "ed4c3f38f66e65e5cb658445e85f6fdf8f87c2ce",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|TURG",
+    "filename": "Dexter Resurrection S02E01 1080p TOD WEB-DL AAC2 0 H 264-TURG.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "�������: ����������� / Dexter: Resurrection / �����: 2 / �����: 1 (10) [2026 ��� �������� ����� WEB-DL 1080p] (Jetvis) + Original + Sub (Rus Eng)\n👤 20 💾 2.9 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "1e2effc903a0cce7f1a2efebd590ef82493de6ee",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.Jetvis.mkv"
+   },
+   "sources": [
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:1e2effc903a0cce7f1a2efebd590ef82493de6ee"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurreccion [HDTV 1080p][Cap.201]\n👤 19 💾 3.02 GB ⚙️ Wolfmax4k\n🇬🇧 / 🇪🇸",
+   "infoHash": "3c9f6cc07d9d2341dbfb527edf482f2fb60eafac",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter Resurreccion [HDTV 1080p][Cap.201].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.Rus.ColdFilm\n👤 16 💾 1.83 GB ⚙️ EXT\n🇷🇺",
+   "infoHash": "654095fcde0120c1bda40fd7c5391ee8fbd62766",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.1080p.ColdFilm.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurreccion.S02E01.2026.WEB-DL.1080p-Dual-Lat\n👤 12 💾 2.85 GB ⚙️ Cinecalidad\nDual Audio / 🇲🇽",
+   "infoHash": "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|Lat"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection S02E01 Risky Business 1080P AMZN WEB-DL DDP5.1. X265 POOTLED\n👤 11 💾 1.62 GB ⚙️ EXT",
+   "infoHash": "706e94430a6c07b0cf7a7f695f30f480e60fdf4d",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter Resurrection S02E01 Risky Business 1080P AMZN WEB-DL DDP5.1. X265 POOTLED.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.10bit.WEBRip.HEVC\n👤 11 💾 727.13 MB ⚙️ EXT\n🇬🇧 / 🇷🇺",
+   "infoHash": "6bfd9e98f5dd5108c069eace06a47c1cf72ba2eb",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.1080p.10bit.WEBRip.HEVC.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.s02e01.HD1080p.WEBRip.Rus\n👤 9 💾 2.81 GB ⚙️ EXT\n🇷🇺",
+   "infoHash": "0ce41d8630619940eaa01b6de65d365f22cfd7d8",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.s02e01.HD1080p.WEBRip.Rus.RuDub.tv.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter: Resurrection / Season: 2 / Episodes: 1 of 10 [2026 USA crime drama WEB-DL 1080p] Original + Sub (Rus Eng)\n👤 8 💾 3.04 GB ⚙️ EXT\n🇬🇧 / 🇷🇺",
+   "infoHash": "b25db881c15c16492ae6b8f9b207194f5a6d45a9",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.1080p.WEB-DL.RGzsRutracker.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter: Vzkříšení / Dexter: Resurrection S02E01 (CZ/EN)[1080p][WEB-DL]\n👤 7 💾 3.03 GB ⚙️ EXT\n🇬🇧 / 🇨🇿 / 🇸🇰",
+   "infoHash": "3551e7458deadbe2e740fc93b6fcb6becca408a3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter_ Vzkříšení_S02E01_Riskantní podnik.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.H264.AAC.WEBRip.le-production\n👤 7 💾 1.56 GB ⚙️ EXT",
+   "infoHash": "88afd68499969e3a1d7af0f9bdce7388a4693191",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|production",
+    "filename": "Dexter.Resurrection.S02E01.1080p.H264.AAC.WEBRip.le-production.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection (2025) S02E01 (1080p AMZN WEB-DL x265 10bit EAC3 Atmos 5.1) [adst9]\n👤 7 💾 2.43 GB ⚙️ EXT",
+   "infoHash": "f7c88dba00c65fc9a15a1978d02829796fe66c2e",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter Resurrection (2025) S02E01 (1080p AMZN WEB-DL x265 10bit EAC3 Atmos 5.1) [adst9].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter Resurrection S02E01 Risky Business (2026)(EN/CZtitl )[1080p][WebDL][H264]\n👤 5 💾 3 GB ⚙️ EXT",
+   "infoHash": "ebdbda9eaccef620c587dd3e47cf17741ff348ff",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Dexter.Resurrection.S02E01.1080p.rus\n👤 5 💾 2.77 GB ⚙️ EXT\n🇷🇺",
+   "infoHash": "e92c26e90188919f2c21e72520e2f244bf3e7d96",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p",
+    "filename": "Dexter.Resurrection.S02E01.1080p.rus.LostFilm.TV.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter Resurrection S02E01 Risky Business 720p AMZN WEB-DL DDP5 1 H 264-playWEB\n👤 464 💾 1.21 GB ⚙️ EXT",
+   "infoHash": "d322f66ac966906045b208988410c63c179878a2",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|playWEB",
+    "filename": "Dexter Resurrection S02E01 Risky Business 720p AMZN WEB-DL DDP5 1 H 264-playWEB[EZTVx.to].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter Resurrection S02E01 720p HEVC x265-MeGusta\n👤 420 💾 477.33 MB ⚙️ EZTV",
+   "infoHash": "34f3d8e8eee3242b9ba44ee0bcce01c688142c64",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|MeGusta",
+    "filename": "Dexter.Resurrection.S02E01.720p.HEVC.x265-MeGusta[EZTVx.to].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter.Resurrection.S02E01.720p.x264-FENiX\n👤 92 💾 558.15 MB ⚙️ EXT",
+   "infoHash": "83f83df0fe644a45a4ad976577f61a948cb59a86",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|FENiX",
+    "filename": "Dexter.Resurrection.S02E01.720p.x264-FENiX.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter Resurrection (2025) S02E01 720p hevc x265 [WD-13].mkv\n👤 72 💾 174.71 MB ⚙️ EXT",
+   "infoHash": "bcf4a089fcae5a653907a5886160f1e27e5bb120",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p",
+    "filename": "Dexter Resurrection (2025) S02E01 720p hevc x265 [WD-13].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter.Resurrection.S02E01.720p.10bit.WEBRip.2CH.x265.HEVC-PSA\n👤 51 💾 256.83 MB ⚙️ EXT",
+   "infoHash": "16a764779196d188ef7824b199dd26747e8e0744",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|PSA",
+    "filename": "Dexter.Resurrection.S02E01.720p.10bit.WEBRip.2CH.x265.HEVC-PSA.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter.Resurrection.S02E01.720p.Subtitulado.Esp.SC\n👤 15 💾 520.49 MB ⚙️ EXT\n🇪🇸",
+   "infoHash": "bead8c3dac2cb0f6ea64ae00912e023fb34d6e69",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p",
+    "filename": "Dexter.Resurrection.S02E01.720p.Subtitulado.Esp.SC.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Dexter Resurreccion [HDTV 720p][Cap.201]\n👤 15 💾 1.24 GB ⚙️ Wolfmax4k\n🇪🇸",
+   "infoHash": "595842f8045a44448544de78004a11910e1a2842",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p",
+    "filename": "Dexter Resurreccion [HDTV 720p][Cap.201].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n480p",
+   "title": "Dexter Resurrection S02E01 480p x264-mSD\n👤 151 💾 366.42 MB ⚙️ EZTV",
+   "infoHash": "63576409bb35eb6b7c5c474efd7eb6f25c8a20e2",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|480p|mSD",
+    "filename": "Dexter.Resurrection.S02E01.480p.x264-mSD[EZTVx.to].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n400p",
+   "title": "Декстер: Воскрешение / Dexter: Resurrection [02x01 из 10] (2026) WEBRip от Kerob | L2\n👤 21 💾 401.59 MB ⚙️ Rutor\n🇷🇺",
+   "infoHash": "53aad80160fed122c510c50d986c9a11f1e829c9",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|400p",
+    "filename": "Dexter.Resurrection.S02E01.400p.Kerob.avi"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:53aad80160fed122c510c50d986c9a11f1e829c9",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n400p",
+   "title": "Dexter.Resurrection.S02E01.400p.Rus.ColdFilm\n👤 5 💾 414.36 MB ⚙️ EXT\n🇷🇺",
+   "infoHash": "7dd0f7bb9357d639aea2931d59d69a6611f24aca",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|400p",
+    "filename": "Dexter.Resurrection.S02E01.400p.ColdFilm.avi"
+   }
+  },
+  {
+   "name": "Torrentio\nHDTV",
+   "title": "Dexter : Resurrection S02E01 - Saison 2 FRENCH HDTV 2026\n👤 209 💾 369.12 MB ⚙️ Torrent9\n🇫🇷",
+   "infoHash": "44209a7c30abc9a8579139e3fac5e26612f49a96",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|HDTV",
+    "filename": "Dexter.Resurrection.S02e01.French.Web.Aac.2.0.H264.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\nWEB-DL",
+   "title": "Dexter : Resurrection S02E01 - Saison 2 VOSTFR HDTV 2026\n👤 76 💾 381.69 MB ⚙️ Torrent9\n🇫🇷",
+   "infoHash": "52de967f9796d45b247ff63660267421a5e556c3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|WEB-DL",
+    "filename": "Dexter.Resurrection.S02e01.Fastsub.Vostfr.Web-Dl.Ddp5.1.H.264.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\nXviD",
+   "title": "Dexter Resurrection S02E01 XviD-AFG\n👤 60 💾 498.96 MB ⚙️ EZTV",
+   "infoHash": "24cf0fddb58f3879215435c7d047777e66b3bac3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|XviD|AFG",
+    "filename": "Dexter.Resurrection.S02E01.XviD-AFG[EZTVx.to].avi"
+   }
+  },
+  {
+   "name": "Torrentio\nWEB-DL",
+   "title": "Декстер: Воскрешение / Dexter: Resurrection [02x01 из 10] (2026) WEB-DLRip-AVC от DoMiNo & селезень | HDrezka Studio\n👤 56 💾 647.47 MB ⚙️ Rutor\n🇬🇧 / 🇷🇺",
+   "infoHash": "73afcd3091373b13b564abd975e384420e23b017",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|WEB-DL",
+    "filename": "Dexter.Resurrection.S02E01.WEB-DLRip.x264.seleZen.mkv"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:73afcd3091373b13b564abd975e384420e23b017",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nWEB-DL",
+   "title": "�������: ����������� / Dexter: Resurrection / �����: 2 / �����: 1 �� 10 [2026 ��� �������� ����� WEB-DLRip] MVO (LostFilm) + Original + Sub (Rus Eng)\n👤 54 💾 721.27 MB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "931844826e7927fff3ece220389e1818459ef3c9",
+   "fileIdx": 2,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|WEB-DL",
+    "filename": "Dexter.Resurrection.S02E01.WEB-DLRip.RGzsRutracker.avi"
+   },
+   "sources": [
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:931844826e7927fff3ece220389e1818459ef3c9"
+   ]
+  },
+  {
+   "name": "Torrentio",
+   "title": "Dexter.Resurrection.S02E01.rus\n👤 15 💾 750.48 MB ⚙️ EXT\n🇷🇺",
+   "infoHash": "87a72ec85f5b217ce08f42fab207a618fa357818",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "filename": "Dexter.Resurrection.S02E01.rus.LostFilm.TV.avi"
+   }
+  }
+ ],
+ "cacheMaxAge": 3600,
+ "staleRevalidate": 14400,
+ "staleError": 604800
+}

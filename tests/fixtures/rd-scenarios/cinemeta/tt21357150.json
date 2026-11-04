@@ -1,0 +1,136 @@
+{
+ "imdb_id": "tt21357150",
+ "name": "Avengers: Doomsday",
+ "type": "movie",
+ "cast": [
+  "Robert Downey Jr.",
+  "Pedro Pascal",
+  "Chris Hemsworth"
+ ],
+ "country": "United States",
+ "description": "Heroes from three different worlds must unite when they're thrust together to confront a catastrophic danger that could destroy everything they know.",
+ "director": [
+  "Anthony Russo",
+  "Joe Russo"
+ ],
+ "genre": [
+  "Action",
+  "Adventure",
+  "Sci-Fi"
+ ],
+ "imdbRating": "",
+ "released": "2026-12-18T00:00:00.000Z",
+ "slug": "movie/avengers-doomsday-21357150",
+ "writer": [
+  "Jack Kirby",
+  "Stan Lee",
+  "Stephen McFeely"
+ ],
+ "year": "2026",
+ "moviedb_id": 1003596,
+ "popularities": {
+  "moviedb": 117.9732,
+  "stremio": 3.93244,
+  "stremio_lib": 0,
+  "trakt": 56
+ },
+ "poster": "https://images.metahub.space/poster/small/tt21357150/img",
+ "background": "https://images.metahub.space/background/medium/tt21357150/img",
+ "logo": "https://images.metahub.space/logo/medium/tt21357150/img",
+ "awards": "2 nominations total",
+ "runtime": "165 min",
+ "trailers": [
+  {
+   "source": "X1aFkAkFASk",
+   "type": "Trailer"
+  },
+  {
+   "source": "irVNGjRFZGk",
+   "type": "Trailer"
+  }
+ ],
+ "popularity": 3.93244,
+ "id": "tt21357150",
+ "genres": [
+  "Action",
+  "Adventure",
+  "Sci-Fi"
+ ],
+ "releaseInfo": "2026",
+ "trailerStreams": [
+  {
+   "title": "Avengers: Doomsday",
+   "ytId": "X1aFkAkFASk"
+  },
+  {
+   "title": "Avengers: Doomsday",
+   "ytId": "irVNGjRFZGk"
+  }
+ ],
+ "links": [
+  {
+   "name": "Avengers: Doomsday",
+   "category": "share",
+   "url": "https://www.strem.io/s/movie/avengers-doomsday-21357150"
+  },
+  {
+   "name": "Action",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Action"
+  },
+  {
+   "name": "Adventure",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Adventure"
+  },
+  {
+   "name": "Sci-Fi",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Sci-Fi"
+  },
+  {
+   "name": "Robert Downey Jr.",
+   "category": "Cast",
+   "url": "stremio:///search?search=Robert%20Downey%20Jr."
+  },
+  {
+   "name": "Pedro Pascal",
+   "category": "Cast",
+   "url": "stremio:///search?search=Pedro%20Pascal"
+  },
+  {
+   "name": "Chris Hemsworth",
+   "category": "Cast",
+   "url": "stremio:///search?search=Chris%20Hemsworth"
+  },
+  {
+   "name": "Jack Kirby",
+   "category": "Writers",
+   "url": "stremio:///search?search=Jack%20Kirby"
+  },
+  {
+   "name": "Stan Lee",
+   "category": "Writers",
+   "url": "stremio:///search?search=Stan%20Lee"
+  },
+  {
+   "name": "Stephen McFeely",
+   "category": "Writers",
+   "url": "stremio:///search?search=Stephen%20McFeely"
+  },
+  {
+   "name": "Anthony Russo",
+   "category": "Directors",
+   "url": "stremio:///search?search=Anthony%20Russo"
+  },
+  {
+   "name": "Joe Russo",
+   "category": "Directors",
+   "url": "stremio:///search?search=Joe%20Russo"
+  }
+ ],
+ "behaviorHints": {
+  "defaultVideoId": "tt21357150",
+  "hasScheduledVideos": false
+ }
+}

@@ -1,0 +1,145 @@
+{
+  "id": "11-breaking-bad-antes",
+  "nombre": "«Breaking Bad» T1 E1 antes de pedir",
+  "por_que": "Torrentio pone en T1 E1 un paquete latino de la temporada 4 («T4 … CAPITULO 01»): no es este episodio.",
+  "titulo": {
+    "tipo": "series",
+    "meta_id": "tt0903747",
+    "video_id": "tt0903747:1:1",
+    "cinemeta": "cinemeta/tt0903747.json",
+    "tmdb": null
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt0903747_1_1.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:1.json"
+  },
+  "torrentio_estado": "ok",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "premium"
+    },
+    "al_instante": [],
+    "torrents": []
+  },
+  "libreta": [],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "El paquete latino «T4 … CAPITULO 01» es de la temporada 4: «¿Otro episodio?», nunca la recomendada.",
+    "titulo": "Breaking Bad",
+    "logo": true,
+    "video": "tt0903747:1:1",
+    "boton": "pedirlo_y_avisarme",
+    "boton_version": "Real-Debrid todavía no lo tiene",
+    "causa": null,
+    "pedir": {
+      "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+      "idioma": "es"
+    },
+    "al_instante_aparte": null,
+    "recomendada": {
+      "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+      "archivo": 0
+    },
+    "recomendada_idioma": "es",
+    "filas": [
+      {
+        "opciones": [
+          {
+            "recomendada": false,
+            "velocidad": "por_pedir",
+            "otro_titulo": true,
+            "calidad": "720p",
+            "hash": "aa1fa3a7209b67db16a8bdcc3f647809e45b3f0a"
+          }
+        ],
+        "idioma": "es-419"
+      },
+      {
+        "opciones": [
+          {
+            "calidad": "4K",
+            "velocidad": "por_pedir",
+            "otro_titulo": false,
+            "recomendada": false,
+            "hash": "f0fd1cad0e24b69ff6aaadb9df40c50286327188"
+          },
+          {
+            "velocidad": "por_pedir",
+            "recomendada": true,
+            "otro_titulo": false,
+            "calidad": "1080p",
+            "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086"
+          },
+          {
+            "calidad": "720p",
+            "hash": "72a391645b5ea76dd6f5ade169ffda943aa81649",
+            "otro_titulo": false,
+            "velocidad": "por_pedir",
+            "recomendada": false
+          }
+        ],
+        "idioma": "en"
+      },
+      {
+        "opciones": [
+          {
+            "recomendada": true,
+            "calidad": "1080p",
+            "otro_titulo": false,
+            "velocidad": "por_pedir",
+            "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086"
+          }
+        ],
+        "idioma": "es"
+      }
+    ],
+    "hay_que_pedirlas": [
+      {
+        "hash": "6bbad06245a0d631b0a5e47c8cd6e5abc9a70211",
+        "idioma": "en",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "01bb15bbfc6516c4aa0152f92342445b15dcfdd7",
+        "idioma": "pl",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "5f265e068307cb42f548eac3aa8dddcc26655fb9",
+        "idioma": "ru",
+        "calidad": "720p"
+      },
+      {
+        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
+        "idioma": "en",
+        "calidad": "SD"
+      },
+      {
+        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
+        "idioma": "fr",
+        "calidad": "SD"
+      },
+      {
+        "hash": "3232f602f8c2089a94cdf59d31c670a9693cd00c",
+        "idioma": "ru",
+        "calidad": "SD"
+      }
+    ],
+    "ver_ahora": {
+      "hash": "3a51229dfc22e6e63430c426c710b16e8b2a0086",
+      "archivo": 0
+    },
+    "escondidas": 0
+  }
+}

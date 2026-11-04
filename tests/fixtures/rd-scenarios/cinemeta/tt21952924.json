@@ -1,0 +1,214 @@
+{
+ "imdb_id": "tt21952924",
+ "name": "Phony",
+ "popularities": {
+  "trakt": 1188,
+  "moviedb": 23.1631,
+  "stremio": 0.7721033333333334,
+  "stremio_lib": 0
+ },
+ "type": "series",
+ "cast": [
+  "Connie Britton",
+  "Sam Nivola",
+  "Maliq Johnson"
+ ],
+ "country": "United States",
+ "description": "After waking up from a freak car accident, Sonny discovers that his mother has been replaced by an impostor.",
+ "genre": [
+  "Comedy",
+  "Drama",
+  "Mystery"
+ ],
+ "imdbRating": "",
+ "released": "2026-10-20T00:00:00.000Z",
+ "slug": "series/phony-21952924",
+ "writer": [
+  "Nick Paley"
+ ],
+ "year": "2026–",
+ "runtime": "30 min",
+ "status": "Continuing",
+ "tvdb_id": 455844,
+ "moviedb_id": 275139,
+ "poster": "https://images.metahub.space/poster/small/tt21952924/img",
+ "trailers": [
+  {
+   "source": "y-68gT7y_sc",
+   "type": "Trailer"
+  }
+ ],
+ "director": [],
+ "background": "https://images.metahub.space/background/medium/tt21952924/img",
+ "logo": "https://images.metahub.space/logo/medium/tt21952924/img",
+ "popularity": 0.7721033333333334,
+ "id": "tt21952924",
+ "genres": [
+  "Comedy",
+  "Drama",
+  "Mystery"
+ ],
+ "releaseInfo": "2026–",
+ "videos": [
+  {
+   "name": "Pilot",
+   "season": 1,
+   "number": 1,
+   "firstAired": "2026-10-20T08:00:00.000Z",
+   "tvdb_id": 10759366,
+   "rating": "0",
+   "overview": "Sonny Cooke, a high school student, awakes from a car accident to discover his mom, Ellen, looks slightly different.",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/1/w780.jpg",
+   "id": "tt21952924:1:1",
+   "released": "2026-10-20T08:00:00.000Z",
+   "episode": 1,
+   "description": "Sonny Cooke, a high school student, awakes from a car accident to discover his mom, Ellen, looks slightly different."
+  },
+  {
+   "name": "Crosby, Stills, and Nash",
+   "season": 1,
+   "number": 2,
+   "firstAired": "2026-10-20T08:00:00.000Z",
+   "tvdb_id": 12040498,
+   "rating": "0",
+   "overview": "After hiding from his \"imposter\" mom all weekend, Sonny returns to school determined to find help. He pursues a police officer at Career Day who tells him someone broke into his house while he was in the hospital. Weldon suggests Sharla, a private investigator who believes in the paranormal.",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/2/w780.jpg",
+   "id": "tt21952924:1:2",
+   "released": "2026-10-20T08:00:00.000Z",
+   "episode": 2,
+   "description": "After hiding from his \"imposter\" mom all weekend, Sonny returns to school determined to find help. He pursues a police officer at Career Day who tells him someone broke into his house while he was in the hospital. Weldon suggests Sharla, a private investigator who believes in the paranormal."
+  },
+  {
+   "name": "Reverse Cuckoo Situation",
+   "season": 1,
+   "number": 3,
+   "firstAired": "2026-10-27T08:00:00.000Z",
+   "tvdb_id": 12040499,
+   "rating": "0",
+   "overview": "Sonny is forced to stay home with Ellen, so he sets a trap to catch her in her lies. At school, rumors spread that Shovel saw a dead body, and Mallory and Chloe grow closer. Meanwhile, Sharla tails Ellen to a meeting with a menacing stranger behind a bar.",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/3/w780.jpg",
+   "id": "tt21952924:1:3",
+   "released": "2026-10-27T08:00:00.000Z",
+   "episode": 3,
+   "description": "Sonny is forced to stay home with Ellen, so he sets a trap to catch her in her lies. At school, rumors spread that Shovel saw a dead body, and Mallory and Chloe grow closer. Meanwhile, Sharla tails Ellen to a meeting with a menacing stranger behind a bar."
+  },
+  {
+   "name": "Vibes Are Rancid",
+   "season": 1,
+   "number": 4,
+   "firstAired": "2026-11-03T08:00:00.000Z",
+   "tvdb_id": 12040500,
+   "rating": "0",
+   "overview": "Sonny goes to a party to find Shovel, who might have details about his “real” mom’s fate.",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/4/w780.jpg",
+   "id": "tt21952924:1:4",
+   "released": "2026-11-03T08:00:00.000Z",
+   "episode": 4,
+   "description": "Sonny goes to a party to find Shovel, who might have details about his “real” mom’s fate."
+  },
+  {
+   "name": "House of Dog",
+   "season": 1,
+   "number": 5,
+   "firstAired": "2026-11-10T08:00:00.000Z",
+   "tvdb_id": 12040501,
+   "rating": "0",
+   "overview": "",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/5/w780.jpg",
+   "id": "tt21952924:1:5",
+   "released": "2026-11-10T08:00:00.000Z",
+   "episode": 5
+  },
+  {
+   "name": "TBA",
+   "season": 1,
+   "number": 6,
+   "firstAired": "2026-11-17T08:00:00.000Z",
+   "tvdb_id": 12040502,
+   "rating": "0",
+   "overview": "",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/6/w780.jpg",
+   "id": "tt21952924:1:6",
+   "released": "2026-11-17T08:00:00.000Z",
+   "episode": 6
+  },
+  {
+   "name": "TBA",
+   "season": 1,
+   "number": 7,
+   "firstAired": "2026-11-24T08:00:00.000Z",
+   "tvdb_id": 12040503,
+   "rating": "0",
+   "overview": "",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/7/w780.jpg",
+   "id": "tt21952924:1:7",
+   "released": "2026-11-24T08:00:00.000Z",
+   "episode": 7
+  },
+  {
+   "name": "TBA",
+   "season": 1,
+   "number": 8,
+   "firstAired": "2026-12-01T08:00:00.000Z",
+   "tvdb_id": 12040504,
+   "rating": "0",
+   "overview": "",
+   "thumbnail": "https://episodes.metahub.space/tt21952924/1/8/w780.jpg",
+   "id": "tt21952924:1:8",
+   "released": "2026-12-01T08:00:00.000Z",
+   "episode": 8
+  }
+ ],
+ "trailerStreams": [
+  {
+   "title": "Phony",
+   "ytId": "y-68gT7y_sc"
+  }
+ ],
+ "links": [
+  {
+   "name": "Phony",
+   "category": "share",
+   "url": "https://www.strem.io/s/series/phony-21952924"
+  },
+  {
+   "name": "Comedy",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Comedy"
+  },
+  {
+   "name": "Drama",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Drama"
+  },
+  {
+   "name": "Mystery",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Mystery"
+  },
+  {
+   "name": "Connie Britton",
+   "category": "Cast",
+   "url": "stremio:///search?search=Connie%20Britton"
+  },
+  {
+   "name": "Sam Nivola",
+   "category": "Cast",
+   "url": "stremio:///search?search=Sam%20Nivola"
+  },
+  {
+   "name": "Maliq Johnson",
+   "category": "Cast",
+   "url": "stremio:///search?search=Maliq%20Johnson"
+  },
+  {
+   "name": "Nick Paley",
+   "category": "Writers",
+   "url": "stremio:///search?search=Nick%20Paley"
+  }
+ ],
+ "behaviorHints": {
+  "defaultVideoId": null,
+  "hasScheduledVideos": true
+ }
+}

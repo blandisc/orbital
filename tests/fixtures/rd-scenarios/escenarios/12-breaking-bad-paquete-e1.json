@@ -1,0 +1,166 @@
+{
+  "id": "12-breaking-bad-paquete-e1",
+  "nombre": "«Breaking Bad»: pediste el paquete de la temporada 1 desde T1 E1",
+  "por_que": "Un paquete (todos sus videos) pedido para T1 E1, listo.",
+  "titulo": {
+    "tipo": "series",
+    "meta_id": "tt0903747",
+    "video_id": "tt0903747:1:1",
+    "cinemeta": "cinemeta/tt0903747.json",
+    "tmdb": null
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt0903747_1_1.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt0903747:1:1.json"
+  },
+  "torrentio_estado": "ok",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "premium"
+    },
+    "al_instante": [],
+    "torrents": []
+  },
+  "libreta": [
+    {
+      "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+      "files": {
+        "tt0903747:1:1": 26
+      },
+      "account": "A",
+      "rd_id": "R1",
+      "title": "Breaking Bad",
+      "kind": "series",
+      "meta_id": "tt0903747",
+      "video_ids": [
+        "tt0903747:1:1"
+      ],
+      "language": "es",
+      "release": "Breaking Bad (S01)(2008)(1080p)(VP9)(WebDL)( EN 5.1+SPA 2.0)(Complete) PHDTeam",
+      "by": "iPhone",
+      "since": 1759996400,
+      "state": "ready",
+      "percent": 100,
+      "all_files": true,
+      "season": 1,
+      "episode": 1
+    }
+  ],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "El paquete pedido (todos sus videos) para T1 E1, listo: «Ver» lo pone con el archivo de E1 (26).",
+    "titulo": "Breaking Bad",
+    "logo": true,
+    "video": "tt0903747:1:1",
+    "boton": "ver",
+    "boton_version": "es · 1080p · 5.1",
+    "causa": null,
+    "pedir": null,
+    "al_instante_aparte": null,
+    "recomendada": {
+      "archivo": 26,
+      "hash": "e81e125021b52d5ecd34249a356574eae14b23ed"
+    },
+    "recomendada_idioma": "es",
+    "filas": [
+      {
+        "opciones": [
+          {
+            "recomendada": false,
+            "hash": "aa1fa3a7209b67db16a8bdcc3f647809e45b3f0a",
+            "velocidad": "por_pedir",
+            "calidad": "720p",
+            "otro_titulo": true
+          }
+        ],
+        "idioma": "es-419"
+      },
+      {
+        "opciones": [
+          {
+            "hash": "f0fd1cad0e24b69ff6aaadb9df40c50286327188",
+            "recomendada": false,
+            "velocidad": "por_pedir",
+            "calidad": "4K",
+            "otro_titulo": false
+          },
+          {
+            "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+            "recomendada": true,
+            "velocidad": "al_instante_la_pediste",
+            "otro_titulo": false,
+            "calidad": "1080p"
+          },
+          {
+            "recomendada": false,
+            "hash": "72a391645b5ea76dd6f5ade169ffda943aa81649",
+            "velocidad": "por_pedir",
+            "otro_titulo": false,
+            "calidad": "720p"
+          }
+        ],
+        "idioma": "en"
+      },
+      {
+        "opciones": [
+          {
+            "recomendada": true,
+            "hash": "e81e125021b52d5ecd34249a356574eae14b23ed",
+            "velocidad": "al_instante_la_pediste",
+            "calidad": "1080p",
+            "otro_titulo": false
+          }
+        ],
+        "idioma": "es"
+      }
+    ],
+    "hay_que_pedirlas": [
+      {
+        "hash": "6bbad06245a0d631b0a5e47c8cd6e5abc9a70211",
+        "idioma": "en",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "01bb15bbfc6516c4aa0152f92342445b15dcfdd7",
+        "idioma": "pl",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "5f265e068307cb42f548eac3aa8dddcc26655fb9",
+        "idioma": "ru",
+        "calidad": "720p"
+      },
+      {
+        "hash": "4a36cddbe3f716be6f335abd9df1b6d3257e824e",
+        "idioma": "en",
+        "calidad": "SD"
+      },
+      {
+        "hash": "0a03aba4f6395f865b40e5c83b27ae4f630897c1",
+        "idioma": "fr",
+        "calidad": "SD"
+      },
+      {
+        "hash": "3232f602f8c2089a94cdf59d31c670a9693cd00c",
+        "idioma": "ru",
+        "calidad": "SD"
+      }
+    ],
+    "ver_ahora": {
+      "archivo": 26,
+      "hash": "e81e125021b52d5ecd34249a356574eae14b23ed"
+    },
+    "escondidas": 0
+  }
+}

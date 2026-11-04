@@ -1,0 +1,129 @@
+{
+ "awards": "Won 1 Oscar. 73 wins & 111 nominations total",
+ "cast": [
+  "Jim Carrey",
+  "Kate Winslet",
+  "Tom Wilkinson"
+ ],
+ "country": "United States",
+ "description": "When their relationship turns sour, a couple undergoes a medical procedure to have each other erased from their memories forever.",
+ "director": [
+  "Michel Gondry"
+ ],
+ "dvdRelease": "2014-02-12T00:00:00.000Z",
+ "genre": [
+  "Drama",
+  "Romance",
+  "Sci-Fi"
+ ],
+ "imdbRating": "8.3",
+ "imdb_id": "tt0338013",
+ "moviedb_id": 38,
+ "name": "Eternal Sunshine of the Spotless Mind",
+ "popularity": 0.7308800000000001,
+ "poster": "https://images.metahub.space/poster/small/tt0338013/img",
+ "released": "2004-03-19T00:00:00.000Z",
+ "runtime": "108 min",
+ "trailers": [
+  {
+   "source": "c2e-bj6qy8Y",
+   "type": "Trailer"
+  }
+ ],
+ "type": "movie",
+ "writer": [
+  "Charlie Kaufman",
+  "Michel Gondry",
+  "Pierre Bismuth"
+ ],
+ "year": "2004",
+ "background": "https://images.metahub.space/background/medium/tt0338013/img",
+ "logo": "https://images.metahub.space/logo/medium/tt0338013/img",
+ "popularities": {
+  "moviedb": 21.9264,
+  "stremio": 0.7308800000000001,
+  "trakt": 63,
+  "stremio_lib": 0
+ },
+ "slug": "movie/eternal-sunshine-of-the-spotless-mind-0338013",
+ "id": "tt0338013",
+ "genres": [
+  "Drama",
+  "Romance",
+  "Sci-Fi"
+ ],
+ "releaseInfo": "2004",
+ "videos": [],
+ "trailerStreams": [
+  {
+   "title": "Eternal Sunshine of the Spotless Mind",
+   "ytId": "c2e-bj6qy8Y"
+  }
+ ],
+ "links": [
+  {
+   "name": "8.3",
+   "category": "imdb",
+   "url": "https://imdb.com/title/tt0338013"
+  },
+  {
+   "name": "Eternal Sunshine of the Spotless Mind",
+   "category": "share",
+   "url": "https://www.strem.io/s/movie/eternal-sunshine-of-the-spotless-mind-0338013"
+  },
+  {
+   "name": "Drama",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Drama"
+  },
+  {
+   "name": "Romance",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Romance"
+  },
+  {
+   "name": "Sci-Fi",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Sci-Fi"
+  },
+  {
+   "name": "Jim Carrey",
+   "category": "Cast",
+   "url": "stremio:///search?search=Jim%20Carrey"
+  },
+  {
+   "name": "Kate Winslet",
+   "category": "Cast",
+   "url": "stremio:///search?search=Kate%20Winslet"
+  },
+  {
+   "name": "Tom Wilkinson",
+   "category": "Cast",
+   "url": "stremio:///search?search=Tom%20Wilkinson"
+  },
+  {
+   "name": "Charlie Kaufman",
+   "category": "Writers",
+   "url": "stremio:///search?search=Charlie%20Kaufman"
+  },
+  {
+   "name": "Michel Gondry",
+   "category": "Writers",
+   "url": "stremio:///search?search=Michel%20Gondry"
+  },
+  {
+   "name": "Pierre Bismuth",
+   "category": "Writers",
+   "url": "stremio:///search?search=Pierre%20Bismuth"
+  },
+  {
+   "name": "Michel Gondry",
+   "category": "Directors",
+   "url": "stremio:///search?search=Michel%20Gondry"
+  }
+ ],
+ "behaviorHints": {
+  "defaultVideoId": "tt0338013",
+  "hasScheduledVideos": false
+ }
+}

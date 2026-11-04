@@ -1,0 +1,60 @@
+{
+  "id": "15-inception-rd-vencido",
+  "nombre": "«El origen»: tu Real-Debrid venció",
+  "por_que": "Torrentio manda su «RD error» en lugar de versiones; Real-Debrid dice que el Premium se acabó.",
+  "titulo": {
+    "tipo": "movie",
+    "meta_id": "tt1375666",
+    "video_id": "tt1375666",
+    "cinemeta": "cinemeta/tt1375666.json",
+    "tmdb": {
+      "original_language": "en",
+      "title_es_MX": "El origen",
+      "original_title": "Inception",
+      "title_en": "Inception",
+      "overview_es_MX": "Dom Cobb es un ladrón…",
+      "fuente": "a mano"
+    }
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt1375666.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json"
+  },
+  "torrentio_estado": "rd_error",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "vencida"
+    },
+    "al_instante": [],
+    "torrents": []
+  },
+  "libreta": [],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "Cuenta vencida: «Tu Real-Debrid venció» con «Renovar»; no se ofrece «Pedirlo y avisarme» (fallaría).",
+    "titulo": "El origen",
+    "logo": true,
+    "video": "tt1375666",
+    "boton": "sin_version",
+    "causa": "real_debrid_vencio",
+    "pedir": null,
+    "al_instante_aparte": null,
+    "recomendada": null,
+    "recomendada_idioma": null,
+    "filas": [],
+    "hay_que_pedirlas": [],
+    "ver_ahora": null,
+    "escondidas": 0
+  }
+}

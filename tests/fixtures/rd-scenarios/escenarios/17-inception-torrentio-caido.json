@@ -1,0 +1,60 @@
+{
+  "id": "17-inception-torrentio-caido",
+  "nombre": "«El origen»: Torrentio no contesta",
+  "por_que": "Torrentio bloqueado o caído (HTTP 503) con internet.",
+  "titulo": {
+    "tipo": "movie",
+    "meta_id": "tt1375666",
+    "video_id": "tt1375666",
+    "cinemeta": "cinemeta/tt1375666.json",
+    "tmdb": {
+      "original_language": "en",
+      "title_es_MX": "El origen",
+      "original_title": "Inception",
+      "title_en": "Inception",
+      "overview_es_MX": "Dom Cobb es un ladrón…",
+      "fuente": "a mano"
+    }
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt1375666.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json"
+  },
+  "torrentio_estado": "sin_respuesta",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "premium"
+    },
+    "al_instante": [],
+    "torrents": []
+  },
+  "libreta": [],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "Torrentio no contesta con internet: «No pude conectar con tus complementos» con «Reintentar».",
+    "titulo": "El origen",
+    "logo": true,
+    "video": "tt1375666",
+    "boton": "sin_version",
+    "causa": "complementos_no_contestan",
+    "pedir": null,
+    "al_instante_aparte": null,
+    "recomendada": null,
+    "recomendada_idioma": null,
+    "filas": [],
+    "hay_que_pedirlas": [],
+    "ver_ahora": null,
+    "escondidas": 0
+  }
+}

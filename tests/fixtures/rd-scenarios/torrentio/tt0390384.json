@@ -1,0 +1,639 @@
+{
+ "streams": [
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.BluRay.x265-RARBG\n👤 287 💾 1.2 GB ⚙️ RARBG",
+   "infoHash": "297b0244679203dea8d2cbd5eb966fb021771019",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x265",
+    "filename": "Primer.2004.1080p.BluRay.x265-RARBG.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer (2004) (1080p BluRay x265 HEVC 10bit EAC3 5.1 Bandi) [QxR]\n👤 89 💾 4.61 GB ⚙️ 1337x",
+   "infoHash": "313932275ca07fea9e520f0fcf0f49c29d0ce9e0",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|hevc|10bit",
+    "filename": "Primer (2004) (1080p BluRay x265 10bit Bandi).mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer (2004) [WEBRip] [1080p] [YTS] [YIFY]\n👤 88 💾 1.22 GB ⚙️ 1337x",
+   "infoHash": "27f76d7b88f7526da30d100bf8f998c3a4af1f5c",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEBRip|x264",
+    "filename": "Primer.2004.1080p.WEBRip.x264-[YTS.AM].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.BluRay.REMUX.AVC.DD5.1-FGT\n👤 85 💾 17.54 GB ⚙️ RARBG",
+   "infoHash": "e93e6a89f5eb631f518bb5f5a7730ee67099a5e7",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX|avc",
+    "filename": "Primer.2004.1080p.BluRay.REMUX.AVC.DD5.1-FGT.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer 2004 1080p BluRay\n👤 81 💾 1.43 GB ⚙️ YTS",
+   "infoHash": "d4d874b886e2a28945359caf2abde22a4f181c06",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "Primer.2004.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Детонатор / Руководство / Primer [2004 BDRemux 1080p] DVO (R5) + Sub Rus + Original Eng\n👤 50 💾 19.45 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "26bfe6c5902235ec44811aee2863923866f361a8",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX",
+    "filename": "Primer.2004.Umbrella.Entertainment.BDRemux.1080p.mkv"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:26bfe6c5902235ec44811aee2863923866f361a8",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer (2004) 1080p H264 Eng AC3 5.1 AC3 2.0 Sub Ita Eng NUEng Web-DL Mux by frankfiume iDN_CreW\n👤 16 💾 1.58 GB ⚙️ ilCorSaRoNeRo\n🇬🇧 / 🇮🇹",
+   "infoHash": "6a0c72ae8438cf6e4bf86bade5b268826c8bd0a0",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEB-DL|h264",
+    "filename": "Primer (2004) Web-DL Mux by frankfiume.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.BluRay.REMUX.AVC.DD5.1-FGT\n👤 10 💾 17.54 GB ⚙️ ThePirateBay",
+   "infoHash": "e855119b2015d6ae76ca9f11b057fca712898db9",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX|avc",
+    "filename": "Primer.2004.1080p.BluRay.REMUX.AVC.DD5.1-FGT.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer (2004) 1080p Bluray AV1 Opus Eng [dAV1nci]\n👤 10 💾 3.19 GB ⚙️ 1337x",
+   "infoHash": "6104ffe47392a72b2af273202c9b9c542d2c2598",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|av1",
+    "filename": "Primer.2004.1080p.Bluray.AV1.Opus.Eng-dAV1nci.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.AMZN.WEBRip.DDP5.1.x264-FOCUS\n👤 10 💾 7.91 GB ⚙️ ThePirateBay",
+   "infoHash": "361971aae503b6051c2b5e4bdf05e02a7448d616",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEBRip|x264",
+    "filename": "Primer.2004.1080p.WEBRip.DD5.1.x264-FOCUS.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer [2004] 1080p BDRip x265 LPCM 2.0 Kira [SEV]\n👤 9 💾 10.05 GB ⚙️ 1337x",
+   "infoHash": "4dd05a1bd94e295ca6b5f7fd91e210f2f5962926",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BDRip|x265",
+    "filename": "Primer [2004] 1080p BDRip x265 LPCM 2.0 Kira [SEV].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer 2004 1080p WEB-DL DD 5.1 x264 [MW]\n👤 5 💾 2.02 GB ⚙️ 1337x",
+   "infoHash": "28b1838477b8ab9b6ee52c92737bc1fc046ce5d4",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEB-DL|x264",
+    "filename": "Primer 2004 1080p WEB-DL DD 5.1 x264 [MW].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Sci-Fi Movies Collection (1080p.AV1.AC3 encoded.muxed by VerbaL) (2026) [26 Movies]\nPrimer (Primer) (2004) [1080p] [tmdb-14337] [imdb-tt0390384].mkv\n👤 3 💾 1.22 GB ⚙️ EXT\n🇬🇧 / 🇮🇹",
+   "infoHash": "0462d0e2480b618c9c2624ec1ee65d4a6566dc08",
+   "fileIdx": 238,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|av1",
+    "filename": "Primer (Primer) (2004) [1080p] [tmdb-14337] [imdb-tt0390384].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.BluRay.H264.AAC-RARBG\n👤 3 💾 1.47 GB ⚙️ RARBG",
+   "infoHash": "356bf26eed31474c3f68bea514c7101d652269e2",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|h264",
+    "filename": "Primer.2004.1080p.BluRay.H264.AAC-RARBG.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.BluRay.x264.DD5.1-FGT\n👤 3 💾 6.56 GB ⚙️ RARBG",
+   "infoHash": "e14dc8f7fe019687332e69c4b9a3e00e1ef736a4",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "Primer.2004.1080p.BluRay.x264.DD5.1-FGT.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer - Sci-Fi Thriller 2004 Eng Rus Multi Subs 1080p [H264-mp4]\n👤 2 💾 5.92 GB ⚙️ TorrentGalaxy\nMulti Subs / 🇬🇧 / 🇷🇺",
+   "infoHash": "35074bc94d03fe5e2de25bbed14745ace298f644",
+   "fileIdx": 13,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|h264",
+    "filename": "Primer - Sci-Fi Thriller 2004 Eng Rus Multi Subs 1080p [H264-mp4].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.WEBRip.x265-RARBG\n👤 2 💾 1.2 GB ⚙️ RARBG",
+   "infoHash": "c0ff1bee253e652a0e15a8e04950765e8b8e6f8b",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEBRip|x265",
+    "filename": "Primer.2004.1080p.WEBRip.x265-RARBG.mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Детонатор / Primer (2004) BDRemux 1080p от HD-Кинозал | P2\n👤 1 💾 17.63 GB ⚙️ Rutor\n🇬🇧 / 🇷🇺",
+   "infoHash": "b6d40b362707c81f11851948d4cfa6cf8f63a509",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay REMUX",
+    "filename": "Primer.2004.1080p.BluRay.REMUX.Kinozal-Атлас31.mkv"
+   },
+   "sources": [
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://retracker.local/announce",
+    "dht:b6d40b362707c81f11851948d4cfa6cf8f63a509",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer.2004.1080p.WEBRip.x264-RARBG\n👤 1 💾 1.47 GB ⚙️ RARBG",
+   "infoHash": "108f0a7fc3ccfb3457a111048056ead5a7a34d55",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEBRip|x264"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "Primer [2004] 1080p x265 WebRip E-AC-3 5.1 Kira [SEV]\n👤 1 💾 4.3 GB ⚙️ 1337x",
+   "infoHash": "f8d3422ce4865aa86453b538bd2feded95b45e90",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|WEBRip|x265"
+   }
+  },
+  {
+   "name": "Torrentio\n1080p",
+   "title": "The Dead Lands 2014 Bluray 1080p DTS-HD X264-Grym\nTheatrical.Premier.Q.and.A-Grym.mkv\n👤 1 💾 1022.61 MB ⚙️ MagnetDL",
+   "infoHash": "6525d3853b82ada3e7ba4f89412e101f57ab1946",
+   "fileIdx": 3,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|1080p|BluRay|x264",
+    "filename": "Theatrical.Premier.Q.and.A-Grym.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer - Thriller Sci-Fi 2004 Eng Subs 720p [H264-mp4]\n👤 33 💾 1.5 GB ⚙️ ThePirateBay",
+   "infoHash": "6020cc74c0627fd9c8e321dc39fad33ded8e49c8",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|h264"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer 2004 720p BluRay\n👤 17 💾 710.31 MB ⚙️ YTS",
+   "infoHash": "258d0f186166aafd60647456d1357ba11c728484",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BluRay|x264",
+    "filename": "Primer.2004.720p.BluRay.x264.AAC-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Детонатор / Primer [2004 WEBRip 720p] DVO + Sub Rus Eng + Original Eng\n👤 16 💾 3.46 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "12f4b6d9da84a04fcb59672b3bad52c8a5f877e0",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|WEBRip",
+    "filename": "Primer.2004.WEB-DL.720p.Rus.Eng.mkv"
+   },
+   "sources": [
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "dht:12f4b6d9da84a04fcb59672b3bad52c8a5f877e0",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer (2004) [WEBRip] [720p] [YTS] [YIFY]\n👤 12 💾 646.35 MB ⚙️ 1337x",
+   "infoHash": "24e3a5da4d0f50034f57cf441c77bc37cbf14ec3",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|WEBRip|x264",
+    "filename": "Primer.2004.720p.WEBRip.x264-[YTS.AM].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer.2004.720p.WEBRip.999MB.x265.10bit-GalaxyRG\n👤 5 💾 990.88 MB ⚙️ ThePirateBay",
+   "infoHash": "67618558257f15d606b559cd692887fcad33f650",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|WEBRip|x265|10bit",
+    "filename": "Primer.2004.720p.WEBRip.999MB.HQ.x265.10bit-GalaxyRG.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer - Sci-Fi Thriller 2004 Eng Rus Multi Subs 720p [H264-mp4]\n👤 2 💾 1.1 GB ⚙️ 1337x\nMulti Subs / 🇬🇧 / 🇷🇺",
+   "infoHash": "54abb5f5cfd891915cc250ee33d5ba8a1be65eab",
+   "fileIdx": 13,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|h264",
+    "filename": "Primer - Sci-Fi Thriller 2004 Eng Rus Multi Subs 720p [H264-mp4].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer (2004) 720p WebRip x264 -[MoviesFD]\n👤 2 💾 615.66 MB ⚙️ TorrentGalaxy",
+   "infoHash": "9af0cd25f2663795c2dd3efc27c2689b39ff52e3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|WEBRip|x264",
+    "filename": "Primer.2004.720P.Webrip.X264.[Moviesfd].mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Wynalazek - Primer (2004) [720p.BluRay.x264.AAC-YTS.MX] [Napisy PL]\n👤 1 💾 710.31 MB ⚙️ BestTorrents\n🇵🇱",
+   "infoHash": "04a2aac231fd4053cbcd96785ee0acc40c52786d",
+   "fileIdx": 5,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BluRay|x264",
+    "filename": "Primer.2004.720p.BluRay.x264.AAC-[YTS.MX].mp4"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer.2004.720p.BluRay.x264-USURY\n👤 1 💾 5.4 GB ⚙️ ThePirateBay",
+   "infoHash": "87ee59fcc8c874b2535bf8d974b8ea68eb57ec44",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|BluRay|x264",
+    "filename": "primer.2004.720p.bluray.x264-usury.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n720p",
+   "title": "Primer 2004 720p WEB-DL (noise removal re-encode)\n👤 1 💾 2.75 GB ⚙️ ThePirateBay",
+   "infoHash": "1abde282496509165199c87bc1c33d9e9dd7394e",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|720p|WEB-DL"
+   }
+  },
+  {
+   "name": "Torrentio\n576p",
+   "title": "Primer 2004 576p HDTV x264-HANDJOB\n👤 2 💾 1.58 GB ⚙️ ThePirateBay",
+   "infoHash": "5fcbc037d8f2e39c6de37398e021342b81d89873",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|576p|HDTV|x264"
+   }
+  },
+  {
+   "name": "Torrentio\nWEB-DL",
+   "title": "Детонатор / Руководство / Primer [2004 WEB-DLRip] DVO (R5) + Sub (Rus Eng) + Original Eng\n👤 9 💾 1.48 GB ⚙️ Rutracker\n🇬🇧 / 🇷🇺",
+   "infoHash": "d46f85ce62f8c0e50414eba5ed6f5e28831bcf01",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|WEB-DL|R5",
+    "filename": "Primer.2004.WEB-DLRip.avi"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:d46f85ce62f8c0e50414eba5ed6f5e28831bcf01",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nWEB-DL",
+   "title": "Детонатор / Руководство / Primer [2004 WEB-DLRip] DVO (R5)\n👤 5 💾 747.69 MB ⚙️ Rutracker\n🇷🇺",
+   "infoHash": "a8bb953dacde97b623031bb052d884e8beb7d3f0",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|WEB-DL|R5",
+    "filename": "Primer.2004.WEB-DLRip.avi"
+   },
+   "sources": [
+    "tracker:http://bt4.t-ru.org/ann?magnet",
+    "dht:a8bb953dacde97b623031bb052d884e8beb7d3f0",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nWEB-DL",
+   "title": "Детонатор / Primer (2004) WEB-DLRip-AVC | Р2\n👤 3 💾 1.45 GB ⚙️ Rutor\n🇬🇧 / 🇷🇺",
+   "infoHash": "2eeaf764fc0206d1e572e47ad6313d856b153741",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|WEB-DL|avc",
+    "filename": "Primer.2004.WEB-DLRip.DD2.0.x264.-whip93.mkv"
+   },
+   "sources": [
+    "tracker:http://retracker.local/announce",
+    "tracker:udp://opentor.org:2710",
+    "dht:2eeaf764fc0206d1e572e47ad6313d856b153741",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Ventitré (2004) SD H264 ITA AC3 SUB ITA DVDRip [2.0 GB] - UBi CreW\n👤 2 💾 2.01 GB ⚙️ ilCorSaRoNeRo\n🇮🇹",
+   "infoHash": "e9f5fea37af7d9ee9d628bf5cae6208826f86219",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip|h264",
+    "filename": "Ventitre.2004.ITA.DVDRip.DD5.1.x264-UBi.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Primer [dvdrip][spanish]\n👤 2 💾 699.66 MB ⚙️ ThePirateBay\n🇪🇸",
+   "infoHash": "08b4304c6d849daf472854b3d9487b2375411035",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip"
+   }
+  },
+  {
+   "name": "Torrentio\nBDRip",
+   "title": "Детонатор / Primer (2004) BDRip-AVC от msltel | P2\n👤 1 💾 2.28 GB ⚙️ Rutor\n🇬🇧 / 🇷🇺",
+   "infoHash": "d0f33992fc072b9d881333e1d9612f26210e82ee",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|BDRip|avc",
+    "filename": "Детонатор.2004.BDRip-AVC msltel.mkv"
+   },
+   "sources": [
+    "tracker:http://retracker.local/announce",
+    "tracker:udp://opentor.org:2710",
+    "dht:d0f33992fc072b9d881333e1d9612f26210e82ee",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Детонатор / Primer (2004) DVDRip\n👤 1 💾 695.37 MB ⚙️ Rutor\n🇷🇺",
+   "infoHash": "477604f9203ed97f73d951e78db5d41d8c4e6ce3",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip",
+    "filename": "Detonator (2004)DVDRip.avi"
+   },
+   "sources": [
+    "tracker:http://retracker.local/announce",
+    "tracker:udp://opentor.org:2710",
+    "dht:477604f9203ed97f73d951e78db5d41d8c4e6ce3",
+    "tracker:udp://tracker.opentrackr.org:1337/announce",
+    "tracker:udp://open.stealth.si:80/announce",
+    "tracker:udp://open.demonii.com:1337/announce",
+    "tracker:udp://open.tracker.cl:1337/announce",
+    "tracker:udp://tracker.skynetcloud.site:6969/announce",
+    "tracker:udp://tracker.qu.ax:6969/announce",
+    "tracker:udp://tracker.theoks.net:6969/announce",
+    "tracker:udp://tracker-udp.gbitt.info:80/announce",
+    "tracker:udp://explodie.org:6969/announce",
+    "tracker:udp://tracker.ducks.party:1984/announce",
+    "tracker:udp://tracker.tryhackx.org:6969/announce",
+    "tracker:udp://tracker.nyaa.vc:6969/announce",
+    "tracker:udp://tracker.dler.org:6969/announce",
+    "tracker:udp://tracker2.dler.org:80/announce",
+    "tracker:http://tracker.dler.com:6969/announce",
+    "tracker:udp://tracker.gmi.gd:6969/announce",
+    "tracker:http://tracker.renfei.net:8080/announce",
+    "tracker:udp://tracker.peerfect.org:6969/announce",
+    "tracker:udp://tracker.opentrackr.com:6969/announce",
+    "tracker:udp://tracker.ilibr.org:6969/announce",
+    "tracker:udp://opentor.net:6969",
+    "tracker:http://bt.t-ru.org/ann?magnet",
+    "tracker:http://bt2.t-ru.org/ann?magnet",
+    "tracker:http://bt3.t-ru.org/ann?magnet",
+    "tracker:http://bt4.t-ru.org/ann?magnet"
+   ]
+  },
+  {
+   "name": "Torrentio\nDVDRip",
+   "title": "Primer.2004.LiMiTED.DVDRip.XviD-INVASiON\n👤 1 💾 696.58 MB ⚙️ ThePirateBay",
+   "infoHash": "254d3cdd197ca31a94d88bdf199bdf1a8078d338",
+   "behaviorHints": {
+    "bingeGroup": "torrentio|DVDRip|xvid"
+   }
+  },
+  {
+   "name": "Torrentio",
+   "title": "Big Brother Australia AU Series 1 Complete\nbb1.au.day01.premiere.xvid-zx.avi\n👤 4 💾 586.51 MB ⚙️ TorrentGalaxy",
+   "infoHash": "163854671a6f706409a0dfb5ca23a61e961d2067",
+   "fileIdx": 3,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|163854671a6f706409a0dfb5ca23a61e961d2067",
+    "filename": "bb1.au.day01.premiere.xvid-zx.avi"
+   }
+  },
+  {
+   "name": "Torrentio",
+   "title": "Primer[2004]DvDrip.AC3[Eng]-aXXo\n👤 1 💾 699.64 MB ⚙️ ThePirateBay",
+   "infoHash": "d3bf58f5211cfd6a187bb93adc0b10a6c6147d10"
+  }
+ ],
+ "cacheMaxAge": 3600,
+ "staleRevalidate": 14400,
+ "staleError": 604800
+}

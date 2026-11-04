@@ -1,0 +1,211 @@
+{
+  "id": "07-dune-4k-remux-pedida",
+  "nombre": "«Dune: Parte dos»: pediste la 4K REMUX latina (61 GB)",
+  "por_que": "La pedida y lista va primero aunque prefieras 1080p y pese mucho.",
+  "titulo": {
+    "tipo": "movie",
+    "meta_id": "tt15239678",
+    "video_id": "tt15239678",
+    "cinemeta": "cinemeta/tt15239678.json",
+    "tmdb": {
+      "original_language": "en",
+      "title_es_MX": "Dune: Parte dos",
+      "original_title": "Dune: Part Two",
+      "title_en": "Dune: Part Two",
+      "overview_es_MX": "Paul Atreides se une…",
+      "fuente": "a mano"
+    }
+  },
+  "torrentio": {
+    "archivo": "torrentio/tt15239678.json",
+    "capturado": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt15239678.json"
+  },
+  "torrentio_estado": "ok",
+  "torrentio_opciones": {
+    "solo_al_instante": false,
+    "idiomas_primero": []
+  },
+  "real_debrid": {
+    "clave": true,
+    "cuenta": {
+      "id": "A",
+      "estado": "premium"
+    },
+    "al_instante": [],
+    "torrents": []
+  },
+  "libreta": [
+    {
+      "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3",
+      "files": {
+        "tt15239678": 3
+      },
+      "account": "A",
+      "rd_id": "R1",
+      "title": "Dune: Parte dos",
+      "kind": "movie",
+      "meta_id": "tt15239678",
+      "video_ids": [
+        "tt15239678"
+      ],
+      "language": "es-419",
+      "release": "Dune.Part.Two.2024.2160p.BluRay.REMUX.DV.HDR.ENG.LATINO.DDP5.1.H265.MP4-BEN.THE.MEN",
+      "by": "iPhone",
+      "since": 1759996400,
+      "state": "ready",
+      "percent": 100,
+      "all_files": false
+    }
+  ],
+  "preferencias": {
+    "audio": "es",
+    "espanol": "es-419",
+    "calidad": "1080p"
+  },
+  "esperado": {
+    "_nota": "La pedida (4K REMUX, 61 GB) va primera aunque prefieras 1080p: es la que pediste.",
+    "titulo": "Dune: Parte dos",
+    "logo": true,
+    "video": "tt15239678",
+    "boton": "ver",
+    "boton_version": "es-419 · 4K · Dolby Vision · DD+",
+    "causa": null,
+    "pedir": null,
+    "al_instante_aparte": null,
+    "recomendada": {
+      "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3",
+      "archivo": 3
+    },
+    "recomendada_idioma": "es-419",
+    "filas": [
+      {
+        "opciones": [
+          {
+            "velocidad": "al_instante_la_pediste",
+            "recomendada": true,
+            "otro_titulo": false,
+            "calidad": "4K",
+            "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3"
+          },
+          {
+            "velocidad": "por_pedir",
+            "recomendada": false,
+            "otro_titulo": false,
+            "calidad": "1080p",
+            "hash": "9006fbf91001e7053c648dfe71836ffd2f2ca0f4"
+          }
+        ],
+        "idioma": "es-419"
+      },
+      {
+        "opciones": [
+          {
+            "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3",
+            "recomendada": true,
+            "otro_titulo": false,
+            "velocidad": "al_instante_la_pediste",
+            "calidad": "4K"
+          },
+          {
+            "velocidad": "por_pedir",
+            "calidad": "1080p",
+            "otro_titulo": false,
+            "recomendada": false,
+            "hash": "9006fbf91001e7053c648dfe71836ffd2f2ca0f4"
+          },
+          {
+            "calidad": "720p",
+            "recomendada": false,
+            "otro_titulo": false,
+            "velocidad": "por_pedir",
+            "hash": "8ebfe94bff95c7895a1cea35dc35f3f8072beffc"
+          }
+        ],
+        "idioma": "en"
+      },
+      {
+        "opciones": [
+          {
+            "recomendada": false,
+            "calidad": "4K",
+            "otro_titulo": false,
+            "velocidad": "por_pedir",
+            "hash": "da04ded9922d3304005334649ca809ab85d36b83"
+          },
+          {
+            "recomendada": false,
+            "velocidad": "por_pedir",
+            "otro_titulo": false,
+            "calidad": "1080p",
+            "hash": "1f8581f9e81a422287459ac6489323dc305590f5"
+          }
+        ],
+        "idioma": "es"
+      },
+      {
+        "opciones": [
+          {
+            "hash": "9cf3225d39f3a46c34cc149101dd8560c574a21b",
+            "recomendada": false,
+            "otro_titulo": false,
+            "velocidad": "por_pedir",
+            "calidad": "4K"
+          },
+          {
+            "velocidad": "por_pedir",
+            "calidad": "1080p",
+            "otro_titulo": false,
+            "recomendada": false,
+            "hash": "eca99591be0c9d5961688422a1457671bb20b92f"
+          },
+          {
+            "velocidad": "por_pedir",
+            "recomendada": false,
+            "otro_titulo": false,
+            "calidad": "720p",
+            "hash": "23797e65de4c6ddce5a95686ea3d478b2b48095b"
+          }
+        ],
+        "idioma": "es-ES"
+      }
+    ],
+    "hay_que_pedirlas": [
+      {
+        "hash": "62c6429f039d61f4a9b1663305d86d0fa649cbb1",
+        "idioma": "es-419",
+        "calidad": "4K"
+      },
+      {
+        "hash": "2770fe270845674966e184be60ed1be0fe494f3a",
+        "idioma": "en",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "420a1035496cdab32f06fb5bc175e8a25dd8e857",
+        "idioma": "ru",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "cdefe7ef45615ac9e864f49f77b52de16ee47950",
+        "idioma": "fr",
+        "calidad": "1080p"
+      },
+      {
+        "hash": "4950a74e1461e71a356c1919026e8c0bbdc4d2ed",
+        "idioma": "en",
+        "calidad": "4K"
+      },
+      {
+        "hash": "71e5f9df109886fa7bc220d7362049bcf16998a5",
+        "idioma": "fr",
+        "calidad": "4K"
+      }
+    ],
+    "ver_ahora": {
+      "hash": "dd088a2c10a90e11630c2550e0def047c3a1bee3",
+      "archivo": 3
+    },
+    "escondidas": 10
+  }
+}
