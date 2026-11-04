@@ -42,7 +42,9 @@ struct AddonsSettings: View {
                     }
                     // Solo los traídos de Stremio se quitan; los que vienen con Orbital solo se apagan (C7). Con el dedo se desliza;
                     // con el mouse o el trackpad (Mac, iPad), el menú del clic secundario.
-                    .swipeActions { if model.canRemove(addon) { Button("Quitar", role: .destructive) { removing = addon }.tint(DS.danger) } }   // rojo, como en iOS
+                    // Sin `role: .destructive`: con él, iOS borraba la fila al momento y la regresaba mientras preguntaba «¿Quitar…?»
+                    // (Fernando, 3 nov: «se traba… lo quita y lo vuelve a poner»). El rojo lo da el tinte; se quita al confirmar.
+                    .swipeActions { if model.canRemove(addon) { Button("Quitar") { removing = addon }.tint(DS.danger) } }
                     .contextMenu { if model.canRemove(addon) { Button("Quitar complemento", systemImage: "trash", role: .destructive) { removing = addon } } }
                     .accessibilityIdentifier("addon-row-\(addon.id)")
                 }

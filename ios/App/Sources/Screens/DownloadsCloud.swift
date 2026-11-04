@@ -84,7 +84,8 @@ struct DownloadsCloudPart: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .swipeActions { if !other { Button(finished ? "Quitar" : "Cancelar", role: .destructive) { sheets.cancelling = request }.tint(DS.danger) } }
+        // Sin `role: .destructive`: pregunta antes, y con él iOS quitaba la fila y la regresaba (igual que en Complementos).
+        .swipeActions { if !other { Button(finished ? "Quitar" : "Cancelar") { sheets.cancelling = request }.tint(DS.danger) } }
         .contextMenu {
             Button("Abrir la ficha", systemImage: "info.circle") { CloudWords(env).open(request) }
             if !other {
