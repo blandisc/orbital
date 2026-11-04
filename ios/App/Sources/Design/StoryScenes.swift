@@ -57,11 +57,14 @@ struct SceneLoop<Content: View>: View {
     @ViewBuilder let content: (Int) -> Content
     @State private var step = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.storyTurn) private var turn
 
     var body: some View {
-        content(reduceMotion ? steps - 1 : step)
-            .task(id: reduceMotion) {
-                guard !reduceMotion else { return }
+        let waiting = turn?.waiting == true
+        content(waiting ? 0 : reduceMotion ? steps - 1 : step)
+            .task(id: "\(reduceMotion)|\(waiting)") {
+                guard !reduceMotion, !waiting else { return }
+                step = 0
                 while !Task.isCancelled {
                     try? await Task.sleep(for: beat)
                     withAnimation(DS.Motion.spring(reduceMotion)) { step = (step + 1) % steps }
@@ -332,10 +335,15 @@ struct SceneTypedVersion: View {
 struct SceneLanguages: View {
     let drag: Bool
     private let base = ["Latino", "Idioma original", "Inglés", "Castellano"]
+    @Environment(\.storyTurn) private var turn
+    /// Tu turno: lo que llevas arrastrado «Inglés» y si ya lo subiste.
+    @State private var pull: CGFloat = 0
+    @State private var moved = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         SceneLoop(steps: 4) { step in
-            let order = drag && step >= 2 ? ["Inglés", "Latino", "Idioma original", "Castellano"] : base
+            let order = drag && (step >= 2 || moved) ? ["Inglés", "Latino", "Idioma original", "Castellano"] : base
             VStack(spacing: DS.Space.s2) {
                 Text("Tus idiomas").recipe(.cardTitle, color: DS.text).frame(maxWidth: .infinity, alignment: .leading)
                 ForEach(Array(order.enumerated()), id: \.element) { i, name in
@@ -347,7 +355,12 @@ struct SceneLanguages: View {
                         else { Image(systemName: "line.3.horizontal").foregroundStyle(DS.textMuted) }
                     }
                     .opacity(missing ? DS.Opacity.dimmed : 1)
-                    .scaleEffect(drag && name == "Inglés" && step == 1 ? DS.Scene.lifted : 1)
+                    .scaleEffect(drag && name == "Inglés" && (step == 1 || pull != 0) ? DS.Scene.lifted : 1)
+                    .offset(y: drag && name == "Inglés" ? pull : 0)
+                    .gesture(drag && name == "Inglés" && turn?.waiting == true ? DragGesture().onChanged { pull = min(0, $0.translation.height) }.onEnded { g in
+                        withAnimation(DS.Motion.spring(reduceMotion)) { pull = 0; if g.translation.height < -DS.Scene.finger * 2 { moved = true } }
+                        if moved { turn?.done() }
+                    } : nil)
                     .zIndex(name == "Inglés" ? 1 : 0)   // ds-exception: lo que se arrastra va encima
                     .overlay(alignment: .trailing) {
                         if drag && name == "Inglés" && (step == 1 || step == 2) { SceneFinger(pressed: true).offset(x: -DS.Space.s1) }

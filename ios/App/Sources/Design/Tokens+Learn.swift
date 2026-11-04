@@ -55,6 +55,8 @@ extension DS {
         /// Cada tarjeta dura lo suyo (`LearnStory.Card.seconds`); la última con botón, esto más para alcanzar a tocarlo. Avanza
         /// en `ticks` pasos.
         static let lastExtra: Duration = .seconds(2)
+        /// «Tu turno»: cuánto espera tu gesto antes de que lo haga el dedo fantasma, y la pausa para celebrarlo.
+        static let turnWait: Duration = .seconds(6), turnPraise: Duration = .milliseconds(700)
         static let ticks = 60
         /// El ícono de la historia arriba y la mano fantasma.
         static let hand: CGFloat = 44

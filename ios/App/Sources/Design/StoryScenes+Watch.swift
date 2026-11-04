@@ -9,6 +9,10 @@ private let sampleTints = [DS.ListTint.flame, DS.ListTint.series, DS.ListTint.sp
 /// El mosaico de Explorar que deriva lento; con `zoom`, el dedo toca un cartel que crece, y el segundo toque abre su ficha.
 struct SceneMosaic: View {
     let zoom: Bool
+    @Environment(\.storyTurn) private var turn
+    /// Tu turno: el primer toque acerca; el segundo abre la ficha.
+    @State private var tapped = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         SceneLoop(steps: 4) { step in
@@ -16,7 +20,12 @@ struct SceneMosaic: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s1), count: 3), spacing: DS.Space.s1) {
                     ForEach(0..<9, id: \.self) { i in
                         ScenePoster(title: sampleTitles[i], tint: sampleTints[i])
-                            .scaleEffect(zoom && i == 4 && step >= 1 ? DS.Scene.lifted * DS.Scene.lifted : 1)
+                            .scaleEffect(zoom && i == 4 && (step >= 1 || tapped >= 1) ? DS.Scene.lifted * DS.Scene.lifted : 1)
+                            .onTapGesture {
+                                guard zoom, i == 4, turn?.waiting == true else { return }
+                                withAnimation(DS.Motion.spring(reduceMotion)) { tapped += 1 }
+                                if tapped >= 2 { turn?.done() }
+                            }
                             .zIndex(i == 4 ? 1 : 0)   // ds-exception: el que se acerca va encima
                     }
                 }
@@ -24,7 +33,7 @@ struct SceneMosaic: View {
                 .offset(y: zoom ? 0 : -CGFloat(step) * DS.Space.s3)
                 if zoom {
                     SceneFinger(pressed: step == 1 || step == 2, shown: step == 1 || step == 2)
-                    if step == 3 {
+                    if step == 3 || tapped >= 2 {
                         VStack(spacing: DS.Space.s2) {
                             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(sampleTints[4].opacity(DS.Opacity.dimmed))
                                 .overlay { Text(verbatim: sampleTitles[4]).recipe(.title, color: DS.paper) }
@@ -115,6 +124,10 @@ struct SceneFilters: View {
 struct ScenePlayer: View {
     enum Gesture { case none, doubleTap, pinch, lock }
     let gesture: Gesture
+    @Environment(\.storyTurn) private var turn
+    /// Tu turno: cuántos dobles toques diste en la orilla.
+    @State private var skips = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         SceneLoop(steps: 4) { step in
@@ -130,8 +143,16 @@ struct ScenePlayer: View {
                                 .position(x: w * [0.2, 0.5, 0.8][i], y: h / 2)   // ds-exception: las tres zonas del reproductor
                         }
                     case .doubleTap:
+                        let shown = max(step, skips)
                         SceneFinger(pressed: step >= 1, shown: step >= 1).position(x: w * 0.82, y: h / 2)   // ds-exception: la orilla derecha
-                        if step >= 1 { Text(verbatim: "+\(step * 10)").recipe(.title, color: DS.paper).position(x: w * 0.82, y: h / 2 - DS.Scene.finger * 1.6).id(step).transition(.scale.combined(with: .opacity)) }
+                        if shown >= 1 { Text(verbatim: "+\(shown * 10)").recipe(.title, color: DS.paper).position(x: w * 0.82, y: h / 2 - DS.Scene.finger * 1.6).id(shown).transition(.scale.combined(with: .opacity)) }
+                        // Tu turno: el doble toque de verdad, en la mitad derecha.
+                        Color.clear.contentShape(Rectangle()).frame(width: w / 2, height: h).position(x: w * 0.75, y: h / 2)   // ds-exception: la mitad derecha del video
+                            .onTapGesture(count: 2) {
+                                guard turn?.waiting == true else { return }
+                                withAnimation(DS.Motion.pop(reduceMotion)) { skips += 1 }
+                                turn?.done()
+                            }
                     case .pinch:
                         let spread = step >= 1 ? DS.Scene.finger * 2 : DS.Scene.finger / 2
                         SceneFinger(pressed: true, shown: step >= 1 && step < 3).position(x: w / 2 - spread, y: h / 2 - spread)

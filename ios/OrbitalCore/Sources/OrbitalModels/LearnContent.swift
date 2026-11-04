@@ -22,8 +22,9 @@ public struct LearnStory: Sendable, Identifiable, Equatable {
         case remoteFocus, sendToTV, continueHere, voiceAsk
     }
 
-    /// «El truco»: lo que pocos saben (la tarjeta más larga de cada historia).
-    public enum Mark: Sendable, Equatable { case none, trick }
+    /// «El truco»: lo que pocos saben (la tarjeta más larga de cada historia). «Tu turno»: la historia se detiene y la escena
+    /// acepta tu gesto de verdad; si en unos segundos no lo haces, el dedo fantasma lo hace por ti.
+    public enum Mark: Sendable, Equatable { case none, trick, turn }
 
     public struct Card: Sendable, Equatable {
         public var scene: Scene
@@ -66,14 +67,14 @@ public enum LearnContent {
     public static let language = LearnStory(id: "language", title: "En tu idioma", symbol: "character.bubble.fill", tint: "watching", cards: [
         .init(scene: .typedVersion, title: "Habla como tú", line: "«Ver» elige tu idioma y tu calidad.", seconds: 4),
         .init(scene: .languageOrder, title: "Tu orden manda", line: "Arranca con el primero que haya.", seconds: 4),
-        .init(scene: .languageDrag, title: "Arrastra para cambiar", line: "Mantén presionado y súbelo.", seconds: 5),
+        .init(scene: .languageDrag, title: "Arrastra para cambiar", line: "Mantén presionado y súbelo.", seconds: 5, mark: .turn),
         .init(scene: .versionsSheet, title: "¿Otra? Toca «Versión»", line: "Calidad, idioma y si ya está lista.", seconds: 4),
         .init(scene: .cloudRequest, title: "Pídela a la nube", line: "Te avisamos cuando esté.", seconds: 6, mark: .trick),
     ], action: ("Ordenar tus idiomas", .languages))
 
     public static let discover = LearnStory(id: "discover", title: "Encontrar qué ver", symbol: "sparkles", tint: "spark", cards: [
         .init(scene: .mosaicDrift, title: "¿No sabes qué ver?", line: "Orbital te propone, tú eliges.", seconds: 4),
-        .init(scene: .mosaicZoom, title: "Un toque acerca", line: "El segundo abre la ficha.", seconds: 5),
+        .init(scene: .mosaicZoom, title: "Un toque acerca", line: "El segundo abre la ficha.", seconds: 5, mark: .turn),
         .init(scene: .deckSwipe, title: "Desliza el mazo", line: "No a un lado, sí al otro.", seconds: 3),
         .init(scene: .decideShuffle, title: "Decide por mí", line: "Tres carteles, cada uno con su porqué.", seconds: 5),
         .init(scene: .filterTiles, title: "Junta filtros", line: "Comedias de los 90, en Netflix, con más de 7.", seconds: 6, mark: .trick),
@@ -81,7 +82,7 @@ public enum LearnContent {
 
     public static let watch = LearnStory(id: "watch", title: "Ver a tu manera", symbol: "hand.tap.fill", tint: "library", cards: [
         .init(scene: .playerBare, title: "Sin botones", line: "El reproductor responde a tus dedos.", seconds: 3),
-        .init(scene: .playerDoubleTap, title: "Doble toque: 10 s", line: "Cada toque extra suma otros 10.", seconds: 5),
+        .init(scene: .playerDoubleTap, title: "Doble toque: 10 s", line: "Cada toque extra suma otros 10.", seconds: 5, mark: .turn),
         .init(scene: .playerPinch, title: "Pellizca y llena", line: "Ciérralos para verla completa.", seconds: 3),
         .init(scene: .playerLock, title: "El candado", line: "En «Más». Nada la toca.", seconds: 4),
         .init(scene: .downloadRing, title: "Para el avión", line: "Descarga y sigue sin internet.", seconds: 5),

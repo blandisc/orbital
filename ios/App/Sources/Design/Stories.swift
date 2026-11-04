@@ -21,6 +21,9 @@ struct StoryPlayer: View {
     @State private var progress: Double = 0
     @State private var paused = false
     @State private var width: CGFloat = 0
+    /// «Tu turno»: la tarjeta espera tu gesto (y cuántas veces lo lograste, para el toque en la mano).
+    @State private var waitingTurn = false
+    @State private var turnsDone = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
@@ -42,6 +45,7 @@ struct StoryPlayer: View {
             }
             Spacer(minLength: 0)
             StoryCardView(card: card, tint: tint).id(index).transition(.opacity.combined(with: .move(edge: .trailing)))
+                .environment(\.storyTurn, card.mark == .turn ? StoryTurn(waiting: waitingTurn, done: turnDone) : nil)
             Spacer(minLength: 0)
             if last, let action = story.action {
                 Button { onAction(action.destination) } label: { Text(LocalizedStringKey(action.title)).frame(maxWidth: .infinity) }
@@ -58,6 +62,7 @@ struct StoryPlayer: View {
         .contentShape(Rectangle())
         .gesture(SpatialTapGesture().onEnded { g in step(g.location.x < width * DS.Watching.backZone ? -1 : 1) })
         .onLongPressGesture(minimumDuration: DS.Watching.holdToPause, perform: {}, onPressingChanged: { paused = $0 })
+        .sensoryFeedback(.success, trigger: turnsDone)
         .animation(DS.Motion.base(reduceMotion), value: index)
         .task(id: "\(index)|\(paused)|\(active)|\(scenePhase == .active)") { await tick() }
         .onChange(of: index) { _, _ in if last { onFinish() } }
@@ -73,6 +78,14 @@ struct StoryPlayer: View {
     }
 
     private func tick() async {
+        // Tu turno: primero espera tu gesto unos segundos (la barra quieta); si no llega, el dedo fantasma lo hace y sigue.
+        if card.mark == .turn, active, !paused {
+            waitingTurn = true
+            guard autoAdvance else { return }   // con VoiceOver o «Reducir movimiento» espera tu gesto o «Siguiente»
+            try? await Task.sleep(for: DS.Story.turnWait)
+            if Task.isCancelled { return }
+            waitingTurn = false
+        }
         guard autoAdvance, active, !paused, scenePhase == .active else { return }
         let length = Duration.milliseconds(Int(card.seconds * 1000)) + (last && story.action != nil ? DS.Story.lastExtra : .zero)
         for i in 0..<DS.Story.ticks {
@@ -83,7 +96,15 @@ struct StoryPlayer: View {
         step(1)
     }
 
+    /// Lo lograste: un toque en la mano y, enseguida, la siguiente.
+    private func turnDone() {
+        guard waitingTurn else { return }
+        waitingTurn = false; turnsDone += 1
+        Task { try? await Task.sleep(for: DS.Story.turnPraise); step(1) }
+    }
+
     private func step(_ by: Int) {
+        waitingTurn = false
         let next = index + by
         if next >= story.cards.count { if let onNextStory { onNextStory() } else { close() }; return }
         if next < 0 { onPreviousStory?(); return }
@@ -160,11 +181,23 @@ struct StoryDeck: View {
     }
 }
 
+/// «Tu turno» (Fernando, 4 nov 2026: «tienes mi OK para probarlo de tu turno»): la tarjeta espera tu gesto sobre la
+/// miniatura; la escena lo acepta y avisa con `done()`. Mientras espera, la escena se queda en su primer cuadro y sin dedo.
+struct StoryTurn {
+    var waiting: Bool
+    var done: () -> Void
+}
+
+extension EnvironmentValues {
+    @Entry var storyTurn: StoryTurn?
+}
+
 /// Una tarjeta de historia: arriba la escena (la pantalla en miniatura con su dedo fantasma) y abajo su título y su línea, que
 /// llegan después del gesto («primero se ve, luego se nombra»). El truco de la historia lleva su marca.
 struct StoryCardView: View {
     let card: LearnStory.Card
     let tint: Color
+    @Environment(\.storyTurn) private var turn
     @State private var named = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -176,6 +209,10 @@ struct StoryCardView: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if card.mark == .trick {
                     Label("El truco", systemImage: "sparkle").recipe(.label, color: DS.warning)
+                }
+                if card.mark == .turn, turn?.waiting == true {
+                    Label("Tu turno: inténtalo", systemImage: "hand.point.up.left.fill").recipe(.label, color: DS.eyebrow)
+                        .transition(.opacity)
                 }
                 Text(LocalizedStringKey(card.title)).recipe(.display, color: DS.paper).fixedSize(horizontal: false, vertical: true)
                 Text(LocalizedStringKey(card.line)).recipe(.body, color: DS.paper).fixedSize(horizontal: false, vertical: true)

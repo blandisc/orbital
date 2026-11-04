@@ -65,4 +65,21 @@ final class HomeStoriesUITests: XCTestCase {
         sleep(2)
         XCTAssertNotEqual(deck.value as? String, before, "otra historia a la vista")
     }
+
+    /// Tu turno: en «Ver a tu manera», la tarjeta del doble toque espera tu gesto; al darlo, sigue sola.
+    func testYourTurnWaitsForTheGestureAndThenMovesOn() {
+        app.terminate()
+        app.launchArguments = ["-demo", "-demo-no-idle", "-demo-rd", "premium", "-demo-story", "watch"]
+        app.launch()
+        let deck = app.descendants(matching: .any)["story-deck"].firstMatch
+        XCTAssertTrue(deck.waitForExistence(timeout: 20))
+        let turn = app.staticTexts["Tu turno: inténtalo"]
+        XCTAssertTrue(turn.waitForExistence(timeout: 10), "la segunda tarjeta espera tu gesto")
+        sleep(3)
+        XCTAssertTrue(turn.exists, "y sigue esperando, sin avanzar sola")
+        let screen = app.windows.firstMatch.frame
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.4)).doubleTap()
+        _ = screen
+        XCTAssertTrue(turn.waitForNonExistence(timeout: 5), "al hacerlo, sigue")
+    }
 }
