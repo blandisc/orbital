@@ -366,7 +366,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     const t = details && !details.error ? target() : null;
     buttons = arrange(titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
       download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt(), following,
-      request: ask?.can_request ? "ask" : ask?.why === "requested" ? (ask.request?.percent ?? 0) : null }));
+      request: ask?.offer ? ask.offer : ask?.can_request ? "ask" : ask?.why === "requested" ? (ask.request?.percent ?? 0) : null }));
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
@@ -776,6 +776,12 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       why = await api.stremioAvailability(t.kind, t.id, t.video_id);
     } catch { /* sin respuesta: lo de antes */ }
     if (mine !== token) return;
+    if (why?.why === "ok" && why.offer) { // FQ1-A: arranca en otro idioma; el tuyo se puede pedir, al lado de «Ver»
+      ask = why;
+      renderActions();
+      onChange();
+      return;
+    }
     if (!why || why.why === "ok") {
       if (err) {
         mount(avail, h("span", { class: "title__avail-none" }, err?.status === 404 ? "Sin versiones por ahora" : "No pude buscar versiones ahora"));
@@ -794,10 +800,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   async function requestDebrid() {
     const t = target();
     if (ask?.why === "requested" && ask.request?.hash) return onRequest(ask.request.hash); // ya pedido: su hoja, con «Cancelar pedido»
-    if (!t || !ask?.can_request) return;
+    if (!t || !(ask?.can_request || ask?.offer)) return;
     const mine = token;
     try {
-      const res = await api.stremioRequest({ kind: t.kind, id: t.id, video: t.video_id, title: details?.title || item?.title });
+      const res = await api.stremioRequest({ kind: t.kind, id: t.id, video: t.video_id, title: details?.title || item?.title,
+        hash: ask.offer?.hash });
       if (mine !== token) return;
       ask = res.availability;
       mount(avail, h("span", { class: ["title__avail-item", "title__avail-item--warn"] }, `${ask.message} · ${ask.detail}`));

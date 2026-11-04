@@ -48,6 +48,8 @@ export const episodesLed = (details, kind = "movie") =>
 /** «Pedirlo y avisarme» a Real-Debrid (RD-1) o, ya pedido, cuánto lleva (A abre el pedido, con «Cancelar pedido»).
  * `request`: "ask" | un porcentaje | null. Las palabras son las de design/vocabulario.json. */
 export function debridAction(request) {
+  // FQ1-A: ya arranca en otro idioma; al lado de «Ver», pedir el tuyo («Pedir a la nube en latino»).
+  if (request?.label) return { id: "rd-request", icon: "download", label: request.label, short: "Pedirla" };
   if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedirlo y avisarme", short: "Pedirlo" };
   if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en Real-Debrid · ${request} %`, short: `${request} %`, active: true };
   return null;

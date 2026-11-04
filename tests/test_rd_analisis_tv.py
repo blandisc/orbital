@@ -137,3 +137,21 @@ def test_fq2_la_que_real_debrid_no_dejo_bajar_nunca_es_la_recomendada(library, m
     assert w.best_source("movie", "tt1375666") is yes
     monkeypatch.setattr(w.rd, "refused", lambda: {"e" * 40, "f" * 40})
     assert w.best_source("movie", "tt1375666") is no  # si todas, la primera (algo hay que ofrecer)
+
+
+def test_fq1_ver_en_castellano_y_al_lado_pedir_la_latina(library, monkeypatch):
+    w = library.watch
+    cast = source(0, "Dune.Part.Two.2024.1080p.Castellano")
+    lat = source(1, "Dune.Part.Two.2024.1080p.Latino", name="[RD download] Torrentio\n1080p", infoHash="a" * 40)
+    monkeypatch.setattr(type(w), "asked_language", lambda self, meta: (streams.Preferences(audio="es", spanish="es-419"), ""))
+    monkeypatch.setattr(w, "stream_sources", lambda kind, video_id, prefs=None: [cast, lat])
+    monkeypatch.setattr(w.rd, "client", lambda: object())
+    monkeypatch.setattr(w.rd, "status", lambda video_id: None)
+    monkeypatch.setattr(w.rd, "refused", lambda: set())
+    monkeypatch.setattr(w, "_release_of", lambda kind, meta_id, video_id: None)
+    got = w.availability("movie", "tt15239678", "tt15239678")
+    assert got["why"] == "ok" and got["offer"] == {"label": "Pedir a la nube en latino", "hash": "a" * 40}
+    monkeypatch.setattr(w.rd, "refused", lambda: {"a" * 40})  # la que no dejó bajar no se ofrece (FQ2-A)
+    assert "offer" not in w.availability("movie", "tt15239678", "tt15239678")
+    monkeypatch.setattr(w, "stream_sources", lambda kind, video_id, prefs=None: [source(2, "Dune.Part.Two.2024.1080p.Latino"), lat])
+    assert "offer" not in w.availability("movie", "tt15239678", "tt15239678")  # ya arranca en latino: nada que pedir

@@ -1162,8 +1162,10 @@ class Watch:
             found = self.stream_sources(kind, video_id, prefs)
         except stremio_api.StremioError as exc:
             return {**out, "why": "no-addons", "message": "No puedo buscar versiones", "detail": str(exc)}
-        if any(ready_now(s) for s in found):
-            return out
+        ready = [s for s in found if ready_now(s)]
+        if ready:
+            offer = self._dub_offer(kind, video_id, prefs, found, ready)
+            return {**out, "offer": offer} if offer else out
         outcome = self.streams.outcome.get(f"{kind}:{video_id}")
         if self.rd.client() is not None:  # tu cuenta va antes que lo de cada versión (el orden de vocabulario.json)
             cause = DEBRID_CAUSES.get(self.debrid_status(fresh=outcome == "debrid-account").get("problem") or "")
@@ -1190,6 +1192,21 @@ class Watch:
                     "detail": f"Lo puede bajar por ti, de preferencia en {language}; tarda según cuánta gente lo comparte"}
         return {**out, "why": "none", "message": "Nadie lo tiene todavía en internet",
                 "detail": "Suele aparecer en unas horas o días · vuelve a buscar más tarde"}
+
+    def _dub_offer(self, kind: str, video_id: str, prefs: streams.Preferences, found: list[streams.Source],
+                   ready: list[streams.Source]) -> dict | None:
+        """FQ1-A (Fernando, 3 nov): quieres latino y lo que arranca ya es otro idioma. «Ver» pone la que arranca y, al lado,
+        «Pedir a la nube en latino» pide la tuya: {"label", "hash"}; None si ya arranca en tu doblaje o no hay cuál pedir."""
+        want = prefs.spanish if prefs.audio == "es" and prefs.spanish in streams.SPANISH_VARIANTS else None
+        if not want or self.rd.client() is None or any(want in s.audio_langs for s in ready):
+            return None
+        refused = self.rd.refused()
+        pool = [s for s in found if s.debrid and not s.cached] or self.rd.candidates(kind, video_id, prefs)
+        pick = next((s for s in pool if want in s.audio_langs and s.info_hash and s.info_hash not in refused
+                     and not s.doubtful and not {"CAM", "Tráiler", "3D"} & set(s.tags)), None)
+        if pick is None:
+            return None
+        return {"label": f"Pedir a la nube en {streams.LANG_NAMES.get(want, want).lower()}", "hash": pick.info_hash}
 
     def request_debrid(self, kind: str, meta_id: str, video_id: str, title: str = "", want: str | None = None) -> dict:
         """«Pedirlo y avisarme»: Real-Debrid empieza a bajarlo (RD-1); con `want`, justo esa versión (la huella que trae
