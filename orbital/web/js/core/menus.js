@@ -1559,11 +1559,11 @@ const EXPLAINERS = {
     ["settings", "spark", "Aquí decides cuáles te enseña", "Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."],
   ],
   // PT13 (Fernando, 4 nov): «¿Qué es Real-Debrid?», los cuatro puntos del iPhone.
-  realdebrid: [
-    ["cloud", "series", "Guarda copias en sus servidores", "Real-Debrid es un servicio de pago que guarda películas y series; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."],
-    ["download", "calendar", "Lo que no tiene, lo baja por ti", "Se lo pides desde la ficha o desde «Versión» y lo baja allá, no en la TV. Suele tardar de minutos a horas; a veces días."],
-    ["star", "trend", "Cuesta y vence", "Pagas por días de Premium. Cuando vence, nada arranca al instante hasta que lo renuevas en real-debrid.com."],
-    ["bolt", "library", "Tu clave", "Con ella Orbital le pide videos a tu cuenta. Se queda en esta TV y nunca se enseña completa."],
+  realdebrid: [ // los textos exactos del iPhone (Explainer.swift, tema realDebrid)
+    ["cloud", "series", "Guarda copias por ti", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca en segundos."],
+    ["calendar", "calendar", "Lo que no tiene, lo baja", "Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte."],
+    ["card", "trend", "Cuesta y vence", "Se paga por días en real-debrid.com y no se renueva solo. En la TV, Ajustes te avisa desde una semana antes y el día que vence."],
+    ["key", "trophy", "Tu clave", "Conecta Orbital con tu cuenta. Vive guardada en esta TV y nunca se muestra completa."],
   ],
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
@@ -1593,7 +1593,7 @@ export function debridFlowMenu() {
 export function explainerMenu(topic) {
   return {
     title: "¿Qué es esto?",
-    steps: topic === "requests" ? EXPLAIN_STEPS : undefined,
+    steps: ["requests", "realdebrid"].includes(topic) ? EXPLAIN_STEPS : undefined, // los tres pasos arriba, como el iPhone
     // PT12: cada idea solo se lee (no se marca); el foco va a «Entendido», como el iPhone.
     options: [...(EXPLAINERS[topic] || []).map(([icon, tint, label, hint]) => ({ icon, tint, label, hint, info: true })),
       { icon: "check", label: "Entendido", command: { type: "back" } }],
