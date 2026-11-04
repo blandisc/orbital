@@ -696,7 +696,7 @@ const SETTING_TEXT = {
   internet_subtitles: ["Buscar subtítulos en internet", "Si el video no los trae en tu idioma, se buscan en OpenSubtitles. Viene con Orbital."],
   video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
   video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
-  rd_auto_request: ["Pedir solo el siguiente episodio", "Si Real-Debrid aún no lo tiene, se lo pide unos minutos antes de que acabe el que ves."],
+  rd_auto_request: ["Pedir solo el siguiente episodio", "Si todavía no está en la nube, se lo pide unos minutos antes de que acabe el que ves."],
   game_idle_minutes: ["Cerrar juegos olvidados en pausa", "Un juego en pausa se cierra solo después de ese rato. Lo no guardado se pierde."],
   close_previous: ["Abrir algo nuevo cierra lo anterior", "Así no se quedan dos juegos o videos abiertos gastando memoria."],
   game_mode: ["Cerrar Orbital al jugar", "Más memoria para Switch, Wii U y las consolas pesadas. Vuelve sola al salir del juego."],
@@ -1345,12 +1345,12 @@ const REQUEST_WORDS = { queued: "En cola", no_peers: "Sin gente que lo comparta"
   too_many: "Muchas descargas activas", ready: "Listo" };
 const REQUEST_ICONS = { queued: "calendar", downloading: "download", no_peers: "players", refused: "warning", too_many: "list", ready: "check" };
 
-/** Un pedido en una línea: «Bajando en Real-Debrid · 42 %», «En cola»… */
+/** Un pedido en una línea: «Bajando en la nube · 42 %», «En cola»… */
 /** Dónde, cómo y por qué de un pedido: el mismo texto del iPhone, adaptado a la TV (rd_requests.CLOUD). */
-export const DEBRID_CLOUD = "Real-Debrid lo baja en su nube por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso.";
+export const DEBRID_CLOUD = "La nube es tu Real-Debrid: lo baja por ti, no en la TV. Cuando termine, arranca al instante aquí y en tu iPhone. Suele tardar de minutos a horas; te aviso.";
 
 export function requestLabel(req) {
-  return req.state === "downloading" ? `Bajando en Real-Debrid · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
+  return req.state === "downloading" ? `Bajando en la nube · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
 }
 
 /** Quién lo pidió: «Lo pediste aquí» o «Lo pidió el iPhone de Fernando». */
@@ -1442,8 +1442,8 @@ export function debridRemoteMenu(event) {
 const EXPLAINERS = {
   requests: [
     ["search", "library", "Tus complementos buscan dónde verlo", "Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."],
-    ["bolt", "series", "Real-Debrid lo guarda", "Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca al instante."],
-    ["download", "calendar", "Pedirlo es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
+    ["bolt", "series", "Real-Debrid es la nube", "Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."],
+    ["download", "calendar", "Pedir a la nube es que lo baje por ti", "Si todavía no lo tiene, se lo pides y lo baja allá, no en la TV. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."],
     ["bell", "trend", "Te avisamos cuando esté", "Aquí en la TV, en cuanto Real-Debrid termina de bajar lo que pediste desde la TV."],
   ],
   torrentio: [
@@ -1458,7 +1458,7 @@ const EXPLAINERS = {
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
-const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "Real-Debrid lo baja" },
+const EXPLAIN_STEPS = [{ icon: "plus", tint: "library", label: "Tú lo pides" }, { icon: "download", tint: "calendar", label: "La nube lo baja" },
   { icon: "play", tint: "flame", label: "Arranca al instante" }];
 
 export function explainerMenu(topic) {
@@ -1510,7 +1510,7 @@ export function debridRequestsMenu(requests = []) {
       ...(going.length ? [{ heading: true, label: "Bajando" }, ...going.map(row)] : []),
       ...(done.length ? [{ heading: true, label: "Ya terminaron" }, ...done.map(row)] : []),
       explainRow("requests"),
-    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedirlo y avisarme» cuando Real-Debrid no lo tiene", command: { type: "close" } },
+    ] : [{ icon: "info", label: "Todavía no le pides nada", hint: "En una ficha, «Pedir a la nube» cuando todavía no está en la nube", command: { type: "close" } },
       explainRow("requests")],
   };
 }

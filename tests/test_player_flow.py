@@ -96,7 +96,7 @@ def test_fallback_tries_your_language_first_then_another_and_says_why_it_gave_up
     assert watch.fallback_source([later_es, en], "es").index == 2  # luego otro idioma; nunca una que aún hay que bajar
     assert watch.fallback_source([later_es], "es") is None
     message, detail = watch.give_up_words("Nocturne · T1 E1", [later_es], "es")
-    assert message == "Real-Debrid aún no tiene Nocturne · T1 E1 en español" and "Pídelo desde la ficha" in detail
+    assert message == "Nocturne · T1 E1 todavía no está en la nube en español" and "Pídelo a la nube desde la ficha" in detail
 
 
 def test_progress_is_saved_every_minute_not_only_at_the_end():
@@ -646,7 +646,7 @@ def test_a_30_second_filler_is_a_failed_source_not_the_end_of_the_episode():
     segment = p.segment
     segment.start = 1594.0
     p.tick(segment, segment.loaded + 5, False)
-    assert tried == [(1594.0, True)] and "Real-Debrid aún no tiene esa versión" in mpv.overlays[3]
+    assert tried == [(1594.0, True)] and "Esa versión todavía no está en la nube" in mpv.overlays[3]
     p.hide_hud()
 
 
@@ -663,7 +663,7 @@ def test_next_episode_not_in_real_debrid_offers_to_request_it_instead_of_countin
     segment.upnext, segment.upnext_requested = p.next_provider(segment.meta), True
     p.tick(segment, 1, False)
     card = mpv.overlays[4]
-    assert "Real-Debrid todavía no lo tiene" in card and "Pedirlo y avisarme" in card and segment.upnext_deadline is None
+    assert "Todavía no está en la nube" in card and "Pedir a la nube" in card and segment.upnext_deadline is None
     p.press("a")
     for _ in range(100):
         if asked:

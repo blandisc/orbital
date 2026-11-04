@@ -187,10 +187,10 @@ def give_up_words(title: str, left: list[streams.Source], audio: str) -> tuple[s
     """Por qué no se pudo y qué hacer, en palabras (aviso con título y detalle)."""
     language = streams.LANG_NAMES.get(audio, audio)
     if any(audio in s.languages and s.debrid and not s.cached for s in left):
-        return (f"Real-Debrid aún no tiene {title} en {language.lower()}",
-                "Pídelo desde la ficha: lo baja y te aviso cuando esté")
+        return (f"{title} todavía no está en la nube en {language.lower()}",
+                "Pídelo a la nube desde la ficha: lo baja y te aviso cuando esté")
     if any(not s.cached and s.debrid for s in left):
-        return f"Real-Debrid aún no tiene {title}", "Pídelo desde la ficha: lo baja y te aviso cuando esté"
+        return f"{title} todavía no está en la nube", "Pídelo a la nube desde la ficha: lo baja y te aviso cuando esté"
     return f"No pude abrir ninguna versión de {title}", "Las que hay no abrieron · inténtalo más tarde o elige otra con Y"
 
 
@@ -1188,8 +1188,8 @@ class Watch:
             return {**out, "why": "debrid", "can_request": True, "message": req["message"], "detail": req["detail"]}
         if exists and self.rd.client() is not None:
             language = streams.LANG_NAMES.get(prefs.audio, prefs.audio).lower()
-            return {**out, "why": "debrid", "can_request": True, "message": "Real-Debrid todavía no lo tiene",
-                    "detail": f"Lo puede bajar por ti, de preferencia en {language}; tarda según cuánta gente lo comparte"}
+            return {**out, "why": "debrid", "can_request": True, "message": "Todavía no está en la nube",
+                    "detail": f"La nube lo puede bajar por ti, de preferencia en {language}; tarda según cuánta gente lo comparte"}
         return {**out, "why": "none", "message": "Nadie lo tiene todavía en internet",
                 "detail": "Suele aparecer en unas horas o días · vuelve a buscar más tarde"}
 

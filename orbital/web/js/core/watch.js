@@ -50,8 +50,8 @@ export const episodesLed = (details, kind = "movie") =>
 export function debridAction(request) {
   // FQ1-A: ya arranca en otro idioma; al lado de «Ver», pedir el tuyo («Pedir a la nube en latino»).
   if (request?.label) return { id: "rd-request", icon: "download", label: request.label, short: "Pedirla" };
-  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedirlo y avisarme", short: "Pedirlo" };
-  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en Real-Debrid · ${request} %`, short: `${request} %`, active: true };
+  if (request === "ask") return { id: "rd-request", icon: "download", label: "Pedir a la nube", short: "Pedir" };
+  if (typeof request === "number") return { id: "rd-request", icon: "download", label: `Bajando en la nube · ${request} %`, short: `${request} %`, active: true };
   return null;
 }
 

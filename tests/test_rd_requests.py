@@ -117,7 +117,7 @@ def test_request_follow_and_ready_source(setup):
     entry = state.data[rd_requests.STATE_ID][H1]
     assert entry["account"] == "7" and entry["by"] == "TV" and entry["video_ids"] == ["tt1:1:1"] and entry["rd_id"] == "RD1"
     rd.set(H1, status="downloading", progress=42)
-    assert reqs.tick() is True and reqs.status("tt1:1:1")["message"] == "Bajando en Real-Debrid · 42 %"
+    assert reqs.tick() is True and reqs.status("tt1:1:1")["message"] == "Bajando en la nube · 42 %"
     rd.set(H1, status="downloaded", progress=100)
     assert reqs.tick() is False and reqs.status("tt1:1:1")["state"] == "ready" and finder.forgot == ["tt1:1:1"]
     assert [e["message"] for e in events if e.get("type") == "toast"] == ["Ya está Nocturne · T1 E1"]

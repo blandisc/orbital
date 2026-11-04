@@ -680,7 +680,7 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
     { hash: "c", title: "Midsommar", state: "gone", by: "TV" }]);
   assert.deepEqual(list.options.map((o) => [o.label, o.hint, o.icon]), [
     ["Bajando", undefined, undefined], // P1-A: dos grupos; «Ya terminaron» no sale vacío
-    ["Nocturne · T1 E1", "Bajando en Real-Debrid · 42 % · Lo pediste aquí", "download"],
+    ["Nocturne · T1 E1", "Bajando en la nube · 42 % · Lo pediste aquí", "download"],
     ["Severance · T2 E1", "Sin gente que lo comparta · Lo pidió el iPhone de Fernando", "players"], ["¿Qué es esto?", undefined, "info"]]); // la lápida no se enseña
   assert.deepEqual(debridRequestsMenu([{ hash: "a", state: "ready" }, { hash: "b", state: "queued" }]).options.filter((o) => o.heading).map((o) => o.label),
     ["Bajando", "Ya terminaron"]);
@@ -790,7 +790,7 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
 test("AU1-A y AU2-A (Fernando, 3 nov): «¿Qué es esto?» con los textos del iPhone, y «Sin iPhone» deja de avisar con Real-Debrid", async () => {
   const { explainerMenu, settingsMissing } = await import("../../orbital/web/js/core/menus.js");
   assert.deepEqual(explainerMenu("requests").options.map((o) => o.label),
-    ["Tus complementos buscan dónde verlo", "Real-Debrid lo guarda", "Pedirlo es que lo baje por ti", "Te avisamos cuando esté"]);
+    ["Tus complementos buscan dónde verlo", "Real-Debrid es la nube", "Pedir a la nube es que lo baje por ti", "Te avisamos cuando esté"]);
   assert.equal(explainerMenu("torrentio").options[0].hint.slice(0, 40), "Cuando eliges un título, revisa sitios d");
   assert.ok(explainerMenu("addons").options.every((o) => o.command.type === "stay")); // solo se leen
   assert.ok(settingsMissing({}).some((m) => m.label === "Sin iPhone"));

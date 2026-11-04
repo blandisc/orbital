@@ -267,7 +267,7 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
 
   /** Pistas del pie mientras el panel está abierto. */
   const hints = (g) => {
-    const verb = (r, src) => (!isAsk(r) ? "Ver con esta" : asked(src) ? "Ver su pedido" : "Pedirlo y avisarme");
+    const verb = (r, src) => (!isAsk(r) ? "Ver con esta" : asked(src) ? "Ver su pedido" : "Pedir a la nube");
     if (cell) {
       return [{ glyph: g.select, label: verb(cell.row, items[index]) }, items.length > 1 && { glyph: g.rows, label: "Otra" },
         { glyph: g.back, label: "Volver a los idiomas", end: true }].filter(Boolean);
