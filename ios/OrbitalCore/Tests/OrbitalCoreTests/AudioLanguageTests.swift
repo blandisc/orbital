@@ -65,7 +65,8 @@ final class AudioLanguageTests: XCTestCase {
         XCTAssertNil(TitleOrigin().originalCode)
     }
 
-    /// Quieres latino: la latina primero, luego la que no dice cuál, luego la castellana, y el inglés al fondo.
+    /// Quieres latino: la latina primero, luego la que no dice cuál y después tu orden (Fernando, 3 nov: el original, inglés,
+    /// castellano): sin saber el original, el inglés antes que el castellano.
     func testLatinoPreferenceOrder() {
         let prefs = Preferences(audio: "es", quality: "1080p", spanish: "es-419")
         func source(_ code: String, _ evidence: AudioLanguage.Evidence = .name) -> Source {
@@ -75,7 +76,7 @@ final class AudioLanguageTests: XCTestCase {
         let latino = Streams.score(source("es-419"), prefs: prefs), generic = Streams.score(source("es"), prefs: prefs)
         let castilian = Streams.score(source("es-ES"), prefs: prefs), english = Streams.score(source("en"), prefs: prefs)
         let maybeLatino = Streams.score(source("es-419", .maybe), prefs: prefs)
-        XCTAssertGreaterThan(latino, generic); XCTAssertGreaterThan(generic, castilian); XCTAssertGreaterThan(castilian, english)
+        XCTAssertGreaterThan(latino, generic); XCTAssertGreaterThan(generic, english); XCTAssertGreaterThan(english, castilian)
         XCTAssertGreaterThan(latino, maybeLatino, "lo que se sabe, antes que lo que es «tal vez»")
         XCTAssertEqual(Streams.score(source("es-ES"), prefs: Preferences(audio: "es", quality: "1080p")), Streams.score(source("es-419"), prefs: Preferences(audio: "es", quality: "1080p")),
                        "con «cualquiera», da igual cuál")

@@ -71,7 +71,11 @@ struct VersionChip: View {
                 Text(verbatim: Self.facts(option)).recipe(.caption).lineLimit(1)
                 // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
                 // T8-A: la que hay que pedir lo dice corto y con su flecha (antes «Real-Debrid aún no la t…», cortado).
-                if option.speed == .realDebridMustDownload, let cloud {
+                if option.refused {
+                    // FQ2-A: Real-Debrid no la dejó bajar; nunca la recomendada (escenarios comunes con la TV, 3 nov).
+                    Label { Text("Real-Debrid no lo dejó bajar") } icon: { Image(systemName: "nosign") }
+                        .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
+                } else if option.speed == .realDebridMustDownload, let cloud {
                     Label { Text(verbatim: cloud) } icon: { Image(systemName: "icloud.and.arrow.down") }
                         .recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon).lineLimit(1)
                 } else if option.speed == .realDebridMustDownload {
@@ -107,7 +111,8 @@ struct VersionChip: View {
 
     /// La de una versión: lo que pediste y ya está lo dice («Al instante · la pediste»).
     static func speedText(_ option: VersionOption) -> Text? {
-        option.requested && option.speed == .inRealDebrid ? Text("Al instante · la pediste") : speedText(option.speed)
+        if option.refused { return Text("Real-Debrid no lo dejó bajar") }
+        return option.requested && option.speed == .inRealDebrid ? Text("Al instante · la pediste") : speedText(option.speed)
     }
 
     static func speedColor(_ speed: SourceSpeed) -> Color? {

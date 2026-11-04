@@ -1,132 +1,154 @@
 {
   "id": "22-eterno-resplandor-titulo",
-  "nombre": "«Eterno resplandor…»: el nombre en español es muy distinto",
-  "por_que": "TMDB en es-MX trae el título pero no la sinopsis; la de España trae «¡Olvídate de mí!». La latina está al instante.",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt0338013",
-    "video_id": "tt0338013",
-    "cinemeta": "cinemeta/tt0338013.json",
-    "tmdb": {
-      "original_language": "en",
-      "title_es_MX": "Eterno resplandor de una mente sin recuerdos",
-      "overview_es_MX": "",
-      "original_title": "Eternal Sunshine of the Spotless Mind",
-      "title_en": "Eternal Sunshine of the Spotless Mind",
-      "translations": [
+  "name": "«Eterno resplandor…»: el nombre en español es muy distinto",
+  "why": "TMDB en es-MX trae el título pero no la sinopsis; la de España trae «¡Olvídate de mí!». La latina está al instante.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt0338013",
+    "video_id": "tt0338013"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
         {
-          "iso_639_1": "es",
-          "iso_3166_1": "ES",
+          "id": 38,
+          "title": "Eterno resplandor de una mente sin recuerdos",
+          "original_title": "Eternal Sunshine of the Spotless Mind",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 38,
+      "title": "Eterno resplandor de una mente sin recuerdos",
+      "original_title": "Eternal Sunshine of the Spotless Mind",
+      "original_language": "en",
+      "origin_country": [
+        "US"
+      ],
+      "overview": ""
+    },
+    "translations": [
+      {
+        "iso_639_1": "es",
+        "iso_3166_1": "ES",
+        "data": {
           "title": "¡Olvídate de mí!",
           "overview": "Joel y Clementine…"
         }
-      ],
-      "fuente": "a mano"
+      }
+    ]
+  },
+  "cinemeta": "cinemeta/tt0338013.json",
+  "torrentio": {
+    "file": "torrentio/tt0338013.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt0338013.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
     }
   },
-  "torrentio": {
-    "archivo": "torrentio/tt0338013.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt0338013.json"
-  },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
-      "id": "A",
-      "estado": "premium"
-    },
-    "al_instante": [
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [
       "ccde38f5425d19d278b80ed5059beea943a07c73"
     ],
-    "torrents": []
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
   },
-  "libreta": [],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "Sin sinopsis en es-MX, la de España no cambia el título: «Eterno resplandor de una mente sin recuerdos», no «¡Olvídate de mí!».",
-    "titulo": "Eterno resplandor de una mente sin recuerdos",
+  "expected": {
+    "_note": "Sin sinopsis en es-MX, la de España no cambia el título: «Eterno resplandor de una mente sin recuerdos», no «¡Olvídate de mí!».",
+    "title": "Eterno resplandor de una mente sin recuerdos",
     "logo": true,
-    "video": "tt0338013",
-    "boton": "ver",
-    "boton_version": "es-419 · 1080p",
-    "causa": null,
-    "pedir": null,
-    "al_instante_aparte": null,
-    "recomendada": {
+    "video_id": "tt0338013",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": {
       "hash": "ccde38f5425d19d278b80ed5059beea943a07c73",
-      "archivo": 0
+      "file": 0,
+      "language": "es-419",
+      "res": "1080p"
     },
-    "recomendada_idioma": "es-419",
-    "filas": [
+    "rows": [
       {
-        "opciones": [
-          {
-            "hash": "ccde38f5425d19d278b80ed5059beea943a07c73",
-            "velocidad": "al_instante",
-            "otro_titulo": false,
-            "recomendada": true,
-            "calidad": "1080p"
-          }
-        ],
-        "idioma": "es-419"
+        "code": "es-419",
+        "hash": "ccde38f5425d19d278b80ed5059beea943a07c73",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "calidad": "4K",
-            "recomendada": false,
-            "otro_titulo": false,
-            "velocidad": "por_pedir",
-            "hash": "da0b800aba813eff6bf00ae2ed48fdf162c34efd"
-          },
-          {
-            "recomendada": false,
-            "hash": "e288ac7aeebc21b2098a0db453029c55a2645ae7",
-            "otro_titulo": false,
-            "calidad": "1080p",
-            "velocidad": "por_pedir"
-          },
-          {
-            "recomendada": false,
-            "hash": "7398a344fd17b0aaf7d91458bd4a100b2306dc6e",
-            "otro_titulo": false,
-            "calidad": "720p",
-            "velocidad": "por_pedir"
-          }
-        ],
-        "idioma": "en"
+        "code": "en",
+        "hash": "da0b800aba813eff6bf00ae2ed48fdf162c34efd",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "e288ac7aeebc21b2098a0db453029c55a2645ae7",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "7398a344fd17b0aaf7d91458bd4a100b2306dc6e",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
       }
     ],
-    "hay_que_pedirlas": [
+    "to_request": [
       {
-        "hash": "9ffbf3a006b7156ebf6913542080e92cd9bcf0da",
-        "idioma": "it",
-        "calidad": "1080p"
-      },
-      {
-        "hash": "6115c1152496484d93495e855844b4524f4dc074",
-        "idioma": "ru",
-        "calidad": "SD"
-      },
-      {
+        "code": "en",
         "hash": "1e4e2ce3ce90124b7d023397285f89f59230adfd",
-        "idioma": "en",
-        "calidad": "SD"
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "6115c1152496484d93495e855844b4524f4dc074",
+        "res": "SD"
       }
     ],
-    "ver_ahora": {
-      "hash": "ccde38f5425d19d278b80ed5059beea943a07c73",
-      "archivo": 0
-    },
-    "escondidas": 0
+    "hidden": 0,
+    "play_now": "ccde38f5425d19d278b80ed5059beea943a07c73",
+    "request": null,
+    "other_account": null
   }
 }

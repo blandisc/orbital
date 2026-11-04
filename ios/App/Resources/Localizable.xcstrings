@@ -37861,6 +37861,39 @@
           }
         }
       }
+    },
+    "Pedir a la nube en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request it to the cloud in %@"
+          }
+        }
+      }
+    },
+    "Pedir a la nube aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request it to the cloud here"
+          }
+        }
+      }
+    },
+    "Lo tiene tu TV con otra cuenta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your TV has it with another account"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

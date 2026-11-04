@@ -45,10 +45,16 @@ public final class DebridRequestsModel: ObservableModel {
     /// Es de otra cuenta de Real-Debrid: se enseña («Lo pidió la TV · …»), pero no se sigue, no se cancela ni sale como versión.
     public func isOtherAccount(_ request: DebridRequest) -> Bool { request.isOther(account: account) }
 
-    /// El pedido de ese video (película o episodio) en tu cuenta, si hay.
-    public func request(metaID: String, videoID: String?) -> DebridRequest? {
+    /// El pedido de ese video (película o episodio) en tu cuenta, si hay. `listed`: las huellas que Torrentio da para ese video;
+    /// un paquete que pediste con todos sus videos (`all_files`) y que Torrentio lista también para este episodio lo trae,
+    /// aunque lo hayas pedido desde otro: «Bajando · 40 %» en E3 del paquete pedido desde E1, nunca «Pedirlo y avisarme» otra
+    /// vez (escenarios comunes con la TV, 3 nov). Sin `listed` solo cuenta lo anotado (otra temporada no es de ese paquete).
+    public func request(metaID: String, videoID: String?, listed: Set<String> = []) -> DebridRequest? {
         let mine = requests.filter { $0.covers(metaID: metaID, videoID: videoID) && !isOtherAccount($0) }
-        return mine.first { $0.state != .refused } ?? mine.first
+        if let found = mine.first(where: { $0.state != .refused }) ?? mine.first { return found }
+        guard videoID != nil, !listed.isEmpty else { return nil }
+        return requests.first { $0.metaID == metaID && $0.coversWholeTorrent && listed.contains($0.hash) && $0.state != .gone
+            && $0.state != .refused && !isOtherAccount($0) }
     }
 
     /// IOS-8 · ¿este aparato avisa de este pedido? Solo el que lo pidió (los demás no prometen «Te aviso»).
@@ -58,6 +64,11 @@ public final class DebridRequestsModel: ObservableModel {
     /// dice («La TV lo está pidiendo con otra cuenta») y aun así deja pedirlo aparte.
     public func otherAccountRequest(metaID: String, videoID: String?) -> DebridRequest? {
         requests.first { $0.covers(metaID: metaID, videoID: videoID) && isOtherAccount($0) && DebridRequestWords.group($0.state) == .pending }
+    }
+
+    /// FQ5-A · lo que otra cuenta (la de tu TV) ya tiene listo de ese video: aquí no existe ese enlace, pero se ve en la TV.
+    public func otherAccountReady(metaID: String, videoID: String?) -> DebridRequest? {
+        requests.first { $0.covers(metaID: metaID, videoID: videoID) && isOtherAccount($0) && $0.state == .ready }
     }
 
     /// El pedido de ese torrent en tu cuenta (nunca una lápida).
@@ -105,7 +116,8 @@ public final class DebridRequestsModel: ObservableModel {
         var pick = preferred.map { (torrent: $0, language: language, release: release) }
         if pick == nil {
             guard let found = await torrents(kind: kind, videoID: videoID, prefs: prefs) else { return .failed(nil, .network) }
-            guard let best = found.first, let torrent = best.torrent else { return .nobodyHasIt }
+            let refused = requester.refused(metaID: metaID)
+            guard let best = found.first(where: { !refused.contains($0.torrent?.hash ?? "") }), let torrent = best.torrent else { return .nobodyHasIt }
             pick = (torrent, Streams.playingLanguage(best, prefs)?.code, best.release.isEmpty ? nil : best.release)
         }
         guard let pick else { return .nobodyHasIt }

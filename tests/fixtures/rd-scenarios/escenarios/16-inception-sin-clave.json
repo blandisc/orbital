@@ -1,57 +1,89 @@
 {
   "id": "16-inception-sin-clave",
-  "nombre": "«El origen» sin clave de Real-Debrid",
-  "por_que": "No conectaste Real-Debrid: Torrentio solo da torrents, que el iPhone no reproduce.",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt1375666",
-    "video_id": "tt1375666",
-    "cinemeta": "cinemeta/tt1375666.json",
-    "tmdb": {
-      "original_language": "en",
-      "title_es_MX": "El origen",
+  "name": "«El origen» sin clave de Real-Debrid",
+  "why": "No conectaste Real-Debrid: Torrentio solo da torrents, que el iPhone no reproduce.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt1375666",
+    "video_id": "tt1375666"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 27205,
+          "title": "El origen",
+          "original_title": "Inception",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 27205,
+      "title": "El origen",
       "original_title": "Inception",
-      "title_en": "Inception",
-      "overview_es_MX": "Dom Cobb es un ladrón…",
-      "fuente": "a mano"
+      "original_language": "en",
+      "origin_country": [
+        "US",
+        "GB"
+      ],
+      "overview": "Dom Cobb es un ladrón…"
     }
   },
+  "cinemeta": "cinemeta/tt1375666.json",
   "torrentio": {
-    "archivo": "torrentio/tt1375666.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json"
+    "file": "torrentio/tt1375666.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
   },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": false,
+    "instant": [],
+    "account": null,
+    "torrents": [],
+    "book": [],
+    "error": null
   },
-  "real_debrid": {
-    "clave": false,
-    "cuenta": null,
-    "al_instante": [],
-    "torrents": []
-  },
-  "libreta": [],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "Sin clave: «Vuelve a conectar Real-Debrid» con «Ajustes» (antes «Sin versiones por ahora», sin salida).",
-    "titulo": "El origen",
+  "expected": {
+    "_note": "Sin clave: «Vuelve a conectar Real-Debrid» con «Ajustes» (antes «Sin versiones por ahora», sin salida).",
+    "title": "El origen",
     "logo": true,
-    "video": "tt1375666",
-    "boton": "sin_version",
-    "causa": "vuelve_a_conectar",
-    "pedir": null,
-    "al_instante_aparte": null,
-    "recomendada": null,
-    "recomendada_idioma": null,
-    "filas": [],
-    "hay_que_pedirlas": [],
-    "ver_ahora": null,
-    "escondidas": 0
+    "video_id": "tt1375666",
+    "primary": "fix",
+    "cause": "bad_key",
+    "cause_arg": null,
+    "fix": "settings",
+    "offer": null,
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": null,
+    "rows": [],
+    "to_request": [],
+    "hidden": 0,
+    "play_now": null,
+    "request": null,
+    "other_account": null
   }
 }

@@ -13,9 +13,17 @@ public final class AppearWatch: ObservableModel {
         public var title: String
         public var since: Date
         public var checked: Date?
+        /// El estreno, si todavía no sale (FQ4-A): se revisa hasta ese día más 14.
+        public var releases: Date?
         public var id: String { "\(kind):\(videoID)" }
         /// El último día que se revisa.
-        public var until: Date { since.addingTimeInterval(AppearWatch.days * 86_400) }
+        public var until: Date { AppearWatch.until(since: since, releases: releases) }
+    }
+
+    /// Hasta cuándo se revisa: 14 días desde hoy o, si aún no se estrena, desde su estreno (FQ4-A, Fernando, 3 nov: una película
+    /// que sale en seis semanas se dejaba de revisar antes de salir).
+    public nonisolated static func until(since: Date, releases: Date?) -> Date {
+        max(since, releases ?? since).addingTimeInterval(days * 86_400)
     }
 
     public nonisolated static let days: TimeInterval = 14
@@ -43,16 +51,16 @@ public final class AppearWatch: ObservableModel {
     public func entry(kind: String, videoID: String) -> Entry? { entries.first { $0.kind == kind && $0.videoID == videoID } }
 
     /// «Avisarme cuando aparezca». Revisar ahora no hace falta: acabas de ver que nadie lo tiene.
-    public func watch(kind: String, metaID: String, videoID: String, title: String) {
+    public func watch(kind: String, metaID: String, videoID: String, title: String, releases: Date? = nil) {
         let now = clock()
         entries = entries.filter { !($0.kind == kind && $0.videoID == videoID) }
-            + [Entry(kind: kind, metaID: metaID, videoID: videoID, title: title, since: now, checked: now)]
+            + [Entry(kind: kind, metaID: metaID, videoID: videoID, title: title, since: now, checked: now, releases: releases)]
     }
 
     /// «Ya no avisarme».
     public func stop(kind: String, videoID: String) { entries.removeAll { $0.kind == kind && $0.videoID == videoID } }
 
-    /// Lo que toca revisar hoy (y se olvida lo que pasó de 14 días).
+    /// Lo que toca revisar hoy (y se olvida lo que ya pasó de su último día).
     public func due() -> [Entry] {
         let now = clock()
         entries.removeAll { now > $0.until }

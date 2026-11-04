@@ -261,6 +261,13 @@ public actor DebridRequester {
         }
     }
 
+    /// Las huellas que Real-Debrid no dejó bajar en tu cuenta (rechazadas: error 35, derechos…) para ese título: «Real-Debrid no
+    /// lo dejó bajar» en «Versión», nunca la recomendada ni la ofrecida (FQ2-A, Fernando, 3 nov).
+    public nonisolated func refused(metaID: String) -> Set<String> {
+        let mine = knownAccount
+        return Set(book.all.filter { $0.state == .refused && $0.metaID == metaID && !$0.isOther(account: mine) }.map(\.hash))
+    }
+
     /// El enlace para ver ese video de un pedido listo, sin pasar por Torrentio (que puede ni listarlo, con «solo lo que ya
     /// está»): `torrents/info` → el enlace de su archivo → `unrestrict/link`. nil si no se puede.
     public func streamLink(hash: String, videoID: String) async -> URL? {

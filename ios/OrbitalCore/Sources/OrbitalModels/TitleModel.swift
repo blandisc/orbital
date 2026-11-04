@@ -79,12 +79,17 @@ public final class TitleModel: ObservableModel {
     /// «Pedirlo y avisarme» (R2-A, R4): la versión que existe pero Real-Debrid todavía no tiene, lista para pedir; nil si la
     /// recomendada arranca al instante, si no hay qué pedir o sin clave de Real-Debrid.
     public internal(set) var debridOffer: DebridOffer? { didSet { if oldValue != debridOffer { changed() } } }
+    /// FQ1-A (Fernando, 3 nov): «Ver» arranca ya en otro idioma de tu orden y el tuyo existe pero hay que pedirlo: al lado,
+    /// «Pedir a la nube en latino» con esta versión.
+    public internal(set) var wantedOffer: DebridOffer? { didSet { if oldValue != wantedOffer { changed() } } }
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
     let services: Services
     /// Si Torrentio sin Real-Debrid contestó que no hay ningún torrent (por título): la causa 11.
     var lookupEmpty: [String: Bool] = [:]
+    /// Las huellas que Torrentio dio para cada video (la última búsqueda): un paquete pedido desde otro episodio las comparte.
+    var listedHashes: [String: Set<String>] = [:]
     private(set) var meta: JSON?           // la ficha ORIGINAL
     private var localized: JSON?
     /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
@@ -219,6 +224,7 @@ public final class TitleModel: ObservableModel {
         do {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
+            listedHashes[videoID] = Set(found.compactMap { $0.torrent?.hash })
             bestSource = Source.best(found)
             // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
             // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
@@ -236,6 +242,7 @@ public final class TitleModel: ObservableModel {
             // «Pedirlo y avisarme» (que fallaría). Análisis de fondo con la TV, 3 nov.
             if let why, why.blocksRequests { offer = nil }
             debridOffer = offer
+            wantedOffer = await wantedAside(videoID: videoID, prefs: prefs, found: found)
             unavailableCause = why
         } catch {
             // Sin red puede fallar antes de preguntarle a los complementos (al leer cuáles tienes): también es «sin conexión»
@@ -304,7 +311,7 @@ public final class TitleModel: ObservableModel {
                               watched: watched.contains(ep.id), progress: ongoing ? progress : nil,
                               timeLeft: ongoing ? PlaybackRules.timeLeft(left) : "",
                               leftMinutes: ongoing ? PlaybackRules.minutesLeft(left) : 0, download: downloadStates[ep.id],
-                              airs: Self.airDate(ep.released))
+                              airs: Self.airDate(ep.released, now: services.now()))
         }
     }
 
@@ -368,7 +375,12 @@ public final class TitleModel: ObservableModel {
     }
 
     /// El video de «Ver» todavía no sale: cuándo.
-    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0) } }
+    /// El estreno de lo que toca, si todavía no sale (una película por estrenarse o el episodio que viene): «Avisarme cuando
+    /// aparezca» revisa hasta ese día más 14 (FQ4-A).
+    public var upcomingRelease: Date? {
+        kind == "movie" ? Self.airDate(meta?["released"]?.string, now: services.now()) : continueAirs
+    }
+    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0, now: services.now()) } }
 
     func episode(_ id: String) -> (Int, Episode)? {
         for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }
