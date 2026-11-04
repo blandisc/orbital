@@ -361,7 +361,7 @@ struct TitleView: View {
         let outcome = await model.download([target])
         guard case .queued = outcome else { return await report(outcome, model, videoID: target) }
         let item = await model.existingDownload(target)
-        let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
+        let size = item?.expectedBytes.map { ByteSize.text($0, locale: env.uiLocale) }
         let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
         let what = model.episodeLabel(target)
         env.notify(what.map { String(format: Strings.tr("Bajando %@", language: env.services.appSettings.uiLanguage), $0) } ?? "Bajando la recomendada",

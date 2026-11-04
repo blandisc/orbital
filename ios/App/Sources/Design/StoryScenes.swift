@@ -400,7 +400,7 @@ struct SceneCloudRequest: View {
                     Spacer(minLength: 0)
                     SceneRow(title: step == 0 ? Text("4K · Latino · Por pedir") : step < 3 ? (Text("Bajando en la nube") + Text(verbatim: " · \(step == 1 ? "12" : "42") %")) : Text("Lista para ver"),
                              lit: step >= 3) {
-                        Image(systemName: step >= 3 ? "play.fill" : "icloud.and.arrow.down").foregroundStyle(DS.fresh)
+                        Image(systemName: step >= 3 ? "play.fill" : DS.Symbol.cloud).foregroundStyle(DS.fresh)
                     }
                     .overlay { SceneFinger(pressed: step == 0, shown: step == 0) }
                     GeometryReader { geo in

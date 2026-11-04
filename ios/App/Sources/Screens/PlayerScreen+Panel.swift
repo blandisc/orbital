@@ -200,9 +200,9 @@ extension PlayerScreen {
             .map { dockVersionTitle($0.element, index: $0.offset) }
         // Un subtítulo de imagen (PGS) no trae frases: la vista de sincronizar lo dice y deja Antes/Después.
         let canSync = holder.engine.drawsSubtitles
-        let sizes = ["small", "medium", "large"]
+        let sizes = AppSettings.subtitleSizes
         let sizeAt = sizes.firstIndex(of: settings.subtitleSize) ?? 1
-        let sizeNames = ["Chico", "Mediano", "Grande"].map { Strings.tr($0, language: settings.uiLanguage) }
+        let sizeNames = ["Pequeño", "Normal", "Grande", "Muy grande"].map { Strings.tr($0, language: settings.uiLanguage) }
         func setSize(_ i: Int) { env.services.settings.update { $0.subtitleSize = sizes[i] } }
         func step(_ d: Int) {
             guard !versions.isEmpty else { return }
@@ -246,7 +246,7 @@ extension PlayerScreen {
             nudge: { model.nudgeSubtitles(by: $0) }, resetDelay: { model.resetSubtitleDelay() },
             sync: canSync ? { withAnimation(DS.Motion.base(reduceMotion)) { startSync(model) } } : nil,
             sizeName: sizeNames[sizeAt],
-            smaller: sizeAt > 0 ? { setSize(sizeAt - 1) } : nil, larger: sizeAt < 2 ? { setSize(sizeAt + 1) } : nil,
+            smaller: sizeAt > 0 ? { setSize(sizeAt - 1) } : nil, larger: sizeAt < sizes.count - 1 ? { setSize(sizeAt + 1) } : nil,
             done: { model.confirmInSync(); withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false } },
             compact: false, language: settings.uiLanguage,
             audioValue: currentAudio, subtitleValue: subtitleValue,
@@ -272,7 +272,7 @@ extension PlayerScreen {
         // El idioma que de verdad suena (la pista puesta) gana a lo que decía el nombre.
         let heard = model.snapshot.audioTracks.first { $0.id == model.snapshot.selectedAudio }.flatMap(TrackChooser.audioCode)
         let language = (heard ?? Streams.playingLanguage(src, heardPrefs(model))?.code).map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: ui), $0) }
-        let size = src.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(src.size), countStyle: .file) : nil
+        let size = src.size > 0 ? ByteSize.text(Int64(src.size), language: ui) : nil
         return ([language, src.resolution.isEmpty ? nil : src.resolution, size].compactMap { $0 }).joined(separator: " · ")
     }
 

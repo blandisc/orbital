@@ -283,7 +283,7 @@ struct MiMediaTitleView: View {
                     HStack {
                         Text(verbatim: ([d.resolution] + d.hdr + d.audioBadges).filter { !$0.isEmpty }.joined(separator: " · ")).recipe(.cardTitle)
                         Spacer()
-                        Text(verbatim: ByteCountFormatter.string(fromByteCount: Int64(e.file.size), countStyle: .file)).recipe(.data)
+                        Text(verbatim: ByteSize.text(Int64(e.file.size), locale: env.uiLocale)).recipe(.data)
                     }
                     DataLine(parts: [languages.map { LanguageFlags.flagged(appLocale.localizedString(forLanguageCode: $0)?.capitalized(with: appLocale) ?? $0, $0) }.joined(separator: ", "),
                                      e.file.added.map { env.message("Agregada") + " " + $0.formatted(Date.RelativeFormatStyle(presentation: .named, locale: appLocale)) } ?? ""])
@@ -328,7 +328,7 @@ struct MiMediaTitleView: View {
                         Text(verbatim: name).recipe(.secondary, color: row.missing ? DS.textMuted : DS.text).lineLimit(1)
                         if row.missing { Text("No está en tu carpeta").recipe(.caption) }
                         else if let best {
-                            DataLine(parts: [best.details.resolution, ByteCountFormatter.string(fromByteCount: Int64(best.file.size), countStyle: .file)])
+                            DataLine(parts: [best.details.resolution, ByteSize.text(Int64(best.file.size), locale: env.uiLocale)])
                         }
                     }
                     Spacer(minLength: DS.Space.s2)
@@ -478,7 +478,7 @@ struct MiMediaFolderView: View {
                         Button { Task { await play(file) } } label: {
                             VStack(alignment: .leading, spacing: 0) {
                                 Label(file.name, systemImage: "film").recipe(.secondary, color: DS.text).lineLimit(2)
-                                DataLine(parts: [OneDriveLibrary.describe(file).resolution, ByteCountFormatter.string(fromByteCount: Int64(file.size), countStyle: .file)])
+                                DataLine(parts: [OneDriveLibrary.describe(file).resolution, ByteSize.text(Int64(file.size), locale: env.uiLocale)])
                             }
                         }
                         .buttonStyle(.plain)

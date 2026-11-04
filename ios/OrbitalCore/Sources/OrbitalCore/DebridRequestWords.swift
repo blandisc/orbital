@@ -21,11 +21,6 @@ public enum DebridRequestWords {
         }
     }
 
-    /// El renglón corto de la lista («Bajando · 42 %»).
-    public static func short(_ request: DebridRequest, _ tr: (String) -> String = { $0 }) -> String {
-        request.state == .downloading ? String(format: tr("Bajando · %lld %%"), request.percent) : title(request, tr)
-    }
-
     /// El renglón de abajo: qué pasa y qué sigue, sin prometer. IOS-8: «Te aviso cuando esté listo» solo si este aparato va
     /// a avisar (`notifies`: con permiso y pedido desde aquí); si no, «Ábrelo aquí para ver cuánto lleva».
     public static func detail(_ request: DebridRequest, now: Date, notifies: Bool = true, _ tr: (String) -> String = { $0 }) -> String {
@@ -133,16 +128,39 @@ public enum DebridRequestWords {
         [.refused, .noPeers].contains(request.state) || request.isStalled(now: now)
     }
 
+    /// Un ícono por estado y por acción, el mismo en la TV (PT5 y PT10, Fernando, 4 nov 2026: «de acuerdo a tu
+    /// recomendación»). Todo lo de Real-Debrid lleva la nube con flecha; la flecha sola es solo «Descargar» a este aparato.
+    /// El triángulo es solo para «Real-Debrid no lo dejó bajar». Las pantallas los toman de aquí (o de `DS.Symbol`), nunca
+    /// escriben el nombre a mano: `DesignRulesTests` lo vigila. La TV: design/vocabulario.json › iconos.
+    public enum Icon {
+        /// Pedir a la nube, bajando en la nube, Tus pedidos, el grupo de Real-Debrid en Descargas, «La nube lo baja».
+        public static let cloud = "icloud.and.arrow.down"
+        /// Cancelar un pedido que sigue en camino (⊗).
+        public static let cancel = "xmark.circle"
+        /// Quitar de tu Real-Debrid lo que ya terminó.
+        public static let remove = "trash"
+        /// En cola.
+        public static let queued = "clock"
+        /// Sin gente que lo comparta.
+        public static let noPeers = "person.2.slash"
+        /// Real-Debrid no lo dejó bajar: el único con triángulo.
+        public static let refused = "exclamationmark.triangle"
+        /// Muchas descargas activas: su propio ícono (una pila), no el triángulo.
+        public static let tooMany = "square.stack.3d.up"
+        /// Listo: arranca al instante.
+        public static let ready = "checkmark.circle"
+    }
+
     /// El ícono de cada estado (SF Symbols).
     public static func symbol(_ state: DebridRequest.State) -> String {
         switch state {
-        case .queued: "hourglass"
-        case .downloading: "arrow.down.circle"
-        case .noPeers: "person.2.slash"
-        case .refused: "nosign"
-        case .tooMany: "exclamationmark.triangle"
-        case .ready: "checkmark.circle"
-        case .gone: "xmark.circle"
+        case .queued: Icon.queued
+        case .downloading: Icon.cloud
+        case .noPeers: Icon.noPeers
+        case .refused: Icon.refused
+        case .tooMany: Icon.tooMany
+        case .ready: Icon.ready
+        case .gone: Icon.cancel
         }
     }
 }

@@ -60,7 +60,7 @@ struct DebridFlowStrip: View {
 
     private let steps: [(symbol: String, tint: Color, label: LocalizedStringKey)] = [
         ("hand.tap.fill", DS.ListTint.library, "Tú lo pides"),
-        ("icloud.and.arrow.down.fill", DS.ListTint.calendar, "La nube lo baja"),
+        (DS.Symbol.cloudFill, DS.ListTint.calendar, "La nube lo baja"),
         ("play.fill", DS.ListTint.flame, "Arranca al instante"),
     ]
 
@@ -146,8 +146,8 @@ struct DebridExplainer: View {
              Text("Preguntan en internet qué versiones hay de lo que elegiste: en qué idioma, de qué calidad y cuánta gente la comparte."))
         card("icloud.fill", DS.ListTint.series, Text("Real-Debrid es la nube"),
              Text("Un servicio de pago que guarda películas y series en sus servidores; en Orbital le decimos «la nube». Lo que ya tiene arranca al instante."))
-        card("arrow.down.circle.fill", DS.ListTint.calendar, Text("Pedir a la nube es que lo baje por ti"),
-             Text("Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Tarda según cuánta gente lo comparte: de minutos a días. A veces no lo deja bajar (derechos de autor) y te lo decimos."))
+        card(DS.Symbol.cloudFill, DS.ListTint.calendar, Text("Pedir a la nube es que lo baje por ti"),
+             Text("Si todavía no lo tiene, se lo pides y lo baja allá, no en este iPhone. Suele tardar de minutos a horas; si poca gente lo comparte, hasta días. A veces no lo deja bajar (derechos de autor) y te lo decimos."))
         card("bell.fill", DS.ListTint.trend, Text("Te avisamos cuando esté"),
              Text("Con la app abierta lo sabes al momento. Con la app cerrada, iOS decide cuándo revisar: el aviso puede tardar un rato."))
         // R14-B: lo que pides en la TV también avisa aquí, cuando la app puede mirar (solo en el iPhone).
@@ -161,7 +161,7 @@ struct DebridExplainer: View {
         card("magnifyingglass", DS.ListTint.library, Text("Torrentio es un buscador"),
              Text("Cuando eliges un título, revisa sitios de internet y te trae la lista de versiones que existen: idiomas, calidades, tamaños."))
         card("externaldrive.fill.badge.checkmark", DS.ListTint.series, Text("Real-Debrid las sirve"),
-             Text("Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por bajar»): de minutos a días."))
+             Text("Si ya tiene la versión, arranca en segundos («al instante»). Si no, la puede bajar por ti («por pedir»): suele tardar de minutos a horas; si poca gente la comparte, hasta días."))
         card("slider.horizontal.3", DS.ListTint.spark, Text("Aquí decides cuáles te enseña"),
              Text("Lo que elijas en esta página decide qué versiones salen en «Versión». Lo de fábrica ya está bien; cámbialo solo si algo te molesta."))
     }
@@ -178,8 +178,8 @@ struct DebridExplainer: View {
     @ViewBuilder private var realDebrid: some View {
         card("externaldrive.fill.badge.checkmark", DS.ListTint.series, Text("Guarda copias por ti"),
              Text("Es un servicio de pago que guarda películas y series en sus servidores. Lo que ya tiene arranca en segundos."))
-        card("arrow.down.circle.fill", DS.ListTint.calendar, Text("Lo que no tiene, lo baja"),
-             Text("Se lo pides y lo baja: de minutos a días, según cuánta gente lo comparte."))
+        card(DS.Symbol.cloudFill, DS.ListTint.calendar, Text("Lo que no tiene, lo baja"),
+             Text("Se lo pides y lo baja: suele tardar de minutos a horas; si poca gente lo comparte, hasta días."))
         card("creditcard.fill", DS.ListTint.bookmark, Text("Cuesta y vence"),
              Text("Se paga por días en real-debrid.com y no se renueva solo. Te avisamos 14 días antes, 3 días antes y el día que vence."))
         card("key.fill", DS.ListTint.trophy, Text("Tu clave"),

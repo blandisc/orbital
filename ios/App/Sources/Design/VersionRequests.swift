@@ -12,7 +12,7 @@ struct VersionRequestGroup<Rows: View>: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 DSGroupLabel(title: Text("Hay que pedirlas · tardan"))
-                Text("La nube las baja por ti: de minutos a días.").recipe(.footnote)
+                Text("La nube las baja por ti: suele tardar de minutos a horas.").recipe(.footnote)
             }
             .padding(.top, DS.Space.s3)
             rows
@@ -23,7 +23,7 @@ struct VersionRequestGroup<Rows: View>: View {
 }
 
 /// Una versión por pedir: idioma y calidad, tamaño y lo que la distingue (como las demás), y «Pedirlo y avisarme». Ya pedida,
-/// su estado («Bajando · 42 %») en lugar del botón: no se pide dos veces. Tocar el nombre abre su tarjeta.
+/// su estado («Bajando en la nube · 42 %») en lugar del botón: no se pide dos veces. Tocar el nombre abre su tarjeta.
 struct VersionRequestRow: View {
     let title: Text
     let option: VersionOption
@@ -31,13 +31,14 @@ struct VersionRequestRow: View {
     var status: DebridRequestStatus?
     let request: () -> Void
     let open: () -> Void
+    @Environment(\.locale) private var locale   // el idioma de la app («2,9 GB»)
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     title.recipe(.cardTitle, color: DS.text)
-                    Text(verbatim: VersionChip.facts(option)).recipe(.caption)
+                    Text(verbatim: VersionChip.facts(option, locale: locale)).recipe(.caption)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -46,7 +47,7 @@ struct VersionRequestRow: View {
             if let status {
                 status.accessibilityIdentifier("version-request-status")   // la misma pieza que la ficha y «Tus pedidos»
             } else {
-                Button(action: request) { Label("Pedir a la nube", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                Button(action: request) { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
                     .dsSecondaryButton().controlSize(.large)
                     .accessibilityIdentifier("version-request")
             }

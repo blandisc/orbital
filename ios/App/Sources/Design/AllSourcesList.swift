@@ -223,7 +223,7 @@ struct AllSourcesList: View {
             }
             if let request, SourceSpeed(source) == .realDebridMustDownload {
                 if let status = requestStatus(source) { status.padding(.top, DS.Space.s1) } else {
-                    Button { request(source) } label: { Label("Pedir a la nube", systemImage: "arrow.down.circle").frame(maxWidth: .infinity) }
+                    Button { request(source) } label: { Label("Pedir a la nube", systemImage: DS.Symbol.cloud).frame(maxWidth: .infinity) }
                         .dsPrimaryButton().controlSize(.large).padding(.top, DS.Space.s1).accessibilityIdentifier("all-sources-request")
                 }
             } else {
@@ -265,11 +265,9 @@ struct AllSourcesList: View {
 
     // MARK: Textos
 
-    /// «1080p · DV · 12.3 GB» (sin tamaño si no se sabe; una sola insignia de imagen).
+    /// «1080p · DV · 12,3 GB» (sin tamaño si no se sabe; una sola insignia de imagen).
     private func facts(_ source: Source) -> String {
-        let size: String? = source.size > 0
-            ? (source.size >= 1_000_000_000 ? String(format: "%.1f GB", Double(source.size) / 1e9) : String(format: "%.0f MB", Double(source.size) / 1e6))
-            : nil
+        let size: String? = source.size > 0 ? ByteSize.text(Int64(source.size), language: uiLanguage) : nil
         return [source.resolution.isEmpty ? "SD" : source.resolution, AllSources.hdrBadge(source), size].compactMap { $0 }.joined(separator: " · ")
     }
 

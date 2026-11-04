@@ -18,6 +18,9 @@ final class PlayerNoticeState {
         let id = UUID()
         let then: @MainActor (UNAuthorizationStatus) async -> Void
     }
+    /// PT24: qué se contestó a «¿Te aviso cuando esté listo?» en la pantalla de un pedido, y de qué video (otro episodio
+    /// vuelve a preguntar).
+    var notifyAnswer: (videoID: String, answer: PlayerFailureView.NotifyAnswer)?
     /// Avisos que llegaron con la cápsula del candado en pantalla. Salen, en orden, cuando esa cápsula se va.
     var heldNotices = HeldNotices<PlayerScreen.QueuedNotice>()
     var heldDrain: Task<Void, Never>?

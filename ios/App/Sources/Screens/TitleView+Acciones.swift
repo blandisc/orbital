@@ -69,9 +69,9 @@ extension TitleView {
         }
     }
 
-    /// «4K · Dolby Vision» y «12.3 GB · Torrentio» (o «Bajando 40 % · Torrentio») para la hoja «Ya la tienes».
+    /// «4K · Dolby Vision» y «12,3 GB · Torrentio» (o «Bajando 40 % · Torrentio») para la hoja «Ya la tienes».
     func describe(_ item: DownloadItem) -> (label: String, detail: Text) {
-        let size = item.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
+        let size = item.expectedBytes.map { ByteSize.text($0, locale: env.uiLocale) } ?? ""
         let tail = item.addon.isEmpty ? "" : " · \(item.addon)"
         if item.state != .done, let expected = item.expectedBytes, expected > 0 {
             let percent = "\(Int(Double(item.writtenBytes) / Double(expected) * 100)) %"
@@ -82,7 +82,7 @@ extension TitleView {
 
     func describe(_ source: Source) -> (label: String, detail: Text) {
         let label = ([source.resolution] + source.hdr).filter { !$0.isEmpty }.joined(separator: " · ")
-        let size = source.size > 0 ? ByteCountFormatter.string(fromByteCount: Int64(source.size), countStyle: .file) : nil
+        let size = source.size > 0 ? ByteSize.text(Int64(source.size), locale: env.uiLocale) : nil
         return (label.isEmpty ? source.addon : label, Text(verbatim: [size, source.addon.isEmpty ? nil : source.addon].compactMap { $0 }.joined(separator: " · ")))
     }
 

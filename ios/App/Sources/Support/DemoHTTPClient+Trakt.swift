@@ -26,6 +26,11 @@ extension DemoHTTPClient {
         return HTTPResponse(status: 200, data: rows.serialized())
     }
 
+    /// El año de cada título de la watchlist de mentira (Guardado decía «2022» en todos; PT23, 4 nov 2026).
+    static let demoYears: [String: Int] = ["tt11280740": 2022, "tt15239678": 2024, "tt0903747": 2008, "tt0386676": 2005, "tt0816692": 2014,
+                                           "tt1160419": 2021, "tt14452776": 2022, "tt1375666": 2010, "tt7366338": 2019, "tt5753856": 2017,
+                                           "tt0068646": 1972]
+
     /// Lo público de Trakt (sin sesión) y MDBList, de mentira: «Lo más popular hoy», «Por género», la búsqueda y «Aprobadas
     /// por la crítica» salen de aquí sin tocar internet. Una búsqueda sin coincidencias contesta nil (cae a Cinemeta).
     static func publicDemo(_ url: URL) -> HTTPResponse? {
@@ -170,7 +175,7 @@ extension DemoHTTPClient {
                     // Con géneros y calificación, como Trakt (`extended=full`): «Género» y «Calificación» del filtro tienen qué usar.
                     let facts = Self.watchlistFacts[w.imdb] ?? (["drama"], 7.5)
                     return ["listed_at": iso(w.hoursAgo), "type": .string(w.kind),
-                            w.kind: ["title": .string(w.title), "year": 2022, "genres": .array(facts.genres.map { .string($0) }), "rating": .double(facts.rating),
+                            w.kind: ["title": .string(w.title), "year": .int(Self.demoYears[w.imdb] ?? 2022), "genres": .array(facts.genres.map { .string($0) }), "rating": .double(facts.rating),
                                      "ids": ["imdb": .string(w.imdb), "trakt": 1]]]
                 }))
             }
