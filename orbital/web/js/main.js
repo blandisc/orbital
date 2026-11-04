@@ -10,6 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
+import { tokenMs } from "./core/tokens.js";
 import { cloudRow, DEBRID_FORM, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
@@ -607,15 +608,34 @@ function applySettings(settings) {
   warnDebridExpiry(settings);
 }
 
+/** Cuando la pantalla de arranque ya se fue (se desvanece un rato después de boot.finish). */
+function afterBoot(fn, tries = 40) {
+  if (!boot.waiting) return fn();
+  if (tries > 0) setTimeout(() => afterBoot(fn, tries - 1), tokenMs("--duration-brand-fade"));
+}
+
 /** VE1-A: el aviso de que tu Real-Debrid vence (14, 3 y 0 días), una vez por fecha; «Renovar» abre tu cuenta (dice cómo).
  *  El ámbar de Ajustes y Cuentas sigue igual. */
 function warnDebridExpiry(settings) {
+  // Solo con Orbital a la vista: durante el arranque se iba debajo de la pantalla de inicio, y detrás de un juego o un video
+  // nadie lo lee. Se vuelve a intentar al terminar de arrancar y al regresar de lo que estaba abierto.
+  if (!settings || boot.waiting || !state.libraryLoaded || state.running || document.hidden) return;
   const notice = debridExpiryNotice(settings.realdebrid, settings.rd_expiry_notice);
   if (!notice) return;
   settings.rd_expiry_notice = notice.key; // ya salió: no se repite aunque lleguen otros ajustes antes de guardarse
   api.setSettings({ rd_expiry_notice: notice.key }).catch(() => {});
-  ui.toast.show(notice.message, { tone: "warn", detail: notice.detail,
-    action: { label: "Renovar", onPress: () => runCommand({ type: "rd-account" }) } });
+  const duration = tokenMs("--duration-notice-long"); // se lee entero
+  ui.toast.show(notice.message, { tone: "warn", detail: notice.detail, duration,
+    ...offerToastAction({ label: "Renovar", button: "menu", duration, run: () => runCommand({ type: "rd-account" }) }) });
+}
+
+/** La acción de un aviso, con las cuatro superficies: con el dedo o el mouse se toca; con el mando o el teclado, el botón
+ *  que el aviso enseña a su lado (☰ / M) la hace mientras el aviso está a la vista. Antes solo se podía tocar. */
+function offerToastAction({ label, button, duration, run }) {
+  const action = { button, run, until: Date.now() + duration };
+  state.toastAction = action;
+  const press = () => { if (state.toastAction === action) state.toastAction = null; run(); };
+  return { action: { label, glyph: state.modality === "touch" ? "" : glyphs()[button], onPress: press } };
 }
 
 /** ¿En la pantalla de la consola (sin tele)? La de la Legion Go es 16:10 y una tele 16:9. Ahí las frases para Alexa junto a
@@ -1022,6 +1042,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     if (inHome() || inGames() || inForYou() || inTv()) renderHints();
     else setFocus(r, c, { silent: true });
     boot.finish();
+    afterBoot(() => warnDebridExpiry(state.settings)); // VE1-A: en cuanto se ve Orbital
     if (refresh) {
       const countAfter = state.allRows.reduce((n, row) => n + row.items.length, 0);
       const diff = countAfter - countBefore;
@@ -2042,6 +2063,14 @@ function handleAction(action, { repeat = false } = {}) {
   if (state.voiceAction && Date.now() < state.voiceAction.until && action === state.voiceAction.button && !ui.sheet.isOpen) {
     return runVoiceAction();
   }
+  // Un aviso con acción a la vista (offerToastAction): su botón la hace.
+  if (state.toastAction && Date.now() < state.toastAction.until && action === state.toastAction.button && !ui.sheet.isOpen
+    && !ui.launch.visible) {
+    const { run } = state.toastAction;
+    state.toastAction = null;
+    ui.toast.dismiss();
+    return run();
+  }
   // 1: ☰ en la ficha o en Fuentes abre el menú (antes pasaba a la búsqueda de abajo, que dictaba).
   if (action === "menu" && !ui.sheet.isOpen && (ui.title.isOpen || ui.sources.isOpen) && !ui.launch.visible) {
     return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
@@ -2367,7 +2396,7 @@ const EVENTS = {
     const replaced = ui.launch.visible && event.id !== state.launchingId;
     const quiet = !!event.cancelled || (state.quietClose?.id === event.id && Date.now() < state.quietClose.until);
     if (quiet) state.quietClose = null;
-    if (!replaced) { ui.launch.hide(); boot.land(); }
+    if (!replaced) { ui.launch.hide(); boot.land(); setTimeout(() => warnDebridExpiry(state.settings)); } // VE1-A: de vuelta
     if (replaced && !event.crashed) {
       // nada que decir: lo cerraste para abrir otra cosa
     } else if (quiet) {

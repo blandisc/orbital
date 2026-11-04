@@ -1495,11 +1495,12 @@ export function debridExpiryNotice(rd, seen = "") {
   const expired = rd.problem === "expired";
   const stage = expired || (rd.days != null && rd.days <= 0) ? 0 : rd.days == null ? null : rd.days <= 3 ? 3 : rd.days <= 14 ? 14 : null;
   if (stage === null) return null;
+  const expires = Math.floor(Number(rd.expires) || 0); // la fecha puede traer decimales: el ajuste guarda segundos enteros
   const [when, shown] = String(seen || "").split(":");
-  if (when === String(rd.expires || 0) && shown !== undefined && Number(shown) <= stage) return null;
+  if (when === String(expires) && shown !== undefined && Number(shown) <= stage) return null;
   const message = expired ? "Tu Real-Debrid venció" : stage === 0 ? "Tu Real-Debrid vence hoy"
     : rd.days === 1 ? "Tu Real-Debrid vence mañana" : `Tu Real-Debrid vence en ${rd.days} días`;
-  return { key: `${rd.expires || 0}:${stage}`, message,
+  return { key: `${expires}:${stage}`, message,
     detail: expired ? "Nada arranca al instante hasta que lo renueves · real-debrid.com, desde tu celular o tu computadora"
       : "No se renueva solo · real-debrid.com, desde tu celular o tu computadora" };
 }

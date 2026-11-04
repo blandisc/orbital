@@ -897,4 +897,5 @@ test("VE1-A (Fernando, 4 nov): el aviso de vencimiento sale 14 días antes, 3 d�
   assert.equal(debridExpiryNotice(rd(0, { problem: "expired" }), "1800000000:3").message, "Tu Real-Debrid venció");
   assert.equal(debridExpiryNotice(rd(14, { expires: 1_900_000_000 }), "1800000000:0").key, "1900000000:14"); // renovaste: vuelve a avisar
   assert.equal(debridExpiryNotice({ linked: false, days: 2 }), null);
+  assert.equal(debridExpiryNotice(rd(3, { expires: 1_800_000_000.75 })).key, "1800000000:3"); // con decimales: segundos enteros
 });
