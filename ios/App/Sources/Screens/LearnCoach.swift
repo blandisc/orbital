@@ -9,16 +9,19 @@ struct LearnCoach: ViewModifier {
     let title: LocalizedStringKey
     let detail: LocalizedStringKey
     var used = false
+    /// Solo cuando esto se cumple (el del reproductor: en pausa).
+    var active = true
     @State private var showing = false
     @Environment(AppEnvironment.self) private var env
 
     func body(content: Content) -> some View {
         content
-            .coachHost(showing ? CoachContent(id: id.rawValue, title: title, detail: detail, spotlight: id.spotlight) : nil,
+            .coachHost(showing ? CoachContent(id: id.rawValue, title: title, detail: detail, spotlight: id.spotlight, scene: id.scene) : nil,
                        story: { showing = false; env.ui.openStory = id.story },
                        done: { showing = false },
                        skipAll: { LearnModel(env.services).skipAllCoach(); showing = false })
-            .task {
+            .task(id: active) {
+                guard active else { return }
                 try? await Task.sleep(for: DS.Coach.wait)
                 guard !Task.isCancelled else { return }
                 let learn = LearnModel(env.services)
@@ -30,7 +33,7 @@ struct LearnCoach: ViewModifier {
 }
 
 extension View {
-    func learnCoach(_ id: LearnModel.CoachID, title: LocalizedStringKey, detail: LocalizedStringKey, used: Bool = false) -> some View {
-        modifier(LearnCoach(id: id, title: title, detail: detail, used: used))
+    func learnCoach(_ id: LearnModel.CoachID, title: LocalizedStringKey, detail: LocalizedStringKey, used: Bool = false, active: Bool = true) -> some View {
+        modifier(LearnCoach(id: id, title: title, detail: detail, used: used, active: active))
     }
 }

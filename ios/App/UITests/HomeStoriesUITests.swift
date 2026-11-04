@@ -45,7 +45,9 @@ final class HomeStoriesUITests: XCTestCase {
         app.buttons["home-stories-close"].tap()
         XCTAssertTrue(app.buttons["home-random-simpsons"].waitForExistence(timeout: 5), "regresa el encabezado")
         for _ in 0..<3 { app.swipeDown() }
-        XCTAssertTrue(app.buttons["home-random-simpsons"].isHittable, "y la app sigue viva")
+        sleep(2)
+        XCTAssertEqual(app.state, .runningForeground, "y la app sigue viva")
+        XCTAssertTrue(app.buttons["home-random-simpsons"].waitForExistence(timeout: 5))
     }
 
     /// Como Instagram: al deslizar a la izquierda dentro de una historia, sigue la próxima.
@@ -56,13 +58,11 @@ final class HomeStoriesUITests: XCTestCase {
         let ring = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'learn-ring-'")).firstMatch
         XCTAssertTrue(ring.waitForExistence(timeout: 5))
         ring.tap()
-        let deck = app.otherElements["story-deck"].firstMatch
+        let deck = app.descendants(matching: .any)["story-deck"].firstMatch
         XCTAssertTrue(app.buttons["story-close"].firstMatch.waitForExistence(timeout: 5))
-        let screen = app.windows.firstMatch.frame
-        let visible: () -> [String] = { self.app.staticTexts.allElementsBoundByIndex.filter { screen.contains($0.frame) }.map(\.label) }
-        let before = visible()
-        (deck.exists ? deck : app.windows.firstMatch).swipeLeft()
+        let before = deck.value as? String
+        deck.swipeLeft()
         sleep(2)
-        XCTAssertNotEqual(visible(), before, "otra historia a la vista")
+        XCTAssertNotEqual(deck.value as? String, before, "otra historia a la vista")
     }
 }

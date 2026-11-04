@@ -73,6 +73,8 @@ extension DS {
         static let hole: CGFloat = 8
         static let ring: CGFloat = 2
         static let bubble: CGFloat = 300
+        /// La escena en miniatura dentro de la burbuja.
+        static let scene: CGFloat = 130
     }
 }
 
@@ -140,5 +142,28 @@ extension DS {
         static let line: CGFloat = 6
         /// El texto llega después del gesto: el título aparece a esta fracción de la tarjeta.
         static let textAt = 0.35
+    }
+}
+
+/// Las escenas de la guía de bienvenida (revisión del director, 4 nov 2026).
+extension DS {
+    enum GuideScene {
+        /// Tu órbita (G2): el anillo, el planeta y las miniaturas que entran.
+        static let orbitWidth: CGFloat = 240, orbitHeight: CGFloat = 74, planet: CGFloat = 46, mini: CGFloat = 42
+        /// Tu Inicio en miniatura (G7): sus pósters, los logos y cuánto crece al volverse el de verdad.
+        static let homePoster: CGFloat = 78, logo: CGFloat = 44
+        static let grow: CGFloat = 1.5   // ds-exception: el Inicio en miniatura crece a pantalla completa
+        static let landStep = 0.07
+        /// La luna que viaja de pantalla en pantalla, y dónde queda el arco de avance (fracción del ancho).
+        static let flight = 0.45, fadeOut = 0.25
+        static let arcStart = 0.08, arcSpan = 0.62   // ds-exception: el arco de arriba en fracción del ancho
+        /// Los pósters de G2 entran cayendo, uno tras otro (vienen de la órbita de la bienvenida).
+        static let dropStep = 0.04
+        /// Los objetos de «¿Qué ya tienes?» (G3).
+        static let object: CGFloat = 52
+        /// La escena viva de «Ver aquí mismo» (G4).
+        static let sceneHeight: CGFloat = 220
+        /// Al elegir, el póster se voltea.
+        static let flip: Double = 180   // ds-exception: media vuelta del póster
     }
 }

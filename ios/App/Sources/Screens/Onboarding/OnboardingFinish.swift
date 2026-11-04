@@ -12,13 +12,14 @@ struct OnboardingTV: View {
     @Environment(AppEnvironment.self) private var env
 
     var body: some View {
-        GuidePage(title: Text("Tu TV"), message: Text("Con Orbital en la TV, tu iPhone es su control: mándale lo que veas y sigue aquí lo que suena allá."),
+        GuidePage(title: Text("Tu iPhone, control de tu TV"), message: Text("Mándale lo que veas y sigue aquí lo que suena allá."),
                   step: step, primary: env.services.orbital.isConfigured ? Text("Continuar") : Text("Conectar tu TV"),
                   secondary: Text("Después"),
                   next: { if env.services.orbital.isConfigured { next() } else { connecting = true } },
                   skip: next, skipGuide: skip, back: back) {
             VStack(spacing: DS.Space.s4) {
-                GuideArt(symbol: "tv", tint: DS.ListTint.series) { EmptyView() }
+                StorySceneView(scene: .sendToTV, tint: DS.ListTint.series)   // G6: el póster vuela a la TV
+                    .frame(height: DS.GuideScene.sceneHeight).accessibilityHidden(true)
                 // IOS-18: en el iPad con la invitación de tu iPhone, su tarjeta aquí mismo (CX4-A).
                 if env.services.pendingInvite != nil { IPadInviteCard { connecting = true } }
             }
@@ -27,11 +28,12 @@ struct OnboardingTV: View {
     }
 }
 
-/// 7 · Listo: los pósters que elegiste bajan a su lugar uno tras otro, con un toque de éxito. «Ir a Inicio».
+/// 7 · Listo (G7): lo que elegiste baja y arma tu Inicio en miniatura («Porque te gustó…», «Nuevo en tus plataformas»); al
+/// tocar «Ir a Inicio», ese Inicio crece a pantalla completa y se vuelve el de verdad. Sin resumen de piezas (Q4).
 struct OnboardingDone: View {
     let finish: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
-    @State private var landed = false
+    @State private var grow = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(guide: OnboardingModel, finish: @escaping () -> Void) {
@@ -40,31 +42,20 @@ struct OnboardingDone: View {
 
     var body: some View {
         let model = guide.model
-        let chosen = model.candidates.filter { model.liked.contains($0.imdb) }
-        GuidePage(title: Text("Tu Orbital ya está lista."), message: Text("Te armé Inicio con lo que te gusta. Arriba vas a ver círculos: son historias cortas para conocer cada parte."),
-                  primary: Text("Ir a Inicio"), next: finish) {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
-                if !chosen.isEmpty {
-                    HStack(spacing: DS.Space.s2) {
-                        ForEach(Array(chosen.prefix(DS.Welcome.posters).enumerated()), id: \.element.imdb) { i, item in
-                            PosterView(url: item.poster, title: item.title, maxPoints: DS.Welcome.posterHeight)
-                                .frame(height: DS.Welcome.posterHeight)
-                                .offset(y: landed ? 0 : -DS.Welcome.fallFrom / 4)
-                                .opacity(landed ? 1 : 0)
-                                .animation(DS.Motion.spring(reduceMotion)?.delay(Double(i) * DS.Motion.entranceStep), value: landed)
-                        }
-                    }
-                }
-                VStack(spacing: DS.Space.s3) {
-                    ForEach(model.pieces, id: \.self) { piece in
-                        let words = OnboardingHave.words(piece)
-                        GuidePiece(symbol: words.symbol, tint: words.tint, title: Text(words.title),
-                                   tag: model.isConnected(piece) ? Text("Conectado") : Text("Después, en Ajustes"))
-                    }
-                }
-            }
+        let liked = model.candidates.filter { model.liked.contains($0.imdb) }
+        let more = model.candidates.filter { !model.liked.contains($0.imdb) }
+        let logos = model.platforms.filter { model.chosenPlatforms.contains($0.brand) }.compactMap(\.logo)
+        GuidePage(title: Text("Tu Orbital ya está lista."), message: Text("Te armé Inicio con lo que te gusta."),
+                  primary: Text("Ir a Inicio"), next: go) {
+            GuideMiniHome(liked: liked.isEmpty ? Array(more.prefix(3)) : liked, more: Array(more.dropFirst(liked.isEmpty ? 3 : 0)), logos: logos, grow: grow)
         }
-        .sensoryFeedback(.success, trigger: landed)
-        .task { landed = true }
+        .sensoryFeedback(.success, trigger: grow)
+    }
+
+    /// El Inicio en miniatura crece y se desvanece; luego, el de verdad.
+    private func go() {
+        guard !reduceMotion else { return finish() }
+        withAnimation(DS.Motion.enter(reduceMotion)) { grow = true }
+        Task { try? await Task.sleep(for: .seconds(DesignTokens.Motion.enter)); finish() }
     }
 }

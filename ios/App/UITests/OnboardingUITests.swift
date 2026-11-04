@@ -60,6 +60,7 @@ class GuideUITestCase: XCTestCase {
     func enter(_ token: String) {
         let field = app.textFields["debrid-token"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
+        for _ in 0..<3 where !field.isHittable { app.scrollViews.firstMatch.swipeUp() }
         field.tap()
         if let current = field.value as? String, !current.isEmpty, current != "Pega tu clave" {
             field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 2))
@@ -74,19 +75,21 @@ class GuideUITestCase: XCTestCase {
         wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4); c("01-bienvenida")
         next(); wait("¿Qué te gusta?"); c("02-gustos")
         next(); wait("¿Qué ya tienes?"); c("03-que-tienes")
-        app.buttons["have-debrid-has"].tap()
-        next(); wait("Ver aquí mismo, sin esperar")
-        XCTAssertFalse(nextButton().isEnabled, "con «Ya lo tengo», «Continuar» espera la clave")
-        XCTAssertTrue(app.buttons["guide-skip"].exists, "pero «Cuando quiera ver algo» siempre deja seguir")
-        app.swipeDown(); c("04-clave-vacia")
-        enter(Self.badToken); wait("no reconoce"); XCTAssertFalse(nextButton().isEnabled); c("05-clave-no-reconocida")
-        enter(Self.shortToken); wait("incompleta"); XCTAssertFalse(nextButton().isEnabled)
-        enter(Self.freeToken); wait("Tu cuenta es gratuita"); XCTAssertFalse(nextButton().isEnabled)
-        enter(Self.goodToken); wait("fernando · Premium"); XCTAssertTrue(nextButton().isEnabled); c("06-clave-buena")
+        app.buttons["have-debrid"].tap(); app.buttons["have-trakt"].tap()
+        next(); wait("Ve todo al instante, aquí")
+        XCTAssertTrue(app.buttons["guide-skip"].exists, "«Cuando quiera ver algo» siempre deja seguir")
+        let byHand = app.buttons["debrid-by-hand"].firstMatch
+        XCTAssertTrue(byHand.waitForExistence(timeout: 10), "«Otra forma: escribirla»")
+        app.scrollViews.firstMatch.swipeUp()
+        byHand.tap(); c("04-clave-a-mano")
+        enter(Self.badToken); wait("no reconoce"); c("05-clave-no-reconocida")
+        enter(Self.shortToken); wait("incompleta")
+        enter(Self.freeToken); wait("Tu cuenta es gratuita")
+        enter(Self.goodToken); wait("fernando · Premium"); c("06-clave-buena")
         next(); wait("Esperando a que lo apruebes"); c("07-trakt-codigo")
         wait("Conectado como fernando", 20); c("08-trakt-conectado")
         next()
-        XCTAssertFalse(app.staticTexts["Tu TV"].exists, "sin TV no hay paso de la TV")
+        XCTAssertFalse(app.staticTexts["Tu iPhone, control de tu TV"].exists, "sin TV no hay paso de la TV")
         wait("Tu Orbital ya está lista."); c("09-listo")
         next()
         XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 10) || app.buttons["Inicio"].waitForExistence(timeout: 5),
@@ -97,15 +100,15 @@ class GuideUITestCase: XCTestCase {
 final class OnboardingUITests: GuideUITestCase {
     func testCompleteTheGuideWithEveryKeyProblem() { walkTheGuide(capture: false) }
 
-    /// «Después» en todo: de «¿Qué ya tienes?» directo a «Listo» (C1, D1: nada detiene la guía).
+    /// Sin marcar nada y «Cuando quiera ver algo»: de «¿Qué ya tienes?» a «Listo» sin conectar nada (Q1, D1).
     func testLaterSkipsStraightToTheEnd() {
         launch(["-demo-first-run", "-demo-signed-out", "-demo-no-tv"])
         wait("Todo lo que quieres ver, en un solo lugar.", 20); sleep(4)
         next(); wait("¿Qué te gusta?")
         next(); wait("¿Qué ya tienes?")
-        app.buttons["have-debrid-later"].tap()
-        app.buttons["have-trakt-later"].tap()
-        next(); wait("Tu Orbital ya está lista.")
+        next(); wait("Ve todo al instante, aquí")
+        app.buttons["guide-skip"].tap()
+        wait("Tu Orbital ya está lista.")
     }
 
     func testSkipFromAnyStep() {

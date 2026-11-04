@@ -2,8 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// 2 · Lo que te gusta (H1): pósters de lo popular de ahora y tus plataformas, en una pantalla. Son gustos, no vistos: arman
-/// «Porque viste» y «Nuevo en tus plataformas» mientras Trakt no sabe nada de ti. Se puede seguir sin elegir.
+/// 2 · Lo que te gusta (H1; G2 de la revisión del director): los pósters llegan cayendo, como si siguieran a los de la
+/// bienvenida; al tocar uno se voltea y una copia entra en tu órbita, arriba; con tres, el anillo se cierra y llega la luna.
+/// Tus plataformas son sus logos, en gris hasta que los enciendes. Son gustos, no vistos. Se puede seguir sin elegir.
 struct OnboardingLikes: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
@@ -11,6 +12,7 @@ struct OnboardingLikes: View {
     let skip: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var picked = 0
+    @State private var arrived = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
@@ -19,26 +21,31 @@ struct OnboardingLikes: View {
 
     var body: some View {
         let model = guide.model
-        let count = model.liked.count
-        GuidePage(title: Text("¿Qué te gusta?"), message: Text("Elige 3 o más y armo tu Inicio con eso."), step: step,
-                  next: next, skipGuide: skip, back: back) {
+        let chosen = model.liked.compactMap { id in model.candidates.first { $0.imdb == id } }
+        GuidePage(title: Text("¿Qué te gusta?"), message: chosen.count >= OnboardingModel.minimumLikes ? nil : Text("Elige 3 o más y armo tu Inicio con eso."),
+                  step: step, next: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
+                GuideOrbit(picked: chosen, needed: OnboardingModel.minimumLikes)
                 if model.candidates.isEmpty {
                     DSLoadingState()
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: DS.Likes.columns), spacing: DS.Space.s3) {
-                        ForEach(model.candidates) { item in likeTile(item, on: model.liked.contains(item.imdb)) { model.toggleLike(item); picked += 1 } }
+                        ForEach(Array(model.candidates.enumerated()), id: \.element.imdb) { i, item in
+                            likeTile(item, on: model.liked.contains(item.imdb)) { model.toggleLike(item); picked += 1 }
+                                .offset(y: arrived || reduceMotion ? 0 : -DS.Welcome.fallFrom)
+                                .opacity(arrived || reduceMotion ? 1 : 0)
+                                .animation(DS.Motion.spring(reduceMotion)?.delay(Double(i) * DS.GuideScene.dropStep), value: arrived)
+                        }
                     }
-                    (count >= OnboardingModel.minimumLikes ? Text("Listo: \(String(count)) elegidos.")
-                                                            : Text("Llevas \(String(count)) de \(String(OnboardingModel.minimumLikes)).")).recipe(.footnote, color: DS.textMuted)
-                        .contentTransition(.numericText())
                 }
                 if !model.platforms.isEmpty {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         Text("¿Dónde ves hoy?").recipe(.cardTitle, color: DS.text)
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: 2), spacing: DS.Space.s3) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s3), count: 3), spacing: DS.Space.s3) {
                             ForEach(model.platforms, id: \.brand) { platform in
-                                platformTile(platform.name, on: model.chosenPlatforms.contains(platform.brand)) { model.togglePlatform(platform.brand); picked += 1 }
+                                platformTile(platform.name, logo: platform.logo, on: model.chosenPlatforms.contains(platform.brand)) {
+                                    model.togglePlatform(platform.brand); picked += 1
+                                }
                             }
                         }
                     }
@@ -46,7 +53,8 @@ struct OnboardingLikes: View {
             }
         }
         .sensoryFeedback(.selection, trigger: picked)
-        .task { await model.loadCandidates() }
+        .sensoryFeedback(.success, trigger: chosen.count >= OnboardingModel.minimumLikes)
+        .task { await model.loadCandidates(); arrived = true }
         .task { await model.loadPlatforms() }
     }
 
@@ -62,6 +70,8 @@ struct OnboardingLikes: View {
                     }
                 }
                 .overlay { if on { RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.text, lineWidth: DS.Stroke.selected) } }
+                .rotation3DEffect(.degrees(on && !reduceMotion ? DS.GuideScene.flip : 0), axis: (x: 0, y: 1, z: 0))
+                .rotation3DEffect(.degrees(on && !reduceMotion ? DS.GuideScene.flip : 0), axis: (x: 0, y: 1, z: 0))   // la media vuelta de regreso: queda al derecho
                 .scaleEffect(on ? DS.Explainer.restScale : 1)
                 .animation(DS.Motion.pop(reduceMotion), value: on)
         }
@@ -70,30 +80,37 @@ struct OnboardingLikes: View {
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
-    private func platformTile(_ name: String, on: Bool, toggle: @escaping () -> Void) -> some View {
+    /// Una plataforma: su logo, en gris hasta que la enciendes (o su nombre si el logo no carga).
+    private func platformTile(_ name: String, logo: String?, on: Bool, toggle: @escaping () -> Void) -> some View {
         Button(action: toggle) {
-            HStack(spacing: DS.Space.s2) {
-                Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? DS.brandMoon : DS.textMuted)
-                Text(verbatim: name).recipe(.body, color: DS.text)
-                Spacer(minLength: 0)
+            Group {
+                if logo != nil { DSPlatformLogo(url: logo) } else { Text(verbatim: name).recipe(.label, color: DS.text) }
             }
-            .padding(DS.Space.s3)
             .frame(maxWidth: .infinity)
-            .dsCard()
+            .padding(DS.Space.s3)
+            .dsCard(fill: on ? DS.fresh.opacity(DS.Opacity.selectedFill) : nil)
+            .saturation(on ? 1 : 0)
+            .opacity(on ? 1 : DS.Opacity.dimmed)
+            .overlay(alignment: .bottom) { if on { Circle().fill(DS.brandMoon).frame(width: DS.Space.s2, height: DS.Space.s2).offset(y: DS.Space.s1).transition(.scale) } }
+            .animation(DS.Motion.pop(reduceMotion), value: on)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: name))
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
-/// 3 · ¿Qué ya tienes? (C1): Real-Debrid, Trakt y, donde hay TV, Orbital en la TV. Lo que contestas arma el resto: «Ya lo
-/// tengo» va directo a conectar, «¿Qué es?» lo explica y «Después» se lo salta. Lo ya conectado dice «Conectado».
+/// 3 · ¿Qué ya tienes? (C1; G3 de la revisión): tres objetos de línea en lugar de tarjetas y botones. Un toque enciende lo
+/// que tienes (la nube se llena, el hilo entre aparatos se dibuja, la TV prende); lo que no tienes, no se marca (Q1). Mantener
+/// presionado dice qué es. Lo ya conectado sale encendido.
 struct OnboardingHave: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
     let next: () -> Void
     let skip: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
+    @State private var explaining: OnboardingModel.Piece?
+    @State private var taps = 0
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); self.step = step; self.back = back; self.next = next; self.skip = skip
@@ -101,52 +118,51 @@ struct OnboardingHave: View {
 
     var body: some View {
         let model = guide.model
-        GuidePage(title: Text("¿Qué ya tienes?"), message: Text("Así te explico solo lo que te falta."), step: step,
-                  next: next, skipGuide: skip, back: back) {
-            VStack(spacing: DS.Space.s3) {
-                ForEach(model.pieces, id: \.self) { piece in card(piece, model) }
-                Text("Todo se puede conectar después en Ajustes.").recipe(.footnote, color: DS.textMuted)
+        GuidePage(title: Text("¿Qué ya tienes?"), message: Text("Toca lo que ya tienes. Mantén presionado para saber qué es."), step: step,
+                  primary: Text("Seguir"), next: next, skipGuide: skip, back: back) {
+            VStack(spacing: DS.Space.s5) {
+                HStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(model.pieces, id: \.self) { piece in object(piece, model) }
+                }
+                if let explaining {
+                    let words = Self.words(explaining)
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text(words.title).recipe(.cardTitle, color: DS.text)
+                        Text(words.detail).recipe(.secondary, color: DS.textMuted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DS.Space.s4).dsCard()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                Text("Lo que no tengas, te lo explico en el siguiente paso o lo conectas después en Ajustes.").recipe(.footnote, color: DS.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .sensoryFeedback(.selection, trigger: taps)
     }
 
-    @ViewBuilder private func card(_ piece: OnboardingModel.Piece, _ model: OnboardingModel) -> some View {
+    @ViewBuilder private func object(_ piece: OnboardingModel.Piece, _ model: OnboardingModel) -> some View {
         let words = Self.words(piece)
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(spacing: DS.Space.s3) {
-                DSIconTile(symbol: words.symbol, tint: words.tint)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(words.title).recipe(.cardTitle, color: DS.text)
-                    Text(words.detail).recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
+        let on = model.isConnected(piece) || model.answers[piece] == .has
+        Button {
+            guard !model.isConnected(piece) else { return }
+            model.toggle(piece); taps += 1
+        } label: {
+            VStack(spacing: DS.Space.s2) {
+                GuideHaveObject(kind: piece == .debrid ? .cloud : piece == .trakt ? .thread : .tv, on: on)
+                Text(words.title).recipe(.label, color: on ? DS.text : DS.textMuted).multilineTextAlignment(.center)
+                if model.isConnected(piece) { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.success) }
             }
-            if model.isConnected(piece) {
-                Label("Conectado", systemImage: "checkmark.circle.fill").recipe(.label, color: DS.success)
-            } else {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s2) { answers(piece, model) }
-                    VStack(spacing: DS.Space.s2) { answers(piece, model) }
-                }
-            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Space.s4)
+            .dsCard(fill: on ? DS.fresh.opacity(DS.Opacity.selectedFill) : nil)
         }
-        .padding(DS.Space.s4)
-        .dsCard()
-        .accessibilityElement(children: .contain)
-    }
-
-    @ViewBuilder private func answers(_ piece: OnboardingModel.Piece, _ model: OnboardingModel) -> some View {
-        let options: [(OnboardingModel.Answer, LocalizedStringKey)] = piece == .tv
-            ? [(.has, "La tengo"), (.later, "No la tengo")]
-            : [(.has, "Ya lo tengo"), (.explain, "¿Qué es?"), (.later, "Después")]
-        ForEach(options, id: \.0) { value, title in
-            let chosen = model.answers[piece] == value
-            Button { model.answer(piece, value) } label: { Text(title).frame(maxWidth: .infinity) }
-                .modifier(AnswerStyle(chosen: chosen))
-                .accessibilityAddTraits(chosen ? .isSelected : [])
-                .accessibilityIdentifier("have-\(piece.rawValue)-\(value.rawValue)")
-        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(LongPressGesture().onEnded { _ in withAnimation(DS.Motion.fade) { explaining = explaining == piece ? nil : piece } })
+        .accessibilityLabel(Text(words.title))
+        .accessibilityValue(on ? Text("Lo tengo") : Text("No lo tengo"))
+        .accessibilityHint(Text(words.detail))
+        .accessibilityIdentifier("have-\(piece.rawValue)")
     }
 
     static func words(_ piece: OnboardingModel.Piece) -> (symbol: String, tint: Color, title: LocalizedStringKey, detail: LocalizedStringKey) {
@@ -155,13 +171,5 @@ struct OnboardingHave: View {
         case .trakt: ("checkmark.seal.fill", DS.ListTint.chart, "Trakt", "Tu avance, en todos tus aparatos. Gratis.")
         case .tv: ("tv.fill", DS.ListTint.series, "Orbital en la TV", "Tu iPhone como su control.")
         }
-    }
-}
-
-/// La respuesta elegida va llena; las otras, de vidrio.
-private struct AnswerStyle: ViewModifier {
-    let chosen: Bool
-    func body(content: Content) -> some View {
-        if chosen { content.dsPrimaryButton() } else { content.dsGlassButton() }
     }
 }

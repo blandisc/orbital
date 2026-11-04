@@ -11,6 +11,8 @@ struct OnboardingView: View {
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var step: Step = .welcome
     @State private var history: [Step] = []
+    /// Cuántas veces ha viajado la luna (cada paso hacia adelante).
+    @State private var flights = 0
     /// Lo que la guía te explicó: su historia de «Aprende» ya cuenta como vista.
     @State private var explained: Set<OnboardingModel.Piece> = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -29,6 +31,11 @@ struct OnboardingView: View {
                                         removal: .opacity.combined(with: .scale(scale: DS.Motion.leaveScale))))
         }
         .animation(DS.Motion.enter(reduceMotion) ?? DS.Motion.fade, value: step)
+        // El hilo: la luna sale del botón y viaja a su marca del arco (aproximada: el arco ocupa la parte izquierda de arriba).
+        .overlay {
+            let p = guide.model.position(step)
+            GuideMoonFlight(trigger: flights, to: DS.GuideScene.arcStart + DS.GuideScene.arcSpan * Double(p.current) / Double(max(p.total - 1, 1)))
+        }
         .tint(DS.accent)
         .interactiveDismissDisabled()
         .task { if let resume = guide.model.resumeStep { step = resume } }
@@ -56,6 +63,7 @@ struct OnboardingView: View {
         guard let next = guide.model.next(after: current) else { return finish() }
         history.append(current)
         step = next
+        flights += 1
     }
 
     private func goBack() {

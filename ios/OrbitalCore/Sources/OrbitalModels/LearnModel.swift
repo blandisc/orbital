@@ -122,6 +122,16 @@ public final class LearnModel: ObservableModel {
         case titlePlay = "title-play", advancedSearch = "advanced-search", explore, downloads, playerGestures = "player-gestures"
         /// ¿Con foco (oscurece todo menos el botón) o aviso chico?
         public var spotlight: Bool { self == .titlePlay || self == .advancedSearch }
+        /// Su escena en miniatura (la misma de su historia).
+        public var scene: LearnStory.Scene {
+            switch self {
+            case .titlePlay: .typedVersion
+            case .advancedSearch: .filterTiles
+            case .explore: .mosaicZoom
+            case .downloads: .downloadRing
+            case .playerGestures: .playerDoubleTap
+            }
+        }
         /// La historia que abre «Ver la historia».
         public var story: String {
             switch self {

@@ -1,6 +1,292 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "%@ en tu órbita": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in your orbit"
+          }
+        }
+      }
+    },
+    "Abrir Real-Debrid y copiar clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Real-Debrid and copy the key"
+          }
+        }
+      }
+    },
+    "Así funciona: tocas «Ver», la nube lo tiene y lo ves": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How it works: you tap “Watch”, the cloud has it and you watch it"
+          }
+        }
+      }
+    },
+    "Comprobar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check"
+          }
+        }
+      }
+    },
+    "Lo que no tengas, te lo explico en el siguiente paso o lo conectas después en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you don't have, I'll explain in the next step or you connect it later in Settings."
+          }
+        }
+      }
+    },
+    "Lo tengo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I have it"
+          }
+        }
+      }
+    },
+    "Mándale lo que veas y sigue aquí lo que suena allá.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it what you watch and keep watching here what's playing there."
+          }
+        }
+      }
+    },
+    "No lo tengo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I don't have it"
+          }
+        }
+      }
+    },
+    "Otra forma: escribirla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another way: type it"
+          }
+        }
+      }
+    },
+    "Pegar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        }
+      }
+    },
+    "Pegar tu clave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste your key"
+          }
+        }
+      }
+    },
+    "Porque te gustó %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Because you liked %@"
+          }
+        }
+      }
+    },
+    "Revisando tu cuenta…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking your account…"
+          }
+        }
+      }
+    },
+    "Sigue donde te quedaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick up where you left off"
+          }
+        }
+      }
+    },
+    "Te armé Inicio con lo que te gusta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I built your Home with what you like."
+          }
+        }
+      }
+    },
+    "Toca lo que ya tienes. Mantén presionado para saber qué es.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap what you already have. Touch and hold to learn what it is."
+          }
+        }
+      }
+    },
+    "Trakt guarda lo que ves en todos tus aparatos. Es gratis.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt keeps what you watch on all your devices. It's free."
+          }
+        }
+      }
+    },
+    "Tu Inicio, armado con lo que te gusta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Home, built with what you like"
+          }
+        }
+      }
+    },
+    "Tu iPhone, control de tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iPhone, your TV remote"
+          }
+        }
+      }
+    },
+    "Unos 3 € cada 15 días · una cuenta por persona": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About €3 every 15 days · one account per person"
+          }
+        }
+      }
+    },
+    "Ve todo al instante, aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch it all instantly, here"
+          }
+        }
+      }
+    },
+    "Y tu TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "And your TV"
+          }
+        }
+      }
+    },
+    "en tu lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in your list"
+          }
+        }
+      }
+    },
+    "vistos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watched"
+          }
+        }
+      }
+    },
+    "Doble toque a los lados: 10 s": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double tap the sides: 10 s"
+          }
+        }
+      }
+    },
+    "Pellizca para llenar la pantalla; el candado está en «Más».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch to fill the screen; the lock is in “More”."
+          }
+        }
+      }
+    },
     "4K · Latino · Por pedir": {
       "extractionState": "manual",
       "localizations": {

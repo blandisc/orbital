@@ -18,21 +18,22 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertFalse(OnboardingModel.shouldShow(trakt.services), "quien ya usaba la app (Trakt conectado) no la ve")
     }
 
-    /// C1: «¿Qué ya tienes?» arma la guía; nada la detiene (D1: «Cuando quiera ver algo»).
+    /// C1 y Q1: lo que no tienes no se marca. Real-Debrid se explica siempre que no esté conectado; Trakt y la TV, solo si
+    /// los marcas; con los dos, una sola pantalla de «tus aparatos» (Q3). Nada detiene la guía.
     func testTheAnswersShapeThePlanAndNothingBlocks() throws {
         let rig = try ServicesRig(signedIn: false, traktClientID: "CID")
         let guide = OnboardingModel(rig.services)
-        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .trakt, .done], "sin contestar, la TV no entra")
+        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .done], "sin marcar nada: solo se explica Real-Debrid")
         XCTAssertTrue(OnboardingModel.Step.allCases.allSatisfy(guide.canContinue), "ningún paso es obligatorio")
-        guide.answer(.debrid, .later)
-        guide.answer(.tv, .has)
-        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .trakt, .tv, .done])
-        XCTAssertEqual(guide.next(after: .have), .trakt, "«Después» se salta Real-Debrid")
-        guide.answer(.trakt, .later)
-        XCTAssertEqual(guide.next(after: .have), .tv)
+        guide.toggle(.tv)
+        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .tv, .done])
+        guide.toggle(.trakt)
+        XCTAssertEqual(guide.plan, [.welcome, .likes, .have, .debrid, .trakt, .done], "Trakt y la TV juntos")
+        XCTAssertTrue(guide.traktWithTV)
+        guide.toggle(.trakt)
+        XCTAssertEqual(guide.next(after: .debrid), .tv)
         XCTAssertEqual(guide.next(after: .tv), .done)
         XCTAssertNil(guide.next(after: .done))
-        XCTAssertEqual(guide.position(.tv).current, 3)
     }
 
     func testTheTVStepOnlyWhereThereIsTV() throws {

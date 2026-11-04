@@ -21,7 +21,6 @@ struct StoryPlayer: View {
     @State private var progress: Double = 0
     @State private var paused = false
     @State private var width: CGFloat = 0
-    @State private var drag: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
@@ -55,14 +54,10 @@ struct StoryPlayer: View {
         .frame(maxWidth: .infinity)
         .background { ZStack { DS.backdropDeep; tint.opacity(DS.Explainer.tileFill) }.ignoresSafeArea() }
         .foregroundStyle(DS.paper)
-        .offset(y: max(0, drag))
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .contentShape(Rectangle())
         .gesture(SpatialTapGesture().onEnded { g in step(g.location.x < width * DS.Watching.backZone ? -1 : 1) })
         .onLongPressGesture(minimumDuration: DS.Watching.holdToPause, perform: {}, onPressingChanged: { paused = $0 })
-        .simultaneousGesture(DragGesture().onChanged { g in if abs(g.translation.height) > abs(g.translation.width) { drag = g.translation.height } }.onEnded { g in
-            if g.translation.height > DS.Story.closeDrag { close() } else { withAnimation(DS.Motion.spring(reduceMotion)) { drag = 0 } }
-        })
         .animation(DS.Motion.base(reduceMotion), value: index)
         .task(id: "\(index)|\(paused)|\(active)|\(scenePhase == .active)") { await tick() }
         .onChange(of: index) { _, _ in if last { onFinish() } }
@@ -120,6 +115,7 @@ struct StoryDeck: View {
     var onAction: (LearnStory.Destination) -> Void = { _ in }
     let close: () -> Void
     @State private var current: String?
+    @State private var drag: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -143,10 +139,18 @@ struct StoryDeck: View {
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $current)
             .scrollIndicators(.hidden)
+            .offset(y: max(0, drag))
+            // Bajar para cerrar: vive en el mazo (en cada historia le quitaba el deslizamiento al paginado).
+            .simultaneousGesture(DragGesture(minimumDistance: DS.Space.s6).onChanged { g in
+                if g.translation.height > abs(g.translation.width) * 2 { drag = g.translation.height }
+            }.onEnded { g in
+                if drag > DS.Story.closeDrag { close() } else { withAnimation(DS.Motion.spring(reduceMotion)) { drag = 0 } }
+            })
         }
         .background(DS.backdropDeep.ignoresSafeArea())
         .onAppear { current = start }
         .accessibilityElement(children: .contain)
+        .accessibilityValue(Text(verbatim: current ?? ""))   // cuál se ve (VoiceOver y las pruebas)
         .accessibilityIdentifier("story-deck")
     }
 

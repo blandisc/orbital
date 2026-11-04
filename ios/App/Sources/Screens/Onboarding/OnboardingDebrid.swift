@@ -3,11 +3,10 @@ import UIKit
 import OrbitalModels
 import OrbitalAddons
 
-/// 4 · Ver aquí mismo (D1, Fernando, 3 nov 2026): qué es Real-Debrid con los tres pasos de la nube (la misma pieza que la
-/// tarjeta «Así funciona» de las versiones), cuánto cuesta, que es una cuenta por persona y que no ocupa espacio. Pagar no
-/// detiene la guía: «Cuando quiera ver algo» sigue, y la hoja de conectar sale la primera vez que tocas «Ver». Al volver de
-/// la página de Real-Debrid, la clave pegada se revisa sola. Conectar con un código (sin copiar ni pegar) llega cuando se
-/// pruebe con una cuenta; mientras, la clave con sus tres pasos.
+/// 4 · Ver aquí mismo (D1; G4 de la revisión): una escena viva en lugar de dos pantallas de lectura. La ficha, el dedo toca
+/// «Ver» y arranca; abajo, una sola línea con el precio y la regla de una cuenta por persona (Q2: el detalle vive en la
+/// historia «Ver al instante»). Un solo botón: «Abrir Real-Debrid y copiar clave»; al volver, si copiaste algo, «Pegar tu
+/// clave» con un toque. Escribirla a mano queda en «Otra forma». Pagar no detiene la guía: «Cuando quiera ver algo».
 struct OnboardingSeeHere: View {
     let step: (current: Int, total: Int)
     let back: (() -> Void)?
@@ -15,55 +14,73 @@ struct OnboardingSeeHere: View {
     let skip: () -> Void
     @State private var guide: ModelObserver<OnboardingModel>
     @State private var debrid: ModelObserver<DebridModel>
-    @State private var connecting = false
+    @State private var opened = false
+    @State private var canPaste = false
+    @State private var byHand = false
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
 
     init(guide: OnboardingModel, step: (current: Int, total: Int), back: (() -> Void)?, next: @escaping () -> Void, skip: @escaping () -> Void) {
         _guide = State(wrappedValue: ModelObserver(guide)); _debrid = State(wrappedValue: ModelObserver(guide.debrid))
         self.step = step; self.back = back; self.next = next; self.skip = skip
-        _connecting = State(initialValue: guide.answers[.debrid] == .has)
     }
 
     var body: some View {
         let model = debrid.model
-        GuidePage(title: Text("Ver aquí mismo, sin esperar"),
-                  message: Text("Real-Debrid es un servicio de pago que guarda los videos en su nube y te los entrega al instante."),
+        GuidePage(title: Text("Ve todo al instante, aquí"),
                   step: step,
-                  primary: connecting ? Text("Continuar") : Text("Conectar ahora"),
-                  primaryEnabled: !connecting || model.ready,
-                  secondary: Text("Cuando quiera ver algo"),
-                  next: { if connecting { next() } else { withAnimation(DS.Motion.fade) { connecting = true } } },
+                  primary: model.ready ? Text("Seguir") : Text("Abrir Real-Debrid y copiar clave"),
+                  secondary: model.ready ? nil : Text("Cuando quiera ver algo"),
+                  next: { if model.ready { next() } else { opened = true; openURL(model.tokenURL) } },
                   skip: next, skipGuide: skip, back: back) {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
-                DebridFlowStrip()
-                if connecting {
-                    GuideNumberedStep(number: 1, text: Text(verbatim: "real-debrid.com/apitoken")) {
-                        Button("Abrir") { openURL(model.tokenURL) }.dsGlassButton()
+                StorySceneView(scene: .titlePlay, tint: DS.ListTint.flame)
+                    .frame(height: DS.GuideScene.sceneHeight)
+                    .overlay(alignment: .topTrailing) {
+                        if model.ready {
+                            Image(systemName: "checkmark.icloud.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.fresh)
+                                .padding(DS.Space.s3).transition(.scale.combined(with: .opacity))
+                        }
                     }
-                    GuideNumberedStep(number: 2, text: Text("Copia el texto largo que aparece")) { EmptyView() }
-                    GuideNumberedStep(number: 3, text: Text("Vuelve aquí y pégalo")) { EmptyView() }
-                    DebridKeyField(debrid: model)
-                    DebridSharedOffer(debrid: model, carded: true)
+                    .accessibilityElement()
+                    .accessibilityLabel(Text("Así funciona: tocas «Ver», la nube lo tiene y lo ves"))
+                Text("Unos 3 € cada 15 días · una cuenta por persona").recipe(.secondary, color: DS.textMuted)
+                // El campo no se quita mientras se revisa la clave (antes desaparecía y perdía el teclado).
+                if case .ok(let status) = model.check {
+                    GuidePiece(symbol: "checkmark.circle.fill", tint: DS.success, title: Text(verbatim: "\(status.username) · Premium"), detail: DebridWords.text(status))
                 } else {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        GuidePiece(symbol: "calendar", tint: DS.ListTint.watching, title: Text("Desde unos 3 € cada 15 días"),
-                                   detail: Text("Lo pagas en su página, por adelantado. No se renueva solo: Orbital te avisa antes."))
-                        GuidePiece(symbol: "person.fill", tint: DS.ListTint.series, title: Text("Una cuenta por persona"),
-                                   detail: Text("Si dos la usan a la vez, Real-Debrid la corta."))
-                        GuidePiece(symbol: "iphone", tint: DS.ListTint.library, title: Text("No ocupa espacio"),
-                                   detail: Text("El video llega desde la nube mientras lo ves."))
+                    if canPaste || opened {
+                        Button {
+                            if let text = UIPasteboard.general.string { model.token = text; Task { await model.verify() } }
+                        } label: { Label("Pegar tu clave", systemImage: "doc.on.clipboard").frame(maxWidth: .infinity) }
+                            .dsGlassButton().controlSize(.large)
+                            .accessibilityIdentifier("debrid-paste")
+                    }
+                    if byHand {
+                        DebridKeyField(debrid: model)   // dice lo que contestó Real-Debrid, con su arreglo
+                    } else {
+                        switch model.check {
+                        case .checking: DSInlineProgress(text: Text("Revisando tu cuenta…"))
+                        case .free: DSNotice(text: "Tu cuenta es gratuita: necesitas Premium para ver.", tone: .warn)
+                        case .failed(let message): DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .warn)
+                        default: EmptyView()
+                        }
+                        Button { withAnimation(DS.Motion.fade) { byHand = true } } label: { Text("Otra forma: escribirla").recipe(.footnote, color: DS.textMuted) }
+                            .buttonStyle(.borderless)
+                            .accessibilityIdentifier("debrid-by-hand")
                     }
                     Button("Crear cuenta y pagar", systemImage: "arrow.up.right") { openURL(model.renewURL) }
                         .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
                 }
+                DebridSharedOffer(debrid: model, carded: true)
             }
         }
-        .task { await model.checkShared() }
-        // De regreso de la página de Real-Debrid: si ya pegaste la clave, se revisa sola.
+        .sensoryFeedback(.success, trigger: model.ready)
+        .task { await model.checkShared(); canPaste = UIPasteboard.general.hasStrings }
+        // De regreso de la página de Real-Debrid: si copiaste algo, «Pegar tu clave» a la vista.
         .onChange(of: scenePhase) { _, phase in
-            guard phase == .active, connecting, !model.token.isEmpty, !model.ready else { return }
-            Task { await model.verify() }
+            guard phase == .active else { return }
+            canPaste = UIPasteboard.general.hasStrings
         }
     }
 }

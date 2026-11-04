@@ -317,6 +317,9 @@ struct PlayerScreen: View {
         .onAppear { Perf.mark("player.shown"); HardwareVolumeButtons.yieldsToPlayer = true }
         .onDisappear { HardwareVolumeButtons.yieldsToPlayer = false }
         .onChange(of: model.snapshot.state) { if model.snapshot.state == .playing { Perf.mark("player.firstFrame") } }
+        // A1: la primera vez que pausas, el aviso chico de los gestos (nunca encima de una escena que corre).
+        .learnCoach(.playerGestures, title: "Doble toque a los lados: 10 s", detail: "Pellizca para llenar la pantalla; el candado está en «Más».",
+                    active: model.snapshot.state == .paused)
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
             #if DEBUG

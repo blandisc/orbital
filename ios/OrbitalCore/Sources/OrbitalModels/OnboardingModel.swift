@@ -35,7 +35,7 @@ public final class OnboardingModel: ObservableModel {
     public private(set) var candidates: [Suggestion] = [] { didSet { changed() } }
     public private(set) var liked: [String] = [] { didSet { changed() } }
     /// Las plataformas de tu país, para prender las tuyas.
-    public private(set) var platforms: [(brand: String, name: String)] = [] { didSet { changed() } }
+    public private(set) var platforms: [(brand: String, name: String, logo: String?)] = [] { didSet { changed() } }
     public private(set) var chosenPlatforms: Set<String> = [] { didSet { changed() } }
     private let services: Services
 
@@ -71,13 +71,22 @@ public final class OnboardingModel: ObservableModel {
 
     public func answer(_ piece: Piece, _ value: Answer) { answers[piece] = value }
 
-    /// Los pasos de tu guía con lo que contestaste hasta ahora. Lo que no contestas todavía cuenta (la barra no se encoge de
-    /// golpe); «Después» o ya conectado lo quitan. La TV solo si dijiste que la tienes.
+    /// Un toque en su objeto: lo tienes o no (Q1).
+    public func toggle(_ piece: Piece) { answers[piece] = answers[piece] == .has ? nil : .has }
+
+    /// ¿La pantalla de Trakt lleva también la de la TV? (Q3: con los dos, una sola de «tus aparatos».)
+    public var traktWithTV: Bool { offersTV && !isConnected(.tv) && answers[.tv] == .has }
+
+    /// Los pasos de tu guía con lo que marcaste (revisión del director, Q1: lo que no tienes, no se marca). «Ver aquí mismo» sale
+    /// siempre que Real-Debrid no esté conectado (ahí se explica); Trakt y la TV, solo si marcaste que los tienes. Con los dos,
+    /// van juntos en una sola pantalla de «tus aparatos» (Q3).
     public var plan: [Step] {
         var out: [Step] = [.welcome, .likes, .have]
         if !isConnected(.debrid), answers[.debrid] != .later { out.append(.debrid) }
-        if offersTrakt, !isConnected(.trakt), answers[.trakt] != .later { out.append(.trakt) }
-        if offersTV, !isConnected(.tv), answers[.tv] == .has { out.append(.tv) }
+        let trakt = offersTrakt && !isConnected(.trakt) && answers[.trakt] == .has
+        let tv = offersTV && !isConnected(.tv) && answers[.tv] == .has
+        if trakt { out.append(.trakt) }
+        if tv && !trakt { out.append(.tv) }
         out.append(.done)
         return out
     }
@@ -146,7 +155,7 @@ public final class OnboardingModel: ObservableModel {
 
     public func loadPlatforms() async {
         let found = await services.forYou.platforms()
-        platforms = Tmdb.platforms.filter { found[$0.brand] != nil }.map { ($0.brand, $0.name) }
+        platforms = Tmdb.platforms.compactMap { p in found[p.brand].map { (p.brand, p.name, $0.logo) } }
     }
 
     public func togglePlatform(_ brand: String) {

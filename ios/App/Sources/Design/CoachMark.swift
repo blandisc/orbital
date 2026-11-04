@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalModels
 
 /// Los avisos sobre la pantalla (F3, Fernando, 3 nov 2026), la primera vez que entras a algo propio de Orbital. Dos formas:
 /// con foco (el velo oscurece todo menos el botón señalado, un anillo se dibuja una vez y no late, y la burbuja sube junto
@@ -11,6 +12,8 @@ struct CoachContent: Equatable {
     let detail: LocalizedStringKey
     /// Con foco (oscurece todo menos `id`) o aviso chico.
     let spotlight: Bool
+    /// La escena en miniatura con su dedo fantasma (la misma de su historia, en chico).
+    var scene: LearnStory.Scene?
 
     static func == (a: CoachContent, b: CoachContent) -> Bool { a.id == b.id && a.spotlight == b.spotlight }
 }
@@ -99,6 +102,9 @@ struct CoachOverlay: View {
 
     private var bubble: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
+            if let scene = coach.scene {
+                StorySceneView(scene: scene, tint: DS.ListTint.spark).frame(height: DS.Coach.scene).accessibilityHidden(true)
+            }
             Text(coach.title).recipe(.cardTitle, color: DS.text).fixedSize(horizontal: false, vertical: true)
             Text(coach.detail).recipe(.secondary, color: DS.textMuted).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: DS.Space.s3) {
