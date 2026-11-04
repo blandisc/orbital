@@ -150,7 +150,129 @@
     "other_account": "Una entrada con otra `account` se enseña («Lo pidió la TV · …» en el iPhone, «Lo pidió el <by>» en la TV) pero no se sigue, no se cancela y no sale como versión: ese enlace no existe en tu cuenta",
     "access": "Con el token del puerto del túnel mientras no haya aparatos emparejados; con el primero, solo con llave de aparato (devices › access, K1-13). No lleva claves ni enlaces"
   },
+  "push": {
+    "_": "R14-A y R11-A (Fernando, 4 nov 2026): la TV avisa al iPhone al instante por APNs y lleva al día la actividad en vivo de un pedido. Acordado entre las sesiones de la TV y del iPhone tras la revisión adversarial de la TV (12 puntos); la del iPhone puede cambiar algo antes de construir. Si la TV está apagada no sale nada: el vistazo del iPhone (R10, R14-B) sigue de respaldo.",
+    "register": {
+      "_": "POST /api/companion/push-token y DELETE con el mismo cuerpo. Solo con llave de aparato (od1): el device_id sale de la llave, nunca del cuerpo. El iPhone registra en cada arranque y en cada cambio de token (upsert, idempotente).",
+      "body": {
+        "kind": "alert | activity_start | activity",
+        "token": "hex de APNs",
+        "env": "sandbox | production (por token: lo firmado en desarrollo es sandbox)",
+        "rd_account": "el id de usuario de Real-Debrid del aparato (de /user con su clave); nunca la clave",
+        "hash": "solo con kind activity: el pedido de esa actividad"
+      },
+      "limits": {
+        "alert": 1,
+        "activity_start": 1,
+        "activity": 10
+      },
+      "forget": "La TV olvida un token con 410 Unregistered, con DELETE, y todos los de un aparato quitado (device_removed / remove) o desconocido tras reinstalar. Con BadDeviceToken no lo borra (puede ser un env cruzado): lo marca dudoso y no le manda hasta que el iPhone lo vuelva a registrar.",
+      "privacy": "Los tokens nunca van en bitácoras, en avisos ni en respuestas. La llave .p8, su Key ID y el Team ID los carga Fernando en la TV (Ajustes › Cuentas › Avisos al iPhone, por el camino de pegar desde otro aparato) y la TV los guarda con DPAPI; nunca por chat ni git."
+    },
+    "alerts": {
+      "_": "Solo a los aparatos cuyo rd_account es el de la cuenta del pedido (requests › account). De los pedidos de cualquier aparato de esa cuenta. Cada <collapse-id> sale una sola vez (la TV lo anota en la libreta del pedido; el de vencimiento, en rd_expiry_notice).",
+      "events": {
+        "ready": {
+          "collapse_id": "<hash>:ready",
+          "title": [
+            "push.ready.title",
+            "«T1 E2» o el título de la película"
+          ],
+          "body": [
+            "push.ready.body",
+            "el título"
+          ],
+          "category": "DEBRID_READY"
+        },
+        "refused": {
+          "collapse_id": "<hash>:refused",
+          "title": [
+            "push.refused.title"
+          ],
+          "body": [
+            "push.refused.body",
+            "el título"
+          ]
+        },
+        "stuck": {
+          "collapse_id": "<hash>:stuck",
+          "title": [
+            "push.stuck.title"
+          ],
+          "body": [
+            "push.stuck.body",
+            "el título"
+          ],
+          "when": "24 h sin avanzar"
+        },
+        "retried": {
+          "collapse_id": "<hash>:retried",
+          "title": [
+            "push.retried.title",
+            "el título"
+          ],
+          "body": [
+            "push.retried.body"
+          ],
+          "when": "el reintento de N3; uno por pedido, no por reintento"
+        },
+        "expiry": {
+          "collapse_id": "expiry:<vence en segundos enteros>:<14|3|0>",
+          "title": [
+            "push.expiry.title (con los días) | push.expiry1.title | push.expiry0.title | push.expired.title"
+          ],
+          "body": [
+            "push.expiry.body"
+          ],
+          "when": "VE1-A: 14, 3 y 0 días, y vencida"
+        }
+      },
+      "aps": "alert {title-loc-key, title-loc-args, loc-key, loc-args} sin title/body de respaldo (iOS los ignora con loc-key); thread-id «debrid»; mutable-content 0; category solo en ready. Campos propios: {hash, meta_id, video_id, kind}; nunca un enlace ni la clave.",
+      "headers": {
+        "apns-push-type": "alert",
+        "apns-topic": "mx.iracheta.orbital",
+        "apns-priority": 10,
+        "apns-collapse-id": "el de cada evento"
+      },
+      "duplicates": "El iPhone usa el mismo identificador en sus avisos locales y, antes de programar uno, revisa getDeliveredNotifications: si ya llegó, no lo repite."
+    },
+    "keys": [
+      "push.ready.title",
+      "push.ready.body",
+      "push.refused.title",
+      "push.refused.body",
+      "push.stuck.title",
+      "push.stuck.body",
+      "push.retried.title",
+      "push.retried.body",
+      "push.expiry.title",
+      "push.expiry1.title",
+      "push.expiry0.title",
+      "push.expired.title",
+      "push.expiry.body",
+      "push.activity.title"
+    ],
+    "activity": {
+      "_": "R11-A: la actividad en vivo de un pedido. Los del iPhone los inicia el iPhone (y registra su token activity con el hash); los de la TV, la TV con push-to-start (activity_start, iOS 17.2+), solo si ese hash no tiene ya una del iPhone.",
+      "attributes_type": "DebridActivityAttributes",
+      "attributes": {
+        "hash": "String",
+        "title": "String",
+        "label": "String («T1 E2» o vacío)"
+      },
+      "content_state": {
+        "percent": "Int",
+        "state": "queued | downloading | no_peers | too_many | ready | refused",
+        "line": "String, ya armado («A este paso, faltan unos minutos.»)"
+      },
+      "start": "push-to-start: event start, attributes-type, attributes completos, content-state y alert {title-loc-key: push.activity.title, title-loc-args: [label o título]}.",
+      "update": "apns-push-type liveactivity, apns-topic mx.iracheta.orbital.push-type.liveactivity, prioridad 5, event update; timestamp = el del avance en Real-Debrid (progress_at), para no pisar uno local más nuevo; stale-date. Uno cada 2 min como mucho y solo si cambió el porcentaje o el estado.",
+      "end": "Al quedar listo, rechazado o gone: event end, prioridad 10, dismissal-date unos 15 min después. A las 8 h de empezada (límite de Apple) también termina, con line «Sigue en la nube · te aviso cuando esté»."
+    },
+    "transport": "HTTP/2 a api.sandbox.push.apple.com o api.push.apple.com según el env del token; JWT ES256 con la llave .p8 (kid = Key ID, iss = Team ID), reusado 20 a 50 min (APNs rechaza uno de más de 60 y responde TooManyProviderTokenUpdates si se renueva seguido). La TV usa httpx[http2] y cryptography."
+  },
   "routes": {
+    "POST /api/companion/push-token": "R14-A: {kind, token, env, rd_account, hash?} con llave de aparato; DELETE con el mismo cuerpo. Ver push › register.",
     "GET /api/addons": "la lista con su revision; las direcciones que traen clave van tapadas («•••»). Con ?full=1 las da completas, solo con llave de aparato (ver secrets).",
     "PUT /api/addons": "{base_revision, changed_at, changed_by, addons, removed}: 200 con lo guardado, 409 con la lista actual, 422 si algo no cuadra (una máscara, un origin que no existe, un complemento agregado a mano).",
     "PUT /api/realdebrid": "{token}: la clave fija, aparte de la lista y solo al oprimir «Pasar a la TV» en el iPhone. Responde con el usuario y el vencimiento, nunca con la clave.",
