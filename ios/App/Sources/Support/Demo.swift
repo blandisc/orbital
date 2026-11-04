@@ -86,6 +86,11 @@ enum Demo {
     static var oneDrive: String? { value(after: "-demo-onedrive") }
     /// `-demo-media`: Descargas abre en Mi media; `-demo-media-title movie:tt…` abre ese título.
     static var media: Bool { ProcessInfo.processInfo.arguments.contains("-demo-media") }
+    /// `-demo-library downloads|media|saved`: la parte de Biblioteca con la que abre (sin esto, Guardado; con `-demo-media`,
+    /// Mi media; con `-demo-downloads`, Descargas).
+    static var libraryPart: String? { value(after: "-demo-library") }
+    /// `-demo-saved-empty`: Mi lista de Trakt vacía (el vacío de Guardado, con «Explorar»).
+    static var savedEmpty: Bool { ProcessInfo.processInfo.arguments.contains("-demo-saved-empty") }
     static var mediaTitle: String? { value(after: "-demo-media-title") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
@@ -99,7 +104,7 @@ enum Demo {
         return args[i + 1]
     }
 
-    /// `-demo-tab 2`: la pestaña con la que arranca (0 Inicio, 1 Para ti, 2 Ver, 3 Descargas).
+    /// `-demo-tab 2`: la pestaña con la que arranca (0 Inicio, 1 Explorar, 2 Buscar, 3 Biblioteca).
     static var tab: Int { value(after: "-demo-tab").flatMap(Int.init) ?? 0 }
     /// `-demo-title series:tt0386676`: abre esa ficha en la pestaña de arranque.
     static var title: (kind: String, id: String)? {

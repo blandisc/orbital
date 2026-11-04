@@ -154,3 +154,38 @@ struct DSGenreMenu: View {
         .accessibilityIdentifier("genre-menu")
     }
 }
+
+/// Una lista desplegable nativa con lo elegido a la vista («Mi lista ⌃⌄»): la misma cápsula y el mismo `Menu` con `Picker`
+/// que las temporadas (`DSSeasonMenu`) y los géneros (`DSGenreMenu`), para elegir uno entre opciones que cambian y no caben
+/// como pestañas: la lista de Biblioteca › Guardado (Mi lista o una tuya de Trakt; Fernando, 3 nov 2026, BI1-A).
+struct DSChoiceMenu<ID: Hashable>: View {
+    struct Option { let id: ID; let title: Text; var symbol: String? = nil }
+    let options: [Option]
+    @Binding var selection: ID
+    /// Qué se elige (para VoiceOver): «Lista».
+    let label: Text
+
+    private var current: Option? { options.first { $0.id == selection } }
+
+    var body: some View {
+        Menu {
+            Picker(selection: $selection) {
+                ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                    Label { option.title } icon: { if let symbol = option.symbol { Image(systemName: symbol) } }.tag(option.id)
+                }
+            } label: { EmptyView() }
+        } label: {
+            HStack(spacing: DS.Space.s2) {
+                if let symbol = current?.symbol {
+                    Image(systemName: symbol).font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                }
+                (current?.title ?? Text(verbatim: "")).recipe(.labelLarge, color: DS.text).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
+            }
+        }
+        .dsSecondaryButton()
+        .sensoryFeedback(.selection, trigger: selection)
+        .accessibilityLabel(label)
+        .accessibilityValue(current?.title ?? Text(verbatim: ""))
+    }
+}

@@ -288,23 +288,19 @@ public actor Trakt {
     /// Todo lo que ya viste (películas y series con al menos un episodio), por IMDb: «Decide por mí» no te propone eso.
     /// Lo que ya viste: las películas y las series que viste completas. Una serie a la mitad no cuenta (Fernando, 1 nov:
     /// «Ocultar lo que ya vi» escondía una serie por un solo capítulo).
-    public func watchedIDs() async throws -> Set<String> {
-        async let movies = get("/sync/watched/movies")
-        async let shows = get("/sync/watched/shows", [("extended", "full")])   // con sus temporadas y cuántos capítulos han salido
-        let movieRows: JSON? = try await movies   // cada espera en su línea (compilador de la CI, 31 oct 2026)
-        let showRows: JSON? = try await shows
-        let seenMovies = (movieRows?.array ?? []).compactMap { $0["movie"]?["ids"]?["imdb"]?.string }
-        let seenShows = (showRows?.array ?? []).filter(Self.showCompleted).compactMap { $0["show"]?["ids"]?["imdb"]?.string }
-        return Set(seenMovies + seenShows)
-    }
+    public func watchedIDs() async throws -> Set<String> { try await watchedState().completed }
 
     /// ¿Viste todos los capítulos que han salido? (Sin contar los especiales, la temporada 0.) Sin el dato de cuántos han
     /// salido, se cuenta como vista (como antes).
-    static func showCompleted(_ row: JSON) -> Bool {
-        guard let aired = row["show"]?["aired_episodes"]?.intValue, aired > 0 else { return true }
+    static func showCompleted(_ row: JSON) -> Bool { showFraction(row) >= 1 }
+
+    /// Cuánto llevas de una serie: los capítulos vistos entre los que han salido (sin especiales), de 0 a 1. Sin el dato de
+    /// cuántos han salido, 1 (vista, como antes).
+    static func showFraction(_ row: JSON) -> Double {
+        guard let aired = row["show"]?["aired_episodes"]?.intValue, aired > 0 else { return 1 }
         let seen = (row["seasons"]?.array ?? []).filter { ($0["number"]?.intValue ?? 0) > 0 }
             .reduce(0) { $0 + ($1["episodes"]?.array?.count ?? 0) }
-        return seen >= aired
+        return min(1, Double(seen) / Double(aired))
     }
 
     static func isListID(_ id: String) -> Bool { !id.isEmpty && id.allSatisfy(\.isASCII) && id.allSatisfy(\.isNumber) }

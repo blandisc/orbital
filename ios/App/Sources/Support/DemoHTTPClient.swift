@@ -292,7 +292,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         .init(id: 105, name: "Fin de semana", created: 48, updated: 2, items: ["tt15239678"]),
     ]
     var traktWatchlist: [(imdb: String, title: String, kind: String, hoursAgo: Double)] = [("tt11280740", "Severance", "show", 5),
-        ("tt15239678", "Dune: Part Two", "movie", 30), ("tt0903747", "Breaking Bad", "show", 200)]
+        ("tt15239678", "Dune: Part Two", "movie", 30), ("tt0903747", "Breaking Bad", "show", 200),
+        // Biblioteca › Guardado: de todo un poco (a medias aquí o en Trakt, vistas y por ver).
+        ("tt0386676", "The Office", "show", 260), ("tt0816692", "Interstellar", "movie", 300), ("tt1160419", "Dune", "movie", 340),
+        ("tt14452776", "The Bear", "show", 400), ("tt1375666", "Inception", "movie", 450), ("tt7366338", "Chernobyl", "show", 500),
+        ("tt5753856", "Dark", "show", 600), ("tt0068646", "The Godfather", "movie", 700)]
     var nextTraktList = 106
     var traktHidden: Set<String> = ProcessInfo.processInfo.arguments.contains("-demo-hidden-shows") ? ["tt7366338"] : []   // SS1-A
 
