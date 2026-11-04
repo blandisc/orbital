@@ -208,6 +208,7 @@ def router(d: Deps) -> APIRouter:
         prefs, subtitles = catalog.watch.language_for(id)  # el idioma que recuerda este título, igual que al reproducir
         try:
             found = catalog.watch.stream_sources(kind, video or id, prefs)
+            found = found + catalog.watch.askable(kind, video or id, prefs, found)  # «Solo lo que ya está»: qué pedir
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))
         except Exception as exc:  # noqa: BLE001 - nunca «Internal Server Error» en la pantalla de fuentes

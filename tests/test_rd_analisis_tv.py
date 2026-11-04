@@ -207,3 +207,28 @@ def test_sin_tmdb_el_original_sale_del_pais_de_cinemeta(library, monkeypatch):
     monkeypatch.setattr(w.localizer, "facts", lambda kind, meta_id: None)
     monkeypatch.setattr(w.cinemeta, "meta", lambda kind, meta_id: {"name": "Breaking Bad", "country": "United States"})
     assert w._title_facts("series", "tt0903747:1:1")["original"] == "en"
+
+
+def test_escenario_36_solo_lo_que_ya_esta_igual_hay_que_pedirlas(library, monkeypatch):
+    # Tu Torrentio en «Solo lo que ya está en Real-Debrid»: no trae nada que pedir. «Versión» busca sin la clave (como el
+    # iPhone, a22ff6a6) y agrega lo que se puede pedir, sin repetir lo que ya arranca ni chocar números de fuente.
+    w = library.watch
+    ya = source(0, "Dune.Part.Two.2024.1080p.Castellano", infoHash="c" * 40)
+    keyless = [source(0, "Dune.Part.Two.2024.1080p.Castellano", name="Torrentio\n1080p", infoHash="c" * 40),
+               source(1, "Dune.Part.Two.2024.1080p.Latino", name="Torrentio\n1080p", infoHash="a" * 40),
+               source(2, "Dune.Part.Two.2024.2160p.Latino", name="Torrentio\n4k", infoHash="b" * 40)]
+    prefs = streams.Preferences(audio="es", spanish="es-419")
+    monkeypatch.setattr(w.rd, "client", lambda: object())
+    monkeypatch.setattr(w.rd, "refused", lambda: {"b" * 40})
+    monkeypatch.setattr(w.rd, "candidates", lambda kind, video_id, prefs: keyless)
+    extra = w.askable("movie", "tt15239678", prefs, [ya])
+    assert [s.info_hash for s in extra] == ["a" * 40, "b" * 40]
+    assert all(s.debrid and not s.cached and s.index >= w.ASK_INDEX for s in extra)
+    assert [s.public().get("hash") for s in extra] == ["a" * 40, "b" * 40]  # «Pedirlo» pide justo esa
+    assert extra[1].refused and not extra[0].refused
+    assert keyless[1].index == 1 and not keyless[1].debrid  # no toca la lista de «Pedir a la nube»
+    # Si tu lista ya trae qué pedir, o sin clave, no se busca nada más.
+    pedir = source(3, "Dune.Part.Two.2024.1080p.Latino", name="[RD download] Torrentio\n1080p", infoHash="d" * 40)
+    assert w.askable("movie", "tt15239678", prefs, [ya, pedir]) == []
+    monkeypatch.setattr(w.rd, "client", lambda: None)
+    assert w.askable("movie", "tt15239678", prefs, [ya]) == []

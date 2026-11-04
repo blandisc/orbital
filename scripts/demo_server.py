@@ -9,6 +9,7 @@ abrir nada de verdad (el lanzador solo anota). No interfiere con el Orbital real
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -372,18 +373,29 @@ def demo_sources(catalog) -> None:
     fixture = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "streams" / "torrentio_rd_2026-10-20.json"
     titles = {t["video_id"].split(":")[0]: t for t in json.loads(fixture.read_text("utf-8"))["titles"]}
 
-    demo_state = os.environ.get("ORBITAL_DEMO_STATE") or ""  # capturas: no_instant | downloading | ready
+    demo_state = os.environ.get("ORBITAL_DEMO_STATE") or ""  # capturas: no_instant | only_instant | downloading | ready
+
+    def fake_hash(video_id, i):  # lo capturado no trae huella: una fija por versión (la misma con y sin la clave)
+        return hashlib.sha1(f"{video_id.split(':')[0]}/{i}".encode()).hexdigest()
+
+    def parsed(kind, video_id):
+        title = titles.get(video_id.split(":")[0]) or titles["tt15239678" if kind == "movie" else "tt0096697"]
+        return title, [streams.parse({**st, "infoHash": fake_hash(video_id, i)}, "Torrentio",
+                                     "https://torrentio.strem.fun/manifest.json", i, title["original"])
+                       for i, st in enumerate(title["streams"])]
 
     def stream_sources(kind, video_id, prefs=None):
         title = titles.get(video_id.split(":")[0]) or titles["tt15239678" if kind == "movie" else "tt0096697"]
         found = []
         for i, stream in enumerate(title["streams"]):
             # Lo capturado no trae enlace (se quitó la clave): uno de mentira, para que «Ver» tenga recomendada.
-            stream = {**stream, "url": stream.get("url") or f"https://demo.invalid/{video_id}/{i}.mkv"}
+            stream = {**stream, "url": stream.get("url") or f"https://demo.invalid/{video_id}/{i}.mkv", "infoHash": fake_hash(video_id, i)}
             src = streams.parse(stream, "Torrentio", "https://torrentio.strem.fun/manifest.json", i, title["original"])
             src.other_title = not streams.mentions_title(title["titles"], src.release)
             if demo_state == "no_instant":  # nada al instante: «Pedir a la nube» y «Hay que pedirlas»
                 src.cached = False
+            if demo_state == "only_instant" and src.debrid and not src.cached:
+                continue  # tu Torrentio en «Solo lo que ya está en Real-Debrid»: no trae qué pedir
             found.append(src)
         found = streams.rank(found, prefs or catalog.watch.stream_prefs, kind)
         req = catalog.watch.rd.status(video_id)  # lo pedido y listo: «Al instante · la pediste», primero (como la TV)
@@ -395,6 +407,13 @@ def demo_sources(catalog) -> None:
         return found
 
     catalog.watch.stream_sources = stream_sources
+    if demo_state == "only_instant":  # la búsqueda sin clave (la de «Pedir a la nube»): todo lo que existe, sin Real-Debrid
+        def candidates(kind, video_id, prefs):
+            got = parsed(kind, video_id)[1]
+            for src in got:
+                src.debrid = src.cached = False
+            return streams.rank(got, prefs, kind)
+        catalog.watch.rd.candidates = candidates
 
 
 def main() -> None:

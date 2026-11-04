@@ -1290,6 +1290,26 @@ class Watch:
             mine.requested = True
         return [mine, *found] if mine is not None else found
 
+    ASK_INDEX = 100_000  # las que solo salen sin la clave van numeradas aparte: nunca chocan con las de tu Torrentio
+
+    def askable(self, kind: str, video_id: str, prefs: streams.Preferences, found: list[streams.Source]) -> list[streams.Source]:
+        """«Versión» con tu Torrentio en «Solo lo que ya está en Real-Debrid» (como el iPhone, 4 nov): Torrentio no trae nada
+        que pedir, así que «Hay que pedirlas» saldría vacío. Se buscan sin la clave (lo mismo que usa «Pedir a la nube») y
+        se agregan como por pedir; las que ya trae tu lista no se repiten. Vacío si tu lista ya trae qué pedir o sin clave."""
+        if self.rd.client() is None or any(s.debrid and not s.cached for s in found):
+            return []
+        have = {s.info_hash for s in found if s.info_hash}
+        refused = self.rd.refused()
+        out: list[streams.Source] = []
+        for s in self.rd.candidates(kind, video_id, prefs):
+            if not s.info_hash or s.info_hash in have:
+                continue
+            gone = s.info_hash in refused
+            out.append(replace(s, index=self.ASK_INDEX + len(out), debrid=True, cached=False, refused=gone,
+                               score=s.score - (1500 if gone else 0)))  # FQ2-A: lo que no dejó bajar, al final
+            have.add(s.info_hash)
+        return out
+
     def availability(self, kind: str, meta_id: str, video_id: str) -> dict:
         """Por qué no hay una versión que arranque ya y qué se puede hacer (la ficha lo dice con sus palabras, RD-1 y RD-5):
         {"why": "ok" | "unreleased" | "offline" | "no-addons" | "debrid" | "none", "message", "detail", "can_request",
