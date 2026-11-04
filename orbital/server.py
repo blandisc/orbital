@@ -182,10 +182,12 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             # Un solo volumen: el reproductor mueve el de Windows (el de Ajustes rápidos y Alexa). Solo aquí, en la Orbital de
             # verdad: en pruebas movería el volumen real de la computadora.
             catalog.watch.player.system_volume = (system_audio.volume, system_audio.set_volume)
-            # Con DWM lleno los videos se traban: se libera antes de abrir uno (solo aquí: en pruebas reiniciaría DWM).
+            # Con DWM lleno los videos se traban: se libera en reposo y al volver de un juego (solo aquí: en pruebas
+            # reiniciaría DWM). Al abrir un video ya no: salía escondido detrás de Orbital (2026-11-03). Si acaba de
+            # reiniciarse, el video espera a que Windows vuelva a dibujar (dwm_release.wait_settled).
             from . import dwm_release
 
-            catalog.watch.player.before_open = dwm_release.release_if_full
+            catalog.watch.player.before_open = dwm_release.wait_settled
             # Y al volver de un juego (los emuladores Vulkan le dejan memoria a DWM): mientras la tele regresa a 4K.
             catalog.sessions.release_video_memory = lambda: dwm_release.release_if_full("al volver de un juego")
             threading.Thread(target=scan, daemon=True, name="first-scan").start()

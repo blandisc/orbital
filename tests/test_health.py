@@ -139,21 +139,43 @@ def test_video_memory_is_released_with_another_window_in_front_after_a_long_whil
     assert release.runs == 1
 
 
-def test_before_a_video_dwm_is_released_only_when_it_holds_too_much():
+def test_back_from_a_game_dwm_is_released_only_when_it_holds_too_much():
     from orbital import dwm_release
 
     runs, waits = [], []
     real = dwm_release.available, dwm_release.run
     dwm_release.available, dwm_release.run = (lambda: True), (lambda: runs.append(1) or True)
     try:
-        assert not dwm_release.release_if_full("antes del video", measure=lambda: (1800, 300), sleep=waits.append)  # limpio: nada
-        assert not dwm_release.release_if_full("antes del video", measure=lambda: None, sleep=waits.append)  # no se pudo medir: nada
-        assert dwm_release.release_if_full("antes del video", measure=lambda: (12700, 300), sleep=waits.append)
+        assert not dwm_release.release_if_full("al volver de un juego", measure=lambda: (1800, 300), sleep=waits.append)  # limpio: nada
+        assert not dwm_release.release_if_full("al volver de un juego", measure=lambda: None, sleep=waits.append)  # no se pudo medir: nada
+        assert dwm_release.release_if_full("al volver de un juego", measure=lambda: (12700, 300), sleep=waits.append)
         assert runs == [1] and waits == [dwm_release.BACK_AFTER]  # espera a que Windows vuelva a dibujar
         dwm_release.available = lambda: False
-        assert not dwm_release.release_if_full("antes del video", measure=lambda: (12700, 300), sleep=waits.append)  # sin activar
+        assert not dwm_release.release_if_full("al volver de un juego", measure=lambda: (12700, 300), sleep=waits.append)  # sin activar
     finally:
         dwm_release.available, dwm_release.run = real
+
+
+def test_a_video_never_restarts_dwm_and_waits_if_it_was_just_restarted():
+    """2026-11-03, «salió reducido»: mpv abierto hasta 12 s después de reiniciar DWM quedaba al frente para Windows pero no
+    se veía. Un video ya no reinicia DWM; si Orbital acaba de reiniciarlo (al volver de un juego), espera a SETTLE."""
+    from orbital import dwm_release
+
+    waits, now = [], [1000.0]
+    real_last = dwm_release._last_restart[0]
+    try:
+        dwm_release._last_restart[0] = 0.0
+        assert dwm_release.wait_settled(sleep=waits.append, clock=lambda: now[0]) == 0 and waits == []  # nunca reiniciado
+        dwm_release._last_restart[0] = now[0] - 5
+        assert dwm_release.wait_settled(sleep=waits.append, clock=lambda: now[0]) == dwm_release.SETTLE - 5
+        dwm_release._last_restart[0] = now[0] - 60
+        assert dwm_release.wait_settled(sleep=waits.append, clock=lambda: now[0]) == 0  # hace mucho: nada
+    finally:
+        dwm_release._last_restart[0] = real_last
+    import inspect
+
+    from orbital import server
+    assert "before_open = dwm_release.wait_settled" in inspect.getsource(server)
 
 
 def test_sudden_dwm_growth_logs_who_was_in_front_and_measures_every_minute(tmp_path, caplog, monkeypatch):

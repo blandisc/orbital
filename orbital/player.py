@@ -245,7 +245,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
         self._held = False  # abrió en pausa hasta que se vaya la pantalla de carga (release_start): un tráiler
-        self.before_open = None  # () antes de abrir mpv: liberar la memoria de video de Windows si hace falta (server.py)
+        self.before_open = None  # () antes de abrir mpv: esperar si DWM acaba de reiniciarse (server.py, dwm_release)
         self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
         self.on_play_episode = None  # (meta, id_del_episodio): ver ese episodio
         self.on_sub_scale = None  # (escala): para recordarla
@@ -296,7 +296,7 @@ class OrbitalPlayer(PlayerScreen):
         self.stop()
         if self.segment is not None and self.segment.playing:
             self._close_segment(self.segment)  # lo visto del video anterior se guarda antes de soltarlo
-        if self.before_open is not None:  # con la pantalla de carga a la vista: DWM limpio, sin tirones (dwm_release)
+        if self.before_open is not None:  # con la pantalla de carga a la vista: DWM ya dibuja bien (dwm_release)
             self._safe(self.before_open)
         self._held = bool(options.get("paused"))
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, bindings=input_conf(),

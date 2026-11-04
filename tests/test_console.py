@@ -76,7 +76,8 @@ def test_game_end_reopens_window_unless_user_exited(library, monkeypatch):
 
 def test_back_from_a_game_video_memory_is_released_with_orbital_in_front_before_4k(library, monkeypatch):
     """Al volver de un juego, si DWM quedó lleno se libera ahí (junto al parpadeo de volver a 4K), con Orbital ya al
-    frente para que no se asome el escritorio. Un video no: ese ya se libera antes de abrirse (player.before_open)."""
+    frente para que no se asome el escritorio. Un video no reinicia DWM al abrirse: si acaba de reiniciarse, espera
+    (dwm_release.wait_settled, player.before_open)."""
     from orbital import display
 
     order = []

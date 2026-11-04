@@ -53,12 +53,17 @@ def available() -> bool:
 # tres tirones; recién liberado, 0 en 45 min). Es lo mismo que pide la liberación en reposo (health.RELEASE_MB).
 FRESH_MB = 3000
 BACK_AFTER = 2.5  # s que tarda Windows en volver a dibujar tras reiniciar DWM (la pantalla parpadea en ese rato)
+# Lo que tarda en volver a dibujar bien una ventana nueva: medido en la tele el 2026-11-03, mpv abierto 3, 5, 8 y 12 s
+# después de reiniciar DWM quedaba al frente para Windows pero no se veía (seguía la ficha de Orbital: «salió reducido»);
+# a los 20 s, bien. Por eso un video ya no reinicia DWM al abrirse y, si acaba de reiniciarse, espera a esto.
+SETTLE = 20.0
+_last_restart = [0.0]  # time.monotonic() del último reinicio que lanzó Orbital
 
 
-def release_if_full(moment: str = "antes del video", measure=None, sleep=time.sleep) -> bool:
-    """En un momento en que el parpadeo no estorba (antes de abrir un video, con la pantalla de carga; al volver de un
-    juego, cuando la tele ya va a parpadear al regresar a 4K): si DWM retiene de más, se reinicia ahí. Solo con la tarea
-    activada. Devuelve si lo hizo. La fuga es del driver de AMD (32.0.23044.19, del 2026-09-30): ver el informe de la
+def release_if_full(moment: str = "al volver de un juego", measure=None, sleep=time.sleep) -> bool:
+    """En un momento en que el parpadeo no estorba (al volver de un juego, cuando la tele ya va a parpadear al regresar a
+    4K): si DWM retiene de más, se reinicia ahí. Solo con la tarea activada. Devuelve si lo hizo. Antes también al abrir
+    un video, pero el video salía escondido detrás de Orbital (ver SETTLE). La fuga es del driver de AMD (32.0.23044.19, del 2026-09-30): ver el informe de la
     investigación en el commit que agregó esto."""
     if measure is None:
         from .health import dwm_gpu_mb as measure
@@ -72,9 +77,22 @@ def release_if_full(moment: str = "antes del video", measure=None, sleep=time.sl
     return True
 
 
-def run() -> bool:
+def wait_settled(sleep=time.sleep, clock=time.monotonic) -> float:
+    """Antes de abrir un video: si Orbital reinició DWM hace menos de SETTLE, espera a que Windows vuelva a dibujar bien
+    las ventanas nuevas (con la pantalla de carga a la vista). Devuelve cuánto esperó."""
+    left = SETTLE - (clock() - _last_restart[0]) if _last_restart[0] else 0.0
+    if left > 0:
+        log.info("DWM se reinició hace %.0f s: el video espera %.0f s a que Windows vuelva a dibujar", SETTLE - left, left)
+        sleep(left)
+        return left
+    return 0.0
+
+
+def run(clock=time.monotonic) -> bool:
     """Reinicia DWM ahora (la pantalla parpadea). Solo si la tarea existe."""
     ok = _schtasks("/run", "/tn", TASK)
+    if ok:
+        _last_restart[0] = clock()
     log.info("Liberar memoria de video: %s", "DWM reiniciado" if ok else "no se pudo (¿está activada?)")
     return ok
 
