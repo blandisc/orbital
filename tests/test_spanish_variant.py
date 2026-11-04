@@ -57,7 +57,7 @@ def test_con_latino_primero_el_doblaje_pedido_luego_el_que_no_dice_y_al_final_el
     anyone = streams.Preferences(audio="es")
     assert streams.language_score(source(0, CASTELLANO), anyone) == streams.language_score(source(1, LATINO), anyone)
     # Fernando, 4 nov: «latino, idioma original, luego inglés y luego castellano»: el inglés ya no es «otro idioma».
-    english = streams.language_score(source(0, ENGLISH), latino)
+    english = streams.language_score(source(0, ENGLISH.replace("WEB-DL", "WEB-DL.English")), latino)  # que lo diga, como el castellano
     castilian = streams.language_score(source(1, CASTELLANO), latino)
     assert streams.language_score(source(2, LATINO), latino) > english > castilian > streams.WRONG_LANGUAGE
     assert streams.language_score(source(0, ENGLISH), anyone) == streams.WRONG_LANGUAGE  # «cualquiera»: como siempre

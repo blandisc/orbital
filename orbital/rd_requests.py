@@ -387,6 +387,18 @@ class RdRequests:
             self._links.pop((info_hash, video_id), None)
             self._publish(video_id)
 
+    def pack_for(self, meta_id: str, hashes: set[str]) -> dict | None:
+        """Un paquete de temporada tuyo, en camino, que Torrentio también lista para este episodio (`hashes`): es su pedido,
+        no se ofrece pedirlo otra vez (error 1 nuevo del iPhone, escenario 24). Uno de otra temporada no cuenta: Torrentio no
+        lo lista aquí. Devuelve su `status` o None."""
+        account = self.account()
+        for r in self._entries():
+            if (r.get("all_files") and r.get("state") in ACTIVE and r.get("meta_id") == meta_id
+                    and str(r.get("hash") or "").lower() in hashes and self._mine(r, account)):
+                vid = (r.get("video_ids") or [None])[0]
+                return self.status(vid) if vid else None
+        return None
+
     def refused(self) -> set[str]:
         """Las huellas que Real-Debrid no dejó bajar: «Versión» lo dice y nunca son la recomendada (FQ2-A, 3 nov)."""
         return {k for k, v in self._all().items() if HASH.match(k) and v.get("state") == REFUSED}
@@ -419,9 +431,18 @@ class RdRequests:
                 return None
             url, name = got
             self._links[key] = (time.time(), url, name)
+        # Con su huella (es esa versión: «Ver ahora» y la ficha la reconocen) y el idioma original del título (una
+        # mexicana de YTS suena en latino, no «Inglés (se supone)»). Escenario 03 de los comunes con el iPhone.
+        idx = (req.get("files") or {}).get(video_id)
         stream = {"name": "[RD+] Real-Debrid\nTu pedido", "title": name or req.get("title") or "", "url": url,
+                  "infoHash": req["hash"], **({"fileIdx": idx} if isinstance(idx, int) else {}),
                   "behaviorHints": {"filename": name}}
-        return streams.parse(stream, "Real-Debrid", "realdebrid://pedido", zlib.crc32(video_id.encode()) % 2**31)
+        try:
+            facts = self.finder.facts(kind, video_id) if hasattr(self.finder, "facts") else {}
+        except Exception:  # noqa: BLE001 - sin TMDB, igual arranca
+            facts = {}
+        original = facts.get("original") if isinstance(facts, dict) and isinstance(facts.get("original"), str) else None
+        return streams.parse(stream, "Real-Debrid", "realdebrid://pedido", zlib.crc32(video_id.encode()) % 2**31, original)
 
     # --- el seguimiento ------------------------------------------------------------------------------------------
     def start(self) -> None:
