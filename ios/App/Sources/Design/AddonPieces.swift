@@ -263,3 +263,18 @@ struct TorrentioNothingProblem: View {
         .accessibilityIdentifier("torrentio-nothing")
     }
 }
+
+/// Lo que dice la hoja de «¿Quitar…?» (Fernando, 3 nov 2026): dónde se quita, que tu Stremio no cambia y que no regresa solo.
+struct AddonRemoveMessage: View {
+    let last: Bool
+    let tv: Bool
+
+    var body: some View {
+        switch (last, tv) {
+        case (false, false): Text("Se quita de este iPhone. Tu Stremio no cambia y «Volver a traer» no lo regresa.")
+        case (false, true): Text("Se quita de este iPhone y de tu TV. Tu Stremio no cambia y «Volver a traer» no lo regresa.")
+        case (true, false): Text("Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y tu Stremio no cambia.")
+        case (true, true): Text("Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV; tu Stremio no cambia.")
+        }
+    }
+}

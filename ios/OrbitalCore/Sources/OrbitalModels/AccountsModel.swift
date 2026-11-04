@@ -176,7 +176,7 @@ public final class AddonsModel: ObservableModel {
     }
 
     /// Se puede quitar: solo los traídos de Stremio (o pegados antes); los que vienen con Orbital solo se apagan (C7).
-    public func canRemove(_ addon: InstalledAddon) -> Bool { !addon.isBuiltIn }
+    public func canRemove(_ addon: InstalledAddon) -> Bool { !addon.isBuiltIn && !services.addonList.livesOnTV(addon) }
 
     /// Es tu última fuente de video prendida: apagarla o quitarla te deja sin versiones (se avisa antes).
     public func isLastSource(_ id: String) -> Bool { services.addonList.isLastSource(id) }

@@ -80,9 +80,7 @@ struct AddonDetail: View {
             Button(model.isLastSource(addon.id) ? "Quitar de todos modos" : "Quitar complemento", role: .destructive) { dismiss(); remove(addon) }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            model.isLastSource(addon.id)
-                ? Text("Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.")
-                : Text("Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.")
+            AddonRemoveMessage(last: model.isLastSource(addon.id), tv: env.services.orbital.isConfigured)
         }
         .confirmationDialog(Text("Te quedarás sin fuentes"), isPresented: $turningOffLast, titleVisibility: .visible) {
             Button("Apagar de todos modos", role: .destructive) { Task { await model.setEnabled(addon.id, false) } }

@@ -124,6 +124,11 @@ class Conflict(Exception):  # noqa: N818 — así se llama en el contrato (409)
         self.current = current
 
 
+def lives_here(entry: Entry) -> bool:
+    """Solo sirve en esta computadora: Local Files de Stremio (`127.0.0.1`), aunque su dirección no haya llegado."""
+    return entry.only_on == DEVICE or host(entry.url or "") in LOCAL_HOSTS or "local files" in (entry.name or "").lower()
+
+
 class AddonList:
     """La lista y sus cambios. `store` es el llavero de la consola (credentials.Credentials o un dict en pruebas)."""
 
@@ -411,6 +416,9 @@ class AddonList:
                     mine.extra = {**mine.extra, **got.extra}
                 seen.append(mine)
             # Lo que el otro no mandó (lo que solo vive en la TV) conserva su lugar: va justo después del que lo precedía.
+            # Lo que vive en esta computadora (Local Files) no se quita desde otro aparato: allá ni sirve (Fernando, 3 nov 2026,
+            # lo quitó sin querer desde el iPhone).
+            removed = [r for r in removed if not (r in by_id and lives_here(by_id[r]))]
             for k, e in enumerate(entries):
                 if e in seen or (e.origin == "stremio" and e.id in removed):
                     continue

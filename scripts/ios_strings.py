@@ -23,6 +23,11 @@ TRANSLATIONS = {
     # quitarla solo aquí o de todos, la invitación del iPhone al iPad, el nombre al conectar y «Darle su propia conexión».
     # OpenSubtitles deja de ser complemento (Fernando, 3 nov): «Buscar en internet» en Idioma y subtítulos.
     "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idioma y subtítulos.": "Torrentio and Comet come with Orbital: you turn them on and off. The ones brought from your Stremio can also be removed. Online subtitles now come with Orbital: they're in Settings › Language & subtitles.",
+    # «¿Quitar…?» de Complementos dice dónde se quita (Fernando, 3 nov).
+    "Se quita de este iPhone. Tu Stremio no cambia y «Volver a traer» no lo regresa.": "It's removed from this iPhone. Your Stremio doesn't change and “Bring back again” won't restore it.",
+    "Se quita de este iPhone y de tu TV. Tu Stremio no cambia y «Volver a traer» no lo regresa.": "It's removed from this iPhone and your TV. Your Stremio doesn't change and “Bring back again” won't restore it.",
+    "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y tu Stremio no cambia.": "It's your last video source: without it there won't be any versions. It's removed from this iPhone and your Stremio doesn't change.",
+    "Es tu última fuente de video: sin ella no habrá versiones. Se quita de este iPhone y de tu TV; tu Stremio no cambia.": "It's your last video source: without it there won't be any versions. It's removed from this iPhone and your TV; your Stremio doesn't change.",
     "Aparatos conectados": "Connected devices",
     "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez.": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again.",
     "Solo tu iPhone o la TV pueden quitar otro aparato.": "Only your iPhone or the TV can remove another device.",
@@ -668,8 +673,6 @@ TRANSLATIONS = {
     "Esa dirección no sirve: escribe la de tu Orbital (orbital.tudominio.com).": "That address won't work: type your Orbital's (orbital.yourdomain.com).",
     # Quitar complementos (C7): solo los traídos de Stremio, con «Deshacer»; la última fuente se avisa.
     "Quitar complemento": "Remove add-on", "¿Quitar «%@»?": "Remove “%@”?", "Quitar de todos modos": "Remove anyway",
-    "Es tu última fuente de video: sin ella no habrá versiones. Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": "It's your last video source: without it there won't be any versions. Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it.",
-    "Se borra su dirección de este iPhone, con su configuración; «Volver a traer» no lo regresa.": "Its address is deleted from this iPhone, with its settings; “Bring back again” won't restore it.",
     "¿Apagar tu última fuente?": "Turn off your last source?", "Apagar de todos modos": "Turn off anyway",
     "Sin ella no habrá versiones para ver hasta que prendas otra.": "Without it there won't be versions to watch until you turn on another.",
     "Quitaste el complemento": "Add-on removed",

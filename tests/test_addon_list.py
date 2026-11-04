@@ -267,3 +267,19 @@ def test_comet_y_las_claves_escondidas_en_la_ruta():
     lst, _ = keyed()
     with pytest.raises(ValueError, match="escanear el código"):
         lst.receive({"base_revision": 0, "addons": [{"id": "x", "origin": "stremio", "name": "Comet viejo", "url": url, "order": 0}]}, "iPhone")
+
+
+def test_local_files_no_se_quita_desde_el_iphone():
+    """Fernando, 3 nov 2026: quitó Local Files sin querer en el iPhone y la TV lo borraba. Lo que vive en esta computadora
+    se queda aunque otro aparato lo mande en «removed»; lo demás sí se quita."""
+    lst = AddonList(Store())
+    lst.import_from_stremio(brought())
+    shared = lst.shared()
+    local = next(e for e in lst.entries() if e.url == LOCAL)
+    tpb = next(e for e in lst.entries() if e.url == TPB)
+    rest = [a for a in shared["addons"] if a["id"] not in (local.id, tpb.id)]
+    lst.receive({"base_revision": shared["revision"], "addons": rest, "removed": [local.id, tpb.id]}, device="iphone")
+    urls = [e.url for e in lst.entries()]
+    assert LOCAL in urls, "Local Files se queda en la TV"
+    assert TPB not in urls, "lo que sí se quiso quitar, se quita"
+    assert local.id not in lst.shared()["removed"]

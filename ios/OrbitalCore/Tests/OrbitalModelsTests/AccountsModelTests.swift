@@ -136,4 +136,19 @@ final class AccountsModelTests: XCTestCase {
         XCTAssertEqual(model.items.map(\.name), ["ThePirateBay+", "Torrentio", "Comet"])
         XCTAssertTrue(list.installed.contains { $0.origin == .recommended("opensubtitles") }, "OpenSubtitles sigue guardado: solo no se enseña")
     }
+
+    /// Fernando, 3 nov: quitó Local Files sin querer y la TV lo borraba. Lo que vive en la TV no se quita desde aquí, aunque
+    /// su dirección no sea la de la computadora (se reconoce por el nombre).
+    func testLocalFilesNoSeQuitaDesdeElIPhone() async throws {
+        let rig = try ServicesRig(signedIn: true)
+        let list = rig.services.addonList
+        list.startWithRecommended()
+        list.importOnce([.init(name: "Local Files (without catalog support)", url: "https://local.example/manifest.json", resources: ["stream"])])
+        let model = AddonsModel(rig.services)
+        let local = try XCTUnwrap(model.items.first { $0.name.hasPrefix("Local Files") })
+        XCTAssertFalse(model.canRemove(local))
+        let removed = await model.remove(local.id)
+        XCTAssertFalse(removed)
+        XCTAssertFalse(list.removedIDs.contains(local.id), "no se le dice a la TV que lo quite")
+    }
 }
