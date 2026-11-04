@@ -1,200 +1,218 @@
 {
   "id": "20-inception-pedido-tv-otra-cuenta",
-  "nombre": "«El origen»: la TV lo pide con otra cuenta",
-  "por_que": "La TV lo está bajando con OTRA cuenta de Real-Debrid: aquí no se ve ni cuenta como al instante.",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt1375666",
-    "video_id": "tt1375666",
-    "cinemeta": "cinemeta/tt1375666.json",
-    "tmdb": {
-      "original_language": "en",
-      "title_es_MX": "El origen",
-      "original_title": "Inception",
-      "title_en": "Inception",
-      "overview_es_MX": "Dom Cobb es un ladrón…",
-      "fuente": "a mano"
-    }
-  },
-  "torrentio": {
-    "archivo": "torrentio/tt1375666.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json"
-  },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
-      "id": "A",
-      "estado": "premium"
-    },
-    "al_instante": [],
-    "torrents": []
-  },
-  "libreta": [
-    {
-      "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
-      "files": {
-        "tt1375666": 3
-      },
-      "account": "B",
-      "rd_id": "TV2",
-      "title": "El origen",
-      "kind": "movie",
-      "meta_id": "tt1375666",
-      "video_ids": [
-        "tt1375666"
-      ],
-      "language": "es-419",
-      "release": "Inception.2010.1080p.BluRay.REMUX.ENG.LATINO.CASTELLANO.HINDI.ITA.GER.FRE.CHI.RUS.UKR.THAI.DTS-HD.Master.VC-1.H264-BEN.THE.MEN",
-      "by": "TV",
-      "since": 1759996400,
-      "state": "downloading",
-      "percent": 40,
-      "all_files": false
-    }
-  ],
-  "preferencias": {
+  "name": "«El origen»: la TV lo pide con otra cuenta",
+  "why": "La TV lo está bajando con OTRA cuenta de Real-Debrid: aquí no se ve ni cuenta como al instante.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
     "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
+    "spanish": "es-419",
+    "quality": "1080p"
   },
-  "esperado": {
-    "_nota": "La TV lo baja con otra cuenta: aquí no cuenta; «Pedirlo y avisarme» dice «La TV lo está pidiendo con otra cuenta».",
-    "titulo": "El origen",
+  "title": {
+    "kind": "movie",
+    "id": "tt1375666",
+    "video_id": "tt1375666"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 27205,
+          "title": "El origen",
+          "original_title": "Inception",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 27205,
+      "title": "El origen",
+      "original_title": "Inception",
+      "original_language": "en",
+      "origin_country": [
+        "US",
+        "GB"
+      ],
+      "overview": "Dom Cobb es un ladrón…"
+    }
+  },
+  "cinemeta": "cinemeta/tt1375666.json",
+  "torrentio": {
+    "file": "torrentio/tt1375666.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [
+      {
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "files": {
+          "tt1375666": 3
+        },
+        "account": "B",
+        "rd_id": "TV2",
+        "title": "El origen",
+        "kind": "movie",
+        "meta_id": "tt1375666",
+        "video_ids": [
+          "tt1375666"
+        ],
+        "language": "es-419",
+        "release": "Inception.2010.1080p.BluRay.REMUX.ENG.LATINO.CASTELLANO.HINDI.ITA.GER.FRE.CHI.RUS.UKR.THAI.DTS-HD.Master.VC-1.H264-BEN.THE.MEN",
+        "by": "TV",
+        "since": 1793707200,
+        "state": "downloading",
+        "percent": 40,
+        "all_files": false,
+        "updated": 1793728200,
+        "progress_at": 1793728200
+      }
+    ],
+    "error": null
+  },
+  "expected": {
+    "_note": "La TV lo baja con otra cuenta: aquí no cuenta; «Pedirlo y avisarme» dice «La TV lo está pidiendo con otra cuenta» (`other_account`).",
+    "title": "El origen",
     "logo": true,
-    "video": "tt1375666",
-    "boton": "pedirlo_y_avisarme",
-    "boton_version": "La TV lo está pidiendo con otra cuenta",
-    "causa": null,
-    "pedir": {
+    "video_id": "tt1375666",
+    "primary": "request",
+    "cause": "not_in_rd",
+    "cause_arg": null,
+    "fix": "request",
+    "offer": {
       "hash": "2849211f150e966ef7924f43aec22727a644e10d",
-      "idioma": "es"
+      "language": "es",
+      "res": "4K"
     },
-    "al_instante_aparte": null,
-    "recomendada": {
+    "instant_aside": null,
+    "recommended": {
       "hash": "2849211f150e966ef7924f43aec22727a644e10d",
-      "archivo": 0
+      "file": 0,
+      "language": "es",
+      "res": "4K"
     },
-    "recomendada_idioma": "es",
-    "filas": [
+    "rows": [
       {
-        "opciones": [
-          {
-            "calidad": "4K",
-            "recomendada": false,
-            "otro_titulo": false,
-            "velocidad": "por_pedir",
-            "hash": "3e979c3e183261623f9f390b8355ca109dcf0825"
-          },
-          {
-            "recomendada": false,
-            "velocidad": "por_pedir",
-            "otro_titulo": false,
-            "calidad": "1080p",
-            "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210"
-          }
-        ],
-        "idioma": "es-419"
+        "code": "es-419",
+        "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "velocidad": "por_pedir",
-            "recomendada": true,
-            "otro_titulo": false,
-            "calidad": "4K",
-            "hash": "2849211f150e966ef7924f43aec22727a644e10d"
-          },
-          {
-            "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
-            "velocidad": "por_pedir",
-            "otro_titulo": false,
-            "calidad": "1080p",
-            "recomendada": false
-          },
-          {
-            "hash": "ce9156eb497762f8b7577b71c0647a4b0c3423e1",
-            "recomendada": false,
-            "otro_titulo": false,
-            "velocidad": "por_pedir",
-            "calidad": "720p"
-          }
-        ],
-        "idioma": "en"
+        "code": "es-419",
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "calidad": "4K",
-            "velocidad": "por_pedir",
-            "otro_titulo": false,
-            "recomendada": true,
-            "hash": "2849211f150e966ef7924f43aec22727a644e10d"
-          }
-        ],
-        "idioma": "es"
+        "code": "en",
+        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
-            "recomendada": false,
-            "otro_titulo": false,
-            "velocidad": "por_pedir",
-            "calidad": "4K"
-          },
-          {
-            "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
-            "velocidad": "por_pedir",
-            "otro_titulo": false,
-            "recomendada": false,
-            "calidad": "1080p"
-          }
-        ],
-        "idioma": "es-ES"
+        "code": "en",
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "ce9156eb497762f8b7577b71c0647a4b0c3423e1",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
       }
     ],
-    "hay_que_pedirlas": [
+    "to_request": [
       {
-        "calidad": "SD",
-        "idioma": "es-ES",
-        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be"
+        "code": "es-ES",
+        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be",
+        "res": "SD"
       },
       {
-        "calidad": "1080p",
-        "idioma": "en",
-        "hash": "1c6b2179bcd73efd07fb8018268598c062cf95af"
+        "code": "en",
+        "hash": "1c6b2179bcd73efd07fb8018268598c062cf95af",
+        "res": "1080p"
       },
       {
-        "calidad": "1080p",
-        "idioma": "fr",
-        "hash": "ba0f85023f176099796288cc21d49f57030fe7a7"
+        "code": "fr",
+        "hash": "ba0f85023f176099796288cc21d49f57030fe7a7",
+        "res": "1080p"
       },
       {
-        "calidad": "1080p",
-        "idioma": "ru",
-        "hash": "513ec652eea0844f470583c18428b23e3cf43e5e"
+        "code": "ru",
+        "hash": "513ec652eea0844f470583c18428b23e3cf43e5e",
+        "res": "1080p"
       },
       {
-        "calidad": "4K",
-        "idioma": "en",
-        "hash": "43e3691dc6f4172841e32b25b349e2b7a980b9c5"
+        "code": "en",
+        "hash": "43e3691dc6f4172841e32b25b349e2b7a980b9c5",
+        "res": "4K"
       },
       {
-        "calidad": "4K",
-        "idioma": "fr",
-        "hash": "ca7c2e3866eece3378b3cbefab30b6298a4fd0bf"
+        "code": "fr",
+        "hash": "ca7c2e3866eece3378b3cbefab30b6298a4fd0bf",
+        "res": "4K"
       }
     ],
-    "ver_ahora": {
-      "hash": "2849211f150e966ef7924f43aec22727a644e10d",
-      "archivo": 0
-    },
-    "escondidas": 1
+    "hidden": 1,
+    "play_now": "2849211f150e966ef7924f43aec22727a644e10d",
+    "request": null,
+    "other_account": {
+      "state": "downloading"
+    }
   }
 }

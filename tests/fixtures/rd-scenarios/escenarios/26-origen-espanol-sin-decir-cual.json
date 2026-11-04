@@ -1,0 +1,190 @@
+{
+  "id": "26-origen-espanol-sin-decir-cual",
+  "name": "«El origen»: al instante solo una en «español» sin decir cuál",
+  "why": "La 4K de UserHEVC trae «ES» (bandera de España, sin decir latino ni castellano) y está al instante; la latina REMUX hay que pedirla. Prefieres latino.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt1375666",
+    "video_id": "tt1375666"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 27205,
+          "title": "El origen",
+          "original_title": "Inception",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 27205,
+      "title": "El origen",
+      "original_title": "Inception",
+      "original_language": "en",
+      "origin_country": [
+        "US",
+        "GB"
+      ],
+      "overview": "Dom Cobb es un ladrón…"
+    }
+  },
+  "cinemeta": "cinemeta/tt1375666.json",
+  "torrentio": {
+    "file": "torrentio/tt1375666.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [
+      "2849211f150e966ef7924f43aec22727a644e10d"
+    ],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
+  },
+  "expected": {
+    "_note": "La de «ES» (sin decir latino ni castellano) arranca ya y gana: «Ver · español · 4K». No se ofrece pedir la latina (la misma pregunta que FQ1).",
+    "title": "El origen",
+    "logo": true,
+    "video_id": "tt1375666",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "instant_aside": null,
+    "recommended": {
+      "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+      "file": 0,
+      "language": "es",
+      "res": "4K"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-419",
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+        "res": "4K",
+        "state": "instant",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "ce9156eb497762f8b7577b71c0647a4b0c3423e1",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "2849211f150e966ef7924f43aec22727a644e10d",
+        "res": "4K",
+        "state": "instant",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "3e979c3e183261623f9f390b8355ca109dcf0825",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "71e315044f21b18dcf380aea4f03a70e2a5e0210",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      }
+    ],
+    "to_request": [
+      {
+        "code": "es-ES",
+        "hash": "cca5d69debbb9dadf164d91ad6bbd8c04216f3be",
+        "res": "SD"
+      },
+      {
+        "code": "en",
+        "hash": "1c6b2179bcd73efd07fb8018268598c062cf95af",
+        "res": "1080p"
+      },
+      {
+        "code": "fr",
+        "hash": "ba0f85023f176099796288cc21d49f57030fe7a7",
+        "res": "1080p"
+      },
+      {
+        "code": "ru",
+        "hash": "513ec652eea0844f470583c18428b23e3cf43e5e",
+        "res": "1080p"
+      },
+      {
+        "code": "en",
+        "hash": "43e3691dc6f4172841e32b25b349e2b7a980b9c5",
+        "res": "4K"
+      },
+      {
+        "code": "fr",
+        "hash": "ca7c2e3866eece3378b3cbefab30b6298a4fd0bf",
+        "res": "4K"
+      }
+    ],
+    "hidden": 1,
+    "play_now": "2849211f150e966ef7924f43aec22727a644e10d",
+    "request": null,
+    "other_account": null
+  }
+}

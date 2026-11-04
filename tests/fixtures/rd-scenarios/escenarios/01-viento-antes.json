@@ -1,113 +1,131 @@
 {
   "id": "01-viento-antes",
-  "nombre": "«El viento tiene miedo» antes de pedirla",
-  "por_que": "Película mexicana de 1968: Real-Debrid no tiene ninguna. Lo que Fernando encontró el 3 nov.",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt0061752",
-    "video_id": "tt0061752",
-    "cinemeta": "cinemeta/tt0061752.json",
-    "tmdb": {
-      "original_language": "es",
-      "title_es_MX": "Even the Wind Is Afraid",
+  "name": "«El viento tiene miedo» antes de pedirla",
+  "why": "Película mexicana de 1968: Real-Debrid no tiene ninguna. Lo que Fernando encontró el 3 nov.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt0061752",
+    "video_id": "tt0061752"
+  },
+  "tmdb": {
+    "source": "a mano: TMDB pide clave (lo que contestó el 3 nov con es-MX); el id de TMDB es inventado (solo enlaza find → detail)",
+    "find": {
+      "movie_results": [
+        {
+          "id": 991752,
+          "title": "Even the Wind Is Afraid",
+          "original_title": "Hasta el viento tiene miedo",
+          "original_language": "es"
+        }
+      ]
+    },
+    "detail": {
+      "id": 991752,
+      "title": "Even the Wind Is Afraid",
       "original_title": "Hasta el viento tiene miedo",
-      "title_en": "Even the Wind Is Afraid",
-      "overview_es_MX": "Unas alumnas castigadas…",
-      "fuente": "a mano: TMDB pide clave (lo que contestó el 3 nov con es-MX)"
+      "original_language": "es",
+      "origin_country": [
+        "MX"
+      ],
+      "overview": "Unas alumnas castigadas…"
     }
   },
+  "cinemeta": "cinemeta/tt0061752.json",
   "torrentio": {
-    "archivo": "torrentio/tt0061752.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt0061752.json"
+    "file": "torrentio/tt0061752.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt0061752.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
   },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
       "id": "A",
-      "estado": "premium"
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
     },
-    "al_instante": [],
-    "torrents": []
+    "torrents": [],
+    "book": [],
+    "error": null
   },
-  "libreta": [],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "Nada en Real-Debrid: «Pedirlo y avisarme» con la latina de YTS 1080p (la misma que recomienda «Versión»); sin «Verlo en … al instante» (ninguna lo está). Título original (hecha en español) y sin logo.",
-    "titulo": "Hasta el viento tiene miedo",
+  "expected": {
+    "_note": "Nada en Real-Debrid: «Pedirlo y avisarme» con la latina de YTS 1080p (la misma que recomienda «Versión»); sin «Verlo en … al instante» (ninguna lo está). Título original (hecha en español) y sin logo.",
+    "title": "Hasta el viento tiene miedo",
     "logo": false,
-    "video": "tt0061752",
-    "boton": "pedirlo_y_avisarme",
-    "boton_version": "Real-Debrid todavía no lo tiene",
-    "causa": null,
-    "pedir": {
-      "idioma": "es-419",
-      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78"
-    },
-    "al_instante_aparte": null,
-    "recomendada": {
+    "video_id": "tt0061752",
+    "primary": "request",
+    "cause": "not_in_rd",
+    "cause_arg": null,
+    "fix": "request",
+    "offer": {
       "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-      "archivo": 0
+      "language": "es-419",
+      "res": "1080p"
     },
-    "recomendada_idioma": "es-419",
-    "filas": [
+    "instant_aside": null,
+    "recommended": {
+      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+      "file": 0,
+      "language": "es-419",
+      "res": "1080p"
+    },
+    "rows": [
       {
-        "opciones": [
-          {
-            "recomendada": true,
-            "calidad": "1080p",
-            "velocidad": "por_pedir",
-            "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-            "otro_titulo": false
-          },
-          {
-            "recomendada": false,
-            "calidad": "720p",
-            "hash": "71dba5d524b5c6dda7eeb5bc83e8118ae8fe9ad1",
-            "velocidad": "por_pedir",
-            "otro_titulo": false
-          }
-        ],
-        "idioma": "es-419"
+        "code": "es-419",
+        "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "recomendada": false,
-            "calidad": "1080p",
-            "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
-            "velocidad": "por_pedir",
-            "otro_titulo": true
-          }
-        ],
-        "idioma": "es"
+        "code": "es-419",
+        "hash": "71dba5d524b5c6dda7eeb5bc83e8118ae8fe9ad1",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
       }
     ],
-    "hay_que_pedirlas": [
+    "to_request": [
       {
+        "code": "es-419",
         "hash": "88c1570543cf3cd00ce81874699059ebb3aa5774",
-        "calidad": "SD",
-        "idioma": "es-419"
+        "res": "SD"
       },
       {
+        "code": "ru",
         "hash": "568ad8f0058b1faeab84044284d026b08fd75a1c",
-        "calidad": "SD",
-        "idioma": "ru"
+        "res": "SD"
       }
     ],
-    "ver_ahora": {
-      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-      "archivo": 0
-    },
-    "escondidas": 0
+    "hidden": 0,
+    "play_now": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+    "request": null,
+    "other_account": null
   }
 }

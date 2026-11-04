@@ -1,0 +1,262 @@
+{
+  "id": "24-freaks-paquete-e3",
+  "name": "«Freaks and Geeks» T1 E3: el paquete que pediste desde E1 sigue bajando",
+  "why": "Casi todo lo que existe son paquetes de la temporada. Pediste el de LESS (todos sus videos) desde E1 y va en 40 %; abres E3, que viene en ese mismo paquete.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "series",
+    "id": "tt0193676",
+    "video_id": "tt0193676:1:3"
+  },
+  "tmdb": null,
+  "cinemeta": "cinemeta/tt0193676.json",
+  "torrentio": {
+    "file": "torrentio/tt0193676_1_3.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt0193676:1:3.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    },
+    "next": {
+      "file": "torrentio/tt0193676_1_4.json",
+      "url": "https://torrentio.strem.fun/stream/series/tt0193676:1:4.json"
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [
+      {
+        "id": "R1",
+        "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+        "status": "downloading",
+        "progress": 40,
+        "seeders": 12,
+        "files": [
+          {
+            "id": 1,
+            "path": "/Freaks.and.Geeks.S01E01.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 2,
+            "path": "/Freaks.and.Geeks.S01E02.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 3,
+            "path": "/Freaks.and.Geeks.S01E03.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 4,
+            "path": "/Freaks.and.Geeks.S01E04.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 5,
+            "path": "/Freaks.and.Geeks.S01E05.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 6,
+            "path": "/Freaks.and.Geeks.S01E06.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 7,
+            "path": "/Freaks.and.Geeks.S01E07.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 8,
+            "path": "/Freaks.and.Geeks.S01E08.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 9,
+            "path": "/Freaks.and.Geeks.S01E09.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 10,
+            "path": "/Freaks.and.Geeks.S01E10.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 11,
+            "path": "/Freaks.and.Geeks.S01E11.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 12,
+            "path": "/Freaks.and.Geeks.S01E12.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 13,
+            "path": "/Freaks.and.Geeks.S01E13.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 14,
+            "path": "/Freaks.and.Geeks.S01E14.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 15,
+            "path": "/Freaks.and.Geeks.S01E15.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 16,
+            "path": "/Freaks.and.Geeks.S01E16.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 17,
+            "path": "/Freaks.and.Geeks.S01E17.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          },
+          {
+            "id": 18,
+            "path": "/Freaks.and.Geeks.S01E18.1080p.BRRip.AC3.x264-LESS.mkv",
+            "bytes": 330000000,
+            "selected": 1
+          }
+        ],
+        "links": []
+      }
+    ],
+    "book": [
+      {
+        "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+        "files": {
+          "tt0193676:1:1": 0
+        },
+        "account": "A",
+        "rd_id": "R1",
+        "title": "Freaks and Geeks",
+        "kind": "series",
+        "meta_id": "tt0193676",
+        "video_ids": [
+          "tt0193676:1:1"
+        ],
+        "season": 1,
+        "episode": 1,
+        "language": "",
+        "release": "Freaks.and.Geeks.S01.COMPLETE.1080p.BRRip.AC3.x264-LESS",
+        "by": "iPhone",
+        "since": 1793721600,
+        "updated": 1793728200,
+        "rd_status": "downloading",
+        "percent": 40,
+        "seeders": 12,
+        "progress_at": 1793728200,
+        "state": "downloading",
+        "all_files": true
+      }
+    ],
+    "error": null
+  },
+  "expected": {
+    "_note": "El paquete pedido desde E1 (todos sus videos) trae E3 y E4: E3 dice «Bajando en Real-Debrid · 40 %» (`requested`), nunca «Pedirlo y avisarme» otra vez; el siguiente episodio también es de ese pedido.",
+    "title": "Freaks and Geeks",
+    "logo": true,
+    "video_id": "tt0193676:1:3",
+    "primary": "requested",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": {
+      "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+      "language": "en",
+      "res": "1080p"
+    },
+    "instant_aside": null,
+    "recommended": {
+      "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+      "file": 2,
+      "language": "en",
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "en",
+        "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "03053772b48e85ae9332decb5250b18bfb72aa69",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      }
+    ],
+    "to_request": [
+      {
+        "code": "en",
+        "hash": "1f6eb25d28650801c622455a94353e0de1da1305",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "ab10ade2acc4fd23f5474de928d320bef49ef6c4",
+        "res": "SD"
+      }
+    ],
+    "hidden": 0,
+    "play_now": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+    "request": {
+      "hash": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+      "state": "downloading",
+      "percent": 40,
+      "stuck": false
+    },
+    "other_account": null,
+    "next_episode": {
+      "video_id": "tt0193676:1:4",
+      "request": "4bfe55abd771d527b7477075fe48c7ab488a1823",
+      "ready": false
+    }
+  }
+}

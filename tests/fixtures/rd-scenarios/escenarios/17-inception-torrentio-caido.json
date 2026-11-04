@@ -1,60 +1,87 @@
 {
   "id": "17-inception-torrentio-caido",
-  "nombre": "«El origen»: Torrentio no contesta",
-  "por_que": "Torrentio bloqueado o caído (HTTP 503) con internet.",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt1375666",
-    "video_id": "tt1375666",
-    "cinemeta": "cinemeta/tt1375666.json",
-    "tmdb": {
-      "original_language": "en",
-      "title_es_MX": "El origen",
+  "name": "«El origen»: Torrentio no contesta",
+  "why": "Torrentio bloqueado o caído (HTTP 503) con internet.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt1375666",
+    "video_id": "tt1375666"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 27205,
+          "title": "El origen",
+          "original_title": "Inception",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 27205,
+      "title": "El origen",
       "original_title": "Inception",
-      "title_en": "Inception",
-      "overview_es_MX": "Dom Cobb es un ladrón…",
-      "fuente": "a mano"
+      "original_language": "en",
+      "origin_country": [
+        "US",
+        "GB"
+      ],
+      "overview": "Dom Cobb es un ladrón…"
     }
   },
+  "cinemeta": "cinemeta/tt1375666.json",
   "torrentio": {
-    "archivo": "torrentio/tt1375666.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json"
+    "file": "torrentio/tt1375666.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt1375666.json",
+    "status": "down",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
   },
-  "torrentio_estado": "sin_respuesta",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
       "id": "A",
-      "estado": "premium"
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
     },
-    "al_instante": [],
-    "torrents": []
+    "torrents": [],
+    "book": [],
+    "error": null
   },
-  "libreta": [],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "Torrentio no contesta con internet: «No pude conectar con tus complementos» con «Reintentar».",
-    "titulo": "El origen",
+  "expected": {
+    "_note": "Torrentio no contesta con internet: «No pude conectar con tus complementos» con «Reintentar».",
+    "title": "El origen",
     "logo": true,
-    "video": "tt1375666",
-    "boton": "sin_version",
-    "causa": "complementos_no_contestan",
-    "pedir": null,
-    "al_instante_aparte": null,
-    "recomendada": null,
-    "recomendada_idioma": null,
-    "filas": [],
-    "hay_que_pedirlas": [],
-    "ver_ahora": null,
-    "escondidas": 0
+    "video_id": "tt1375666",
+    "primary": "fix",
+    "cause": "addons_offline",
+    "cause_arg": null,
+    "fix": "retry",
+    "offer": null,
+    "instant_aside": null,
+    "recommended": null,
+    "rows": [],
+    "to_request": [],
+    "hidden": 0,
+    "play_now": null,
+    "request": null,
+    "other_account": null
   }
 }

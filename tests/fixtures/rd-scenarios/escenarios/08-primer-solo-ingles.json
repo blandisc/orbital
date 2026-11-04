@@ -1,133 +1,152 @@
 {
   "id": "08-primer-solo-ingles",
-  "nombre": "«Primer»: solo hay en inglés",
-  "por_que": "Una película que solo existe en su idioma original (inglés); quieres latino.",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt0390384",
-    "video_id": "tt0390384",
-    "cinemeta": "cinemeta/tt0390384.json",
-    "tmdb": {
-      "original_language": "en",
-      "title_es_MX": "Primer",
+  "name": "«Primer»: solo hay en inglés",
+  "why": "Una película que solo existe en su idioma original (inglés); quieres latino.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt0390384",
+    "video_id": "tt0390384"
+  },
+  "tmdb": {
+    "source": "a mano",
+    "find": {
+      "movie_results": [
+        {
+          "id": 14337,
+          "title": "Primer",
+          "original_title": "Primer",
+          "original_language": "en"
+        }
+      ]
+    },
+    "detail": {
+      "id": 14337,
+      "title": "Primer",
       "original_title": "Primer",
-      "title_en": "Primer",
-      "overview_es_MX": "Dos ingenieros…",
-      "fuente": "a mano"
+      "original_language": "en",
+      "origin_country": [
+        "US"
+      ],
+      "overview": "Dos ingenieros…"
     }
   },
+  "cinemeta": "cinemeta/tt0390384.json",
   "torrentio": {
-    "archivo": "torrentio/tt0390384.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt0390384.json"
+    "file": "torrentio/tt0390384.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt0390384.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
   },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
-      "id": "A",
-      "estado": "premium"
-    },
-    "al_instante": [
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [
       "297b0244679203dea8d2cbd5eb966fb021771019"
     ],
-    "torrents": []
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
   },
-  "libreta": [],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "Tu idioma no está al instante: «Pedirlo y avisarme» la española (DVDRip) y, al lado, «Verlo en inglés al instante» (la que «Versión» enseña como «Al instante»).",
-    "titulo": "Primer",
+  "expected": {
+    "_note": "Tu idioma no está al instante: «Pedirlo y avisarme» la española (DVDRip) y, al lado, «Verlo en inglés al instante» (la que «Versión» enseña como «Al instante»).",
+    "title": "Primer",
     "logo": true,
-    "video": "tt0390384",
-    "boton": "pedirlo_y_avisarme",
-    "boton_version": "Real-Debrid todavía no lo tiene",
-    "causa": null,
-    "pedir": {
-      "idioma": "es",
-      "hash": "08b4304c6d849daf472854b3d9487b2375411035"
+    "video_id": "tt0390384",
+    "primary": "request",
+    "cause": "not_in_rd",
+    "cause_arg": null,
+    "fix": "request",
+    "offer": {
+      "hash": "08b4304c6d849daf472854b3d9487b2375411035",
+      "language": "es",
+      "res": "SD"
     },
-    "al_instante_aparte": {
+    "instant_aside": {
       "hash": "297b0244679203dea8d2cbd5eb966fb021771019",
-      "idioma": "en"
+      "language": "en",
+      "res": "1080p"
     },
-    "recomendada": {
+    "recommended": {
       "hash": "08b4304c6d849daf472854b3d9487b2375411035",
-      "archivo": null
+      "file": null,
+      "language": "es",
+      "res": "SD"
     },
-    "recomendada_idioma": "es",
-    "filas": [
+    "rows": [
       {
-        "opciones": [
-          {
-            "calidad": "1080p",
-            "hash": "297b0244679203dea8d2cbd5eb966fb021771019",
-            "otro_titulo": false,
-            "velocidad": "al_instante",
-            "recomendada": false
-          },
-          {
-            "velocidad": "por_pedir",
-            "hash": "6020cc74c0627fd9c8e321dc39fad33ded8e49c8",
-            "otro_titulo": false,
-            "recomendada": false,
-            "calidad": "720p"
-          }
-        ],
-        "idioma": "en"
+        "code": "en",
+        "hash": "297b0244679203dea8d2cbd5eb966fb021771019",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": false,
+        "other": false
       },
       {
-        "opciones": [
-          {
-            "recomendada": true,
-            "hash": "08b4304c6d849daf472854b3d9487b2375411035",
-            "otro_titulo": false,
-            "calidad": "SD",
-            "velocidad": "por_pedir"
-          }
-        ],
-        "idioma": "es"
+        "code": "en",
+        "hash": "6020cc74c0627fd9c8e321dc39fad33ded8e49c8",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "08b4304c6d849daf472854b3d9487b2375411035",
+        "res": "SD",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
       }
     ],
-    "hay_que_pedirlas": [
+    "to_request": [
       {
+        "code": "en",
         "hash": "313932275ca07fea9e520f0fcf0f49c29d0ce9e0",
-        "idioma": "en",
-        "calidad": "1080p"
+        "res": "1080p"
       },
       {
+        "code": "ru",
         "hash": "b6d40b362707c81f11851948d4cfa6cf8f63a509",
-        "idioma": "ru",
-        "calidad": "1080p"
+        "res": "1080p"
       },
       {
+        "code": "en",
         "hash": "d46f85ce62f8c0e50414eba5ed6f5e28831bcf01",
-        "idioma": "en",
-        "calidad": "SD"
+        "res": "SD"
       },
       {
+        "code": "ru",
         "hash": "a8bb953dacde97b623031bb052d884e8beb7d3f0",
-        "idioma": "ru",
-        "calidad": "SD"
+        "res": "SD"
       },
       {
+        "code": "it",
         "hash": "e9f5fea37af7d9ee9d628bf5cae6208826f86219",
-        "idioma": "it",
-        "calidad": "SD"
+        "res": "SD"
       }
     ],
-    "ver_ahora": {
-      "hash": "08b4304c6d849daf472854b3d9487b2375411035",
-      "archivo": null
-    },
-    "escondidas": 0
+    "hidden": 0,
+    "play_now": "08b4304c6d849daf472854b3d9487b2375411035",
+    "request": null,
+    "other_account": null
   }
 }

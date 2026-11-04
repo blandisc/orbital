@@ -1,0 +1,177 @@
+{
+  "id": "27-dexter-dual-latino",
+  "name": "«Dexter: Resurrection» T2 E1: dual latino / inglés",
+  "why": "Salió ayer. Al instante están la de Cinecalidad «Dual-Lat» (latino e inglés) y una «DUAL» de Comando (brasileña, la que más gente comparte) que no dice qué idiomas.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "series",
+    "id": "tt33043892",
+    "video_id": "tt33043892:2:1"
+  },
+  "tmdb": null,
+  "cinemeta": "cinemeta/tt33043892.json",
+  "torrentio": {
+    "file": "torrentio/tt33043892_2_1.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/series/tt33043892:2:1.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [
+      "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
+      "d04143eb2335594fa4e53e62f7b07cc3be9593b8"
+    ],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": null
+  },
+  "expected": {
+    "_note": "La «Dual-Lat» sale en latino y en inglés, igual en las dos filas, y es la recomendada en latino. La «DUAL» brasileña que más gente comparte no cuenta como latino. «¿Otro título?» en la latina: «Resurreccion» no es «Resurrection» sin TMDB (FQ3).",
+    "title": "Dexter: Resurrection",
+    "logo": true,
+    "video_id": "tt33043892:2:1",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "instant_aside": null,
+    "recommended": {
+      "hash": "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
+      "file": null,
+      "language": "es-419",
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": true
+      },
+      {
+        "code": "en",
+        "hash": "9af62efb85b9e663b3f8cd28592989dd9b7a9fb2",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "en",
+        "hash": "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
+        "res": "1080p",
+        "state": "instant",
+        "recommended": true,
+        "other": true
+      },
+      {
+        "code": "en",
+        "hash": "bead8c3dac2cb0f6ea64ae00912e023fb34d6e69",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "f7d8cfe4611411922d823756ec50974fef8165ce",
+        "res": "4K",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es-ES",
+        "hash": "3c9f6cc07d9d2341dbfb527edf482f2fb60eafac",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "es-ES",
+        "hash": "595842f8045a44448544de78004a11910e1a2842",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "es",
+        "hash": "320e70007e2a406cd16cee287e3df3ec794efa00",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "es",
+        "hash": "bead8c3dac2cb0f6ea64ae00912e023fb34d6e69",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      }
+    ],
+    "to_request": [
+      {
+        "code": "en",
+        "hash": "8c132db0fd1345a5e9166a66dfeb7e21e6faebcf",
+        "res": "1080p"
+      },
+      {
+        "code": "ru",
+        "hash": "eb4d44a47e44d47b19af3f37ed9a0adab94a133a",
+        "res": "1080p"
+      },
+      {
+        "code": "en",
+        "hash": "d322f66ac966906045b208988410c63c179878a2",
+        "res": "720p"
+      },
+      {
+        "code": "en",
+        "hash": "63576409bb35eb6b7c5c474efd7eb6f25c8a20e2",
+        "res": "SD"
+      },
+      {
+        "code": "fr",
+        "hash": "44209a7c30abc9a8579139e3fac5e26612f49a96",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "73afcd3091373b13b564abd975e384420e23b017",
+        "res": "SD"
+      }
+    ],
+    "hidden": 0,
+    "play_now": "b0fd8f99ba4b5cd9aef770ac27dcef0efada39c0",
+    "request": null,
+    "other_account": null,
+    "next_episode": null
+  }
+}

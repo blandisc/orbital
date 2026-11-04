@@ -1,137 +1,161 @@
 {
   "id": "02-viento-lista",
-  "nombre": "«El viento tiene miedo»: la pedida ya está",
-  "por_que": "Real-Debrid terminó la de YTS 1080p y Torrentio la sigue llamando «[RD download]».",
-  "titulo": {
-    "tipo": "movie",
-    "meta_id": "tt0061752",
-    "video_id": "tt0061752",
-    "cinemeta": "cinemeta/tt0061752.json",
-    "tmdb": {
-      "original_language": "es",
-      "title_es_MX": "Even the Wind Is Afraid",
+  "name": "«El viento tiene miedo»: la pedida ya está",
+  "why": "Real-Debrid terminó la de YTS 1080p y Torrentio la sigue llamando «[RD download]».",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt0061752",
+    "video_id": "tt0061752"
+  },
+  "tmdb": {
+    "source": "a mano: TMDB pide clave (lo que contestó el 3 nov con es-MX); el id de TMDB es inventado (solo enlaza find → detail)",
+    "find": {
+      "movie_results": [
+        {
+          "id": 991752,
+          "title": "Even the Wind Is Afraid",
+          "original_title": "Hasta el viento tiene miedo",
+          "original_language": "es"
+        }
+      ]
+    },
+    "detail": {
+      "id": 991752,
+      "title": "Even the Wind Is Afraid",
       "original_title": "Hasta el viento tiene miedo",
-      "title_en": "Even the Wind Is Afraid",
-      "overview_es_MX": "Unas alumnas castigadas…",
-      "fuente": "a mano: TMDB pide clave (lo que contestó el 3 nov con es-MX)"
+      "original_language": "es",
+      "origin_country": [
+        "MX"
+      ],
+      "overview": "Unas alumnas castigadas…"
     }
   },
+  "cinemeta": "cinemeta/tt0061752.json",
   "torrentio": {
-    "archivo": "torrentio/tt0061752.json",
-    "capturado": "2026-11-03",
-    "url": "https://torrentio.strem.fun/stream/movie/tt0061752.json"
+    "file": "torrentio/tt0061752.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt0061752.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
   },
-  "torrentio_estado": "ok",
-  "torrentio_opciones": {
-    "solo_al_instante": false,
-    "idiomas_primero": []
-  },
-  "real_debrid": {
-    "clave": true,
-    "cuenta": {
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
       "id": "A",
-      "estado": "premium"
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
     },
-    "al_instante": [],
-    "torrents": []
+    "torrents": [],
+    "book": [
+      {
+        "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+        "files": {
+          "tt0061752": 0
+        },
+        "account": "A",
+        "rd_id": "R1",
+        "title": "Hasta el viento tiene miedo",
+        "kind": "movie",
+        "meta_id": "tt0061752",
+        "video_ids": [
+          "tt0061752"
+        ],
+        "language": "es-419",
+        "release": "Even the Wind Is afraid 1968 1080p BluRay",
+        "by": "iPhone",
+        "since": 1793707200,
+        "state": "ready",
+        "percent": 100,
+        "all_files": false,
+        "updated": 1793728200,
+        "progress_at": 1793728200
+      }
+    ],
+    "error": null
   },
-  "libreta": [
-    {
+  "expected": {
+    "_note": "La pedida y lista sale «Al instante · la pediste», primera; «Ver» y «Ver ahora» la ponen. Ya no se ofrece pedir.",
+    "title": "Hasta el viento tiene miedo",
+    "logo": false,
+    "video_id": "tt0061752",
+    "primary": "play",
+    "cause": null,
+    "cause_arg": null,
+    "fix": null,
+    "offer": null,
+    "instant_aside": null,
+    "recommended": {
       "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-      "files": {
-        "tt0061752": 0
-      },
-      "account": "A",
-      "rd_id": "R1",
-      "title": "Hasta el viento tiene miedo",
-      "kind": "movie",
-      "meta_id": "tt0061752",
-      "video_ids": [
-        "tt0061752"
-      ],
+      "file": 0,
       "language": "es-419",
-      "release": "Even the Wind Is afraid 1968 1080p BluRay",
-      "by": "iPhone",
-      "since": 1759996400,
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+        "res": "1080p",
+        "state": "requested_ready",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "es-419",
+        "hash": "71dba5d524b5c6dda7eeb5bc83e8118ae8fe9ad1",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      }
+    ],
+    "to_request": [
+      {
+        "code": "es-419",
+        "hash": "f43bffedb4b30be2967e5aec91588e0bf9688858",
+        "res": "1080p"
+      },
+      {
+        "code": "es-419",
+        "hash": "88c1570543cf3cd00ce81874699059ebb3aa5774",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "568ad8f0058b1faeab84044284d026b08fd75a1c",
+        "res": "SD"
+      }
+    ],
+    "hidden": 0,
+    "play_now": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+    "request": {
+      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
       "state": "ready",
       "percent": 100,
-      "all_files": false
-    }
-  ],
-  "preferencias": {
-    "audio": "es",
-    "espanol": "es-419",
-    "calidad": "1080p"
-  },
-  "esperado": {
-    "_nota": "La pedida y lista sale «Al instante · la pediste», primera; «Ver» y «Ver ahora» la ponen. Ya no se ofrece pedir.",
-    "titulo": "Hasta el viento tiene miedo",
-    "logo": false,
-    "video": "tt0061752",
-    "boton": "ver",
-    "boton_version": "es-419 · 1080p",
-    "causa": null,
-    "pedir": null,
-    "al_instante_aparte": null,
-    "recomendada": {
-      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-      "archivo": 0
+      "stuck": false
     },
-    "recomendada_idioma": "es-419",
-    "filas": [
-      {
-        "idioma": "es-419",
-        "opciones": [
-          {
-            "otro_titulo": false,
-            "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-            "recomendada": true,
-            "velocidad": "al_instante_la_pediste",
-            "calidad": "1080p"
-          },
-          {
-            "otro_titulo": false,
-            "hash": "71dba5d524b5c6dda7eeb5bc83e8118ae8fe9ad1",
-            "recomendada": false,
-            "velocidad": "por_pedir",
-            "calidad": "720p"
-          }
-        ]
-      },
-      {
-        "idioma": "es",
-        "opciones": [
-          {
-            "otro_titulo": true,
-            "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
-            "recomendada": false,
-            "velocidad": "por_pedir",
-            "calidad": "1080p"
-          }
-        ]
-      }
-    ],
-    "hay_que_pedirlas": [
-      {
-        "calidad": "1080p",
-        "idioma": "es-419",
-        "hash": "f43bffedb4b30be2967e5aec91588e0bf9688858"
-      },
-      {
-        "calidad": "SD",
-        "idioma": "es-419",
-        "hash": "88c1570543cf3cd00ce81874699059ebb3aa5774"
-      },
-      {
-        "calidad": "SD",
-        "hash": "568ad8f0058b1faeab84044284d026b08fd75a1c",
-        "idioma": "ru"
-      }
-    ],
-    "ver_ahora": {
-      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
-      "archivo": 0
-    },
-    "escondidas": 0
+    "other_account": null
   }
 }
