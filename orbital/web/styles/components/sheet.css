@@ -17,10 +17,10 @@
 [data-tint="addon"] { --tint: var(--tint-addon); }
 [data-tint="flame"] { --tint: var(--tint-flame); }
 [data-tint="trophy"] { --tint: var(--tint-trophy); }
-.sheet__icon--tint { width: var(--explain-tile); height: var(--explain-tile); align-self: center; border-radius: var(--radius-md);
+.sheet__icon.sheet__icon--tint { width: var(--explain-tile); height: var(--explain-tile); align-self: center; border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--tint) 18%, transparent); color: var(--tint); }
-.sheet__icon--tint .icon, .sheet__icon--tint svg { width: var(--icon-lg); height: var(--icon-lg); }
-.sheet__item--focused .sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
+.sheet__icon.sheet__icon--tint .icon, .sheet__icon.sheet__icon--tint svg { width: var(--icon-lg); height: var(--icon-lg); }
+.sheet__item--focused .sheet__icon.sheet__icon--tint { background: color-mix(in oklab, var(--tint) 30%, transparent); color: var(--tint); }
 /* Los tres pasos de un pedido: se enciende uno cada 1,6 s (los encendidos a 1, los demás a 0,92) y su símbolo brinca. Solo
    mientras la hoja está abierta; con «Reducir movimiento», quietos y encendidos (base.css deja cada animación en su final). */
 .sheet__steps { display: flex; align-items: flex-start; justify-content: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-6); }
