@@ -281,6 +281,25 @@ enum Demo {
     }
     static var rdSlow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-rd-slow") }
 
+    /// Lo que tienes a medias en la demo («Seguir viendo»: The Office, Breaking Bad e Interstellar). Antes lo traía la cuenta
+    /// de mentira de Stremio al abrir; sin Stremio (E1) se siembra aquí, igual que quedaba. Con `-demo-signed-out`, nada.
+    @MainActor static func seedLibrary(_ services: Services) {
+        guard !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") else { return }
+        let now = Date().timeIntervalSince1970
+        let rows: [(id: String, kind: String, name: String, video: String, at: Double, length: Double, hoursAgo: Double)] = [
+            ("tt0386676", "series", "The Office", "tt0386676:2:5", 120, 1_320, 2),
+            ("tt0903747", "series", "Breaking Bad", "tt0903747:1:3", 1_200, 2_820, 30),
+            ("tt0816692", "movie", "Interstellar", "tt0816692", 3_000, 10_140, 50),
+        ]
+        services.library.batch { entries in
+            for row in rows where entries[row.id] == nil {
+                var entry = LibraryEntry(metaID: row.id, kind: row.kind, name: row.name, poster: "https://images.metahub.space/poster/medium/\(row.id)/img")
+                entry.videoID = row.video; entry.position = row.at; entry.duration = row.length; entry.updatedAt = now - row.hoursAgo * 3600
+                entries[row.id] = entry
+            }
+        }
+    }
+
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
     /// Cómo está tu Real-Debrid de mentira (`-demo-rd`): premium (143 días), soon (3 días), expired (hace 2 días), free, invalid, unreachable
     /// o un número de días («14»).
@@ -289,6 +308,12 @@ enum Demo {
 
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
+        // El complemento de demostración (videos de prueba), como uno que pegaste en Ajustes: antes llegaba con la cuenta de
+        // mentira de Stremio y, sin ella (E1), el reproductor de la demo se quedaba sin versiones. Con `-demo-search-slow`, tres.
+        if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") {
+            let urls = searchSlow ? slowLanes.map { "https://demo.orbital.invalid/\($0)/manifest.json" } : [addonURL]
+            secrets.set(SecretKey.ownAddons, urls.joined(separator: "\n"))
+        }
         if scrobble || airings || because || trakt || rate { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa (propia del iPhone): nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb || DemoViento.mode != nil { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
