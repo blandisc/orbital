@@ -41,7 +41,8 @@ final class NewFlowsRegressionUITests: XCTestCase {
         XCTAssertTrue(calendar.waitForExistence(timeout: 10), "«Lo nuevo de lo tuyo» con su calendario")
         shot("inicio-lo-nuevo")
         calendar.tap()
-        XCTAssertTrue(app.navigationBars.element(boundBy: 0).waitForExistence(timeout: 10))
+        // Inicio ya no tiene barra de navegación (el encabezado propio, HE1-B, 4 nov): el calendario se reconoce por su título.
+        XCTAssertTrue(app.staticTexts["De las series que sigues"].waitForExistence(timeout: 10), "abre el calendario")
         shot("calendario")
         app.swipeDown(velocity: .fast)   // cierra la hoja
         let because = any("because-deck")
