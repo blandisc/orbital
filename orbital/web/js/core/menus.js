@@ -639,6 +639,7 @@ export const SETTING_VALUES = {
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
   rd_auto_request: [[true, "Sí"], [false, "No"]],
+  internet_subtitles: [[true, "Sí"], [false, "No"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   game_mode: [["heavy", "Consolas pesadas"], ["off", "Nunca"]],
   game_resolution: [["lower", "1080p"], ["native", "La de la pantalla"]],
@@ -682,7 +683,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "download",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide", rd_auto_request: "download", internet_subtitles: "captions",
   game_mode: "memory", game_resolution: "hd",
 };
 
@@ -692,6 +693,7 @@ const SETTING_TEXT = {
   subtitles: ["Subtítulos", "Los que salen solos al empezar. En el reproductor, X los cambia."],
   quality: ["Calidad", "La que se busca primero. 4K tarda más en empezar."],
   sub_scale: ["Letra de los subtítulos", "El tamaño de los subtítulos en el reproductor."],
+  internet_subtitles: ["Buscar subtítulos en internet", "Si el video no los trae en tu idioma, se buscan en OpenSubtitles. Viene con Orbital."],
   video_idle_minutes: ["Cerrar videos olvidados en pausa", "Un video en pausa se cierra solo después de ese rato. Tu avance se guarda."],
   video_home: ["Home durante un video", "En pequeño: el video sigue en una esquina mientras usas Orbital."],
   rd_auto_request: ["Pedir solo el siguiente episodio", "Si Real-Debrid aún no lo tiene, se lo pide unos minutos antes de que acabe el que ves."],
@@ -848,7 +850,7 @@ export function settingsCategory(id, settings, { voice = null, now = Date.now(),
   const row = (key) => settingRow(key, settings, id);
   switch (id) {
     case "watch": return { title: "Ver", lead: "Cómo suenan y se ven las películas y series.", options: [
-      row("audio"), row("subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
+      row("audio"), row("subtitles"), row("internet_subtitles"), row("quality"), row("sub_scale"), row("video_idle_minutes"), row("video_home"), row("rd_auto_request"),
       { icon: "list", label: "Lo que recuerda cada título", hint: "El idioma y los subtítulos que elegiste viendo", command: { type: "remembered" } },
     ] };
     case "play": return { title: "Jugar", lead: "Qué se cierra solo y cómo corren los juegos.", options: [
@@ -1450,7 +1452,7 @@ const EXPLAINERS = {
   addons: [
     ["addon", "addon", "Los complementos buscan por ti", "Cada uno sabe de algo: versiones de video, subtítulos o listas. Se les pregunta en el orden de la lista."],
     ["pulse", "flame", "El que no contesta se salta", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo."],
-    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan."],
+    ["trophy", "trophy", "Vienen con Orbital o de tu Stremio", "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Ver."],
   ],
 };
 // Los tres pasos de un pedido, arriba de su explicación (se encienden uno tras otro; DebridFlowStrip del iPhone).
@@ -1594,10 +1596,15 @@ export function addonHealth(health, now = Date.now()) {
   return `No contesta${day}${health.skipped ? " · se salta" : ""}`;
 }
 
+/** OpenSubtitles (el de Orbital o el traído de Stremio) ya no es complemento: los subtítulos de internet vienen con Orbital y
+ * se prenden en Ajustes › Ver (Fernando, 3 nov 2026; igual que el iPhone). */
+export const isOpenSubtitles = (e) => e.template === "opensubtitles" || /opensubtitles/i.test(e.name || "");
+const shownAddons = (entries) => (entries || []).filter((e) => !isOpenSubtitles(e));
+
 /** El dato de Complementos en el riel: «4 de 5 contestan», o de dónde salen si aún no son tuyos. */
 function addonsMeta(status) {
   if (!status || status.source !== "own") return "Los de tu cuenta de Stremio";
-  const on = (status.entries || []).filter((e) => e.on);
+  const on = shownAddons(status.entries).filter((e) => e.on);
   if (!on.length) return "Ninguno prendido";
   const answering = on.filter((e) => e.health?.state === "ok" || e.health?.state === "slow").length;
   return `${answering} de ${on.length} contestan`;
@@ -1619,8 +1626,8 @@ export function addonRows(status, now = Date.now()) {
       value: e.on ? "Prendido" : "Apagado", warn: e.on && e.health?.state === "down",
       command: { type: "addon-menu", id: e.id } };
   };
-  const ours = (status.entries || []).filter((e) => e.origin === "orbital");
-  const brought = (status.entries || []).filter((e) => e.origin !== "orbital");
+  const ours = shownAddons(status.entries).filter((e) => e.origin === "orbital");
+  const brought = shownAddons(status.entries).filter((e) => e.origin !== "orbital");
   const imported = status.imported_at ? `Traídos el ${new Date(status.imported_at * 1000).toLocaleDateString("es", { day: "numeric", month: "short" })}` : "";
   if (status.source !== "own" && !status.imported_at) {
     return [

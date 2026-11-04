@@ -120,4 +120,20 @@ final class AccountsModelTests: XCTestCase {
         XCTAssertFalse(model.working)
         XCTAssertEqual(model.items, before, "lo que tenías se queda")
     }
+
+    /// OpenSubtitles ya no es complemento (Fernando, 3 nov): ni el de Orbital ni el traído de Stremio salen en la lista, no se
+    /// ofrece en «Agregar», y «Ordenar» mueve lo que ves aunque OpenSubtitles esté en medio de la lista completa.
+    func testOpenSubtitlesNoSaleEnLaListaYOrdenarSigueBien() async throws {
+        let rig = try ServicesRig(signedIn: true)
+        let list = rig.services.addonList
+        list.startWithRecommended()   // Torrentio, Comet, OpenSubtitles
+        list.importOnce([.init(name: "OpenSubtitles v3", url: "https://opensubtitles-v3.strem.io/manifest.json", resources: ["subtitles"]),
+                         .init(name: "ThePirateBay+", url: "https://tpb.example/manifest.json", resources: ["stream"])])
+        let model = AddonsModel(rig.services)
+        XCTAssertEqual(model.items.map(\.name), ["Torrentio", "Comet", "ThePirateBay+"])
+        XCTAssertFalse(model.missingRecommended.contains { $0.id == "opensubtitles" })
+        await model.move(fromOffsets: IndexSet(integer: 2), toOffset: 0)   // ThePirateBay+ arriba de todo
+        XCTAssertEqual(model.items.map(\.name), ["ThePirateBay+", "Torrentio", "Comet"])
+        XCTAssertTrue(list.installed.contains { $0.origin == .recommended("opensubtitles") }, "OpenSubtitles sigue guardado: solo no se enseña")
+    }
 }

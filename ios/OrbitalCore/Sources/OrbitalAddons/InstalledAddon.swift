@@ -71,6 +71,10 @@ public struct InstalledAddon: Codable, Equatable, Sendable, Identifiable {
     /// Viene con Orbital (Torrentio, Comet, OpenSubtitles): solo se prende y se apaga, no se quita (C7).
     public var isBuiltIn: Bool { if case .recommended = origin { return true }; return false }
 
+    /// OpenSubtitles (el de Orbital o el traído de Stremio): ya no se enseña como complemento; los subtítulos de internet
+    /// vienen con Orbital y se prenden en Ajustes › Idioma y subtítulos (Fernando, 3 nov 2026).
+    public var isOpenSubtitles: Bool { origin == .recommended("opensubtitles") || name.lowercased().contains("opensubtitles") }
+
     /// Una URL pegada que trae una clave de servicio de descarga («realdebrid=», «debridApiKey»…).
     static func mentionsDebrid(_ url: String) -> Bool {
         let lower = url.lowercased()

@@ -72,6 +72,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// «Pedir solo el siguiente episodio» (R8, R9-B): si Real-Debrid aún no tiene el que sigue, se le pide 3 min antes del
     /// final del que ves. Prendido por omisión, igual que la TV (`rd_auto_request`).
     public var autoRequestNextEpisode = true
+    /// Buscar subtítulos en internet (OpenSubtitles) cuando el video no trae en tu idioma. Viene con Orbital: ya no es un
+    /// complemento de la lista (Fernando, 3 nov 2026).
+    public var internetSubtitles = true
 
     public init() {}
 
@@ -112,6 +115,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         videoZoom = try c.decodeIfPresent(String.self, forKey: .videoZoom) ?? videoZoom
         simpsonsSeasons = try c.decodeIfPresent([Int].self, forKey: .simpsonsSeasons) ?? simpsonsSeasons
         autoRequestNextEpisode = try c.decodeIfPresent(Bool.self, forKey: .autoRequestNextEpisode) ?? autoRequestNextEpisode
+        internetSubtitles = try c.decodeIfPresent(Bool.self, forKey: .internetSubtitles) ?? internetSubtitles
         orbitalEnabled = try c.decodeIfPresent(Bool.self, forKey: .orbitalEnabled) ?? !orbitalAddress.isEmpty
     }
 
@@ -120,7 +124,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case deleteWhenWatched, warnCellularOverGB, region, regionChosen, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
         case avatar, displayName, latinSpanish, castilianSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder, videoZoom, simpsonsSeasons
         case subtitleBackground, subtitlePosition, subtitlesOnSkipBack, forcedForForeignAudio, subtitleSystemStyle, orbitalEnabled
-        case autoRequestNextEpisode
+        case autoRequestNextEpisode, internetSubtitles
     }
 
     /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).

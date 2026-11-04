@@ -132,14 +132,17 @@ public final class AddonsModel: ObservableModel {
     public init(_ services: Services) {
         self.services = services
         super.init()
-        items = services.addonList.installed
+        items = Self.visible(services.addonList.installed)
         torrentioChoice = Self.choices(services.addonList)
     }
 
     /// Los recomendados que todavía no tienes (para «Agregar › Recomendados»).
     public var missingRecommended: [AddonTemplate] {
-        AddonCatalog.recommended.filter { t in !items.contains { $0.origin == .recommended(t.id) } }
+        AddonCatalog.recommended.filter { t in t.id != AddonCatalog.openSubtitles.id && !items.contains { $0.origin == .recommended(t.id) } }
     }
+
+    /// Lo que se enseña: todo menos OpenSubtitles, que ya no es complemento (vive en Ajustes › Idioma y subtítulos).
+    static func visible(_ all: [InstalledAddon]) -> [InstalledAddon] { all.filter { !$0.isOpenSubtitles } }
 
     /// Qué dice cada uno debajo de su nombre: «Usa tu Real-Debrid», «Subtítulos»…, y si vino de Stremio.
     public static func summary(_ addon: InstalledAddon) -> (usesDebrid: Bool, subtitles: Bool, imported: Bool) {
@@ -164,7 +167,11 @@ public final class AddonsModel: ObservableModel {
     }
 
     public func move(fromOffsets source: IndexSet, toOffset destination: Int) async {
-        services.addonList.move(fromOffsets: source, toOffset: destination)
+        // Las posiciones son de lo que ves (sin OpenSubtitles): se pasan a las de la lista completa.
+        let shown = services.addonList.installed.indices.filter { !services.addonList.installed[$0].isOpenSubtitles }
+        let full = IndexSet(source.compactMap { shown.indices.contains($0) ? shown[$0] : nil })
+        let target = shown.indices.contains(destination) ? shown[destination] : (shown.last.map { $0 + 1 } ?? 0)
+        services.addonList.move(fromOffsets: full, toOffset: target)
         reload(); await services.resetAccountCaches()
     }
 
@@ -213,7 +220,7 @@ public final class AddonsModel: ObservableModel {
         reload()
     }
 
-    private func reload() { items = services.addonList.installed; torrentioChoice = Self.choices(services.addonList) }
+    private func reload() { items = Self.visible(services.addonList.installed); torrentioChoice = Self.choices(services.addonList) }
 
     // MARK: C1 · cómo le va a cada uno; C3 y M4 · «Configurar»; C5 · con cuál Torrentio quedarse
 

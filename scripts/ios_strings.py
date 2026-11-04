@@ -21,6 +21,8 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 TRANSLATIONS = {
     # CX (3 nov, Fernando: «CX2A, CX3A, CX4A… la Mac no habla con la TV», CX5, CX7A, CX8A): tu clave entre tus aparatos Apple,
     # quitarla solo aquí o de todos, la invitación del iPhone al iPad, el nombre al conectar y «Darle su propia conexión».
+    # OpenSubtitles deja de ser complemento (Fernando, 3 nov): «Buscar en internet» en Idioma y subtítulos.
+    "Torrentio y Comet vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan. Los subtítulos de internet ya vienen con Orbital: están en Ajustes › Idioma y subtítulos.": "Torrentio and Comet come with Orbital: you turn them on and off. The ones brought from your Stremio can also be removed. Online subtitles now come with Orbital: they're in Settings › Language & subtitles.",
     "Aparatos conectados": "Connected devices",
     "Cada uno está conectado por separado: quitar uno no toca a los demás. No se deshace: tendría que escanear el código otra vez.": "Each one is connected on its own: removing one doesn't touch the others. It can't be undone: it would have to scan the code again.",
     "Solo tu iPhone o la TV pueden quitar otro aparato.": "Only your iPhone or the TV can remove another device.",
@@ -174,7 +176,7 @@ TRANSLATIONS = {
     "Te quedarás sin fuentes": "You'll be left without sources", "Tienes %lld Torrentio": "You have %lld Torrentio",
     "Toca uno para ver qué aporta, configurarlo o quitarlo. «Ordenar» cambia el orden.": "Tap one to see what it adds, configure it or remove it. “Sort” changes the order.", "Todavía no te alcanzan los puntos para canjear.": "You don't have enough points to redeem yet.",
     "Torrentio busca las versiones de lo que quieres ver. Aquí decides cuáles te enseña. Lo de abajo ya viene bien; cámbialo solo si algo te molesta.": "Torrentio finds the versions of what you want to watch. Here you decide which ones it shows you. The settings below are already fine; change them only if something bothers you.", "Torrentio es un buscador": "Torrentio is a search engine",
-    "Torrentio, Comet y OpenSubtitles vienen con Orbital: se prenden y se apagan. Los traídos de tu Stremio también se quitan.": "Torrentio, Comet and OpenSubtitles come with Orbital: they're turned on and off. The ones brought from your Stremio can also be removed.", "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo.": "After two failures in a row it's no longer waited for. It's retried less and less often, up to every hour, and comes back on its own.",
+    "Tras dos fallos seguidos ya no se le espera. Se vuelve a probar cada vez más espaciado, hasta cada hora, y regresa solo.": "After two failures in a row it's no longer waited for. It's retried less and less often, up to every hour, and comes back on its own.",
     "Tras dos fallos seguidos ya no se le espera; se vuelve a probar solo, hasta cada hora.": "After two failures in a row it's no longer waited for; it's retried on its own, up to every hour.", "Traído de tu Stremio": "Brought from your Stremio",
     "Traídos de tu Stremio": "Brought from your Stremio", "Tu Stremio no se toca. Lo que quitaste no regresa solo.": "Your Stremio isn't touched. What you removed doesn't come back on its own.",
     "Tu clave": "Your key", "Tu cuenta": "Your account",

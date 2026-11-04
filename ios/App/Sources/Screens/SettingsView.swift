@@ -256,6 +256,7 @@ struct SettingsView: View {
             SubtitlePreview(look: SubtitleLook(settings: s)).listRowInsets(EdgeInsets(top: DS.Space.s3, leading: DS.Space.s4, bottom: DS.Space.s3, trailing: DS.Space.s4))
             Picker("Idioma de siempre", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Apagados").tag("") }
             Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
+            Toggle("Buscar en internet", isOn: Binding(get: { s.internetSubtitles }, set: { v in model.update { $0.internetSubtitles = v } }))
             Picker("Tamaño", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
                 Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
             }

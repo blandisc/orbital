@@ -527,6 +527,10 @@ def cache_key(kind: str, video_id: str, prefs: Preferences) -> str:
     return f"{kind}:{video_id}:{prefs.audio}:{prefs.spanish}:{prefs.quality}"
 
 
+def is_opensubtitles(base: str) -> bool:
+    return "opensubtitles" in base.lower()
+
+
 class StreamFinder:
     """Pide fuentes a los complementos que las dan (en paralelo) y las guarda unos minutos."""
 
@@ -543,6 +547,8 @@ class StreamFinder:
         # tracks(key) -> las pistas de audio que mpv vio al reproducir esa fuente, o None.
         self.facts: Callable[[str, str], dict | None] = lambda kind, video_id: None
         self.tracks: Callable[[str], list[dict] | None] = lambda key: None
+        # Ajustes › Ver › «Buscar subtítulos en internet»: OpenSubtitles viene con Orbital, ya no es complemento (3 nov 2026).
+        self.internet_subtitles: Callable[[], bool] = lambda: True
 
     def addons(self) -> list[addons.Addon]:
         return self.registry.addons()
@@ -563,28 +569,36 @@ class StreamFinder:
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
 
     def subtitles(self, kind: str, video_id: str, lang: str) -> list[str]:
-        """URLs de subtítulos en tu idioma de tus addons (OpenSubtitles…), por si el video no trae."""
+        """URLs de subtítulos en tu idioma de tus complementos y de OpenSubtitles (si está prendido), por si el video no trae."""
         codes = {lang, LANG_CODES.get(lang, lang)}
         urls = []
-        for addon in self.addons():
-            if not addon.handles("subtitles", kind, video_id):
-                continue
+
+        def get(addon: addons.Addon | None) -> list:
+            path = f"subtitles/{kind}/{quote(video_id, safe='')}.json"
             try:
-                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id, safe='')}.json").get("subtitles")
-                subs = subs if isinstance(subs, list) else []
+                data = self._get_json(addon, path) if addon else addons.fetch_json(f"{subtitle_lib.BUILTIN}/{path}", self.timeout)
             except NET_ERRORS as exc:
-                log.info("Sin subtítulos de %s: %s", addon.name, exc)
-                continue
-            urls += [s["url"] for s in subs if isinstance(s, dict) and isinstance(s.get("url"), str)
+                log.info("Sin subtítulos de %s: %s", addon.name if addon else "OpenSubtitles", exc)
+                return []
+            subs = data.get("subtitles")
+            return subs if isinstance(subs, list) else []
+
+        # OpenSubtitles viene con Orbital: el de la lista o el traído de Stremio no se pregunta dos veces.
+        ask: list[addons.Addon | None] = [a for a in self.addons() if a.handles("subtitles", kind, video_id) and not is_opensubtitles(a.base)]
+        if self.internet_subtitles():
+            ask.append(None)
+        for addon in ask:
+            urls += [s["url"] for s in get(addon) if isinstance(s, dict) and isinstance(s.get("url"), str)
                      and s["url"].startswith(("http://", "https://")) and s.get("lang") in codes]
         return urls
 
     def subtitle_options(self, kind: str, video_id: str, fingerprint: tuple[str, int] | None = None) -> list[dict] | None:
-        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (siempre, como el iPhone), con la copia
+        """Todos los subtítulos de un video, de tus complementos y de OpenSubtitles (si está prendido en Ajustes › Ver, como el iPhone), con la copia
         para la que se hicieron y sus descargas. Con la huella del archivo, los de tu copia exacta salen primero. None si
         nadie contestó (sin internet): así «no hay» y «sin conexión» no se confunden."""
-        bases = [(a.base, a.name) for a in self.addons() if a.handles("subtitles", kind, video_id)]
-        if not any("opensubtitles" in b for b, _ in bases):
+        # OpenSubtitles viene con Orbital: el de la lista o el traído de Stremio no se pregunta dos veces.
+        bases = [(a.base, a.name) for a in self.addons() if a.handles("subtitles", kind, video_id) and not is_opensubtitles(a.base)]
+        if self.internet_subtitles():
             bases.append((subtitle_lib.BUILTIN, "OpenSubtitles"))
         extra = f"/videoHash={fingerprint[0]}&videoSize={fingerprint[1]}" if fingerprint else ""
 

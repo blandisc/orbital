@@ -474,6 +474,7 @@ class Watch:
         self.heard = HeardTracks((Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
                                   / "pistas-de-audio.json") if config.source else None)
         self.streams.tracks = self.heard.get
+        self.streams.internet_subtitles = lambda: bool(self.setting("internet_subtitles", True))
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes, live=False: self.events.publish({

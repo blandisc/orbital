@@ -101,7 +101,7 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
 test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
   const page = settingsCategory("watch", { audio: "en", dub: "latino", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
+    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Buscar subtítulos en internet", "—"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"],
     ["Cerrar videos olvidados en pausa", "—"], ["Home durante un video", "—"], ["Pedir solo el siguiente episodio", "—"], ["Lo que recuerda cada título", undefined]]);
   assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es-419", page: "watch" });
   // Latino, de España o cualquiera (como el iPhone); quien ya tenía «es» sigue en «cualquiera».
@@ -641,12 +641,14 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.equal(addonHealth({ state: "down", since: Date.parse("2026-10-31T20:00:00") / 1000, skipped: true }, now), "No contesta desde el sábado · se salta");
   assert.equal(addonHealth({ state: "off" }), "");
   const status = { source: "own", stremio_linked: true, imported_at: Date.parse("2026-11-03T10:00:00") / 1000, entries: [
-    { id: "opensubtitles", name: "OpenSubtitles", origin: "orbital", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.3 } },
+    { id: "opensubtitles", name: "OpenSubtitles", origin: "orbital", template: "opensubtitles", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.3 } },
+    { id: "comet", name: "Comet", origin: "orbital", template: "comet", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
+    { id: "os2", name: "OpenSubtitles v3", origin: "stremio", on: true, gives: "Subtítulos", health: { state: "ok", seconds: 0.4 } },
     { id: "t", name: "Torrentio RD", origin: "stremio", on: true, gives: "Fuentes de video", health: { state: "ok", seconds: 0.6 } },
     { id: "l", name: "Local Files", origin: "stremio", on: false, only_on: "tv", gives: "", health: { state: "off" } },
   ] };
-  const rows = addonRows(status);
-  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "OpenSubtitles", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
+  const rows = addonRows(status); // OpenSubtitles (el de Orbital y el traído) ya no sale: vive en Ajustes › Ver (3 nov)
+  assert.deepEqual(rows.map((r) => r.label), ["Vienen con Orbital", "Comet", "Traídos de tu Stremio", "Torrentio RD", "Archivos de la TV",
     "Volver a traer", "De dónde salen", "Volver a los de Stremio", "¿Qué es esto?"]);
   assert.equal(rows[3].hint, "Fuentes de video · Contesta en 0,6 s");
   assert.equal(rows[4].hint, "Solo en la TV · Necesita Stremio abierto");
@@ -654,7 +656,7 @@ test("Ajustes › Complementos: tu lista, si cada uno contesta y lo que se le pu
   assert.equal(settingsMeta("addons", { addons: status }), "2 de 2 contestan");
   // Lo de Orbital se apaga pero no se quita; el primero no sube, el último no baja.
   assert.deepEqual(addonMenu(status.entries[0], { first: true, last: true }).options.map((o) => o.label), ["Apagar", "Cancelar"]);
-  assert.deepEqual(addonMenu(status.entries[1], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
+  assert.deepEqual(addonMenu(status.entries[3], { first: true }).options.map((o) => o.label), ["Apagar", "Bajar", "Quitar", "Cancelar"]);
   // Sin traer todavía: primero «Traer de tu Stremio».
   assert.equal(addonRows({ source: "stremio", stremio_linked: true, entries: [] })[0].label, "Traer de tu Stremio");
 });

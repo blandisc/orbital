@@ -309,6 +309,7 @@ def test_subtitles_from_subtitle_addons_in_your_language(monkeypatch):
 
     monkeypatch.setattr(streams.StreamFinder, "_get_json", fake_get)
     finder = streams.StreamFinder(addons.AddonRegistry(Client(), auth=lambda: "key"))
+    finder.internet_subtitles = lambda: False  # solo los de la lista (OpenSubtitles de Orbital va aparte)
     assert finder.subtitles("movie", "tt0816692", "en") == ["https://subs/en.srt"]
     assert asked == [("OpenSubtitles", "subtitles/movie/tt0816692.json")]
     # Un addon solo de subtítulos no se usa para buscar fuentes.
@@ -1419,3 +1420,24 @@ def test_the_bottom_line_shows_the_flag_instead_of_the_language():
     assert len(drawn) > 1 and "Sin subtítulos" in drawn[-1]  # la bandera (sus franjas) y después el texto
     assert player_ui.current_flag([{"type": "audio", "selected": True, "lang": "spa", "title": "Latino"}]) == "mx"
     assert player_ui.current_flag([]) is None
+
+
+def test_opensubtitles_comes_with_orbital_and_follows_the_setting(monkeypatch):
+    """OpenSubtitles ya no es complemento (Fernando, 3 nov 2026): el traído de Stremio no se pregunta, el de Orbital sí
+    mientras «Buscar subtítulos en internet» esté prendido."""
+    class Client:
+        def request(self, method, params):
+            return {"addons": [{"transportUrl": "https://opensubtitles-v3.strem.io/manifest.json",
+                                "manifest": {"name": "OpenSubtitles v3", "resources": ["subtitles"]}}]}
+
+    asked = []
+    monkeypatch.setattr(streams.StreamFinder, "_get_json", lambda self, addon, path: asked.append(addon.name) or {})
+    monkeypatch.setattr(streams.addons, "fetch_json",
+                        lambda url, timeout=0: asked.append(url) or {"subtitles": [{"url": "https://subs/es.srt", "lang": "spa"}]})
+    finder = streams.StreamFinder(addons.AddonRegistry(Client(), auth=lambda: "key"))
+    assert finder.subtitles("movie", "tt1", "es") == ["https://subs/es.srt"]
+    assert asked == ["https://opensubtitles-v3.strem.io/subtitles/movie/tt1.json"], "una sola vez, el de Orbital"
+    asked.clear()
+    finder.internet_subtitles = lambda: False
+    assert finder.subtitles("movie", "tt1", "es") == []
+    assert asked == []

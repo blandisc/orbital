@@ -84,4 +84,18 @@ final class SubtitleSearchTests: XCTestCase {
         XCTAssertTrue(rig.model.subtitleSearchFailed)
         XCTAssertFalse(rig.model.subtitlesOffline)
     }
+
+    // MARK: OpenSubtitles viene con Orbital (3 nov)
+
+    func testOpenSubtitlesSeBuscaSoloSiEstaPrendidoEnAjustes() async throws {
+        let rig = try Rig()
+        let os = "https://opensubtitles-v3.strem.io/subtitles/series/tt0386676%3A1%3A1.json"
+        rig.http.json[os] = ["subtitles": [["url": "https://s.example/es.srt", "lang": "spa"]]]
+        let on = await rig.finder.subtitleOptions(kind: "series", videoID: "tt0386676:1:1")
+        XCTAssertTrue(on.contains { $0.language == "spa" }, "prendido (de fábrica): se busca en OpenSubtitles")
+        let off = StreamFinder(http: rig.http, registry: AddonRegistry(http: rig.http, account: nil, own: { [] }), internetSubtitles: { false })
+        let before = rig.http.calls.filter { $0.hasPrefix("https://opensubtitles") }.count
+        _ = await off.subtitleOptions(kind: "series", videoID: "tt0386676:1:2")
+        XCTAssertEqual(rig.http.calls.filter { $0.hasPrefix("https://opensubtitles") }.count, before, "apagado: no se le pregunta")
+    }
 }

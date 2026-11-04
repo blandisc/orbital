@@ -235,7 +235,8 @@ public final class Services: ObservableModel {
         // M5: «kitsu:» y «tmdb:» al de IMDb (para Trakt y los complementos que solo saben de IMDb), recordado en los ajustes.
         IDBridge.memo.attach(kv)
         let bridge = IDBridge(http: http, tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) })
-        let finder = StreamFinder(http: http, registry: registry, health: addonHealth, bridge: bridge, clock: clock)
+        let finder = StreamFinder(http: http, registry: registry, health: addonHealth, bridge: bridge,
+                                  internetSubtitles: { settings.value.internetSubtitles }, clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
