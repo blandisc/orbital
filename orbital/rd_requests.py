@@ -385,6 +385,14 @@ class RdRequests:
             self._links.pop((info_hash, video_id), None)
             self._publish(video_id)
 
+    def ready_packs(self, meta_id: str) -> set[str]:
+        """Las huellas de los paquetes de temporada de esa serie que pediste con todos sus videos (`all_files`) y ya
+        terminaron, de tu cuenta: otro episodio de ahí ya está («Al instante · la pediste») aunque no lo hayas pedido."""
+        account = self.account()
+        return {str(r["hash"]).lower() for r in self._entries()
+                if r.get("all_files") and r.get("state") == READY and r.get("hash") and r.get("meta_id") == meta_id
+                and self._mine(r, account)}
+
     def ready_source(self, kind: str, video_id: str) -> streams.Source | None:
         """El pedido ya bajado, como una versión que arranca al instante (o None). Solo lo de tu cuenta."""
         req = self.find(video_id)

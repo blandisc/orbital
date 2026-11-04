@@ -75,7 +75,8 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
     h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
     r === start.row && c === start.col && opt.source === best() && Badge("Recomendada", { className: "version__badge" }),
-    opt.source.other_title && Chip("¿Otro título?", { tone: "warn", className: "version__other" }));
+    opt.source.other_episode ? Chip("¿Otro episodio?", { tone: "warn", className: "version__other" })
+      : opt.source.other_title && Chip("¿Otro título?", { tone: "warn", className: "version__other" }));
     return button;
   }
 
@@ -105,7 +106,7 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
     const more = opt.all.length > 1 ? `X: las ${opt.all.length} de aquí` : "";
     mount(why,
       h("span", { class: "sources__why-langs" }, ...sureFlags(src), languageLine(src, rows[at.row].code) || src.languages?.join(" + ") || "No dice idioma"),
-      h("span", { class: "sources__why-more" }, [src.other_title && "El nombre no dice este título", src.site, more].filter(Boolean).join(" · ")));
+      h("span", { class: "sources__why-more" }, [src.other_episode ? "El nombre dice otra temporada" : src.other_title && "El nombre no dice este título", src.site, more].filter(Boolean).join(" · ")));
   }
 
   function renderCell() {
