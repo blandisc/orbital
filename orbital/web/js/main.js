@@ -10,7 +10,7 @@ import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLa
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
-import { DEBRID_FORM, debridCancelMenu, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
+import { cloudRow, DEBRID_FORM, debridCancelMenu, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
@@ -1163,7 +1163,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
+  applyCuration([...cloudRow(state.settings?.realdebrid?.requests || []), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -1785,6 +1785,9 @@ function pick(r, c) {
     const item = current();
     if (item?.source === "genre") return openGenre(item);
     if (item?.source === "collection") return openCollection(item);
+    // Lo mismo que A: una descarga a medias dice cómo va y lo que baja en la nube abre su hoja (RX1-TV-A), no se reproduce.
+    if (item?.download && item.download.status !== "done") return openMenu(downloadMenu(item));
+    if (item?.request && item.request.state !== "ready") return runCommand({ type: "rd-request-menu", hash: item.request.hash });
     return launch(item);
   }
   setFocus(r, c);
@@ -2100,6 +2103,8 @@ function handleRows(action, { repeat = false } = {}) {
       if (item?.source === "genre") return openGenre(item); // Por género: su lista completa
       if (item?.source === "collection") return openCollection(item);
       if (item?.download && item.download.status !== "done") return openMenu(downloadMenu(item)); // aún no está: cómo va
+      // RX1-TV-A: lo que baja en la nube abre su hoja (cuánto lleva, «Cancelar pedido»); lo listo arranca, como Seguir viendo.
+      if (item?.request && item.request.state !== "ready") return runCommand({ type: "rd-request-menu", hash: item.request.hash });
       return launch(item);
     }
     case "search": return openSearch();
@@ -2112,6 +2117,7 @@ function handleRows(action, { repeat = false } = {}) {
     case "options":
       if (item?.source === "genre" || item?.source === "collection") return sound.play("error"); // una lista no tiene opciones
       if (item?.download) return openMenu(downloadMenu(item));
+      if (item?.request) return runCommand({ type: "rd-request-menu", hash: item.request.hash }); // su hoja, también ya listo
       return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
     case "menu":
       if (state.section === "media") return openMenu(mediaMenu());
@@ -2235,6 +2241,16 @@ const EVENTS = {
   },
   downloads: (event) => {
     return event.id ? downloadProgress(event) : loadDownloads();
+  },
+  // Un pedido a la nube cambió (lo pediste, avanzó, terminó): la fila «Real-Debrid · bajando para ti» se vuelve a armar
+  // solo si cambió algo que se ve (su estado o su avance de 10 en 10), como «Descargas».
+  "rd-request": async () => {
+    const res = await api.debridRequests().catch(() => null);
+    if (!res) return;
+    const shape = (list) => (list || []).map((r) => `${r.hash}:${r.state}:${Math.floor((r.percent || 0) / 10)}`).join(",");
+    const before = shape(state.settings?.realdebrid?.requests);
+    if (state.settings) state.settings = { ...state.settings, realdebrid: { ...state.settings.realdebrid, requests: res.requests || [] } };
+    if (shape(res.requests) !== before && state.section === "media") buildCuration();
   },
   "library-changed": (event) => {
     loadLibrary();

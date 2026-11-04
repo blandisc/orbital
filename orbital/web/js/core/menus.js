@@ -1353,6 +1353,25 @@ export function requestLabel(req) {
   return req.state === "downloading" ? `Bajando en la nube · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
 }
 
+/** RX1-TV-A (Fernando, 3 nov): la fila «Real-Debrid · bajando para ti» de Películas y series, junto a Descargas, solo
+ *  cuando pediste algo. Primero lo que baja y luego lo que ya terminó (como «Tus pedidos»); A en lo listo abre su ficha y
+ *  en lo que baja, su hoja (la misma de «Tus pedidos»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» sigue ahí. */
+export const CLOUD_ROW = "Real-Debrid · bajando para ti";
+export function cloudRow(requests = [], { now = Date.now() } = {}) {
+  const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone");
+  if (!live.length) return [];
+  const order = (r) => (r.state === "ready" ? 1 : 0);
+  const items = [...live].sort((a, b) => order(a) - order(b) || (b.since || 0) - (a.since || 0)).map((req) => ({
+    id: `cloud:${req.hash}`, title: req.title || "Tu pedido", source: "stremio", category: "cloud", kind: req.kind || "movie",
+    meta_id: req.meta_id, image: `https://images.metahub.space/poster/medium/${req.meta_id}/img`, request: req,
+    subtitle: [req.state === "ready" ? "Al instante · la pediste" : requestLabel(req), requestedBy(req, now)].join(" · "),
+    progress: req.state === "downloading" ? Math.max(0, Math.min(1, (req.percent || 0) / 100)) : null,
+    extra: { kind: req.kind || "movie", meta_id: req.meta_id, video_id: req.video_ids?.[0] || req.meta_id, eyebrow: CLOUD_ROW,
+      description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : DEBRID_CLOUD },
+  }));
+  return [{ id: "curated:cloud", title: CLOUD_ROW, seal: "orbital", group: "downloads", items }];
+}
+
 /** Quién lo pidió: «Lo pediste aquí» o «Lo pidió el iPhone de Fernando». */
 export function requestedBy(req, now = Date.now()) {
   const here = !req.by || req.by === "TV";

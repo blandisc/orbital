@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { debridCancelMenu, debridRemoteMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
+import { cloudRow, CLOUD_ROW, debridCancelMenu, debridRemoteMenu, moviesSetupMenu, stremioAccountMenu, torrentioHidden, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu, torrentioSummary } from "../../orbital/web/js/core/menus.js";
 import { addonHealth, addonMenu, addonRows, debridAccountMenu, debridRequestMenu, debridRequestsMenu, debridRow, requestedBy, requestLabel, stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, segmentable, settingLabel, SETTINGS_CATEGORIES, settingsCategory, settingsMeta, settingsMissing, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
@@ -803,4 +803,21 @@ test("K1-A (Fernando, 3 nov): cerrar «¿Usar la cuenta?» sin contestar borra l
   assert.deepEqual(menu.cancel, { type: "rd-remote-cancel", code: "abc" }); // B o tocar fuera = Cancelar
   assert.equal(menu.options[0].label, "Cancelar");
   assert.match(menu.subtitle, /Si cierras, se borra/);
+});
+
+test("RX1-TV-A (Fernando, 3 nov): «Real-Debrid · bajando para ti» solo cuando pediste algo; primero lo que baja", () => {
+  assert.deepEqual(cloudRow([]), []);
+  assert.deepEqual(cloudRow([{ hash: "a", meta_id: "tt1", state: "gone" }]), []); // lo cancelado no cuenta
+  const now = Date.now();
+  const [row] = cloudRow([
+    { hash: "a", meta_id: "tt0061752", title: "Hasta el viento tiene miedo", kind: "movie", state: "ready", by: "TV", since: now - 60_000 },
+    { hash: "b", meta_id: "tt0903747", title: "Breaking Bad · T1 E2", kind: "series", video_ids: ["tt0903747:1:2"], state: "downloading",
+      percent: 42, by: "iPhone de Fernando" },
+  ], { now });
+  assert.equal(row.title, CLOUD_ROW);
+  assert.deepEqual(row.items.map((i) => i.title), ["Breaking Bad · T1 E2", "Hasta el viento tiene miedo"]);
+  assert.match(row.items[0].subtitle, /^Bajando en la nube · 42 % · Lo pidió el iPhone de Fernando/);
+  assert.equal(row.items[0].progress, 0.42);
+  assert.equal(row.items[0].extra.video_id, "tt0903747:1:2");
+  assert.match(row.items[1].subtitle, /^Al instante · la pediste · /);
 });
