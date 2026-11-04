@@ -140,3 +140,23 @@ def test_the_iphone_reads_and_changes_the_addon_list_through_the_tunnel(apps):
     assert ok.status_code == 200 and ok.json()["revision"] == got["revision"] + 1 and ok.json()["changed_by"] == "iPhone de Fernando"
     bad = {**got["addons"][0], "id": "x", "origin": "stremio", "url": "https://y.strem.fun/realdebrid=ZZZ/manifest.json"}
     assert public.put("/api/addons", json={"base_revision": got["revision"] + 1, "addons": [bad]}, headers=auth).status_code == 422
+
+
+def test_finished_request_is_first_and_instant_and_cam_never_counts_as_instant(watch, monkeypatch):
+    """«El viento tiene miedo» (3 nov): la versión que pediste y ya terminó va primero, «Al instante · la pediste», aunque
+    Torrentio la siga marcando «[RD download]»; y «al instante» nunca es una grabada en el cine ni un tráiler."""
+    from orbital import watch as watch_mod
+    from orbital.library import streams as streams_mod
+
+    def src(index, info_hash, cached, tags=()):
+        s = streams_mod.Source(index=index, addon="Torrentio", stream={"infoHash": info_hash}, transport_url="")
+        s.debrid, s.cached, s.tags = True, cached, list(tags)
+        return s
+
+    other, mine = src(1, "b" * 40, True), src(2, "a" * 40, False)
+    monkeypatch.setattr(type(watch), "has_addons", property(lambda self: True))
+    monkeypatch.setattr(watch.streams, "find", lambda kind, video_id, prefs: [other, mine])
+    monkeypatch.setattr(watch.rd, "status", lambda video_id: {"mine": True, "state": "ready", "hash": "a" * 40})
+    found = watch.stream_sources("movie", "tt0061752")
+    assert found[0] is mine and mine.cached and mine.public()["requested"]
+    assert not watch_mod.ready_now(src(3, "c" * 40, True, ("CAM",)))

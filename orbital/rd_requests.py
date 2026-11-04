@@ -211,12 +211,17 @@ class RdRequests:
         except NET_ERRORS as exc:
             log.info("Sin torrents para pedir de %s: %s", video_id, exc)
             return []
+        try:  # el idioma original del título (una de YTS de una película mexicana es «Latino (original)», no «Inglés»)
+            facts = self.finder.facts(kind, video_id) if hasattr(self.finder, "facts") else {}
+        except Exception:  # noqa: BLE001 - sin TMDB se pide igual
+            facts = {}
+        original = facts.get("original") if isinstance(facts, dict) and isinstance(facts.get("original"), str) else None
         found = []
         for i, stream in enumerate(data.get("streams") or []):
             if not isinstance(stream, dict) or not isinstance(stream.get("infoHash"), str):
                 continue
             try:
-                found.append(streams.parse(stream, addon.name, base, i))
+                found.append(streams.parse(stream, addon.name, base, i, original))
             except streams.PARSE_ERRORS:
                 continue
         return [s for s in streams.rank(found, prefs, kind) if not {"CAM", "Tráiler"} & set(s.tags)]
@@ -279,6 +284,9 @@ class RdRequests:
             fresh["updated"] = time.time()
             self._put(entry["hash"], fresh)
             self.prune()
+        if fresh["state"] == READY and (old or {}).get("state") != READY:  # ya está: «Versión» se vuelve a buscar
+            for video_id in fresh.get("video_ids") or []:
+                self.finder.forget(fresh.get("kind") or "movie", video_id)
         if fresh["state"] in ACTIVE and self._mine(fresh, self.account()):
             self.watch()
         for video_id in fresh.get("video_ids") or []:

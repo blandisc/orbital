@@ -183,7 +183,8 @@ class Catalog:
                                    resolve=self.watch.download_url, publish=self.notify, autostart=bool(cache))
         self.watch.downloads = self.downloads
         # El nombre de cada título en tu idioma, igual en las filas, Para ti, tu biblioteca y la ficha.
-        self.names = localize.TitleNames(self.watch.localizer, cache / "title-names.json" if cache else None,
+        # v2: las de antes guardaron en inglés las películas en el idioma de la app («Even the Wind Is Afraid»).
+        self.names = localize.TitleNames(self.watch.localizer, cache / "title-names-v2.json" if cache else None,
                                          on_new=lambda: self.notify({"type": "library-changed"}))
         self.watch.localizer.on_name = self.names.remember
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)

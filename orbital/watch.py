@@ -167,9 +167,10 @@ FALLBACK_TRIES = 6  # versiones que se prueban solas antes de rendirse (primero 
 
 
 def ready_now(source: streams.Source) -> bool:
-    """Arranca ya: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que bajarla» solo da el video de
-    aviso de 30 s de Real-Debrid: probarla sola no sirve."""
-    return source.cached or not source.debrid
+    """Arranca ya y es de verdad este título: está en Real-Debrid, o no pasa por él (un enlace directo). Una «Hay que
+    bajarla» solo da el video de aviso de 30 s de Real-Debrid; una grabada en el cine, un tráiler o una que parece de otro
+    título no cuentan («El viento tiene miedo»: se ofrecía «Verlo al instante» con una que no era)."""
+    return (source.cached or not source.debrid) and not ({"CAM", "Tráiler"} & set(source.tags)) and not source.other_title
 
 
 def fallback_source(found: list[streams.Source], audio: str, native: bool = True) -> streams.Source | None:
@@ -1118,9 +1119,20 @@ class Watch:
         if not self.has_addons:
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         found = self.streams.find(kind, video_id, prefs or self.stream_prefs)
-        if any(s.cached for s in found):
+        req = self.rd.status(video_id)
+        if not (req and req.get("mine") and req.get("state") == rd_requests.READY):
             return found
-        mine = self.rd.ready_source(kind, video_id)  # tu pedido a Real-Debrid ya bajado: arranca al instante
+        # Tu pedido ya terminó: Torrentio puede seguir marcando ese torrent «[RD download]» un rato. Cuenta como al
+        # instante («Al instante · la pediste») y va primero; si Torrentio no lo lista, se arma con el archivo pedido.
+        done = str(req.get("hash") or "").lower()
+        same = [s for s in found if s.info_hash == done]
+        for s in same:
+            s.cached, s.requested = True, True
+        if same:
+            return [*same, *[s for s in found if s not in same]]
+        mine = self.rd.ready_source(kind, video_id)
+        if mine is not None:
+            mine.requested = True
         return [mine, *found] if mine is not None else found
 
     def availability(self, kind: str, meta_id: str, video_id: str) -> dict:

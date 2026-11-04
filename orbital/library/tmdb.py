@@ -559,7 +559,11 @@ class Tmdb:
     def translation(self, kind: str, tmdb_id: int, language: str, episodes: bool = False) -> dict:
         """Título, sinopsis, géneros y (en series) los episodios en ese idioma: {(temporada, episodio): {…}}."""
         raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", language=language)
-        found = {"title": str(raw.get("title") or raw.get("name") or "").strip(),
+        # Una película en el idioma de la app: su título original (TMDB no la traduce a su propio idioma y con es-MX daba el
+        # inglés: «Even the Wind Is Afraid» en vez de «El viento tiene miedo»).
+        native = str(raw.get("original_language") or "").lower() == language.split("-")[0].lower()
+        title = raw.get("original_title") or raw.get("original_name") if native else None
+        found = {"title": str(title or raw.get("title") or raw.get("name") or "").strip(), "native": native,
                  "overview": str(raw.get("overview") or "").strip(),
                  "genres": [g["name"] for g in raw.get("genres") or [] if isinstance(g, dict) and isinstance(g.get("name"), str)][:3],
                  "episodes": {}}

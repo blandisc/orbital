@@ -132,6 +132,7 @@ class Source:
     seeders: int = 0
     site: str = ""
     cached: bool = False  # [RD+]: ya está en Real-Debrid, arranca al instante
+    requested: bool = False  # la pediste tú y ya terminó: «Al instante · la pediste» (va primero)
     debrid: bool = False
     languages: list[str] = field(default_factory=list)
     release: str = ""
@@ -180,7 +181,7 @@ class Source:
             # Para «Versión»: cada idioma con su código, su nombre y cómo lo sabemos.
             "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
                             for code, how in self.audio_langs.items()],
-            "other_title": self.other_title, "checked": self.checked,
+            "other_title": self.other_title, "checked": self.checked, "requested": self.requested,
             # T8-A: la que hay que pedir lleva su huella (no es secreta) para «Pedirlo y avisarme» justo esta.
             **({"hash": self.info_hash} if self.debrid and not self.cached and self.info_hash else {}),
         }

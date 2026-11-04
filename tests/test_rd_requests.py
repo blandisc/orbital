@@ -304,3 +304,16 @@ def test_t8a_the_version_you_chose_is_the_one_requested(setup):
     assert src.info_hash == other and src.public()["hash"] == other
     src.cached = True
     assert "hash" not in src.public()  # lo que ya arranca no se pide
+
+
+def test_a_finished_request_is_instant_and_first_and_one_from_the_iphone_refreshes_the_search(setup):
+    """«El viento tiene miedo» (3 nov): con Real-Debrid ya terminado, Torrentio seguía marcando ese torrent «[RD download]»:
+    «Ya está» pero no arrancaba. Un pedido listo cuenta como al instante y va primero; uno que llega listo desde el iPhone
+    vuelve a buscar las versiones."""
+    reqs, rd, events, state, finder, _ = setup
+    entry = {"hash": H2, "account": "7", "rd_id": "R9", "title": "El viento", "kind": "movie", "meta_id": "tt0061752",
+             "video_ids": ["tt0061752"], "files": {}, "by": "iPhone de Fernando", "state": "downloading", "percent": 50}
+    reqs.receive(entry)
+    assert finder.forgot == []
+    reqs.receive({**entry, "state": "ready", "percent": 100})
+    assert finder.forgot == ["tt0061752"]

@@ -109,3 +109,20 @@ def test_your_stremio_account_keeps_the_original_title(library, monkeypatch):
                                  position=600, duration=1300, watched=600, refresh=False)
     assert saved == ["The Office", "The Office"]
     assert library.watch.cinemeta.meta("series", "tt0386676")["name"] == "La oficina"  # la ficha, en español
+
+
+def test_a_movie_in_the_app_language_keeps_its_own_title_and_drops_the_english_logo(monkeypatch):
+    """«El viento tiene miedo» (tt0061752, 3 nov): TMDB no traduce una película a su propio idioma; con es-MX devolvía
+    «Even the Wind Is Afraid». Si su idioma original es el de la app, va su título original y el nombre en vez del logo
+    en inglés de metahub."""
+    monkeypatch.setattr(tmdb.Tmdb, "_get", lambda self, path, **params: {
+        "title": "Even the Wind Is Afraid", "original_title": "Hasta el viento tiene miedo", "original_language": "es",
+        "overview": "Un grupo de estudiantes…", "genres": []})
+    found = tmdb.Tmdb("k").translation("movie", 1, "es-MX")
+    assert found["title"] == "Hasta el viento tiene miedo" and found["native"]
+    from orbital.library.localize import apply
+    out = apply({"name": "Even the Wind Is Afraid", "logo": "https://images.metahub.space/logo/x.png"}, found)
+    assert out["name"] == "Hasta el viento tiene miedo" and out["logo"] is None
+    monkeypatch.setattr(tmdb.Tmdb, "_get", lambda self, path, **params: {"title": "El padrino", "original_title": "The Godfather",
+                                                                      "original_language": "en"})
+    assert tmdb.Tmdb("k").translation("movie", 2, "es-MX")["title"] == "El padrino"  # lo de otro idioma, traducido

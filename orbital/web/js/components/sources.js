@@ -50,7 +50,8 @@ export function createSources({ onPlay, onAsk, requests = () => [], onMove, onCl
 
   const facts = (src) => [bytes(src.size), ...(src.hdr || []).map((t) => (t === "DV" ? "Dolby Vision" : t)),
     src.audio && (src.audio === "Atmos" ? "Dolby Atmos" : src.audio)].filter(Boolean);
-  const state = (src) => (isOwnSource(src) || src.cached ? ["Al instante", "good"] : src.debrid ? ["Tarda en empezar", "warn"] : [src.addon, null]);
+  const state = (src) => (src.requested ? ["Al instante · la pediste", "good"] : isOwnSource(src) || src.cached ? ["Al instante", "good"]
+    : src.debrid ? ["Tarda en empezar", "warn"] : [src.addon, null]);
   // T8-A: ¿ya se pidió? (la libreta, por la huella de la versión). Lo olvidado y la lápida no cuentan.
   const asked = (src) => (src?.hash ? (requests() || []).find((q) => q.hash === src.hash && q.state !== "gone") : null);
   const askState = (src) => {

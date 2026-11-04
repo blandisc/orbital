@@ -111,6 +111,8 @@ def apply(meta: dict, found: dict) -> dict:
             out[field] = value
     if found.get("genres"):
         out["genres"] = found["genres"]
+    if found.get("native") and found.get("title"):  # el logo de metahub viene en inglés: va el nombre en su idioma
+        out["logo"] = None
     episodes = found.get("episodes") or {}
     if episodes and isinstance(meta.get("videos"), list):
         videos = []
