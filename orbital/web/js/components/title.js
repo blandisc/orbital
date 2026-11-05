@@ -1098,7 +1098,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && { glyph: g.options, label: "Versión" },
+    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && !onVersion && { glyph: g.options, label: "Versión" },
       led() ? { glyph: g.rows, label: "Episodios" } : panelZone() && { glyph: g.rows, label: PANEL_NAMES[panelZone()] },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
