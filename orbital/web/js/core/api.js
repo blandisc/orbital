@@ -116,7 +116,6 @@ export const api = {
   debridRequests: () => request("/api/realdebrid/requests"),
   debridStatus: () => request("/api/realdebrid"),
   debridCancel: (hash) => post("/api/realdebrid/requests/cancel", { hash }),
-  debridHide: (hash) => post("/api/realdebrid/requests/hide", { hash }),
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
   forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),

@@ -374,7 +374,7 @@ class RdRequests:
             if not (exc.too_many or exc.refused):  # de tu cuenta o de la red: no queda anotado
                 raise
             entry["state"] = TOO_MANY if exc.too_many else REFUSED
-        self._put(info_hash, {**merge(known, entry), "hidden": False} if known else entry)  # pedirlo otra vez lo vuelve a mostrar
+        self._put(info_hash, merge(known, entry) if known else entry)
         log.info("Pedido a Real-Debrid: %s (%s)", title, pick.release or info_hash)
         self._publish(video_id)
         self.watch()
@@ -394,12 +394,6 @@ class RdRequests:
         for video_id in req.get("video_ids") or []:
             self._links.pop((info_hash, video_id), None)
             self._publish(video_id)
-
-    def hide(self, info_hash: str) -> None:
-        """«Ocultar de esta fila» (Fernando, 4 nov): sale de «Real-Debrid · bajando para ti» y sigue en tu Real-Debrid."""
-        if self._all().get(info_hash) is None:
-            raise realdebrid.RealDebridError("Ese pedido ya no está")
-        self._update(info_hash, {"hidden": True})
 
     def pack_for(self, meta_id: str, hashes: set[str]) -> dict | None:
         """Un paquete de temporada tuyo, en camino, que Torrentio también lista para este episodio (`hashes`): es su pedido,

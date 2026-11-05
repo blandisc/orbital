@@ -192,14 +192,4 @@ def router(d: Deps, is_local: Callable[[Request], bool]) -> APIRouter:
             raise HTTPException(409, str(exc)) from exc
         return watch.rd.listing()
 
-    @r.post("/api/realdebrid/requests/hide")
-    def debrid_hide(body: CancelRequest, request: Request) -> dict:
-        """«Ocultar de esta fila»: deja de salir en la fila de la nube; no se toca tu Real-Debrid."""
-        local_only(request)
-        try:
-            watch.rd.hide(body.hash)
-        except realdebrid.RealDebridError as exc:
-            raise HTTPException(409, str(exc)) from exc
-        return watch.rd.listing()
-
     return r

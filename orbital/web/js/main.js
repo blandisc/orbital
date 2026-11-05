@@ -596,6 +596,7 @@ function applySettings(settings) {
   // Una respuesta ilegible o vacía no regresa todo a los valores de fábrica: se queda lo que había.
   const known = ["audio", "text_size", "safe_area", "sounds", "quality"];
   if (!settings || typeof settings !== "object" || !known.some((key) => key in settings)) return;
+  const rowChanged = (state.settings?.cloud_row_hidden || 0) !== (settings.cloud_row_hidden || 0); // «Ocultar esta fila»
   state.settings = settings;
   const root = document.documentElement;
   root.dataset.textSize = settings.text_size || "normal";
@@ -606,6 +607,7 @@ function applySettings(settings) {
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
   ui.settings.update({ settings }); // Ajustes abierto: el valor nuevo se ve en su lugar
   warnDebridExpiry(settings);
+  if (rowChanged && state.libraryLoaded) buildCuration();
 }
 
 /** Cuando la pantalla de arranque ya se fue (se desvanece un rato después de boot.finish). */
@@ -1204,7 +1206,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...cloudRow(state.settings?.realdebrid?.requests || []), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
+  applyCuration([...cloudRow(state.settings?.realdebrid?.requests || [], { hiddenAt: state.settings?.cloud_row_hidden }), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -1828,7 +1830,7 @@ function pick(r, c) {
     if (item?.source === "collection") return openCollection(item);
     // Lo mismo que A: una descarga a medias dice cómo va y lo que baja en la nube abre su hoja (RX1-TV-A), no se reproduce.
     if (item?.download && item.download.status !== "done") return openMenu(downloadMenu(item));
-    if (item?.request && item.request.state !== "ready") return runCommand({ type: "rd-request-menu", hash: item.request.hash });
+    if (item?.request && item.request.state !== "ready") return runCommand({ type: "rd-request-menu", hash: item.request.hash, row: true });
     return launch(item);
   }
   setFocus(r, c);
@@ -2148,7 +2150,7 @@ function handleRows(action, { repeat = false } = {}) {
       if (item?.source === "collection") return openCollection(item);
       if (item?.download && item.download.status !== "done") return openMenu(downloadMenu(item)); // aún no está: cómo va
       // RX1-TV-A: lo que baja en la nube abre su hoja (cuánto lleva, «Cancelar pedido»); lo listo arranca, como Seguir viendo.
-      if (item?.request && item.request.state !== "ready") return runCommand({ type: "rd-request-menu", hash: item.request.hash });
+      if (item?.request && item.request.state !== "ready") return runCommand({ type: "rd-request-menu", hash: item.request.hash, row: true });
       return launch(item);
     }
     case "search": return openSearch();
@@ -2161,7 +2163,7 @@ function handleRows(action, { repeat = false } = {}) {
     case "options":
       if (item?.source === "genre" || item?.source === "collection") return sound.play("error"); // una lista no tiene opciones
       if (item?.download) return openMenu(downloadMenu(item));
-      if (item?.request) return runCommand({ type: "rd-request-menu", hash: item.request.hash }); // su hoja, también ya listo
+      if (item?.request) return runCommand({ type: "rd-request-menu", hash: item.request.hash, row: true }); // su hoja, también ya listo
       return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
     case "menu":
       if (state.section === "media") return openMenu(mediaMenu());

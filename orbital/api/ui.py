@@ -47,6 +47,8 @@ def valid_setting(key, value) -> bool:
     if key == "rd_expiry_notice":  # VE1-A: el último aviso de vencimiento que ya salió, «<vence>:<14|3|0>»
         import re
         return isinstance(value, str) and re.fullmatch(r"\d{1,12}:(14|3|0)", value) is not None
+    if key == "cloud_row_hidden":  # «Ocultar esta fila» (Fernando, 4 nov): cuándo la ocultaste (segundos), o 0 si se ve
+        return isinstance(value, int) and not isinstance(value, bool) and 0 <= value < 10 ** 11
     if key == "languages":  # N4-A: tu orden de idiomas (una lista)
         from ..library.streams import valid_languages
         return valid_languages(value)

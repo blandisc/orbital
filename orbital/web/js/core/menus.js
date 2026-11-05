@@ -1443,9 +1443,9 @@ export function requestLabel(req) {
  *  cuando pediste algo. Primero lo que baja y luego lo que ya terminó (como «Tus pedidos»); A en lo listo abre su ficha y
  *  en lo que baja, su hoja (la misma de «Tus pedidos»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» sigue ahí. */
 export const CLOUD_ROW = "Real-Debrid · bajando para ti";
-export function cloudRow(requests = [], { now = Date.now() } = {}) {
-  const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone" && !r.hidden);
-  if (!live.length) return [];
+export function cloudRow(requests = [], { now = Date.now(), hiddenAt = 0 } = {}) {
+  const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone");
+  if (!live.length || cloudRowHidden(live, hiddenAt)) return [];
   const order = (r) => (r.state === "ready" ? 1 : 0);
   const items = [...live].sort((a, b) => order(a) - order(b) || (b.since || 0) - (a.since || 0)).map((req) => ({
     id: `cloud:${req.hash}`, title: req.title || "Tu pedido", source: "stremio", category: "cloud", kind: req.kind || "movie",
@@ -1458,6 +1458,12 @@ export function cloudRow(requests = [], { now = Date.now() } = {}) {
       description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : DEBRID_CLOUD },
   }));
   return [{ id: "curated:cloud", title: CLOUD_ROW, seal: "orbital", group: "downloads", items }];
+}
+
+/** «Ocultar esta fila» (Fernando, 4 nov): `hiddenAt` es cuándo la ocultaste (segundos). Vuelve sola en cuanto pides algo
+ *  después (lo de la TV o el iPhone), para que lo nuevo no llegue sin que lo veas; o desde Ajustes › Cuentas › Real-Debrid. */
+export function cloudRowHidden(requests = [], hiddenAt = 0) {
+  return !!hiddenAt && !requests.some((r) => (r?.since || 0) > hiddenAt);
 }
 
 /** Quién lo pidió: «Lo pediste aquí» o «Lo pidió el iPhone de Fernando». */
@@ -1510,8 +1516,9 @@ export function debridExpiryNotice(rd, seen = "") {
 }
 
 /** Real-Debrid conectado: de dónde salió tu clave, tu Premium, «Tus pedidos» y cómo renovar. */
-export function debridAccountMenu(rd) {
+export function debridAccountMenu(rd, { rowHiddenAt = 0 } = {}) {
   const requests = rd?.requests || [];
+  const rowHidden = cloudRowHidden(requests, rowHiddenAt);
   const from = DEBRID_SOURCES[rd?.source] || "Tomada de tu Torrentio";
   const active = requests.filter((r) => REQUEST_GOING.includes(r.state)).length;
   if (!rd?.linked) {
@@ -1531,6 +1538,9 @@ export function debridAccountMenu(rd) {
       problem && { icon: "warning", label: problem.label, hint: `${expiredOn}${problem.hint}`, warn: true, command: problem.command },
       { icon: "cloudDownload", label: "Tus pedidos", value: active ? `${active} en camino` : requests.length ? `${requests.length}` : "Ninguno",
         hint: "Lo que le pediste desde la TV o tu iPhone", command: { type: "rd-requests" } },
+      // Fernando, 4 nov: el camino visible para regresar la fila que ocultaste (y para ocultarla desde aquí).
+      { icon: rowHidden ? "hide" : "show", label: "Fila en Películas y series", hint: CLOUD_ROW, value: rowHidden ? "Oculta" : "Se ve",
+        command: { type: "rd-row", hide: !rowHidden, from: "settings" } },
       !problem && rd.expires && { icon: "star", label: "Premium", value: `Vence el ${dayMonth(rd.expires)}`,
           hint: rd.days != null ? (rd.days === 1 ? "Queda 1 día · Renovar en real-debrid.com, desde tu celular" : `Quedan ${rd.days} días · Renovar en real-debrid.com, desde tu celular`) : "",
           warn: rd.days != null && rd.days <= 7, command: { type: "close" } },
@@ -1669,7 +1679,7 @@ export function debridRequestsMenu(requests = []) {
 }
 
 /** Un pedido: «Cancelar pedido» lo quita de tu Real-Debrid (pide confirmar; «Cancelar» va primero). */
-export function debridRequestMenu(req, { account = null, now = Date.now(), instead = null } = {}) {
+export function debridRequestMenu(req, { account = null, now = Date.now(), instead = null, row = false } = {}) {
   const theirs = req.account && account && req.account !== account;
   const ref = req.meta_id && { kind: req.kind || "movie", meta_id: req.meta_id, title: req.title };
   const video = req.video_ids?.[0] || req.meta_id;
@@ -1702,9 +1712,8 @@ export function debridRequestMenu(req, { account = null, now = Date.now(), inste
         && ref && { icon: "swap", label: "Probar otra versión",
         command: { type: "rd-other-version", play: { kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
       open,
-      // Fernando, 4 nov: lo terminado se puede quitar de la fila sin borrarlo de tu Real-Debrid.
-      !req.hidden && ["ready", "refused"].includes(req.state) && { icon: "hide", label: "Ocultar de esta fila",
-        hint: "Sigue en tu Real-Debrid", command: { type: "rd-hide", hash: req.hash, title: req.title } },
+      // Fernando, 4 nov: desde la fila, ocultarla entera (vuelve sola al pedir algo o desde Ajustes).
+      row && { icon: "hide", label: "Ocultar esta fila", hint: "Vuelve sola al pedir algo, o en Ajustes", command: { type: "rd-row", hide: true } },
       req.state !== "ready" && req.state !== "refused"
         ? { icon: "xCircle", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
         : { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true } },

@@ -680,7 +680,7 @@ test("ajustes › Cuentas › Real-Debrid: días de Premium, las tres causas y �
   const account = debridAccountMenu({ linked: true, user: "fer", ends_with: "3F2A", source: "torrentio", expires: in18, days: 18,
     requests: [{ hash: "a", state: "downloading", percent: 42 }] });
   assert.equal(account.subtitle, "Conectada como fer · Tomada de tu Torrentio · termina en ••3F2A"); // de dónde salió la clave
-  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined], ["¿Qué es esto?", undefined]]);
+  assert.deepEqual(account.options.map((o) => [o.label, o.value]), [["Tus pedidos", "1 en camino"], ["Fila en Películas y series", "Se ve"], ["Premium", "Vence el 21 nov"], ["Cambiar la clave", undefined], ["¿Qué es esto?", undefined]]);
   assert.deepEqual(account.options.at(-1).command, { type: "explain", topic: "realdebrid" }); // PT13: los cuatro puntos
   // PT14: vencida, el aviso primero y con su fecha; nunca «Conectada».
   const ago = Date.UTC(2026, 10, 2, 18) / 1000;
@@ -789,10 +789,16 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
   assert.ok(!labels.includes("Volver a los de Stremio") && !labels.includes("Traídos de tu Stremio") && !labels.includes("De dónde salen"));
   // TV-4: lo que ya terminó se ve, y quitarlo de Real-Debrid lo dice.
   const ready = debridRequestMenu({ hash: "h", state: "ready", title: "Midsommar", meta_id: "tt1", kind: "movie", by: "TV" });
-  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Ocultar de esta fila", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Cancelar"]);
-  assert.equal(ready.options[2].command.type, "rd-hide"); // 4 nov: sale de la fila sin borrarlo de Real-Debrid
-  assert.deepEqual(cloudRow([{ hash: "h", state: "ready", meta_id: "tt1", hidden: true }]), []);
-  assert.equal(debridCancelMenu(ready.options[3].command).title, "¿Quitarlo de tu Real-Debrid?");
+  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Cancelar"]);
+  assert.equal(debridCancelMenu(ready.options[2].command).title, "¿Quitarlo de tu Real-Debrid?");
+  // Fernando, 4 nov: desde la fila, «Ocultar esta fila» (la fila entera); vuelve sola en cuanto pides algo después.
+  const fromRow = debridRequestMenu({ hash: "h", state: "downloading", title: "Dune", meta_id: "tt2", kind: "movie", by: "TV" }, { row: true });
+  assert.deepEqual(fromRow.options.find((o) => o.label === "Ocultar esta fila").command, { type: "rd-row", hide: true });
+  const reqs = [{ hash: "h", state: "ready", meta_id: "tt1", since: 100 }];
+  assert.deepEqual(cloudRow(reqs, { hiddenAt: 200 }), []);
+  assert.equal(cloudRow([...reqs, { hash: "g", state: "queued", meta_id: "tt3", since: 300 }], { hiddenAt: 200 }).length, 1);
+  const account = (at) => debridAccountMenu({ linked: true, requests: reqs }, { rowHiddenAt: at }).options.find((o) => o.label === "Fila en Películas y series");
+  assert.deepEqual([account(200).value, account(200).command.hide, account(0).value, account(0).command.hide], ["Oculta", false, "Se ve", true]);
   // TV-5: los emparejados cuentan como iPhone (antes Resumen decía «Sin iPhone»).
   assert.ok(hasPhone({ paired_devices: [{ device_id: "a" }] }));
   assert.ok(!settingsMissing({ paired_devices: [{ device_id: "a" }] }).some((m) => m.label === "Sin iPhone"));

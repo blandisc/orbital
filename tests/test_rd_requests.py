@@ -350,10 +350,3 @@ def test_finished_and_deleted_in_real_debrid_leaves_the_row(setup):
     rd.list.clear()
     rd.missing.add("RD1")
     assert reqs.tick() is False and reqs.status("tt9") is None
-
-
-def test_hide_keeps_it_in_real_debrid(setup):
-    reqs, rd, *_ = setup
-    reqs.request("movie", "tt9", "Midsommar", streams.Preferences())
-    reqs.hide(H1)
-    assert rd.deleted == [] and reqs.listing()["requests"][0]["hidden"] is True
