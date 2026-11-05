@@ -10,7 +10,8 @@ export function flagFor(code, hint = "") {
   if (c === "es" || c === "spa" || c.startsWith("es-")) {
     if (LANG_FLAGS[c]) return LANG_FLAGS[c];
     if (CASTELLANO.some((w) => said.includes(w)) && !LATINO.some((w) => said.includes(w))) return "es";
-    return "mx"; // latino, o un español que no dice cuál
+    if (LATINO.some((w) => said.includes(w))) return "mx";
+    return "esmx"; // un español que no dice cuál: mitad España, mitad México (Fernando, 4 nov)
   }
   if ((c === "pt" || c === "por") && PORTUGAL.some((w) => said.includes(w))) return "pt";
   return LANG_FLAGS[c] || LANG_FLAGS[c.split("-")[0]] || null;

@@ -72,9 +72,25 @@ def _kr() -> list[tuple]:
     return shapes
 
 
+def _esmx() -> list[tuple]:
+    """Un español que no dice si es latino o castellano (Fernando, 4 nov): partida en diagonal, España arriba a la
+    izquierda y México abajo a la derecha (sin el escudo: la diagonal lo partiría), con un filo blanco entre las dos."""
+    def cut(x: float) -> float:  # la diagonal, de la esquina de arriba a la derecha a la de abajo a la izquierda
+        return H - H * x / W
+    xs = [W * (1 - y / H) for y in (5, 15)]  # dónde la diagonal cruza las franjas de España
+    spain = [("poly", [(0, 0), (W, 0), (xs[0], 5), (0, 5)], "#AA151B"),
+             ("poly", [(0, 5), (xs[0], 5), (xs[1], 15), (0, 15)], "#F1BF00"),
+             ("poly", [(0, 15), (xs[1], 15), (0, H)], "#AA151B")]
+    mexico = [("poly", [(0, H), (10, cut(10)), (10, H)], "#006847"),
+              ("poly", [(10, cut(10)), (20, cut(20)), (20, H), (10, H)], "#FFFFFF"),
+              ("poly", [(20, cut(20)), (W, 0), (W, H), (20, H)], "#CE1126")]
+    return spain + mexico + [("poly", _band(W, 0, 0, H, .9), "#FFFFFF")]
+
+
 FLAGS: dict[str, list[tuple]] = {
     "mx": _stripes(["#006847", "#FFFFFF", "#CE1126"], vertical=True) + [("circle", 15, 10, 2.6, "#8C5A2B")],
     "es": _stripes(["#AA151B", "#F1BF00", "#AA151B"], vertical=False, weights=[1, 2, 1]),
+    "esmx": _esmx(),
     "us": _us(),
     "gb": _gb(),
     "br": [("rect", 0, 0, W, H, "#009C3B"), ("poly", [(3, 10), (15, 2.5), (27, 10), (15, 17.5)], "#FFDF00"),
@@ -121,7 +137,9 @@ def flag_for(code: str | None, hint: str = "") -> str | None:
             return LANG_FLAGS[code]
         if any(w in hint for w in CASTELLANO) and not any(w in hint for w in LATINO):
             return "es"
-        return "mx"  # latino, o un español que no dice cuál
+        if any(w in hint for w in LATINO):
+            return "mx"
+        return "esmx"  # un español que no dice cuál: mitad España, mitad México (Fernando, 4 nov)
     if code in ("pt", "por") and any(w in hint for w in PORTUGAL):
         return "pt"
     return LANG_FLAGS.get(code) or LANG_FLAGS.get(code.split("-")[0])
@@ -189,7 +207,8 @@ JS_RULES = """export function flagFor(code, hint = "") {
   if (c === "es" || c === "spa" || c.startsWith("es-")) {
     if (LANG_FLAGS[c]) return LANG_FLAGS[c];
     if (CASTELLANO.some((w) => said.includes(w)) && !LATINO.some((w) => said.includes(w))) return "es";
-    return "mx"; // latino, o un español que no dice cuál
+    if (LATINO.some((w) => said.includes(w))) return "mx";
+    return "esmx"; // un español que no dice cuál: mitad España, mitad México (Fernando, 4 nov)
   }
   if ((c === "pt" || c === "por") && PORTUGAL.some((w) => said.includes(w))) return "pt";
   return LANG_FLAGS[c] || LANG_FLAGS[c.split("-")[0]] || null;

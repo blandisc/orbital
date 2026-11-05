@@ -16,10 +16,10 @@ def test_the_web_flags_are_written_from_the_same_drawings():
 
 
 def test_each_language_gets_its_flag_as_fernando_decided():
-    """Igual que el iPhone: latino y el español que no dice cuál → México; castellano → España; portugués → Brasil."""
+    """Latino → México; castellano → España; el español que no dice cuál → mitad y mitad (Fernando, 4 nov); portugués → Brasil."""
     assert flags.flag_for("es-419") == "mx" and flags.flag_for("spa", "Latino 5.1") == "mx"
     assert flags.flag_for("es-ES") == "es" and flags.flag_for("spa", "Castellano") == "es"
-    assert flags.flag_for("spa") == "mx" and flags.flag_for("es") == "mx"
+    assert flags.flag_for("spa") == "esmx" and flags.flag_for("es") == "esmx" and flags.flag_for("spa", "Dual") == "esmx"
     assert flags.flag_for("eng") == "us" and flags.flag_for("en-GB") == "gb"
     assert flags.flag_for("por") == "br" and flags.flag_for("por", "Portugal") == "pt" and flags.flag_for("jpn") == "jp"
     assert flags.flag_for("ara") is None and flags.flag_for(None) is None and flags.flag_for("") is None
