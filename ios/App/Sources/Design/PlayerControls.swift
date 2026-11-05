@@ -105,10 +105,17 @@ struct UpNextCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            HStack(spacing: DS.Space.s2) { upNextButtons }
+            // Lado a lado si caben; con la letra muy grande, uno bajo el otro (antes se cortaban: «Ver…», «Ahora…»).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) { upNextButtons }
+                VStack(spacing: DS.Space.s2) { upNextButtons }
+            }
         }
         .padding(DS.Space.s4).frame(maxWidth: DS.Size.cardMax, alignment: .leading)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        // Sobre el video, con la letra más grande ya no cabía y empujaba la barra de la ✕ fuera de alcance: crece hasta aquí
+        // (VoiceOver la lee completa).
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityElement(children: .contain)
     }
 
@@ -116,11 +123,11 @@ struct UpNextCard: View {
         if card.downloading != nil {
             // No hay qué poner todavía: avisar cuando esté, o quedarse viendo los créditos.
             Button(action: notify ?? cancel) {
-                Label("Avisarme", systemImage: "bell").lineLimit(1).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+                Label("Avisarme", systemImage: "bell").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
             }
             .dsPrimaryButton()
             Button(action: cancel) {
-                Text("Ver créditos").lineLimit(1).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+                Text("Ver créditos").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
             }
             .buttonStyle(.glass)
         } else {
@@ -132,7 +139,7 @@ struct UpNextCard: View {
         Button(action: watchNow) {
             HStack(spacing: DS.Space.s2) {
                 if card.secondsLeft > 0 { countdown }
-                Text("Ver ahora").lineLimit(1)
+                Text("Ver ahora").lineLimit(1).fixedSize()   // sin cortar: si no cabe, van uno bajo el otro
             }
             .font(DS.TextRecipe.secondary.font.weight(.semibold))
             .frame(maxWidth: .infinity)
@@ -140,7 +147,7 @@ struct UpNextCard: View {
         .dsPrimaryButton()
         .accessibilityValue(card.secondsLeft > 0 ? Text("Empieza en \(card.secondsLeft) s") : Text(verbatim: ""))
         Button(action: cancel) {
-            Text("Ahora no").lineLimit(1).font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
+            Text("Ahora no").lineLimit(1).fixedSize().font(DS.TextRecipe.secondary.font.weight(.semibold)).frame(maxWidth: .infinity)
         }
         .buttonStyle(.glass)
     }
