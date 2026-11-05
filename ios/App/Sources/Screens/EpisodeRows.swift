@@ -19,6 +19,8 @@ struct EpisodeRowView: View {
     var rate: ((Double?) -> Void)?
     /// El color del arte de la ficha: «quedan 20 min» del episodio que vas viendo va en él.
     var accent: Color = DS.accent
+    /// Como tarjeta (la fila de episodios del iPad y la Mac, como la TV): la imagen grande y el nombre debajo.
+    var card = false
     @Environment(\.colorScheme) private var scheme
 
     /// El que vas viendo (con avance y sin terminar): se distingue en la lista (O1).
@@ -26,7 +28,40 @@ struct EpisodeRowView: View {
     /// En claro, el color del arte se oscurece para leerse sobre el papel (como en `ActionTileLabel`).
     private var ink: Color { scheme == .light ? accent.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : accent }
 
-    var body: some View { bodyContent.pointerHover(.highlight) }
+    var body: some View {
+        if card { cardContent.pointerHover(.highlight) } else { bodyContent.pointerHover(.highlight) }
+    }
+
+    /// La tarjeta: la imagen (con su avance, el ▶ del que vas viendo y el ojito de visto), el nombre, lo que falta y la
+    /// sinopsis; lo demás (descargar, versión, marcar, la TV) en «⋯» y al mantenerla presionada.
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Button(action: play) {
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    ZStack(alignment: .bottom) {
+                        PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
+                        if let progress = row.progress { DSProgress(fraction: progress, height: inProgress ? DS.Space.s2 : DS.Space.s1) }
+                        if row.watched {
+                            DS.scrim
+                            Image(systemName: "eye.fill").font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
+                                .frame(maxHeight: .infinity).accessibilityHidden(true)
+                        }
+                    }
+                    .frame(width: DS.EpisodeRow.cardWidth, height: DS.EpisodeRow.cardWidth / DS.Poster.stillAspect)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                    (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)"))
+                        .font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(1)
+                    if hasStatus { status.font(inProgress ? DS.TextRecipe.badge.font : DS.TextRecipe.caption.font).foregroundStyle(inProgress ? ink : DS.textMuted) }
+                    if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(width: DS.EpisodeRow.cardWidth, alignment: .leading)
+        .opacity(row.airs == nil ? 1 : DS.Opacity.dimmed)
+        .contextMenu { if row.airs == nil { actions(download: true) } }
+    }
     @ViewBuilder private var bodyContent: some View {
         // El botón de descargar va junto, no dentro, del que reproduce: anidados, tocar la flecha ponía el episodio.
         // Miniatura, texto y estado en una misma línea central: el estado siempre cae en la misma columna.

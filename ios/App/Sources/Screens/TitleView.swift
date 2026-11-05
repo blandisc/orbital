@@ -173,9 +173,11 @@ struct TitleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {   // ds-exception: el arte va a sangre pegado a lo de abajo
                 ZStack(alignment: .bottomLeading) {
-                    BleedArt(url: model.background ?? model.poster, title: model.title, fallback: model.poster, fadesTop: false) { EmptyView() }
+                    // Al bajar, el arte se recoge como en el iPhone.
+                    BleedArt(url: model.background ?? model.poster, title: model.title, collapse: DS.backdropDeep,
+                             fallback: model.poster, fadesTop: false) { EmptyView() }
                         .overlay { ArtVeil(kind: .leading, strength: .deep) }
-                        .overlay { ArtVeil(kind: .bottom, at: DS.TitleAction.wideVeilFrom, strength: .deep) }
+                        .overlay { ArtVeil(kind: .bottom, at: DS.TitleAction.wideVeilFrom, until: DS.TitleAction.wideVeilSolid, strength: .deep) }
                     VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         TitleLogo(url: model.logo, title: model.title, size: .hero)
                             .frame(maxWidth: DS.TitleAction.wideLogoWidth, alignment: .leading)
@@ -184,7 +186,7 @@ struct TitleView: View {
                         synopsis(model)
                     }
                     .frame(maxWidth: DS.TitleAction.wideColumn, alignment: .leading)
-                    .padding(.horizontal, DS.Space.s10).padding(.bottom, DS.Layout.betweenSections)
+                    .padding(.horizontal, side).padding(.bottom, DS.Layout.betweenSections)
                 }
                 // El arte sube detrás del reloj y de la barra, como en la TV.
                 .frame(height: viewport.height * DS.TitleAction.wideHeroShare + topInset)
@@ -193,9 +195,11 @@ struct TitleView: View {
                     readingSections(model, withSynopsis: false)
                 }
                 .modifier(TitleEntrance())
-                .padding(.horizontal, DS.Space.s10).padding(.top, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
+                .padding(.horizontal, side).padding(.top, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
             }
         }
+        // El fondo de la sala, el mismo color al que baja el velo del arte: sin la línea donde terminaba el arte.
+        .background(DS.backdropDeep.ignoresSafeArea())
     }
 
     /// Lo que se lee bajo las acciones: avisos, sinopsis, créditos, episodios, la ficha rica y los detalles.
@@ -220,7 +224,7 @@ struct TitleView: View {
         if model.kind == "series" { episodes(model) }
         // Sin TMDB, los créditos ya van en el renglón de arriba (antes salían dos veces: «Dirección · Con» y otra vez
         // «Reparto · Dirección · Guion»).
-        if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) }
+        if let extras = model.extras { rich(extras).padding(.horizontal, -side) }
         details(model)
     }
 
@@ -465,6 +469,18 @@ struct TitleView: View {
             }
         }
         let _ = env.ratings.track()   // tus estrellas de cada capítulo: calificar uno vuelve a pintar la lista
+        if sizeClass == .regular {
+            // iPad y Mac (FE2-B): los episodios en una fila que sale por la orilla, como la TV.
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s4) {
+                    ForEach(model.rows) { row in episodeRow(model, row, card: true) }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, side, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .padding(.horizontal, -side)
+        } else {
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
@@ -476,6 +492,17 @@ struct TitleView: View {
                 Divider().overlay(DS.hairline)
             }
         }
+        }
+    }
+
+    /// Un episodio como tarjeta (la fila del iPad y la Mac).
+    private func episodeRow(_ model: TitleModel, _ row: EpisodeRow, card: Bool) -> some View {
+        EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+                       markWatched: { marking = .episode(row.id) }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
+                       resumeDownload: { Task { await model.resumeDownload(row.id) } },
+                       downloadFraction: model.downloadFraction(row.id),
+                       playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil,
+                       rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id), accent: artAccent, card: card)
     }
 
     /// La sinopsis en tres renglones y «más» para leerla completa.
@@ -589,14 +616,17 @@ struct TitleView: View {
 
     private func section<Content: View>(title: LocalizedStringKey, meta: Text, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, side)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .contentMargins(.horizontal, side, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
         }
     }
+
+    /// El margen de los lados: el del iPhone, o el de la TV en el iPad y la Mac (FE2-B). Las filas salen por la orilla.
+    private var side: CGFloat { sizeClass == .regular ? DS.TitleAction.wideSide : DS.Space.gutter }
 
     /// El trabajo de alguien del equipo, en español (TMDB lo manda en inglés); un personaje se queda tal cual.
     private func crewRole(_ role: String) -> String {

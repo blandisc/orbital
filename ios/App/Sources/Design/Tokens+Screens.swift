@@ -111,7 +111,9 @@ extension DS {
         static let readableWidth: CGFloat = 720
         /// La ficha ancha del iPad y la Mac (FE1, como la TV): lo alto del arte (parte de la pantalla), el ancho de la columna
         /// de la izquierda, el del logo y dónde empieza a oscurecer abajo.
-        static let wideHeroShare: CGFloat = 0.82, wideColumn: CGFloat = 520, wideLogoWidth: CGFloat = 360, wideVeilFrom = 0.55
+        static let wideHeroShare: CGFloat = 0.82, wideColumn: CGFloat = 520, wideLogoWidth: CGFloat = 440, wideVeilFrom = 0.55, wideVeilSolid = 0.9
+        /// El margen de los lados de la ficha ancha, el de la TV (64 px allá; aquí 40 pt).
+        static let wideSide = DS.Space.s10
         /// El zoom del póster hacia el panel de la derecha (iPad, Mac): dónde cae el arte (desde arriba de la ventana) y qué
         /// tanto rebota el resorte al llegar.
         static let panelArtTop: CGFloat = 70
@@ -289,6 +291,8 @@ extension DS {
     /// de la de siempre) y el ▶ en vidrio sobre su imagen.
     enum EpisodeRow {
         static let play: CGFloat = 28
+        /// La tarjeta de un episodio en la fila del iPad y la Mac (como la TV).
+        static let cardWidth: CGFloat = 280
     }
 
     enum Rich {
