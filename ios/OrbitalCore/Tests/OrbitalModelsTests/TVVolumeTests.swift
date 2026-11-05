@@ -37,4 +37,29 @@ final class TVVolumeTests: XCTestCase {
         XCTAssertNil(OrbitalRemote.Volume.parse(["level": 80, "muted": false])?.extra, "sin video o una consola de antes: sin Extra")
         XCTAssertEqual(OrbitalRemote.Volume.parse(["level": 100, "extra": 999])?.extra, 200, "nunca pasa del tope de la TV")
     }
+
+    /// V5-B: manteniendo el + se frena en 100 (vibra); soltar y tocar otra vez entra al Extra; el − quita primero el Extra.
+    func testThePlusBrakesAt100AndTheNextTapEntersTheExtra() {
+        var steps = VolumeSteps()
+        let t0 = Date()
+        var v = OrbitalRemote.Volume(level: 95, muted: false, extra: 100, extraMax: 200)
+        var (outcome, shown) = steps.press(5, on: v, at: t0)
+        XCTAssertEqual(outcome, .brake); XCTAssertEqual(shown?.level, 100)
+        v = shown!
+        (outcome, _) = steps.press(5, on: v, at: t0.addingTimeInterval(0.1))
+        XCTAssertEqual(outcome, .hold, "sigues manteniendo: se queda en 100")
+        (outcome, shown) = steps.press(5, on: v, at: t0.addingTimeInterval(1))
+        XCTAssertEqual(outcome, .send); XCTAssertEqual(shown?.extra, 105, "un toque nuevo entra al Extra")
+        (outcome, shown) = steps.press(-5, on: shown, at: t0.addingTimeInterval(2))
+        XCTAssertEqual(shown?.extra, 100); XCTAssertEqual(shown?.level, 100, "al bajar, primero se quita el Extra")
+    }
+
+    /// V6-A: sin video no hay Extra; el + en 100 solo avisa. Con una consola de antes, como siempre.
+    func testWithoutAVideoThePlusAt100OnlyExplains() {
+        var steps = VolumeSteps()
+        let noVideo = OrbitalRemote.Volume(level: 100, muted: false, extraMax: 200)
+        XCTAssertEqual(steps.press(5, on: noVideo).0, .onlyVideos)
+        let old = OrbitalRemote.Volume(level: 100, muted: false)
+        XCTAssertEqual(steps.press(5, on: old, at: Date().addingTimeInterval(5)).0, .send)
+    }
 }

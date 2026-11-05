@@ -1058,7 +1058,8 @@ class PlayerScreen(SubtitleTrial):
         self.set_muted(muted)
         return muted
 
-    def _change_volume(self, direction: int) -> None:
+    def _change_volume(self, direction: int, phone: bool = False) -> None:
+        """▲ ▼ (y el + y − del iPhone, `phone`: V5-B, el mismo orden que el mando; la cápsula sale sin sus botones, V7-A)."""
         system = getattr(self, "system_volume", None)
         if system:
             now = system[0]() or {}
@@ -1071,11 +1072,11 @@ class PlayerScreen(SubtitleTrial):
                 self._apply_extra(boost)
                 if direction > 0 and now.get("muted"):
                     system[1](level=current, muted=False)
-                self._show_volume(boost, muted=False)
+                self._show_volume(boost, muted=False, touch=False if phone else None)
                 return
             level = max(0, min(100, current + 5 * direction))
             after = system[1](level=level, muted=False if direction > 0 else None) or {"level": level}
-            self._show_volume(after.get("level", level), muted=bool(after.get("muted")))
+            self._show_volume(after.get("level", level), muted=bool(after.get("muted")), touch=False if phone else None)
             return
         before = self._value("volume")
         if isinstance(before, (int, float)) and not isinstance(before, bool):
@@ -1098,9 +1099,10 @@ class PlayerScreen(SubtitleTrial):
         if extra:
             self.mpv.command("af", "add", extra)
 
-    def _show_volume(self, level: float, muted: bool) -> None:
-        """La cápsula del volumen; con el dedo, con sus botones − y + (V2-A) y un rato más a la vista para tocarlos."""
-        touch = player_ui.TOUCH
+    def _show_volume(self, level: float, muted: bool, touch: bool | None = None) -> None:
+        """La cápsula del volumen; con el dedo, con sus botones − y + (V2-A) y un rato más a la vista para tocarlos.
+        `touch=False`: desde el iPhone, sin los botones y el rato normal (V7-A)."""
+        touch = player_ui.TOUCH if touch is None else touch
         self._show_notice(player_ui.volume_ass(level, muted=muted, touch=touch), 4.0 if touch else 1.6, layer=self.VOLUME)
 
     def volume_tap(self, x: float, y: float) -> bool:

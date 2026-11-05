@@ -85,6 +85,7 @@ struct RemoteSheet: View {
         }
         .scrollDisabled(!large && compactHeight < WindowMetrics.size.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
+        .presentationContentInteraction(.resizes)   // deslizar mueve la hoja primero y luego el contenido (antes se peleaban)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.
         .presentationDetents(model.now == nil ? [.height(fullHeight)] : [.height(compactHeight), .height(fullHeight)], selection: Binding(
@@ -396,10 +397,12 @@ struct RemoteSheet: View {
     }
 
     @ViewBuilder private func volume(_ model: TVNowModel) -> some View {
-        // El volumen de la TV (el de Windows, como Alexa): − · barra · +, y silencio.
+        // El volumen de la TV: − · barra · +, y silencio; con un video, + y − en el orden del mando (V5-B).
         VolumeControl(volume: model.volume,
                       down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
                       mute: { Task { await model.toggleMute() } })
+            .sensoryFeedback(.impact(weight: .medium), trigger: model.volumeBrakes)   // el + se frena en 100 (V5-B)
+        if model.extraOnlyForVideos { DSNotice(text: "El Extra es solo para videos.") }   // V6-A
         if model.volumeOutdated { DSNotice(text: "Actualiza tu Orbital para cambiar el volumen desde aquí.", tone: .warn) }
     }
 

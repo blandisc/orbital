@@ -262,7 +262,7 @@ def test_companion_now_is_null_without_anything_open(library):
     with TestClient(create_public_app(library.config, main)) as c:
         r = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"})
         assert r.status_code == 200 and r.json() == {"playing": None, "inbox": [], "game": None, "ui": {"screen": "home", "text_field": False},
-                                             "volume": {"level": r.json()["volume"]["level"], "muted": False}}
+                                             "volume": {"level": r.json()["volume"]["level"], "muted": False, "extra_max": 200}}
 
 
 def test_companion_now_reports_whats_playing(library):
@@ -298,10 +298,10 @@ def test_the_iphone_turns_the_volume_up_or_down_and_sees_the_level(library):
         assert c.post("/api/companion/player", json={"action": "volume", "delta": 5}, headers=auth).status_code == 200
         assert c.get("/api/companion/now", headers=auth).json()["volume"]["level"] == min(100, start + 5)
         c.post("/api/companion/player", json={"action": "volume", "level": 40}, headers=auth)
-        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": False}
+        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": False, "extra_max": 200}
         assert c.post("/api/companion/player", json={"action": "volume"}, headers=auth).status_code == 409  # ¿cuánto?
         assert c.post("/api/companion/player", json={"action": "mute"}, headers=auth).status_code == 200  # sin nada en la TV
-        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": True}
+        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": True, "extra_max": 200}
         c.post("/api/companion/player", json={"action": "mute"}, headers=auth)
         assert c.get("/api/companion/now", headers=auth).json()["volume"]["muted"] is False
 
@@ -314,7 +314,30 @@ def test_with_a_video_the_iphone_also_sees_the_extra(library):
     main = create_app(library.config, library)
     with TestClient(create_public_app(library.config, main)) as c:
         volume = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["volume"]
-        assert volume["extra"] == 150 and set(volume) == {"level", "muted", "extra"}
+        assert volume["extra"] == 150 and set(volume) == {"level", "muted", "extra", "extra_max"}
+
+
+def test_with_a_video_the_iphone_volume_follows_the_remote_order(library):
+    """V5-B: con un video, el + del iPhone pasado el 100 de Windows sube el Extra y el − lo quita primero, como ▲ ▼ del
+    mando (antes el iPhone topaba en 100 y al bajar movía Windows aunque hubiera Extra). La TV enseña la cápsula (V7-A)."""
+    system = {"level": 95, "muted": False}
+
+    def write(level=None, muted=None):
+        if level is not None:
+            system["level"] = level
+        if muted is not None:
+            system["muted"] = muted
+        return dict(system)
+
+    p, _ = _play_movie(library)
+    p.system_volume = (lambda: dict(system), write)
+    shown = []
+    p._show_volume = lambda level, muted, touch=None: shown.append((level, touch))
+    companion.control_player(library, "volume", delta=15)
+    assert system["level"] == 100 and p.boost == 110
+    companion.control_player(library, "volume", delta=-5)
+    assert system["level"] == 100 and p.boost == 105  # primero se quita el Extra
+    assert shown and all(touch is False for _, touch in shown)  # la cápsula, sin los botones del dedo
 
 
 def test_the_iphone_gets_the_channel_logo(library):

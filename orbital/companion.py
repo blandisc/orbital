@@ -187,15 +187,18 @@ def now_playing(catalog) -> dict | None:
 
 
 def volume_state(catalog, system: dict | None) -> dict | None:
-    """La barra de volumen del control del iPhone: el de Windows ({"level", "muted"}) y, con el reproductor abierto, su
-    «Extra» (`extra`: 100 sin Extra, hasta playback.VOLUME_BOOST_MAX) para pintarla igual que la cápsula de la TV
-    (V4-A, Fernando, 4 nov 2026). Sin reproductor no hay Extra y la llave no va: el iPhone la pinta como siempre."""
+    """La barra de volumen del control del iPhone: el de Windows ({"level", "muted"}), el tope del Extra (`extra_max`: la
+    barra va de 0 a ahí, V4-A) y, con el reproductor abierto, su Extra (`extra`: 100 sin Extra). Sin video no hay `extra`
+    y el iPhone pinta esa zona apagada (V6-A, Fernando, 4 nov 2026)."""
     if system is None:
         return None
+    from .playback import VOLUME_BOOST_MAX
+
+    state = {**system, "extra_max": VOLUME_BOOST_MAX}
     running = catalog.launcher.status()
     if running is None or running.get("id") != "media:player":
-        return system
-    return {**system, "extra": int(getattr(catalog.watch.player, "boost", 100))}
+        return state
+    return {**state, "extra": int(getattr(catalog.watch.player, "boost", 100))}
 
 
 def ui_state(catalog, shell, reported: dict) -> dict:
@@ -231,6 +234,12 @@ def control_player(catalog, action: str, delta: float | None = None, level: int 
     if action not in PLAYER_ACTIONS:
         raise ValueError("Esa acción no existe")
     if action == "volume":  # sirve con o sin algo en la TV (un juego también suena)
+        if level is None and isinstance(delta, (int, float)) and now_playing(catalog) is not None:
+            # V5-B: con un video, el + y − del iPhone siguen el orden del mando (pasado el 100, el Extra; al bajar, primero
+            # se quita el Extra) y la TV enseña la cápsula (V7-A). Va de 5 en 5 como ▲ ▼; el freno en 100 es del iPhone.
+            for _ in range(min(40, round(abs(delta) / 5))):
+                catalog.watch.player._change_volume(1 if delta > 0 else -1, phone=True)
+            return now_playing(catalog)
         set_volume(delta, level)
         return now_playing(catalog)
     if action == "mute" and now_playing(catalog) is None:  # sin nada en la TV: el silencio de Windows, sin tocar el nivel

@@ -9,19 +9,23 @@ import OrbitalCore
 struct TVLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TVActivityAttributes.self) { context in
-            HStack(spacing: DS.Space.s3) {
-                ActivityPoster(file: context.state.poster, width: DS.Widget.activityPoster)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
-                        Spacer(minLength: DS.Space.s2)
-                        Label { Text("En la TV") } icon: { Image(systemName: "tv") }
-                            .font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.onArtSecondary).labelStyle(.titleAndIcon)
+            // Póster, nombre y barra arriba; los botones en su renglón abajo (antes iban los cuatro apilados junto al
+            // póster y se veía apretado).
+            VStack(spacing: DS.Space.s3) {
+                HStack(alignment: .center, spacing: DS.Space.s3) {
+                    ActivityPoster(file: context.state.poster, width: DS.Widget.activityPoster)
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
+                            Spacer(minLength: DS.Space.s2)
+                            Label { Text("En la TV") } icon: { Image(systemName: "tv") }
+                                .font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.onArtSecondary).labelStyle(.titleAndIcon)
+                        }
+                        subtitle(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                        if !context.state.live { bar(context.state).tint(DS.paper) }
                     }
-                    subtitle(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
-                    if !context.state.live { bar(context.state).tint(DS.paper) }
-                    TVButtons(state: context.state)
                 }
+                TVButtons(state: context.state)
             }
             .padding()
             .environment(\.locale, Locale(identifier: context.state.language))
