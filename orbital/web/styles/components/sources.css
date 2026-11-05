@@ -90,7 +90,7 @@
 .version__state--warn { color: var(--color-warning); }
 .version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }
 .version__badge { position: absolute; top: var(--space-3); right: var(--space-3); } /* arriba a la derecha: no empuja ni se corta */
-.version__other { justify-self: start; }
+.version__other { justify-self: start; white-space: normal; text-wrap: balance; } /* con letra grande pasa a dos renglones en vez de cortarse */
 
 /* Foco invertido, como las fuentes y el menú. */
 .version--focused, .version--focused:hover { background: var(--inverse-bg); color: var(--inverse-fg); }

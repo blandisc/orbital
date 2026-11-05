@@ -119,8 +119,10 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
     h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
     r === start.row && c === start.col && opt.source === best() && Badge("Recomendada", { className: "version__badge" }),
-    opt.source.other_episode ? Chip("¿Otro episodio?", { tone: "warn", className: "version__other" })
-      : opt.source.other_title && Chip("¿Otro título?", { tone: "warn", className: "version__other" }));
+    // Fernando, 4 nov: que se entienda qué quiere decir (antes «¿Otro episodio?» y «¿Otro título?»).
+    opt.source.other_episode ? Chip("Parece de otra temporada", { tone: "warn", className: "version__other" })
+      : opt.source.other_title && Chip(request?.kind === "series" ? "Puede ser otra serie" : "Puede ser otra película",
+        { tone: "warn", className: "version__other" }));
     return button;
   }
 
