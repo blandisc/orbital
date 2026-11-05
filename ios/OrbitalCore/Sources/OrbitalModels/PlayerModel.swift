@@ -134,6 +134,8 @@ public final class PlayerModel: ObservableModel {
     let titlePrefs: TitlePreferences
     /// Lo que recuerda tu Orbital de este título (de cualquier aparato), pedido al abrir: se espera antes de elegir fuente y pistas.
     var resumeSync: Task<Void, Never>?
+    /// El último segundo donde de verdad iba (sonando, o a donde lo llevaste tú): si el motor se cae a 0, no se guarda ese 0.
+    var lastGoodPosition: Double = 0
     let settings: SettingsStore
     let clock: @Sendable () -> Date
     let onCellular: @Sendable () -> Bool
@@ -322,7 +324,7 @@ public final class PlayerModel: ObservableModel {
         failure = nil
         triedVersionIDs = []; askInSync = false; restoredDelay = nil; offsetVersionID = nil; stopBriefSubtitles()
         failedSources = []; hasPlayed = false; playbackSettled = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
-        scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
+        scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false; lastGoodPosition = 0
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; skipAnchor = nil; reachedEnd = false; finalReported = false
         pendingResumeFraction = nil
@@ -473,7 +475,7 @@ public final class PlayerModel: ObservableModel {
     func event() -> ProgressEvent? {
         guard let r = request else { return nil }
         let known = snapshot.duration > 0 ? snapshot.duration : CinemetaParsing.runtimeSeconds(r.meta.map { CinemetaParsing.describe($0).runtime } ?? "")
-        return ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: StremioLibrary.finite(snapshot.position),
+        return ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: Self.positionToSave(StremioLibrary.finite(snapshot.position), lastGood: lastGoodPosition),
                              duration: StremioLibrary.finite(known), watched: 0, at: clock().timeIntervalSince1970)
     }
 

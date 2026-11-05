@@ -17,6 +17,7 @@ extension PlayerModel {
         if previous.state == .playing, let last = lastSnapshotAt { watchedUnsaved += min(max(0, now.timeIntervalSince(last)), 5) }
         lastSnapshotAt = now
         snapshot = s
+        if s.state == .playing, s.position > 0 { lastGoodPosition = s.position }
         restoreOffsetIfVersionChanged()
         if pendingResumeFraction != nil, s.state == .playing || s.state == .paused, !isPlaceholder(s) { await seekToPendingResume(s) }
 

@@ -134,6 +134,12 @@ extension PlayerModel {
         snapshot.position = target
     }
 
+    /// El segundo que se guarda en Stremio y Trakt. Si el motor se cayó a 0 sin que lo pidieras (al volver del PiP con la
+    /// pantalla gris, 4 nov), se guarda donde ibas: un 0 te sacaba la película de «Seguir viendo».
+    nonisolated static func positionToSave(_ position: Double, lastGood: Double) -> Double {
+        position < 5 && lastGood > PlaybackRules.rememberChoiceAfter ? lastGood : position
+    }
+
     /// Con qué lo dejaste en el último aparato donde lo viste (la TV, el iPad, la Mac): la misma fuente y las mismas pistas.
     /// Se pregunta a tu Orbital al abrir y se espera antes de elegir fuente y pistas (`resumeSync`).
     func askOtherDevices(_ request: PlayRequest) {

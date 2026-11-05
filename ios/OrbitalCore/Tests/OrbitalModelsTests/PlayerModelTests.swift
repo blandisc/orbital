@@ -282,6 +282,21 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(try rig.saved().count, 1)
     }
 
+    /// 4 nov: al volver del PiP la pantalla se puso gris y el motor dijo «segundo 0»; se guardó 0 y la película salió de
+    /// «Seguir viendo». Ahora se guarda donde ibas; si tú lo llevas al principio, eso sí se guarda.
+    func testAnEngineThatFallsToZeroDoesNotEraseWhereYouWere() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(900))
+        rig.clock.advance(30); await rig.model.handle(rig.playing(930))
+        rig.clock.advance(5); await rig.model.handle(rig.playing(0, state: .buffering))
+        await rig.model.appDidEnterBackground()
+        let offset = try XCTUnwrap(rig.saved().last?["state"]?["timeOffset"]?.doubleValue)
+        XCTAssertEqual(offset, 930_000, accuracy: 1000, "donde ibas, no el 0 del motor")
+        await rig.model.seek(to: 0)
+        XCTAssertEqual(PlayerModel.positionToSave(0, lastGood: rig.model.lastGoodPosition), 0, "lo llevaste tú al principio")
+    }
+
     // MARK: pistas
     let eng = MediaTrack(id: 1, kind: .audio, language: "eng", codec: "EAC3", channels: "5.1", isDefault: true)
     let spa = MediaTrack(id: 2, kind: .audio, language: "spa", codec: "AC3", channels: "5.1")
