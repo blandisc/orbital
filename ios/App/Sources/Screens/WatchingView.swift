@@ -47,6 +47,9 @@ enum WatchingText {
 /// «Lo que ves»: tus números del periodo (semana, mes, año o siempre), el mapa día por día, las barras, tus géneros, cómo
 /// calificas y lo que más viste. (El Wrapped, apagado por ahora.)
 struct WatchingView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// El ancho de la pantalla: en el iPad la portada crece con él (si no, el arte quedaba en una franja con bordes).
+    @State private var width: CGFloat = 0
     let onOpenTitle: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
     @State private var wrapped: WatchingStats.Period?
@@ -129,8 +132,9 @@ struct WatchingView: View {
             .padding(DS.Space.gutter)
             .onArt()
         }
-        .frame(height: DS.Watching.heroHeight)
+        .frame(height: sizeClass == .regular && width > 0 ? width / DS.Watching.heroAspectWide : DS.Watching.heroHeight)
         .padding(.horizontal, -DS.Space.gutter)   // de orilla a orilla
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 
     private func periodPhrase(_ p: WatchingStats.Period) -> Text {

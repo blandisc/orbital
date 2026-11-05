@@ -208,6 +208,8 @@ extension DS {
         static let barStagger: Double = 0.03, donutTurn: Double = -90, donutStart: CGFloat = 0.7
         /// La portada (el arte de lo que más viste): dónde empieza su velo y su alto; cuántos van en «Lo que más viste».
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
+        /// En el iPad y la Mac la portada va en esta proporción (ancho / alto): el arte llena sin bordes (`ArtFit`).
+        static let heroAspectWide: CGFloat = 2.3
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3
         /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
         static let streakShown = 3, dayFloor = 0.35
@@ -235,6 +237,8 @@ extension DS {
         /// La vitrina de Para ti (`CollectionsShowcase`): el alto del objeto, el ancho de cada uno y su barra de avance.
         static let showcaseEmblem: CGFloat = 60, showcaseWidth: CGFloat = 84, showcaseBar: CGFloat = 4
         static let emblem: CGFloat = 84, header: CGFloat = 64, columns = 5, listEmblem: CGFloat = 64
+        /// Cuántas colecciones por repisa en la portada de Colecciones: en el iPhone y en el iPad y la Mac.
+        static let shelf = 3, shelfWide = 6
         static let discRatio: CGFloat = 0.92, plaqueWidth: CGFloat = 0.62, plaqueHeight: CGFloat = 0.8
         /// Los objetos dibujados (Criterion, IMDb, el periódico del NYT): el estuche y su disco, el sello y el número de la placa,
         /// su marco, el brillo y el periódico (ancho, alto, renglones, el doblez y su inclinación).

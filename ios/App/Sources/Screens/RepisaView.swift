@@ -56,6 +56,7 @@ enum CanonNames {
 /// Colecciones: la repisa con las estatuillas completas (premios) y los objetos de las listas famosas, cada uno con cuántas
 /// llevas. Tocar uno abre su repisa de películas.
 struct RepisaView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let onOpenTitle: (TitleRoute) -> Void
     @Environment(AppEnvironment.self) private var env
 
@@ -83,8 +84,8 @@ struct RepisaView: View {
     private func shelf(_ title: Text, symbol: String, _ items: [CanonCollection], _ model: RepisaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
             DSSectionHead(title: title, level: .section, symbol: symbol)
-            // Tres por repisa; si son dos (las listas), dos centrados.
-            let perRow = min(3, max(1, items.count))
+            // Tres por repisa en el iPhone y seis en el iPad y la Mac (con tres quedaban muy separados); si son menos, centrados.
+            let perRow = min(sizeClass == .regular ? DS.Repisa.shelfWide : DS.Repisa.shelf, max(1, items.count))
             ForEach(Array(stride(from: 0, to: items.count, by: perRow)), id: \.self) { i in
                 ShelfLedge {
                     HStack(alignment: .bottom, spacing: DS.Space.s3) {
