@@ -445,7 +445,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             // Con el reproductor abierto la consola dice también el Extra (100: sin Extra), como `companion.volume_state`.
             let extra = Demo.volumeExtra ?? 100
             let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["select": "Pausa", "alt": "Audio y subtítulos", "options": "Versión", "back": "Salir"],
-                                  "volume": ["level": .int(extra > 100 ? 100 : demoVolume), "muted": .bool(demoMuted), "extra": .int(extra)]]
+                                  "volume": ["level": .int(extra > 100 ? 100 : demoVolume), "muted": .bool(demoMuted), "extra": .int(extra), "extra_max": 200]]
             return HTTPResponse(status: 200, data: JSON.object(["playing": movie, "inbox": .array(inbox), "ui": playerUI]).serialized())
         }
         let playing: JSON = .object(["kind": .string("series"), "live": .bool(false), "meta_id": .string("tt0386676"),
@@ -456,7 +456,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
                         "legend": ["select": "Reproducir", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
                                    "page": "De 5 en 5", "section": "Secciones"],
-                        "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
+                        "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted), "extra_max": 200]]
         return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
     }
 

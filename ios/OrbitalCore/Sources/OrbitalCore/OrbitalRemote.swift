@@ -295,14 +295,15 @@ public struct OrbitalRemote: Sendable {
 
     /// Lo que contesta la consola en cada sondeo: lo que se ve ahora y lo que la TV le dejó al iPhone.
     /// El volumen de la TV (el de Windows, 0–100) y si está en silencio; con un video, el Extra (100–200; nil sin video).
+    /// `extraMax`: el tope del Extra (la barra va de 0 a ahí); nil con una consola de antes.
     public struct Volume: Sendable, Equatable {
-        public var level: Int, muted: Bool, extra: Int?
-        public init(level: Int, muted: Bool, extra: Int? = nil) { self.level = level; self.muted = muted; self.extra = extra }
+        public var level: Int, muted: Bool, extra: Int?, extraMax: Int?
+        public init(level: Int, muted: Bool, extra: Int? = nil, extraMax: Int? = nil) { self.level = level; self.muted = muted; self.extra = extra; self.extraMax = extraMax }
         public var shown: Int { extra.map { $0 > 100 ? $0 : level } ?? level }
         static func parse(_ json: JSON?) -> Volume? {
             guard let level = json?["level"]?.intValue else { return nil }
             return Volume(level: max(0, min(100, level)), muted: json?["muted"]?.bool ?? false,
-                          extra: json?["extra"]?.intValue.map { max(100, min(200, $0)) })
+                          extra: json?["extra"]?.intValue.map { max(100, min(200, $0)) }, extraMax: json?["extra_max"]?.intValue)
         }
     }
 

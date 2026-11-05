@@ -53,6 +53,9 @@ public final class TVNowModel: ObservableModel {
     /// El volumen de la TV (si la consola lo dice) y si tu Orbital todavía no sabe cambiarlo desde el iPhone.
     public private(set) var volume: OrbitalRemote.Volume? { didSet { if oldValue != volume { changed() } } }
     public private(set) var volumeOutdated = false { didSet { if oldValue != volumeOutdated { changed() } } }
+    /// Cada vez que el + se frena en 100 (vibra, V5-B) y si toca decir «El Extra es solo para videos» (V6-A).
+    public private(set) var volumeBrakes = 0 { didSet { if oldValue != volumeBrakes { changed() } } }
+    public private(set) var extraOnlyForVideos = false { didSet { if oldValue != extraOnlyForVideos { changed() } } }
     /// Tu Orbital está conectada (dirección y token): el control de la TV está a la mano aunque no se reproduzca nada.
     public var isConfigured: Bool { services.orbital.isConfigured }
     /// La consola todavía no tiene el control completo (versión anterior): el pad se esconde y se avisa.
@@ -319,7 +322,14 @@ public final class TVNowModel: ObservableModel {
     /// esperando su turno). Mientras cambias, y un momento después, el sondeo no regresa la barra al volumen de antes (la TV
     /// todavía no se enteraba y la barra brincaba hacia atrás y adelante).
     public func changeVolume(by delta: Int) async {
-        if let v = volume { volume = .init(level: max(0, min(100, v.level + delta)), muted: false, extra: v.extra) }
+        let (outcome, shown) = volumeSteps.press(delta, on: volume)
+        switch outcome {
+        case .hold: return
+        case .onlyVideos: showExtraOnlyForVideos(); return
+        case .brake: volumeBrakes += 1
+        case .send: break
+        }
+        if let shown { volume = shown }
         volumeHeldUntil = Date().addingTimeInterval(Self.volumeHold)
         pendingVolume += delta
         guard !sendingVolume else { return }   // ya va una: esta se suma a la siguiente
@@ -343,8 +353,15 @@ public final class TVNowModel: ObservableModel {
         }
     }
 
+    private func showExtraOnlyForVideos() {
+        extraOnlyForVideos = true
+        Task { try? await Task.sleep(for: .seconds(Self.extraHintStays)); extraOnlyForVideos = false }
+    }
+
     /// Lo que falta mandar del volumen, si ya va una orden, y hasta cuándo el sondeo no toca la barra.
     private var pendingVolume = 0, sendingVolume = false
+    private var volumeSteps = VolumeSteps()
+    static let extraHintStays: Double = 3
     private var volumeHeldUntil = Date.distantPast
     /// Cuánto se respeta la barra tras el último cambio antes de volver a creerle al sondeo.
     static let volumeHold: TimeInterval = 1.5
@@ -352,7 +369,7 @@ public final class TVNowModel: ObservableModel {
     /// Silencio sí / no (el de Windows, igual que en la TV).
     public func toggleMute() async {
         guard !busy else { return }   // si no se va a mandar, no se cambia el ícono
-        if let v = volume { volume = .init(level: v.level, muted: !v.muted, extra: v.extra) }
+        if let v = volume { volume = .init(level: v.level, muted: !v.muted, extra: v.extra, extraMax: v.extraMax) }
         await control("mute")
     }
 

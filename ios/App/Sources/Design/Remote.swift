@@ -191,7 +191,8 @@ struct RemoteTextField: View {
 /// se queda vacía y los botones funcionan igual.
 /// Con un video abierto (`extra` no es nil) la barra es la cápsula de la TV acostada (V4-A, Fernando, 4 nov 2026): va de 0 a
 /// 200, el 100 de Windows queda a dos tercios con su rayita y, de ahí para arriba, el Extra en ámbar con la palabra EXTRA
-/// bajo el número (en minúsculas, la regla de mayúsculas del iPhone). Sin video (o con una consola de antes) es la barra de siempre, de 0 a 100.
+/// bajo el número (en minúsculas, la regla de mayúsculas del iPhone). Sin video la zona del Extra se ve punteada (V6-A);
+/// con una consola de antes es la barra de siempre, de 0 a 100.
 struct VolumeControl: View {
     let volume: OrbitalRemote.Volume?
     let down: () -> Void
@@ -200,7 +201,8 @@ struct VolumeControl: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var muted: Bool { volume?.muted ?? false }
-    private var extraScale: Bool { volume?.extra != nil }
+    private var extraScale: Bool { volume?.extra != nil || volume?.extraMax != nil }
+    private var top: CGFloat { volume?.extraMax.map(CGFloat.init) ?? DS.Remote.volumeTop }
     private var inExtra: Bool { (volume?.extra ?? 100) > 100 && !muted }
     /// Hasta dónde llega lo normal (0…1 del ancho) y cuánto ocupa el Extra encima.
     private var normalShare: CGFloat {
@@ -209,7 +211,7 @@ struct VolumeControl: View {
     }
     private var extraShare: CGFloat {
         guard inExtra, let extra = volume?.extra else { return 0 }
-        return (1 - DS.Remote.volumeNormal) * CGFloat(extra - 100) / (DS.Remote.volumeTop - 100)
+        return (1 - DS.Remote.volumeNormal) * CGFloat(extra - 100) / (top - 100)
     }
 
     var body: some View {
@@ -245,6 +247,11 @@ struct VolumeControl: View {
                 Capsule().fill(muted ? DS.textFaint : DS.text).frame(width: w * normalShare, height: DS.Remote.volumeBar)
                 // El Extra, en ámbar, sigue desde el 100 (como en la TV, encima de lo normal).
                 Capsule().fill(DS.warning).frame(width: w * extraShare, height: DS.Remote.volumeBar).offset(x: w * DS.Remote.volumeNormal)
+                if extraScale && volume?.extra == nil {   // sin video no hay Extra: su zona, punteada (V6-A)
+                    let y = geo.size.height / 2
+                    Path { $0.move(to: .init(x: w * DS.Remote.volumeNormal, y: y)); $0.addLine(to: .init(x: w, y: y)) }
+                        .stroke(DS.textFaint, style: StrokeStyle(lineWidth: DS.Remote.volumeBar, dash: [DS.Remote.volumeDash]))
+                }
                 if extraScale {   // la rayita del 100: hasta aquí es lo normal
                     Capsule().fill(DS.warning.opacity(DS.Opacity.dimmed))
                         .frame(width: DS.Remote.volumeMarkWidth, height: DS.Remote.volumeMarkHeight)
