@@ -235,6 +235,7 @@ public final class TitleModel: ObservableModel {
             let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
             recommendedSource = SourcesModel.toPlay(found, resume: resume, family: family)
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
+            if recommendedSource?.instant == true, let url = recommendedSource?.playbackURL { StreamWarmup.warm(url) }   // ST5
             poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }
             sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
             // Lo que falta se pide (R4): si la recomendada no arranca al instante (o no hay ninguna), qué torrent existe.

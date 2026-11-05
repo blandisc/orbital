@@ -51,6 +51,11 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         // (al pausar, la foto seguía diciendo «reproduciendo» y, con el reloj ya quieto, el botón se quedaba en pausa).
         // Se lee en la siguiente vuelta del hilo principal, cuando el valor ya cambió.
         Publishers.MergeMany(changes).receive(on: DispatchQueue.main).sink { [weak self] in self?.publish() }.store(in: &cancellables)
+        // ST2: ya se sabe cuánto dura: el colchón del intermediario se mide en segundos (no en un tope fijo de bytes).
+        engine.$duration.receive(on: DispatchQueue.main).sink { [weak self] seconds in
+            guard let self, seconds > 0, let url = self.proxied, let stream = LocalStreamProxy.shared.stream(for: url) else { return }
+            Task { await stream.setDuration(seconds) }
+        }.store(in: &cancellables)
     }
 
     func load(url: URL, startAt: Double) async throws {
@@ -64,8 +69,39 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         // M3: los datos extra que pide el enlace (algunos de MediaFusion y AIOStreams no abren sin ellos), como en AVPlayer.
         options.httpHeaders = PlaybackHeaders.headers(for: url)
         options.externalSubtitles = declaredExternal.map { ExternalSubtitleTrack(url: $0, name: $0.deletingPathExtension().lastPathComponent, language: Self.language(of: $0)) }
+        // ST2: el colchón del motor, 2 min con Wi-Fi y ~30 s con datos (segmentos de ~4 s; antes 10, ~40 s).
+        let cellular = Connectivity.shared.isCellular
+        options.forwardBufferSegments = cellular ? 8 : 30
+        releaseProxy()
+        // ST6: el video por el intermediario local, con varias conexiones; si no arranca o el motor no lo abre, directo.
+        if let local = parallelURL(for: url, headers: options.httpHeaders, cellular: cellular) {
+            proxied = local
+            do {
+                try await engine.load(url: local, startPosition: startAt, options: options)
+                engine.play()
+                return
+            } catch {
+                releaseProxy()
+                PlayerModel.note("varias conexiones no abrió (\(error)): directo")
+            }
+        }
         try await engine.load(url: url, startPosition: startAt, options: options)
         engine.play()
+    }
+
+    /// Lo que se está sirviendo por el intermediario (se suelta al cambiar de video o detener).
+    private var proxied: URL?
+    private func releaseProxy() { if let proxied { LocalStreamProxy.shared.release(proxied) }; proxied = nil }
+
+    /// Solo videos de la red (no tus descargas ni listas HLS): Real-Debrid y las direcciones directas de los complementos.
+    private func parallelURL(for url: URL, headers: [String: String], cellular: Bool) -> URL? {
+        guard url.scheme == "https" || url.scheme == "http", !url.pathExtension.lowercased().hasPrefix("m3u"),
+              !UserDefaults.standard.bool(forKey: "orbital.single-connection-playback") else { return nil }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("stream-\(UUID().uuidString)", isDirectory: true)
+        let stream = ParallelStream(url: url, config: cellular ? .cellular : .wifi, folder: folder,
+                                    fetch: ParallelStream.urlSessionFetch(headers: headers))
+        PlayerModel.note("varias conexiones: \(cellular ? 4 : 8), colchón \(cellular ? 30 : 120) s")
+        return LocalStreamProxy.shared.serve(stream, name: url.lastPathComponent.isEmpty ? "video" : url.lastPathComponent)
     }
 
     private var preferredAudio: [String] = [], preferredSubtitles: [String] = [], declaredExternal: [URL] = []
@@ -180,7 +216,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func play() async { engine.play() }
     func pause() async { engine.pause() }
     func seek(to seconds: Double) async { await engine.seek(to: seconds) }
-    func stop() async { engine.stop(); hub.send(EngineSnapshot(state: .idle)) }
+    func stop() async { engine.stop(); releaseProxy(); hub.send(EngineSnapshot(state: .idle)) }
     // Los ids de pista son los de AetherEngine (`TrackInfo.id`), no la posición en la lista.
     func selectAudio(_ id: Int?) async { if let id { engine.selectAudioTrack(index: id) } }
     func selectSubtitle(_ id: Int?) async { if let id { engine.selectSubtitleTrack(index: id) } else { engine.clearSubtitle() } }
