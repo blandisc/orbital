@@ -789,8 +789,10 @@ test("auditoría de la TV (3 nov): sin fuentes avisa, sin Stremio no se ofrece v
   assert.ok(!labels.includes("Volver a los de Stremio") && !labels.includes("Traídos de tu Stremio") && !labels.includes("De dónde salen"));
   // TV-4: lo que ya terminó se ve, y quitarlo de Real-Debrid lo dice.
   const ready = debridRequestMenu({ hash: "h", state: "ready", title: "Midsommar", meta_id: "tt1", kind: "movie", by: "TV" });
-  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Cancelar"]);
-  assert.equal(debridCancelMenu(ready.options[2].command).title, "¿Quitarlo de tu Real-Debrid?");
+  assert.deepEqual(ready.options.map((o) => o.label), ["Ver ahora", "Abrir la ficha", "Ocultar de esta fila", "Quitar de tu Real-Debrid", "¿Qué es esto?", "Cancelar"]);
+  assert.equal(ready.options[2].command.type, "rd-hide"); // 4 nov: sale de la fila sin borrarlo de Real-Debrid
+  assert.deepEqual(cloudRow([{ hash: "h", state: "ready", meta_id: "tt1", hidden: true }]), []);
+  assert.equal(debridCancelMenu(ready.options[3].command).title, "¿Quitarlo de tu Real-Debrid?");
   // TV-5: los emparejados cuentan como iPhone (antes Resumen decía «Sin iPhone»).
   assert.ok(hasPhone({ paired_devices: [{ device_id: "a" }] }));
   assert.ok(!settingsMissing({ paired_devices: [{ device_id: "a" }] }).some((m) => m.label === "Sin iPhone"));

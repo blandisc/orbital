@@ -338,3 +338,22 @@ def test_n3_too_many_is_asked_again_once_when_there_is_room(setup):
     state.data[rd_requests.STATE_ID][H1]["state"] = "too_many"
     reqs.tick()
     assert len(rd.added) == 1  # una sola vez
+
+
+def test_finished_and_deleted_in_real_debrid_leaves_the_row(setup):
+    """Fernando, 4 nov: lo terminado que borraste en real-debrid.com ya no se queda en la fila una semana."""
+    reqs, rd, *_ = setup
+    reqs.request("movie", "tt9", "Midsommar", streams.Preferences())
+    rd.list[0].update(status="downloaded", progress=100)
+    reqs.tick()
+    assert reqs.status("tt9")["state"] == "ready"
+    rd.list.clear()
+    rd.missing.add("RD1")
+    assert reqs.tick() is False and reqs.status("tt9") is None
+
+
+def test_hide_keeps_it_in_real_debrid(setup):
+    reqs, rd, *_ = setup
+    reqs.request("movie", "tt9", "Midsommar", streams.Preferences())
+    reqs.hide(H1)
+    assert rd.deleted == [] and reqs.listing()["requests"][0]["hidden"] is True

@@ -1444,7 +1444,7 @@ export function requestLabel(req) {
  *  en lo que baja, su hoja (la misma de «Tus pedidos»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» sigue ahí. */
 export const CLOUD_ROW = "Real-Debrid · bajando para ti";
 export function cloudRow(requests = [], { now = Date.now() } = {}) {
-  const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone");
+  const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone" && !r.hidden);
   if (!live.length) return [];
   const order = (r) => (r.state === "ready" ? 1 : 0);
   const items = [...live].sort((a, b) => order(a) - order(b) || (b.since || 0) - (a.since || 0)).map((req) => ({
@@ -1702,6 +1702,9 @@ export function debridRequestMenu(req, { account = null, now = Date.now(), inste
         && ref && { icon: "swap", label: "Probar otra versión",
         command: { type: "rd-other-version", play: { kind: ref.kind, id: ref.meta_id, video_id: video, title: req.title || "" } } },
       open,
+      // Fernando, 4 nov: lo terminado se puede quitar de la fila sin borrarlo de tu Real-Debrid.
+      !req.hidden && ["ready", "refused"].includes(req.state) && { icon: "hide", label: "Ocultar de esta fila",
+        hint: "Sigue en tu Real-Debrid", command: { type: "rd-hide", hash: req.hash, title: req.title } },
       req.state !== "ready" && req.state !== "refused"
         ? { icon: "xCircle", label: "Cancelar pedido", danger: true, hint: "Se quita de tu Real-Debrid", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title } }
         : { icon: "trash", label: "Quitar de tu Real-Debrid", danger: true, hint: "Borra el archivo de tu cuenta", command: { type: "rd-cancel-ask", hash: req.hash, title: req.title, done: true } },

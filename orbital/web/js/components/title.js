@@ -102,6 +102,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let zone = "actions"; // "about" (la sinopsis) | "actions" | "episodes" | una parte de abajo (PANEL)
   let aboutOpen = false; // la sinopsis completa, sin cortar
   let action = 0;
+  let onVersion = false; // el foco en la cápsula de la versión, junto al principal
   let expanded = false; // «Más»: ya enseña todos los botones
   let extras = null; // frase, clasificación, créditos, la saga, los datos y «Más como esto» (title-extras)
   let restore = null; // { zone: "cast", index }: el foco que dejaste al abrir una persona
@@ -387,9 +388,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     // redondos, solo con su ícono; el nombre sale debajo del enfocado, en su propio lugar (nada se mueve).
     mount(actions, buttons.flatMap((b, i) => [h("button", {
       class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", b.active && "title__action--on",
-        zone === "actions" && i === action && "title__action--focused"],
+        zone === "actions" && i === action && !onVersion && "title__action--focused"],
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
-      onClick: () => { zone = "actions"; action = i; run(b); },
+      onClick: () => { zone = "actions"; action = i; onVersion = false; run(b); },
     }, b.primary
       ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label)]
       : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)]),
@@ -401,7 +402,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function versionCapsule(line) {
     const flag = plays?.line === line && plays.lang ? Flag(plays.lang, plays.dub) : null;
     const rest = flag ? String(line).split(" · ").slice(1).join(" · ") : line;
-    return h("button", { class: "title__version", type: "button", "aria-label": `Versión: ${line}`, onClick: () => sources() },
+    // Fernando, 4 nov: también es una parada de la fila (A la abre), no solo el atajo Y: con el control se la saltaba.
+    return h("button", { class: ["title__version", zone === "actions" && onVersion && "title__version--focused"], type: "button",
+      "aria-label": `Versión: ${line}`, onClick: () => sources() },
       glyphs.options && Glyph(glyphs.options, { small: true }), flag, h("span", {}, [flag && rest && "· ", versionShort(rest, line)].filter(Boolean)));
   }
 
@@ -995,7 +998,15 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
 
   /** Los botones (Ver, Tráiler, Guardar…). Devuelve si se movió, o null si ya se encargó de todo (cambió de zona). */
   function actionsKey(act, series) {
+    const capsule = !!(buttons[0]?.primary && buttons[0].hint && hasTarget());
+    if (!capsule) onVersion = false;
+    // La cápsula de la versión va entre el principal y los demás: → desde el principal llega a ella; ← regresa.
+    if (capsule && act === "right" && action === 0 && !onVersion) { onVersion = true; renderActions(); return true; }
+    if (onVersion && act === "left") { onVersion = false; renderActions(); return true; }
+    if (onVersion && act === "select") { sources(); return true; }
+    if (onVersion && act === "right") { onVersion = false; if (buttons.length < 2) { renderActions(); return true; } }
     if (["left", "right", "up", "down"].includes(act)) {
+      if (["up", "down"].includes(act)) onVersion = false;
       const next = actionStep(buttons.length, action, act);
       // Los botones están arriba de la fila de episodios: ↓ baja a ella (o, sin episodios, a «Más como esto»).
       if (next === "down") {
@@ -1087,7 +1098,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && { glyph: g.options, label: "Versión" },
+    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && { glyph: g.options, label: "Versión" },
       led() ? { glyph: g.rows, label: "Episodios" } : panelZone() && { glyph: g.rows, label: PANEL_NAMES[panelZone()] },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));

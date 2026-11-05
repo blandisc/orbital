@@ -166,6 +166,8 @@
 }
 .title__version > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .title__version:hover { background: var(--color-glass-hover); }
+/* Enfocada con el control (Fernando, 4 nov): como un botón enfocado de la fila; A la abre. */
+.title__version--focused { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
 .title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* Los redondos: solo el ícono; su nombre, debajo, solo al enfocarlo. */
 .title__action--icon { width: var(--control-height); padding: 0; color: var(--color-text); }

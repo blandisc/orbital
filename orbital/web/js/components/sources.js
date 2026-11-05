@@ -329,7 +329,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   const hints = (g) => {
     const verb = (r, src) => (rows[r]?.moreOf ? "Ver más idiomas" : !isAsk(r) ? "Ver con esta" : asked(src) ? "Ver su pedido" : "Pedir a la nube");
     if (cell) {
-      return [{ glyph: g.select, label: verb(cell.row, items[index]) }, items.length > 1 && { glyph: g.rows, label: "Otra" },
+      return [{ glyph: g.select, label: verb(cell.row, items[index]) }, items.length > 1 && { glyph: g.rows, label: "Otra versión" },
         { glyph: g.back, label: "Volver a los idiomas", end: true }].filter(Boolean);
     }
     if (!rows.length) return [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean);

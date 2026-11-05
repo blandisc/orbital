@@ -95,6 +95,13 @@ export function accountCommands({ UNDO_MS, openSources, debridCancelMenu, device
       const back = context?.stack?.length > 1 ? { ...context, stack: context.stack.slice(0, -2) } : null;
       return back ? openMenu(debridRequestsMenu(res.requests || []), back) : ui.sheet.close();
     },
+    "rd-hide": async (command) => {
+      const res = await api.debridHide(command.hash);
+      applySettings({ ...state.settings, realdebrid: { ...state.settings?.realdebrid, requests: res.requests || [] } });
+      sound.play("select");
+      ui.toast.show(`Oculté ${command.title || "el pedido"}`, { detail: "Sigue en tu Real-Debrid" });
+      return ui.sheet.close();
+    },
     // Ajustes › Complementos › Torrentio (corte S3): cada cambio se guarda al hacerlo, con «Deshacer»
     "torrentio-menu": async (command, context) => openMenu(torrentioMenus.main(torrentioEntry()), nested(context)),
     "torrentio-languages": async (command, context) => openMenu(torrentioMenus.languages(torrentioEntry()), nested(context)),

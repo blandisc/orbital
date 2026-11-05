@@ -26,6 +26,7 @@ log = logging.getLogger(__name__)
 STATE_ID = "rd:requests"
 DEVICE = "TV"  # el nombre de la consola en `by` (el iPhone dice «Lo pidió la TV»)
 POLL = 20.0
+READY_CHECK = 300.0  # cada cuánto, como mucho, se ve si lo terminado sigue en tu Real-Debrid
 FORGET_AFTER = 7 * 86400  # lo terminado se olvida a la semana de su último cambio
 STALL_AFTER = 24 * 3600  # «Sigue sin bajar · ¿probar otra versión?»
 READY_LINK_TTL = 6 * 3600  # el enlace de Real-Debrid se vuelve a sacar pasado este rato
@@ -161,6 +162,7 @@ class RdRequests:
         self._polling = False
         self._account: tuple[float, str | None, str | None] = (0.0, None, None)  # (cuándo, token, id de usuario)
         self._links: dict[tuple[str, str], tuple[float, str, str]] = {}  # el enlace listo vive solo en memoria
+        self._ready_checked = 0.0  # cuándo se vio por última vez si lo terminado sigue en Real-Debrid
 
     # --- de dónde sale la clave y qué torrents hay ---------------------------------------------------------------
     def _debrid_addon(self) -> addons.Addon | None:
@@ -270,6 +272,10 @@ class RdRequests:
         """Para «Tus pedidos» y GET /api/realdebrid/requests: {version, account, requests}, sin lo que solo vive aquí."""
         self.prune()
         account = self.account()
+        if time.time() - self._ready_checked >= READY_CHECK and any(
+                r.get("state") == READY and self._mine(r, account) for r in self._entries()):
+            self._ready_checked = time.time()
+            self.watch()  # un vistazo basta: si lo borraste allá, a la siguiente ya no sale
         entries = sorted(self._entries(), key=lambda r: r.get("since") or 0, reverse=True)
         return {"version": 1, "account": account,
                 "requests": [{k: v for k, v in r.items() if k not in LOCAL_ONLY} for r in entries]}
@@ -368,7 +374,7 @@ class RdRequests:
             if not (exc.too_many or exc.refused):  # de tu cuenta o de la red: no queda anotado
                 raise
             entry["state"] = TOO_MANY if exc.too_many else REFUSED
-        self._put(info_hash, merge(known, entry) if known else entry)
+        self._put(info_hash, {**merge(known, entry), "hidden": False} if known else entry)  # pedirlo otra vez lo vuelve a mostrar
         log.info("Pedido a Real-Debrid: %s (%s)", title, pick.release or info_hash)
         self._publish(video_id)
         self.watch()
@@ -388,6 +394,12 @@ class RdRequests:
         for video_id in req.get("video_ids") or []:
             self._links.pop((info_hash, video_id), None)
             self._publish(video_id)
+
+    def hide(self, info_hash: str) -> None:
+        """«Ocultar de esta fila» (Fernando, 4 nov): sale de «Real-Debrid · bajando para ti» y sigue en tu Real-Debrid."""
+        if self._all().get(info_hash) is None:
+            raise realdebrid.RealDebridError("Ese pedido ya no está")
+        self._update(info_hash, {"hidden": True})
 
     def pack_for(self, meta_id: str, hashes: set[str]) -> dict | None:
         """Un paquete de temporada tuyo, en camino, que Torrentio también lista para este episodio (`hashes`): es su pedido,
@@ -512,10 +524,18 @@ class RdRequests:
         self._migrate(rd, torrents)
         pending = self._retry_too_many(rd, account)
         for req in self._entries():
-            if req.get("state") not in ACTIVE or not self._mine(req, account):
+            if req.get("state") not in (*ACTIVE, READY) or not self._mine(req, account):
                 continue
             match = next((t for t in torrents if req.get("rd_id") and t.get("id") == req["rd_id"]), None) \
                 or next((t for t in torrents if str(t.get("hash") or "").lower() == req["hash"]), None)
+            if req.get("state") == READY:  # Fernando, 4 nov: lo terminado que borraste en real-debrid.com se quita solo
+                if match is None and req.get("rd_id"):
+                    try:
+                        rd.info(req["rd_id"])
+                    except realdebrid.RealDebridError as exc:
+                        if exc.gone:
+                            self._update(req["hash"], {"state": GONE})
+                continue
             if match is None and req.get("rd_id"):  # más viejo que los 100 de la lista
                 try:
                     match = rd.info(req["rd_id"])
