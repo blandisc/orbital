@@ -87,6 +87,22 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Acento por categoría | `--rainbow-*` | El arcoíris del azul de Orbital: categorías de TV en vivo (filtros, después) |
 | Marcas | `--platform-*`, `--brand-*`, `--system-*`, `--color-source-*` | El color de cada plataforma, consola o fuente; nunca para la interfaz |
 
+### Ritmo (5 nov 2026)
+
+Una medida para cada cosa, repetida en toda la app, en la TV y en el iPhone:
+
+| Qué | TV | iPhone | Valor |
+|---|---|---|---|
+| Esquina chica: botones cuadrados, teclas, insignias, lo diminuto | `--radius-2xs` … `--radius-md` | `DS.Radius.xs` … `.md` | .5rem · 8 pt |
+| Esquina de tarjeta: pósters, tarjetas, hojas, menús | `--radius-lg` … `--radius-2xl` | `DS.Radius.lg` … `.xxl` | 1rem · 16 pt |
+| Lo redondo | `--radius-pill` | `DS.Radius.pill` | cápsula |
+| Entre secciones | `--layout-between-sections` | `DS.Layout.betweenSections` | 2rem · 32 pt |
+| Alto de fila | `--row-height` | — | uno para todas las filas |
+
+Los nombres viejos se quedan como alias para no tocar cada componente, pero solo valen esas dos medidas. Las esquinas
+concéntricas (`--radius-inner-row`) y los dibujos de aparatos (`ds-exception`) siguen aparte. Lo vigilan
+`tests/web/design-system.test.mjs` («ritmo») y `DesignTests.testRadiiFollowTheRhythm`; los valores viven en `design/tokens.json`.
+
 ### Espacios
 
 | Qué | Token | Valor |
@@ -95,7 +111,7 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | A los lados de la pantalla | `--page-gutter` | El margen de la TV (`--safe-x`, Ajustes › Márgenes de la TV), nunca menos de `--space-4` |
 | Lo que ocupa la barra de arriba | `--status-room` | `--space-5` + `--safe-y` + `--control-height` |
 | Del título a lo suyo | `--layout-title-to-content` | `--space-3` (el mismo 12 del iPhone) |
-| Entre filas del Inicio y de Juegos | `--space-5` (`.home__scroll`) | Cada fila mide un alto fijo y la siguiente asoma |
+| Entre filas del Inicio y de Juegos | `--layout-between-sections` (`.home__scroll`) | Cada fila mide un alto fijo y la siguiente asoma; entre ellas, el mismo espacio de sección que en el resto de la app |
 | Entre tarjetas de una fila | `--card-gap`, `--tile-gap`, `--space-6` (tarjetas anchas) | — |
 | Dentro de una tarjeta | `--inset-poster` · `--inset-row` · `--inset-card` · `--inset-feature` | Un margen por tarjeta, igual en los cuatro lados (§ 3) |
 | Entre botones de una fila | `--space-3` (`.button-row`) | Nunca se parte ni se corta |
@@ -226,7 +242,7 @@ iPhone: `--weight-regular` 400, `--weight-semibold` 600, `--weight-bold` 700, `-
 (misma receta, mismo estilo de Dynamic Type y mismo grosor en los dos lados; una receta solo de la TV dice por qué).
 
 **Espacios de una pantalla, los del iPhone (`DS.Layout`):** del título a lo suyo `--layout-title-to-content` (12), entre
-subsecciones `--layout-between-subsections` (24), entre secciones `--layout-between-sections` (40). En la TV se usan donde se
+subsecciones `--layout-between-subsections` (24), entre secciones `--layout-between-sections` (32). En la TV se usan donde se
 apilan partes (lo de abajo de la ficha, Cambiar el arte, TV en vivo); entre las filas de alto fijo de Inicio, Juegos y
 Películas y series manda el alto de cada fila, y al pie va el pie de pistas (`--hints-room`) en lugar del 56 del iPhone.
 
@@ -242,7 +258,7 @@ Una sección es el **rótulo**: ícono gris, el nombre en letra normal (`groupLa
 
 **Espacios (iPhone, decisión 2 del 31 oct 2026):** cuatro medidas, en `DS.Layout`, medidas desde donde termina lo que se ve
 (el pie de un póster cuenta; los reflejos se quitaron de toda la app el 2 nov 2026): del título a lo suyo **12** (`titleToContent`), entre
-subsecciones **24** (`betweenSubsections`), entre secciones **40** (`betweenSections`, también `DS.Editorial.sectionGap`) y
+subsecciones **24** (`betweenSubsections`), entre secciones **32** (`betweenSections`, también `DS.Editorial.sectionGap`) y
 al pie de la pantalla **56** (`screenBottom`). Arriba de cada pantalla, 12 (`screenTop`).
 | Pieza | `card-title` | — | el nombre en una tarjeta o renglón |
 | Cuerpo · secundario · pie · etiqueta · dato | `body` · `secondary` · `footnote` · `caption` · `data` | — | lo que explica, datos, notas, placas, números |

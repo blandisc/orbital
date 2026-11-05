@@ -44,13 +44,13 @@
   --space-14: 3.5rem;
 
   /* Radios: rectángulos suaves, no burbujas */
-  --radius-2xs: .15rem; /* lo diminuto: el cursor de escribir, la batería, las casillas de Tu año */
-  --radius-xs: .3rem;
-  --radius-sm: .45rem;
-  --radius-md: .6rem;
-  --radius-lg: .8rem;
-  --radius-xl: 1.1rem;
-  --radius-2xl: 1.4rem;
+  --radius-2xs: .5rem; /* lo diminuto: el cursor de escribir, la batería, las casillas de Tu año */
+  --radius-xs: .5rem;
+  --radius-sm: .5rem;
+  --radius-md: .5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1rem;
   --radius-pill: 999px;
 
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
@@ -277,7 +277,7 @@
      suyo: entre filas y secciones manda el alto fijo de cada fila (la pantalla es la medida, no hay pila que crezca). */
   --layout-title-to-content: var(--space-3);
   --layout-between-subsections: var(--space-6); /* entre subsecciones de una pila (DS.Layout.betweenSubsections): las tandas de Cambiar el arte, TV en vivo */
-  --layout-between-sections: var(--space-10); /* entre secciones de una pila (DS.Layout.betweenSections): lo de abajo de la ficha */
+  --layout-between-sections: var(--space-8); /* entre secciones de una pila (DS.Layout.betweenSections): lo de abajo de la ficha */
   --icon-xl: 1.8rem;
   /* Grosor del trazo de un ícono (viewBox 24): fino por omisión; más grueso en lo chico (una palomita, la marca de una plataforma). */
   --stroke-fine: 1.75;

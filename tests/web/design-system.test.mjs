@@ -254,3 +254,11 @@ test("«Jugar» y los principales van en blanco: nada pinta un botón principal 
   const offenders = cssLines().filter(([, , line]) => /primary|play/.test(line) && /background[^;]*--art-accent/.test(line));
   assert.deepEqual(offenders.map(where), []);
 });
+
+// Ritmo (Fernando, 5 nov 2026): una esquina chica, una de tarjeta y la cápsula; nada más.
+test("ritmo: los radios de la escala solo valen .5rem, 1rem o la cápsula", () => {
+  const css = read(join(STYLES, "tokens.css"));
+  const radii = [...css.matchAll(/--radius-[\w-]+:\s*([^;]+);/g)].map((m) => m[1].trim()).filter((v) => !v.startsWith("calc") && !v.startsWith("var"));
+  assert.ok(radii.length > 0);
+  for (const value of radii) assert.ok([".5rem", "1rem", "999px"].includes(value), `radio fuera del ritmo: ${value}`);
+});

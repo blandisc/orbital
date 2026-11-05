@@ -10,6 +10,14 @@ final class DesignTests: XCTestCase {
         return url
     }
 
+    /// Ritmo (Fernando, 5 nov 2026): una esquina chica, una de tarjeta y la cápsula, como la TV.
+    func testRadiiFollowTheRhythm() {
+        let radii: Set<Double> = [DesignTokens.Radius.xs, DesignTokens.Radius.sm, DesignTokens.Radius.md,
+                                  DesignTokens.Radius.lg, DesignTokens.Radius.xl, DesignTokens.Radius.xxl]
+        XCTAssertEqual(radii, [8, 16])
+        XCTAssertEqual(DesignTokens.Radius.pill, 999)
+    }
+
     func testPaletteMatchesOrbitalsPaletteJSON() throws {
         let data = try Data(contentsOf: repo.appendingPathComponent("orbital/web/styles/palette.json"))
         let json = try XCTUnwrap(JSON.parse(data)?.object)

@@ -155,7 +155,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// (el pie de un póster cuenta): del título a lo suyo, entre subsecciones, entre secciones y al pie.
     /// Arriba de cada pantalla, `titleToContent`. `DesignRulesTests.testScreensKeepTheLayoutRhythm` revisa que el primer contenedor de cada pantalla los use.
     enum Layout {
-        static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s10, screenBottom = Space.s14
+        static let titleToContent = Space.s3, betweenSubsections = Space.s6, betweenSections = Space.s8, screenBottom = Space.s14
         static let screenTop = Space.s3
     }
 

@@ -147,7 +147,7 @@ public enum DesignTokens {
 
     /// Espacio (puntos): 4, 8, 12, 16, 20, 24, 32, 40, 56.
     public enum Space { public static let s1 = 4.0, s2 = 8.0, s3 = 12.0, s4 = 16.0, s5 = 20.0, s6 = 24.0, s8 = 32.0, s10 = 40.0, s14 = 56.0 }
-    public enum Radius { public static let xs = 5.0, sm = 7.0, md = 10.0, lg = 13.0, xl = 18.0, xxl = 22.0, pill = 999.0 }
+    public enum Radius { public static let xs = 8.0, sm = 8.0, md = 8.0, lg = 16.0, xl = 16.0, xxl = 16.0, pill = 999.0 }
     /// Tamaños de letra (se escalan con Dynamic Type, que hace de «Tamaño del texto»).
     public enum TextSize { public static let xs = 11.0, sm = 12.5, md = 15.0, lg = 17.0, xl = 22.0, xxl = 28.0, display = 34.0 }
     /// Duraciones en segundos (las de la TV: `design/tokens.json`); con «Reducir movimiento» valen 0.
