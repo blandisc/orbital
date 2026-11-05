@@ -397,7 +397,7 @@ struct RemoteSheet: View {
 
     @ViewBuilder private func volume(_ model: TVNowModel) -> some View {
         // El volumen de la TV (el de Windows, como Alexa): − · barra · +, y silencio.
-        VolumeControl(level: model.volume?.level, muted: model.volume?.muted ?? false,
+        VolumeControl(volume: model.volume,
                       down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
                       mute: { Task { await model.toggleMute() } })
         if model.volumeOutdated { DSNotice(text: "Actualiza tu Orbital para cambiar el volumen desde aquí.", tone: .warn) }

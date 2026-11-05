@@ -306,6 +306,17 @@ def test_the_iphone_turns_the_volume_up_or_down_and_sees_the_level(library):
         assert c.get("/api/companion/now", headers=auth).json()["volume"]["muted"] is False
 
 
+def test_with_a_video_the_iphone_also_sees_the_extra(library):
+    """V4-A: con el reproductor abierto, «Viendo en la TV» dice el Extra (100 = sin Extra) para pintar la barra como la
+    cápsula de la TV; sin video la llave no va (arriba: solo level y muted)."""
+    p, _ = _play_movie(library)
+    p.boost = 150
+    main = create_app(library.config, library)
+    with TestClient(create_public_app(library.config, main)) as c:
+        volume = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["volume"]
+        assert volume["extra"] == 150 and set(volume) == {"level", "muted", "extra"}
+
+
 def test_the_iphone_gets_the_channel_logo(library):
     """«Viendo en la TV» de un canal: su logo, por el puerto del iPhone (también el de un canal de Orbital)."""
     main = create_app(library.config, library)

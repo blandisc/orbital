@@ -26,4 +26,15 @@ final class TVVolumeTests: XCTestCase {
         XCTAssertEqual(deltas.reduce(0, +), 15, "la TV recibe todo lo que tocaste")
         XCTAssertLessThanOrEqual(deltas.count, 2, "sin una orden por toque esperando su turno")
     }
+
+    /// V4-A: con un video la consola manda el Extra y la barra dice lo mismo que la cápsula de la TV; sin él, como siempre.
+    func testTheExtraFromTheTVIsWhatTheBarShows() {
+        let extra = OrbitalRemote.Volume.parse(["level": 100, "muted": false, "extra": 150])
+        XCTAssertEqual(extra?.extra, 150)
+        XCTAssertEqual(extra?.shown, 150, "pasado el 100, el número es el del Extra")
+        let normal = OrbitalRemote.Volume.parse(["level": 80, "muted": false, "extra": 100])
+        XCTAssertEqual(normal?.shown, 80, "sin Extra, el de Windows")
+        XCTAssertNil(OrbitalRemote.Volume.parse(["level": 80, "muted": false])?.extra, "sin video o una consola de antes: sin Extra")
+        XCTAssertEqual(OrbitalRemote.Volume.parse(["level": 100, "extra": 999])?.extra, 200, "nunca pasa del tope de la TV")
+    }
 }

@@ -319,7 +319,7 @@ public final class TVNowModel: ObservableModel {
     /// esperando su turno). Mientras cambias, y un momento después, el sondeo no regresa la barra al volumen de antes (la TV
     /// todavía no se enteraba y la barra brincaba hacia atrás y adelante).
     public func changeVolume(by delta: Int) async {
-        if let v = volume { volume = .init(level: max(0, min(100, v.level + delta)), muted: false) }
+        if let v = volume { volume = .init(level: max(0, min(100, v.level + delta)), muted: false, extra: v.extra) }
         volumeHeldUntil = Date().addingTimeInterval(Self.volumeHold)
         pendingVolume += delta
         guard !sendingVolume else { return }   // ya va una: esta se suma a la siguiente
@@ -352,7 +352,7 @@ public final class TVNowModel: ObservableModel {
     /// Silencio sí / no (el de Windows, igual que en la TV).
     public func toggleMute() async {
         guard !busy else { return }   // si no se va a mandar, no se cambia el ícono
-        if let v = volume { volume = .init(level: v.level, muted: !v.muted) }
+        if let v = volume { volume = .init(level: v.level, muted: !v.muted, extra: v.extra) }
         await control("mute")
     }
 

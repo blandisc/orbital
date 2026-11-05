@@ -797,7 +797,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
                 # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»); con el reproductor al frente,
                 # "player"/"live" y su leyenda
                 "ui": companion.ui_state(catalog, main_app.state.shell, main_app.state.ui_state),
-                "volume": _volume()}  # {"level", "muted"}: la barra de volumen del control del iPhone
+                "volume": companion.volume_state(catalog, _volume())}  # {"level", "muted"} y el Extra: la barra del control del iPhone
 
     @public.get("/api/tv/logo")
     def companion_channel_logo(id: str) -> FileResponse:
