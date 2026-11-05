@@ -13,6 +13,8 @@ public final class LocalStreamProxy: @unchecked Sendable {
     private var port: UInt16?
     private var streams: [String: ParallelStream] = [:]
     private var nextReader = 0
+    /// Lo último que hizo cortar una respuesta (diagnóstico y pruebas).
+    public private(set) var lastError: String?
 
     public init() {}
 
@@ -47,10 +49,14 @@ public final class LocalStreamProxy: @unchecked Sendable {
         guard let listener = try? NWListener(using: parameters) else { return nil }
         let ready = DispatchSemaphore(value: 0)
         nonisolated(unsafe) var failed = false
-        listener.stateUpdateHandler = { state in
+        listener.stateUpdateHandler = { [weak self] state in
             switch state {
             case .ready: ready.signal()
-            case .failed, .cancelled: failed = true; ready.signal()
+            case .failed, .cancelled:
+                failed = true; ready.signal()
+                // iOS puede apagarlo en segundo plano: el siguiente video arranca otro (lo de ahora lo reabre el reproductor).
+                self?.lock.withLock { if self?.listener === listener { self?.listener = nil; self?.port = nil } }
+                listener.cancel()
             default: break
             }
         }
@@ -109,6 +115,7 @@ public final class LocalStreamProxy: @unchecked Sendable {
             }
         } catch {
             // Sin respuesta de Real-Debrid: se corta; el motor lo ve como un error de red y lo trata como siempre.
+            lock.withLock { lastError = "\(error)" }
         }
         await stream.finished(reader: reader)
         connection.send(content: nil, isComplete: true, completion: .contentProcessed { _ in connection.cancel() })

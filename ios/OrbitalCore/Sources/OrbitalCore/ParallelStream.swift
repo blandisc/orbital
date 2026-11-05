@@ -11,8 +11,11 @@ public actor ParallelStream {
     public struct Config: Sendable, Equatable {
         /// Conexiones a la vez (8 con Wi-Fi, 4 con datos).
         public var connections: Int
-        /// Tamaño de cada pedazo.
+        /// Tamaño de cada pedazo: chico, para que lo que el reproductor necesita ya (el arranque, un salto, el final del
+        /// archivo) llegue pronto.
         public var chunkBytes: Int
+        /// Lo de adelante (el colchón) se pide de a varios pedazos seguidos por conexión: menos saludos con el servidor.
+        public var runChunks = 4
         /// El colchón: cuántos segundos por delante (2 min con Wi-Fi, 30 s con datos, ST2).
         public var aheadSeconds: Double
         /// Mientras no se sabe cuánto pesa cada segundo, el colchón en bytes.
@@ -20,8 +23,8 @@ public actor ParallelStream {
         /// Lo que se guarda detrás de donde vas (un salto atrás de unos segundos no vuelve a la red).
         public var behindBytes: Int
 
-        public static let wifi = Config(connections: 8, chunkBytes: 4 << 20, aheadSeconds: 120, fallbackAheadBytes: 400 << 20, behindBytes: 24 << 20)
-        public static let cellular = Config(connections: 4, chunkBytes: 2 << 20, aheadSeconds: 30, fallbackAheadBytes: 60 << 20, behindBytes: 8 << 20)
+        public static let wifi = Config(connections: 8, chunkBytes: 1 << 20, aheadSeconds: 120, fallbackAheadBytes: 400 << 20, behindBytes: 24 << 20)
+        public static let cellular = Config(connections: 4, chunkBytes: 1 << 20, aheadSeconds: 30, fallbackAheadBytes: 60 << 20, behindBytes: 8 << 20)
 
         public init(connections: Int, chunkBytes: Int, aheadSeconds: Double, fallbackAheadBytes: Int, behindBytes: Int) {
             self.connections = connections; self.chunkBytes = chunkBytes; self.aheadSeconds = aheadSeconds
@@ -133,15 +136,25 @@ public actor ParallelStream {
             let first = at / chunk, last = min(lastIndex, (at + aheadBytes) / chunk)
             if first <= last { wanted += Array(first...last) }
         }
-        for index in wanted where inflight.count < connections && !done.contains(index) && inflight[index] == nil && index <= lastIndex {
-            inflight[index] = Task { await self.run(index) }
+        let waited = Set(waiters.keys)
+        var busy = Set(inflight.values).count
+        for index in wanted where busy < connections && !done.contains(index) && inflight[index] == nil && index <= lastIndex {
+            // Lo que alguien espera, solo (llega antes); lo de adelante, de a `runChunks` seguidos.
+            var last = index
+            if !waited.contains(index) {
+                while last - index + 1 < config.runChunks, last + 1 <= lastIndex, !done.contains(last + 1), inflight[last + 1] == nil,
+                      !waited.contains(last + 1), wanted.contains(last + 1) { last += 1 }
+            }
+            let task = Task { await self.run(index...last) }
+            for i in index...last { inflight[i] = task }
+            busy += 1
         }
         evict()
     }
 
-    private func run(_ index: Int) async {
-        let chunk = config.chunkBytes, low = index * chunk
-        let high = (total.map { min($0, low + chunk) } ?? low + chunk) - 1
+    private func run(_ indices: ClosedRange<Int>) async {
+        let chunk = config.chunkBytes, low = indices.lowerBound * chunk, index = indices.lowerBound
+        let high = (total.map { min($0, (indices.upperBound + 1) * chunk) } ?? (indices.upperBound + 1) * chunk) - 1
         do {
             fetched += 1
             let piece = try await fetch(url, low...high)
@@ -149,17 +162,23 @@ public actor ParallelStream {
             guard !piece.data.isEmpty else { throw Failure.empty }
             if let final = piece.finalURL { url = final }
             if let size = piece.total { total = size }
-            try piece.data.write(to: file(index))
-            done.insert(index); tries[index] = nil; inflight[index] = nil
-            for c in waiters.removeValue(forKey: index) ?? [] { c.resume() }
+            for i in indices {
+                let start = (i - indices.lowerBound) * chunk
+                guard start < piece.data.count else { inflight[i] = nil; continue }
+                try piece.data.subdata(in: start..<min(piece.data.count, start + chunk)).write(to: file(i))
+                done.insert(i); tries[i] = nil; inflight[i] = nil
+                for c in waiters.removeValue(forKey: i) ?? [] { c.resume() }
+            }
         } catch {
-            inflight[index] = nil
+            for i in indices { inflight[i] = nil }
             if closed { return }
             // Real-Debrid dice «demasiadas»: se baja a la mitad (como mucho hasta una conexión) en vez de insistir.
             if case Failure.refused(let status) = error, status == 429 || status == 503 || status == 509 { connections = max(1, connections / 2) }
             let count = (tries[index] ?? 0) + 1
             tries[index] = count
-            if count >= 3 || waiters[index] == nil && count >= 2 {
+            // Lo que el reproductor espera se reintenta más (6 veces, ~8 s): rendirse es un tropiezo en la película.
+            // Al abrir (aún sin una sola respuesta), a los 3: el reproductor abre directo sin esperar.
+            if count >= (total == nil ? 3 : 6) || waiters[index] == nil && count >= 2 {
                 for c in waiters.removeValue(forKey: index) ?? [] { c.resume(throwing: error) }
                 if waiters[index] == nil { tries[index] = nil }
             } else {
