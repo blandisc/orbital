@@ -37,7 +37,10 @@ struct HomeHeader: View {
                 .allowsHitTesting(!open)
                 .accessibilityHidden(open)
             if !stories.isEmpty {
-                row(stories)
+                // Cerradas y sin deslizar: `hidden()` las quita también de VoiceOver (solo `accessibilityHidden` las dejaba
+                // fuera de la pantalla para la accesibilidad, a la derecha), y su alto se sigue midiendo.
+                let away = !open && progress == 0
+                Group { if away { row(stories).hidden() } else { row(stories) } }
                     .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { rowHeight = $0 }
                     .offset(x: (1 - progress) * width * DS.HomeStories.away)
