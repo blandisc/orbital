@@ -263,9 +263,14 @@ public struct ResumeChoice: Codable, Equatable, Sendable {
     /// La «familia» de la versión (`bingeGroup`: mismo grupo, calidad e idioma en cada episodio): con ella el siguiente
     /// episodio sigue en la misma versión, no solo en el mismo idioma.
     public var binge: String?
-    public init(videoID: String, source: String? = nil, audio: Track? = nil, subtitle: Track? = nil, binge: String? = nil) {
-        self.videoID = videoID; self.source = source; self.audio = audio; self.subtitle = subtitle; self.binge = binge
+    /// Cuándo lo viste así (segundos desde 1970): en «Continuar» gana lo último, en este aparato o en otro (vía tu Orbital).
+    public var at: Double?
+    public init(videoID: String, source: String? = nil, audio: Track? = nil, subtitle: Track? = nil, binge: String? = nil, at: Double? = nil) {
+        self.videoID = videoID; self.source = source; self.audio = audio; self.subtitle = subtitle; self.binge = binge; self.at = at
     }
+
+    /// Lo mismo sin la hora (para saber si cambió algo).
+    var unstamped: ResumeChoice { var copy = self; copy.at = nil; return copy }
 }
 
 /// Cada serie o película recuerda el audio y los subtítulos que elegiste viéndola (como en Orbital).
@@ -303,6 +308,11 @@ public final class TitlePreferences: @unchecked Sendable {
 
     static let resumeKey = "resume-choices"
     private var resumes: [String: ResumeChoice]
+    /// Lo que se vio aquí y tu Orbital aún no sabe (para «Continuar» en otro aparato).
+    static let resumePendingKey = "resume-pending"
+    private var resumePending: Set<String>
+    /// Habla con tu Orbital: manda lo de aquí y trae lo que recuerda de `want` (nil sin conexión o con una de antes).
+    public var exchangeResume: (@Sendable (_ changes: [String: ResumeChoice], _ want: [String]) async -> [String: ResumeChoice]?)?
 
     /// «Comprobado»: las pistas de audio reales de cada versión que ya viste (por su huella `Source.key`, la misma de la TV).
     static let checkedKey = "checked-audio", checkedLimit = 2000
@@ -312,6 +322,7 @@ public final class TitlePreferences: @unchecked Sendable {
         self.kv = kv
         all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:]
         resumes = kv.data(Self.resumeKey).flatMap { try? JSONDecoder().decode([String: ResumeChoice].self, from: $0) } ?? [:]
+        resumePending = kv.data(Self.resumePendingKey).flatMap { try? JSONDecoder().decode(Set<String>.self, from: $0) } ?? []
         checked = kv.data(Self.checkedKey).flatMap { try? JSONDecoder().decode([String: [AudioLanguage]].self, from: $0) } ?? [:]
         sync = kv.data(Self.syncKey).flatMap { try? JSONDecoder().decode(SyncState.self, from: $0) } ?? SyncState()
     }
@@ -362,11 +373,46 @@ public final class TitlePreferences: @unchecked Sendable {
     /// Las pistas con que dejaste el título (cualquier episodio): para el siguiente se usan las mismas.
     public func lastChoice(metaID: String) -> ResumeChoice? { lock.withLock { resumes[metaID] } }
 
-    public func remember(metaID: String, choice: ResumeChoice) {
-        lock.withLock {
-            guard resumes[metaID] != choice else { return }
-            resumes[metaID] = choice
+    /// Con qué lo estás viendo. Lleva la hora (si no trae una) y, si `share`, tu Orbital se entera: «Continuar» en la TV,
+    /// el iPad o la Mac sigue igual. La hora se renueva aunque no cambie nada (a lo más una vez por minuto).
+    public func remember(metaID: String, choice: ResumeChoice, share: Bool = true, now: Date = Date()) {
+        var stamped = choice
+        if stamped.at == nil { stamped.at = now.timeIntervalSince1970 }
+        let queued: Bool = lock.withLock {
+            let old = resumes[metaID]
+            guard old?.unstamped != stamped.unstamped || (old?.at ?? 0) < (stamped.at ?? 0) - 50 else { return false }
+            resumes[metaID] = stamped
             kv.set(Self.resumeKey, data: try? JSONEncoder().encode(resumes))
+            guard share else { return false }
+            resumePending.insert(metaID)
+            kv.set(Self.resumePendingKey, data: try? JSONEncoder().encode(resumePending))
+            return true
+        }
+        if queued { onPendingChoice?() }
+    }
+
+    /// Manda lo pendiente a tu Orbital y trae lo que recuerda de `want`: si allá es más reciente (lo viste después en la TV
+    /// u otro aparato), se queda eso. A lo más `timeout` segundos: sin respuesta, se sigue con lo de aquí.
+    public func syncResume(want: [String] = [], timeout: Double = 8) async {
+        guard let exchange = exchangeResume else { return }
+        let sent = lock.withLock { Dictionary(uniqueKeysWithValues: resumePending.compactMap { id in resumes[id].map { (id, $0) } }) }
+        guard !sent.isEmpty || !want.isEmpty else { return }
+        let reply: [String: ResumeChoice]? = await withTaskGroup(of: [String: ResumeChoice]??.self) { group in
+            group.addTask { await exchange(sent, want) }
+            group.addTask { try? await Task.sleep(for: .seconds(timeout)); return .some(nil) }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first ?? nil
+        }
+        guard let reply else { return }
+        lock.withLock {
+            for (id, choice) in sent where resumes[id] == choice { resumePending.remove(id) }   // lo que cambió mientras, va la próxima
+            for (id, theirs) in reply where (theirs.at ?? 0) > (resumes[id]?.at ?? 0) {
+                resumes[id] = theirs
+                resumePending.remove(id)
+            }
+            kv.set(Self.resumeKey, data: try? JSONEncoder().encode(resumes))
+            kv.set(Self.resumePendingKey, data: try? JSONEncoder().encode(resumePending))
         }
     }
 

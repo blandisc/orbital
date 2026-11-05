@@ -127,3 +127,31 @@ def test_continue_on_iphone_sends_the_source_and_tracks(library, monkeypatch):
                                    choice=choice)
     assert item["position"] == 600 and item["source"] == "Torrentio|abc|0"
     assert item["audio"] == {"lang": "eng", "title": ""} and item["subtitle"] == {"off": True}
+
+
+def test_continue_follows_the_last_device_you_watched_on(library):
+    """Lo que tenías en el iPhone, iPad o Mac llega a la TV con su hora: gana lo más reciente, aquí o allá."""
+    from orbital.server import ResumeIn, resume_for_device, resume_from_device
+    watch = library.watch
+    phone = ResumeIn(video_id="tt1", source="Torrentio|abc|0", at=2000,
+                     audio={"lang": "spa", "title": "Latino"}, subtitle={"off": False, "lang": "eng", "title": "Forced", "url": "file:///x"})
+    library.state.set_pref("stremio:tt1", "resume", {"video_id": "tt1", "source": "tv", "sub": {"off": True}, "at": 1000})
+    assert watch.apply_resume("tt1", resume_from_device(phone))
+    saved = watch.resume_choice("tt1", "tt1")
+    assert saved["source"] == "Torrentio|abc|0" and saved["audio"] == {"lang": "spa", "title": "Latino"}
+    assert saved["sub"] == {"off": False, "lang": "eng", "title": "Forced", "url": ""}  # solo direcciones web
+    assert not watch.apply_resume("tt1", {**resume_from_device(phone), "source": "viejo", "at": 1500})  # más viejo: no
+    back = resume_for_device(watch.resumes_for(["tt1", "tt2"])["tt1"])
+    assert back["subtitle"]["lang"] == "eng" and back["at"] == 2000 and "tt2" not in watch.resumes_for(["tt2"])
+
+
+def test_watching_on_the_tv_stamps_the_hour_even_without_changes(library, monkeypatch):
+    watch = library.watch
+    monkeypatch.setattr(watch.player, "current_subtitle", lambda: {"off": True})
+    monkeypatch.setattr(watch.player, "current_audio", lambda: None)
+    meta = {"kind": "movie", "meta_id": "tt1", "video_id": "tt1", "source_key": "k"}
+    watch._remember_choice(meta)
+    first = watch.resume_choice("tt1", "tt1")["at"]
+    library.state.set_pref("stremio:tt1", "resume", {**watch.resume_choice("tt1", "tt1"), "at": first - 120})
+    watch._remember_choice(meta)  # lo mismo, dos minutos después: la hora se renueva (lo último visto es aquí)
+    assert watch.resume_choice("tt1", "tt1")["at"] >= first

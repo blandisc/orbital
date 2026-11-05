@@ -277,6 +277,11 @@ final class AppEnvironment {
         }
         downloadContinuation.onEnded = { await liveActivity.setSuppressed(false) }
         services.titlePrefs.onPendingChoice = { [weak self] in Task { @MainActor in self?.scheduleChoiceSync() } }
+        let orbital = services.orbital
+        services.titlePrefs.exchangeResume = { changes, want in
+            guard orbital.isConfigured else { return nil }
+            return try? await orbital.syncResume(changes, want: want)
+        }
         downloadContinuation.onExpired = { if UIApplication.shared.applicationState != .active { await lanes.setForeground(false) } }
         Task {
             for await items in services.downloads.makeUpdates() {
@@ -311,6 +316,7 @@ final class AppEnvironment {
     func syncChoices() async {
         guard services.orbital.isConfigured else { return }
         await services.titlePrefs.syncChoices(with: services.orbital)
+        await services.titlePrefs.syncResume()   // con qué fuente y pistas viste cada cosa aquí: para «Continuar» en otro aparato
     }
 
     @ObservationIgnored private var choiceSync: Task<Void, Never>?

@@ -13,6 +13,7 @@ extension PlayerModel {
         let src = source.map { "\($0.cached ? "en Real-Debrid" : ($0.debrid ? "Real-Debrid aún la baja" : "directa")) · \($0.qualitySummary.joined(separator: " "))" } ?? "archivo"
         Self.note("cargar desde \(url.host ?? "archivo") en \(Int(start)) s (\(src))")
         loadStartedAt = clock(); lastLoggedState = ""
+        await resumeSync?.value
         if let request {
             // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
             let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())

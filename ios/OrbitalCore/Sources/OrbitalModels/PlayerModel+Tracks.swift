@@ -123,6 +123,24 @@ extension PlayerModel {
                             subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle), binge: source?.binge)
     }
 
+    /// Ya se sabe la duración: se va al punto que dio Trakt (una vez). El aviso de «Viendo» a Trakt sale ya con ese avance.
+    func seekToPendingResume(_ s: EngineSnapshot) async {
+        guard let fraction = pendingResumeFraction, s.duration > 0 else { return }
+        pendingResumeFraction = nil
+        let target = max(0, fraction * s.duration - pendingResumeRewind)
+        guard target > 5, abs(target - s.position) > 5 else { return }
+        if !playbackSettled { startupPosition = target }   // los 2 s de arranque se cuentan desde donde va a seguir
+        await engine.seek(to: target)
+        snapshot.position = target
+    }
+
+    /// Con qué lo dejaste en el último aparato donde lo viste (la TV, el iPad, la Mac): la misma fuente y las mismas pistas.
+    /// Se pregunta a tu Orbital al abrir y se espera antes de elegir fuente y pistas (`resumeSync`).
+    func askOtherDevices(_ request: PlayRequest) {
+        let prefs = titlePrefs, metaID = request.metaID
+        resumeSync = Task { await prefs.syncResume(want: [metaID], timeout: PlaybackRules.resumeSyncTimeout) }
+    }
+
     /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
     func rememberChoice() {
         guard let request, snapshot.position >= PlaybackRules.rememberChoiceAfter, let choice = currentChoice() else { return }

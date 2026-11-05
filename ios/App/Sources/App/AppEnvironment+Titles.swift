@@ -126,7 +126,7 @@ extension AppEnvironment {
     func play(_ item: OrbitalRemote.InboxItem) async {
         // «Seguir en el iPhone»: la fuente, el audio y los subtítulos de la TV quedan como «Continuar» de ese video, y el
         // reproductor los usa (la misma huella de fuente en los dos; lo que este archivo no traiga, de su complemento o por idioma).
-        if let choice = item.choice { services.titlePrefs.remember(metaID: item.metaID, choice: choice) }
+        if let choice = item.choice { services.titlePrefs.remember(metaID: item.metaID, choice: choice, share: false) }
         await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title,
                    episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster, at: item.position)
     }

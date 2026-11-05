@@ -2448,8 +2448,30 @@ class Watch:
             return
         choice = {"video_id": meta["video_id"], "source": meta.get("source_key"), "sub": self.player.current_subtitle(),
                   "audio": self.player.current_audio()}
-        if choice != self.state.prefs(f"stremio:{meta['meta_id']}").get("resume"):
-            self.state.set_pref(f"stremio:{meta['meta_id']}", "resume", choice)
+        saved = self.state.prefs(f"stremio:{meta['meta_id']}").get("resume") or {}
+        now = time.time()
+        # Con su hora: en «Continuar» gana lo último que viste, aquí o en el iPhone, iPad o Mac (`apply_resume`). La hora se
+        # renueva aunque no cambies nada (a lo más una vez por minuto): lo último visto aquí sigue siendo lo más reciente.
+        if choice != {k: v for k, v in saved.items() if k != "at"} or now - float(saved.get("at") or 0) >= 50:
+            self.state.set_pref(f"stremio:{meta['meta_id']}", "resume", {**choice, "at": now})
+
+    def apply_resume(self, meta_id: str, choice: dict) -> bool:
+        """Lo que tenías puesto en otro aparato (iPhone, iPad, Mac) al guardar tu avance: se queda si es más reciente que lo
+        de aquí, para que «Continuar» en la TV siga con esa fuente, ese audio y esos subtítulos. False si lo de aquí es más nuevo."""
+        saved = self.state.prefs(f"stremio:{meta_id}").get("resume") or {}
+        if float(saved.get("at") or 0) >= float(choice.get("at") or 0):
+            return False
+        self.state.set_pref(f"stremio:{meta_id}", "resume", choice)
+        return True
+
+    def resumes_for(self, meta_ids: list[str]) -> dict:
+        """«Continuar» en otro aparato: lo que recuerda la TV de cada título (fuente, audio, subtítulos y su hora)."""
+        out = {}
+        for meta_id in meta_ids:
+            saved = self.state.prefs(f"stremio:{meta_id}").get("resume")
+            if isinstance(saved, dict) and saved.get("video_id"):
+                out[meta_id] = saved
+        return out
 
     def _save_progress(self, meta: dict, position: float, duration: float, watched: float, refresh: bool) -> None:
         """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio).

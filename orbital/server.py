@@ -369,6 +369,44 @@ class ChoiceChange(BaseModel):
     base_rev: int = Field(0, ge=0)
 
 
+class ResumeTrack(BaseModel):
+    off: bool = False
+    lang: str = Field("", max_length=20)
+    title: str = Field("", max_length=200)
+    url: str = Field("", max_length=1000)
+
+
+class ResumeIn(BaseModel):
+    """Con qué viste un video en el iPhone, iPad o Mac: la huella de la fuente, el audio, los subtítulos y cuándo."""
+    video_id: str = Field(..., max_length=120)
+    source: str | None = Field(None, max_length=500)
+    audio: ResumeTrack | None = None
+    subtitle: ResumeTrack | None = None
+    at: float = Field(..., ge=0)
+
+
+class ResumeSync(BaseModel):
+    changes: dict[str, ResumeIn] = Field(default_factory=dict, max_length=100)
+    want: list[str] = Field(default_factory=list, max_length=100)
+
+
+def resume_from_device(change: ResumeIn) -> dict:
+    """En el formato de la TV (`watch._remember_choice`): `sub` y `audio` como los da el reproductor."""
+    sub = None
+    if change.subtitle is not None:
+        url = change.subtitle.url if change.subtitle.url.startswith(("http://", "https://")) else ""
+        sub = {"off": True} if change.subtitle.off else {"off": False, "lang": change.subtitle.lang, "title": change.subtitle.title, "url": url}
+    audio = {"lang": change.audio.lang, "title": change.audio.title} if change.audio and not change.audio.off else None
+    return {"video_id": change.video_id, "source": change.source or None, "sub": sub, "audio": audio, "at": min(change.at, time.time())}
+
+
+def resume_for_device(saved: dict) -> dict:
+    sub = saved.get("sub") if isinstance(saved.get("sub"), dict) else None
+    audio = saved.get("audio") if isinstance(saved.get("audio"), dict) else None
+    return {"video_id": saved.get("video_id"), "source": saved.get("source"), "audio": audio,
+            "subtitle": sub, "at": float(saved.get("at") or 0)}
+
+
 class ChoicesSync(BaseModel):
     since: int = Field(0, ge=0)
     changes: dict[str, ChoiceChange] = Field(default_factory=dict, max_length=100)
@@ -827,6 +865,17 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             changed[meta_id] = {**{k: prefs[k] for k in ("audio", "spanish", "subtitles") if isinstance(prefs.get(k), str)},
                                 "rev": prefs.get("rev") or 0}
         return {"rev": rev, "changed": changed, "rejected": rejected}
+
+    @public.post("/api/companion/resume")
+    def companion_resume(body: ResumeSync) -> dict:
+        """«Continuar» en cualquier aparato: el iPhone, iPad o Mac manda con qué fuente, audio y subtítulos vio cada video
+        (gana lo más reciente, de aquí o de allá) y recibe lo que la TV recuerda de los títulos que pide en `want`."""
+        watch = main_app.state.catalog.watch
+        for meta_id, change in body.changes.items():
+            if MEDIA_ID.match(meta_id) and MEDIA_ID.match(change.video_id):
+                watch.apply_resume(meta_id, resume_from_device(change))
+        wanted = [m for m in body.want if MEDIA_ID.match(m)]
+        return {"resume": {m: resume_for_device(v) for m, v in watch.resumes_for(wanted).items()}}
 
     @public.post("/api/companion/inbox/ack")
     def companion_inbox_ack(body: CompanionAck) -> dict:

@@ -132,6 +132,8 @@ public final class PlayerModel: ObservableModel {
     let finder: StreamFinder
     private let watch: WatchService
     let titlePrefs: TitlePreferences
+    /// Lo que recuerda tu Orbital de este título (de cualquier aparato), pedido al abrir: se espera antes de elegir fuente y pistas.
+    var resumeSync: Task<Void, Never>?
     let settings: SettingsStore
     let clock: @Sendable () -> Date
     let onCellular: @Sendable () -> Bool
@@ -353,6 +355,7 @@ public final class PlayerModel: ObservableModel {
         // Lo más reciente entre Stremio y Trakt (lo que dejaste en la TV u otro dispositivo); sin Trakt, lo de Stremio.
         let resume: Task<ResumePoint, Never>? = startAt == nil && !request.fromStart && request.startPosition == nil
             ? Task { await watch.resumePoint(metaID: request.metaID, videoID: request.videoID, kind: request.kind) } : nil
+        if startAt == nil && !request.fromStart { askOtherDevices(request) }
         if let file = request.localFile {
             var start = startAt ?? 0
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
@@ -392,6 +395,7 @@ public final class PlayerModel: ObservableModel {
                 if mine == generation { search?.choices = sourceChoices.count }
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
+                await resumeSync?.value
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
                 // Lo que pediste y ya está, antes que la de «Continuar» (la misma regla que «Ver» de la ficha, `SourcesModel.toPlay`).
                 else if failedSources.isEmpty, let ready = SourcesModel.toPlay(sourceChoices, resume: nil, family: nil), ready.requested { found = ready }
@@ -446,17 +450,6 @@ public final class PlayerModel: ObservableModel {
         guard let point = await resume?.value else { return 0 }
         pendingResumeFraction = point.fraction; pendingResumeRewind = point.rewind
         return point.seconds
-    }
-
-    /// Ya se sabe la duración: se va al punto que dio Trakt (una vez). El aviso de «Viendo» a Trakt sale ya con ese avance.
-    func seekToPendingResume(_ s: EngineSnapshot) async {
-        guard let fraction = pendingResumeFraction, s.duration > 0 else { return }
-        pendingResumeFraction = nil
-        let target = max(0, fraction * s.duration - pendingResumeRewind)
-        guard target > 5, abs(target - s.position) > 5 else { return }
-        if !playbackSettled { startupPosition = target }   // los 2 s de arranque se cuentan desde donde va a seguir
-        await engine.seek(to: target)
-        snapshot.position = target
     }
 
     /// Los mensajes de los motores pueden traer la dirección del video (con tu clave): nunca llegan a la pantalla.
