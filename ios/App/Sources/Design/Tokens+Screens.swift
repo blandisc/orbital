@@ -562,8 +562,8 @@ extension DS {
         static let holdTapWindow: TimeInterval = 0.8
         /// Cuánto se mantiene una tecla para su segunda acción (mantener «Atrás»: al inicio).
         static let holdSeconds: Double = 0.6
-        /// La barra del volumen de la TV en el control.
-        static let volumeBar: CGFloat = 6
+        /// La barra del volumen de la TV; con un video (V4-A), de 0 a 200 con el 100 a dos tercios, y el número de ancho fijo.
+        static let volumeBar: CGFloat = 6, volumeTop: CGFloat = 200, volumeNormal: CGFloat = 2.0 / 3.0, volumeMarkWidth: CGFloat = 2, volumeMarkHeight: CGFloat = 16, volumeNumberWidth: CGFloat = 44
         /// Alto del pad táctil y de cada tecla.
         static let padHeight: CGFloat = 170, keyHeight: CGFloat = 60
         /// En un teléfono bajito (SE) el pad y las teclas se encogen: «Atrás» y «Escribir en la TV» caben sin deslizar.

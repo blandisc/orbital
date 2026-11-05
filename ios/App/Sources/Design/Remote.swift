@@ -187,34 +187,41 @@ struct RemoteTextField: View {
     }
 }
 
-/// El volumen de la TV en el control: silencio, −, la barra con el nivel y +. Sin el dato de la consola, la barra se
-/// queda vacía y los botones funcionan igual.
+/// El volumen de la TV en el control: silencio, −, la barra con el nivel, el número y +. Sin el dato de la consola, la barra
+/// se queda vacía y los botones funcionan igual.
+/// Con un video abierto (`extra` no es nil) la barra es la cápsula de la TV acostada (V4-A, Fernando, 4 nov 2026): va de 0 a
+/// 200, el 100 de Windows queda a dos tercios con su rayita y, de ahí para arriba, el Extra en ámbar con la palabra EXTRA
+/// bajo el número (en minúsculas, la regla de mayúsculas del iPhone). Sin video (o con una consola de antes) es la barra de siempre, de 0 a 100.
 struct VolumeControl: View {
-    let level: Int?
-    let muted: Bool
+    let volume: OrbitalRemote.Volume?
     let down: () -> Void
     let up: () -> Void
     let mute: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var muted: Bool { volume?.muted ?? false }
+    private var extraScale: Bool { volume?.extra != nil }
+    private var inExtra: Bool { (volume?.extra ?? 100) > 100 && !muted }
+    /// Hasta dónde llega lo normal (0…1 del ancho) y cuánto ocupa el Extra encima.
+    private var normalShare: CGFloat {
+        let level = CGFloat(volume?.level ?? 0) / 100
+        return extraScale ? level * DS.Remote.volumeNormal : level
+    }
+    private var extraShare: CGFloat {
+        guard inExtra, let extra = volume?.extra else { return 0 }
+        return (1 - DS.Remote.volumeNormal) * CGFloat(extra - 100) / (DS.Remote.volumeTop - 100)
+    }
+
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(spacing: DS.Space.s2) {
             Button(action: mute) { Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
                 .accessibilityLabel(muted ? Text("Quitar silencio") : Text("Silencio"))
             // Mantener presionado repite (como los botones del iPhone).
             Button(action: down) { Image(systemName: "minus").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
                 .buttonRepeatBehavior(.enabled)
                 .accessibilityLabel(Text("Bajar volumen"))
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(DS.fill)
-                    Capsule().fill(muted ? DS.textFaint : DS.text).frame(width: geo.size.width * CGFloat(level ?? 0) / 100)
-                }
-                // La barra se desliza al nuevo nivel en vez de brincar.
-                .animation(DS.Motion.snap(reduceMotion), value: level)
-            }
-            .frame(height: DS.Remote.volumeBar)
-            .accessibilityHidden(true)
+            bar
+            number
             Button(action: up) { Image(systemName: "plus").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
                 .buttonRepeatBehavior(.enabled)
                 .accessibilityLabel(Text("Subir volumen"))
@@ -225,9 +232,44 @@ struct VolumeControl: View {
         // Como las teclas y «Dile a Orbital»: el mismo relleno, esquinas y alto (antes era una cápsula de vidrio, distinta).
         .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Remote.keyHeightFitted)
         .dsCard(translucent: true)
-        .sensoryFeedback(.selection, trigger: level)
+        .sensoryFeedback(.selection, trigger: volume?.shown)
         .accessibilityElement(children: .contain)
-        .accessibilityValue(level.map { Text("\($0) %") } ?? Text(""))
+        .accessibilityValue(volume.map { inExtra ? Text("\($0.shown) %, Extra") : Text("\($0.shown) %") } ?? Text(""))
+    }
+
+    private var bar: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            ZStack(alignment: .leading) {
+                Capsule().fill(DS.fill).frame(height: DS.Remote.volumeBar)
+                Capsule().fill(muted ? DS.textFaint : DS.text).frame(width: w * normalShare, height: DS.Remote.volumeBar)
+                // El Extra, en ámbar, sigue desde el 100 (como en la TV, encima de lo normal).
+                Capsule().fill(DS.warning).frame(width: w * extraShare, height: DS.Remote.volumeBar).offset(x: w * DS.Remote.volumeNormal)
+                if extraScale {   // la rayita del 100: hasta aquí es lo normal
+                    Capsule().fill(DS.warning.opacity(DS.Opacity.dimmed))
+                        .frame(width: DS.Remote.volumeMarkWidth, height: DS.Remote.volumeMarkHeight)
+                        .offset(x: w * DS.Remote.volumeNormal - DS.Remote.volumeMarkWidth / 2)
+                }
+            }
+            .frame(height: geo.size.height)
+            // La barra se desliza al nuevo nivel en vez de brincar.
+            .animation(DS.Motion.snap(reduceMotion), value: volume)
+        }
+        .frame(height: DS.Remote.volumeMarkHeight)
+        .accessibilityHidden(true)
+    }
+
+    /// El número de la TV («80», o «150» con «Extra» debajo en ámbar); con silencio, «—».
+    private var number: some View {
+        VStack(spacing: 0) {
+            Text(verbatim: muted ? "—" : volume.map { "\($0.shown)" } ?? "")
+                .recipe(.data, color: muted ? DS.textMuted : DS.text)
+                .contentTransition(.numericText())
+            if inExtra { Text("Extra").recipe(.badge, color: DS.warning).lineLimit(1).minimumScaleFactor(DS.Size.statScale) }
+        }
+        .frame(width: DS.Remote.volumeNumberWidth, alignment: .center)
+        .animation(DS.Motion.snap(reduceMotion), value: volume?.shown)
+        .accessibilityHidden(true)
     }
 }
 

@@ -33,6 +33,8 @@ enum Demo {
     static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") || horror }
     /// `-demo-tv-horror`: en la TV suena Insidious (con mapa de sustos de verdad) y la TV está en su reproductor.
     static var horror: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-horror") }
+    /// `-demo-volume-extra 150`: con el reproductor de la TV (`-demo-tv-horror`), el Extra en ese nivel (V4-A).
+    static var volumeExtra: Int? { value(after: "-demo-volume-extra").flatMap(Int.init) }
     /// `-demo-game`: la consola de mentira tiene un juego abierto (modo acompañante).
     static var game: Bool { ProcessInfo.processInfo.arguments.contains("-demo-game") }
 

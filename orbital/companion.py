@@ -186,6 +186,18 @@ def now_playing(catalog) -> dict | None:
     return now
 
 
+def volume_state(catalog, system: dict | None) -> dict | None:
+    """La barra de volumen del control del iPhone: el de Windows ({"level", "muted"}) y, con el reproductor abierto, su
+    «Extra» (`extra`: 100 sin Extra, hasta playback.VOLUME_BOOST_MAX) para pintarla igual que la cápsula de la TV
+    (V4-A, Fernando, 4 nov 2026). Sin reproductor no hay Extra y la llave no va: el iPhone la pinta como siempre."""
+    if system is None:
+        return None
+    running = catalog.launcher.status()
+    if running is None or running.get("id") != "media:player":
+        return system
+    return {**system, "extra": int(getattr(catalog.watch.player, "boost", 100))}
+
+
 def ui_state(catalog, shell, reported: dict) -> dict:
     """Qué pantalla tiene la TV para el control del iPhone: la que cuenta la interfaz, salvo con el reproductor al
     frente: entonces "player" (o "live", la TV en vivo) y la leyenda del reproductor (X = Audio y subtítulos…)."""
