@@ -72,19 +72,41 @@ def _kr() -> list[tuple]:
     return shapes
 
 
+def _clip(points: list[tuple[float, float]], side) -> list[tuple[float, float]]:
+    """El pedazo de un polígono que queda del lado `side(x, y) >= 0` de una recta (Sutherland–Hodgman)."""
+    out: list[tuple[float, float]] = []
+    for i, cur in enumerate(points):
+        prev = points[i - 1]
+        a, b = side(*prev), side(*cur)
+        if (a >= 0) != (b >= 0):
+            t = a / (a - b)
+            out.append((prev[0] + t * (cur[0] - prev[0]), prev[1] + t * (cur[1] - prev[1])))
+        if b >= 0:
+            out.append(cur)
+    return out
+
+
 def _esmx() -> list[tuple]:
-    """Un español que no dice si es latino o castellano (Fernando, 4 nov): partida en diagonal, España arriba a la
-    izquierda y México abajo a la derecha (sin el escudo: la diagonal lo partiría), con un filo blanco entre las dos."""
-    def cut(x: float) -> float:  # la diagonal, de la esquina de arriba a la derecha a la de abajo a la izquierda
-        return H - H * x / W
-    xs = [W * (1 - y / H) for y in (5, 15)]  # dónde la diagonal cruza las franjas de España
-    spain = [("poly", [(0, 0), (W, 0), (xs[0], 5), (0, 5)], "#AA151B"),
-             ("poly", [(0, 5), (xs[0], 5), (xs[1], 15), (0, 15)], "#F1BF00"),
-             ("poly", [(0, 15), (xs[1], 15), (0, H)], "#AA151B")]
-    mexico = [("poly", [(0, H), (10, cut(10)), (10, H)], "#006847"),
-              ("poly", [(10, cut(10)), (20, cut(20)), (20, H), (10, H)], "#FFFFFF"),
-              ("poly", [(20, cut(20)), (W, 0), (W, H), (20, H)], "#CE1126")]
-    return spain + mexico + [("poly", _band(W, 0, 0, H, .9), "#FFFFFF")]
+    """Un español que no dice si es latino o castellano (Fernando, 4 nov): las dos banderas partidas por una raya en
+    diagonal, España arriba a la izquierda y México abajo a la derecha. La raya va cargada a la izquierda (Fernando:
+    «cómete un poquito más del español») para que el escudo de México quede entero."""
+    top, bottom = 18, 4  # dónde la raya toca el borde de arriba y el de abajo
+    def mexico(x: float, y: float) -> float:  # > 0 del lado de México
+        return (x - top) * H - (bottom - top) * y
+    def spain(x: float, y: float) -> float:
+        return -mexico(x, y)
+    def rect(x: float, y: float, w: float, h: float) -> list[tuple[float, float]]:
+        return [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
+    shapes: list[tuple] = []
+    for y, h, color in ((0, 5, "#AA151B"), (5, 10, "#F1BF00"), (15, 5, "#AA151B")):
+        piece = _clip(rect(0, y, W, h), spain)
+        if piece:
+            shapes.append(("poly", piece, color))
+    for x, color in ((0, "#006847"), (10, "#FFFFFF"), (20, "#CE1126")):
+        piece = _clip(rect(x, 0, 10, H), mexico)
+        if piece:
+            shapes.append(("poly", piece, color))
+    return shapes + [("circle", 15, 10, 2.6, "#8C5A2B"), ("poly", _band(top, 0, bottom, H, .9), "#FFFFFF")]
 
 
 FLAGS: dict[str, list[tuple]] = {

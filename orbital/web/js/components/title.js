@@ -925,6 +925,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     zone = "actions";
     aboutOpen = false;
     action = 0;
+    onVersion = false; // una ficha nueva empieza en «Ver», aunque en la anterior dejaras la cápsula de la versión enfocada
     expanded = false;
     extras = null;
     rated = { ratings: null, mine: null, letterboxd: null };
