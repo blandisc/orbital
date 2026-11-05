@@ -15,6 +15,8 @@ struct TitleView: View {
     @Environment(\.dynamicTypeSize) var typeSize
     @Environment(\.colorScheme) var scheme
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// La pestaña elegida bajo el arte en el iPad y la Mac (nil: la primera que haya).
+    @State private var wideTab: WideTab?
     @Environment(\.openURL) private var openURL
     /// Lo que dice Letterboxd de la película (su promedio y sus reseñas populares); las series casi nunca están.
     @State var letterboxdInfo: LetterboxdFilmInfo?
@@ -192,7 +194,7 @@ struct TitleView: View {
                 .frame(height: viewport.height * DS.TitleAction.wideHeroShare + topInset)
                 .padding(.top, -topInset)
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                    readingSections(model, withSynopsis: false)
+                    wideSections(model)
                 }
                 .modifier(TitleEntrance())
                 .padding(.horizontal, side).padding(.top, DS.Space.s4).padding(.bottom, DS.Layout.screenBottom)
@@ -200,6 +202,37 @@ struct TitleView: View {
         }
         // El fondo de la sala, el mismo color al que baja el velo del arte: sin la línea donde terminaba el arte.
         .background(DS.backdropDeep.ignoresSafeArea())
+    }
+
+    /// Bajo el arte, como en la TV: pestañas (Episodios · Reparto · Parecidas · Detalles) y solo lo de la elegida.
+    @ViewBuilder private func wideSections(_ model: TitleModel) -> some View {
+        if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
+        if let error = model.error, !model.isLoading {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                DSNotice(verbatim: env.message(error), tone: .warn)
+                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.load() } }
+                    .dsGlassButton().accessibilityIdentifier("title-retry")
+            }
+        }
+        let tabs = WideTab.available(series: model.kind == "series", extras: model.extras)
+        let current = wideTab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs.first ?? .details
+        DSTextTabs(options: tabs.map { DSTextTabs.Option(id: $0, title: $0.title, symbol: $0.symbol) },
+                   selection: Binding(get: { current }, set: { wideTab = $0 }))
+            .accessibilityIdentifier("title-tabs")
+        switch current {
+        case .episodes: episodes(model)
+        case .cast: if let extras = model.extras { rich(extras, trailers: false, similar: false, headed: false).padding(.horizontal, -side) }
+        case .similar: if let extras = model.extras { rich(extras, trailers: false, people: false).padding(.horizontal, -side) }
+        case .details:
+            creditLine(model)
+            yourRating(model)
+            if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
+            if let info = letterboxdInfo, !info.reviews.isEmpty {
+                LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
+            }
+            if let extras = model.extras { rich(extras, people: false, similar: false).padding(.horizontal, -side) }
+            details(model)
+        }
     }
 
     /// Lo que se lee bajo las acciones: avisos, sinopsis, créditos, episodios, la ficha rica y los detalles.
@@ -588,35 +621,37 @@ struct TitleView: View {
 
     /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), la saga y
     /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
-    @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
+    /// `trailers`, `people`, `similar`: qué partes van (en el iPad cada una vive en su pestaña).
+    /// `headed: false`: sin el rótulo de la sección (la pestaña ya lo dice).
+    @ViewBuilder private func rich(_ x: TitleExtras, trailers: Bool = true, people showPeople: Bool = true, similar: Bool = true, headed: Bool = true) -> some View {
         VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
-            if let trailer = x.trailer {
+            if trailers, let trailer = x.trailer {
                 section(title: "Tráiler y extras", meta: Text("Para verla antes de verla")) {
                     VideoClipCard(clip: trailer)
                     ForEach(x.extras) { VideoClipCard(clip: $0) }
                 }
             }
             let people = x.crew + x.cast
-            if !people.isEmpty {
-                section(title: "Reparto y equipo", meta: Text("Quién sale y quién la hizo")) {
+            if showPeople, !people.isEmpty {
+                section(title: "Reparto y equipo", meta: Text("Quién sale y quién la hizo"), headed: headed) {
                     ForEach(people) { p in
                         NavigationLink(value: PersonRoute(id: p.personID, name: p.name)) { PersonFace(name: p.name, role: crewRole(p.role), photo: p.photo) }
                             .buttonStyle(.plain)
                     }
                 }
             }
-            if let saga = x.collection {
+            if similar, let saga = x.collection {
                 section(title: "La saga", meta: Text(verbatim: saga.name)) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
             }
-            if !x.recommendations.isEmpty {
+            if similar, !x.recommendations.isEmpty {
                 section(title: "Más como esto", meta: Text("Si te gusta esta")) { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
             }
         }
     }
 
-    private func section<Content: View>(title: LocalizedStringKey, meta: Text, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(title: LocalizedStringKey, meta: Text, count: Int? = nil, headed: Bool = true, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, side)
+            if headed { DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, side) }
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
@@ -659,4 +694,35 @@ struct TitleView: View {
 
     // MARK: acciones
 
+}
+
+/// Las pestañas bajo el arte de la ficha en el iPad y la Mac (FE1/FE2-B, como la TV).
+enum WideTab: Hashable {
+    case episodes, cast, similar, details
+
+    var title: Text {
+        switch self {
+        case .episodes: Text("Episodios")
+        case .cast: Text("Reparto")
+        case .similar: Text("Parecidas")
+        case .details: Text("Detalles")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .episodes: "list.and.film"
+        case .cast: "person.2"
+        case .similar: "square.stack"
+        case .details: "info.circle"
+        }
+    }
+
+    /// Solo las que tienen algo: Episodios en las series, Reparto y Parecidas si TMDB los trae; Detalles siempre.
+    static func available(series: Bool, extras: TitleExtras?) -> [WideTab] {
+        var tabs: [WideTab] = series ? [.episodes] : []
+        if let extras, !(extras.crew + extras.cast).isEmpty { tabs.append(.cast) }
+        if let extras, extras.collection != nil || !extras.recommendations.isEmpty { tabs.append(.similar) }
+        return tabs + [.details]
+    }
 }
