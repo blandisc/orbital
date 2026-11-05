@@ -62,12 +62,14 @@ struct TitleLink: View {
     var detail: Text?
     /// Cuántos renglones puede ocupar `detail` (2 con letra de accesibilidad en Buscar).
     var detailLines = 1
+    /// Otro póster si el primero no carga (Buscar: el de TMDB).
+    var fallbackPoster: String? = nil
     @Environment(\.posterCaptions) private var captions
 
     var body: some View {
         TitleNavigationLink(route: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
+                PosterCard(title: route.title, poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width, fallback: fallbackPoster)
                     .titleZoomSource(route)
                 // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
                 if captions {

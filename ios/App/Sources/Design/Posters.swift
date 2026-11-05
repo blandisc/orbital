@@ -115,11 +115,13 @@ struct PosterCard: View {
     var rank: Int?
     var progress: Double?
     var width: CGFloat = DS.Poster.railWidth
+    /// Otro póster si el primero no carga (Buscar: el de TMDB cuando metahub no tiene el suyo).
+    var fallback: String? = nil
 
     var body: some View { bodyContent.pointerHover(.lift, radius: DS.Radius.md) }   // el realce sigue la esquina del póster (D14)
     @ViewBuilder private var bodyContent: some View {
         ZStack(alignment: .topLeading) {
-            PosterView(url: poster, title: title)
+            PosterView(url: poster, title: title, fallback: fallback)
             if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }
             else if let platformRank { PlatformBadge(name: platformRank.platform, rank: platformRank.rank).padding(DS.Space.s2) }
             else if let badge { DSBadge(text: badge, symbol: badgeSymbol).padding(DS.Space.s2) }

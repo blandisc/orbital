@@ -236,7 +236,8 @@ struct BrowseView: View {
         DSPosterGrid(items: shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r, width in
             // Con letra de accesibilidad, el año y el tipo en dos renglones (en uno se cortaban).
             TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: width,
-                      detail: yearAndKind(year: r.year, kind: r.kind), detailLines: typeSize.isAccessibilitySize ? 2 : 1)
+                      detail: yearAndKind(year: r.year, kind: r.kind), detailLines: typeSize.isAccessibilitySize ? 2 : 1,
+                      fallbackPoster: r.fallbackPoster)
                 .perfTag("search.grid")
                 .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
         }

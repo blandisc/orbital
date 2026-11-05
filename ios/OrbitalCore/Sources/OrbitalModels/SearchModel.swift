@@ -6,6 +6,8 @@ public final class SearchModel: ObservableModel {
     public struct Result: Equatable, Identifiable {
         public var id: String { "\(kind):\(metaID)" }
         public var kind: String, metaID: String, title: String, originalTitle: String, poster: String?, year: String
+        /// El póster de TMDB, si metahub no tiene el suyo (uno de cada cuatro resultados salía gris, Fernando 5 nov).
+        public var fallbackPoster: String? = nil
     }
 
     // Solo se avisa si cambió de verdad (antes, cada letra mandaba cuatro avisos aunque nada cambiara).
@@ -52,9 +54,11 @@ public final class SearchModel: ObservableModel {
             // Los nombres en tu idioma, a la vez (películas y series), y solo si la búsqueda sigue siendo esta.
             async let movieNames = names(found, kind: "movie")
             async let seriesNames = names(found, kind: "series")
-            let names = await movieNames.merging(seriesNames) { a, _ in a }
+            let (movies, series) = await (movieNames, seriesNames)
+            let names = movies.names.merging(series.names) { a, _ in a }, posters = movies.posters.merging(series.posters) { a, _ in a }
             let localized = found.map { r in Result(kind: r.kind, metaID: r.metaID, title: names[r.metaID] ?? r.title, originalTitle: r.title,
-                                                    poster: r.poster, year: r.year) }
+                                                    poster: r.poster ?? posters[r.metaID], year: r.year,
+                                                    fallbackPoster: r.poster == nil ? nil : posters[r.metaID]) }
             // Solo se recuerda si contestaron todos y la traducción terminó (antes una búsqueda a medias, o vacía porque algo
             // falló, se quedaba guardada toda la sesión; cancelada por otra letra, se habrían guardado los nombres en inglés).
             if complete, !Task.isCancelled { remember(results: localized, for: key) }
@@ -159,14 +163,17 @@ public final class SearchModel: ObservableModel {
         if memoryOrder.count > Self.memoryLimit { memory[memoryOrder.removeFirst()] = nil }
     }
 
-    private func names(_ found: [SearchResult], kind: String) async -> [String: String] {
+    /// Los nombres en tu idioma y, de reserva, los pósters de TMDB (la misma consulta).
+    private func names(_ found: [SearchResult], kind: String) async -> (names: [String: String], posters: [String: String]) {
         let metas = found.filter { $0.kind == kind }.map { JSON.object(["id": .string($0.metaID), "name": .string($0.title)]) }
-        guard !metas.isEmpty else { return [:] }
-        var names: [String: String] = [:]
+        guard !metas.isEmpty else { return ([:], [:]) }
+        var names: [String: String] = [:], posters: [String: String] = [:]
         for meta in await services.localizer.catalog(kind: kind, metas: metas) {
-            if let id = meta["id"]?.string, let name = meta["name"]?.string { names[id] = name }
+            guard let id = meta["id"]?.string else { continue }
+            if let name = meta["name"]?.string { names[id] = name }
+            if let poster = meta[Localizer.posterKey]?.nonEmptyString { posters[id] = poster }
         }
-        return names
+        return (names, posters)
     }
 
     /// Recuerda lo que buscaste (solo cuando abres un resultado).
