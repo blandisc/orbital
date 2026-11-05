@@ -10,7 +10,7 @@ import UIKit
 ///
 /// `hints`: las frases del momento (`/api/voice/hints`); sin ellas no sale «Ahora». `nowTitle`: lo que se ve en la TV
 /// («Ahora, viendo The Office»). `onSay`: tocar una frase la manda (quien abre la guía la manda a la tele y la cierra); sin
-/// él (desde Ajustes) tocar solo la resalta. Mantener pulsada una frase enseña qué hace.
+/// él tocar solo la resalta (Ajustes también la manda: el aviso dice lo que contestó). Mantener pulsada una frase enseña qué hace.
 struct VoiceGuideView: View {
     let hints: [String]
     let nowTitle: String?

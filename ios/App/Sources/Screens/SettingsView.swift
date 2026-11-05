@@ -5,6 +5,16 @@ import OrbitalModels
 /// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
 /// está ahora: lo tuyo (apariencia, Un Simpson al azar, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
+    /// Una frase de «Lo que puedes decir» tocada desde Ajustes: va a la TV como si la dijeras en el control, y lo que
+    /// contesta sale de aviso (aquí no hay renglón de voz).
+    private func sayFromSettings(_ phrase: String) {
+        Task { @MainActor in
+            let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(phrase)
+            let text = outcome.speech.isEmpty ? (outcome.ok ? "Listo." : "No se pudo.") : outcome.speech
+            env.notify(text, tone: outcome.ok ? .success : .warn)
+        }
+    }
+
     @Environment(AppEnvironment.self) var env
     @State var settings: ModelObserver<SettingsModel>
     @State var session: ModelObserver<SessionModel>
@@ -197,7 +207,9 @@ struct SettingsView: View {
                                 value: orbitalValue)
                 }
                 .task { await env.services.checkTV() }   // IOS-2: «Conectada» solo si la TV contestó
-                NavigationLink { VoiceGuideView() } label: {   // la voz le da órdenes a tu Orbital
+                NavigationLink {   // la voz le da órdenes a tu Orbital; tocar una frase la manda a la TV, como en el control
+                    VoiceGuideView(hints: env.tvNow.hints, nowTitle: env.tvNow.now?.title) { phrase in sayFromSettings(phrase) }
+                } label: {
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
                 }
                 Button { orbitalSetup = .tutorial } label: {
