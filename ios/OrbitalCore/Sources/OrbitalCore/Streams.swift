@@ -498,10 +498,19 @@ public enum Streams {
         }
     }
 
+    /// Lo que pierde una versión «al instante» de Comet frente a una de Torrentio (menos que lo que pesa «al instante»).
+    static let cometDoubt = 300.0
+    static func isComet(_ src: Source) -> Bool {
+        "\(src.addon) \(URL(string: src.transportURL)?.host ?? "")".lowercased().contains("comet")
+    }
+
     /// Puntaje de una fuente (más alto = mejor). Para `.download` se prefiere 1080p/HEVC y tamaño moderado.
     public static func score(_ src: Source, prefs: Preferences, kind: String = "movie", purpose: Purpose = .watch) -> Double {
         var s = 0.0
         if src.cached { s += 1000 } else if src.debrid { s -= 400 }  // [RD+] arranca al instante; si no, Real-Debrid aún la descarga
+        // Comet, de respaldo (Fernando, 6 nov): su «⚡» a veces no es cierto y manda el aviso «Not ready yet» de ElfHosted. Va
+        // detrás de la de Torrentio al instante en tu idioma, pero antes de una que Real-Debrid aún tiene que bajar.
+        if src.cached, isComet(src) { s -= cometDoubt }
         if src.requested { s += 2500 }   // la pediste y ya está: «Ya está» y al abrirla, esa (sobre idioma y calidad)
         s += languageScore(src, prefs)
         let order = ["4K", "1080p", "720p", "480p", ""]
