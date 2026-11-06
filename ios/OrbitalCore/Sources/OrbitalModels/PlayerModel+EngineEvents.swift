@@ -31,8 +31,9 @@ extension PlayerModel {
         }
         // El aviso de Real-Debrid (una versión que aún no tiene): no es el título. Nunca cuenta como visto, terminado ni pasa
         // al siguiente episodio; se vuelve a la tuya (si la cambiaste a mano) o se prueba otra.
-        // También si ya «sonó»: el motor puede empezar antes de saber cuánto dura (antes así se colaba el aviso de ElfHosted).
-        if !hasPlayed || !playbackSettled || s.position < 30, isPlaceholder(s) {
+        // En cualquier momento, aunque ya «sonó»: el motor puede empezar antes de saber cuánto dura (así se colaba el aviso de
+        // ElfHosted, «Not ready yet», hasta el minuto). Un video de segundos nunca es el episodio.
+        if isPlaceholder(s) {
             if let source { failedSources.insert(source.index); queued.mark(source.key, at: clock()) }   // ya quedó pedida: no se vuelve a pedir
             lastNotice = .downloading
             notice = .notReadyOnRealDebrid
