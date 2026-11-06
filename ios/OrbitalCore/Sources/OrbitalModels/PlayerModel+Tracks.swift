@@ -95,7 +95,23 @@ extension PlayerModel {
             tracks.first { $0.language == saved.language && $0.title == saved.title }
                 ?? tracks.first { PlaybackRules.languageCode($0.language) != nil && PlaybackRules.languageCode($0.language) == PlaybackRules.languageCode(saved.language) && !$0.isForced }
         }
-        if let audio = choice.audio, let track = find(s.audioTracks, audio), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        // El audio, por idioma y variante (latino ≠ castellano): la TV y el iPhone nombran distinto las pistas, y «la primera en
+        // español» solía ser la de España. Si lo guardado no dice cuál español y hay varios, manda tu regla de siempre.
+        func findAudio(_ tracks: [MediaTrack], _ saved: ResumeChoice.Track) -> MediaTrack? {
+            if let exact = tracks.first(where: { $0.language == saved.language && $0.title == saved.title }) { return exact }
+            guard let want = TrackChooser.audioCode(MediaTrack(id: -1, kind: .audio, language: saved.language, title: saved.title)) else { return nil }
+            let same = tracks.filter { TrackChooser.audioCode($0) == want }
+            if !same.isEmpty { return same.first }
+            guard want == "es", tracks.filter({ TrackChooser.audioCode($0)?.hasPrefix("es") == true }).count == 1 else { return nil }
+            return tracks.first { TrackChooser.audioCode($0)?.hasPrefix("es") == true }
+        }
+        if let audio = choice.audio, let track = findAudio(s.audioTracks, audio) {
+            if track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        } else if let request {
+            let prefs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular()).prefs
+            if let track = TrackChooser.audio(s.audioTracks, language: prefs.audio, latin: prefs.spanish == "es-419", castilian: prefs.spanish == "es-ES"),
+               track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        }
         guard let sub = choice.subtitle else { return false }
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
         if sub.off { await engine.selectSubtitle(nil); return true }

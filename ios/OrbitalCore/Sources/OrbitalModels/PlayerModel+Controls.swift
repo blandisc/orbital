@@ -196,9 +196,12 @@ extension PlayerModel {
 
     /// El aviso corto que Real-Debrid manda en lugar de una versión que aún no tiene.
     func isPlaceholder(_ s: EngineSnapshot) -> Bool {
-        guard request?.localFile == nil, s.duration > 0, s.duration < Self.placeholderMaxSeconds else { return false }
+        guard request?.localFile == nil, s.duration > 0 else { return false }
         let expected = request?.meta.map { CinemetaParsing.runtimeSeconds(CinemetaParsing.describe($0).runtime) } ?? 0
-        return expected == 0 || expected >= Self.placeholderTitleMinSeconds
+        if s.duration < Self.placeholderMaxSeconds { return expected == 0 || expected >= Self.placeholderTitleMinSeconds }
+        // Los avisos de ElfHosted («Not ready yet», MEDIA_NOT_CACHED_YET) duran más de 2 min: un video de menos del 15 % de
+        // lo que dura el título tampoco es el título.
+        return expected >= Self.placeholderTitleMinSeconds && s.duration < expected * 0.15
     }
 
     /// Los idiomas de audio que solo traen otras versiones, para ofrecerlos junto a los del archivo. Sin grabaciones de cine,

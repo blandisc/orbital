@@ -132,13 +132,16 @@ public actor ParallelStream {
         guard !closed else { return }
         let chunk = config.chunkBytes
         var wanted = waiters.keys.sorted()
-        if let at = primary {
+        // Mientras el reproductor espera algo (el arranque, un salto, el final del archivo), el colchón no compite por la red.
+        if waiters.isEmpty, let at = primary {
             let first = at / chunk, last = min(lastIndex, (at + aheadBytes) / chunk)
             if first <= last { wanted += Array(first...last) }
         }
         let waited = Set(waiters.keys)
         var busy = Set(inflight.values).count
-        for index in wanted where busy < connections && !done.contains(index) && inflight[index] == nil && index <= lastIndex {
+        for index in wanted where !done.contains(index) && inflight[index] == nil && index <= lastIndex {
+            // Lo que alguien espera sale ya, aunque las conexiones estén ocupadas con el colchón; lo de adelante, en el tope.
+            guard waited.contains(index) || busy < connections else { continue }
             // Lo que alguien espera, solo (llega antes); lo de adelante, de a `runChunks` seguidos.
             var last = index
             if !waited.contains(index) {
