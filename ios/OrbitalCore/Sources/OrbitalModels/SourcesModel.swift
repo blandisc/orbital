@@ -200,6 +200,8 @@ public struct VersionOption: Identifiable, Equatable, Sendable {
     public var cloudPercent = 0
     /// Real-Debrid no la dejó bajar (FQ2-A): «Real-Debrid no lo dejó bajar», nunca la recomendada ni «por pedir».
     public var refused = false
+    /// De qué complemento viene (Torrentio, Comet u otro): el ícono chico junto a la calidad.
+    public var from: Streams.AddonKind = .other
     /// Qué tan rápido arranca, sin prometer de más.
     public var speed: SourceSpeed { cached ? .inRealDebrid : debrid ? .realDebridMustDownload : .unknown }
 }
@@ -254,7 +256,7 @@ extension SourcesModel {
                       downloadable: s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false,
                       heavy: Double(s.size) / 1e9 > limitGB, recommended: recommended, others: others,
                       otherTitle: s.tags.contains(Streams.otherTitleTag) || s.tags.contains(Streams.otherEpisodeTag) || s.otherTitle,
-                      otherEpisode: s.tags.contains(Streams.otherEpisodeTag), debrid: s.debrid, requested: s.requested, refused: s.refused)
+                      otherEpisode: s.tags.contains(Streams.otherEpisodeTag), debrid: s.debrid, requested: s.requested, refused: s.refused, from: Streams.addonKind(s))
     }
 
     /// Lo que se puede pedir y no se ve ya como chip: una por idioma y calidad (la mejor), en el orden de la recomendación,

@@ -498,11 +498,16 @@ public enum Streams {
         }
     }
 
+    /// De qué complemento viene una versión (el ícono chico de la lista, Fernando 6 nov).
+    public enum AddonKind: Sendable, Equatable { case torrentio, comet, other }
+    public static func addonKind(_ src: Source) -> AddonKind {
+        let who = "\(src.addon) \(URL(string: src.transportURL)?.host ?? "")".lowercased()
+        return who.contains("torrentio") ? .torrentio : who.contains("comet") ? .comet : .other
+    }
+
     /// Lo que pierde una versión «al instante» de Comet frente a una de Torrentio (menos que lo que pesa «al instante»).
     static let cometDoubt = 300.0
-    static func isComet(_ src: Source) -> Bool {
-        "\(src.addon) \(URL(string: src.transportURL)?.host ?? "")".lowercased().contains("comet")
-    }
+    static func isComet(_ src: Source) -> Bool { addonKind(src) == .comet }
 
     /// Puntaje de una fuente (más alto = mejor). Para `.download` se prefiere 1080p/HEVC y tamaño moderado.
     public static func score(_ src: Source, prefs: Preferences, kind: String = "movie", purpose: Purpose = .watch) -> Double {

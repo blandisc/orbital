@@ -188,6 +188,7 @@ struct AllSourcesList: View {
                 }
                 Spacer(minLength: DS.Space.s2)
                 if let marker = marker(source) { marker.recipe(.badge, color: DS.brandMoon) }
+                AddonMark(kind: Streams.addonKind(source))
             }
             languages(source).recipe(.footnote).fixedSize(horizontal: false, vertical: true)
             if let tag = AllSources.hiddenTag(source) {
@@ -330,6 +331,7 @@ struct AllSourcesList: View {
         var label = Text("\(Text(verbatim: facts(source) + ", "))\(languages(source))")
         if let speed = speedText(source) { label = Text("\(label)\(Text(verbatim: ", "))\(speed)") }
         if let marker = marker(source) { label = Text("\(label)\(Text(verbatim: ", "))\(marker)") }
+        label = Text("\(label)\(Text(verbatim: ", "))\(AddonMark.name(Streams.addonKind(source)))")
         if let tag = AllSources.hiddenTag(source) { label = Text("\(label)\(Text(verbatim: ", "))\((tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")))") }
         if source.tags.contains(Streams.otherEpisodeTag) { label = Text("\(label)\(Text(verbatim: ", "))\(Text("¿Otro episodio?"))") }
         else if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { label = Text("\(label)\(Text(verbatim: ", "))\(Text("¿Otro título?"))") }

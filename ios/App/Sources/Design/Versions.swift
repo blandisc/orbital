@@ -68,6 +68,8 @@ struct VersionChip: View {
                 HStack(spacing: DS.Space.s1) {
                     Text(verbatim: option.quality).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
                     if option.recommended { Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon) }
+                    Spacer(minLength: 0)
+                    AddonMark(kind: option.from)
                 }
                 Text(verbatim: Self.facts(option, locale: locale)).recipe(.caption).lineLimit(1)
                 // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
@@ -97,7 +99,7 @@ struct VersionChip: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option, locale: locale)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))"))
+        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option, locale: locale)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))\(Text(verbatim: ", "))\(AddonMark.name(option.from))"))
         .accessibilityIdentifier("version-\(option.quality)")
     }
 
