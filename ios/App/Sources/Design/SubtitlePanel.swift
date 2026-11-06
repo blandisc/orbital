@@ -26,8 +26,8 @@ struct SubtitleVersionRow: View {
                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
                     .font(DS.TextRecipe.secondary.font).foregroundStyle(selected ? DS.text : DS.textFaint)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: title).recipe(selected ? .label : .footnote, color: DS.text).lineLimit(2)
-                    if let detail, !detail.isEmpty { Text(verbatim: detail).recipe(.caption, color: DS.textFaint).lineLimit(1).truncationMode(.middle) }
+                    Text.flagged(title).recipe(selected ? .label : .footnote, color: DS.text).lineLimit(2)
+                    if let detail, !detail.isEmpty { Text.withFlagImages(detail).recipe(.caption, color: DS.textFaint).lineLimit(1).truncationMode(.middle) }
                     HStack(spacing: DS.Space.s1) {
                         if fromVideo { DSChip(text: "Del video") }
                         if matchesCopy { DSChip(text: "Coincide con tu copia", tone: .good) }
@@ -314,7 +314,7 @@ struct SubtitleDock: View {
                 HStack(spacing: DS.Space.s2) {
                     Text("Versión").recipe(.labelLarge, color: DS.text)
                     Spacer(minLength: DS.Space.s2)
-                    Text(verbatim: videoVersion).recipe(.footnote).lineLimit(1)
+                    Text.withFlagImages(videoVersion).recipe(.footnote).lineLimit(1)
                     if openVersion != nil { Image(systemName: "chevron.right").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted) }
                 }
                 .padding(.horizontal, DS.Space.s3)

@@ -172,6 +172,10 @@ public actor StreamFinder {
                 Streams.markOtherEpisode(&source, videoID: videoID, filename: stream["behaviorHints"]?["filename"]?.string ?? "")
                 if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión
                 if let real = checked(source.key) { source.setAudio(real) }
+                // Otro episodio de una versión que ya abriste: sus idiomas reales, solo si incluyen lo que dice el nombre (se
+                // agrega lo que faltaba; nunca se contradice el nombre).
+                else if let family = source.binge, let real = checked(TitlePreferences.familyKey(family)),
+                        source.audio.allSatisfy({ said in real.contains { $0.code == said.code } }) { source.setAudio(real) }
                 if onlyPlayable && source.playbackURL == nil { continue }
                 if let url = source.playbackURL { PlaybackHeaders.remember(source.requestHeaders, for: url) }   // M3
                 // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.

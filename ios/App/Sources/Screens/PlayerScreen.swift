@@ -279,7 +279,9 @@ struct PlayerScreen: View {
             // (dentro de los controles, o sola si están escondidos); en horizontal, abajo a la derecha sobre la barra.
             // Con el panel de subtítulos abierto, tampoco: se encimaba sobre él (sale al cerrarlo, si aún falta).
             // IOS-16: nunca sobre la pantalla de un pedido o de un error (se encimaba con «Avisarme cuando esté»).
-            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock, !model.phase.isFailed {
+            // Ni mientras carga (Fernando, 6 nov): con la ruedita los controles se ven aunque estén «escondidos» y la tarjeta salía
+            // dos veces, la de los controles y esta.
+            if let up = model.upNext, !padlock.locked, !dockState.subtitleDock, !model.phase.isFailed, model.phase != .preparing {
                 if landscape {
                     VStack { Spacer(); HStack { Spacer(); upNextCard(model, up).onGeometryChange(for: CGFloat.self) { $0.size.height } action: { upNextHeight = $0 } } }
                         .padding(.horizontal, DS.Space.s6)

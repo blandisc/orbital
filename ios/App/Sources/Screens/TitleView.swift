@@ -591,7 +591,7 @@ struct TitleView: View {
                     ForEach(rows, id: \.0) { label, value in
                         GridRow {
                             Text(LocalizedStringKey(label)).recipe(.footnote, color: DS.textFaint)
-                            Text(verbatim: value).recipe(.footnote, color: DS.text)
+                            Text.withFlagImages(value).recipe(.footnote, color: DS.text)
                         }
                     }
                 }

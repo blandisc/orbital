@@ -86,7 +86,7 @@ extension TitleView {
         guard let code = offer.instantLanguage, let source = offer.instantSource else { return nil }
         let quality = AllSources.quality(source)
         let name = [Streams.versionLanguageName(code, in: language), quality == "Otras" ? nil : quality].compactMap { $0 }.joined(separator: " · ")
-        return (Text("Ver \(LanguageFlags.flagged(name, code)), ya arranca"), { debridSheet = nil; start(observerModel, videoID: nil, source: source) })
+        return (Text("Ver \(Text.withFlagImages(LanguageFlags.flagged(name, code))), ya arranca"), { debridSheet = nil; start(observerModel, videoID: nil, source: source) })
     }
 
     /// «Pedir a la nube»: la primera vez, antes de la pregunta de iOS, una línea de para qué son los avisos (R10).

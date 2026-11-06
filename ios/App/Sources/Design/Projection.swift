@@ -30,7 +30,7 @@ struct DataLine: View {
         let shown = parts.filter { !$0.isEmpty }
         ViewThatFits(in: .horizontal) {
             ForEach(Array((1...max(1, shown.count)).reversed()), id: \.self) { count in
-                Text(verbatim: shown.prefix(count).joined(separator: " · ")).recipe(.data, color: color).lineLimit(1)
+                Text.withFlagImages(shown.prefix(count).joined(separator: " · ")).recipe(.data, color: color).lineLimit(1)
             }
         }
     }

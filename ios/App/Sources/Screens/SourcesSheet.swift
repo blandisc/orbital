@@ -104,7 +104,7 @@ struct SourcesSheet: View {
         guard let source = model.ranked.first(where: { s in instant.contains { $0.1.id == s.index } }),
               let match = instant.first(where: { $0.1.id == source.index }) else { return nil }
         let name = "\(Streams.versionLanguageName(match.0, in: ui)) · \(match.1.quality)"
-        return (Text("Ver \(LanguageFlags.flagged(name, match.0)), ya arranca"), { picked = nil; pick(source, .watch) })
+        return (Text("Ver \(Text.withFlagImages(LanguageFlags.flagged(name, match.0))), ya arranca"), { picked = nil; pick(source, .watch) })
     }
 
     var body: some View {
@@ -198,7 +198,7 @@ struct SourcesSheet: View {
                 }
                 .padding(.top, DS.Space.s2)
             } label: {
-                Text("\(Text("Otros idiomas · "))\(Text(verbatim: model.moreLanguages.map { LanguageFlags.flagged(VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui), $0.code) }.joined(separator: ", ")))")
+                Text("\(Text("Otros idiomas · "))\(Text.withFlagImages(model.moreLanguages.map { LanguageFlags.flagged(VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui), $0.code) }.joined(separator: ", ")))")
             }
             .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             .padding(DS.Space.s3)
@@ -262,7 +262,7 @@ struct VersionCard: View {
                 }
                 VersionEvidence(evidence: option.evidence, language: language, release: option.release, site: option.site)
                 if !option.alsoHas.isEmpty {
-                    (Text("\(Text("También trae: "))\(Text(verbatim: option.alsoHas.map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: uiLanguage), $0) }.joined(separator: ", ")))"))
+                    (Text("\(Text("También trae: "))\(Text.withFlagImages(option.alsoHas.map { LanguageFlags.flagged(Streams.versionLanguageName($0, in: uiLanguage), $0) }.joined(separator: ", ")))"))
                         .recipe(.footnote)
                 }
                 if option.speed == .realDebridMustDownload, let request {

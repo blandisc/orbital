@@ -5,13 +5,13 @@ import XCTest
 final class LanguageFlagsTests: XCTestCase {
     func testSpanishEnglishAndPortugueseFollowTheDesktopRules() {
         XCTAssertEqual(LanguageFlags.flag("es-419"), "🇲🇽")
-        XCTAssertEqual(LanguageFlags.flag("es"), "🇲🇽", "el español que no dice cuál: México")
+        XCTAssertEqual(LanguageFlags.flag("es"), LanguageFlags.mixedSpanish, "el español que no dice cuál: mitad y mitad")
         XCTAssertEqual(LanguageFlags.flag("es-ES"), "🇪🇸")
         XCTAssertEqual(LanguageFlags.flag("en"), "🇺🇸")
         XCTAssertEqual(LanguageFlags.flag("en-GB"), "🇬🇧")
         XCTAssertEqual(LanguageFlags.flag("pt"), "🇧🇷")
         XCTAssertEqual(LanguageFlags.flag("pt-PT"), "🇵🇹")
-        XCTAssertEqual(LanguageFlags.flag("spa"), "🇲🇽", "las pistas dicen «spa»")
+        XCTAssertEqual(LanguageFlags.flag("spa"), LanguageFlags.mixedSpanish, "las pistas dicen «spa»: no dicen cuál")
         XCTAssertEqual(LanguageFlags.flag("jpn"), "🇯🇵")
         XCTAssertNil(LanguageFlags.flag("ar"), "sin un país claro, sin bandera")
         XCTAssertNil(LanguageFlags.flag(nil))

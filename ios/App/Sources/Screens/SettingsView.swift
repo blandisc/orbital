@@ -467,7 +467,7 @@ struct RememberedTitlesView: View {
                 ForEach(rows) { row in
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text(verbatim: names[row.id] ?? row.id).recipe(.body)
-                        Text(verbatim: row.line).recipe(.footnote)
+                        Text.withFlagImages(row.line).recipe(.footnote)
                     }
                     .swipeActions { Button("Olvidar", role: .destructive) { forget(row.id) } }
                 }

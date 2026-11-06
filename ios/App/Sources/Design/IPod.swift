@@ -99,7 +99,7 @@ struct IPodScreen: View {
             Color.clear.frame(maxHeight: .infinity)   // el video
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: title).recipe(.cardTitle, color: face.lcdText).lineLimit(1)
-                if !detail.isEmpty { Text(verbatim: detail).recipe(.caption, color: face.lcdMuted).lineLimit(1) }
+                if !detail.isEmpty { Text.withFlagImages(detail).recipe(.caption, color: face.lcdMuted).lineLimit(1) }
                 IPodProgress(face: face, fraction: duration > 0 ? position / duration : 0).padding(.top, DS.Space.s1)
                 HStack {
                     Text(verbatim: Self.clock(position))

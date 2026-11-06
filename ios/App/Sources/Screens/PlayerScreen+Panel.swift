@@ -138,7 +138,7 @@ extension PlayerScreen {
                 }
                 .padding(DS.Space.gutter)
             }
-            .navigationTitle(Text(verbatim: String(format: Strings.tr("%@ · %lld versiones", language: uiLanguage), name, versions.count)))
+            .navigationTitle(Text.withFlagImages(String(format: Strings.tr("%@ · %lld versiones", language: uiLanguage), name, versions.count)))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dockState.dockVersions = false } } }
         }

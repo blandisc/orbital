@@ -72,15 +72,26 @@ extension Text {
     /// Sin bandera conocida (el árabe, un código raro), nada. Varios idiomas, varias banderas («🇺🇸🇲🇽 Inglés + latino»).
     static func flag(_ codes: [String]) -> Text {
         let flagged = LanguageFlags.flagged("", codes)
-        return flagged.isEmpty ? Text(verbatim: "") : Text(verbatim: flagged + " ").accessibilityLabel(Text(verbatim: ""))
+        return flagged.isEmpty ? Text(verbatim: "") : withFlagImages(flagged + " ").accessibilityLabel(Text(verbatim: ""))
     }
     static func flag(_ code: String?) -> Text { flag(code.map { [$0] } ?? []) }
 
     /// Un texto que ya trae sus banderas al principio («🇲🇽 Latino · 1080p»): igual a la vista, pero VoiceOver no las lee.
     static func flagged(_ string: String) -> Text {
         let rest = LanguageFlags.withoutFlags(string)
-        guard rest.count < string.count, string.hasSuffix(rest) else { return Text(verbatim: string) }
-        return Text("\(Text(verbatim: String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")))\(Text(verbatim: rest))")
+        guard rest.count < string.count, string.hasSuffix(rest) else { return withFlagImages(string) }
+        return Text("\(withFlagImages(String(string.dropLast(rest.count))).accessibilityLabel(Text(verbatim: "")))\(Text(verbatim: rest))")
+    }
+
+    /// El español que no dice cuál (`LanguageFlags.mixedSpanish`) se dibuja con la bandera mitad España, mitad México.
+    static func withFlagImages(_ string: String) -> Text {
+        let parts = string.components(separatedBy: LanguageFlags.mixedSpanish)
+        guard parts.count > 1 else { return Text(verbatim: string) }
+        var text = Text(verbatim: parts[0])
+        for part in parts.dropFirst() {
+            text = Text("\(text)\(Text(Image("flag-esmx")).baselineOffset(DS.Flag.baseline))\(Text(verbatim: part))")
+        }
+        return text
     }
 }
 

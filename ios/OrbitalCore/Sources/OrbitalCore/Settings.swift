@@ -327,6 +327,8 @@ public final class TitlePreferences: @unchecked Sendable {
         sync = kv.data(Self.syncKey).flatMap { try? JSONDecoder().decode(SyncState.self, from: $0) } ?? SyncState()
     }
 
+    public static func familyKey(_ family: String) -> String { "family:" + family }
+
     /// El audio comprobado de una versión, si ya la viste.
     public func checkedAudio(_ key: String) -> [AudioLanguage]? { lock.withLock { checked[key] } }
 
@@ -339,8 +341,11 @@ public final class TitlePreferences: @unchecked Sendable {
         return rememberChecked(key: key, codes: codes)
     }
 
-    /// Lo mismo con los idiomas ya resueltos («es-419» si el nombre lo decía y la pista solo dice «spa»).
-    @discardableResult public func rememberChecked(key: String, codes: [String]) -> Bool {
+    /// Lo mismo con los idiomas ya resueltos («es-419» si el nombre lo decía y la pista solo dice «spa»). Con `family` (el
+    /// `bingeGroup`: la misma versión en cada episodio), también para los demás episodios de esa versión (Fernando, 6 nov:
+    /// decía un idioma y al abrirla traía más).
+    @discardableResult public func rememberChecked(key: String, codes: [String], family: String? = nil) -> Bool {
+        if let family, !family.isEmpty { rememberChecked(key: Self.familyKey(family), codes: codes) }
         guard !codes.isEmpty, !key.isEmpty else { return false }
         let value = codes.map { AudioLanguage($0, .checked) }
         return lock.withLock {
