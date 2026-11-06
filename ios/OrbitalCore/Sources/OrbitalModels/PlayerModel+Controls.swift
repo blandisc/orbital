@@ -21,7 +21,10 @@ extension PlayerModel {
             // Y si no trae ninguno de esos, «Tus idiomas» en su orden (N4-A): «original» es el idioma original de esta versión.
             let order = langs.prefs.order.compactMap { $0 == "original" ? source?.originalLanguage : $0 }
             var audio: [String] = []
-            for code in [choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap({ $0 }) + order
+            // Lo de «Continuar» con su variante («spa» + «Latino» → «es-419»); un español que no dice cuál, el de Ajustes.
+            let resumed = choice?.audio.flatMap { TrackChooser.audioCode(MediaTrack(id: -1, kind: .audio, language: $0.language, title: $0.title)) }
+                .map { $0 == "es" && !langs.prefs.spanish.isEmpty ? langs.prefs.spanish : $0 }
+            for code in [resumed ?? choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap({ $0 }) + order
             where !code.isEmpty && !audio.contains(code) { audio.append(code) }
             let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)

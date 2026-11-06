@@ -78,6 +78,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             proxied = local
             do {
                 try await engine.load(url: local, startPosition: startAt, options: options)
+                await pickSpanishVariant()
                 engine.play()
                 return
             } catch {
@@ -86,7 +87,22 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             }
         }
         try await engine.load(url: url, startPosition: startAt, options: options)
+        await pickSpanishVariant()
         engine.play()
+    }
+
+    /// El motor elige el audio solo por el idioma («spa»): con «Castellano» y «Latino» se quedaba con el primero y la app lo
+    /// cambiaba segundos después (Fernando, 6 nov: «primero castellano y luego latino»). Antes del primer cuadro, la variante
+    /// que pediste, por el nombre de la pista.
+    private func pickSpanishVariant() async {
+        guard let want = preferredAudio.first(where: { PlaybackRules.languageCode($0) == "es" || $0.lowercased().hasPrefix("es") }),
+              want == "es-419" || want == "es-ES" else { return }
+        let tracks = engine.audioTracks.map { MediaTrack(id: $0.id, kind: .audio, language: $0.language, title: $0.name) }
+        let current = tracks.first { $0.id == engine.activeAudioTrackIndex }
+        guard current.flatMap(TrackChooser.audioCode) != want, current.map({ TrackChooser.audioCode($0)?.hasPrefix("es") ?? true }) ?? true,
+              let better = tracks.first(where: { TrackChooser.audioCode($0) == want }) else { return }
+        PlayerModel.note("audio: \(want) por su nombre, antes de empezar")
+        engine.selectAudioTrack(index: better.id)
     }
 
     /// Lo que se está sirviendo por el intermediario (se suelta al cambiar de video o detener).
