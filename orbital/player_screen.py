@@ -1310,6 +1310,10 @@ class PlayerScreen(SubtitleTrial):
                   "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
         if series:
             legend |= {"pageleft": "Episodio anterior", "pageright": "Episodio siguiente"}
+        # Con un panel abierto (episodios, versión, pausa), B lo cierra primero: el iPhone dice «Atrás», no «Salir»
+        # (Fernando, 6 nov: «que sea atrás hasta que estés en la última pantalla de afuera»).
+        if self.menu is not None:
+            legend["back"] = "Atrás"
         return legend
 
     def phone_tracks(self) -> dict:

@@ -15,8 +15,11 @@ public struct VolumeSteps: Sendable {
         case onlyVideos
     }
 
-    /// Dos toques más juntos que esto son el botón mantenido (la repetición de iOS va cada ~0,1 s).
-    public static let holdGap: TimeInterval = 0.35
+    /// Dos toques más juntos que esto son el botón mantenido (la repetición de iOS va cada ~0,1 s). Antes 0,35 s: tocar rápido
+    /// contaba como mantener y el freno del 100 no dejaba pasar (Fernando, 6 nov: «se traba cuando le das rápido»).
+    public static let holdGap: TimeInterval = 0.15
+    /// La repetición del botón mantenido: de aquí para abajo, pasos dobles.
+    public static let repeatGap: TimeInterval = 0.15, repeatsBeforeFast = 3
 
     private var lastPress = Date.distantPast, braked = false
 

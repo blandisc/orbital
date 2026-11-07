@@ -322,6 +322,12 @@ public final class TVNowModel: ObservableModel {
     /// esperando su turno). Mientras cambias, y un momento después, el sondeo no regresa la barra al volumen de antes (la TV
     /// todavía no se enteraba y la barra brincaba hacia atrás y adelante).
     public func changeVolume(by delta: Int) async {
+        // Con el botón mantenido un rato (la repetición de iOS, cada ~0,1 s, ya van 3) sube de 10 en 10: más rápido (Fernando,
+        // 6 nov). Tres toques tuyos seguidos siguen siendo +15.
+        let now = Date()
+        volumeStreak = now.timeIntervalSince(lastVolumePress) < VolumeSteps.repeatGap ? volumeStreak + 1 : 0
+        lastVolumePress = now
+        let delta = volumeStreak >= VolumeSteps.repeatsBeforeFast ? delta * 2 : delta
         let (outcome, shown) = volumeSteps.press(delta, on: volume)
         switch outcome {
         case .hold: return
@@ -359,7 +365,7 @@ public final class TVNowModel: ObservableModel {
     }
 
     /// Lo que falta mandar del volumen, si ya va una orden, y hasta cuándo el sondeo no toca la barra.
-    private var pendingVolume = 0, sendingVolume = false
+    private var pendingVolume = 0, sendingVolume = false, lastVolumePress = Date.distantPast, volumeStreak = 0
     private var volumeSteps = VolumeSteps()
     static let extraHintStays: Double = 3
     private var volumeHeldUntil = Date.distantPast
