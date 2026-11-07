@@ -59,7 +59,11 @@ extension PlayerModel {
         // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
         // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
         if !picked, !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
-        let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
+        var langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
+        // Lo seguías viendo en otro idioma (inglés, por ejemplo): ese es tu idioma para este título, no se avisa «no está en
+        // tu idioma» (Fernando, 6 nov).
+        if !request.fromStart, let last = PlaybackRules.languageCode(titlePrefs.lastChoice(metaID: request.metaID)?.audio?.language),
+           !last.isEmpty { langs.prefs.audio = last }
         let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: langs.prefs.spanish == "es-419", castilian: langs.prefs.spanish == "es-ES")
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
         // (Si la elegiste tú en «Elegir versión», ya sabías qué idioma trae: no se avisa.)

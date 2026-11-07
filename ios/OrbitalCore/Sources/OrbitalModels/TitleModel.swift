@@ -234,6 +234,11 @@ public final class TitleModel: ObservableModel {
             let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
             let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
             recommendedSource = SourcesModel.toPlay(found, resume: resume, family: family)
+            // La estabas viendo en otro idioma (inglés): con ese se dice qué va a sonar y si te queda, no con el de Ajustes
+            // (Fernando, 6 nov: «ya la veía en inglés y me dijo que no estaba en mi idioma»).
+            var prefs = prefs
+            if let heard = PlaybackRules.languageCode(services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.audio?.language),
+               !heard.isEmpty { prefs.audio = heard }
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
             if recommendedSource?.instant == true, let url = recommendedSource?.playbackURL { StreamWarmup.warm(url) }   // ST5
             poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }

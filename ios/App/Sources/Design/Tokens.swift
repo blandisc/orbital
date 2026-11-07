@@ -454,6 +454,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let button: CGFloat = 30
         /// «Viendo en la TV»: el ancho de cada botón (−10 s, pausa, +10 s).
         static let tvKey: CGFloat = 64
+        /// «Viendo en la TV» en la pantalla bloqueada: el póster a todo lo alto de la actividad (2:3, 96 pt de alto).
+        static let tvPoster: CGFloat = 64
         /// «Los Simpson en la tele»: el ancho de la tele en el mediano, su proporción (con la antena), cuánto del ancho es pantalla,
         /// el marco y la esquina del mueble (fracciones del ancho) y la antena (alto, fracción del ancho; abertura en grados).
         static let simpsonsTV: CGFloat = 150, simpsonsTVAspect: CGFloat = 1.2, simpsonsScreenShare: CGFloat = 0.66

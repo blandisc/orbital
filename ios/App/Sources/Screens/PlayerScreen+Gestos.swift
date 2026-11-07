@@ -333,7 +333,8 @@ extension PlayerScreen {
     /// ×2 como TikTok: mantener el dedo lo pone mientras dure. Hacia abajo se fija; hacia arriba vuelve a la velocidad previa.
     func holdFastForward(_ model: PlayerModel) {
         if movingVideo { cancelVideoMove() }
-        guard drag.dragAxis == .undecided else { return }
+        // Mientras carga (al abrir, al saltar o cargando de nuevo) no hay ×2 (Fernando, 6 nov): no hay qué adelantar.
+        guard drag.dragAxis == .undecided, model.phase == .playing, model.snapshot.state == .playing || model.snapshot.state == .paused else { return }
         drag.fastForwardOwnsTouch = true
         drag.fastForwardHolding = true
         drag.fastForwardLockedAtStart = drag.fastForwardLocked
