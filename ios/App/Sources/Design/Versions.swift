@@ -51,6 +51,41 @@ struct VersionLanguageRow: View {
     }
 }
 
+/// «Elegir versión» mientras se buscan (Fernando, 6 nov: «el parrafito sin info»): dos filas con la forma de las de verdad (el
+/// idioma y sus calidades) en gris, para que al llegar nada brinque. VoiceOver dice «Buscando versiones».
+struct VersionsSkeleton: View {
+    var body: some View {
+        VStack(spacing: DS.Space.s2) {
+            ForEach(0..<2, id: \.self) { row in
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: row == 0 ? "🇲🇽 Latino" : "🇺🇸 Inglés").recipe(.cardTitle, color: DS.text)
+                        Text(verbatim: "Tu idioma").recipe(.footnote)
+                    }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Version.chipMinimum), spacing: DS.Space.s2)], alignment: .leading, spacing: DS.Space.s2) {
+                        ForEach(0..<(row == 0 ? 2 : 1), id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                                Text(verbatim: "1080p").font(DS.TextRecipe.cardTitle.font)
+                                Text(verbatim: "2.9 GB · HDR").recipe(.caption)
+                                Text(verbatim: "Al instante").recipe(.caption)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(DS.Space.s2)
+                            .dsCard(translucent: true)
+                        }
+                    }
+                }
+                .padding(DS.Space.s3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .dsCard(translucent: true)
+            }
+        }
+        .redacted(reason: .placeholder)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Buscando versiones"))
+    }
+}
+
 /// Una calidad de un idioma: «1080p», su tamaño y lo que la distingue, y si arranca al instante. La recomendada va marcada.
 struct VersionChip: View {
     let option: VersionOption

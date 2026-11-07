@@ -134,7 +134,7 @@ extension TitleView {
             return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }
         if model.continueVideoID == nil {
-            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: Text("Buscando versión…"), play: go)
+            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, versionPending: true, play: go)
         }
         // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
         if let debrid = debridContinueAction(model) { return debrid }
@@ -151,9 +151,11 @@ extension TitleView {
         let spoken = model.recommendedSource.map { [languageName].compactMap { $0 } + $0.qualitySummary } ?? []
         let cause = model.unavailableCause.map { Text(verbatim: $0.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }) }
         let version: Text = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
-            : quality.isEmpty ? Text("Buscando versión…") : Text.withFlagImages(quality.joined(separator: " · "))
+            : Text.withFlagImages(quality.joined(separator: " · "))
+        let pending = model.sourceCheck != .none && model.sourceCheck != .offline && quality.isEmpty
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
-        return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: version,
+        return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: pending ? nil : version,
+                              versionPending: pending,
                               versionLabel: spoken.isEmpty ? nil : Text("Se va a ver en: \(spoken.joined(separator: ", "))"),
                               play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model),
                               why: model.poorFit.map(poorFitReason), tint: artAccent)

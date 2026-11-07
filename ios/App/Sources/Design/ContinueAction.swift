@@ -17,6 +17,8 @@ struct ContinueAction: View {
     var left: Text?
     /// «🇲🇽 Latino · 1080p», «Buscando versión…»; nil: ese renglón no va.
     var version: Text?
+    /// Aún buscando versión: el renglón con su forma en gris (esqueleto), no «Buscando versión…» en letras.
+    var versionPending = false
     /// Lo que lee VoiceOver en vez de `version` (sin las banderas).
     var versionLabel: Text?
     let play: () -> Void
@@ -43,7 +45,16 @@ struct ContinueAction: View {
                 .accessibilityIdentifier("title-play")
                 .coachAnchor("title-play")   // F3: el aviso con foco de la ficha señala este botón
             if let progress { DSProgress(fraction: progress).padding(.top, DS.Space.s1) }
-            if left != nil || version != nil || restart != nil || aside != nil {
+            if versionPending {
+                // «quedan…» y «Desde el principio» como siempre; solo la versión, en gris con su forma.
+                HStack(spacing: DS.Space.s3) {
+                    status(leftText, nil)
+                    Text(verbatim: "🇲🇽 · 1080p · CC").recipe(.footnote).redacted(reason: .placeholder)
+                        .accessibilityLabel(Text("Buscando versión"))
+                    if restart == nil && aside == nil { Spacer(minLength: 0) }
+                    restartRow
+                }
+            } else if left != nil || version != nil || restart != nil || aside != nil {
                 // Si no cabe todo en un renglón (versión larga, letra grande), «quedan…» y «Desde el principio» se quedan juntos
                 // (son el mismo asunto: el avance) y la versión baja sola.
                 ViewThatFits(in: .horizontal) {

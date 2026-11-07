@@ -129,7 +129,7 @@ struct SourcesSheet: View {
             }
             ScrollView {
                 VStack(spacing: DS.Space.s2) {   // ds-exception: renglones de la lista de versiones, no secciones de pantalla
-                    if model.isLoading { DSLoadingState() }
+                    if model.isLoading { VersionsSkeleton() }   // la forma de lo que viene, no una ruedita sola
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     if showsAll {
                         if !model.ranked.isEmpty {
