@@ -240,7 +240,7 @@ public final class TitleModel: ObservableModel {
             if let heard = PlaybackRules.languageCode(services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.audio?.language),
                !heard.isEmpty { prefs.audio = heard }
             recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
-            if recommendedSource?.instant == true, let url = recommendedSource?.playbackURL { StreamWarmup.warm(url) }   // ST5
+            if let ready = recommendedSource, ready.instant, let url = ready.playbackURL { StreamWarmup.warm(url, parallel: ready.resolution == "4K") }   // ST5
             poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }
             sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
             // Lo que falta se pide (R4): si la recomendada no arranca al instante (o no hay ninguna), qué torrent existe.

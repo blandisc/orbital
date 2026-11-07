@@ -72,13 +72,24 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         // ST2: el colchón del motor, 2 min con Wi-Fi y ~30 s con datos (segmentos de ~4 s; antes 10, ~40 s).
         let cellular = Connectivity.shared.isCellular
         options.forwardBufferSegments = cellular ? 8 : 30
+        // Arranque rápido (6 nov): cada segmento de video se entrega mientras se arma (AVPlayer empieza con el primer medio
+        // segundo, no con el segmento entero; medido con un archivo de cuadros clave cada 10 s: de 7.4 a 5.4 s hasta que
+        // suena) y la revisión inicial del archivo tiene tope (20 MB / 10 s en vez de 50 MB / 60 s: un MKV con subtítulos
+        // PGS la hace leer hasta el tope antes del primer cuadro, ~3 s de más a 15.8 MB/s, según el propio motor).
+        options.progressiveSegmentDelivery = true
+        options.probesize = 20 << 20
+        options.maxAnalyzeDuration = 10_000_000
         releaseProxy()
+        // La variante de español que pediste, desde el primer cuadro si ya se sabe en qué pista viene (`AudioVariantMemory`).
+        let variant = wantedVariant, keys = [url.absoluteString, titleKey]
+        let guess = variant.flatMap { AudioVariantMemory.shared.index(variant: $0, keys: keys) }.map(Int32.init)
+        loadedKey = url.absoluteString
         // ST6: el video por el intermediario local, con varias conexiones; si no arranca o el motor no lo abre, directo.
         if let local = parallelURL(for: url, headers: options.httpHeaders, cellular: cellular) {
             proxied = local
             do {
-                try await engine.load(url: local, startPosition: startAt, options: options)
-                await pickSpanishVariant()
+                try await engine.load(url: local, startPosition: startAt, options: options, audioSourceStreamIndex: guess)
+                pickSpanishVariant(variant, guessed: guess != nil, keys: keys)
                 engine.play()
                 return
             } catch {
@@ -86,23 +97,39 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
                 PlayerModel.note("varias conexiones no abrió (\(error)): directo")
             }
         }
-        try await engine.load(url: url, startPosition: startAt, options: options)
-        await pickSpanishVariant()
+        // Lo que se calentó desde la ficha (los primeros 8 MB y la dirección final): se espera a que termine en vez de pedirlo
+        // otra vez a la par (dos conexiones al mismo archivo: Real-Debrid forma la segunda).
+        await EnginePrewarm.settle(url)
+        try await engine.load(url: url, startPosition: startAt, options: options, audioSourceStreamIndex: guess)
+        pickSpanishVariant(variant, guessed: guess != nil, keys: keys)
         engine.play()
+    }
+
+    /// La variante de español que pediste («es-419» o «es-ES»), si pediste una.
+    private var wantedVariant: String? {
+        guard let want = preferredAudio.first(where: { PlaybackRules.languageCode($0) == "es" || $0.lowercased().hasPrefix("es") }),
+              want == "es-419" || want == "es-ES" else { return nil }
+        return want
     }
 
     /// El motor elige el audio solo por el idioma («spa»): con «Castellano» y «Latino» se quedaba con el primero y la app lo
     /// cambiaba segundos después (Fernando, 6 nov: «primero castellano y luego latino»). Antes del primer cuadro, la variante
-    /// que pediste, por el nombre de la pista.
-    private func pickSpanishVariant() async {
-        guard let want = preferredAudio.first(where: { PlaybackRules.languageCode($0) == "es" || $0.lowercased().hasPrefix("es") }),
-              want == "es-419" || want == "es-ES" else { return }
+    /// que pediste, por el nombre de la pista. Cambiarla aquí es volver a abrir el archivo (medido con un origen como
+    /// Real-Debrid: +2.4 s), así que se recuerda en qué pista venía y la próxima vez se pide desde el principio. Si lo
+    /// recordado no era (otro orden de pistas), se corrige como antes.
+    private func pickSpanishVariant(_ want: String?, guessed: Bool, keys: [String]) {
+        guard let want else { return }
         let tracks = engine.audioTracks.map { MediaTrack(id: $0.id, kind: .audio, language: $0.language, title: $0.name) }
         let current = tracks.first { $0.id == engine.activeAudioTrackIndex }
-        guard current.flatMap(TrackChooser.audioCode) != want, current.map({ TrackChooser.audioCode($0)?.hasPrefix("es") ?? true }) ?? true,
-              let better = tracks.first(where: { TrackChooser.audioCode($0) == want }) else { return }
-        PlayerModel.note("audio: \(want) por su nombre, antes de empezar")
-        engine.selectAudioTrack(index: better.id)
+        if let current, TrackChooser.audioCode(current) == want { AudioVariantMemory.shared.remember(current.id, variant: want, keys: keys); return }
+        let spanish = current.map { TrackChooser.audioCode($0)?.hasPrefix("es") ?? true } ?? true
+        if spanish || guessed, let better = tracks.first(where: { TrackChooser.audioCode($0) == want }) {
+            PlayerModel.note("audio: \(want) por su nombre, antes de empezar")
+            AudioVariantMemory.shared.remember(better.id, variant: want, keys: keys)
+            engine.selectAudioTrack(index: better.id)
+        } else if guessed, !spanish, let any = tracks.first(where: { TrackChooser.audioCode($0)?.hasPrefix("es") == true }) {
+            engine.selectAudioTrack(index: any.id)   // lo recordado cayó en otro idioma y este archivo no trae la variante
+        }
     }
 
     /// Lo que se está sirviendo por el intermediario (se suelta al cambiar de video o detener).
@@ -121,6 +148,9 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     }
 
     private var preferredAudio: [String] = [], preferredSubtitles: [String] = [], declaredExternal: [URL] = []
+    /// El título que suena y el enlace abierto (para recordar en qué pista viene cada variante de español).
+    private var titleKey = "", loadedKey = ""
+    func prepare(titleKey: String) async { self.titleKey = titleKey }
 
     func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {
         preferredAudio = audioLanguages; preferredSubtitles = subtitleLanguages; declaredExternal = externalSubtitles
@@ -234,7 +264,16 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func seek(to seconds: Double) async { await engine.seek(to: seconds) }
     func stop() async { engine.stop(); releaseProxy(); hub.send(EngineSnapshot(state: .idle)) }
     // Los ids de pista son los de AetherEngine (`TrackInfo.id`), no la posición en la lista.
-    func selectAudio(_ id: Int?) async { if let id { engine.selectAudioTrack(index: id) } }
+    func selectAudio(_ id: Int?) async {
+        guard let id else { return }
+        // La elegiste tú: si es una variante de español, la próxima vez se abre ya en ella.
+        if let track = engine.audioTracks.first(where: { $0.id == id }),
+           let code = TrackChooser.audioCode(MediaTrack(id: id, kind: .audio, language: track.language, title: track.name)),
+           code == "es-419" || code == "es-ES" {
+            AudioVariantMemory.shared.remember(id, variant: code, keys: [loadedKey, titleKey])
+        }
+        engine.selectAudioTrack(index: id)
+    }
     func selectSubtitle(_ id: Int?) async { if let id { engine.selectSubtitleTrack(index: id) } else { engine.clearSubtitle() } }
     /// Un subtítulo sumado a media reproducción: el motor lo dibuja encima al instante. Antes se rearmaba la sesión en cada
     /// uno (para que también saliera en la ventana de PiP) y probar varios trababa y reiniciaba el video; ahora se rearma una
@@ -441,6 +480,41 @@ final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlayb
         completionHandler()
     }
 }
+
+/// ST5 con el motor (6 nov): al abrir la ficha, AetherEngine baja los primeros 8 MB del video y resuelve la redirección de
+/// Torrentio a Real-Debrid; el «Ver» los toma (`load` del mismo enlace) y arranca sin esos saludos (medido con un origen como
+/// Real-Debrid: de 5.2 a 2.8 s hasta que suena). Con datos, el saludo de un byte (no gastar 8 MB por cada ficha que abres).
+enum EnginePrewarm {
+    @MainActor private static var running: [String: Task<Void, Never>] = [:]
+    /// Lo que se espera a que termine lo que va en camino antes de abrir el video; más que eso, se cancela y se abre directo.
+    static let settleSeconds: Double = 3
+
+    static func install() {
+        StreamWarmup.engineWarm = { url, headers in
+            Task { @MainActor in
+                guard !Connectivity.shared.isCellular else { return }
+                if running.count > 8 { running.values.forEach { $0.cancel() }; running = [:] }
+                let key = url.absoluteString
+                running[key] = Task.detached(priority: .utility) {
+                    let report = await AetherEngine.prewarm(url: url, httpHeaders: headers)
+                    await MainActor.run {
+                        running[key] = nil
+                        if let why = report.declined { PlayerModel.note("calentar desde la ficha no pudo: \(why.prefix(80))") }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Antes de abrir `url`: si se está calentando, se espera (hasta `settleSeconds`) a que termine.
+    @MainActor static func settle(_ url: URL) async {
+        let key = url.absoluteString
+        guard running[key] != nil else { return }
+        let deadline = Date().addingTimeInterval(settleSeconds)
+        while running[key] != nil, Date() < deadline { try? await Task.sleep(nanoseconds: PlayerTiming.prewarmPoll) }
+        if let late = running.removeValue(forKey: key) { late.cancel() }
+    }
+}
 #endif
 
 /// Plazos del motor de video (fuera de la vista: el motor no importa el sistema de diseño).
@@ -453,4 +527,6 @@ enum PlayerTiming {
     /// Leer el cuadro de AVPlayer: cuántas veces y cada cuánto (en pausa sale a la primera; sonando, en unos 300 ms).
     static let stillAttempts = 60
     static let stillRetry: UInt64 = 8_000_000
+    /// Al dar «Ver» con el principio del video aún bajando desde la ficha: cada cuánto se revisa si ya terminó.
+    static let prewarmPoll: UInt64 = 50_000_000
 }

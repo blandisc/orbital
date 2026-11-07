@@ -214,12 +214,19 @@ public enum ParallelPlayback {
 /// ST5 (Fernando, 5 nov): al abrir la ficha, la versión que va a sonar se le pide a Real-Debrid (un solo byte): Torrentio
 /// resuelve el enlace y abre la conexión con su servidor, que se queda abierta en la misma sesión con que luego lee el
 /// reproductor. Al dar «Ver» ya no se espera ese saludo. Una vez por enlace cada 10 min; nunca baja el video.
+///
+/// Arranque rápido (6 nov): si la app pone `engineWarm`, el motor calienta el video él mismo (AetherEngine guarda los
+/// primeros 8 MB y la dirección final de Real-Debrid tras Torrentio, y el «Ver» los usa: medido con un origen como
+/// Real-Debrid, de 5.2 a 2.8 s hasta que suena). El saludo de un byte queda para los 4K (van por el intermediario local,
+/// que no aprovecha lo del motor) y cuando la app no lo pone.
 public enum StreamWarmup {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var warmed: [String: Date] = [:]
+    /// Calentar con el motor (dirección, datos extra que pide el enlace). Lo pone la app al arrancar.
+    nonisolated(unsafe) public static var engineWarm: (@Sendable (URL, [String: String]) -> Void)?
 
     @discardableResult
-    public static func warm(_ url: URL, session: URLSession = ParallelStream.session, now: Date = Date()) -> Bool {
+    public static func warm(_ url: URL, parallel: Bool = false, session: URLSession = ParallelStream.session, now: Date = Date()) -> Bool {
         guard url.scheme == "https" || url.scheme == "http" else { return false }
         let fresh: Bool = lock.withLock {
             if let at = warmed[url.absoluteString], now.timeIntervalSince(at) < 600 { return false }
@@ -228,10 +235,39 @@ public enum StreamWarmup {
             return true
         }
         guard fresh else { return false }
+        if !parallel, let engineWarm = lock.withLock({ Self.engineWarm }) { engineWarm(url, PlaybackHeaders.headers(for: url)); return true }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         for (k, v) in PlaybackHeaders.headers(for: url) { request.setValue(v, forHTTPHeaderField: k) }
         request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
         session.dataTask(with: request).resume()
         return true
+    }
+}
+
+/// En qué pista del archivo está cada variante del español («es-419», «es-ES») de un título (Fernando, 6 nov: «primero
+/// castellano y luego latino»). El motor elige el audio solo por idioma («spa»); cambiarlo después de abrir es volver a
+/// abrir el archivo (medido con un origen como Real-Debrid: +2.4 s). Se recuerda por enlace y por título (los episodios de
+/// una serie suelen traer las pistas en el mismo orden) y se pide desde el primer cuadro; el motor revisa que la pista
+/// exista y la app, que sea la variante (si no, la cambia como antes).
+public final class AudioVariantMemory: @unchecked Sendable {
+    public static let shared = AudioVariantMemory(defaults: .standard)
+    static let key = "orbital.audio-variant-tracks", most = 400
+    private let defaults: UserDefaults
+    private let lock = NSLock()
+    public init(defaults: UserDefaults) { self.defaults = defaults }
+
+    public func remember(_ index: Int, variant: String, keys: [String]) {
+        lock.withLock {
+            var all = defaults.dictionary(forKey: Self.key) as? [String: Int] ?? [:]
+            if all.count > Self.most { all = [:] }
+            for key in keys where !key.isEmpty { all["\(key)|\(variant)"] = index }
+            defaults.set(all, forKey: Self.key)
+        }
+    }
+
+    /// La primera de `keys` que se recuerde (el enlace antes que el título).
+    public func index(variant: String, keys: [String]) -> Int? {
+        let all = lock.withLock { defaults.dictionary(forKey: Self.key) as? [String: Int] ?? [:] }
+        return keys.lazy.compactMap { all["\($0)|\(variant)"] }.first
     }
 }

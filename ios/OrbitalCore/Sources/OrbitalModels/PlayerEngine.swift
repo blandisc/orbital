@@ -64,6 +64,8 @@ public protocol PlayerEngine: AnyObject, Sendable {
     /// primer cuadro) y los subtítulos externos que ya se tienen (una descarga), declarados al cargar para que también salgan
     /// en la ventana de PiP.
     func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async
+    /// El título que va a sonar (el motor recuerda por título en qué pista viene cada variante de español).
+    func prepare(titleKey: String) async
     var snapshots: AsyncStream<EngineSnapshot> { get }
     /// Al volver de segundo plano: rearma lo que el sistema le quitó al video (el motor suelta el decodificador y la conexión
     /// al irse a segundo plano en pausa) en el mismo punto, y sigue sonando si `resume`. `false`: no pudo (la fuente ya no
@@ -75,4 +77,5 @@ public extension PlayerEngine {
     func restoreAfterBackground(resume: Bool) async -> Bool { true }
     func setRate(_ rate: Float) async {}
     func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {}
+    func prepare(titleKey: String) async {}
 }

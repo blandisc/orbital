@@ -9,6 +9,9 @@ struct OrbitalApp: App {
     init() {
         // Video con sonido aunque el teléfono esté en silencio (como cualquier reproductor).
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+        #if AETHER_ENGINE
+        EnginePrewarm.install()   // «Ver» arranca con el principio del video que se bajó desde la ficha
+        #endif
     }
 
     var body: some Scene {

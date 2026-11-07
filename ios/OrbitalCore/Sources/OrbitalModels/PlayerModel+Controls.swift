@@ -30,6 +30,7 @@ extension PlayerModel {
             where !code.isEmpty && !audio.contains(code) { audio.append(code) }
             let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
             await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
+            await engine.prepare(titleKey: request.metaID)
         }
         try await engine.load(url: url, startAt: start)
         engineOpened = true

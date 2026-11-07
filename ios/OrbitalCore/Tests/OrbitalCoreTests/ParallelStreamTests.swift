@@ -143,4 +143,30 @@ final class StreamWarmupTests: XCTestCase {
         XCTAssertTrue(StreamWarmup.warm(url, now: now.addingTimeInterval(601)))
         XCTAssertFalse(StreamWarmup.warm(URL(fileURLWithPath: "/tmp/x.mkv")), "tus descargas, no")
     }
+
+    func testTheEngineWarmsWhenTheAppSetsItExceptFor4K() {
+        let seen = Box()
+        StreamWarmup.engineWarm = { url, _ in seen.add(url) }
+        defer { StreamWarmup.engineWarm = nil }
+        let a = URL(string: "https://torrentio.example/engine/a.mkv")!, b = URL(string: "https://torrentio.example/engine/b.mkv")!
+        XCTAssertTrue(StreamWarmup.warm(a))
+        XCTAssertTrue(StreamWarmup.warm(b, parallel: true))
+        XCTAssertEqual(seen.urls, [a], "el 4K va por el intermediario: el motor no lo calienta")
+    }
+
+    final class Box: @unchecked Sendable {
+        let lock = NSLock(); var urls: [URL] = []
+        func add(_ url: URL) { lock.withLock { urls.append(url) } }
+    }
+
+    func testTheSpanishVariantTrackIsRememberedByLinkThenTitle() {
+        let defaults = UserDefaults(suiteName: "variant-\(UUID())")!
+        let memory = AudioVariantMemory(defaults: defaults)
+        XCTAssertNil(memory.index(variant: "es-419", keys: ["https://x/1.mkv", "tt1"]))
+        memory.remember(2, variant: "es-419", keys: ["https://x/1.mkv", "tt1"])
+        XCTAssertEqual(memory.index(variant: "es-419", keys: ["https://x/2.mkv", "tt1"]), 2, "otro episodio: lo del título")
+        memory.remember(3, variant: "es-419", keys: ["https://x/2.mkv"])
+        XCTAssertEqual(memory.index(variant: "es-419", keys: ["https://x/2.mkv", "tt1"]), 3, "el enlace antes que el título")
+        XCTAssertNil(memory.index(variant: "es-ES", keys: ["https://x/1.mkv", "tt1"]), "cada variante, la suya")
+    }
 }
