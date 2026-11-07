@@ -487,7 +487,9 @@ final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlayb
 enum EnginePrewarm {
     @MainActor private static var running: [String: Task<Void, Never>] = [:]
     /// Lo que se espera a que termine lo que va en camino antes de abrir el video; más que eso, se cancela y se abre directo.
-    static let settleSeconds: Double = 3
+    /// 0 (Fernando, 6 nov, en su iPhone): si al dar «Ver» no ha terminado, se cancela y se abre directo. Esperarlo costó 3 s de
+    /// más (6.5 s contra ~3.5 s de abrir directo): calentar baja 8 MB y abrir solo necesita el principio.
+    static let settleSeconds: Double = 0
 
     static func install() {
         StreamWarmup.engineWarm = { url, headers in
