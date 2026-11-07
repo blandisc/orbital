@@ -315,6 +315,55 @@ struct ScareTimeline: View {
     }
 }
 
+/// La línea de tiempo del control que se arrastra (Fernando, 6 nov: «la barrita está para adelantar y atrasar»): al deslizar,
+/// el punto sigue tu dedo y arriba dice a qué minuto vas; al soltar, la TV brinca ahí (`seek`). VoiceOver: subir o bajar
+/// adelanta o atrasa 30 s.
+struct RemoteScrubber: View {
+    let position: Double
+    let duration: Double
+    var scares: [JumpScare] = []
+    let seek: (Double) -> Void
+    @State private var target: Double?
+
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            if let target {
+                Text(verbatim: Self.clock(target) + " / " + Self.clock(duration)).recipe(.caption, color: DS.text).monospacedDigit()
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
+            }
+            GeometryReader { geo in
+                ScareTimeline(position: target ?? position, duration: duration, scares: scares)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .gesture(DragGesture(minimumDistance: DS.Remote.scrubSlop)
+                        .onChanged { g in
+                            guard duration > 0 else { return }
+                            target = min(duration, max(0, Double(g.location.x / max(1, geo.size.width)) * duration))
+                        }
+                        .onEnded { _ in
+                            if let target { seek(target) }
+                            target = nil
+                        })
+            }
+            .frame(height: DS.Size.touchTarget)
+        }
+        .sensoryFeedback(.selection, trigger: target.map { Int($0 / 60) })
+        .accessibilityElement()
+        .accessibilityLabel(Text("Línea de tiempo"))
+        .accessibilityValue(Text(verbatim: Self.clock(position)))
+        .accessibilityAdjustableAction { direction in
+            let step = DS.Remote.scrubAccessibilityStep
+            seek(min(duration, max(0, position + (direction == .increment ? step : -step))))
+        }
+    }
+
+    static func clock(_ seconds: Double) -> String {
+        let s = Int(max(0, seconds)), h = s / 3600, m = (s % 3600) / 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s % 60) : String(format: "%d:%02d", m, s % 60)
+    }
+}
+
 /// El mapa de sustos de la película que suena en la TV: la línea de tiempo, cuánto falta para el siguiente (y si es fuerte),
 /// cuántos quedan y «Avisarme» (vibra unos segundos antes de cada uno, con el control abierto). Sin spoilers: no dice qué pasa.
 struct ScarePanel: View {

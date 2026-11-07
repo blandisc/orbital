@@ -1,6 +1,12 @@
 import SwiftUI
 
 /// Los tokens del filtro avanzado y de «¿Cuándo la viste?» (aparte de Tokens+Screens para que ninguno pase de su tope).
+extension DS.Remote {
+    /// La barra del control: cuánto mover el dedo antes de que cuente como arrastre, y el paso con VoiceOver.
+    static let scrubSlop: CGFloat = 2
+    static let scrubAccessibilityStep: Double = 30
+}
+
 extension DS.Rating {
     /// Tras calificar desde la pastilla: lo que se quedan las estrellas llenas con «Guardada» antes de irse.
     static let savedHold: Duration = .milliseconds(1400)

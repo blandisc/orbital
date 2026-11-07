@@ -423,19 +423,20 @@ struct RemoteSheet: View {
         } else {
             TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
                 let position = now.position(at: context.date, since: model.fetchedAt)
+                let seek = { (to: Double) in Task { await model.control("seek", delta: to) } }
                 if let scares = model.scares {
-                    // Los sustos en un renglón (la barra y cuánto falta para el siguiente); un toque abre el detalle.
-                    Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = true } } label: {
-                        VStack(alignment: .leading, spacing: DS.Space.s1) {
-                            ScareTimeline(position: position, duration: now.duration, scares: scares)
-                            nextScare(scares, position: position)
+                    // La barra se arrastra para adelantar o atrasar; el renglón de abajo (cuánto falta para el siguiente
+                    // susto) abre el detalle.
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        RemoteScrubber(position: position, duration: now.duration, scares: scares) { _ = seek($0) }
+                        Button { withAnimation(DS.Motion.smooth(reduceMotion)) { showsScares = true } } label: {
+                            nextScare(scares, position: position).contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("remote-scares")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("remote-scares")
                 } else {
-                    ScareTimeline(position: position, duration: now.duration)
+                    RemoteScrubber(position: position, duration: now.duration) { _ = seek($0) }
                 }
             }
             .transition(.opacity)
