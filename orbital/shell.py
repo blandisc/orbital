@@ -570,10 +570,13 @@ class ConsoleShell:
 
         name = name_of(device)
         connected_word = "conectado"
+        running = self.catalog.launcher.status()
+        # Con una película o un canal abierto no se habla de jugar ni de jugadores (Fernando, 6 nov: «jugar en la película»).
+        video = bool(running and str(running.get("id") or "").startswith("media:"))
         if not connected:
             players.sync()
             if self.away_from_orbital() and self.overlay is not None:
-                self.overlay.notice(f"Se desconectó el {name}", "Enciéndelo o conéctalo para seguir jugando",
+                self.overlay.notice(f"Se desconectó el {name}", "" if video else "Enciéndelo o conéctalo para seguir jugando",
                                     seconds=4.5, badge="!", tone="warn")
             else:
                 self.notify({"type": "toast", "tone": "warn", "message": f"Se desconectó el control {name}"})
@@ -581,8 +584,13 @@ class ConsoleShell:
         number = players.joined(slot)
         gamepad.rumble(slot)
         message = f"Control {name} {connected_word} · Jugador {number}"
-        running = self.catalog.launcher.status()
         log.info("%s", message)
+        if video:
+            if self.overlay is not None and self.away_from_orbital():
+                self.overlay.notice(f"{name} {connected_word}", "Ya puedes controlar el video", seconds=3.5)
+            else:
+                self.notify({"type": "toast", "tone": "success", "message": f"Control {name} {connected_word}"})
+            return
         detail = ""
         if running and running.get("managed") and number > 1:
             exe = self.win.exe_name(int(running["pid"])) if running.get("pid") else ""
