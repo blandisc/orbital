@@ -228,21 +228,24 @@ public final class TitleModel: ObservableModel {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             listedHashes[videoID] = Set(found.compactMap { $0.torrent?.hash })
-            bestSource = Source.best(found)
-            // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
-            // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
-            let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
-            let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
-            recommendedSource = SourcesModel.toPlay(found, resume: resume, family: family)
             // La estabas viendo en otro idioma (inglés): con ese se dice qué va a sonar y si te queda, no con el de Ajustes
             // (Fernando, 6 nov: «ya la veía en inglés y me dijo que no estaba en mi idioma»).
             var prefs = prefs
             if let heard = PlaybackRules.languageCode(services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.audio?.language),
                !heard.isEmpty { prefs.audio = heard }
-            recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
-            if let ready = recommendedSource, ready.instant, let url = ready.playbackURL { StreamWarmup.warm(url, parallel: ready.resolution == "4K") }   // ST5
-            poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }
-            sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
+            // Todo lo de «Ver» de una vez: un solo repintado de la ficha, no uno por campo (tirones al desplazarte).
+            coalescing {
+                bestSource = Source.best(found)
+                // «Ver» dice lo que de verdad va a sonar: la versión con que lo dejaste (ese video), o la de su misma familia en el
+                // siguiente episodio; si no, la recomendada (lo mismo que elige el reproductor).
+                let resume = services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.source
+                let family = services.titlePrefs.lastChoice(metaID: metaID)?.binge
+                recommendedSource = SourcesModel.toPlay(found, resume: resume, family: family)
+                recommendedLanguage = recommendedSource.flatMap { Streams.playingLanguage($0, prefs)?.code }
+                if let ready = recommendedSource, ready.instant, let url = ready.playbackURL { StreamWarmup.warm(url, parallel: ready.resolution == "4K") }   // ST5
+                poorFit = recommendedSource.flatMap { Streams.poorFit(found, playing: $0, prefs: prefs, kind: kind) }
+                sourceCheck = !found.isEmpty ? .available : services.isOnline() ? .none : .offline   // sin red, «no hay» no es cierto
+            }
             // Lo que falta se pide (R4): si la recomendada no arranca al instante (o no hay ninguna), qué torrent existe.
             let wanted = recommendedSource.map { !$0.instant } ?? true
             var offer = wanted && sourceCheck != .offline ? await offerToRequest(videoID: videoID, prefs: prefs, found: found) : nil
@@ -251,9 +254,8 @@ public final class TitleModel: ObservableModel {
             // Con tu cuenta vencida, sin Premium o con la clave vieja no se puede pedir nada: la salida es esa («Renovar»), no
             // «Pedirlo y avisarme» (que fallaría). Análisis de fondo con la TV, 3 nov.
             if let why, why.blocksRequests { offer = nil }
-            debridOffer = offer
-            wantedOffer = await wantedAside(videoID: videoID, prefs: prefs, found: found)
-            unavailableCause = why
+            let aside = await wantedAside(videoID: videoID, prefs: prefs, found: found)
+            coalescing { debridOffer = offer; wantedOffer = aside; unavailableCause = why }
         } catch {
             // Sin red puede fallar antes de preguntarle a los complementos (al leer cuáles tienes): también es «sin conexión»
             // (antes se quedaba «Buscando versión…» para siempre).
