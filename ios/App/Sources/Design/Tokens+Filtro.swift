@@ -1,6 +1,11 @@
 import SwiftUI
 
 /// Los tokens del filtro avanzado y de «¿Cuándo la viste?» (aparte de Tokens+Screens para que ninguno pase de su tope).
+extension DS.Rating {
+    /// Tras calificar desde la pastilla: lo que se quedan las estrellas llenas con «Guardada» antes de irse.
+    static let savedHold: Duration = .milliseconds(1400)
+}
+
 extension DS {
     /// La bandera del español que no dice cuál (imagen, no emoji): un poco abajo de la línea, como las de emoji.
     enum Flag {

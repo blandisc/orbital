@@ -119,13 +119,28 @@ struct RatingReminder: View {
     let onRate: (Double) -> Void
     let onDismiss: () -> Void
     let onOpenQueue: () -> Void
+    /// Lo que tocaste: las estrellas se quedan llenas y dice «Guardada» un momento antes de irse (Fernando, 6 nov: «se cerró
+    /// inmediatamente y no supe si lo registró»).
+    @State private var rated: Double?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
             posterThumb
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("¿Qué tal \(title)?").recipe(.label, color: DS.text).lineLimit(1)
-                RatingStars(value: nil, size: DS.Rating.starInline) { if let v = $0 { onRate(v) } }
+                HStack(spacing: DS.Space.s2) {
+                    RatingStars(value: rated, size: DS.Rating.starInline) { v in
+                        guard let v, rated == nil else { return }
+                        rated = v
+                        Task { try? await Task.sleep(for: DS.Rating.savedHold); onRate(v) }
+                    }
+                    if rated != nil {
+                        Label("Guardada", systemImage: "checkmark").recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(DS.Motion.base(reduceMotion), value: rated)
             }
             .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
             Spacer(minLength: 0)
