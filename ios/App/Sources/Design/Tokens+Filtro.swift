@@ -2,6 +2,11 @@ import SwiftUI
 
 /// Los tokens del filtro avanzado y de «¿Cuándo la viste?» (aparte de Tokens+Screens para que ninguno pase de su tope).
 extension DS {
+    /// La bandera del español que no dice cuál (imagen, no emoji): un poco abajo de la línea, como las de emoji.
+    enum Flag {
+        static let baseline: CGFloat = -2
+    }
+
     /// «¿Cuándo la viste?» (`WatchedWhenSheet`): el póster de arriba, el ancho del ícono de cada opción y su alto.
     enum Watched {
         static let poster: CGFloat = 64, icon: CGFloat = 28, row: CGFloat = 60

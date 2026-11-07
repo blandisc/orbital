@@ -112,7 +112,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     /// Solo videos de la red (no tus descargas ni listas HLS): Real-Debrid y las direcciones directas de los complementos.
     private func parallelURL(for url: URL, headers: [String: String], cellular: Bool) -> URL? {
         guard url.scheme == "https" || url.scheme == "http", !url.pathExtension.lowercased().hasPrefix("m3u"),
-              !UserDefaults.standard.bool(forKey: "orbital.single-connection-playback") else { return nil }
+              !UserDefaults.standard.bool(forKey: "orbital.single-connection-playback"), ParallelPlayback.wants(url) else { return nil }
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("stream-\(UUID().uuidString)", isDirectory: true)
         let stream = ParallelStream(url: url, config: cellular ? .cellular : .wifi, folder: folder,
                                     fetch: ParallelStream.urlSessionFetch(headers: headers))

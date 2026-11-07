@@ -55,11 +55,6 @@ extension DS {
         static let maxColors = 2
     }
 
-    /// La bandera del español que no dice cuál (imagen, no emoji): un poco abajo de la línea, como las de emoji.
-    enum Flag {
-        static let baseline: CGFloat = -2
-    }
-
     /// «Elegir versión»: lo más angosto que queda una calidad (dos por renglón en cualquier iPhone: con tres se cortaba el texto), el punto de
     /// «Al instante» y el borde de la recomendada.
     enum Version {

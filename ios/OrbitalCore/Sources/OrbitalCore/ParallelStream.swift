@@ -132,16 +132,15 @@ public actor ParallelStream {
         guard !closed else { return }
         let chunk = config.chunkBytes
         var wanted = waiters.keys.sorted()
-        // Mientras el reproductor espera algo (el arranque, un salto, el final del archivo), el colchón no compite por la red.
-        if waiters.isEmpty, let at = primary {
+        if let at = primary {
             let first = at / chunk, last = min(lastIndex, (at + aheadBytes) / chunk)
             if first <= last { wanted += Array(first...last) }
         }
         let waited = Set(waiters.keys)
         var busy = Set(inflight.values).count
         for index in wanted where !done.contains(index) && inflight[index] == nil && index <= lastIndex {
-            // Lo que alguien espera sale ya, aunque las conexiones estén ocupadas con el colchón; lo de adelante, en el tope.
-            guard waited.contains(index) || busy < connections else { continue }
+            // El colchón deja una conexión libre: lo que alguien espera (el arranque, un salto) sale ya, sin pasar del tope.
+            guard busy < (waited.contains(index) ? connections : max(1, connections - 1)) else { continue }
             // Lo que alguien espera, solo (llega antes); lo de adelante, de a `runChunks` seguidos.
             var last = index
             if !waited.contains(index) {
@@ -201,6 +200,15 @@ public actor ParallelStream {
             try? FileManager.default.removeItem(at: file(index))
         }
     }
+}
+
+/// Qué videos van por varias conexiones (Fernando, 6 nov: «se sigue tardando mucho en iniciar»). Solo 4K: en 1080p una
+/// conexión de Real-Debrid (15.8 MB/s) sobra y leer directo arranca en 3–4 s; el intermediario agregaba segundos.
+public enum ParallelPlayback {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var wanted: Set<String> = []
+    public static func want(_ url: URL) { lock.withLock { if wanted.count > 50 { wanted.removeAll() }; wanted.insert(url.absoluteString) } }
+    public static func wants(_ url: URL) -> Bool { lock.withLock { wanted.contains(url.absoluteString) } }
 }
 
 /// ST5 (Fernando, 5 nov): al abrir la ficha, la versión que va a sonar se le pide a Real-Debrid (un solo byte): Torrentio
