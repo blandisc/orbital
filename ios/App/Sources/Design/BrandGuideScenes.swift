@@ -160,7 +160,7 @@ struct GuideHaveObject: View {
                 }
                 .foregroundStyle(DS.text)
             case .tv:
-                Image(systemName: on ? "tv.fill" : "tv").font(.system(size: DS.GuideScene.object, weight: .light))   // ds-exception: un dibujo, no texto
+                Image(systemName: on ? "tv.and.mediabox.fill" : "tv.and.mediabox").font(.system(size: DS.GuideScene.object, weight: .light))   // ds-exception: un dibujo, no texto
                     .foregroundStyle(on ? DS.fresh : DS.text)
                     .contentTransition(.symbolEffect(.replace))
             }

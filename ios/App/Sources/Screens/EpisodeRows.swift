@@ -123,7 +123,7 @@ struct EpisodeRowView: View {
         // Ya visto: «Marcar como no visto» (sale de lo visto aquí y en Trakt).
         if row.watched { Button("Marcar como no visto", systemImage: "circle", action: markWatched) }
         else { Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched) }
-        if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
+        if let playOnTV { Button("Ver en la TV", systemImage: "tv.and.mediabox", action: playOnTV) }
     }
 
     private var hasStatus: Bool { row.airs != nil || (!row.watched && row.leftMinutes > 0) || row.download == .done }

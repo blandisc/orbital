@@ -89,7 +89,7 @@ extension Text {
         guard parts.count > 1 else { return Text(verbatim: string) }
         var text = Text(verbatim: parts[0])
         for part in parts.dropFirst() {
-            text = Text("\(text)\(Text(Image("Icons/flag-esmx")).baselineOffset(DS.Flag.baseline))\(Text(verbatim: part))")
+            text = Text("\(text)\(Text(Image("flag-esmx")).baselineOffset(DS.Flag.baseline))\(Text(verbatim: part))")
         }
         return text
     }

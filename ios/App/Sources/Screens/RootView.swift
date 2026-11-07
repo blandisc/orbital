@@ -105,7 +105,7 @@ struct RootView: View {
                     // «Sigue en tu Orbital · Minions & Monstruos · desde 12:34»; si iba al principio, lo dice así (no «en 0:00»).
                     Toast(tone: .success, title: Text("Sigue en tu Orbital"), detail: Text("\(Text(verbatim: "\(h.request.displayTitle) · "))\(Self.handoffFrom(h.position))"),
                           actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward", action: { Task { await env.undoHandoff() } },
-                          symbol: "tv", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
+                          symbol: "tv.and.mediabox", color: DS.brandMoon, seconds: DS.Timing.toastAction, dismiss: { env.handoff = nil })
                         .transition(DS.Motion.notice(reduceMotion))
                 } else if !ui.coverShowsNotices {
                     BannerView()

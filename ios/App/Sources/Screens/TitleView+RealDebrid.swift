@@ -31,7 +31,7 @@ extension TitleView {
         case .onTV?:
             // FQ5-A: lo tiene tu TV con otra cuenta; se manda el título y el episodio (nunca el enlace) y aparte se puede pedir aquí.
             let here: (title: Text, symbol: String, action: () -> Void)? = model.debridOffer.map { _ in (Text("Pedir a la nube aquí"), DS.Symbol.cloud, { requestFromDebrid(model) }) }
-            return ContinueAction(title: Text("Ver en la TV"), symbol: "tv", version: Text("Lo tiene tu TV con otra cuenta"),
+            return ContinueAction(title: Text("Ver en la TV"), symbol: "tv.and.mediabox", version: Text("Lo tiene tu TV con otra cuenta"),
                                   play: { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.kind == "series" ? model.continueVideoID : nil,
                                                                     title: model.title.isEmpty ? model.originalTitle : model.title) } },
                                   aside: here, tint: artAccent)

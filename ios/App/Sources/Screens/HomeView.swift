@@ -347,7 +347,7 @@ struct HomeView: View {
         }
         if env.services.orbital.isConfigured {
             // Un toque lo explica («¿Ver en la TV?»), el segundo lo manda: solo el ícono no decía qué hacía.
-            ConfirmIconButton(symbol: "tv", prompt: "¿Ver en la TV?", label: "Ver en la TV") {
+            ConfirmIconButton(symbol: "tv.and.mediabox", prompt: "¿Ver en la TV?", label: "Ver en la TV") {
                 Task { await env.playOnTV(kind: s.kind, metaID: s.imdb, videoID: s.kind == "movie" ? s.imdb : nil, title: s.title) }
             }
         }
@@ -396,7 +396,7 @@ struct HomeView: View {
                         .contextMenu {
                             Button("Ver la ficha", systemImage: "info.circle") { openTitle = route(item) }
                             if env.services.orbital.isConfigured {
-                                Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) } }
+                                Button("Ver en la TV", systemImage: "tv.and.mediabox") { Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) } }
                             }
                             Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } }
                         }

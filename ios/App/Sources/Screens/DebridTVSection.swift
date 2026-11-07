@@ -49,13 +49,13 @@ struct DebridTVCompare: View {
                 line("checkmark.circle.fill", DS.success, Text("Tu TV usa la cuenta \(user)"), Text("La misma que este iPhone."))
                     .accessibilityIdentifier("debrid-tv-same")
             case .tvHasNone:
-                line("tv", DS.textMuted, Text("Tu TV todavía no tiene Real-Debrid"), nil)
+                line("tv.and.mediabox", DS.textMuted, Text("Tu TV todavía no tiene Real-Debrid"), nil)
                 if model.hasToken { passButton(Text("Pasar a la TV"), Text("Tu TV usará la cuenta de este iPhone")) }
             case .tvKeyBroken:
                 line("exclamationmark.triangle", DS.warning, Text("Tu TV no pudo confirmar su cuenta"), Text("Real-Debrid no reconoce su clave o no contestó."))
                 if model.hasToken { passButton(Text("Pasar a la TV"), Text("Tu TV usará la cuenta de este iPhone")) }
             case .onlyTV(let user):
-                line("tv", DS.textMuted, Text("Tu TV usa la cuenta \(user)"), nil)
+                line("tv.and.mediabox", DS.textMuted, Text("Tu TV usa la cuenta \(user)"), nil)
                 useButton(Text("Usar la de la TV"), Text("Este iPhone usará la cuenta \(user)"))
             case .different(let tv, let mine, let apart):
                 line("person.2", apart ? DS.textMuted : DS.warning, Text("Tu TV usa la cuenta \(tv)"),

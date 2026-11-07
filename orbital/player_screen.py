@@ -1306,7 +1306,7 @@ class PlayerScreen(SubtitleTrial):
         meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
         series = meta.get("kind") == "series" and self.on_episode is not None
         legend = {"select": "Continuar" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
-                  "options": "Episodios" if series else "Versión", "left": "Atrasar", "right": "Adelantar",
+                  "options": "Episodios y versión" if series else "Versión", "left": "Atrasar", "right": "Adelantar",
                   "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
         if series:
             legend |= {"pageleft": "Episodio anterior", "pageright": "Episodio siguiente"}

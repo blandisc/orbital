@@ -247,10 +247,10 @@ struct WatchActions: View {
 
     @ViewBuilder private var tvPill: some View {
         switch WidgetTVStatus.current(for: item.metaID) {
-        case .sending: pill(Text("Mandando…"), symbol: "tv", solid: false, wide: true)
+        case .sending: pill(Text("Mandando…"), symbol: "tv.and.mediabox", solid: false, wide: true)
         case .sent: pill(Text("En tu Orbital"), symbol: "checkmark", solid: false, wide: true)
         case .failed: pill(Text("La TV no contesta"), symbol: "exclamationmark.triangle.fill", solid: false, wide: true)
-        case nil: pill(Text("En la TV"), symbol: "tv", solid: false)
+        case nil: pill(Text("En la TV"), symbol: "tv.and.mediabox", solid: false)
         }
     }
 

@@ -27,7 +27,7 @@ extension AppEnvironment {
         ui.sendingToTV = metaID
         defer { if ui.sendingToTV == metaID { ui.sendingToTV = nil } }
         let language = services.appSettings.uiLanguage
-        notices.show(Notice(text: Strings.message("Mandando a tu Orbital…", language: language), tone: .info, detail: title, symbol: "tv"))
+        notices.show(Notice(text: Strings.message("Mandando a tu Orbital…", language: language), tone: .info, detail: title, symbol: "tv.and.mediabox"))
         do {
             try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)
             notify("Ya está en tu Orbital", detail: title, tone: .success, actionTitle: "Control", actionSymbol: "appletvremote.gen4.fill") { [weak self] in

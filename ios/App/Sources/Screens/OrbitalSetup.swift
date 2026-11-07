@@ -86,10 +86,10 @@ struct OrbitalSetupView: View {
             GuidePage(title: Text("Pásalo a la TV"),
                       message: Text("En cualquier película o serie toca «Ver en la TV»: empieza en la sala justo donde ibas. Lo que veas allá sale arriba de la barra, en «En la TV»."),
                       step: (1, 2), primary: Text("Siguiente"), secondary: Text("Saltar"), next: next, skip: { dismiss() }) {
-                GuideArt(symbol: "tv", tint: DS.ListTint.series) {
+                GuideArt(symbol: "tv.and.mediabox", tint: DS.ListTint.series) {
                     HStack(spacing: DS.Space.s2) {
                         Label("Ver", systemImage: "play.fill").frame(maxWidth: .infinity).padding(DS.Space.s2).background(DS.fill, in: Capsule())
-                        Label("Ver en la TV", systemImage: "tv").frame(maxWidth: .infinity).padding(DS.Space.s2).background(DS.fillStrong, in: Capsule())
+                        Label("Ver en la TV", systemImage: "tv.and.mediabox").frame(maxWidth: .infinity).padding(DS.Space.s2).background(DS.fillStrong, in: Capsule())
                     }
                     .font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text)
                 }

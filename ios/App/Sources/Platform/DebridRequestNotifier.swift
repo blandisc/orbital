@@ -27,7 +27,7 @@ enum DebridRequestNotifier {
             UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver ahora", language: language), options: [.foreground],
                                  icon: UNNotificationActionIcon(systemImageName: "play.fill")),
             UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [],
-                                 icon: UNNotificationActionIcon(systemImageName: "tv")),
+                                 icon: UNNotificationActionIcon(systemImageName: "tv.and.mediabox")),
         ].filter { tv || $0.identifier != Action.tv }
         let ready = UNNotificationCategory(identifier: category, actions: actions, intentIdentifiers: [],
                                            hiddenPreviewsBodyPlaceholder: Strings.tr("La nube terminó tu pedido", language: language), options: [])

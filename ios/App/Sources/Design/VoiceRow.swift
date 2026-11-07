@@ -163,7 +163,7 @@ struct VoiceRow: View {
     /// El ícono de la respuesta sin póster: la tele en verde si llegó, un aviso en ámbar si no.
     private func statusTile(ok: Bool) -> some View {
         let tint = ok ? DS.success : DS.warning
-        return Image(systemName: ok ? "tv" : "exclamationmark.bubble").font(DS.TextRecipe.section.font).foregroundStyle(tint)
+        return Image(systemName: ok ? "tv.and.mediabox" : "exclamationmark.bubble").font(DS.TextRecipe.section.font).foregroundStyle(tint)
             .frame(width: DS.Remote.voiceMic, height: DS.Remote.voiceMic)
             .background(tint.opacity(DS.Opacity.selectedFill), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .accessibilityHidden(true)
@@ -302,7 +302,7 @@ struct ConnectionTrail: View {
                 link(failed: issue == .noInternet || issue == .tunnelDown)
                 node("network", Text("Internet"), ok: issue == .orbitalDown || issue == .tokenChanged)
                 link(failed: issue == .orbitalDown || issue == .tokenChanged)
-                node("tv", Text("Orbital"), ok: false)
+                node("tv.and.mediabox", Text("Orbital"), ok: false)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(message)

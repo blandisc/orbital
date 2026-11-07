@@ -453,7 +453,7 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             trackMenu(model, title: Text("Subtítulos"), symbol: "captions.bubble", action: "subtitles", tracks: now.subtitleTracks, fallback: .alt, legendKey: "alt")
             trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .alt, legendKey: "alt")
-            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(verbatim: $0) } ?? (series ? Text("Episodios") : Text("Versión"))) {
+            RemoteKey(symbol: series ? "list.bullet" : "square.stack", title: model.legend["options"].map { Text(verbatim: $0) } ?? (series ? Text("Episodios y versión") : Text("Versión"))) {
                 Task { await model.press(.options) }
                 withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }
             }

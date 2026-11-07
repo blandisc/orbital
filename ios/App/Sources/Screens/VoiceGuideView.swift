@@ -318,7 +318,7 @@ private struct PhraseCard: View {
             .pointerHover(.lift)
             .contextMenu {
                 if !phrase.note.isEmpty { Text(verbatim: phrase.note) }
-                if let onSay { Button("Mandar a la tele", systemImage: "tv") { onSay(phrase.say) } }
+                if let onSay { Button("Mandar a la tele", systemImage: "tv.and.mediabox") { onSay(phrase.say) } }
                 Button("Copiar", systemImage: "doc.on.doc") { UIPasteboard.general.string = phrase.say }
             }
             .accessibilityLabel(Text(verbatim: "«\(phrase.say)»"))
@@ -407,7 +407,7 @@ private struct PhraseRow: View {
             }
         }
         .contextMenu {
-            if let onSay { Button("Mandar a la tele", systemImage: "tv") { onSay(say) } }
+            if let onSay { Button("Mandar a la tele", systemImage: "tv.and.mediabox") { onSay(say) } }
             Button("Copiar", systemImage: "doc.on.doc") { UIPasteboard.general.string = say }
         }
     }

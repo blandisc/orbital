@@ -63,7 +63,7 @@ enum ReleaseNotifier {
     static func registerCategory(language: String, tv: Bool) {
         let actions = [
             UNNotificationAction(identifier: Action.watch, title: Strings.tr("Ver", language: language), options: [.foreground], icon: UNNotificationActionIcon(systemImageName: "play.fill")),
-            UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "tv")),
+            UNNotificationAction(identifier: Action.tv, title: Strings.tr("Ver en la TV", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "tv.and.mediabox")),
             UNNotificationAction(identifier: Action.download, title: Strings.tr("Descargar", language: language), options: [], icon: UNNotificationActionIcon(systemImageName: "arrow.down.circle")),
             // Una serie que ya no te interesa: desde el mismo aviso (sin abrir la app).
             UNNotificationAction(identifier: Action.unfollow, title: Strings.tr("Dejar de seguir", language: language), options: [.destructive], icon: UNNotificationActionIcon(systemImageName: "bell.slash")),

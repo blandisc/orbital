@@ -288,7 +288,7 @@ struct TitleView: View {
             if env.services.orbital.isConfigured {
                 // Mientras va en camino, la ruedita en su lugar (y el aviso abajo): antes el toque no enseñaba nada.
                 Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: {
-                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv") }   // ds-exception: la ruedita va dentro del botón que la pidió
+                    if env.isSendingToTV(model.metaID) { ProgressView() } else { Image(systemName: "tv.and.mediabox") }   // ds-exception: la ruedita va dentro del botón que la pidió
                 }
                     .disabled(model.continueVideoID == nil || env.isSendingToTV(model.metaID))
                     .sensoryFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }

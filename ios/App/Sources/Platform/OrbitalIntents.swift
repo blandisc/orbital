@@ -319,7 +319,7 @@ struct OrbitalShortcuts: AppShortcutsProvider {
         ], shortTitle: "Orden por voz", systemImageName: "playpause.fill")
         AppShortcut(intent: PlayTitleIntent(), phrases: [
             "Pon \(\.$show) en \(.applicationName)", "Dile a \(.applicationName) que ponga \(\.$show)",
-        ], shortTitle: "Poner en la TV", systemImageName: "tv")
+        ], shortTitle: "Poner en la TV", systemImageName: "tv.and.mediabox")
         AppShortcut(intent: AskOrbitalIntent(), phrases: [
             "Habla con \(.applicationName)", "Orden para \(.applicationName)",
         ], shortTitle: "Habla con Orbital", systemImageName: "waveform")

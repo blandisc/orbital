@@ -22,7 +22,7 @@ struct NowPlayingCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
+            Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv.and.mediabox")
                 .font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect, whole: true).frame(width: DS.Poster.nowPlayingWidth)
@@ -153,7 +153,7 @@ struct FromTVCard: View {
                     .overlay(ArtVeil(kind: .both, at: DS.Backdrop.scrimMid))
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     HStack(alignment: .firstTextBaseline) {
-                        Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
+                        Label { eyebrow } icon: { Image(systemName: "tv.and.mediabox") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)   // ds-exception: rótulo de estado sobre el arte («En la tele»), no un porqué
                         Spacer(minLength: DS.Space.s2)
                         DSIconButton(symbol: "xmark", label: "Quitar", size: .small, action: onDismiss)
                             .font(DS.TextRecipe.label.font)

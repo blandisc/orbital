@@ -58,7 +58,7 @@ struct OnboardingTrakt: View {
                 if model.traktWithTV {
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
                         Text("Y tu TV").recipe(.cardTitle, color: DS.text)
-                        Button(env.services.orbital.isConfigured ? "Conectada" : "Conectar tu TV", systemImage: "tv") { connectingTV = true }
+                        Button(env.services.orbital.isConfigured ? "Conectada" : "Conectar tu TV", systemImage: "tv.and.mediabox") { connectingTV = true }
                             .dsGlassButton().disabled(env.services.orbital.isConfigured)
                     }
                 }

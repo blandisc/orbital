@@ -84,7 +84,7 @@ struct OrbitalUpgradeSheet: View {
 
     private func answer(_ title: Text, _ detail: Text?, _ model: OrbitalUpgradeModel) -> some View {
         Section {
-            DSProblem(title: title, detail: detail, symbol: "tv") {
+            DSProblem(title: title, detail: detail, symbol: "tv.and.mediabox") {
                 Button { model.reset() } label: { Text("Pedírsela otra vez").frame(maxWidth: .infinity) }
                     .dsProblemFix(primary: true)
                 Button(action: scan) { Label("Escanear", systemImage: "qrcode.viewfinder").frame(maxWidth: .infinity) }

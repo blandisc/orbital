@@ -17,7 +17,7 @@ struct TVLiveActivity: Widget {
                     HStack(alignment: .firstTextBaseline) {
                         Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
                         Spacer(minLength: DS.Space.s2)
-                        Image(systemName: "tv").font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.onArtSecondary)
+                        Image(systemName: "tv.and.mediabox").font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.onArtSecondary)
                             .accessibilityLabel(Text("En la TV"))
                     }
                     subtitle(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
@@ -38,7 +38,7 @@ struct TVLiveActivity: Widget {
                     ActivityPoster(file: context.state.poster, width: DS.Widget.islandPoster).padding(.leading, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Image(systemName: context.state.paused ? "pause.fill" : "tv").font(DS.font(.lg, weight: .semibold)).padding(.trailing, DS.Space.s1)
+                    Image(systemName: context.state.paused ? "pause.fill" : "tv.and.mediabox").font(DS.font(.lg, weight: .semibold)).padding(.trailing, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 0) {
@@ -60,7 +60,7 @@ struct TVLiveActivity: Widget {
             } compactTrailing: {
                 ring(context.state)
             } minimal: {
-                Image(systemName: context.state.paused ? "pause.fill" : "tv").font(DS.font(.sm, weight: .bold)).foregroundStyle(DS.paper)
+                Image(systemName: context.state.paused ? "pause.fill" : "tv.and.mediabox").font(DS.font(.sm, weight: .bold)).foregroundStyle(DS.paper)
             }
             .widgetURL(WidgetLink.remoteURL)
         }

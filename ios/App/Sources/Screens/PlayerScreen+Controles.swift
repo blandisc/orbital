@@ -291,7 +291,7 @@ extension PlayerScreen {
             }
             if pip.isPossible { PlayerMenuRow(title: "Ventana (PiP)", symbol: "pip.enter") { moreOpen = false; pip.toggle() } }
             if canHandOffToTV(model) {
-                PlayerMenuRow(title: "Ver en la TV", symbol: "tv") { moreOpen = false; Task { await continueOnTV() } }
+                PlayerMenuRow(title: "Ver en la TV", symbol: "tv.and.mediabox") { moreOpen = false; Task { await continueOnTV() } }
             }
             if canDownload { downloadRow { moreOpen = false } }
             if model.source != nil {

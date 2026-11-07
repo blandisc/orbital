@@ -36,12 +36,12 @@ struct AddonTVStatus: View {
     private var main: Line? {
         switch status {
         case .off: nil
-        case .checking: Line(symbol: "tv", tint: DS.textMuted, title: Text("Revisando con tu TV…"), detail: nil)
+        case .checking: Line(symbol: "tv.and.mediabox", tint: DS.textMuted, title: Text("Revisando con tu TV…"), detail: nil)
         case .same(_, let by):
             Line(symbol: "checkmark.circle", tint: DS.success, title: Text("Es la misma lista que tu TV"),
                  detail: by == "tv" ? Text("El último cambio fue en tu TV") : Text("Lo que cambies aquí, tu TV lo toma"))
         case .unreachable:
-            Line(symbol: "tv", tint: DS.warning, title: Text("Tu TV no contestó"), detail: Text("Lo que cambies aquí le llega cuando conteste"))
+            Line(symbol: "tv.and.mediabox", tint: DS.warning, title: Text("Tu TV no contestó"), detail: Text("Lo que cambies aquí le llega cuando conteste"))
         case .outdated:
             Line(symbol: "arrow.down.circle", tint: DS.warning, title: Text("Actualiza Orbital en tu TV"), detail: Text("Así toma esta lista"))
         case .refused(let why) where AddonTVSync.waitsForKeys(why): nil   // lo dice el renglón de abajo, si toca (IOS-5)
@@ -73,7 +73,7 @@ struct AddonTVOnlyRow: View {
     let addon: SharedAddon
 
     var body: some View {
-        IconBeside(symbol: "tv") {
+        IconBeside(symbol: "tv.and.mediabox") {
             (addon.isTVFiles ? Text("Archivos de la TV") : Text(verbatim: addon.name))
                 .font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
             Text("Solo en la TV").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)

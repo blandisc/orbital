@@ -203,7 +203,7 @@ struct SettingsView: View {
             .accessibilityIdentifier("settings-orbital")
             if on {
                 NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
-                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: env.services.orbitalNeedsRescan || env.services.tvLinkNow == .silent ? DS.warning : DS.ListTint.series,
+                    SettingsRow(title: "Tu Orbital", symbol: "tv.and.mediabox", tint: env.services.orbitalNeedsRescan || env.services.tvLinkNow == .silent ? DS.warning : DS.ListTint.series,
                                 value: orbitalValue)
                 }
                 .task { await env.services.checkTV() }   // IOS-2: «Conectada» solo si la TV contestó

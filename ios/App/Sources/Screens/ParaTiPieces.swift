@@ -27,7 +27,7 @@ struct SuggestionActions: View {
         if list == nil { Button("Guardar", systemImage: "plus") { Task { await env.save(suggestion) } } }   // a la lista por omisión (`SaveDestination`)
         Button("Descargar", systemImage: "arrow.down.circle") { Task { await env.download(suggestion) } }
         if env.services.orbital.isConfigured {
-            Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
+            Button("Ver en la TV", systemImage: "tv.and.mediabox") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
         }
         if list != nil, suggestion.kind == "movie" {
             Button("Marcar como vista", systemImage: "checkmark.circle") {
