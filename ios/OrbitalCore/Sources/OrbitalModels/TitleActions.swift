@@ -49,6 +49,37 @@ public final class TitleActions {
         await services.forYou.clearCache(["trakt:watchlist"])
     }
 
+    /// Las listas tuyas que se pueden editar desde un póster: Mi lista (`watchlist`) y tus listas de Trakt (`list:<id>`). Los
+    /// rankings, los catálogos de complementos, Para ti y «Tus series» (lo que estás viendo) son de solo lectura.
+    public nonisolated static func isEditable(listID: String) -> Bool { listID == "watchlist" || listID.hasPrefix("list:") }
+
+    /// Pone o quita un título de una de tus listas (`isEditable`): Mi lista por `setSaved` (el teléfono, Trakt y Stremio);
+    /// una lista de Trakt directo y, sin conexión, a la cola (llega después: no es un error).
+    public func setInList(_ s: Suggestion, listID: String, add: Bool) async throws {
+        if listID == "watchlist" { return try await setSaved(s, add: add) }
+        guard listID.hasPrefix("list:") else { throw TraktError.invalid("Esta lista no se puede editar") }
+        guard let trakt = services.trakt, trakt.linked else { throw TraktError.auth("Conecta Trakt en Ajustes") }
+        let id = String(listID.dropFirst("list:".count))
+        do {
+            try await trakt.setListItem(listID: id, imdb: s.imdb, series: s.kind == "series", add: add)
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.init(target: id, imdb: s.imdb, series: s.kind == "series", add: add))
+        }
+        await services.forYou.clearCache(["trakt:list:\(id)", "trakt:listkeys"])
+    }
+
+    /// «Agregar a …»: buscar películas y series por nombre (solo las que tienen id de IMDb: las que Trakt acepta).
+    public func searchTitles(_ query: String) async -> [SearchResult] {
+        ((try? await services.cinemeta.searchAll(query, limit: 20)) ?? []).filter { $0.metaID.hasPrefix("tt") }
+    }
+
+    /// Un resultado de búsqueda como título de una lista (con el póster de metahub si no trae).
+    public nonisolated static func suggestion(_ r: SearchResult, listID: String) -> Suggestion {
+        Suggestion(kind: r.kind, imdb: r.metaID, title: r.title, year: Int(r.year.prefix(4)),
+                   poster: r.poster ?? String(format: ForYou.metahubPoster, r.metaID), wide: String(format: ForYou.metahubBackground, r.metaID),
+                   reason: listID == "watchlist" ? .inWatchlist : .inList(""))
+    }
+
     /// Pone o quita un favorito en Trakt; sin conexión, a la cola del iPhone (no es un error: llega después).
     public func setFavorite(_ s: Suggestion, add: Bool) async throws {
         guard let trakt = services.trakt, trakt.linked else { throw TraktError.auth("Conecta Trakt en Ajustes") }

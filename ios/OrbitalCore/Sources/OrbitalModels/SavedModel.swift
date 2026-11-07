@@ -107,6 +107,50 @@ public final class SavedModel: ObservableModel {
         return out
     }
 
+    // MARK: editar la lista (quitar y agregar)
+    /// La lista que ves se puede editar: Mi lista y tus listas de Trakt, todas tuyas (con Trakt conectado).
+    public var canEdit: Bool { traktLinked && TitleActions.isEditable(listID: selected) }
+
+    /// El nombre de la lista que ves ("" en Mi lista: la pantalla lo pone).
+    public var selectedName: String { lists.first { $0.id == selected }?.name ?? "" }
+
+    /// Quita un título de la lista que ves: sale al instante y, si Trakt no acepta, regresa a su lugar (devuelve false).
+    @discardableResult
+    public func remove(_ s: Suggestion) async -> Bool {
+        let list = selected
+        setShown(s, shown: false)
+        do { try await actions.setInList(s, listID: list, add: false); return true } catch {
+            if list == selected { setShown(s, shown: true) }
+            return false
+        }
+    }
+
+    /// Agrega un título a la lista que ves (desde «Agregar» o «Deshacer»): entra al instante, al principio o donde estaba.
+    @discardableResult
+    public func add(_ s: Suggestion) async -> Bool {
+        let list = selected
+        setShown(s, shown: true)
+        do { try await actions.setInList(s, listID: list, add: true); return true } catch {
+            if list == selected { setShown(s, shown: false) }
+            return false
+        }
+    }
+
+    /// Lo que se quitó y dónde estaba (para regresarlo a su lugar con «Deshacer»).
+    private var removed: [String: (Int, Suggestion)] = [:]
+    private lazy var actions = TitleActions(services)
+
+    func setShown(_ s: Suggestion, shown: Bool) {
+        if !shown {
+            guard let i = items.firstIndex(where: { $0.imdb == s.imdb }) else { return }
+            removed[s.imdb] = (i, items.remove(at: i))
+        } else {
+            guard !items.contains(where: { $0.imdb == s.imdb }) else { return }
+            let (i, saved) = removed.removeValue(forKey: s.imdb) ?? (0, s)
+            items.insert(saved, at: min(i, items.count))
+        }
+    }
+
     /// Cómo vas con un título: vista (Trakt), a medias (Trakt o el avance de este aparato) o por ver.
     public func state(of s: Suggestion) -> WatchState {
         if watched.movies.contains(s.imdb) || (watched.shows[s.imdb] ?? 0) >= 1 { return .watched }

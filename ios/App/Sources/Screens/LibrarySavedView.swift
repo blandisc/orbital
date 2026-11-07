@@ -15,6 +15,9 @@ struct LibrarySavedView: View {
     /// "" es todo, «movie» o «series».
     @State private var kind = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// «Editar» (6 nov 2026): cada póster con su «−»; «+» busca qué agregar. Mi lista y tus listas de Trakt son tuyas.
+    @State private var editing = false
+    @State private var adding = false
     private var model: SavedModel { observer.model }
 
     var body: some View {
@@ -39,6 +42,36 @@ struct LibrarySavedView: View {
         .perfTag("saved")
         .task { await model.load() }
         .onAppear { model.refreshProgress() }   // viste algo y regresaste: la barra al día
+        .toolbar { if model.canEdit { ListEditToolbar(editing: $editing) { adding = true } } }
+        .sheet(isPresented: $adding) { addSheet }
+        .onChange(of: model.selected) { editing = false }
+    }
+
+    private var listName: Text { model.selected == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName) }
+
+    /// Quitar con un toque (el «−», el menú): sale ya y el aviso trae «Deshacer»; si Trakt no acepta, regresa y lo dice.
+    private func remove(_ s: Suggestion) {
+        let model = model, env = env, list = model.selected, name = model.selectedName
+        Task {
+            if await model.remove(s) {
+                env.notifyListEdit(s, list: list, name: name, added: false) { Task { if model.selected == list { await model.add(s) } } }
+            } else {
+                env.notify(format: "No pude cambiar «%@»", env.listName(list, name: name), tone: .warn)
+            }
+        }
+    }
+
+    /// «Agregar a …»: un toque agrega (o quita, si ya estaba) y la cuadrícula cambia al instante.
+    private var addSheet: some View {
+        let model = model, env = env
+        return AddToListSheet(listName: listName, search: { await env.titles.searchTitles($0) },
+                              contains: { id in model.items.contains { $0.imdb == id } }) { r in
+            let s = TitleActions.suggestion(r, listID: model.selected)
+            let list = model.selected, name = model.selectedName
+            let wasIn = model.items.contains { $0.imdb == s.imdb }
+            let ok = wasIn ? await model.remove(s) : await model.add(s)
+            if !ok { env.notify(format: "No pude cambiar «%@»", env.listName(list, name: name), tone: .warn) }
+        }
     }
 
     /// «Mi lista ⌃⌄»: Mi lista o una de tus listas de Trakt, con un toque.
@@ -60,12 +93,14 @@ struct LibrarySavedView: View {
         } else if isEmpty {
             // La lista no tiene nada: su única salida, ir a buscar qué guardar.
             DSEmptyState(symbol: "bookmark", title: Text("Nada guardado todavía"), message: Text("En una ficha, toca Guardar y aparece aquí.")) {
+                if model.canEdit { Button("Agregar") { adding = true }.accessibilityIdentifier("saved-empty-add") }
                 Button("Explorar") { env.openTab = AppEnvironment.exploreTab }.accessibilityIdentifier("saved-empty-explore")
             }
         } else {
             SortableGrid(listID: "saved:\(model.selected)", items: items, collections: collections.model, showsKindFilter: false,
                          loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) }) { s, width in
                 TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
+                    .listEditable(editing: editing, listName: listName, remove: model.canEdit ? { remove(s) } : nil)
             }
             .id(model.selected)   // otra lista: su propio orden y sus filtros
         }

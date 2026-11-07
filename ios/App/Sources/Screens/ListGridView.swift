@@ -9,10 +9,32 @@ struct ListGridView: View {
     var observer: ModelObserver<ParaTiModel>
     var collections: ModelObserver<CollectionsModel>
     let shelfID: String
+    @Environment(AppEnvironment.self) private var env
+    /// «Editar»: cada póster con su «−» (solo en tus listas: Mi lista y las tuyas de Trakt).
+    @State private var editing = false
+    @State private var adding = false
     private var model: ParaTiModel { observer.model }
+    private var editable: Bool { TitleActions.isEditable(listID: shelfID) && env.services.trakt?.linked == true }
 
     private func poster(_ s: Suggestion, _ plan: ShelfPlan, width: CGFloat) -> some View {
         PlanPoster(suggestion: s, plan: plan, model: model, style: plan.style == .top10 ? .platform : plan.style, width: width)
+            .listEditable(editing: editing, listName: shelfTitle(plan), menu: false, remove: editable ? { remove(s, plan) } : nil)
+    }
+
+    private func remove(_ s: Suggestion, _ plan: ShelfPlan) {
+        let model = model
+        Task { await env.edit(s, list: plan.id, name: plan.title, add: false) { shown in model.setShown(s, inList: plan.id, shown: shown) } }
+    }
+
+    /// «Agregar a …»: agrega (o quita, si ya estaba) y la cuadrícula cambia al instante.
+    private func addSheet(_ plan: ShelfPlan) -> some View {
+        let model = model, env = env
+        return AddToListSheet(listName: shelfTitle(plan), search: { await env.titles.searchTitles($0) },
+                              contains: { id in model.items(for: plan).contains { $0.imdb == id } }) { r in
+            let s = TitleActions.suggestion(r, listID: plan.id)
+            let add = !model.items(for: plan).contains { $0.imdb == s.imdb }
+            await env.edit(s, list: plan.id, name: plan.title, add: add) { shown in model.setShown(s, inList: plan.id, shown: shown) }
+        }
     }
 
     var body: some View {
@@ -39,6 +61,8 @@ struct ListGridView: View {
                 }
                 .padding(.bottom, DS.Layout.screenBottom)
                 .navigationTitle(shelfTitle(plan))
+                .toolbar { if editable { ListEditToolbar(editing: $editing) { adding = true } } }
+                .sheet(isPresented: $adding) { addSheet(plan) }
             }
         }
         .background(Backdrop())

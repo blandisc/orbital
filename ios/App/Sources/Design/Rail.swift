@@ -54,6 +54,8 @@ struct TitleLink: View {
     var platformRank: (rank: Int, platform: String)?
     /// Está en tu watchlist: un marcador en la esquina (sin texto que se corte en un póster angosto).
     var bookmarked = false
+    /// Quitar de Mi lista con un toque en el marcador (`DSBookmarkToggle`, con «Deshacer»); sin esto, la placa es solo un dato.
+    var unbookmark: (() -> Void)? = nil
     /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae.
     var rank: Int?
     var progress: Double?
@@ -66,10 +68,19 @@ struct TitleLink: View {
     var fallbackPoster: String? = nil
     @Environment(\.posterCaptions) private var captions
 
+    /// El marcador va como botón encima del enlace (dentro del enlace, el toque abriría la ficha).
+    private var bookmarkIsControl: Bool { bookmarked && unbookmark != nil && badge == nil && rank == nil && platformRank == nil }
+
     var body: some View {
+        link.overlay(alignment: .topLeading) {
+            if bookmarkIsControl, let unbookmark { DSBookmarkToggle(listName: Text("Mi lista"), action: unbookmark) }
+        }
+    }
+
+    private var link: some View {
         TitleNavigationLink(route: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked, rank: rank, progress: progress, width: width, fallback: fallbackPoster)
+                PosterCard(title: route.title, poster: route.poster, badge: badge, badgeSymbol: badgeSymbol, platformRank: platformRank, bookmarked: bookmarked && !bookmarkIsControl, rank: rank, progress: progress, width: width, fallback: fallbackPoster)
                     .titleZoomSource(route)
                 // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
                 if captions {

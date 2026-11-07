@@ -495,6 +495,31 @@ public final class ParaTiModel: ObservableModel {
         }
     }
 
+    /// Un título que sale (o regresa, con «Deshacer») de una de tus listas desde su estante: cambia aquí al instante, en su
+    /// mismo lugar. Mi lista también mueve el marcador de los demás pósters.
+    public func setShown(_ s: Suggestion, inList listID: String, shown: Bool) {
+        if listID == "watchlist" { setInWatchlist(s.imdb, shown) }
+        let keys = railItems.keys.filter { $0.hasPrefix("\(listID):") }
+        var rails = railItems
+        for key in keys {
+            var items = rails[key] ?? []
+            if !shown, let i = items.firstIndex(where: { $0.imdb == s.imdb }) {
+                hiddenInLists["\(key)|\(s.imdb)"] = (i, items.remove(at: i))
+            } else if shown, !items.contains(where: { $0.imdb == s.imdb }) {
+                if let (i, saved) = hiddenInLists.removeValue(forKey: "\(key)|\(s.imdb)") { items.insert(saved, at: min(i, items.count)) }
+                else if key == "\(listID):-" || key == "\(listID):\(s.kind)" { items.insert(s, at: 0) }   // nuevo (de «Agregar»): al principio
+            }
+            rails[key] = items
+        }
+        railItems = rails
+    }
+    private var hiddenInLists: [String: (Int, Suggestion)] = [:]
+
+    /// El marcador de Mi lista en los pósters: al quitar o agregar desde un póster, al instante.
+    public func setInWatchlist(_ imdb: String, _ inList: Bool) {
+        if inList { watchlistKeys.insert(imdb) } else { watchlistKeys.remove(imdb) }
+    }
+
     /// «No me interesa».
     public func dismiss(_ s: Suggestion) async {
         switch source {

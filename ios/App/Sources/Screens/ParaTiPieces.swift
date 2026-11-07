@@ -18,6 +18,8 @@ struct SuggestionActions: View {
     var onWatched: ((Suggestion) -> Void)? = nil
     /// En tus favoritos (Para ti › Tuyo › Favoritos): «Quitar de favoritos» (eso hace `onDismiss`) en vez de «No me interesa».
     var favorite = false
+    /// En una de tus listas de Trakt (o Mi lista) desde Para ti: «Quitar de esta lista» (eso hace `onDismiss`).
+    var ownList = false
     let onDismiss: (Suggestion) -> Void
 
     var body: some View {
@@ -34,6 +36,8 @@ struct SuggestionActions: View {
         }
         if list != nil {
             Button("Quitar de Mi lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
+        } else if ownList {
+            Button("Quitar de esta lista", systemImage: "minus.circle", role: .destructive) { onDismiss(suggestion) }
         } else if favorite {
             Button("Quitar de favoritos", systemImage: "heart.slash", role: .destructive) { onDismiss(suggestion) }
         } else {
@@ -53,6 +57,10 @@ struct ShelfPoster: View {
     var width: CGFloat = DS.Poster.railWidth
     /// En tu lista de Favoritos: su menú ofrece «Quitar de favoritos» (no «No me interesa»).
     var favorite = false
+    /// Un estante de una lista tuya: su menú dice «Quitar de esta lista» (no «No me interesa»).
+    var ownList = false
+    /// Un toque en el marcador de Mi lista lo quita de ahí (con «Deshacer»).
+    var unbookmark: (() -> Void)? = nil
     let onDismiss: (Suggestion) -> Void
     @State private var taps = 0
 
@@ -61,13 +69,13 @@ struct ShelfPoster: View {
             if style == .top10, let rank = suggestion.rank {
                 TitleNavigationLink(route: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew, zoom: suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), badgeSymbol: badge.flatMap(badgeSymbol), platformRank: platformRank, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
+                TitleLink(route: suggestion.route, badge: badge.flatMap(badgeText), badgeSymbol: badge.flatMap(badgeSymbol), platformRank: platformRank, bookmarked: inList, unbookmark: unbookmark, rank: style == .platform ? suggestion.rank : nil, width: width,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
-        .contextMenu { SuggestionActions(suggestion: suggestion, favorite: favorite, onDismiss: onDismiss) }
+        .contextMenu { SuggestionActions(suggestion: suggestion, favorite: favorite, ownList: ownList, onDismiss: onDismiss) }
     }
 
     /// «N.º 3 en Netflix» no va en texto: es la píldora de la plataforma, con su logo.
@@ -181,11 +189,28 @@ struct PlanPoster: View {
 
     var body: some View {
         let favorites = plan.id == ForYou.favoritesList
+        let own = TitleActions.isEditable(listID: plan.id)
         // En Mi lista todo está ahí: el marcador sobra.
         ShelfPoster(suggestion: suggestion, style: style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(suggestion.imdb),
-                    badge: badge, width: width, favorite: favorites) { dismissed in
-            Task { if favorites { await env.removeFavorite(dismissed) } else { await model.dismiss(dismissed) } }
+                    badge: badge, width: width, favorite: favorites, ownList: own, unbookmark: { unbookmark() }) { dismissed in
+            Task {
+                if favorites { await env.removeFavorite(dismissed) }
+                else if own { await removeFromShelf(dismissed) }
+                else { await model.dismiss(dismissed) }
+            }
         }
+    }
+
+    /// Quitar de la lista de este estante (Mi lista o una tuya de Trakt), con «Deshacer».
+    private func removeFromShelf(_ s: Suggestion) async {
+        await env.edit(s, list: plan.id, name: plan.title, add: false) { shown in model.setShown(s, inList: plan.id, shown: shown) }
+    }
+
+    /// El marcador de Mi lista en un póster de otro estante: un toque lo quita de Mi lista (Fernando, 6 nov 2026: «le picaba
+    /// donde está el elemento de que está guardado y no hacía nada»).
+    private func unbookmark() {
+        let s = suggestion, model = model
+        Task { await env.edit(s, list: "watchlist", name: "", add: false) { shown in model.setShown(s, inList: "watchlist", shown: shown) } }
     }
 }
 

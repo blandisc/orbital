@@ -89,4 +89,47 @@ final class SavedModelTests: XCTestCase {
         XCTAssertTrue(model.failed)
         XCTAssertFalse(model.loading)
     }
+
+    /// Editar tus listas (Fernando, 6 nov 2026): quitar sale al instante y llega a Trakt; si Trakt no acepta, regresa a su
+    /// lugar. «Deshacer» (agregar) lo regresa donde estaba. Mi lista también se edita; las demás listas no.
+    func testQuitarYAgregarEnTuListaDeTrakt() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        trakt(rig)
+        rig.http.prefix["https://api.trakt.tv/users/me/lists/103/items"] = .array([row("tt0000009", "De la lista", kind: "movie"),
+                                                                                  row("tt0000010", "Otra de la lista", kind: "series")])
+        let model = SavedModel(rig.services)
+        await model.load()
+        await model.choose("list:103")
+        XCTAssertTrue(model.canEdit)
+        XCTAssertEqual(model.selectedName, "Para ver con Ana")
+        let first = try XCTUnwrap(model.items.first)
+        let removed = await model.remove(first)
+        XCTAssertTrue(removed)
+        XCTAssertEqual(model.items.map(\.imdb), ["tt0000010"])
+        XCTAssertTrue(rig.http.calls.contains("https://api.trakt.tv/users/me/lists/103/items/remove"))
+        // «Deshacer»: regresa a su lugar (el primero).
+        await model.add(first)
+        XCTAssertEqual(model.items.map(\.imdb), ["tt0000009", "tt0000010"])
+        // Trakt no acepta (403): sale y vuelve.
+        rig.http.statuses["https://api.trakt.tv/users/me/lists/103/items/remove"] = 403
+        let failed = await model.remove(first)
+        XCTAssertFalse(failed)
+        XCTAssertEqual(model.items.map(\.imdb), ["tt0000009", "tt0000010"], "si falla, regresa a su lugar")
+    }
+
+    func testMiListaSeEditaYLasDemasNo() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        trakt(rig)
+        let model = SavedModel(rig.services)
+        await model.load()
+        XCTAssertTrue(model.canEdit, "Mi lista es tuya")
+        let first = try XCTUnwrap(model.items.first)
+        await model.remove(first)
+        XCTAssertFalse(model.items.contains { $0.imdb == first.imdb })
+        XCTAssertTrue(TitleActions.isEditable(listID: "watchlist"))
+        XCTAssertTrue(TitleActions.isEditable(listID: "list:103"))
+        for readOnly in ["mine", "recs", "trend", "chart:nfx", "jw:nfx", ForYou.favoritesList] {
+            XCTAssertFalse(TitleActions.isEditable(listID: readOnly), readOnly)
+        }
+    }
 }
