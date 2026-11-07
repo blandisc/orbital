@@ -515,7 +515,7 @@ decide algo del iPhone, su commit dice qué pasa en la TV («En la TV: igual · 
 | Hoja con encabezado propio | `sheet`, `side-panel` | Igual | — |
 | Aviso | `toast` | Distinto a propósito: arriba a la derecha, porque abajo va el pie de pistas y se lee desde el sillón | Mismos tonos, textos y duración (`--duration-notice`). |
 | Etiqueta | `Badge`, `Chip` y `CornerRibbon` | Igual | «Nuevo» es el listón de la esquina del póster (Mi media, sus listas); «HOY» y el ▲▼ del Top 10 se quedan en placa. |
-| Editar una lista tuya | — | Pendiente | En la TV todavía no: con mando, «Quitar de esta lista» en el menú del póster de una lista tuya y agregar desde la ficha (registro de paridad, 6 nov 2026). |
+| Editar una lista tuya | — | Pendiente · ola 7 | En la TV todavía no: con mando, «Quitar de esta lista» en el menú del póster de una lista tuya y agregar desde la ficha (registro de paridad, 6 nov 2026). |
 | Texto sobre arte | `Veil(...lados)` y `--veil-bottom`, `--veil-leading`, `--veil-top`, `--veil-bottom-soft`, `--veil-corner` | Igual | Una receta por lado; los velos de pseudo-elemento (tarjeta de premio, escenario de «Porque viste», mosaico) usan los mismos tokens. |
 | Cargando | `PosterSkeletons(n)` (`skeleton--poster`, `skeleton--heading`) | Igual | Películas y series (dos filas) y una lista abierta, quietos: nada se anima mientras se espera. |
 | Sin conexión o error | Mensajes en palabras con «Reintentar» | Igual | — |

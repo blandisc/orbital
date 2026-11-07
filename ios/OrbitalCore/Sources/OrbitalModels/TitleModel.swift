@@ -228,11 +228,9 @@ public final class TitleModel: ObservableModel {
             let found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch)
             guard !Task.isCancelled else { return }
             listedHashes[videoID] = Set(found.compactMap { $0.torrent?.hash })
-            // La estabas viendo en otro idioma (inglés): con ese se dice qué va a sonar y si te queda, no con el de Ajustes
-            // (Fernando, 6 nov: «ya la veía en inglés y me dijo que no estaba en mi idioma»).
+            // La veías en otro idioma (inglés): ese dice qué va a sonar y si te queda, no el de Ajustes (Fernando, 6 nov).
             var prefs = prefs
-            if let heard = PlaybackRules.languageCode(services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.audio?.language),
-               !heard.isEmpty { prefs.audio = heard }
+            if let heard = PlaybackRules.languageCode(services.titlePrefs.resumeChoice(metaID: metaID, videoID: videoID)?.audio?.language), !heard.isEmpty { prefs.audio = heard }
             // Todo lo de «Ver» de una vez: un solo repintado de la ficha, no uno por campo (tirones al desplazarte).
             coalescing {
                 bestSource = Source.best(found)
