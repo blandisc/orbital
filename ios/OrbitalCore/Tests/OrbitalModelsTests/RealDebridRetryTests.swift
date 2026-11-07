@@ -60,7 +60,7 @@ final class RealDebridRetryTests: XCTestCase {
         await rig.model.retry()
         XCTAssertEqual(rig.engine.loads.count, 1, "«Reintentar» no la vuelve a pedir")
         XCTAssertEqual(rig.model.lastNotice, .downloading, "dice que ya está pedida")
-        XCTAssertEqual(rig.model.cause, .notInDebrid(language: "es"))
+        XCTAssertEqual(rig.model.cause, .notInDebrid(language: "es-419"), "sin variante marcada, tu lista de fábrica: latino primero")
     }
 }
 

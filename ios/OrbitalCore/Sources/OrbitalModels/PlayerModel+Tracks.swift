@@ -66,10 +66,8 @@ extension PlayerModel {
            !last.isEmpty { langs.prefs.audio = last }
         let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: langs.prefs.spanish == "es-419", castilian: langs.prefs.spanish == "es-ES")
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
-        // (Si la elegiste tú en «Elegir versión», ya sabías qué idioma trae: no se avisa.)
-        if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio), request.sourceIndex == nil || request.sourceIndex != source?.index {
-            notice = .audioNotInYourLanguage
-        }
+        // Sin «No está en tu idioma» (Fernando, 6 nov: confundía; salía aunque tú hubieras escogido ese idioma). Si otra
+        // versión trae tu idioma, lo dice `offerVersionInYourLanguage`.
         offerVersionInYourLanguage(s, prefs: langs.prefs)
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
         if picked { return }

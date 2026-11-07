@@ -508,12 +508,13 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/mine.mkv", "la misma familia que el episodio anterior")
     }
 
-    func testWarnsWhenNoAudioTrackIsYourLanguage() async throws {
+    /// Fernando, 6 nov: «No está en tu idioma» confundía (salía aunque tú escogieras ese idioma): ya no se avisa.
+    func testNoLongerWarnsWhenNoAudioTrackIsYourLanguage() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "es" }
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEs], selectedAudio: 1))
-        XCTAssertEqual(rig.model.notice, .audioNotInYourLanguage)
+        XCTAssertNotEqual(rig.model.notice, .audioNotInYourLanguage)
     }
 
     // MARK: intro y siguiente episodio

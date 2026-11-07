@@ -170,9 +170,19 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
 
     /// La variante de español que prefieres: «es-419» (latino), «es-ES» (castellano) o "" (cualquiera).
+    /// Sale de «Tus idiomas» (lo que ves en Ajustes), no de una casilla aparte: sin variante marcada, la lista de fábrica pone
+    /// latino primero y el reproductor tomaba «cualquiera» (la primera pista en español, casi siempre la de España; Fernando,
+    /// 6 nov: «me la puso en castellano y sí había latino»).
+    /// Tu español aunque tu audio de siempre sea otro (un título que pusiste en español).
+    public static func spanishOf(_ s: AppSettings) -> String {
+        s.latinSpanish ? "es-419" : s.castilianSpanish ? "es-ES" : s.yourLanguages.first { $0 == "es-419" || $0 == "es-ES" } ?? ""
+    }
+
     public var spanishVariant: String {
         guard audio == "es" else { return "" }
-        return latinSpanish ? "es-419" : castilianSpanish ? "es-ES" : ""
+        if latinSpanish { return "es-419" }
+        if castilianSpanish { return "es-ES" }
+        return yourLanguages.first { $0 == "es-419" || $0 == "es-ES" } ?? ""
     }
 }
 
@@ -365,7 +375,7 @@ public final class TitlePreferences: @unchecked Sendable {
         if let audio = saved?.audio, !audio.isEmpty { prefs.audio = audio }
         if prefs.audio == "es", let variant = saved?.spanish, !variant.isEmpty { prefs.spanish = variant }
         // Este título lo pusiste en español aunque tu audio de siempre sea otro: la variante que elegiste en Ajustes vale igual.
-        if prefs.audio == "es", prefs.spanish.isEmpty { prefs.spanish = settings.latinSpanish ? "es-419" : settings.castilianSpanish ? "es-ES" : "" }
+        if prefs.audio == "es", prefs.spanish.isEmpty { prefs.spanish = AppSettings.spanishOf(settings) }
         return (prefs, saved?.subtitles ?? settings.subtitles)
     }
 
