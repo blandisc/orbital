@@ -109,6 +109,13 @@ extension DS.Coach {
 /// derecha a la altura de «Todo · Películas · Series»; al deslizar a la izquierda, las historias ocupan todo el encabezado; al
 /// bajar, se achican en su mismo lugar y pierden el nombre.
 extension DS {
+    /// SX1: el selector de Inicio. Cerrado, cada ícono mide `closed`; abierto crece a `open` para tocarlo fácil.
+    enum KindPill {
+        static let closed: CGFloat = 34, open: CGFloat = 42
+        static let enterScale: CGFloat = 0.4, pressed: CGFloat = 0.88   // ds-exception: escalas
+        static let settle: Duration = .milliseconds(220)
+    }
+
     enum HomeStories {
         /// El círculo encogido al bajar (el normal es `DS.Story.ring`).
         static let compactRing: CGFloat = 40, compactTile: CGFloat = 32

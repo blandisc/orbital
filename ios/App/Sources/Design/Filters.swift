@@ -229,47 +229,80 @@ struct DSChoiceMenu<ID: Hashable>: View {
     }
 }
 
-/// SX1 (Fernando, 9 nov): el selector de Inicio es solo el ícono de lo que ves. Al tocarlo, la misma pastilla se estira a lo
-/// ancho y enseña los tres; al elegir uno se encoge con el ícono nuevo. Nada aparece encima de la portada. Dejar el dedo
-/// encima de un ícono dice su nombre; VoiceOver lo lee siempre.
+/// SX1 (Fernando, 9 nov): el selector de Inicio es solo el ícono de lo que ves. Al tocarlo, la misma pastilla crece con un
+/// resorte (los íconos un poco más grandes, para tocarlos fácil), los otros dos salen uno tras otro y la cápsula de al lado
+/// se recoge a la derecha hasta quedar solo tu foto. Al elegir, el círculo blanco se desliza al nuevo y la pastilla se encoge con él. Dejar el dedo
+/// encima dice su nombre; VoiceOver lo lee siempre. Con «Reducir movimiento», fundido.
 struct KindPill: View {
     @Binding var kind: String
     @Binding var open: Bool
     let options: [(String, LocalizedStringKey)]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var mark
+
+    private var motion: Animation { DS.Motion.morph(reduceMotion) ?? DS.Motion.fade }
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(open ? options : options.filter { $0.0 == kind }, id: \.0) { option in
+        let shown = open ? options : options.filter { $0.0 == kind }
+        HStack(spacing: open ? DS.Space.s1 : 0) {
+            ForEach(Array(shown.enumerated()), id: \.element.0) { index, option in
                 let on = kind == option.0
-                Button {
-                    withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) {
-                        if open { kind = option.0 }
-                        open.toggle()
-                    }
-                } label: {
-                    Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
-                        .font(DS.TextRecipe.section.font)
+                Button { choose(option.0) } label: {
+                    Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
+                        .font(open ? DS.TextRecipe.title.font : DS.TextRecipe.section.font)
                         .foregroundStyle(on && open ? DS.bg : DS.text)
-                        .frame(width: DS.Size.kindPill, height: DS.Size.kindPill)
-                        .background(on && open ? DS.accent : .clear, in: Circle())
+                        .frame(width: open ? DS.KindPill.open : DS.KindPill.closed, height: open ? DS.KindPill.open : DS.KindPill.closed)
+                        .background {
+                            if on && open { Circle().fill(DS.text).matchedGeometryEffect(id: "mark", in: mark) }
+                        }
                         .contentShape(Circle())
                 }
-                .buttonStyle(.plain)   // ds-exception: un segmento del control; el fondo marca el elegido
+                .buttonStyle(KindPillPress())
                 .help(Text(option.1))
                 .accessibilityLabel(open ? Text(option.1) : Text(option.1) + Text(". Cambiar entre todo, películas y series"))
                 .accessibilityAddTraits(on ? .isSelected : [])
-                .transition(.scale.combined(with: .opacity))
+                .transition(.asymmetric(
+                    insertion: .scale(scale: DS.KindPill.enterScale).combined(with: .opacity)
+                        .animation(motion.delay(Double(index) * DS.Motion.entranceStep)),
+                    removal: .opacity.animation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade)))   // se apaga en su lugar, sin flotar fuera
             }
         }
         .padding(DS.Space.s1 / 2)
         .glassEffect(.regular.interactive(), in: Capsule())
         .fixedSize()
         .sensoryFeedback(.selection, trigger: kind)
+        .sensoryFeedback(.impact(weight: .light), trigger: open)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Series o películas"))
         #if DEBUG
         .task { if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-kind-open") { open = true } }   // capturas: abierta
+        .task {   // capturas en video: abre, elige Series, y regresa a Todo
+            guard Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-kind-cycle") else { return }
+            for next in ["series", ""] {
+                try? await Task.sleep(for: .seconds(2)); choose(kind)
+                try? await Task.sleep(for: .seconds(1.2)); choose(next)
+            }
+        }
         #endif
+    }
+
+    /// Cerrada abre; abierta, el círculo se desliza a lo elegido y, un instante después, se encoge con él.
+    private func choose(_ option: String) {
+        guard open else { withAnimation(motion) { open = true }; return }
+        guard option != kind else { withAnimation(motion) { open = false }; return }
+        withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { kind = option }
+        Task {
+            try? await Task.sleep(for: DS.KindPill.settle)
+            withAnimation(motion) { open = false }
+        }
+    }
+}
+
+/// Al apretar, el ícono se hunde tantito.
+private struct KindPillPress: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? DS.KindPill.pressed : 1)
+            .animation(DS.Motion.snap(false), value: configuration.isPressed)   // ds-exception: el hundido al apretar es inmediato y breve
     }
 }

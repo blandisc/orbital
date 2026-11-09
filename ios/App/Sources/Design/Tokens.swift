@@ -300,6 +300,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// sustos al abrirse): sigue a la hoja en lugar de ir por su lado.
         static func smooth(_ reduce: Bool) -> Animation? { reduce ? nil : .smooth(duration: DesignTokens.Motion.slow) }
         /// Un rebote más marcado y corto: elegir un mosaico («¿Qué vemos?» › Más filtros).
+        /// Algo que cambia de forma y reacciona (el selector de Inicio al abrirse): resorte con un rebote apenas visible.
+        static func morph(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.22) }
         static func pop(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.base, bounce: 0.45) }
         /// Solo un fundido de opacidad: se vale también con «Reducir movimiento» (no mueve nada). Lo que antes se animaba
         /// con `DS.Motion.…(false)` (cambiar de pestaña de texto, de periodo, de filtro) va con esto.
@@ -406,8 +408,6 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let markSmall: CGFloat = 22
         /// ET1: el círculo de un botón de ícono del encabezado de temporada (bajar, marcar vista), con su anillo de avance.
         static let seasonAction: CGFloat = 30
-        /// SX1: cada ícono del selector de Inicio que se estira.
-        static let kindPill: CGFloat = 34
         /// Lo que una marca redonda (el jitomate) baja de la línea del título: como la «o», que cae un poco abajo de la línea,
         /// así su cuerpo queda centrado con las mayúsculas en vez de verse flotando.
         static let markOvershoot: CGFloat = 1.5

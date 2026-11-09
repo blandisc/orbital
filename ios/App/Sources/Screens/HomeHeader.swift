@@ -84,7 +84,11 @@ struct HomeHeader: View {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
             DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
             Spacer(minLength: DS.Space.s2)
-            if !kindOpen { capsule(stories).transition(.scale(scale: 0.8, anchor: .trailing).combined(with: .opacity)) }
+            // SX1: mientras eliges, la cápsula se recoge a la derecha hasta quedar solo tu foto, apagada; tocarla cierra.
+            capsule(stories)
+                .opacity(kindOpen ? DS.Opacity.dimmed : 1)
+                .allowsHitTesting(!kindOpen)
+                .overlay { if kindOpen { Color.clear.contentShape(Rectangle()).onTapGesture { withAnimation(DS.Motion.morph(reduceMotion) ?? DS.Motion.fade) { kindOpen = false } } } }
         }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
@@ -94,13 +98,13 @@ struct HomeHeader: View {
     /// La cápsula: el control, la dona y tu foto (se hace a un lado mientras eliges en el selector, SX1).
     private func capsule(_ stories: [LearnStory]) -> some View {
             HStack(spacing: Self.hint == .storyInCapsule ? DS.Space.s2 : DS.Space.s4) {
-                if showsRemote {
+                if showsRemote && !kindOpen {
                     Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                 }
-                Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
+                if !kindOpen { Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
                     .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
-                    .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons")
+                    .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons") }
                 if let first = stories.first, Self.hint == .storyInCapsule {
                     // HH3: un círculo de historia en la cápsula; tu foto sigue siendo tu perfil.
                     Button { openStories() } label: {
