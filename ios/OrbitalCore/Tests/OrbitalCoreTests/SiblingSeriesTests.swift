@@ -24,6 +24,7 @@ final class SiblingSeriesTests: XCTestCase {
     func testTheSeriesNamedByTheEndOfTheTitleIsAnother() {
         XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "The.Clone.Wars.S01E04.1080p.WEB.mkv"))
         XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "The Clone Wars Season 1 1080p"))
+        XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "📄 StarWars.The.Clone.Wars.S01e01.Ita.Eng.720p.h264.byMetalh.mkv"), "lo que abrió el 9 nov")
         XCTAssertFalse(Streams.namesAnotherSeries(clone2003, "Clone.Wars.S01E04.mkv"), "sin artículo, no se decide")
         XCTAssertFalse(Streams.namesAnotherSeries(["Star Wars: The Mandalorian"], "The.Mandalorian.S01E01.mkv"))
     }
