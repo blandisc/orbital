@@ -171,7 +171,9 @@ public actor StreamFinder {
                 var index = Streams.stableIndex(addonURL: addon.url, stream: stream)
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
                 var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
-                source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")")
+                let named = "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")"
+                source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], named)
+                    || (videoID.contains(":") && [source.release, stream["behaviorHints"]?["filename"]?.string ?? ""].contains { Streams.namesAnotherSeries(titleOrigin?.titles ?? [], $0) })
                 Streams.markOtherEpisode(&source, videoID: videoID, filename: stream["behaviorHints"]?["filename"]?.string ?? "")
                 if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión
                 if let real = checked(source.key) { source.setAudio(real) }
