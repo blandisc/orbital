@@ -108,6 +108,9 @@ export const ICONS = {
   library: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5h9a1.5 1.5 0 0 1 1.5 1.5v11.5"/><rect x="5" y="6.5" width="11" height="14" rx="1.5"/><circle cx="10.5" cy="13.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   chart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20.5v-5M10.5 20.5V11M16 20.5V8.5"/><circle cx="16" cy="4.25" r="1.6" fill="currentColor" stroke="none"/></svg>',
   addon: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.4 7.6h3.25a2.25 2.25 0 1 1 4.5 0h3.25v3.25a2.25 2.25 0 1 1 0 4.5v3.25H5.4z"/></svg>',
+  // De qué complemento viene una versión (AddonMark, como t.circle y c.circle del iPhone): Ⓣ Torrentio y Ⓒ Comet.
+  addonTorrentio: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 8h7M12 8v8.5"/></svg>',
+  addonComet: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.2 9.1a4.2 4.2 0 1 0 0 5.8"/></svg>',
   // TV en vivo: una pantalla con su antena.
   home: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>',
   grid: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',

@@ -1,6 +1,7 @@
 import { api } from "../core/api.js";
 import { motion } from "../core/motion.js";
-import { Badge, Chip } from "./ui.js";
+import { Badge, Chip, LineSkeleton } from "./ui.js";
+import { AddonMark } from "./addon-mark.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
@@ -69,6 +70,8 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     return ["↓ Por pedir", null];
   };
   const isAsk = (r) => !!rows[r]?.ask;
+  // De qué complemento viene (Ⓣ Torrentio, Ⓒ Comet, la pieza para los demás), junto a la calidad; lo tuyo no lleva.
+  const mark = (src) => (src && !isOwnSource(src) ? AddonMark(src.addon_kind) : null);
 
   let start = { row: 0, col: 0 }; // dónde está la recomendada (una versión con dos idiomas sale en dos filas: se marca una)
   // La recomendada es la que pone «Ver» (con «Continuar», la de antes); si el servidor no lo dice, la primera.
@@ -115,7 +118,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       "aria-label": `${rows[r].name} · ${opt.res}`,
       onClick: () => (r === at.row && c === at.col ? act(opt.source, rows[r].ask) : focus({ row: r, col: c })),
     },
-    h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res),
+    h("span", { class: "version__top" }, h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res), mark(opt.source)),
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
     h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
     r === start.row && c === start.col && opt.source === best() && Badge("Recomendada", { className: "version__badge" }),
@@ -167,7 +170,7 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
           onClick: () => (i === index ? act(src, isAsk(cell.row)) : setIndex(i)) },
         h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
         h("span", { class: "source__main" },
-          h("span", { class: "source__chips" }, Chip(label, { tone }), ...facts(src).map((f) => Chip(f))),
+          h("span", { class: "source__chips" }, Chip(label, { tone }), ...facts(src).map((f) => Chip(f)), mark(src)),
           h("span", { class: "source__release" }, ...sureFlags(src), languageLine(src, rows[cell.row].code)),
           h("span", { class: "source__release" }, [src.release, src.site].filter(Boolean).join(" · "))));
       })));
@@ -220,6 +223,15 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
 
   let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
 
+  /** Mientras se busca (Fernando, 6 nov: «el parrafito sin info»): las filas de «Versión» en gris con su forma, quietas, en
+   *  lugar de «Buscando dónde verlo…»: dos idiomas, el primero con dos calidades. Como `VersionsSkeleton` del iPhone. */
+  const skeleton = () => h("div", { class: "versions__skeleton", role: "status", "aria-label": "Buscando versiones" },
+    [2, 1].map((count) => h("div", { class: "versions__row", "aria-hidden": "true" },
+      h("div", { class: "versions__lang" }, LineSkeleton({ className: "versions__skeleton-name" }), LineSkeleton({ className: "versions__skeleton-role" })),
+      h("div", { class: "versions__options" }, Array.from({ length: count }, () => h("div", { class: ["version", "version--skeleton"] },
+        LineSkeleton({ className: "versions__skeleton-res" }), LineSkeleton({ className: "versions__skeleton-state" }),
+        LineSkeleton({ className: "versions__skeleton-facts" })))))));
+
   const isEpisode = () => request?.kind === "series" && !!request?.video_id;
 
   function renderScope() {
@@ -240,13 +252,13 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
     cell = null;
     title.textContent = req.title || "";
     subtitle.textContent = "";
-    mount(list);
+    mount(list, skeleton());
     mount(why);
-    status.textContent = "Buscando dónde verlo…";
+    status.textContent = "";
     const started = performance.now();
     // Si falla otra vez enseguida, que se note que sí lo intentó (antes nada cambiaba en pantalla).
     const settle = () => new Promise((resolve) => setTimeout(resolve, Math.max(0, 600 - (performance.now() - started))));
-    status.hidden = false;
+    status.hidden = true; // los esqueletos ya dicen que se está buscando
     status.classList.remove("sources__status--problem");
     retry.hidden = true;
     el.hidden = false;
@@ -278,6 +290,8 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       if (mine !== token) return;
       await settle();
       if (mine !== token) return;
+      mount(list); // sin esqueletos: el porqué y «Reintentar»
+      status.hidden = false;
       // El servidor ya explica por qué (sin Internet, sin complementos…) y qué hacer; A lo intenta otra vez.
       status.textContent = err.message;
       failed = true;
