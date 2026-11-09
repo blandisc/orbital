@@ -279,8 +279,8 @@ struct KindPill: View {
         .task {   // capturas en video: abre, elige Series, y regresa a Todo
             guard Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-kind-cycle") else { return }
             for next in ["series", ""] {
-                try? await Task.sleep(for: .seconds(2)); choose(kind)
-                try? await Task.sleep(for: .seconds(1.2)); choose(next)
+                try? await Task.sleep(for: .seconds(2)); choose(kind)   // ds-exception: guion de capturas, solo en DEBUG
+                try? await Task.sleep(for: .seconds(1.2)); choose(next)   // ds-exception: guion de capturas, solo en DEBUG
             }
         }
         #endif
@@ -299,7 +299,7 @@ struct KindPill: View {
 }
 
 /// Al apretar, el ícono se hunde tantito.
-private struct KindPillPress: ButtonStyle {
+private struct KindPillPress: ButtonStyle {   // ds-exception: el hundido del segmento; la pastilla es vidrio nativo
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? DS.KindPill.pressed : 1)
