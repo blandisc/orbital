@@ -11,6 +11,8 @@ Antes de empezar: `docs/sistema-de-diseno.md` y las cuatro superficies (control,
 3. **«Episodios y versión»: textos cortados.** Al escoger episodio o versión solo se lee completo «Al instante»;
    «Idioma dudoso» y los demás se cortan. Hay que decidir qué se hace ahí (más ancho, dos renglones, o ícono con su nombre
    para VoiceOver, como el iPhone, D10: íconos, no cápsulas de texto).
+   **1–3 hechos (8 nov):** íconos y nombres enteros en Reproducción, vidrio con los tokens (`player_ui.glass`) y, en Versión,
+   íconos con leyenda (la decisión está en `docs/sistema-de-diseno.md` § 8). Falta verlo con mando en la Lenovo.
 4. Ya hecho desde el iPhone (no tocar): lo que la TV manda al control como leyenda del botón Y ahora dice
    «Episodios y versión» en series (`player_screen.py`), igual que la pantalla.
 

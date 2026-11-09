@@ -195,7 +195,7 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | Calendario · ¿Qué vemos? · listas | Por las piezas: casillas y pósters que se levantan |
 | Cambiar el arte | Por las piezas: casillas que se levantan |
 | Pantalla de carga · arranque · avisos | Sin cambio (ya eran del lenguaje) |
-| Reproductor (`player_ui.py`) | Botones en cápsula: el primero en blanco, los demás de vidrio (`GLASS_ALPHA`, `GLASS_EDGE_ALPHA`); píldoras táctiles de vidrio |
+| Reproductor (`player_ui.py`) | Botones en cápsula: el primero en blanco, los demás de vidrio (`player_ui.glass`, los números de los tokens); píldoras táctiles, panel de columnas (flotante), tarjetas y avisos de vidrio (8 nov 2026) |
 
 ## 1. Tokens (`orbital/web/styles/`)
 
@@ -772,6 +772,20 @@ diseño y tiene sus propias piezas reutilizables en `player_ui.py`: `rrect`, `ci
 atrás), `gradient` (velo sin franjas), `glyph`/`hints` (botones del mando), `buttons`, `text`/`fit`/`wrap`
 y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CSS» (`FS` los convierte).
 
+Piezas del 8 nov 2026 (pendientes del reproductor, puntos 1–3):
+
+| Pieza | Para qué |
+|---|---|
+| `glass(x, y, w, h, r, kind, edge)` · `glass_fill(kind)` | La receta «Vidrio» en mpv: `GLASS_TOKENS` y `EDGE_TOKENS` son los números de `--color-glass`, `--color-glass-strong`, `--color-glass-selected`, `--glyph-bg` y sus filos (`test_player_glass_is_the_glass_of_the_interface` los compara con `themes/orbital.css`). «glass» en botones secundarios, píldoras («Elegir», «Cerrar»…), casillas de Versión y «Sigue reproduciendo»; «glass-strong» en el panel de columnas (flotante, separado de las orillas, `RADIUS_CARD` = `--radius-2xl`), tarjetas, avisos, el volumen y la franja de «Probar otros». Las capas se componen en una sola figura y la luz de arriba es un filo de 1,5 px. Sin desenfoque: ASS no tiene `backdrop-filter`, y así no cuesta nada en reposo ni encima del video |
+| `glyph(…, solid=True)` | Sobre lo blanco (el principal, «Saltar intro») el disco del glifo es sólido (`--glyph-bg-solid`); en lo demás, de cristal (`--glyph-bg`) |
+| `icon(name, cx, cy, size, color)` · `ICON_PATHS` | Íconos dibujados en una cuadrícula de 24 (como los SF Symbols): `bolt`, `cloud-down`, `doubt`, `restart`, `resume`, `phone-play`, `phone-send`, `phone-down`, `episode` |
+| `_icon_rows` (`ICON_COLUMNS`) | Y › Reproducción: cada acción con su ícono y su nombre entero (hasta dos o tres renglones, partidos entre palabras); la pista («Mismo minuto») debajo. Las filas miden lo que su texto y se ven las que caben; el resto se desplaza con el foco («5 de 5» en el encabezado) |
+| `CELL_STATES` · `cell_states` · `states_legend` | Y › Versión: lo de cada casilla en íconos (⚡ «Al instante» en `--color-live`, la nube «Hay que bajarla», «?» «Idioma dudoso» en `--color-warning`); la leyenda con sus nombres va en el encabezado de la columna o, si no cabe entera, abajo; la enfocada se dice en palabras abajo. La calidad («4K HDR») y el idioma se achican antes de cortarse |
+
+**Decisión (8 nov 2026, punto 3).** En Versión, íconos con leyenda y no dos renglones: la casilla mide ~130 px en la TV y ~100 en la
+Legion con la letra grande; «Hay que bajarla · Idioma dudoso» no cabía ni en dos. Como el iPhone (D10: íconos, no cápsulas de texto);
+mpv no tiene lector de pantalla, así que el «nombre accesible» de cada ícono es la leyenda a la vista y la nota de la casilla enfocada.
+
 | Estado | Qué se ve | Botones |
 |---|---|---|
 | Al tocar un botón | Solo la barra partida por capítulos con su punto, tiempo y «termina a las…»; abajo a la izquierda el idioma, los subtítulos y la versión (el mismo renglón que en pausa). Sin título ni «Película»: eso es de la pausa | A Pausa · X Audio y subtítulos · Y Versión (en una serie, «Episodios y versión») · B (mantener) Salir; en pausa también ◀▶ Adelantar · ↑↓ Volumen · **RT Siguiente episodio** (solo si hay siguiente; con teclado, `]`). RT con un toque pasa al siguiente y LT al anterior: sale la tarjeta «Cambio de episodio · Siguiente · E3» con la cuenta atrás de 3 s en su anillo y «B Cancelar» (con el dedo, «Cancelar»; con teclado, Esc); mantenerlo cuenta una vez |
@@ -779,7 +793,7 @@ y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CS
 | Adelantando (◀ ▶, LB/RB) | Solo la barra y, sobre el punto, la hora, cuánto salta y el capítulo | Mantén: más rápido |
 | X | Panel abajo: Audio · Subtítulos · Tamaño · Sincronía (el video sigue). Elegir audio o subtítulos **no lo cierra**; mientras está abierto, los subtítulos suben (`sub-pos`) para verse encima. En Audio, tras las pistas de esta versión, tu idioma (y los que no trae) en otra: «Latino» con «En otra · 4K» a la derecha (corto: la columna es angosta); elegirla cambia de fuente y sigue donde ibas | ◀ ▶ columna · A elegir · B cerrar |
 | Probar otros (X › Subtítulos) | Franja arriba (`sub_trial_ass`, 96 px): «Español · Subtítulo 2 de 5», del video o de tu complemento, la sincronía y, a la derecha, qué pasa (bajando, sin internet, no hay más) | ◀▶ Otro subtítulo · ↑↓ Adelantar o atrasar · A Este va bien · B Listo (se queda el último que probaste, como el iPhone) |
-| Y | Panel «Más»: **Episodios** (series; el encabezado dice la temporada, «Episodios · T5», y abre en la que ves; el que ves dice «Viendo» y el que sigue «Siguiente» en ámbar, `--color-warning`; LB/RB cambian de temporada, con el dedo «‹ Temporada» y «Temporada ›») · **Versión** · Reproducción. Versión es la cuadrícula de «Versión» de la ficha (`watch.version_grid`, `_grid_rows`): un renglón por idioma y sus calidades en casillas («1080p» y debajo «Al instante» en `--color-live`); abre en la que ves (con contorno) y abajo dice la enfocada en palabras | ↑↓ idioma · ◀ ▶ calidad (del borde, a la columna de al lado) · A cambiar (sigue donde ibas) · B cerrar |
+| Y | Panel «Más»: **Episodios** (series; el encabezado dice la temporada, «Episodios · T5», y abre en la que ves; el que ves dice «Viendo» y el que sigue «Siguiente» en ámbar, `--color-warning`; LB/RB cambian de temporada, con el dedo «‹ Temporada» y «Temporada ›») · **Versión** · Reproducción. Versión es la cuadrícula de «Versión» de la ficha (`watch.version_grid`, `_grid_rows`): un renglón por idioma y sus calidades en casillas de vidrio («1080p» y debajo sus íconos: ⚡ al instante en `--color-live`, la nube si hay que bajarla, «?» si el idioma es dudoso, con su leyenda); abre en la que ves (con contorno) y abajo dice la enfocada en palabras. Reproducción: cada acción con su ícono y su nombre entero | ↑↓ idioma · ◀ ▶ calidad (del borde, a la columna de al lado) · A cambiar (sigue donde ibas) · B cerrar |
 | Tarjetas | «Saltar intro» (botón claro), «Siguiente episodio» (el **cuadro del episodio** a la izquierda, «Siguiente episodio · T1 E2» y su nombre en grande, y el anillo de cuenta atrás a la derecha; el cuadro es una imagen encima, `overlay-add`, en el lugar que deja `upnext_ass`, `placed["still"]`, bajada al pedir el siguiente; sin cuadro, la tarjeta de siempre), «¿Sigues viendo?». Al elegir el siguiente (A, la cuenta atrás o LT/RT), **la misma tarjeta pasa a «Cargando T1 E2…»**: el arco que le quedaba se vuelve uno que gira, y se va cuando el episodio da imagen; no sale otro aviso | A / B (cargando: mantén B, salir) |
 
 El reproductor no usa ☰ (Start es de Orbital: con Home, salir del juego).
