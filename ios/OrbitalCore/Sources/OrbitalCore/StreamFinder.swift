@@ -339,14 +339,14 @@ public actor StreamFinder {
         emit(key, .asking(serving.map(\.name)))
         // Un complemento lento no detiene a los demás: pasado `budget`, si alguno ya dio fuentes, no se le espera (cuenta como
         // fallido: se vuelve a preguntar pronto).
-        let budget = Self.budget, perAddon = limits.perAddon, health = self.health
+        let budget = Self.budget, perAddon = limits.perAddon, addonHealth = self.health
         let results = await withTaskGroup(of: Arrival.self) { group in
             for (i, addon) in serving.enumerated() {
                 let id = ids[addon.url] ?? videoID
                 // Con tope propio: un servidor que gotea (o una red que no hace caso a la cancelación) no detiene la búsqueda.
                 group.addTask {
                     let got: [JSON]?? = await Deadline.within(perAddon, or: .none) { .some(await self.fetch(addon, kind: kind, videoID: id)) }
-                    if case .none = got, !Task.isCancelled { health?.fail(addon.url) }
+                    if case .none = got, !Task.isCancelled { addonHealth?.fail(addon.url) }
                     return .addon(i, got ?? nil)
                 }
             }
