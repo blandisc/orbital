@@ -87,8 +87,14 @@ export function createBackdrop({ settle = 150 } = {}) {
   const wait = settler({ quick: settle, held: settle * 2 });
 
   let aliveTimer = 0;
-  function swap(url, poster, pixel = false) {
+  function swap(url, poster, pixel = false, palette = null) {
     const back = layers[1 - front];
+    // Su color va con la capa (Fernando, 8 nov: de Luigi's Mansion a Metroid «un parpadeo raro»): con el tono global, la
+    // capa que salía se volvía del color de la que entraba a media transición (Luigi recortado sobre rojo).
+    for (const [name, value] of [["--art-tint", palette?.tint], ["--art-accent", palette?.accent]]) {
+      if (value) back.el.style.setProperty(name, value);
+      else back.el.style.removeProperty(name);
+    }
     // La capa que entra viene de estar oculta: ahí se le quita el acercamiento (la que sale se funde tal como estaba).
     back.el.classList.remove("backdrop__layer--alive");
     clearTimeout(aliveTimer);
@@ -127,10 +133,11 @@ export function createBackdrop({ settle = 150 } = {}) {
         clearTimeout(stale);
         if (mine !== token) return;
         // Ya decodificada (fuera del hilo principal): como fondo de CSS no hay `decoding="async"`, y pintarla sin decodificar
-        // lo hacía dentro del cuadro al entrar a Películas y series (37–48 ms).
-        swap(url, poster, pixel);
+        // lo hacía dentro del cuadro al entrar a Películas y series (37–48 ms). El tono primero (de la copia de 160 px, ya
+        // en memoria casi siempre): la imagen y su color entran juntos, no el color antes ni después.
         paletteOf(img, url).then((palette) => {
           if (mine !== token) return;
+          swap(url, poster, pixel, palette);
           if (palette) applyPalette(palette); // de fuera: el color anterior se queda hasta que llega el tono (sin parpadeo gris)
           else remotePalette(url, (p) => { if (mine === token) applyPalette(p); });
         });

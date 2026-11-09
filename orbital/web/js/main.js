@@ -806,7 +806,8 @@ function gamesFocused(target) {
   if (!inGames()) return;
   consoleOpened(ui.games.console?.id);
   const item = target?.item ?? target?.console?.last ?? null;
-  if (item) ui.backdrop.show(item.hero || item.image || null);
+  // Al ancho de la pantalla, como el Inicio: entera (hasta 2560 px) tardaba más y su tono se sacaba de ella, no de la copia chica.
+  if (item) ui.backdrop.show(sized(item.hero || item.image, innerWidth) || null);
   const node = document.querySelector(`.games [data-focus-id="${ui.games.focusId}"]`);
   if (node) {
     const r = node.getBoundingClientRect();
