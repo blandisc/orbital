@@ -32,6 +32,8 @@ final class AppUI {
     /// Tocaste el aviso «Ya está…» o «Sigue sin bajar» de un pedido a Real-Debrid: Biblioteca › Descargas abre con la hoja de
     /// ese pedido (su huella).
     var openCloudRequest: String?
+    /// N1: una descarga que empezó: su póster vuela a la pestaña Biblioteca (`DownloadFlightLayer`).
+    var downloadFlight: DownloadFlight?
     /// Biblioteca › Descargas está a la vista: la marca de la pestaña no sale (ya lo estás viendo).
     var seeingDownloads = false
     /// El Centro de control pidió el control de tu Orbital.
