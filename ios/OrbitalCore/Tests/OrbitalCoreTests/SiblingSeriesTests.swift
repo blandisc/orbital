@@ -20,4 +20,22 @@ final class SiblingSeriesTests: XCTestCase {
         XCTAssertFalse(Streams.namesAnotherSeries(["The Office"], "Office.S02E05.720p.mkv"), "sin el artículo, la misma")
         XCTAssertFalse(Streams.namesAnotherSeries(["Star Wars: The Clone Wars"], "Star.Wars.The.Clone.Wars.S01E01.mkv"))
     }
+
+    func testTheSeriesNamedByTheEndOfTheTitleIsAnother() {
+        XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "The.Clone.Wars.S01E04.1080p.WEB.mkv"))
+        XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "The Clone Wars Season 1 1080p"))
+        XCTAssertFalse(Streams.namesAnotherSeries(clone2003, "Clone.Wars.S01E04.mkv"), "sin artículo, no se decide")
+        XCTAssertFalse(Streams.namesAnotherSeries(["Star Wars: The Mandalorian"], "The.Mandalorian.S01E01.mkv"))
+    }
+
+    func testAnotherYearIsAnotherSeries() {
+        let years = Streams.seriesYears("2003–2005")
+        XCTAssertEqual(years, 2003...2005)
+        XCTAssertTrue(Streams.otherYears("Star Wars Clone Wars (2008) S01E04 1080p", years: years))
+        XCTAssertFalse(Streams.otherYears("Star Wars Clone Wars (2003) 1080p - Episode 4.mkv", years: years))
+        XCTAssertFalse(Streams.otherYears("Star Wars Saga (1977-2005)", years: years), "dos años: colección, no se decide")
+        XCTAssertFalse(Streams.otherYears("Clone.Wars.S01E04.mkv", years: years))
+        XCTAssertEqual(Streams.seriesYears("2019–")?.lowerBound, 2019)
+        XCTAssertNil(Streams.seriesYears(nil))
+    }
 }

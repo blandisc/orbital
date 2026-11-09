@@ -420,6 +420,7 @@ public final class PlayerModel: ObservableModel {
             guard mine == generation, !closing else { return }
             guard let found else { return failedSources.isEmpty ? await noSources(generation: mine) : fail("Ninguna versión funcionó.", .noneWorked) }
             source = found
+            Self.note("versión: \(found.release.prefix(120))\(found.isOtherTitle ? " [¿otro título?]" : "")")
             var start = startAt ?? 0
             if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await resumeStart(resume) } }
             guard mine == generation, !closing else { return }

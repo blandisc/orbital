@@ -175,7 +175,7 @@ public actor StreamFinder {
                 source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], named)
                 // Otra serie de casi el mismo nombre: descartada, no solo más abajo (Fernando, 8 nov: lista en Real-Debrid, la de
                 // «The Clone Wars» le seguía ganando a las de 2003 que Real-Debrid aún no tenía).
-                if videoID.contains(":"), [source.release, stream["behaviorHints"]?["filename"]?.string ?? ""].contains(where: { Streams.namesAnotherSeries(titleOrigin?.titles ?? [], $0) }),
+                if videoID.contains(":"), [source.release, stream["behaviorHints"]?["filename"]?.string ?? ""].contains(where: { Streams.namesAnotherSeries(titleOrigin?.titles ?? [], $0) || Streams.otherYears($0, years: titleOrigin?.seriesYears) }),
                    !source.tags.contains(Streams.otherTitleTag) { source.otherTitle = true; source.tags.append(Streams.otherTitleTag) }
                 Streams.markOtherEpisode(&source, videoID: videoID, filename: stream["behaviorHints"]?["filename"]?.string ?? "")
                 if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión

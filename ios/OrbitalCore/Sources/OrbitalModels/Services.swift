@@ -534,7 +534,8 @@ actor OriginBook {
         let tmdb = await facts
         var titles = tmdb?.titles ?? []
         if let name = info?["name"]?.nonEmptyString, !titles.contains(name) { titles.append(name) }
-        let found = TitleOrigin(language: tmdb?.language, country: info?["country"]?.nonEmptyString, year: year, titles: titles)
+        let found = TitleOrigin(language: tmdb?.language, country: info?["country"]?.nonEmptyString, year: year, titles: titles,
+                                seriesYears: kind == "series" ? Streams.seriesYears(info?["releaseInfo"]?.string ?? info?["year"]?.string) : nil)
         if found.language != nil || found.country != nil { known[metaID] = found }
         return found
     }

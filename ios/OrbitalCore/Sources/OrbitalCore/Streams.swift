@@ -155,8 +155,10 @@ public struct TitleOrigin: Sendable, Equatable {
     public var year: Int?
     /// Sus nombres (TMDB y Cinemeta, en cualquier idioma): una versión que no menciona ninguno puede ser otro título.
     public var titles: [String]
-    public init(language: String? = nil, country: String? = nil, year: Int? = nil, titles: [String] = []) {
-        self.language = language; self.country = country; self.year = year; self.titles = titles
+    /// Los años de una serie (de Cinemeta): una versión que dice otro año es otra serie de nombre parecido.
+    public var seriesYears: ClosedRange<Int>?
+    public init(language: String? = nil, country: String? = nil, year: Int? = nil, titles: [String] = [], seriesYears: ClosedRange<Int>? = nil) {
+        self.language = language; self.country = country; self.year = year; self.titles = titles; self.seriesYears = seriesYears
     }
 
     static let spainNames: Set<String> = ["es", "spain", "españa"]

@@ -18,10 +18,32 @@ extension Streams {
             let words = plain(title).split(separator: " ").map(String.init)
             if words == show { return false }
             let extra = show.filter { !words.contains($0) }
-            if !extra.isEmpty, extra.allSatisfy(articles.contains), show.filter({ !articles.contains($0) }) == words.filter({ !articles.contains($0) }) {
+            let core = show.filter { !articles.contains($0) }, titleCore = words.filter { !articles.contains($0) }
+            // Con un artículo de más y lo demás igual, o igual al final del título («The.Clone.Wars» para «Star Wars: Clone Wars»).
+            if !extra.isEmpty, extra.allSatisfy(articles.contains), !core.isEmpty,
+               core == titleCore || (core.count >= 2 && core.count < titleCore.count && Array(titleCore.suffix(core.count)) == core) {
                 return true
             }
         }
         return false
+    }
+
+    /// Una serie de otros años: el nombre trae un solo año y cae fuera de los de la serie (con uno de margen). «Star Wars: Clone
+    /// Wars» es de 2003–2005; un «…(2008)…» es la otra (Fernando, 8 nov).
+    public static func otherYears(_ release: String, years: ClosedRange<Int>?) -> Bool {
+        guard let years else { return false }
+        let found = Set(allMatches(yearPattern, release).compactMap(Int.init))
+        guard found.count == 1, let only = found.first else { return false }
+        return only < years.lowerBound - 1 || only > years.upperBound + 1
+    }
+
+    /// Los años de una serie de Cinemeta («2003–2005», «2019–» sigue al aire).
+    public static func seriesYears(_ releaseInfo: String?) -> ClosedRange<Int>? {
+        guard let info = releaseInfo else { return nil }
+        let found = allMatches(yearPattern, info).compactMap(Int.init)
+        guard let start = found.first else { return nil }
+        let ongoing = info.trimmingCharacters(in: .whitespaces).hasSuffix("–") || info.trimmingCharacters(in: .whitespaces).hasSuffix("-")
+        let end = found.count > 1 ? found[1] : ongoing ? Calendar.current.component(.year, from: Date()) : start
+        return start...max(start, end)
     }
 }
