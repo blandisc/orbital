@@ -1,83 +1,144 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Orbital · Live Activities</title>
+<title>Orbital · Live Activities pulidas (TV3, D2, D3, N1)</title>
 <style>
-:root{--bg:#0b0d12;--card:#151821;--ink:#f3efe6;--mute:#9aa0ad;--teal:#5fd3c4;--amber:#f2b84b;--good:#5ccf7a;--line:#262a35}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:28px 18px 60px}
-h1{font-size:24px;margin:0 0 4px}h2{font-size:19px;margin:44px 0 6px}p.lead{color:var(--mute);margin:0 0 18px;max-width:760px}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
-.opt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
-.opt.rec{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
-.code{display:inline-block;font-weight:700;font-size:13px;letter-spacing:.04em;background:#222735;border-radius:8px;padding:2px 8px;margin-right:6px}
-.rec .code{background:var(--teal);color:#062b26}
-.tag{font-size:12px;color:var(--teal);font-weight:600}
-.opt h3{margin:8px 0 10px;font-size:16px}
-ul{margin:10px 0 0;padding-left:18px;color:var(--mute)}li b{color:var(--ink);font-weight:600}
-/* pantalla bloqueada */
-.lock{background:linear-gradient(160deg,#1d2433,#0d1018);border-radius:22px;padding:14px;min-height:150px}
-.la{background:rgba(20,22,28,.78);backdrop-filter:blur(10px);border-radius:20px;padding:12px;display:flex;gap:12px;align-items:stretch}
-.poster{width:56px;border-radius:9px;flex:none;background:linear-gradient(160deg,#d9a441,#7b3f1d)}
-.poster.b{background:linear-gradient(160deg,#4d7cff,#1c2b66)}.poster.c{background:linear-gradient(160deg,#c94b6d,#4a1630)}
-.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-.t{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s{font-size:12.5px;color:var(--mute)}
-.bar{height:5px;border-radius:5px;background:#333847;overflow:hidden}.bar i{display:block;height:100%;background:var(--ink);border-radius:5px}
-.keys{display:flex;gap:8px;margin-top:4px}.k{flex:1;height:30px;border-radius:15px;background:#2a2f3c;display:grid;place-items:center;font-size:13px}
-.k.solid{background:var(--ink);color:#111}
-.chip{font-size:11.5px;font-weight:700;color:#111;background:var(--ink);border-radius:10px;padding:1px 7px}
-.amber{color:var(--amber)}.teal{color:var(--teal)}
-.stack{display:flex}.stack .poster{width:30px;height:45px;margin-left:-10px;border:2px solid #14161c}.stack .poster:first-child{margin-left:0}
-.ring{width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--ink) 0 62%,#333847 0);display:grid;place-items:center;flex:none}
-.ring b{width:34px;height:34px;border-radius:50%;background:#16181f;display:grid;place-items:center;font-size:11px}
-.island{margin:14px auto 0;width:210px;height:36px;border-radius:18px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 8px}
-.island .mini{width:22px;height:22px;border-radius:6px;background:linear-gradient(160deg,#d9a441,#7b3f1d)}
-.island .txt{font-size:12px;font-weight:700}
-.glow{box-shadow:0 0 0 1px rgba(95,211,196,.35),0 10px 30px -10px rgba(95,211,196,.5)}
-.backdrop{background:linear-gradient(90deg,rgba(217,164,65,.45),rgba(20,22,28,.85) 55%),#14161c}
-.toast{background:#1c2030;border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center}
-.toast .ic{width:28px;height:28px;border-radius:50%;background:var(--teal);color:#062b26;display:grid;place-items:center;font-weight:800}
-.foot{margin-top:40px;color:var(--mute);font-size:13px}
+:root{--bg:#07090d;--ink:#f3efe6;--mute:#9aa0ad;--faint:#5d6371;--teal:#5fd3c4;--tealDeep:#0b3a35;--amber:#f2b84b;--good:#5ccf7a;--line:#22262f;--glass:rgba(24,27,35,.72)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,"SF Pro Text",system-ui,sans-serif;padding:26px 16px 70px}
+h1{font-size:25px;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:20px;margin:48px 0 4px}h3{font-size:14px;color:var(--mute);font-weight:600;margin:18px 0 8px;text-transform:none}
+p.lead{color:var(--mute);margin:0 0 14px;max-width:780px}
+.code{display:inline-block;font-weight:800;font-size:13px;background:var(--teal);color:#062b26;border-radius:8px;padding:2px 9px;margin-right:8px;vertical-align:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.panel{background:#10131a;border:1px solid var(--line);border-radius:20px;padding:16px}
+.lock{position:relative;border-radius:26px;padding:16px 12px;min-height:160px;overflow:hidden;
+ background:radial-gradient(120% 90% at 20% 0%,#2a3550 0%,#121726 45%,#090b11 100%)}
+.time{text-align:center;font:700 44px/1 -apple-system,system-ui;color:rgba(243,239,230,.85);margin:2px 0 12px;letter-spacing:-.02em}
+.la{background:var(--glass);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border-radius:22px;padding:13px;display:flex;gap:12px;align-items:stretch;border:1px solid rgba(255,255,255,.06)}
+.poster{border-radius:10px;flex:none;position:relative;overflow:hidden;box-shadow:0 6px 18px -8px rgba(0,0,0,.8)}
+.p1{background:linear-gradient(165deg,#e3b35b,#8a4a1e 70%,#3b1a0c)}.p2{background:linear-gradient(165deg,#5e8bff,#22357a 70%,#0d1533)}
+.p3{background:linear-gradient(165deg,#e0607f,#5a1a35)}.p4{background:linear-gradient(165deg,#6fd39b,#1e5a3a)}.p5{background:linear-gradient(165deg,#b18cff,#3a2470)}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center}
+.t{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s{font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row{display:flex;align-items:center;gap:8px}.sp{flex:1}
+.bar{height:5px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden;position:relative}.bar i{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--ink)}
+.keys{display:flex;gap:8px;margin-top:5px}.k{flex:1;max-width:64px;height:30px;border-radius:15px;background:rgba(255,255,255,.1);display:grid;place-items:center;font-size:13px;font-weight:700}
+.moon{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff7e6,#e9dcc2 60%,#b9ab90);box-shadow:0 0 10px rgba(95,211,196,.55)}
+.orb{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--teal);letter-spacing:.02em}
+.island{margin:14px auto 0;height:37px;border-radius:19px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 9px;width:230px}
+.island.open{height:auto;border-radius:30px;padding:14px;width:100%;display:block}
+.mini{width:23px;height:23px;border-radius:7px}
+.ring{--p:40;width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--c,var(--ink)) calc(var(--p)*1%),rgba(255,255,255,.14) 0)}
+.ring b{width:37px;height:37px;border-radius:50%;background:#14171f;display:grid;place-items:center;font-size:11.5px;font-weight:800}
+.ring.sm{width:22px;height:22px}.ring.sm b{width:16px;height:16px;font-size:0}
+.queue{display:flex;align-items:center}.queue .poster{width:24px;height:36px;margin-left:-8px;border:2px solid #191c24;border-radius:7px}.queue .poster:first-child{margin-left:0}
+.count{font-size:11.5px;font-weight:800;background:var(--ink);color:#111;border-radius:9px;padding:1px 7px}
+.seg{display:flex;gap:3px;height:6px}.seg i{flex:1;border-radius:3px;background:rgba(255,255,255,.14);position:relative;overflow:hidden}
+.seg i.done{background:var(--good)}.seg i.now::after{content:"";position:absolute;inset:0 60% 0 0;background:var(--ink);border-radius:3px}
+.state{font-size:11.5px;font-weight:700;border-radius:8px;padding:1px 7px}
+.st-wait{color:var(--amber);background:rgba(242,184,75,.14)}.st-done{color:var(--good);background:rgba(92,207,122,.14)}.st-pause{color:var(--mute);background:rgba(255,255,255,.08)}
+ul{margin:12px 0 0;padding-left:18px;color:var(--mute)}li b{color:var(--ink);font-weight:600}
+.note{color:var(--mute);font-size:13px;margin-top:10px}
+/* N1 animado */
+.phone{position:relative;height:300px;border-radius:30px;background:linear-gradient(#141824,#0b0e15);overflow:hidden;border:1px solid var(--line)}
+.ficha{position:absolute;left:16px;right:16px;top:18px;display:flex;gap:12px}
+.ficha .poster{width:72px;height:108px}
+.btn{position:absolute;left:104px;top:86px;height:34px;width:150px;border-radius:17px;background:var(--ink);color:#111;font-weight:700;font-size:13px;display:grid;place-items:center}
+.fly{position:absolute;width:30px;height:45px;left:40px;top:40px;border-radius:7px;animation:fly 3.2s cubic-bezier(.5,0,.2,1) infinite}
+@keyframes fly{0%,22%{transform:translate(0,0) scale(1);opacity:0}28%{opacity:1;transform:translate(0,0) scale(1.25)}62%{transform:translate(196px,206px) scale(.45);opacity:1}66%,100%{transform:translate(196px,206px) scale(.3);opacity:0}}
+.tabbar{position:absolute;left:12px;right:12px;bottom:12px;height:54px;border-radius:27px;background:rgba(30,34,44,.8);display:flex;justify-content:space-around;align-items:center;font-size:20px;color:var(--faint)}
+.tabbar .dl{position:relative;color:var(--ink);animation:bump 3.2s ease-out infinite}
+.badge{position:absolute;top:-6px;right:-12px;font-size:10px;font-weight:800;background:var(--teal);color:#062b26;border-radius:8px;padding:0 5px;animation:pop 3.2s ease-out infinite}
+@keyframes bump{0%,62%{transform:scale(1)}68%{transform:scale(1.28)}76%{transform:scale(.94)}84%,100%{transform:scale(1)}}
+@keyframes pop{0%,62%{transform:scale(0)}70%{transform:scale(1.25)}80%,100%{transform:scale(1)}}
+.toastN{position:absolute;left:14px;right:14px;top:150px;border-radius:16px;background:rgba(34,38,50,.95);padding:10px 12px;display:flex;gap:10px;align-items:center;animation:toast 3.2s cubic-bezier(.2,.9,.25,1.2) infinite;transform-origin:top center}
+@keyframes toast{0%,26%{opacity:0;transform:translateY(-8px) scale(.92)}34%,88%{opacity:1;transform:translateY(0) scale(1)}96%,100%{opacity:0;transform:translateY(-6px) scale(.97)}}
+.toastN .ic{width:28px;height:28px;border-radius:50%;background:var(--teal);color:#062b26;display:grid;place-items:center;font-weight:900}
+.link{color:var(--teal);font-weight:700;font-size:13px}
+@media (prefers-reduced-motion:reduce){.fly,.tabbar .dl,.badge,.toastN{animation:none}.toastN{opacity:1}.badge{transform:scale(1)}}
+.foot{margin-top:40px;color:var(--mute);font-size:13px;max-width:780px}
 </style></head><body>
-<h1>Live Activities de Orbital</h1>
-<p class="lead">Dos pantallas: <b>«Viendo en la TV»</b> y <b>Descargas</b>. Cada opción tiene su código para que me digas cuál (por ejemplo «TV2 y D2»). La que recomiendo lleva el borde turquesa.</p>
+<h1>Live Activities, segunda vuelta</h1>
+<p class="lead">Las que pediste más pulidas: <b>TV3</b> (marca Orbital), <b>D2</b> (la fila), <b>D3</b> (una barra por todo el lote) y <b>N1</b> (el póster vuela a Descargas). Cada una con la pantalla bloqueada, la isla cerrada, la isla abierta y sus estados.</p>
 
-<h2>1 · «Viendo en la TV» con más carácter</h2>
-<p class="lead">Hoy: póster, nombre, barra y tres botones sobre el velo gris de iOS. Funciona, pero podría ser de cualquier app.</p>
-<div class="row">
- <div class="opt"><span class="code">TV1</span><span class="tag">Póster de fondo</span><h3>El arte de la película detrás</h3>
-  <div class="lock"><div class="la backdrop"><div class="poster"></div><div class="col"><div class="t">Dune: Parte Dos</div><div class="s">termina a las 23:21</div><div class="bar"><i style="width:58%"></i></div><div class="keys"><div class="k">−10</div><div class="k solid">❚❚</div><div class="k">+10</div></div></div></div></div>
-  <ul><li><b>Gana:</b> cada película se ve distinta; se nota que es lo que estás viendo.</li><li><b>Pierde:</b> con arte claro la letra pierde contraste (se oscurece a la derecha).</li></ul></div>
- <div class="opt rec"><span class="code">TV2</span><span class="tag">Recomendada · color de la película</span><h3>El color del póster en el brillo y la barra</h3>
-  <div class="lock"><div class="la glow" style="box-shadow:0 0 0 1px rgba(217,164,65,.45),0 10px 30px -10px rgba(217,164,65,.6)"><div class="poster"></div><div class="col"><div class="t">Dune: Parte Dos <span class="s">· 📺</span></div><div class="s">quedan 52 min · termina 23:21</div><div class="bar"><i style="width:58%;background:#e2b45a"></i></div><div class="keys"><div class="k">−10</div><div class="k solid" style="background:#e2b45a">❚❚</div><div class="k">+10</div></div></div></div>
-  <div class="island"><div class="mini"></div><span class="txt" style="color:#e2b45a">52 min</span></div></div>
-  <ul><li><b>Gana:</b> carácter sin perder lectura: el tono del póster (el mismo que usa la ficha) en la barra, el botón y un brillo leve; en la isla, «52 min» en ese color.</li><li><b>Pierde:</b> poco; con pósters grises se ve como hoy.</li></ul></div>
- <div class="opt"><span class="code">TV3</span><span class="tag">Marca Orbital</span><h3>La luna de Orbital y el turquesa de la app</h3>
-  <div class="lock"><div class="la" style="border:1px solid rgba(95,211,196,.4)"><div class="poster"></div><div class="col"><div class="t"><span class="teal">◐ Orbital</span> · Dune</div><div class="s">quedan 52 min</div><div class="bar"><i style="width:58%;background:var(--teal)"></i></div><div class="keys"><div class="k">−10</div><div class="k solid" style="background:var(--teal);color:#062b26">❚❚</div><div class="k">+10</div></div></div></div></div>
-  <ul><li><b>Gana:</b> se reconoce Orbital al instante.</li><li><b>Pierde:</b> todas se ven iguales; el turquesa es la «voz» de la app y aquí compite con el póster.</li></ul></div>
+<h2><span class="code">TV3</span>«Viendo en la TV» con la marca Orbital</h2>
+<p class="lead">La luna de Orbital y el turquesa (la voz de la app) solo en lo que es de Orbital: el sello, el botón principal y el avance. El póster sigue mandando a la izquierda.</p>
+<div class="grid">
+ <div class="panel"><h3>Pantalla bloqueada · sonando</h3>
+  <div class="lock"><div class="time">23:08</div>
+   <div class="la" style="border-color:rgba(95,211,196,.28)"><div class="poster p1" style="width:62px;height:93px"></div>
+    <div class="col"><div class="row"><span class="orb"><span class="moon"></span>EN TU TV</span><span class="sp"></span><span class="s">quedan 52 min</span></div>
+     <div class="t">Dune: Parte Dos</div>
+     <div class="bar"><i style="width:58%;background:var(--teal)"></i></div>
+     <div class="keys"><div class="k">↺10</div><div class="k" style="background:var(--teal);color:#062b26">❚❚</div><div class="k">10↻</div></div></div></div></div></div>
+ <div class="panel"><h3>En pausa · y una serie</h3>
+  <div class="lock"><div class="time">23:08</div>
+   <div class="la"><div class="poster p2" style="width:62px;height:93px;filter:saturate(.6)"></div>
+    <div class="col"><div class="row"><span class="orb"><span class="moon" style="box-shadow:none;opacity:.7"></span>EN TU TV</span><span class="sp"></span><span class="state st-pause">En pausa</span></div>
+     <div class="t">The Office · T2 E5</div><div class="s">Trojan's Horse</div>
+     <div class="bar"><i style="width:31%;background:var(--mute)"></i></div>
+     <div class="keys"><div class="k">⏮</div><div class="k" style="background:var(--teal);color:#062b26">▶</div><div class="k">⏭</div></div></div></div></div></div>
+ <div class="panel"><h3>Isla cerrada y abierta</h3>
+  <div class="island"><span class="moon" style="width:18px;height:18px"></span><span style="font-size:12px;font-weight:700;color:var(--teal)">52 min</span></div>
+  <div class="island open" style="margin-top:14px"><div class="row"><div class="poster p1" style="width:40px;height:60px"></div><div class="col"><span class="orb"><span class="moon"></span>EN TU TV</span><div class="t">Dune: Parte Dos</div><div class="bar"><i style="width:58%;background:var(--teal)"></i></div></div></div>
+   <div class="keys" style="justify-content:center"><div class="k">↺10</div><div class="k" style="background:var(--teal);color:#062b26">❚❚</div><div class="k">10↻</div></div></div>
+  <p class="note">Cerrada: la luna (que brilla mientras suena y se apaga en pausa) y cuánto falta, en turquesa.</p></div>
 </div>
+<ul><li><b>Gana:</b> se reconoce Orbital de lejos; la luna dice «esto pasa en tu tele», no en el teléfono.</li><li><b>Pierde:</b> todas las películas comparten color; el turquesa no se usa en otros avisos del sistema, así que no se confunde.</li></ul>
 
-<h2>2 · Descargas: «1 de 5» y el aviso al empezar</h2>
-<p class="lead">Hoy: el póster de lo que baja, un % y «faltan 3». No dice cuál vas ni cuántas eran en total.</p>
-<div class="row">
- <div class="opt"><span class="code">D1</span><span class="tag">La de hoy + contador</span><h3>Igual, con «2 de 5» junto al nombre</h3>
-  <div class="lock"><div class="la"><div class="poster b"></div><div class="col"><div class="t">The Office <span class="chip">2 de 5</span></div><div class="s">T2 · E5 · Trojan's Horse</div><div class="bar"><i style="width:40%"></i></div><div class="s">40 % · termina como a las 10:42</div></div></div></div>
-  <ul><li><b>Gana:</b> cambio mínimo; ya sabes cuántas van.</li><li><b>Pierde:</b> no ves qué viene después.</li></ul></div>
- <div class="opt rec"><span class="code">D2</span><span class="tag">Recomendada · la fila</span><h3>La actual grande y las que siguen en fila</h3>
-  <div class="lock"><div class="la"><div class="ring"><b>40%</b></div><div class="col"><div class="t">The Office · T2 E5</div><div class="s">2 de 5 · lo demás termina 11:20</div><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><div class="stack"><div class="poster b"></div><div class="poster c"></div><div class="poster"></div></div><span class="s">siguen 3</span></div></div></div>
-  <div class="island"><span class="txt">↓ 2/5</span><div class="ring" style="width:22px;height:22px"><b style="width:16px;height:16px"></b></div></div></div>
-  <ul><li><b>Gana:</b> de un vistazo: cuál va (anillo con %), cuántas son (2 de 5), qué sigue (pósters) y a qué hora acaba todo. En la isla «↓ 2/5».</li><li><b>Pierde:</b> el nombre del episodio va más corto.</li></ul></div>
- <div class="opt"><span class="code">D3</span><span class="tag">Una barra por todo</span><h3>Una sola barra para el lote completo</h3>
-  <div class="lock"><div class="la"><div class="poster b"></div><div class="col"><div class="t">Bajando 5 · The Office y 2 más</div><div class="s">ahora: T2 E5 (2 de 5)</div><div class="bar" style="display:flex;gap:3px;background:none"><i style="flex:1;background:var(--good)"></i><i style="flex:1;background:#bfc4ce;opacity:.6"></i><i style="flex:1;background:#333847"></i><i style="flex:1;background:#333847"></i><i style="flex:1;background:#333847"></i></div><div class="s">1 lista · termina 11:20</div></div></div></div>
-  <ul><li><b>Gana:</b> la barra en tramos dice el avance del lote entero.</li><li><b>Pierde:</b> el % de la actual se pierde.</li></ul></div>
+<h2><span class="code">D2</span>Descargas: la actual grande y la fila</h2>
+<div class="grid">
+ <div class="panel"><h3>Bajando · 2 de 5</h3>
+  <div class="lock"><div class="time">10:21</div>
+   <div class="la"><div class="ring" style="--p:40"><b>40%</b></div>
+    <div class="col"><div class="row"><div class="t">The Office · T2 E5</div><span class="sp"></span><span class="count">2 de 5</span></div>
+     <div class="s">Trojan's Horse · 1.1 de 2.7 GB</div>
+     <div class="row" style="margin-top:3px"><div class="queue"><div class="poster p3"></div><div class="poster p4"></div><div class="poster p5"></div></div><span class="s">siguen 3 · todo listo como a las 11:20</span></div></div></div></div></div>
+ <div class="panel"><h3>Esperando Wi-Fi · y terminado</h3>
+  <div class="lock" style="min-height:0"><div class="la"><div class="ring" style="--p:40;--c:var(--amber)"><b style="color:var(--amber)">❚❚</b></div>
+    <div class="col"><div class="row"><div class="t">The Office · T2 E5</div><span class="sp"></span><span class="state st-wait">Wi-Fi</span></div><div class="s">Sigue cuando te conectes a Wi-Fi</div></div></div>
+   <div class="la" style="margin-top:10px"><div class="ring" style="--p:100;--c:var(--good)"><b style="color:var(--good)">✓</b></div>
+    <div class="col"><div class="row"><div class="t">5 listas para ver</div><span class="sp"></span><span class="state st-done">Listo</span></div><div class="row"><div class="queue"><div class="poster p2"></div><div class="poster p3"></div><div class="poster p4"></div><div class="poster p5"></div></div><span class="s">sin internet, cuando quieras</span></div></div></div></div></div>
+ <div class="panel"><h3>Isla cerrada y abierta</h3>
+  <div class="island"><span style="font-size:12px;font-weight:800">↓ 2/5</span><div class="ring sm" style="--p:40"><b></b></div></div>
+  <div class="island open" style="margin-top:14px"><div class="row"><div class="ring" style="--p:40"><b>40%</b></div><div class="col"><div class="t">The Office · T2 E5</div><div class="s">2 de 5 · siguen 3</div></div><div class="queue"><div class="poster p3"></div><div class="poster p4"></div><div class="poster p5"></div></div></div></div>
+  <p class="note">Cerrada: «↓ 2/5» y el anillo de la actual. Abierta: lo mismo con los pósters que siguen.</p></div>
 </div>
+<ul><li><b>Gana:</b> de un vistazo: cuál va, cuántas son, qué sigue y a qué hora acaba todo. Al terminar, «5 listas para ver» con sus pósters.</li><li><b>Pierde:</b> el nombre del episodio va en el segundo renglón, más corto.</li></ul>
 
-<h2>3 · El aviso al empezar una descarga (dentro de la app)</h2>
-<div class="row">
- <div class="opt rec"><span class="code">N1</span><span class="tag">Recomendada · vuela a Descargas</span><h3>El póster vuela a la pestaña Descargas</h3>
-  <div class="lock" style="min-height:110px"><div class="toast"><div class="ic">↓</div><div class="col"><div class="t">Bajando The Office · T2 E5</div><div class="s">2 de 5 en la fila · Ver</div></div></div></div>
-  <ul><li><b>Gana:</b> el póster chiquito se encoge y viaja a Descargas (que hace un pequeño rebote con el número); el aviso dice cuántas lleva la fila y «Ver».</li><li><b>Pierde:</b> una animación más (sin ella con «Reducir movimiento»).</li></ul></div>
- <div class="opt"><span class="code">N2</span><span class="tag">Solo el aviso</span><h3>El aviso de siempre, con la fila</h3>
-  <div class="lock" style="min-height:110px"><div class="toast"><div class="ic">↓</div><div class="col"><div class="t">Descargando</div><div class="s">The Office · T2 E5 · 2 de 5</div></div></div></div>
-  <ul><li><b>Gana:</b> simple.</li><li><b>Pierde:</b> no se siente que «se guardó» en algún lado.</li></ul></div>
+<h2><span class="code">D3</span>Descargas: una barra por todo el lote</h2>
+<div class="grid">
+ <div class="panel"><h3>Bajando · tramo por descarga</h3>
+  <div class="lock"><div class="time">10:21</div>
+   <div class="la"><div class="poster p2" style="width:52px;height:78px"></div>
+    <div class="col"><div class="row"><div class="t">The Office y 2 más</div><span class="sp"></span><span class="s">2 de 5</span></div>
+     <div class="s">ahora: T2 E5 · 40 %</div>
+     <div class="seg"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div>
+     <div class="s">1 lista · todo como a las 11:20</div></div></div></div></div>
+ <div class="panel"><h3>Esperando Wi-Fi · y terminado</h3>
+  <div class="lock" style="min-height:0"><div class="la"><div class="poster p2" style="width:52px;height:78px;filter:saturate(.5)"></div>
+    <div class="col"><div class="row"><div class="t">The Office y 2 más</div><span class="sp"></span><span class="state st-wait">Wi-Fi</span></div><div class="seg"><i class="done"></i><i class="now" style="opacity:.6"></i><i></i><i></i><i></i></div><div class="s">Sigue cuando te conectes a Wi-Fi</div></div></div>
+   <div class="la" style="margin-top:10px"><div class="poster p2" style="width:52px;height:78px"></div>
+    <div class="col"><div class="row"><div class="t">5 listas para ver</div><span class="sp"></span><span class="state st-done">Listo</span></div><div class="seg"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></div></div></div></div></div>
+ <div class="panel"><h3>Isla cerrada y abierta</h3>
+  <div class="island"><span style="font-size:12px;font-weight:800">↓ 2/5</span><div class="seg" style="width:70px"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div></div>
+  <div class="island open" style="margin-top:14px"><div class="row"><div class="poster p2" style="width:36px;height:54px"></div><div class="col"><div class="t">The Office y 2 más</div><div class="seg"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div><div class="s">2 de 5 · ahora T2 E5 · 40 %</div></div></div></div>
+  <p class="note">Con más de 8 descargas, los tramos se juntan en una barra con una marca por cada una lista.</p></div>
 </div>
-<p class="foot">Mi recomendación: <b>TV2 + D2 + N1</b>. TV2 da carácter con el color de cada película sin perder lectura; D2 responde a «uno de X» y enseña qué sigue; N1 hace evidente a dónde se va lo que pides. Maquetas sin datos reales.</p>
+<ul><li><b>Gana:</b> la barra en tramos cuenta el lote entero; verde lo listo, blanco lo que baja.</li><li><b>Pierde:</b> el avance de la actual es chico; con un solo título se ve como hoy.</li></ul>
+
+<h2><span class="code">N1</span>Al descargar, el póster vuela a Descargas</h2>
+<div class="grid">
+ <div class="panel"><h3>La animación (se repite)</h3>
+  <div class="phone"><div class="ficha"><div class="poster p2"></div><div class="col" style="justify-content:flex-start"><div class="t">The Office</div><div class="s">T2 · E5 · Trojan's Horse</div></div></div>
+   <div class="btn">↓ Descargar</div><div class="fly p2"></div>
+   <div class="toastN"><div class="ic">↓</div><div class="col"><div class="t" style="font-size:14px">Bajando T2 E5</div><div class="s">2 de 5 en la fila</div></div><span class="link">Ver</span></div>
+   <div class="tabbar"><span>⌂</span><span>⌕</span><span class="dl">↓<span class="badge">5</span></span><span>☰</span></div></div></div>
+ <div class="panel"><h3>Cómo se siente</h3>
+  <ul style="margin-top:0"><li><b>1.</b> Tocas «Descargar»: el póster chiquito se desprende y crece un instante (dice «lo tomé»).</li>
+   <li><b>2.</b> Viaja en curva hacia la pestaña Descargas y se encoge (0.4 s).</li>
+   <li><b>3.</b> La pestaña rebota y su globito sube a «5» (el total en la fila).</li>
+   <li><b>4.</b> Aparece el aviso con «2 de 5 en la fila» y «Ver», que abre Descargas.</li>
+   <li><b>5.</b> Una vibración suave al llegar. Con «Reducir movimiento»: solo el aviso, sin vuelo.</li></ul>
+  <p class="note">La misma idea en el iPad y la Mac (vuela al lado del menú) y, con «Descargar temporada», vuelan los pósters de los episodios uno tras otro.</p></div>
+</div>
+<p class="foot">Combinaciones que funcionan juntas: <b>TV3 + D2 + N1</b> (marca Orbital en la tele, descargas con fila) o <b>TV3 + D3 + N1</b> (lote en tramos). Mi recomendación sigue siendo <b>D2</b> para descargas: dice qué sigue, no solo cuánto. Maquetas sin datos reales; el texto y los tiempos son los que se usarían.</p>
 </body></html>
