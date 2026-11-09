@@ -1883,6 +1883,8 @@ class Watch:
             facts["titles"] = [*facts.get("titles", []), name]
         if not facts.get("original") and (from_country := streams.original_from_country(info.get("country"))):
             facts["original"] = from_country  # sin TMDB, el país de Cinemeta (como el iPhone)
+        if kind == "series":  # «2003–2005»: una versión de otros años es otra serie (streams.other_years)
+            facts["years"] = str(info.get("releaseInfo") or info.get("year") or "")
         year = re.match(r"(19|20)\d\d", str(info.get("year") or info.get("releaseInfo") or ""))
         if year:
             facts.setdefault("year", int(year.group()))  # una versión que dice otro año es otra película

@@ -233,6 +233,22 @@ def test_otra_serie_con_un_articulo_de_mas():
     assert streams.names_another_series(clone2003, "Star Wars The Clone Wars (2008) Season 1")
 
 
+def test_otra_serie_por_el_final_del_titulo_o_por_otro_ano():
+    """Fernando, 9 nov: seguía abriendo la de 2008 («The.Clone.Wars…» sin «Star Wars», o con su año); como el iPhone."""
+    clone2003 = ["Star Wars: Clone Wars"]
+    assert streams.names_another_series(clone2003, "The.Clone.Wars.S01E04.1080p.WEB.mkv")
+    assert streams.names_another_series(clone2003, "The Clone Wars Season 1 1080p")
+    assert not streams.names_another_series(clone2003, "Clone.Wars.S01E04.mkv"), "sin artículo, no se decide"
+    assert not streams.names_another_series(["Star Wars: The Mandalorian"], "The.Mandalorian.S01E01.mkv")
+    years = streams.series_years("2003–2005")
+    assert years == (2003, 2005)
+    assert streams.other_years("Star Wars Clone Wars (2008) S01E04 1080p", years)
+    assert not streams.other_years("Star Wars Clone Wars (2003) 1080p - Episode 4.mkv", years)
+    assert not streams.other_years("Star Wars Saga (1977-2005)", years), "dos años: colección, no se decide"
+    assert not streams.other_years("Clone.Wars.S01E04.mkv", years)
+    assert streams.series_years("2019–")[0] == 2019 and streams.series_years(None) is None
+
+
 def test_otra_serie_lista_no_le_gana_a_la_de_esta_serie():
     """Lista en Real-Debrid, la de «The Clone Wars» le ganaba a la de 2003 que había que bajar (Fernando, 8 nov)."""
     other = streams.Source(index=1, addon="Comet", stream={}, transport_url="", release="Star.Wars.The.Clone.Wars.S01E01.1080p",

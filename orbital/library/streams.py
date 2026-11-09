@@ -23,6 +23,7 @@ import zlib
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field, replace
+from datetime import date
 from urllib.parse import quote, urlparse
 
 from ..net import NET_ERRORS
@@ -508,9 +509,32 @@ def names_another_series(titles: list[str], release: str) -> bool:
         if words == show:
             return False
         extra = [w for w in show if w not in words]
-        if extra and all(w in ARTICLES for w in extra) and [w for w in show if w not in ARTICLES] == [w for w in words if w not in ARTICLES]:
+        core, title_core = [w for w in show if w not in ARTICLES], [w for w in words if w not in ARTICLES]
+        # Con un artículo de más y lo demás igual, o igual al final del título («The.Clone.Wars» para «Star Wars: Clone Wars»;
+        # Fernando, 9 nov: seguía abriendo la de 2008).
+        if extra and all(w in ARTICLES for w in extra) and core and (
+                core == title_core or 2 <= len(core) < len(title_core) and title_core[-len(core):] == core):
             return True
     return False
+
+
+def series_years(info: str | None) -> tuple[int, int] | None:
+    """Los años de una serie de Cinemeta («2003–2005»; «2019–» sigue al aire), como Streams.seriesYears del iPhone."""
+    found = [int(y) for y in YEAR.findall(info or "")]
+    if not found:
+        return None
+    ongoing = (info or "").strip().endswith(("–", "-"))
+    end = found[1] if len(found) > 1 else date.today().year if ongoing else found[0]
+    return found[0], max(found[0], end)
+
+
+def other_years(release: str, years: tuple[int, int] | None) -> bool:
+    """Una serie de otros años: el nombre trae un solo año y cae fuera de los de la serie, con uno de margen («Star Wars:
+    Clone Wars» es de 2003–2005; un «…(2008)…» es la otra; como Streams.otherYears del iPhone)."""
+    if not years:
+        return False
+    found = {int(y) for y in YEAR.findall(release)}
+    return len(found) == 1 and not years[0] - 1 <= next(iter(found)) <= years[1] + 1
 
 
 # «¿Otro episodio?» (las mismas reglas que el iPhone, Streams+Episodes.swift): Torrentio a veces pone en un episodio el
@@ -900,6 +924,7 @@ class StreamFinder:
             facts = {}
         original = facts.get("original") if isinstance(facts.get("original"), str) else None
         titles = [x for x in facts.get("titles") or [] if isinstance(x, str) and x.strip()]
+        years = series_years(facts.get("years")) if kind == "series" else None
         notices = set()
         for addon, streams in results:
             for stream in streams or []:
@@ -916,7 +941,8 @@ class StreamFinder:
                     hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
                     filename = str(hints.get("filename") or "")
                     src.other_title = not mentions_title(titles, f"{src.release} {filename}")
-                    src.other_series = ":" in video_id and any(names_another_series(titles, name) for name in (src.release, filename))
+                    src.other_series = ":" in video_id and any(names_another_series(titles, name) or other_years(name, years)
+                                                               for name in (src.release, filename))
                     if kind == "movie" and isinstance(facts.get("year"), int):
                         src.other_year = other_year(src.release, facts["year"])
                     if (season := season_of(video_id)) is not None:
