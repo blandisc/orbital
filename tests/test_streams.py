@@ -130,3 +130,46 @@ def test_un_complemento_muerto_no_hace_decir_sin_conexion(monkeypatch):
     monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: None)
     assert finder.find("series", "tt1:1:8", Preferences()) == []
     assert finder.outcome["series:tt1:1:8"] == "offline"  # nadie contestó: eso sí es sin conexión
+
+
+# --- Comet de respaldo (Fernando, 6 nov; `Streams.cometDoubt` del iPhone) -------------------------------------------------
+COMET = "https://comet.elfhosted.com/abc/manifest.json"
+
+
+def comet(name, title):
+    return parse(s(name, title), "Comet", COMET, 50)
+
+
+def test_comet_marca_al_instante_con_el_rayo_y_por_bajar_con_el_reloj():
+    ready = comet("[RD⚡️] Comet 1080p", "Interstellar.2014.1080p.BluRay.x264\n💾 3.2 GB")
+    waiting = comet("[RD⏳] Comet 1080p", "Interstellar.2014.1080p.BluRay.x264\n💾 3.2 GB")
+    assert ready.cached and ready.debrid and ready.kind == "comet"
+    assert waiting.debrid and not waiting.cached
+    assert streams.instant_mark("[RD+] Torrentio\n1080p", "Torrentio", TORRENTIO) == (True, True)
+    assert streams.instant_mark("[RD download] Torrentio\n1080p", "Torrentio", TORRENTIO) == (False, True)
+
+
+def test_comet_al_instante_va_detras_de_torrentio_y_antes_de_la_que_hay_que_bajar():
+    title = "Interstellar.2014.1080p.BluRay.x264\n👤 50 💾 3.2 GB ⚙️ RARBG"
+    tor_ready = parse(s("[RD+] Torrentio\n1080p", title), "Torrentio RD", TORRENTIO, 1)
+    tor_later = parse(s("[RD download] Torrentio\n1080p", title), "Torrentio RD", TORRENTIO, 2)
+    com_ready = comet("[RD⚡] Comet 1080p", title)
+    order = rank([tor_later, com_ready, tor_ready], Preferences(audio="en", quality="1080p"), "movie")
+    assert [x.index for x in order] == [1, 50, 2]
+    # El castigo es el del iPhone: 300 menos que la misma de Torrentio, nada más.
+    assert tor_ready.score - com_ready.score == streams.COMET_DOUBT == 300
+
+
+def test_comet_en_tu_idioma_le_gana_a_torrentio_en_otro():
+    tor_other = parse(s("[RD+] Torrentio\n1080p", "Interstellar.2014.1080p.Russian\n💾 3.2 GB\n🇷🇺"), "Torrentio RD", TORRENTIO, 1)
+    com_mine = comet("[RD⚡] Comet 1080p", "Interstellar.2014.1080p.BluRay.x264\n💾 3.2 GB\n🇬🇧")
+    order = rank([tor_other, com_mine], Preferences(audio="en", quality="1080p"), "movie")
+    assert order[0].index == 50
+
+
+def test_cada_version_dice_de_que_complemento_viene():
+    assert streams.addon_kind("Torrentio RD", TORRENTIO) == "torrentio"
+    assert streams.addon_kind("Mi complemento", COMET) == "comet"  # por el servidor, aunque el nombre no lo diga
+    assert streams.addon_kind("MediaFusion", "https://mediafusion.elfhosted.com/x/manifest.json") == "other"
+    assert parsed(INTERSTELLAR)[0].public()["addon_kind"] == "torrentio"
+    assert comet("[RD⚡] Comet 1080p", "x\n💾 3.2 GB").public()["addon_kind"] == "comet"

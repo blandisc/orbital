@@ -23,7 +23,7 @@ import zlib
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field, replace
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from ..net import NET_ERRORS
 from . import addons
@@ -157,6 +157,7 @@ class Source:
     # no menciona el título: solo baja, y en tu idioma sigue ganando, FQ3-A), esta nunca es la recomendada (como el iPhone).
     other_year: bool = False
     refused: bool = False  # Real-Debrid no la dejó bajar (FQ2-A): −1500, como el iPhone; solo es la tarjeta si está sola
+    kind: str = "other"  # de qué complemento viene: "torrentio", "comet" u "other" (addon_kind; el ícono de «Versión»)
 
     @property
     def doubtful(self) -> bool:
@@ -199,6 +200,7 @@ class Source:
             # Para «Versión»: cada idioma con su código, su nombre y cómo lo sabemos.
             "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
                             for code, how in self.audio_langs.items()],
+            "addon_kind": self.kind,  # Ⓣ Torrentio, Ⓒ Comet o la pieza de los demás, junto a la calidad (AddonMark)
             "other_title": self.other_title or self.other_year, "other_episode": self.other_episode, "checked": self.checked, "requested": self.requested,
             # T8-A: la que hay que pedir lleva su huella (no es secreta) para «Pedirlo y avisarme» justo esta.
             **({"hash": self.info_hash} if self.debrid and not self.cached and self.info_hash else {}),
@@ -264,6 +266,42 @@ def torrentio_notice(stream: dict) -> str | None:
     return "failed_access" if "rd error" in name else None
 
 
+def _who(addon: str, transport_url: str) -> str:
+    """Quién trae la versión: el nombre del complemento y el servidor de su dirección, en minúsculas."""
+    try:
+        host = urlparse(transport_url).hostname or ""
+    except ValueError:
+        host = ""
+    return f"{addon} {host}".lower()
+
+
+def addon_kind(addon: str, transport_url: str) -> str:
+    """De qué complemento viene una versión: "torrentio", "comet" u "other" (el ícono chico de «Versión», Fernando 6 nov;
+    `Streams.addonKind` del iPhone)."""
+    who = _who(addon, transport_url)
+    return "torrentio" if "torrentio" in who else "comet" if "comet" in who else "other"
+
+
+DEBRID_MARK = re.compile(r"\[(RD|AD|PM|DL|TB|OC)[ +\]]")
+
+
+def instant_mark(name: str, addon: str, transport_url: str) -> tuple[bool, bool]:
+    """(¿ya está en Real-Debrid?, ¿pasa por Real-Debrid?) según cómo lo marca cada complemento (`Streams.instantMark` del
+    iPhone): Torrentio con «[RD+]»; Comet y MediaFusion con «⚡» (al instante) o «⏳»/«⬇» (hay que bajarla)."""
+    who = _who(addon, transport_url)
+    head = name.split("\n", 1)[0]
+    bolt = "⚡" in head  # por letra: «⚡️» trae un selector de variante detrás y sigue contando
+    waiting = "⏳" in head or "⬇" in head
+    marked = bool(DEBRID_MARK.search(name))
+    if "torrentio" in who:
+        return "[RD+]" in name or "+]" in head, marked
+    if "comet" in who:
+        return bolt or "+]" in head, marked or bolt or waiting
+    if "mediafusion" in who:
+        return bolt, bolt or waiting or marked
+    return "[RD+]" in name or "+]" in head or bolt, marked or bolt or waiting
+
+
 def parse(stream: dict, addon: str, transport_url: str, index: int, original: str | None = None) -> Source:
     """`original`: el idioma original del título según TMDB ("en", "ja", "es-ES"…); None si no se sabe."""
     name = str(stream.get("name") or "")
@@ -272,11 +310,11 @@ def parse(stream: dict, addon: str, transport_url: str, index: int, original: st
     first = text.split("\n", 1)[0].strip()
     hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
     filename = str(hints.get("filename") or "")
-    src = Source(index=index, addon=addon.split()[0] if addon.split() else "", stream=stream, transport_url=transport_url)
+    src = Source(index=index, addon=addon.split()[0] if addon.split() else "", stream=stream, transport_url=transport_url,
+                 kind=addon_kind(addon, transport_url))
     binge = hints.get("bingeGroup")
     src.binge = binge if isinstance(binge, str) and binge else None
-    src.cached = "[RD+]" in name or "+]" in name.split("\n")[0]
-    src.debrid = bool(re.search(r"\[(RD|AD|PM|DL|TB|OC)[ +\]]", name))
+    src.cached, src.debrid = instant_mark(name, addon, transport_url)
     # La resolución que declara el addon manda; el nombre del archivo solo si el addon no dice nada
     # ("1080p.UHD.BluRay" no es 4K: "UHD" ahí es el origen del disco).
     for where in (name, f"{first} {filename}"):
@@ -579,12 +617,21 @@ STEP_UNSURE_SPANISH = 100  # «Español (no dice cuál)»: justo después del tu
 STEP_BASE, STEP_EACH = 300, 40
 
 
+# Lo que pierde una versión «al instante» de Comet frente a una de Torrentio (menos que lo que pesa «al instante»).
+COMET_DOUBT = 300
+
+
 def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
     s = 0.0
     if src.cached:
         s += 1000  # arranca al instante
     elif src.debrid:
         s -= 400  # Real-Debrid aún tiene que descargarla
+    # Comet, de respaldo (Fernando, 6 nov): su «⚡» a veces no es cierto y manda el aviso «Not ready yet» de ElfHosted. Va
+    # detrás de la de Torrentio al instante en tu idioma, pero antes de una que Real-Debrid aún tiene que bajar
+    # (`Streams.cometDoubt` del iPhone).
+    if src.cached and src.kind == "comet":
+        s -= COMET_DOUBT
     s += language_score(src, prefs)
     order = ["4K", "1080p", "720p", "480p", ""]
     want = order.index(prefs.quality) if prefs.quality in order else 1
