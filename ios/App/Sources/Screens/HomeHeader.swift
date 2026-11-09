@@ -21,6 +21,19 @@ struct HomeHeader: View {
     @State private var width: CGFloat = 1
     @State private var standardHeight: CGFloat = 0
     @State private var rowHeight: CGFloat = 0
+    @State private var pulse = false
+    @State private var pulsed = false
+
+    /// Cómo avisa que hay historias nuevas (HH2 o HH3, Fernando, 9 nov; se elige al ver las dos de verdad).
+    enum Hint { case ringOnAvatar, storyInCapsule }
+    static var hint: Hint {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-demo-hint-hh3") { return .storyInCapsule }
+        #endif
+        return .ringOnAvatar
+    }
+
+    private func openStories() { withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { open = true } }
 
     var body: some View {
         let _ = env.ui.openStory   // al cerrar una historia, se vuelven a leer
@@ -65,12 +78,12 @@ struct HomeHeader: View {
     /// Lo de siempre en un renglón (EH1, Fernando, 9 nov): el logo, «Todo ▾» y la cápsula (el control, la dona y tu foto). Con
     /// historias sin ver, tu foto lleva un anillo turquesa y tocarla las abre (tu perfil sigue junto a la ✕ de las historias).
     private var standard: some View {
-        let stories = !LearnModel(env.services).rings().isEmpty
+        let stories = LearnModel(env.services).rings()
         return HStack(spacing: DS.Space.s2) {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
             DSKindFilter(kind: $kind, menu: true).accessibilityIdentifier("home-kind-filter")
             Spacer(minLength: DS.Space.s2)
-            HStack(spacing: DS.Space.s4) {
+            HStack(spacing: Self.hint == .storyInCapsule ? DS.Space.s2 : DS.Space.s4) {
                 if showsRemote {
                     Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
@@ -78,11 +91,30 @@ struct HomeHeader: View {
                 Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
                     .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                     .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons")
-                if stories {
-                    Button { withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { open = true } } label: {
-                        AvatarImage(id: avatar).overlay(Circle().inset(by: -DS.Stroke.focus).stroke(DS.accent, lineWidth: DS.Stroke.selected))
+                if let first = stories.first, Self.hint == .storyInCapsule {
+                    // HH3: un círculo de historia en la cápsula; tu foto sigue siendo tu perfil.
+                    Button { openStories() } label: {
+                        LearnRingMark(story: first, unseen: true, ring: DS.HomeStories.capsuleRing, tile: DS.HomeStories.capsuleTile)
                     }
                     .accessibilityLabel(Text("Historias nuevas de Aprende")).accessibilityIdentifier("home-stories-ring")
+                    ProfileButton(avatar: avatar)
+                } else if !stories.isEmpty {
+                    // HH2: tu foto con el mismo anillo de las historias (grueso, con aire), que late una vez al llegar.
+                    Button { openStories() } label: {
+                        AvatarImage(id: avatar)
+                            .padding(DS.Stroke.focus)
+                            .overlay(Circle().stroke(DS.fresh, lineWidth: DS.Story.ringStroke))
+                            .scaleEffect(pulse ? DS.HomeStories.pulse : 1)
+                    }
+                    .accessibilityLabel(Text("Historias nuevas de Aprende")).accessibilityIdentifier("home-stories-ring")
+                    .task {
+                        guard !reduceMotion, !pulsed else { return }
+                        pulsed = true
+                        try? await Task.sleep(for: .milliseconds(600))
+                        withAnimation(DS.Motion.smooth(false)) { pulse = true }
+                        try? await Task.sleep(for: .milliseconds(250))
+                        withAnimation(DS.Motion.smooth(false)) { pulse = false }
+                    }
                 } else {
                     ProfileButton(avatar: avatar)
                 }

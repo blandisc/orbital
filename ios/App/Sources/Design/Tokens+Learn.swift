@@ -112,6 +112,10 @@ extension DS {
     enum HomeStories {
         /// El círculo encogido al bajar (el normal es `DS.Story.ring`).
         static let compactRing: CGFloat = 40, compactTile: CGFloat = 32
+        /// HH3: el círculo de historia dentro de la cápsula, del alto de tu foto.
+        static let capsuleRing: CGFloat = 28, capsuleTile: CGFloat = 22
+        /// HH2: cuánto crece tu foto al latir una vez.
+        static let pulse: CGFloat = 1.12   // ds-exception: escala, no un tamaño
         /// Deslizar más de esta fracción del ancho (o rápido) abre o cierra.
         static let commit: CGFloat = 0.28   // ds-exception: fracción del ancho, no un espacio
         /// Lo que sale se aleja un poco y se apaga, para que se lea la profundidad (no se va entero de golpe).
