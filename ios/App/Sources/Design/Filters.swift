@@ -249,7 +249,7 @@ struct KindPill: View {
                 let on = kind == option.0
                 Button { choose(option.0) } label: {
                     Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(.fill)   // siempre relleno: el ícono no cambia de dibujo al cerrar
-                        .font(open ? DS.TextRecipe.title.font : DS.TextRecipe.section.font)
+                        .font(DS.TextRecipe.section.font)   // el mismo tamaño abierto: así el círculo cubre hasta el ícono más ancho (series)
                         .foregroundStyle(on && open ? DS.bg : DS.text)
                         .frame(width: open ? DS.KindPill.open : DS.KindPill.closed, height: open ? DS.KindPill.open : DS.KindPill.closed)
                         .background {

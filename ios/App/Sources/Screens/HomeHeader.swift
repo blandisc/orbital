@@ -87,6 +87,8 @@ struct HomeHeader: View {
             // SX1: mientras eliges, la cápsula se recoge a la derecha hasta quedar solo tu foto, apagada; tocarla cierra.
             capsule(stories)
                 .opacity(kindOpen ? DS.Opacity.dimmed : 1)
+                // al cerrar, regresa un instante después de que la pastilla se encoge: nunca se enciman
+                .animation((DS.Motion.morph(reduceMotion) ?? DS.Motion.fade).delay(kindOpen ? 0 : DS.Motion.entranceStep * 2), value: kindOpen)
                 .allowsHitTesting(!kindOpen)
                 .overlay { if kindOpen { Color.clear.contentShape(Rectangle()).onTapGesture { withAnimation(DS.Motion.morph(reduceMotion) ?? DS.Motion.fade) { kindOpen = false } } } }
         }
