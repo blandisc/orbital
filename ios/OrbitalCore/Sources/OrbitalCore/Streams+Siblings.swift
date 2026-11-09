@@ -28,13 +28,15 @@ extension Streams {
         return false
     }
 
-    /// Una serie de otros años: el nombre trae un solo año y cae fuera de los de la serie (con uno de margen). «Star Wars: Clone
+    /// Una serie de otros años: los años del nombre caen fuera de los de la serie (con uno de margen). «Star Wars: Clone
     /// Wars» es de 2003–2005; un «…(2008)…» es la otra (Fernando, 8 nov).
     public static func otherYears(_ release: String, years: ClosedRange<Int>?) -> Bool {
         guard let years else { return false }
         let found = Set(allMatches(yearPattern, release).compactMap(Int.init))
-        guard found.count == 1, let only = found.first else { return false }
-        return only < years.lowerBound - 1 || only > years.upperBound + 1
+        // Todos los años del nombre fuera de los de la serie: «S1E01.2008-2009» es la otra (Fernando, 9 nov). Si alguno cae
+        // dentro («1977-2005», una colección), no se decide.
+        guard !found.isEmpty else { return false }
+        return found.allSatisfy { $0 < years.lowerBound - 1 || $0 > years.upperBound + 1 }
     }
 
     /// Los años de una serie de Cinemeta («2003–2005», «2019–» sigue al aire).

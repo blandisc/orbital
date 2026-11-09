@@ -33,6 +33,7 @@ final class SiblingSeriesTests: XCTestCase {
         XCTAssertEqual(years, 2003...2005)
         XCTAssertTrue(Streams.otherYears("Star Wars Clone Wars (2008) S01E04 1080p", years: years))
         XCTAssertFalse(Streams.otherYears("Star Wars Clone Wars (2003) 1080p - Episode 4.mkv", years: years))
+        XCTAssertTrue(Streams.otherYears("📄 Star.Wars-Clone.Wars.S1E01.2008-2009.1080p.NF.WebDL.AVC.DD.5.1-DTOne.mkv", years: years), "lo que abrió el 9 nov")
         XCTAssertFalse(Streams.otherYears("Star Wars Saga (1977-2005)", years: years), "dos años: colección, no se decide")
         XCTAssertFalse(Streams.otherYears("Clone.Wars.S01E04.mkv", years: years))
         XCTAssertEqual(Streams.seriesYears("2019–")?.lowerBound, 2019)
