@@ -34,24 +34,12 @@ struct DSKindFilter: View {
     var mark: Color = DS.text
     /// EH1 (Fernando, 9 nov): un menú chico «Todo ▾» junto al logo de Inicio, en vez de un renglón de pestañas.
     var menu = false
+    /// SX1: si la pastilla está abierta (Inicio quita la cápsula mientras eliges, para que quepa).
+    var open: Binding<Bool>? = nil
 
     var body: some View {
         if menu {
-            Menu {
-                Picker(selection: $kind) {
-                    ForEach(options, id: \.0) { option in Label(option.1, systemImage: KindGlyph.symbol(option.0)).tag(option.0) }
-                } label: { EmptyView() }
-            } label: {
-                HStack(spacing: DS.Space.s1) {
-                    Text(options.first { $0.0 == kind }?.1 ?? "Todo").recipe(.labelLarge, color: DS.text).lineLimit(1).fixedSize()
-                    Image(systemName: "chevron.down").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
-                }
-                .frame(minHeight: DS.Size.touchTarget)
-                .contentShape(Rectangle())
-            }
-            .fixedSize()
-            .sensoryFeedback(.selection, trigger: kind)
-            .accessibilityLabel(Text("Series o películas"))
+            KindPill(kind: $kind, open: open ?? .constant(false), options: options)
         } else if compact {
             // La pastilla propia: la nativa de iOS no pone ícono junto al texto.
             HStack(spacing: 0) {
@@ -238,5 +226,50 @@ struct DSChoiceMenu<ID: Hashable>: View {
         .sensoryFeedback(.selection, trigger: selection)
         .accessibilityLabel(label)
         .accessibilityValue(current?.title ?? Text(verbatim: ""))
+    }
+}
+
+/// SX1 (Fernando, 9 nov): el selector de Inicio es solo el ícono de lo que ves. Al tocarlo, la misma pastilla se estira a lo
+/// ancho y enseña los tres; al elegir uno se encoge con el ícono nuevo. Nada aparece encima de la portada. Dejar el dedo
+/// encima de un ícono dice su nombre; VoiceOver lo lee siempre.
+struct KindPill: View {
+    @Binding var kind: String
+    @Binding var open: Bool
+    let options: [(String, LocalizedStringKey)]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(open ? options : options.filter { $0.0 == kind }, id: \.0) { option in
+                let on = kind == option.0
+                Button {
+                    withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) {
+                        if open { kind = option.0 }
+                        open.toggle()
+                    }
+                } label: {
+                    Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
+                        .font(DS.TextRecipe.section.font)
+                        .foregroundStyle(on && open ? DS.bg : DS.text)
+                        .frame(width: DS.Size.kindPill, height: DS.Size.kindPill)
+                        .background(on && open ? DS.accent : .clear, in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)   // ds-exception: un segmento del control; el fondo marca el elegido
+                .help(Text(option.1))
+                .accessibilityLabel(open ? Text(option.1) : Text(option.1) + Text(". Cambiar entre todo, películas y series"))
+                .accessibilityAddTraits(on ? .isSelected : [])
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .padding(DS.Space.s1 / 2)
+        .glassEffect(.regular.interactive(), in: Capsule())
+        .fixedSize()
+        .sensoryFeedback(.selection, trigger: kind)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Series o películas"))
+        #if DEBUG
+        .task { if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-kind-open") { open = true } }   // capturas: abierta
+        #endif
     }
 }

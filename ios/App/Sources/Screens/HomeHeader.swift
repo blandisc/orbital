@@ -22,6 +22,7 @@ struct HomeHeader: View {
     @State private var standardHeight: CGFloat = 0
     @State private var rowHeight: CGFloat = 0
     @State private var pulse = false
+    @State private var kindOpen = false
     @State private var pulsed = false
 
     /// Cómo avisa que hay historias nuevas (HH2 o HH3, Fernando, 9 nov; se elige al ver las dos de verdad).
@@ -81,8 +82,17 @@ struct HomeHeader: View {
         let stories = LearnModel(env.services).rings()
         return HStack(spacing: DS.Space.s2) {
             AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
-            DSKindFilter(kind: $kind, menu: true).accessibilityIdentifier("home-kind-filter")
+            DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
             Spacer(minLength: DS.Space.s2)
+            if !kindOpen { capsule(stories).transition(.scale(scale: 0.8, anchor: .trailing).combined(with: .opacity)) }
+        }
+        .padding(.horizontal, DS.Space.gutter)
+        .padding(.bottom, DS.Space.s1)
+        .frame(maxWidth: WindowMetrics.size.width)   // nunca más ancho que la pantalla (si no, toda Inicio se recorre)
+    }
+
+    /// La cápsula: el control, la dona y tu foto (se hace a un lado mientras eliges en el selector, SX1).
+    private func capsule(_ stories: [LearnStory]) -> some View {
             HStack(spacing: Self.hint == .storyInCapsule ? DS.Space.s2 : DS.Space.s4) {
                 if showsRemote {
                     Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
@@ -122,10 +132,6 @@ struct HomeHeader: View {
             .buttonStyle(.plain).foregroundStyle(DS.text)
             .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
             .glassEffect(.regular.interactive(), in: Capsule())
-        }
-        .padding(.horizontal, DS.Space.gutter)
-        .padding(.bottom, DS.Space.s1)
-        .frame(maxWidth: WindowMetrics.size.width)   // nunca más ancho que la pantalla (si no, toda Inicio se recorre)
     }
 
     /// Las historias en lugar de todo el encabezado, con la ✕ para regresar.
