@@ -2,8 +2,8 @@ import SwiftUI
 import OrbitalModels
 
 /// El encabezado de Inicio (HE1-B, Fernando, 4 nov 2026): el logo, la cápsula del control, la dona y tu foto, y «Todo ·
-/// Películas · Series». Si hay historias de «Aprende» sin ver, dos círculos se asoman en la orilla derecha, a la altura de la
-/// barra de tipos (nunca encima de la cápsula). Al deslizar a la izquierda todo sigue a tu dedo: lo de siempre se aleja y se
+/// Películas · Series» (desde EH1, 9 nov, en un solo renglón con «Todo ▾»). Si hay historias de «Aprende» sin ver, tu foto
+/// lleva un anillo turquesa y tocarla las abre. Al deslizar a la izquierda todo sigue a tu dedo: lo de siempre se aleja y se
 /// apaga, y las historias entran ocupando el encabezado entero; al soltar, se acomoda con un resorte. Deslizar a la derecha o
 /// la ✕ lo regresa. Al bajar, los círculos se achican en su mismo lugar y su nombre se va. Con «Reducir movimiento», fundido.
 struct HomeHeader: View {
@@ -51,14 +51,6 @@ struct HomeHeader: View {
         }
         .frame(height: height, alignment: .top)
         .clipped()
-        .overlay(alignment: .bottomTrailing) {
-            if !stories.isEmpty, !open {
-                LearnPeek(stories: stories) { withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { open = true } }
-                    .offset(x: min(0, drag))
-                    .opacity(1 - min(1, progress * 2))   // ds-exception: sigue al dedo: se apaga en la primera mitad del gesto
-                    .padding(.bottom, DS.Space.s1)
-            }
-        }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = max($0, 1) }
         .contentShape(Rectangle())
         .simultaneousGesture(swipe(enabled: !stories.isEmpty))
@@ -70,29 +62,38 @@ struct HomeHeader: View {
         #endif
     }
 
-    /// Lo de siempre: el logo y la cápsula (el control, la dona y tu foto), y debajo los tipos.
+    /// Lo de siempre en un renglón (EH1, Fernando, 9 nov): el logo, «Todo ▾» y la cápsula (el control, la dona y tu foto). Con
+    /// historias sin ver, tu foto lleva un anillo turquesa y tocarla las abre (tu perfil sigue junto a la ✕ de las historias).
     private var standard: some View {
-        VStack(spacing: DS.Space.s2) {
-            HStack {
-                AppMark()
-                Spacer(minLength: DS.Space.s3)
-                HStack(spacing: DS.Space.s5) {
-                    if showsRemote {
-                        Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
-                            .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
+        let stories = !LearnModel(env.services).rings().isEmpty
+        return HStack(spacing: DS.Space.s2) {
+            AppMark(small: true)   // un poco más chico: así caben «Todo ▾» y la cápsula
+            DSKindFilter(kind: $kind, menu: true).accessibilityIdentifier("home-kind-filter")
+            Spacer(minLength: DS.Space.s2)
+            HStack(spacing: DS.Space.s4) {
+                if showsRemote {
+                    Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
+                        .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
+                }
+                Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
+                    .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
+                    .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons")
+                if stories {
+                    Button { withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { open = true } } label: {
+                        AvatarImage(id: avatar).overlay(Circle().inset(by: -DS.Stroke.focus).stroke(DS.accent, lineWidth: DS.Stroke.selected))
                     }
-                    Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
-                        .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
-                        .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons")
+                    .accessibilityLabel(Text("Historias nuevas de Aprende")).accessibilityIdentifier("home-stories-ring")
+                } else {
                     ProfileButton(avatar: avatar)
                 }
-                .buttonStyle(.plain).foregroundStyle(DS.text)
-                .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-                .glassEffect(.regular.interactive(), in: Capsule())
             }
-            .padding(.horizontal, DS.Space.gutter)
-            HomeKindBar(kind: $kind)
+            .buttonStyle(.plain).foregroundStyle(DS.text)
+            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+            .glassEffect(.regular.interactive(), in: Capsule())
         }
+        .padding(.horizontal, DS.Space.gutter)
+        .padding(.bottom, DS.Space.s1)
+        .frame(maxWidth: WindowMetrics.size.width)   // nunca más ancho que la pantalla (si no, toda Inicio se recorre)
     }
 
     /// Las historias en lugar de todo el encabezado, con la ✕ para regresar.
@@ -100,6 +101,7 @@ struct HomeHeader: View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
             LearnRings(stories: stories, compact: collapsed) { env.ui.openStory = $0.id }
                 .frame(maxWidth: .infinity)
+            ProfileButton(avatar: avatar).buttonStyle(.plain)   // EH1: tu perfil, aquí mientras tu foto abre las historias
             DSIconButton(symbol: "xmark", label: "Volver", size: .small) {
                 withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { open = false }
             }

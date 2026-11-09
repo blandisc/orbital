@@ -32,9 +32,27 @@ struct DSKindFilter: View {
     var compact = false
     /// La rayita de la elegida: blanca (lo elegido) o turquesa en Inicio (Fernando, 31 oct 2026: Inicio se queda como estaba).
     var mark: Color = DS.text
+    /// EH1 (Fernando, 9 nov): un menú chico «Todo ▾» junto al logo de Inicio, en vez de un renglón de pestañas.
+    var menu = false
 
     var body: some View {
-        if compact {
+        if menu {
+            Menu {
+                Picker(selection: $kind) {
+                    ForEach(options, id: \.0) { option in Label(option.1, systemImage: KindGlyph.symbol(option.0)).tag(option.0) }
+                } label: { EmptyView() }
+            } label: {
+                HStack(spacing: DS.Space.s1) {
+                    Text(options.first { $0.0 == kind }?.1 ?? "Todo").recipe(.labelLarge, color: DS.text).lineLimit(1).fixedSize()
+                    Image(systemName: "chevron.down").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
+                }
+                .frame(minHeight: DS.Size.touchTarget)
+                .contentShape(Rectangle())
+            }
+            .fixedSize()
+            .sensoryFeedback(.selection, trigger: kind)
+            .accessibilityLabel(Text("Series o películas"))
+        } else if compact {
             // La pastilla propia: la nativa de iOS no pone ícono junto al texto.
             HStack(spacing: 0) {
                 ForEach(options, id: \.0) { option in

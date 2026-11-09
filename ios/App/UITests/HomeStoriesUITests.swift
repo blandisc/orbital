@@ -13,7 +13,7 @@ final class HomeStoriesUITests: XCTestCase {
     }
 
     func testSwipeLeftOpensTheStoriesAndTheCrossBringsTheHeaderBack() {
-        let peek = app.buttons["home-stories-peek"]
+        let peek = app.buttons["home-stories-ring"]
         XCTAssertTrue(peek.waitForExistence(timeout: 20), "dos círculos se asoman a la derecha")
         XCTAssertTrue(app.buttons["home-random-simpsons"].isHittable, "sin estorbar a la cápsula")
         app.buttons["home-kind-filter"].firstMatch.exists ? app.otherElements["home-kind-filter"].swipeLeft() : peek.swipeLeft()
@@ -26,7 +26,7 @@ final class HomeStoriesUITests: XCTestCase {
     }
 
     func testTappingThePeekAlsoOpensThem() {
-        let peek = app.buttons["home-stories-peek"]
+        let peek = app.buttons["home-stories-ring"]
         XCTAssertTrue(peek.waitForExistence(timeout: 20))
         peek.tap()
         let ring = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'learn-ring-'")).firstMatch
@@ -52,7 +52,7 @@ final class HomeStoriesUITests: XCTestCase {
 
     /// Como Instagram: al deslizar a la izquierda dentro de una historia, sigue la próxima.
     func testSwipingLeftInsideAStoryGoesToTheNextOne() {
-        let peek = app.buttons["home-stories-peek"]
+        let peek = app.buttons["home-stories-ring"]
         XCTAssertTrue(peek.waitForExistence(timeout: 20))
         peek.tap()
         let ring = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'learn-ring-'")).firstMatch

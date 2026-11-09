@@ -5,11 +5,13 @@ import SwiftUI
 struct AppMark: View {
     /// Opcional a propósito: va en la barra de arriba (ver `ToolbarEnvironmentTests`).
     @Environment(AppEnvironment.self) private var env: AppEnvironment?
+    /// EH1: un poco más chico (con su planeta) para que quepan «Todo ▾» y la cápsula en el mismo renglón.
+    var small = false
 
     var body: some View {
         let compact = WindowMetrics.size.width < DS.Size.compactWidth
         let ui = env?.ui
-        OrbitalWordmark(size: compact ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
+        OrbitalWordmark(size: compact || small ? DS.Size.headerWordmarkCompact : DS.Size.headerWordmark, animated: true, showsMark: !compact)
             .foregroundStyle(DS.text).fixedSize()
             // La entrada de la app termina justo aquí (sin el planeta, en un iPhone angosto, ya no calza: ahí se desvanece).
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if !compact, let ui { ui.homeLogoFrame = $0 } }

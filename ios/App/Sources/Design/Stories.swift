@@ -300,37 +300,3 @@ struct LearnRingMark: View {
         .frame(width: ring, height: ring)
     }
 }
-
-/// Lo que se asoma en la orilla derecha de Inicio (HE1-B): dos círculos encimados, el segundo medio escondido tras la orilla.
-/// El primero da un empujoncito cada tanto, como invitando a deslizar. Es un botón: con el puntero o el teclado se toca.
-struct LearnPeek: View {
-    let stories: [LearnStory]
-    let open: () -> Void
-    @State private var nudged = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        Button(action: open) {
-            HStack(spacing: -DS.HomeStories.peekOverlap) {
-                ForEach(Array(stories.prefix(2).enumerated()), id: \.element.id) { i, story in
-                    LearnRingMark(story: story, unseen: true, ring: DS.HomeStories.peekRing, tile: DS.HomeStories.peekRing - DS.Space.s2)
-                        .offset(x: i == 0 && nudged ? -DS.HomeStories.nudge : 0)
-                        .zIndex(Double(2 - i))
-                }
-            }
-            .offset(x: DS.HomeStories.peekRing * DS.HomeStories.peekHidden)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Historias de Aprende Orbital: \(String(stories.count)) sin ver"))
-        .accessibilityIdentifier("home-stories-peek")
-        .task(id: reduceMotion) {
-            guard !reduceMotion else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: DS.HomeStories.nudgeEvery)
-                withAnimation(DS.Motion.pop(reduceMotion)) { nudged = true }
-                try? await Task.sleep(for: DS.Explainer.step / 4)
-                withAnimation(DS.Motion.spring(reduceMotion)) { nudged = false }
-            }
-        }
-    }
-}
