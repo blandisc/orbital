@@ -53,6 +53,16 @@ extension TitleView {
         guard var request = model.playRequest(videoID: videoID) else { return }
         request.sourceIndex = source?.index
         request.fromStart = fromStart
+        launch(request, source: source)
+    }
+
+    /// Tocar un episodio de la lista: igual visto que sin ver, reproduce (uno visto, desde el inicio); la versión va en «⋯».
+    func startEpisode(_ model: TitleModel, videoID: String) {
+        guard let request = model.episodeRequest(videoID) else { return }
+        launch(request, source: nil)
+    }
+
+    private func launch(_ request: PlayRequest, source: Source?) {
         if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } }
         else { env.ui.playerSource = PlayerZoomID(metaID: request.metaID, slot: "title"); env.play(request) }
     }

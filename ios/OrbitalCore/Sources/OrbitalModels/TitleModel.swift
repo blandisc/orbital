@@ -35,7 +35,9 @@ public final class TitleModel: ObservableModel {
     public private(set) var poster: String? { didSet { changed() } }
     public private(set) var background: String? { didSet { changed() } }
     public private(set) var seasons: [Season] = [] { didSet { changed() } }
-    public private(set) var selectedSeason = 1 { didSet { changed() } }
+    public private(set) var selectedSeason = 1 { didSet { if oldValue != selectedSeason { changed() } } }
+    /// Ya se puso la temporada de entrada (o la elegiste tú): de aquí en adelante no salta sola.
+    private var seasonSettled = false
     public private(set) var rows: [EpisodeRow] = [] { didSet { changed() } }
     /// En Mi lista (el teléfono, al día con tu watchlist de Trakt).
     public private(set) var inLibrary = false { didSet { changed() } }
@@ -304,12 +306,22 @@ public final class TitleModel: ObservableModel {
         let favorite = services.traktOutbox.pending(target: TraktOutbox.favorites, imdb: metaID) ?? onTraktFavorites
         if favoriteWrites == 0 { isFavorite = favorite }
         applyDownloads(await queue)
-        if let state = entry?.videoID, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
-        else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
+        settleSeason()
         buildRows()
     }
 
-    public func select(season: Int) { selectedSeason = season; buildRows() }
+    /// La temporada salta sola solo al abrir la ficha; luego manda la tuya (Fernando, 9 nov: volver de ver la cambiaba).
+    private func settleSeason() {
+        guard !seasons.isEmpty else { return }
+        if !seasonSettled, let state = entry?.videoID, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) {
+            selectedSeason = season.season
+        } else if !seasons.contains(where: { $0.season == selectedSeason }) {
+            selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1
+        }
+        seasonSettled = true
+    }
+
+    public func select(season: Int) { seasonSettled = true; selectedSeason = season; buildRows() }
 
     private func buildRows() {
         let current = entry?.nextUp == false ? entry?.videoID : nil
@@ -373,28 +385,6 @@ public final class TitleModel: ObservableModel {
         if kind == "series", let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
         return PlayRequest(kind: kind, metaID: metaID, videoID: video, originalTitle: originalTitle, displayTitle: title, episodeLabel: label,
                            poster: poster, year: info.year, meta: meta, fromStart: fromStart)
-    }
-
-    /// La fecha de estreno si todavía no llega («2026-10-23T02:00:00.000Z»).
-    static func airDate(_ released: String?, now: Date = Date()) -> Date? {
-        guard let released else { return nil }
-        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let plain = ISO8601DateFormatter()
-        guard let date = iso.date(from: released) ?? plain.date(from: released), date > now else { return nil }
-        return date
-    }
-
-    /// El video de «Ver» todavía no sale: cuándo.
-    /// El estreno de lo que toca, si todavía no sale (una película por estrenarse o el episodio que viene): «Avisarme cuando
-    /// aparezca» revisa hasta ese día más 14 (FQ4-A).
-    public var upcomingRelease: Date? {
-        kind == "movie" ? Self.airDate(meta?["released"]?.string, now: services.now()) : continueAirs
-    }
-    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0, now: services.now()) } }
-
-    func episode(_ id: String) -> (Int, Episode)? {
-        for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }
-        return nil
     }
 
     // MARK: Mi lista

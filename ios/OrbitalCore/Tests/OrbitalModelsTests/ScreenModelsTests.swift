@@ -190,6 +190,36 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(request.episodeLabel.hasPrefix("T1 · E3"))
     }
 
+    /// Fernando, 9 nov: «me salió un episodio y me cambió de temporada». La temporada que eliges se queda aunque se refresque lo
+    /// tuyo (volver de ver, marcar, Trakt); solo la primera carga salta a la del episodio en que vas.
+    func testTitleKeepsTheSeasonYouChoseWhenItsStateRefreshes() async throws {
+        let rig = try titleRig()
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        XCTAssertEqual(title.selectedSeason, 1)
+        let other = try XCTUnwrap(title.seasons.first { !$0.isSpecials && $0.season != 1 }?.season)
+        title.select(season: other)
+        await title.refreshState()
+        XCTAssertEqual(title.selectedSeason, other, "refrescar no regresa a la temporada de «Continuar»")
+        // Aunque avances a un episodio de otra temporada (lo que pasa al volver de ver), sigue la que elegiste.
+        rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) { $0.videoID = "tt0386676:1:4" }
+        await title.refreshState()
+        XCTAssertEqual(title.selectedSeason, other)
+        XCTAssertTrue(title.rows.allSatisfy { $0.season == other })
+    }
+
+    /// Tocar un episodio visto lo reproduce desde el inicio (como uno sin ver); uno sin ver sigue donde ibas.
+    func testTappingAWatchedEpisodePlaysItFromTheStart() async throws {
+        let rig = try titleRig()
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        let seen = try XCTUnwrap(title.episodeRequest("tt0386676:1:1"))
+        XCTAssertTrue(seen.fromStart)
+        XCTAssertEqual(seen.videoID, "tt0386676:1:1")
+        let ongoing = try XCTUnwrap(title.episodeRequest("tt0386676:1:3"))
+        XCTAssertFalse(ongoing.fromStart, "el que vas viendo sigue donde ibas")
+    }
+
     /// CEN-37: sin clave de TMDB en el iPhone, con la consola conectada la ficha toma su sinopsis (en español); sin consola, lo
     /// de Cinemeta. Con clave, el iPhone es independiente: no le pregunta a la consola.
     func testTitleTakesTheConsolesOverviewOnlyWithoutItsOwnTmdbKey() async throws {

@@ -541,7 +541,7 @@ struct TitleView: View {
         } else {
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
-                EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+                EpisodeRowView(row: row, play: { if row.airs == nil { startEpisode(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                                markWatched: { marking = .episode(row.id) }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
@@ -555,7 +555,7 @@ struct TitleView: View {
 
     /// Un episodio como tarjeta (la fila del iPad y la Mac).
     private func episodeRow(_ model: TitleModel, _ row: EpisodeRow, card: Bool) -> some View {
-        EpisodeRowView(row: row, play: { if row.airs == nil { start(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+        EpisodeRowView(row: row, play: { if row.airs == nil { startEpisode(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                        markWatched: { marking = .episode(row.id) }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                        resumeDownload: { Task { await model.resumeDownload(row.id) } },
                        downloadFraction: model.downloadFraction(row.id),

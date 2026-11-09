@@ -93,3 +93,40 @@ extension TitleModel {
         return try? Date(String(text.prefix(10)), strategy: .iso8601.year().month().day())
     }
 }
+
+extension TitleModel {
+    /// Tocar un episodio: uno que ya viste vuelve a empezar desde el inicio, como uno nuevo (antes seguía «donde ibas», que en
+    /// uno visto es casi el final o un avance viejo de Trakt). Se queda con la versión de la serie (su familia), no con la
+    /// fuente exacta de la vez pasada. Elegir otra versión sigue en «⋯» y al mantenerlo presionado.
+    public func episodeRequest(_ videoID: String) -> PlayRequest? {
+        guard var request = playRequest(videoID: videoID) else { return nil }
+        if watched.contains(videoID) {
+            request.fromStart = true
+            request.binge = services.titlePrefs.lastChoice(metaID: metaID)?.binge
+        }
+        return request
+    }
+
+    // MARK: estrenos
+    /// La fecha de estreno si todavía no llega («2026-10-23T02:00:00.000Z»).
+    static func airDate(_ released: String?, now: Date = Date()) -> Date? {
+        guard let released else { return nil }
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let date = iso.date(from: released) ?? plain.date(from: released), date > now else { return nil }
+        return date
+    }
+
+    /// El video de «Ver» todavía no sale: cuándo.
+    /// El estreno de lo que toca, si todavía no sale (una película por estrenarse o el episodio que viene): «Avisarme cuando
+    /// aparezca» revisa hasta ese día más 14 (FQ4-A).
+    public var upcomingRelease: Date? {
+        kind == "movie" ? Self.airDate(meta?["released"]?.string, now: services.now()) : continueAirs
+    }
+    public var continueAirs: Date? { continueVideoID.flatMap { episode($0)?.1.released }.flatMap { Self.airDate($0, now: services.now()) } }
+
+    func episode(_ id: String) -> (Int, Episode)? {
+        for season in seasons { if let ep = season.episodes.first(where: { $0.id == id }) { return (season.season, ep) } }
+        return nil
+    }
+}
