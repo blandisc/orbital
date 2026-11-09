@@ -483,6 +483,30 @@ def mentions_title(titles: list[str], text: str) -> bool:
     return False
 
 
+ARTICLES = frozenset({"the", "a", "an", "el", "la", "los", "las", "le", "les", "il", "der", "die", "das"})
+SERIES_EPISODE_MARK = re.compile(r"[ ._\-\[(]s\d{1,2}[ ._]?e\d{1,3}", re.IGNORECASE)
+
+
+def names_another_series(titles: list[str], release: str) -> bool:
+    """Otra serie con casi el mismo nombre (Fernando, 8 nov: «Star Wars: Clone Wars» de 2003 bajaba «Star.Wars.The.Clone.Wars»
+    de 2008, que Comet le daba por el nombre; como el iPhone, Streams.namesAnotherSeries). El nombre de la serie en el archivo
+    (lo de antes de «S01E01») es uno de sus títulos pero con un artículo de más: es la otra. Igual o sin artículo, es esta."""
+    mark = SERIES_EPISODE_MARK.search(release.replace("📄", ""))
+    if not mark:
+        return False
+    show = [w for w in _plain(release.replace("📄", "")[: mark.start()]).split() if not w.isdigit()]
+    if not show:
+        return False
+    for title in titles:
+        words = _plain(title).split()
+        if words == show:
+            return False
+        extra = [w for w in show if w not in words]
+        if extra and all(w in ARTICLES for w in extra) and [w for w in show if w not in ARTICLES] == [w for w in words if w not in ARTICLES]:
+            return True
+    return False
+
+
 # «¿Otro episodio?» (las mismas reglas que el iPhone, Streams+Episodes.swift): Torrentio a veces pone en un episodio el
 # archivo de otra temporada. Solo con temporada (los de Kitsu van de corrido).
 EPISODE_MARK = re.compile(r"\bs(\d{1,2})[ ._-]?e\d{1,3}\b|\b(\d{1,2})x\d{2,3}\b", re.I)
@@ -884,7 +908,9 @@ class StreamFinder:
                 try:
                     src = parse(stream, addon.name, addon.url, index, original)
                     hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
-                    src.other_title = not mentions_title(titles, f"{src.release} {hints.get('filename') or ''}")
+                    filename = str(hints.get("filename") or "")
+                    src.other_title = not mentions_title(titles, f"{src.release} {filename}") or (
+                        ":" in video_id and any(names_another_series(titles, name) for name in (src.release, filename)))
                     if kind == "movie" and isinstance(facts.get("year"), int):
                         src.other_year = other_year(src.release, facts["year"])
                     if (season := season_of(video_id)) is not None:

@@ -304,7 +304,7 @@ def version_grid(found: list[streams.Source], prefs: streams.Preferences, curren
                  refused: set[str] | frozenset[str] = frozenset()) -> list[dict]:
     """Y › Versión en el reproductor, lo mismo que «Versión» de la ficha: las filas de version_layout (las de tu orden y
     luego las demás), cada una con su mejor versión por calidad. La puesta se marca en su idioma y calidad.
-    [{"label": "Latino", "cells": [{"id", "label": "1080p", "hint": "Al instante", "size", "doubt", "current"}]}]"""
+    [{"label": "Latino", "cells": [{"id", "label": "1080p", "hint": "Al instante", "size", "doubt", "addon", "current"}]}]"""
     main, more, _ = version_layout(found, prefs, refused)
     out = []
     for row in [*main, *more]:
@@ -316,6 +316,7 @@ def version_grid(found: list[streams.Source], prefs: streams.Preferences, curren
                           "hint": "Al instante" if src.cached else "Hay que bajarla",
                           "size": f"{src.size / 1e9:.1f} GB" if src.size else "",
                           "doubt": "Idioma dudoso" if option["how"] == "maybe" else "",
+                          "addon": src.kind,  # Ⓣ Torrentio, Ⓒ Comet o la pieza, junto a la calidad (addon_kind)
                           "current": current is not None and current in option["all"]})
         out.append({"label": name, "flag": flags.flag_for(row["code"]), "cells": cells})
     return out

@@ -218,6 +218,18 @@ def test_titulos_cortos_no_marcan_todo_como_otro_titulo():
     assert not streams.mentions_title(["La casa de papel", "Money Heist"], "La Casa De La Pradera (2026)")
 
 
+def test_otra_serie_con_un_articulo_de_mas():
+    """Fernando, 8 nov: «Star Wars: Clone Wars» (2003) bajaba «The Clone Wars» (2008) de Comet; como el iPhone."""
+    clone2003 = ["Star Wars: Clone Wars"]
+    assert streams.names_another_series(clone2003, "📄 Star.Wars.The.Clone.Wars.S01E01.Ambush.1080p.HEVC.x265-MeGusta.mkv")
+    assert streams.names_another_series(clone2003, "Star.Wars.The.Clone.Wars.S01e02.Ita.Eng.1080p.h265.10bit.SubS-Me7alh.mkv")
+    assert not streams.names_another_series(clone2003, "Star.Wars.Clone.Wars.2003.S01E01.1080p.mkv")
+    assert not streams.names_another_series(clone2003, "Star Wars Clone Wars (2003) 1080p - Episode 1.mkv")
+    assert not streams.names_another_series(["The Office"], "The.Office.US.S02E05.1080p.mkv")
+    assert not streams.names_another_series(["The Office"], "Office.S02E05.720p.mkv")
+    assert not streams.names_another_series(["Star Wars: The Clone Wars"], "Star.Wars.The.Clone.Wars.S01E01.mkv")
+
+
 @pytest.mark.parametrize("tracks, langs", [
     ([{"type": "audio", "lang": "es-MX"}], ["es-419"]),
     ([{"type": "audio", "lang": "es-ES"}], ["es-ES"]),

@@ -315,6 +315,13 @@ ICON_PATHS: dict[str, list[tuple[str, float]]] = {
                    ("m 11.2 8.5 l 12.8 8.5 l 12.8 13.5 l 11.2 13.5", 0), ("m 8.8 12.6 l 15.2 12.6 l 12 16.4", 0)],
     # Idioma dudoso: un círculo con «?» (el «?» lo pone `icon`, en texto).
     "doubt": [("m 12 3 b 17 3 21 7 21 12 b 21 17 17 21 12 21 b 7 21 3 17 3 12 b 3 7 7 3 12 3", 1.8)],
+    # De qué complemento viene una versión (AddonMark de la interfaz y del iPhone): Ⓣ Torrentio, Ⓒ Comet (la «C» la pone
+    # `icon`, con un arco) y la pieza para los demás.
+    "addon-torrentio": [("m 12 3 b 17 3 21 7 21 12 b 21 17 17 21 12 21 b 7 21 3 17 3 12 b 3 7 7 3 12 3", 1.8),
+                        ("m 8.5 7.1 l 15.5 7.1 l 15.5 8.9 l 8.5 8.9", 0), ("m 11.1 7.1 l 12.9 7.1 l 12.9 16.5 l 11.1 16.5", 0)],
+    "addon-comet": [("m 12 3 b 17 3 21 7 21 12 b 21 17 17 21 12 21 b 7 21 3 17 3 12 b 3 7 7 3 12 3", 1.8)],
+    "addon": [("m 5.4 7.6 l 8.65 7.6 b 8.65 6.36 9.66 5.35 10.9 5.35 b 12.14 5.35 13.15 6.36 13.15 7.6 l 16.4 7.6 "
+               "l 16.4 10.85 b 17.64 10.85 18.65 11.86 18.65 13.1 b 18.65 14.34 17.64 15.35 16.4 15.35 l 16.4 18.6 l 5.4 18.6", 1.8)],
     # Desde el principio: |◀.
     "restart": [("m 4 5 l 6.6 5 l 6.6 19 l 4 19", 0), ("m 20 5 l 20 19 l 8.4 12", 0)],
     # Volver a donde ibas: la flecha que regresa (↺; el arco lo pone `icon`).
@@ -348,6 +355,8 @@ def icon(name: str, cx: float, cy: float, size: float, color: str = TEXT, alpha:
            else _shape(place(path), color, alpha) for path, stroke in ICON_PATHS[name]]
     if name == "doubt":
         out.append(f"{{\\an5\\pos({cx:.0f},{cy + .5 * k:.0f})\\fn{FONT}\\fs{size * .8:.0f}\\b1\\bord0\\shad0\\1c{color}\\1a&H{alpha}&}}?")
+    elif name == "addon-comet":  # la «C»: abierta a la derecha
+        out.append(arc(cx, cy, 4.2 * k, 1.8 * k, 42.0, 318.0, color, alpha))
     elif name == "resume":  # el arco abierto arriba a la izquierda y la punta que regresa (a la izquierda)
         r, start, end = 7.6 * k, 262.0, 560.0
         out.append(arc(cx, cy + k, r, 2 * k, start, end, color, alpha))
@@ -1009,6 +1018,7 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         if panel.column.grid and panel.column.chosen:
             row, cell = panel.column.options[panel.column.index], panel.column.chosen
             said = " · ".join(p for p in (row["label"], cell["label"], cell["doubt"], cell["hint"], cell["size"],
+                                          ADDON_MARKS.get(cell.get("addon") or "", ("",))[0],
                                           "la que ves" if cell.get("current") else "") if p)
             note = said if legend_below else f"{said}      Al instante: Real-Debrid ya la tiene y arranca en segundos"
         room = note_room - (legend_width(legend_below) + 40 if legend_below else 0)
@@ -1096,6 +1106,7 @@ GRID_NAME = 215  # la banderita y el nombre del idioma («Castellano» entero), 
 # completo "Al instante"»). En palabras va abajo, en la nota de la enfocada, y el encabezado de la columna dice qué es cada uno.
 CELL_STATES = (("Al instante", "bolt", LIVE), ("Hay que bajarla", "cloud-down", MUTED), ("Idioma dudoso", "doubt", NEXT))
 CELL_ICON = 22  # los íconos de una casilla (crecen con el tamaño del texto)
+ADDON_MARKS = {"torrentio": ("Torrentio", "addon-torrentio"), "comet": ("Comet", "addon-comet"), "other": ("Otro complemento", "addon")}
 
 
 def cell_states(cell: dict) -> list[tuple[str, str, str]]:
@@ -1159,10 +1170,15 @@ def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active:
             if TOUCH:
                 targets["panel"].append((cx, y, width, 54, ("cell", c, i, j)))
             ink = ON_LIGHT if focused else TEXT
+            # De qué complemento viene (Ⓣ, Ⓒ o la pieza): tenue, en el renglón de los íconos y a la derecha (junto a la
+            # calidad, en una casilla angosta de 4:3, cortaba «4K HDR»).
+            if mark := ADDON_MARKS.get(cell.get("addon") or ""):
+                lines.append(icon(mark[1], cx + width - 12 - size / 2, y + 40, size, ON_LIGHT if focused else MUTED))
+            room = width - 24
             label_size = 21  # «4K HDR» en una casilla angosta (16:10, letra grande): se achica antes de cortarse
-            while label_size > 16 and text_width(cell["label"], label_size, "semi") > width - 24:
+            while label_size > 16 and text_width(cell["label"], label_size, "semi") > room:
                 label_size -= 1
-            lines.append(text(cx + 12, y + 17, esc(fit(cell["label"], label_size, width - 24, "semi")), label_size, ink,
+            lines.append(text(cx + 12, y + 17, esc(fit(cell["label"], label_size, room, "semi")), label_size, ink,
                               weight="semi", align=4))
             ix = cx + 12
             for _name, shape, color in cell_states(cell):
