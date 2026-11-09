@@ -1,0 +1,4 @@
+/* De qué complemento viene una versión (addon-mark.js): chico y tenue, junto a la calidad. Enfocada (foco invertido), lo
+   pone quien la lleva (sources.css). */
+.addon-mark { display: inline-flex; flex: none; align-items: center; color: var(--color-text-muted); }
+.addon-mark .icon { width: var(--icon-sm); height: var(--icon-sm); }

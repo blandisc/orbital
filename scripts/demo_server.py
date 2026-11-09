@@ -388,13 +388,30 @@ def demo_sources(catalog) -> None:
                                      "https://torrentio.strem.fun/manifest.json", i, title["original"])
                        for i, st in enumerate(title["streams"])]
 
+    # `ORBITAL_DEMO_ADDONS=mixto`: algunas versiones de Comet (con su «⚡») y de MediaFusion, para ver de qué complemento viene
+    # cada una (AddonMark) y el castigo de Comet al ordenar. `ORBITAL_DEMO_SOURCES_WAIT=<segundos>`: la búsqueda tarda, para
+    # ver los esqueletos de la ficha y de «Versión».
+    mixed = os.environ.get("ORBITAL_DEMO_ADDONS") == "mixto"
+    wait = float(os.environ.get("ORBITAL_DEMO_SOURCES_WAIT") or 0)
+
+    def from_addon(stream, i):
+        head, _, rest = str(stream.get("name") or "").partition("\n")
+        if not mixed or "[RD+]" not in head or i % 3 == 0:
+            return stream, "Torrentio", "https://torrentio.strem.fun/manifest.json"
+        if i % 3 == 1:
+            return {**stream, "name": f"[RD⚡] Comet {rest}".strip()}, "Comet", "https://comet.elfhosted.com/demo/manifest.json"
+        return {**stream, "name": f"⚡ MediaFusion {rest}".strip()}, "MediaFusion", "https://mediafusion.elfhosted.com/demo/manifest.json"
+
     def stream_sources(kind, video_id, prefs=None):
         title = titles.get(video_id.split(":")[0]) or titles["tt15239678" if kind == "movie" else "tt0096697"]
+        if wait:
+            time.sleep(wait)
         found = []
         for i, stream in enumerate(title["streams"]):
             # Lo capturado no trae enlace (se quitó la clave): uno de mentira, para que «Ver» tenga recomendada.
             stream = {**stream, "url": stream.get("url") or f"https://demo.invalid/{video_id}/{i}.mkv", "infoHash": fake_hash(video_id, i)}
-            src = streams.parse(stream, "Torrentio", "https://torrentio.strem.fun/manifest.json", i, title["original"])
+            stream, addon, base = from_addon(stream, i)
+            src = streams.parse(stream, addon, base, i, title["original"])
             src.other_title = not streams.mentions_title(title["titles"], src.release)
             if demo_state == "no_instant":  # nada al instante: «Pedir a la nube» y «Hay que pedirlas»
                 src.cached = False

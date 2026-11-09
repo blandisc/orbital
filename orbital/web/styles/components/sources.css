@@ -83,6 +83,8 @@
 }
 .version:hover { background: var(--color-glass-hover); }
 .version--more { grid-column: span 2; } /* PT-V: «Más idiomas», un poco más ancha: los nombres que guarda */
+/* La calidad y, junto a ella, de qué complemento viene (AddonMark: Ⓣ, Ⓒ o la pieza), chico y tenue. */
+.version__top { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
 .version__res { font-family: var(--font-sans); font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); font-variant-numeric: tabular-nums; }
 .version__res--4k { color: var(--color-accent); }
 .version__state { font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); }
@@ -100,6 +102,18 @@
 .version--focused .version__facts { color: inherit; opacity: var(--opacity-near); }
 .version--focused .badge { background: var(--color-on-primary); color: var(--color-primary); }
 .version--focused .chip { background: var(--on-light-fill); }
+:is(.version--focused, .source--focused) .addon-mark { color: inherit; opacity: var(--opacity-near); }
+.source__chips .addon-mark { align-self: center; }
+
+/* Mientras se busca (VersionsSkeleton del iPhone): las mismas filas y casillas, con renglones grises del alto de su letra en
+   lugar del texto. Quietas (nada se anima mientras se espera) y sin foco ni clic: aún no hay qué elegir. */
+.version--skeleton { pointer-events: none; }
+.versions__skeleton { display: flex; flex-direction: column; gap: var(--space-3); }
+.versions__skeleton-name { width: 8rem; height: var(--type-card-title); }
+.versions__skeleton-role { width: 5.5rem; height: var(--type-footnote); }
+.versions__skeleton-res { width: 4rem; height: var(--type-card-title); }
+.versions__skeleton-state { width: 6.5rem; height: var(--type-label); }
+.versions__skeleton-facts { width: 8.5rem; max-width: 100%; height: var(--type-footnote); }
 
 /* Lo que trae la enfocada y cómo lo sabemos: una línea, para leer desde el sillón. */
 .sources__why { display: grid; gap: var(--space-1); min-height: 2.6rem; padding-inline: calc(12rem + var(--space-5) + var(--space-2)) var(--space-2); } /* bajo las calidades */

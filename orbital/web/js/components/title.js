@@ -1,5 +1,5 @@
 import { api } from "../core/api.js";
-import { Badge, Chip, Pill, Progress, SectionHead } from "./ui.js";
+import { Badge, Chip, LineSkeleton, Pill, Progress, SectionHead } from "./ui.js";
 import { ArtFit } from "./art-fit.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
@@ -95,6 +95,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let item = null;
   let details = null;
   let plays = null; // { video_id, line, lang, dub }: cómo va a sonar «Ver» (lo dice el servidor)
+  let searching = false; // aún se busca la versión de «Ver»: su cápsula, en gris con su forma (ContinueAction.versionPending)
   let instead = null; // { label, play }: la que ya arranca, para la hoja de un pedido en camino (RX2-A)
   let ask = null; // por qué no hay versión que arranque ya y si se puede pedir a Real-Debrid (api.stremioAvailability)
   let askTimer = 0;
@@ -396,8 +397,14 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)]),
     // El botón dice solo «Continuar» o «Ver» (Fernando, 2 nov, opción C); a su lado, cómo va a sonar y verse, en una cápsula
     // de vidrio que con Y (o tocándola) abre las versiones. El idioma va como su bandera, sin la palabra: «🇲🇽 · 1080p · CC».
-    b.primary && b.hint && versionCapsule(b.hint)]).filter(Boolean));
+    b.primary && (b.hint ? versionCapsule(b.hint) : searching && b.id === "play" && versionPending())]).filter(Boolean));
   }
+
+  /** Mientras se busca la versión (Fernando, 6 nov: «el parrafito sin info»): la cápsula de al lado de «Ver» en gris con su
+   *  forma («🇲🇽 · 1080p · CC» tapado), no «Buscando…» ni nada; así tampoco brinca la fila cuando llega. Aún no es una parada
+   *  de la fila ni se toca: no hay qué elegir. */
+  const versionPending = () => h("span", { class: ["title__version", "title__version--pending"] },
+    LineSkeleton({ className: "title__version-skeleton", label: "Buscando versión" }));
 
   function versionCapsule(line) {
     const flag = plays?.line === line && plays.lang ? Flag(plays.lang, plays.dub) : null;
@@ -766,10 +773,12 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     ask = null;
     clearTimeout(askTimer);
     const t = canPrefetch() && target();
+    searching = !!t;
     if (!t) return;
     try {
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
+      searching = false;
       const list = Array.isArray(data?.sources) ? data.sources : [];
       const found = availability(list);
       // Lo que se sale de lo que pediste para esta serie («Solo en castellano: no hay latino»), antes que lo demás.
@@ -791,7 +800,10 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       // instante, y esos dos nunca salían.
       explain(mine, t);
     } catch (err) {
-      if (mine === token) explain(mine, t, err);
+      if (mine !== token) return;
+      searching = false;
+      renderActions(); // sin la cápsula en gris: el porqué lo dice el renglón de abajo
+      explain(mine, t, err);
     }
   }
 

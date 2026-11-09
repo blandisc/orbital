@@ -40,6 +40,12 @@ export const EmptyState = ({ icon = null, title, text = null, className = null }
 export const PosterSkeletons = (count = 8, { className = null } = {}) =>
   Array.from({ length: count }, () => h("span", { class: ["skeleton", "skeleton--poster", className], "aria-hidden": "true" }));
 
+/** Un renglón que todavía carga: una barra gris del alto de su letra (la que le ponga quien la usa), quieta. Con `label`, el
+ *  lector de pantalla dice qué se espera («Buscando versión»); sin él, se calla. Como `.redacted(reason: .placeholder)` del
+ *  iPhone: la versión de la ficha y las filas de «Versión» mientras se buscan. */
+export const LineSkeleton = ({ className = null, label = "" } = {}) =>
+  h("span", { class: ["skeleton", "skeleton--line", className], ...(label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" }) });
+
 /** «Nuevo» sobre un póster: el listón en diagonal de la esquina (como DSCornerRibbon del iPhone). Va dentro de la pieza
  *  que lo lleva (posición relativa); «HOY» sigue siendo una insignia. */
 export const CornerRibbon = (text = "Nuevo", { className = null } = {}) =>

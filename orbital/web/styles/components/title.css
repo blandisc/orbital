@@ -166,6 +166,10 @@
 }
 .title__version > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .title__version:hover { background: var(--color-glass-hover); }
+/* Aún buscando la versión: la misma cápsula con un renglón gris del tamaño de «🇲🇽 · 1080p · CC» (ContinueAction.versionPending
+   del iPhone). Quieta y sin clic: todavía no hay qué elegir. */
+.title__version--pending { pointer-events: none; }
+.title__version-skeleton { width: 9em; }
 /* Enfocada con el control (Fernando, 4 nov): como un botón enfocado de la fila; A la abre. */
 .title__version--focused { background: var(--color-primary); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); box-shadow: var(--shadow-lifted); }
 .title__action small { color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }

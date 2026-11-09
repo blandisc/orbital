@@ -239,4 +239,5 @@
 /* Skeleton: la forma de lo que llega, quieta (sin brillo que corra: Orbital no gasta mientras espera). */
 .skeleton { display: block; flex: none; border-radius: var(--card-radius); background: var(--color-fill); }
 .skeleton--poster { width: calc(var(--card-height) * .667); height: var(--card-height); }
+.skeleton--line { height: 1em; border-radius: var(--radius-sm); } /* un renglón: su ancho y su letra los pone quien lo usa */
 .skeleton--heading { width: 14rem; height: var(--type-section); margin-block: var(--space-2) var(--space-5); border-radius: var(--radius-sm); }
