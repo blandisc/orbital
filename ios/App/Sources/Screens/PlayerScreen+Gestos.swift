@@ -47,30 +47,30 @@ extension PlayerScreen {
                 userTogglePlay(model)
                 flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
             })
-            .gesture(MagnifyGesture().onChanged { value in
+            .gesture(VideoPinch(changed: { magnification in
                 if framing.pinchStartedAt == nil { framing.pinchStartedAt = Date() }
                 // La guía en vivo: qué pasa si sueltas ahora (3 nov 2026: «una pequeña interfaz para que entienda qué está haciendo»).
-                let preview = VideoZoom.pinched(magnification: Double(value.magnification))
+                let preview = VideoZoom.pinched(magnification: magnification)
                 if !framing.pinching || framing.pinchPreview != preview {
                     withAnimation(DS.Motion.base(reduceMotion)) { framing.pinching = true; framing.pinchPreview = preview }
                 }
-            }.onEnded { value in
+            }, ended: { magnification in
                 withAnimation(DS.Motion.base(reduceMotion)) { framing.pinching = false; framing.pinchPreview = nil }
                 // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
                 let lasted = framing.pinchStartedAt.map { Date().timeIntervalSince($0) } ?? 0
                 framing.pinchStartedAt = nil
                 #if DEBUG
-                framing.lastPinch = Double(value.magnification)   // para las pruebas de interfaz (sale en el renglón «Zoom» del «⋯»)
+                framing.lastPinch = magnification   // para las pruebas de interfaz (sale en el renglón «Zoom» del «⋯»)
                 #endif
                 // No cuentan: un pellizco justo al girar (el agarre), uno instantáneo o uno junto a un toque con dos dedos (pausar):
                 // iOS los reporta como si abrieras los dedos y la imagen quedaba agrandada en vertical sin querer.
                 guard Date().timeIntervalSince(framing.rotatedAt) > DS.Gesture.pinchAfterRotationGuard,
                       lasted >= DS.Gesture.pinchMinDuration,
                       Date().timeIntervalSince(twoFingerTapAt) > DS.Gesture.pinchTapGuard,
-                      let target = VideoZoom.pinched(magnification: Double(value.magnification)), target != zoom else { return }
+                      let target = VideoZoom.pinched(magnification: magnification), target != zoom else { return }
                 framing.zoomBeforePinch = (zoom, Date())
-                setZoom(target, cause: String(format: "pellizco %.2f× en %.2f s", Double(value.magnification), lasted))
-            })
+                setZoom(target, cause: String(format: "pellizco %.2f× en %.2f s", magnification, lasted))
+            }))
             .sensoryFeedback(.impact, trigger: zoom)
             .simultaneousGesture(dragGesture(model, size: geo.size))
             .onChange(of: dragging) { _, now in
