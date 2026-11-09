@@ -195,6 +195,10 @@ extension DS {
 
     /// Los avisos (`Toast`).
     enum Toast {
+        /// AV1: cómo aparece. El ícono salta desde chico, la cápsula crece desde él con rebote y el texto entra al final.
+        static let iconStart: CGFloat = 0.3, growStart: CGFloat = 0.96, textSlide: CGFloat = -6, bounce = 0.3
+        static let iconPop = 0.3, grow = 0.45
+        static let growAfter: Duration = .milliseconds(120), textAfter: Duration = .milliseconds(200)
         /// El borde del que te necesita (ámbar) o del que avisa que algo se perdió (rojo): su color, tenue.
         static let toneStroke = 0.4, strokeWidth: CGFloat = 1
         /// Lo que hay que deslizar hacia abajo para quitarlo, y lo más ancho que se pone (en iPad u horizontal no cruza la pantalla).

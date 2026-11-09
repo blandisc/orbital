@@ -291,6 +291,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static func base(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.base) }
         static func enter(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.enter) }
         static func tint(_ reduce: Bool) -> Animation? { reduce ? nil : .easeInOut(duration: DesignTokens.Motion.tint) }
+        /// AV1: el ícono de un aviso salta y la cápsula crece desde él, con rebote (los avisos ya no se piden sin «Reducir
+        /// movimiento»: el aviso lo revisa antes).
+        static let toastPop = Animation.spring(duration: DS.Toast.iconPop, bounce: DS.Toast.bounce)
+        static let toastGrow = Animation.spring(duration: DS.Toast.grow, bounce: DS.Toast.bounce)
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
         /// Un resorte sin rebote, para lo que cambia de alto y de forma a la vez (el control al estirarse o encogerse, los
         /// sustos al abrirse): sigue a la hoja en lugar de ir por su lado.

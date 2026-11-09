@@ -277,6 +277,11 @@ struct Toast: View {
     var seconds: UInt64?
     let dismiss: () -> Void
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// AV1 (Fernando, 8 nov; como la TV): primero el ícono, luego la cápsula crece desde él con un rebote y al final el texto.
+    @State private var iconIn = false
+    @State private var grown = false
+    @State private var textIn = false
 
     /// Cuánto se queda según el tono y si trae salida: solo informa, 4 s; con salida, 8 s; si te necesita, hasta que lo toques.
     static func duration(_ tone: DSNotice.Tone, hasAction: Bool) -> UInt64? {
@@ -300,12 +305,14 @@ struct Toast: View {
         // (sin «›»: la flecha es para ir a otra pantalla).
         HStack(spacing: DS.Space.s3) {
             Image(systemName: symbol ?? Self.symbol(tone)).font(DS.TextRecipe.body.font.weight(.semibold)).foregroundStyle(color ?? Self.color(tone))
+                .scaleEffect(iconIn ? 1 : DS.Toast.iconStart)
             VStack(alignment: .leading, spacing: 0) {
                 title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
                 // El dato en dos renglones si hace falta (en un iPhone angosto se cortaba justo lo que importa).
                 if let detail { detail.recipe(.caption).lineLimit(2).fixedSize(horizontal: false, vertical: true) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .opacity(textIn ? 1 : 0).offset(x: textIn ? 0 : DS.Toast.textSlide)
             if let actionTitle, let action {
                 let button = Button { action(); dismiss() } label: {
                     HStack(spacing: DS.Space.s1) {
@@ -319,14 +326,28 @@ struct Toast: View {
                     if prominent { button.dsSolidPrimaryButton(shape: .capsule) } else { button.dsSecondaryButton() }
                 }
                 .fixedSize()
+                .opacity(textIn ? 1 : 0)
             }
         }
         // Más aire por dentro (antes el texto y «Cambiar» casi tocaban el borde).
         .padding(.leading, DS.Space.s4).padding(.trailing, action == nil ? DS.Space.s4 : DS.Space.s3).padding(.vertical, DS.Space.s3)
         .glassEffect(.regular, in: Capsule())
         .overlay { if prominent { Capsule().strokeBorder(Self.color(tone).opacity(DS.Toast.toneStroke), lineWidth: DS.Toast.strokeWidth) } }
+        // La cápsula sale del ícono: se descubre de izquierda a derecha y, al llegar, rebota un poco.
+        .mask(alignment: .leading) {
+            GeometryReader { geo in Capsule().frame(width: grown ? geo.size.width : min(geo.size.width, geo.size.height)) }
+        }
+        .scaleEffect(grown ? 1 : DS.Toast.growStart, anchor: .leading)
         .contentShape(Capsule())
         .onTapGesture(perform: dismiss)
+        .task {
+            if reduceMotion { iconIn = true; grown = true; textIn = true; return }
+            withAnimation(DS.Motion.toastPop) { iconIn = true }
+            try? await Task.sleep(for: DS.Toast.growAfter)
+            withAnimation(DS.Motion.toastGrow) { grown = true }
+            try? await Task.sleep(for: DS.Toast.textAfter)
+            withAnimation(DS.Motion.enter(reduceMotion)) { textIn = true }
+        }
         // Deslizarlo hacia arriba o hacia abajo lo quita (el que te necesita no se va solo).
         .gesture(DragGesture(minimumDistance: DS.Toast.swipe).onEnded { if abs($0.translation.height) >= DS.Toast.swipe { dismiss() } })
         .frame(maxWidth: DS.Toast.maxWidth)
