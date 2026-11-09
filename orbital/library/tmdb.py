@@ -549,6 +549,16 @@ class Tmdb:
         lang = {"xx": "", "cn": "zh"}.get(lang, lang)  # «xx»: sin idioma (mudas, música); «cn»: cantonés
         return {"original": lang or None, "titles": list(dict.fromkeys(t for t in titles if t))}
 
+    def poster(self, imdb: str) -> str | None:
+        """El póster de un título de IMDb (película o serie), None si TMDB no lo tiene. El de metahub a veces es de otro
+        título (Fernando, 8 nov: «Star Wars: Clone Wars» de 2003 salía con el de un programa coreano)."""
+        data = self._get(f"/find/{imdb}", external_source="imdb_id")
+        for group in ("tv_results", "movie_results"):
+            rows = data.get(group) or []
+            if isinstance(rows, list) and rows and isinstance(rows[0], dict) and (url := image(rows[0].get("poster_path"))):
+                return url
+        return None
+
     def find_id(self, imdb: str, kind: str) -> int | None:
         """El id de TMDB de un título de IMDb (None si TMDB no lo tiene)."""
         data = self._get(f"/find/{imdb}", external_source="imdb_id")

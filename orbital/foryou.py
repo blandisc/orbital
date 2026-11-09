@@ -61,6 +61,8 @@ MINE_TTL = 15 * 60
 RECS_TTL = 60 * 60
 POPULAR_TTL = 6 * 3600
 SLOW_TTL = 24 * 3600
+POSTER_TTL = 30 * 24 * 3600  # el póster de TMDB de un título casi no cambia
+METAHUB_POSTER = re.compile(r"https://images\.metahub\.space/poster/[a-z]+/(tt[0-9]{1,12})/img")
 
 CALENDAR_DAYS = 14  # lo que enseña «Próximos estrenos»: dos semanas
 LATEST_PAST_DAYS = 7  # «Lo nuevo de lo tuyo» también enseña lo que salió la semana pasada (como el iPhone)
@@ -489,6 +491,7 @@ class ForYou:
     def _build(self) -> None:
         self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.catalog.credentials)
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
+        self._posters_down_until = 0.0
         self.rawg = rawg_api.Rawg(self._key("rawg_key"))
         self.mdblist = mdblist_api.MdbList(self._key("mdblist_key"))
         self.letterboxd = letterboxd_api.Letterboxd(self._key("letterboxd_user"))
@@ -549,6 +552,25 @@ class ForYou:
                 "letterboxd": self.letterboxd.user,  # tu usuario («Cuentas» lo enseña) o None
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
                 "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}
+
+    def tmdb_poster(self, imdb: str) -> str | None:
+        """El póster de TMDB de un título (P1, Fernando 8 nov: primero TMDB, el de metahub a veces es de otro título; como
+        el iPhone). None sin clave de TMDB, si TMDB no lo tiene o si no contesta: va el de metahub."""
+        if not self.tmdb.configured or not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            return None
+        if time.monotonic() < self._posters_down_until:  # TMDB no contestó hace poco: no se espera por cada póster
+            return None
+        try:
+            return self.cache.get(f"poster:{imdb}", POSTER_TTL, lambda: self.tmdb.poster(imdb))
+        except Exception:  # noqa: BLE001 - el póster de TMDB es un extra: queda el de siempre
+            log.info("No pude leer el póster de TMDB de %s", imdb)
+            self._posters_down_until = time.monotonic() + 10 * 60
+            return None
+
+    def poster_source(self, url: str) -> str:
+        """La dirección de donde bajar un póster: si es de metahub, el de TMDB de ese título cuando lo hay (`tmdb_poster`)."""
+        found = METAHUB_POSTER.fullmatch(url or "")
+        return (self.tmdb_poster(found[1]) if found else None) or url
 
     def platforms(self) -> dict[str, dict]:
         if not self.tmdb.configured:
@@ -1542,7 +1564,7 @@ class ForYou:
             ok = False
             url = item.get("image")
             if isinstance(url, str) and remote_art.allowed(url):
-                ok = remote_art.sized(url, 360) is not None  # POSTER_PX del mosaico (foryou-mosaic.js)
+                ok = remote_art.sized(self.poster_source(url), 360) is not None  # POSTER_PX del mosaico (foryou-mosaic.js)
             imdb = item.get("meta_id")
             if isinstance(imdb, str) and str(item.get("logo") or "").startswith("https://images.metahub.space/logo/"):
                 self.trimmed_logo(imdb)

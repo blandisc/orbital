@@ -124,7 +124,14 @@ def router(d: Deps) -> APIRouter:
 
         if not remote_art.allowed(u):
             raise HTTPException(404)
-        path = await asyncio.get_running_loop().run_in_executor(_WEB_ART, remote_art.sized, u, max(120, min(1920, w)))
+        loop, width = asyncio.get_running_loop(), max(120, min(1920, w))
+        path = None
+        # P1 (Fernando, 8 nov): un póster de metahub va primero con el de TMDB, si hay clave (el de metahub de «Star Wars:
+        # Clone Wars» era de un programa coreano). Aquí pasan todos los pósters de la tele; como el iPhone.
+        if (source := await loop.run_in_executor(_WEB_ART, catalog.foryou.poster_source, u)) != u:
+            path = await loop.run_in_executor(_WEB_ART, remote_art.sized, source, width)
+        if path is None:
+            path = await loop.run_in_executor(_WEB_ART, remote_art.sized, u, width)
         if path is None:
             return RedirectResponse(u, status_code=307)
         return FileResponse(path, media_type=image_type(path), headers={"Cache-Control": "max-age=604800"})

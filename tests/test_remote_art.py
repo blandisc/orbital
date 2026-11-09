@@ -43,3 +43,28 @@ def test_api_serves_the_small_copy_or_sends_to_the_original(make_client, monkeyp
     monkeypatch.setattr(remote_art, "fetch", lambda url, timeout=10: (_ for _ in ()).throw(OSError("x")))
     gone = c.get("/api/img", params={"u": "https://image.tmdb.org/t/p/original/z.jpg"}, follow_redirects=False)
     assert gone.status_code == 307 and gone.headers["location"] == "https://image.tmdb.org/t/p/original/z.jpg"
+
+
+def test_a_metahub_poster_goes_first_with_the_tmdb_one(make_client, library, monkeypatch):
+    """P1 (Fernando, 8 nov): el póster de metahub de «Star Wars: Clone Wars» era de un programa coreano; con TMDB, el suyo."""
+    asked: list[str] = []
+    monkeypatch.setattr(remote_art, "fetch", lambda url, timeout=10: asked.append(url) or jpeg((1000, 1500)))
+    monkeypatch.setattr(library.foryou, "tmdb_poster", lambda imdb: "https://image.tmdb.org/t/p/w500/cw.jpg" if imdb == "tt0361243" else None)
+    c = make_client()
+    assert c.get("/api/img", params={"u": "https://images.metahub.space/poster/small/tt0361243/img", "w": 240}).status_code == 200
+    assert asked == ["https://image.tmdb.org/t/p/w500/cw.jpg"]
+    assert c.get("/api/img", params={"u": "https://images.metahub.space/poster/medium/tt9/img", "w": 240}).status_code == 200
+    assert asked[-1] == "https://images.metahub.space/poster/medium/tt9/img"  # TMDB no lo tiene: el de siempre
+
+
+def test_tmdb_poster_needs_a_key_and_waits_after_a_failure(library, monkeypatch):
+    from orbital.library.tmdb import TmdbError
+
+    foryou = library.foryou
+    monkeypatch.setattr(foryou.tmdb, "key", "")
+    assert foryou.tmdb_poster("tt0361243") is None
+    monkeypatch.setattr(foryou.tmdb, "key", "k")
+    calls: list[str] = []
+    monkeypatch.setattr(foryou.tmdb, "poster", lambda imdb: calls.append(imdb) or (_ for _ in ()).throw(TmdbError("x")))
+    assert foryou.tmdb_poster("tt0361243") is None and foryou.tmdb_poster("tt1") is None
+    assert calls == ["tt0361243"]  # sin TMDB, no se espera por cada póster

@@ -228,6 +228,19 @@ def test_otra_serie_con_un_articulo_de_mas():
     assert not streams.names_another_series(["The Office"], "The.Office.US.S02E05.1080p.mkv")
     assert not streams.names_another_series(["The Office"], "Office.S02E05.720p.mkv")
     assert not streams.names_another_series(["Star Wars: The Clone Wars"], "Star.Wars.The.Clone.Wars.S01E01.mkv")
+    assert streams.names_another_series(clone2003, "Star.Wars.The.Clone.Wars.S01-S07.1080p.BluRay"), "un paquete sin S01E01"
+    assert streams.names_another_series(clone2003, "Star Wars The Clone Wars Complete Series 1080p")
+    assert streams.names_another_series(clone2003, "Star Wars The Clone Wars (2008) Season 1")
+
+
+def test_otra_serie_lista_no_le_gana_a_la_de_esta_serie():
+    """Lista en Real-Debrid, la de «The Clone Wars» le ganaba a la de 2003 que había que bajar (Fernando, 8 nov)."""
+    other = streams.Source(index=1, addon="Comet", stream={}, transport_url="", release="Star.Wars.The.Clone.Wars.S01E01.1080p",
+                           resolution="1080p", cached=True, other_series=True)
+    mine = streams.Source(index=2, addon="Torrentio", stream={}, transport_url="", release="Star.Wars.Clone.Wars.2003.1080p",
+                          resolution="1080p", debrid=True)
+    assert rank([other, mine], Preferences(audio="en"), "series")[0] is mine
+    assert other.doubtful and other.public()["other_title"]
 
 
 @pytest.mark.parametrize("tracks, langs", [

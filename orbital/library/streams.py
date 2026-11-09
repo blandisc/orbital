@@ -156,13 +156,16 @@ class Source:
     # El nombre dice otro año («Даже ветер… [1977]» para la de 1968): es otra película. A diferencia de `other_title` (el nombre
     # no menciona el título: solo baja, y en tu idioma sigue ganando, FQ3-A), esta nunca es la recomendada (como el iPhone).
     other_year: bool = False
+    # Otra serie de casi el mismo nombre («The Clone Wars» de 2008 para «Clone Wars» de 2003; names_another_series): como
+    # otro año, nunca la recomendada ni la de «Continuar» (Fernando, 8 nov: lista en Real-Debrid, le seguía ganando).
+    other_series: bool = False
     refused: bool = False  # Real-Debrid no la dejó bajar (FQ2-A): −1500, como el iPhone; solo es la tarjeta si está sola
     kind: str = "other"  # de qué complemento viene: "torrentio", "comet" u "other" (addon_kind; el ícono de «Versión»)
 
     @property
     def doubtful(self) -> bool:
         """De otro año o de otro episodio: nunca la recomendada, la ofrecida ni «al instante» si hay otra."""
-        return self.other_year or self.other_episode
+        return self.other_year or self.other_episode or self.other_series
 
     @property
     def checked(self) -> bool:
@@ -201,7 +204,7 @@ class Source:
             "audio_langs": [{"code": code, "name": LANG_NAMES.get(code, code), "proof": how}
                             for code, how in self.audio_langs.items()],
             "addon_kind": self.kind,  # Ⓣ Torrentio, Ⓒ Comet o la pieza de los demás, junto a la calidad (AddonMark)
-            "other_title": self.other_title or self.other_year, "other_episode": self.other_episode, "checked": self.checked, "requested": self.requested,
+            "other_title": self.other_title or self.other_year or self.other_series, "other_episode": self.other_episode, "checked": self.checked, "requested": self.requested,
             # T8-A: la que hay que pedir lleva su huella (no es secreta) para «Pedirlo y avisarme» justo esta.
             **({"hash": self.info_hash} if self.debrid and not self.cached and self.info_hash else {}),
         }
@@ -484,7 +487,10 @@ def mentions_title(titles: list[str], text: str) -> bool:
 
 
 ARTICLES = frozenset({"the", "a", "an", "el", "la", "los", "las", "le", "les", "il", "der", "die", "das"})
-SERIES_EPISODE_MARK = re.compile(r"[ ._\-\[(]s\d{1,2}[ ._]?e\d{1,3}", re.IGNORECASE)
+# Donde acaba el nombre de la serie: «S01E01», pero también un paquete («S01-S07», «Season 1», «Complete»), el año o la
+# calidad («Star.Wars.The.Clone.Wars.S01-S07.1080p» no trae «S01E01»; como el iPhone).
+SERIES_EPISODE_MARK = re.compile(r"[ ._\-\[(](?:s\d{1,2}(?:[ ._]?e\d{1,3})?|seasons?|temporadas?|complete|completa|\d{3,4}p|(?:19|20)\d{2})"
+                                 r"(?=[ ._\-\])]|$)", re.IGNORECASE)
 
 
 def names_another_series(titles: list[str], release: str) -> bool:
@@ -677,8 +683,8 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
         s -= 1500
     if "Reescalada" in src.tags:
         s -= 150
-    if src.other_episode or src.other_year or src.refused:
-        s -= 1500  # otra temporada u otro año: nunca la recomendada (como el iPhone)
+    if src.other_episode or src.other_year or src.other_series or src.refused:
+        s -= 1500  # otra temporada, otro año u otra serie: nunca la recomendada (como el iPhone)
     if src.other_title:
         s -= 500  # el nombre no menciona el título: puede ser otro (no se esconde: a veces es el nombre en otro país)
     s += min(src.seeders, 500) / 10
@@ -909,8 +915,8 @@ class StreamFinder:
                     src = parse(stream, addon.name, addon.url, index, original)
                     hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
                     filename = str(hints.get("filename") or "")
-                    src.other_title = not mentions_title(titles, f"{src.release} {filename}") or (
-                        ":" in video_id and any(names_another_series(titles, name) for name in (src.release, filename)))
+                    src.other_title = not mentions_title(titles, f"{src.release} {filename}")
+                    src.other_series = ":" in video_id and any(names_another_series(titles, name) for name in (src.release, filename))
                     if kind == "movie" and isinstance(facts.get("year"), int):
                         src.other_year = other_year(src.release, facts["year"])
                     if (season := season_of(video_id)) is not None:
