@@ -117,6 +117,7 @@ extension AppEnvironment {
         switch outcome {
         case .queued:
             // Como el círculo de la ficha: qué se está bajando (calidad y tamaño) y a la mano, Descargas.
+            ui.downloadFlight = DownloadFlight(poster: s.poster)   // N1
             notify("Bajando la recomendada", detail: await titles.downloadDetail(s), tone: .success, action: .downloads)
         default: report(outcome, downloaded: (s.imdb, videoID(for: s)))
         }

@@ -88,8 +88,11 @@ extension TitleView {
 
     func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel, videoID: String? = nil) async {
         switch outcome {
-        // Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un aviso breve.
-        case .queued(let n): if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
+        // N1: el póster vuela a Biblioteca. Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un
+        // aviso breve.
+        case .queued(let n):
+            env.ui.downloadFlight = DownloadFlight(poster: model.poster)
+            if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
         // «Ya está descargada · Ver»: la copia del iPhone, sin red.
         default: env.report(outcome, downloaded: videoID.map { (model.metaID, $0) })
         }

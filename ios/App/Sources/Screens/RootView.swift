@@ -75,6 +75,7 @@ struct RootView: View {
         MainTabs().onAppear { Perf.mark("app.tabs") }
         .environment(\.playerZoom, playerZoom)
         .background(DS.bg.ignoresSafeArea())
+        .overlay { DownloadFlightLayer(flight: ui.downloadFlight).ignoresSafeArea() }
         .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
         // El reproductor crece desde la tarjeta que se tocó y, al cerrar, se encoge de vuelta a ella (con su avance al día).
         .fullScreenCover(item: $env.playing, onDismiss: { ui.playerSource = nil }) { request in

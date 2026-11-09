@@ -434,6 +434,15 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     /// El widget «Lo siguiente para ti» (también lo compila la extensión de widgets): barra de avance, miniatura de los renglones,
     /// dónde empieza el velo inferior del póster y cada cuánto se pide recarga si la app no avisa.
+    /// N1: el vuelo del póster a Biblioteca al empezar una descarga. Tamaño, de dónde sale (fracción del alto), cuánto crece al
+    /// tomarlo y cuánto queda al llegar, tiempos, y dónde está la pestaña (la cápsula izquierda de tres; Buscar a la derecha).
+    enum Flight {
+        static let poster: CGFloat = 56, startShare: CGFloat = 0.42, grabScale: CGFloat = 1.15, endScale: CGFloat = 0.3
+        static let grab: Duration = .milliseconds(160), travel: Duration = .milliseconds(480)
+        static let curve = Animation.timingCurve(0.5, 0, 0.2, 1, duration: 0.45)
+        static let tabInset = DS.Space.s4, searchReserve: CGFloat = 80, libraryShare: CGFloat = 5.0 / 6, tabFromBottom: CGFloat = 46
+    }
+
     enum Widget {
         static let progressHeight = CGFloat(DesignTokens.Widget.progressHeight), thumbWidth = CGFloat(DesignTokens.Widget.thumbWidth)
         static let scrimStart = DesignTokens.Widget.scrimStart, scrimStartWide = DesignTokens.Widget.scrimStartWide
@@ -456,6 +465,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let tvKey: CGFloat = 64
         /// «Viendo en la TV» en la pantalla bloqueada: el póster a todo lo alto de la actividad (2:3, 96 pt de alto).
         static let tvPoster: CGFloat = 64
+        /// D3: la barra de la tanda de descargas (alto, separación entre tramos y hasta cuántos tramos; más, una barra seguida).
+        static let batchHeight: CGFloat = 6, batchGap = DS.Space.s1, batchSegmentsMax = 8
+        /// TV3: el brillo de la luna de Orbital mientras suena.
+        static let sealGlow: Double = 0.6
         /// «Los Simpson en la tele»: el ancho de la tele en el mediano, su proporción (con la antena), cuánto del ancho es pantalla,
         /// el marco y la esquina del mueble (fracciones del ancho) y la antena (alto, fracción del ancho; abertura en grados).
         static let simpsonsTV: CGFloat = 150, simpsonsTVAspect: CGFloat = 1.2, simpsonsScreenShare: CGFloat = 0.66

@@ -14,14 +14,15 @@ struct TVLiveActivity: Widget {
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 ActivityPoster(file: context.state.poster, width: DS.Widget.tvPoster)
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    // TV3 (Fernando, 8 nov): el sello de Orbital (la luna, encendida mientras suena) y el turquesa solo en lo de
+                    // Orbital: el sello, el botón principal y el avance. El póster sigue mandando.
                     HStack(alignment: .firstTextBaseline) {
-                        Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
+                        OrbitalSeal(paused: context.state.paused)
                         Spacer(minLength: DS.Space.s2)
-                        Image(systemName: "tv.and.mediabox").font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.onArtSecondary)
-                            .accessibilityLabel(Text("En la TV"))
+                        subtitle(context.state).font(DS.font(.xs)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
                     }
-                    subtitle(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
-                    if !context.state.live { bar(context.state).tint(DS.paper) }
+                    Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
+                    if !context.state.live { bar(context.state).tint(context.state.paused ? DS.onArtSecondary : DS.accent) }
                     TVButtons(state: context.state)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -38,7 +39,7 @@ struct TVLiveActivity: Widget {
                     ActivityPoster(file: context.state.poster, width: DS.Widget.islandPoster).padding(.leading, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Image(systemName: context.state.paused ? "pause.fill" : "tv.and.mediabox").font(DS.font(.lg, weight: .semibold)).padding(.trailing, DS.Space.s1)
+                    OrbitalSeal(paused: context.state.paused, compact: true).padding(.trailing, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 0) {
@@ -50,17 +51,17 @@ struct TVLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: DS.Space.s2) {
-                        if !context.state.live { bar(context.state) }
+                        if !context.state.live { bar(context.state).tint(context.state.paused ? DS.onArtSecondary : DS.accent) }
                         TVButtons(state: context.state)
                     }
                     .padding(.horizontal, DS.Space.s1)
                 }
             } compactLeading: {
-                ActivityPoster(file: context.state.poster, width: DS.Space.s5)
+                OrbitalSeal(paused: context.state.paused, compact: true)
             } compactTrailing: {
                 ring(context.state)
             } minimal: {
-                Image(systemName: context.state.paused ? "pause.fill" : "tv.and.mediabox").font(DS.font(.sm, weight: .bold)).foregroundStyle(DS.paper)
+                OrbitalSeal(paused: context.state.paused, compact: true)
             }
             .widgetURL(WidgetLink.remoteURL)
         }
@@ -94,7 +95,7 @@ struct TVLiveActivity: Widget {
             }
         }
         .progressViewStyle(.circular)
-        .tint(DS.paper)
+        .tint(state.paused ? DS.onArtSecondary : DS.accent)
         .frame(width: DS.Widget.compactRing, height: DS.Widget.compactRing)
     }
 }
@@ -117,8 +118,30 @@ private struct TVButtons: View {
             Image(systemName: symbol).font(DS.font(.md, weight: .bold))
                 .foregroundStyle(solid ? DS.backdropDeep : DS.paper)
                 .frame(maxWidth: DS.Widget.tvKey).frame(height: DS.Widget.button)
-                .background(Capsule().fill(solid ? DS.paper : DS.fillStrong))
+                .background(Capsule().fill(solid ? DS.accent : DS.fillStrong))
         }
         .accessibilityLabel(label)
+    }
+}
+
+
+/// TV3: el sello de Orbital en «Viendo en la TV»: la luna del logo (encendida mientras suena, apagada en pausa) y «En tu TV» en
+/// turquesa. `compact`: solo la luna, para la isla.
+struct OrbitalSeal: View {
+    var paused = false
+    var compact = false
+
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {
+            Image("orbital.mark")
+                .font(DS.font(compact ? .md : .sm, weight: .semibold))
+                .foregroundStyle(paused ? DS.onArtSecondary : DS.accent)
+                .shadow(color: paused ? .clear : DS.accent.opacity(DS.Widget.sealGlow), radius: DS.Space.s1)
+            if !compact {
+                Text("En tu TV").font(DS.font(.xs, weight: .bold)).foregroundStyle(paused ? DS.onArtSecondary : DS.accent)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(paused ? Text("En tu TV, en pausa") : Text("En tu TV"))
     }
 }
