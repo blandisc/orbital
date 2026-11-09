@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Descargar en una serie: cómo se ve (DB1 + DS1 + DP2)</title>
+<style>
+:root{--bg:#07090d;--ink:#f3efe6;--mute:#9aa0ad;--faint:#5d6371;--teal:#5fd3c4;--amber:#f2b84b;--good:#5ccf7a;--line:#22262f;--art:#e3b35b;--artInk:#2a1a05}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:24px 14px 60px}
+h1{font-size:24px;margin:0 0 4px;text-align:center}p.lead{color:var(--mute);text-align:center;margin:0 0 22px}
+.wrap{display:flex;gap:22px;flex-wrap:wrap;justify-content:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cap{font-weight:700;font-size:14px}.cap span{display:block;font-weight:400;color:var(--mute);font-size:12.5px;max-width:300px;text-align:center}
+.phone{width:320px;height:660px;border-radius:44px;background:#000;padding:10px;box-shadow:0 0 0 2px #222,0 30px 60px -20px #000}
+.scr{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:#0b0d12}
+.hero{height:230px;background:radial-gradient(120% 90% at 30% 20%,#f2c46e 0%,#b5702c 40%,#3a1e0e 75%,#0b0d12 100%);position:relative}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,#0b0d12)}
+.logo{position:absolute;left:18px;bottom:22px;z-index:2;font:800 30px/1 Georgia,serif;letter-spacing:.02em}
+.meta{padding:0 18px;font-size:12px;color:var(--mute)}
+.play{margin:12px 18px 6px;height:48px;border-radius:24px;background:var(--ink);color:#111;display:grid;place-items:center;font-weight:700}
+.st{margin:0 18px;font-size:12px;color:var(--mute)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 18px}
+.tile{background:rgba(255,255,255,.07);border-radius:14px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:650;position:relative}
+.tile .i{font-size:19px}.tile.on{background:rgba(227,179,91,.18);color:var(--art)}
+.tile.press{box-shadow:0 0 0 2px var(--art) inset}
+.badge{position:absolute;top:5px;right:6px;font-size:10px;font-weight:800;background:var(--art);color:var(--artInk);border-radius:8px;padding:0 5px}
+.season{display:flex;align-items:center;gap:8px;margin:8px 18px 4px}
+.chip{font-size:12px;font-weight:700;border-radius:15px;padding:6px 11px;background:#20242f;white-space:nowrap}
+.chip.dl{background:rgba(227,179,91,.16);color:var(--art)}
+.sp{flex:1}
+.ep{display:flex;gap:10px;align-items:center;margin:0 18px;padding:8px 0;border-bottom:1px solid #1a1e27;font-size:12.5px}
+.th{width:64px;height:36px;border-radius:7px;background:linear-gradient(135deg,#3a4256,#1c2130);flex:none}
+.et{font-weight:650}.es{color:var(--mute);font-size:11.5px}
+.ok{color:var(--good)}.dlicon{color:var(--mute)}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#191c25;border-radius:28px 28px 36px 36px;padding:10px 14px 18px;box-shadow:0 -10px 30px -10px #000}
+.grab{width:36px;height:5px;border-radius:3px;background:#3a3f4c;margin:0 auto 12px}
+.sh{font-weight:750;font-size:17px}.ss{font-size:12px;color:var(--mute);margin:2px 0 10px}
+.opt{display:flex;align-items:center;gap:11px;padding:10px 8px;border-radius:14px}.opt+.opt{margin-top:2px}
+.opt .i{width:32px;height:32px;border-radius:10px;background:#252a38;display:grid;place-items:center;flex:none;font-size:15px}
+.opt.main{background:rgba(227,179,91,.14)}.opt.main .i{background:var(--art);color:var(--artInk)}
+.ot{font-weight:650;font-size:14px}.os{font-size:11.5px;color:var(--mute)}.sz{font-size:12px;color:var(--mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+.warn{color:var(--amber)}
+.ring{position:relative;width:20px;height:20px;border-radius:50%;background:conic-gradient(var(--art) 40%,#2b3040 0)}
+.ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#0b0d12}
+.toast{position:absolute;left:14px;right:14px;bottom:86px;height:50px;border-radius:25px;background:rgba(34,38,50,.96);display:flex;align-items:center;gap:10px;padding:0 14px 0 10px;font-size:13px}
+.toast .ic{width:28px;height:28px;border-radius:50%;background:var(--good);color:#0b2414;display:grid;place-items:center;font-weight:900}
+.tabbar{position:absolute;left:12px;right:12px;bottom:12px;height:56px;border-radius:28px;background:rgba(28,31,40,.9);display:flex;justify-content:space-around;align-items:center;color:var(--faint);font-size:19px}
+.tabbar .on{color:var(--ink);position:relative}.tabbar .n{position:absolute;top:-6px;right:-12px;font-size:10px;font-weight:800;background:var(--teal);color:#062b26;border-radius:8px;padding:0 5px}
+.notes{max-width:980px;margin:30px auto 0;color:var(--mute);font-size:13.5px}.notes b{color:var(--ink)}
+</style></head><body>
+<h1>Descargar en una serie, como se vería</h1>
+<p class="lead">La combinación recomendada: <b>DB1</b> (el cuadrito «Listos» con número) + <b>DS1</b> (la hoja «¿Qué descargo?») + <b>DP2</b> (bajar la temporada desde su encabezado).</p>
+<div class="wrap">
+
+ <div class="col"><div class="phone"><div class="scr">
+  <div class="hero"><div class="logo">THE OFFICE</div></div>
+  <div class="meta">Serie · 2005 · 9 temporadas · Comedia</div>
+  <div class="play">▶ Continuar T2 E5</div><div class="st">quedan 21 min · 🇲🇽 · 1080p</div>
+  <div class="tiles"><div class="tile"><span class="i">＋</span>Mi lista</div><div class="tile press"><span class="i">⬇︎</span>Descargar</div><div class="tile"><span class="i">▶︎</span>Tráiler</div><div class="tile"><span class="i">☰</span>Versión</div></div>
+  <div class="season"><span class="chip">Temporada 2 ▾</span><span class="sp"></span><span class="chip dl">⬇︎ Temporada · 7.6 GB</span></div>
+  <div class="ep"><span class="th"></span><div><div class="et">E5 · Halloween</div><div class="es">22 min</div></div><span class="sp"></span><span class="dlicon">⬇︎</span></div>
+  <div class="ep"><span class="th"></span><div><div class="et">E6 · The Fight</div><div class="es">22 min</div></div><span class="sp"></span><span class="dlicon">⬇︎</span></div>
+  <div class="tabbar"><span>⌂</span><span>✦</span><span>▤</span><span>⌕</span></div>
+ </div></div><div class="cap">1 · La ficha<span>Tocas «Descargar». En el encabezado de la temporada, «⬇︎ Temporada · 7.6 GB» (DP2).</span></div></div>
+
+ <div class="col"><div class="phone"><div class="scr">
+  <div class="hero"><div class="logo">THE OFFICE</div></div>
+  <div class="dim"></div>
+  <div class="sheet"><div class="grab"></div><div class="sh">¿Qué descargo?</div><div class="ss">The Office · 1080p · latino · hay 31 GB libres</div>
+   <div class="opt main"><span class="i">▶︎</span><div><div class="ot">El siguiente: T2 E5</div><div class="os">Halloween</div></div><span class="sp"></span><span class="sz">420 MB</span></div>
+   <div class="opt"><span class="i">⇣</span><div><div class="ot">Los siguientes 5</div><div class="os">T2 E5 a E9</div></div><span class="sp"></span><span class="sz">2.1 GB</span></div>
+   <div class="opt"><span class="i">▤</span><div><div class="ot">Toda la temporada 2</div><div class="os">22 episodios · faltan 18</div></div><span class="sp"></span><span class="sz">7.6 GB</span></div>
+   <div class="opt"><span class="i">▦</span><div><div class="ot">Toda la serie</div><div class="os warn">201 episodios · no cabe en tu iPhone</div></div><span class="sp"></span><span class="sz warn">84 GB</span></div>
+   <div class="opt"><span class="i">☰</span><div><div class="ot">Elegir versión…</div><div class="os">otra calidad o idioma</div></div></div>
+  </div>
+ </div></div><div class="cap">2 · La hoja «¿Qué descargo?»<span>Arriba, resaltado, lo de un toque de siempre. Cada opción con su tamaño; lo que no cabe, en ámbar.</span></div></div>
+
+ <div class="col"><div class="phone"><div class="scr">
+  <div class="hero"><div class="logo">THE OFFICE</div></div>
+  <div class="meta">Serie · 2005 · 9 temporadas · Comedia</div>
+  <div class="play">▶ Continuar T2 E5</div><div class="st">quedan 21 min · 🇲🇽 · 1080p</div>
+  <div class="tiles"><div class="tile"><span class="i">＋</span>Mi lista</div><div class="tile on"><span class="badge">3</span><span class="i">✓</span>Listos</div><div class="tile"><span class="i">▶︎</span>Tráiler</div><div class="tile"><span class="i">☰</span>Versión</div></div>
+  <div class="season"><span class="chip">Temporada 2 ▾</span><span class="sp"></span><span class="chip dl">⬇︎ 2 de 5</span></div>
+  <div class="ep"><span class="th"></span><div><div class="et">E5 · Halloween</div><div class="es">en el iPhone</div></div><span class="sp"></span><span class="ok">✓</span></div>
+  <div class="ep"><span class="th"></span><div><div class="et">E6 · The Fight</div><div class="es">bajando · 40 %</div></div><span class="sp"></span><span class="ring"></span></div>
+  <div class="toast"><div class="ic">↓</div><div><b>Bajando 5 episodios</b><div class="es">2 de 5 en la fila</div></div><span class="sp"></span><b style="color:var(--teal)">Ver</b></div>
+  <div class="tabbar"><span>⌂</span><span>✦</span><span class="on">▤<span class="n">3</span></span><span>⌕</span></div>
+ </div></div><div class="cap">3 · Bajando y ya listos<span>El cuadrito dice «✓ Listos» con cuántos tienes (DB1); la temporada dice «2 de 5»; cada episodio su ✓ o su anillo.</span></div></div>
+</div>
+<div class="notes"><b>Detalles:</b> mantener presionado «Descargar» baja el siguiente sin abrir la hoja (como hoy un toque). En una película, el cuadrito dice «✓ Lista» sin número y tocar «Descargar» baja directo (no hay hoja). VoiceOver: «3 episodios descargados». Lo que no cabe se puede tocar igual: pide confirmar y baja hasta llenar, dejando 2 GB libres.</div>
+</body></html>
