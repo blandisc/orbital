@@ -12,6 +12,7 @@ import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMen
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
 import { tokenMs } from "./core/tokens.js";
 import { cloudRow, DEBRID_FORM, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
+import { isEditableList, listEditOptions } from "./core/menus.js";
 import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
@@ -105,7 +106,9 @@ const ui = {
     onChrome: (away) => { document.body.dataset.chrome = away ? "away" : ""; },
     onPick: (target, id) => (ui.games.focusId === id && !justTouched() ? gamesActivate(target) : ui.games.focus(id)),
   }),
-  shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
+  // Clic secundario o mantener el dedo en un póster: sus Opciones (lo mismo que Y).
+  shelf: createShelf({ onPick: (r, c) => pick(r, c), onMore: (r, c) => { setFocus(r, c, { silent: true }); handleAction("options"); },
+    onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints({ onAction: (action) => handleAction(action) }),
   sheet: createSheet({
     onCommand: (command, context) => {
@@ -245,8 +248,13 @@ const ui = {
   listScreen: createListScreen({
     onMove: () => sound.play("move"),
     onPick: (item) => openListItem(item),
-    onMore: (item) => openMenu(item.file ? looseMenu(item) : gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() })),
+    // Una lista tuya: «Quitar de esta lista» en Opciones (como mantener el dedo en el iPhone).
+    onMore: (item) => openMenu(item.file ? looseMenu(item) : gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked(),
+      list: ui.listScreen.sorter.editable && { ...ui.listScreen.sorter.editable, here: true } })),
     onSort: (screen) => openMenu(listSortMenu(screen)),
+    onRemove: (item) => removeFromList(ui.listScreen.sorter.editable, item),
+    onAdd: () => addToList(ui.listScreen.sorter.editable),
+    onChange: () => renderHints(),
     onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
     watched: () => api.forYouWatched().then((r) => r.ids || []),
@@ -419,7 +427,9 @@ function returnToMenu(from) {
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
 const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.filter, ui.gamePage, ui.calendar, ui.search, ui.settings];
-const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
+/** De la de más arriba a la de más abajo. Buscar eligiendo una ficha («Agregar» a una lista tuya) va encima de la lista abierta. */
+const overlays = () => (ui.search.isPicking ? [ui.search, ...OVERLAYS] : OVERLAYS);
+const topOverlay = () => overlays().find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
  *  leyenda del pie ({acción: texto}, para rotular sus botones como la tele). Solo se manda si cambió. */
@@ -1250,6 +1260,7 @@ function openCollection(item) {
   // Un premio: su estatuilla; un estudio: su logo en blanco. Un año: el título ya es el número grande.
   const media = c.type === "award" ? { statue: c.statue } : c.type === "studio" && c.logo ? { logo: c.logo, mono: true } : {};
   ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
+    editable: c.type === "list" && traktLinked() && isEditableList(l.id) ? { where: l.id, name: l.id === "watchlist" ? "Mi lista" : l.title } : null,
     tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
   return renderHints();
 }
@@ -1346,6 +1357,100 @@ function toggleSave(where) {
     });
 }
 
+// --- Editar tus listas (Fernando, 6 nov: «quitarle y ponerle elementos, y que sea evidente»; ListEditing del iPhone) -----
+// Solo Mi lista y tus listas de Trakt (isEditableList). Cambia al instante, con «Deshacer» en el aviso; si Trakt no acepta,
+// regresa y lo dice. Los textos son los del iPhone: «Quitada de «Mi lista»», «Agregada a «…»», «No pude cambiar «…»».
+const quoted = (list) => `«${list.name}»`;
+
+/** Lo ya cargado de una lista tuya (la fila de Películas y series y la lista que se abre de su tarjeta): sin el título
+ *  (devuelve dónde estaba) o con él de vuelta (`removed`) o nuevo al principio (`entry`). */
+function listLocally(where, metaId, add, { entry = null, removed = null } = {}) {
+  const out = [];
+  for (const key of Object.keys(mediaItems)) {
+    const { id, kind } = unkeyOf(key);
+    if (id !== where) continue;
+    const items = mediaItems[key] || [];
+    if (!add) {
+      const at = items.findIndex((i) => i?.meta_id === metaId);
+      if (at >= 0) { out.push([key, at, items[at]]); mediaItems[key] = items.filter((_, n) => n !== at); }
+    } else if (entry && (!kind || kind === entry.kind) && !items.some((i) => i?.meta_id === metaId)) mediaItems[key] = [entry, ...items];
+  }
+  for (const [key, at, raw] of removed || []) {
+    const items = [...(mediaItems[key] || [])];
+    if (!items.some((i) => i?.meta_id === raw.meta_id)) items.splice(Math.min(at, items.length), 0, raw);
+    mediaItems[key] = items;
+  }
+  buildCuration();
+  return out;
+}
+
+/** La lista abierta, si es esa misma lista tuya (para cambiarla también ahí). */
+const openListOf = (list) => (ui.listScreen.isOpen && ui.listScreen.sorter.editable?.where === list.where ? ui.listScreen.sorter : null);
+
+/** Quitar de una lista tuya (A editando, su «−», Opciones › Quitar de esta lista): sale ya; «Deshacer» la regresa a su lugar. */
+function removeFromList(list, item) {
+  const metaId = item?.meta_id || item?.extra?.meta_id || item?.id;
+  const kind = item?.kind === "series" || item?.extra?.kind === "series" ? "series" : "movie";
+  if (!list || !/^tt\d+$/.test(metaId || "")) return sound.play("error");
+  const shown = openListOf(list)?.without(metaId) || [];
+  const rows = listLocally(list.where, metaId, false);
+  const back = () => { listLocally(list.where, metaId, true, { removed: rows }); openListOf(list)?.restore(shown); };
+  sound.play("select");
+  ui.toast.show(`Quitada de ${quoted(list)}`, { detail: item.title || "", duration: UNDO_MS,
+    ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: () => {
+      back();
+      sound.play("select");
+      api.saveTo(kind, metaId, list.where, true).catch((err) => listFailed(list, err, () => {
+        listLocally(list.where, metaId, false);
+        openListOf(list)?.without(metaId);
+      }));
+    } }) });
+  api.saveTo(kind, metaId, list.where, false).catch((err) => listFailed(list, err, back));
+}
+
+/** Trakt no aceptó: regresa lo que se cambió y lo dice. */
+function listFailed(list, err, undo) {
+  undo();
+  sound.play("error");
+  ui.toast.show(`No pude cambiar ${quoted(list)}`, { error: true, detail: err?.message || "" });
+}
+
+/** «Agregar» (☰ › Agregar a esta lista…, el botón de arriba): Buscar para elegir qué poner, encima de la lista. */
+function addToList(list) {
+  if (!list) return;
+  sound.play("open");
+  ui.listScreen.el.after(ui.search.el); // misma capa (--z-overlay): lo que va después queda encima
+  ui.search.open("", { pick: { hint: `Busca qué agregar a ${quoted(list)}`, onPick: (result) => addPicked(list, result) } });
+  renderHints();
+}
+
+/** Buscar de siempre va en su lugar (debajo de la lista abierta: una ficha que abres desde Buscar puede abrir una lista
+ *  encima). Se acomoda al abrirse, no al irse: moverla a media salida cortaba su animación. */
+function restoreSearchLayer() {
+  if (ui.search.el.previousElementSibling !== ui.settings.el) ui.settings.el.after(ui.search.el);
+}
+
+function addPicked(list, result) {
+  const ref = titleRef(result);
+  if (!/^tt\d+$/.test(ref?.meta_id || "")) { sound.play("error"); return ui.toast.show("Elige una película o serie", { error: true }); }
+  const kind = ref.kind === "series" ? "series" : "movie";
+  const entry = { meta_id: ref.meta_id, kind, title: result.title, image: result.image || ref.image, year: Number(result.year || result.extra?.year) || undefined };
+  openListOf(list)?.prepend(curatedItem(entry));
+  listLocally(list.where, ref.meta_id, true, { entry });
+  const out = () => { listLocally(list.where, ref.meta_id, false); openListOf(list)?.without(ref.meta_id); };
+  sound.play("select");
+  ui.toast.show(`Agregada a ${quoted(list)}`, { tone: "success", detail: result.title || "", duration: UNDO_MS,
+    ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: () => {
+      out();
+      sound.play("select");
+      api.saveTo(kind, ref.meta_id, list.where, false).catch((err) => listFailed(list, err, () => {
+        listLocally(list.where, ref.meta_id, true, { entry });
+        openListOf(list)?.prepend(curatedItem(entry));
+      }));
+    } }) });
+  api.saveTo(kind, ref.meta_id, list.where, true).catch((err) => listFailed(list, err, out));
+}
+
 function versionsMenu(play, versions) {
   const lang = { es: "Español", en: "Inglés" };
   const gb = (b) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
@@ -1362,6 +1467,7 @@ function fixTitle({ kind, imdb = null, title, fileId = null }) {
   if (ui.title.isOpen) ui.title.close();
   sound.play("open");
   let busy = false; // un A de más no la corrige dos veces
+  if (ui.listScreen.isOpen) ui.listScreen.el.after(ui.search.el); // desde Mi media › Sin ficha: Buscar encima de la lista
   ui.search.open(title || "", { pick: { kind, onPick: async (result) => {
     if (busy) return;
     busy = true;
@@ -1607,11 +1713,13 @@ function openGenre(item) {
   renderHints();
 }
 
-/** «Ordenar y filtrar» de una lista abierta (como el botón del iPhone). Un ranking solo se filtra. */
+/** «Ordenar y filtrar» de una lista abierta (como el botón del iPhone). Un ranking solo se filtra. Una lista tuya empieza
+ *  con «Editar esta lista» (el camino visible de X) y «Agregar a esta lista…». */
 function listSortMenu(s) {
   const st = s.settings;
   const check = (on) => (on ? "✓" : "");
   const options = [];
+  if (s.editable) options.push(...listEditOptions(s.editable, s.editing));
   if (!s.ranked) {
     options.push({ heading: true, label: "Ordenar" },
       ...SORTS.map((o) => ({ icon: "list", label: o.label, value: check(st.sort === o.id), command: { type: "list-sort", value: o.id } })));
@@ -1807,6 +1915,7 @@ function openSearch(initial = "") {
     return;
   }
   sound.play("open");
+  restoreSearchLayer();
   ui.search.open(initial);
   renderHints();
 }
@@ -1851,7 +1960,7 @@ function commands() {
   if (commandTable) return commandTable;
   const torrentioMenus = { main: (entry) => torrentioMenu(entry, state.settings?.languages || []), languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
-  const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
   return commandTable;
 }
@@ -2095,7 +2204,7 @@ function handleAction(action, { repeat = false } = {}) {
   }
   if (menuStillLoading(action)) return;
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
-  if (OVERLAYS.some((view) => view.handle(action, { repeat }))) return renderHints();
+  if (overlays().some((view) => view.handle(action, { repeat }))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
   if (inTv()) return handleTv(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
@@ -2164,7 +2273,8 @@ function handleRows(action, { repeat = false } = {}) {
       if (item?.source === "genre" || item?.source === "collection") return sound.play("error"); // una lista no tiene opciones
       if (item?.download) return openMenu(downloadMenu(item));
       if (item?.request) return runCommand({ type: "rd-request-menu", hash: item.request.hash, row: true }); // su hoja, también ya listo
-      return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
+      return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked(),
+        list: state.rows[r]?.group === "milista" && mediaLists.some((l) => l.id === "watchlist") ? { where: "watchlist", name: "Mi lista" } : null }));
     case "menu":
       if (state.section === "media") return openMenu(mediaMenu());
       return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));

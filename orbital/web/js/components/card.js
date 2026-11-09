@@ -28,7 +28,7 @@ export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon ||
 /** Una pieza ancha (Destacados, como el carrusel de Stremio): el arte 16:9 a su tamaño real y el logo del título encima. */
 export const WIDE_RATIO = 16 / 9;
 
-export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false, ranked = false, wide = false } = {}) {
+export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption = false, pop = false, ranked = false, wide = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
@@ -78,6 +78,8 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     type: "button",
     "aria-label": item.title,
     onClick: onPress,
+    // Clic secundario o mantener el dedo: sus Opciones (lo mismo que Y), como el menú del iPhone al mantener presionado.
+    onContextmenu: onMore && ((event) => { event.preventDefault(); onMore(); }),
   });
   if (fill) card.style.setProperty("--fill", fill);
   const setRatio = (ratio) => {

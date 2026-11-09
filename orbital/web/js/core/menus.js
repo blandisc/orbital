@@ -22,7 +22,12 @@ export function mineChannelMenu(name, imdb, trakt = false) {
   };
 }
 
-export function gameMenu(item, { running = null, phone = false, page = false, trakt = false } = {}) {
+/**
+ * `list`: el póster está en una lista tuya (`{ where, name, here }`: Mi lista o una de tus listas de Trakt, como
+ * `TitleActions.isEditable` del iPhone). Trae «Quitar de esta lista» (dentro de la lista) o «Quitar de Mi lista» (en su
+ * fila), al final con lo que quita; cambia al instante con «Deshacer» en el aviso.
+ */
+export function gameMenu(item, { running = null, phone = false, page = false, trakt = false, list = null } = {}) {
   if (!item) return null;
   const isOpen = running?.id === item.id;
   if (item.source === "search") {
@@ -62,6 +67,10 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
   if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
     options.push({ icon: "cover", label: "Cambiar el arte", command: { type: "media-art", kind: item.extra?.kind || item.kind || "movie", metaId, title: item.title } });
   }
+  if (list && titled && trakt) {
+    options.push({ icon: "minus", label: list.here ? "Quitar de esta lista" : `Quitar de ${list.name}`, hint: list.here ? list.name : "", danger: true,
+      command: { type: "list-remove", where: list.where, name: list.name, kind, id: metaId, title: item.title } });
+  }
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
@@ -90,6 +99,21 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
       command: { type: "prefs", id: item.id, title: item.title, prefs: { hidden: true } } }); // se puede deshacer unos segundos
   }
   return { title: item.title, options };
+}
+
+/** Las listas que son tuyas y se editan (como `TitleActions.isEditable` del iPhone): Mi lista (tu watchlist de Trakt) y
+ *  tus listas de Trakt. Un ranking, un catálogo, tus favoritos, Para ti, Letterboxd o un complemento, no. */
+export const isEditableList = (id) => id === "watchlist" || /^list:\d+$/.test(id || "");
+
+/** Lo primero de ☰ en una lista tuya: «Editar esta lista» (X; editando, «Listo») y «Agregar a esta lista…». */
+export function listEditOptions(list, editing = false) {
+  return [
+    { heading: true, label: list.name },
+    editing
+      ? { icon: "check", label: "Listo", hint: "Deja de editar · X o B", command: { type: "list-edit", on: false } }
+      : { icon: "minus", label: "Editar esta lista", hint: "Un «−» en cada póster para quitarlo · X", command: { type: "list-edit", on: true } },
+    { icon: "plus", label: "Agregar a esta lista…", hint: "Busca una película o serie", command: { type: "list-add" } },
+  ];
 }
 
 /** Cambiar emulador: solo esta vez, o siempre. */
