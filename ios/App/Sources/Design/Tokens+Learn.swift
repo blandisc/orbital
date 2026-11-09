@@ -113,6 +113,8 @@ extension DS {
     enum KindPill {
         static let closed: CGFloat = 34, open: CGFloat = 42
         static let enterScale: CGFloat = 0.4, pressed: CGFloat = 0.88   // ds-exception: escalas
+        /// El ícono de series es más ancho que los otros dos; así se ven del mismo tamaño.
+        static let seriesOptical: CGFloat = 0.86   // ds-exception: escala óptica
         static let settle: Duration = .milliseconds(220)
         /// Más angosto que esto (iPhone SE, mini), tu foto también se hace a un lado mientras eliges.
         static let narrowScreen: CGFloat = 390
