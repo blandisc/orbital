@@ -138,11 +138,10 @@ struct PlayerFailureView: View {
     }
 
     private var symbol: String {
+        // El de la tabla (`UnavailableCause.symbol`, el mismo de «Versión»); las demás causas usan el de la falla.
         switch cause {
-        case .debridExpired?, .noPremium?, .reconnectDebrid?: return "person.crop.circle.badge.exclamationmark"
-        case .debridRefused?: return DebridRequestWords.Icon.refused   // PT10: el triángulo, como en Tus pedidos
-        case .notInDebrid?, .downloading?: return DS.Symbol.cloud
-        case .nobodyHasIt?: return "magnifyingglass"
+        case let c? where c.blocksRequests: return c.symbol
+        case .debridRefused?, .notInDebrid?, .downloading?, .nobodyHasIt?: return cause?.symbol ?? ""
         default: break
         }
         return switch failure {

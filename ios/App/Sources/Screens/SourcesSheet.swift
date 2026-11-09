@@ -16,6 +16,7 @@ struct SourcesSheet: View {
     /// T8-A · «Pedirlo y avisarme» de una versión que Real-Debrid aún no tiene (el flujo de la ficha). nil: no se puede pedir.
     var request: ((Source) async -> Void)?
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
 
     /// Un episodio: ¿esta versión es solo para él o la serie sigue así? («Solo este episodio | Desde aquí», como la TV).
     private let episode: Bool
@@ -130,7 +131,10 @@ struct SourcesSheet: View {
             ScrollView {
                 VStack(spacing: DS.Space.s2) {   // ds-exception: renglones de la lista de versiones, no secciones de pantalla
                     if model.isLoading { VersionsSkeleton() }   // la forma de lo que viene, no una ruedita sola
-                    if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
+                    // V4: sin ninguna versión, la causa de la tabla de «Ver» con su salida, no un aviso suelto.
+                    if !model.isLoading, let cause = model.emptyCause {
+                        VersionsEmptyCause(cause: cause, uiLanguage: ui, perform: { emptyExit($0, model) })
+                    } else if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     if showsAll {
                         if !model.ranked.isEmpty {
                             AllSourcesList(sources: model.ranked, current: model.recommendedIndex,
@@ -181,6 +185,17 @@ struct SourcesSheet: View {
                         request: request == nil ? nil : { id in ask(id) }, requestStatus: requestStatus(p.option.id, full: true),
                         instead: p.option.speed == .realDebridMustDownload ? instantInstead(model, ui) : nil)
                 // Mide lo que dice (sin espacio muerto); al abrir «Otras», crece y, si no cabe, se desplaza.
+        }
+    }
+
+    /// V4 · la salida de la causa de una hoja vacía. «Pedir a la nube» y «Elegir otra versión» no llevan botón: lo que se
+    /// puede pedir ya está abajo y no hay otra versión que elegir.
+    private func emptyExit(_ action: UnavailableCause.Action, _ model: SourcesModel) -> (() -> Void)? {
+        switch action {
+        case .retry: { Task { await model.load(onCellular: env.connectivity.isCellular) } }
+        case .renew: { UIApplication.shared.open(env.services.debrid.provider.renewURL) }   // en el navegador
+        case .settings: { dismiss(); env.ui.openSettings = true }
+        case .request, .otherVersion: nil
         }
     }
 

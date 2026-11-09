@@ -40,6 +40,8 @@ public final class SourcesModel: ObservableModel {
     public private(set) var rows: [SourceRow] = [] { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
+    /// V4: por qué la hoja no tiene ninguna versión (la tabla de «Ver»); nil mientras busca o si hay alguna.
+    public private(set) var emptyCause: UnavailableCause? { didSet { if oldValue != emptyCause { changed() } } }
     /// «Elegir versión»: las filas por idioma (el tuyo, el original y las variantes de español), los demás idiomas y cuántas
     /// se esconden (grabadas en el cine, tráileres).
     public private(set) var languageRows: [LanguageRow] = [] { didSet { changed() } }
@@ -57,9 +59,9 @@ public final class SourcesModel: ObservableModel {
     /// Lo que existe para pedir y la lista de Real-Debrid no trae (Torrentio sin Real-Debrid, R4): solo para «Hay que
     /// pedirlas · tardan» y para pedirlas, nunca para ver.
     private var requestable: [Source] = []
-    private let services: Services
+    let services: Services
     private var loadCount = 0
-    private let kind: String, videoID: String, metaID: String
+    let kind: String, videoID: String, metaID: String
 
     public init(_ services: Services, kind: String, metaID: String, videoID: String) {
         self.services = services; self.kind = kind; self.metaID = metaID; self.videoID = videoID
@@ -67,7 +69,7 @@ public final class SourcesModel: ObservableModel {
     }
 
     public func load(onCellular: Bool = false) async {
-        isLoading = true
+        isLoading = true; emptyCause = nil   // Reintentar: el esqueleto, no la causa vieja
         // Solo la última carga apaga el indicador (una vieja que se cancela no lo quita a media espera).
         loadCount += 1
         let ticket = loadCount
@@ -79,6 +81,7 @@ public final class SourcesModel: ObservableModel {
         let found: [Source]
         do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch) }
         catch where !Task.isCancelled {
+            emptyCause = await emptyCause(thrown: error, canRequest: false)
             sources = []; requestable = []; rows = []; languageRows = []; moreLanguages = []; hiddenCount = 0; toRequest = []
             // Ningún complemento contestó: con internet son ellos, no tu conexión (`Degraded`).
             self.error = error is StreamFinderError
@@ -105,6 +108,7 @@ public final class SourcesModel: ObservableModel {
         toRequest = Self.toRequest(found + extra, shown: grouped.main + grouped.more, prefs: prefs, limitGB: settings.warnCellularOverGB, inCloud: Set(inCloud.keys))
         error = !sources.isEmpty ? nil : toRequest.isEmpty ? "Real-Debrid aún no tiene este título. Los estrenos suelen aparecer unas horas después."
             : "Real-Debrid aún no tiene este título."   // y abajo, «Hay que pedirlas»
+        emptyCause = !sources.isEmpty ? nil : await emptyCause(thrown: nil, canRequest: !toRequest.isEmpty)
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         let canSave = { (s: Source) in s.playbackURL.map { !["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } ?? false }
         // Para guardar: el mismo puntaje que usa «Descargar» (1080p, HEVC, tamaño moderado), solo si no es la de ver.

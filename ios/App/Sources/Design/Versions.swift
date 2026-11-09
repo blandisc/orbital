@@ -222,3 +222,54 @@ struct VersionEvidence: View {
         }
     }
 }
+
+/// V4 · «Versión» sin ninguna versión: la causa con la tabla de «Ver» (`UnavailableCause`), su ícono, la frase y su única
+/// salida (Renovar, Ajustes, Reintentar). «Pedir a la nube» no lleva botón aquí: las que se pueden pedir están abajo, en
+/// «Hay que pedirlas». Nunca una hoja en blanco.
+struct VersionsEmptyCause: View {
+    let cause: UnavailableCause
+    let uiLanguage: String
+    /// La salida de la causa; nil si aquí no aplica (se queda sin botón).
+    let perform: (UnavailableCause.Action) -> (() -> Void)?
+
+    private func tr(_ key: String) -> String { Strings.tr(key, language: uiLanguage) }
+
+    var body: some View {
+        let detail = cause.detail(tr, languageName: { VersionLanguageRow.inline(Streams.versionLanguageName($0, in: uiLanguage), uiLanguage) })
+        DSEmptyState(symbol: cause.symbol, title: Text(verbatim: cause.title(tr)), message: detail.map { Text(verbatim: $0) }) {
+            if let action = cause.action, let run = perform(action) {
+                Button(UnavailableCause.label(action, tr), systemImage: action.symbol, action: run)
+                    .accessibilityIdentifier("sources-empty-action")
+            }
+        }
+        .accessibilityIdentifier("sources-empty")
+    }
+}
+
+extension UnavailableCause {
+    /// El ícono de cada causa, el mismo en «Versión» y en el reproductor (`PlayerFailureView`).
+    var symbol: String {
+        switch self {
+        case .debridExpired, .noPremium, .reconnectDebrid: "person.crop.circle.badge.exclamationmark"
+        case .debridRefused: DebridRequestWords.Icon.refused   // PT10: el triángulo, como en Tus pedidos
+        case .notInDebrid, .downloading: DS.Symbol.cloud
+        case .nobodyHasIt: "magnifyingglass"
+        case .unreleased: "calendar"
+        case .cannotSearch, .addonsOffline: "exclamationmark.icloud"
+        case .noAddonsOn: "puzzlepiece.extension"
+        }
+    }
+}
+
+extension UnavailableCause.Action {
+    /// El ícono del botón de cada salida.
+    var symbol: String {
+        switch self {
+        case .renew: "arrow.up.right"   // abre el navegador
+        case .settings: "gear"
+        case .retry: "arrow.clockwise"
+        case .otherVersion: "rectangle.stack"
+        case .request: DS.Symbol.cloud
+        }
+    }
+}
