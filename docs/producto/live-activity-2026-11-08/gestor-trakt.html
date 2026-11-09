@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Gestor de lo que ves (todo Trakt, mejor)</title>
+<style>
+:root{--bg:#07090d;--card:#10131a;--ink:#f3efe6;--mute:#9aa0ad;--teal:#5fd3c4;--amber:#f2b84b;--good:#5ccf7a;--red:#ef6f6f;--line:#22262f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,system-ui,sans-serif;padding:26px 16px 70px;max-width:1100px;margin:auto}
+h1{font-size:26px;margin:0 0 6px}h2{font-size:20px;margin:44px 0 8px}h3{font-size:16px;margin:0 0 8px}
+p.lead{color:var(--mute);margin:0 0 16px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600}
+.ya{color:var(--good);font-weight:700}.medias{color:var(--amber);font-weight:700}.falta{color:var(--red);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}.card.rec{border-color:var(--teal)}
+.code{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;margin-right:8px;background:#222735}.rec .code{background:var(--teal);color:#062b26}
+ul{margin:8px 0 0;padding-left:18px;color:var(--mute)}li b{color:var(--ink)}
+.phone{background:linear-gradient(#141824,#0b0e15);border:1px solid var(--line);border-radius:26px;padding:14px;margin:10px 0}
+.pill{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:17px;background:#232837;font-size:13px;font-weight:650}
+.pill.on{background:var(--teal);color:#062b26}
+.states{display:flex;gap:6px;flex-wrap:wrap}
+.row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #1b1f29}.row:last-child{border:0}
+.po{width:34px;height:51px;border-radius:6px;flex:none}.a{background:linear-gradient(160deg,#e3b35b,#7b3f1d)}.b{background:linear-gradient(160deg,#5e8bff,#1c2b66)}.c{background:linear-gradient(160deg,#e0607f,#4a1630)}.d{background:linear-gradient(160deg,#6fd39b,#1e5a3a)}
+.t{font-weight:650;font-size:14px}.s{font-size:12px;color:var(--mute)}.sp{flex:1}
+.swipe{display:flex;gap:4px}.sw{font-size:11px;font-weight:700;border-radius:8px;padding:6px 8px}
+.sheet{background:#1a1e29;border-radius:18px;padding:12px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:10px}.opt:hover{background:#222735}.opt .i{width:26px;text-align:center}
+.tag{font-size:11px;font-weight:700;border-radius:7px;padding:1px 6px}
+.foot{color:var(--mute);font-size:13px;margin-top:30px}
+</style></head><body>
+<h1>Orbital como gestor de todo lo que ves</h1>
+<p class="lead">Análisis de lo que hace Trakt con tus películas y series, qué ya tiene Orbital, qué falta, y una propuesta para hacerlo igual o mejor con mejor UX. Cada decisión lleva un código.</p>
+
+<h2>1 · Lo que hace Trakt y dónde está Orbital</h2>
+<table>
+<tr><th>Área</th><th>Qué hace Trakt</th><th>Orbital hoy</th></tr>
+<tr><td><b>Watchlist</b></td><td>Agregar y quitar películas, series, temporadas y episodios; ordenar y filtrar; notas</td><td class="medias">A medias: agregar, quitar y «Deshacer» (Mi lista). Sin temporadas/episodios sueltos, sin ordenar ni notas</td></tr>
+<tr><td><b>Listas personales</b></td><td>Crear, renombrar, describir, privada/pública, ordenar a mano o por campo, borrar, me gusta, comentarios</td><td class="medias">A medias: ver, crear, agregar y quitar elementos. Sin renombrar, privacidad, reordenar ni borrar</td></tr>
+<tr><td><b>Favoritos</b></td><td>El ♥ de una película o serie, con nota</td><td class="ya">Ya (el corazón de la ficha)</td></tr>
+<tr><td><b>Historial</b></td><td>Marcar visto (con fecha: ahora, estreno, otra), varias veces (re-ver), quitar una vista, editar fechas</td><td class="medias">A medias: marcar y desmarcar, y «¿Cuándo la viste?». Sin re-vistas ni editar una vista</td></tr>
+<tr><td><b>Avance (Up Next)</b></td><td>Siguiente episodio de cada serie, % visto, reiniciar avance (re-ver la serie)</td><td class="ya">Ya («Seguir viendo»). Falta «Volver a verla desde el principio»</td></tr>
+<tr><td><b>Ocultar / dejar</b></td><td>Ocultar de Seguir viendo, del calendario, de recomendaciones; «dejar» una serie (dropped)</td><td class="medias">A medias: quitar de Seguir viendo y ocultar de recomendaciones. Sin «Dejé esta serie» ni calendario</td></tr>
+<tr><td><b>Calificaciones</b></td><td>1–10 en película, serie, temporada y episodio</td><td class="ya">Ya (estrellas en película, serie y episodio). Falta temporada</td></tr>
+<tr><td><b>En pausa</b></td><td>Lo que dejaste a medias en cualquier app, quitarlo</td><td class="ya">Ya</td></tr>
+<tr><td><b>Calendario</b></td><td>Tus estrenos, nuevas series, premieres</td><td class="ya">Ya («Lo nuevo de lo tuyo», widget)</td></tr>
+<tr><td><b>Recomendaciones</b></td><td>Para ti y ocultar las que no quieres</td><td class="ya">Ya (Para ti, «No me interesa»)</td></tr>
+<tr><td><b>Colección</b></td><td>Lo que tienes (formato, resolución, audio)</td><td class="falta">Falta (Orbital tiene Descargas y la nube, no «colección»)</td></tr>
+<tr><td><b>Check-in</b></td><td>«Estoy viendo esto ahora» a mano</td><td class="ya">Automático al reproducir (scrobble); no hace falta a mano</td></tr>
+<tr><td><b>Estadísticas y año</b></td><td>Horas, géneros, Year in Review</td><td class="ya">Ya («Lo que ves», Wrapped)</td></tr>
+<tr><td><b>Social</b></td><td>Seguir gente, actividad, comentarios, likes</td><td class="falta">Falta (no prioritario)</td></tr>
+<tr><td><b>Notas</b></td><td>Nota privada en watchlist, favoritos, listas</td><td class="falta">Falta</td></tr>
+</table>
+
+<h2>2 · El problema de UX de Trakt</h2>
+<ul><li><b>Cada cosa vive en su lugar:</b> watchlist, historial, avance, ocultos, listas y calificaciones son pantallas distintas; para «ya no la quiero ver» hay 3 caminos diferentes.</li>
+<li><b>No dice el estado de un título:</b> ¿la quiero ver, la estoy viendo, la terminé, la dejé? Hay que deducirlo.</li>
+<li><b>Editar en lote es torpe</b> y las acciones destructivas no tienen «Deshacer».</li></ul>
+
+<h2>3 · La propuesta: un solo «estado» por título y un gestor en Biblioteca</h2>
+<div class="grid">
+ <div class="card rec"><span class="code">G1</span><b>El botón de estado en la ficha</b> (recomendado)
+  <div class="phone"><div class="states"><span class="pill">＋ Quiero verla</span><span class="pill on">▶ Viendo</span><span class="pill">✓ Vista</span><span class="pill">⏸ La dejé</span></div>
+   <p class="s" style="margin:10px 0 0">Un solo control con cuatro estados. Cada uno hace lo correcto en Trakt por ti: «Quiero verla» = watchlist; «Viendo» = avance; «Vista» = historial (y sale de la watchlist); «La dejé» = oculta del avance y del calendario.</p></div>
+  <ul><li><b>Gana:</b> una sola pregunta («¿cómo vas con esto?») en vez de seis menús. Siempre se ve el estado.</li><li><b>Pierde:</b> casos raros (en watchlist y a medias) se resuelven con la regla «gana lo más reciente».</li></ul></div>
+ <div class="card"><span class="code">G2</span><b>Biblioteca como gestor, por estado</b>
+  <div class="phone"><div class="states"><span class="pill on">Quiero ver · 124</span><span class="pill">Viendo · 9</span><span class="pill">Vistas · 812</span><span class="pill">Dejadas · 6</span><span class="pill">Listas · 5</span></div>
+   <div class="row"><div class="po a"></div><div><div class="t">Dune: Parte Dos</div><div class="s">en Quiero ver desde oct</div></div><span class="sp"></span><div class="swipe"><span class="sw" style="background:#1d3b2a;color:var(--good)">✓ Vista</span><span class="sw" style="background:#3b1d1d;color:var(--red)">Quitar</span></div></div>
+   <div class="row"><div class="po b"></div><div><div class="t">The Office</div><div class="s">T3 E4 · 42 % de la serie</div></div><span class="sp"></span><span class="s">⏸ ←</span></div></div>
+  <ul><li><b>Gana:</b> todo lo tuyo en un lugar, con contadores; deslizar para cambiar de estado; «Deshacer» siempre.</li><li><b>Pierde:</b> reordena Biblioteca (Descargas se queda como su propia pestaña dentro).</li></ul></div>
+ <div class="card"><span class="code">G3</span><b>Editar en lote</b>
+  <div class="phone"><div class="row"><span class="tag" style="background:var(--teal);color:#062b26">3 elegidas</span><span class="sp"></span><span class="pill">Mover a…</span><span class="pill">✓ Vistas</span><span class="pill">Quitar</span></div></div>
+  <ul><li><b>Gana:</b> limpiar la watchlist de 124 en un minuto («todas las de 2019 a Vistas»).</li><li><b>Pierde:</b> un modo más en la pantalla (entra con «Editar», que ya existe).</li></ul></div>
+ <div class="card"><span class="code">G4</span><b>Listas completas</b>
+  <div class="phone"><div class="sheet"><div class="opt"><span class="i">✎</span>Renombrar y describir</div><div class="opt"><span class="i">🔒</span>Privada · Solo amigos · Pública</div><div class="opt"><span class="i">↕</span>Ordenar: a mano, por año, por calificación</div><div class="opt"><span class="i">⎘</span>Duplicar</div><div class="opt" style="color:var(--red)"><span class="i">🗑</span>Borrar lista (con Deshacer)</div></div></div>
+  <ul><li><b>Gana:</b> lo que Trakt tiene en su web, aquí con el dedo (arrastrar para reordenar).</li><li><b>Pierde:</b> nada; es completar.</li></ul></div>
+ <div class="card"><span class="code">G5</span><b>Historial que se edita</b>
+  <div class="phone"><div class="row"><div class="po c"></div><div><div class="t">Interstellar</div><div class="s">Vista 3 veces · última 2 nov</div></div><span class="sp"></span><span class="pill">＋ Otra vez</span></div><div class="s">12 mar 2019 · 20 ago 2022 · 2 nov 2026 (toca una para cambiar la fecha o quitarla)</div></div>
+  <ul><li><b>Gana:</b> re-vistas y fechas corregibles; «Volver a ver la serie desde el principio» reinicia el avance sin perder el historial.</li><li><b>Pierde:</b> pantalla nueva en la ficha (dentro de «Detalles»).</li></ul></div>
+ <div class="card"><span class="code">G6</span><b>Notas y temporadas</b>
+  <div class="phone"><div class="s">📝 «Verla con Ana» · ★★★★ T2</div></div>
+  <ul><li><b>Gana:</b> nota privada en cualquier título de tu lista; calificar una temporada; agregar solo una temporada a «Quiero ver».</li><li><b>Pierde:</b> poco usado; va al final.</li></ul></div>
+</div>
+
+<h2>4 · Mejor que Trakt (lo que Trakt no hace)</h2>
+<ul><li><b>«Deshacer» en todo</b> lo que quita (Trakt no lo tiene).</li>
+<li><b>Sugerir el estado:</b> si lo viste completo en la TV, pasa solo a «Vista»; si no la abres en 6 meses, Orbital pregunta «¿La dejaste?».</li>
+<li><b>Funciona sin internet</b> y sincroniza después (la cola de Trakt que ya existe).</li>
+<li><b>Lo mismo en la TV con el mando</b> (una sola Orbital) y desde Siri: «Oye Siri, ya vi Dune».</li></ul>
+
+<h2>5 · En qué orden</h2>
+<table><tr><th>Ola</th><th>Qué</th><th>Por qué primero</th></tr>
+<tr><td>1</td><td><b>G1</b> estado en la ficha + <b>G2</b> Biblioteca por estado</td><td>Es lo que más se nota y ordena todo lo demás</td></tr>
+<tr><td>2</td><td><b>G3</b> lote + <b>G4</b> listas completas</td><td>Limpiar y organizar</td></tr>
+<tr><td>3</td><td><b>G5</b> historial + <b>G6</b> notas y temporadas</td><td>Completar lo que Trakt tiene</td></tr></table>
+<p class="foot">Recomiendo empezar por <b>G1 + G2</b>. Dime los códigos que quieres (por ejemplo «G1, G2 y G4») y armo maquetas de pantalla completa de esa ola antes de construir. Esta página es análisis y propuesta; las maquetas son esquemáticas.</p>
+</body></html>
