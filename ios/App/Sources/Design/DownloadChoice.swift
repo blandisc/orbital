@@ -60,30 +60,35 @@ struct DownloadChoiceSheet: View {
     static let iconShare: CGFloat = 0.7
 }
 
-/// DP2: bajar la temporada desde su encabezado («⬇︎ Temporada · 7.6 GB»); bajando, cuántas van («2 de 5»); toda lista, ✓.
-struct SeasonDownloadButton: View {
-    let missing: Int
-    let total: Int
-    let bytes: Int64?
+/// ET1 (Fernando, 9 nov): un botón de ícono del encabezado de temporada con su texto chico debajo (el peso, «Vista»).
+/// `progress` (0…1) lo vuelve un anillo con su %; `done` lo pinta lleno en verde. https://claude.ai/artifact/ARhv4cB7YRH8PFFsbNiF6w
+struct SeasonActionButton: View {
+    let symbol: String
+    let caption: Text
+    var progress: Double? = nil
+    var done = false
     let tint: Color
-    let action: () -> Void
-    @Environment(\.locale) private var locale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        if total > 0 {
-            Button(action: action) {
-                Label {
-                    if missing == 0 { Text("Temporada lista") }
-                    else if let bytes { Text("Temporada · \(Text(verbatim: ByteSize.text(bytes, locale: locale)))") }
-                    else { Text("Temporada") }
-                } icon: { Image(systemName: missing == 0 ? "checkmark.circle.fill" : "arrow.down.circle") }
-                .font(DS.TextRecipe.label.font)
-                .foregroundStyle(tint)
-                .lineLimit(1)
+        VStack(spacing: DS.Space.s1) {
+            ZStack {
+                Circle().stroke(DS.hairline, lineWidth: DS.Stroke.selected)
+                if let progress {
+                    Circle().trim(from: 0, to: max(0.02, progress))
+                        .stroke(tint, style: StrokeStyle(lineWidth: DS.Stroke.selected, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .animation(DS.Motion.base(reduceMotion), value: progress)
+                    Text(verbatim: "\(Int((progress * 100).rounded(.down)))").font(DS.TextRecipe.badge.font).monospacedDigit().foregroundStyle(DS.text)
+                } else {
+                    Image(systemName: done ? "\(symbol).fill" : symbol).font(DS.TextRecipe.label.font)
+                        .foregroundStyle(done ? DS.success : tint)
+                }
             }
-            .buttonStyle(.plain)
-            .disabled(missing == 0)
-            .accessibilityIdentifier("season-download")
+            .frame(width: DS.Size.seasonAction, height: DS.Size.seasonAction)
+            caption.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
         }
+        .frame(minWidth: DS.Size.touchTarget, minHeight: DS.Size.touchTarget)
+        .contentShape(Rectangle())
     }
 }

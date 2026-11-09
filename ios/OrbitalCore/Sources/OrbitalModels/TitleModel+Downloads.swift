@@ -26,6 +26,29 @@ extension TitleModel {
         }
     }
 
+    /// ET1: cómo va la descarga de una temporada. `fraction` solo mientras algo baja o espera (0…1, contando lo ya listo); `ready`
+    /// solo cuando TODOS están en el iPhone (antes se decía «Temporada lista» en cuanto entraban a la fila; Fernando, 9 nov).
+    public struct SeasonDownload: Equatable, Sendable {
+        public var total = 0, done = 0, active = 0, missing = 0
+        public var fraction: Double?
+        public var ready: Bool { total > 0 && done == total }
+    }
+
+    public func seasonDownload(_ season: Int) -> SeasonDownload {
+        let ids = seasonEpisodeIDs(season)
+        var out = SeasonDownload(total: ids.count)
+        var progress = 0.0
+        for id in ids {
+            switch downloadState(id) {
+            case .done?: out.done += 1
+            case .downloading?, .queued?, .paused?: out.active += 1; progress += downloadFraction(id) ?? 0
+            default: out.missing += 1
+            }
+        }
+        if out.active > 0 { out.fraction = min(1, (Double(out.done) + progress) / Double(out.done + out.active)) }
+        return out
+    }
+
     /// DB1: cuántos episodios (o la película) ya están en el iPhone.
     public var downloadedCount: Int {
         (kind == "movie" ? [metaID] : allEpisodeIDs).filter { downloadState($0) == .done }.count

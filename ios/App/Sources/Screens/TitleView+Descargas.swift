@@ -32,11 +32,20 @@ extension TitleView {
         }
     }
 
-    /// DP2: «⬇︎ Temporada · 7.6 GB» junto a «Marcar como vista».
+    /// ET1: ⬇︎ bajar la temporada (con su peso; bajando, anillo con %; toda en el iPhone, lleno en verde).
     func seasonDownload(_ model: TitleModel) -> some View {
-        let ids = model.seasonEpisodeIDs(model.selectedSeason), missing = model.notDownloaded(ids)
-        return SeasonDownloadButton(missing: missing.count, total: ids.count, bytes: model.estimatedBytes(episodes: missing.count), tint: artAccent) {
-            Task { await report(model.download(missing), model) }
+        let state = model.seasonDownload(model.selectedSeason)
+        let missing = model.notDownloaded(model.seasonEpisodeIDs(model.selectedSeason))
+        let caption: Text = state.ready ? Text("Lista")
+            : state.fraction != nil ? Text("Bajando")
+            : model.estimatedBytes(episodes: missing.count).map { Text(verbatim: ByteSize.text($0, locale: env.uiLocale)) } ?? Text("Bajar")
+        return Button { Task { await report(model.download(missing), model) } } label: {
+            SeasonActionButton(symbol: "arrow.down.circle", caption: caption, progress: state.ready ? nil : state.fraction,
+                               done: state.ready, tint: artAccent)
         }
+        .buttonStyle(.plain)
+        .disabled(missing.isEmpty)
+        .accessibilityLabel(state.ready ? Text("Temporada en el iPhone") : Text("Bajar la temporada"))
+        .accessibilityIdentifier("season-download")
     }
 }

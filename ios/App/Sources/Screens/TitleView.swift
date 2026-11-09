@@ -458,6 +458,32 @@ struct TitleView: View {
         }
     }
 
+    /// ET1: el selector de temporada y, debajo, «3 de 22 vistos».
+    @ViewBuilder private func seasonHeading(_ model: TitleModel, _ progress: (watched: Int, total: Int)) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            seasonControl(model)
+            if progress.total > 0 { Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote, color: DS.textMuted) }
+        }
+    }
+
+    /// ET1: ⬇︎ y ✓ (el ✓ abre «Solo la temporada / Toda la serie»; toda vista, en verde).
+    @ViewBuilder private func seasonActions(_ model: TitleModel, _ progress: (watched: Int, total: Int)) -> some View {
+        if progress.total > 0 {
+            HStack(alignment: .top, spacing: DS.Space.s2) {
+                seasonDownload(model)
+                Menu {
+                    Button("Solo la temporada \(model.selectedSeason)", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
+                    Button("Toda la serie", systemImage: "checkmark.rectangle.stack") { marking = .series }
+                } label: {
+                    SeasonActionButton(symbol: "checkmark.circle", caption: Text("Vista"), done: progress.watched == progress.total, tint: artAccent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Marcar como vista"))
+                .accessibilityIdentifier("season-mark-watched")
+            }
+        }
+    }
+
     /// La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
     @ViewBuilder private func seriesVersion(_ model: TitleModel, wanted: String) -> some View {
         if let next = model.continueVideoID {
@@ -482,27 +508,21 @@ struct TitleView: View {
         // «T1, T2…» van solo en el reproductor; la misma pieza que Mi media y la hoja de episodios) y a la derecha la versión de
         // la serie, su cápsula gemela; abajo, el avance de la temporada.
         let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
-        if !model.seasons.isEmpty || model.continueVideoID != nil {
-            // Con letra grande no caben juntas: la versión baja a su renglón.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: DS.Space.s2) { seasonControl(model); Spacer(minLength: DS.Space.s2); seriesVersion(model, wanted: wanted) }
-                VStack(alignment: .leading, spacing: DS.Space.s2) { seasonControl(model); seriesVersion(model, wanted: wanted) }
-            }
-        }
-        // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt), con su barra.
+        // ET1 (Fernando, 9 nov): la temporada con cuántos llevas debajo, y a su lado dos botones de ícono (⬇︎ bajarla, ✓ marcarla
+        // vista) con su texto chico; la versión de la serie a la derecha o, si no cabe, en su renglón.
         let progress = model.seasonProgress
-        if progress.total > 0 {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                HStack {
-                    Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
-                    Spacer()
-                    seasonDownload(model)   // DP2
-                    Menu {
-                        Button("Solo la temporada \(model.selectedSeason)", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
-                        Button("Toda la serie", systemImage: "checkmark.rectangle.stack") { marking = .series }
-                    } label: { Label("Marcar como vista", systemImage: "checkmark.circle").font(DS.TextRecipe.footnote.font) }
-                    .accessibilityIdentifier("season-mark-watched")
+        if !model.seasons.isEmpty || model.continueVideoID != nil {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: DS.Space.s3) {
+                    seasonHeading(model, progress); Spacer(minLength: DS.Space.s2)
+                    seriesVersion(model, wanted: wanted); seasonActions(model, progress)
                 }
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    HStack(alignment: .top, spacing: DS.Space.s3) { seasonHeading(model, progress); Spacer(minLength: DS.Space.s2); seasonActions(model, progress) }
+                    seriesVersion(model, wanted: wanted)
+                }
+            }
+            if progress.total > 0 {
                 ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.accent)
             }
         }
