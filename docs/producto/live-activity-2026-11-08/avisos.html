@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Avisos del iPhone: hoy vs. con rebote</title>
+<style>
+:root{--bg:#07090d;--ink:#f3efe6;--mute:#9aa0ad;--teal:#5fd3c4;--amber:#f2b84b;--good:#5ccf7a;--line:#22262f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:26px 16px 60px}
+h1{font-size:24px;margin:0 0 6px}p.lead{color:var(--mute);max-width:760px;margin:0 0 18px}
+.code{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;margin-right:8px;background:#222735}
+.rec .code{background:var(--teal);color:#062b26}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.panel{background:#10131a;border:1px solid var(--line);border-radius:20px;padding:16px}.panel.rec{border-color:var(--teal)}
+h2{font-size:17px;margin:4px 0 10px}
+.screen{position:relative;height:330px;border-radius:30px;overflow:hidden;background:linear-gradient(#1a2030,#0b0e15);border:1px solid var(--line)}
+.slot{position:absolute;left:0;right:0;display:flex;justify-content:center}
+.s1{top:22px}.s2{top:122px}.s3{top:222px}
+.toast{display:flex;align-items:center;gap:10px;height:52px;padding:0 16px 0 10px;border-radius:26px;background:rgba(36,40,52,.92);box-shadow:0 10px 30px -12px rgba(0,0,0,.8);max-width:300px}
+.ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:900;flex:none;color:#111}
+.txt{display:flex;flex-direction:column;line-height:1.2;white-space:nowrap}.txt b{font-size:14px}.txt span{font-size:12px;color:var(--mute)}
+/* HOY: baja 16 y aparece, todo junto, 0.52 s */
+.today .toast{animation:today 3.6s ease-out infinite}
+.today .s2 .toast{animation-delay:.25s}.today .s3 .toast{animation-delay:.5s}
+@keyframes today{0%{opacity:0;transform:translateY(-16px)}14%{opacity:1;transform:translateY(0)}80%{opacity:1}92%,100%{opacity:0}}
+/* PROPUESTA: ícono, luego la cajita crece con rebote, luego el texto */
+.new .toast{animation:wrap 3.6s infinite;transform-origin:left center;overflow:hidden}
+.new .ic{animation:icon 3.6s infinite}
+.new .txt{animation:text 3.6s infinite}
+.new .s2 *{animation-delay:.25s}.new .s3 *{animation-delay:.5s}
+@keyframes icon{0%{transform:scale(0)}8%{transform:scale(1.25)}13%{transform:scale(1)}80%{opacity:1}92%,100%{opacity:0;transform:scale(.9)}}
+@keyframes wrap{0%,6%{max-width:52px;background:rgba(36,40,52,0)}10%{background:rgba(36,40,52,.92)}22%{max-width:320px}27%{max-width:290px}31%{max-width:300px}80%{opacity:1}92%,100%{opacity:0}}
+@keyframes text{0%,17%{opacity:0;transform:translateX(-6px)}26%{opacity:1;transform:none}80%{opacity:1}92%,100%{opacity:0}}
+.warn{background:var(--amber)}.ok{background:var(--good)}.info{background:var(--teal)}
+ul{color:var(--mute);margin:12px 0 0;padding-left:18px}li b{color:var(--ink)}
+.steps{display:flex;gap:8px;margin-top:12px}.steps div{flex:1;background:#161a23;border-radius:12px;padding:8px;font-size:12.5px;color:var(--mute)}.steps b{display:block;color:var(--ink);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.foot{color:var(--mute);font-size:13px;margin-top:26px;max-width:760px}
+</style></head><body>
+<h1>Avisos del iPhone: hoy y con el ajuste</h1>
+<p class="lead">Los mismos tres avisos, en bucle. A la izquierda como salen hoy; a la derecha como saldrían con el ajuste que ya tiene la TV (ícono primero, la cajita crece con rebote, luego el texto).</p>
+<div class="grid">
+ <div class="panel"><h2><span class="code">AV0</span>Hoy</h2>
+  <div class="screen today">
+   <div class="slot s1"><div class="toast"><div class="ic warn">!</div><div class="txt"><b>Se desconectó el control</b><span>Jugador 1</span></div></div></div>
+   <div class="slot s2"><div class="toast"><div class="ic ok">✓</div><div class="txt"><b>Guardada en Mi lista</b><span>Cambiar</span></div></div></div>
+   <div class="slot s3"><div class="toast"><div class="ic info">↓</div><div class="txt"><b>Bajando T2 E5</b><span>2 de 5 en la fila</span></div></div></div>
+  </div>
+  <ul><li><b>Cómo es:</b> baja 16 puntos desde arriba mientras aparece; todo a la vez, en medio segundo.</li><li><b>Se siente:</b> correcto pero plano; el ícono no se distingue del texto.</li></ul></div>
+ <div class="panel rec"><h2><span class="code">AV1</span>Con el ajuste (recomendado)</h2>
+  <div class="screen new">
+   <div class="slot s1"><div class="toast"><div class="ic warn">!</div><div class="txt"><b>Se desconectó el control</b><span>Jugador 1</span></div></div></div>
+   <div class="slot s2"><div class="toast"><div class="ic ok">✓</div><div class="txt"><b>Guardada en Mi lista</b><span>Cambiar</span></div></div></div>
+   <div class="slot s3"><div class="toast"><div class="ic info">↓</div><div class="txt"><b>Bajando T2 E5</b><span>2 de 5 en la fila</span></div></div></div>
+  </div>
+  <div class="steps"><div><b>1 · El ícono</b>salta y se asienta (0.15 s)</div><div><b>2 · La cajita</b>crece desde el ícono y rebota un poco (resorte 0.45 s)</div><div><b>3 · El texto</b>entra cuando la caja ya está (0.15 s)</div></div>
+  <ul><li><b>Gana:</b> lo primero que ves es qué tipo de aviso es (el color y el ícono), y luego el detalle; igual que en la TV.</li><li><b>Pierde:</b> tarda un poco más en leerse completo (~0.6 s contra 0.5). Con «Reducir movimiento», solo aparece, sin rebote.</li></ul></div>
+</div>
+<p class="foot">Recomiendo <b>AV1</b>: es el mismo gesto que ya tiene la TV, así se siente una sola Orbital. Se aplicaría a todos los avisos del iPhone (arriba y encima del reproductor) con un solo cambio en la pieza de avisos.</p>
+</body></html>
