@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Descargar en la ficha de una serie</title>
+<style>
+:root{--bg:#07090d;--card:#10131a;--ink:#f3efe6;--mute:#9aa0ad;--teal:#5fd3c4;--amber:#f2b84b;--good:#5ccf7a;--line:#22262f;--art:#e3b35b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,system-ui,sans-serif;padding:26px 16px 70px;max-width:1100px;margin:auto}
+h1{font-size:25px;margin:0 0 6px}h2{font-size:19px;margin:40px 0 8px}p.lead{color:var(--mute);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}.card.rec{border-color:var(--teal)}
+.code{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;margin-right:8px;background:#222735}.rec .code{background:var(--teal);color:#062b26}
+ul{margin:10px 0 0;padding-left:18px;color:var(--mute)}li b{color:var(--ink)}
+.phone{background:linear-gradient(#1a1610,#0b0e15 55%);border:1px solid var(--line);border-radius:26px;padding:14px;margin:10px 0}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{background:rgba(255,255,255,.06);border-radius:14px;height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:650;position:relative;overflow:hidden}
+.tile .i{font-size:20px}.tile.on{background:rgba(227,179,91,.18);color:var(--art)}
+.cut{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px}
+.ring{position:absolute;top:6px;right:6px;font-size:10px;font-weight:800;background:var(--art);color:#2a1a05;border-radius:8px;padding:0 5px}
+.sheet{background:#1a1e29;border-radius:20px 20px 14px 14px;padding:12px 12px 6px;margin-top:10px}
+.grab{width:36px;height:5px;border-radius:3px;background:#3a3f4c;margin:0 auto 10px}
+.sh{font-weight:700;font-size:15px;margin:0 0 2px}.ss{font-size:12px;color:var(--mute);margin-bottom:8px}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px}.opt+.opt{border-top:1px solid #23283a}
+.opt .i{width:30px;height:30px;border-radius:9px;background:#252a38;display:grid;place-items:center;flex:none}
+.opt.main{background:rgba(227,179,91,.14)}.opt.main .i{background:var(--art);color:#2a1a05}
+.ot{font-weight:650;font-size:14px}.os{font-size:12px;color:var(--mute)}.sp{flex:1}.sz{font-size:12px;color:var(--mute);white-space:nowrap}
+.warn{color:var(--amber)}
+.season{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #1f2330}
+.chip{font-size:12px;font-weight:700;border-radius:14px;padding:5px 10px;background:#232837}
+.ep{display:flex;gap:8px;align-items:center;padding:6px 0;font-size:13px}.ep .th{width:52px;height:30px;border-radius:6px;background:#2a3040}
+.foot{color:var(--mute);font-size:13px;margin-top:30px}
+</style></head><body>
+<h1>Descargar en la ficha de una serie</h1>
+<p class="lead">Hoy: un toque baja el siguiente episodio; mantener abre «Elegir versión» y «Los siguientes 5». No hay temporada ni serie completa, y «Descargada» no cabe en el cuadrito. Tres decisiones, cada una con su código.</p>
+
+<h2>1 · El cuadrito cuando ya está bajado (el texto que se corta)</h2>
+<div class="grid">
+ <div class="card"><span class="code">DB0</span><b>Hoy</b>
+  <div class="phone"><div class="tiles"><div class="tile"><span class="i">＋</span>Mi lista</div><div class="tile on"><span class="i">⬇︎</span><span class="cut">Descargad…</span></div><div class="tile"><span class="i">▶︎</span>Tráiler</div><div class="tile"><span class="i">☰</span>Versión</div></div></div>
+  <ul><li><b>Problema:</b> «Descargada» (y en inglés «Downloaded») no cabe; no dice cuántos episodios.</li></ul></div>
+ <div class="card rec"><span class="code">DB1</span><b>Corto y con número</b> (recomendado)
+  <div class="phone"><div class="tiles"><div class="tile"><span class="i">＋</span>Mi lista</div><div class="tile on"><span class="ring">3</span><span class="i">✓</span>Listos</div><div class="tile"><span class="i">▶︎</span>Tráiler</div><div class="tile"><span class="i">☰</span>Versión</div></div>
+   <p class="ss" style="margin:8px 0 0">Película: «Lista». Serie: «Listos» con el número de episodios en el iPhone. Bajando: «42 %» con su anillo (como hoy).</p></div>
+  <ul><li><b>Gana:</b> cabe en cualquier iPhone y en inglés («Ready»); el número dice cuánto tienes sin internet.</li><li><b>Pierde:</b> «Listos» es menos literal que «Descargada» (VoiceOver dice «3 episodios descargados»).</li></ul></div>
+ <div class="card"><span class="code">DB2</span><b>Solo el ícono lleno</b>
+  <div class="phone"><div class="tiles"><div class="tile"><span class="i">＋</span>Mi lista</div><div class="tile on"><span class="i">⬇︎</span>3 en iPhone</div><div class="tile"><span class="i">▶︎</span>Tráiler</div><div class="tile"><span class="i">☰</span>Versión</div></div></div>
+  <ul><li><b>Gana:</b> más claro dónde está.</li><li><b>Pierde:</b> «3 en iPhone» vuelve a quedar justo; en iPhone SE se corta.</li></ul></div>
+</div>
+
+<h2>2 · Al tocar «Descargar» en una serie</h2>
+<div class="grid">
+ <div class="card rec"><span class="code">DS1</span><b>Hoja «¿Qué descargo?»</b> (recomendado)
+  <div class="phone"><div class="sheet"><div class="grab"></div><div class="sh">¿Qué descargo?</div><div class="ss">The Office · 1080p · latino</div>
+   <div class="opt main"><span class="i">▶︎</span><div><div class="ot">El siguiente: T2 E5</div><div class="os">Trojan's Horse</div></div><span class="sp"></span><span class="sz">420 MB</span></div>
+   <div class="opt"><span class="i">⇣</span><div><div class="ot">Los siguientes 5</div><div class="os">T2 E5 a E9</div></div><span class="sp"></span><span class="sz">2.1 GB</span></div>
+   <div class="opt"><span class="i">▤</span><div><div class="ot">Toda la temporada 2</div><div class="os">22 episodios · faltan 18</div></div><span class="sp"></span><span class="sz">7.6 GB</span></div>
+   <div class="opt"><span class="i">▦</span><div><div class="ot">Toda la serie</div><div class="os warn">201 episodios · no cabe: hay 31 GB libres</div></div><span class="sp"></span><span class="sz">84 GB</span></div>
+   <div class="opt"><span class="i">☰</span><div><div class="ot">Elegir versión…</div><div class="os">calidad e idioma</div></div></div></div></div>
+  <ul><li><b>Gana:</b> responde «¿uno, una temporada o toda la serie?» con el tamaño de cada opción y si cabe; la de arriba (resaltada) es la de un toque de hoy.</li><li><b>Pierde:</b> un toque más para bajar solo uno (se compensa: mantener el botón sigue bajando el siguiente directo).</li></ul></div>
+ <div class="card"><span class="code">DS2</span><b>Menú corto (el de iOS)</b>
+  <div class="phone"><div class="sheet" style="border-radius:14px"><div class="opt"><span class="i">▶︎</span><div class="ot">Siguiente episodio</div></div><div class="opt"><span class="i">⇣</span><div class="ot">Los siguientes 5</div></div><div class="opt"><span class="i">▤</span><div class="ot">Esta temporada</div></div><div class="opt"><span class="i">▦</span><div class="ot">Toda la serie</div></div></div></div>
+  <ul><li><b>Gana:</b> rápido, conocido.</li><li><b>Pierde:</b> sin tamaños ni aviso de espacio; «toda la serie» sin saber que son 84 GB.</li></ul></div>
+</div>
+
+<h2>3 · Dónde vive «Descargar toda la serie / la temporada»</h2>
+<div class="grid">
+ <div class="card"><span class="code">DP1</span><b>Solo en la hoja de Descargar</b>
+  <ul><li><b>Gana:</b> un solo lugar para todo lo de descargar.</li><li><b>Pierde:</b> quien está mirando la lista de episodios no lo ve ahí.</li></ul></div>
+ <div class="card rec"><span class="code">DP2</span><b>En la hoja y en el encabezado de cada temporada</b> (recomendado)
+  <div class="phone"><div class="season"><span class="chip">Temporada 2 ▾</span><span class="sp"></span><span class="chip">⬇︎ Temporada · 7.6 GB</span></div>
+   <div class="ep"><span class="th"></span>E5 · Trojan's Horse<span class="sp"></span>⬇︎</div><div class="ep"><span class="th"></span>E6 · Valentine's Day<span class="sp"></span>✓</div></div>
+  <ul><li><b>Gana:</b> donde ves los episodios, bajas la temporada (y cada episodio su flecha, como hoy). «Toda la serie» en la hoja (DS1), por ser grande.</li><li><b>Pierde:</b> un botón más en el encabezado de temporada.</li></ul></div>
+ <div class="card"><span class="code">DP3</span><b>Un botón grande «Descargar serie» en la ficha</b>
+  <ul><li><b>Gana:</b> muy visible.</li><li><b>Pierde:</b> invita a bajar 84 GB sin querer; ocupa lugar para algo que se usa poco.</li></ul></div>
+</div>
+<p class="foot">Recomiendo <b>DB1 + DS1 + DP2</b>. En la TV no aplica igual (no descarga), así que es solo iPhone, iPad y Mac. Dime los códigos y lo construyo.</p>
+</body></html>
