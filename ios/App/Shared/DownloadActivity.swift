@@ -25,6 +25,9 @@ struct DownloadActivityAttributes: ActivityAttributes, Sendable {
         /// la velocidad de ese momento) en lugar de quedarse congelada mientras la descarga sigue.
         var estimateStart: Date?
         var estimateEnd: Date?
+        /// D3 (Fernando, 8 nov): la tanda completa en tramos. Cuántas son, cuántas ya están, el avance de la que baja y cuántos
+        /// títulos más hay («The Office y 2 más»).
+        var total = 0, finished = 0, current: Double = 0, otherTitles = 0
 
         init(title: String, fraction: Double, remaining: Int, waiting: Bool, language: String, detail: String = "", poster: String? = nil, done: Bool = false) {
             self.title = title; self.fraction = fraction; self.remaining = remaining; self.waiting = waiting; self.language = language
@@ -44,6 +47,10 @@ struct DownloadActivityAttributes: ActivityAttributes, Sendable {
             done = try c.decodeIfPresent(Bool.self, forKey: .done) ?? false
             estimateStart = try c.decodeIfPresent(Date.self, forKey: .estimateStart)
             estimateEnd = try c.decodeIfPresent(Date.self, forKey: .estimateEnd)
+            total = try c.decodeIfPresent(Int.self, forKey: .total) ?? 0
+            finished = try c.decodeIfPresent(Int.self, forKey: .finished) ?? 0
+            current = try c.decodeIfPresent(Double.self, forKey: .current) ?? 0
+            otherTitles = try c.decodeIfPresent(Int.self, forKey: .otherTitles) ?? 0
         }
     }
 }

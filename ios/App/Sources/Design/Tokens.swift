@@ -456,6 +456,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let tvKey: CGFloat = 64
         /// «Viendo en la TV» en la pantalla bloqueada: el póster a todo lo alto de la actividad (2:3, 96 pt de alto).
         static let tvPoster: CGFloat = 64
+        /// D3: la barra de la tanda de descargas (alto, separación entre tramos y hasta cuántos tramos; más, una barra seguida).
+        static let batchHeight: CGFloat = 6, batchGap: CGFloat = 3, batchSegmentsMax = 8
+        /// TV3: el brillo de la luna de Orbital mientras suena.
+        static let sealGlow: Double = 0.6
         /// «Los Simpson en la tele»: el ancho de la tele en el mediano, su proporción (con la antena), cuánto del ancho es pantalla,
         /// el marco y la esquina del mueble (fracciones del ancho) y la antena (alto, fracción del ancho; abertura en grados).
         static let simpsonsTV: CGFloat = 150, simpsonsTVAspect: CGFloat = 1.2, simpsonsScreenShare: CGFloat = 0.66

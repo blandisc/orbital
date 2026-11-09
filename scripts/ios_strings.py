@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Live Activities TV3 y D3 (Fernando, 8 nov).
+    "%lld listas para ver": "%lld ready to watch", "En tu TV, en pausa": "On your TV, paused",
+    "Orbital · %@ de %@ listas": "Orbital · %@ of %@ ready", "En tu TV": "On your TV", "%lld de %lld": "%lld of %lld",
+    "ahora: %@ · %@": "now: %@ · %@", "%@ y %lld más": "%@ and %lld more", "Otro complemento": "Another add-on",
     # Biblioteca (Fernando, 3 nov: «BI1A… BI2A… el mismo filtro…»): Descargas · Mi media · Guardado, y «Estado» en las listas.
     "Biblioteca": "Library", "Descargas · %@": "Downloads · %@", "Descargas · %lld": "Downloads · %lld",
     "Por ver": "To watch", "A medias": "In progress", "Vistas": "Watched",

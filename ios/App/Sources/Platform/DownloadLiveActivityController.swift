@@ -79,12 +79,19 @@ final class DownloadLiveActivityController {
             fraction: expected > 0 ? min(1, Double(written) / Double(expected)) : 0,
             remaining: pending.count, waiting: !pending.contains { $0.state == .downloading && !$0.waitingForNetwork }, language: language(),
             detail: current.subtitle, poster: await posterFile(current))
+        // D3: la tanda en tramos (lo que terminó desde que empezó esta tanda, más lo que falta).
+        let started = batchStarted ?? 0
+        state.finished = items.filter { $0.state == .done && ($0.finishedAt ?? 0) >= started }.count
+        state.total = state.finished + pending.count
+        state.current = current.expectedBytes.map { $0 > 0 ? min(1, Double(current.writtenBytes) / Double($0)) : 0 } ?? 0
+        state.otherTitles = Set(pending.map(\.metaID)).subtracting([current.metaID]).count
         if backgrounded, rate > 0, expected > written, pending.contains(where: { $0.state == .downloading }) {
             state.estimateStart = now.addingTimeInterval(-Double(written) / rate)
             state.estimateEnd = now.addingTimeInterval(Double(expected - written) / rate)
         }
         if let last, last.title == state.title, last.detail == state.detail, last.poster == state.poster, last.remaining == state.remaining,
            last.waiting == state.waiting, last.language == state.language, abs(last.fraction - state.fraction) < 0.01,
+           last.total == state.total, abs(last.current - state.current) < 0.01,
            (last.estimateEnd == nil) == (state.estimateEnd == nil) { return }
         last = state
         let content = ActivityContent(state: state, staleDate: nil)
@@ -121,6 +128,8 @@ final class DownloadLiveActivityController {
         var final = DownloadActivityAttributes.ContentState(title: done.title, fraction: 1, remaining: 0, waiting: false, language: language(),
                                                            detail: done.subtitle, poster: last?.poster, done: true)
         final.poster = await posterFile(done) ?? final.poster
+        final.total = items.filter { $0.state == .done && ($0.finishedAt ?? 0) >= started }.count
+        final.finished = final.total; final.current = 1
         await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .default)
         self.activity = nil; last = nil
     }

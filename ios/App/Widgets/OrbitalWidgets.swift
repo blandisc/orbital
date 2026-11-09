@@ -22,20 +22,19 @@ struct OrbitalWidgets: WidgetBundle {
 struct DownloadLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DownloadActivityAttributes.self) { context in
-            // Pantalla bloqueada: el póster de lo que baja, su nombre y episodio, el avance y cuánto falta.
+            // D3 (Fernando, 8 nov): el póster, «The Office y 2 más · 2 de 5», qué baja ahora y la tanda en tramos (verde lo listo,
+            // blanco lo que baja). Una sola descarga se ve como antes: nombre, episodio y su barra.
             HStack(spacing: DS.Space.s3) {
                 ActivityPoster(file: context.state.poster, width: DS.Widget.activityPoster)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
+                        batchTitle(context.state).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
                         Spacer(minLength: DS.Space.s2)
-                        percent(context.state).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper)
+                        counter(context.state).font(DS.font(.sm, weight: .semibold)).foregroundStyle(context.state.done ? DS.good : DS.onArtSecondary)
                     }
-                    if !context.state.detail.isEmpty {
-                        Text(verbatim: context.state.detail).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
-                    }
-                    bar(context.state).tint(context.state.done ? DS.good : DS.paper)
-                    subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                    nowLine(context.state).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary).lineLimit(1)
+                    BatchBar(state: context.state)
+                    subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(context.state.waiting ? DS.warning : DS.onArtSecondary).lineLimit(1)
                 }
             }
             .padding()
@@ -52,20 +51,19 @@ struct DownloadLiveActivity: Widget {
                     ActivityPoster(file: context.state.poster, width: DS.Widget.islandPoster).padding(.leading, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    percent(context.state).font(DS.font(.lg, weight: .semibold)).padding(.trailing, DS.Space.s1)
+                    counter(context.state).font(DS.font(.lg, weight: .semibold)).padding(.trailing, DS.Space.s1)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(verbatim: context.state.title).font(DS.font(.md, weight: .semibold)).lineLimit(1)
-                        (context.state.detail.isEmpty ? Text(subtitle(context.state)) : Text(verbatim: context.state.detail))
-                            .font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
+                        batchTitle(context.state).font(DS.font(.md, weight: .semibold)).lineLimit(1)
+                        nowLine(context.state).font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .environment(\.locale, Locale(identifier: context.state.language))
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        bar(context.state).tint(context.state.done ? DS.good : nil)
+                        BatchBar(state: context.state)
                         subtitleText(context.state).font(DS.font(.sm)).foregroundStyle(.secondary).lineLimit(1)
                     }
                     .padding(.horizontal, DS.Space.s1)
@@ -83,6 +81,26 @@ struct DownloadLiveActivity: Widget {
             }
             .widgetURL(WidgetLink.downloadsURL)
         }
+    }
+
+    /// «The Office y 2 más» (o solo el nombre); terminado, «3 listas para ver».
+    private func batchTitle(_ s: DownloadActivityAttributes.ContentState) -> Text {
+        if s.done, s.total > 1 { return Text("\(s.total) listas para ver") }
+        if s.otherTitles > 0 { return Text("\(Text(verbatim: s.title)) y \(s.otherTitles) más") }
+        return Text(verbatim: s.title)
+    }
+
+    /// «2 de 5» con varias; con una sola, el porcentaje de siempre.
+    @ViewBuilder private func counter(_ s: DownloadActivityAttributes.ContentState) -> some View {
+        if s.total > 1 && !s.done { Text("\(min(s.total, s.finished + 1)) de \(s.total)").monospacedDigit() }
+        else { percent(s) }
+    }
+
+    /// Qué baja ahora: «ahora: T2 · E5 · 40 %» con varias; con una, su episodio.
+    private func nowLine(_ s: DownloadActivityAttributes.ContentState) -> Text {
+        let detail = s.detail.isEmpty ? s.title : s.detail
+        if s.total > 1 && !s.done { return Text("ahora: \(Text(verbatim: detail)) · \(Text(verbatim: "\(Int((s.current * 100).rounded())) %"))") }
+        return Text(verbatim: detail)
     }
 
     /// La barra: con la app en segundo plano avanza sola hasta la hora estimada; si no, la fracción que mandó la app.
@@ -134,6 +152,7 @@ struct DownloadLiveActivity: Widget {
     private func subtitle(_ state: DownloadActivityAttributes.ContentState) -> LocalizedStringKey {
         if state.done { return "Descargado · listo para ver sin conexión" }
         if state.waiting { return "En espera" }   // en pausa o esperando red
+        if state.total > 1 { return "Orbital · \(state.finished) de \(state.total) listas" }
         return state.remaining > 1 ? "Orbital · faltan \(state.remaining)" : "Orbital · descargando"
     }
 }
@@ -162,5 +181,33 @@ struct ActivityPoster: View {
         let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
                                         kCGImageSourceThumbnailMaxPixelSize: max(1, Int(maxPixel.rounded(.up)))]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { UIImage(cgImage: $0) }
+    }
+}
+
+
+/// D3: la tanda en tramos, uno por descarga (verde lo listo, blanco lo que baja, gris lo que falta). Con una sola descarga o más
+/// de `DS.Widget.batchSegmentsMax`, una barra seguida con el avance de todo.
+struct BatchBar: View {
+    let state: DownloadActivityAttributes.ContentState
+
+    var body: some View {
+        if state.total > 1 && state.total <= DS.Widget.batchSegmentsMax {
+            HStack(spacing: DS.Widget.batchGap) {
+                ForEach(0..<state.total, id: \.self) { i in
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(i < state.finished || state.done ? DS.good : DS.fillStrong)
+                            if i == state.finished && !state.done {
+                                Capsule().fill(state.waiting ? DS.warning : DS.paper).frame(width: geo.size.width * state.current)
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(height: DS.Widget.batchHeight)
+            .accessibilityLabel(Text("\(state.finished) de \(state.total) listas"))
+        } else {
+            ProgressView(value: state.done ? 1 : state.fraction).tint(state.done ? DS.good : DS.paper)
+        }
     }
 }
