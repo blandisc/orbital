@@ -154,11 +154,22 @@ final class ImagePipeline: @unchecked Sendable {
 
     /// Los bytes (del disco o de la red) y luego la reducción, con su propio límite.
     private func decode(_ url: URL, pixels: Int, urgent: Bool) async -> UIImage? {
-        guard let data = await data(url, urgent: urgent), !Task.isCancelled else { return nil }
+        guard let data = await posterData(url, urgent: urgent), !Task.isCancelled else { return nil }
         if urgent { return Self.downsample(data, maxPixel: pixels) }   // chica: se decodifica al momento
         guard await decoder.acquire() else { return nil }
         defer { Task { await decoder.release() } }
         return Self.downsample(data, maxPixel: pixels)
+    }
+
+    /// P1 (Fernando, 8 nov): un póster de metahub se pide primero a TMDB (el de metahub a veces es de otro título); si TMDB
+    /// no lo tiene o falla, el de metahub. La llave de memoria sigue siendo la URL de metahub: las pantallas no cambian.
+    private var posters: PosterSource?
+    func setPosterSource(_ source: PosterSource?) { lock.withLock { posters = source } }
+
+    private func posterData(_ url: URL, urgent: Bool) async -> Data? {
+        if let posters = lock.withLock({ posters }), let tmdb = await posters.resolve(url.absoluteString),
+           let data = await data(tmdb, urgent: urgent), !data.isEmpty { return data }
+        return await data(url, urgent: urgent)
     }
 
     /// Tu Orbital (dirección y token): sus imágenes (logos de canales, arte de juegos) piden el token como el resto de su
@@ -262,7 +273,7 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     /// Los bytes de una imagen para otro uso (el widget): mismo caché y misma fila que las pantallas.
-    func bytes(_ url: URL) async -> Data? { await data(url) }
+    func bytes(_ url: URL) async -> Data? { await posterData(url, urgent: false) }
 
     private static func cost(of image: UIImage) -> Int {
         guard let cg = image.cgImage else { return 1 }

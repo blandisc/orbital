@@ -221,6 +221,11 @@ final class AppEnvironment {
         // Cambiar el idioma (o una clave) vuelve a pintar toda la app (por Observation, ver `services`); aquí, la apariencia y las imágenes.
         servicesSubscription = services.onChange { [weak self] in self?.applyAppearance(); self?.shareConsoleWithImages() }
         shareConsoleWithImages()
+        // P1: primero el póster de TMDB (con la clave que tenga la app en ese momento).
+        ImagePipeline.shared.setPosterSource(PosterSource(store: services.kv) { [weak services] imdb in
+            guard let tmdb = await MainActor.run(body: { services?.tmdb }), tmdb.configured else { return nil }
+            do { return .some(try await tmdb.posterPath(imdb: imdb)) } catch { return nil }
+        })
         session = SessionModel(services)
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)
