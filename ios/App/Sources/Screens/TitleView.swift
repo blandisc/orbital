@@ -23,6 +23,7 @@ struct TitleView: View {
     @State private var observer: ModelObserver<TitleModel>
     @State var tint = ArtTint()
     @State var sourcesFor: SourcesTarget?
+    @State var rewatch: EpisodeRow?   // EV1: el visto que tocaste («Ya lo viste»)
     @State var askingDownload = false
     /// La sinopsis completa (tocar «más»).
     @State var fullSynopsis = false
@@ -90,6 +91,7 @@ struct TitleView: View {
         .task { await model.loadConsoleDetails() }
         .task { await model.loadExtras(); if model.extras != nil { Perf.mark("title.extras") } }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
+        .modifier(RewatchDialog(row: $rewatch, version: rewatchVersion(model), again: { startEpisode(model, videoID: $0) }, versions: openVersions, unwatch: { id in Task { await model.unmarkWatched(id) } }))
         .task {
             await model.load()
             Task { await model.loadBestSource(onCellular: env.connectivity.isCellular); if model.bestSource != nil { Perf.mark("title.sources") } }   // aparte: las fuentes tardan y no detienen el color del fondo
@@ -541,7 +543,7 @@ struct TitleView: View {
         } else {
         LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
-                EpisodeRowView(row: row, play: { if row.airs == nil { startEpisode(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+                EpisodeRowView(row: row, play: { if row.airs == nil { tapEpisode(model, row) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                                markWatched: { marking = .episode(row.id) }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
@@ -552,10 +554,9 @@ struct TitleView: View {
         }
         }
     }
-
     /// Un episodio como tarjeta (la fila del iPad y la Mac).
     private func episodeRow(_ model: TitleModel, _ row: EpisodeRow, card: Bool) -> some View {
-        EpisodeRowView(row: row, play: { if row.airs == nil { startEpisode(model, videoID: row.id) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
+        EpisodeRowView(row: row, play: { if row.airs == nil { tapEpisode(model, row) } }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                        markWatched: { marking = .episode(row.id) }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
                        resumeDownload: { Task { await model.resumeDownload(row.id) } },
                        downloadFraction: model.downloadFraction(row.id),

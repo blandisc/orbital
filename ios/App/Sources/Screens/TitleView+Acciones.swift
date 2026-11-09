@@ -62,6 +62,18 @@ extension TitleView {
         launch(request, source: nil)
     }
 
+    /// EV1 (Fernando, 9 nov): uno sin ver empieza; uno visto pregunta «Ya lo viste» (ver otra vez, otra versión, no visto).
+    func tapEpisode(_ model: TitleModel, _ row: EpisodeRow) {
+        if row.watched { rewatch = row } else { startEpisode(model, videoID: row.id) }
+    }
+
+    /// La versión de la serie para «Ver otra vez» (la bandera y el idioma; «Español» si no dice cuál).
+    func rewatchVersion(_ model: TitleModel) -> String {
+        let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
+        let ui = env.services.appSettings.uiLanguage
+        return "\(LanguageFlags.flag(wanted) ?? "") \(wanted == "es" ? Strings.tr("Español", language: ui) : Streams.versionLanguageName(wanted, in: ui))"
+    }
+
     private func launch(_ request: PlayRequest, source: Source?) {
         if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } }
         else { env.ui.playerSource = PlayerZoomID(metaID: request.metaID, slot: "title"); env.play(request) }
@@ -189,4 +201,24 @@ extension TitleView {
         return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
     }
 
+}
+
+/// EV1: la hoja chica de un episodio que ya viste (la del sistema, abajo): ver otra vez con la versión de la serie, elegir otra
+/// versión o idioma, o marcarlo como no visto. https://claude.ai/artifact/25F8bQVYpNq1ZBzj221YVm
+struct RewatchDialog: ViewModifier {
+    @Binding var row: EpisodeRow?
+    let version: String
+    let again: (String) -> Void
+    let versions: (String) -> Void
+    let unwatch: (String) -> Void
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(Text("Ya viste «\(row?.title ?? "")»"), isPresented: Binding(get: { row != nil }, set: { if !$0 { row = nil } }),
+                                   titleVisibility: .visible, presenting: row) { r in
+            Button { again(r.id) } label: { Label { Text("Ver otra vez · \(Text(verbatim: version))") } icon: { Image(systemName: "play.fill") } }
+            Button { versions(r.id) } label: { Label("Otra versión o idioma", systemImage: "arrow.left.arrow.right") }
+            Button { unwatch(r.id) } label: { Label("Marcar como no visto", systemImage: "circle") }
+            Button("Cancelar", role: .cancel) {}
+        }
+    }
 }
