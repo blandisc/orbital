@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Encabezado de Inicio más chico (EH0–EH3)</title>
+<style>
+:root{--bg:#0b0d12;--card:#151922;--line:#262c38;--t:#eef1f6;--m:#8b93a4;--a:#3fd0c9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:24px}
+h1{font-size:22px;margin:0 0 4px}p.lead{color:var(--m);margin:0 0 22px;max-width:920px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card.rec{border-color:var(--a);box-shadow:0 0 0 1px var(--a) inset}
+.code{display:inline-block;font-weight:700;border-radius:6px;padding:1px 8px;margin-right:6px;background:#5b6475}
+.rec .code{background:var(--a);color:var(--bg)}
+.phone{background:#000;border-radius:26px;padding:12px 12px 0;margin:12px 0;height:330px;border:1px solid #222;overflow:hidden;position:relative}
+.sb{color:var(--m);font-size:10px;text-align:center;margin-bottom:6px}
+.bar{display:flex;align-items:center;gap:8px;padding:4px 2px}
+.logo{font-weight:800;font-size:20px;letter-spacing:-.5px}.logo.s{font-size:18px}
+.cap{margin-left:auto;display:flex;gap:12px;align-items:center;background:#1c212b;border-radius:999px;padding:6px 12px;font-size:14px}
+.av{width:22px;height:22px;border-radius:50%;background:#556}
+.av.ring{box-shadow:0 0 0 2px #000,0 0 0 4px var(--a)}
+.tabs{display:flex;justify-content:center;gap:22px;font-size:14px;padding:8px 0 6px;position:relative}
+.tabs .on{border-bottom:2px solid var(--a);padding-bottom:3px}
+.peek{position:absolute;right:-6px;bottom:4px;display:flex;gap:4px}.peek i{width:22px;height:22px;border-radius:50%;border:2px solid var(--a);background:#223}
+.menu{font-size:14px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:3px}.menu small{color:var(--m)}
+.seg{display:flex;background:#1c212b;border-radius:9px;padding:2px;gap:2px}.seg span{width:30px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:7px;color:var(--m)}.seg .on{background:#323a4a;color:var(--t)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--a);display:inline-block;margin-left:2px;vertical-align:top}
+.hero{height:190px;border-radius:14px;background:linear-gradient(160deg,#2b3550,#121622);margin-top:8px;display:flex;align-items:flex-end;padding:10px;font-weight:700}
+.h{color:var(--m);font-size:11px;margin-top:6px}
+.meas{font-size:11px;color:var(--a);margin:2px 0 0}
+ul{margin:8px 0 0;padding-left:18px;color:#c9cfdb;font-size:13px}li{margin:3px 0}
+.foot{margin-top:24px;padding:14px;border:1px solid var(--a);border-radius:12px;max-width:920px}
+</style></head><body>
+<h1>Encabezado de Inicio más chico</h1>
+<p class="lead">Hoy el encabezado ocupa dos renglones: el logo con la cápsula (control, dona y tu foto), y debajo «Todo · Películas · Series». Además, dos círculos de historias se asoman a la derecha. Estas opciones lo bajan a un solo renglón. Mi recomendación: <b>EH1</b>.</p>
+<div class="grid">
+
+<div class="card"><span class="code">EH0</span><b>Hoy</b>
+<div class="phone"><div class="sb">9:41</div>
+ <div class="bar"><span class="logo">orbital</span><div class="cap">📺 🍩 <span class="av"></span></div></div>
+ <div class="tabs"><span class="on">Todo</span><span>Películas</span><span>Series</span><div class="peek"><i></i><i></i></div></div>
+ <div class="hero">En tendencia</div></div>
+<p class="meas">Encabezado: unos 96 pt</p>
+<ul><li>Dos renglones. Los círculos de historias tapan la orilla de «Series».</li></ul></div>
+
+<div class="card rec"><span class="code">EH1</span><b>Un renglón: «Todo ▾» junto al logo; historias como anillo en tu foto</b> (recomendado)
+<div class="phone"><div class="sb">9:41</div>
+ <div class="bar"><span class="logo s">orbital</span><span class="menu">Todo <small>▾</small></span><div class="cap">📺 🍩 <span class="av ring"></span></div></div>
+ <div class="hero" style="height:225px">En tendencia</div>
+ <div class="h">«Todo ▾» abre un menú: Todo · Películas · Series. El anillo turquesa en tu foto avisa que hay historias nuevas; tu foto abre tu perfil y las historias juntos.</div></div>
+<p class="meas">Encabezado: unos 52 pt (−44)</p>
+<ul><li><b>Gana:</b> un renglón menos; la portada se ve más grande. Las historias usan la seña que ya conoces de Instagram.</li><li><b>Pierde:</b> cambiar a «Series» son dos toques (abrir el menú y elegir).</li></ul></div>
+
+<div class="card"><span class="code">EH2</span><b>Un renglón: tres íconos chicos</b>
+<div class="phone"><div class="sb">9:41</div>
+ <div class="bar"><span class="logo s">orbital</span><div class="seg"><span class="on">✦</span><span>🎬</span><span>📺</span></div><div class="cap">📺 🍩 <span class="av"></span></div></div>
+ <div class="hero" style="height:225px">En tendencia</div>
+ <div class="h">✦ Todo · 🎬 Películas · 📺 Series, en un selector chico. Historias: un punto turquesa en el logo<span class="dot"></span> (tocar el logo las abre).</div></div>
+<p class="meas">Encabezado: unos 52 pt (−44)</p>
+<ul><li><b>Gana:</b> un toque para cambiar de tipo, igual que hoy, y sin texto.</li><li><b>Pierde:</b> hay que aprender los íconos, y el renglón queda más apretado en un iPhone chico.</li></ul></div>
+
+<div class="card"><span class="code">EH3</span><b>Dos renglones, pero delgados</b>
+<div class="phone"><div class="sb">9:41</div>
+ <div class="bar"><span class="logo s">orbital</span><div class="cap" style="padding:4px 10px;font-size:12px">📺 🍩 <span class="av ring" style="width:18px;height:18px"></span></div></div>
+ <div class="tabs" style="font-size:12px;padding:4px 0 2px;gap:18px"><span class="on">Todo</span><span>Películas</span><span>Series</span></div>
+ <div class="hero" style="height:205px">En tendencia</div>
+ <div class="h">Lo mismo de hoy, con letra y espacios más chicos. Historias: el anillo en tu foto, como en EH1.</div></div>
+<p class="meas">Encabezado: unos 74 pt (−22)</p>
+<ul><li><b>Gana:</b> no cambia cómo se usa; sigue a la vista.</li><li><b>Pierde:</b> ahorra la mitad que EH1 y EH2.</li></ul></div>
+
+</div>
+<div class="foot"><b>Mi recomendación: EH1.</b> Casi siempre estás en «Todo», así que no vale la pena un renglón entero para cambiarlo. Con un menú chico junto al logo y las historias como anillo en tu foto, la portada gana unos 44 pt. Si cambias mucho entre películas y series, EH2 deja ese cambio en un toque. Dime el código y lo construyo. En la tele no aplica: allá el encabezado es distinto a propósito.</div>
+</body></html>
