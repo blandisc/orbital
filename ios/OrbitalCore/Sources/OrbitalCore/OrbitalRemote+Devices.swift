@@ -161,6 +161,15 @@ extension OrbitalRemote {
                                expires: Self.date(json?["expires"]), tail: json?["ends_with"]?.string ?? "")
     }
 
+    /// «Pasar a la TV» tu cuenta de OpenSubtitles (`PUT /api/opensubtitles`): usuario y token, nunca la contraseña.
+    public func putOpenSubtitles(_ account: OpenSubtitlesAccount) async throws {
+        guard hasDeviceKey else { throw Failure.needsKey }
+        var body: [String: JSON] = ["username": .string(account.username), "token": .string(account.token)]
+        if let base = account.base { body["base"] = .string(base) }
+        if let remaining = account.remaining { body["remaining"] = .int(remaining) }
+        _ = try await send("api/opensubtitles", method: "PUT", body: JSON.object(body).serialized())
+    }
+
     /// IOS-6 · la cuenta de Real-Debrid de tu TV (`GET /api/realdebrid`, sin la clave): nil si la TV no tiene una.
     public func realDebridAccount() async throws -> OrbitalTVDebrid? {
         guard hasDeviceKey else { throw Failure.needsKey }

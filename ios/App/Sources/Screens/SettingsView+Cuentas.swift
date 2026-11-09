@@ -28,6 +28,21 @@ extension SettingsView {
             }
         } header: { Text("Letterboxd · tus reseñas") } footer: { Text("Solo se lee: tus reseñas salen en Lo que ves y en cada ficha, y tus listas en Explorar.") }
         .listRowBackground(DS.surface)
+        if AppEnvironment.shared.openSubtitles.available {
+            Section {
+                NavigationLink { OpenSubtitlesSettings() } label: {
+                    SettingsRow(title: "OpenSubtitles", symbol: "captions.bubble", tint: DS.ListTint.series, value: openSubtitlesValue)
+                }
+                .accessibilityIdentifier("settings-opensubtitles")
+            } header: { Text("OpenSubtitles · subtítulos") } footer: { Text("Más subtítulos y de tu copia exacta.") }
+            .listRowBackground(DS.surface)
+        }
+    }
+
+    private var openSubtitlesValue: Text {
+        let model = AppEnvironment.shared.openSubtitles
+        let _ = model.track()
+        return model.account.map { Text(verbatim: $0.username) } ?? Text("No conectado")
     }
 
     private var letterboxdValue: Text {

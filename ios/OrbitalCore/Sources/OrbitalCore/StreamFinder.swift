@@ -74,10 +74,13 @@ public actor StreamFinder {
     private let bridge: IDBridge?
     /// Ajustes › Idioma y subtítulos › «Buscar en internet»: si se le pregunta a OpenSubtitles.
     private let internetSubtitles: @Sendable () -> Bool
+    /// La API oficial de OpenSubtitles (con la clave de la app): muchos más subtítulos que su complemento, que queda de respaldo.
+    public nonisolated let openSubtitles: OpenSubtitlesAPI?
 
     public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, bridge: IDBridge? = nil,
-                internetSubtitles: @escaping @Sendable () -> Bool = { true }, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.registry = registry; self.health = health; self.bridge = bridge
+                internetSubtitles: @escaping @Sendable () -> Bool = { true }, openSubtitles: OpenSubtitlesAPI? = nil,
+                clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.registry = registry; self.health = health; self.bridge = bridge; self.openSubtitles = openSubtitles
         self.internetSubtitles = internetSubtitles; self.clock = clock
     }
 
@@ -365,6 +368,9 @@ public actor StreamFinder {
         let extra = file.map { "/videoHash=\($0.hash)&videoSize=\($0.size)" } ?? ""
         var out: [SubtitleOption] = []
         var answered = false
+        // La API va aparte y primero: si no está (sin clave), no contesta o se niega, queda el complemento de siempre.
+        let api = internetSubtitles() ? openSubtitles : nil
+        async let fromAPI = api?.search(kind: kind, videoID: videoID, file: file)
         await withTaskGroup(of: [SubtitleOption]?.self) { group in
             for base in bases {
                 group.addTask { [http] in
@@ -391,9 +397,28 @@ public actor StreamFinder {
             }
             for await found in group { if let found { answered = true; out += found } }
         }
-        guard answered else { return nil }
+        let official = await fromAPI ?? []
+        guard answered || !official.isEmpty else { return nil }
+        return Self.merge(official: official, addons: out)
+    }
+
+    /// Los de la API primero (los de tu copia exacta, luego los más bajados); de los complementos, lo que no repita: la
+    /// misma dirección o el mismo archivo de OpenSubtitles (su complemento usa los mismos números).
+    static func merge(official: [SubtitleOption], addons: [SubtitleOption]) -> [SubtitleOption] {
+        let files = Set(official.compactMap(\.fileID))
         var seen = Set<URL>()
-        return out.filter { seen.insert($0.url).inserted }
+        return (official + addons.filter { !($0.source == "OpenSubtitles" && $0.fileID.map(files.contains) == true) })
+            .filter { seen.insert($0.url).inserted }
+    }
+
+    /// La dirección que se le da al reproductor: la de un subtítulo de la API se pide (gasta cuota) solo ahora.
+    public func playableSubtitle(_ url: URL) async -> URL? { try? await resolveSubtitle(url) }
+
+    /// Lo mismo, con el motivo si no se pudo (sin cuenta, sin cuota de hoy): el reproductor lo dice.
+    public func resolveSubtitle(_ url: URL) async throws -> URL {
+        guard url.scheme == OpenSubtitlesAPI.scheme else { return url }
+        guard let openSubtitles else { throw OpenSubtitlesError.noAppKey }
+        return try await openSubtitles.resolve(url)
     }
 }
 
@@ -408,11 +433,14 @@ public struct SubtitleOption: Sendable, Equatable, Identifiable {
     /// De dónde salió («OpenSubtitles» o el servidor del complemento) y su id de archivo allá (para no guardarlo dos veces).
     public var source: String?
     public var fileID: String?
+    /// OpenSubtitles dice que se hizo para tu copia exacta (la huella coincide): va primero.
+    public var exactFile = false
     public var id: URL { url }
     public init(url: URL, language: String, release: String? = nil, downloads: Int? = nil, hearingImpaired: Bool = false, foreignOnly: Bool = false,
-                source: String? = nil, fileID: String? = nil) {
+                source: String? = nil, fileID: String? = nil, exactFile: Bool = false) {
         self.url = url; self.language = language; self.release = release; self.downloads = downloads
         self.hearingImpaired = hearingImpaired; self.foreignOnly = foreignOnly; self.source = source; self.fileID = fileID
+        self.exactFile = exactFile
     }
 }
 

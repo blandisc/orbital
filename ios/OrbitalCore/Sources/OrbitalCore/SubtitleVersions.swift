@@ -103,6 +103,7 @@ public struct SubtitleVersion: Sendable, Equatable, Identifiable {
     public var fromVideo: Bool { if case .embedded = origin, saved == nil { true } else { false } }
     public var matchesCopy: Bool { match > 0 }
     public var downloads: Int? { if case .internet(let o) = origin { o.downloads } else { saved?.downloads } }
+    public var exactFile: Bool { if case .internet(let o) = origin { o.exactFile } else { false } }
     public var option: SubtitleOption? { if case .internet(let o) = origin { o } else { nil } }
     public var track: MediaTrack? { if case .embedded(let t) = origin { t } else { nil } }
     /// El nombre de la copia (internet) o de la pista; nil si no trae ninguno.
@@ -151,6 +152,7 @@ public enum SubtitleVersions {
             .filter { !SubtitleFilter.hides($0.element) && SubtitleLanguage.code($0.element.language) == language }
             .map { (i: $0.offset, v: SubtitleVersion(origin: .internet($0.element), language: language, match: mine.match(ReleaseTraits.parse($0.element.release)))) }
             .sorted { a, b in
+                if a.v.exactFile != b.v.exactFile { return a.v.exactFile }   // OpenSubtitles: hecho para tu copia exacta
                 if a.v.match != b.v.match { return a.v.match > b.v.match }
                 let da = a.v.downloads ?? -1, db = b.v.downloads ?? -1
                 return da != db ? da > db : a.i < b.i

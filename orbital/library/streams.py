@@ -26,7 +26,7 @@ from dataclasses import dataclass, field, replace
 from urllib.parse import quote, urlparse
 
 from ..net import NET_ERRORS
-from . import addons
+from . import addons, opensubtitles
 from . import subtitles as subtitle_lib
 
 log = logging.getLogger(__name__)
@@ -766,6 +766,8 @@ class StreamFinder:
         self.tracks: Callable[[str], list[dict] | None] = lambda key: None
         # Ajustes › Ver › «Buscar subtítulos en internet»: OpenSubtitles viene con Orbital, ya no es complemento (3 nov 2026).
         self.internet_subtitles: Callable[[], bool] = lambda: True
+        # La API oficial de OpenSubtitles (con la clave de la app): muchos más; el complemento queda de respaldo. La pone Watch.
+        self.opensubtitles: opensubtitles.OpenSubtitles | None = None
 
     def addons(self) -> list[addons.Addon]:
         return self.registry.addons()
@@ -827,16 +829,14 @@ class StreamFinder:
                 return None
             return subtitle_lib.parse_options(data.get("subtitles") or [], "OpenSubtitles" if "opensubtitles" in base else name)
 
-        with ThreadPoolExecutor(max_workers=max(1, len(bases))) as pool:
+        api = self.opensubtitles if self.internet_subtitles() else None
+        with ThreadPoolExecutor(max_workers=max(1, len(bases)) + 1) as pool:
+            official = pool.submit(api.search, video_id, fingerprint) if api is not None else None
             answers = list(pool.map(lambda b: ask(*b), bases))
-        if all(a is None for a in answers):
+            from_api = (official.result() if official else None) or []
+        if all(a is None for a in answers) and not from_api:
             return None
-        seen, out = set(), []
-        for option in (o for a in answers if a for o in a):
-            if option["url"] not in seen:
-                seen.add(option["url"])
-                out.append(option)
-        return out
+        return opensubtitles.merge(from_api, [o for a in answers if a for o in a])
 
     def find(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
         key = cache_key(kind, video_id, prefs)

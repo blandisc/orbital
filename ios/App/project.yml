@@ -79,6 +79,7 @@ targets:
         CFBundleLocalizations: [es, en]
         OrbitalTraktClientID: $(ORBITAL_TRAKT_CLIENT_ID)   # lo lee Services.bundledTraktClientID
         OrbitalTMDBKey: $(ORBITAL_TMDB_KEY)   # lo lee Services.bundledTMDBKey (de Secrets.xcconfig)
+        OrbitalOpenSubtitlesKey: $(ORBITAL_OPENSUBTITLES_KEY)   # lo lee Services.bundledOpenSubtitlesKey (de Secrets.xcconfig)
         UILaunchScreen: {}
         UIAppFonts: [Sora-SemiBold.ttf]   # la letra de «orbital» (DS.Brand.wordFont), la misma de la TV
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]

@@ -77,11 +77,14 @@ extension PlayerModel {
         case .embedded(let track): await engine.selectSubtitle(track.id)
         case .internet(let option):
             if let id = addedTracks[option.url] { await engine.selectSubtitle(id); return }
+            // Uno de la API de OpenSubtitles se pide ahora (gasta cuota): si no se puede (sin cuenta o sin cuota), se dice.
+            let real: URL
+            do { real = try await finder.resolveSubtitle(option.url) } catch { notice = .openSubtitles("\(error)"); return }
             knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
             addedExternalSubtitle = true
             pendingSubtitleURL = option.url
             addedSubtitleURLs.insert(option.url)
-            await engine.addSubtitle(url: option.url, language: option.language)
+            await engine.addSubtitle(url: real, language: option.language)
         }
     }
 

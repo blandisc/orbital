@@ -9,7 +9,7 @@ import OrbitalCore
 @MainActor
 public final class OnboardingModel: ObservableModel {
     public enum Step: String, CaseIterable, Hashable, Sendable {
-        case welcome, likes, have, debrid, trakt, tv, done
+        case welcome, likes, have, debrid, trakt, tv, subtitles, done
         var order: Int { Self.allCases.firstIndex(of: self) ?? 0 }
     }
 
@@ -61,6 +61,9 @@ public final class OnboardingModel: ObservableModel {
     public var offersTrakt: Bool { if case .off = settings.trakt { return false }; return true }
     public var pieces: [Piece] { Piece.allCases.filter { $0 != .tv || offersTV }.filter { $0 != .trakt || offersTrakt } }
 
+    /// ¿Se ofrece conectar OpenSubtitles? Con la clave de la app y sin tu cuenta todavía (se lee al abrir la guía).
+    public var offersSubtitles = false { didSet { if oldValue != offersSubtitles { changed() } } }
+
     public func isConnected(_ piece: Piece) -> Bool {
         switch piece {
         case .debrid: services.debrid.hasToken
@@ -87,6 +90,8 @@ public final class OnboardingModel: ObservableModel {
         let tv = offersTV && !isConnected(.tv) && answers[.tv] == .has
         if trakt { out.append(.trakt) }
         if tv && !trakt { out.append(.tv) }
+        // Más subtítulos (OpenSubtitles): solo si esta versión trae la clave de la app y aún no está tu cuenta.
+        if offersSubtitles { out.append(.subtitles) }
         out.append(.done)
         return out
     }

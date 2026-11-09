@@ -37,7 +37,9 @@ extension AppEnvironment {
             return notify("Todavía no está en la nube", detail: "Los estrenos suelen llegar unas horas después")
         }
         // Apagados en este título (o en Ajustes): Infuse los recibe apagados (antes mandaba los de Ajustes de todos modos).
-        let subtitle = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
+        let found = langs.subtitles.isEmpty ? nil : await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles).first
+        var subtitle: URL?
+        if let found { subtitle = await services.finder.playableSubtitle(found) }
         var season: Int?, episode: Int?
         let parts = request.videoID.split(separator: ":")
         if request.kind == "series", parts.count >= 3 { season = Int(parts[parts.count - 2]); episode = Int(parts[parts.count - 1]) }

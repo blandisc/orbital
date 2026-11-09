@@ -13,7 +13,7 @@ import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu
 import { tokenMs } from "./core/tokens.js";
 import { cloudRow, DEBRID_FORM, debridCancelMenu, debridExpiryNotice, debridRemoteMenu, deviceMenu, deviceRemoveMenu, deviceUpgradeMenu, explainerMenu, moviesSetupMenu, stremioLogoutMenu } from "./core/menus.js";
 import { isEditableList, listEditOptions } from "./core/menus.js";
-import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
+import { addonMenu, alexaMenu, artConfirmMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridFlowMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, mineChannelMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, OPENSUBTITLES_FORM, opensubtitlesMenu, memoryMenu, rememberedMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { feel } from "./core/feel.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -196,6 +196,11 @@ const ui = {
     onDone: (res, form) => {
       if (loginFrom) loginFrom.done = true;
       if (form.id === "realdebrid") return debridSaved(res);
+      if (form.id === "opensubtitles") {
+        sound.play("select");
+        ui.toast.show("OpenSubtitles conectado", { tone: "success", detail: "Ya salen muchos más subtítulos" });
+        return applySettings({ ...state.settings, opensubtitles: res });
+      }
       if (form.service) return keysSaved(form, res);
       state.stremioLinked = true;
       sound.play("select");
@@ -2055,6 +2060,19 @@ async function runCommand(command, context = null) {
         sound.play("back");
         ui.sheet.close();
         return renderHints();
+      case "os-connect":
+        sound.play("open");
+        loginFrom = { context };
+        ui.login.open({ ...OPENSUBTITLES_FORM, submit: (values, signal) => api.openSubtitlesLogin(values.username.trim(), values.password, signal) });
+        return renderHints();
+      case "os-account":
+        return openMenu(opensubtitlesMenu(state.settings.opensubtitles));
+      case "os-disconnect": {
+        const status = await api.openSubtitlesLogout();
+        sound.play("select");
+        ui.toast.show("Quité tu cuenta de OpenSubtitles", { tone: "success" });
+        return applySettings({ ...state.settings, opensubtitles: status });
+      }
       case "keys":
         if (!KEY_FORMS[command.service]) return;
         sound.play("open");

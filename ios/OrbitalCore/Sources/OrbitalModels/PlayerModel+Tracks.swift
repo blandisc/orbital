@@ -180,7 +180,7 @@ extension PlayerModel {
             let file = request.localFile.flatMap(FileFingerprint.of)
             url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language, file: file).first
         }
-        if let url { pendingSubtitleURL = url; await engine.addSubtitle(url: url, language: language) }
+        if let url, let real = await finder.playableSubtitle(url) { pendingSubtitleURL = url; await engine.addSubtitle(url: real, language: language) }
     }
 
     public func loadScares() async {

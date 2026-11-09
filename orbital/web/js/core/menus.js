@@ -830,6 +830,7 @@ function accountRows(settings) {
         command: { type: "keys", service: "trakt" } },
     ...phoneRows(settings),
     onedriveRow(settings.onedrive),
+    opensubtitlesRow(settings.opensubtitles),
     // Fernando, 4 nov: Stremio ya no se conecta (como el iPhone); solo queda de respaldo para ver torrents. Una cuenta que
     // ya estaba conectada sale aquí hasta que pases tu Mi lista a Trakt y se desconecte.
     settings.stremio_linked && { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: "Pasar a Trakt",
@@ -1279,6 +1280,34 @@ export function onedriveRow(status) {
   if (!status.linked) return { ...base, value: "Conectar", hint: "Tus películas guardadas ahí", command: { type: "onedrive-link" } };
   const found = status.scanning ? "Buscando tus videos…" : status.folder ? `${status.titles} títulos en «${status.folder}»` : "Elige la carpeta de tus videos";
   return { ...base, value: "✓ Conectada", ok: true, hint: status.error || found, command: { type: "onedrive-account" } };
+}
+
+/** OpenSubtitles (como el iPhone): tu cuenta gratuita para tener muchos más subtítulos y los de tu copia exacta. Sin la
+ *  clave de la app en esta consola no sale (no serviría). */
+export const OPENSUBTITLES_FORM = {
+  id: "opensubtitles", title: "Conectar OpenSubtitles", submitLabel: "Conectar",
+  lead: "Más subtítulos y de tu copia exacta. Crea tu cuenta gratis en opensubtitles.com/es/users/sign_up (desde el celular) y escribe aquí tu usuario y contraseña.",
+  missing: "Escribe tu usuario y tu contraseña.",
+  fields: [{ name: "username", label: "Usuario de OpenSubtitles", secret: false }, { name: "password", label: "Contraseña", secret: true }],
+};
+
+export function opensubtitlesRow(status) {
+  if (!status?.available) return null;
+  const base = { icon: "captions", label: "OpenSubtitles" };
+  if (!status.connected) return { ...base, value: "Conectar", hint: "Más subtítulos y de tu copia exacta", command: { type: "os-connect" } };
+  const left = Number.isInteger(status.remaining) ? `Te quedan ${status.remaining} hoy` : "Más subtítulos y de tu copia exacta";
+  return { ...base, value: "✓ Conectada", ok: true, hint: `${status.username} · ${left}`, command: { type: "os-account" } };
+}
+
+/** OpenSubtitles conectado: desconectar (Cancelar primero). */
+export function opensubtitlesMenu(status) {
+  return {
+    title: "OpenSubtitles", subtitle: `Conectada como ${status?.username || "tú"}. Sin ella, los subtítulos salen del complemento de siempre (menos opciones).`,
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "minus", label: "Desconectar", danger: true, command: { type: "os-disconnect" } },
+    ],
+  };
 }
 
 /** OneDrive conectado: la carpeta, buscar de nuevo y desconectar (Cancelar primero). */

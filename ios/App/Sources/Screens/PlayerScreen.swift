@@ -442,6 +442,9 @@ struct PlayerScreen: View {
             if value == .notReadyOnRealDebrid {
                 return show(PlayerNotice(title: Strings.tr("Todavía no está en la nube", language: ui0), detail: Strings.tr("Mandó su aviso de «descargando». Puede tardar; prueba más tarde u otra versión.", language: ui0), tone: .warn))
             }
+            if case .openSubtitles(let why)? = value {
+                return show(PlayerNotice(title: Strings.tr("Ese subtítulo no se pudo bajar", language: ui0), detail: why, tone: .warn))
+            }
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
             let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }
             // Corto, para que quepa con su botón: «No trae latino · Sus pistas: inglés y castellano · Cambiar».

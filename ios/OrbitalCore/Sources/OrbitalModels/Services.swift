@@ -237,7 +237,8 @@ public final class Services: ObservableModel {
         IDBridge.memo.attach(kv)
         let bridge = IDBridge(http: http, tmdb: { Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), memo: detailsMemo, gate: detailsGate) })
         let finder = StreamFinder(http: http, registry: registry, health: addonHealth, bridge: bridge,
-                                  internetSubtitles: { settings.value.internetSubtitles }, clock: clock)
+                                  internetSubtitles: { settings.value.internetSubtitles },
+                                  openSubtitles: Services.makeOpenSubtitles(http: http, secrets: secrets, settings: settings), clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: Services.tmdbKey(secrets: secrets, builtIn: builtInTMDBKey), language: "es-MX", memo: detailsMemo, gate: detailsGate)
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
@@ -373,7 +374,8 @@ public final class Services: ObservableModel {
             let s = settings.value
             let languages = DownloadSubtitles.languages([titlePrefs.languages(for: item.metaID, settings: s).subtitles, s.subtitles, s.audio, s.uiLanguage])
             guard let found = await finder.subtitleSearch(kind: item.kind, videoID: item.videoID) else { return nil }
-            let picks = DownloadSubtitles.pick(found, languages: languages, release: item.release, saved: item.allSavedSubtitles)
+            // Los de la API de OpenSubtitles no se bajan en montón: gastan tu cuota diaria (solo el que tú eliges).
+            let picks = DownloadSubtitles.pick(found.filter { $0.url.scheme != OpenSubtitlesAPI.scheme }, languages: languages, release: item.release, saved: item.allSavedSubtitles)
             return await DownloadSubtitles.fetchAll(picks) { url in
                 guard let response = try? await http.send(HTTPRequest(url: url, timeout: 20)), response.status == 200 else { return nil }
                 return response.data

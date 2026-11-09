@@ -151,7 +151,8 @@ public final class DownloadsModel: ObservableModel {
     /// Baja ese subtítulo y lo guarda con la descarga (sin conexión también sale). Nombre «es-2.srt»: el reproductor elige por
     /// el idioma del principio del nombre.
     public func saveSubtitle(_ item: DownloadItem, _ option: SubtitleOption) async -> Bool {
-        guard let response = try? await services.http.send(HTTPRequest(url: option.url, timeout: 20)), response.status == 200, !response.data.isEmpty else { return false }
+        guard let real = await services.finder.playableSubtitle(option.url),
+              let response = try? await services.http.send(HTTPRequest(url: real, timeout: 20)), response.status == 200, !response.data.isEmpty else { return false }
         let two = Streams.languageCodes.first { $0.value == option.language }?.key ?? option.language
         let count = item.subtitleFiles.filter { ($0 as NSString).lastPathComponent.hasPrefix(two) }.count
         return await services.downloads.addSubtitle(id: item.id, name: "\(two)-\(count + 1).srt", data: response.data)

@@ -39,6 +39,7 @@ final class AppEnvironment {
     @ObservationIgnored lazy var follow = FollowModel(services)
     /// Letterboxd (solo leer): tu diario, tus reseñas y lo de tu archivo, para Lo que ves y la ficha.
     @ObservationIgnored lazy var letterboxd = LetterboxdModel(services)
+    @ObservationIgnored lazy var openSubtitles = OpenSubtitlesModel(services)
     /// Colecciones (la repisa): una para toda la app, con lo visto de `collections` (el mismo caché).
     @ObservationIgnored lazy var repisa = RepisaModel(services, watched: { [unowned self] in await self.collections.watchedIDs() })
     /// El filtro avanzado: uno para toda la app (lo que elegiste se queda al volver a abrir el cajón).

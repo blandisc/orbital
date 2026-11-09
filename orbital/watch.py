@@ -25,7 +25,7 @@ from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
-from .library import addon_list, addons, cinemeta, localize, realdebrid, streams, stremio_api, torrentio
+from .library import addon_list, addons, cinemeta, localize, opensubtitles, realdebrid, streams, stremio_api, torrentio
 from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
@@ -529,6 +529,10 @@ class Watch:
                                             lambda: self.setting("language", config.ui.language))
         self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
+        # Más subtítulos: la API de OpenSubtitles (clave de la app y tu cuenta en secrets.json; Ajustes › Cuentas).
+        self.opensubtitles = opensubtitles.OpenSubtitles(self.credentials, languages=lambda: [self.subtitles_lang, "en"])
+        self.streams.opensubtitles = self.opensubtitles
+        opensubtitles.install(self.opensubtitles)
         # Lo que Real-Debrid aún no tiene se le pide desde la ficha o el reproductor; ya bajado, es una versión más.
         self._rd_status: tuple[float, str | None, dict] = (0.0, None, {})
         self.rd = RdRequests(self.streams, self.state, lambda event: self.events.publish(event), token=self.rd_token)

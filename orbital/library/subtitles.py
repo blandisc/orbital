@@ -84,7 +84,8 @@ def ranked(options: list[dict], lang: str, release: str | None) -> list[dict]:
     picked = [(i, o) for i, o in enumerate(options) if language(o.get("lang")) == lang and not hides(o)]
     for _, o in picked:
         o["match"] = mine.match(ReleaseTraits.parse(o.get("release")))
-    picked.sort(key=lambda p: (-p[1]["match"], -(p[1].get("downloads") or -1), p[0]))
+    # «exact»: OpenSubtitles (su API) dice que se hizo para tu archivo exacto: va antes que todo.
+    picked.sort(key=lambda p: (not p[1].get("exact"), -p[1]["match"], -(p[1].get("downloads") or -1), p[0]))
     return [o for _, o in picked]
 
 

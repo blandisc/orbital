@@ -38,7 +38,12 @@ struct OnboardingView: View {
         }
         .tint(DS.accent)
         .interactiveDismissDisabled()
-        .task { if let resume = guide.model.resumeStep { step = resume } }
+        .task {
+            let subs = AppEnvironment.shared.openSubtitles
+            await subs.refresh()
+            guide.model.offersSubtitles = subs.available && !subs.connected
+            if let resume = guide.model.resumeStep { step = resume }
+        }
         .onChange(of: step) { _, now in guide.model.reached(now) }
     }
 
@@ -55,6 +60,7 @@ struct OnboardingView: View {
         case .trakt:
             OnboardingTrakt(guide: model, step: position, back: back, next: { explained.insert(.trakt); go(from: step) }, skip: finish)
         case .tv: OnboardingTV(step: position, back: back, next: { go(from: step) }, skip: finish)
+        case .subtitles: OnboardingSubtitles(step: position, back: back, next: { go(from: step) }, skip: finish)
         case .done: OnboardingDone(guide: model, finish: finish)
         }
     }

@@ -170,6 +170,8 @@ export const api = {
   remoteInputStart: (title, fields, purpose) => post("/api/remote-input", { title, fields, purpose }),
   /** La clave de Real-Debrid pegada en la TV, o la que llegó del celular tras «Usar» (la consola la prueba antes). */
   debridKey: (token, signal) => post("/api/realdebrid/key", { token }, { signal, timeout: 20000 }),
+  openSubtitlesLogin: (username, password, signal) => post("/api/opensubtitles/login", { username, password }, { signal, timeout: 20000 }),
+  openSubtitlesLogout: () => post("/api/opensubtitles/logout", {}),
   debridRemoteConfirm: (code) => post("/api/realdebrid/remote/confirm", { code }, { timeout: 20000 }),
   remoteInputTake: (code) => request(`/api/remote-input/take?code=${encodeURIComponent(code)}`),
   remoteInputCancel: (code) => post("/api/remote-input/cancel", { code }),

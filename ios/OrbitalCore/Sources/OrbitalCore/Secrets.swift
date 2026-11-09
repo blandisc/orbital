@@ -37,6 +37,8 @@ public enum SecretKey {
     public static let sharedRealDebridSeen = AddonKeys.sharedRealDebridSeen
     /// CX4-A · la invitación de tu iPhone para conectar tu iPad (llavero de iCloud): la TV, su dirección y un código de un uso.
     public static let orbitalInvite = "orbital_invite"
+    /// Tu cuenta de OpenSubtitles (usuario, token y cuota; nunca la contraseña): solo de este aparato.
+    public static let openSubtitlesAccount = "opensubtitles_account"
 
     /// TEC-5 · lo ÚNICO que viaja por el llavero de iCloud. Todo lo demás (la llave de este aparato, el token del túnel,
     /// Trakt, OneDrive, las direcciones de complementos, tu clave local de Real-Debrid) se queda en este aparato.

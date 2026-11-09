@@ -30,7 +30,22 @@ from pydantic import BaseModel, Field
 
 from . import __version__, companion, devices
 from . import quick as system_audio
-from .api import addons, diagnostics, downloads, foryou, library, live, media, onedrive, play, quick, tv, ui, update
+from .api import (
+    addons,
+    diagnostics,
+    downloads,
+    foryou,
+    library,
+    live,
+    media,
+    onedrive,
+    opensubtitles,
+    play,
+    quick,
+    tv,
+    ui,
+    update,
+)
 from .api.deps import Deps
 from .api.live import SseHub, VoiceRequest
 from .api.play import humane_error  # noqa: F401 - se importa desde aquí
@@ -240,7 +255,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     for part in (library.router(d), play.router(d), media.router(d), ui.router(d),
                  live.router(d, is_local_request), diagnostics.router(d), quick.router(d),
                  update.router(d, updater), foryou.router(d), tv.router(d), onedrive.router(d), downloads.router(d),
-                 addons.router(d, is_local_request)):
+                 addons.router(d, is_local_request), opensubtitles.router(d)):
         app.include_router(part)
     _companion_routes(app, config)
     _remote_input_routes(app, config)
@@ -1012,6 +1027,22 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         except ConnectionError as exc:
             raise HTTPException(503, str(exc)) from exc
         return JSONResponse(out, headers={"Cache-Control": "no-store"})
+
+    @public.put("/api/opensubtitles")
+    async def companion_opensubtitles_put(request: Request) -> JSONResponse:
+        """«Pasar a la TV»: tu cuenta de OpenSubtitles del iPhone (usuario y token, nunca la contraseña)."""
+        with_key(request, "rd_put")  # el mismo límite que cambiar una clave (5 por hora)
+        try:
+            body = await request.json()
+        except ValueError:
+            body = {}
+        token = body.get("token") if isinstance(body, dict) else None
+        user = body.get("username") if isinstance(body, dict) else None
+        if not isinstance(token, str) or not 10 <= len(token) <= 4096 or not isinstance(user, str) or not user.strip():
+            raise HTTPException(422, "Esa no parece una cuenta de OpenSubtitles")
+        watch = main_app.state.catalog.watch
+        watch.opensubtitles.adopt({**body, "username": user.strip()})
+        return JSONResponse(watch.opensubtitles.status(), headers={"Cache-Control": "no-store"})
 
     @public.get("/api/realdebrid/requests")
     def companion_debrid_requests() -> dict:

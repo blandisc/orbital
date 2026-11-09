@@ -54,6 +54,7 @@ from .gamepad import (  # noqa: F401 - las pruebas los piden a player
     X_BUTTON,
     Y_BUTTON,
 )
+from .library import opensubtitles
 from .mpv import PIPE, Mpv  # noqa: F401 - se importan desde aquí
 from .net import read_body
 from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las piden a player
@@ -146,7 +147,9 @@ def fetch_subtitle(url: str) -> str:
     ext = os.path.splitext(urlsplit(url).path)[1].lower()
     path = subtitle_cache() / (hashlib.sha1(url.encode()).hexdigest()[:20] + (ext if ext in {".srt", ".vtt", ".ass", ".ssa", ".sub"} else ".srt"))
     if not path.exists():
-        req = urllib.request.Request(url, headers={"User-Agent": "Orbital/0.1"})
+        # Uno de la API de OpenSubtitles se pide ahora (gasta cuota); ya bajado, el archivo se reusa sin gastar otra.
+        real = opensubtitles.resolve(url)
+        req = urllib.request.Request(real, headers={"User-Agent": "Orbital/0.1"})
         with urllib.request.urlopen(req, timeout=SUB_TIMEOUT) as res:
             data = read_body(res, timeout=SUB_TIMEOUT, limit=SUB_MAX_BYTES)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -1330,7 +1333,7 @@ class OrbitalPlayer(PlayerScreen):
 
         def work() -> None:
             path = url
-            if url.startswith(("http://", "https://")):
+            if url.startswith(("http://", "https://", opensubtitles.SCHEME)):
                 try:
                     path = self.fetch_subtitle(url)
                 except (OSError, ValueError) as exc:

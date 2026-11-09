@@ -65,6 +65,8 @@ public enum PlayerNotice: Sendable, Equatable {
     case switchFailedBack
     /// Real-Debrid aún no tiene esa versión (mandó su video corto de «descargando» en lugar de la película).
     case notReadyOnRealDebrid
+    /// Un subtítulo de la API de OpenSubtitles no se pudo bajar (sin cuenta, sin cuota de hoy o sin respuesta).
+    case openSubtitles(String)
 }
 
 /// Un idioma de audio que solo trae otra versión (otro archivo): a cuál iría y qué tan seguro es que lo trae.
