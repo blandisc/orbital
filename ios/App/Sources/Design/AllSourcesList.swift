@@ -210,7 +210,7 @@ struct AllSourcesList: View {
             if !extra.isEmpty { Text(verbatim: extra.joined(separator: " · ")).recipe(.data) }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(Array(AllSources.languageEvidence(source).enumerated()), id: \.offset) { _, item in
-                    (Text("\(Text.flag(item.code))\(Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui) + ": "))\(evidence(item.kind))"))
+                    (Text("\(Text.flag(item.code))\(Text(verbatim: VersionText.inline(Streams.versionLanguageName(item.code, in: ui), ui) + ": "))\(evidence(item.kind))"))
                         .recipe(.footnote)
                 }
             }
@@ -284,14 +284,14 @@ struct AllSourcesList: View {
             text = Text("\(text)\(Text(verbatim: " · "))\(Text("también"))\(Text(verbatim: " "))")
             for (i, item) in rest.enumerated() {
                 if i > 0 { text = Text("\(text)\(Text(verbatim: ", "))") }
-                text = Text("\(text)\(Text.flag(item.code))\(Text(verbatim: VersionLanguageRow.inline(Streams.versionLanguageName(item.code, in: ui), ui)))")
+                text = Text("\(text)\(Text.flag(item.code))\(Text(verbatim: VersionText.inline(Streams.versionLanguageName(item.code, in: ui), ui)))")
             }
         }
         let guessed = items.filter { $0.kind == .assumed }
         if !guessed.isEmpty {
             text = Text("\(text)\(Text(verbatim: " · "))\(Text("se supone"))")
             if guessed.count < items.count {
-                text = Text("\(text)\(Text(verbatim: ": " + guessed.map { VersionLanguageRow.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", ")))")
+                text = Text("\(text)\(Text(verbatim: ": " + guessed.map { VersionText.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", ")))")
             }
         }
         return text

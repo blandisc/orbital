@@ -2,143 +2,19 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «Elegir versión»: un idioma con sus calidades (solo las que existen). El nombre del idioma y, si toca, «tu idioma» u
-/// «original»; debajo, una cápsula por calidad que pasa al siguiente renglón si no cabe (en un iPhone angosto).
-struct VersionLanguageRow: View {
-    let row: LanguageRow
-    let uiLanguage: String
-    /// RX2-A · lo que ya pediste y baja en la nube dice cómo va («Bajando en la nube · 42 %»), no «Por pedir». nil: no está pedida.
-    var cloud: (VersionOption) -> String? = { _ in nil }
-    let pick: (VersionOption) -> Void
-    @Environment(\.dynamicTypeSize) private var typeSize
-
+/// Las palabras de una versión, las mismas en «Versión», la ficha y el reproductor.
+enum VersionText {
     /// Un nombre de idioma a media frase: en minúsculas en español («en latino»), con su mayúscula en inglés («in Latin
     /// American Spanish»).
     static func inline(_ name: String, _ ui: String) -> String { ui.hasPrefix("en") ? name : name.lowercased() }
 
-    /// La fila «Español» se llama así a secas; abajo dice que no se sabe cuál.
+    /// El español que no dice cuál se llama así a secas.
     static func spanish(_ ui: String) -> String { ui.hasPrefix("en") ? "Spanish" : "Español" }
 
-    private var note: Text? {
-        if row.yours { return Text("Tu idioma") }
-        if row.original { return Text("Original") }
-        if row.allMaybe { return Text("Tal vez") }
-        if row.code == "es" { return Text("No dice si latino o castellano") }
-        return nil
-    }
+    /// El nombre de un idioma de versión («Latino», «Castellano», «Español» a secas, «Inglés»).
+    static func name(_ code: String, _ ui: String) -> String { code == "es" ? spanish(ui) : Streams.versionLanguageName(code, in: ui) }
 
-    var body: some View { bodyContent.pointerHover(.highlight) }
-    @ViewBuilder private var bodyContent: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            // El nombre y, debajo, lo que hay que saber de la fila (las mismas palabras que la TV).
-            VStack(alignment: .leading, spacing: 0) {
-                (Text("\(Text.flag(row.code))\(Text(verbatim: row.code == "es" ? Self.spanish(uiLanguage) : Streams.versionLanguageName(row.code, in: uiLanguage)))"))
-                    .recipe(.cardTitle, color: DS.text)
-                if let note { note.recipe(.footnote, color: row.allMaybe ? DS.warning : DS.textMuted) }
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
-            // Con letra de accesibilidad, una por renglón (en dos, «1080p» se partía en tres renglones).
-            LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: DS.Version.chipMinimum), spacing: DS.Space.s2)],
-                      alignment: .leading, spacing: DS.Space.s2) {
-                ForEach(row.options) { option in
-                    VersionChip(option: option, language: Streams.versionLanguageName(row.code, in: uiLanguage), cloud: cloud(option)) { pick(option) }
-                }
-            }
-        }
-        .padding(DS.Space.s3)
-        .dsCard(translucent: true)
-    }
-}
-
-/// «Elegir versión» mientras se buscan (Fernando, 6 nov: «el parrafito sin info»): dos filas con la forma de las de verdad (el
-/// idioma y sus calidades) en gris, para que al llegar nada brinque. VoiceOver dice «Buscando versiones».
-struct VersionsSkeleton: View {
-    var body: some View {
-        VStack(spacing: DS.Space.s2) {
-            ForEach(0..<2, id: \.self) { row in
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(verbatim: row == 0 ? "🇲🇽 Latino" : "🇺🇸 Inglés").recipe(.cardTitle, color: DS.text)
-                        Text(verbatim: "Tu idioma").recipe(.footnote)
-                    }
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Version.chipMinimum), spacing: DS.Space.s2)], alignment: .leading, spacing: DS.Space.s2) {
-                        ForEach(0..<(row == 0 ? 2 : 1), id: \.self) { _ in
-                            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                Text(verbatim: "1080p").font(DS.TextRecipe.cardTitle.font)
-                                Text(verbatim: "2.9 GB · HDR").recipe(.caption)
-                                Text(verbatim: "Al instante").recipe(.caption)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(DS.Space.s2)
-                            .dsCard(translucent: true)
-                        }
-                    }
-                }
-                .padding(DS.Space.s3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .dsCard(translucent: true)
-            }
-        }
-        .redacted(reason: .placeholder)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Buscando versiones"))
-    }
-}
-
-/// Una calidad de un idioma: «1080p», su tamaño y lo que la distingue, y si arranca al instante. La recomendada va marcada.
-struct VersionChip: View {
-    let option: VersionOption
-    let language: String
-    /// Ya pedida: cómo va en la nube («Bajando en la nube · 42 %»).
-    var cloud: String?
-    let action: () -> Void
-    @Environment(\.locale) private var locale   // el idioma de la app («2,9 GB»)
-
-    var body: some View { bodyContent.pointerHover(.highlight) }
-    @ViewBuilder private var bodyContent: some View {
-        let shape = RoundedRectangle(cornerRadius: DSCardLevel.row.radius, style: .continuous)
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                HStack(spacing: DS.Space.s1) {
-                    Text(verbatim: option.quality).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-                    if option.recommended { Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon) }
-                    Spacer(minLength: 0)
-                    AddonMark(kind: option.from)
-                }
-                Text(verbatim: Self.facts(option, locale: locale)).recipe(.caption).lineLimit(1)
-                // Solo lo que se sabe: al instante si Real-Debrid ya la tiene; si aún no, se dice; si no se sabe, nada.
-                // T8-A: la que hay que pedir lo dice corto y con su flecha (antes «Real-Debrid aún no la t…», cortado).
-                if option.refused {
-                    // FQ2-A: Real-Debrid no la dejó bajar; nunca la recomendada (escenarios comunes con la TV, 3 nov).
-                    Label { Text("Real-Debrid no lo dejó bajar") } icon: { Image(systemName: DebridRequestWords.Icon.refused) }
-                        .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
-                } else if option.speed == .realDebridMustDownload, let cloud {
-                    Label { Text(verbatim: cloud) } icon: { Image(systemName: DS.Symbol.cloud) }
-                        .recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon).lineLimit(1)
-                } else if option.speed == .realDebridMustDownload {
-                    Label { Text("Por pedir") } icon: { Image(systemName: DS.Symbol.cloud) }
-                        .recipe(.caption, color: DS.warning).labelStyle(.titleAndIcon).lineLimit(1)
-                } else if let speed = Self.speedText(option), let color = Self.speedColor(option.speed) {
-                    HStack(spacing: DS.Space.s1) {
-                        Circle().fill(color).frame(width: DS.Version.dot, height: DS.Version.dot)
-                        speed.recipe(.caption).lineLimit(1)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(DS.Space.s2)
-            .dsCard(translucent: true, fill: option.recommended ? DS.fillStrong : nil)
-            .overlay(shape.strokeBorder(option.recommended ? .clear : DS.hairline, lineWidth: DS.Stroke.hairline))
-            .dsSelectionRing(option.recommended, in: shape)   // la recomendada, con el anillo de lo elegido (D5; antes turquesa)
-            .contentShape(shape)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("\(Text(verbatim: [language, option.quality, Self.size(option, locale: locale)].compactMap { $0 }.joined(separator: ", ")))\(Self.speedText(option).map { Text("\(Text(verbatim: ", "))\($0)") } ?? Text(verbatim: ""))\(option.recommended ? Text("\(Text(verbatim: ", "))\(Text("Recomendada"))") : Text(verbatim: ""))\(Text(verbatim: ", "))\(AddonMark.name(option.from))"))
-        .accessibilityIdentifier("version-\(option.quality)")
-    }
-
-    /// Qué tan rápido arranca, en palabras: «Al instante» (ya está en Real-Debrid), «Real-Debrid aún no la tiene» o nada.
+    /// Qué tan rápido arranca, en palabras: «Al instante» (ya está en Real-Debrid), «Todavía no está en la nube» o nada.
     static func speedText(_ speed: SourceSpeed) -> Text? {
         switch speed {
         case .inRealDebrid: Text("Al instante")
@@ -147,18 +23,10 @@ struct VersionChip: View {
         }
     }
 
-    /// La de una versión: lo que pediste y ya está lo dice («Al instante · la pediste»).
-    static func speedText(_ option: VersionOption) -> Text? {
-        if option.refused { return Text("Real-Debrid no lo dejó bajar") }
-        return option.requested && option.speed == .inRealDebrid ? Text("Al instante · la pediste") : speedText(option.speed)
-    }
-
-    static func speedColor(_ speed: SourceSpeed) -> Color? {
-        switch speed {
-        case .inRealDebrid: DS.success   // listo al instante: el verde de «listo», no el turquesa
-        case .realDebridMustDownload: DS.warning
-        case .unknown: nil
-        }
+    /// «2.9 GB · DV · Al instante»: los datos y, si se sabe, qué tan rápido arranca.
+    static func withSpeed(_ facts: String, _ speed: SourceSpeed) -> Text {
+        guard let words = speedText(speed) else { return Text(verbatim: facts) }
+        return facts.isEmpty ? words : Text("\(Text(verbatim: facts + " · "))\(words)")
     }
 
     static func size(_ option: VersionOption, locale: Locale) -> String? {
@@ -168,6 +36,33 @@ struct VersionChip: View {
     /// «2,9 GB · DV · Atmos».
     static func facts(_ option: VersionOption, locale: Locale) -> String {
         ([size(option, locale: locale)] + option.badges.prefix(2).map { $0 == "Dolby Vision" ? "DV" : $0 }).compactMap { $0 }.joined(separator: " · ")
+    }
+}
+
+/// «Elegir versión» mientras se buscan (Fernando, 6 nov: «el parrafito sin info»): la forma de la lista de verdad (tu idioma
+/// con dos renglones y «Otros idiomas» con uno) en gris, para que al llegar nada brinque. VoiceOver dice «Buscando versiones».
+struct VersionsSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            ForEach(0..<2, id: \.self) { group in
+                Text(verbatim: group == 0 ? "🇲🇽 Latino" : "Otros idiomas").recipe(.cardTitle, color: DS.text).padding(.top, DS.Space.s2)
+                VStack(spacing: 0) {
+                    ForEach(0..<(group == 0 ? 2 : 1), id: \.self) { _ in
+                        HStack(spacing: DS.Space.s2) {
+                            Text(verbatim: "1080p").font(DS.TextRecipe.labelLarge.font)
+                            Spacer(minLength: DS.Space.s2)
+                            Text(verbatim: "2.9 GB").recipe(.footnote)
+                        }
+                        .padding(.horizontal, DS.Space.s3)
+                        .frame(minHeight: DS.Size.touchTarget)
+                    }
+                }
+                .dsCard(translucent: true)
+            }
+        }
+        .redacted(reason: .placeholder)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Buscando versiones"))
     }
 }
 
@@ -235,7 +130,7 @@ struct VersionsEmptyCause: View {
     private func tr(_ key: String) -> String { Strings.tr(key, language: uiLanguage) }
 
     var body: some View {
-        let detail = cause.detail(tr, languageName: { VersionLanguageRow.inline(Streams.versionLanguageName($0, in: uiLanguage), uiLanguage) })
+        let detail = cause.detail(tr, languageName: { VersionText.inline(Streams.versionLanguageName($0, in: uiLanguage), uiLanguage) })
         DSEmptyState(symbol: cause.symbol, title: Text(verbatim: cause.title(tr)), message: detail.map { Text(verbatim: $0) }) {
             if let action = cause.action, let run = perform(action) {
                 Button(UnavailableCause.label(action, tr), systemImage: action.symbol, action: run)

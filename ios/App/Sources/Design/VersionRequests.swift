@@ -38,7 +38,7 @@ struct VersionRequestRow: View {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     title.recipe(.cardTitle, color: DS.text)
-                    Text(verbatim: VersionChip.facts(option, locale: locale)).recipe(.caption)
+                    Text(verbatim: VersionText.facts(option, locale: locale)).recipe(.caption)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())

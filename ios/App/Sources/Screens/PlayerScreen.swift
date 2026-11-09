@@ -448,9 +448,9 @@ struct PlayerScreen: View {
             guard case .otherVersionHasYourLanguage(let want, let have, let index)? = value else { return }
             let ui = env.services.appSettings.uiLanguage, tr = { (k: String) in Strings.tr(k, language: ui) }
             // Corto, para que quepa con su botón: «No trae latino · Sus pistas: inglés y castellano · Cambiar».
-            let wanted = want == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(want, in: ui)
-            let tracks = have.map { VersionLanguageRow.inline(Streams.versionLanguageName($0, in: ui), ui) }.joined(separator: tr(" y "))
-            show(PlayerNotice(title: String(format: tr("No trae %@"), VersionLanguageRow.inline(wanted, ui)),
+            let wanted = want == "es" ? VersionText.spanish(ui) : Streams.versionLanguageName(want, in: ui)
+            let tracks = have.map { VersionText.inline(Streams.versionLanguageName($0, in: ui), ui) }.joined(separator: tr(" y "))
+            show(PlayerNotice(title: String(format: tr("No trae %@"), VersionText.inline(wanted, ui)),
                               detail: String(format: tr("Sus pistas: %@"), tracks), tone: .warn,
                               switchTo: index, switchTitle: tr("Cambiar")))
         }

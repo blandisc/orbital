@@ -223,7 +223,7 @@ extension PlayerScreen {
         let others: [SubtitleDock.Language] = model.otherVersionAudio(excluding: seenAudio).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
             let speed = o.instant ? Strings.tr("en la nube", language: ui) : Strings.tr("Todavía no está en la nube", language: ui)
             let detail = "↻ " + ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
-            return .init(id: String(o.sourceIndex), title: LanguageFlags.flagged(o.code == "es" ? VersionLanguageRow.spanish(ui) : Streams.versionLanguageName(o.code, in: ui), o.code),
+            return .init(id: String(o.sourceIndex), title: LanguageFlags.flagged(o.code == "es" ? VersionText.spanish(ui) : Streams.versionLanguageName(o.code, in: ui), o.code),
                          selected: false, detail: detail, guessed: !o.sure)
         }
         let otherLanguage = Dictionary(model.otherVersionAudio(excluding: seenAudio).map { (String($0.sourceIndex), $0.code) }, uniquingKeysWith: { a, _ in a })
@@ -310,9 +310,11 @@ extension PlayerScreen {
                     AllSourcesList(sources: model.sourceChoices, current: model.source?.index, currentIsPlaying: true,
                                    primary: ("Cambiar a esta", { pickSource($0.index, model) }), secondary: nil, uiLanguage: ui, prefs: prefs)
                 } else {
-                    VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        ForEach(rows.main + rows.more) { row in
-                            VersionLanguageRow(row: row, uiLanguage: ui) { option in pickSource(option.id, model) }
+                    // V1: la misma lista con íconos que «Versión» de la ficha; tocar cambia a esa, mantener da sus detalles.
+                    VersionLanguageList(rows: rows.main + rows.more, uiLanguage: ui) { row, option, showsLanguage in
+                        VersionListRow(option: option, code: row.code, uiLanguage: ui, showsLanguage: showsLanguage,
+                                       action: { pickSource(option.id, model) }) {
+                            Button("Cambiar a esta", systemImage: "play.fill") { pickSource(option.id, model) }
                         }
                     }
                 }

@@ -55,10 +55,10 @@ extension DS {
         static let maxColors = 2
     }
 
-    /// «Elegir versión»: lo más angosto que queda una calidad (dos por renglón en cualquier iPhone: con tres se cortaba el texto), el punto de
-    /// «Al instante» y el borde de la recomendada.
+    /// «Elegir versión» (V1, lista con íconos): el lugar de la ✦ de la recomendada (las calidades quedan en columna aunque no
+    /// la lleven), lo ancho de lo que se ve al mantener presionado un renglón y el punto de «cómo sabemos el idioma».
     enum Version {
-        static let chipMinimum: CGFloat = 136, dot: CGFloat = 8
+        static let mark: CGFloat = 16, preview: CGFloat = 320, dot: CGFloat = 8
         /// Un idioma que se supone (no lo dice el nombre ni se comprobó): borde punteado.
         static let guessLine: CGFloat = 1, guessDash: CGFloat = 4
     }

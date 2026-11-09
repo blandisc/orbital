@@ -189,7 +189,7 @@ extension TitleView {
     /// N5-A · «La de inglés pesa 64 GB y aquí no se ve bien» (o «…viene en AV1…»).
     func poorFitReason(_ fit: PoorFit) -> Text {
         let ui = env.services.appSettings.uiLanguage
-        let name = VersionLanguageRow.inline(fit.language.map { Streams.versionLanguageName($0, in: ui) } ?? SourcesModel.quality(fit.source), ui)
+        let name = VersionText.inline(fit.language.map { Streams.versionLanguageName($0, in: ui) } ?? SourcesModel.quality(fit.source), ui)
         switch fit.problem {
         case .heavy(let gb): return Text("La de \(name) pesa \(String(gb)) GB y aquí no se ve bien")
         case .format(let format): return Text("La de \(name) viene en \(format) y aquí no se ve bien")

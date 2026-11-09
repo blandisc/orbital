@@ -42442,6 +42442,419 @@
           }
         }
       }
+    },
+    "Hay que pedirla": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs requesting"
+          }
+        }
+      }
+    },
+    "Aún no está en la nube: tocarla la pide y te avisamos cuando llegue.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aún no está en la nube: tocarla la pide y te avisamos cuando llegue."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aún no está en la nube: tocarla la pide y te avisamos cuando llegue."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aún no está en la nube: hacer clic la pide y te avisamos cuando llegue."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Aún no está en la nube: tocarla la pide y te avisamos cuando llegue."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Not in the cloud yet: tapping it requests it and we let you know when it arrives."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Not in the cloud yet: tapping it requests it and we let you know when it arrives."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Not in the cloud yet: clicking it requests it and we let you know when it arrives."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Not in the cloud yet: tapping it requests it and we let you know when it arrives."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Hay pistas del idioma, pero no seguras. Mantén presionado para ver por qué.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay pistas del idioma, pero no seguras. Mantén presionado para ver por qué."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay pistas del idioma, pero no seguras. Mantén presionado para ver por qué."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay pistas del idioma, pero no seguras. Mantén el clic para ver por qué."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hay pistas del idioma, pero no seguras. Mantén presionado para ver por qué."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "There are hints about the language, but they're not certain. Touch and hold to see why."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "There are hints about the language, but they're not certain. Touch and hold to see why."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "There are hints about the language, but they're not certain. Click and hold to see why."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "There are hints about the language, but they're not certain. Touch and hold to see why."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca para pedirla. Mantén presionado para más.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para pedirla. Mantén presionado para más."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para pedirla. Mantén presionado para más."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic para pedirla. Mantén el clic para más."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para pedirla. Mantén presionado para más."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to request it. Touch and hold for more."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to request it. Touch and hold for more."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click to request it. Click and hold for more."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to request it. Touch and hold for more."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca para verla. Mantén presionado para más.": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para verla. Mantén presionado para más."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para verla. Mantén presionado para más."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic para verla. Mantén el clic para más."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para verla. Mantén presionado para más."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to watch it. Touch and hold for more."
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to watch it. Touch and hold for more."
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click to watch it. Click and hold for more."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to watch it. Touch and hold for more."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Toca para ver · mantén presionado para más": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para ver · mantén presionado para más"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para ver · mantén presionado para más"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Haz clic para ver · mantén el clic para más"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Toca para ver · mantén presionado para más"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "iphone": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to watch · touch and hold for more"
+                }
+              },
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to watch · touch and hold for more"
+                }
+              },
+              "mac": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Click to watch · click and hold for more"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tap to watch · touch and hold for more"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Sí, desde aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, from here on"
+          }
+        }
+      }
+    },
+    "¿Para el resto de la serie también?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the rest of the series too?"
+          }
+        }
+      }
+    },
+    "Los siguientes episodios, en %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next episodes, in %@."
+          }
+        }
+      }
+    },
+    "Ver cómo va": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See how it's going"
+          }
+        }
+      }
+    },
+    "Ver por idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View by language"
+          }
+        }
+      }
+    },
+    "Ver todas las versiones · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all versions · %lld"
+          }
+        }
+      }
+    },
+    "Más idiomas · ": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More languages · "
+          }
+        }
+      }
     }
   },
   "version": "1.0"

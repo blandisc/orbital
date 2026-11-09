@@ -19,6 +19,20 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # V1 + V3 de «Versión» (Fernando, 9 nov).
+    "Hay que pedirla": "Needs requesting",
+    "Aún no está en la nube: tocarla la pide y te avisamos cuando llegue.": "Not in the cloud yet: tapping it requests it and we let you know when it arrives.",
+    "Hay pistas del idioma, pero no seguras. Mantén presionado para ver por qué.": "There are hints about the language, but they're not certain. Touch and hold to see why.",
+    "Toca para pedirla. Mantén presionado para más.": "Tap to request it. Touch and hold for more.",
+    "Toca para verla. Mantén presionado para más.": "Tap to watch it. Touch and hold for more.",
+    "Toca para ver · mantén presionado para más": "Tap to watch · touch and hold for more",
+    "Sí, desde aquí": "Yes, from here on",
+    "¿Para el resto de la serie también?": "For the rest of the series too?",
+    "Los siguientes episodios, en %@.": "The next episodes, in %@.",
+    "Ver cómo va": "See how it's going",
+    "Ver por idioma": "View by language",
+    "Ver todas las versiones · %lld": "See all versions · %lld",
+    "Más idiomas · ": "More languages · ",
     # Descargar en una serie (DB1, DS1, DP2; Fernando, 8 nov).
     "¿Qué descargo?": "What should I download?", "El siguiente: %@": "Next: %@", "Un episodio": "One episode",
     "Los siguientes %lld": "Next %lld", "Toda la temporada %lld": "Whole season %lld", "Toda la temporada %@": "Whole season %@",
