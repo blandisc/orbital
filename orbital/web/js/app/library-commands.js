@@ -2,7 +2,7 @@
  * Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí antes de su propio switch. */
 import { decadeName, MIN_RATINGS, ratingName } from "../components/list-screen.js";
 
-export function libraryCommands({ api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
+export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu, fixTitle, folderMenu, genreNames, launch, loadDownloads, loadLibrary, nested, offerUndoHide, openListItem, openMenu, openTitle, renderHints, sendToPhone, sound, state, toggleSave, ui, watch }) {
   return {
     "prefs": async (command, context) => {
       if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
@@ -75,6 +75,16 @@ export function libraryCommands({ api, artConfirmMenu, fixTitle, folderMenu, gen
         { icon: "calendar", label: "Todas", value: current == null ? "✓" : "", command: { type: "list-decade", value: null } },
         ...s.decades().map((d) => ({ icon: "calendar", label: decadeName(d), value: current === d ? "✓" : "", command: { type: "list-decade", value: d } }))] },
       nested(context));
+    },
+    // Editar una lista tuya (☰ › Editar esta lista · Agregar a esta lista…, Opciones › Quitar de esta lista).
+    "list-edit": async (command) => {
+      return ui.listScreen.sorter.setEditing(!!command.on);
+    },
+    "list-add": async () => {
+      return addToList(ui.listScreen.sorter.editable);
+    },
+    "list-remove": async (command) => {
+      return removeFromList({ where: command.where, name: command.name }, { meta_id: command.id, kind: command.kind, title: command.title });
     },
     "list-decade": async (command, context) => {
       return ui.listScreen.sorter.setDecade(command.value);

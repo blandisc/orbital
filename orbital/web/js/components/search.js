@@ -179,7 +179,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (q.length < MIN_CHARS) {
       if (q) showResults([]);
       else showRecent();
-      setHint(q ? "Sigue escribiendo…" : "Escribe el nombre y verás los resultados.");
+      setHint(q ? "Sigue escribiendo…" : picking?.hint || "Escribe el nombre y verás los resultados.");
       return;
     }
     // Tus juegos y apps al instante; las películas y series llegan después, detrás de ellos.
@@ -308,7 +308,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   function open() {
     const item = items[resultIndex];
-    if (!item) return;
+    if (!item || el.hidden || el.classList.contains("screen--leaving")) return; // un segundo toque mientras se va no abre otra cosa
     if (item.recent) { // repetir una búsqueda reciente
       text = item.recent;
       zone = "keys";
@@ -376,11 +376,12 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     return true;
   }
 
-  /** `pick`: { kind, onPick(result) } — elegir una ficha («Corregir ficha» de Mi media) en vez de abrirla. */
+  /** `pick`: { kind, hint, onPick(result) } — elegir una ficha («Corregir ficha» de Mi media, «Agregar» a una lista tuya) en
+   *  vez de abrirla. */
   function show(initial = "", { pick = null } = {}) {
     cancelExit();
     picking = pick;
-    if (pick) setHint(pick.kind === "series" ? "Busca la serie correcta y elígela" : "Busca la película correcta y elígela");
+    if (pick) setHint(pick.hint || (pick.kind === "series" ? "Busca la serie correcta y elígela" : "Busca la película correcta y elígela"));
     if (initial) text = initial.toLowerCase();
     zone = "keys";
     el.hidden = false;
@@ -429,6 +430,9 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
   }
 
-  return { el, open: show, close, handle, hints, refresh, type, setText, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },
+  return { el, open: show, close, handle, hints, refresh, type, setText,
+    /** Eligiendo una ficha para algo que está abierto debajo (una lista): Buscar va primero, aunque esa vista también esté abierta. */
+    get isPicking() { return !!picking && !el.hidden && !el.classList.contains("screen--leaving"); },
+    get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); },
     get typing() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

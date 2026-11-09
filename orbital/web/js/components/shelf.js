@@ -17,7 +17,7 @@ const STAGE_PX = 640; // «Porque viste»: el panel mide --because-stage-width (
  * Filas de tarjetas. Muestra una fila a la vez (la siguiente asoma) y desplaza la
  * fila actual para que la tarjeta enfocada quede a la izquierda con una de contexto.
  */
-export function createShelf({ onPick, onSwipe }) {
+export function createShelf({ onPick, onMore, onSwipe }) {
   const rowsEl = h("div", { class: "shelf__rows" });
   const el = h("section", { class: "shelf", "aria-label": "Biblioteca" }, rowsEl);
   // Pantalla táctil (Legion Go sin dock): deslizar de lado recorre la fila; de arriba abajo cambia de fila.
@@ -108,7 +108,7 @@ export function createShelf({ onPick, onSwipe }) {
     // Un Top 10 (row.ranked): cada póster con su cifra grande detrás, como en Para ti y el iPhone.
     const built = row.items.map((item, c) => {
       const options = {
-        onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
+        onPress: () => onPick(r, c), onMore: onMore && (() => onMore(r, c)), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
         onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
       };
       // Una tarjeta de colección (plataforma, premio, estudio, año, lista): la abre completa, como en el iPhone.

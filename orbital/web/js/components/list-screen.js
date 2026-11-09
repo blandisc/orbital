@@ -1,10 +1,11 @@
 import { h, hideAfterExit, markGridEdge, mount } from "../core/dom.js";
 import { storage } from "../core/storage.js";
 import { keepInView } from "./browse.js";
+import { Button } from "./button.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
-import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons } from "./ui.js";
+import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons, RemoveMark } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -12,10 +13,13 @@ import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons } from "./ui.js";
  * con su nombre. ☰ abre «Ordenar y filtrar» (hoja); los filtros activos quedan como cápsulas arriba. Cada lista recuerda
  * cómo la ordenaste. Un ranking (Top 10) no se reordena.
  *
- * open({ id, title, meta, media: { statue?, logo? }, source?, person?, tabs: [{ id, label, load, ranked?, brand? }] })
+ * open({ id, title, meta, media: { statue?, logo? }, source?, person?, editable?, tabs: [{ id, label, load, ranked?, brand? }] })
  * Una persona (`person`: foto, de dónde es y biografía, como PersonView del iPhone) va arriba de su filmografía; X
  * despliega la biografía.
- * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose()
+ * Una lista tuya (`editable: { name, where }`: Mi lista y tus listas de Trakt, como ListEditing del iPhone) se edita: X
+ * (o ☰ › Editar esta lista, o el botón «Editar» de arriba) pone el «−» en cada póster; A o el «−» lo quitan, B o «Listo»
+ * terminan, y «Agregar» busca qué poner. Un ranking, un catálogo o Para ti no se editan.
+ * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose() · onRemove(item) · onAdd() · onChange()
  */
 // Sin «Como viene»: si no eliges orden, la lista va como llega (elegir otra vez el que está puesto lo quita).
 // Los mismos órdenes que el iPhone (ListSort), con sus nombres.
@@ -42,18 +46,19 @@ export function chooseSort(listId, current, id) {
   return next;
 }
 
-export function createListScreen({ onPick, onMore, onSort, onMove, onClose, ratings, watched }) {
+export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRemove, onAdd, onChange, ratings, watched }) {
   const media = h("span", { class: "list-screen__media", "aria-hidden": "true" });
   const title = h("h2", { class: "list-screen__title" });
   const meta = h("span", { class: "list-screen__meta" });
   const chips = h("div", { class: "list-screen__chips" });
+  const tools = h("span", { class: "list-screen__tools", hidden: true }); // «Editar» · «Agregar» y «Listo»: el camino del mouse y el dedo
   const tabsEl = h("div", { class: "list-screen__tabs", role: "tablist" });
   const grid = h("div", { class: ["card-grid", "list-screen__grid"], role: "group" });
   const viewport = h("div", { class: "list-screen__viewport" }, grid);
   const status = h("div", { class: "list-screen__status" });
   const about = h("div", { hidden: true }); // una persona: su foto y su biografía (PersonHead)
   const el = h("section", { class: "list-screen screen", hidden: true, "aria-label": "Lista" },
-    h("header", { class: "list-screen__head" }, media, h("span", { class: "list-screen__heading" }, title, meta), chips),
+    h("header", { class: "list-screen__head" }, media, h("span", { class: "list-screen__heading" }, title, meta), tools, chips),
     about, tabsEl, status, viewport);
 
   let list = null; // lo que se abrió
@@ -63,6 +68,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
   let zone = "grid"; // "tabs" | "grid"
   let index = 0;
   let attempt = 0;
+  let editing = false; // una lista tuya, con el «−» en cada póster
   let settings = { sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
   /** La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt), como el iPhone. */
   const score = (i) => {
@@ -92,6 +98,26 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
     mount(about, list.person ? PersonHead(list.person) : null);
     about.hidden = !list.person;
+    paintTools();
+  }
+
+  /** «Editar» (o, editando, «Agregar» y «Listo»): lo mismo que X, ☰ › Agregar a esta lista y B, a la vista para el mouse
+   *  y el dedo. */
+  function paintTools() {
+    tools.hidden = !list.editable;
+    mount(tools, !list.editable ? null : editing
+      ? [Button({ label: "Agregar", onPress: () => onAdd?.() }), Button({ label: "Listo", variant: "primary", onPress: () => setEditing(false) })]
+      : Button({ label: "Editar", onPress: () => setEditing(true) }));
+  }
+
+  function setEditing(on) {
+    if (!list?.editable || editing === on) return;
+    editing = on;
+    zone = "grid";
+    onMove?.();
+    paintTools();
+    paintGrid();
+    onChange?.();
   }
 
   /** Lo de la persona que llega después (TMDB): su foto, de dónde es y su biografía. */
@@ -157,11 +183,15 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     else if (items && !shown.length) mount(status, EmptyState({ icon: "list", title: "Nada con esos filtros", text: "Cámbialos con ☰." }));
     if (!items) mount(grid, PosterSkeletons(12));
     else mount(grid, shown.map((item, i) => {
-      const options = { caption: true, onPress: () => { zone = "grid"; index = i; paintFocus(); onPick?.(item); } };
+      const focusHere = () => { zone = "grid"; index = i; paintFocus(); };
+      // Editando, el póster ya no abre la ficha (para no tropezar, como el iPhone): se quita con su «−» (o A).
+      const options = { caption: true, onPress: () => { focusHere(); if (!editing) onPick?.(item); },
+        onMore: () => { focusHere(); onMore?.(item); } };
       const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
       built.card.dataset.focusId = `item:${i}`;
       if (item.day_label === "Nuevo") built.card.append(CornerRibbon()); // como en la fila: el listón, no una placa
       else if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
+      if (editing) built.card.append(RemoveMark(list.editable.name, { onPress: () => { focusHere(); onRemove?.(item); } }));
       return built.el ?? built.card;
     }));
     grid.dataset.shift = "0";
@@ -218,6 +248,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     tab = 0;
     index = 0;
     zone = "grid";
+    editing = false;
     loaded.clear();
     settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
     paintHead();
@@ -243,6 +274,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
 
   function handle(action) {
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
+    if (action === "back" && editing) { setEditing(false); return true; } // B: «Listo»
     if (action === "back") { close(); return true; }
     if (action === "menu") { onSort?.(api); return true; }
     if (action === "prevsection" || action === "nextsection") { switchTab(tab + (action === "nextsection" ? 1 : -1)); return true; }
@@ -263,6 +295,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       return true;
     }
     const item = shown[index];
+    if (action === "alt" && list.editable) { setEditing(!editing); return true; } // X: Editar · Listo
+    if (action === "select" && editing) { if (item) onRemove?.(item); return true; }
     if (action === "alt" && list.person?.biography) { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); return true; }
     if (action === "select" || action === "alt") { if (item) onPick?.(item); return true; }
     if (action === "options") { if (item) onMore?.(item); return true; }
@@ -302,6 +336,38 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       refresh();
     },
     setDecade(decade) { settings.decade = decade; index = 0; refresh(); },
+    /** Una lista tuya: `{ name, where }` («Mi lista» y «watchlist», «Terror de octubre» y «list:123»), o null. */
+    get editable() { return list?.editable ?? null; },
+    get editing() { return editing; },
+    setEditing,
+    /** Saca un título de lo cargado (cambia al instante); devuelve dónde estaba, para `restore` («Deshacer»). */
+    without(metaId) {
+      const removed = [];
+      for (const [t, items] of loaded) {
+        const at = items.findIndex((i) => i.meta_id === metaId);
+        if (at >= 0) { removed.push([t, at, items[at]]); loaded.set(t, items.filter((_, n) => n !== at)); }
+      }
+      refresh();
+      return removed;
+    },
+    /** Lo regresa a su lugar (lo que dio `without`). */
+    restore(removed) {
+      for (const [t, at, item] of removed) {
+        const items = [...(loaded.get(t) || [])];
+        if (!items.some((i) => i.meta_id === item.meta_id)) items.splice(Math.min(at, items.length), 0, item);
+        loaded.set(t, items);
+      }
+      refresh();
+    },
+    /** Uno nuevo («Agregar»): al principio de cada pestaña donde va (la única, o la de su tipo). */
+    prepend(item) {
+      list?.tabs.forEach((t, n) => {
+        const items = loaded.get(n);
+        if (!items || items.some((i) => i.meta_id === item.meta_id) || (t.id !== "all" && t.id !== item.kind)) return;
+        loaded.set(n, [item, ...items]);
+      });
+      refresh();
+    },
     async setHideWatched(on) {
       settings.hideWatched = on;
       if (on && !seen) seen = new Set(await watched?.().catch(() => []) ?? []);
@@ -310,14 +376,20 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     },
   };
 
-  const hints = (g) => [
+  const hints = (g) => (editing ? [
+    { glyph: g.select, label: "Quitar" },
+    { glyph: g.options, label: "Opciones" },
+    { glyph: g.alt, label: "Listo" },
+    { glyph: g.back, label: "Atrás", end: true },
+  ] : [
     { glyph: g.select, label: "Ver" },
+    list?.editable && { glyph: g.alt, label: "Editar" },
     list?.person?.biography && { glyph: g.alt, label: "Biografía" },
     // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).
     { glyph: g.menu, label: `${ranked() ? "Filtrar" : "Ordenar y filtrar"}${activeFilters().length ? ` · ${activeFilters().length}` : ""}` },
     list?.tabs.length > 1 && { glyph: g.section, label: "Cambiar" },
     { glyph: g.back, label: "Atrás", end: true },
-  ].filter(Boolean);
+  ]).filter(Boolean);
 
   return { el, open, close, handle, hints, sorter: api, setPerson, setHeading, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

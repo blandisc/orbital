@@ -12,6 +12,8 @@
 .list-screen__title.award-wordmark { font-weight: var(--weight-regular); letter-spacing: var(--tracking-award); } /* el nombre de un premio, como en su tarjeta */
 .list-screen__title { margin: 0; font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-none); letter-spacing: var(--tracking-display); text-wrap: balance; }
 .list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
+/* Una lista tuya: «Editar» (o «Agregar» y «Listo») junto a su nombre, para el mouse y el dedo (el mando usa X y ☰). */
+.list-screen__tools { flex: none; display: flex; gap: var(--space-3); align-self: center; }
 .list-screen__chips { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); align-self: center; }
 .list-screen__chip {
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass); box-shadow: var(--edge-glass);

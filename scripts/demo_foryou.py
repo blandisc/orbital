@@ -70,6 +70,8 @@ class DemoTrakt:
         self._mine: dict[str, dict] = {}  # las listas que se crean aquí («Tu match perfecto», «Tus canales»)
         self._ratings: dict[str, int] = {}
         self.history: list[tuple[dict, object]] = []
+        # Editar tus listas: lo que agregaste o quitaste de Mi lista y de la lista de muestra («1»), como en Trakt.
+        self._edits: dict[str, tuple[list[str], set[str]]] = {"watchlist": ([], set()), "1": ([], set())}
 
     def device_code(self):
         self._linking_since = time.time()
@@ -91,8 +93,29 @@ class DemoTrakt:
         return [S[k] for k in ("andor", "shogun", "succession", "dark", "bear", "blackmirror", "saul")] if kind == "series" \
             else [M[k] for k in ("br", "spider", "madmax", "inception", "parasite")]
 
+    def _edited(self, which, base):
+        added, removed = self._edits[which]
+        known = {e["imdb"]: e for e in [*S.values(), *M.values()]}
+        seen = set(removed)
+        return [e for e in [*(known.get(i, _m(i, i, 2020, 100)) for i in added), *base] if not (e["imdb"] in seen or seen.add(e["imdb"]))]
+
+    def _edit(self, which, imdb, add):
+        added, removed = self._edits[which]
+        if add and imdb in removed:  # «Deshacer»: vuelve a su lugar
+            removed.discard(imdb)
+        elif add:
+            if imdb not in added:
+                added.insert(0, imdb)
+        else:
+            removed.add(imdb)
+            if imdb in added:
+                added.remove(imdb)
+
     def watchlist(self):
-        return [M["dune2"], M["oppen"], M["past"], S["tlou"], M["batman"], M["parasite"], M["prestige"], S["breaking"]]
+        return self._edited("watchlist", [M["dune2"], M["oppen"], M["past"], S["tlou"], M["batman"], M["parasite"], M["prestige"], S["breaking"]])
+
+    def set_watchlist(self, kind, imdb, add):
+        self._edit("watchlist", imdb, add)
 
     def favorites(self):  # el corazón de Trakt («Series y películas favoritas»)
         return [S["severance"], M["inter"], S["bear"]]
@@ -111,6 +134,8 @@ class DemoTrakt:
         return list_id
 
     def set_list_item(self, list_id, kind, imdb, add):
+        if list_id in self._edits:
+            return self._edit(list_id, imdb, add)
         items = self._mine.setdefault(list_id, {"name": list_id, "items": []})["items"]
         if add and imdb not in items:
             items.append(imdb)
@@ -145,7 +170,7 @@ class DemoTrakt:
         if list_id in self._mine:
             known = {e["imdb"]: e for e in [*S.values(), *M.values()]}
             return [known.get(i, _s(i, i, 2020, 10)) for i in self._mine[list_id]["items"]]
-        return [_m("tt1136608", "District 9", 2009, 112), M["arrival"], M["inter"], M["inception"], M["dune1"], M["br"], S["dark"]]
+        return self._edited("1", [_m("tt1136608", "District 9", 2009, 112), M["arrival"], M["inter"], M["inception"], M["dune1"], M["br"], S["dark"]])
 
     def trending(self, kind, limit=30):
         # Todo el catálogo de mentiras, como Trakt de verdad (decenas): con 14, el mosaico se repetía.
