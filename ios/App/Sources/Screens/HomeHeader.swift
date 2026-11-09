@@ -85,12 +85,16 @@ struct HomeHeader: View {
             DSKindFilter(kind: $kind, menu: true, open: $kindOpen).accessibilityIdentifier("home-kind-filter")
             Spacer(minLength: DS.Space.s2)
             // SX1: mientras eliges, la cápsula se recoge a la derecha hasta quedar solo tu foto, apagada; tocarla cierra.
+            // En un iPhone chico (SE) ni tu foto cabe junto al selector abierto: se va del todo y regresa al elegir.
+            if !(kindOpen && WindowMetrics.size.width < DS.KindPill.narrowScreen) {
             capsule(stories)
                 .opacity(kindOpen ? DS.Opacity.dimmed : 1)
                 // al cerrar, regresa un instante después de que la pastilla se encoge: nunca se enciman
                 .animation((DS.Motion.morph(reduceMotion) ?? DS.Motion.fade).delay(kindOpen ? 0 : DS.Motion.entranceStep * 2), value: kindOpen)
                 .allowsHitTesting(!kindOpen)
                 .overlay { if kindOpen { Color.clear.contentShape(Rectangle()).onTapGesture { withAnimation(DS.Motion.morph(reduceMotion) ?? DS.Motion.fade) { kindOpen = false } } } }
+                .transition(.scale(scale: DS.KindPill.enterScale, anchor: .trailing).combined(with: .opacity))
+            }
         }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
