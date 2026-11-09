@@ -1,6 +1,7 @@
 """Comportamiento de "consola": ir y volver entre Orbital y el juego con el mando.
 
   * Home (o un toque de Legion L): desde el juego -> Orbital; desde Orbital -> de vuelta al juego.
+  * Controles de la Legion (sin Home): un toque de Start + Select desde el juego -> Orbital.
   * Legion L dos veces seguidas desde un juego -> se cierra (el primer toque ya te trajo a Orbital).
   * El atajo de cerrar mantenido en el juego (Start + Select + Home; GameSir: LB + RB + Select) -> aviso encima del juego (sin salir de él) con una
     barra que se llena; al completarse, el emulador se cierra de golpe y vuelves a Orbital.
@@ -80,6 +81,7 @@ class ConsoleShell:
         self._refocus_at = 0.0  # la última vez que se le devolvió el foco al video (ver _video_lost_focus)
         self._legion_last = 0.0
         self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
+        self._lenovo_seen: set[str] = set()  # las ventanas de Lenovo ya anotadas (ver _note_lenovo)
         self._last_buttons: dict[int, int] = {}  # por puerto, para ver cuándo se presiona algo (wake_on_button)
         self._woke_at = -999.0
         self.health = None  # HealthMonitor (memoria); se crea en start()
@@ -333,8 +335,14 @@ class ConsoleShell:
         return False
 
     def on_gamepad(self, event: str) -> None:
-        {"home": self.home, "hold-start": self.hold_start, "hold-cancel": self.hold_cancel,
+        {"home": self.home, "combo-home": self.combo_home, "hold-start": self.hold_start, "hold-cancel": self.hold_cancel,
          "hold-complete": self.hold_complete, "quick": self.quick_panel, "capture": self.capture}[event]()
+
+    def combo_home(self) -> None:
+        """Un toque de Start + Select en los controles de la Legion (no tienen Home): del juego a Orbital, como Home. En
+        Orbital no hace nada: ahí Start y Select son el menú y buscar, y para volver está A o ☰ › «Volver a …»."""
+        if not self.is_orbital(self.win.foreground()):
+            self.home()
 
     def quick_panel(self) -> None:
         """Home + LB: el panel rápido (brillo, volumen, energía…). Desde un juego, primero a Orbital."""
@@ -490,6 +498,14 @@ class ConsoleShell:
         return self.win.focus(hwnd)
 
     # --------------------------------------------------------------- Legion L
+    def _note_lenovo(self, hwnd: int) -> None:
+        """Anota (una vez por programa) qué ventana de Lenovo pasa al frente: la 1.4 de Legion Space ya no trae
+        legionspace.exe y Legion L dejó de llegar (8 nov). Así se sabe qué abre ahora sin adivinar."""
+        exe = self.win.exe_name(self.win.pid_of(hwnd)) or ""
+        if ("legion" in exe or "lenovo" in exe) and exe not in self._lenovo_seen:
+            self._lenovo_seen.add(exe)
+            log.info("Al frente una ventana de Lenovo: %s («%s»)", exe, self.win.title(hwnd))
+
     def check_legion(self, fg: int, previous: int, now: float | None = None) -> None:
         """Legion L abre Legion Space (no se puede reasignar): Orbital lo esconde al instante y lo usa
         como botón propio, tomando como punto de partida la ventana de antes (`previous`).
@@ -743,6 +759,7 @@ class ConsoleShell:
                 if self.win.exe_name(self.win.pid_of(last)) != LEGION_SPACE:
                     previous = last  # lo que había antes de Legion Space
                 last = fg
+                self._note_lenovo(fg)
                 if self.paused and self.win.pid_of(fg) in self.paused:
                     self.unpause()  # volvió al juego por su cuenta (Alt+Tab, clic): que siga
                 self.check_legion(fg, previous)

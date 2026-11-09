@@ -62,8 +62,9 @@ def connected_controllers() -> list[dict]:
         if get_state(slot, ctypes.byref(state)) != 0:
             continue
         vid = vendor(slot) if vendor else None
+        combo = close_combo_for(vid)
         found.append({"slot": slot + 1, "kind": VENDORS.get(vid or 0, "other"),
-                      "close": CLOSE_LABELS[close_combo_for(vid)],
+                      "close": CLOSE_LABELS[combo], "home": f"toca {CLOSE_LABELS[combo]}" if taps_home(combo) else "Home",
                       "battery": battery(slot) if battery else None})
     return found
 
@@ -71,6 +72,12 @@ def connected_controllers() -> list[dict]:
 def close_combo_for(vendor_id: int | None) -> int:
     """Qué botones mantener para cerrar el juego según la marca del mando."""
     return {LENOVO_VENDOR: LEGION_CLOSE_COMBO, GAMESIR_VENDOR: GAMESIR_CLOSE_COMBO}.get(vendor_id or 0, CLOSE_COMBO)
+
+
+def taps_home(combo: int) -> bool:
+    """Los controles de la Legion no tienen Home y Legion L depende de Legion Space (la 1.4 ya no trae legionspace.exe y
+    el botón dejó de llegar, Fernando, 8 nov): un toque de su Start + Select es su «Ir a Orbital»."""
+    return combo == LEGION_CLOSE_COMBO
 HOLD_ARM = 0.25  # s con el combo antes de reaccionar (evita toques accidentales)
 HOLD_TOTAL = 1.5  # s hasta preguntar si cerrar
 
@@ -79,7 +86,8 @@ class ComboDetector:
     """Convierte el estado de los botones de UN mando en eventos.
 
     Eventos: "home", "hold-start", "hold-cancel", "hold-complete", y con Home mantenido:
-    Home + LB = "quick" (panel rápido), Home + RB = "capture" (captura de pantalla).
+    Home + LB = "quick" (panel rápido), Home + RB = "capture" (captura de pantalla). En un mando sin Home (la Legion,
+    `taps_home`), soltar el combo antes de que se arme (un toque) es "combo-home".
     """
 
     def __init__(self, arm: float = HOLD_ARM, total: float = HOLD_TOTAL, combo: int = CLOSE_COMBO) -> None:
@@ -91,6 +99,15 @@ class ComboDetector:
         self._chord_seen = 0  # botones ya contados en este Home mantenido (uno por pulsación)
         self._combo_since: float | None = None
         self._phase = "idle"  # idle -> armed -> done
+
+    @property
+    def combo(self) -> int:
+        return self._combo
+
+    @combo.setter
+    def combo(self, value: int) -> None:
+        self._combo = value
+        self.tap_home = taps_home(value)
 
     def update(self, buttons: int, now: float) -> list[str]:
         events: list[str] = []
@@ -113,6 +130,8 @@ class ComboDetector:
         if not combo:
             if self._phase == "armed":
                 events.append("hold-cancel")
+            elif self._phase == "idle" and self._combo_since is not None and self.tap_home:
+                events.append("combo-home")
             self._combo_since, self._phase = None, "idle"
             return events
         if self._combo_since is None:
@@ -493,7 +512,7 @@ class GamepadWatcher:
         _watcher = self
         threading.Thread(target=self._run, args=(get_state,), daemon=True, name="gamepad").start()
         log.info("Atajos del mando activos: Home = Orbital/juego · cerrar juego = Start+Select+Home "
-                 "(GameSir: LB+RB+Select · controles de la Legion Go: Start+Select)")
+                 "(GameSir: LB+RB+Select · controles de la Legion Go: un toque de Start+Select = Orbital, mantenido = cerrar)")
         return True
 
     def stop(self) -> None:

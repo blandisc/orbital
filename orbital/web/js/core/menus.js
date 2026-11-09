@@ -1168,7 +1168,7 @@ export function diagnosticsMenu(d = {}, { now = Date.now() } = {}) {
       info("windows", "Memoria libre", mb(memory.free_mb),
         memory.dwm_shared_mb != null ? `Ventanas de Windows (DWM): ${mb(memory.dwm_shared_mb)}` : undefined),
       info("gamepad", "Mandos", `${(d.controllers || []).length}`,
-        (d.controllers || []).map((c) => `${c.name || c.kind} (cerrar: ${c.close})`).join(" · ") || "Ninguno conectado"),
+        (d.controllers || []).map((c) => `${c.name || c.kind} (${c.home ? `Orbital: ${c.home} · ` : ""}cerrar: ${c.close})`).join(" · ") || "Ninguno conectado"),
       ...(d.problems?.length
         ? d.problems.slice(-8).reverse().map(String).map((line) => info("mark", line.includes("ERROR") ? "Error" : "Aviso", "", line))
         : [info("check", "Sin avisos recientes", "")]),
@@ -2083,10 +2083,10 @@ export function moviesSetupMenu(settings = {}) {
 export function tourMenu(step, { legion = false, gamesir = false } = {}) {
   const steps = [
     { title: "Jugar y volver", text: legion
-      ? "A abre un juego. En el juego, un toque de Legion L te trae a Orbital (el juego queda en pausa); A o Legion L te regresan."
+      ? "A abre un juego. En el juego, un toque de Start + Select a la vez te trae a Orbital (el juego queda en pausa); A te regresa."
       : "A abre un juego. En el juego, Home te trae a Orbital (el juego queda en pausa); A o Home te regresan." },
     { title: "Cerrar un juego", text: legion
-      ? "Mantén Start + Select hasta que se llene la barra, o toca Legion L dos veces. Desde Orbital: Y sobre el juego → Cerrar."
+      ? "Mantén Start + Select hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar."
       : `Mantén ${gamesir ? "LB + RB + Select" : "Start + Select + Home"} hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar.` },
     { title: "Panel rápido", text: legion
       ? "☰ → Panel rápido: volumen, brillo, modo de energía, batería y capturas."
@@ -2109,10 +2109,11 @@ export function tourMenu(step, { legion = false, gamesir = false } = {}) {
 // --- Cómo se usa: una hoja, con el mando que tienes conectado -----------------------------------
 const row = (label, value, hint) => ({ icon: "gamepad", label, value, hint, command: { type: "stay" } });
 
-/** Lo que cambia según el mando: la Legion Go usa Legion L en vez de Home y no tiene combinaciones. */
+/** Lo que cambia según el mando: los controles de la Legion no tienen Home (ni sus combinaciones). Legion L dependía de
+ * Legion Space y la 1.4 lo dejó sin llegar (8 nov): un toque de Start + Select es su «Ir a Orbital» (orbital/gamepad.py). */
 function gameRows(legion, close = "Start + Select + Home") {
   return legion
-    ? [["Ir a Orbital", "Legion L"], ["Volver al juego", "Legion L o A"], ["Cerrar el juego", "Mantén Start + Select"],
+    ? [["Ir a Orbital", "Toca Start + Select"], ["Volver al juego", "A o ☰ → Volver a…"], ["Cerrar el juego", "Mantén Start + Select"],
       ["Panel rápido", "☰ → Panel rápido"]]
     : [["Ir a Orbital", "Home"], ["Volver al juego", "Home o A"], ["Cerrar el juego", `Mantén ${close}`],
       ["Panel rápido", "Mantén Home + LB"], ["Captura", "Mantén Home + RB"]];

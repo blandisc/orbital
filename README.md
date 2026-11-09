@@ -52,7 +52,8 @@ se controla con la voz a través de **Alexa**.
 | Mando | Acción |
 |---|---|
 | Home (Guía) | Del juego a Orbital y, desde Orbital, de vuelta al juego |
-| Legion L | Un toque: igual que Home. Dos toques seguidos desde un juego: lo cierra |
+| Start + Select (controles de la Legion) | Un toque en un juego: a Orbital. Mantenido: cierra el juego |
+| Legion L | Con Legion Space 1.3: un toque, igual que Home; dos seguidos desde un juego lo cierran. La 1.4 ya no lo deja llegar |
 | LB + RB + Select (mantener 1,5 s), GameSir | Una barra se llena encima del juego y lo cierra (soltar antes = nada). Sin Home ni Start: Start + Select le cambian el modo al GameSir, Home + Start le reinician los ajustes y mantener Home abre la Vista de tareas de Windows |
 | Start + Select + Home (mantener 1,5 s), otros mandos | Lo mismo |
 | Start + Select (mantener 1,5 s), controles de la Legion Go | Lo mismo: Orbital reconoce los controles de Lenovo y no les pide Home (no tienen) |

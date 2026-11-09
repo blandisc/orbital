@@ -268,7 +268,7 @@ test("actualizar: qué cambia, actualizar primero, y avisos claros si no se pued
 });
 
 test("guía rápida: paso a paso, con el atajo del mando que tienes", () => {
-  assert.match(tourMenu(0, { legion: true }).subtitle, /Legion L/);
+  assert.match(tourMenu(0, { legion: true }).subtitle, /Start \+ Select/);
   assert.match(tourMenu(0, { legion: false }).subtitle, /Home/);
   assert.deepEqual(tourMenu(0).options[0].command, { type: "tour", step: 1 });
   const last = tourMenu(4);

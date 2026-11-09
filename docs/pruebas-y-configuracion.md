@@ -18,7 +18,8 @@
 - [ ] Al encender la Legion Go, Orbital abre solo (acceso directo de inicio).
 - [ ] En el escritorio, Home abre Orbital; Home otra vez se queda en Orbital.
 - [ ] En un juego, Home → Orbital; Home → de vuelta al juego.
-- [ ] Un toque de Legion L hace lo mismo que Home; dos toques seguidos (menos de 2 s) desde un juego lo cierran. Legion Space no se queda abierto.
+- [ ] Controles de la Legion: un toque de Start + Select en un juego trae Orbital; mantenido 1,5 s, lo cierra. En Orbital, el toque no hace nada (son ☰ y buscar). Si Legion L abre algo, `orbital.log` dice «Al frente una ventana de Lenovo: …».
+- [ ] Un toque de Legion L hace lo mismo que Home (con Legion Space 1.3; la 1.4 ya no trae legionspace.exe); dos toques seguidos (menos de 2 s) desde un juego lo cierran. Legion Space no se queda abierto.
 - [ ] Cambiar de modo el GameSir (Start+Select o Home sostenidos) no cierra el juego.
 - [ ] Home+X, Home+B… dentro de Eden siguen haciendo lo de Eden (no mueven a Orbital).
 - [ ] GameSir: LB + RB + Select sostenidos en un juego (otros mandos: Start + Select + Home): aparece el aviso encima del juego; soltar antes no cierra; sostener 1,5 s cierra sin preguntar.

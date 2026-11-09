@@ -29,7 +29,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Abrir un juego | A (la portada vuela a "Abriendo", el mando vibra) | ✅ |
 | Abrir con el emulador alternativo (Ryujinx/Eden) | X | ✅ |
 | Usar siempre otro emulador, favorito, ocultar | Y → menú lateral | ✅ |
-| Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo) o un toque de Legion L | ✅ |
+| Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo); en los controles de la Legion, un toque de Start + Select (8 nov: Legion L dejó de llegar con Legion Space 1.4) | ✅ |
 | Volver al juego desde Orbital | Home, Legion L, o A sobre el juego ("Continuar") | ✅ |
 | Juego olvidado en pausa | Aviso 10 min antes de cerrarlo solo | ✅ (nuevo) |
 | Cerrar el juego | GameSir: mantener LB + RB + Select 1,5 s (barra encima del juego, cierre inmediato; antes Start + Select + Home, que chocaba con los combos del propio GameSir —Start + Select cambia de modo, Home + Start reinicia sus ajustes— y con la Vista de tareas que Windows abre al mantener Home desde 2026-10-18). Otros mandos: Start + Select + Home. Controles de la Legion Go: mantener Start + Select 1,5 s (no tienen Home ni cambio de modo) o Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
@@ -130,7 +130,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 | Volver (buscar, ficha, fuentes, menú) | Botón "Atrás" abajo a la izquierda (solo aparece al usar el dedo) | ✅ |
 | Saltar la pantalla de carga | Tocarla | ✅ |
 | En el reproductor | Tocar el video pausa o reanuda y muestra la barra; el doble toque ya no sale de pantalla completa | ✅ |
-| Ir a Orbital desde un juego | Legion L (un toque) | ✅ |
+| Ir a Orbital desde un juego | Un toque de Start + Select (Legion L dependía de `legionspace.exe`, que la 1.4 de Legion Space ya no trae; 8 nov) | ✅ en pruebas · ⏳ en la Legion |
 
 ## Sistema
 

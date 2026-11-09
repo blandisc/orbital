@@ -63,6 +63,30 @@ def test_gamesir_closes_with_lb_rb_select_and_its_own_combos_never_do():
                    (8.6, LB_BUTTON | RB_BUTTON | BACK)]) == ["hold-start", "hold-complete"]
 
 
+def test_legion_tap_of_start_select_goes_to_orbital_and_holding_still_closes():
+    """Los controles de la Legion no tienen Home y Legion L dejó de llegar con Legion Space 1.4 (Fernando, 8 nov): un
+    toque de Start + Select es su «Ir a Orbital»; mantenerlo sigue cerrando el juego."""
+    from orbital.gamepad import LEGION_CLOSE_COMBO, close_combo_for
+    combo = close_combo_for(0x17EF)
+    assert combo == LEGION_CLOSE_COMBO == BACK | START
+    d = ComboDetector(arm=.25, total=1.5, combo=combo)
+    assert run(d, [(0, BACK | START), (0.1, BACK | START), (0.15, START), (0.2, 0)]) == ["combo-home"]
+    assert run(d, [(1, BACK | START), (1.3, BACK | START), (2.6, BACK | START), (2.7, 0)]) == ["hold-start", "hold-complete"]
+    assert run(d, [(3, BACK | START), (3.4, BACK | START), (3.6, 0)]) == ["hold-start", "hold-cancel"]  # se arrepintió
+    assert run(d, [(4, BACK), (4.1, 0), (4.2, START), (4.3, 0)]) == []  # Select o Start solos, nada
+
+
+def test_other_controllers_do_not_tap_home():
+    # Start + Select sin Home es de los emuladores y del propio GameSir: un toque no saca del juego.
+    from orbital.gamepad import close_combo_for
+    for vendor in (0x045E, 0x3537, None):
+        d = ComboDetector(arm=.25, total=1.5, combo=close_combo_for(vendor))
+        assert run(d, [(0, BACK | START), (0.1, 0)]) == []
+    d = ComboDetector()  # el combo se cambia al conectar el mando
+    d.combo = close_combo_for(0x17EF)
+    assert run(d, [(0, BACK | START), (0.1, 0)]) == ["combo-home"]
+
+
 def test_remote_maps_buttons_to_keys_with_repeat_on_dpad():
     from orbital.gamepad import A_BUTTON, DPAD_RIGHT, VK_RIGHT, VK_SPACE, KeyRemote
 

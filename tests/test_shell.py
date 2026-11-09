@@ -124,6 +124,24 @@ def test_home_in_orbital_without_game_stays():
     assert win.fg == ORBITAL
 
 
+def test_legion_tap_goes_to_orbital_only_from_a_game():
+    shell, win, _ = make(MANAGED)
+    shell.on_gamepad("combo-home")  # un toque de Start + Select en los controles de la Legion
+    assert win.fg == ORBITAL
+    shell.on_gamepad("combo-home")  # en Orbital son el menú y buscar: no te regresa al juego
+    assert win.fg == ORBITAL
+
+
+def test_lenovo_windows_are_noted_once(caplog):
+    shell, win, _ = make(MANAGED)
+    with caplog.at_level("INFO", logger="orbital.shell"):
+        shell._note_lenovo(LEGION)
+        shell._note_lenovo(LEGION)
+        shell._note_lenovo(GAME)
+    assert [r.getMessage() for r in caplog.records if "Lenovo" in r.getMessage()] == [
+        "Al frente una ventana de Lenovo: legionspace.exe («Legion Space»)"]
+
+
 def test_hold_shows_overlay_in_game_and_closes_hard():
     shell, win, overlay = make(MANAGED)
     shell.hold_start()
