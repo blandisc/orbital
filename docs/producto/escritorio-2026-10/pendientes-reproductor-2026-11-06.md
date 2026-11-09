@@ -29,3 +29,6 @@ Al terminar, el commit dice qué pasa en el iPhone y lo pendiente entra a `docs/
    luego la cajita de texto crece y rebota un poco (ejemplo de Fernando: «se desconectó el control»). Con
    `prefers-reduced-motion`, solo aparecer. Tokens de duración y curva en `styles/tokens.css`; la prueba del sistema de
    diseño cuida duraciones a mano. Aplica a los avisos dentro de Orbital y a los de encima del juego (`overlay.py`).
+   **Hecho (8 nov):** en Orbital (`toast.js`, `toast.css`) y encima del juego (`overlay.py`), con `--duration-notice-icon`,
+   `--delay-notice-grow`, `--duration-notice-grow` · `--ease-notice-grow` y `--delay-notice-text`. Capturas por cuadro en
+   `orbital-capturas/avisos`. En el iPhone: sin cambio; si se quiere igual, queda por decidir en el registro de paridad.

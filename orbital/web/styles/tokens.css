@@ -185,6 +185,13 @@
   --duration-alive: 9s; /* «cobra vida»: quieto en una pieza, su arte se acerca despacio */
   --duration-notice: 4s; /* un aviso a la vista (el mismo del iPhone: design/tokens.json) */
   --duration-notice-long: 6.5s; /* un error: se lee de lejos, en el sillón (solo la TV) */
+  /* Cómo aparece un aviso (Fernando, 6 nov 2026): primero la alerta (el ícono, con un «pop»), luego la cajita crece desde
+     el ícono y rebota un poco, y al final el texto. Lo mismo encima del juego (overlay.py usa estos valores; tests/test_overlay.py lo cuida). */
+  --duration-notice-icon: 240ms; /* el ícono sale solo (--ease-pop) */
+  --delay-notice-grow: 160ms; /* la cajita empieza cuando el ícono ya casi está */
+  --duration-notice-grow: 660ms; /* resorte de 0.45 s con rebote 0.3 (pasa ~4 % y regresa), muestreado hasta asentarse */
+  --ease-notice-grow: linear(0, 0.036, 0.126, 0.245, 0.375, 0.505, 0.625, 0.731, 0.82, 0.892, 0.947, 0.987, 1.015, 1.033, 1.042, 1.046, 1.045, 1.042, 1.036, 1.03, 1.024, 1.019, 1.014, 1.009, 1.006, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 1);
+  --delay-notice-text: 320ms; /* el texto y la sombra, cuando la cajita ya casi llegó (--duration-base, --ease-out) */
   /* Pantalla de carga (cinemática: más lenta a propósito) */
   --duration-launch-travel: 5.5s;
   --duration-launch-orbit: 3.4s; /* una vuelta pausada: con 2.6 s se sentía ansiosa */
