@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Live Activities</title>
+<style>
+:root{--bg:#0b0d12;--card:#151821;--ink:#f3efe6;--mute:#9aa0ad;--teal:#5fd3c4;--amber:#f2b84b;--good:#5ccf7a;--line:#262a35}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:28px 18px 60px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:19px;margin:44px 0 6px}p.lead{color:var(--mute);margin:0 0 18px;max-width:760px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.opt.rec{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
+.code{display:inline-block;font-weight:700;font-size:13px;letter-spacing:.04em;background:#222735;border-radius:8px;padding:2px 8px;margin-right:6px}
+.rec .code{background:var(--teal);color:#062b26}
+.tag{font-size:12px;color:var(--teal);font-weight:600}
+.opt h3{margin:8px 0 10px;font-size:16px}
+ul{margin:10px 0 0;padding-left:18px;color:var(--mute)}li b{color:var(--ink);font-weight:600}
+/* pantalla bloqueada */
+.lock{background:linear-gradient(160deg,#1d2433,#0d1018);border-radius:22px;padding:14px;min-height:150px}
+.la{background:rgba(20,22,28,.78);backdrop-filter:blur(10px);border-radius:20px;padding:12px;display:flex;gap:12px;align-items:stretch}
+.poster{width:56px;border-radius:9px;flex:none;background:linear-gradient(160deg,#d9a441,#7b3f1d)}
+.poster.b{background:linear-gradient(160deg,#4d7cff,#1c2b66)}.poster.c{background:linear-gradient(160deg,#c94b6d,#4a1630)}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.t{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s{font-size:12.5px;color:var(--mute)}
+.bar{height:5px;border-radius:5px;background:#333847;overflow:hidden}.bar i{display:block;height:100%;background:var(--ink);border-radius:5px}
+.keys{display:flex;gap:8px;margin-top:4px}.k{flex:1;height:30px;border-radius:15px;background:#2a2f3c;display:grid;place-items:center;font-size:13px}
+.k.solid{background:var(--ink);color:#111}
+.chip{font-size:11.5px;font-weight:700;color:#111;background:var(--ink);border-radius:10px;padding:1px 7px}
+.amber{color:var(--amber)}.teal{color:var(--teal)}
+.stack{display:flex}.stack .poster{width:30px;height:45px;margin-left:-10px;border:2px solid #14161c}.stack .poster:first-child{margin-left:0}
+.ring{width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--ink) 0 62%,#333847 0);display:grid;place-items:center;flex:none}
+.ring b{width:34px;height:34px;border-radius:50%;background:#16181f;display:grid;place-items:center;font-size:11px}
+.island{margin:14px auto 0;width:210px;height:36px;border-radius:18px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.island .mini{width:22px;height:22px;border-radius:6px;background:linear-gradient(160deg,#d9a441,#7b3f1d)}
+.island .txt{font-size:12px;font-weight:700}
+.glow{box-shadow:0 0 0 1px rgba(95,211,196,.35),0 10px 30px -10px rgba(95,211,196,.5)}
+.backdrop{background:linear-gradient(90deg,rgba(217,164,65,.45),rgba(20,22,28,.85) 55%),#14161c}
+.toast{background:#1c2030;border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+.toast .ic{width:28px;height:28px;border-radius:50%;background:var(--teal);color:#062b26;display:grid;place-items:center;font-weight:800}
+.foot{margin-top:40px;color:var(--mute);font-size:13px}
+</style></head><body>
+<h1>Live Activities de Orbital</h1>
+<p class="lead">Dos pantallas: <b>«Viendo en la TV»</b> y <b>Descargas</b>. Cada opción tiene su código para que me digas cuál (por ejemplo «TV2 y D2»). La que recomiendo lleva el borde turquesa.</p>
+
+<h2>1 · «Viendo en la TV» con más carácter</h2>
+<p class="lead">Hoy: póster, nombre, barra y tres botones sobre el velo gris de iOS. Funciona, pero podría ser de cualquier app.</p>
+<div class="row">
+ <div class="opt"><span class="code">TV1</span><span class="tag">Póster de fondo</span><h3>El arte de la película detrás</h3>
+  <div class="lock"><div class="la backdrop"><div class="poster"></div><div class="col"><div class="t">Dune: Parte Dos</div><div class="s">termina a las 23:21</div><div class="bar"><i style="width:58%"></i></div><div class="keys"><div class="k">−10</div><div class="k solid">❚❚</div><div class="k">+10</div></div></div></div></div>
+  <ul><li><b>Gana:</b> cada película se ve distinta; se nota que es lo que estás viendo.</li><li><b>Pierde:</b> con arte claro la letra pierde contraste (se oscurece a la derecha).</li></ul></div>
+ <div class="opt rec"><span class="code">TV2</span><span class="tag">Recomendada · color de la película</span><h3>El color del póster en el brillo y la barra</h3>
+  <div class="lock"><div class="la glow" style="box-shadow:0 0 0 1px rgba(217,164,65,.45),0 10px 30px -10px rgba(217,164,65,.6)"><div class="poster"></div><div class="col"><div class="t">Dune: Parte Dos <span class="s">· 📺</span></div><div class="s">quedan 52 min · termina 23:21</div><div class="bar"><i style="width:58%;background:#e2b45a"></i></div><div class="keys"><div class="k">−10</div><div class="k solid" style="background:#e2b45a">❚❚</div><div class="k">+10</div></div></div></div>
+  <div class="island"><div class="mini"></div><span class="txt" style="color:#e2b45a">52 min</span></div></div>
+  <ul><li><b>Gana:</b> carácter sin perder lectura: el tono del póster (el mismo que usa la ficha) en la barra, el botón y un brillo leve; en la isla, «52 min» en ese color.</li><li><b>Pierde:</b> poco; con pósters grises se ve como hoy.</li></ul></div>
+ <div class="opt"><span class="code">TV3</span><span class="tag">Marca Orbital</span><h3>La luna de Orbital y el turquesa de la app</h3>
+  <div class="lock"><div class="la" style="border:1px solid rgba(95,211,196,.4)"><div class="poster"></div><div class="col"><div class="t"><span class="teal">◐ Orbital</span> · Dune</div><div class="s">quedan 52 min</div><div class="bar"><i style="width:58%;background:var(--teal)"></i></div><div class="keys"><div class="k">−10</div><div class="k solid" style="background:var(--teal);color:#062b26">❚❚</div><div class="k">+10</div></div></div></div></div>
+  <ul><li><b>Gana:</b> se reconoce Orbital al instante.</li><li><b>Pierde:</b> todas se ven iguales; el turquesa es la «voz» de la app y aquí compite con el póster.</li></ul></div>
+</div>
+
+<h2>2 · Descargas: «1 de 5» y el aviso al empezar</h2>
+<p class="lead">Hoy: el póster de lo que baja, un % y «faltan 3». No dice cuál vas ni cuántas eran en total.</p>
+<div class="row">
+ <div class="opt"><span class="code">D1</span><span class="tag">La de hoy + contador</span><h3>Igual, con «2 de 5» junto al nombre</h3>
+  <div class="lock"><div class="la"><div class="poster b"></div><div class="col"><div class="t">The Office <span class="chip">2 de 5</span></div><div class="s">T2 · E5 · Trojan's Horse</div><div class="bar"><i style="width:40%"></i></div><div class="s">40 % · termina como a las 10:42</div></div></div></div>
+  <ul><li><b>Gana:</b> cambio mínimo; ya sabes cuántas van.</li><li><b>Pierde:</b> no ves qué viene después.</li></ul></div>
+ <div class="opt rec"><span class="code">D2</span><span class="tag">Recomendada · la fila</span><h3>La actual grande y las que siguen en fila</h3>
+  <div class="lock"><div class="la"><div class="ring"><b>40%</b></div><div class="col"><div class="t">The Office · T2 E5</div><div class="s">2 de 5 · lo demás termina 11:20</div><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><div class="stack"><div class="poster b"></div><div class="poster c"></div><div class="poster"></div></div><span class="s">siguen 3</span></div></div></div>
+  <div class="island"><span class="txt">↓ 2/5</span><div class="ring" style="width:22px;height:22px"><b style="width:16px;height:16px"></b></div></div></div>
+  <ul><li><b>Gana:</b> de un vistazo: cuál va (anillo con %), cuántas son (2 de 5), qué sigue (pósters) y a qué hora acaba todo. En la isla «↓ 2/5».</li><li><b>Pierde:</b> el nombre del episodio va más corto.</li></ul></div>
+ <div class="opt"><span class="code">D3</span><span class="tag">Una barra por todo</span><h3>Una sola barra para el lote completo</h3>
+  <div class="lock"><div class="la"><div class="poster b"></div><div class="col"><div class="t">Bajando 5 · The Office y 2 más</div><div class="s">ahora: T2 E5 (2 de 5)</div><div class="bar" style="display:flex;gap:3px;background:none"><i style="flex:1;background:var(--good)"></i><i style="flex:1;background:#bfc4ce;opacity:.6"></i><i style="flex:1;background:#333847"></i><i style="flex:1;background:#333847"></i><i style="flex:1;background:#333847"></i></div><div class="s">1 lista · termina 11:20</div></div></div></div>
+  <ul><li><b>Gana:</b> la barra en tramos dice el avance del lote entero.</li><li><b>Pierde:</b> el % de la actual se pierde.</li></ul></div>
+</div>
+
+<h2>3 · El aviso al empezar una descarga (dentro de la app)</h2>
+<div class="row">
+ <div class="opt rec"><span class="code">N1</span><span class="tag">Recomendada · vuela a Descargas</span><h3>El póster vuela a la pestaña Descargas</h3>
+  <div class="lock" style="min-height:110px"><div class="toast"><div class="ic">↓</div><div class="col"><div class="t">Bajando The Office · T2 E5</div><div class="s">2 de 5 en la fila · Ver</div></div></div></div>
+  <ul><li><b>Gana:</b> el póster chiquito se encoge y viaja a Descargas (que hace un pequeño rebote con el número); el aviso dice cuántas lleva la fila y «Ver».</li><li><b>Pierde:</b> una animación más (sin ella con «Reducir movimiento»).</li></ul></div>
+ <div class="opt"><span class="code">N2</span><span class="tag">Solo el aviso</span><h3>El aviso de siempre, con la fila</h3>
+  <div class="lock" style="min-height:110px"><div class="toast"><div class="ic">↓</div><div class="col"><div class="t">Descargando</div><div class="s">The Office · T2 E5 · 2 de 5</div></div></div></div>
+  <ul><li><b>Gana:</b> simple.</li><li><b>Pierde:</b> no se siente que «se guardó» en algún lado.</li></ul></div>
+</div>
+<p class="foot">Mi recomendación: <b>TV2 + D2 + N1</b>. TV2 da carácter con el color de cada película sin perder lectura; D2 responde a «uno de X» y enseña qué sigue; N1 hace evidente a dónde se va lo que pides. Maquetas sin datos reales.</p>
+</body></html>
