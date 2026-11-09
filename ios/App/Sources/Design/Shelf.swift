@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalModels
 
 // Estantes de «Para ti › Listas» (equivalentes a `shelf`, `card__rank` y `tiles` de la consola; ver ios/README.md).
 
@@ -72,6 +73,43 @@ struct HeroSkeleton: View {
                 .clipped()
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// «Ver todo» de lo más popular hoy. Una ruta (no `isPresented`): así los títulos de adentro también se abren.
+struct PopularRoute: Hashable {}
+
+/// «Lo más popular hoy»: el Top 10 de lo que más se está viendo ahora en Trakt, con la cifra grande (el mismo lenguaje que
+/// los rankings de tus plataformas). Películas y series alternadas. Una franja más de Explorar (BX, Fernando, 9 nov 2026:
+/// antes vivía en Buscar, que se quedó solo para buscar); su «Ver todo» abre `PopularGridView`.
+struct PopularTodayShelf: View {
+    let items: [CatalogItem]
+    /// Cuántos van en la franja con puesto (un Top 10).
+    static let count = 10
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            NavigationLink(value: PopularRoute()) {
+                DSSectionHead(title: "Lo más popular hoy", chevron: true, meta: Text("Lo más visto hoy en Trakt"))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(Array(items.prefix(Self.count).enumerated()), id: \.element.id) { index, item in
+                        let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
+                        TitleNavigationLink(route: route) {
+                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, zoom: route)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .edgeBump()   // al final de la fila, un golpe suave en la mano, como los demás estantes
+        }
     }
 }
 

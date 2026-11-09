@@ -14,6 +14,9 @@ struct ListsView: View {
     /// Premios, tus listas de Trakt, los años y Lo que ves.
     /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
+    /// «Lo más popular hoy» (el Top 10 de Trakt): el mismo catálogo de toda la app, que se pide al abrirla (RootView); aquí
+    /// solo se lee, sin otra petición.
+    @State private var catalog = ModelObserver(AppEnvironment.shared.catalog)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
     /// Para saltar a un grupo desde el índice: con la lista perezosa, `ScrollViewReader.scrollTo` no encontraba uno que aún
@@ -157,7 +160,10 @@ struct ListsView: View {
                     VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     ForEach(Array(generalShelves.enumerated()), id: \.element.id) { i, plan in
                         shelf(plan).entrance("shelf:" + plan.id, order: i).id(plan.id).perfTag("paraTi.shelf")   // entran escalonados
+                        // «Lo más popular hoy», una franja más (BX, Fernando, 9 nov 2026): después de la segunda, no arriba.
+                        if i == min(Self.popularAfter, generalShelves.count) - 1 { popularToday }
                     }
+                    if generalShelves.isEmpty { popularToday }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
                         // En panorámicas (otro formato: se reconoce sin leerla), con la plataforma en la esquina.
@@ -216,9 +222,19 @@ struct ListsView: View {
         .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
         .navigationDestination(item: $demoCollection) { route in CollectionGridView(collections: collections, route: route) }
         .task { await collections.model.loadMyList() }
+        .navigationDestination(for: PopularRoute.self) { _ in PopularGridView(model: catalog.model) }
+        .task { if catalog.model.popular.isEmpty, !catalog.model.isLoading { await catalog.model.load() } }   // casi siempre ya llegó
         .navigationDestination(for: ShelfRoute.self) { route in
             ListGridView(observer: observer, collections: collections, shelfID: route.id)
         }
+    }
+
+    /// Tras cuántos estantes de «Lo que se ve hoy» va «Lo más popular hoy».
+    private static let popularAfter = 2
+
+    /// «Lo más popular hoy» si ya llegó (sin él, la franja no se dibuja vacía).
+    @ViewBuilder private var popularToday: some View {
+        if !catalog.model.popular.isEmpty { PopularTodayShelf(items: catalog.model.popular).id("popular-today") }   // `-demo-shelf popular-today`
     }
 
     /// Sin repetir, en el mismo orden.

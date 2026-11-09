@@ -4,8 +4,6 @@ import OrbitalModels
 
 /// Un género de «Explora» al que se navega (nombre en inglés: `CatalogModel.traktGenre` lo pasa a Trakt).
 struct GenreRoute: Hashable { var genre: String }
-/// «Ver todo» de lo más popular hoy. Una ruta (no `isPresented`): así los títulos de adentro también se abren.
-struct PopularRoute: Hashable {}
 
 /// Cuánto se ha bajado en una lista, sin avisar a SwiftUI (no es `@Observable`).
 private final class ScrollOffset {
@@ -21,8 +19,8 @@ private final class ScrollOffset {
 /// Dónde vas en la lista y hasta dónde se puede bajar (cambia cuando la barra se esconde o vuelve).
 private struct ScrollSpot: Equatable { var y: CGFloat; var bottom: CGFloat }
 
-/// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, el Top 10 de hoy en carrusel y los géneros para
-/// explorar; al escribir, los resultados en cuadrícula.
+/// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, solo la puerta del filtro avanzado, lo que buscaste
+/// y los géneros (BX, Fernando, 9 nov 2026: lo más popular hoy se fue a Explorar); al escribir, los resultados en cuadrícula.
 struct BrowseView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var catalog: ModelObserver<CatalogModel>
@@ -52,12 +50,8 @@ struct BrowseView: View {
     /// Los resultados: todo, solo películas o solo series.
     @State private var kind: String = ""
     @Environment(\.dynamicTypeSize) private var typeSize
-    /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
+    /// Los colores del n.º 1 de hoy: el fondo de la pantalla toma su tono (como Inicio).
     @State private var tint: ArtTint
-    /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
-
-    /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
-    private static let popularCount = 10
 
     init() {
         let services = AppEnvironment.shared.services
@@ -163,7 +157,6 @@ struct BrowseView: View {
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
-        .navigationDestination(for: PopularRoute.self) { _ in PopularGridView(model: catalog.model) }
         .task(id: query) {
             if query.count >= 2 { Perf.begin("search") }
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
@@ -259,8 +252,6 @@ struct BrowseView: View {
         if let degraded = model.degraded {
             DegradedNotice(state: degraded) { Task { await model.load() } }.padding(.horizontal, DS.Space.gutter)
         }
-        if !model.popular.isEmpty { popular(model) }
-        else if model.isLoading { DSLoadingState() }
         explore
     }
 
@@ -291,33 +282,6 @@ struct BrowseView: View {
                 }
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-        }
-    }
-
-    /// «Lo más popular hoy»: el Top 10 de lo que más se está viendo ahora en Trakt, en carrusel, con la cifra grande (el
-    /// mismo lenguaje que los rankings de tus plataformas). Películas y series alternadas.
-    private func popular(_ model: CatalogModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            NavigationLink(value: PopularRoute()) {
-                DSSectionHead(title: "Lo más popular hoy", chevron: true,
-                              meta: Text("Lo más visto hoy en Trakt"))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                    ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
-                        let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
-                        TitleNavigationLink(route: route) {
-                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent, zoom: route)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
         }
     }
 
@@ -378,7 +342,7 @@ struct GenreView: View {
     }
 }
 
-/// «Lo más popular hoy» completo (desde su «Ver todo»): con el mismo ordenar y filtrar que toda lista.
+/// «Lo más popular hoy» completo (desde el «Ver todo» de su franja en Explorar): con el mismo ordenar y filtrar que toda lista.
 struct PopularGridView: View {
     let model: CatalogModel
     @Environment(AppEnvironment.self) private var env
