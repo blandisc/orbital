@@ -22,7 +22,8 @@ struct TitleView: View {
     @State var letterboxdInfo: LetterboxdFilmInfo?
     @State private var observer: ModelObserver<TitleModel>
     @State var tint = ArtTint()
-    @State private var sourcesFor: SourcesTarget?
+    @State var sourcesFor: SourcesTarget?
+    @State var askingDownload = false
     /// La sinopsis completa (tocar «más»).
     @State private var fullSynopsis = false
     /// Elegiste otra fuente para algo que ya tienes descargado: ¿cambiarla?
@@ -410,19 +411,22 @@ struct TitleView: View {
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                 } label: {
-                    ActionTileLabel(title: Text("Descargada"), symbol: "arrow.down.circle.fill", active: true, tint: artAccent)
+                    // DB1: «Lista» o, en una serie, «Listos» con cuántos episodios tienes (antes «Descargada» se cortaba).
+                    ActionTileLabel(title: model.kind == "series" ? Text("Listos") : Text("Lista"), symbol: "checkmark.circle.fill", active: true, tint: artAccent,
+                                    badge: model.kind == "series" ? model.downloadedCount : nil)
                 }
             default:
                 Menu {
                     Button("Elegir versión…", systemImage: "list.bullet.rectangle") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
                     if model.kind == "series" {
-                        Button("Los siguientes \(DS.Size.downloadNext)", systemImage: "square.stack.3d.down.right") { Task { await report(model.downloadNext(DS.Size.downloadNext), model) } }
+                        Button("El siguiente, sin preguntar", systemImage: "arrow.down.circle") { Task { await downloadRecommended(model) } }   // DS1: la hoja tiene lo demás
                     }
                 } label: {
-                    ActionTileLabel(title: Text("Descargar"), symbol: "arrow.down.circle", tint: artAccent)
+                    ActionTileLabel(title: Text("Descargar"), symbol: "arrow.down.circle", tint: artAccent, badge: model.kind == "series" ? model.downloadedCount : nil)
                 } primaryAction: {
-                    Task { await downloadRecommended(model) }
+                    if model.kind == "series" { askingDownload = true } else { Task { await downloadRecommended(model) } }   // DS1
                 }
+                .sheet(isPresented: $askingDownload) { downloadChoice(model) }
             }
         }
         .menuStyle(.button).buttonStyle(.plain)
@@ -431,7 +435,7 @@ struct TitleView: View {
     }
 
     /// Un toque: la recomendada (la mejor en calidad, idioma y tamaño), y un aviso que dice cuál y deja elegir otra.
-    private func downloadRecommended(_ model: TitleModel, videoID: String? = nil) async {
+    func downloadRecommended(_ model: TitleModel, videoID: String? = nil) async {
         guard let target = videoID ?? model.downloadTarget else { return }
         let outcome = await model.download([target])
         guard case .queued = outcome else { return await report(outcome, model, videoID: target) }
@@ -492,6 +496,7 @@ struct TitleView: View {
                 HStack {
                     Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
                     Spacer()
+                    seasonDownload(model)   // DP2
                     Menu {
                         Button("Solo la temporada \(model.selectedSeason)", systemImage: "checkmark.circle") { marking = .season(model.selectedSeason) }
                         Button("Toda la serie", systemImage: "checkmark.rectangle.stack") { marking = .series }

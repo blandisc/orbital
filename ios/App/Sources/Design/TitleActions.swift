@@ -33,6 +33,8 @@ struct ActionTileLabel: View {
     var active = false
     var progress: Double?
     var tint: Color = DS.accent
+    /// DB1: cuántos tienes (los episodios de una serie en el iPhone), en la esquina.
+    var badge: Int? = nil
     @Environment(\.colorScheme) private var scheme
 
     /// El color del arte suele ser claro: en el modo claro se oscurece para que «Guardada» se lea sobre el papel.
@@ -56,6 +58,13 @@ struct ActionTileLabel: View {
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.tile)
         .dsCard(translucent: true, fill: active ? tint.opacity(DesignTokens.Opacity.track) : nil)
         .overlay(shape.strokeBorder(active ? tint.opacity(DesignTokens.Opacity.faint) : DS.hairline, lineWidth: DS.Size.hairline))
+        .overlay(alignment: .topTrailing) {
+            if let badge, badge > 0 {
+                Text(verbatim: "\(badge)").recipe(.badge, color: DS.onPrimary).monospacedDigit()
+                    .padding(.horizontal, DS.Space.s1).background(tint, in: Capsule()).padding(DS.Space.s1)
+                    .accessibilityHidden(true)
+            }
+        }
         .contentShape(shape)
     }
 }
