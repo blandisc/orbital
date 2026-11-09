@@ -193,7 +193,7 @@ public enum Streams {
     // Banderas e indicios de idioma en los títulos de Torrentio y compañía (`FLAG_LANG` de la TV). Torrentio solo pone 🇲🇽
     // cuando el nombre dice latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).
     static let flagLanguages: [(String, String)] = [
-        ("🇬🇧", "en"), ("🇺🇸", "en"), ("🇲🇽", "es-419"), ("🇪🇸", "es"), ("🇦🇷", "es-419"), ("🇫🇷", "fr"), ("🇮🇹", "it"), ("🇩🇪", "de"),
+        ("🇬🇧", "en"), ("🇺🇸", "en"), ("🇲🇽", "es-419"), ("🇪🇸", "es"), ("🇦🇷", "es-419"), ("🇨🇴", "es-419"), ("🇨🇱", "es-419"), ("🇵🇪", "es-419"), ("🇻🇪", "es-419"), ("🇫🇷", "fr"), ("🇮🇹", "it"), ("🇩🇪", "de"),
         ("🇵🇹", "pt"), ("🇧🇷", "pt"), ("🇷🇺", "ru"), ("🇯🇵", "ja"), ("🇰🇷", "ko"), ("🇨🇳", "zh"), ("🇮🇳", "hi"), ("🇵🇱", "pl"),
         ("🇹🇷", "tr"), ("🇺🇦", "uk"), ("🇳🇱", "nl"), ("🇨🇿", "cs"), ("🇸🇰", "sk"), ("🇭🇺", "hu"), ("🇬🇷", "el"), ("🇸🇪", "sv"),
         ("🇩🇰", "da"), ("🇳🇴", "no"), ("🇫🇮", "fi"), ("🇷🇴", "ro"), ("🇧🇬", "bg"), ("🇭🇷", "hr"), ("🇷🇸", "sr"), ("🇮🇱", "he"),
@@ -356,7 +356,7 @@ public enum Streams {
         let words = (lines.dropLast(marked ? 1 : 0).filter { !matches(sizePattern, $0) && !matches(seedersPattern, $0) } + [filename])
             .joined(separator: "\n")
         // Peerflix pone la bandera en el nombre («Peerflix 🇪🇸 1080p»): cuenta como una marca más (solo en el iPhone).
-        let marks = ([marked ? last : ""] + allMatches(flagPattern, name)).joined(separator: " ")
+        let marks = ([marked ? last : ""] + allMatches(flagPattern, name) + [cometFlags(description)]).joined(separator: " ")
         return audioLanguages(words, marks: marks, site: site, original: origin?.originalCode)
     }
 
@@ -384,7 +384,7 @@ public enum Streams {
         let lines = words.components(separatedBy: "\n").map { before(subsFrom, $0) }
         let subtitled = lines.joined(separator: "\n") != words
         let audioWords = lines.map(technical).joined(separator: "\n")
-        for (pattern, code) in wordLanguages where matches(pattern, audioWords) { put(code, .name) }
+        for (pattern, code) in wordLanguages + moreWordLanguages where matches(pattern, audioWords) { put(code, .name) }
         for (pattern, code) in codeLanguages where matches(pattern, lines.joined(separator: "\n")) { put(code, .name) }
         let place = String(site.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == "_" }.map(Character.init)).lowercased()
         if let lang = siteLanguages[place], !(subtitled && level(lang) == 0) { put(lang, .site) }
@@ -405,6 +405,7 @@ public enum Streams {
             put(original ?? "en", original == nil ? .unknown : .name)
             if let original, original != "en", !found.contains(where: { $0.code != original && $0.evidence.level >= 4 }) { put("en", .name) }
         }
+        if level("es") >= AudioLanguage.Evidence.name.level, let dub = simpsonsDub(audioWords), level(dub) == 0 { put(dub, .name) }   // «Homer ama a Flanders»
         if level("es") > 0, spanishVariants.contains(where: { level($0) >= level("es") }) { _ = pop("es") }   // «SPANiSH.LATiNO»: ya se sabe cuál
         if let original, spanishVariants.contains(original), let how = pop("es") { put(original, how) }   // «Spanish» en una serie española: su castellano
         if found.isEmpty, matches(dubbedWord, audioWords) { return [AudioLanguage("en", .maybe)] }

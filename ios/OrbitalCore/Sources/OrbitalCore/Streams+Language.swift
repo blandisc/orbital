@@ -8,6 +8,40 @@ extension Streams {
     static let languagePoints: [AudioLanguage.Evidence: Double] = [.checked: 340, .name: 300, .site: 300, .original: 300, .unknown: 260, .maybe: 60]
     /// Otro idioma pesa más que arrancar al instante (+1000): una en ruso lista no le gana a una en tu idioma que tarda.
     static let wrongLanguage = -1600.0
+    /// Lo que baja «español, no dice cuál» cuando pediste latino o castellano (`STEP_UNSURE_SPANISH` de la TV y los escenarios
+    /// comunes). Es poco: un «ESP» en 1080p todavía le gana a un latino de 50 MB sin resolución (Los Simpson, 9 nov).
+    static let unspecifiedSpanish = 100.0
+
+    /// Más señales de idioma en el nombre, de Torrentio real (Los Simpson, 9 nov). Se suman a `wordLanguages`, en lo técnico.
+    static let moreWordLanguages: [(NSRegularExpression, String)] = [
+        // «[lat]», «Esp-Lat», «Spa.Lat», «Lat-Ing», «es-MX», «spa_mx», «doblaje latino», «mexicano».
+        (r(#"[\[(]lat[\])]|\b(esp|spa|dual)[ ._-]lat\b|\blat[ ._-](ing|eng|en)\b|\b(es|spa)[-_]mx\b|\bmexicano\b"#), "es-419"),
+        // Los Simpson latinos dicen «Homero» (los castellanos, «Homer»): «Homero ama a Flanders», «Homero y el Bat».
+        (r(#"\bhomero\b"#), "es-419"),
+        (r(#"[\[(]cast[\])]|\b(esp|spa)[ ._-]cast\b|\b(es|spa)[-_]es\b|espa[ñn]ol[ ._(-]+(de[ ._]+)?espa[ñn]a\b"#), "es-ES"),
+        (r(#"\bepisódio\b"#), "pt"),   // «Episódio 02 - Radioactive Man.avi» (un «Dual» brasileño)
+    ]
+
+    /// El doblaje de Los Simpson por cómo le dicen a Homero, cuando el nombre solo dice «Español» («Los Simpson: Español:
+    /// Temporadas 1 A 10» trae «Homer ama a Flanders», «3x17.Homer.Bateador»: el castellano). nil si no hay pista.
+    static func simpsonsDub(_ words: String) -> String? {
+        if matches(homero, words) { return "es-419" }
+        return matches(homerSpanish, words) ? "es-ES" : nil
+    }
+    static let homero = r(#"\bhomero\b"#)
+    static let homerSpanish = r(#"\bhomer[ ._-]+(ama|y|el|la|los|contra|bateador|en|al|va|se|de|del|tiene)\b"#)
+
+    /// Comet no pone banderas: escribe los idiomas que lee del nombre en una línea con 🌎 («🌎 la/en», «🌎 Multi es fr»).
+    /// Se vuelven banderas para que pesen igual que las de Torrentio («la» = latino, 🇲🇽; el resto, tal vez).
+    static func cometFlags(_ description: String) -> String {
+        guard let line = description.components(separatedBy: .newlines).first(where: { $0.contains("🌎") }) else { return "" }
+        let codes = line.lowercased().split(whereSeparator: { !$0.isLetter && $0 != "-" }).map(String.init)
+        let flags = codes.compactMap { code -> String? in
+            if ["la", "lat", "latino", "es-419", "es-mx"].contains(code) { return "🇲🇽" }
+            return flagLanguages.first { $0.1 == code }?.0
+        }
+        return (codes.contains("multi") ? "Multi Audio " : "") + flags.joined(separator: " ")
+    }
 
     /// Cuánto suma el idioma según qué tan seguro es (`language_score` de la TV). Una dual con tu idioma vale lo mismo que la
     /// que solo trae ese. Con una variante de español elegida (Ajustes, la voz, el título): el doblaje pedido primero, luego el
@@ -21,7 +55,7 @@ extension Streams {
         var best = wrongLanguage
         for code in spanish {
             guard var value = points(code) else { continue }
-            if wanted != nil && code == "es" { value -= 100 }   // español sin saber cuál: después del que pediste, antes que otro idioma
+            if wanted != nil && code == "es" { value -= unspecifiedSpanish }   // español sin saber cuál: después del que pediste, antes que otro idioma
             else if let wanted, code != wanted {
                 if prefs.order.contains(code) { continue }   // el otro doblaje está en tu orden: vale lo de su lugar
                 value -= 250   // el otro doblaje
