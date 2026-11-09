@@ -386,7 +386,10 @@ public actor StreamFinder {
     /// `instantOnly`: solo las que arrancan al instante (un reintento nunca le pide a Real-Debrid otra descarga, R6).
     public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], instantOnly: Bool = false,
                      purpose: Purpose = .watch) async throws -> Source? {
-        let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose).filter { !skip.contains($0.index) && (!instantOnly || $0.instant) }
+        // Nunca sola una de otro título (Fernando, 9 nov: el capítulo 6 de «Clone Wars» 2003 solo lo tenía Comet, de la serie de
+        // 2008, y se abría «la menos mala»). Si solo hay de esas, no hay: se dice, y se pueden ver en «Versión».
+        let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose)
+            .filter { !skip.contains($0.index) && (!instantOnly || $0.instant) && !$0.tags.contains(Streams.otherTitleTag) }
         guard let first = found.first else { return nil }
         if let binge, let same = found.first(where: { $0.binge == binge && $0.score > first.score - 700 }) { return same }
         return first

@@ -72,6 +72,11 @@ extension PlayerModel {
 
     /// No hay ninguna versión: se dice y, con tu Torrentio sin Real-Debrid, se averigua si existe (R4).
     func noSources(generation mine: Int) async {
+        // Solo había de otro título (9 nov): se dice tal cual, no «no hay».
+        if !sourceChoices.isEmpty, sourceChoices.allSatisfy({ $0.tags.contains(Streams.otherTitleTag) }) {
+            Self.note("solo había versiones de otro título: \(sourceChoices.count)")
+            return fail("Solo encontré versiones de otra serie con un nombre parecido. Si quieres verlas, están en «Versión».", .noSources)
+        }
         fail("No hay versiones en Real-Debrid para este título.", .noSources)
         await explainNoSources(generation: mine)
     }

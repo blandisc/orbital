@@ -160,6 +160,8 @@ public final class SourcesModel: ObservableModel {
     /// en el siguiente episodio y, al final, la recomendada (nunca una de cine o un tráiler si hay otra).
     public static func toPlay(_ found: [Source], resume: String?, family: String?) -> Source? {
         // Ni de cine ni tráiler, ni lo que Real-Debrid no dejó bajar (FQ2-A), si hay otra.
+        // Nunca sola una de otro título (9 nov): si solo hay de esas, ninguna.
+        let found = found.filter { !$0.tags.contains(Streams.otherTitleTag) }
         let usable = found.contains { !hidden($0) && !$0.refused } ? found.filter { !hidden($0) && !$0.refused }
             : found.contains { !hidden($0) } ? found.filter { !hidden($0) } : found
         if let ready = usable.first(where: \.requested) { return ready }
