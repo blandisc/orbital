@@ -56,9 +56,11 @@ public final class SearchModel: ObservableModel {
             async let seriesNames = names(found, kind: "series")
             let (movies, series) = await (movieNames, seriesNames)
             let names = movies.names.merging(series.names) { a, _ in a }, posters = movies.posters.merging(series.posters) { a, _ in a }
+            // El póster de TMDB primero: el de metahub a veces es de otro título (Fernando, 8 nov: «Star Wars: Clone Wars» de
+            // 2003 salía con el de un programa coreano). Si TMDB no tiene, el de Cinemeta.
             let localized = found.map { r in Result(kind: r.kind, metaID: r.metaID, title: names[r.metaID] ?? r.title, originalTitle: r.title,
-                                                    poster: r.poster ?? posters[r.metaID], year: r.year,
-                                                    fallbackPoster: r.poster == nil ? nil : posters[r.metaID]) }
+                                                    poster: posters[r.metaID] ?? r.poster, year: r.year,
+                                                    fallbackPoster: posters[r.metaID] == nil ? nil : r.poster) }
             // Solo se recuerda si contestaron todos y la traducción terminó (antes una búsqueda a medias, o vacía porque algo
             // falló, se quedaba guardada toda la sesión; cancelada por otra letra, se habrían guardado los nombres en inglés).
             if complete, !Task.isCancelled { remember(results: localized, for: key) }

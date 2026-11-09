@@ -173,7 +173,10 @@ public actor StreamFinder {
                 var source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index, origin: titleOrigin)
                 let named = "\(source.release) \(stream["behaviorHints"]?["filename"]?.string ?? "")"
                 source.otherTitle = !Streams.mentionsTitle(titleOrigin?.titles ?? [], named)
-                    || (videoID.contains(":") && [source.release, stream["behaviorHints"]?["filename"]?.string ?? ""].contains { Streams.namesAnotherSeries(titleOrigin?.titles ?? [], $0) })
+                // Otra serie de casi el mismo nombre: descartada, no solo más abajo (Fernando, 8 nov: lista en Real-Debrid, la de
+                // «The Clone Wars» le seguía ganando a las de 2003 que Real-Debrid aún no tenía).
+                if videoID.contains(":"), [source.release, stream["behaviorHints"]?["filename"]?.string ?? ""].contains(where: { Streams.namesAnotherSeries(titleOrigin?.titles ?? [], $0) }),
+                   !source.tags.contains(Streams.otherTitleTag) { source.otherTitle = true; source.tags.append(Streams.otherTitleTag) }
                 Streams.markOtherEpisode(&source, videoID: videoID, filename: stream["behaviorHints"]?["filename"]?.string ?? "")
                 if let notice = source.notice { notices.append(notice); continue }   // el aviso de Torrentio nunca es una versión
                 if let real = checked(source.key) { source.setAudio(real) }

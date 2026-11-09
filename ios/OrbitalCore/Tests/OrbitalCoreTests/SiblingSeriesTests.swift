@@ -7,6 +7,9 @@ final class SiblingSeriesTests: XCTestCase {
 
     func testTheSeriesWithAnExtraArticleIsAnother() {
         XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "📄 Star.Wars.The.Clone.Wars.S01E01.Ambush.1080p.HEVC.x265-MeGusta.mkv"))
+        XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "Star.Wars.The.Clone.Wars.S01-S07.1080p.BluRay"), "un paquete sin S01E01")
+        XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "Star Wars The Clone Wars Complete Series 1080p"))
+        XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "Star Wars The Clone Wars (2008) Season 1"))
         XCTAssertTrue(Streams.namesAnotherSeries(clone2003, "Star.Wars.The.Clone.Wars.S01e02.Ita.Eng.1080p.h265.10bit.SubS-Me7alh.mkv"))
     }
 

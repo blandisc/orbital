@@ -5,7 +5,9 @@ extension Streams {
     /// de 2008, que Comet le daba por el nombre). El nombre de la serie en el archivo (lo de antes de «S01E01») es uno de sus
     /// títulos pero con un artículo de más («The», «El», «La»…): es la otra. Igual o sin artículo, es esta.
     static let articles: Set<String> = ["the", "a", "an", "el", "la", "los", "las", "le", "les", "il", "der", "die", "das"]
-    static let seriesEpisodeMark = r(#"(?i)[ ._\-\[(]s\d{1,2}[ ._]?e\d{1,3}"#)
+    /// Donde acaba el nombre de la serie: «S01E01», pero también un paquete («S01-S07», «Season 1», «Complete»), el año o la
+    /// calidad (Fernando, 8 nov: «Star.Wars.The.Clone.Wars.S01-S07.1080p» no traía «S01E01» y se colaba).
+    static let seriesEpisodeMark = r(#"(?i)[ ._\-\[(](?:s\d{1,2}(?:[ ._]?e\d{1,3})?|seasons?|temporadas?|complete|completa|\d{3,4}p|(?:19|20)\d{2})(?=[ ._\-\])]|$)"#)
     public static func namesAnotherSeries(_ titles: [String], _ release: String) -> Bool {
         let clean = release.replacingOccurrences(of: "📄", with: "")
         guard let mark = seriesEpisodeMark.firstMatch(in: clean, range: NSRange(clean.startIndex..., in: clean)),
