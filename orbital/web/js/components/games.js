@@ -248,6 +248,17 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
         paint();
         return true;
       }
+      // En la cuadrícula, ◀ ▶ se quedan en su renglón: al final de uno, nada (Fernando, 8 nov: recorriendo Switch «hay un
+      // brinco»). Por distancia, ▶ desde el último de abajo saltaba al de arriba a la derecha, y la barra y el juego volvían.
+      if ((action === "left" || action === "right") && focusId.startsWith("game:")) {
+        const cell = grid.querySelector(`[data-focus-id="${focusId}"]`);
+        const side = action === "left" ? cell?.previousElementSibling : cell?.nextElementSibling;
+        // El enfocado es más grande: mismo renglón = a menos de media tarjeta de altura.
+        if (!side?.dataset.focusId || Math.abs(side.offsetTop - cell.offsetTop) > cell.offsetHeight / 2) return "edge";
+        focusId = side.dataset.focusId;
+        paint();
+        return true;
+      }
       const next = nextFocus(measure(), focusId, action);
       if (!next) return "edge";
       focusId = next;
