@@ -893,10 +893,10 @@ def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
     from orbital import player_ui
 
     def waves(ass):  # cada onda es un tramo de anillo: una figura más después del cuerpo de la bocina
-        return ass.count("\p1}") - 5  # cápsula, riel, relleno, la rayita del 100 y cuerpo de la bocina
+        return ass.count("\p1}") - 6  # cápsula (y la luz de su filo de vidrio), riel, relleno, la rayita del 100 y cuerpo
     assert waves(player_ui.volume_ass(15)) == 1 and waves(player_ui.volume_ass(50)) == 2 and waves(player_ui.volume_ass(90)) == 3
     muted = player_ui.volume_ass(50, muted=True)
-    assert "—" in muted and muted.count("\p1}") == 5  # cápsula, riel (sin relleno), la rayita, cuerpo y la ✕
+    assert "—" in muted and muted.count("\p1}") == 6  # cápsula y su luz, riel (sin relleno), la rayita, cuerpo y la ✕
     extra = player_ui.volume_ass(160)
     assert "EXTRA" in extra and player_ui.EXTRA in extra and "EXTRA" not in player_ui.volume_ass(100)  # V1-C
     touch = player_ui.volume_ass(80, touch=True)  # V2-A: + y − tocables
@@ -1460,3 +1460,122 @@ def test_opensubtitles_comes_with_orbital_and_follows_the_setting(monkeypatch):
     finder.internet_subtitles = lambda: False
     assert finder.subtitles("movie", "tt1", "es") == []
     assert asked == []
+
+
+# --- Pendientes del reproductor (Fernando, 6 nov 2026): Reproducción entera, vidrio y los estados de Versión en íconos ---
+_GRID = [
+    {"label": "Latino", "flag": "mx", "cells": [
+        {"id": 1, "label": "4K HDR", "hint": "Al instante", "size": "14.2 GB", "doubt": "", "current": False},
+        {"id": 2, "label": "1080p", "hint": "Hay que bajarla", "size": "2.1 GB", "doubt": "Idioma dudoso", "current": True}]},
+    {"label": "Castellano", "flag": "es", "cells": [
+        {"id": 3, "label": "720p", "hint": "Al instante", "size": "", "doubt": "Idioma dudoso", "current": False}]},
+]
+_EPISODES = [{"id": f"e{i}", "label": f"E{i} · Episodio {i}", "season": 1, "current": i == 2} for i in range(1, 9)]
+_CANVASES = [(1920, 1080), (2560, 1600), (1440, 1080)]  # la TV, la Legion Go (16:10) y 4:3
+
+
+def _drawn_text(ass: str) -> list[str]:
+    """Los textos que pinta una capa (lo que va después de cada bloque de etiquetas, sin las figuras)."""
+    import re
+
+    return [t for t in re.findall(r"}([^{\n]+)", ass) if not re.match(r"^m -?\d", t)]
+
+
+@pytest.fixture
+def canvas_back():
+    yield
+    player_ui.set_canvas(1920, 1080)
+    player_ui.set_text_size("normal")
+    player_ui.set_input("gamepad")
+
+
+def test_player_glass_is_the_glass_of_the_interface():
+    """El vidrio del reproductor usa los números de los tokens de la interfaz (--color-glass, --color-glass-strong,
+    --color-glass-selected, --glyph-bg y sus filos): si cambia el vidrio de Orbital, el reproductor no se queda atrás."""
+    import re
+    from pathlib import Path
+
+    css = (Path(player_ui.__file__).parent / "web" / "styles" / "themes" / "orbital.css").read_text(encoding="utf-8")
+
+    def rgba(token: str) -> list[tuple]:
+        found = re.search(rf"--{re.escape(token)}:([^;]+);", css)
+        assert found, token
+        return [(int(r), int(g), int(b), float(a)) for r, g, b, a in re.findall(r"rgba\((\d+), (\d+), (\d+), ([\d.]+)\)", found.group(1))]
+
+    for kind, layers in player_ui.GLASS_TOKENS.items():
+        assert tuple(rgba(kind if kind == "glyph-bg" else f"color-{kind}")) == layers, kind
+    for edge, (top, ring) in player_ui.EDGE_TOKENS.items():
+        assert [layer[3] for layer in rgba(f"edge-{edge}")][:2] == [top, ring], edge
+    strong = int(player_ui.glass_fill("glass-strong")[1], 16)
+    assert strong < 0x50, "lo que flota tapa lo bastante para leer encima del video"
+    assert int(player_ui.glass_fill("glass")[1], 16) > strong, "los controles, más transparentes"
+
+
+def test_player_panels_buttons_and_cards_are_glass(canvas_back):
+    """Paneles, botones secundarios, píldoras táctiles («Cerrar»), tarjetas y avisos: de vidrio, no el panel negro de antes."""
+    strong, control = player_ui.glass_fill("glass-strong"), player_ui.glass_fill("glass")
+
+    def has(ass: str, fill: tuple[str, str]) -> bool:
+        return f"\\1c{fill[0]}\\1a&H{fill[1]}&" in ass
+
+    panel = player_ui.more_panel(episodes=_EPISODES, sources=_GRID, iphone=True)
+    ass = player_ui.panel_ass(panel)
+    assert has(ass, strong) and has(ass, control)  # el panel y sus casillas
+    assert f"\\1c{player_ui.PANEL}\\1a&H28&" not in ass, "ya no el panel negro de orilla a orilla"
+    hud = player_ui.Hud(title="X", paused=True, position=10, duration=100, series=True)
+    assert has(player_ui.hud_ass(hud), control)  # «Audio y subtítulos», «Episodios y versión»
+    assert has(player_ui.upnext_ass("E2", "Siguiente episodio", seconds=5, progress=.5, actions=[("A", "Ver")]), strong)
+    assert has(player_ui.toast_ass("Subtítulos: Español"), strong)
+    player_ui.set_input("touch")
+    ass = player_ui.panel_ass(panel)
+    assert has(ass, control) and any(t[4] == "close" for t in player_ui.targets["panel"])  # «Cerrar», de vidrio y tocable
+
+
+@pytest.mark.parametrize("canvas", _CANVASES)
+@pytest.mark.parametrize("size", ["normal", "xlarge"])
+@pytest.mark.parametrize("mode", ["gamepad", "keyboard", "touch"])
+def test_playback_column_says_every_action_whole_with_its_icon(canvas, size, mode, canvas_back):
+    """Pausa › Y › Reproducción (#1): cada renglón con su ícono y su nombre entero, en dos renglones si hace falta; nunca «…».
+    Recorrida con el foco, cada una se ve (y con el dedo o el mouse, se toca) alguna vez."""
+    player_ui.set_canvas(*canvas)
+    player_ui.set_text_size(size)
+    player_ui.set_input(mode)
+    panel = player_ui.more_panel(episodes=_EPISODES, sources=_GRID, back_to=754, iphone=True)
+    panel.col = next(i for i, c in enumerate(panel.columns) if c.key == "playback")
+    playback = panel.column
+    assert all(o.get("icon") in player_ui.ICON_PATHS for o in playback.options)
+    labels = {o["label"] for o in playback.options}
+    seen: set[int] = set()
+    for index in range(len(playback.options)):
+        playback.index = index
+        drawn = _drawn_text(player_ui.panel_ass(panel))
+        assert not any(t.endswith("…") and any(t.rstrip("…") in label for label in labels) for t in drawn)
+        if mode == "touch":
+            shown = {t[4][2] for t in player_ui.targets["panel"] if isinstance(t[4], tuple) and t[4][:2] == ("option", panel.col)}
+            assert index in shown, "la enfocada siempre se ve (y se toca)"
+            seen |= shown
+    for option in playback.options:  # el nombre entero, partido entre palabras
+        lines, height = player_ui._icon_row_lines(option, 150)
+        assert " ".join(lines) == option["label"] and height >= 54
+    if mode == "touch":
+        assert seen == set(range(len(playback.options)))
+
+
+@pytest.mark.parametrize("canvas", _CANVASES)
+@pytest.mark.parametrize("size", ["normal", "xlarge"])
+def test_version_cells_say_their_state_with_icons_and_a_legend(canvas, size, canvas_back):
+    """Y › Versión (#3): «Idioma dudoso» y «Hay que bajarla» ya no se cortan en la casilla: son íconos (⚡, la nube, «?»),
+    la leyenda los nombra enteros (arriba o, si no cabe, abajo) y la nota dice la enfocada en palabras."""
+    player_ui.set_canvas(*canvas)
+    player_ui.set_text_size(size)
+    panel = player_ui.more_panel(episodes=_EPISODES, sources=_GRID, iphone=True)
+    panel.col = next(i for i, c in enumerate(panel.columns) if c.key == "source")
+    panel.column.index, panel.column.cell = 0, 1
+    drawn = _drawn_text(player_ui.panel_ass(panel))
+    assert not any(t.endswith("…") for t in drawn if t[:2] in ("Id", "Ha", "Al", "4K")), drawn
+    assert "4K HDR" in drawn, "la calidad se achica antes de cortarse"
+    states = [name for name, _, _ in player_ui.CELL_STATES]
+    assert states[0] in drawn and states[1] in drawn, "la leyenda: cada ícono con su nombre"
+    if canvas[0] / canvas[1] > 1.5:  # en 4:3 (no es la TV ni la Legion) solo va lo que cabe entero, o nada
+        assert any(t.startswith("Latino · 1080p · Idioma dudoso") for t in drawn), "la enfocada, en palabras"
+    assert player_ui.cell_states(_GRID[0]["cells"][1]) == [player_ui.CELL_STATES[1], player_ui.CELL_STATES[2]]

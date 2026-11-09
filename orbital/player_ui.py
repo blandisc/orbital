@@ -34,6 +34,7 @@ from . import flags
 FLAG_H, FLAG_GAP = 22, 12  # la banderita junto al idioma (audio, subtítulos, versión)
 W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
+RADIUS_CARD = 22  # --radius-2xl (1 rem a 1080p): la esquina de las tarjetas, los paneles y los menús (el «Ritmo»)
 
 TOUCH = False  # con el dedo: botones que se tocan en vez de glifos del mando
 KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del mando
@@ -97,10 +98,21 @@ SOFT = ass_color(PALETTE["ink-200"])  # texto secundario claro (sinopsis, datos)
 MUTED = ass_color(PALETTE["ink-300"])
 PANEL = ass_color(PALETTE["ink-950"])  # tarjetas y paneles sobre el video
 ON_LIGHT = ass_color(PALETTE["ink-1000"])  # texto sobre lo enfocado (fondo claro)
-# Vidrio, como en Orbital (--color-glass y --edge-glass, rediseño Apple TV del 31 oct 2026): un panel oscuro translúcido con un
-# filo blanco casi transparente. Lo usan los botones secundarios y las píldoras táctiles; el principal va en blanco.
-GLASS_ALPHA = "50"
-GLASS_EDGE_ALPHA = "D6"
+GLYPH_SOLID = ass_color(PALETTE["ink-850"])  # --glyph-bg-solid: el disco del glifo sobre lo blanco
+NEXT = ass_color(PALETTE["amber-300"])  # «Siguiente» en Y › Episodios (--color-warning: el que sigue, no un error)
+LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
+# Vidrio, como en Orbital (receta «Vidrio» de docs/sistema-de-diseno.md § 0): los mismos números que los tokens de
+# themes/orbital.css, capa por capa (la luz blanca que baja y el fondo apenas oscuro), y su filo (arriba más brillante que
+# alrededor). `tests/test_player.py · test_player_glass_is_the_glass_of_the_interface` los compara con el CSS. mpv no desenfoca lo
+# de atrás (no hay backdrop-filter en ASS): el vidrio del reproductor es solo translúcido, y no cuesta nada en reposo.
+GLASS_TOKENS = {
+    "glass": ((255, 255, 255, .14), (255, 255, 255, .05), (28, 28, 32, .3)),  # --color-glass: lo que se toca o se enfoca
+    "glass-strong": ((255, 255, 255, .08), (255, 255, 255, .02), (30, 30, 36, .74)),  # --color-glass-strong: lo que flota
+    "glass-selected": ((255, 255, 255, .32), (255, 255, 255, .16)),  # --color-glass-selected: lo elegido en un grupo
+    "glyph-bg": ((255, 255, 255, .2), (255, 255, 255, .06), (24, 24, 28, .42)),  # --glyph-bg: los glifos del mando
+}
+# El filo: (la luz de arriba, el contorno), como --edge-glass, --edge-glass-hairline y --edge-glass-selected.
+EDGE_TOKENS = {"glass": (.3, .1), "glass-hairline": (.22, .08), "glass-selected": (.45, .14)}
 SHADE = "&H000000&"  # degradados y velos sobre el video (negro de verdad, a propósito)
 # Botones del mando en su color, los mismos que en la interfaz: A verde, B rojo, X azul, Y amarillo.
 GLYPH = {"A": ass_color(PALETTE["pad-green"]), "B": ass_color(PALETTE["pad-red"]),
@@ -258,6 +270,97 @@ def ring(cx: float, cy: float, r: float, thickness: float, fraction: float, colo
     return _shape("m " + outside[0] + " l " + " ".join(outside[1:] + inside), color, alpha)
 
 
+def _alpha(opacity: float) -> str:
+    """Opacidad (0 a 1) -> transparencia ASS («00» tapa, «FF» no se ve)."""
+    return f"{max(0, min(255, round(255 * (1 - opacity)))):02X}"
+
+
+def glass_fill(kind: str = "glass") -> tuple[str, str]:
+    """El color y la transparencia ASS de un vidrio de `GLASS_TOKENS`: sus capas compuestas en una sola (el fondo abajo y,
+    encima, la luz blanca, en su promedio de arriba a abajo). Una figura en vez de tres: más barato para libass."""
+    layers = list(GLASS_TOKENS[kind])
+    light = [layer for layer in layers if layer[:3] == (255, 255, 255)]
+    base = [layer for layer in layers if layer[:3] != (255, 255, 255)]
+    sheen = (255, 255, 255, sum(layer[3] for layer in light) / len(light))
+    rgb, opacity = (0.0, 0.0, 0.0), 0.0
+    for *c, a in [*base, sheen]:
+        out = a + opacity * (1 - a)
+        rgb = tuple((ci * a + pi * opacity * (1 - a)) / out for ci, pi in zip(c, rgb, strict=True)) if out else rgb
+        opacity = out
+    hex_color = "#" + "".join(f"{round(ci):02X}" for ci in rgb)
+    return ass_color(hex_color), _alpha(opacity)
+
+
+def glass(x: float, y: float, w: float, h: float, r: float, kind: str = "glass", edge: str | None = "glass") -> str:
+    """Una pieza de vidrio (receta «Vidrio»): «glass» para lo que se toca o se enfoca (botones, píldoras, casillas),
+    «glass-strong» para lo que flota encima de todo (paneles, tarjetas, avisos), «glass-selected» para lo elegido. Su filo
+    (`edge`): «glass» si flota sobre el video, «glass-hairline» dentro de un panel, None sin filo (una franja de orilla a orilla)."""
+    color, alpha = glass_fill(kind)
+    if not edge:
+        return rrect(x, y, w, h, r, color, alpha)
+    top, ring_opacity = EDGE_TOKENS[edge]
+    inset = max(r * .8, 2)  # la luz de arriba, entre las dos esquinas
+    return "\n".join([rrect(x, y, w, h, r, color, alpha, outline=TEXT, width=1.2, outline_alpha=_alpha(ring_opacity)),
+                      rrect(x + inset, y, max(0.0, w - 2 * inset), 1.5, .75, TEXT, _alpha(top))])
+
+
+# Íconos del reproductor, dibujados en una cuadrícula de 24 (como los SF Symbols del iPhone y los `ICONS` de la interfaz).
+# Cada uno es una lista de (figura, trazo): con trazo, solo el contorno (un ícono de línea); sin él, relleno.
+ICON_PATHS: dict[str, list[tuple[str, float]]] = {
+    # Al instante (Real-Debrid ya la tiene): el rayo, como «bolt.fill» del iPhone.
+    "bolt": [("m 13 2 l 4 13.5 l 11 13.5 l 10 22 l 20 10 l 13 10", 0)],
+    # Hay que bajarla: la nube con flecha, la de todo lo de Real-Debrid (PT5).
+    "cloud-down": [("m 7 19 b 4.2 19 2 16.8 2 14 b 2 11.4 4 9.3 6.5 9.1 b 7.4 6.1 10 4 13 4 b 16.6 4 19.5 6.8 19.8 10.3 "
+                    "b 21.7 10.9 23 12.7 23 14.8 b 23 17.1 21.1 19 18.8 19", 1.8),
+                   ("m 11.2 8.5 l 12.8 8.5 l 12.8 13.5 l 11.2 13.5", 0), ("m 8.8 12.6 l 15.2 12.6 l 12 16.4", 0)],
+    # Idioma dudoso: un círculo con «?» (el «?» lo pone `icon`, en texto).
+    "doubt": [("m 12 3 b 17 3 21 7 21 12 b 21 17 17 21 12 21 b 7 21 3 17 3 12 b 3 7 7 3 12 3", 1.8)],
+    # Desde el principio: |◀.
+    "restart": [("m 4 5 l 6.6 5 l 6.6 19 l 4 19", 0), ("m 20 5 l 20 19 l 8.4 12", 0)],
+    # Volver a donde ibas: la flecha que regresa (↺; el arco lo pone `icon`).
+    "resume": [],
+    # Seguir en el iPhone · Enviar al iPhone · Descargar en el iPhone: el teléfono con lo que pasa adentro.
+    "phone-play": [("m 9.4 2.5 l 14.6 2.5 b 16 2.5 17 3.5 17 4.9 l 17 19.1 b 17 20.5 16 21.5 14.6 21.5 l 9.4 21.5 "
+                    "b 8 21.5 7 20.5 7 19.1 l 7 4.9 b 7 3.5 8 2.5 9.4 2.5", 1.7), ("m 10.6 8.6 l 15 12 l 10.6 15.4", 0)],
+    "phone-send": [("m 9.4 2.5 l 14.6 2.5 b 16 2.5 17 3.5 17 4.9 l 17 19.1 b 17 20.5 16 21.5 14.6 21.5 l 9.4 21.5 "
+                    "b 8 21.5 7 20.5 7 19.1 l 7 4.9 b 7 3.5 8 2.5 9.4 2.5", 1.7),
+                   ("m 11.2 10 l 12.8 10 l 12.8 16 l 11.2 16", 0), ("m 8.9 10.8 l 15.1 10.8 l 12 7.2", 0)],
+    "phone-down": [("m 9.4 2.5 l 14.6 2.5 b 16 2.5 17 3.5 17 4.9 l 17 19.1 b 17 20.5 16 21.5 14.6 21.5 l 9.4 21.5 "
+                    "b 8 21.5 7 20.5 7 19.1 l 7 4.9 b 7 3.5 8 2.5 9.4 2.5", 1.7),
+                   ("m 11.2 7 l 12.8 7 l 12.8 13 l 11.2 13", 0), ("m 8.9 12.2 l 15.1 12.2 l 12 15.8", 0)],
+    # Seguir solo este capítulo (salir del canal): un episodio, el ▶ en su cuadro.
+    "episode": [("m 5.5 5 l 18.5 5 b 20 5 21 6 21 7.5 l 21 16.5 b 21 18 20 19 18.5 19 l 5.5 19 b 4 19 3 18 3 16.5 l 3 7.5 "
+                 "b 3 6 4 5 5.5 5", 1.8), ("m 10 8.8 l 15.4 12 l 10 15.2", 0)],
+}
+_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+
+
+def icon(name: str, cx: float, cy: float, size: float, color: str = TEXT, alpha: str = "00") -> str:
+    """Un ícono de `ICON_PATHS` centrado en (cx, cy), de `size` de lado en el lienzo, del color de su texto."""
+    k = size / 24
+    ox, oy = cx - 12 * k, cy - 12 * k
+
+    def place(path: str) -> str:
+        n = iter(range(10 ** 6))
+        return _NUMBER.sub(lambda m: f"{(ox if next(n) % 2 == 0 else oy) + float(m.group()) * k:.1f}", path)
+
+    out = [_shape(place(path), color, "FF", outline=color, width=stroke * k / 2, outline_alpha=alpha) if stroke
+           else _shape(place(path), color, alpha) for path, stroke in ICON_PATHS[name]]
+    if name == "doubt":
+        out.append(f"{{\\an5\\pos({cx:.0f},{cy + .5 * k:.0f})\\fn{FONT}\\fs{size * .8:.0f}\\b1\\bord0\\shad0\\1c{color}\\1a&H{alpha}&}}?")
+    elif name == "resume":  # el arco abierto arriba a la izquierda y la punta que regresa (a la izquierda)
+        r, start, end = 7.6 * k, 262.0, 560.0
+        out.append(arc(cx, cy + k, r, 2 * k, start, end, color, alpha))
+        a = math.radians(start)
+        px, py = cx + r * math.cos(a), cy + k + r * math.sin(a)
+        dx, dy = math.sin(a), -math.cos(a)  # hacia donde regresa el arco (contra el reloj)
+        nx, ny = -dy, dx
+        tip, half = 3.6 * k, 3.4 * k
+        out.append(_shape(f"m {px + dx * tip:.1f} {py + dy * tip:.1f} l {px + nx * half:.1f} {py + ny * half:.1f} "
+                          f"l {px - nx * half:.1f} {py - ny * half:.1f}", color, alpha))
+    return "\n".join(out)
+
+
 # Cuánto pueden cubrir, sumadas, las figuras de una capa (en pantallas completas): a 4K libass deja de pintar la capa
 # entera pasando de ~12 (medido en la Lenovo con mpv: 12.3 sí, 16.5 no). Cada paso de un velo es una figura que llega
 # hasta su orilla oscura, así que un velo de muchos pasos cuesta varias pantallas.
@@ -413,19 +516,21 @@ def fit(value: str, size: int, width: float, weight: str = "regular") -> str:
     return value.rstrip(" ,.;:·") + "…"
 
 
-def glyph(x: float, cy: float, label: str, size: int = 34) -> tuple[str, float]:
+def glyph(x: float, cy: float, label: str, size: int = 34, *, solid: bool = False) -> tuple[str, float]:
     """Botón del mando dibujado (círculo, o píldora si son dos) en su color. Devuelve (ass, ancho). Con teclado,
-    la tecla que hace lo mismo («Espacio», «Esc»), en el mismo color."""
+    la tecla que hace lo mismo («Espacio», «Esc»), en el mismo color. De cristal (--glyph-bg); sobre lo blanco (`solid`: el
+    botón principal, «Saltar intro»), sólido (--glyph-bg-solid), que ahí el cristal no se vería."""
     color = GLYPH.get(label, TEXT)
+    disc = (GLYPH_SOLID, "00") if solid else glass_fill("glyph-bg")
     if KEYBOARD:  # una tecla: rectángulo redondeado (como las del teclado) y la letra más grande que en el círculo
         label = KEY_NAMES.get(label, label)
         font = int(size * .56)
         w = max(size, text_width(label, font, "bold") + size * .6)
-        parts = [rrect(x, cy - size / 2, w, size, size * .24, PANEL, "40", outline=color, width=2),
+        parts = [rrect(x, cy - size / 2, w, size, size * .24, *disc, outline=color, width=2),
                  text(x + w / 2, cy, esc(label), font, color, weight="bold", align=5)]
         return "\n".join(parts), w
     w = size if len(label) == 1 else max(size, text_width(label, int(size * .44), "bold") + size * .6)
-    parts = [rrect(x, cy - size / 2, w, size, size / 2, PANEL, "40", outline=color, width=2),
+    parts = [rrect(x, cy - size / 2, w, size, size / 2, *disc, outline=color, width=2),
              text(x + w / 2, cy, esc(label), int(size * .44), color, weight="bold", align=5)]
     return "\n".join(parts), w
 
@@ -565,7 +670,7 @@ def hud_ass(hud: Hud) -> str:
         chip_w = text_width(hud.seeking, 22, "semi") + 28
         left = center - (when_w + 14 + chip_w) / 2
         lines += [text(left, BAR_Y - 84, when, 44, weight="bold", align=4),
-                  rrect(left + when_w + 14, BAR_Y - 103, chip_w, 38, 19, PANEL, "40"),
+                  glass(left + when_w + 14, BAR_Y - 103, chip_w, 38, 19),
                   text(left + when_w + 28, BAR_Y - 84, esc(hud.seeking), 22, weight="semi", align=4)]
         chapter = chapter_at(hud)
         if chapter:
@@ -673,11 +778,11 @@ def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "h
         h = 76 if TOUCH else 62
         # El glifo se mide de verdad: con teclado «Espacio» es mucho más ancho que el círculo del mando y se
         # encimaba sobre «Continuar».
-        shape, gw = ("", 0.0) if TOUCH else glyph(x + 16, y + 31, key, 30)
+        shape, gw = ("", 0.0) if TOUCH else glyph(x + 16, y + 31, key, 30, solid=primary)
         lead = 26 if TOUCH else 16 + gw + 12
         w = lead + text_width(label, 24, "semi") + 26
         out.append(rrect(x, y, w, h, h / 2, TEXT) if primary
-                   else rrect(x, y, w, h, h / 2, PANEL, GLASS_ALPHA, outline=TEXT, width=1.5, outline_alpha=GLASS_EDGE_ALPHA))
+                   else glass(x, y, w, h, h / 2))
         if shape:
             out.append(shape)
         out.append(text(x + lead, y + h / 2, esc(label), 24, ON_LIGHT if primary else TEXT, weight="semi", align=4))
@@ -698,7 +803,7 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
     x = (right - total) if right is not None else (center - total / 2) if center is not None else (left if left is not None else MARGIN)
     out = []
     for (label, action), w in zip(items, widths, strict=True):
-        out.append(rrect(x, y, w, h, h / 2, PANEL, GLASS_ALPHA, outline=TEXT, width=1.5, outline_alpha=GLASS_EDGE_ALPHA))
+        out.append(glass(x, y, w, h, h / 2))
         out.append(text(x + w / 2, y + h / 2, esc(label), size, weight="semi", align=5))
         targets[layer].append((x, y, w, h, action))
         x += w + gap
@@ -792,27 +897,34 @@ PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 # Dónde empieza el panel (X, Y): 40 más arriba que antes, que la sexta fila terminaba en 998 y la fila de abajo (botones,
 # la nota de Versión, «Cerrar» con el dedo desde 986) empezaba ahí mismo: se encimaban (visto en la TV el 2026-10-29).
 PANEL_TOP = 520
+PANEL_INSET = 36  # el vidrio del panel sale esto de sus columnas (y queda separado de las orillas: «Menú flotante»)
+PANEL_BOTTOM = 976  # donde acaba el vidrio: las filas terminan en 958 y abajo van las pistas (1022) o «Cerrar» (986)
+ROWS_TOP = PANEL_TOP + 84  # la primera fila de cada columna
+ROWS_BOTTOM = ROWS_TOP + PANEL_ROWS * 60 - 6  # lo más abajo que llega una fila (958)
 
 
 def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str:
-    """Panel abajo, sobre un velo: el video sigue arriba. La opción enfocada, clara; la puesta, con ✓."""
-    # Una superficie sólida (como las hojas de Orbital) para leer sobre cualquier escena, con una
-    # transición corta arriba; el video sigue visible encima.
+    """Panel abajo, de vidrio fuerte (receta «Menú flotante»): el video sigue arriba. La opción enfocada, clara; la puesta,
+    con ✓."""
+    # Un velo corto que oscurece lo de abajo (para que las pistas del pie se lean sobre cualquier escena) y, encima, el panel
+    # de vidrio separado de las orillas. Pocas figuras grandes: SHADE_BUDGET.
     targets["panel"] = []
-    lines = [gradient(PANEL_TOP - 120, PANEL_TOP, 255, 40, 16), rrect(0, PANEL_TOP, W, H - PANEL_TOP, 0, PANEL, "28")]
+    lines = [gradient(PANEL_TOP - 160, PANEL_TOP + 40, 255, 110, 10), rrect(0, PANEL_TOP + 40, W, H - PANEL_TOP - 40, 0, SHADE, "6E"),
+             glass(MARGIN - PANEL_INSET, PANEL_TOP - 16, W - 2 * (MARGIN - PANEL_INSET), PANEL_BOTTOM - PANEL_TOP + 16, RADIUS_CARD,
+                   "glass-strong")]
     if playing or muted:
         label = " · ".join(p for p in ("Sigue reproduciendo" if playing else "", "sin sonido" if muted else "") if p)
         label = label[:1].upper() + label[1:]
-        lines += [rrect(MARGIN, 64, text_width(label, 22, "semi") + 70, 46, 23, PANEL, "40"),
+        lines += [glass(MARGIN, 64, text_width(label, 22, "semi") + 70, 46, 23),
                   _shape(f"m {MARGIN + 24} 77 l {MARGIN + 38} 87 l {MARGIN + 24} 97", TEXT),
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
     n = len(panel.columns)
-    # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, angosta. La
+    # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, la de siempre. La
     # cuadrícula de versiones, la que más: hasta cuatro calidades por idioma.
-    weights = [2.0 if column.grid else {"source": 1.4, "episodes": 1.35, "playback": .85, "channels": 1.5, "category": .7}.get(column.key, 1.0)
+    weights = [2.0 if column.grid else {"source": 1.4, "episodes": 1.35, "playback": 1.0, "channels": 1.5, "category": .7}.get(column.key, 1.0)
                for column in panel.columns]
     unit = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1.0, sum(weights)))
-    x = MARGIN
+    x, legend_below = MARGIN, []
     for c, column in enumerate(panel.columns):
         col_w = unit * weights[c]
         if c:
@@ -824,6 +936,9 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
         lines.append(text(x + 18, PANEL_TOP + 40, esc(name), 22, TEXT if active else MUTED, weight="semi"))
         if TOUCH:
             targets["panel"].append((x, PANEL_TOP + 20, col_w, 44, ("column", c)))
+        if column.key in ICON_COLUMNS:  # Reproducción: cada renglón con su ícono y su texto entero (dos renglones si hace falta)
+            lines += _icon_rows(column, c, x, col_w, active)
+            continue
         # Antes la lista se recentraba en cada paso de la cruceta (todo brincaba); ahora solo se
         # desplaza cuando el foco sale de las filas a la vista.
         if column.index < column.top:
@@ -836,6 +951,13 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
             lines.append(text(x + 18, y + 27, "Nada que elegir aquí", 24, MUTED, align=4))
         if column.grid:
             lines += _grid_rows(column, c, x, y, col_w, active)
+            name_w = text_width(name, 22, "semi") + 48
+            counter = text_width("99 de 99", 20) + 24 if len(column.options) > PANEL_ROWS else 0
+            legend = legend_items(column.options)
+            if legend_width(legend) <= col_w - 36 - name_w - counter:  # en el encabezado si cabe entera; si no, abajo
+                lines += states_legend(legend, x + 18 + name_w, PANEL_TOP + 40 + 15)
+            else:
+                legend_below = legend
         for i, option in enumerate([] if column.grid else column.options[first:first + PANEL_ROWS], start=first):
             focused = active and i == column.index
             current = bool(option.get("current"))
@@ -857,6 +979,12 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                 lines += flags.ass(option["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
                 left += FLAG_H * flags.W / flags.H + FLAG_GAP
                 room -= left - x - 52
+            need = text_width(option["label"], 24, weight)
+            if hint and need > room:  # el nombre primero: la pista suelta sus datos del final («En otra · 4K» → «En otra»)
+                spare = col_w - 70 - (left - x - 52) - need - 20
+                shorter = fit(hint, 20, spare) if spare > 0 else ""
+                if shorter and not shorter.endswith("…"):
+                    hint, room = shorter, col_w - 70 - (left - x - 52) - text_width(shorter, 20) - 20
             lines.append(text(left, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
             if hint:
                 tint = ON_LIGHT if focused else NEXT if option.get("accent") else MUTED
@@ -869,58 +997,177 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
             y += 60
         if len(column.options) > PANEL_ROWS:  # en el encabezado, a la derecha: abajo se encimaba con la nota de Fuentes
             lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
+    seasons = len(panel.column.pages) > 1  # Episodios con más de una temporada: LB/RB (o sus botones) la cambian
+    turn = [("‹ Temporada", "lb"), ("Temporada ›", "rb")] if seasons else []
+    keys = [("◀ ▶", "Columna"), ("A", "Elegir"), *([("LB RB", "Temporada")] if seasons else []), ("B", "Cerrar")]
+    # Lo que queda a la izquierda de los botones de abajo (con el dedo, «‹ Temporada · Temporada › · Cerrar» miden más).
+    note_room = W - 2 * MARGIN - 48 - (pills_width([*turn, ("Cerrar", "close")]) if TOUCH else hints_width(keys))
+    while legend_below and legend_width(legend_below) > note_room:  # 4:3 con la letra más grande: lo de menos uso, fuera
+        legend_below.pop()
     if panel.column.key == "source":  # la enfocada en palabras y qué quiere decir «Al instante», donde se elige
         note = "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. Las demás primero se descargan y pueden tardar."
         if panel.column.grid and panel.column.chosen:
             row, cell = panel.column.options[panel.column.index], panel.column.chosen
             said = " · ".join(p for p in (row["label"], cell["label"], cell["doubt"], cell["hint"], cell["size"],
                                           "la que ves" if cell.get("current") else "") if p)
-            note = f"{said}      Al instante: Real-Debrid ya la tiene y arranca en segundos"
-        lines.append(text(MARGIN, 1022, esc(fit(note, 20, W - 2 * MARGIN - 420)), 20, MUTED, align=4))
-    seasons = len(panel.column.pages) > 1  # Episodios con más de una temporada: LB/RB (o sus botones) la cambian
+            note = said if legend_below else f"{said}      Al instante: Real-Debrid ya la tiene y arranca en segundos"
+        room = note_room - (legend_width(legend_below) + 40 if legend_below else 0)
+        note = fit(note, 20, room) if room >= 160 else ""  # sin lugar (4:3, letra grande), la dice solo la casilla enfocada
+        if note:
+            lines.append(text(MARGIN, 1022, esc(note), 20, MUTED, align=4))
+        if legend_below:
+            lines += states_legend(legend_below, MARGIN + (text_width(note, 20) + 40 if note else 0), 1022)
+    elif legend_below:
+        lines += states_legend(legend_below, MARGIN, 1022)
     if TOUCH:
-        turn = [("‹ Temporada", "lb"), ("Temporada ›", "rb")] if seasons else []
         lines.append(pills([*turn, ("Cerrar", "close")], 986, right=W - MARGIN, layer="panel"))
     else:
-        lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), *([("LB RB", "Temporada")] if seasons else []), ("B", "Cerrar")],
-                           1022, right=W - MARGIN))
+        lines.append(hints(keys, 1022, right=W - MARGIN))
     return "\n".join(lines)
+
+
+ICON_COLUMNS = {"playback"}  # columnas de acciones: un ícono por renglón y el texto entero, en dos renglones si no cabe
+ICON_SIZE = 30  # el ícono de un renglón (crece con el tamaño del texto)
+
+
+def _icon_row_lines(option: dict, room: float) -> tuple[list[str], float]:
+    """Los renglones del nombre de una acción (hasta tres, partidos entre palabras: nunca «…» a media palabra) y lo que mide
+    su fila. La pista («Mismo minuto») va debajo, en chico: a la derecha le quitaba lugar al nombre."""
+    words = str(option["label"]).split()
+    label = wrap(option["label"], 24, room, 3)
+    if " ".join(label) != " ".join(words):  # ni en tres renglones (no pasa con estos textos): una palabra por renglón
+        label = [fit(w, 24, room, "semi") for w in words]
+    step = 30 * _text_scale
+    body = step * len(label) + (26 * _text_scale if option.get("hint") else 0)
+    return label, max(54.0, body + 22)
+
+
+def _icon_rows(column: Column, c: int, x: float, col_w: float, active: bool) -> list[str]:
+    """Reproducción (Y): cada acción con su ícono y su nombre completo, como los renglones de un menú de Orbital. La fila
+    crece si el nombre necesita dos renglones; se ven las que caben entre ROWS_TOP y ROWS_BOTTOM y el resto se desplaza con
+    el foco (sin brincar: solo cuando el foco sale de las que se ven)."""
+    lines: list[str] = []
+    if not column.options:
+        return [text(x + 18, ROWS_TOP + 27, "Nada que elegir aquí", 24, MUTED, align=4)]
+    size = ICON_SIZE * _text_scale
+    left = x + 18 + size + 14
+    room = x + col_w - 18 - left
+    rows = [_icon_row_lines(option, room) for option in column.options]
+    budget = ROWS_BOTTOM - ROWS_TOP
+
+    def fits(first: int, last: int) -> bool:  # ¿caben de `first` a `last` (incluidas)?
+        return sum(h for _, h in rows[first:last + 1]) + 6 * (last - first) <= budget
+
+    column.top = max(0, min(column.top, column.index))
+    while column.top < column.index and not fits(column.top, column.index):
+        column.top += 1
+    y, shown = ROWS_TOP, 0
+    for i in range(column.top, len(column.options)):
+        option, (label, h) = column.options[i], rows[i]
+        if i > column.top and y + h > ROWS_BOTTOM:
+            break
+        focused = active and i == column.index
+        if focused:
+            lines.append(rrect(x, y, col_w, h, 12, TEXT))
+        if TOUCH:
+            targets["panel"].append((x, y, col_w, h, ("option", c, i)))
+        ink = ON_LIGHT if focused else TEXT if option.get("current") else SOFT
+        weight = "semi" if focused or option.get("current") else "regular"
+        hint = option.get("hint") or ""
+        step = 30 * _text_scale
+        top = y + (h - step * len(label) - (26 * _text_scale if hint else 0)) / 2
+        lines.append(icon(option.get("icon") or "restart", x + 18 + size / 2, y + h / 2, size, ink))
+        for n, part in enumerate(label):
+            lines.append(text(left, top + step * (n + .5), esc(part), 24, ink, weight=weight, align=4))
+        if hint:
+            lines.append(text(left, top + step * len(label) + 13 * _text_scale, esc(fit(hint, 20, room)), 20,
+                              ON_LIGHT if focused else MUTED, align=4))
+        y += h + 6
+        shown += 1
+    if shown < len(column.options):  # no caben todas: cuál es la enfocada, en el encabezado (como las demás columnas)
+        lines.append(text(x + col_w - 18, PANEL_TOP + 42, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
+    return lines
 
 
 GRID_NAME = 215  # la banderita y el nombre del idioma («Castellano» entero), a la izquierda de sus casillas
 
 
+# Lo que dice cada casilla de Versión, en íconos (como el iPhone, D10: íconos, no cápsulas de texto; Fernando, 6 nov: «solo se lee
+# completo "Al instante"»). En palabras va abajo, en la nota de la enfocada, y el encabezado de la columna dice qué es cada uno.
+CELL_STATES = (("Al instante", "bolt", LIVE), ("Hay que bajarla", "cloud-down", MUTED), ("Idioma dudoso", "doubt", NEXT))
+CELL_ICON = 22  # los íconos de una casilla (crecen con el tamaño del texto)
+
+
+def cell_states(cell: dict) -> list[tuple[str, str, str]]:
+    """Lo que dice una casilla (de `CELL_STATES`): primero qué tan rápido arranca y luego si su idioma es dudoso."""
+    said = {cell.get("hint"), cell.get("doubt")}
+    return [state for state in CELL_STATES if state[0] in said]
+
+
+def legend_items(grid: list[dict]) -> list[tuple[str, str, str]]:
+    """Los íconos de `CELL_STATES` que aparecen en la cuadrícula (la leyenda solo explica lo que se ve)."""
+    present = {s[0] for row in grid for cell in row.get("cells", []) for s in cell_states(cell)}
+    return [s for s in CELL_STATES if s[0] in present]
+
+
+def legend_width(items: list[tuple[str, str, str]]) -> float:
+    size = CELL_ICON * _text_scale
+    return sum(size + 8 + text_width(name, 20) for name, _, _ in items) + 24 * max(0, len(items) - 1)
+
+
+def states_legend(items: list[tuple[str, str, str]], x: float, cy: float) -> list[str]:
+    """«⚡ Al instante  ☁ Hay que bajarla  ? Idioma dudoso»: cada ícono con su nombre (nunca un ícono sin él)."""
+    size, out = CELL_ICON * _text_scale, []
+    for name, shape, color in items:
+        out.append(icon(shape, x + size / 2, cy, size, color))
+        out.append(text(x + size + 8, cy, esc(name), 20, MUTED, align=4))
+        x += size + 8 + text_width(name, 20) + 24
+    return out
+
+
 def _grid_rows(column: Column, c: int, x: float, y: float, col_w: float, active: bool) -> list[str]:
     """La cuadrícula de Versión (como «Versión» de la ficha): un renglón por idioma, su nombre a la izquierda y
-    sus calidades en casillas («1080p» y debajo «Al instante»); la enfocada, clara; la que ves, con contorno."""
+    sus calidades en casillas de vidrio («1080p» y debajo sus íconos: ⚡ al instante, la nube si hay que bajarla, «?» si el
+    idioma es dudoso); la enfocada, clara; la que ves, con contorno."""
     lines = []
-    width = (col_w - GRID_NAME - 10 * 3) / 4  # hasta cuatro calidades: 4K, 1080p, 720p, SD
+    # Hasta cuatro calidades (4K, 1080p, 720p, SD), pero solo el lugar de las que hay: con dos, cada casilla mide el doble. En
+    # una columna angosta (4:3), el nombre del idioma cede un poco antes que las casillas.
+    slots = max(1, min(4, max((len(row["cells"]) for row in column.options), default=1)))
+    name_w = min(GRID_NAME, col_w * .34)
+    width = min((col_w - name_w - 10 * (slots - 1)) / slots, (col_w - GRID_NAME - 30) / 2)
+    size = CELL_ICON * _text_scale
     for i, row in enumerate(column.options[column.top:column.top + PANEL_ROWS], start=column.top):
         here = active and i == column.index
         left = x + 18
         if row.get("flag"):
             lines += flags.ass(row["flag"], left, y + 27 - FLAG_H / 2, FLAG_H)
             left += FLAG_H * flags.W / flags.H + FLAG_GAP
-        lines.append(text(left, y + 27, esc(fit(row["label"], 24, GRID_NAME - 8 - (left - x), "semi" if here else "regular")), 24,
-                          TEXT if here or any(cell.get("current") for cell in row["cells"]) else SOFT,
-                          weight="semi" if here else "regular", align=4))
-        cx = x + GRID_NAME
+        weight, name_size, room = "semi" if here else "regular", 24, name_w - 8 - (left - x)
+        while name_size > 19 and text_width(row["label"], name_size, weight) > room:  # se achica antes de cortarse
+            name_size -= 1
+        lines.append(text(left, y + 27, esc(fit(row["label"], name_size, room, weight)), name_size,
+                          TEXT if here or any(cell.get("current") for cell in row["cells"]) else SOFT, weight=weight, align=4))
+        cx = x + name_w
         for j, cell in enumerate(row["cells"][:4]):
             focused = here and j == min(column.cell, len(row["cells"]) - 1)
             if focused:
                 lines.append(rrect(cx, y, width, 54, 12, TEXT))
             else:
-                lines.append(rrect(cx, y, width, 54, 12, TEXT, "E6"))  # la casilla, apenas marcada
+                lines.append(glass(cx, y, width, 54, 12, edge="glass-hairline"))  # la casilla: un control de vidrio
             if cell.get("current"):
                 lines.append(rrect(cx, y, width, 54, 12, TEXT, "FF", outline=TEXT if not focused else ON_LIGHT, width=2))
             if TOUCH:
                 targets["panel"].append((cx, y, width, 54, ("cell", c, i, j)))
             ink = ON_LIGHT if focused else TEXT
-            state = cell["doubt"] or cell["hint"]
-            good = cell["hint"] == "Al instante" and not cell["doubt"]
-            lines += [text(cx + 14, y + 17, esc(fit(cell["label"], 21, width - 24, "semi")), 21, ink, weight="semi", align=4),
-                      text(cx + 14, y + 40, esc(fit(state, 17, width - 24)), 17,
-                           ON_LIGHT if focused else (LIVE if good else MUTED), align=4)]
+            label_size = 21  # «4K HDR» en una casilla angosta (16:10, letra grande): se achica antes de cortarse
+            while label_size > 16 and text_width(cell["label"], label_size, "semi") > width - 24:
+                label_size -= 1
+            lines.append(text(cx + 12, y + 17, esc(fit(cell["label"], label_size, width - 24, "semi")), label_size, ink,
+                              weight="semi", align=4))
+            ix = cx + 12
+            for _name, shape, color in cell_states(cell):
+                lines.append(icon(shape, ix + size / 2, y + 40, size, ON_LIGHT if focused else color))
+                ix += size + 6
             cx += width + 10
         y += 60
     return lines
@@ -1003,18 +1250,21 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
         columns.append(_column("source", [{"label": s["label"], "hint": s.get("hint", ""), "action": ("source", s["id"]),
                                            "current": bool(s.get("current"))} for s in sources]))
     if channel:  # un canal de Orbital: salirte del canal y quedarte en este episodio, o seguirlo en el iPhone
-        playback = [{"label": "Seguir solo este capítulo", "hint": "Sale del canal", "action": ("detach", None), "current": False}]
+        playback = [{"label": "Seguir solo este capítulo", "hint": "Sale del canal", "action": ("detach", None), "current": False,
+                     "icon": "episode"}]
         if iphone:
-            playback.append({"label": "Seguir en el iPhone", "hint": "Mismo minuto", "action": ("iphone", "continue"), "current": False})
+            playback.append({"label": "Seguir en el iPhone", "hint": "Mismo minuto", "action": ("iphone", "continue"), "current": False,
+                             "icon": "phone-play"})
         columns.append(Column("playback", playback))
         return Panel("more", columns, 0)
-    playback = [{"label": "Desde el principio", "action": ("restart", None), "current": False}]
+    playback = [{"label": "Desde el principio", "action": ("restart", None), "current": False, "icon": "restart"}]
     if back_to:  # empezaste desde el principio sin querer: volver a donde ibas
-        playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False})
+        playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False, "icon": "resume"})
     if iphone:  # lo que ves: seguir en el iPhone en el mismo minuto, mandarlo (desde donde ibas) o descargarlo allá
-        playback += [{"label": "Seguir en el iPhone", "hint": "Mismo minuto", "action": ("iphone", "continue"), "current": False},
-                     {"label": "Enviar al iPhone", "action": ("iphone", "open"), "current": False},
-                     {"label": "Descargar en el iPhone", "action": ("iphone", "download"), "current": False}]
+        playback += [{"label": "Seguir en el iPhone", "hint": "Mismo minuto", "action": ("iphone", "continue"), "current": False,
+                      "icon": "phone-play"},
+                     {"label": "Enviar al iPhone", "action": ("iphone", "open"), "current": False, "icon": "phone-send"},
+                     {"label": "Descargar en el iPhone", "action": ("iphone", "download"), "current": False, "icon": "phone-down"}]
     columns.append(Column("playback", playback))
     return Panel("more", columns, 0)
 
@@ -1090,7 +1340,7 @@ def sub_trial_ass(trial: SubTrial) -> str:
     targets["try"] = []
     h = TRY_TOUCH_H if TOUCH else TRY_H
     top, info, keys = TRY_ROWS
-    lines = [rrect(0, 0, W, h, 0, PANEL, "18"), gradient(h, h + 48, 120, 255, 8)]
+    lines = [glass(0, 0, W, h, 0, "glass-strong", None), gradient(h, h + 48, 160, 255, 8)]
     if trial.total <= 0:
         title = f"{trial.language} · No hay subtítulos para probar"
     elif trial.number <= 0:
@@ -1141,8 +1391,6 @@ class LiveHud:
 
 
 # Qué dice y de qué color es cada estado del canal.
-NEXT = ass_color(PALETTE["amber-300"])  # «Siguiente» en Y › Episodios (--color-warning: el que sigue, no un error)
-LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
 LIVE_STATUS = {"live": ("En vivo", LIVE), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
 
 
@@ -1191,7 +1439,7 @@ def muted_ass() -> str:
     speaker = _shape(f"m {x + 24} {y + 20} l {x + 32} {y + 20} l {x + 42} {y + 11} l {x + 42} {y + 43} "
                      f"l {x + 32} {y + 34} l {x + 24} {y + 34}", TEXT)
     slash = _shape(f"m {x + 20} {y + 40} l {x + 23} {y + 43} l {x + 49} {y + 14} l {x + 46} {y + 11}", TEXT)
-    return "\n".join([rrect(x, y, w, 54, 27, PANEL, "30"), speaker, slash, text(x + 62, y + 27, esc(label), 24, weight="semi", align=4)])
+    return "\n".join([glass(x, y, w, 54, 27, "glass-strong"), speaker, slash, text(x + 62, y + 27, esc(label), 24, weight="semi", align=4)])
 
 
 def channels_panel(categories: list[dict], channels: list[dict], *, focus: str = "channels") -> Panel:
@@ -1236,7 +1484,7 @@ def skip_ass(label: str, *, appear: float = 1.0) -> str:
     gw = glyph(0, 0, "A", 30)[1]  # con teclado, «Espacio»: el botón crece con su glifo
     w = 16 + gw + 12 + text_width(label, 24, "bold") + 28
     x, y = W - MARGIN - w, 790 + lift
-    shape, gw = glyph(x + 16, y + 32, "A", 30)
+    shape, gw = glyph(x + 16, y + 32, "A", 30, solid=True)
     return _entering("\n".join([rrect(x, y, w, 64, 14, TEXT), shape,
                                 text(x + 16 + gw + 12, y + 32, esc(label), 24, ON_LIGHT, weight="bold", align=4)]), appear)
 
@@ -1256,12 +1504,12 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     still = still and not short
     w, h = (880 if still else 660), (206 if TOUCH else 176) - short
     x, y = W - MARGIN - w, 870 - h + (1 - ease_out(appear)) * CARD_RISE
-    lines = [rrect(x, y, w, h, 20, PANEL, "18")]
+    lines = [glass(x, y, w, h, RADIUS_CARD, "glass-strong")]
     tx, right = x + 32, x + w - 32
     if still:
         sw, sh = STILL_BOX
         sx, sy = x + 20, y + (h - sh) / 2
-        lines.append(rrect(sx, sy, sw, sh, 12, TEXT, "E6"))  # el lugar del cuadro mientras llega (y si no llega)
+        lines.append(glass(sx, sy, sw, sh, 12, edge="glass-hairline"))  # el lugar del cuadro mientras llega (y si no llega)
         placed["still"] = (sx, sy, sw, sh)
         tx = sx + sw + 28
     else:
@@ -1269,7 +1517,7 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     if circled:
         r, thick = (44, 7) if still else (50, 8)
         cx, cy = (right - r, y + h / 2) if still else (x + 32 + r, y + h / 2)
-        lines += [circle(cx, cy, r, TEXT, "C8"), circle(cx, cy, r - thick, PANEL)]
+        lines.append(ring(cx, cy, r, thick, 1.0, TEXT, "C8"))  # el riel del anillo (sin disco: se ve el vidrio)
         if spinner is not None:
             turn, length = spinner
             if length > .005:
@@ -1328,11 +1576,11 @@ def toast_ass(message: str, top: float = NOTICE_Y) -> str:
     if not detail:
         w = text_width(title, 24, "semi") + 44
         x = W - MARGIN - w
-        return "\n".join([rrect(x, top, w, 54, 27, PANEL, "30"), text(x + 22, top + 27, esc(title), 24, weight="semi", align=4)])
+        return "\n".join([glass(x, top, w, 54, 27, "glass-strong"), text(x + 22, top + 27, esc(title), 24, weight="semi", align=4)])
     detail = fit(detail, 20, room)
     w = max(text_width(title, 24, "semi"), text_width(detail, 20)) + 44
     x = W - MARGIN - w
-    return "\n".join([rrect(x, top, w, 84, 24, PANEL, "30"), text(x + 22, top + 28, esc(title), 24, weight="semi", align=4),
+    return "\n".join([glass(x, top, w, 84, 24, "glass-strong"), text(x + 22, top + 28, esc(title), 24, weight="semi", align=4),
                       text(x + 22, top + 58, esc(detail), 20, SOFT, align=4)])
 
 
@@ -1409,7 +1657,7 @@ def volume_ass(volume: float, muted: bool = False, touch: bool = False) -> str:
     fill = 0 if muted else max(track_w, normal_h * min(level, 100) / 100)
     extra = 0 if muted or level <= 100 else (track_h - normal_h) * (level - 100) / (VOLUME_TOP - 100)
     number = "—" if muted else f"{int(level)}"
-    parts = [rrect(x, y, w, h, w / 2, PANEL, "38", blur=1),  # la cápsula, como los paneles (un poco de vidrio)
+    parts = [glass(x, y, w, h, w / 2, "glass-strong"),  # la cápsula, de vidrio como los paneles
              text(x + w / 2, y + 34, number, 30, TEXT, weight="semi", align=5, alpha="70" if muted else "00"),
              rrect(track_x, track_top, track_w, track_h, track_w / 2, TEXT, "D0")]  # el riel
     if extra:
@@ -1423,7 +1671,7 @@ def volume_ass(volume: float, muted: bool = False, touch: bool = False) -> str:
     if touch:  # V2-A: + arriba y − abajo, a la izquierda de la cápsula
         for label, action, by in (("+", "up", y + 40), ("−", "down", y + h - 110)):
             bx, size = x - 92, 72
-            parts.append(rrect(bx, by, size, size, size / 2, PANEL, GLASS_ALPHA, outline=TEXT, width=1.5, outline_alpha=GLASS_EDGE_ALPHA))
+            parts.append(glass(bx, by, size, size, size / 2))
             parts.append(text(bx + size / 2, by + size / 2, label, 40, TEXT, weight="semi", align=5))
             targets["volume"].append((bx, by, size, size, action))
     parts.append(speaker(x + w / 2 + 4, y + h - 46, level, muted))
@@ -1454,7 +1702,7 @@ def pip_ass(paused: bool) -> str:
     parts = [veil]
     # Volver a pantalla completa: las cuatro esquinas de un marco (el ícono de siempre).
     ex, ey, s, t = corner, corner, 34, 14
-    parts.append(circle(ex, ey, PIP_BUTTON, PANEL, "50"))
+    parts.append(glass(ex - PIP_BUTTON, ey - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, PIP_BUTTON))
     for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
         x0, y0 = ex + sx * s, ey + sy * s
         parts.append(_shape(_line_path(x0, y0, x0 - sx * 26, y0, t), TEXT))
@@ -1462,12 +1710,12 @@ def pip_ass(paused: bool) -> str:
     targets["hud"].append((ex - PIP_BUTTON, ey - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, "pip:expand"))
     # Cerrar: una ✕.
     qx, qy = W - corner, corner
-    parts.append(circle(qx, qy, PIP_BUTTON, PANEL, "50"))
+    parts.append(glass(qx - PIP_BUTTON, qy - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, PIP_BUTTON))
     parts.append(_shape(_line_path(qx - 34, qy - 34, qx + 34, qy + 34, 14), TEXT))
     parts.append(_shape(_line_path(qx + 34, qy - 34, qx - 34, qy + 34, 14), TEXT))
     targets["hud"].append((qx - PIP_BUTTON, qy - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, "pip:close"))
     # Pausa / reproducir, al centro y más grande.
-    parts.append(circle(cx, cy, PIP_PLAY, PANEL, "40"))
+    parts.append(glass(cx - PIP_PLAY, cy - PIP_PLAY, 2 * PIP_PLAY, 2 * PIP_PLAY, PIP_PLAY))
     if paused:
         parts.append(_shape(f"m {cx - 38:.1f} {cy - 62:.1f} l {cx + 66:.1f} {cy:.1f} l {cx - 38:.1f} {cy + 62:.1f}", TEXT))
     else:
