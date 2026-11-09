@@ -415,6 +415,8 @@ public final class PlayerModel: ObservableModel {
                 guard mine == generation else { return }
                 // Con internet y sin que fuera la red (leer tus complementos falló): no se pudo ni buscar (la causa 3).
                 if !(error is StreamFinderError), !(error is NetworkError), !Degraded.isOffline(error) { return cannotSearch(error) }
+                // Alguno no contestó y nadie dio nada: se dice quién, no «no hay» ni «sin internet» (Fernando, 9 nov).
+                if let unsure = error as? StreamFinderError, case .incomplete = unsure { Self.note("sin respuesta: \(unsure)"); return fail(unsure.description, .network) }
                 return fail("Sin conexión: no pude buscar dónde verlo.", .network)
             }
             guard mine == generation, !closing else { return }

@@ -2,9 +2,17 @@ import Foundation
 import OrbitalAddons
 
 /// Ningún complemento contestó (sin internet, o tus complementos caídos): no es lo mismo que «no hay fuentes».
-public enum StreamFinderError: Error, Sendable, CustomStringConvertible {
+/// `incomplete`: alguno no contestó (o se saltó) y los que sí no tenían nada; ni reintentando se supo si hay (Fernando,
+/// 9 nov: «No hay versiones en Real-Debrid» de un episodio que Torrentio sí tenía): se dice quién, nunca «no hay».
+public enum StreamFinderError: Error, Sendable, CustomStringConvertible, Equatable {
     case unreachable
-    public var description: String { "Sin conexión: no pude buscar dónde verlo. Revisa tu internet." }
+    case incomplete([String])
+    public var description: String {
+        switch self {
+        case .unreachable: "Sin conexión: no pude buscar dónde verlo. Revisa tu internet."
+        case .incomplete(let names): "\(names.isEmpty ? "Tus complementos" : names.joined(separator: " y ")) no \(names.count == 1 ? "contestó" : "contestaron") a tiempo: no sé si hay versiones. Intenta de nuevo."
+        }
+    }
 }
 
 /// Lo que va pasando al pedir fuentes: a qué complementos se les pregunta y lo que contesta cada uno (las versiones con
@@ -51,6 +59,7 @@ public actor StreamFinder {
     private let clock: @Sendable () -> Date
     /// Cómo le va a cada complemento (C2): el que no contesta dos veces seguidas ya no se espera hasta su próximo intento.
     private let health: AddonHealth?
+    private let limits: SearchLimits
     private var cache: [String: (expires: Date, sources: [Source])] = [:]
     /// Los avisos de Torrentio que llegaron en lugar de versiones en la última búsqueda de cada video (R5): no se ofrecen,
     /// pero dicen por qué no hay.
@@ -63,7 +72,7 @@ public actor StreamFinder {
     /// distinto (antes cada una volvía a preguntar a todos y esperaba al más lento). Y lo que ya se está pidiendo se comparte.
     private typealias Answers = (serving: [Addon], results: [[JSON]?])
     private var answers: [String: (expires: Date, answers: Answers, failed: Bool)] = [:]
-    private var asking: [String: Task<Answers, Error>] = [:]
+    private var asking: [String: (id: UUID, task: Task<Answers, Error>)] = [:]
     /// Quien quiere ver la búsqueda mientras pasa (la órbita de «Buscando la mejor versión»), por video.
     private var watchers: [String: [UUID: AsyncStream<SearchEvent>.Continuation]] = [:]
     /// Lo que ya pasó en una búsqueda en curso: quien llega tarde (el reproductor, si la ficha ya había preguntado) lo recibe
@@ -79,8 +88,8 @@ public actor StreamFinder {
 
     public init(http: HTTPClient, registry: AddonRegistry, health: AddonHealth? = nil, bridge: IDBridge? = nil,
                 internetSubtitles: @escaping @Sendable () -> Bool = { true }, openSubtitles: OpenSubtitlesAPI? = nil,
-                clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.registry = registry; self.health = health; self.bridge = bridge; self.openSubtitles = openSubtitles
+                limits: SearchLimits = SearchLimits(), clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.limits = limits; self.http = http; self.registry = registry; self.health = health; self.bridge = bridge; self.openSubtitles = openSubtitles
         self.internetSubtitles = internetSubtitles; self.clock = clock
     }
 
@@ -138,7 +147,7 @@ public actor StreamFinder {
             // M6: si solo da torrents, el iPhone no puede reproducir nada de él (la TV sí).
             if !found.isEmpty { health?.answered(addon.url, onlyTorrents: AddonTorrents.onlyTorrents(found.map { ($0["url"]?.string, $0["infoHash"]?.string) })) }
             return found
-        } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") {
+        } catch let error as NetworkError where error.description.hasPrefix("HTTP 4") && !Self.busy(error) {
             health?.ok(addon.url, seconds: Date().timeIntervalSince(start))
             return []   // contestó (no tiene ese video): eso es «no hay», no un fallo de red
         } catch {
@@ -162,9 +171,14 @@ public actor StreamFinder {
         let metaID = Self.metaID(of: videoID)
         let lookup = origin
         let originTask = Task { await lookup(kind, metaID) }
-        let (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
+        var (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
+        // Alguno no contestó (o se saltó por no contestar antes) y nadie dio nada: no se sabe si hay. Se pregunta otra vez a
+        // todos, también a los saltados, antes de decir nada.
+        if Self.unsure(results, skipped: skippedByHealth["\(kind):\(videoID)"] ?? []) {
+            (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: true, everyone: true)
+        }
         let failed = results.contains { $0 == nil }
-        let titleOrigin = await originTask.value
+        let titleOrigin = await Deadline.within(limits.origin, or: nil) { await originTask.value }
         var sources: [Source] = [], seen = Set<Int>(), notices: [StreamNotice] = []
         for (addon, streams) in zip(serving, results) {
             for stream in streams ?? [] {
@@ -196,7 +210,8 @@ public actor StreamFinder {
         }
         for missing in Self.markReady(&sources, readyNow) where !missing.listedOnly {
             // Torrentio no la lista (con «solo lo que ya está» o por su límite): se ve con el enlace de tu Real-Debrid.
-            guard let url = await readyLink(missing.hash, videoID) else { continue }
+            let link = readyLink
+            guard let url = await Deadline.within(limits.readyLink, or: nil, { await link(missing.hash, videoID) }) else { continue }
             var source = Self.readySource(missing, url: url, origin: titleOrigin)
             while seen.contains(source.index) { source.index = (source.index + 1) % (1 << 31) }
             sources.append(source); seen.insert(source.index)
@@ -206,7 +221,9 @@ public actor StreamFinder {
         quietSeen["\(kind):\(videoID)"] = (skippedByHealth["\(kind):\(videoID)"] ?? []) + zip(serving, results).filter { $0.1 == nil }.map(\.0.name)
         // Nadie contestó: es la red, no que no haya fuentes (antes se decía «No hay fuentes» sin internet).
         if !results.isEmpty, results.allSatisfy({ $0 == nil }), ranked.isEmpty { throw StreamFinderError.unreachable }
-        if failed && ranked.isEmpty { return ranked }  // la red falló y no hay nada: no se recuerda
+        // Alguno no contestó y no hay nada: no se sabe si hay (antes se regresaba la lista vacía y se decía «No hay versiones
+        // en Real-Debrid»). No se recuerda.
+        if failed && ranked.isEmpty { throw StreamFinderError.incomplete(quiet(kind: kind, videoID: videoID)) }
         if cache.count >= Self.cacheMax { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { cache[k] = nil } }
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)
         return ranked
@@ -269,21 +286,43 @@ public actor StreamFinder {
 
     /// Lo que contestaron los complementos para un video: de lo guardado (si no ha caducado y no se pide `fresh`), de una
     /// petición que ya va en camino, o se pregunta a todos a la vez.
-    private func ask(kind: String, videoID: String, fresh: Bool) async throws -> Answers {
+    /// Todo con tope (`limits.total`): quien se une a una petición en camino (la de la ficha) tampoco espera para siempre.
+    private func ask(kind: String, videoID: String, fresh: Bool, everyone: Bool = false) async throws -> Answers {
         let key = "\(kind):\(videoID)"
         if !fresh, let hit = answers[key], clock() < hit.expires { return hit.answers }
-        if !fresh, let running = asking[key] { return try await running.value }
-        let task = Task { try await self.askAll(kind: kind, videoID: videoID) }
-        asking[key] = task
-        defer { asking[key] = nil }
-        let found = try await task.value
+        if !fresh, let running = asking[key]?.task { return try await wait(running, key: key) }
+        let task = Task { try await self.askAll(kind: kind, videoID: videoID, everyone: everyone) }
+        let id = UUID()
+        asking[key] = (id, task)
+        // Solo se quita la propia: un `fresh` que empezó después no se borra al terminar esta.
+        defer { if asking[key]?.id == id { asking[key] = nil } }
+        let found = try await wait(task, key: key)
         let failed = found.results.contains { $0 == nil }
         if answers.count >= Self.cacheMax { for k in answers.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { answers[k] = nil } }
         answers[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), found, failed)
         return found
     }
 
-    private func askAll(kind: String, videoID: String) async throws -> Answers {
+    /// Espera una petición con el tope total; si se pasa, se cancela, se suelta (el siguiente no la hereda) y es la red.
+    private func wait(_ task: Task<Answers, Error>, key: String) async throws -> Answers {
+        let result = await Deadline.within(limits.total, or: Result<Answers, Error>.failure(StreamFinderError.unreachable)) { await task.result }
+        if case .failure(StreamFinderError.unreachable) = result {
+            task.cancel()
+            if asking[key]?.task == task { asking[key] = nil }
+            happened[key] = nil
+        }
+        return try result.get()
+    }
+
+    /// 429 (demasiadas preguntas) y 408 (tiempo agotado) no son «no tengo ese video»: es que no contestó.
+    static func busy(_ error: NetworkError) -> Bool { ["HTTP 429", "HTTP 408"].contains(error.description) }
+
+    /// Nadie dio nada y alguno no contestó o se saltó: no se sabe si hay.
+    static func unsure(_ results: [[JSON]?], skipped: [String]) -> Bool {
+        !results.contains { !($0 ?? []).isEmpty } && (results.contains { $0 == nil } || !skipped.isEmpty)
+    }
+
+    private func askAll(kind: String, videoID: String, everyone: Bool) async throws -> Answers {
         var all = try await registry.serving("stream", kind: kind, itemID: videoID)
         var ids = [String: String]()   // M5: a los que solo saben de IMDb, con el id traducido
         if IDBridge.isForeign(videoID), let bridge, let imdb = await bridge.videoID(videoID, kind: kind) {
@@ -293,18 +332,23 @@ public actor StreamFinder {
             }
         }
         // Los que no contestan se saltan (C2); si son todos, se les pregunta igual: nunca te quedas sin preguntar.
-        let awake = all.filter { health?.skip($0.url) != true }
+        let awake = everyone ? all : all.filter { health?.skip($0.url) != true }
         let serving = awake.isEmpty ? all : awake
         let key = "\(kind):\(videoID)"
-        skippedByHealth[key] = awake.isEmpty ? [] : all.filter { health?.skip($0.url) == true }.map(\.name)
+        skippedByHealth[key] = awake.isEmpty || everyone ? [] : all.filter { health?.skip($0.url) == true }.map(\.name)
         emit(key, .asking(serving.map(\.name)))
         // Un complemento lento no detiene a los demás: pasado `budget`, si alguno ya dio fuentes, no se le espera (cuenta como
         // fallido: se vuelve a preguntar pronto).
-        let budget = Self.budget
+        let budget = Self.budget, perAddon = limits.perAddon, health = self.health
         let results = await withTaskGroup(of: Arrival.self) { group in
             for (i, addon) in serving.enumerated() {
                 let id = ids[addon.url] ?? videoID
-                group.addTask { .addon(i, await self.fetch(addon, kind: kind, videoID: id)) }
+                // Con tope propio: un servidor que gotea (o una red que no hace caso a la cancelación) no detiene la búsqueda.
+                group.addTask {
+                    let got: [JSON]?? = await Deadline.within(perAddon, or: .none) { .some(await self.fetch(addon, kind: kind, videoID: id)) }
+                    if case .none = got, !Task.isCancelled { health?.fail(addon.url) }
+                    return .addon(i, got ?? nil)
+                }
             }
             group.addTask { try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000)); return .budget }
             var out = [[JSON]?](repeating: nil, count: serving.count)
