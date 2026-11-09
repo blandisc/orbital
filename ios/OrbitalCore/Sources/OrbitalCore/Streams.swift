@@ -27,6 +27,8 @@ public struct Source: Sendable, Equatable, Identifiable {
     public var dub = ""
     /// El nombre no menciona el título (TMDB y Cinemeta): Torrentio a veces trae otro («La casa de la pradera»). Baja, no se esconde.
     public var otherTitle = false
+    /// De otro título u otro episodio (por el año, el nombre o una serie de casi el mismo nombre): nunca se elige sola.
+    public var isOtherTitle: Bool { otherTitle || tags.contains(Streams.otherTitleTag) || tags.contains(Streams.otherEpisodeTag) }
     /// El idioma original del título («ja», «es-ES»…), si se sabe: el renglón «original» de tu orden de idiomas.
     public var originalLanguage: String?
     /// Real-Debrid no la dejó bajar (la pediste y la rechazó: error 35, derechos…): «Real-Debrid no lo dejó bajar», nunca la
@@ -432,28 +434,6 @@ public enum Streams {
         }
         return false
     }
-    /// Otra serie con casi el mismo nombre (Fernando, 8 nov: «Star Wars: Clone Wars» de 2003 bajaba «Star.Wars.The.Clone.Wars»
-    /// de 2008, que Comet le daba por el nombre). El nombre de la serie en el archivo (lo de antes de «S01E01») es uno de sus
-    /// títulos pero con un artículo de más («The», «El», «La»…): es la otra. Igual o sin artículo, es esta.
-    static let articles: Set<String> = ["the", "a", "an", "el", "la", "los", "las", "le", "les", "il", "der", "die", "das"]
-    static let seriesEpisodeMark = r(#"(?i)[ ._\-\[(]s\d{1,2}[ ._]?e\d{1,3}"#)
-    public static func namesAnotherSeries(_ titles: [String], _ release: String) -> Bool {
-        let clean = release.replacingOccurrences(of: "📄", with: "")
-        guard let mark = seriesEpisodeMark.firstMatch(in: clean, range: NSRange(clean.startIndex..., in: clean)),
-              let cut = Range(mark.range, in: clean) else { return false }
-        let show = plain(String(clean[..<cut.lowerBound])).split(separator: " ").map(String.init).filter { Int($0) == nil }
-        guard !show.isEmpty else { return false }
-        for title in titles {
-            let words = plain(title).split(separator: " ").map(String.init)
-            if words == show { return false }
-            let extra = show.filter { !words.contains($0) }
-            if !extra.isEmpty, extra.allSatisfy(articles.contains), show.filter({ !articles.contains($0) }) == words.filter({ !articles.contains($0) }) {
-                return true
-            }
-        }
-        return false
-    }
-
     /// «¿Otro título?»: el nombre trae un solo año y no es el de la película (con un año de margen por los estrenos tardíos).
     /// Dos años o más («1947 - 2021») es una colección: puede traer la buena, no se marca.
     public static let otherTitleTag = "¿Otro título?"

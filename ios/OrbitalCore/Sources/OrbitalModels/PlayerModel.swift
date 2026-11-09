@@ -403,7 +403,7 @@ public final class PlayerModel: ObservableModel {
                 else if failedSources.isEmpty, let ready = SourcesModel.toPlay(sourceChoices, resume: nil, family: nil), ready.requested { found = ready }
                 // «Continuar»: la fuente con la que lo dejaste, si sigue ahí (como en la TV).
                 else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
-                        let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
+                        let pick = sourceChoices.first(where: { $0.key == key && !$0.isOtherTitle }) { found = pick }
                 // Otro episodio: la misma familia de versión con que dejaste la serie (no solo el mismo idioma).
                 else {
                     let family = request.binge ?? (request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)?.binge)

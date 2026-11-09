@@ -159,7 +159,8 @@ public final class SourcesModel: ObservableModel {
         let usable = found.contains { !hidden($0) && !$0.refused } ? found.filter { !hidden($0) && !$0.refused }
             : found.contains { !hidden($0) } ? found.filter { !hidden($0) } : found
         if let ready = usable.first(where: \.requested) { return ready }
-        if let resume, let same = found.first(where: { $0.key == resume }) { return same }
+        // La de «Continuar», salvo que sea de otro título (Fernando, 8 nov: recordaba la de «The Clone Wars» en la de 2003).
+        if let resume, let same = found.first(where: { $0.key == resume && !$0.isOtherTitle }) { return same }
         let first = usable.first
         if let family, let same = usable.first(where: { $0.binge == family && $0.score > (first?.score ?? 0) - 700 }) { return same }
         return first

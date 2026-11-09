@@ -263,23 +263,6 @@ extension DS {
         static let momentBeat: Duration = .milliseconds(200)   // más cortos (Fernando, 31 oct 2026): de ~1,4 s a ~0,8 s hasta «Completaste»
     }
 
-    /// Calificar como en Trakt (`RatingStars`, `RatingReminder`): las estrellas en ámbar (el color del porqué de las portadas,
-    /// como las de Trakt), su tamaño en la ficha y en línea dentro del recordatorio, y el póster chico de la pastilla.
-    enum Rating {
-        static let filled = DS.warning, empty = DS.textMuted   // las vacías se leen también sobre el vidrio y el arte
-        static let star: CGFloat = 26, starInline: CGFloat = 17, gap = DS.Space.s1
-        /// Lo que se mueve el dedo antes de que cuente como arrastre (menos que eso es un toque).
-        static let dragStart: CGFloat = 8
-        /// La onda al calificar: cada estrella empieza esto después de la anterior, crece a esta escala y su toque es así de suave.
-        static let waveStep: Double = 0.06, wavePop: CGFloat = 1.3, waveIntensity: Double = 0.6
-        /// Las estrellas de un capítulo visto (bajo su texto, en la lista de la serie) y el alto que le suman al renglón.
-        static let starEpisode: CGFloat = 15, episodeRow: CGFloat = 22
-        /// Cuánto se queda el recordatorio a la vista antes de irse solo (vuelve la próxima vez que abras la app).
-        static let reminderHold: Duration = .seconds(8)
-        /// El velo claro del vidrio de la pastilla, para que se lea igual que la barra de pestañas (vidrio nativo de iOS).
-        static let glassTint = DS.paper.opacity(0.12)   // ds-exception: velo del vidrio, medido contra la barra de pestañas
-        static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
-    }
 
     /// La tarjeta de «Decide por mí» sobre el arte (`Companion`): dónde empieza el velo para que el texto se lea. Lo demás del
     /// carrusel 3D (`Deck`) se borró con él (auditoría del 31 oct 2026, D22).
@@ -334,11 +317,6 @@ extension DS {
         static let poster: CGFloat = 58
     }
 
-    enum RatingBrand {
-        static let trakt = Color(red: 0.93, green: 0.11, blue: 0.14)
-        /// Los logos, chicos y un poco apagados: son un dato bajo el nombre, no un titular.
-        static let markHeight: CGFloat = 14, markOpacity: Double = 0.85, wordmarkScale: CGFloat = 0.68
-    }
 
     /// «Lo que puedes decir»: el globo con la frase para empezar toma un poco del color de su lugar.
     enum VoiceGuide { static let starterFill = 0.18 }
