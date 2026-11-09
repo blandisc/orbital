@@ -3,7 +3,9 @@ Orbital (tokens.css, themes/orbital.css, toast.css):
 
 - Notificación («GameSir conectado · Jugador 2», «Se desconectó el GameSir»): arriba a la derecha, donde salen los avisos
   de Orbital, con su forma (radio xl), su fondo, su borde fino y su sombra. El ícono en un círculo: el número del
-  jugador en el azul de los controles de Orbital o, si es advertencia, «!» en ámbar tenue. Entra como los avisos (desliza 1,5 rem y aparece en 220 ms, ease-out) y el número hace un «pop».
+  jugador en el azul de los controles de Orbital o, si es advertencia, «!» en ámbar tenue. Entra como los avisos de
+  Orbital (toast.css): primero el ícono con un «pop», luego la tarjeta crece desde él y rebota un poco, y al final llegan
+  el texto y la sombra; con «Reducir movimiento», aparece entera de una vez.
 - Acción (mantener el atajo de cerrar): la misma notificación, en el mismo lugar, con el ícono de apagar; el anillo coral
   alrededor se llena mientras mantienes el atajo y, al cerrar, el círculo se llena entero («Volviendo a Orbital»).
 
@@ -17,6 +19,7 @@ from __future__ import annotations
 
 import ctypes
 import logging
+import math
 import queue
 import sys
 import threading
@@ -45,12 +48,21 @@ SHADOW_Y, SHADOW_BLUR, SHADOW_ALPHA = 1.5, 4.0, .55  # --shadow-overlay: 0 1.5re
 RING = .16  # rem: el grueso del anillo que se llena al mantener el atajo de cerrar
 SAFE_AREA = 4  # --safe-area: margen de la tele (Ajustes › Márgenes de la TV)
 
-# El movimiento (tokens.css): --duration-base / --ease-out y --duration-exit / --ease-in, como toast-in / toast-out.
-ENTER_MS, EXIT_MS = 220, 160
+# El movimiento (tokens.css; tests/test_overlay.py cuida que sean los mismos). La entrada de un aviso, como toast.css:
+# el ícono (--duration-notice-icon, --ease-pop), la tarjeta que crece desde él (--delay-notice-grow, --duration-notice-grow
+# con el resorte de --ease-notice-grow, y se funde en --duration-fast) y el texto y la sombra (--delay-notice-text,
+# --duration-base, --ease-out). La acción de cerrar entra con --duration-base / --ease-out y todo sale con --duration-exit /
+# --ease-in, como toast-out.
+ENTER_MS, EXIT_MS, FADE_MS = 220, 160, 140
 EASE_OUT = (.16, 1, .3, 1)
 EASE_IN = (.5, 0, .75, 0)
-SLIDE_IN, SLIDE_OUT = 1.5, 1.0  # rem: toast-in viene de 1,5 rem a la derecha; toast-out se va 1 rem
-POP_MS, POP_DELAY_MS, POP_FRAMES = 380, 90, 12
+EASE_POP = (.22, 1.35, .42, 1)
+ICON_MS, GROW_DELAY_MS, GROW_MS, TEXT_DELAY_MS = 240, 160, 660, 320
+SPRING_RESPONSE, SPRING_BOUNCE = .45, .3  # el resorte de --ease-notice-grow: spring(duration: 0.45, bounce: 0.3)
+REVEAL_MS = max(GROW_DELAY_MS + GROW_MS, TEXT_DELAY_MS + ENTER_MS)
+FRAME_MS = 33  # la entrada se redibuja a 30 cuadros por segundo: menos de un segundo de trabajo y luego quieta
+ICON_FROM, TEXT_FROM = .4, .75  # el ícono nace al 40 %; el texto llega desde .75 rem a la izquierda (--space-3)
+SLIDE_IN, SLIDE_OUT = 1.5, 1.0  # rem: la acción de cerrar entra desde 1,5 rem a la derecha; todo se va 1 rem
 
 
 def bezier(p1x: float, p1y: float, p2x: float, p2y: float):
@@ -70,10 +82,19 @@ def bezier(p1x: float, p1y: float, p2x: float, p2y: float):
     return curve
 
 
-def ease_back(p: float) -> float:
-    """Pasa un poco de su tamaño y regresa: el «pop» del número."""
-    c1 = 1.70158
-    return 1 + (c1 + 1) * (p - 1) ** 3 + c1 * (p - 1) ** 2
+def spring(seconds: float, response: float = SPRING_RESPONSE, bounce: float = SPRING_BOUNCE) -> float:
+    """El resorte de SwiftUI spring(duration:bounce:) (amortiguamiento = 1 − rebote), de 0 a 1 pasando un poco: el mismo que
+    --ease-notice-grow muestrea en tokens.css."""
+    if seconds <= 0:
+        return 0.0
+    zeta = 1 - bounce
+    w0 = 2 * math.pi / response
+    wd = w0 * math.sqrt(1 - zeta * zeta)
+    return 1 - math.exp(-zeta * w0 * seconds) * (math.cos(wd * seconds) + zeta * w0 / wd * math.sin(wd * seconds))
+
+
+def _clamp(value: float) -> float:
+    return max(0.0, min(1.0, value))
 
 
 def screen_rect() -> tuple[int, int, int, int]:
@@ -130,27 +151,41 @@ def _fit(draw, text: str, font, room: float) -> str:
     return text.rstrip() + "…"
 
 
-def _card(width: float, height: float, rem: float):
-    """La tarjeta con su sombra: (imagen RGBA, margen de la sombra). La sombra es la de --shadow-overlay."""
+def _shadow(width: float, height: float, rem: float):
+    """La sombra de la tarjeta (--shadow-overlay), sola: (imagen RGBA, margen)."""
     from PIL import Image, ImageDraw, ImageFilter
 
     margin = round(SHADOW_BLUR * rem * .75)
     w, h = round(width), round(height)
     image = Image.new("RGBA", (w + 2 * margin, h + 2 * margin), (0, 0, 0, 0))
-    radius = round(RADIUS * rem)
     shadow = Image.new("L", image.size, 0)
     dy = round(SHADOW_Y * rem * .5)
-    ImageDraw.Draw(shadow).rounded_rectangle((margin, margin + dy, margin + w, margin + h + dy), radius,
+    ImageDraw.Draw(shadow).rounded_rectangle((margin, margin + dy, margin + w, margin + h + dy), round(RADIUS * rem),
                                              fill=round(255 * SHADOW_ALPHA))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(SHADOW_BLUR * rem / 4))
-    image.putalpha(shadow)
-    # La tarjeta, suavizada: se dibuja al doble y se reduce.
+    image.putalpha(shadow.filter(ImageFilter.GaussianBlur(SHADOW_BLUR * rem / 4)))
+    return image, margin
+
+
+def _plate(width: float, height: float, rem: float):
+    """La tarjeta (fondo y borde fino), suavizada: se dibuja al doble y se reduce."""
+    from PIL import Image, ImageDraw
+
+    w, h = max(2, round(width)), max(2, round(height))
+    radius = min(round(RADIUS * rem), h // 2)
     big = Image.new("RGBA", (w * 2, h * 2), (0, 0, 0, 0))
     draw = ImageDraw.Draw(big)
     draw.rounded_rectangle((0, 0, w * 2 - 1, h * 2 - 1), radius * 2, fill=SURFACE + (255,))
     draw.rounded_rectangle((1, 1, w * 2 - 2, h * 2 - 2), radius * 2, outline=HAIRLINE, width=2)
-    image.alpha_composite(big.resize((w, h), Image.LANCZOS), (margin, margin))
-    return image, margin
+    return big.resize((w, h), Image.LANCZOS)
+
+
+def _faded(image, alpha: float):
+    """La imagen con su transparencia multiplicada por `alpha`."""
+    if alpha >= 1:
+        return image
+    faded = image.copy()
+    faded.putalpha(image.getchannel("A").point(lambda v: round(v * alpha)))
+    return faded
 
 
 def _circle(text: str, size: int, tone: str, grow: float = 1.12):
@@ -177,8 +212,9 @@ def _circle(text: str, size: int, tone: str, grow: float = 1.12):
     return image.resize((size, size), Image.LANCZOS)
 
 
-def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: float = 1.12):
-    """La notificación completa: (imagen, margen de la sombra)."""
+def toast_layers(title: str, detail: str, mark: str, tone: str, rem: float) -> dict:
+    """Las piezas de la notificación, ya medidas: la sombra, la tarjeta, el texto (en el lienzo entero) y el lugar del
+    ícono. `compose_toast` las junta en cada cuadro de la entrada."""
     from PIL import Image, ImageDraw
 
     probe = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
@@ -189,20 +225,63 @@ def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: 
     words = max(probe.textlength(title, font=title_font), probe.textlength(detail, font=detail_font) if detail else 0)
     width = min(TOAST_MAX_W * rem, max(TOAST_MIN_W * rem, left + words + PAD_RIGHT * rem))
     height = TOAST_H * rem if detail else 3 * rem
-    image, margin = _card(width, height, rem)
-    draw = ImageDraw.Draw(image)
+    shadow, margin = _shadow(width, height, rem)
+    text = Image.new("RGBA", shadow.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(text)
     room = width - left - PAD_RIGHT * rem
     x, mid = margin + left, margin + height / 2
-    if mark and grow > 0:
-        circle = _circle(mark, icon, tone, grow)
-        image.alpha_composite(circle, (round(margin + inset), round(mid - icon / 2)))
     if detail:
         draw.text((x, mid - .1 * rem), _fit(draw, title, title_font, room), fill=TEXT + (255,), font=title_font, anchor="ls")
         draw.text((x, mid + .3 * rem), _fit(draw, detail, detail_font, room), fill=MUTED + (255,), font=detail_font,
                   anchor="lt")
     else:
         draw.text((x, mid), _fit(draw, title, title_font, room), fill=TEXT + (255,), font=title_font, anchor="lm")
-    return image, margin
+    return {"shadow": shadow, "text": text, "margin": margin, "width": width, "height": height, "rem": rem,
+            "mark": mark, "tone": tone, "icon": icon, "icon_at": (round(margin + inset), round(mid - icon / 2)),
+            "plate": _plate(width, height, rem)}
+
+
+def compose_toast(layers: dict, at_ms: float | None = None, grow: float = 1.12):
+    """Un cuadro de la entrada, `at_ms` después de empezar (None: entera y quieta): primero el ícono con su «pop», luego
+    la tarjeta crece desde él (nace como un círculo del alto de la tarjeta y se estira con el resorte, pasándose un poco) y
+    al final el texto (desde .75 rem a la izquierda) y la sombra. `grow`: el tamaño final del ícono (0: sin ícono)."""
+    from PIL import Image
+
+    shadow, margin, rem = layers["shadow"], layers["margin"], layers["rem"]
+    width, height = layers["width"], layers["height"]
+    image = Image.new("RGBA", shadow.size, (0, 0, 0, 0))
+    ease_out, pop = bezier(*EASE_OUT), bezier(*EASE_POP)
+    late = 1.0 if at_ms is None else ease_out(_clamp((at_ms - TEXT_DELAY_MS) / ENTER_MS))
+    if late > 0:
+        image.alpha_composite(_faded(shadow, late))
+    if at_ms is None:
+        image.alpha_composite(layers["plate"], (margin, margin))
+    elif at_ms > GROW_DELAY_MS:
+        stretch = spring((at_ms - GROW_DELAY_MS) / 1000)
+        span = height + (width - height) * stretch  # del círculo alrededor del ícono a la tarjeta entera
+        plate = _plate(min(span, image.width - margin), height, rem)
+        image.alpha_composite(_faded(plate, ease_out(_clamp((at_ms - GROW_DELAY_MS) / FADE_MS))), (margin, margin))
+    if late > 0:
+        text = _faded(layers["text"], late)
+        shift = round(-TEXT_FROM * rem * (1 - late))
+        if shift:
+            moved = Image.new("RGBA", text.size, (0, 0, 0, 0))
+            moved.alpha_composite(text, (0, 0), (-shift, 0))
+            text = moved
+        image.alpha_composite(text)
+    if layers["mark"] and grow > 0:
+        p = 1.0 if at_ms is None else pop(_clamp(at_ms / ICON_MS))
+        if p > 0:
+            size = ICON_FROM + (1 - ICON_FROM) * p
+            circle = _faded(_circle(layers["mark"], layers["icon"], layers["tone"], grow * size), _clamp(p))
+            image.alpha_composite(circle, layers["icon_at"])
+    return image
+
+
+def draw_toast(title: str, detail: str, mark: str, tone: str, rem: float, grow: float = 1.12):
+    """La notificación completa y quieta: (imagen, margen de la sombra)."""
+    layers = toast_layers(title, detail, mark, tone, rem)
+    return compose_toast(layers, None, grow), layers["margin"]
 
 
 def _power(size: int, progress: float, done: bool):
@@ -350,7 +429,7 @@ class GameOverlay:
         surface = Surface(hwnd)
         ease_out, ease_in = bezier(*EASE_OUT), bezier(*EASE_IN)
         state: dict = {"kind": None, "alpha": 0.0, "dx": 0.0, "dy": 0.0, "anim": None, "hide_at": None, "rem": 16.0,
-                       "spot": (0.0, 0.0), "filling": None, "base": None, "pop": None, "content": None}
+                       "spot": (0.0, 0.0), "filling": None, "base": None, "reveal": None}
 
         def measure() -> float:
             _sx, _sy, sw, sh = screen_rect()
@@ -390,16 +469,19 @@ class GameOverlay:
             animate(shift, 0, 0.0, EXIT_MS, ease_in)
 
         def toast(cmd) -> None:
+            """La notificación: sale en su lugar, sin deslizarse; la entrada la hacen sus piezas (compose_toast), cuadro
+            a cuadro. Con «Reducir movimiento», entera de una vez."""
             _, title, detail, duration, mark, tone = cmd
             rem = measure()
             state["kind"], state["filling"] = "toast", None
-            pop = bool(mark) and not self.reduce_motion()
-            state["content"] = (title, detail, mark, tone)
-            image, margin = draw_toast(title, detail, mark, tone, rem, grow=.05 if pop else 1.12)
-            put(image, margin, "toast")
-            state["pop"] = time.monotonic() + POP_DELAY_MS / 1000 if pop else None
+            layers = toast_layers(title, detail, mark, tone, rem)
+            still = self.reduce_motion()
+            put(compose_toast(layers, None if still else 0), layers["margin"], "toast")
+            state["reveal"] = None if still else (time.monotonic(), layers, 0)
             state["hide_at"] = time.monotonic() + duration / 1000
-            enter("x")
+            state["dx"], state["dy"], state["alpha"], state["anim"] = 0.0, 0.0, 1.0, None
+            _raise_no_activate(hwnd)
+            draw_now()
 
         def action(title: str, detail: str, progress: float, fresh: bool, done: bool = False) -> None:
             rem = measure() if fresh else state["rem"]
@@ -416,11 +498,11 @@ class GameOverlay:
             elif kind == "show":
                 _, title, detail, duration = cmd
                 state["filling"] = (time.monotonic(), max(duration, 1) / 1000, title, detail)
-                state["hide_at"], state["pop"] = None, None
+                state["hide_at"], state["reveal"] = None, None
                 action(title, detail, 0.0, fresh=True)
                 enter("x")
             elif kind == "closing":
-                state["filling"] = None
+                state["filling"], state["reveal"] = None, None
                 action(cmd[1], cmd[2], 1.0, fresh=True, done=True)
             elif kind == "hide":
                 state["hide_at"] = time.monotonic() + cmd[1] / 1000
@@ -441,16 +523,19 @@ class GameOverlay:
                 if filling is not None:
                     t0, length, title, detail = filling
                     action(title, detail, (now - t0) / length, fresh=False)
-                pop = state["pop"]
-                if pop is not None and now >= pop and state["kind"] == "toast":
-                    p = min(1.0, (now - pop) / (POP_MS / 1000))
-                    step = round(p * (POP_FRAMES - 1)) / (POP_FRAMES - 1)
-                    title, detail, mark, tone = state["content"]
-                    image, _margin = draw_toast(title, detail, mark, tone, state["rem"], grow=ease_back(step) * 1.12)
-                    surface.set_image(image)
-                    draw_now()
-                    if p >= 1:
-                        state["pop"] = None
+                reveal = state["reveal"]
+                if reveal is not None and state["kind"] == "toast":
+                    t0, layers, shown = reveal
+                    at = (now - t0) * 1000
+                    frame = int(at // FRAME_MS) + 1
+                    if at >= REVEAL_MS:
+                        state["reveal"] = None  # el último cuadro: entera y quieta
+                        surface.set_image(compose_toast(layers))
+                        draw_now()
+                    elif frame != shown:
+                        state["reveal"] = (t0, layers, frame)
+                        surface.set_image(compose_toast(layers, at))
+                        draw_now()
                 anim = state["anim"]
                 if anim is not None:
                     t0, length, dx0, dx1, dy0, dy1, a0, a1, curve = anim
@@ -468,7 +553,7 @@ class GameOverlay:
                 log.exception("Error dibujando el aviso encima del juego")
             # 60 vueltas por segundo solo mientras se ve; escondida, 10: una orden nueva tarda a lo mucho 100 ms en
             # notarse (el aviso de cerrar sale a los 250 ms de mantener el atajo) y no gasta CPU sin parar.
-            busy = state["alpha"] > 0 or state["anim"] is not None or state["filling"] is not None or state["pop"] is not None
+            busy = state["alpha"] > 0 or state["anim"] is not None or state["filling"] is not None or state["reveal"] is not None
             root.after(16 if busy else 100, tick)
 
         self._ready.set()

@@ -109,21 +109,23 @@ export function createToast({ onTone = () => {} } = {}) {
         toast.actionGlyph ? KeyHint(toast.actionGlyph, toast.actionLabel) : h("span", {}, toast.actionLabel),
         svg(ICONS.chevron))
       : null;
-    mount(el, lead(toast),
+    // La sombra y el vidrio van aparte del texto: primero sale el ícono, la cajita crece desde él y luego llega el texto
+    // (toast.css). Son piezas nuevas en cada aviso, así que la entrada se repite sola.
+    mount(el,
+      h("span", { class: "toast__shade", "aria-hidden": "true" }),
+      h("span", { class: "toast__surface", "aria-hidden": "true" },
+        h("span", { class: "toast__glass" },
+          // Cuenta regresiva visible (p. ej. los 2 s para el segundo toque de Legion L).
+          toast.countdown > 0 ? h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }) : null)),
+      lead(toast),
       h("span", { class: "toast__body" },
         h("span", { class: "toast__title" }, title),
         detail ? h("span", { class: "toast__detail" }, detail) : null),
-      action,
-      // Cuenta regresiva visible (p. ej. los 2 s para el segundo toque de Legion L).
-      toast.countdown > 0 ? h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }) : null);
+      action);
     el.className = ["toast", `toast--${toast.tone}`, detail || toast.image ? "toast--two-line" : null,
       toast.image ? "toast--rich" : null].filter(Boolean).join(" ");
     el.setAttribute("role", toast.tone === "error" ? "alert" : "status");
     el.hidden = false;
-    // Reinicia la animación de entrada.
-    el.style.animation = "none";
-    void el.offsetWidth;
-    el.style.animation = "";
     clearTimeout(timer);
     const base = toast.countdown ? toast.countdown + 300
       : toast.duration || (toast.tone === "error" ? tokenMs("--duration-notice-long", 6500) : tokenMs("--duration-notice", 4000));

@@ -1,26 +1,52 @@
 /* Toast: los avisos del iPhone (Toast / BannerView) en la tele: el ícono de su tono, título y detalle, y su acción a la
    derecha. En la esquina de arriba a la derecha, debajo de la barra de estado (como en las consolas): nunca tapa las
-   pestañas de sección ni lo que tienes enfocado al centro. */
+   pestañas de sección ni lo que tienes enfocado al centro.
+
+   Cómo aparece (Fernando, 6 nov 2026): primero la alerta (el ícono, con un «pop»), luego la cajita crece desde el ícono y
+   rebota un poco, y al final el texto. Solo transform y opacity, y al terminar queda quieto (Orbital ligera). La cajita es
+   el vidrio (`__glass`) que se desliza desde el ícono dentro de su recorte (`__surface`, con la forma del aviso y un poco
+   de aire a la derecha para el rebote): lo que se ve es una cápsula que nace redonda en el ícono y se estira sin deformar
+   sus esquinas (un scaleX las aplastaba). La sombra (`__shade`) llega con el texto. */
 .toast {
   --toast-tone: var(--color-text-muted);
+  --toast-lead: var(--control-height); /* de dónde nace la cajita: un círculo del alto del aviso, alrededor del ícono */
+  --toast-slack: var(--space-8); /* el aire del rebote, a la derecha */
   position: fixed; z-index: var(--z-toast);
   top: calc(var(--space-5) + var(--safe-y) + 3rem + var(--space-1)); right: var(--page-gutter);
   display: flex; align-items: center; gap: var(--space-3);
   width: max-content; max-width: min(46rem, calc(100vw - 2 * var(--page-gutter)));
   min-height: var(--control-height); padding: var(--space-1) var(--space-6) var(--space-1) var(--space-1);
-  border-radius: var(--radius-pill); line-height: var(--leading-tight); overflow: hidden;
-  background: var(--color-glass-strong); backdrop-filter: var(--filter-glass);
-  box-shadow: var(--shadow-overlay), var(--edge-hairline);
+  border-radius: var(--radius-pill); line-height: var(--leading-tight);
   font-size: var(--type-body); font-weight: var(--type-body-weight);
-  animation: toast-in var(--duration-base) var(--ease-out);
 }
 /* Dos renglones o portada: menos redonda (una píldora alta se ve rara). */
 .toast--two-line { border-radius: var(--radius-xl); }
 
+.toast__shade, .toast__surface, .toast__glass { position: absolute; z-index: var(--z-behind); border-radius: inherit; pointer-events: none; }
+.toast__shade { inset: 0; box-shadow: var(--shadow-overlay); animation: fade-in var(--duration-base) var(--ease-out) var(--delay-notice-text) both; }
+.toast__surface { inset: 0 calc(-1 * var(--toast-slack)) 0 0; overflow: hidden; }
+.toast__glass {
+  inset: 0 var(--toast-slack) 0 0; overflow: hidden;
+  background: var(--color-glass-strong); backdrop-filter: var(--filter-glass); box-shadow: var(--edge-hairline);
+  animation: toast-grow var(--duration-notice-grow) var(--ease-notice-grow) var(--delay-notice-grow) both,
+    fade-in var(--duration-fast) var(--ease-out) var(--delay-notice-grow) both;
+}
+@keyframes toast-grow { from { transform: translateX(calc(var(--toast-lead) - 100%)); } }
+.toast__icon, .toast__art { animation: toast-pop var(--duration-notice-icon) var(--ease-pop) both; }
+@keyframes toast-pop { from { opacity: 0; transform: scale(.4); } }
+.toast__body, .toast__action { animation: toast-text var(--duration-base) var(--ease-out) var(--delay-notice-text) both; }
+@keyframes toast-text { from { opacity: 0; transform: translateX(calc(-1 * var(--space-3))); } }
+/* Movimiento reducido: solo aparece, entero y de una vez. */
+@media (prefers-reduced-motion: reduce) {
+  .toast :is(.toast__shade, .toast__glass, .toast__icon, .toast__art, .toast__body, .toast__action) { animation: none; }
+}
+[data-motion="reduce"] .toast :is(.toast__shade, .toast__glass, .toast__icon, .toast__art, .toast__body, .toast__action) { animation: none; }
+
 /* El tono: el color de su ícono (los del iPhone: info gris, éxito papel, advertencia ámbar, error rojo). */
 .toast--success { --toast-tone: var(--color-text); }
 .toast--warn { --toast-tone: var(--color-warning); }
-.toast--error { --toast-tone: var(--color-danger); box-shadow: var(--shadow-overlay), inset 0 0 0 1px color-mix(in oklab, var(--color-danger) 45%, transparent); }
+.toast--error { --toast-tone: var(--color-danger); }
+.toast--error .toast__glass { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-danger) 45%, transparent); }
 .toast--voice { --toast-tone: var(--assistant-accent); }
 
 .toast__icon {
@@ -59,10 +85,9 @@
 .toast__action > .icon { width: var(--icon-sm); height: var(--icon-sm); }
 
 .toast--leaving { animation: toast-out var(--duration-exit) var(--ease-in) forwards; }
-@keyframes toast-in { from { opacity: 0; transform: translateX(1.5rem) scale(.98); } }
 @keyframes toast-out { to { opacity: 0; transform: translateX(1rem); } }
 
-/* Cuenta regresiva: una línea que se vacía en la base del aviso. */
+/* Cuenta regresiva: una línea que se vacía en la base del aviso (va dentro del vidrio, que la recorta). */
 .toast__countdown { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--color-accent); transform-origin: left; animation: toast-countdown linear forwards; }
 @keyframes toast-countdown { to { transform: scaleX(0); } }
 /* Con un menú lateral abierto el aviso sale a su izquierda: nunca encima del título del menú. */
