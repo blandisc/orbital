@@ -1,0 +1,38 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orbital · El selector que se abre (SX1–SX3)</title>
+<style>:root{--a:#3fd0c9;--g:#3a5757}body{margin:0;background:#0b0d12;color:#eef1f6;font:15px/1.45 -apple-system,system-ui,sans-serif;padding:24px}h1{font-size:22px;margin:0 0 4px}p.l{color:#8b93a4;max-width:960px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}.k{background:#151922;border:1px solid #262c38;border-radius:16px;padding:16px}.k.r{border-color:var(--a)}
+.c{font-weight:700;border-radius:6px;padding:1px 8px;background:#5b6475;margin-right:6px}.r .c{background:var(--a);color:#0b0d12}
+.m{background:#2a4646;border-radius:18px;margin:12px 0;padding:34px 12px 14px;height:150px;position:relative;overflow:hidden}.b{display:flex;align-items:center;gap:8px;height:40px}.lg{font-weight:800;font-size:20px}
+.cap{margin-left:auto;display:flex;gap:11px;align-items:center;background:var(--g);border-radius:999px;padding:6px 11px}.av{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 45% 45%,#eee 0 28%,#3a2d5a 30%);box-shadow:0 0 0 2px var(--g),0 0 0 4.5px var(--a)}
+.hint{font-size:11px;color:var(--a);margin-top:6px}
+/* SX1: la pastilla crece a lo ancho */
+.p1{display:flex;align-items:center;background:var(--g);border-radius:999px;height:34px;padding:0 4px;overflow:hidden;animation:w1 6s infinite;width:34px}
+.p1 span{flex:none;width:30px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.p1 .on{background:var(--a);color:#0b0d12}
+@keyframes w1{0%,20%{width:34px}30%,70%{width:104px}80%,100%{width:34px}}
+.o1{animation:sel1 6s infinite}@keyframes sel1{0%,55%{background:transparent;color:#eef1f6}60%,100%{background:var(--a);color:#0b0d12}}
+.f1{animation:fade1 6s infinite}@keyframes fade1{0%,55%{background:var(--a);color:#0b0d12}60%,100%{background:transparent;color:#eef1f6}}
+/* SX2: tarjeta de vidrio que nace del ícono */
+.btn{width:34px;height:34px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;position:relative;z-index:2}
+.card{position:absolute;left:150px;top:30px;background:rgba(70,100,100,.92);backdrop-filter:blur(10px);border-radius:18px;padding:6px;width:150px;transform-origin:top left;animation:pop 6s infinite;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.card div{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:12px;font-size:14px}.card .s{background:rgba(63,208,201,.25)}
+@keyframes pop{0%,20%{transform:scale(.2);opacity:0}30%,70%{transform:scale(1);opacity:1}80%,100%{transform:scale(.2);opacity:0}}
+/* SX3: abanico de íconos bajo el botón */
+.fan{position:absolute;left:150px;top:72px;display:flex;gap:8px}.fan span{width:36px;height:36px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;opacity:0;animation:fan 6s infinite}
+.fan span:nth-child(2){animation-delay:.08s}.fan span:nth-child(3){animation-delay:.16s}
+@keyframes fan{0%,20%{opacity:0;transform:translateY(-20px) scale(.4)}30%,70%{opacity:1;transform:none}80%,100%{opacity:0;transform:translateY(-20px) scale(.4)}}
+ul{color:#c9cfdb;font-size:13px;padding-left:18px}li{margin:3px 0}.f{margin-top:22px;border:1px solid var(--a);border-radius:12px;padding:14px;max-width:960px}</style></head><body>
+<h1>El selector de Inicio: un ícono que se abre al tocarlo</h1>
+<p class="l">Cerrado, el selector es solo el ícono de lo que estás viendo: ▦ todo, 🎬 películas o 📺 series. Al tocarlo se abre para elegir; al elegir, se cierra y queda el ícono nuevo. Las tres maquetas se mueven solas: se abren, eligen «Series» y se cierran. En la app el movimiento sería el resorte suave de Orbital, con el vidrio de iOS y un toque de vibración al elegir. Mi recomendación: <b>SX1</b>.</p>
+<div class="g">
+<div class="k r"><span class="c">SX1</span><b>La pastilla se estira</b> (recomendado)
+<div class="m"><div class="b"><span class="lg">orbital</span><div class="p1"><span class="f1">▦</span><span>🎬</span><span class="o1">📺</span></div><div class="cap">📺 🍩 <span class="av"></span></div></div><div class="hint">Tocas ▦ → la misma pastilla crece a lo ancho y enseña las tres → tocas 📺 → se encoge con 📺.</div></div>
+<ul><li><b>Gana:</b> el más elegante: nada aparece encima, la misma pieza cambia de forma. Sin palabras. Elegir es el mismo toque que abrir.</li><li><b>Pierde:</b> sin nombres; si dejas el dedo encima, sale el nombre (y VoiceOver lo dice).</li></ul></div>
+<div class="k"><span class="c">SX2</span><b>Una tarjeta de vidrio con nombres</b>
+<div class="m"><div class="b"><span class="lg">orbital</span><div class="btn">▦</div><div class="cap">📺 🍩 <span class="av"></span></div></div><div class="card"><div>▦ Todo</div><div>🎬 Películas</div><div class="s">📺 Series</div></div></div>
+<ul><li><b>Gana:</b> crece desde el ícono, como los menús nuevos de iOS, y cada opción dice su nombre.</li><li><b>Pierde:</b> tapa un poco la portada mientras está abierta; es lo que hace cualquier app.</li></ul></div>
+<div class="k"><span class="c">SX3</span><b>Un abanico de íconos que cae</b>
+<div class="m"><div class="b"><span class="lg">orbital</span><div class="btn">▦</div><div class="cap">📺 🍩 <span class="av"></span></div></div><div class="fan"><span>▦</span><span>🎬</span><span>📺</span></div></div>
+<ul><li><b>Gana:</b> juguetón; los tres caen uno tras otro.</li><li><b>Pierde:</b> flota sobre la portada y se siente menos serio.</li></ul></div>
+</div>
+<div class="f"><b>Mi recomendación: SX1.</b> Es lo más refinado: la pastilla se estira en su lugar, eliges y se cierra con el ícono nuevo, sin tapar nada. Si quieres ver los nombres siempre, SX2. En la tele no aplica (allá el encabezado es distinto a propósito). Dime el código y lo construyo con capturas reales.</div></body></html>
