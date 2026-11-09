@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital · Encabezado de temporada (bajar y marcar vista)</title>
+<style>
+:root{--bg:#07090d;--ink:#f3efe6;--mute:#9aa0ad;--teal:#5fd3c4;--good:#5ccf7a;--line:#22262f;--art:#e3b35b;--artInk:#2a1a05}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:24px 14px 60px;max-width:1080px;margin:auto}
+h1{font-size:24px;margin:0 0 6px}p.lead{color:var(--mute);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}
+.card{background:#10131a;border:1px solid var(--line);border-radius:18px;padding:16px}.card.rec{border-color:var(--teal)}
+.code{display:inline-block;font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;margin-right:8px;background:#222735}.rec .code{background:var(--teal);color:#062b26}
+.phone{background:linear-gradient(#141824,#0b0e15);border:1px solid var(--line);border-radius:22px;padding:14px 14px 6px;margin:10px 0}
+.row{display:flex;align-items:center;gap:8px}.sp{flex:1}
+.menu{font-weight:750;font-size:16px}.menu small{color:var(--mute);font-weight:600}
+.lnk{font-size:12.5px;color:var(--art);font-weight:650;white-space:nowrap}.mut{font-size:12.5px;color:var(--mute)}
+.ib{width:38px;height:38px;border-radius:19px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:16px;position:relative}
+.ib.on{background:rgba(92,207,122,.16);color:var(--good)}
+.ib .t{position:absolute;top:42px;font-size:10px;color:var(--mute);white-space:nowrap}
+.ring{width:38px;height:38px;border-radius:50%;background:conic-gradient(var(--art) 14%,#2a2f3d 0);display:grid;place-items:center}
+.ring b{width:30px;height:30px;border-radius:50%;background:#10131a;display:grid;place-items:center;font-size:10px}
+.bar{height:4px;border-radius:2px;background:#2a2f3d;margin:10px 0 4px;overflow:hidden}.bar i{display:block;height:100%;width:14%;background:var(--art)}
+.ep{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #1a1e27;font-size:13px}.th{width:60px;height:34px;border-radius:7px;background:linear-gradient(135deg,#3a4256,#1c2130)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.08);font-size:12.5px;font-weight:650}
+.sheet{background:#1a1e29;border-radius:14px;padding:6px;margin-top:8px;font-size:13px}.sheet div{padding:8px 10px;border-radius:9px}
+ul{color:var(--mute);margin:10px 0 0;padding-left:18px}li b{color:var(--ink)}
+.foot{color:var(--mute);font-size:13px;margin-top:26px}
+</style></head><body>
+<h1>Encabezado de temporada: bajar y marcar vista</h1>
+<p class="lead">Hoy: tres textos sueltos en un renglón («3 de 22 vistos», «⬇︎ Temporada · 7.6 GB», «Marcar como vista»). Tres maneras de ordenarlo.</p>
+<div class="grid">
+ <div class="card"><span class="code">ET0</span><b>Hoy</b>
+  <div class="phone"><div class="row"><span class="menu">Temporada 2 ▾</span></div>
+   <div class="row" style="margin-top:8px"><span class="mut">3 de 22 vistos</span><span class="sp"></span><span class="lnk">⬇︎ Temporada · 7.6 GB</span><span class="lnk">✓ Marcar como vista</span></div>
+   <div class="bar"><i></i></div><div class="ep"><span class="th"></span>E1 · The Dundies</div></div>
+  <ul><li><b>Problema:</b> tres cosas del mismo tamaño y color peleando en un renglón; los textos se aprietan.</li></ul></div>
+
+ <div class="card rec"><span class="code">ET1</span><b>Dos botones de ícono junto a la temporada</b> (recomendado)
+  <div class="phone"><div class="row"><span class="menu">Temporada 2 ▾<br><small>3 de 22 vistos</small></span><span class="sp"></span>
+   <span class="ib">⬇︎<span class="t">7.6 GB</span></span><span class="ib">✓<span class="t">Vista</span></span></div>
+   <div class="bar" style="margin-top:22px"><i></i></div><div class="ep"><span class="th"></span>E1 · The Dundies</div></div>
+  <ul><li><b>Gana:</b> limpio, en el mismo renglón que el selector; cada botón con su ícono y debajo lo que hace (el peso, «Vista»). Bajando, el ⬇︎ se vuelve un anillo con su %; toda vista, el ✓ en verde.</li><li><b>Pierde:</b> hay que tocar el ✓ para ver «Solo la temporada / Toda la serie» (sale el menú, como hoy).</li></ul>
+  <div class="phone"><div class="row"><span class="menu">Temporada 2 ▾<br><small>22 de 22 vistos</small></span><span class="sp"></span><span class="ring"><b>40%</b></span><span class="ib on">✓</span></div></div></div>
+
+ <div class="card"><span class="code">ET2</span><b>La barra de avance manda</b>
+  <div class="phone"><div class="row"><span class="menu">Temporada 2 ▾</span><span class="sp"></span><span class="ring"><b>3/22</b></span></div>
+   <div class="row" style="margin-top:10px"><span class="pill">⬇︎ 7.6 GB</span><span class="pill">✓ Marcar vista</span></div>
+   <div class="ep" style="margin-top:8px"><span class="th"></span>E1 · The Dundies</div></div>
+  <ul><li><b>Gana:</b> el avance en un anillo («3/22») y dos acciones claras abajo.</li><li><b>Pierde:</b> son cápsulas con texto (las que no te gustan) y ocupa un renglón más.</li></ul></div>
+
+ <div class="card"><span class="code">ET3</span><b>Todo en un menú «⋯»</b>
+  <div class="phone"><div class="row"><span class="menu">Temporada 2 ▾<br><small>3 de 22 vistos</small></span><span class="sp"></span><span class="ib">⋯</span></div>
+   <div class="sheet"><div>⬇︎ Bajar la temporada · 7.6 GB</div><div>✓ Marcar la temporada como vista</div><div>✓ Marcar toda la serie</div></div></div>
+  <ul><li><b>Gana:</b> el encabezado más limpio.</li><li><b>Pierde:</b> esconde dos acciones útiles detrás de «⋯»: menos evidente.</li></ul></div>
+</div>
+<p class="foot">Recomiendo <b>ET1</b>: íconos (no cápsulas), en el renglón del selector, con su texto chico debajo para que se entienda sin adivinar. Dime el código y lo construyo.</p>
+</body></html>
