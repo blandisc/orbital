@@ -120,10 +120,10 @@ struct HomeHeader: View {
                     .task {
                         guard !reduceMotion, !pulsed else { return }
                         pulsed = true
-                        try? await Task.sleep(for: .milliseconds(600))
-                        withAnimation(DS.Motion.smooth(false)) { pulse = true }
-                        try? await Task.sleep(for: .milliseconds(250))
-                        withAnimation(DS.Motion.smooth(false)) { pulse = false }
+                        try? await Task.sleep(for: DS.HomeStories.pulseDelay)
+                        withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { pulse = true }
+                        try? await Task.sleep(for: DS.HomeStories.pulseHold)
+                        withAnimation(DS.Motion.smooth(reduceMotion) ?? DS.Motion.fade) { pulse = false }
                     }
                 } else {
                     ProfileButton(avatar: avatar)

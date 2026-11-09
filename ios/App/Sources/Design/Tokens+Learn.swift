@@ -116,6 +116,8 @@ extension DS {
         static let capsuleRing: CGFloat = 28, capsuleTile: CGFloat = 22
         /// HH2: cuánto crece tu foto al latir una vez.
         static let pulse: CGFloat = 1.12   // ds-exception: escala, no un tamaño
+        /// HH2: cuánto espera para latir al llegar, y cuánto dura crecida.
+        static let pulseDelay: Duration = .milliseconds(600), pulseHold: Duration = .milliseconds(250)
         /// Deslizar más de esta fracción del ancho (o rápido) abre o cierra.
         static let commit: CGFloat = 0.28   // ds-exception: fracción del ancho, no un espacio
         /// Lo que sale se aleja un poco y se apaga, para que se lea la profundidad (no se va entero de golpe).
