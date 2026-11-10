@@ -219,3 +219,11 @@ def test_watched_state_without_seasons_asks_progress_of_recent_shows(library, ma
     shows = fy.trakt.watched_state()["shows"]
     assert shows["tt14452776"]["fraction"] == .5  # el exacto
     assert shows["tt14688458"]["fraction"] == .8  # sin respuesta: 8 de 10
+
+
+def test_lists_saved_before_g4_are_read_again(library, make_foryou, net):  # noqa: F811
+    """La caché del disco tenía tus listas sin «quién la ve» ni cuántos: todas decían «solo tú» (10 nov, en la tele)."""
+    net.on("GET", r"/users/me/lists$", (200, [{"name": "animadas", "privacy": "public", "item_count": 17, "ids": {"trakt": 3}}]))
+    fy = make_foryou(linked=True)
+    fy.cache.get("trakt:lists", 900, lambda: [{"id": "3", "name": "animadas"}])
+    assert fy.gestor.lists() == [{"id": "3", "name": "animadas", "privacy": "public", "count": 17}]

@@ -348,7 +348,11 @@ class Gestor:
             return []
         from .foryou import MINE_TTL
 
-        return self.foryou.cache.get("trakt:lists", MINE_TTL, self.trakt.lists, stale=True)
+        rows = self.foryou.cache.get("trakt:lists", MINE_TTL, self.trakt.lists, stale=True)
+        if any("privacy" not in row for row in rows):  # guardadas en disco antes de G4-A (sin quién la ve ni cuántos)
+            self.foryou.cache.clear("trakt:lists")
+            rows = self.foryou.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)
+        return rows
 
     def _list_id(self, where: str) -> str:
         if not where.startswith("list:") or not where[5:].isdigit():

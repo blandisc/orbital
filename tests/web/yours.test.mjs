@@ -63,6 +63,8 @@ test("«¿Cómo vas con…?» trae las respuestas, la campana y tus listas (como
   assert.equal(watching.title, "¿Cómo vas con The Office?");
   assert.deepEqual(labels(watching), ["En Mi lista", "Viendo", "Vista", "La dejé", "Avisarme de episodios nuevos", "Agregar a una lista…"]);
   assert.equal(watching.options[1].value, "✓");
+  const long = statusMenu({ ...base, title: "Chad Powers: Mariscal de campo", status: "watching" });
+  assert.deepEqual([long.title, long.subtitle], ["¿Cómo vas?", "Chad Powers: Mariscal de campo"]); // nunca cortado con «…»
   const dropped = statusMenu({ ...base, status: "dropped" });
   assert.ok(!labels(dropped).includes("Avisarme de episodios nuevos")); // «La dejé» apaga la campana
   assert.equal(dropped.options.find((o) => o.label === "La dejé").command.type, "status-resume");

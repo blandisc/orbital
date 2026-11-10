@@ -64,7 +64,8 @@ export function statusMenu(about) {
     options.push({ icon: "list", label: "Agregar a una lista…", hint: "Mi lista y tus listas",
       command: { type: "save-open", kind, id, title, library: !!about.library } });
   }
-  return { title: `¿Cómo vas con ${title}?`, options };
+  // Un nombre largo no cabe en la pregunta (se cortaba: «¿Cómo vas con Chad Powers: Mariscal d…»): entonces va debajo.
+  return title.length > 18 ? { title: "¿Cómo vas?", subtitle: title, options } : { title: `¿Cómo vas con ${title}?`, options };
 }
 
 export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, openShowcase, renderHints, setUnseeded, sound, ui, undoable }) {
