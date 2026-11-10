@@ -102,7 +102,7 @@ public actor LibrarySync {
     private func pullHidden(_ trakt: Trakt) async -> Bool? {
         guard let shows = try? await trakt.hiddenShows() else { return nil }
         let before = ForYou.hidden(kv)
-        let after = ForYou.hiddenFrom(trakt: shows.map(\.imdb), kv: kv)
+        let after = ForYou.hiddenFrom(trakt: shows.map(\.imdb), kv: kv, pending: outbox.pendingHidden)
         guard after != before else { return false }
         ForYou.setHidden(after, kv: kv)
         return true

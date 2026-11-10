@@ -53,7 +53,7 @@ public final class FollowModel: ObservableModel {
             // Trakt manda: lo que escondiste en otro aparato también se va de aquí (y lo que mostraste allá, regresa).
             if let found = await hiddenNow {
                 hiddenFromTrakt = found
-                hidden = ForYou.hiddenFrom(trakt: found.map(\.imdb), kv: services.kv)
+                hidden = ForYou.hiddenFrom(trakt: found.map(\.imdb), kv: services.kv, pending: services.traktOutbox.pendingHidden)
                 ForYou.setHidden(hidden, kv: services.kv)
             }
         } catch {
@@ -81,7 +81,8 @@ public final class FollowModel: ObservableModel {
     }
 
     /// «Esconder» (SS1-A): sale de la lista, de tus estrenos, de «Sigue viendo» y de los avisos, aquí y en Trakt (oculta de tu
-    /// progreso y tu calendario). Lo que viste se queda. Si Trakt no lo acepta, regresa y devuelve el motivo.
+    /// progreso y tu calendario) y, desde «La dejé» (G1-A), también en sus «dejadas». Lo que viste se queda. Sin internet se
+    /// queda hecho y espera a Trakt; si Trakt no lo acepta, regresa y devuelve el motivo.
     public func hide(_ imdb: String) async -> String? {
         let wasFollowing = isFollowing(imdb)
         let before = (hidden, unfollowed)
@@ -89,7 +90,10 @@ public final class FollowModel: ObservableModel {
         await apply(hidden: hidden.union([imdb]), unfollowed: unfollowed.union([imdb]))
         guard let trakt = services.trakt, trakt.linked else { return nil }
         do {
-            try await trakt.setHidden(imdb: imdb, hidden: true)
+            try await trakt.setHidden(imdb: imdb, hidden: true, sections: Trakt.droppedSections)
+            return nil
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.hidden(imdb: imdb, true, sections: Trakt.droppedSections))
             return nil
         } catch {
             await apply(hidden: before.0, unfollowed: before.1)
@@ -104,9 +108,14 @@ public final class FollowModel: ObservableModel {
         let before = (hidden, unfollowed)
         await apply(hidden: hidden.subtracting([imdb]), unfollowed: following ? unfollowed.subtracting([imdb]) : unfollowed.union([imdb]))
         guard let trakt = services.trakt, trakt.linked else { return nil }
+        // Apagada se queda oculta del calendario (así no te avisa); solo vuelve a tu progreso. Y deja de contar como dejada.
+        let sections = following ? Trakt.droppedSections : ["progress_watched", "dropped"]
         do {
-            // Apagada se queda oculta del calendario (así no te avisa); solo vuelve a tu progreso.
-            try await trakt.setHidden(imdb: imdb, hidden: false, sections: following ? Trakt.hiddenSections : ["progress_watched"])
+            try await trakt.setHidden(imdb: imdb, hidden: false, sections: sections)
+            hiddenFromTrakt.removeAll { $0.imdb == imdb }
+            return nil
+        } catch where TraktOutbox.retryable(error) {
+            services.traktOutbox.enqueue(.hidden(imdb: imdb, false, sections: sections))
             hiddenFromTrakt.removeAll { $0.imdb == imdb }
             return nil
         } catch {

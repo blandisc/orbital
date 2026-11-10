@@ -88,9 +88,10 @@ final class FollowHideTests: XCTestCase {
         XCTAssertEqual(sentIDs(rig, "/users/hidden/calendar/remove"), ["tt0000002"])
     }
 
-    func testSiTraktNoContestaNoSeEsconde() async throws {
+    /// Trakt caído o sin internet: se queda escondida y espera (DroppedTraktTests). Si Trakt la rechaza, no.
+    func testSiTraktLaRechazaNoSeEsconde() async throws {
         let rig = try linkedRig()
-        rig.http.statuses["\(api)/users/hidden/calendar"] = 500
+        rig.http.statuses["\(api)/users/hidden/calendar"] = 422
         let model = FollowModel(rig.services)
         await model.loadSeries()
         let problem = await model.hide("tt0000001")

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Lo que guardaste en Trakt (tu watchlist, tus favoritos, tus listas y tus calificaciones) y Trakt aún no recibió: sin internet, o con la sesión prestada por tu
+/// Lo que guardaste en Trakt (tu watchlist, tus favoritos, tus listas, tus calificaciones y las series que dejaste) y Trakt aún no recibió: sin internet, o con la sesión prestada por tu
 /// Orbital caducada y la consola apagada. Se guarda aquí (sobrevive al cierre de la app) y se manda en cuanto se pueda; lo
 /// último que elegiste para un título en una lista es lo que cuenta. Las listas se recuerdan para poder elegirlas sin conexión.
 public final class TraktOutbox: @unchecked Sendable {
@@ -12,15 +12,21 @@ public final class TraktOutbox: @unchecked Sendable {
         public var add: Bool
         /// Solo en `ratings`: el 1…10 que diste (nil con `add == false`: quitar tu calificación).
         public var rating: Int?
-        public init(target: String, imdb: String, series: Bool, add: Bool, rating: Int? = nil) {
-            self.target = target; self.imdb = imdb; self.series = series; self.add = add; self.rating = rating
+        /// Solo en `hidden`: las secciones de Trakt donde se esconde o se vuelve a mostrar la serie.
+        public var sections: [String]?
+        public init(target: String, imdb: String, series: Bool, add: Bool, rating: Int? = nil, sections: [String]? = nil) {
+            self.target = target; self.imdb = imdb; self.series = series; self.add = add; self.rating = rating; self.sections = sections
+        }
+        /// Esconder una serie («La dejé») o volver a mostrarla, en esas secciones de Trakt.
+        public static func hidden(imdb: String, _ hidden: Bool, sections: [String]) -> Item {
+            Item(target: TraktOutbox.hidden, imdb: imdb, series: true, add: hidden, sections: sections)
         }
         /// Calificar (o, con nil, quitar tu calificación).
         public static func rating(imdb: String, series: Bool, _ value: Int?) -> Item {
             Item(target: TraktOutbox.ratings, imdb: imdb, series: series, add: value != nil, rating: value)
         }
     }
-    public static let watchlist = "watchlist", favorites = "favorites", ratings = "ratings"
+    public static let watchlist = "watchlist", favorites = "favorites", ratings = "ratings", hidden = "hidden"
     static let key = "trakt-outbox", listsKey = "trakt-lists"
 
     private let kv: KeyValueStore
@@ -41,6 +47,11 @@ public final class TraktOutbox: @unchecked Sendable {
     /// Las calificaciones que aún no llegan a Trakt: IMDb → 1…10, o nil si la quitaste.
     public var pendingRatings: [String: Int?] {
         lock.withLock { Dictionary(items.filter { $0.target == Self.ratings }.map { ($0.imdb, $0.rating) }, uniquingKeysWith: { $1 }) }
+    }
+
+    /// Las series que escondiste o mostraste y Trakt aún no sabe: IMDb → escondida. Lo que diga Trakt al recargar no las pisa.
+    public var pendingHidden: [String: Bool] {
+        lock.withLock { Dictionary(items.filter { $0.target == Self.hidden }.map { ($0.imdb, $0.add) }, uniquingKeysWith: { $1 }) }
     }
 
     public func enqueue(_ item: Item) {
@@ -74,6 +85,7 @@ public final class TraktOutbox: @unchecked Sendable {
                 if item.target == Self.watchlist { try await trakt.setWatchlist(imdb: item.imdb, series: item.series, add: item.add) }
                 else if item.target == Self.favorites { try await trakt.setFavorite(imdb: item.imdb, series: item.series, add: item.add) }
                 else if item.target == Self.ratings { try await trakt.setRating(imdb: item.imdb, series: item.series, rating: item.add ? item.rating : nil) }
+                else if item.target == Self.hidden { try await trakt.setHidden(imdb: item.imdb, hidden: item.add, sections: item.sections ?? Trakt.hiddenSections) }
                 else { try await trakt.setListItem(listID: item.target, imdb: item.imdb, series: item.series, add: item.add) }
                 sent += 1
             } catch where Self.retryable(error) {
