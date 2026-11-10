@@ -17,7 +17,7 @@ import time
 from typing import TYPE_CHECKING
 
 from .library import trakt as trakt_api
-from .trakt_outbox import HIDDEN, WATCHLIST, TraktOutbox, retryable
+from .trakt_outbox import HIDDEN, HISTORY, NOTE, WATCHLIST, TraktOutbox, retryable
 
 if TYPE_CHECKING:
     from .foryou import ForYou
@@ -395,3 +395,134 @@ class Gestor:
         target = WATCHLIST if where == WATCHLIST else self._list_id(where)
         self._require().reorder(target, [i for i in imdbs if str(i).startswith("tt")])
         self._changed("trakt:watchlist" if target == WATCHLIST else f"trakt:list:{target}")
+
+    # --- ola 3 (O3-B, 10 nov 2026, como `WatchService+Viewings.swift` y `NotesModel`): corregir lo que viste --------------
+    @staticmethod
+    def _target(kind: str, imdb: str, video_id: str | None) -> dict:
+        found = trakt_api.scrobble_target(kind, imdb, video_id if kind == "series" else imdb)
+        if found is None:
+            raise ValueError("Título inválido")
+        return found
+
+    def _pending_history(self) -> tuple[list[dict], set[int]]:
+        """Lo que la cola aún no manda: vistas que entran y los ids que salen."""
+        pending = [i for i in self.outbox.pending if i.get("target") == HISTORY]
+        adds = [i for i in pending if i.get("add")]
+        gone = {n for i in pending if not i.get("add") for n in i.get("ids") or []}
+        return adds, gone
+
+    def viewings(self, kind: str, imdb: str, video_id: str | None = None) -> list[dict]:
+        """Cada vez que viste esta película o este capítulo, la más nueva primero ({id, at}; id 0: aún en la cola)."""
+        t = self._require()
+        target = self._target(kind, imdb, video_id)
+        ep = target.get("episode") or {}
+        adds, gone = self._pending_history()
+        queued = [{"id": 0, "at": i["at"]} for i in adds if i.get("video") == target]
+        remote = [v for v in t.viewings(kind, imdb, ep.get("season"), ep.get("number")) if v["id"] not in gone]
+        return sorted(queued + remote, key=lambda v: -v["at"])
+
+    def _history_send(self, item: dict, run) -> str:
+        result = self._send(item, run)
+        self._changed("trakt:watched", "trakt:watched-state")
+        return result
+
+    def add_viewing(self, kind: str, imdb: str, video_id: str | None, at: float) -> str:
+        """«La vi otra vez» (o la nueva fecha de una vista): una vista más en tu historial."""
+        self._require()
+        target = self._target(kind, imdb, video_id)
+        item = {"target": HISTORY, "imdb": f"{video_id or imdb}@{at:.0f}", "kind": kind, "add": True, "video": target, "at": at}
+        return self._history_send(item, lambda: self.trakt.add_history(target, at))
+
+    def remove_viewings(self, ids: list[int]) -> str:
+        """Borra solo esas vistas (una repetida, las repetidas del historial)."""
+        self._require()
+        clean = sorted({i for i in ids if isinstance(i, int) and i > 0})
+        if not clean:
+            return "sent"
+        item = {"target": HISTORY, "imdb": "remove:" + ",".join(map(str, clean)), "kind": "movie", "add": False, "ids": clean}
+        return self._history_send(item, lambda: self.trakt.remove_viewings(clean))
+
+    def move_viewing(self, viewing_id: int, kind: str, imdb: str, video_id: str | None, at: float) -> str:
+        """Cambia la fecha de una vista: la nueva entra primero (si falla, no se pierde nada) y luego sale la vieja."""
+        added = self.add_viewing(kind, imdb, video_id, at)
+        removed = self.remove_viewings([viewing_id])
+        return "queued" if "queued" in (added, removed) else "sent"
+
+    def undo_viewing(self, kind: str, imdb: str, video_id: str | None, at: float) -> bool:
+        """«Deshacer» del aviso de «Vista»: quita solo la vista que se acaba de marcar (la más cercana a `at`, de las últimas
+        12 horas); las de antes se quedan."""
+        found = self.viewings(kind, imdb, video_id)
+        mine = min(found, key=lambda v: abs(v["at"] - at), default=None)
+        if mine is None or abs(mine["at"] - at) > 12 * 3600 or not mine["id"]:
+            return False
+        self.remove_viewings([mine["id"]])
+        return True
+
+    def history(self, page: int = 1) -> dict:
+        """Tu historial (de 100 en 100), sin lo que ya borraste aquí, con las vistas repetidas marcadas."""
+        _, gone = self._pending_history()
+        entries = [e for e in self._require().history(page) if e["id"] not in gone]
+        return {"entries": entries, "repeats": sorted(trakt_api.repeats(entries)), "more": len(entries) >= 90}
+
+    # Tu nota: con Trakt VIP vive en Trakt (privada); sin VIP, solo en esta tele (y la hoja lo dice). Como `NotesModel`.
+    def vip(self) -> bool | None:
+        state = self.foryou.catalog.state
+        try:
+            found = self._require().is_vip()
+        except trakt_api.TraktAuthError:
+            raise
+        except trakt_api.TraktError:  # sin red: lo último que se supo
+            saved = state.settings().get("trakt_vip")
+            return saved if isinstance(saved, bool) else None
+        state.set_setting("trakt_vip", found)
+        return found
+
+    def _local_notes(self) -> dict:
+        found = self._settings().get("notes_local")
+        return found if isinstance(found, dict) else {}
+
+    def note(self, kind: str, imdb: str) -> dict:
+        """{text, vip}: tu nota de este título y dónde se guarda. Con VIP, las de esta tele pasan solas a Trakt."""
+        vip = self.vip()
+        pending = next((i for i in reversed(self.outbox.pending) if i.get("target") == NOTE and i.get("imdb") == imdb), None)
+        if pending is not None:
+            return {"text": pending.get("text") or "", "vip": vip}
+        local = self._local_notes()
+        if vip:
+            notes = self.trakt.my_notes()
+            for key, (text, k) in list(local.items()):  # las de la tele, a Trakt
+                if key not in notes:
+                    self.outbox.enqueue({"target": NOTE, "imdb": key, "kind": k, "text": text, "add": True})
+            if local:
+                self.foryou.catalog.state.set_setting("notes_local", None)
+                self.outbox.flush(self.trakt)
+                notes = self.trakt.my_notes()
+            return {"text": (notes.get(imdb) or {}).get("text") or "", "vip": True}
+        return {"text": (local.get(imdb) or ["", kind])[0], "vip": vip}
+
+    def set_note(self, kind: str, imdb: str, text: str) -> dict:
+        """Guarda (o, vacía, borra) tu nota. Con VIP va a Trakt (sin red, espera); sin VIP, a esta tele."""
+        if kind not in trakt_api.KINDS or not str(imdb).startswith("tt"):
+            raise ValueError("Título inválido")
+        clean = text.strip()[:trakt_api.NOTE_LIMIT]
+        vip = self.vip()
+        if vip:
+            existing = (self.trakt.my_notes().get(imdb) or {}).get("id")
+            item = {"target": NOTE, "imdb": imdb, "kind": kind, "text": clean, "note_id": existing, "add": True}
+            queued = self._send(item, lambda: self.trakt.set_note(kind, imdb, clean, existing)) == "queued"
+            return {"vip": True, "queued": queued}
+        local = self._local_notes()
+        if clean:
+            local[imdb] = [clean, kind]
+        else:
+            local.pop(imdb, None)
+        self.foryou.catalog.state.set_setting("notes_local", local or None)
+        return {"vip": vip, "queued": False}
+
+    # Estrellas de temporada (G7-A): 1–5 aquí, el doble en Trakt.
+    def season_stars(self, imdb: str, season: int) -> int | None:
+        rating = self._require().season_rating(imdb, season)
+        return max(1, min(5, round(rating / 2))) if rating else None
+
+    def rate_season(self, imdb: str, season: int, stars: int | None) -> None:
+        self._require().set_season_rating(imdb, season, None if stars is None else max(1, min(5, int(stars))) * 2)

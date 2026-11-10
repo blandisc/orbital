@@ -134,6 +134,16 @@ export const api = {
   dropMany: (items) => post("/api/foryou/drop-many", { items }),
   watchedMany: (items, undo = false) => post("/api/foryou/watched-many", { items, undo }),
   manageList: (action, body = {}) => post("/api/foryou/list-manage", { action, ...body }),
+  // Ola 3 (O3-B): tus vistas, tu historial, tu nota y tus temporadas.
+  viewings: (kind, id, videoId = null) =>
+    request(`/api/foryou/viewings?kind=${kind}&id=${encodeURIComponent(id)}${videoId ? `&video_id=${encodeURIComponent(videoId)}` : ""}`),
+  changeViewing: (body) => post("/api/foryou/viewings", body),
+  history: (page = 1) => request(`/api/foryou/history?page=${page}`),
+  removeViewings: (ids) => post("/api/foryou/history/remove", { ids }),
+  note: (kind, id) => request(`/api/foryou/note?kind=${kind}&id=${encodeURIComponent(id)}`),
+  saveNote: (kind, id, text) => post("/api/foryou/note", { kind, id, text }),
+  seasonRating: (id, season) => request(`/api/foryou/season-rating?id=${encodeURIComponent(id)}&season=${season}`),
+  rateSeason: (id, season, stars) => post("/api/foryou/season-rating", { id, season, stars }),
   markWatched: ({ kind, id, video_id = null, when = "now" }) => post("/api/foryou/watched", { kind, id, video_id, when }),
   consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>

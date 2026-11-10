@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
@@ -81,6 +82,31 @@ class ListManageRequest(BaseModel):
     name: str = ""
     privacy: str = ""
     ids: list[str] = []
+
+
+class ViewingRequest(BaseModel):
+    action: str  # add · move · remove · undo
+    kind: str
+    id: str
+    video_id: str | None = None
+    viewing_id: int | None = None
+    at: float | None = None  # segundos (la fecha nueva, o cuándo marcaste la que se deshace)
+
+
+class IdsRequest(BaseModel):
+    ids: list[int]
+
+
+class NoteRequest(BaseModel):
+    kind: str
+    id: str
+    text: str = ""
+
+
+class SeasonRateRequest(BaseModel):
+    id: str
+    season: int
+    stars: int | None = None
 
 
 class RateRequest(BaseModel):
@@ -314,6 +340,74 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(400, "¿Qué hago con la lista?")
         found = _trakt_call(actions[body.action], "Esto necesita internet: revisa tu conexión e inténtalo de nuevo.")
         return {"ok": True, **(found if isinstance(found, dict) else {})}
+
+    # --- ola 3 (O3-B): tus vistas, tu historial, tu nota y tus temporadas ----------------------------------------------
+    def _kind(kind: str) -> str:
+        if kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        return kind
+
+    @r.get("/viewings")
+    def viewings(kind: str, id: str, video_id: str = "") -> dict:
+        """«Tus vistas»: cada vez que viste esta película o este capítulo, con su fecha y hora."""
+        found = _trakt_call(lambda: foryou.gestor.viewings(_kind(kind), id[:20], video_id[:40] or None),
+                            "No pude leer tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"viewings": found}
+
+    @r.post("/viewings")
+    def change_viewing(body: ViewingRequest) -> dict:
+        """«La vi otra vez» (add), cambiar la fecha (move), borrar una (remove) o deshacer la de hoy (undo)."""
+        g, kind, imdb, video = foryou.gestor, _kind(body.kind), body.id[:20], (body.video_id or "")[:40] or None
+        actions = {
+            "add": lambda: g.add_viewing(kind, imdb, video, body.at or time.time()),
+            "move": lambda: g.move_viewing(body.viewing_id or 0, kind, imdb, video, body.at or time.time()),
+            "remove": lambda: g.remove_viewings([body.viewing_id or 0]),
+            "undo": lambda: "sent" if g.undo_viewing(kind, imdb, video, body.at or time.time()) else "missing",
+        }
+        if body.action not in actions:
+            raise HTTPException(400, "¿Qué hago con esa vista?")
+        sent = _trakt_call(actions[body.action], "No pude cambiar tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": sent != "missing", "queued": sent == "queued"}
+
+    @r.get("/history")
+    def history(page: int = 1) -> dict:
+        """Tu historial de Trakt, de 100 en 100, con las vistas repetidas marcadas."""
+        return _trakt_call(lambda: foryou.gestor.history(max(1, min(page, 500))),
+                           "No pude leer tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+
+    @r.post("/history/remove")
+    def history_remove(body: IdsRequest) -> dict:
+        """«Borrar N vistas repetidas»: solo esas; siempre queda la otra vista de cada una."""
+        sent = _trakt_call(lambda: foryou.gestor.remove_viewings(body.ids[:500]),
+                           "No pude borrar esas vistas en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True, "queued": sent == "queued"}
+
+    @r.get("/note")
+    def note(kind: str, id: str) -> dict:
+        """«Tu nota»: el texto y dónde se guarda (Trakt con VIP; sin VIP, en esta tele)."""
+        return _trakt_call(lambda: foryou.gestor.note(_kind(kind), id[:20]),
+                           "No pude leer tu nota. Revisa tu conexión e inténtalo de nuevo.")
+
+    @r.post("/note")
+    def save_note(body: NoteRequest) -> dict:
+        return _trakt_call(lambda: foryou.gestor.set_note(_kind(body.kind), body.id[:20], body.text[:2000]),
+                           "No pude guardar tu nota. Revisa tu conexión e inténtalo de nuevo.")
+
+    @r.get("/season-rating")
+    def season_rating(id: str, season: int) -> dict:
+        """Tus estrellas (1–5) de una temporada, o null."""
+        try:
+            return {"stars": foryou.gestor.season_stars(id[:20], season)}
+        except SERVICE_ERRORS:
+            return {"stars": None}
+
+    @r.post("/season-rating")
+    def rate_season(body: SeasonRateRequest) -> dict:
+        if body.stars is not None and not 1 <= body.stars <= 5:
+            raise HTTPException(400, "Calificación inválida")
+        _trakt_call(lambda: foryou.gestor.rate_season(body.id[:20], body.season, body.stars),
+                    "No pude guardar tu calificación en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True}
 
     @r.post("/follow")
     def follow(body: FollowRequest) -> dict:

@@ -50,6 +50,7 @@ import { accountCommands } from "./app/account-commands.js";
 import { libraryCommands } from "./app/library-commands.js";
 import { yoursCommands } from "./app/yours-commands.js";
 import { listManageOptions, savedCommands, savedMenuOptions } from "./app/saved-commands.js";
+import { viewingsCommands } from "./app/viewings-commands.js";
 import { createMatchDeck } from "./components/match-deck.js";
 import { createShowcase } from "./components/showcase.js";
 import { createFilterPanel } from "./components/filter-panel.js";
@@ -155,6 +156,9 @@ const ui = {
     onWatched: (about) => runCommand({ type: "watched", ...about }),
     // G1-A: sin estado, un toque la guarda en Mi lista; con estado (o X), «¿Cómo vas con…?».
     onStatus: (about, { quick }) => runCommand(quick ? { type: "status-list", ...about } : { type: "status", ...about }),
+    // G7-B: terminaste una temporada: si no la has calificado, el aviso lo pregunta (Y › «Calificar»).
+    onSeasonDone: (season) => api.seasonRating(season.id, season.season).then(({ stars }) => stars || undoable(`¿Qué tal ${season.title}, temporada ${season.season}?`,
+      "La terminaste", () => runCommand({ type: "season-rate", ...season }), { label: "Calificar" })).catch(() => {}),
     downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
@@ -1975,7 +1979,7 @@ function commands() {
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
   const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, undoable, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
   commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }),
-    ...savedTable() };
+    ...savedTable(), ...viewingsCommands({ ...deps, openListForm }) };
   return commandTable;
 }
 
@@ -2135,10 +2139,11 @@ function savedTable() {
 }
 
 /** El nombre de una lista (nueva o cambiada), con el teclado de la tele. */
-function openListForm({ title, lead = "", submitLabel, value = "", submit, done }) {
+function openListForm({ title, lead = "", submitLabel, value = "", submit, done, eyebrow = "Tus listas", optional = false }) {
   sound.play("open");
-  ui.login.open({ id: "list-form", eyebrow: "Tus listas", title, lead, submitLabel, missing: "Ponle nombre a la lista",
-    fields: [{ name: "name", label: "Nombre", value, forget: true }],
+  // Una lista: «Nombre»; tu nota (ola 3): «Tu nota», que puede quedar vacía (así se borra).
+  ui.login.open({ id: optional ? "note-form" : "list-form", eyebrow, title, lead, submitLabel, missing: "Ponle nombre a la lista",
+    fields: [{ name: "name", label: optional ? "Tu nota" : "Nombre", value, forget: true, optional }],
     submit: async (values) => ({ res: await submit(values), values }), done });
   renderHints();
 }
@@ -2157,9 +2162,9 @@ async function saveOrder(editable, ids) {
 }
 
 /** Un cambio con «Deshacer» (Y mientras se ve el aviso; con el mouse o el dedo, en el aviso): el gestor de lo tuyo. */
-function undoable(message, detail, undo) {
-  ui.toast.show(message, { tone: "info", detail: detail || "", duration: UNDO_MS,
-    ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: () => {
+function undoable(message, detail, undo, { label = "Deshacer", tone = "info" } = {}) {
+  ui.toast.show(message, { tone, detail: detail || "", duration: UNDO_MS,
+    ...offerToastAction({ label, button: "options", duration: UNDO_MS, run: () => {
       Promise.resolve(undo()).then(() => sound.play("select")).catch((err) => {
         sound.play("error");
         ui.toast.show("No pude deshacerlo", { error: true, detail: err?.message || "" });

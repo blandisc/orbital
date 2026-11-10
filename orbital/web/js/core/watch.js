@@ -177,6 +177,18 @@ const RELEASE_FORMAT = { day: "numeric", month: "short" };
  * Estado de cada episodio: visto (los anteriores al que ibas), a medias (con su barra) o por
  * estrenar ("Se estrena el 12 oct"). Los especiales no cuentan para "visto".
  */
+/** La temporada que acabas de terminar (G7-B, como `RatingsModel.endsSeason` del iPhone): antes le faltaba algo de lo que ya
+ * salió y ahora la viste toda. null si ninguna. `before` y `after`: los `episodeStates` de antes y de ahora. */
+export function finishedSeason(seasons, before, after) {
+  for (const s of seasons || []) {
+    if (s.season === 0) continue;
+    const out = (s.episodes || []).filter((e) => !after.get(e.id)?.upcoming);
+    const all = (states) => out.length > 0 && out.every((e) => states.get(e.id)?.watched);
+    if (all(after) && !all(before)) return s.season;
+  }
+  return null;
+}
+
 export function episodeStates(details, now = Date.now()) {
   const states = new Map();
   const seasons = details?.seasons || [];

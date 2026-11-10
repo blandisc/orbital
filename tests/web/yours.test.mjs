@@ -61,7 +61,10 @@ test("«¿Cómo vas con…?» trae las respuestas, la campana y tus listas (como
   const labels = (m) => m.options.map((o) => o.label);
   const watching = statusMenu({ ...base, status: "watching" });
   assert.equal(watching.title, "¿Cómo vas con The Office?");
-  assert.deepEqual(labels(watching), ["En Mi lista", "Viendo", "Vista", "La dejé", "Avisarme de episodios nuevos", "Agregar a una lista…"]);
+  assert.deepEqual(labels(watching), ["En Mi lista", "Viendo", "Vista", "La dejé", "Avisarme de episodios nuevos", "Agregar a una lista…", "Tu nota"]);
+  // Ola 3: con el capítulo enfocado visto y la temporada, «Tus vistas» y sus estrellas
+  const deeper = labels(statusMenu({ ...base, status: "watching", episode: "tt1:2:3", season: 2 }));
+  assert.deepEqual(deeper.slice(-3), ["Tus vistas", "Calificar la temporada 2", "Tu nota"]);
   assert.equal(watching.options[1].value, "✓");
   const long = statusMenu({ ...base, title: "Chad Powers: Mariscal de campo", status: "watching" });
   assert.deepEqual([long.title, long.subtitle], ["¿Cómo vas?", "Chad Powers: Mariscal de campo"]); // nunca cortado con «…»
@@ -72,7 +75,7 @@ test("«¿Cómo vas con…?» trae las respuestas, la campana y tus listas (como
   assert.deepEqual(labels(statusMenu({ kind: "movie", id: "tt2", title: "Dune", status: "in_list", trakt: false })), ["En Mi lista"]);
   // Una película en Mi lista: «La dejé» la saca de Mi lista y de Seguir viendo
   const movie = statusMenu({ kind: "movie", id: "tt2", title: "Dune", status: "in_list", trakt: true, canDrop: true });
-  assert.deepEqual(labels(movie), ["En Mi lista", "Vista", "La dejé", "Agregar a una lista…"]);
+  assert.deepEqual(labels(movie), ["En Mi lista", "Vista", "La dejé", "Agregar a una lista…", "Tu nota"]);
 });
 
 test("«Para hoy» vale solo el día que la elegiste (al otro día, Mi lista vuelve a su orden)", async () => {

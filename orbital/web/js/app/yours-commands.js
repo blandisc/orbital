@@ -1,6 +1,8 @@
 /** Comandos de lo tuyo con un título (olas 2 y 3 de «Una sola Orbital», como el iPhone): calificar con estrellas, «¿Cuándo la
  * viste?», «Tus canales» y «¿Qué vemos hoy?». Cada comando es una entrada de la tabla: `runCommand` (main.js) busca aquí. */
 
+import { watchedFixMenu } from "./viewings-commands.js";
+
 /** Las estrellas, de la mejor a la peor, con lo que dicen (como la hoja de calificar del iPhone). */
 export const STARS = [[5, "Me encantó"], [4, "Me gustó"], [3, "Estuvo bien"], [2, "No me gustó"], [1, "Muy mala"]];
 export const starText = (n) => "★".repeat(n); // solo las que diste: «☆» junto a «★» casi no se distinguía en la tele
@@ -64,6 +66,16 @@ export function statusMenu(about) {
     options.push({ icon: "list", label: "Agregar a una lista…", hint: "Mi lista y tus listas",
       command: { type: "save-open", kind, id, title, library: !!about.library } });
   }
+  // Ola 3 (O3-B): tus vistas (la película vista o el capítulo enfocado), tu nota y las estrellas de la temporada.
+  if (trakt && (about.seen || about.episode)) {
+    const videoId = series ? about.episode : null;
+    options.push({ icon: "clock", label: "Tus vistas", hint: videoId ? `De ${videoId.split(":").slice(1).map((n, i) => (i ? `E${n}` : `T${n}`)).join(" ")}: cambiar una fecha o borrar una` : "Cambiar una fecha, borrar una o «La vi otra vez»",
+      command: { type: "viewings", about: { kind, id, videoId, title } } });
+  }
+  if (trakt && series && about.season && seenAny) {
+    options.push({ icon: "star", label: `Calificar la temporada ${about.season}`, command: { type: "season-rate", id, title, season: about.season } });
+  }
+  if (trakt) options.push({ icon: "text", label: "Tu nota", hint: "Privada, solo para ti", command: { type: "note", kind, id, title } });
   // Un nombre largo no cabe en la pregunta (se cortaba: «¿Cómo vas con Chad Powers: Mariscal d…»): entonces va debajo.
   return title.length > 18 ? { title: "¿Cómo vas?", subtitle: title, options } : { title: `¿Cómo vas con ${title}?`, options };
 }
@@ -155,10 +167,19 @@ export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, op
     "watched": async (command, context) => openMenu(watchedMenu(command), nested(context)),
     "watched-other": async (command, context) => openMenu(otherDayMenu(command.base), nested(context)),
     "watched-set": async (command) => {
+      const at = command.when === "now" ? Math.round(Date.now() / 1000) : Number(command.when);
       await api.markWatched({ kind: command.kind, id: command.id, video_id: command.video_id, when: command.when });
       ui.sheet.close();
       sound.play("success");
-      ui.toast.show(`Marqué ${command.title} como vista`, { tone: "success" });
+      ui.title.statusChanged?.(command.id);
+      // O3-B: una película o un capítulo con su momento trae «Cambiar» (Y): «Deshacer» solo esta u «Otra fecha».
+      const one = command.kind === "movie" || command.video_id;
+      if (one && Number.isFinite(at)) {
+        const about = { kind: command.kind, id: command.id, videoId: command.video_id || null, title: command.title };
+        undoable(`Marqué ${command.title} como vista`, "", () => openMenu(watchedFixMenu(about, at)), { label: "Cambiar", tone: "success" });
+      } else {
+        ui.toast.show(`Marqué ${command.title} como vista`, { tone: "success" });
+      }
       return renderHints();
     },
     "tv-mine": async (command) => {

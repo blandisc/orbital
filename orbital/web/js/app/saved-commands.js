@@ -365,6 +365,10 @@ export function savedMenuOptions(tabId, lists, { online = true } = {}) {
     out.push({ heading: true, label: "¿Las dejaste?" },
       { icon: "hide", label: "Sí, las dejé", hint: "No las ves hace seis meses: salen de Viendo y dejan de avisarte", command: { type: "saved-stale-drop" } });
   }
+  if (tabId === "watched") {
+    out.push({ heading: true, label: "Vistas" },
+      { icon: "clock", label: "Historial", hint: "Cada vez que viste algo, con las repetidas marcadas", command: { type: "history", page: 1 } });
+  }
   out.push({ heading: true, label: "Tus listas" },
     ...lists.map((l) => ({ icon: "list", label: l.name, hint: [l.count != null && many(l.count, "1 título", "títulos"), lower(privacyName(l.privacy))].filter(Boolean).join(" · "),
       command: { type: "list-open", where: `list:${l.id}`, name: l.name } })),

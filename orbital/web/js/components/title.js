@@ -11,7 +11,7 @@ import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 import { flight, motion, reducedMotion, rollNumber } from "../core/motion.js";
 import { tokenMs, tokenPx } from "../core/tokens.js";
-import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress, titleStatus } from "../core/watch.js";
+import { actionStep, availability, episodeStates, episodesLed, finishedSeason, titleActions, titleProgress, titleStatus } from "../core/watch.js";
 import { Flag } from "./flag.js";
 
 /**
@@ -31,7 +31,7 @@ const EPISODE_PX = 360;
 
 export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {},
-  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, onStatus = () => {}, onRequest = () => {}, returnTo = () => null }) {
+  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, onStatus = () => {}, onSeasonDone = () => {}, onRequest = () => {}, returnTo = () => null }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -629,7 +629,10 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     const series = kindOf() === "series";
     return { kind: kindOf(), id: details?.id || item.meta_id, title: details?.title || item.title, status: s, trakt: hasTrakt(),
       following: following !== false, library: !!details?.in_library, seenAny: (details?.watched || []).length > 0,
-      canDrop: series ? true : !!details?.in_library || details?.resume?.position > 0 };
+      canDrop: series ? true : !!details?.in_library || details?.resume?.position > 0,
+      // Ola 3: «Tus vistas» de la película vista o del capítulo enfocado (si lo viste) y la temporada que ves.
+      seen: !series && !!details?.seen, episode: series && states.get(episode()?.id)?.watched ? episode().id : null,
+      season: series && seasons()[season]?.season > 0 ? seasons()[season].season : null };
   }
 
   /** El botón de estado: sin estado, un toque la guarda en Mi lista (como «Guardar»); con estado, abre «¿Cómo vas con…?».
@@ -730,7 +733,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       const settled = () => { if (mine === token) ratings.classList.remove("title__ratings--waiting"); };
       api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {}).finally(settled);
       fillInfo({ ...data, title: data.title || item.title, art: artOf(data), ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
+      const before = quiet && kind === "series" ? states : null;
       states = episodeStates(data, Date.now());
+      // G7-B: regresaste de ver el último capítulo que ha salido de una temporada: «¿Qué tal la temporada 3?».
+      const done = before && hasTrakt() ? finishedSeason(data.seasons, before, states) : null;
+      if (done) onSeasonDone({ id, title: data.title || item.title, season: done });
       prefetch(mine);
       // Abre en el episodio en el que ibas (no en T1 E1).
       // Al ponerse al día, sigues en el episodio que tenías enfocado (si aún existe).

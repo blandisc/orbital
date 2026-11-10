@@ -18,6 +18,10 @@ log = logging.getLogger(__name__)
 
 KEY = "trakt_outbox"
 WATCHLIST, HIDDEN = "watchlist", "hidden"
+# Ola 3 (O3-B): una vista que entra o las que salen de tu historial (`imdb` es su llave única: título y momento, o los ids)
+# y tu nota con VIP. Cada una va sola, no en lote.
+HISTORY, NOTE = "history", "note"
+SINGLE = (HIDDEN, HISTORY, NOTE)
 
 
 def retryable(exc: Exception) -> bool:
@@ -76,7 +80,7 @@ class TraktOutbox:
             while queue:
                 item = queue[0]
                 run = [item]
-                if item["target"] != HIDDEN:
+                if item["target"] not in SINGLE:
                     for nxt in queue[1:]:
                         if nxt["target"] != item["target"] or nxt.get("add") != item.get("add"):
                             break
@@ -84,6 +88,13 @@ class TraktOutbox:
                 try:
                     if item["target"] == HIDDEN:
                         t.set_hidden([item["imdb"]], bool(item.get("add")), tuple(item.get("sections") or trakt_api.HIDDEN_SECTIONS))
+                    elif item["target"] == HISTORY:  # ola 3: una vista que entra (con su fecha) o las que salen (por id)
+                        if item.get("add"):
+                            t.add_history(item["video"], item["at"])
+                        else:
+                            t.remove_viewings(item.get("ids") or [])
+                    elif item["target"] == NOTE:
+                        t.set_note(item["kind"], item["imdb"], item.get("text") or "", item.get("note_id"))
                     else:
                         t.set_items(item["target"], [(i["kind"], i["imdb"]) for i in run], bool(item.get("add")))
                     sent += len(run)

@@ -49,8 +49,10 @@ KINDS = {"movie": "movies", "series": "shows"}
 # de trakt.tv (/users/hidden/dropped), como `Trakt.hiddenSections` y `droppedSections` del iPhone.
 HIDDEN_SECTIONS = ("calendar", "progress_watched")
 DROPPED_SECTIONS = (*HIDDEN_SECTIONS, "dropped")
-PRIVACIES = ("private", "link", "friends", "public")
-PROGRESS_SHOWS = 40  # el tablero de Guardado pide el avance exacto de tus 40 series más recientes (Trakt dejó de mandarlo junto)  # «Quién la ve» (G4-A), los valores que entiende Trakt
+PRIVACIES = ("private", "link", "friends", "public")  # «Quién la ve» (G4-A), los valores que entiende Trakt
+PROGRESS_SHOWS = 40  # el tablero de Guardado pide el avance exacto de tus 40 series más recientes (Trakt dejó de mandarlo junto)
+NOTE_LIMIT = 500  # lo más largo que Trakt guarda en una nota
+REPEAT_WINDOW = 3600  # s: dos vistas del mismo título más cerca que esto son repetidas (la tele y el iPhone a la vez)
 
 
 SCROBBLE_ACTIONS = ("start", "pause", "stop")
@@ -293,6 +295,20 @@ def _typed(rows) -> list[dict]:
             seen.add(item["imdb"])
             found.append(item)
     return found
+
+
+def repeats(entries: list[dict], window: float = REPEAT_WINDOW) -> set[int]:
+    """Las vistas repetidas de tu historial: el mismo título o capítulo a menos de `window` de otra más vieja (esa se queda)."""
+    groups: dict[str, list[dict]] = {}
+    for e in entries:
+        groups.setdefault(f"{e['imdb']}:{e.get('season')}:{e.get('episode')}", []).append(e)
+    out: set[int] = set()
+    for group in groups.values():
+        ordered = sorted(group, key=lambda e: e["at"])
+        for a, b in zip(ordered, ordered[1:], strict=False):
+            if b["at"] - a["at"] < window:
+                out.add(b["id"])
+    return out
 
 
 class Trakt:
@@ -672,7 +688,7 @@ class Trakt:
             aired = raw.get("aired_episodes")
             # Trakt ya no manda las temporadas aquí (10 nov 2026: llegan sin «seasons»): de entrada, las veces que viste
             # episodios entre los que han salido (una repetida cuenta de más); las más recientes se corrigen abajo.
-            plays = row.get("plays") if isinstance(row.get("plays"), int) else 0
+            plays: int = row["plays"] if isinstance(row.get("plays"), int) else 0
             seen = sum(len(_dict(s).get("episodes") or []) for s in row.get("seasons") or [] if (_dict(s).get("number") or 0) > 0) or plays
             fraction = min(1.0, seen / aired) if isinstance(aired, int) and aired > 0 else 1.0
             shows[item["imdb"]] = {**item, "last": _when(row.get("last_watched_at")), "fraction": fraction,
@@ -688,8 +704,9 @@ class Trakt:
             except TraktError:  # una que falla se queda con la cuenta de arriba
                 return imdb, None
             aired, completed = data.get("aired"), data.get("completed")
-            ok = isinstance(aired, int) and aired > 0 and isinstance(completed, int)
-            return imdb, (min(1.0, completed / aired) if ok else None)
+            if isinstance(aired, int) and aired > 0 and isinstance(completed, int):
+                return imdb, min(1.0, completed / aired)
+            return imdb, None
 
         from concurrent.futures import ThreadPoolExecutor
 
@@ -751,6 +768,119 @@ class Trakt:
                 if section == "dropped" and exc.status is not None and exc.status != 429 and exc.status < 500:
                     continue
                 raise
+
+    # --- ola 3 del gestor (O3-B, 10 nov 2026, como `Trakt+History.swift`): tus vistas, tu historial, tu nota y tus temporadas
+    def viewings(self, kind: str, imdb: str, season: int | None = None, episode: int | None = None) -> list[dict]:
+        """Cada vez que viste esta película o este capítulo ({id, at}), la más nueva primero. El id es el de esa vista en tu
+        historial: lo que se borra."""
+        if kind not in KINDS or not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            raise TraktError("Título inválido")
+        typ = "movie" if kind == "movie" else "show"
+        found = self._get(f"/search/imdb/{imdb}", type=typ)
+        first = _dict(found[0]) if isinstance(found, list) and found else {}
+        trakt_id = _dict(_dict(first.get(typ)).get("ids")).get("trakt")
+        if not isinstance(trakt_id, int):
+            return []
+        out = []
+        for raw in self._all_pages(f"/sync/history/{typ}s/{trakt_id}"):
+            row = _dict(raw)
+            ep = _dict(row.get("episode"))
+            if season is not None and (ep.get("season") != season or ep.get("number") != episode):
+                continue
+            at = _when(row.get("watched_at"))
+            if isinstance(row.get("id"), int) and at is not None:
+                out.append({"id": row["id"], "at": at})
+        return sorted(out, key=lambda v: -v["at"])
+
+    def remove_viewings(self, ids: list[int]) -> None:
+        """Borra solo esas vistas de tu historial (las demás se quedan)."""
+        clean = [i for i in ids if isinstance(i, int) and i > 0]
+        if clean:
+            self._send("POST", "/sync/history/remove", {"ids": clean})
+
+    def history(self, page: int = 1, limit: int = 100) -> list[dict]:
+        """Tu historial, lo más nuevo primero: {id, at, kind, imdb, title, year, season, episode, episode_title}."""
+        rows = self._get("/sync/history", page=max(1, int(page)), limit=limit)
+        out = []
+        for raw in rows if isinstance(rows, list) else []:
+            row = _dict(raw)
+            at = _when(row.get("watched_at"))
+            movie = _dict(row.get("movie"))
+            show, ep = _dict(row.get("show")), _dict(row.get("episode"))
+            item = movie or show
+            imdb = _dict(item.get("ids")).get("imdb")
+            if not isinstance(row.get("id"), int) or at is None or not isinstance(imdb, str):
+                continue
+            found = {"id": row["id"], "at": at, "kind": "movie" if movie else "series", "imdb": imdb,
+                     "title": str(item.get("title") or imdb), "year": item.get("year") if isinstance(item.get("year"), int) else None,
+                     "season": None, "episode": None, "episode_title": None}
+            if not movie:
+                if not isinstance(ep.get("season"), int) or not isinstance(ep.get("number"), int):
+                    continue
+                found.update(season=ep["season"], episode=ep["number"], episode_title=str(ep.get("title") or "") or None)
+            out.append(found)
+        return out
+
+    def is_vip(self) -> bool:
+        """¿Tu cuenta de Trakt es VIP? (las notas viven en Trakt solo así)."""
+        user = _dict(_dict(self._get("/users/settings")).get("user"))
+        return user.get("vip") is True or user.get("vip_ep") is True
+
+    def my_notes(self) -> dict[str, dict]:
+        """Tus notas de películas y series en Trakt: {IMDb: {id, text}}."""
+        out: dict[str, dict] = {}
+        for typ in ("movies", "shows"):
+            for raw in self._all_pages(f"/users/me/notes/{typ}"):
+                row = _dict(raw)
+                item = _dict(row.get("movie") or row.get("show"))
+                imdb, note = _dict(item.get("ids")).get("imdb"), _dict(row.get("note"))
+                if isinstance(imdb, str) and isinstance(note.get("id"), int) and isinstance(note.get("notes"), str):
+                    out[imdb] = {"id": note["id"], "text": note["notes"]}
+        return out
+
+    def set_note(self, kind: str, imdb: str, text: str, existing: int | None) -> int | None:
+        """Escribe (o, con texto vacío, borra) tu nota de una película o serie; siempre privada. Devuelve su id."""
+        if kind not in KINDS or not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            raise TraktError("Título inválido")
+        clean = text.strip()[:NOTE_LIMIT]
+        if not clean:
+            if existing:
+                try:
+                    self._send("DELETE", f"/notes/{existing}")
+                except TraktAuthError:
+                    raise
+                except TraktError as exc:
+                    if exc.status != 404:
+                        raise
+            return None
+        if existing:
+            try:
+                data = self._send("PUT", f"/notes/{existing}", {"notes": clean, "privacy": "private", "spoiler": False})
+                return _dict(data).get("id") or existing
+            except TraktAuthError:
+                raise
+            except TraktError as exc:
+                if exc.status != 404:  # la borraste en trakt.tv: se hace otra
+                    raise
+        data = self._send("POST", "/notes", {("movie" if kind == "movie" else "show"): {"ids": {"imdb": imdb}},
+                                             "notes": clean, "privacy": "private", "spoiler": False})
+        found = _dict(data).get("id")
+        return found if isinstance(found, int) else None
+
+    def season_rating(self, imdb: str, season: int) -> int | None:
+        """Tu calificación (1–10) de una temporada, o None."""
+        for raw in self._all_pages("/sync/ratings/seasons"):
+            row = _dict(raw)
+            if _dict(_dict(row.get("show")).get("ids")).get("imdb") == imdb and _dict(row.get("season")).get("number") == season:
+                return row.get("rating") if isinstance(row.get("rating"), int) else None
+        return None
+
+    def set_season_rating(self, imdb: str, season: int, rating: int | None) -> None:
+        """Califica una temporada (1–10) o, con None, quita tu calificación."""
+        if not re.fullmatch(r"tt[0-9]{1,12}", imdb or "") or not isinstance(season, int):
+            raise TraktError("Título inválido")
+        one = {"number": season, **({} if rating is None else {"rating": int(rating)})}
+        self._send("POST", "/sync/ratings" + ("/remove" if rating is None else ""), {"shows": [{"ids": {"imdb": imdb}, "seasons": [one]}]})
 
     def my_rating(self, kind: str, imdb: str) -> int | None:
         """Tu calificación de un título (1–10) o None si no lo has calificado."""
