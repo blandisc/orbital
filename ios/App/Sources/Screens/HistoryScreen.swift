@@ -66,20 +66,19 @@ struct HistoryScreen: View {
         .sheet(item: $editing) { e in
             ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: e.at) { date in move(e, to: date) }
         }
-        .sheet(isPresented: $adding, onDismiss: { if picked != nil { pickedReady = true } }) {
+        .sheet(isPresented: $adding, onDismiss: { pickedReady = picked; picked = nil }) {
             AddToListSheet(listName: Text("Historial"), search: { await env.titles.searchTitles($0) }, contains: { _ in false }) { r in
                 picked = r
                 adding = false
             }
         }
-        .sheet(isPresented: $pickedReady, onDismiss: { picked = nil }) {
-            if let r = picked {
-                if r.kind == "movie" {
-                    ViewingDatePicker(title: Text(verbatim: r.title), initial: Date()) { date in add(r, at: date) }
-                } else {
-                    // Una serie se marca capítulo por capítulo: su ficha.
-                    NavigationStack { TitleView(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster)) }
-                }
+        // Con `item` (no `isPresented`): la hoja nace con su título; con `isPresented` llegaba en blanco (la pasada del 10 nov).
+        .sheet(item: $pickedReady) { r in
+            if r.kind == "movie" {
+                ViewingDatePicker(title: Text(verbatim: r.title), initial: Date()) { date in add(r, at: date) }
+            } else {
+                // Una serie se marca capítulo por capítulo: su ficha.
+                NavigationStack { TitleView(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster)) }
             }
         }
         .confirmationDialog(Text("¿Borrar las vistas repetidas?"), isPresented: $confirmRepeats, titleVisibility: .visible) {
@@ -87,7 +86,7 @@ struct HistoryScreen: View {
         } message: { Text("De cada título se queda la primera vista.") }
     }
 
-    @State private var pickedReady = false
+    @State private var pickedReady: SearchResult?
 
     private func row(_ e: TraktHistoryEntry) -> some View {
         let repeated = repeats.contains(e.id)
@@ -131,15 +130,18 @@ struct HistoryScreen: View {
         return order.map { ($0, groups[$0]!) }
     }
 
-    private func reload() async { entries = []; page = 1; more = true; await loadMore() }
+    private func reload() async {
+        guard !loading else { return }   // con una página en camino, reiniciar la dejaría caer en una lista vacía
+        entries = []; page = 1; more = true; await loadMore()
+    }
 
     private func loadMore() async {
         guard !loading else { return }
         loading = true; failed = false
         do {
             let found = try await env.services.watch.history(page: page)
-            entries += found.filter { f in !entries.contains { $0.id == f.id } }
-            more = found.count >= 100
+            entries += found.entries.filter { f in !entries.contains { $0.id == f.id } }
+            more = found.full
             page += 1
         } catch { failed = true }
         loading = false
@@ -150,7 +152,7 @@ struct HistoryScreen: View {
         let left = entries.filter { $0.target == e.target && $0.id != e.id }.count
         withAnimation(DS.Motion.base(reduceMotion)) { entries.removeAll { $0.id == e.id } }
         Task {
-            await watch.removeViewing(TraktViewing(id: e.id, at: e.at), kind: e.kind, metaID: e.target.imdb, videoID: videoID(e), remaining: left)
+            await watch.removeViewing(TraktViewing(id: e.id, at: e.at), kind: e.kind, metaID: e.target.imdb, videoID: videoID(e), remaining: left, sure: false)
             env.collections.forgetWatched()
             env.notify("Vista borrada", detail: name(e), tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
                 Task { await watch.addViewing(kind: e.kind, metaID: e.target.imdb, videoID: videoID(e), name: e.title, at: e.at); await reload() }

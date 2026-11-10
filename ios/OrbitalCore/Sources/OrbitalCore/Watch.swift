@@ -158,8 +158,13 @@ public struct PendingWork: Sendable, Equatable, Codable {
     public struct TraktWatched: Sendable, Equatable, Codable {
         public var target: TraktTarget
         public var at: Double
-        public init(target: TraktTarget, at: Double) { self.target = target; self.at = at }
+        /// Una fecha cambiada: el id de la vista vieja, que se borra solo cuando la nueva ya llegó (si Trakt la rechaza, la
+        /// vieja se queda: nunca se pierde la vista).
+        public var replaces: Int?
+        public init(target: TraktTarget, at: Double, replaces: Int? = nil) { self.target = target; self.at = at; self.replaces = replaces }
     }
+    /// Las vistas de Trakt que ya no se enseñan: las borradas y las que una fecha cambiada está reemplazando.
+    public var goneViewings: Set<Int> { Set(traktViewingRemovals + traktRewatched.compactMap(\.replaces)) }
     public var isEmpty: Bool { progress.isEmpty && traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty && traktViewingRemovals.isEmpty && traktRewatched.isEmpty }
 
     public init(from decoder: Decoder) throws {

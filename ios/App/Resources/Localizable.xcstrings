@@ -44067,6 +44067,17 @@
           }
         }
       }
+    },
+    "Sin internet: solo lo que espera en este iPhone. Lo demás de tu Trakt sale cuando vuelva.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet: only what's waiting on this iPhone. The rest of your Trakt shows up when it's back."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

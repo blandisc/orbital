@@ -19,7 +19,8 @@ extension DemoHTTPClient {
     nonisolated(unsafe) static var demoNotes: [String: (id: Int, text: String, show: Bool)] = [:]
     static let historyLock = NSLock()
 
-    static let historyNames = ["tt1160419": "Dune", "tt1375666": "Inception", "tt0386676": "The Office", "tt7366338": "Chernobyl"]
+    static let historyNames = ["tt1160419": "Dune", "tt1375666": "Inception", "tt0386676": "The Office", "tt7366338": "Chernobyl",
+                               "tt0816692": "Interstellar", "tt15239678": "Dune: Part Two", "tt0133093": "The Matrix", "tt0068646": "The Godfather"]
 
     func historyDemo(_ request: HTTPRequest) -> HTTPResponse? {
         let path = request.url.path, method = request.method

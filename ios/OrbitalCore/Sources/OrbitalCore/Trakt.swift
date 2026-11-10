@@ -195,6 +195,7 @@ public actor Trakt {
     /// Una escritura a la vez y como máximo una por segundo (límite de Trakt).
     func write(_ path: String, _ body: JSON?, method: String = "POST") async throws -> (Int, JSON?) {
         // El turno se reserva ANTES de esperar: dos escrituras a la vez salen con un segundo de diferencia, en orden.
+        if path.hasPrefix("/sync/history") || path == "/scrobble/stop" { progressCache = [:] }   // el avance cambió: se vuelve a preguntar
         let now = clock()
         let slot = max(now, lastWrite.addingTimeInterval(1))
         lastWrite = slot

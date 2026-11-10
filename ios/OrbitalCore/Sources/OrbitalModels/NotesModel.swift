@@ -41,14 +41,20 @@ public final class NotesModel: ObservableModel {
         services.kv.set(Self.vipKey, data: (isVIP ? "1" : "0").data(using: .utf8))
         guard isVIP else { return }
         if let found = try? await trakt.myNotes() { remote = found; changed() }
-        let moving = local
+        // Solo las que Trakt aún no tiene; cada una sale del iPhone cuando Trakt ya la tiene (si Trakt la rechaza, se queda
+        // aquí: nunca se pierde). Si ya había una en Trakt, la del iPhone se guarda y no la pisa.
+        let moving = local.filter { remote[$0.key] == nil }
         guard !moving.isEmpty else { return }
-        for (imdb, value) in moving where remote[imdb] == nil {
+        for (imdb, value) in moving {
             services.traktOutbox.enqueue(.note(imdb: imdb, series: value.last == "series", String((value.first ?? "").prefix(Trakt.noteLimit))))
         }
-        local = [:]
         await services.traktOutbox.flush(trakt)
-        if let found = try? await trakt.myNotes() { remote = found; changed() }
+        guard let found = try? await trakt.myNotes() else { return }
+        remote = found
+        var left = local
+        for imdb in moving.keys where found[imdb] != nil { left[imdb] = nil }
+        local = left
+        changed()
     }
 
     /// Guarda (o, vacía, borra) tu nota. Con VIP va a Trakt (sin red, espera); sin VIP, al iPhone.

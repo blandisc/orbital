@@ -186,7 +186,7 @@ struct WatchingView: View {
     /// Cómo calificas (Fernando, 31 oct 2026): solo la gráfica y, arriba, un carrusel con lo que calificaste con el número
     /// elegido (al abrir, 5 estrellas). Tocar otra barra cambia el carrusel; «Ver todo», todo lo que calificaste.
     @ViewBuilder private var ratings: some View {
-        let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
+        let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil && RatingKey.parseSeason($0.key) == nil }
         let all = Array(mine.values)
         if !all.isEmpty {
             let counts = (1...5).map { star in all.filter { Int((RatingScale.stars(trakt: $0)).rounded(.up)) == star }.count }
@@ -216,7 +216,7 @@ struct WatchingView: View {
 
     /// Todo lo que calificaste y está en tu historial (de ahí salen su nombre y si es serie), con sus estrellas.
     private func ratedItems() -> [WatchingRatedView.Item] {
-        let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil }
+        let mine = env.ratings.ratings.filter { RatingKey.parseEpisode($0.key) == nil && RatingKey.parseSeason($0.key) == nil }
         var seen = Set<String>(), out: [WatchingRatedView.Item] = []
         for play in env.watching.plays.sorted(by: { $0.at > $1.at }) where seen.insert(play.imdb).inserted {
             guard let trakt = mine[play.imdb] else { continue }

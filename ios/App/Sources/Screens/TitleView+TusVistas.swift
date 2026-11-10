@@ -138,7 +138,7 @@ struct ViewingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewings: [TraktViewing] = []
     @State private var loading = true
-    @State private var failed = false
+    @State private var offline = false
     @State private var editing: TraktViewing?
     @State private var adding = false
 
@@ -148,13 +148,15 @@ struct ViewingsSheet: View {
         NavigationStack {
             List {
                 if loading { DSLoadingState().listRowBackground(Color.clear) }
-                else if failed {
-                    DSEmptyState(symbol: "wifi.slash", title: Text("No pude traer tus vistas"), message: Text("Revisa tu conexión e inténtalo otra vez.")) {
-                        Button("Reintentar") { Task { await load() } }
+                else {
+                    if offline {   // sin internet: lo de la cola y «La vi otra vez» siguen a mano
+                        DSNotice(text: "Sin internet: solo lo que espera en este iPhone. Lo demás de tu Trakt sale cuando vuelva.", tone: .warn)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .accessibilityIdentifier("viewings-offline")
                     }
-                    .listRowBackground(Color.clear)
-                } else {
-                    ForEach(viewings, id: \.at) { v in
+                    // Por posición: dos vistas pueden tener la misma hora (o id 0 en la cola) y cada botón debe ir a la suya.
+                    ForEach(Array(viewings.enumerated()), id: \.offset) { _, v in
                         HStack(spacing: DS.Space.s3) {
                             Button { editing = v } label: {
                                 HStack(spacing: DS.Space.s3) {
@@ -200,9 +202,8 @@ struct ViewingsSheet: View {
     }
 
     private func load() async {
-        loading = true; failed = false
-        do { viewings = try await env.services.watch.viewings(kind: target.kind, videoID: target.videoID) }
-        catch { failed = true }
+        loading = true
+        (viewings, offline) = await env.services.watch.viewingsOrQueued(kind: target.kind, videoID: target.videoID)
         loading = false
     }
 
@@ -287,7 +288,7 @@ struct NoteSheet: View {
                     .padding(DS.Space.s2)
                     .dsCard(.row)
                     .frame(minHeight: DS.Size.noteEditor)
-                    .onChange(of: text) { _, new in if inTrakt, new.count > Trakt.noteLimit { text = String(new.prefix(Trakt.noteLimit)) } }
+                    .onChange(of: text) { _, new in if new.count > Trakt.noteLimit { text = String(new.prefix(Trakt.noteLimit)) } }   // también sin VIP: si un día pasa a Trakt, cabe entera
                     .accessibilityIdentifier("note-editor")
                 HStack(alignment: .top, spacing: DS.Space.s2) {
                     Image(systemName: inTrakt ? "lock" : "iphone").foregroundStyle(DS.textMuted)

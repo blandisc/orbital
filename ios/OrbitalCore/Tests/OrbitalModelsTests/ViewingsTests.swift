@@ -10,7 +10,7 @@ final class ViewingsTests: XCTestCase {
 
     func stubDune(_ rig: ServicesRig) {
         rig.http.json["\(api)/search/imdb/tt1160419?type=movie"] = [["movie": ["ids": ["trakt": 42, "imdb": "tt1160419"]]]]
-        rig.http.json["\(api)/sync/history/movies/42"] = [
+        rig.http.prefix["\(api)/sync/history/movies/42"] = [
             ["id": 900, "watched_at": "2024-01-02T18:30:00.000Z", "action": "watch"],
             ["id": 901, "watched_at": "2025-03-14T21:12:00.000Z", "action": "watch"],
         ]
@@ -37,6 +37,9 @@ final class ViewingsTests: XCTestCase {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         stubDune(rig)
         let day = Date(timeIntervalSince1970: 1_700_000_000)
+        // Trakt ya la tiene con la fecha nueva (así sabe la cola que llegó y borra la vieja).
+        rig.http.prefix["\(api)/sync/history/movies/42"] = [["id": 900, "watched_at": "2024-01-02T18:30:00.000Z"],
+                                                             ["id": 902, "watched_at": .string(StremioLibrary.iso(day.timeIntervalSince1970))]]
         await rig.services.watch.moveViewing(TraktViewing(id: 900, at: Date()), kind: "movie", videoID: "tt1160419", to: day)
         XCTAssertEqual(rig.http.bodies("\(api)/sync/history").count, 1, "la nueva entra")
         XCTAssertEqual(rig.http.bodies("\(api)/sync/history/remove").first.flatMap(JSON.parse)?["ids"]?.array?.compactMap(\.intValue), [900])
@@ -48,8 +51,58 @@ final class ViewingsTests: XCTestCase {
         rig.http.offline = true
         await rig.services.watch.moveViewing(TraktViewing(id: 900, at: Date()), kind: "movie", videoID: "tt1160419", to: Date())
         let work = await rig.services.watch.pending.load()
-        XCTAssertEqual(work.traktViewingRemovals, [900])
-        XCTAssertEqual(work.traktRewatched.count, 1)
+        XCTAssertEqual(work.traktViewingRemovals, [], "la vieja no se borra antes de que llegue la nueva")
+        XCTAssertEqual(work.traktRewatched.map(\.replaces), [900])
+        XCTAssertEqual(work.goneViewings, [900], "pero ya no se enseña")
+    }
+
+    // MARK: la pasada del 10 nov (revisión)
+
+    func testElHistorialSePideDeCienEnCien() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        stubDune(rig)
+        _ = try await rig.services.watch.viewings(kind: "movie", videoID: "tt1160419")
+        XCTAssertTrue(rig.http.calls.contains { $0.contains("/sync/history/movies/42") && $0.contains("limit=100") }, "Trakt da 10 si no se le pide más")
+    }
+
+    func testSiTraktRechazaLaFechaNuevaLaViejaSeQueda() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        stubDune(rig)
+        rig.http.statuses["\(api)/sync/history"] = 422
+        await rig.services.watch.moveViewing(TraktViewing(id: 900, at: Date()), kind: "movie", videoID: "tt1160419", to: Date(timeIntervalSince1970: 1_700_000_000))
+        XCTAssertTrue(rig.http.bodies("\(api)/sync/history/remove").isEmpty, "nunca se pierde la vista")
+    }
+
+    func testDeshacerNoBorraLaVistaDeLaTele() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        stubDune(rig)
+        // La TV la marcó anoche (901, el 14 mar a las 21:12); en el iPhone se marca a las 9 de la mañana: no subió nada.
+        let ok = await rig.services.watch.undoViewing(kind: "movie", metaID: "tt1160419", videoID: "tt1160419", at: Self.date("2025-03-15T09:00:00.000Z"), wasSeen: true)
+        XCTAssertTrue(ok)
+        XCTAssertTrue(rig.http.bodies("\(api)/sync/history/remove").isEmpty, "la de la TV se queda")
+    }
+
+    func testQuitarDeVistasTambienQuitaLaVueltaEnCola() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.offline = true
+        await rig.services.watch.addViewing(kind: "movie", metaID: "tt1160419", videoID: "tt1160419", at: Date())
+        await rig.services.watch.unmarkWatched(kind: "movie", metaID: "tt1160419", videoID: "tt1160419")
+        let work = await rig.services.watch.pending.load()
+        XCTAssertTrue(work.traktRewatched.isEmpty, "si no, Trakt la regresaría")
+    }
+
+    func testAlSerVIPLaNotaDelIPhoneNoSePierdeSiTraktLaRechaza() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
+        rig.http.json["\(api)/users/settings"] = ["user": ["vip": false]]
+        let notes = NotesModel(rig.services)
+        await notes.load()
+        await notes.save("tt1160419", series: false, text: "Verla en IMAX")
+        rig.http.json["\(api)/users/settings"] = ["user": ["vip": true]]
+        rig.http.prefix["\(api)/users/me/notes/movies"] = []
+        rig.http.prefix["\(api)/users/me/notes/shows"] = []
+        rig.http.statuses["\(api)/notes"] = 422
+        await notes.load()
+        XCTAssertEqual(notes.note("tt1160419"), "Verla en IMAX", "se queda en el iPhone")
     }
 
     func testDeshacerQuitaSoloLaVistaDeHoy() async throws {
@@ -93,8 +146,8 @@ final class ViewingsTests: XCTestCase {
     func testConVIPLaNotaVaATraktYPrivada() async throws {
         let rig = try ServicesRig(traktLinked: true, traktClientID: "CID")
         rig.http.json["\(api)/users/settings"] = ["user": ["vip": true]]
-        rig.http.json["\(api)/users/me/notes/movies"] = []
-        rig.http.json["\(api)/users/me/notes/shows"] = []
+        rig.http.prefix["\(api)/users/me/notes/movies"] = []
+        rig.http.prefix["\(api)/users/me/notes/shows"] = []
         rig.http.json["\(api)/notes"] = ["id": 77]
         let notes = NotesModel(rig.services)
         await notes.load()

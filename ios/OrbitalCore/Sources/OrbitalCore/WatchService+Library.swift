@@ -127,6 +127,7 @@ extension WatchService {
         guard let target = TraktTarget(videoID: videoID, kind: kind) else { return }
         var work = pending.load()
         work.traktWatched.removeAll { $0.target == target }
+        work.traktRewatched.removeAll { $0.target == target }   // «La vi otra vez» sin red no lo regresa
         if !work.traktUnwatched.contains(target) { work.traktUnwatched.append(target) }
         pending.save(work)
         await flushPending()

@@ -93,12 +93,16 @@ extension WatchService {
                 let chunks = stride(from: 0, to: snapshot.traktWatched.count, by: 100).map { Array(snapshot.traktWatched[$0..<min($0 + 100, snapshot.traktWatched.count)]) }
                 retry.traktWatched = await attempt(chunks) { chunk in try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) }) }.flatMap { $0 }
             }
-            // Primero lo nuevo y luego lo borrado: una fecha cambiada sin red nunca se queda sin ninguna de las dos.
-            if !snapshot.traktRewatched.isEmpty {
-                retry.traktRewatched = await attempt([snapshot.traktRewatched]) { chunk in try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) }) }.flatMap { $0 }
+            // Primero lo nuevo, una por una; la vieja de una fecha cambiada se borra solo si la nueva llegó.
+            var replaced: [Int] = []
+            for item in snapshot.traktRewatched {
+                let sent = await attempt([item]) { try await trakt.addToHistory([($0.target, Date(timeIntervalSince1970: $0.at))]) }
+                if sent.isEmpty, item.replaces != nil, await Self.landed(item, in: trakt) { replaced.append(item.replaces!) }
+                retry.traktRewatched += sent
             }
-            if !snapshot.traktViewingRemovals.isEmpty {
-                retry.traktViewingRemovals = await attempt([snapshot.traktViewingRemovals]) { try await trakt.removeViewings($0) }.flatMap { $0 }
+            let removals = snapshot.traktViewingRemovals + replaced
+            if !removals.isEmpty {
+                retry.traktViewingRemovals = await attempt([removals]) { try await trakt.removeViewings($0) }.flatMap { $0 }
             }
             retry.playbackRemovals = await attempt(snapshot.playbackRemovals) { removal in
                 let stale = try await trakt.playback(fresh: true).filter { $0.target.imdb == removal.target.imdb && $0.pausedAt.timeIntervalSince1970 <= removal.at + 1 }
@@ -127,6 +131,12 @@ extension WatchService {
         next.traktRewatched = current.traktRewatched.filter { !snapshot.traktRewatched.contains($0) } + retry.traktRewatched
         pending.save(next)
         return next
+    }
+
+    /// ¿La vista nueva ya está en Trakt? (si Trakt la rechazó, `attempt` la descarta sin decirlo: la vieja no se borra).
+    static func landed(_ item: PendingWork.TraktWatched, in trakt: Trakt) async -> Bool {
+        guard let all = try? await trakt.viewings(item.target) else { return true }   // sin cómo saberlo: se confía en el 2xx
+        return all.contains { abs($0.at.timeIntervalSince1970 - item.at) < 2 }
     }
 
     /// Manda cada cosa; devuelve lo que vale la pena reintentar (sin red, Trakt caído). Lo que Trakt rechaza (inválido) se descarta.

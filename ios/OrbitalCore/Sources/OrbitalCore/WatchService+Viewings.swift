@@ -10,24 +10,46 @@ extension WatchService {
         guard let target = TraktTarget(videoID: videoID, kind: kind) else { return [] }
         let work = pending.load()
         let queued = (work.traktWatched + work.traktRewatched).filter { $0.target == target }.map { TraktViewing(id: 0, at: Date(timeIntervalSince1970: $0.at)) }
+        let gone = work.goneViewings
         var remote: [TraktViewing] = []
-        if let trakt, trakt.linked { remote = try await trakt.viewings(target).filter { !work.traktViewingRemovals.contains($0.id) } }
+        if let trakt, trakt.linked { remote = try await trakt.viewings(target).filter { !gone.contains($0.id) } }
         return (queued + remote).sorted { $0.at > $1.at }
     }
 
+    /// Para la hoja «Tus vistas»: primero sube lo que esperaba (así lo de la cola ya tiene su id) y, sin internet, enseña lo
+    /// que espera en este aparato con `offline` (la hoja lo dice y «La vi otra vez» sigue a mano). La sesión de la TV lo
+    /// encontró en su pasada del 10 nov.
+    public func viewingsOrQueued(kind: String, videoID: String) async -> (viewings: [TraktViewing], offline: Bool) {
+        if !pending.load().isEmpty { await flushPending() }
+        if let found = try? await viewings(kind: kind, videoID: videoID) { return (found, false) }
+        guard let target = TraktTarget(videoID: videoID, kind: kind) else { return ([], true) }
+        let work = pending.load()
+        let queued = (work.traktWatched + work.traktRewatched).filter { $0.target == target }.map { TraktViewing(id: 0, at: Date(timeIntervalSince1970: $0.at)) }
+        return (queued.sorted { $0.at > $1.at }, true)
+    }
+
     /// Borra una sola vista. Si era la única, el título (o el capítulo) deja de contar como visto aquí.
-    public func removeViewing(_ viewing: TraktViewing, kind: String, metaID: String, videoID: String, remaining: Int) async {
+    /// `sure: false` (el Historial solo ve las páginas que cargó): antes de dejar de contarlo como visto, se pregunta a Trakt.
+    public func removeViewing(_ viewing: TraktViewing, kind: String, metaID: String, videoID: String, remaining: Int, sure: Bool = true) async {
         guard let target = TraktTarget(videoID: videoID, kind: kind) else { return }
         var work = pending.load()
-        if viewing.id == 0 {   // aún no llegaba a Trakt: sale de la cola
+        if viewing.id == 0 {   // aún no llegaba a Trakt: sale de la cola (y si era una fecha cambiada, la vieja también se va)
             let at = viewing.at.timeIntervalSince1970
             work.traktWatched.removeAll { $0.target == target && abs($0.at - at) < 1 }
+            for old in work.traktRewatched where old.target == target && abs(old.at - at) < 1 {
+                if let id = old.replaces, !work.traktViewingRemovals.contains(id) { work.traktViewingRemovals.append(id) }
+            }
             work.traktRewatched.removeAll { $0.target == target && abs($0.at - at) < 1 }
         } else if !work.traktViewingRemovals.contains(viewing.id) {
             work.traktViewingRemovals.append(viewing.id)
         }
         pending.save(work)
-        if remaining == 0 {
+        var none = remaining == 0
+        if none, !sure {
+            let left = try? await viewings(kind: kind, videoID: videoID).filter { $0.id != viewing.id }
+            none = left?.isEmpty == true   // sin red no se sabe: se queda como visto
+        }
+        if none {
             store.update(metaID, make: { LibraryMerge.make(metaID, kind: kind, name: "") }) { $0.seen.remove(videoID) }
             announceChange()
         }
@@ -40,14 +62,13 @@ extension WatchService {
         var work = pending.load()
         if viewing.id == 0 {
             let at = viewing.at.timeIntervalSince1970
-            let wasRewatch = work.traktRewatched.contains { $0.target == target && abs($0.at - at) < 1 }
+            let old = work.traktRewatched.first { $0.target == target && abs($0.at - at) < 1 }
             work.traktWatched.removeAll { $0.target == target && abs($0.at - at) < 1 }
             work.traktRewatched.removeAll { $0.target == target && abs($0.at - at) < 1 }
-            let moved = PendingWork.TraktWatched(target: target, at: date.timeIntervalSince1970)
-            if wasRewatch { work.traktRewatched.append(moved) } else { work.traktWatched.append(moved) }
-        } else {
-            work.traktRewatched.append(.init(target: target, at: date.timeIntervalSince1970))
-            if !work.traktViewingRemovals.contains(viewing.id) { work.traktViewingRemovals.append(viewing.id) }
+            if let old { work.traktRewatched.append(.init(target: target, at: date.timeIntervalSince1970, replaces: old.replaces)) }
+            else { work.traktWatched.append(.init(target: target, at: date.timeIntervalSince1970)) }
+        } else {   // la vieja se borra hasta que la nueva llegue (flushPending)
+            work.traktRewatched.append(.init(target: target, at: date.timeIntervalSince1970, replaces: viewing.id))
         }
         pending.save(work)
         await flushPending()
@@ -86,12 +107,13 @@ extension WatchService {
         } else if !wasSeen {   // era la única: como «Quitar de vistas»
             if !work.traktUnwatched.contains(target) { work.traktUnwatched.append(target) }
             pending.save(work)
-        } else if let trakt, trakt.linked, let all = try? await trakt.viewings(target),
-                  let mine = all.min(by: { abs($0.at.timeIntervalSince1970 - stamp) < abs($1.at.timeIntervalSince1970 - stamp) }),
-                  abs(mine.at.timeIntervalSince1970 - stamp) < 12 * 3600 {
-            var again = pending.load()
-            again.traktViewingRemovals.append(mine.id)
-            pending.save(again)
+        } else if let trakt, trakt.linked, let all = try? await trakt.viewings(target) {
+            // Solo la que se mandó con esta hora: si Trakt ya tenía una cerca (la TV anoche), no se subió nada y esa se queda.
+            if let mine = all.first(where: { abs($0.at.timeIntervalSince1970 - stamp) < 120 }) {
+                var again = pending.load()
+                again.traktViewingRemovals.append(mine.id)
+                pending.save(again)
+            }
         } else {
             done = false
         }
@@ -128,10 +150,12 @@ extension WatchService {
         await flushPending()
     }
 
-    /// Tu historial de Trakt (página `page`, de 100 en 100), sin lo que ya borraste aquí.
-    public func history(page: Int) async throws -> [TraktHistoryEntry] {
-        guard let trakt, trakt.linked else { return [] }
-        let gone = pending.load().traktViewingRemovals
-        return try await trakt.history(page: page).filter { !gone.contains($0.id) }
+    /// Tu historial de Trakt (página `page`, de 100 en 100), sin lo que ya borraste aquí. `full`: la página vino llena (hay más),
+    /// contada antes de quitar nada.
+    public func history(page: Int) async throws -> (entries: [TraktHistoryEntry], full: Bool) {
+        guard let trakt, trakt.linked else { return ([], false) }
+        let gone = pending.load().goneViewings
+        let found = try await trakt.history(page: page)
+        return (found.entries.filter { !gone.contains($0.id) }, found.full)
     }
 }

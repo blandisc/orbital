@@ -36,7 +36,7 @@ extension Trakt {
         let kind = target.isEpisode ? "show" : "movie"
         guard let found = try await get("/search/imdb/\(target.imdb)", [("type", kind)])?.array?.first,
               let id = found[kind]?["ids"]?["trakt"]?.intValue else { return [] }
-        let rows = try await allPages("/sync/history/\(kind)s/\(id)")
+        let rows = try await allPaged("/sync/history/\(kind)s/\(id)")
         return rows.compactMap { row -> TraktViewing? in
             if target.isEpisode {
                 guard row["episode"]?["season"]?.intValue == target.season, row["episode"]?["number"]?.intValue == target.episode else { return nil }
@@ -61,9 +61,21 @@ extension Trakt {
     }
 
     /// Tu historial, lo más nuevo primero (`page` desde 1, de 100 en 100).
-    public func history(page: Int = 1, limit: Int = 100) async throws -> [TraktHistoryEntry] {
+    public func history(page: Int = 1, limit: Int = 100) async throws -> (entries: [TraktHistoryEntry], full: Bool) {
         let rows = try await get("/sync/history", [("page", String(page)), ("limit", String(limit))])?.array ?? []
-        return rows.compactMap(Self.historyEntry)
+        return (rows.compactMap(Self.historyEntry), rows.count >= limit)
+    }
+
+    /// Todas las páginas de algo que Trakt da de 10 en 10 si no se le pide otra cosa (el historial, las notas): se piden de
+    /// 100 en 100 desde la primera. `allPages` pide la primera sin página porque otras (la watchlist) la dan completa así.
+    func allPaged(_ path: String, _ params: [(String, String)] = [], maxPages: Int = 20) async throws -> [JSON] {
+        var out: [JSON] = []
+        for page in 1...maxPages {
+            let rows = try await get(path, params + [("page", String(page)), ("limit", "100")])?.array ?? []
+            out += rows
+            if rows.count < 100 { break }
+        }
+        return out
     }
 
     static func historyEntry(_ row: JSON) -> TraktHistoryEntry? {
@@ -111,7 +123,7 @@ extension Trakt {
     public func myNotes() async throws -> [String: (id: Int, text: String)] {
         var out: [String: (id: Int, text: String)] = [:]
         for type in ["movies", "shows"] {
-            for row in try await allPages("/users/me/notes/\(type)") {
+            for row in try await allPaged("/users/me/notes/\(type)") {
                 let item = row["movie"] ?? row["show"]
                 guard let imdb = item?["ids"]?["imdb"]?.string, let note = row["note"], let id = note["id"]?.intValue,
                       let text = note["notes"]?.string else { continue }
