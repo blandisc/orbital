@@ -60,6 +60,13 @@ class TraktOutbox:
         """Lo pendiente en Mi lista o en una lista: IMDb → entra (True) o sale (False)."""
         return {i["imdb"]: bool(i.get("add")) for i in self.pending if i.get("target") == target}
 
+    def discard(self, keep) -> None:
+        """Quita de la cola lo que ya no debe mandarse (`keep(item)` False): «Quitar de vistas» limpia las «La vi otra vez»
+        que esperaban, o Trakt las regresaría."""
+        with self._lock:
+            items = [i for i in self._load() or [] if not isinstance(i, dict) or keep(i)]
+            self._save(items or None)
+
     def _drop(self, done: list[dict]) -> None:
         with self._lock:
             items = [i for i in self._load() or [] if i not in done]
@@ -75,6 +82,7 @@ class TraktOutbox:
                 return 0
             self._flushing = True
         sent = 0
+        failed: set[str] = set()  # lo que Trakt rechazó: lo que dependía de eso ya no se manda
         try:
             queue = self.pending
             while queue:
@@ -85,6 +93,11 @@ class TraktOutbox:
                         if nxt["target"] != item["target"] or nxt.get("add") != item.get("add"):
                             break
                         run.append(nxt)
+                if item.get("after") in failed:  # la vieja de una fecha cambiada: la nueva no entró, así que se queda
+                    log.info("Trakt: la nueva no entró; dejo la vista vieja (%s)", item)
+                    self._drop(run)
+                    queue = queue[len(run):]
+                    continue
                 try:
                     if item["target"] == HIDDEN:
                         t.set_hidden([item["imdb"]], bool(item.get("add")), tuple(item.get("sections") or trakt_api.HIDDEN_SECTIONS))
@@ -103,6 +116,7 @@ class TraktOutbox:
                         log.info("Trakt: la cola espera (%s)", exc)
                         break
                     log.info("Trakt: descarto %s de la cola: %s", item, exc)
+                    failed.update(i["imdb"] for i in run)
                 self._drop(run)
                 queue = queue[len(run):]
         finally:

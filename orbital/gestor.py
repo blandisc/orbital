@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+UNDO_WINDOW = 120  # s: «Deshacer» del aviso de «Vista» quita solo la vista de esa hora (±2 min), como el iPhone
 STALE_AFTER = 182 * 24 * 3600  # una serie a medias sin verla en seis meses: «¿Las dejaste?»
 STATUSES = ("in_list", "watching", "watched", "dropped")
 
@@ -338,8 +339,11 @@ class Gestor:
     def unmark_movies_watched(self, imdbs: list[str]) -> None:
         """El «Deshacer» de «Vistas»: salen de lo visto."""
         t = self._require()
-        for imdb in imdbs:
-            t.remove_history({"movie": {"ids": {"imdb": imdb}}})
+        gone = [{"movie": {"ids": {"imdb": imdb}}} for imdb in imdbs]
+        # Las «La vi otra vez» que esperaban: si se mandaran después, Trakt la regresaría a vista.
+        self.outbox.discard(lambda i: not (i.get("target") == HISTORY and i.get("add") and i.get("video") in gone))
+        for target in gone:
+            t.remove_history(target)
         self._changed("trakt:watched", "trakt:watched-state")
 
     # --- G4-A: tus listas (necesita conexión) -----------------------------------------------------------------------
@@ -441,11 +445,15 @@ class Gestor:
         self._changed("trakt:watched", "trakt:watched-state")
         return result
 
+    @staticmethod
+    def _add_key(imdb: str, video_id: str | None, at: float) -> str:
+        return f"{video_id or imdb}@{at:.0f}"
+
     def add_viewing(self, kind: str, imdb: str, video_id: str | None, at: float) -> str:
         """«La vi otra vez» (o la nueva fecha de una vista): una vista más en tu historial."""
         self._require()
         target = self._target(kind, imdb, video_id)
-        item = {"target": HISTORY, "imdb": f"{video_id or imdb}@{at:.0f}", "kind": kind, "add": True, "video": target, "at": at}
+        item = {"target": HISTORY, "imdb": self._add_key(imdb, video_id, at), "kind": kind, "add": True, "video": target, "at": at}
         return self._history_send(item, lambda: self.trakt.add_history(target, at))
 
     def remove_viewings(self, ids: list[int]) -> str:
@@ -459,16 +467,27 @@ class Gestor:
 
     def move_viewing(self, viewing_id: int, kind: str, imdb: str, video_id: str | None, at: float) -> str:
         """Cambia la fecha de una vista: la nueva entra primero (si falla, no se pierde nada) y luego sale la vieja."""
-        added = self.add_viewing(kind, imdb, video_id, at)
-        removed = self.remove_viewings([viewing_id])
-        return "queued" if "queued" in (added, removed) else "sent"
+        added = self.add_viewing(kind, imdb, video_id, at)  # si Trakt la rechaza, sube el error y la vieja no se toca
+        if added == "queued":  # la nueva espera: la vieja sale solo cuando la nueva entre (la cola lo respeta)
+            if viewing_id:
+                self.outbox.enqueue({"target": HISTORY, "imdb": f"remove:{viewing_id}", "kind": kind, "add": False,
+                                     "ids": [viewing_id], "after": self._add_key(imdb, video_id, at)})
+            return "queued"
+        return self.remove_viewings([viewing_id])
 
     def undo_viewing(self, kind: str, imdb: str, video_id: str | None, at: float) -> bool:
-        """«Deshacer» del aviso de «Vista»: quita solo la vista que se acaba de marcar (la más cercana a `at`, de las últimas
-        12 horas); las de antes se quedan."""
+        """«Deshacer» del aviso de «Vista»: quita solo la vista que se acaba de marcar (la de la hora marcada, ±2 min); las de
+        antes se quedan, también una que ya estaba cerca (como el iPhone, 10 nov 2026). Si aún espera en la cola, sale de ahí."""
+        target = self._target(kind, imdb, video_id)
+        waiting = [i for i in self.outbox.pending if i.get("target") == HISTORY and i.get("add") and i.get("video") == target
+                   and abs(i.get("at", 0) - at) <= UNDO_WINDOW]
+        if waiting:
+            keys = {i["imdb"] for i in waiting}
+            self.outbox.discard(lambda i: i.get("imdb") not in keys)
+            return True
         found = self.viewings(kind, imdb, video_id)
         mine = min(found, key=lambda v: abs(v["at"] - at), default=None)
-        if mine is None or abs(mine["at"] - at) > 12 * 3600 or not mine["id"]:
+        if mine is None or abs(mine["at"] - at) > UNDO_WINDOW or not mine["id"]:
             return False
         self.remove_viewings([mine["id"]])
         return True

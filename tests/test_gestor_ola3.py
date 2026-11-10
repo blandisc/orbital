@@ -114,3 +114,47 @@ def test_without_internet_your_viewings_still_open_with_what_waits(library, make
         c.post("/api/foryou/viewings", json={"action": "add", "kind": "movie", "id": "tt0816692", "at": 1800000000})
         got = c.get("/api/foryou/viewings", params={"kind": "movie", "id": "tt0816692"}).json()
     assert got == {"viewings": [{"id": 0, "at": 1800000000}], "offline": True}
+
+
+def test_changing_a_date_offline_keeps_the_old_one_if_trakt_rejects_the_new(library, make_foryou, net):  # noqa: F811
+    """La vieja sale solo cuando la nueva ya entró: si Trakt rechaza la nueva (al volver el internet), la vieja se queda."""
+    state = {"down": True}
+
+    def add(url, body):
+        if state["down"]:
+            raise OSError("sin red")
+        return 422, None  # Trakt no la acepta
+
+    net.on("POST", r"/sync/history$", add)
+    net.on("POST", r"/sync/history/remove", (200, {}))
+    fy = make_foryou(linked=True)
+    assert fy.gestor.move_viewing(12, "movie", "tt0816692", None, 1700000000) == "queued"
+    state["down"] = False
+    fy.gestor.outbox.flush(fy.trakt)
+    assert posts(net, "/sync/history/remove") == [] and fy.gestor.outbox.pending == []
+
+
+def test_undo_only_removes_the_viewing_of_that_minute(library, make_foryou, net):  # noqa: F811
+    """«Deshacer» del aviso quita la vista de la hora marcada (±2 min), no una que ya estaba cerca."""
+    net.on("GET", r"/search/imdb/", (200, [{"movie": {"ids": {"trakt": 1}}}]))
+    net.on("GET", r"/sync/history/movies/1", (200, [{"id": 7, "watched_at": "2026-11-10T10:00:00.000Z"}]))
+    net.on("POST", r"/sync/history/remove", (200, {}))
+    fy = make_foryou(linked=True)
+    at = trakt._when("2026-11-10T10:00:00.000Z")
+    assert fy.gestor.undo_viewing("movie", "tt1", None, at + 600) is False  # la de las 10:00 se queda
+    assert fy.gestor.undo_viewing("movie", "tt1", None, at + 30) is True
+    assert posts(net, "/sync/history/remove") == [{"ids": [7]}]
+
+
+def test_unmarking_drops_waiting_rewatches(library, make_foryou, net):  # noqa: F811
+    """«Quitar de vistas» limpia las «La vi otra vez» que esperaban en la cola: si no, Trakt la regresaría."""
+    def down(url, body):
+        raise OSError("sin red")
+
+    net.on("POST", r"/sync/history$", down)
+    net.on("POST", r"/sync/history/remove", (200, {}))
+    fy = make_foryou(linked=True)
+    fy.gestor.add_viewing("movie", "tt1", None, 1800000000)
+    assert len(fy.gestor.outbox.pending) == 1
+    fy.gestor.unmark_movies_watched(["tt1"])
+    assert fy.gestor.outbox.pending == []

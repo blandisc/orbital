@@ -896,6 +896,7 @@ class ForYou:
         moment: str | float = time.time() if when == "now" else when if when in ("released", "unknown") else float(when)
         self.trakt.add_history(target, moment)  # sin episodio: la serie completa
         self.cache.clear("trakt:watched")
+        self.cache.clear("trakt:watched-state")  # el avance de tus series (Guardado) también cambió
 
     def title_extras(self, kind: str, imdb: str) -> dict:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
