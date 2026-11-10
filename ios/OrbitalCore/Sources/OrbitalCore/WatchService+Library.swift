@@ -48,7 +48,8 @@ extension WatchService {
 
     /// Mi lista: aquí al instante; a tu watchlist de Trakt por la cola (`outbox`, que ya sabe esperar a la red) y, si lo
     /// conectaste, una copia a la biblioteca de Stremio.
-    public func setInLibrary(kind: String, metaID: String, title: String, poster: String?, add: Bool, outbox: TraktOutbox? = nil) async {
+    /// `flush: false`: varios seguidos (elegir varios); quien llama manda la cola una vez al final.
+    public func setInLibrary(kind: String, metaID: String, title: String, poster: String?, add: Bool, outbox: TraktOutbox? = nil, flush: Bool = true) async {
         let now = clock().timeIntervalSince1970
         store.update(metaID, make: { LibraryMerge.make(metaID, kind: kind, name: title) }) { e in
             e.inList = add; e.listedAt = add ? now : nil
@@ -58,7 +59,7 @@ extension WatchService {
         announceChange()
         if let outbox, metaID.hasPrefix("tt") {
             outbox.enqueue(.init(target: TraktOutbox.watchlist, imdb: metaID, series: kind == "series", add: add))
-            await outbox.flush(trakt)
+            if flush { await outbox.flush(trakt) }
         }
         if copiesToStremio { try? await copyLibrary(kind: kind, metaID: metaID, poster: poster, add: add) }
     }

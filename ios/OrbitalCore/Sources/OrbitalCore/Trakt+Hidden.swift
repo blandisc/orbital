@@ -31,8 +31,14 @@ extension Trakt {
 
     /// Esconde una serie en esas secciones de Trakt (o la vuelve a mostrar). Lo que viste no se toca.
     public func setHidden(imdb: String, hidden: Bool, sections: [String] = Trakt.hiddenSections) async throws {
-        guard Self.isIMDb(imdb) else { throw TraktError.invalid("Título inválido") }
-        let body: JSON = ["shows": [["ids": ["imdb": .string(imdb)]]]]
+        try await setHidden(imdbs: [imdb], hidden: hidden, sections: sections)
+    }
+
+    /// Varias series a la vez (elegir varias › «Las dejé»): un envío por sección, no por serie.
+    public func setHidden(imdbs: [String], hidden: Bool, sections: [String] = Trakt.hiddenSections) async throws {
+        let valid = imdbs.filter(Self.isIMDb)
+        guard !valid.isEmpty else { throw TraktError.invalid("Título inválido") }
+        let body: JSON = ["shows": .array(valid.map { ["ids": ["imdb": .string($0)]] })]
         for section in sections {   // `write` ya las espacia un segundo (límite de Trakt)
             let (status, _) = try await write("/users/hidden/\(section)\(hidden ? "" : "/remove")", body)
             guard status == 200 || status == 201 || status == 204 else {

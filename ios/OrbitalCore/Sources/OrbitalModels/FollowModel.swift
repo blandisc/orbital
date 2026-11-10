@@ -102,6 +102,50 @@ public final class FollowModel: ObservableModel {
         }
     }
 
+    /// «La dejé» de varias series a la vez (elegir varias): como `hide`, en un solo envío por sección. Devuelve el motivo si
+    /// Trakt las rechaza (y regresan).
+    public func hide(_ imdbs: [String]) async -> String? {
+        let ids = imdbs.filter { !hidden.contains($0) }
+        guard !ids.isEmpty else { return nil }
+        if ids.count == 1 { return await hide(ids[0]) }
+        let before = (hidden, unfollowed)
+        lastHidden = nil
+        await apply(hidden: hidden.union(ids), unfollowed: unfollowed.union(ids))
+        guard let trakt = services.trakt, trakt.linked else { return nil }
+        do {
+            try await trakt.setHidden(imdbs: ids, hidden: true, sections: Trakt.droppedSections)
+            return nil
+        } catch where TraktOutbox.retryable(error) {
+            for id in ids { services.traktOutbox.enqueue(.hidden(imdb: id, true, sections: Trakt.droppedSections)) }
+            return nil
+        } catch {
+            await apply(hidden: before.0, unfollowed: before.1)
+            return "Trakt no contestó. Intenta de nuevo en un momento."
+        }
+    }
+
+    /// Regresa varias a la vez (el «Deshacer» de elegir varias), sin la campana.
+    public func unhide(_ imdbs: [String]) async -> String? {
+        let ids = imdbs.filter { hidden.contains($0) }
+        guard !ids.isEmpty else { return nil }
+        if ids.count == 1 { return await unhide(ids[0], following: false) }
+        let before = (hidden, unfollowed)
+        await apply(hidden: hidden.subtracting(ids), unfollowed: unfollowed.union(ids))
+        guard let trakt = services.trakt, trakt.linked else { return nil }
+        let sections = ["progress_watched", "dropped"]
+        do {
+            try await trakt.setHidden(imdbs: ids, hidden: false, sections: sections)
+            hiddenFromTrakt.removeAll { ids.contains($0.imdb) }
+            return nil
+        } catch where TraktOutbox.retryable(error) {
+            for id in ids { services.traktOutbox.enqueue(.hidden(imdb: id, false, sections: sections)) }
+            return nil
+        } catch {
+            await apply(hidden: before.0, unfollowed: before.1)
+            return "Trakt no contestó. Intenta de nuevo en un momento."
+        }
+    }
+
     /// «Mostrar otra vez» (desde «Escondidas») o «Deshacer»: regresa a la lista. `following`: si vuelve a avisarte (al deshacer,
     /// como estaba antes de esconderla).
     public func unhide(_ imdb: String, following: Bool = true) async -> String? {

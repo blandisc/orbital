@@ -17,8 +17,9 @@ struct SavedListScreen: View {
     /// "" es todo, «movie» o «series».
     @State private var kind = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// «Editar» (6 nov 2026): cada póster con su «−»; «+» busca qué agregar. Mi lista y tus listas de Trakt son tuyas.
-    @State private var editing = false
+    /// «Editar» (G3-A, 10 nov 2026): elegir varios y la barra de abajo; «+» busca qué agregar. Mi lista y tus listas de Trakt
+    /// son tuyas.
+    @State private var selection = ListSelection()
     @State private var adding = false
     private var model: SavedModel { observer.model }
 
@@ -38,17 +39,27 @@ struct SavedListScreen: View {
             .refreshOrbitHost()
             .padding(.top, DS.Space.s2)
             .padding(.bottom, DS.Layout.screenBottom)
+            .selectionDrag(selection)
         }
         .scrollBounceBehavior(.basedOnSize)
         .orbitalRefreshable { [model] in await model.load() }
         .perfTag("saved")
+        .safeAreaInset(edge: .bottom) {
+            if selection.editing {
+                SavedSelectionBar(model: model, selection: selection, listID: model.selected, pile: nil, items: shownItems)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
         .task { await model.choose(listID) }
         .onAppear { model.refreshProgress() }   // viste algo y regresaste: la barra al día
         .navigationBarTitleDisplayMode(.inline)   // el nombre ya va grande en «Mi lista ⌃⌄»
-        .toolbar { if model.canEdit { ListEditToolbar(editing: $editing) { adding = true } } }
+        .toolbar { if model.canEdit { ListSelectToolbar(selection: selection, add: { adding = true }, all: shownItems.map(\.imdb)) } }
         .sheet(isPresented: $adding) { addSheet }
-        .onChange(of: model.selected) { editing = false }
+        .onChange(of: model.selected) { selection.editing = false }
     }
+
+    /// Lo que se ve (con Todo · Películas · Series aplicado): lo que «Todas» elige.
+    private var shownItems: [Suggestion] { kind.isEmpty ? model.items : model.items.filter { $0.kind == kind } }
 
     private var listName: Text { model.selected == SavedModel.watchlist ? Text("Mi lista") : Text(verbatim: model.selectedName) }
 
@@ -100,6 +111,7 @@ struct SavedListScreen: View {
                 Button("Explorar") { env.openTab = AppEnvironment.exploreTab }.accessibilityIdentifier("saved-empty-explore")
             }
         } else {
+            if selection.editing { SelectionHeader(selection: selection, all: items.map(\.imdb)) }
             SortableGrid(listID: "saved:\(model.selected)", items: items, collections: collections.model, showsKindFilter: false,
                          loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) }) { s, width in
                 poster(s, width: width)
@@ -112,10 +124,11 @@ struct SavedListScreen: View {
     @ViewBuilder private func poster(_ s: Suggestion, width: CGFloat) -> some View {
         let link = TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
         if model.selected == SavedModel.watchlist {
-            link.listEditable(editing: editing, listName: listName, menu: false, remove: model.canEdit ? { remove(s) } : nil)
-                .contextMenu { SavedMoveMenu(suggestion: s, from: .inList, model: model) }
+            link.contextMenu { if !selection.editing { SavedMoveMenu(suggestion: s, from: .inList, model: model) } }
+                .selectable(selection, id: s.imdb, title: s.title)
         } else {
-            link.listEditable(editing: editing, listName: listName, remove: model.canEdit ? { remove(s) } : nil)
+            link.listEditable(editing: false, listName: listName, remove: model.canEdit && !selection.editing ? { remove(s) } : nil)
+                .selectable(selection, id: s.imdb, title: s.title)
         }
     }
 
@@ -268,33 +281,38 @@ struct SavedStateScreen: View {
     var observer: ModelObserver<SavedModel>
     let status: TitleStatus
     @State private var collections = ModelObserver(AppEnvironment.shared.collections)
+    /// «Editar»: elegir varios (G3-A).
+    @State private var selection = ListSelection()
     private var model: SavedModel { observer.model }
+
+    /// Un póster del montón: abre su ficha, mantener el dedo trae «Mover a…» y, mientras eliges, se elige.
+    private func cell(_ s: Suggestion, width: CGFloat, from: TitleStatus) -> some View {
+        TitleLink(route: s.route, progress: status == .watched ? nil : model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
+            .contextMenu { if !selection.editing { SavedMoveMenu(suggestion: s, from: from, model: model) } }
+            .selectable(selection, id: s.imdb, title: s.title)
+    }
 
     var body: some View {
         let follow = env.follow
         let _ = follow.track()
         let board = model.board(hidden: follow.hidden, hiddenNames: Dictionary(follow.hiddenSeries.map { ($0.imdb, $0.title) }, uniquingKeysWith: { a, _ in a }))
         let items = board.items(status)
+        let every = status == .watching ? items + board.stale : items
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
+                if selection.editing { SelectionHeader(selection: selection, all: every.map(\.imdb)) }
                 if status == .watched, !items.isEmpty {
                     ForEach(months(items, board), id: \.0) { month, group in
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection)
-                            DSPosterGrid(items: group) { s, width in
-                                TitleLink(route: s.route, width: width, detail: s.year.map { Text(verbatim: String($0)) })
-                                    .contextMenu { SavedMoveMenu(suggestion: s, from: status, model: model) }
-                            }
+                            DSPosterGrid(items: group) { s, width in cell(s, width: width, from: status) }
                         }
                         .padding(.horizontal, DS.Space.gutter)
                     }
                 } else {
                     if !items.isEmpty || board.stale.isEmpty || status != .watching {
                         SortableGrid(listID: "saved-state:\(status.rawValue)", items: items, collections: collections.model,
-                                     loading: !model.loadedOnce, states: nil) { s, width in
-                            TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
-                                .contextMenu { SavedMoveMenu(suggestion: s, from: status, model: model) }
-                        }
+                                     loading: !model.loadedOnce, states: nil) { s, width in cell(s, width: width, from: status) }
                         .padding(.horizontal, DS.Space.gutter)
                     }
                     if status == .watching, !board.stale.isEmpty { stale(board.stale) }
@@ -302,8 +320,16 @@ struct SavedStateScreen: View {
             }
             .padding(.top, DS.Space.s2)
             .padding(.bottom, DS.Layout.screenBottom)
+            .selectionDrag(selection)
         }
         .navigationTitle(LibrarySavedView.name(status)).navigationBarTitleDisplayMode(.inline)
+        .toolbar { if !every.isEmpty || selection.editing { ListSelectToolbar(selection: selection, all: every.map(\.imdb)) } }
+        .safeAreaInset(edge: .bottom) {
+            if selection.editing {
+                SavedSelectionBar(model: model, selection: selection, listID: nil, pile: status, items: every)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
         .task { if !model.loadedOnce { await model.load() } }
     }
 
@@ -312,30 +338,24 @@ struct SavedStateScreen: View {
     private func stale(_ shows: [Suggestion]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: Text("¿Las dejaste?"), count: shows.count, eyebrow: Text("Hace más de seis meses que no las ves"))
-            DSPosterGrid(items: shows) { s, width in
-                TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
-                    .contextMenu { SavedMoveMenu(suggestion: s, from: .watching, model: model) }
+            DSPosterGrid(items: shows) { s, width in cell(s, width: width, from: .watching) }
+            if !selection.editing {
+                Button { Task { await dropAll(shows) } } label: { Label("Sí, las dejé", systemImage: "eye.slash") }
+                    .dsSecondaryButton()
+                    .accessibilityIdentifier("saved-stale-drop")
             }
-            Button { Task { await dropAll(shows) } } label: { Label("Sí, las dejé", systemImage: "eye.slash") }
-                .dsSecondaryButton()
-                .accessibilityIdentifier("saved-stale-drop")
         }
         .padding(.horizontal, DS.Space.gutter)
         .accessibilityElement(children: .contain).accessibilityIdentifier("saved-stale")
     }
 
     private func dropAll(_ shows: [Suggestion]) async {
-        let follow = env.follow
-        var done: [String] = []
-        for s in shows {
-            if let problem = await follow.hide(s.imdb) { env.notify(problem, tone: .error); break }
-            await ReleaseNotifier.forget(s.imdb)
-            done.append(s.imdb)
-        }
-        guard !done.isEmpty else { return }
-        env.notify(done.count == 1 ? "La dejaste" : "Las dejaste", detail: done.count == 1 ? shows.first?.title : nil, tone: .info,
+        let follow = env.follow, ids = shows.map(\.imdb)
+        if let problem = await follow.hide(ids) { env.notify(problem, tone: .error); return }
+        for id in ids { await ReleaseNotifier.forget(id) }
+        env.notify(ids.count == 1 ? "La dejaste" : "Las dejaste", detail: ids.count == 1 ? shows.first?.title : nil, tone: .info,
                    actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-            Task { for imdb in done { _ = await follow.unhide(imdb, following: false) } }
+            Task { _ = await follow.unhide(ids) }
         }
     }
 

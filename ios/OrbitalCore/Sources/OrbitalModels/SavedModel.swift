@@ -34,7 +34,7 @@ public final class SavedModel: ObservableModel {
     public internal(set) var watchlist: [Suggestion] = [] { didSet { if watchlist != oldValue { changed() } } }
     /// Tus listas de Trakt: unos pósters y cuántos títulos tiene cada una (los renglones de «Tus listas»).
     public private(set) var listPosters: [String: [String]] = [:] { didSet { if listPosters != oldValue { changed() } } }
-    public private(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
+    public internal(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
     /// Ya se pidió una vez (antes de eso no se enseña el vacío).
     public private(set) var loadedOnce = false { didSet { if loadedOnce != oldValue { changed() } } }
 
@@ -136,6 +136,8 @@ public final class SavedModel: ObservableModel {
         watched.info[s.imdb] = TraktWatchedInfo(kind: s.kind, title: s.title, year: s.year, lastWatchedAt: date)
     }
     func forgetWatched(_ imdb: String) { watched.movies.remove(imdb) }
+    /// Una lista recién hecha, al final de las tuyas (Trakt la pone ahí).
+    func appendList(_ list: SavedList) { if !lists.contains(where: { $0.id == list.id }) { lists.append(list); listCounts[list.id] = 0 } }
 
     /// Ya llegó lo que viste en Trakt (sin eso, el tablero no sabe qué cambió solo).
     public private(set) var watchedReady = false

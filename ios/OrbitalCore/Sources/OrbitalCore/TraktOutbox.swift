@@ -80,7 +80,25 @@ public final class TraktOutbox: @unchecked Sendable {
         guard lock.withLock({ flushing ? false : { flushing = true; return true }() }) else { return 0 }
         defer { lock.withLock { flushing = false } }
         var sent = 0
-        for item in pending {
+        var queue = pending[...]
+        while let item = queue.first {
+            // Varios seguidos a la misma lista (o a Mi lista), todos para poner o todos para quitar: un solo envío (G3-A).
+            if item.target != Self.favorites, item.target != Self.ratings, item.target != Self.hidden {
+                let run = queue.prefix { $0.target == item.target && $0.add == item.add }
+                if run.count > 1 {
+                    do {
+                        try await trakt.setItems(target: item.target, run.map { ($0.imdb, $0.series) }, add: item.add)
+                        sent += run.count
+                    } catch where Self.retryable(error) {
+                        break
+                    } catch {}   // no se puede (lista borrada): se descartan
+                    let done = Array(run)
+                    lock.withLock { for d in done { if let i = items.firstIndex(of: d) { items.remove(at: i) } }; save() }
+                    queue = queue.dropFirst(run.count)
+                    continue
+                }
+            }
+            queue = queue.dropFirst()
             do {
                 if item.target == Self.watchlist { try await trakt.setWatchlist(imdb: item.imdb, series: item.series, add: item.add) }
                 else if item.target == Self.favorites { try await trakt.setFavorite(imdb: item.imdb, series: item.series, add: item.add) }

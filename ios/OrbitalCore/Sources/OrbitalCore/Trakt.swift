@@ -474,6 +474,30 @@ public actor Trakt {
         series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
     }
 
+    /// Pone o quita varios títulos a la vez de tu watchlist (`watchlist`) o de una de tus listas (su id), en un solo envío
+    /// (G3-A, 10 nov 2026: elegir varios). Trakt acepta arreglos de películas y series.
+    public func setItems(target: String, _ items: [(imdb: String, series: Bool)], add: Bool) async throws {
+        let valid = items.filter { Self.isIMDb($0.imdb) }
+        guard !valid.isEmpty else { throw TraktError.invalid("Título inválido") }
+        let path: String
+        if target == "watchlist" { path = add ? "/sync/watchlist" : "/sync/watchlist/remove" }
+        else {
+            guard Self.isListID(target) else { throw TraktError.invalid("Lista inválida") }
+            path = "/users/me/lists/\(target)/items\(add ? "" : "/remove")"
+        }
+        let (status, _) = try await write(path, Self.itemsBody(valid))
+        guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// `{"movies":[…],"shows":[…]}` con varios títulos.
+    static func itemsBody(_ items: [(imdb: String, series: Bool)]) -> JSON {
+        let ids = { (series: Bool) -> JSON in .array(items.filter { $0.series == series }.map { ["ids": ["imdb": .string($0.imdb)]] }) }
+        var body: [String: JSON] = [:]
+        if items.contains(where: { !$0.series }) { body["movies"] = ids(false) }
+        if items.contains(where: { $0.series }) { body["shows"] = ids(true) }
+        return .object(body)
+    }
+
     /// Pone o quita un título de una de tus listas.
     public func setListItem(listID: String, imdb: String, series: Bool, add: Bool) async throws {
         guard Self.isIMDb(imdb), Self.isListID(listID) else { throw TraktError.invalid("Título inválido") }
