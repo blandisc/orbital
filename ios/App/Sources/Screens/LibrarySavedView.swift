@@ -5,7 +5,7 @@ import OrbitalModels
 /// Una lista de Guardado abierta (Fernando, 3 nov 2026: BI1-A y BI3-A, «que sea como mi biblioteca de guardado»): tu referencia
 /// rápida. Mi lista de Trakt y, con un toque en «Mi lista ⌃⌄», cualquiera de tus listas (las mismas de Para ti); Todo ·
 /// Películas · Series (`DSKindFilter`) y el mismo «Ordenar y filtrar» de toda lista abierta (`SortableGrid`), con «Estado»:
-/// Por ver · A medias · Vistas. Cada póster lleva su barra de avance y abre su ficha. Sin Trakt, el vacío con «Conectar
+/// Por ver · Viendo · Vistas. Cada póster lleva su barra de avance y abre su ficha. Sin Trakt, el vacío con «Conectar
 /// Trakt»; una lista vacía, con «Explorar».
 struct SavedListScreen: View {
     @Environment(AppEnvironment.self) private var env
@@ -102,10 +102,20 @@ struct SavedListScreen: View {
         } else {
             SortableGrid(listID: "saved:\(model.selected)", items: items, collections: collections.model, showsKindFilter: false,
                          loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) }) { s, width in
-                TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
-                    .listEditable(editing: editing, listName: listName, remove: model.canEdit ? { remove(s) } : nil)
+                poster(s, width: width)
             }
             .id(model.selected)   // otra lista: su propio orden y sus filtros
+        }
+    }
+
+    /// Cada póster: en Mi lista, mantener el dedo trae «Mover a…» (G2-A); en tus listas, «Quitar de esta lista».
+    @ViewBuilder private func poster(_ s: Suggestion, width: CGFloat) -> some View {
+        let link = TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
+        if model.selected == SavedModel.watchlist {
+            link.listEditable(editing: editing, listName: listName, menu: false, remove: model.canEdit ? { remove(s) } : nil)
+                .contextMenu { SavedMoveMenu(suggestion: s, from: .inList, model: model) }
+        } else {
+            link.listEditable(editing: editing, listName: listName, remove: model.canEdit ? { remove(s) } : nil)
         }
     }
 
@@ -152,7 +162,7 @@ struct LibrarySavedView: View {
     var body: some View {
         let follow = env.follow
         let _ = follow.track()
-        let board = model.board(hidden: follow.hidden, hiddenNames: Dictionary(follow.hiddenSeries.map { ($0.imdb, $0.title) }, uniquingKeysWith: { a, _ in a }))
+        let board = currentBoard
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if model.traktLinked {
@@ -179,8 +189,29 @@ struct LibrarySavedView: View {
         .scrollBounceBehavior(.basedOnSize)
         .orbitalRefreshable { [model] in await model.load() }
         .perfTag("saved")
-        .task { await model.load(); if follow.available { await follow.loadSeries() } }
+        .task {
+            await model.load()
+            if follow.available { await follow.loadSeries() }
+            announce(model.takeAutomaticChanges(currentBoard))
+        }
         .onAppear { model.refreshProgress() }
+    }
+
+    private var currentBoard: SavedBoard {
+        let follow = env.follow
+        return model.board(hidden: follow.hidden, hiddenNames: Dictionary(follow.hiddenSeries.map { ($0.imdb, $0.title) }, uniquingKeysWith: { a, _ in a }))
+    }
+
+    /// «Dune pasó a Vistas»: lo que cambió solo desde la última vez (lo terminaste en la TV, o una serie vista estrenó).
+    private func announce(_ changes: [SavedChange]) {
+        guard let first = changes.first else { return }
+        let language = env.services.appSettings.uiLanguage
+        let where_ = Strings.tr(first.to == .watched ? "Vistas" : "Viendo", language: language)
+        if changes.count == 1 {
+            env.notify(format: "%@ pasó a %@", first.title, where_, tone: .info)
+        } else {
+            env.notify(format: "%@ y %d más cambiaron de estado", first.title, changes.count - 1, detail: "Lo viste en otro aparato o salió algo nuevo", tone: .info)
+        }
     }
 
     static func name(_ status: TitleStatus) -> Text {
@@ -250,16 +281,23 @@ struct SavedStateScreen: View {
                     ForEach(months(items, board), id: \.0) { month, group in
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection)
-                            DSPosterGrid(items: group) { s, width in TitleLink(route: s.route, width: width, detail: s.year.map { Text(verbatim: String($0)) }) }
+                            DSPosterGrid(items: group) { s, width in
+                                TitleLink(route: s.route, width: width, detail: s.year.map { Text(verbatim: String($0)) })
+                                    .contextMenu { SavedMoveMenu(suggestion: s, from: status, model: model) }
+                            }
                         }
                         .padding(.horizontal, DS.Space.gutter)
                     }
                 } else {
-                    SortableGrid(listID: "saved-state:\(status.rawValue)", items: items, collections: collections.model,
-                                 loading: !model.loadedOnce, states: nil) { s, width in
-                        TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
+                    if !items.isEmpty || board.stale.isEmpty || status != .watching {
+                        SortableGrid(listID: "saved-state:\(status.rawValue)", items: items, collections: collections.model,
+                                     loading: !model.loadedOnce, states: nil) { s, width in
+                            TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
+                                .contextMenu { SavedMoveMenu(suggestion: s, from: status, model: model) }
+                        }
+                        .padding(.horizontal, DS.Space.gutter)
                     }
-                    .padding(.horizontal, DS.Space.gutter)
+                    if status == .watching, !board.stale.isEmpty { stale(board.stale) }
                 }
             }
             .padding(.top, DS.Space.s2)
@@ -267,6 +305,38 @@ struct SavedStateScreen: View {
         }
         .navigationTitle(LibrarySavedView.name(status)).navigationBarTitleDisplayMode(.inline)
         .task { if !model.loadedOnce { await model.load() } }
+    }
+
+    /// «¿Las dejaste?»: las series a medias que no ves hace más de seis meses ya no cuentan en Viendo; un toque las deja todas
+    /// (o una por una, manteniendo el dedo), y si no, siguen aquí.
+    private func stale(_ shows: [Suggestion]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: Text("¿Las dejaste?"), count: shows.count, eyebrow: Text("Hace más de seis meses que no las ves"))
+            DSPosterGrid(items: shows) { s, width in
+                TitleLink(route: s.route, progress: model.progress(of: s), width: width, detail: s.year.map { Text(verbatim: String($0)) })
+                    .contextMenu { SavedMoveMenu(suggestion: s, from: .watching, model: model) }
+            }
+            Button { Task { await dropAll(shows) } } label: { Label("Sí, las dejé", systemImage: "eye.slash") }
+                .dsSecondaryButton()
+                .accessibilityIdentifier("saved-stale-drop")
+        }
+        .padding(.horizontal, DS.Space.gutter)
+        .accessibilityElement(children: .contain).accessibilityIdentifier("saved-stale")
+    }
+
+    private func dropAll(_ shows: [Suggestion]) async {
+        let follow = env.follow
+        var done: [String] = []
+        for s in shows {
+            if let problem = await follow.hide(s.imdb) { env.notify(problem, tone: .error); break }
+            await ReleaseNotifier.forget(s.imdb)
+            done.append(s.imdb)
+        }
+        guard !done.isEmpty else { return }
+        env.notify(done.count == 1 ? "La dejaste" : "Las dejaste", detail: done.count == 1 ? shows.first?.title : nil, tone: .info,
+                   actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
+            Task { for imdb in done { _ = await follow.unhide(imdb, following: false) } }
+        }
     }
 
     /// «Noviembre», «Octubre»… (con el año si no es este): solo la primera letra en mayúscula.

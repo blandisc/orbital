@@ -36,4 +36,23 @@ final class TitleStatusUITests: XCTestCase {
         sleep(2)
         let b = XCTAttachment(screenshot: app.screenshot()); b.name = "milista"; b.lifetime = .keepAlways; add(b)
     }
+
+    /// «Mover a…»: mantener el dedo sobre un póster de Vistas lo regresa a Mi lista, con aviso y «Deshacer».
+    func testMantenerElDedoMueveAOtroEstado() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launch()
+        let watched = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch
+        XCTAssertTrue(watched.waitForExistence(timeout: 20))
+        watched.tap()
+        XCTAssertTrue(app.navigationBars["Vistas"].waitForExistence(timeout: 10))
+        let poster = app.buttons.matching(identifier: "title-link").firstMatch
+        XCTAssertTrue(poster.waitForExistence(timeout: 10), "hay pósters en Vistas")
+        poster.press(forDuration: 1.2)
+        let move = app.buttons["Mi lista"]
+        XCTAssertTrue(move.waitForExistence(timeout: 5), "el menú «Mover a…» ofrece «Mi lista»")
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = "mover"; a.lifetime = .keepAlways; add(a)
+        move.tap()
+        XCTAssertTrue(app.staticTexts["Guardada en Mi lista"].waitForExistence(timeout: 5), "avisa con «Deshacer»")
+    }
 }

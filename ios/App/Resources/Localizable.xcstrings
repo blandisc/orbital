@@ -42855,6 +42855,259 @@
           }
         }
       }
+    },
+    "La dejé": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropped"
+          }
+        }
+      }
+    },
+    "Las dejé": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dropped"
+          }
+        }
+      }
+    },
+    "¿Cómo vas con %@?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How's %@ going?"
+          }
+        }
+      }
+    },
+    "Avisarme de episodios nuevos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify me of new episodes"
+          }
+        }
+      }
+    },
+    "Agregar a una lista…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to a list…"
+          }
+        }
+      }
+    },
+    "Mantén presionado para ver las opciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and hold for options"
+          }
+        }
+      }
+    },
+    "La dejaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You dropped it"
+          }
+        }
+      }
+    },
+    "Las dejaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You dropped them"
+          }
+        }
+      }
+    },
+    "Otra vez en Seguir viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back in Continue watching"
+          }
+        }
+      }
+    },
+    "Ya no sale en Mi lista ni en Seguir viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No longer in My list or Continue watching"
+          }
+        }
+      }
+    },
+    "Te aviso de episodios nuevos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll let you know about new episodes"
+          }
+        }
+      }
+    },
+    "Sin avisos de episodios nuevos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new episode alerts"
+          }
+        }
+      }
+    },
+    "Mover a…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to…"
+          }
+        }
+      }
+    },
+    "Marcada como vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marked as watched"
+          }
+        }
+      }
+    },
+    "¿Las dejaste?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Did you drop them?"
+          }
+        }
+      }
+    },
+    "Hace más de seis meses que no las ves": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't watched them in over six months"
+          }
+        }
+      }
+    },
+    "Sí, las dejé": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, I dropped them"
+          }
+        }
+      }
+    },
+    "%@ pasó a %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ moved to %@"
+          }
+        }
+      }
+    },
+    "%@ y %d más cambiaron de estado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ and %d more changed status"
+          }
+        }
+      }
+    },
+    "Lo viste en otro aparato o salió algo nuevo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You watched on another device or something new came out"
+          }
+        }
+      }
+    },
+    "1 título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 title"
+          }
+        }
+      }
+    },
+    "Sin fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        }
+      }
+    },
+    "Conéctalo y aquí ves Mi lista, lo que estás viendo, lo que viste y tus listas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect it to see My list, what you're watching, what you've watched and your lists here."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

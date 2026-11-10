@@ -31,14 +31,14 @@ public final class SavedModel: ObservableModel {
     /// Lo que viste según Trakt (películas y cuánto llevas de cada serie).
     public private(set) var watched = TraktWatchedState() { didSet { if watched != oldValue { changed() } } }
     /// Mi lista entera, aunque veas otra lista (el tablero cuenta lo que tienes en ella).
-    public private(set) var watchlist: [Suggestion] = [] { didSet { if watchlist != oldValue { changed() } } }
+    public internal(set) var watchlist: [Suggestion] = [] { didSet { if watchlist != oldValue { changed() } } }
     /// Tus listas de Trakt: unos pósters y cuántos títulos tiene cada una (los renglones de «Tus listas»).
     public private(set) var listPosters: [String: [String]] = [:] { didSet { if listPosters != oldValue { changed() } } }
     public private(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
     /// Ya se pidió una vez (antes de eso no se enseña el vacío).
     public private(set) var loadedOnce = false { didSet { if loadedOnce != oldValue { changed() } } }
 
-    private let services: Services
+    let services: Services
 
     public init(_ services: Services) {
         self.services = services
@@ -63,7 +63,7 @@ public final class SavedModel: ObservableModel {
             select(Self.watchlist)
             await loadItems()
         }
-        if let found = await seen { watched = found }
+        if let found = await seen { watched = found; watchedReady = true }
         await loadListPreviews()
     }
 
@@ -130,6 +130,34 @@ public final class SavedModel: ObservableModel {
     }
 
     // MARK: por estado (G2-A)
+    /// Lo que marcaste aquí como visto, antes de que Trakt lo cuente («Mover a… › Vista»).
+    func noteWatched(_ s: Suggestion, at date: Date) {
+        watched.movies.insert(s.imdb)
+        watched.info[s.imdb] = TraktWatchedInfo(kind: s.kind, title: s.title, year: s.year, lastWatchedAt: date)
+    }
+    func forgetWatched(_ imdb: String) { watched.movies.remove(imdb) }
+
+    /// Ya llegó lo que viste en Trakt (sin eso, el tablero no sabe qué cambió solo).
+    public private(set) var watchedReady = false
+    static let snapshotKey = "saved-board-snapshot"
+
+    /// Lo que cambió solo desde la última vez que viste el tablero; la primera vez, nada (se toma la foto).
+    public func takeAutomaticChanges(_ board: SavedBoard) -> [SavedChange] {
+        guard watchedReady else { return [] }
+        let old = services.kv.data(Self.snapshotKey).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }
+        let now = board.statuses
+        services.kv.set(Self.snapshotKey, data: try? JSONEncoder().encode(now.mapValues(\.rawValue)))
+        guard let old else { return [] }
+        return board.automaticChanges(since: old.compactMapValues(TitleStatus.init(rawValue:)))
+    }
+
+    /// Lo que moviste aquí ya no se avisa como cambio solo.
+    func noteMoved(_ imdb: String, to status: TitleStatus) {
+        guard var old = services.kv.data(Self.snapshotKey).flatMap({ try? JSONDecoder().decode([String: String].self, from: $0) }) else { return }
+        old[imdb] = status.rawValue
+        services.kv.set(Self.snapshotKey, data: try? JSONEncoder().encode(old))
+    }
+
     /// Lo tuyo por estado; `hidden`: las series que dejaste (`FollowModel`).
     public func board(hidden: Set<String>, hiddenNames: [String: String] = [:]) -> SavedBoard {
         SavedBoard.build(watchlist: watchlist, watched: watched, hidden: hidden, hiddenNames: hiddenNames)
@@ -166,7 +194,7 @@ public final class SavedModel: ObservableModel {
 
     /// Lo que se quitó y dónde estaba (para regresarlo a su lugar con «Deshacer»).
     private var removed: [String: (Int, Suggestion)] = [:]
-    private lazy var actions = TitleActions(services)
+    lazy var actions = TitleActions(services)
 
     func setShown(_ s: Suggestion, shown: Bool) {
         if !shown {

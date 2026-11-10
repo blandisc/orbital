@@ -9,6 +9,8 @@ public struct SavedBoard: Equatable, Sendable {
     /// Lo más reciente primero (la pantalla lo junta por mes).
     public var watched: [Suggestion] = []
     public var dropped: [Suggestion] = []
+    /// Series a medias que no ves hace más de seis meses: no cuentan en Viendo y Orbital pregunta «¿La dejaste?».
+    public var stale: [Suggestion] = []
     /// Cuándo viste por última vez cada uno (para «Noviembre», «Octubre»…).
     public var lastWatched: [String: Date] = [:]
 
@@ -29,7 +31,10 @@ public struct SavedBoard: Equatable, Sendable {
     ///   - watched: lo que viste según Trakt (con nombres, fechas y qué series siguen saliendo).
     ///   - hidden: las series que dejaste (escondidas).
     ///   - hiddenNames: el nombre de las dejadas que no están en lo visto.
-    public static func build(watchlist: [Suggestion], watched: TraktWatchedState, hidden: Set<String>, hiddenNames: [String: String] = [:]) -> SavedBoard {
+    ///   - now: hoy (para «¿La dejaste?»: seis meses sin verla).
+    public static let staleAfter: TimeInterval = 182 * 24 * 3600
+    public static func build(watchlist: [Suggestion], watched: TraktWatchedState, hidden: Set<String>, hiddenNames: [String: String] = [:],
+                             now: Date = Date()) -> SavedBoard {
         var board = SavedBoard()
         let listed = Set(watchlist.map(\.imdb))
         // Mi lista tal cual (es lo que abre la tarjeta). Trakt saca una serie de la watchlist al ver su primer episodio, así que
@@ -49,10 +54,47 @@ public struct SavedBoard: Equatable, Sendable {
         }
         // Una película vista que volviste a poner en Mi lista cuenta en Mi lista (la quieres ver otra vez).
         seen += watched.movies.filter { !listed.contains($0) }
-        board.watching = going.sorted(by: recent).compactMap(suggestion)
+        let old = { (imdb: String) in (watched.info[imdb]?.lastWatchedAt).map { now.timeIntervalSince($0) > staleAfter } ?? false }
+        board.watching = going.filter { !old($0) }.sorted(by: recent).compactMap(suggestion)
+        board.stale = going.filter(old).sorted(by: recent).compactMap(suggestion)
         board.watched = seen.sorted(by: recent).compactMap(suggestion)
         board.dropped = hidden.sorted(by: recent).compactMap(suggestion)
         board.lastWatched = watched.info.compactMapValues(\.lastWatchedAt)
         return board
     }
 }
+
+/// Un título que cambió de estado solo, sin que lo movieras aquí (G2-A: «si el estado cambia solo, te avisa»): terminaste la
+/// película en la TV, acabaste una serie o una serie vista estrenó temporada.
+public struct SavedChange: Equatable, Sendable {
+    public var imdb: String
+    public var title: String
+    public var to: TitleStatus
+}
+
+extension SavedBoard {
+    /// Cada título y su estado (una serie que no ves hace seis meses sigue contando como a medias aquí).
+    public var statuses: [String: TitleStatus] {
+        var out: [String: TitleStatus] = [:]
+        for s in inList { out[s.imdb] = .inList }
+        for s in watching + stale { out[s.imdb] = .watching }
+        for s in watched { out[s.imdb] = .watched }
+        for s in dropped { out[s.imdb] = .dropped }
+        return out
+    }
+
+    /// Lo que cambió solo desde la última vez: algo que pasó a Vistas, o una vista que regresó a Viendo. Lo que tú mueves
+    /// (a Mi lista o a «Las dejé») no se avisa, y un título nuevo tampoco.
+    public func automaticChanges(since old: [String: TitleStatus]) -> [SavedChange] {
+        let all = inList + watching + stale + watched
+        var out: [SavedChange] = []
+        for (imdb, now) in statuses {
+            guard let before = old[imdb], before != now, before != .dropped else { continue }
+            let auto = (now == .watched) || (now == .watching && before == .watched)
+            if auto, let s = all.first(where: { $0.imdb == imdb }) { out.append(SavedChange(imdb: imdb, title: s.title, to: now)) }
+        }
+        let order = watched.map(\.imdb) + watching.map(\.imdb) + stale.map(\.imdb)
+        return out.sorted { (order.firstIndex(of: $0.imdb) ?? .max) < (order.firstIndex(of: $1.imdb) ?? .max) }
+    }
+}
+
