@@ -99,7 +99,10 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     media.hidden = !media.firstChild;
     title.textContent = list.title;
     // Un premio: su nombre con remate y su metal (award-wordmark, de collection-card).
-    title.className = ["list-screen__title", list.metal && "award-wordmark", list.metal && `award-wordmark--${list.metal}`].filter(Boolean).join(" ");
+    // Un nombre largo (una lista de Trakt: «The 25 Best Sci-Fi Movies of the 21st Century (So Far)») baja un paso: en la
+    // Legion Go, en dos renglones de `display`, se salía por arriba (10 nov 2026).
+    title.className = ["list-screen__title", String(list.title || "").length > 32 && "list-screen__title--long", list.metal && "award-wordmark",
+      list.metal && `award-wordmark--${list.metal}`].filter(Boolean).join(" ");
     if (list.metal) title.textContent = list.title.toLocaleUpperCase("es"); // ds-exception: logotipo en mayúsculas
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
     mount(about, list.person ? PersonHead(list.person) : null);

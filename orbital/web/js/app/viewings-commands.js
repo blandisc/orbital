@@ -173,7 +173,9 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
         submit: (v) => api.saveNote(command.kind, command.id, v.name),
         done: (r, values) => {
           sound.play("success");
-          ui.toast.show(values.name.trim() ? "Guardé tu nota" : "Borré tu nota", { tone: "success", detail: offline(r) || command.title });
+          // Dónde quedó, también aquí: con la letra grande en la Legion Go, la hoja esconde su explicación.
+          const where = r?.vip ? "En tu Trakt, privada" : "Solo en esta tele: sin Trakt VIP no llega al iPhone";
+          ui.toast.show(values.name.trim() ? "Guardé tu nota" : "Borré tu nota", { tone: "success", detail: offline(r) || where });
           return renderHints();
         } });
     },
