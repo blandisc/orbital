@@ -1,0 +1,435 @@
+<title>Gestor: ola 3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Ola 3 del gestor (G5, G6 y G7): mismo estilo que gestor-maquetas.html. */
+:root{
+  color-scheme:dark;
+  --bg:#0b0c10; --panel:#13151b; --line:#252833; --ink:#f2f0ea; --mute:#9a9ea9; --faint:#6c707b;
+  --teal:#5fd3c4; --onteal:#05261f; --amber:#f2b84b; --red:#ef7b7b; --good:#7ccf8f;
+  --ph-bg:#0e0f13; --ph-raised:#1c1e25; --ph-tile:#22252d; --ph-ink:#f5f4f0; --ph-mute:#9fa3ad;
+  --art:#d9a35a; /* el color que sale del póster (Dune) */
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 80px}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-size:30px;line-height:1.15;margin:0 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:22px;margin:0 0 6px;text-wrap:balance}
+h3{font-size:16px;margin:0}
+p{margin:0}
+.lead{color:var(--mute);max-width:70ch}
+section{margin-top:52px;display:flex;flex-direction:column;gap:18px;min-width:0}
+section>*,.wrap,header>*{min-width:0;max-width:100%}
+.q{color:var(--mute);max-width:72ch}
+/* resumen */
+.gap{width:100%;border-collapse:collapse;font-size:14px}
+.gap th,.gap td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.gap th{color:var(--mute);font-weight:600}
+.gap td:first-child{font-weight:650;white-space:nowrap}
+.st{display:inline-flex;align-items:center;gap:6px;font-weight:650;white-space:nowrap}
+.st svg{width:15px;height:15px}
+.ya{color:var(--good)}.medias{color:var(--amber)}.falta{color:var(--red)}
+.ola{color:var(--teal);font-weight:700;white-space:nowrap}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+/* opciones */
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:28px 22px;align-items:start}
+.opt{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tag{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.code{font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;background:#262a35;color:var(--ink)}
+.rec .code{background:var(--teal);color:var(--onteal)}
+.today .code{background:transparent;border:1px solid var(--line);color:var(--mute)}
+.recmark{font-size:12px;font-weight:700;color:var(--teal)}
+.opt ul{margin:0;padding-left:18px;color:var(--mute);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.opt li b{color:var(--ink);font-weight:650}
+.pick{border:1px solid var(--teal);border-radius:16px;padding:14px 16px;background:#0f1b1a;display:flex;flex-direction:column;gap:6px;max-width:80ch}
+.pick b{color:var(--teal)}
+/* teléfono */
+.phone{width:300px;max-width:100%;height:600px;border-radius:38px;border:7px solid #23252c;background:var(--ph-bg);
+  position:relative;overflow:hidden;color:var(--ph-ink);font-size:12.5px;line-height:1.35;flex:none;align-self:center}
+.sb{height:30px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-weight:600;font-size:11.5px}
+.island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:78px;height:22px;border-radius:12px;background:#000}
+.nav{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;position:relative;z-index:2}
+.nav .r{display:flex;gap:14px}
+.ic{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic.f{fill:currentColor;stroke:none}
+.hero{position:absolute;inset:0 0 auto;height:270px;background:
+  radial-gradient(120% 80% at 70% 10%,#b9773a 0%,#5d3518 45%,transparent 75%),linear-gradient(#3b2412,var(--ph-bg));opacity:.9}
+.hero.b{background:radial-gradient(120% 80% at 60% 10%,#3e6bd6 0%,#1a2a5a 45%,transparent 75%),linear-gradient(#162042,var(--ph-bg))}
+.body{position:relative;z-index:1;padding:0 14px;display:flex;flex-direction:column;gap:10px}
+.ttl{margin-top:96px;display:flex;flex-direction:column;gap:3px}
+.ttl b{font-size:21px;line-height:1.1;letter-spacing:-.01em}
+.meta{color:var(--ph-mute);font-size:11px}
+.play{height:40px;border-radius:12px;background:#f5f4f0;color:#111;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13.5px}
+.ver{color:var(--ph-mute);font-size:10.5px;text-align:center;margin-top:-4px}
+.prog{height:3px;border-radius:2px;background:#ffffff26;overflow:hidden;margin-top:-4px}.prog i{display:block;height:100%;background:#f5f4f0}
+.tiles{display:grid;gap:6px}
+.t{min-width:0;white-space:nowrap;letter-spacing:-.15px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 7px;border-radius:12px;background:var(--ph-tile);font-size:10px;font-weight:600;text-align:center;color:var(--ph-ink)}
+.t .ic{width:19px;height:19px;color:var(--art)}
+.t.on{background:#3a2b18;color:#f3d7a8}
+.t.on .ic{color:#f3c27a}
+.t.new{outline:2px solid var(--teal);outline-offset:1px}
+.line{display:flex;justify-content:space-between;align-items:center;color:var(--ph-mute);font-size:11px}
+.stars{color:#5a5d66;letter-spacing:2px;font-size:12px}
+.syn{color:var(--ph-mute);font-size:11px;line-height:1.45}
+.sk{height:8px;border-radius:4px;background:#ffffff14}
+.tabbar{position:absolute;left:10px;right:10px;bottom:10px;height:46px;border-radius:23px;background:#1e2027ee;display:flex;justify-content:space-around;align-items:center;color:var(--ph-mute);z-index:5}
+.tabbar .on{color:var(--ph-ink)}
+.tabbar .ic{width:19px;height:19px}
+.note{position:absolute;left:10px;right:10px;font-size:10.5px;line-height:1.35;background:#5fd3c41f;border:1px dashed var(--teal);color:#bdf0e9;border-radius:10px;padding:6px 8px;z-index:6}
+.warnnote{background:#ef7b7b1c;border-color:var(--red);color:#ffc9c9}
+.fold{position:absolute;left:0;right:0;border-top:1.5px dashed var(--red);z-index:6}
+.fold span{position:absolute;right:8px;top:-15px;font-size:9.5px;color:var(--red);font-weight:700}
+/* menú y hoja */
+.dim{position:absolute;inset:0;background:#0009;z-index:7;backdrop-filter:blur(2px)}
+.menu{position:absolute;z-index:8;width:220px;border-radius:14px;background:#2a2c33f5;box-shadow:0 12px 40px #000a;overflow:hidden;font-size:12px}
+.menu .h{padding:9px 12px 7px;color:var(--ph-mute);font-size:10.5px}
+.mi{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid #ffffff10}
+.mi .ic{width:16px;height:16px}
+.mi .sp{flex:1;display:flex;flex-direction:column}
+.mi small{color:var(--ph-mute);font-size:10px}
+.mi.ck{color:#f3d7a8}
+.mi.sep{border-top:6px solid #1c1d22}
+.tog{width:28px;height:16px;border-radius:8px;background:#5fd3c4;position:relative;flex:none}.tog::after{content:"";position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:6px;background:#fff}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;background:#1d1f26;border-radius:20px 20px 0 0;padding:8px 14px 22px;display:flex;flex-direction:column;gap:9px}
+.grab{width:34px;height:4px;border-radius:2px;background:#ffffff30;align-self:center}
+.big4{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.big4 .t{padding:12px 4px;font-size:11px}
+/* segmentado de íconos (G1-B) */
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--ph-tile);border-radius:12px;padding:3px;gap:3px}
+.seg div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:9px;font-size:9.5px;font-weight:600;color:var(--ph-mute)}
+.seg .ic{width:17px;height:17px}
+.seg .on{background:#3a2b18;color:#f3d7a8}
+.ask{font-size:10.5px;color:var(--teal)}
+/* línea de estado (G1-C) */
+.stline{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#f3d7a8}
+.stline .ic{width:15px;height:15px}
+.stline em{font-style:normal;color:var(--ph-mute);font-weight:500}
+/* Biblioteca */
+.big{font-size:24px;font-weight:750;letter-spacing:-.01em;padding:0 14px}
+.ttabs{display:flex;gap:16px;padding:0 14px;font-size:13px;font-weight:650;color:var(--ph-mute)}
+.ttabs .on{color:var(--ph-ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.selector{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.selector .ic{width:13px;height:13px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.po{aspect-ratio:2/3;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:5px;font-size:8.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
+.po .bar{position:absolute;left:5px;right:5px;bottom:4px;height:2.5px;border-radius:2px;background:#ffffff40}.po .bar i{display:block;height:100%;background:#fff;border-radius:2px}
+.po .mark{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:9px;background:#000a;display:flex;align-items:center;justify-content:center}
+.po .mark .ic{width:11px;height:11px}
+.p1{background:linear-gradient(160deg,#d9a35a,#6a3a17)}.p2{background:linear-gradient(160deg,#5e8bff,#1c2b66)}.p3{background:linear-gradient(160deg,#e0607f,#4a1630)}
+.p4{background:linear-gradient(160deg,#6fd39b,#1e5a3a)}.p5{background:linear-gradient(160deg,#b28cff,#3b2370)}.p6{background:linear-gradient(160deg,#f08a4b,#5b2410)}
+.p7{background:linear-gradient(160deg,#9aa5b1,#2c323a)}.p8{background:linear-gradient(160deg,#4fc0d0,#15404a)}.p9{background:linear-gradient(160deg,#e8c95a,#5d4a10)}
+.filter{display:flex;align-items:center;gap:6px;color:var(--ph-mute);font-size:11px}
+.sttiles{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stt{background:var(--ph-tile);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+.stt .top{display:flex;justify-content:space-between;align-items:center}
+.stt .ic{width:19px;height:19px;color:#f3c27a}
+.stt b{font-size:19px;font-variant-numeric:tabular-nums}
+.stt span{font-size:11px;font-weight:650}
+.stt .mini{display:flex;gap:3px}.stt .mini i{width:18px;height:27px;border-radius:3px;display:block}
+.sub{display:flex;justify-content:space-between;align-items:baseline}
+.sub b{font-size:14px}.sub span{color:var(--teal);font-size:11px}
+.lrow{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid #ffffff10}
+.lrow .po{width:34px;flex:none;padding:0}
+.lrow .sp{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.lrow .sp b{font-size:12px}.lrow .sp small{color:var(--ph-mute);font-size:10px}
+.lrow .ic{color:var(--ph-mute)}
+.swipe{display:flex;align-items:stretch;margin:0 -14px}
+.swipe .lrow{flex:1;padding-left:14px;transform:translateX(-62px);background:var(--ph-bg);border:0}
+.swact{display:flex}
+.swact div{width:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9.5px;font-weight:700}
+.swact .ic{width:16px;height:16px}
+.toast{position:absolute;left:12px;right:12px;bottom:64px;z-index:6;background:#2a2c33;border-radius:14px;padding:9px 11px;display:flex;align-items:center;gap:8px;font-size:11px;box-shadow:0 8px 24px #0008}
+.toast .sp{flex:1}.toast em{font-style:normal;color:var(--teal);font-weight:700;display:flex;align-items:center;gap:4px}
+.toast .ic{width:15px;height:15px}
+/* tabla de estados */
+.states{width:100%;border-collapse:collapse;font-size:14px}
+.states th,.states td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.states th{color:var(--mute);font-weight:600}
+.states td:first-child{white-space:nowrap;font-weight:650}
+.states td:first-child svg{width:16px;height:16px;vertical-align:-3px;margin-right:6px;color:#f3c27a}
+.foot{color:var(--faint);font-size:13px}
+.say{font-size:17px;font-weight:700;color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:620px){h1{font-size:25px
+.zoom{background:var(--ph-bg);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:14px;color:var(--ph-ink)}
+.zoom .cap{font-size:12.5px;color:var(--mute);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px}
+.zoom .cap b{color:var(--ink);font-weight:650}
+.zoom .tiles .t{font-size:12px;padding:11px 2px 9px;gap:6px}
+.zoom .tiles .t .ic{width:24px;height:24px}
+.zoom .seg div{font-size:11.5px;padding:9px 0 7px}.zoom .seg .ic{width:22px;height:22px}
+.zoom .stline{font-size:14px}.zoom .stline .ic{width:18px;height:18px}
+.menu.static{position:static;width:100%;box-shadow:none;border:1px solid #ffffff14;font-size:13.5px}
+.menu.static .mi{padding:10px 14px}.menu.static .mi .ic{width:19px;height:19px}.menu.static small{font-size:11.5px}
+.done{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--panel);display:flex;gap:10px;align-items:flex-start}
+.done svg{width:20px;height:20px;color:var(--good);flex:none;margin-top:2px}
+.phone .tiles .t{font-size:9.5px}
+/* ola 2 */
+.po .selc{position:absolute;top:5px;right:5px;width:17px;height:17px;border-radius:9px;border:1.6px solid #fff;background:#0006}
+.po .selc.on{background:var(--teal);border-color:var(--teal);display:flex;align-items:center;justify-content:center}
+.po .selc.on svg{width:11px;height:11px;color:var(--onteal);stroke-width:3}
+.po.dimmed{opacity:.55}
+.po .minus{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:9px;background:#e5484d;display:flex;align-items:center;justify-content:center}
+.po .minus::after{content:"";width:8px;height:2px;background:#fff;border-radius:1px}
+.selbar{position:absolute;left:10px;right:10px;bottom:10px;height:58px;border-radius:20px;background:#24262eef;display:grid;grid-template-columns:repeat(3,1fr);align-items:center;z-index:6;box-shadow:0 8px 24px #0008}
+.selbar div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:650}
+.selbar .ic{width:19px;height:19px;color:var(--ph-ink)}
+.selbar .del,.selbar .del .ic{color:#ff8a8a}
+.navt{font-size:12px;font-weight:650}
+.navt.teal{color:var(--teal)}
+.zoom .selbar{position:static;height:66px;box-shadow:none;border:1px solid #ffffff14}
+.zoom .selbar div{font-size:12px}.zoom .selbar .ic{width:22px;height:22px}
+.privs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.privs .t{font-size:11px;padding:10px 2px}
+.privs .t.on{background:#3a2b18}
+.swdel{display:flex;align-items:center;justify-content:center;width:62px;background:#e5484d;color:#fff;font-size:9.5px;font-weight:700;flex-direction:column;gap:2px}
+.swdel .ic{width:16px;height:16px;color:#fff}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4-6 4z"/></symbol>
+  <symbol id="i-bookmark-f" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4-6 4z" fill="currentColor"/></symbol>
+  <symbol id="i-playc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.5 3.5-5.5 3.5z" fill="currentColor"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/></symbol>
+  <symbol id="i-checkf" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor"/><path d="M8 12.3l2.7 2.7L16 9.5" stroke="#1a1208" stroke-width="2.2"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 20L20 4"/></symbol>
+  <symbol id="i-plusc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v8M8.5 12.5L12 16l3.5-3.5"/></symbol>
+  <symbol id="i-trailer" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.5 9.5l4 2.5-4 2.5z" fill="currentColor"/></symbol>
+  <symbol id="i-version" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M7 9h2M11 9h6M7 12h2M11 12h6M7 15h2M11 15h6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="17.5" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 004 0"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 20h8"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0112 7.6 4.2 4.2 0 0119.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M7 11H5.5v9h13v-9H17"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5v9h-5.5v-5.5h-5V20H4z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8z"/></symbol>
+  <symbol id="i-stack" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M6.5 5h11M9 2.5h6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-chevd" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L4.5 11.5 9 16"/><path d="M5 11.5h9a5 5 0 010 10h-2"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4h5v2.5M6.5 6.5l1 13.5h9l1-13.5M10 10.5v6M14 10.5v6"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><rect x="3.5" y="8" width="11" height="12" rx="2"/><path d="M8 8V5.5a2 2 0 012-2h8.5a2 2 0 012 2V14a2 2 0 01-2 2H14.5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 013 3L8 18.5z"/><path d="M13.5 7l3 3"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0014.5 4h-9A1.5 1.5 0 004 5.5v9A1.5 1.5 0 005.5 16H8"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5L7 20l3.5-3.5M17 20V4M13.5 7.5L17 4l3.5 3.5"/></symbol>
+</svg>
+
+<style>
+.plays{display:flex;flex-direction:column}
+.plays .r{display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:1px solid #ffffff10;font-size:12px}
+.plays .r .sp{flex:1;display:flex;flex-direction:column}
+.plays .r small{color:var(--ph-mute);font-size:10px}
+.plays .r .ic{width:15px;height:15px;color:var(--ph-mute)}
+.plays .add{color:var(--teal);font-weight:650}
+.plays .add .ic{color:var(--teal)}
+.month{font-size:10.5px;color:var(--ph-mute);font-weight:650;margin-top:6px}
+.hrow{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px solid #ffffff10;font-size:11.5px}
+.hrow .po{width:26px;padding:0;flex:none}
+.hrow .sp{flex:1;display:flex;flex-direction:column}
+.hrow small{color:var(--ph-mute);font-size:10px}
+.hrow .dup{color:#f3c27a}
+.notebox{background:var(--ph-tile);border-radius:12px;padding:10px;font-size:11.5px;line-height:1.45;min-height:70px}
+.notebox small{display:block;color:var(--ph-mute);font-size:10px;margin-top:6px}
+.lineb{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;background:var(--ph-tile);border-radius:12px;padding:9px 10px}
+.lineb .sp{display:flex;flex-direction:column;gap:2px}
+.lineb small{color:var(--ph-mute);font-size:10px}
+.lineb .ic{width:14px;height:14px;color:var(--ph-mute)}
+.amber{color:#f3c27a;letter-spacing:2px}
+.eps{display:flex;flex-direction:column;gap:6px}
+.ep{display:flex;gap:8px;align-items:center;font-size:11px}
+.ep i{width:52px;height:30px;border-radius:5px;background:#ffffff14;display:block;flex:none}
+.ep .sp{flex:1;display:flex;flex-direction:column}
+.ep small{color:var(--ph-mute);font-size:9.5px}
+.toastz{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,320px));gap:16px}
+.toastz>div{display:flex;flex-direction:column;gap:8px}
+.tz{font-size:13px;color:var(--mute);margin:0}
+.seasonsel{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M4 11V9.5A3.5 3.5 0 017.5 6H19l-3-3M20 13v1.5a3.5 3.5 0 01-3.5 3.5H5l3 3"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3.5h9l4 4V20a.5.5 0 01-.5.5h-12A.5.5 0 016 20z"/><path d="M14.5 3.5V8H19M9 12.5h6M9 16h4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+</svg>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Gestor, ola 3: una sola decisión</h1>
+    <p class="lead">Fer, la ola 2 ya está construida. Esta es la última tanda del gestor: corregir lo que viste, una nota privada por
+      título y calificar temporadas. Solo tienes que decidir una cosa: <b>O3-A</b> o <b>O3-B</b>. Con tu respuesta lo construyo, lo pruebo,
+      lo subo y lo instalo en tu iPhone sin volver a preguntarte nada de esta tanda. Abajo ves cómo se vería cada pieza.</p>
+  </header>
+
+  <section>
+    <h2>Tu decisión</h2>
+    <div class="row" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div class="opt rec">
+        <div class="tag"><span class="code">O3-A</span><h3>Lo esencial</h3><span class="recmark">Recomendada</span></div>
+        <ul>
+          <li><b>«Tus vistas» en la ficha</b> (G5-A): cuántas veces la viste y cuándo; cambiar una fecha, borrar una vista repetida y «La vi otra vez».</li>
+          <li><b>«Otra fecha»</b> en el aviso al marcar «Vista».</li>
+          <li><b>«Tu nota»</b> en la ficha (G6). Dónde se guarda lo decide Orbital (abajo).</li>
+          <li><b>Estrellas de la temporada</b> bajo «Temporada 3» (G7-A).</li>
+          <li><b>Gana:</b> todo vive donde ya estás, sin pantallas ni preguntas nuevas.</li>
+          <li><b>Pierde:</b> limpiar muchas vistas repetidas es ficha por ficha.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="tag"><span class="code">O3-B</span><h3>Todo</h3></div>
+        <ul>
+          <li><b>Todo lo de O3-A</b>, más:</li>
+          <li><b>Pantalla «Historial»</b> (G5-B): todo lo que viste por mes, con las vistas repetidas señaladas, para limpiar de golpe.</li>
+          <li><b>Pregunta al terminar una temporada</b> (G7-B): «¿Qué tal estuvo?» con estrellas.</li>
+          <li><b>Gana:</b> limpias tu historial de una vez y calificas en caliente.</li>
+          <li><b>Pierde:</b> una pantalla más, una pregunta más al terminar cada temporada y casi el doble de trabajo antes de que lo veas.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="q"><b style="color:var(--ink)">Lo que decido yo, sin preguntarte:</b> la nota se guarda en tu Trakt si tu cuenta es VIP
+      (Orbital lo revisa solo) y, si no, en tu iPhone. «Vista» sigue siendo un toque con la fecha de hoy. Sin internet, los cambios
+      esperan en la cola, como hoy; si mientras tanto la tele marca algo, se guardan las dos cosas. Las series se corrigen capítulo por
+      capítulo, manteniendo el dedo sobre el capítulo; «Otra fecha» al marcar una temporada o la serie entera pone esa fecha a todos
+      sus capítulos. Lo mismo llega al iPad y a la Mac, que usan la misma app.</p>
+  </section>
+
+  <section>
+    <h2>Qué cambia en esta tanda</h2>
+    <div class="scroll"><table class="gap"><thead><tr><th>Qué</th><th>Hoy en Orbital</th><th>Qué trae esta tanda</th><th>Código</th></tr></thead><tbody>
+      <tr><td>Tu historial</td><td><span class="st medias">A medias</span><br>«Vista» marca la fecha de hoy y se puede deshacer al momento. No ves cuántas veces la viste ni cuándo, ni puedes corregirlo</td><td>Ver cada vez que la viste, cambiar la fecha, borrar una vista repetida y sumar «La vi otra vez»</td><td class="ola">G5</td></tr>
+      <tr><td>Nota privada</td><td><span class="st no">No hay</span></td><td>Una nota tuya por película o serie («la vi con Ana», «verla en IMAX»)</td><td class="ola">G6</td></tr>
+      <tr><td>Calificar temporada</td><td><span class="st medias">A medias</span><br>Calificas la serie y cada capítulo; la temporada, no</td><td>Estrellas para cada temporada, guardadas en tu Trakt</td><td class="ola">G7</td></tr>
+    </tbody></table></div>
+    <p class="q">En las tres, «Vista» sigue siendo un toque con la fecha de hoy. Lo nuevo es que el aviso suma «Otra fecha» junto a
+      «Deshacer», por si la viste antes. «Deshacer» quita solo la vista de hoy, no las anteriores. Todo se guarda en tu Trakt, salvo la nota cuando no hay VIP. Sin internet, los cambios esperan en la cola, como hoy.</p>
+    <div class="toastz"><div><p class="tz">Hoy, al marcar «Vista»: solo deshacer</p><div class="toast" style="position:static"><svg class="ic"><use href="#i-checkf"/></svg><span class="sp">Dune: Parte Dos, vista</span><em><svg class="ic"><use href="#i-undo"/></svg>Deshacer</em></div></div>
+      <div><p class="tz">Con esta tanda: «Otra fecha» abre el calendario</p><div class="toast" style="position:static"><svg class="ic"><use href="#i-checkf"/></svg><span class="sp">Vista hoy</span><em><svg class="ic"><use href="#i-cal"/></svg>Otra fecha</em><em><svg class="ic"><use href="#i-undo"/></svg>Deshacer</em></div></div></div>
+  </section>
+
+  <section>
+    <h2>G5 · Corregir lo que viste</h2>
+    <p class="q">Trakt guarda cada vez que viste algo, con su fecha. A veces una vista sale doble (la tele y el iPhone la marcaron a la vez)
+      o con una fecha equivocada (la marcaste días después).</p>
+    <div class="row">
+      <div class="opt today">
+        <div class="tag"><span class="code">Hoy</span><h3>Solo «Vista» y «Deshacer»</h3></div>
+        <div class="phone" aria-label="Hoy: ficha vista"><div class="hero"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción</span></div><div class="play">▶ Ver otra vez</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Vista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div><div class="line"><span>Tu calificación</span><span class="stars amber">★★★★★</span></div><p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza…</p><div class="sk" style="width:70%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div><div class="toast"><svg class="ic"><use href="#i-checkf"/></svg><span class="sp">Dune: Parte Dos, vista</span><em><svg class="ic"><use href="#i-undo"/></svg>Deshacer</em></div></div>
+        <ul><li>Si la marcaste tarde, se queda con la fecha de hoy. Una vista doble solo se borra en trakt.tv.</li></ul>
+      </div>
+      <div class="opt rec">
+        <div class="tag"><span class="code">G5-A</span><h3>«Tus vistas» en la ficha</h3><span class="recmark">En O3-A y O3-B</span></div>
+        <div class="phone" aria-label="G5-A: hoja de tus vistas"><div class="hero"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción</span></div><div class="play">▶ Ver otra vez</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Vista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div><div class="line"><span>Tu calificación</span><span class="stars amber">★★★★★</span></div><div class="lineb"><span class="sp"><span>La viste 2 veces</span><small>La última, el 14 mar 2025</small></span><svg class="ic"><use href="#i-chev"/></svg></div><p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza…</p><div class="sk" style="width:70%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div><div class="sheet"><div class="grab"></div><b style="font-size:14px">Tus vistas de Dune: Parte Dos</b><div class="plays"><div class="r"><svg class="ic"><use href="#i-cal"/></svg><span class="sp">14 mar 2025 · 9:12 p.m.<small>Toca la fecha para cambiarla</small></span><svg class="ic"><use href="#i-trash"/></svg></div><div class="r"><svg class="ic"><use href="#i-cal"/></svg><span class="sp">2 ene 2024 · 6:30 p.m.<small>El bote la borra (con «Deshacer»)</small></span><svg class="ic"><use href="#i-trash"/></svg></div><div class="r add"><svg class="ic"><use href="#i-repeat"/></svg><span class="sp">La vi otra vez…<small>Hoy u otra fecha</small></span></div></div></div></div>
+        <ul>
+          <li><b>Para ti:</b> debajo de tu calificación sale «La viste 2 veces · la última, el 14 mar». Al tocarlo se abre la lista de
+            tus vistas con fecha y hora: tocas una para cambiar su fecha, el bote la borra (con «Deshacer») y «La vi otra vez…» suma una
+            (hoy u otra fecha). Si borras la única, deja de contar como vista.</li>
+          <li><b>Series:</b> lo mismo en cada capítulo, al mantener el dedo sobre él: «Cambiar fecha» y «Borrar esta vista».</li>
+          <li><b>Gana:</b> corriges donde ya estás, título por título; sin pantalla nueva.</li>
+          <li><b>Pierde:</b> para limpiar varias vistas dobles hay que ir ficha por ficha.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="tag"><span class="code">G5-B</span><h3>Una pantalla «Historial»</h3><span class="recmark" style="color:var(--mute)">Solo en O3-B</span></div>
+        <div class="phone" aria-label="G5-B: historial"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><span class="navt teal"><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-plus"/></svg> Agregar</span></div></div><div style="display:flex;flex-direction:column;gap:6px"><div class="big">Historial</div><div class="body" style="gap:0"><div class="month">Noviembre 2026</div><div class="hrow"><div class="po p2"></div><span class="sp">The Bear · T3 E4<small>Hoy, 8:40 p.m.</small></span></div><div class="hrow"><div class="po p2"></div><span class="sp dup">The Bear · T3 E4<small>Hoy, 8:41 p.m. · Repetida</small></span><svg class="ic"><use href="#i-trash"/></svg></div><div class="hrow"><div class="po p1"></div><span class="sp">Dune: Parte Dos<small>2 nov</small></span></div><div class="month">Octubre 2026</div><div class="hrow"><div class="po p9"></div><span class="sp">Nosferatu<small>31 oct</small></span></div><div class="hrow"><div class="po p7"></div><span class="sp">Severance · T2 E10<small>28 oct</small></span></div><div class="hrow"><div class="po p3"></div><span class="sp">Anora<small>20 oct</small></span></div><p class="meta" style="margin-top:8px">Tocar uno cambia su fecha; el bote lo borra.</p></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul>
+          <li><b>Para ti:</b> en el tablero de Guardado, la tarjeta «Vistas» suma arriba «Historial»: todo lo que viste, por mes y
+            con su hora. Tocar uno cambia su fecha, el bote lo borra y «Agregar» busca algo que viste fuera de Orbital.</li>
+          <li><b>Gana:</b> las vistas repetidas (el mismo título o capítulo con menos de una hora de diferencia) salen marcadas «Repetida» y se limpian juntas.</li>
+          <li><b>Pierde:</b> una pantalla más, y desde la ficha no ves cuántas veces la viste.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>G6 · Tu nota privada (esto no lo decides: Orbital elige)</h2>
+    <p class="q">La nota se ve y se escribe igual en los dos casos: «Tu nota» en la ficha, debajo de tu calificación, y nadie más la
+      ve. Trakt guarda notas solo con su plan de pago (VIP), hasta 500 letras. Orbital revisa tu cuenta y usa Trakt si puede; si no, tu iPhone.</p>
+    <div class="row">
+      <div class="opt today">
+        <div class="tag"><span class="code">Hoy</span><h3>No hay notas</h3></div>
+        <div class="phone" aria-label="Hoy: ficha sin nota"><div class="hero"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción</span></div><div class="play">▶ Ver otra vez</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Vista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div><div class="line"><span>Tu calificación</span><span class="stars amber">★★★★★</span></div><p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza…</p><div class="sk" style="width:70%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul><li>Lo que quieras recordar de un título vive fuera de Orbital.</li></ul>
+      </div>
+      <div class="opt rec">
+        <div class="tag"><span class="code">Sin VIP</span><h3>En tu iPhone</h3></div>
+        <div class="phone" aria-label="G6-A: nota en el iPhone"><div class="hero"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción</span></div><div class="play">▶ Ver otra vez</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Vista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div><div class="line"><span>Tu calificación</span><span class="stars amber">★★★★★</span></div><div class="lineb"><span class="sp"><span><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-note"/></svg> Tu nota</span><small>«Verla en el cine IMAX otra vez; Ana se durmió»</small></span><svg class="ic"><use href="#i-chev"/></svg></div><p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza…</p><div class="sk" style="width:70%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div><div class="sheet"><div class="grab"></div><b style="font-size:14px">Tu nota</b><div class="notebox">Verla en el cine IMAX otra vez; Ana se durmió a la mitad.<small>Solo en este iPhone. No sale de aquí.</small></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-mute)"><span>Borrar nota</span><span style="color:var(--teal);font-weight:650">Listo</span></div></div></div>
+        <ul>
+          <li><b>Para ti:</b> funciona ya, sin pagar nada.</li>
+          <li><b>Gana:</b> gratis y sin límite de letras.</li>
+          <li><b>Pierde:</b> vive solo en este iPhone. Tu cuenta de Apple gratuita no trae iCloud, así que no pasa al iPad, a la Mac ni a la
+            tele (la versión gratuita de Apple no deja a Orbital usar iCloud). Reinstalarla encima, como cada 7 días, no la borra; se pierde solo si
+            borras la app a mano. Si algún día pagas VIP, tus notas pasan solas a Trakt.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="tag"><span class="code">Con VIP</span><h3>En tu Trakt</h3></div>
+        <div class="phone" aria-label="G6-B: nota en Trakt"><div class="hero"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción</span></div><div class="play">▶ Ver otra vez</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Vista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div><div class="line"><span>Tu calificación</span><span class="stars amber">★★★★★</span></div><div class="lineb"><span class="sp"><span><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-note"/></svg> Tu nota</span><small>«Verla en el cine IMAX otra vez; Ana se durmió»</small></span><svg class="ic"><use href="#i-chev"/></svg></div><p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza…</p><div class="sk" style="width:70%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div><div class="sheet"><div class="grab"></div><b style="font-size:14px">Tu nota</b><div class="notebox">Verla en el cine IMAX otra vez; Ana se durmió a la mitad.<small>En tu Trakt (VIP) · 52 de 500 letras · la ves en trakt.tv</small></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-mute)"><span>Borrar nota</span><span style="color:var(--teal);font-weight:650">Listo</span></div></div></div>
+        <ul>
+          <li><b>Para ti:</b> la nota se guarda en tu cuenta de Trakt y la ves también en trakt.tv.</li>
+          <li><b>Gana:</b> queda en tu cuenta de Trakt, no en el teléfono, y algún día la tele puede enseñarla.</li>
+          <li><b>Pierde:</b> necesita Trakt VIP (de pago) y un máximo de 500 letras.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>G7 · Calificar una temporada</h2>
+    <p class="q">Trakt sí guarda la calificación de cada temporada (gratis). Hoy Orbital la deja para la serie y para cada capítulo.</p>
+    <div class="row">
+      <div class="opt today">
+        <div class="tag"><span class="code">Hoy</span><h3>Serie y capítulos</h3></div>
+        <div class="phone" aria-label="Hoy: serie"><div class="hero b"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>The Bear</b><span class="meta">2022 · 3 temporadas · Comedia, drama</span></div><div class="play">▶ T4 E1 · Never</div><div class="line"><span>Tu calificación de la serie</span><span class="stars amber">★★★★☆</span></div><div class="seasonsel">Temporada 3 <svg class="ic" style="width:13px;height:13px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="eps"><div class="ep"><i></i><span class="sp">1 · Tomorrow<small>Vista · ★★★★</small></span></div><div class="ep"><i></i><span class="sp">2 · Next<small>Vista</small></span></div><div class="ep"><i></i><span class="sp">3 · Doors<small>Vista</small></span></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul><li>Una temporada floja dentro de una serie buena no tiene dónde quedar.</li></ul>
+      </div>
+      <div class="opt rec">
+        <div class="tag"><span class="code">G7-A</span><h3>Estrellas bajo «Temporada 3»</h3><span class="recmark">En O3-A y O3-B</span></div>
+        <div class="phone" aria-label="G7-A: estrellas de la temporada"><div class="hero b"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>The Bear</b><span class="meta">2022 · 3 temporadas · Comedia, drama</span></div><div class="play">▶ T4 E1 · Never</div><div class="line"><span>Tu calificación de la serie</span><span class="stars amber">★★★★☆</span></div><div class="seasonsel">Temporada 3 <svg class="ic" style="width:13px;height:13px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="lineb"><span class="sp"><span>Tu calificación de la temporada 3</span></span><span class="stars amber" style="font-size:13px">★★★☆☆</span></div><div class="eps"><div class="ep"><i></i><span class="sp">1 · Tomorrow<small>Vista · ★★★★</small></span></div><div class="ep"><i></i><span class="sp">2 · Next<small>Vista</small></span></div><div class="ep"><i></i><span class="sp">3 · Doors<small>Vista</small></span></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul>
+          <li><b>Para ti:</b> al elegir una temporada en la lista desplegable, debajo sale «Tu calificación de la temporada 3» con sus
+            estrellas. Tocas y queda; tocar la misma estrella la quita, como hoy en la serie.</li>
+          <li><b>Gana:</b> está siempre a la mano y no interrumpe.</li>
+          <li><b>Pierde:</b> si no te acuerdas, nadie te lo pregunta.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="tag"><span class="code">G7-B</span><h3>Te pregunta al terminarla</h3><span class="recmark" style="color:var(--mute)">Solo en O3-B</span></div>
+        <div class="phone" aria-label="G7-B: te pregunta al terminar"><div class="hero b"></div><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div><div class="body"><div class="ttl"><b>The Bear</b><span class="meta">2022 · 3 temporadas · Comedia, drama</span></div><div class="play">▶ T4 E1 · Never</div><div class="line"><span>Tu calificación de la serie</span><span class="stars amber">★★★★☆</span></div><div class="seasonsel">Temporada 3 <svg class="ic" style="width:13px;height:13px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="eps"><div class="ep"><i></i><span class="sp">1 · Tomorrow<small>Vista · ★★★★</small></span></div><div class="ep"><i></i><span class="sp">2 · Next<small>Vista</small></span></div><div class="ep"><i></i><span class="sp">3 · Doors<small>Vista</small></span></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div><div class="sheet"><div class="grab"></div><b style="font-size:14px">Terminaste la temporada 3</b><span class="meta">¿Qué tal estuvo? Se guarda en tu Trakt.</span><div style="font-size:26px;letter-spacing:6px;color:#8a8d96;text-align:center">☆☆☆☆☆</div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-mute)"><span>Ahora no</span><span style="color:var(--teal);font-weight:650">Listo</span></div></div></div>
+        <ul>
+          <li><b>Para ti:</b> al acabar el último capítulo de una temporada, al cerrar el reproductor, sale «Terminaste la temporada 3,
+            ¿qué tal estuvo?» con las estrellas vacías: tocas una y queda. «Ahora no» la cierra y no vuelve a preguntar por esa temporada.
+            Solo pregunta si la terminas en el reproductor de Orbital, no al marcarla vista a mano ni en la tele.</li>
+          <li><b>Gana:</b> calificas justo cuando la tienes fresca.</li>
+          <li><b>Pierde:</b> una pregunta más al terminar cada temporada.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Para dictar</h2>
+    <div class="pick">
+      <span class="say">«O3-A»</span>
+      <p>Mi recomendación es <b>O3-A</b>: corriges cada título donde ya estás, con la nota y las estrellas de temporada a la mano, y lo
+        tienes en tu iPhone antes. El historial completo y la pregunta al terminar se pueden sumar después si los extrañas.</p>
+    </div>
+    <p class="q"><b style="color:var(--ink)">En la tele:</b> no cambia su código. Las fechas corregidas, las vistas borradas y las
+      estrellas de temporada le llegan por Trakt cuando recargue. La nota guardada en el iPhone no le llega; la guardada en Trakt
+      queda lista para cuando la tele la lea. Corregir el historial con el mando queda en el registro de paridad, para su sesión.</p>
+    <p class="foot">Maquetas esquemáticas sobre la ficha y Biblioteca › Guardado del iPhone (10 nov 2026). Con esta tanda se cierra el
+      gestor tipo Trakt.</p>
+  </section>
+</div>
