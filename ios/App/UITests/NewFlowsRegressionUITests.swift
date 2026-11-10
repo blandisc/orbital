@@ -69,7 +69,7 @@ final class NewFlowsRegressionUITests: XCTestCase {
         XCTAssertTrue(first.waitForExistence(timeout: 20), "llegan resultados")
         shot("filtro-resultados")
         first.tap()
-        XCTAssertTrue(app.buttons["title-save"].waitForExistence(timeout: 20), "se abre la ficha")
+        XCTAssertTrue(app.buttons["title-status"].waitForExistence(timeout: 20), "se abre la ficha")
         shot("filtro-ficha")
     }
 

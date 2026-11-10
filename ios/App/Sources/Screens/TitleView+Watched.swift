@@ -2,42 +2,6 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-extension TitleView {
-    /// «Ya la vi» en la fila de una película: abre «¿Cuándo la viste?»; vista, queda encendida y ofrece verla otra vez o
-    /// quitarla.
-    func watchedAction(_ model: TitleModel) -> some View {
-        let seen = model.isWatched(.movie)
-        return Button { marking = .movie } label: {
-            ActionTileLabel(title: seen ? Text("Vista") : Text("Ya la vi"), symbol: seen ? "checkmark.circle.fill" : "checkmark.circle", active: seen, tint: artAccent)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("title-watched")
-    }
-
-    /// «Siguiendo» en la fila de una serie (con Trakt): tocarla deja de seguirla (no sale en tus estrenos ni te avisa), con
-    /// «Deshacer»; otra vez, la vuelves a seguir.
-    func followAction(_ model: TitleModel) -> some View {
-        let follow = AppEnvironment.shared.follow
-        let _ = follow.track()
-        let following = follow.isFollowing(model.metaID)
-        return Button {
-            Task {
-                if let problem = await follow.setFollowing(model.metaID, !following) { AppEnvironment.shared.notify(problem, tone: .error); return }
-                AppEnvironment.shared.notify(following ? "Ya no la sigues" : "La sigues otra vez",
-                                             detail: following ? "Sin avisos ni estrenos de \(model.title)" : model.title, tone: .info,
-                                             actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-                    Task { _ = await follow.setFollowing(model.metaID, following) }
-                }
-            }
-        } label: {
-            ActionTileLabel(title: following ? Text("Siguiendo") : Text("Seguir"), symbol: following ? "bell.fill" : "bell.slash", active: following, tint: artAccent)
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: following)
-        .accessibilityIdentifier("title-follow")
-    }
-}
-
 /// La hoja «¿Cuándo la viste?» de la ficha: arma qué se marca (película, episodio, temporada o serie), su fecha de estreno
 /// y cuántos episodios anteriores faltan, y hace lo elegido.
 struct TitleWatchedWhen: ViewModifier {

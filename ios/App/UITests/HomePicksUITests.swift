@@ -29,6 +29,6 @@ final class HomePicksUITests: XCTestCase {
         guard let visible = app.buttons.matching(identifier: "title-link").allElementsBoundByIndex
             .first(where: { abs($0.frame.minY - first.frame.minY) < 4 && $0.frame.minX > 0 && $0.frame.maxX < app.frame.width }) else { return XCTFail("sin póster a la vista") }
         origin.withOffset(CGVector(dx: visible.frame.midX, dy: visible.frame.minY + visible.frame.height * 0.8)).tap()
-        XCTAssertTrue(app.buttons["title-save"].waitForExistence(timeout: 15), "se abre la ficha")
+        XCTAssertTrue(app.buttons["title-status"].waitForExistence(timeout: 15), "se abre la ficha")
     }
 }

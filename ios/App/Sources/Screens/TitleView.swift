@@ -37,7 +37,7 @@ struct TitleView: View {
     @State var cancelling: DebridRequest?
     var observerModel: TitleModel { observer.model }
     func openVersions(_ videoID: String) { sourcesFor = SourcesTarget(videoID: videoID, purpose: .watch) }
-    @State private var saving = false
+    @State var saving = false
     /// «¿Cuándo la viste?»: qué se está marcando (la película, un episodio, la temporada o la serie).
     @State var marking: WatchedScope?
     /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
@@ -326,11 +326,10 @@ struct TitleView: View {
             continueAction(model)
             debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
             // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4) + (model.kind == "movie" || AppEnvironment.shared.follow.available ? 1 : 0)),
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4)),
                       spacing: DS.Space.s2) {
-                if model.kind == "movie" { watchedAction(model).frame(maxWidth: .infinity) }
-                else if AppEnvironment.shared.follow.available { followAction(model).frame(maxWidth: .infinity) }   // series: seguirla o no
-                saveAction(model).frame(maxWidth: .infinity)
+                // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
+                statusAction(model).frame(maxWidth: .infinity)
                 downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {
                     Button { openURL(url) } label: { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }
@@ -345,30 +344,8 @@ struct TitleView: View {
         }
     }
 
-    /// Guardar: un toque la guarda en la lista por omisión (tu watchlist con Trakt, si no Mi lista; `SaveDestination`), con un
-    /// aviso que deja cambiar; mantener presionado elige dónde (la de por omisión primero).
-    private func saveAction(_ model: TitleModel) -> some View {
-        Menu {
-            ForEach(model.fixedDestinations, id: \.self) { destination in
-                Button { Task { await model.toggle(destination) } } label: {
-                    Label { SaveDestinationName.text(destination) } icon: {
-                        Image(systemName: model.isSaved(in: destination) ? "checkmark" : SaveDestinationName.symbol(destination))
-                    }
-                }
-            }
-            if model.traktAvailable { Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true } }
-        } label: {
-            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark.circle.fill" : "plus.circle", active: model.isSaved, tint: artAccent)
-        } primaryAction: {
-            Task { await quickSave(model) }
-        }
-        .menuStyle(.button).buttonStyle(.plain)
-        .sensoryFeedback(.success, trigger: model.isSaved) { _, saved in saved }
-        .accessibilityIdentifier("title-save")
-        .accessibilityHint(Text("Mantén presionado para elegir en qué lista"))
-    }
-
-    private func quickSave(_ model: TitleModel) async {
+    /// Un toque en el botón de estado sin estado (G1-A): la guarda en Mi lista, como el «Guardar» de antes.
+    func quickSave(_ model: TitleModel) async {
         switch model.quickSave {
         case .add(let destination):
             await model.toggle(destination)
