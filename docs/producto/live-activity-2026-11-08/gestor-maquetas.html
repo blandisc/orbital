@@ -20,7 +20,8 @@ h2{font-size:22px;margin:0 0 6px;text-wrap:balance}
 h3{font-size:16px;margin:0}
 p{margin:0}
 .lead{color:var(--mute);max-width:70ch}
-section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
+section{margin-top:52px;display:flex;flex-direction:column;gap:18px;min-width:0}
+section>*,.wrap,header>*{min-width:0;max-width:100%}
 .q{color:var(--mute);max-width:72ch}
 /* resumen */
 .gap{width:100%;border-collapse:collapse;font-size:14px}
@@ -33,7 +34,7 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 .ola{color:var(--teal);font-weight:700;white-space:nowrap}
 .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
 /* opciones */
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:18px;align-items:start}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:28px 22px;align-items:start}
 .opt{display:flex;flex-direction:column;gap:12px;min-width:0}
 .tag{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .code{font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;background:#262a35;color:var(--ink)}
@@ -45,8 +46,8 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 .pick{border:1px solid var(--teal);border-radius:16px;padding:14px 16px;background:#0f1b1a;display:flex;flex-direction:column;gap:6px;max-width:80ch}
 .pick b{color:var(--teal)}
 /* teléfono */
-.phone{width:272px;max-width:100%;height:590px;border-radius:38px;border:7px solid #23252c;background:var(--ph-bg);
-  position:relative;overflow:hidden;color:var(--ph-ink);font-size:12px;line-height:1.35;flex:none;align-self:center}
+.phone{width:300px;max-width:100%;height:600px;border-radius:38px;border:7px solid #23252c;background:var(--ph-bg);
+  position:relative;overflow:hidden;color:var(--ph-ink);font-size:12.5px;line-height:1.35;flex:none;align-self:center}
 .sb{height:30px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-weight:600;font-size:11.5px}
 .island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:78px;height:22px;border-radius:12px;background:#000}
 .nav{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;position:relative;z-index:2}
@@ -64,7 +65,7 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 .ver{color:var(--ph-mute);font-size:10.5px;text-align:center;margin-top:-4px}
 .prog{height:3px;border-radius:2px;background:#ffffff26;overflow:hidden;margin-top:-4px}.prog i{display:block;height:100%;background:#f5f4f0}
 .tiles{display:grid;gap:6px}
-.t{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 7px;border-radius:12px;background:var(--ph-tile);font-size:10px;font-weight:600;text-align:center;color:var(--ph-ink)}
+.t{min-width:0;white-space:nowrap;letter-spacing:-.15px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 7px;border-radius:12px;background:var(--ph-tile);font-size:10px;font-weight:600;text-align:center;color:var(--ph-ink)}
 .t .ic{width:19px;height:19px;color:var(--art)}
 .t.on{background:#3a2b18;color:#f3d7a8}
 .t.on .ic{color:#f3c27a}
@@ -96,7 +97,7 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 .big4{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .big4 .t{padding:12px 4px;font-size:11px}
 /* segmentado de íconos (G1-B) */
-.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--ph-tile);border-radius:12px;padding:3px;gap:3px}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--ph-tile);border-radius:12px;padding:3px;gap:3px}
 .seg div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:9px;font-size:9.5px;font-weight:600;color:var(--ph-mute)}
 .seg .ic{width:17px;height:17px}
 .seg .on{background:#3a2b18;color:#f3d7a8}
@@ -111,7 +112,7 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 .ttabs .on{color:var(--ph-ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
 .selector{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
 .selector .ic{width:13px;height:13px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .po{aspect-ratio:2/3;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:5px;font-size:8.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
 .po .bar{position:absolute;left:5px;right:5px;bottom:4px;height:2.5px;border-radius:2px;background:#ffffff40}.po .bar i{display:block;height:100%;background:#fff;border-radius:2px}
 .po .mark{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:9px;background:#000a;display:flex;align-items:center;justify-content:center}
@@ -152,6 +153,18 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 .say{font-size:17px;font-weight:700;color:var(--teal)}
 :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 @media (max-width:620px){h1{font-size:25px}}
+.zoom{background:var(--ph-bg);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:14px;color:var(--ph-ink)}
+.zoom .cap{font-size:12.5px;color:var(--mute);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px}
+.zoom .cap b{color:var(--ink);font-weight:650}
+.zoom .tiles .t{font-size:12px;padding:11px 2px 9px;gap:6px}
+.zoom .tiles .t .ic{width:24px;height:24px}
+.zoom .seg div{font-size:11.5px;padding:9px 0 7px}.zoom .seg .ic{width:22px;height:22px}
+.zoom .stline{font-size:14px}.zoom .stline .ic{width:18px;height:18px}
+.menu.static{position:static;width:100%;box-shadow:none;border:1px solid #ffffff14;font-size:13.5px}
+.menu.static .mi{padding:10px 14px}.menu.static .mi .ic{width:19px;height:19px}.menu.static small{font-size:11.5px}
+.done{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--panel);display:flex;gap:10px;align-items:flex-start}
+.done svg{width:20px;height:20px;color:var(--good);flex:none;margin-top:2px}
+.phone .tiles .t{font-size:9.5px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -245,169 +258,81 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 
   <!-- 3 · G1 -->
   <section>
-    <h2>G1 · ¿Dónde se ve y se cambia el estado en la ficha?</h2>
-    <p class="q">Hoy la ficha tiene cinco botones debajo de «Ver»: «Ya la vi» (o «Seguir» en una serie), «Guardar», «Descargar»,
-      «Tráiler» y «Versión». El estado tiene que verse al abrir, sin bajar, también en un iPhone SE.</p>
+    <h2>G1 · ¿Cómo se ve y se cambia el estado en la ficha?</h2>
+    <p class="q">Lo único que cambia entre las opciones es la parte de los botones debajo de «Ver». Por eso cada opción trae la
+      ficha completa y, debajo, ese pedazo <b style="color:var(--ink)">de cerca</b> en sus distintos estados.</p>
     <div class="row">
-
-      <!-- Hoy -->
       <div class="opt today">
-        <div class="tag"><span class="code">Hoy</span><h3>Tres botones que se reparten la respuesta</h3></div>
-        <div class="phone" aria-label="Ficha de hoy">
-          <div class="island"></div><div class="hero"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
-          <div class="body">
-            <div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div>
-            <div class="play"><svg class="ic f" style="width:13px;height:13px"><path d="M6 4l14 8-14 8z"/></svg>Ver</div>
-            <div class="ver">🇲🇽 · 4K · Dolby Vision</div>
-            <div class="tiles" style="grid-template-columns:repeat(5,1fr)">
-              <div class="t"><svg class="ic"><use href="#i-check"/></svg>Ya la vi</div>
-              <div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Guardada</div>
-              <div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div>
-              <div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div>
-              <div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div>
-            </div>
-            <div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
-            <p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia…</p>
-            <div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div>
-          </div>
-          <div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div>
-        </div>
-        <ul>
-          <li>«Guardada» dice que está en Mi lista; «Ya la vi», si la viste. En una serie, «Siguiendo» es otra cosa (avisos).</li>
-          <li>Para dejar una serie hay que ir a Biblioteca › Series que sigues.</li>
-        </ul>
+        <div class="tag"><span class="code">Hoy</span><h3>Tres botones se reparten la respuesta</h3></div>
+        <div class="phone" aria-label="Ficha de hoy"><div class="island"></div><div class="hero"></div>
+<div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+<div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
+<div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div><div class="play">▶ Ver</div><div class="ver">🇲🇽 · 4K · Dolby Vision</div><div class="tiles" style="grid-template-columns:repeat(5,minmax(0,1fr))"><div class="t"><svg class="ic"><use href="#i-check"/></svg>Ya la vi</div><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Guardada</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div>
+<div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
+<p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia…</p>
+<div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <div class="zoom"><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Película guardada</b><span>«Guardada» y «Ya la vi» por separado</span></div><div class="tiles" style="grid-template-columns:repeat(5,minmax(0,1fr))"><div class="t"><svg class="ic"><use href="#i-check"/></svg>Ya la vi</div><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Guardada</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Serie que vas viendo</b><span>«Siguiendo» es de avisos, no de cómo vas</span></div><div class="tiles" style="grid-template-columns:repeat(5,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-bell"/></svg>Siguiendo</div><div class="t"><svg class="ic"><use href="#i-plusc"/></svg>Guardar</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div></div></div>
+        <ul><li>Para saber cómo vas hay que leer dos botones; para dejar una serie hay que ir a Biblioteca › Series que sigues.</li></ul>
       </div>
 
-      <!-- G1-A -->
       <div class="opt rec">
-        <div class="tag"><span class="code">G1-A</span><h3>Un botón de estado en lugar de dos</h3><span class="recmark">Recomendada</span></div>
-        <div class="phone" aria-label="G1-A: ficha con el botón de estado">
-          <div class="island"></div><div class="hero"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
-          <div class="body">
-            <div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div>
-            <div class="play"><svg class="ic f" style="width:13px;height:13px"><path d="M6 4l14 8-14 8z"/></svg>Ver</div>
-            <div class="ver">🇲🇽 · 4K · Dolby Vision</div>
-            <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
-              <div class="t on new"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista</div>
-              <div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div>
-              <div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div>
-              <div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div>
-            </div>
-            <div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
-            <p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia…</p>
-            <div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div>
-          </div>
-          <div class="note" style="top:300px">Sin estado dice «Mi lista»: un toque la guarda, como hoy «Guardar». Con estado, un toque abre el menú. Mantener el dedo siempre lo abre.</div>
-          <div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div>
-        </div>
-        <div class="phone" aria-label="G1-A: menú del estado en una serie">
-          <div class="island"></div><div class="hero b"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
-          <div class="body">
-            <div class="ttl"><b>The Office</b><span class="meta">2005 · 9 temporadas · Comedia</span></div>
-            <div class="play"><svg class="ic f" style="width:13px;height:13px"><path d="M6 4l14 8-14 8z"/></svg>Continuar T3 E4</div>
-            <div class="prog"><i style="width:42%"></i></div>
-            <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
-              <div class="t on"><svg class="ic"><use href="#i-playc"/></svg>Viendo</div>
-              <div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div>
-              <div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div>
-              <div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div>
-            </div>
-          </div>
-          <div class="dim"></div>
-          <div class="menu" style="left:14px;top:232px">
-            <div class="h">¿Cómo vas con The Office?</div>
-            <div class="mi"><svg class="ic"><use href="#i-bookmark"/></svg><span class="sp">En Mi lista</span></div>
-            <div class="mi ck"><svg class="ic"><use href="#i-playc"/></svg><span class="sp">Viendo<small>Sigue T3 E4 · 42 % de la serie</small></span>✓</div>
-            <div class="mi"><svg class="ic"><use href="#i-check"/></svg><span class="sp">Vista<small>Faltan 142 episodios</small></span></div>
-            <div class="mi"><svg class="ic"><use href="#i-eyeoff"/></svg><span class="sp">La dejé<small>Ya no sale en Seguir viendo</small></span></div>
-            <div class="mi sep"><svg class="ic"><use href="#i-bell"/></svg><span class="sp">Avisarme de episodios nuevos</span><span class="tog"></span></div>
-            <div class="mi"><svg class="ic"><use href="#i-list"/></svg><span class="sp">Agregar a una lista…</span></div>
-          </div>
-        </div>
+        <div class="tag"><span class="code">G1-A</span><h3>Un solo botón de estado</h3><span class="recmark">Recomendada</span></div>
+        <div class="phone" aria-label="G1-A"><div class="island"></div><div class="hero"></div>
+<div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+<div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
+<div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div><div class="play">▶ Ver</div><div class="ver">🇲🇽 · 4K · Dolby Vision</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div>
+<div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
+<p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia…</p>
+<div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <div class="zoom"><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Sin estado</b><span>un toque la guarda, como hoy</span></div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t"><svg class="ic"><use href="#i-bookmark"/></svg>Mi lista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Guardada</b><span>un toque abre el menú</span></div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Ya la viste</b><span></span></div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-checkf"/></svg>Vista</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Serie que vas viendo</b><span></span></div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t on"><svg class="ic"><use href="#i-playc"/></svg>Viendo</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div></div></div>
+        <div class="menu static"><div class="h">¿Cómo vas con The Office? (al tocar el botón)</div>
+<div class="mi"><svg class="ic"><use href="#i-bookmark"/></svg><span class="sp">En Mi lista</span></div>
+<div class="mi ck"><svg class="ic"><use href="#i-playc"/></svg><span class="sp">Viendo<small>Sigue T3 E4 · 42 % de la serie</small></span>✓</div>
+<div class="mi"><svg class="ic"><use href="#i-check"/></svg><span class="sp">Vista<small>Marca los 142 episodios que faltan</small></span></div>
+<div class="mi"><svg class="ic"><use href="#i-eyeoff"/></svg><span class="sp">La dejé<small>Ya no sale en Seguir viendo ni te avisa</small></span></div>
+<div class="mi sep"><svg class="ic"><use href="#i-bell"/></svg><span class="sp">Avisarme de episodios nuevos</span><span class="tog"></span></div>
+<div class="mi"><svg class="ic"><use href="#i-list"/></svg><span class="sp">Agregar a una lista…</span></div></div>
         <ul>
-          <li><b>Para ti:</b> un botón dice cómo vas; tocarlo da las respuestas, la campana de avisos y tus listas. Guardar en Mi lista sigue siendo un toque.</li>
-          <li><b>Gana:</b> la ficha deja de tener respuestas que se contradicen («Guardada» y «Vista» a la vez); un botón menos; cabe en el SE.</li>
-          <li><b>Pierde:</b> «Ya la vi», «Guardar» y «Seguir» se juntan en uno; marcar una película como vista pasa de un toque a dos.</li>
+          <li><b>Para ti:</b> el primer botón siempre dice cómo vas. Tocarlo da las respuestas, la campana de avisos y tus listas.</li>
+          <li><b>Gana:</b> una sola respuesta, sin contradicciones; un botón menos; todo cabe en el iPhone SE.</li>
+          <li><b>Pierde:</b> marcar una película como vista pasa de un toque a dos.</li>
         </ul>
       </div>
 
-      <!-- G1-B -->
       <div class="opt">
-        <div class="tag"><span class="code">G1-B</span><h3>Una fila de cuatro íconos siempre a la vista</h3></div>
-        <div class="phone" aria-label="G1-B: fila de cuatro estados">
-          <div class="island"></div><div class="hero"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
-          <div class="body">
-            <div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div>
-            <div class="play"><svg class="ic f" style="width:13px;height:13px"><path d="M6 4l14 8-14 8z"/></svg>Ver</div>
-            <div class="ver">🇲🇽 · 4K · Dolby Vision</div>
-            <span class="ask">¿Cómo vas con esta?</span>
-            <div class="seg">
-              <div class="on"><svg class="ic"><use href="#i-bookmark-f"/></svg>Mi lista</div>
-              <div><svg class="ic"><use href="#i-playc"/></svg>Viendo</div>
-              <div><svg class="ic"><use href="#i-check"/></svg>Vista</div>
-              <div><svg class="ic"><use href="#i-eyeoff"/></svg>La dejé</div>
-            </div>
-            <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
-              <div class="t"><svg class="ic"><use href="#i-list"/></svg>Listas</div>
-              <div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div>
-              <div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div>
-              <div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div>
-            </div>
-            <div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
-          </div>
-          <div class="fold" style="top:368px"><span>hasta aquí se ve en un SE</span></div>
-          <div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div>
-        </div>
+        <div class="tag"><span class="code">G1-B</span><h3>Cuatro íconos siempre a la vista</h3></div>
+        <div class="phone" aria-label="G1-B"><div class="island"></div><div class="hero"></div>
+<div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+<div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
+<div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div><div class="play">▶ Ver</div><div class="ver">🇲🇽 · 4K · Dolby Vision</div><div class="seg"><div class="on"><svg class="ic"><use href="#i-bookmark"/></svg>Mi lista</div><div class=""><svg class="ic"><use href="#i-playc"/></svg>Viendo</div><div class=""><svg class="ic"><use href="#i-check"/></svg>Vista</div><div class=""><svg class="ic"><use href="#i-eyeoff"/></svg>La dejé</div></div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t"><svg class="ic"><use href="#i-list"/></svg>Listas</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div>
+<div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
+<p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia…</p>
+<div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div></div><div class="fold" style="top:395px"><span>hasta aquí se ve en un SE</span></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <div class="zoom"><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Guardada</b><span></span></div><div class="seg"><div class="on"><svg class="ic"><use href="#i-bookmark"/></svg>Mi lista</div><div class=""><svg class="ic"><use href="#i-playc"/></svg>Viendo</div><div class=""><svg class="ic"><use href="#i-check"/></svg>Vista</div><div class=""><svg class="ic"><use href="#i-eyeoff"/></svg>La dejé</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Ya la viste</b><span></span></div><div class="seg"><div class=""><svg class="ic"><use href="#i-bookmark"/></svg>Mi lista</div><div class=""><svg class="ic"><use href="#i-playc"/></svg>Viendo</div><div class="on"><svg class="ic"><use href="#i-check"/></svg>Vista</div><div class=""><svg class="ic"><use href="#i-eyeoff"/></svg>La dejé</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Serie que vas viendo</b><span></span></div><div class="seg"><div class=""><svg class="ic"><use href="#i-bookmark"/></svg>Mi lista</div><div class="on"><svg class="ic"><use href="#i-playc"/></svg>Viendo</div><div class=""><svg class="ic"><use href="#i-check"/></svg>Vista</div><div class=""><svg class="ic"><use href="#i-eyeoff"/></svg>La dejé</div></div></div></div>
         <ul>
           <li><b>Para ti:</b> las cuatro respuestas a un toque, sin menú.</li>
-          <li><b>Gana:</b> lo más directo; se entiende sin explicar.</li>
-          <li><b>Pierde:</b> una fila más; en el SE «Descargar» y «Versión» quedan abajo del borde. «Viendo» en una película se ve apagado casi siempre.</li>
+          <li><b>Gana:</b> lo más directo; marcar vista sigue siendo un toque.</li>
+          <li><b>Pierde:</b> una fila más; en el SE «Descargar» y «Versión» quedan debajo del borde. En películas, «Viendo» casi siempre está apagado.</li>
         </ul>
       </div>
 
-      <!-- G1-C -->
       <div class="opt">
-        <div class="tag"><span class="code">G1-C</span><h3>Una línea bajo el título y una hoja</h3></div>
-        <div class="phone" aria-label="G1-C: línea de estado con hoja">
-          <div class="island"></div><div class="hero"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
-          <div class="body">
-            <div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div>
-            <div class="stline"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista <em>desde el 3 oct</em><svg class="ic" style="width:11px;height:11px"><use href="#i-chev"/></svg></div>
-            <div class="play"><svg class="ic f" style="width:13px;height:13px"><path d="M6 4l14 8-14 8z"/></svg>Ver</div>
-            <div class="ver">🇲🇽 · 4K · Dolby Vision</div>
-            <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
-              <div class="t"><svg class="ic"><use href="#i-list"/></svg>Listas</div>
-              <div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div>
-              <div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div>
-              <div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div>
-            </div>
-          </div>
-          <div class="dim" style="background:#0007"></div>
-          <div class="sheet">
-            <div class="grab"></div>
-            <b style="font-size:13px">¿Cómo vas con Dune: Parte Dos?</b>
-            <div class="big4">
-              <div class="t on"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista</div>
-              <div class="t"><svg class="ic"><use href="#i-check"/></svg>Vista</div>
-              <div class="t"><svg class="ic"><use href="#i-eyeoff"/></svg>La dejé</div>
-              <div class="t"><svg class="ic"><use href="#i-x"/></svg>Quitar estado</div>
-            </div>
-          </div>
-        </div>
+        <div class="tag"><span class="code">G1-C</span><h3>Una frase bajo el título</h3></div>
+        <div class="phone" aria-label="G1-C"><div class="island"></div><div class="hero"></div>
+<div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+<div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><svg class="ic"><use href="#i-tv"/></svg><svg class="ic"><use href="#i-heart"/></svg><svg class="ic"><use href="#i-share"/></svg></div></div>
+<div class="body"><div class="ttl"><b>Dune: Parte Dos</b><span class="meta">2024 · 2 h 46 min · Ciencia ficción · IMDb 8,5</span></div><div class="stline"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista <em>desde el 3 oct</em><svg class="ic"><use href="#i-chev"/></svg></div><div class="play">▶ Ver</div><div class="ver">🇲🇽 · 4K · Dolby Vision</div><div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))"><div class="t"><svg class="ic"><use href="#i-list"/></svg>Listas</div><div class="t"><svg class="ic"><use href="#i-down"/></svg>Descargar</div><div class="t"><svg class="ic"><use href="#i-trailer"/></svg>Tráiler</div><div class="t"><svg class="ic"><use href="#i-version"/></svg>Versión</div></div>
+<div class="line"><span>Tu calificación</span><span class="stars">★★★★★</span></div>
+<p class="syn">Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia…</p>
+<div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <div class="zoom"><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Guardada</b><span></span></div><div class="stline"><svg class="ic"><use href="#i-bookmark-f"/></svg>En Mi lista <em>desde el 3 oct</em><svg class="ic"><use href="#i-chev"/></svg></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Ya la viste</b><span></span></div><div class="stline"><svg class="ic"><use href="#i-checkf"/></svg>Vista <em>el 2 nov</em><svg class="ic"><use href="#i-chev"/></svg></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Serie que vas viendo</b><span></span></div><div class="stline"><svg class="ic"><use href="#i-playc"/></svg>Viendo <em>sigue T3 E4</em><svg class="ic"><use href="#i-chev"/></svg></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Sin estado</b><span></span></div><div class="stline"><svg class="ic"><use href="#i-plusc"/></svg>¿Cómo vas con esta? <em></em><svg class="ic"><use href="#i-chev"/></svg></div></div></div>
+        <div class="menu static"><div class="h">¿Cómo vas con Dune: Parte Dos? (hoja al tocar la línea)</div>
+<div class="mi ck"><svg class="ic"><use href="#i-bookmark"/></svg><span class="sp">En Mi lista</span>✓</div><div class="mi"><svg class="ic"><use href="#i-check"/></svg><span class="sp">Vista</span></div>
+<div class="mi"><svg class="ic"><use href="#i-eyeoff"/></svg><span class="sp">La dejé</span></div><div class="mi"><svg class="ic"><use href="#i-x"/></svg><span class="sp">Quitar de todo</span></div></div>
         <ul>
-          <li><b>Para ti:</b> el estado se lee como una frase, con la fecha; la hoja da las opciones grandes.</li>
-          <li><b>Gana:</b> se ve cuándo la guardaste; la fila de botones no cambia de tamaño.</li>
-          <li><b>Pierde:</b> parece texto, no botón; se toca menos. Dos lugares para cosas parecidas (la línea y «Listas»).</li>
+          <li><b>Para ti:</b> el estado se lee como frase, con fecha; al tocarla sale una hoja con las opciones.</li>
+          <li><b>Gana:</b> dice desde cuándo; la fila de botones no cambia.</li>
+          <li><b>Pierde:</b> parece texto, no botón, y se toca menos.</li>
         </ul>
       </div>
     </div>
@@ -415,7 +340,7 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 
   <!-- 4 · G2 -->
   <section>
-    <h2>G2 · ¿Cómo se ordena Biblioteca por estado?</h2>
+    <h2>G2 · Biblioteca por estado</h2>
     <p class="q">Hoy Biblioteca tiene «Descargas · Mi media · Guardado». Guardado enseña Mi lista o una de tus listas, en
       cuadrícula, con el filtro «Por ver · A medias · Vistas» dentro de esa lista. Lo que viste y lo que dejaste no tienen lugar.</p>
     <div class="row">
@@ -448,7 +373,7 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
 
       <!-- G2-A -->
       <div class="opt rec">
-        <div class="tag"><span class="code">G2-A</span><h3>Un tablero con los cuatro estados</h3><span class="recmark">Recomendada</span></div>
+        <div class="tag"><span class="code">G2-A</span><h3>Un tablero con los cuatro estados</h3><span class="recmark">Elegida · pestaña «Guardado»</span></div>
         <div class="phone" aria-label="G2-A: tablero de estados">
           <div class="island"></div>
           <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
@@ -499,107 +424,17 @@ section{margin-top:52px;display:flex;flex-direction:column;gap:18px}
         </ul>
       </div>
 
-      <!-- G2-B -->
-      <div class="opt">
-        <div class="tag"><span class="code">G2-B</span><h3>El mismo Guardado, con los estados en el selector</h3></div>
-        <div class="phone" aria-label="G2-B: selector con estados">
-          <div class="island"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div style="display:flex;flex-direction:column;gap:10px;padding-top:8px">
-            <div class="big">Biblioteca</div>
-            <div class="ttabs"><span>Descargas</span><span>Mi media</span><span class="on">Guardado</span></div>
-            <div class="body" style="gap:9px">
-              <div class="sub"><span class="selector" style="color:var(--ph-ink)"><svg class="ic" style="width:15px;height:15px"><use href="#i-bookmark"/></svg>Mi lista<svg class="ic"><use href="#i-chevd"/></svg></span><span class="filter"><svg class="ic" style="width:14px;height:14px"><use href="#i-filter"/></svg>Filtro</span></div>
-              <div class="grid3">
-                <div class="po p1">Dune: Parte Dos</div><div class="po p2">The Bear</div><div class="po p3">Anora</div>
-                <div class="po p4">Shōgun</div><div class="po p5">Conclave</div><div class="po p6">Civil War</div>
-              </div>
-            </div>
-          </div>
-          <div class="dim" style="background:#0006"></div>
-          <div class="menu" style="left:14px;top:150px;width:210px">
-            <div class="mi ck"><svg class="ic"><use href="#i-bookmark"/></svg><span class="sp">Mi lista</span>124</div>
-            <div class="mi"><svg class="ic"><use href="#i-playc"/></svg><span class="sp">Viendo</span>9</div>
-            <div class="mi"><svg class="ic"><use href="#i-check"/></svg><span class="sp">Vistas</span>812</div>
-            <div class="mi"><svg class="ic"><use href="#i-eyeoff"/></svg><span class="sp">Las dejé</span>6</div>
-            <div class="mi sep"><svg class="ic"><use href="#i-list"/></svg><span class="sp">Para ver con Ana</span>18</div>
-            <div class="mi"><svg class="ic"><use href="#i-list"/></svg><span class="sp">Tu match perfecto</span>32</div>
-          </div>
-          <div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div>
-        </div>
-        <ul>
-          <li><b>Para ti:</b> Guardado se ve igual que hoy; el menú de «Mi lista ▾» suma Viendo, Vistas y Las dejé con su cifra.</li>
-          <li><b>Gana:</b> el cambio más chico; los pósters de Mi lista siguen a un toque.</li>
-          <li><b>Pierde:</b> los estados quedan escondidos en un menú; las cifras solo se ven al abrirlo.</li>
-        </ul>
-      </div>
-
-      <!-- G2-C -->
-      <div class="opt">
-        <div class="tag"><span class="code">G2-C</span><h3>Renglones con fecha en vez de pósters</h3></div>
-        <div class="phone" aria-label="G2-C: renglones con deslizar">
-          <div class="island"></div>
-          <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
-          <div style="display:flex;flex-direction:column;gap:10px;padding-top:8px">
-            <div class="big">Biblioteca</div>
-            <div class="ttabs"><span>Descargas</span><span>Mi media</span><span class="on">Guardado</span></div>
-            <div class="body" style="gap:4px">
-              <div class="seg" style="margin-bottom:6px">
-                <div class="on"><svg class="ic"><use href="#i-bookmark-f"/></svg>124</div>
-                <div><svg class="ic"><use href="#i-playc"/></svg>9</div>
-                <div><svg class="ic"><use href="#i-check"/></svg>812</div>
-                <div><svg class="ic"><use href="#i-eyeoff"/></svg>6</div>
-              </div>
-              <div class="lrow"><div class="po p1"></div><div class="sp"><b>Dune: Parte Dos</b><small>Película · en Mi lista desde el 3 oct</small></div><svg class="ic"><use href="#i-dots"/></svg></div>
-              <div class="lrow"><div class="po p3"></div><div class="sp"><b>Anora</b><small>Película · desde el 28 sep</small></div><svg class="ic"><use href="#i-dots"/></svg></div>
-              <div class="lrow"><div class="po p5"></div><div class="sp"><b>Conclave</b><small>Película · desde el 12 sep</small></div><svg class="ic"><use href="#i-dots"/></svg></div>
-              <div class="lrow"><div class="po p4"></div><div class="sp"><b>Shōgun</b><small>Serie · 10 episodios</small></div><svg class="ic"><use href="#i-dots"/></svg></div>
-              <div class="lrow"><div class="po p9"></div><div class="sp"><b>Nosferatu</b><small>Película · desde el 2 sep</small></div><svg class="ic"><use href="#i-dots"/></svg></div>
-            </div>
-          </div>
-          <div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div>
-        </div>
-        <ul>
-          <li><b>Para ti:</b> cuatro íconos con su cifra arriba; abajo, renglones con desde cuándo está cada uno. (Deslizar o elegir varias es de G3, con cualquier opción.)</li>
-          <li><b>Gana:</b> se lee como un gestor; enseña fechas y cabe más en la pantalla.</li>
-          <li><b>Pierde:</b> renglones en vez de pósters, distinto al resto de la app; tus listas quedan en otro lado.</li>
-        </ul>
-      </div>
     </div>
-  </section>
-
-  <!-- 5 · Nombre -->
-  <section>
-    <h2>N · ¿Cómo se llama la pestaña de Biblioteca?</h2>
-    <p class="q">Se decide aparte de G2 (las maquetas de G2 dicen «Guardado» solo para comparar). Si Guardado también enseña lo que viste y lo que dejaste, «Guardado» ya no describe lo que hay. «Mi lista»
-      se queda como nombre de tu watchlist en las dos apps (no cambia nada en la tele).</p>
-    <div class="row" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
-      <div class="opt rec">
-        <div class="tag"><span class="code">N-A</span><h3>«Lo tuyo»</h3><span class="recmark">Recomendada</span></div>
-        <div class="ttabs" style="padding:12px 14px;background:var(--ph-bg);border-radius:14px;color:var(--ph-mute)"><span>Descargas</span><span>Mi media</span><span class="on">Lo tuyo</span></div>
-        <ul><li><b>Gana:</b> cabe lo que quieres, lo que ves, lo que viste y tus listas. Corto, y es la misma idea que «Lo nuevo de lo tuyo» en Inicio.</li><li><b>Pierde:</b> «Mi media» y «Lo tuyo» se parecen un poco.</li></ul>
-      </div>
-      <div class="opt">
-        <div class="tag"><span class="code">N-B</span><h3>«Guardado» se queda</h3></div>
-        <div class="ttabs" style="padding:12px 14px;background:var(--ph-bg);border-radius:14px;color:var(--ph-mute)"><span>Descargas</span><span>Mi media</span><span class="on">Guardado</span></div>
-        <ul><li><b>Gana:</b> nada nuevo que aprender.</li><li><b>Pierde:</b> «Vistas» y «Las dejé» no son cosas guardadas.</li></ul>
-      </div>
-      <div class="opt">
-        <div class="tag"><span class="code">N-C</span><h3>«Tus títulos»</h3></div>
-        <div class="ttabs" style="padding:12px 14px;background:var(--ph-bg);border-radius:14px;color:var(--ph-mute)"><span>Descargas</span><span>Mi media</span><span class="on">Tus títulos</span></div>
-        <ul><li><b>Gana:</b> muy claro.</li><li><b>Pierde:</b> largo; en un SE la tercera pestaña queda justa.</li></ul>
-      </div>
-    </div>
+    <div class="done"><svg class="ic"><use href="#i-checkf"/></svg><p>Ya decidiste <b>G2-A</b> (el tablero) y que la pestaña se siga llamando <b>«Guardado»</b>. No hace falta dictar nada más aquí.</p></div>
   </section>
 
   <!-- 6 · Para dictar -->
   <section>
     <h2>Para dictar</h2>
     <div class="pick">
-      <span class="say">«G1-A, G2-A, N-A»</span>
-      <p>Mi recomendación: el botón de estado en la ficha (cabe en el SE y no mueve nada), el tablero en Biblioteca (ves todo
-        lo tuyo con cifras) y la pestaña «Lo tuyo».</p>
-      <p>Si prefieres el cambio más chico: <b>«G1-A, G2-B, N-B»</b>.</p>
+      <span class="say">Solo falta G1: «G1-A», «G1-B» o «G1-C»</span>
+      <p>Mi recomendación es <b>G1-A</b>: un solo botón que dice cómo vas, cabe en el SE y no deja respuestas que se contradicen.
+        Si te importa más marcar «vista» en un toque, <b>G1-B</b>.</p>
     </div>
     <p class="q"><b style="color:var(--ink)">En la tele:</b> la tele ve los mismos efectos desde Trakt, sin tocar su código: lo que marques
       en el iPhone sale de su Mi lista o de su Seguir viendo. Quedan pendientes en el registro de paridad, para su sesión: el botón de
