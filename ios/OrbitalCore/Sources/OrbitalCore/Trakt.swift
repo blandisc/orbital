@@ -283,7 +283,11 @@ public actor Trakt {
         public var id: String
         public var name: String
         public var updatedAt: Date?
-        public init(id: String, name: String, updatedAt: Date? = nil) { self.id = id; self.name = name; self.updatedAt = updatedAt }
+        /// Quién la ve: `private`, `link`, `friends` o `public` (G4-A).
+        public var privacy: String
+        public init(id: String, name: String, updatedAt: Date? = nil, privacy: String = "private") {
+            self.id = id; self.name = name; self.updatedAt = updatedAt; self.privacy = privacy
+        }
     }
 
     /// Tus listas tal como las acomodaste en Trakt, con su fecha de cambio (`updated_at`, o `created_at` si no viene).
@@ -291,7 +295,8 @@ public actor Trakt {
         let rows = try await get("/users/me/lists")
         return (rows?.array ?? []).compactMap { row in
             guard let name = row["name"]?.string?.trimmingCharacters(in: .whitespaces), !name.isEmpty, let id = row["ids"]?["trakt"]?.intValue else { return nil }
-            return OwnList(id: String(id), name: name, updatedAt: (row["updated_at"]?.string ?? row["created_at"]?.string).flatMap(TraktParsing.date))
+            return OwnList(id: String(id), name: name, updatedAt: (row["updated_at"]?.string ?? row["created_at"]?.string).flatMap(TraktParsing.date),
+                           privacy: row["privacy"]?.string ?? "private")
         }
     }
 

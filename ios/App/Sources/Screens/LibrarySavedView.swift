@@ -21,6 +21,8 @@ struct SavedListScreen: View {
     /// son tuyas.
     @State private var selection = ListSelection()
     @State private var adding = false
+    /// «Ordenar a mano» (G4-A): desde el «···» o, en Mi lista, desde «Ordenar y filtrar».
+    @State private var reordering = false
     private var model: SavedModel { observer.model }
 
     var body: some View {
@@ -55,6 +57,7 @@ struct SavedListScreen: View {
         .navigationBarTitleDisplayMode(.inline)   // el nombre ya va grande en «Mi lista ⌃⌄»
         .toolbar { if model.canEdit { ListSelectToolbar(selection: selection, add: { adding = true }, all: shownItems.map(\.imdb)) } }
         .sheet(isPresented: $adding) { addSheet }
+        .modifier(SavedListManagement(model: model, reordering: $reordering, editing: selection.editing))
         .onChange(of: model.selected) { selection.editing = false }
     }
 
@@ -113,7 +116,8 @@ struct SavedListScreen: View {
         } else {
             if selection.editing { SelectionHeader(selection: selection, all: items.map(\.imdb)) }
             SortableGrid(listID: "saved:\(model.selected)", items: items, collections: collections.model, showsKindFilter: false,
-                         loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) }) { s, width in
+                         loading: model.loading || !model.loadedOnce, states: model.states, bar: { AnyView(bar(menu: $0)) },
+                         manualOrder: model.canEdit && model.selected == SavedModel.watchlist && items.count > 1 ? { reordering = true } : nil) { s, width in
                 poster(s, width: width)
             }
             .id(model.selected)   // otra lista: su propio orden y sus filtros
@@ -170,6 +174,9 @@ struct SavedListScreen: View {
 struct LibrarySavedView: View {
     @Environment(AppEnvironment.self) private var env
     var observer: ModelObserver<SavedModel>
+    /// «Nueva lista» (G4-A): el nombre que escribes.
+    @State private var naming = false
+    @State private var newListName = ""
     private var model: SavedModel { observer.model }
 
     var body: some View {
@@ -246,7 +253,7 @@ struct LibrarySavedView: View {
     /// Tus listas de Trakt, cada una con sus pósters; un toque la abre.
     @ViewBuilder private var lists: some View {
         let own = model.lists.filter { $0.id != SavedModel.watchlist }
-        if !own.isEmpty {
+        if model.loadedOnce {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 DSSectionHead(title: Text("Tus listas"), level: .section)
                 ForEach(own) { list in
@@ -256,8 +263,33 @@ struct LibrarySavedView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                // «Nueva lista» al final (G4-A): nace «Solo tú», como en «Guardar en…». Necesita internet.
+                Button { newListName = ""; naming = true } label: {
+                    Label("Nueva lista", systemImage: "plus").recipe(.label, color: DS.accent)
+                        .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!env.isOnline)
+                .accessibilityIdentifier("saved-new-list")
             }
             .padding(.horizontal, DS.Space.gutter)
+            .alert("Nueva lista", isPresented: $naming) {
+                TextField("Nombre", text: $newListName)
+                Button("Cancelar", role: .cancel) {}
+                Button("Crear") { createList(newListName) }
+                    .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            } message: { Text("Nace «Solo tú». Puedes cambiar quién la ve en su «···».") }
+        }
+    }
+
+    private func createList(_ name: String) {
+        let model = model, env = env
+        Task {
+            switch await model.createList(named: name) {
+            case .success: env.notify(format: "Hice «%@»", name.trimmingCharacters(in: .whitespacesAndNewlines), tone: .success)
+            case .failure(let error): env.notify("No pude hacer la lista", detail: SavedListManagement.reason(error), tone: .warn)
+            }
         }
     }
 

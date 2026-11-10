@@ -101,6 +101,8 @@ struct SortableGrid<Cell: View>: View {
     /// «Mi lista ⌃⌄» a la izquierda y Todo · Películas · Series y el botón a la derecha; Fernando, 4 nov 2026). Debajo, solo
     /// lo filtrado en cápsulas. nil: el botón va arriba a la derecha, en la barra, como en toda lista abierta.
     var bar: ((ListFilterMenu) -> AnyView)?   // ds-exception: el renglón lo arma la pantalla
+    /// «Ordenar › A mano…» (G4-A, 10 nov 2026): en tus listas de Trakt y Mi lista, abre su modo con agarraderas.
+    var manualOrder: (() -> Void)?
     /// Cada póster recibe el ancho de su columna (`DSPosterGrid`).
     @ViewBuilder var cell: (Suggestion, CGFloat) -> Cell
     @State private var sort: ListSort
@@ -116,9 +118,9 @@ struct SortableGrid<Cell: View>: View {
 
     init(listID: String, items: [Suggestion], collections: CollectionsModel, watched: (() async -> Set<String>)? = nil,
          imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, showsKindFilter: Bool = true, loading: Bool = false,
-         states: [String: WatchState]? = nil, bar: ((ListFilterMenu) -> AnyView)? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
+         states: [String: WatchState]? = nil, bar: ((ListFilterMenu) -> AnyView)? = nil, manualOrder: (() -> Void)? = nil, @ViewBuilder cell: @escaping (Suggestion, CGFloat) -> Cell) {
         let shared = collections
-        self.states = states; self.bar = bar
+        self.states = states; self.bar = bar; self.manualOrder = manualOrder
         self.hideWatchedAvailable = collections.traktLinked && states == nil
         self.listID = listID; self.items = items; self.cell = cell
         self.showsKindFilter = showsKindFilter; self.loading = loading
@@ -171,7 +173,8 @@ struct SortableGrid<Cell: View>: View {
 
     private var menu: ListFilterMenu {
         ListFilterMenu(sort: $sort, filter: $filter, sorts: sorts, genres: genres, decades: decades, showsKindFilter: showsKindFilter,
-                       showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating)
+                       showsStateFilter: states != nil, hideWatchedAvailable: hideWatchedAvailable, loading: rating,
+                       manualOrder: manualOrder.map { open in { sort = .added; open() } })
     }
 
     /// IMDb se pide solo si el orden o la calificación mínima la usan.
@@ -211,18 +214,25 @@ struct ListFilterMenu: View {
     var hideWatchedAvailable = true
     /// Mientras llegan las calificaciones o los géneros: la ruedita en el botón.
     var loading = false
+    /// «A mano…» al final de «Ordenar» (tu orden queda en Trakt); nil donde la lista no es tuya.
+    var manualOrder: (() -> Void)?
     @Environment(\.locale) private var locale
     private var language: String { locale.language.languageCode?.identifier ?? "es" }
 
     var body: some View {
         Menu {
             // Elegir otra vez el orden activo lo quita (la lista vuelve a ir como llega).
-            if !sorts.isEmpty {
+            if !sorts.isEmpty || manualOrder != nil {
                 Menu {
                     ForEach(sorts, id: \.self) { option in
                         Button { sort = sort == option ? .added : option } label: {
                             if sort == option { Label(option.label, systemImage: "checkmark") } else { Text(option.label) }
                         }
+                    }
+                    if let manualOrder {
+                        Divider()
+                        Button(action: manualOrder) { Label("A mano…", systemImage: "line.3.horizontal") }
+                            .accessibilityIdentifier("sort-manual")
                     }
                 } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
             }

@@ -92,6 +92,14 @@ extension DemoHTTPClient {
     ]
 
     /// Trakt de mentira para «Guardar en…»: la watchlist, tus listas (tardan ~1,5 s, como la red) y lo que escribes en ellas.
+    /// Una lista tuya de mentira: nombre, cuándo se creó y cambió (horas atrás), qué tiene, quién la ve y el orden a mano (G4-A:
+    /// lo que no está en `rank` va después, por IMDb).
+    struct DemoTraktList {
+        var id: Int; var name: String; var created: Double; var updated: Double; var items: Set<String>
+        var privacy = "private"; var rank: [String] = []
+        var ordered: [String] { items.sorted { a, b in (rank.firstIndex(of: a) ?? .max, a) < (rank.firstIndex(of: b) ?? .max, b) } }
+    }
+
     func traktDemo(_ request: HTTPRequest) async -> HTTPResponse? {
         let path = request.url.path, post = request.method == "POST"
         let body = request.body.flatMap(JSON.parse)
@@ -102,7 +110,7 @@ extension DemoHTTPClient {
             try? await Task.sleep(for: .milliseconds(1500))   // ds-exception: demora de red simulada (solo modo demo), para ver «Guardar en…» cargando
             return lock.withLock {
                 json(.array(traktLists.map { l in
-                    ["name": .string(l.name), "ids": ["trakt": .int(l.id), "slug": .string(l.name.lowercased())], "privacy": "private",
+                    ["name": .string(l.name), "ids": ["trakt": .int(l.id), "slug": .string(l.name.lowercased())], "privacy": .string(l.privacy),
                      "item_count": .int(l.items.count), "created_at": iso(l.created), "updated_at": iso(l.updated)]
                 }))
             }
@@ -115,7 +123,34 @@ extension DemoHTTPClient {
                 return json(["name": .string(name), "ids": ["trakt": .int(nextTraktList)], "created_at": iso(0), "updated_at": iso(0)], status: 201)
             }
         }
-        let parts = path.split(separator: "/").map(String.init)   // users · me · lists · {id} · items [· remove]
+        let parts = path.split(separator: "/").map(String.init)   // users · me · lists · {id} · items [· remove | reorder]
+        // El renglón de cada título (lo que pide «ordenar a mano»): sale del número de su IMDb.
+        func row(_ imdb: String) -> Int { Int(imdb.dropFirst(2)) ?? 0 }
+        // G4-A: cambiar nombre o quién la ve (PUT) y borrar (DELETE).
+        if parts.count == 4, parts[2] == "lists", let id = Int(parts[3]), request.method == "PUT" || request.method == "DELETE" {
+            return lock.withLock {
+                guard let i = traktLists.firstIndex(where: { $0.id == id }) else { return json([:], status: 404) }
+                if request.method == "DELETE" { traktLists.remove(at: i); return json([:], status: 204) }
+                if let name = body?["name"]?.string { traktLists[i].name = name }
+                if let privacy = body?["privacy"]?.string { traktLists[i].privacy = privacy }
+                return json(["name": .string(traktLists[i].name), "ids": ["trakt": .int(id)], "privacy": .string(traktLists[i].privacy)])
+            }
+        }
+        if parts.count == 6, parts[2] == "lists", parts[5] == "reorder", let id = Int(parts[3]) {
+            return lock.withLock {
+                guard let i = traktLists.firstIndex(where: { $0.id == id }) else { return json([:], status: 404) }
+                let rows = body?["rank"]?.array?.compactMap(\.intValue) ?? []
+                traktLists[i].rank = rows.compactMap { r in traktLists[i].items.first { row($0) == r } }
+                return json(["updated": .int(rows.count)])
+            }
+        }
+        if path == "/sync/watchlist/reorder" {
+            return lock.withLock {
+                let rows = body?["rank"]?.array?.compactMap(\.intValue) ?? []
+                traktWatchlist.sort { (rows.firstIndex(of: row($0.imdb)) ?? .max) < (rows.firstIndex(of: row($1.imdb)) ?? .max) }
+                return json(["updated": .int(rows.count)])
+            }
+        }
         if parts.count >= 5, parts[2] == "lists", parts[4] == "items", let id = Int(parts[3]) {
             return lock.withLock {
                 guard let i = traktLists.firstIndex(where: { $0.id == id }) else { return json([:], status: 404) }
@@ -126,9 +161,9 @@ extension DemoHTTPClient {
                     return json(["added": [:]], status: 201)
                 }
                 // Con su nombre y su año (Biblioteca › Guardado las enseña; «Guardar en…» solo mira los IMDb).
-                return json(.array(traktLists[i].items.sorted().map { imdb in
+                return json(.array(traktLists[i].ordered.map { imdb in
                     let kind = Self.demoShows.contains(imdb) ? "show" : "movie"
-                    return ["type": .string(kind), kind: ["title": .string(Self.demoTitles[imdb] ?? imdb), "year": 2020, "ids": ["imdb": .string(imdb), "trakt": 1]]]
+                    return ["id": .int(row(imdb)), "type": .string(kind), kind: ["title": .string(Self.demoTitles[imdb] ?? imdb), "year": 2020, "ids": ["imdb": .string(imdb), "trakt": 1]]]
                 }))
             }
         }
@@ -174,7 +209,7 @@ extension DemoHTTPClient {
                 return json(.array(traktWatchlist.map { w in
                     // Con géneros y calificación, como Trakt (`extended=full`): «Género» y «Calificación» del filtro tienen qué usar.
                     let facts = Self.watchlistFacts[w.imdb] ?? (["drama"], 7.5)
-                    return ["listed_at": iso(w.hoursAgo), "type": .string(w.kind),
+                    return ["id": .int(row(w.imdb)), "listed_at": iso(w.hoursAgo), "type": .string(w.kind),
                             w.kind: ["title": .string(w.title), "year": .int(Self.demoYears[w.imdb] ?? 2022), "genres": .array(facts.genres.map { .string($0) }), "rating": .double(facts.rating),
                                      "ids": ["imdb": .string(w.imdb), "trakt": 1]]]
                 }))

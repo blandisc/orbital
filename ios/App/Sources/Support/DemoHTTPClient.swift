@@ -284,7 +284,6 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
 
     /// Tus listas de Trakt de mentira (`-demo-trakt`): nombre, cuándo se crearon y cuándo cambiaron (horas atrás) y qué tienen.
     /// Trakt las manda en el orden en que las acomodaste (aquí, de la más vieja a la más nueva): la app decide cuál va arriba.
-    struct DemoTraktList { var id: Int; var name: String; var created: Double; var updated: Double; var items: Set<String> }
     var traktLists: [DemoTraktList] = [
         .init(id: 101, name: "Documentales", created: 9000, updated: 8000, items: ["tt7366338"]),
         .init(id: 102, name: "Clásicos pendientes", created: 6000, updated: 4000, items: ["tt0068646", "tt0111161"]),

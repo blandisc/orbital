@@ -43372,6 +43372,316 @@
           }
         }
       }
+    },
+    "Más de esta lista": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More for this list"
+          }
+        }
+      }
+    },
+    "Cambiar nombre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        }
+      }
+    },
+    "Quién la ve": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who can see it"
+          }
+        }
+      }
+    },
+    "Solo tú": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only you"
+          }
+        }
+      }
+    },
+    "Con el enlace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anyone with the link"
+          }
+        }
+      }
+    },
+    "Solo amigos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends only"
+          }
+        }
+      }
+    },
+    "Todos en Trakt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone on Trakt"
+          }
+        }
+      }
+    },
+    "Ordenar a mano": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort by hand"
+          }
+        }
+      }
+    },
+    "Duplicar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        }
+      }
+    },
+    "Compartir enlace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share link"
+          }
+        }
+      }
+    },
+    "Borrar lista": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete list"
+          }
+        }
+      }
+    },
+    "Sin internet: cambiar tu lista necesita conexión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet: changing your list needs a connection"
+          }
+        }
+      }
+    },
+    "¿Borrar «%@»?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete “%@”?"
+          }
+        }
+      }
+    },
+    "No se puede deshacer. Los títulos siguen en Mi lista y en tus otras listas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This can’t be undone. The titles stay in My list and your other lists."
+          }
+        }
+      }
+    },
+    "Borraste «%@»": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted “%@”"
+          }
+        }
+      }
+    },
+    "No pude borrar la lista": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t delete the list"
+          }
+        }
+      }
+    },
+    "No pude cambiar el nombre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t rename the list"
+          }
+        }
+      }
+    },
+    "No pude cambiar quién la ve": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t change who can see it"
+          }
+        }
+      }
+    },
+    "No pude duplicar la lista": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t duplicate the list"
+          }
+        }
+      }
+    },
+    "Copia de %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy of %@"
+          }
+        }
+      }
+    },
+    "Hice «%@»": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Made “%@”"
+          }
+        }
+      }
+    },
+    "Esta lista es «Solo tú»": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list is “Only you”"
+          }
+        }
+      }
+    },
+    "Abrir con el enlace y copiarlo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open it with the link and copy it"
+          }
+        }
+      }
+    },
+    "Para compartirla, quien tenga el enlace podrá verla. Puedes regresarla a «Solo tú» cuando quieras.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To share it, anyone with the link will be able to see it. You can set it back to “Only you” anytime."
+          }
+        }
+      }
+    },
+    "Enlace copiado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link copied"
+          }
+        }
+      }
+    },
+    "Quien lo tenga puede ver la lista.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anyone who has it can see the list."
+          }
+        }
+      }
+    },
+    "No pude guardar tu orden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t save your order"
+          }
+        }
+      }
+    },
+    "Revisa tu conexión e inténtalo otra vez.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and try again."
+          }
+        }
+      }
+    },
+    "A mano…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By hand…"
+          }
+        }
+      }
+    },
+    "Nace «Solo tú». Puedes cambiar quién la ve en su «···».": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It starts as “Only you”. You can change who sees it in its “···”."
+          }
+        }
+      }
+    },
+    "No pude hacer la lista": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t make the list"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

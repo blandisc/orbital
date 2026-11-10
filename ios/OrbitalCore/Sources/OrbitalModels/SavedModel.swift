@@ -23,7 +23,7 @@ public final class SavedModel: ObservableModel {
     public private(set) var lists: [SavedList] = [SavedList(id: SavedModel.watchlist, name: "")] { didSet { if lists != oldValue { changed() } } }
     /// La lista que ves (se recuerda en este aparato).
     public private(set) var selected: String { didSet { if selected != oldValue { changed() } } }
-    public private(set) var items: [Suggestion] = [] { didSet { if items != oldValue { changed() } } }
+    public internal(set) var items: [Suggestion] = [] { didSet { if items != oldValue { changed() } } }
     /// Todavía no llega la lista (la primera vez o al cambiar de lista).
     public private(set) var loading = false { didSet { if loading != oldValue { changed() } } }
     /// Trakt no contestó: el vacío dice «Reintentar».
@@ -33,7 +33,9 @@ public final class SavedModel: ObservableModel {
     /// Mi lista entera, aunque veas otra lista (el tablero cuenta lo que tienes en ella).
     public internal(set) var watchlist: [Suggestion] = [] { didSet { if watchlist != oldValue { changed() } } }
     /// Tus listas de Trakt: unos pósters y cuántos títulos tiene cada una (los renglones de «Tus listas»).
-    public private(set) var listPosters: [String: [String]] = [:] { didSet { if listPosters != oldValue { changed() } } }
+    public internal(set) var listPosters: [String: [String]] = [:] { didSet { if listPosters != oldValue { changed() } } }
+    /// Quién ve cada una de tus listas (`list:<id>` → `private`, `link`, `friends` o `public`), para el «···» (G4-A).
+    public internal(set) var privacies: [String: String] = [:] { didSet { if privacies != oldValue { changed() } } }
     public internal(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
     /// Ya se pidió una vez (antes de eso no se enseña el vacío).
     public private(set) var loadedOnce = false { didSet { if loadedOnce != oldValue { changed() } } }
@@ -56,6 +58,7 @@ public final class SavedModel: ObservableModel {
         async let own = forYou.ownTraktLists()
         async let seen = try? trakt.watchedState()
         async let mine = try? forYou.items(listID: Self.watchlist)
+        async let owned = try? trakt.ownLists()
         await loadItems()
         if let found = await mine { watchlist = await localized(found) }
         lists = [SavedList(id: Self.watchlist, name: "")] + (await own).map { SavedList(id: "list:\($0.id)", name: $0.name) }
@@ -64,6 +67,7 @@ public final class SavedModel: ObservableModel {
             await loadItems()
         }
         if let found = await seen { watched = found; watchedReady = true }
+        if let found = await owned { privacies = Dictionary(found.map { ("list:\($0.id)", $0.privacy) }, uniquingKeysWith: { a, _ in a }) }
         await loadListPreviews()
     }
 
@@ -99,8 +103,9 @@ public final class SavedModel: ObservableModel {
         loading = true
         defer { if id == selected { loading = false; loadedOnce = true } }
         do {
-            let found = try await services.forYou.items(listID: id)
+            let raw = try await services.forYou.items(listID: id)
             guard id == selected, !Task.isCancelled else { return }   // cambiaste de lista mientras llegaba
+            let found = Self.manualOrder(raw, services.kv.data(Self.orderKey(id)).flatMap { try? JSONDecoder().decode([String].self, from: $0) })
             items = found
             failed = false
             // Los nombres en tu idioma (PT23: «Dune: Parte dos», como la TV), por el mismo `Localizer` de las fichas. Primero
@@ -136,6 +141,8 @@ public final class SavedModel: ObservableModel {
         watched.info[s.imdb] = TraktWatchedInfo(kind: s.kind, title: s.title, year: s.year, lastWatchedAt: date)
     }
     func forgetWatched(_ imdb: String) { watched.movies.remove(imdb) }
+    func replaceList(_ id: String, with list: SavedList) { if let i = lists.firstIndex(where: { $0.id == id }) { lists[i] = list } }
+    func removeList(_ id: String) { lists.removeAll { $0.id == id }; listCounts[id] = nil; listPosters[id] = nil; privacies[id] = nil }
     /// Una lista recién hecha, al final de las tuyas (Trakt la pone ahí).
     func appendList(_ list: SavedList) { if !lists.contains(where: { $0.id == list.id }) { lists.append(list); listCounts[list.id] = 0 } }
 
