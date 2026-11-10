@@ -1,0 +1,339 @@
+<title>Gestor: ola 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Ola 2 del gestor (G3 y G4): mismo estilo que gestor-maquetas.html. */
+:root{
+  color-scheme:dark;
+  --bg:#0b0c10; --panel:#13151b; --line:#252833; --ink:#f2f0ea; --mute:#9a9ea9; --faint:#6c707b;
+  --teal:#5fd3c4; --onteal:#05261f; --amber:#f2b84b; --red:#ef7b7b; --good:#7ccf8f;
+  --ph-bg:#0e0f13; --ph-raised:#1c1e25; --ph-tile:#22252d; --ph-ink:#f5f4f0; --ph-mute:#9fa3ad;
+  --art:#d9a35a; /* el color que sale del póster (Dune) */
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 80px}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-size:30px;line-height:1.15;margin:0 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:22px;margin:0 0 6px;text-wrap:balance}
+h3{font-size:16px;margin:0}
+p{margin:0}
+.lead{color:var(--mute);max-width:70ch}
+section{margin-top:52px;display:flex;flex-direction:column;gap:18px;min-width:0}
+section>*,.wrap,header>*{min-width:0;max-width:100%}
+.q{color:var(--mute);max-width:72ch}
+/* resumen */
+.gap{width:100%;border-collapse:collapse;font-size:14px}
+.gap th,.gap td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.gap th{color:var(--mute);font-weight:600}
+.gap td:first-child{font-weight:650;white-space:nowrap}
+.st{display:inline-flex;align-items:center;gap:6px;font-weight:650;white-space:nowrap}
+.st svg{width:15px;height:15px}
+.ya{color:var(--good)}.medias{color:var(--amber)}.falta{color:var(--red)}
+.ola{color:var(--teal);font-weight:700;white-space:nowrap}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+/* opciones */
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:28px 22px;align-items:start}
+.opt{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tag{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.code{font-weight:800;font-size:13px;border-radius:8px;padding:2px 9px;background:#262a35;color:var(--ink)}
+.rec .code{background:var(--teal);color:var(--onteal)}
+.today .code{background:transparent;border:1px solid var(--line);color:var(--mute)}
+.recmark{font-size:12px;font-weight:700;color:var(--teal)}
+.opt ul{margin:0;padding-left:18px;color:var(--mute);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.opt li b{color:var(--ink);font-weight:650}
+.pick{border:1px solid var(--teal);border-radius:16px;padding:14px 16px;background:#0f1b1a;display:flex;flex-direction:column;gap:6px;max-width:80ch}
+.pick b{color:var(--teal)}
+/* teléfono */
+.phone{width:300px;max-width:100%;height:600px;border-radius:38px;border:7px solid #23252c;background:var(--ph-bg);
+  position:relative;overflow:hidden;color:var(--ph-ink);font-size:12.5px;line-height:1.35;flex:none;align-self:center}
+.sb{height:30px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-weight:600;font-size:11.5px}
+.island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:78px;height:22px;border-radius:12px;background:#000}
+.nav{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;position:relative;z-index:2}
+.nav .r{display:flex;gap:14px}
+.ic{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic.f{fill:currentColor;stroke:none}
+.hero{position:absolute;inset:0 0 auto;height:270px;background:
+  radial-gradient(120% 80% at 70% 10%,#b9773a 0%,#5d3518 45%,transparent 75%),linear-gradient(#3b2412,var(--ph-bg));opacity:.9}
+.hero.b{background:radial-gradient(120% 80% at 60% 10%,#3e6bd6 0%,#1a2a5a 45%,transparent 75%),linear-gradient(#162042,var(--ph-bg))}
+.body{position:relative;z-index:1;padding:0 14px;display:flex;flex-direction:column;gap:10px}
+.ttl{margin-top:96px;display:flex;flex-direction:column;gap:3px}
+.ttl b{font-size:21px;line-height:1.1;letter-spacing:-.01em}
+.meta{color:var(--ph-mute);font-size:11px}
+.play{height:40px;border-radius:12px;background:#f5f4f0;color:#111;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13.5px}
+.ver{color:var(--ph-mute);font-size:10.5px;text-align:center;margin-top:-4px}
+.prog{height:3px;border-radius:2px;background:#ffffff26;overflow:hidden;margin-top:-4px}.prog i{display:block;height:100%;background:#f5f4f0}
+.tiles{display:grid;gap:6px}
+.t{min-width:0;white-space:nowrap;letter-spacing:-.15px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 7px;border-radius:12px;background:var(--ph-tile);font-size:10px;font-weight:600;text-align:center;color:var(--ph-ink)}
+.t .ic{width:19px;height:19px;color:var(--art)}
+.t.on{background:#3a2b18;color:#f3d7a8}
+.t.on .ic{color:#f3c27a}
+.t.new{outline:2px solid var(--teal);outline-offset:1px}
+.line{display:flex;justify-content:space-between;align-items:center;color:var(--ph-mute);font-size:11px}
+.stars{color:#5a5d66;letter-spacing:2px;font-size:12px}
+.syn{color:var(--ph-mute);font-size:11px;line-height:1.45}
+.sk{height:8px;border-radius:4px;background:#ffffff14}
+.tabbar{position:absolute;left:10px;right:10px;bottom:10px;height:46px;border-radius:23px;background:#1e2027ee;display:flex;justify-content:space-around;align-items:center;color:var(--ph-mute);z-index:5}
+.tabbar .on{color:var(--ph-ink)}
+.tabbar .ic{width:19px;height:19px}
+.note{position:absolute;left:10px;right:10px;font-size:10.5px;line-height:1.35;background:#5fd3c41f;border:1px dashed var(--teal);color:#bdf0e9;border-radius:10px;padding:6px 8px;z-index:6}
+.warnnote{background:#ef7b7b1c;border-color:var(--red);color:#ffc9c9}
+.fold{position:absolute;left:0;right:0;border-top:1.5px dashed var(--red);z-index:6}
+.fold span{position:absolute;right:8px;top:-15px;font-size:9.5px;color:var(--red);font-weight:700}
+/* menú y hoja */
+.dim{position:absolute;inset:0;background:#0009;z-index:7;backdrop-filter:blur(2px)}
+.menu{position:absolute;z-index:8;width:220px;border-radius:14px;background:#2a2c33f5;box-shadow:0 12px 40px #000a;overflow:hidden;font-size:12px}
+.menu .h{padding:9px 12px 7px;color:var(--ph-mute);font-size:10.5px}
+.mi{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid #ffffff10}
+.mi .ic{width:16px;height:16px}
+.mi .sp{flex:1;display:flex;flex-direction:column}
+.mi small{color:var(--ph-mute);font-size:10px}
+.mi.ck{color:#f3d7a8}
+.mi.sep{border-top:6px solid #1c1d22}
+.tog{width:28px;height:16px;border-radius:8px;background:#5fd3c4;position:relative;flex:none}.tog::after{content:"";position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:6px;background:#fff}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;background:#1d1f26;border-radius:20px 20px 0 0;padding:8px 14px 22px;display:flex;flex-direction:column;gap:9px}
+.grab{width:34px;height:4px;border-radius:2px;background:#ffffff30;align-self:center}
+.big4{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.big4 .t{padding:12px 4px;font-size:11px}
+/* segmentado de íconos (G1-B) */
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--ph-tile);border-radius:12px;padding:3px;gap:3px}
+.seg div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:9px;font-size:9.5px;font-weight:600;color:var(--ph-mute)}
+.seg .ic{width:17px;height:17px}
+.seg .on{background:#3a2b18;color:#f3d7a8}
+.ask{font-size:10.5px;color:var(--teal)}
+/* línea de estado (G1-C) */
+.stline{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#f3d7a8}
+.stline .ic{width:15px;height:15px}
+.stline em{font-style:normal;color:var(--ph-mute);font-weight:500}
+/* Biblioteca */
+.big{font-size:24px;font-weight:750;letter-spacing:-.01em;padding:0 14px}
+.ttabs{display:flex;gap:16px;padding:0 14px;font-size:13px;font-weight:650;color:var(--ph-mute)}
+.ttabs .on{color:var(--ph-ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.selector{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.selector .ic{width:13px;height:13px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.po{aspect-ratio:2/3;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:5px;font-size:8.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
+.po .bar{position:absolute;left:5px;right:5px;bottom:4px;height:2.5px;border-radius:2px;background:#ffffff40}.po .bar i{display:block;height:100%;background:#fff;border-radius:2px}
+.po .mark{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:9px;background:#000a;display:flex;align-items:center;justify-content:center}
+.po .mark .ic{width:11px;height:11px}
+.p1{background:linear-gradient(160deg,#d9a35a,#6a3a17)}.p2{background:linear-gradient(160deg,#5e8bff,#1c2b66)}.p3{background:linear-gradient(160deg,#e0607f,#4a1630)}
+.p4{background:linear-gradient(160deg,#6fd39b,#1e5a3a)}.p5{background:linear-gradient(160deg,#b28cff,#3b2370)}.p6{background:linear-gradient(160deg,#f08a4b,#5b2410)}
+.p7{background:linear-gradient(160deg,#9aa5b1,#2c323a)}.p8{background:linear-gradient(160deg,#4fc0d0,#15404a)}.p9{background:linear-gradient(160deg,#e8c95a,#5d4a10)}
+.filter{display:flex;align-items:center;gap:6px;color:var(--ph-mute);font-size:11px}
+.sttiles{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stt{background:var(--ph-tile);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+.stt .top{display:flex;justify-content:space-between;align-items:center}
+.stt .ic{width:19px;height:19px;color:#f3c27a}
+.stt b{font-size:19px;font-variant-numeric:tabular-nums}
+.stt span{font-size:11px;font-weight:650}
+.stt .mini{display:flex;gap:3px}.stt .mini i{width:18px;height:27px;border-radius:3px;display:block}
+.sub{display:flex;justify-content:space-between;align-items:baseline}
+.sub b{font-size:14px}.sub span{color:var(--teal);font-size:11px}
+.lrow{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid #ffffff10}
+.lrow .po{width:34px;flex:none;padding:0}
+.lrow .sp{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.lrow .sp b{font-size:12px}.lrow .sp small{color:var(--ph-mute);font-size:10px}
+.lrow .ic{color:var(--ph-mute)}
+.swipe{display:flex;align-items:stretch;margin:0 -14px}
+.swipe .lrow{flex:1;padding-left:14px;transform:translateX(-62px);background:var(--ph-bg);border:0}
+.swact{display:flex}
+.swact div{width:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9.5px;font-weight:700}
+.swact .ic{width:16px;height:16px}
+.toast{position:absolute;left:12px;right:12px;bottom:64px;z-index:6;background:#2a2c33;border-radius:14px;padding:9px 11px;display:flex;align-items:center;gap:8px;font-size:11px;box-shadow:0 8px 24px #0008}
+.toast .sp{flex:1}.toast em{font-style:normal;color:var(--teal);font-weight:700;display:flex;align-items:center;gap:4px}
+.toast .ic{width:15px;height:15px}
+/* tabla de estados */
+.states{width:100%;border-collapse:collapse;font-size:14px}
+.states th,.states td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.states th{color:var(--mute);font-weight:600}
+.states td:first-child{white-space:nowrap;font-weight:650}
+.states td:first-child svg{width:16px;height:16px;vertical-align:-3px;margin-right:6px;color:#f3c27a}
+.foot{color:var(--faint);font-size:13px}
+.say{font-size:17px;font-weight:700;color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:620px){h1{font-size:25px}}
+.zoom{background:var(--ph-bg);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:14px;color:var(--ph-ink)}
+.zoom .cap{font-size:12.5px;color:var(--mute);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px}
+.zoom .cap b{color:var(--ink);font-weight:650}
+.zoom .tiles .t{font-size:12px;padding:11px 2px 9px;gap:6px}
+.zoom .tiles .t .ic{width:24px;height:24px}
+.zoom .seg div{font-size:11.5px;padding:9px 0 7px}.zoom .seg .ic{width:22px;height:22px}
+.zoom .stline{font-size:14px}.zoom .stline .ic{width:18px;height:18px}
+.menu.static{position:static;width:100%;box-shadow:none;border:1px solid #ffffff14;font-size:13.5px}
+.menu.static .mi{padding:10px 14px}.menu.static .mi .ic{width:19px;height:19px}.menu.static small{font-size:11.5px}
+.done{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--panel);display:flex;gap:10px;align-items:flex-start}
+.done svg{width:20px;height:20px;color:var(--good);flex:none;margin-top:2px}
+.phone .tiles .t{font-size:9.5px}
+/* ola 2 */
+.po .selc{position:absolute;top:5px;right:5px;width:17px;height:17px;border-radius:9px;border:1.6px solid #fff;background:#0006}
+.po .selc.on{background:var(--teal);border-color:var(--teal);display:flex;align-items:center;justify-content:center}
+.po .selc.on svg{width:11px;height:11px;color:var(--onteal);stroke-width:3}
+.po.dimmed{opacity:.55}
+.po .minus{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:9px;background:#e5484d;display:flex;align-items:center;justify-content:center}
+.po .minus::after{content:"";width:8px;height:2px;background:#fff;border-radius:1px}
+.selbar{position:absolute;left:10px;right:10px;bottom:10px;height:58px;border-radius:20px;background:#24262eef;display:grid;grid-template-columns:repeat(3,1fr);align-items:center;z-index:6;box-shadow:0 8px 24px #0008}
+.selbar div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:650}
+.selbar .ic{width:19px;height:19px;color:var(--ph-ink)}
+.selbar .del,.selbar .del .ic{color:#ff8a8a}
+.navt{font-size:12px;font-weight:650}
+.navt.teal{color:var(--teal)}
+.zoom .selbar{position:static;height:66px;box-shadow:none;border:1px solid #ffffff14}
+.zoom .selbar div{font-size:12px}.zoom .selbar .ic{width:22px;height:22px}
+.privs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.privs .t{font-size:11px;padding:10px 2px}
+.privs .t.on{background:#3a2b18}
+.swdel{display:flex;align-items:center;justify-content:center;width:62px;background:#e5484d;color:#fff;font-size:9.5px;font-weight:700;flex-direction:column;gap:2px}
+.swdel .ic{width:16px;height:16px;color:#fff}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4-6 4z"/></symbol>
+  <symbol id="i-bookmark-f" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4-6 4z" fill="currentColor"/></symbol>
+  <symbol id="i-playc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.5 3.5-5.5 3.5z" fill="currentColor"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/></symbol>
+  <symbol id="i-checkf" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor"/><path d="M8 12.3l2.7 2.7L16 9.5" stroke="#1a1208" stroke-width="2.2"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 20L20 4"/></symbol>
+  <symbol id="i-plusc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v8M8.5 12.5L12 16l3.5-3.5"/></symbol>
+  <symbol id="i-trailer" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.5 9.5l4 2.5-4 2.5z" fill="currentColor"/></symbol>
+  <symbol id="i-version" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M7 9h2M11 9h6M7 12h2M11 12h6M7 15h2M11 15h6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="17.5" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2.2 2.2 0 004 0"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 20h8"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0112 7.6 4.2 4.2 0 0119.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M7 11H5.5v9h13v-9H17"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5v9h-5.5v-5.5h-5V20H4z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8z"/></symbol>
+  <symbol id="i-stack" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M6.5 5h11M9 2.5h6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-chevd" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L4.5 11.5 9 16"/><path d="M5 11.5h9a5 5 0 010 10h-2"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4h5v2.5M6.5 6.5l1 13.5h9l1-13.5M10 10.5v6M14 10.5v6"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><rect x="3.5" y="8" width="11" height="12" rx="2"/><path d="M8 8V5.5a2 2 0 012-2h8.5a2 2 0 012 2V14a2 2 0 01-2 2H14.5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 013 3L8 18.5z"/><path d="M13.5 7l3 3"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0014.5 4h-9A1.5 1.5 0 004 5.5v9A1.5 1.5 0 005.5 16H8"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5L7 20l3.5-3.5M17 20V4M13.5 7.5L17 4l3.5 3.5"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Gestor, ola 2: limpiar de golpe y listas completas</h1>
+    <p class="lead">Fer, la ola 1 ya está en la app (el botón de estado, el tablero de Guardado, «Mover a…» y «¿Las dejaste?»).
+      Esta tanda trae dos decisiones: <b>G3</b>, cómo eliges varios títulos a la vez para moverlos o quitarlos, y <b>G4</b>,
+      dónde manejas tus listas (nombre, quién la ve, orden, duplicar y borrar). Cada decisión tiene «Hoy» y las opciones lado a
+      lado. Me dictas los códigos y lo construyo. Solo iPhone; al final, qué pasa en la tele.</p>
+  </header>
+
+  <section>
+    <h2>Qué cambia en esta tanda</h2>
+    <div class="scroll"><table class="gap"><thead><tr><th>Qué</th><th>Hoy en Orbital</th><th>Qué trae esta tanda</th><th>Código</th></tr></thead><tbody>
+      <tr><td>Limpiar de golpe</td><td><span class="st medias">A medias</span><br>«Editar» quita de uno en uno con «−»; «Mover a…» mueve de uno en uno</td><td>Elegir varios y mandarlos a Vistas, a Las dejé, a otra lista o quitarlos, en un paso</td><td class="ola">G3</td></tr>
+      <tr><td>Manejar tus listas</td><td><span class="st medias">A medias</span><br>Puedes crear una lista (privada) y agregar o quitar títulos. Lo demás, solo en trakt.tv</td><td>Cambiar nombre, quién la ve, tu orden, duplicar, compartir y borrar, sin salir de Orbital</td><td class="ola">G4</td></tr>
+    </tbody></table></div>
+    <p class="q">Todo se guarda en tu Trakt. Sin internet: elegir, mover y quitar se hace al momento y espera en la cola, como hoy.
+      Lo de G4 (nombre, quién la ve, orden, duplicar, borrar, lista nueva) necesita conexión; sin ella esos botones se ven
+      apagados y dicen por qué.</p>
+  </section>
+
+  <section>
+    <h2>G3 · ¿Cómo eliges varios a la vez?</h2>
+    <p class="q">Sirve en Mi lista, en tus listas y en los montones del tablero. La barra ofrece solo lo que tiene sentido ahí:</p>
+    <div class="scroll"><table class="gap"><thead><tr><th>Dónde eliges</th><th>Qué ofrece la barra</th></tr></thead><tbody>
+      <tr><td>Mi lista y tus listas</td><td>Vistas (solo películas) · Mover a… (Las dejé, otra lista, lista nueva) · Quitar</td></tr>
+      <tr><td>Viendo</td><td>Mover a… (Mi lista, Las dejé, una lista)</td></tr>
+      <tr><td>Vistas</td><td>Mover a… (Mi lista, una lista). Sin «Quitar»: borraría cuándo la viste</td></tr>
+      <tr><td>Las dejé</td><td>Mover a… (Viendo, Mi lista)</td></tr>
+    </tbody></table></div>
+    <div class="row">
+      <div class="opt today">
+        <div class="tag"><span class="code">Hoy</span><h3>«Editar» pone un «−» en cada póster</h3></div>
+        <div class="phone" aria-label="Hoy: Editar con menos"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r" style="align-items:center"><svg class="ic"><use href="#i-plus"/></svg><span class="navt teal">Listo</span></div></div><div style="display:flex;flex-direction:column;gap:9px"><div class="big" style="display:flex;align-items:center;gap:8px">Mi lista<svg class="ic" style="width:14px;height:14px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="body" style="gap:9px"><div class="sub"><span class="meta">124 títulos</span><span class="filter"><svg class="ic" style="width:14px;height:14px"><use href="#i-filter"/></svg>Ordenar y filtrar</span></div><div class="grid3"><div class="po p1">Dune: Parte Dos<span class="minus"></span></div><div class="po p3">Anora<span class="minus"></span></div><div class="po p5">Conclave<span class="minus"></span></div><div class="po p9">Nosferatu<span class="minus"></span></div><div class="po p6">Civil War<span class="minus"></span></div><div class="po p8">Flow<span class="minus"></span></div><div class="po p2">The Bear<span class="minus"></span></div><div class="po p4">Shōgun<span class="minus"></span></div><div class="po p7">Severance<span class="minus"></span></div></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul><li>Quitar 20 títulos son 20 toques, y pasarlos a Vistas es de uno en uno desde «Mover a…».</li></ul>
+      </div>
+      <div class="opt rec">
+        <div class="tag"><span class="code">G3-A</span><h3>«Editar» se vuelve «elegir»</h3><span class="recmark">Recomendada</span></div>
+        <div class="phone" aria-label="G3-A: elegir varias"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r" style="align-items:center"><svg class="ic"><use href="#i-plus"/></svg><span class="navt teal">Listo</span></div></div><div style="display:flex;flex-direction:column;gap:9px"><div class="big" style="display:flex;align-items:center;gap:8px">Mi lista<svg class="ic" style="width:14px;height:14px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="body" style="gap:9px"><div class="sub"><span class="meta">3 elegidas de 124 · <svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-check"/></svg> Todas</span><span class="filter"><svg class="ic" style="width:14px;height:14px"><use href="#i-filter"/></svg>Ordenar y filtrar</span></div><div class="grid3"><div class="po p1">Dune: Parte Dos<span class="selc on"><svg class="ic"><use href="#i-tick"/></svg></span></div><div class="po p3 dimmed">Anora<span class="selc"></span></div><div class="po p5 dimmed">Conclave<span class="selc"></span></div><div class="po p9">Nosferatu<span class="selc on"><svg class="ic"><use href="#i-tick"/></svg></span></div><div class="po p6 dimmed">Civil War<span class="selc"></span></div><div class="po p8">Flow<span class="selc on"><svg class="ic"><use href="#i-tick"/></svg></span></div><div class="po p2 dimmed">The Bear<span class="selc"></span></div><div class="po p4 dimmed">Shōgun<span class="selc"></span></div><div class="po p7 dimmed">Severance<span class="selc"></span></div></div></div></div><div class="selbar"><div><svg class="ic"><use href="#i-check"/></svg>Vistas</div><div><svg class="ic"><use href="#i-move"/></svg>Mover a…</div><div class="del"><svg class="ic"><use href="#i-trash"/></svg>Quitar</div></div></div>
+        <div class="zoom"><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>La barra de abajo, de cerca</b><span>aparece al elegir el primero</span></div><div class="selbar"><div><svg class="ic"><use href="#i-check"/></svg>Vistas</div><div><svg class="ic"><use href="#i-move"/></svg>Mover a…</div><div class="del"><svg class="ic"><use href="#i-trash"/></svg>Quitar</div></div></div></div>
+        <div class="menu static"><div class="h">Mover 3 títulos a… (al tocar «Mover a…»)</div><div class="mi "><svg class="ic"><use href="#i-check"/></svg><span class="sp">Vistas<small>Solo las películas: se marcan vistas hoy. Las series se marcan por capítulo en su ficha</small></span></div><div class="mi "><svg class="ic"><use href="#i-eyeoff"/></svg><span class="sp">Las dejé<small>Salen de Mi lista; las series dejan de avisarte</small></span></div><div class="mi sep"><svg class="ic"><use href="#i-list"/></svg><span class="sp">Para ver con Ana<small>Se pasan a esa lista y salen de Mi lista</small></span></div><div class="mi "><svg class="ic"><use href="#i-list"/></svg><span class="sp">Tu match perfecto</span></div><div class="mi "><svg class="ic"><use href="#i-plus"/></svg><span class="sp">Lista nueva…<small>Nace «Solo tú» y los 3 entran ahí en el mismo paso</small></span></div></div>
+        <ul>
+          <li><b>Para ti:</b> tocas «Editar» y cada toque elige un póster; si deslizas el dedo sobre varios, se eligen de corrido (como en Fotos). Abajo, la barra de esa pantalla. «Todas», junto a la cifra, elige la lista entera. El «+» para agregar se queda.</li>
+          <li><b>Gana:</b> un solo modo para editar; limpiar 20 títulos es elegirlos y un toque. Un solo aviso: «20 títulos quitados · Deshacer», que regresa los 20 (tu orden a mano puede moverse). Si Trakt rechaza alguno, el aviso dice cuáles.</li>
+          <li><b>Pierde:</b> el «−» desaparece. Para quitar solo uno: mantener el dedo › «Quitar de Mi lista» (ya existe), o elegirlo y «Quitar».</li>
+          <li><b>Teclado y puntero (iPad, Mac):</b> ⌘E entra, ⌘A elige todas, ⌘-clic suma uno, Mayús-clic elige de corrido, ⌫ quita, Esc sale. Con VoiceOver cada póster dice «elegida» o «no elegida».</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="tag"><span class="code">G3-B</span><h3>«Editar» como hoy y aparte «Elegir»</h3></div>
+        <div class="phone" aria-label="G3-B: dos botones"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r" style="align-items:center"><svg class="ic"><use href="#i-plus"/></svg><span class="navt">Elegir</span><span class="navt">Editar</span></div></div><div style="display:flex;flex-direction:column;gap:9px"><div class="big" style="display:flex;align-items:center;gap:8px">Mi lista<svg class="ic" style="width:14px;height:14px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="body" style="gap:9px"><div class="sub"><span class="meta">124 títulos</span><span class="filter"><svg class="ic" style="width:14px;height:14px"><use href="#i-filter"/></svg>Ordenar y filtrar</span></div><div class="grid3"><div class="po p1">Dune: Parte Dos</div><div class="po p3">Anora</div><div class="po p5">Conclave</div><div class="po p9">Nosferatu</div><div class="po p6">Civil War</div><div class="po p8">Flow</div><div class="po p2">The Bear</div><div class="po p4">Shōgun</div><div class="po p7">Severance</div></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul>
+          <li><b>Para ti:</b> «Editar» sigue con el «−»; «Elegir» abre la selección de G3-A con la misma barra.</li>
+          <li><b>Gana:</b> nada cambia para quien ya usa el «−».</li>
+          <li><b>Pierde:</b> arriba quedan tres botones («+», «Elegir», «Editar») y dos formas de quitar lo mismo.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>G4 · ¿Dónde manejas tus listas?</h2>
+    <p class="q">Trakt deja todo esto; hoy Orbital solo deja crear listas y agregar o quitar títulos. Las dos opciones hacen casi lo
+      mismo; cambia dónde vive. En las dos, el tablero de Guardado suma «Nueva lista» al final de «Tus listas», y una lista nueva nace
+      «Solo tú», como hoy. Mi lista no lleva «···»: su «Ordenar a mano» vive en «Ordenar y filtrar».</p>
+    <div class="row">
+      <div class="opt today">
+        <div class="tag"><span class="code">Hoy</span><h3>La lista abierta solo agrega y quita</h3></div>
+        <div class="phone" aria-label="Hoy: lista abierta"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r" style="align-items:center"><svg class="ic"><use href="#i-plus"/></svg><span class="navt">Editar</span></div></div><div style="display:flex;flex-direction:column;gap:9px"><div class="big" style="display:flex;align-items:center;gap:8px">Para ver con Ana<svg class="ic" style="width:14px;height:14px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="body" style="gap:9px"><div class="sub"><span class="meta">18 títulos · solo tú</span><span class="filter"><svg class="ic" style="width:14px;height:14px"><use href="#i-filter"/></svg>Ordenar y filtrar</span></div><div class="grid3"><div class="po p1">Dune: Parte Dos</div><div class="po p3">Anora</div><div class="po p5">Conclave</div><div class="po p9">Nosferatu</div><div class="po p6">Civil War</div><div class="po p8">Flow</div><div class="po p2">The Bear</div><div class="po p4">Shōgun</div><div class="po p7">Severance</div></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul><li>Para cambiarle el nombre, hacerla pública o borrarla hay que ir a trakt.tv.</li></ul>
+      </div>
+      <div class="opt rec">
+        <div class="tag"><span class="code">G4-A</span><h3>Un «···» arriba de cada lista</h3><span class="recmark">Recomendada</span></div>
+        <div class="phone" aria-label="G4-A: lista con ···"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r" style="align-items:center"><svg class="ic"><use href="#i-plus"/></svg><span class="navt">Editar</span><svg class="ic"><use href="#i-dots"/></svg></div></div><div style="display:flex;flex-direction:column;gap:9px"><div class="big" style="display:flex;align-items:center;gap:8px">Para ver con Ana<svg class="ic" style="width:14px;height:14px;color:var(--ph-mute)"><use href="#i-chevd"/></svg></div><div class="body" style="gap:9px"><div class="sub"><span class="meta">18 títulos · solo tú</span><span class="filter"><svg class="ic" style="width:14px;height:14px"><use href="#i-filter"/></svg>Ordenar y filtrar</span></div><div class="grid3"><div class="po p1">Dune: Parte Dos</div><div class="po p3">Anora</div><div class="po p5">Conclave</div><div class="po p9">Nosferatu</div><div class="po p6">Civil War</div><div class="po p8">Flow</div><div class="po p2">The Bear</div><div class="po p4">Shōgun</div><div class="po p7">Severance</div></div></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <div class="menu static"><div class="h">Para ver con Ana (al tocar «···» arriba)</div><div class="mi "><svg class="ic"><use href="#i-pencil"/></svg><span class="sp">Cambiar nombre</span></div><div class="mi "><svg class="ic"><use href="#i-lock"/></svg><span class="sp">Quién la ve<small>Solo tú · Con el enlace · Todos en Trakt</small></span></div><div class="mi "><svg class="ic"><use href="#i-sort"/></svg><span class="sp">Ordenar a mano<small>Agarraderas en cada póster; arrastras y «Listo»</small></span></div><div class="mi "><svg class="ic"><use href="#i-copy"/></svg><span class="sp">Duplicar<small>Crea «Copia de…», Solo tú, con los mismos títulos y orden</small></span></div><div class="mi "><svg class="ic"><use href="#i-share"/></svg><span class="sp">Compartir enlace<small>Si es «Solo tú», te pregunta si la abres con el enlace</small></span></div><div class="mi sep" style="color:#ff8a8a"><svg class="ic"><use href="#i-trash"/></svg><span class="sp">Borrar lista<small>Te pregunta antes y no se puede deshacer. Los títulos siguen en Mi lista y en tus otras listas</small></span></div></div>
+        <div class="zoom"><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Quién la ve</b><span>la elegida, con palomita</span></div><div class="menu static"><div class="mi "><svg class="ic"><use href="#i-lock"/></svg><span class="sp">Solo tú ✓<small>Nadie más la ve</small></span></div><div class="mi "><svg class="ic"><use href="#i-link"/></svg><span class="sp">Con el enlace<small>Quien tenga el enlace</small></span></div><div class="mi "><svg class="ic"><use href="#i-globe"/></svg><span class="sp">Todos en Trakt<small>Sale en tu perfil</small></span></div><div class="h">Si en Trakt ya era «Solo amigos», sale una cuarta opción así marcada.</div></div></div><div style="display:flex;flex-direction:column;gap:8px"><div class="cap"><b>Tus listas en el tablero</b><span>«Nueva lista» al final</span></div><div class="lrow"><div class="po p5" style="width:34px;padding:0"></div><div class="sp"><b>Para ver con Ana</b><small>18 títulos · solo tú</small></div><svg class="ic" style="width:13px;height:13px"><use href="#i-chev"/></svg></div><div class="lrow" style="border:0;color:var(--teal);font-weight:650"><svg class="ic" style="width:18px;height:18px"><use href="#i-plus"/></svg>Nueva lista</div></div></div>
+        <ul>
+          <li><b>Para ti:</b> abres la lista y en «···» está todo lo de esa lista. «Ordenar a mano» abre su propio modo con agarraderas (no choca con elegir), y ese orden queda en Trakt.</li>
+          <li><b>Gana:</b> lo encuentras donde ya estás; no hay pantalla nueva.</li>
+          <li><b>Pierde:</b> el orden de tus listas en el tablero (el mismo de Trakt) se sigue cambiando en trakt.tv.</li>
+        </ul>
+      </div>
+      <div class="opt">
+        <div class="tag"><span class="code">G4-B</span><h3>Una pantalla «Tus listas»</h3></div>
+        <div class="phone" aria-label="G4-B: Tus listas"><div class="island"></div><div class="sb"><span>9:41</span><span>●●● ▮</span></div><div class="nav"><svg class="ic"><use href="#i-back"/></svg><div class="r"><span class="navt teal">Listo</span></div></div><div style="display:flex;flex-direction:column;gap:9px"><div class="big">Tus listas</div><div class="body" style="gap:0"><div class="lrow"><div class="po p5" style="width:34px;padding:0"></div><div class="sp"><b>Para ver con Ana</b><small>18 títulos · solo tú</small></div><svg class="ic" style="width:16px;height:16px;color:var(--ph-mute)"><use href="#i-grip"/></svg></div><div class="lrow"><div class="po p8" style="width:34px;padding:0"></div><div class="sp"><b>Tu match perfecto</b><small>32 títulos · todos</small></div><svg class="ic" style="width:16px;height:16px;color:var(--ph-mute)"><use href="#i-grip"/></svg></div><div style="margin:0 -14px;overflow:hidden"><div style="display:flex;width:calc(100% + 62px);transform:translateX(-62px)"><div class="lrow" style="flex:1;padding-left:14px;border:0;margin-left:62px"><div class="po p4" style="width:34px;padding:0"></div><div class="sp"><b>Tus canales</b><small>7 series · con el enlace</small></div><svg class="ic" style="width:16px;height:16px;color:var(--ph-mute)"><use href="#i-grip"/></svg></div><div class="swdel"><svg class="ic"><use href="#i-trash"/></svg>Borrar</div></div></div><div class="lrow"><div class="po p2" style="width:34px;padding:0"></div><div class="sp"><b>Navidad</b><small>9 títulos · solo tú</small></div><svg class="ic" style="width:16px;height:16px;color:var(--ph-mute)"><use href="#i-grip"/></svg></div><div class="lrow" style="border:0;color:var(--teal);font-weight:650"><svg class="ic" style="width:18px;height:18px"><use href="#i-plus"/></svg>Nueva lista</div><p class="meta" style="margin-top:8px">Arrastra para ordenar (el orden se guarda en Trakt). Deslizar para borrar te pregunta antes.</p></div></div><div class="tabbar"><svg class="ic"><use href="#i-home"/></svg><svg class="ic"><use href="#i-spark"/></svg><svg class="ic on"><use href="#i-stack"/></svg><svg class="ic"><use href="#i-search"/></svg></div></div>
+        <ul>
+          <li><b>Para ti:</b> en el tablero, «Tus listas › Editar» abre todas tus listas: arrastras para ordenarlas, deslizas para borrar y tocas una para cambiar su nombre o quién la ve.</li>
+          <li><b>Gana:</b> ordenas tus listas en el tablero como quieras; todas en un solo lugar.</li>
+          <li><b>Pierde:</b> una pantalla más, y duplicar, compartir y el orden de los pósters siguen viviendo dentro de cada lista.</li>
+          <li><b>Si eliges las dos:</b> esta pantalla queda solo para ordenar tus listas; renombrar y borrar viven en el «···» de G4-A, en un solo lugar.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Para dictar</h2>
+    <div class="pick">
+      <span class="say">«G3-A, G4-A»</span>
+      <p>Mi recomendación es <b>G3-A</b>: un solo «Editar» que sirve para uno o para cincuenta, con las mismas palabras de «Mover a…».
+        Y <b>G4-A</b>: lo de cada lista vive en esa lista, sin otra pantalla. Si te importa ordenar tus listas en el tablero desde el
+        iPhone, dime «G4-A y B»: B queda solo para eso.</p>
+    </div>
+    <p class="q"><b style="color:var(--ink)">En la tele:</b> no cambia su código. Lo que limpies o cambies en el iPhone le llega por
+      Trakt la próxima vez que recargue (si quitas 20 de Mi lista, desaparecen de su fila «Mi lista»; si renombras una lista, la ve con
+      el nombre nuevo). Editar con el mando queda en el registro de paridad, para su sesión.</p>
+    <p class="foot">Maquetas esquemáticas sobre Biblioteca › Guardado del iPhone (10 nov 2026). Después siguen G5 (historial que se
+      edita: cuántas veces la viste, cambiar una fecha) y G6 (nota privada, calificar una temporada).</p>
+  </section>
+</div>
