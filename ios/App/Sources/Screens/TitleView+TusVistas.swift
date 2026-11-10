@@ -181,6 +181,7 @@ struct ViewingsSheet: View {
                         .accessibilityIdentifier("viewing-add")
                 }
             }
+            .contentMargins(.top, DS.Space.s2, for: .scrollContent)   // sin el hueco de sección entre la barra y la tarjeta
             .navigationTitle(Text("Tus vistas")).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
             .sheet(item: $editing) { v in
@@ -247,18 +248,20 @@ struct ViewingDatePicker: View {
         self.title = title; self.initial = initial; self.save = save; _date = State(initialValue: initial)
     }
 
+    /// A la medida del calendario, sin aire arriba ni abajo; se cierra jalándola (sin «Cancelar»).
     var body: some View {
-        NavigationStack {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSheetHeader(title: title) {
+                Button("Guardar") { save(date); dismiss() }
+                    .dsPrimaryButton()
+                    .accessibilityIdentifier("viewing-date-save")
+            }
             DatePicker(selection: $date, in: ...Date(), displayedComponents: [.date, .hourAndMinute]) { title }
                 .datePickerStyle(.graphical)
-                .padding(.horizontal, DS.Space.gutter)
-                .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
-                    ToolbarItem(placement: .confirmationAction) { Button("Guardar") { save(date); dismiss() }.accessibilityIdentifier("viewing-date-save") }
-                }
+                .labelsHidden()
         }
-        .presentationDetents([.large])
+        .dsSheetContent(bottom: false)
+        .fittedSheet()
     }
 }
 
