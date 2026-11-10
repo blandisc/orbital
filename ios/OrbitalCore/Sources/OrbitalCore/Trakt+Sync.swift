@@ -150,7 +150,52 @@ extension Trakt {
             state.info[imdb] = TraktWatchedInfo(row, item: row["show"], kind: "series")
             if ["returning series", "in production"].contains(row["show"]?["status"]?.string ?? "") { state.airing.insert(imdb) }
         }
+        // Trakt dejó de mandar las temporadas en /sync/watched/shows (visto el 10 nov 2026 con la cuenta de Fernando: sin
+        // «seasons», con y sin extended=full): el avance de las más recientes se pregunta a /progress/watched; las demás se
+        // quedan con el estimado de `showFraction` (reproducciones entre capítulos que han salido).
+        let rows = showRows?.array ?? []
+        if rows.contains(where: { $0["seasons"] == nil }) {
+            let recent = rows.filter { $0["seasons"] == nil }
+                .sorted { ($0["last_watched_at"]?.string ?? "") > ($1["last_watched_at"]?.string ?? "") }
+                .compactMap { $0["show"]?["ids"]?["imdb"]?.string }
+                .prefix(Self.progressRecent)
+            for (imdb, fraction) in await progress(Array(recent)) { state.shows[imdb] = fraction }
+        }
         return state
+    }
+
+    /// Cuántas series recientes se preguntan una por una (como la TV, `orbital/library/trakt.py`).
+    static let progressRecent = 40
+
+    /// El avance de cada serie (capítulos vistos entre los que han salido, sin especiales), de 4 en 4 y guardado 15 minutos.
+    /// La que no contesta se queda con el estimado.
+    func progress(_ imdbs: [String]) async -> [String: Double] {
+        var out: [String: Double] = [:]
+        var missing: [String] = []
+        let now = Date()
+        for imdb in imdbs {
+            if let hit = progressCache[imdb], now.timeIntervalSince(hit.at) < 15 * 60 { out[imdb] = hit.fraction } else { missing.append(imdb) }
+        }
+        var index = 0
+        while index < missing.count {
+            let batch = missing[index..<min(index + 4, missing.count)]
+            index += 4
+            await withTaskGroup(of: (String, Double?).self) { group in
+                for imdb in batch {
+                    group.addTask {
+                        guard let found = try? await self.get("/shows/\(imdb)/progress/watched", [("hidden", "false"), ("specials", "false")]),
+                              let aired = found["aired"]?.intValue, aired > 0, let done = found["completed"]?.intValue else { return (imdb, nil) }
+                        return (imdb, min(1, Double(done) / Double(aired)))
+                    }
+                }
+                for await (imdb, fraction) in group {
+                    guard let fraction else { continue }
+                    out[imdb] = fraction
+                    progressCache[imdb] = (now, fraction)
+                }
+            }
+        }
+        return out
     }
 }
 

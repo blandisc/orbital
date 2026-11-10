@@ -21,6 +21,7 @@ public actor Trakt {
     private var lastWrite = Date.distantPast
     /// Lo que dejaste a medias (`/sync/playback`), guardado un momento: abrir varios títulos seguidos no pregunta cada vez.
     var playbackCache: (at: Date, items: [TraktPlayback])?
+    var progressCache: [String: (at: Date, fraction: Double)] = [:]   // `progress(_:)`: el avance de cada serie, 15 min
     static let playbackCacheFor: TimeInterval = 60
     /// Tus favoritos, guardados un momento con la marca de cuándo cambiaron en Trakt (`favorites.updated_at` de
     /// `/sync/last_activities`): pasado el rato, si la marca no cambió no se vuelven a bajar las dos listas.
@@ -307,21 +308,20 @@ public actor Trakt {
         return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
     }
 
-    /// Todo lo que ya viste (películas y series con al menos un episodio), por IMDb: «Decide por mí» no te propone eso.
     /// Lo que ya viste: las películas y las series que viste completas. Una serie a la mitad no cuenta (Fernando, 1 nov:
     /// «Ocultar lo que ya vi» escondía una serie por un solo capítulo).
     public func watchedIDs() async throws -> Set<String> { try await watchedState().completed }
 
-    /// ¿Viste todos los capítulos que han salido? (Sin contar los especiales, la temporada 0.) Sin el dato de cuántos han
-    /// salido, se cuenta como vista (como antes).
+    /// ¿Viste todos los capítulos que han salido (sin especiales)? Sin el dato de cuántos han salido, cuenta como vista.
     static func showCompleted(_ row: JSON) -> Bool { showFraction(row) >= 1 }
 
-    /// Cuánto llevas de una serie: los capítulos vistos entre los que han salido (sin especiales), de 0 a 1. Sin el dato de
-    /// cuántos han salido, 1 (vista, como antes).
+    /// Cuánto llevas de una serie (vistos entre los que han salido, sin especiales), de 0 a 1; sin `aired_episodes`, 1.
     static func showFraction(_ row: JSON) -> Double {
         guard let aired = row["show"]?["aired_episodes"]?.intValue, aired > 0 else { return 1 }
-        let seen = (row["seasons"]?.array ?? []).filter { ($0["number"]?.intValue ?? 0) > 0 }
-            .reduce(0) { $0 + ($1["episodes"]?.array?.count ?? 0) }
+        guard let seasons = row["seasons"]?.array else {   // Trakt ya no las manda: estimado con las reproducciones
+            return min(1, Double(row["plays"]?.intValue ?? 0) / Double(aired))
+        }
+        let seen = seasons.filter { ($0["number"]?.intValue ?? 0) > 0 }.reduce(0) { $0 + ($1["episodes"]?.array?.count ?? 0) }
         return min(1, Double(seen) / Double(aired))
     }
 
