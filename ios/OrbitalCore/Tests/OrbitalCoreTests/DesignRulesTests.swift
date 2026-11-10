@@ -71,6 +71,17 @@ final class DesignRulesTests: XCTestCase {
         "Backdrop.immersiveGlowRadius": "el radio del brillo de la ficha inmersiva (un degradado)",
     ]
 
+    /// La bandera mitad España, mitad México es una imagen que solo dibujan `Text.flagged`, `Text.flag` y `Text.withFlagImages`
+    /// (Fernando, 9 nov 2026: «en algunos subtítulos aparece roto el ícono… verifica que en ningún lado esté roto»). Un texto
+    /// simple con banderas, o una bandera en el título de una hoja (que no dibuja imágenes), sale como un cuadro roto: ahí va
+    /// `LanguageFlags.plain`.
+    func testTheSpanishFlagIsNeverDrawnAsABrokenBox() throws {
+        let files = try sources()
+        let plainFlags = hits(#"Text\(verbatim: *LanguageFlags\.(flag|flagged|flagOnly)\("#, in: files)
+        let titles = hits(#"\.navigationTitle\(Text\.(withFlagImages|flagged|flag)\("#, in: files)
+        XCTAssertTrue((plainFlags + titles).isEmpty, "Banderas que no se dibujan:\n" + (plainFlags + titles).joined(separator: "\n"))
+    }
+
     func testPieceTokensStayOnTheScale() throws {
         let tokens = try sources(["Design"]).filter(isTokens)
         let decl = try NSRegularExpression(pattern: #"(\w+)\s*(?::\s*CGFloat)?\s*=\s*(-?[0-9][0-9.]*)\b(?!\s*[*/+])"#)

@@ -56,6 +56,13 @@ public enum LanguageFlags {
     /// (`Text.flag`, `Text.flagged`). Nunca se muestra tal cual.
     public static let mixedSpanish = "\u{E000}"
 
+    /// El texto para donde no se puede dibujar la bandera mitad España, mitad México (un aviso, un menú, el título de una
+    /// hoja): sin ella, en vez de un cuadro roto. Las demás banderas se quedan.
+    public static func plain(_ text: String) -> String {
+        guard text.contains(mixedSpanish) else { return text }
+        return text.replacingOccurrences(of: mixedSpanish + " ", with: "").replacingOccurrences(of: mixedSpanish, with: "")
+    }
+
     /// El texto sin las banderas (para VoiceOver: lee el nombre, no «bandera de México»).
     public static func withoutFlags(_ text: String) -> String {
         var out = String.UnicodeScalarView()

@@ -119,7 +119,7 @@ struct LanguageSearchList: View {
                 }
                 Section(ready.isEmpty ? "Idiomas" : "Buscar en internet") {
                     ForEach(shown.filter { !readyCodes.contains($0.0) }, id: \.0) { code, title in
-                        Button { pick(code); dismiss() } label: { Text(verbatim: title).foregroundStyle(DS.text) }
+                        Button { pick(code); dismiss() } label: { Text.flagged(title).foregroundStyle(DS.text) }
                     }
                 }
             }
@@ -291,14 +291,14 @@ struct SubtitleDock: View {
                 HStack(spacing: DS.Space.s2) {
                     Text(title).recipe(.labelLarge, color: DS.text)
                     Spacer(minLength: DS.Space.s2)
-                    Text(verbatim: value).recipe(.footnote).lineLimit(1)
+                    Text.withFlagImages(value).recipe(.footnote).lineLimit(1)
                     Image(systemName: open == id ? "chevron.up" : "chevron.down").font(DS.TextRecipe.badge.font).foregroundStyle(DS.textMuted)
                 }
                 .frame(minHeight: DS.Size.touchTarget)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(Text(verbatim: value))
+            .accessibilityValue(Text(verbatim: LanguageFlags.withoutFlags(value)))
             .accessibilityHint(open == id ? Text("Cerrar") : Text("Abrir"))
             if open == id { content() }
         }
@@ -458,7 +458,7 @@ struct SubtitleDock: View {
     private var triedLine: some View {
         HStack(spacing: DS.Space.s1) {
             Text("Ya probaste:").recipe(.caption)
-            ForEach(tried, id: \.self) { Text(verbatim: $0).recipe(.caption).strikethrough() }
+            ForEach(tried, id: \.self) { Text.withFlagImages($0).recipe(.caption).strikethrough() }
         }
         .lineLimit(1).minimumScaleFactor(DS.Size.statScale)
     }

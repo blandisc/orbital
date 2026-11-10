@@ -138,7 +138,8 @@ extension PlayerScreen {
                 }
                 .padding(DS.Space.gutter)
             }
-            .navigationTitle(Text.withFlagImages(String(format: Strings.tr("%@ · %lld versiones", language: uiLanguage), name, versions.count)))
+            // El título de una hoja no dibuja imágenes: sin la bandera de «español» en vez de un cuadro roto.
+            .navigationTitle(Text(verbatim: LanguageFlags.plain(String(format: Strings.tr("%@ · %lld versiones", language: uiLanguage), name, versions.count))))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dockState.dockVersions = false } } }
         }
@@ -350,7 +351,8 @@ extension PlayerScreen {
     }
 
     /// Un aviso breve arriba del video (sin tapar los controles), que VoiceOver también dice.
-    func toast(_ text: String) async {
+    func toast(_ raw: String) async {
+        let text = LanguageFlags.plain(raw)   // el aviso es texto simple: la bandera de «español» no se dibuja ahí
         if topNoticesAreWaiting {
             notices.heldNotices.hold(.subtitle(text), key: QueuedNoticeKey.subtitle)
             return

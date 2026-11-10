@@ -29,4 +29,12 @@ final class LanguageFlagsTests: XCTestCase {
         XCTAssertEqual(LanguageFlags.flagOnly("Castellano", "es-ES"), "🇪🇸")
         XCTAssertEqual(LanguageFlags.flagOnly("Árabe", "ar"), "Árabe", "sin bandera, el nombre: algo tiene que decir el idioma")
     }
+
+    /// Donde no se puede dibujar la bandera de «español» (un aviso, un menú, el título de una hoja), se quita; las demás se quedan.
+    func testPlainQuitaSoloLaBanderaDeEspanol() {
+        let mixed = LanguageFlags.flagged("Español", "es")
+        XCTAssertTrue(mixed.contains(LanguageFlags.mixedSpanish))
+        XCTAssertEqual(LanguageFlags.plain(mixed + " · 2 de 7"), "Español · 2 de 7")
+        XCTAssertEqual(LanguageFlags.plain(LanguageFlags.flagged("Latino", "es-MX")), LanguageFlags.flagged("Latino", "es-MX"))
+    }
 }

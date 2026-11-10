@@ -215,7 +215,7 @@ struct RewatchDialog: ViewModifier {
     func body(content: Content) -> some View {
         content.confirmationDialog(Text("Ya viste «\(row?.title ?? "")»"), isPresented: Binding(get: { row != nil }, set: { if !$0 { row = nil } }),
                                    titleVisibility: .visible, presenting: row) { r in
-            Button { again(r.id) } label: { Label { Text("Ver otra vez · \(Text(verbatim: version))") } icon: { Image(systemName: "play.fill") } }
+            Button { again(r.id) } label: { Label { Text("Ver otra vez · \(Text(verbatim: LanguageFlags.plain(version)))") } icon: { Image(systemName: "play.fill") } }
             Button { versions(r.id) } label: { Label("Otra versión o idioma", systemImage: "arrow.left.arrow.right") }
             Button { unwatch(r.id) } label: { Label("Marcar como no visto", systemImage: "circle") }
             Button("Cancelar", role: .cancel) {}
