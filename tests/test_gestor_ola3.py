@@ -100,3 +100,17 @@ def test_season_stars_count_double_in_trakt(library, make_foryou, net):  # noqa:
         assert c.get("/api/foryou/season-rating", params={"id": "tt14452776", "season": 3}).json() == {"stars": 4}
         c.post("/api/foryou/season-rating", json={"id": "tt14452776", "season": 2, "stars": 5})
     assert posts(net, "/sync/ratings") == [{"shows": [{"ids": {"imdb": "tt14452776"}, "seasons": [{"number": 2, "rating": 10}]}]}]
+
+
+def test_without_internet_your_viewings_still_open_with_what_waits(library, make_foryou, net):  # noqa: F811
+    """Sin internet, «Tus vistas» abre con lo que espera en la cola y lo dice: «La vi otra vez» sigue a la mano."""
+    def down(url, body):
+        raise OSError("sin red")
+
+    net.on("GET", r"/search/imdb/", down)
+    net.on("POST", r"/sync/history", down)
+    make_foryou(linked=True)
+    with client(library) as c:
+        c.post("/api/foryou/viewings", json={"action": "add", "kind": "movie", "id": "tt0816692", "at": 1800000000})
+        got = c.get("/api/foryou/viewings", params={"kind": "movie", "id": "tt0816692"}).json()
+    assert got == {"viewings": [{"id": 0, "at": 1800000000}], "offline": True}

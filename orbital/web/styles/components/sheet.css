@@ -17,6 +17,10 @@
 [data-tint="addon"] { --tint: var(--tint-addon); }
 [data-tint="flame"] { --tint: var(--tint-flame); }
 [data-tint="trophy"] { --tint: var(--tint-trophy); }
+[data-tint="warning"] { --tint: var(--color-warning); } /* una vista repetida del Historial (ámbar, como el iPhone) */
+/* En una lista (el Historial), el ícono teñido mide lo mismo que los demás: el texto no se corre. */
+.sheet__icon.sheet__icon--tint[data-tint="warning"] { width: 2.5rem; height: 2.5rem; }
+.sheet__icon.sheet__icon--tint[data-tint="warning"] .icon { width: var(--icon-md); height: var(--icon-md); }
 .sheet__icon.sheet__icon--tint { width: var(--explain-tile); height: var(--explain-tile); align-self: center; border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--tint) 18%, transparent); color: var(--tint); }
 .sheet__icon.sheet__icon--tint .icon, .sheet__icon.sheet__icon--tint svg { width: var(--icon-lg); height: var(--icon-lg); }

@@ -413,13 +413,28 @@ class Gestor:
 
     def viewings(self, kind: str, imdb: str, video_id: str | None = None) -> list[dict]:
         """Cada vez que viste esta película o este capítulo, la más nueva primero ({id, at}; id 0: aún en la cola)."""
+        return self.viewings_now(kind, imdb, video_id)[0]
+
+    def viewings_now(self, kind: str, imdb: str, video_id: str | None = None) -> tuple[list[dict], bool]:
+        """Como `viewings`, y si Trakt no contestó (sin internet): entonces solo lo que espera en la cola, para que «La vi
+        otra vez» se pueda usar igual (pasada de pulido, 10 nov 2026)."""
         t = self._require()
         target = self._target(kind, imdb, video_id)
         ep = target.get("episode") or {}
+        if self.outbox.pending:  # regresó el internet: lo que esperaba se manda antes de leer
+            self.outbox.flush(t)
         adds, gone = self._pending_history()
         queued = [{"id": 0, "at": i["at"]} for i in adds if i.get("video") == target]
-        remote = [v for v in t.viewings(kind, imdb, ep.get("season"), ep.get("number")) if v["id"] not in gone]
-        return sorted(queued + remote, key=lambda v: -v["at"])
+        try:
+            remote = [v for v in t.viewings(kind, imdb, ep.get("season"), ep.get("number")) if v["id"] not in gone]
+            offline = False
+        except trakt_api.TraktAuthError:
+            raise
+        except trakt_api.TraktError as exc:
+            if not retryable(exc):
+                raise
+            remote, offline = [], True
+        return sorted(queued + remote, key=lambda v: -v["at"]), offline
 
     def _history_send(self, item: dict, run) -> str:
         result = self._send(item, run)

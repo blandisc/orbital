@@ -291,7 +291,8 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
 
   const hints = (pad, g = typingGlyphs(pad)) => [
     { glyph: g.select, label: "Escribir" }, { glyph: g.alt, label: "Borrar" },
-    { glyph: g.options, label: `${reveal ? "Ocultar" : "Ver"} ${form === STREMIO ? "contraseña" : "clave"}` },
+    // Solo si hay algo secreto: el nombre de una lista o tu nota no tienen clave que ver (pulido del gestor, 10 nov 2026).
+    fields.some((f) => f.secret) && { glyph: g.options, label: `${reveal ? "Ocultar" : "Ver"} ${form === STREMIO ? "contraseña" : "clave"}` },
     fields.length > 1 && { glyph: g.page, label: "Cambiar de campo", secondary: true }, { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);
 

@@ -33,11 +33,13 @@ export function dayOptions(base, now = Date.now(), { today = true } = {}) {
 }
 
 /** «Tus vistas»: la lista (la más nueva primero) y «La vi otra vez». `about`: { kind, id, videoId, title }. */
-export function viewingsMenu(about, viewings, now = Date.now()) {
+export function viewingsMenu(about, viewings, now = Date.now(), { offline = false } = {}) {
   const what = [about.title, episodeLabel(about.videoId)].filter(Boolean).join(" · ");
   const n = viewings.length;
+  // Sin internet solo se sabe lo que espera en la cola: se dice, y «La vi otra vez» sigue a la mano.
+  const count = offline ? "sin internet: solo lo de esta tele" : n ? (n === 1 ? "la viste una vez" : `la viste ${n} veces`) : "";
   return {
-    title: "Tus vistas", subtitle: n ? `${what} · ${n === 1 ? "la viste una vez" : `la viste ${n} veces`}` : what,
+    title: "Tus vistas", subtitle: [what, count].filter(Boolean).join(" · "),
     options: [
       ...viewings.map((v) => ({ icon: "checkCircle", label: viewingDate(v.at, now), hint: v.id ? "" : "Espera internet para llegar a Trakt",
         command: { type: "viewing-menu", about, viewing: v } })),
@@ -65,6 +67,7 @@ export function historyMenu(found, page = 1, now = Date.now()) {
   for (const e of found.entries || []) {
     const what = e.kind === "series" ? `${e.title} · T${e.season} E${e.episode}` : e.title;
     options.push({ icon: repeated.has(e.id) ? "warning" : e.kind === "series" ? "series" : "movie", label: what,
+      ...(repeated.has(e.id) ? { tint: "warning" } : {}), // en ámbar, como el iPhone
       hint: [viewingDate(e.at, now), repeated.has(e.id) && "Repetida"].filter(Boolean).join(" · "),
       command: { type: "viewing-menu", about: { kind: e.kind, id: e.imdb, videoId: e.kind === "series" ? `${e.imdb}:${e.season}:${e.episode}` : null, title: e.title },
         viewing: { id: e.id, at: e.at } } });
@@ -102,8 +105,8 @@ export function viewingsCommands({ api, nested, openMenu, openListForm, renderHi
 
   async function openViewings(about, context) {
     try {
-      const { viewings } = await api.viewings(about.kind, about.id, about.videoId);
-      return openMenu(viewingsMenu(about, viewings), context);
+      const { viewings, offline } = await api.viewings(about.kind, about.id, about.videoId);
+      return openMenu(viewingsMenu(about, viewings, Date.now(), { offline }), context);
     } catch (err) { return failed(err, "No pude leer tus vistas"); }
   }
 

@@ -350,9 +350,9 @@ def router(d: Deps) -> APIRouter:
     @r.get("/viewings")
     def viewings(kind: str, id: str, video_id: str = "") -> dict:
         """«Tus vistas»: cada vez que viste esta película o este capítulo, con su fecha y hora."""
-        found = _trakt_call(lambda: foryou.gestor.viewings(_kind(kind), id[:20], video_id[:40] or None),
-                            "No pude leer tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
-        return {"viewings": found}
+        found, offline = _trakt_call(lambda: foryou.gestor.viewings_now(_kind(kind), id[:20], video_id[:40] or None),
+                                     "No pude leer tu historial de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"viewings": found, "offline": offline}
 
     @r.post("/viewings")
     def change_viewing(body: ViewingRequest) -> dict:

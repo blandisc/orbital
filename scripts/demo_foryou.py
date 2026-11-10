@@ -54,6 +54,13 @@ SHOWS = {
     "penguin": _s("tt15435876", "The Penguin", 2024, 8), "lotus": _s("tt13406094", "The White Lotus", 2021, 21),
 }
 M, S = MOVIES, SHOWS
+OFFLINE = __import__("pathlib").Path(__import__("tempfile").gettempdir()) / "orbital-demo-offline"
+
+
+def _offline():
+    """«Sin internet» en la demo (para ver la cola de Trakt): existe el archivo OFFLINE."""
+    if OFFLINE.exists():
+        raise trakt_api.TraktError("No pude conectar con Trakt: sin internet (demo)")
 # Las que tienen ficha en la demo (DEMO_TITLES de demo_server.py) y no salen en las filas: así se pueden guardar y abrir.
 WITH_PAGE = [_s("tt0386676", "The Office", 2005, 201)]
 
@@ -71,7 +78,7 @@ class DemoTrakt:
         self._linking_since = 0.0
         self._mine: dict[str, dict] = {}  # las listas que se crean aquí («Tu match perfecto», «Tus canales»)
         self._ratings: dict[str, int] = {}
-        self.history: list[tuple[dict, object]] = []
+        self._marked: list[tuple[dict, object]] = []
         # Editar tus listas: lo que agregaste o quitaste de Mi lista y de la lista de muestra («1»), como en Trakt.
         self._edits: dict[str, tuple[list[str], set[str]]] = {"watchlist": ([], set()), "1": ([], set())}
 
@@ -157,7 +164,91 @@ class DemoTrakt:
         return self._ratings.get(imdb)
 
     def add_history(self, target, watched_at=None):
-        self.history.append((target, watched_at))
+        _offline()
+        self._marked.append((target, watched_at))
+        at = float(watched_at) if isinstance(watched_at, (int, float)) or str(watched_at).replace(".", "").isdigit() else time.time()
+        movie, show, ep = target.get("movie"), target.get("show"), target.get("episode") or {}
+        imdb = (movie or show or {}).get("ids", {}).get("imdb")
+        if imdb and (movie or ep):
+            self._views().append(self._view(imdb, "movie" if movie else "series", at, ep.get("season"), ep.get("number")))
+
+    # --- ola 3 (O3-B): tus vistas con su id, tu historial, tu nota y tus temporadas. `ORBITAL_DEMO_VIP=1`: eres VIP.
+    #     Sin internet: crea el archivo %TEMP%\orbital-demo-offline (y bórralo para volver).
+    def _view(self, imdb, kind, at, season=None, episode=None):
+        self._next_id = getattr(self, "_next_id", 9000) + 1
+        known = {e["imdb"]: e for e in [*S.values(), *M.values(), *WITH_PAGE]}
+        return {"id": self._next_id, "at": at, "kind": kind, "imdb": imdb, "title": known.get(imdb, {}).get("title", imdb),
+                "year": known.get(imdb, {}).get("year"), "season": season, "episode": episode,
+                "episode_title": f"Episodio {episode}" if episode else None}
+
+    def _views(self):
+        if not hasattr(self, "_seen"):
+            now, day = time.time(), 86400
+            office, inter = WITH_PAGE[0]["imdb"], M["inter"]["imdb"]
+            self._seen = [self._view(inter, "movie", now - 2 * day), self._view(inter, "movie", now - 400 * day),
+                          self._view(office, "series", now - 3 * day, 1, 1), self._view(office, "series", now - 3 * day + 600, 1, 1),
+                          self._view(office, "series", now - 3 * day + 1900, 1, 2)]
+        return self._seen
+
+    def last_activities(self):  # cada vez, todo «cambió»: la demo es chica
+        return {}
+
+    def watchlist_rows(self):  # la ficha: «En Mi lista» (Seguir viendo y la ficha leen esto)
+        return [{**e, "listed_at": time.time() - n * 3600} for n, e in enumerate(self.watchlist())]
+
+    def recent_shows(self, limit=15):  # la ficha de The Office sabe qué capítulos viste (los de tus vistas)
+        return [WITH_PAGE[0]]
+
+    def show_progress(self, imdb):
+        seen = {(v["season"], v["episode"]) for v in self._views() if v["imdb"] == imdb and v["season"]}
+        if not seen:
+            return None
+        last = max(v["at"] for v in self._views() if v["imdb"] == imdb)
+        nxt = max(seen)
+        return {"next": (nxt[0], nxt[1] + 1), "last_watched": last, "watched": seen}
+
+    def viewings(self, kind, imdb, season=None, episode=None):
+        _offline()
+        rows = [v for v in self._views() if v["imdb"] == imdb and (season is None or (v["season"], v["episode"]) == (season, episode))]
+        return sorted(({"id": v["id"], "at": v["at"]} for v in rows), key=lambda v: -v["at"])
+
+    def remove_viewings(self, ids):
+        _offline()
+        self._seen = [v for v in self._views() if v["id"] not in set(ids)]
+
+    def history(self, page=1, limit=100):
+        _offline()
+        rows = sorted(self._views(), key=lambda v: -v["at"])
+        return rows[(page - 1) * limit: page * limit]
+
+    def is_vip(self):
+        _offline()
+        return __import__("os").environ.get("ORBITAL_DEMO_VIP") == "1"
+
+    def my_notes(self):
+        _offline()
+        return {imdb: dict(n) for imdb, n in getattr(self, "_notes", {}).items()}
+
+    def set_note(self, kind, imdb, text, existing):
+        _offline()
+        self._notes = getattr(self, "_notes", {})
+        if not text.strip():
+            self._notes.pop(imdb, None)
+            return None
+        self._notes[imdb] = {"id": existing or len(self._notes) + 1, "text": text.strip()}
+        return self._notes[imdb]["id"]
+
+    def season_rating(self, imdb, season):
+        _offline()
+        return getattr(self, "_seasons", {}).get((imdb, season))
+
+    def set_season_rating(self, imdb, season, rating):
+        _offline()
+        self._seasons = getattr(self, "_seasons", {})
+        if rating is None:
+            self._seasons.pop((imdb, season), None)
+        else:
+            self._seasons[(imdb, season)] = rating
 
     def public_list_items(self, user, slug):
         return []
@@ -173,7 +264,7 @@ class DemoTrakt:
                  S["dark"]["imdb"]: {**S["dark"], "last": now - 40 * day, "fraction": 1, "airing": False},
                  S["lotus"]["imdb"]: {**S["lotus"], "last": now - 250 * day, "fraction": .3, "airing": True},
                  S["futurama"]["imdb"]: {**S["futurama"], "last": now - 60 * day, "fraction": .2, "airing": True}}
-        for target, _ in self.history:  # lo que marcaste aquí
+        for target, _ in self._marked:  # lo que marcaste aquí
             imdb = (target.get("movie") or {}).get("ids", {}).get("imdb")
             if imdb:
                 known = next((e for e in M.values() if e["imdb"] == imdb), _m(imdb, imdb, 2020, 100))
@@ -195,7 +286,7 @@ class DemoTrakt:
             (self.set_watchlist(kind, imdb, add) if target == "watchlist" else self.set_list_item(target, kind, imdb, add))
 
     def remove_history(self, target):
-        self.history = [(t, w) for t, w in self.history if t != target]
+        self._marked = [(t, w) for t, w in self._marked if t != target]
 
     def update_list(self, list_id, name=None, privacy=None):
         self._meta = getattr(self, "_meta", {})
@@ -212,9 +303,6 @@ class DemoTrakt:
         made = self.create_list(name)
         self._mine[made]["items"] = [e["imdb"] for e in self.list_items(list_id)]
         return made
-
-    def show_progress(self, imdb):  # la ficha de una serie: dónde vas (aquí, en ninguna)
-        return None
 
     def __getattr__(self, name):
         """Lo que la demostración no imita (la ficha y las filas lo piden con Trakt conectado): vacío, nunca un error 500."""
