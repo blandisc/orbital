@@ -319,7 +319,7 @@ struct ListFilterChips: View {
 /// Cómo se llama y qué ícono lleva cada estado (el menú y la cápsula de lo filtrado): un círculo vacío, a medias o con ✓.
 enum WatchStateName {
     static func text(_ state: WatchState) -> Text {
-        switch state { case .unwatched: Text("Por ver"); case .inProgress: Text("A medias"); case .watched: Text("Vistas") }
+        switch state { case .unwatched: Text("Por ver"); case .inProgress: Text("Viendo"); case .watched: Text("Vistas") }
     }
     /// nil: cualquier estado.
     static func symbol(_ state: WatchState?) -> String {

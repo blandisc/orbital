@@ -122,7 +122,13 @@ public struct TraktWatchedState: Sendable, Equatable {
     public var movies: Set<String>
     /// Cada serie con al menos un capítulo visto: los vistos entre los que han salido, de 0 a 1 (1: al día).
     public var shows: [String: Double]
-    public init(movies: Set<String> = [], shows: [String: Double] = [:]) { self.movies = movies; self.shows = shows }
+    /// El nombre, el año y cuándo lo viste por última vez (para Guardado por estado, G2-A).
+    public var info: [String: TraktWatchedInfo] = [:]
+    /// Las series que siguen saliendo (Trakt: «returning series» o «in production»): al día no es terminada.
+    public var airing: Set<String> = []
+    public init(movies: Set<String> = [], shows: [String: Double] = [:], info: [String: TraktWatchedInfo] = [:], airing: Set<String> = []) {
+        self.movies = movies; self.shows = shows; self.info = info; self.airing = airing
+    }
     /// Lo visto completo: las películas y las series al día (una a la mitad no cuenta).
     public var completed: Set<String> { movies.union(shows.filter { $0.value >= 1 }.keys) }
 }
@@ -135,9 +141,30 @@ extension Trakt {
         let movieRows: JSON? = try await movies   // cada espera en su línea (compilador de la CI, 31 oct 2026)
         let showRows: JSON? = try await shows
         var state = TraktWatchedState(movies: Set((movieRows?.array ?? []).compactMap { $0["movie"]?["ids"]?["imdb"]?.string }))
+        for row in movieRows?.array ?? [] {
+            if let imdb = row["movie"]?["ids"]?["imdb"]?.string { state.info[imdb] = TraktWatchedInfo(row, item: row["movie"], kind: "movie") }
+        }
         for row in showRows?.array ?? [] {
-            if let imdb = row["show"]?["ids"]?["imdb"]?.string { state.shows[imdb] = Self.showFraction(row) }
+            guard let imdb = row["show"]?["ids"]?["imdb"]?.string else { continue }
+            state.shows[imdb] = Self.showFraction(row)
+            state.info[imdb] = TraktWatchedInfo(row, item: row["show"], kind: "series")
+            if ["returning series", "in production"].contains(row["show"]?["status"]?.string ?? "") { state.airing.insert(imdb) }
         }
         return state
+    }
+}
+
+/// Un título que viste: su nombre, su año y la última vez que lo viste (de `/sync/watched`).
+public struct TraktWatchedInfo: Sendable, Equatable {
+    public var kind: String
+    public var title: String
+    public var year: Int?
+    public var lastWatchedAt: Date?
+    public init(kind: String, title: String, year: Int? = nil, lastWatchedAt: Date? = nil) {
+        self.kind = kind; self.title = title; self.year = year; self.lastWatchedAt = lastWatchedAt
+    }
+    init(_ row: JSON, item: JSON?, kind: String) {
+        self.init(kind: kind, title: item?["title"]?.string ?? "", year: item?["year"]?.intValue,
+                  lastWatchedAt: row["last_watched_at"]?.string.flatMap(TraktParsing.date))
     }
 }

@@ -73,6 +73,8 @@ struct DownloadsView: View {
         .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
         .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
         .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
+        .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
+        .navigationDestination(for: SavedStateRoute.self) { SavedStateScreen(observer: saved, status: TitleStatus(rawValue: $0.status) ?? .watching) }
         .task { await model.run() }
         .onChange(of: part) { _, new in
             #if DEBUG

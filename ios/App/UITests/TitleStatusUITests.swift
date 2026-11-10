@@ -16,4 +16,24 @@ final class TitleStatusUITests: XCTestCase {
         XCTAssertTrue(app.buttons["En Mi lista"].exists, "y «En Mi lista»")
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = "menu"; a.lifetime = .keepAlways; add(a)
     }
+
+    /// G2-A: Biblioteca › Guardado es un tablero; «Vistas» abre lo visto por mes y «En Mi lista», tu lista.
+    func testGuardadoEsUnTableroQueAbreCadaEstado() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark", "-demo-tab", "3"]
+        app.launch()
+        let watched = app.buttons.containing(NSPredicate(format: "label CONTAINS 'Vistas'")).firstMatch
+        XCTAssertTrue(watched.waitForExistence(timeout: 20), "el tablero tiene «Vistas»")
+        watched.tap()
+        XCTAssertTrue(app.navigationBars["Vistas"].waitForExistence(timeout: 10), "abre Vistas")
+        sleep(2)
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = "vistas"; a.lifetime = .keepAlways; add(a)
+        app.navigationBars.buttons.firstMatch.tap()
+        let list = app.buttons.containing(NSPredicate(format: "label CONTAINS 'En Mi lista'")).firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 10))
+        list.tap()
+        XCTAssertTrue(app.buttons["saved-list-menu"].waitForExistence(timeout: 10) || app.navigationBars["Mi lista"].exists, "abre Mi lista")
+        sleep(2)
+        let b = XCTAttachment(screenshot: app.screenshot()); b.name = "milista"; b.lifetime = .keepAlways; add(b)
+    }
 }

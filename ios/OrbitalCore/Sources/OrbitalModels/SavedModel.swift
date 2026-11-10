@@ -30,6 +30,11 @@ public final class SavedModel: ObservableModel {
     public private(set) var failed = false { didSet { if failed != oldValue { changed() } } }
     /// Lo que viste según Trakt (películas y cuánto llevas de cada serie).
     public private(set) var watched = TraktWatchedState() { didSet { if watched != oldValue { changed() } } }
+    /// Mi lista entera, aunque veas otra lista (el tablero cuenta lo que tienes en ella).
+    public private(set) var watchlist: [Suggestion] = [] { didSet { if watchlist != oldValue { changed() } } }
+    /// Tus listas de Trakt: unos pósters y cuántos títulos tiene cada una (los renglones de «Tus listas»).
+    public private(set) var listPosters: [String: [String]] = [:] { didSet { if listPosters != oldValue { changed() } } }
+    public private(set) var listCounts: [String: Int] = [:] { didSet { if listCounts != oldValue { changed() } } }
     /// Ya se pidió una vez (antes de eso no se enseña el vacío).
     public private(set) var loadedOnce = false { didSet { if loadedOnce != oldValue { changed() } } }
 
@@ -50,13 +55,30 @@ public final class SavedModel: ObservableModel {
         let forYou = services.forYou
         async let own = forYou.ownTraktLists()
         async let seen = try? trakt.watchedState()
+        async let mine = try? forYou.items(listID: Self.watchlist)
         await loadItems()
+        if let found = await mine { watchlist = await localized(found) }
         lists = [SavedList(id: Self.watchlist, name: "")] + (await own).map { SavedList(id: "list:\($0.id)", name: $0.name) }
         if !lists.contains(where: { $0.id == selected }) {   // la borraste en Trakt: de vuelta a Mi lista
             select(Self.watchlist)
             await loadItems()
         }
         if let found = await seen { watched = found }
+        await loadListPreviews()
+    }
+
+    /// Los pósters y la cifra de cada una de tus listas, a la vez (salen de la misma caché que Para ti).
+    private func loadListPreviews() async {
+        let forYou = services.forYou
+        let ids = lists.map(\.id).filter { $0 != Self.watchlist }
+        let found = await withTaskGroup(of: (String, [Suggestion]?).self) { group in
+            for id in ids { group.addTask { (id, try? await forYou.items(listID: id)) } }
+            var out: [String: [Suggestion]] = [:]
+            for await (id, items) in group { if let items { out[id] = items } }
+            return out
+        }
+        listPosters = found.mapValues { Array($0.prefix(3).map(\.poster)) }
+        listCounts = found.mapValues(\.count)
     }
 
     /// Cambiar de lista (un toque): se recuerda y se pide la nueva.
@@ -105,6 +127,12 @@ public final class SavedModel: ObservableModel {
             }
         }
         return out
+    }
+
+    // MARK: por estado (G2-A)
+    /// Lo tuyo por estado; `hidden`: las series que dejaste (`FollowModel`).
+    public func board(hidden: Set<String>, hiddenNames: [String: String] = [:]) -> SavedBoard {
+        SavedBoard.build(watchlist: watchlist, watched: watched, hidden: hidden, hiddenNames: hiddenNames)
     }
 
     // MARK: editar la lista (quitar y agregar)

@@ -586,4 +586,11 @@ extension DS {
         /// Cuánto hay que deslizar de lado para regresar a Explorar.
         static let swipeBack: CGFloat = 80
     }
+
+    /// Biblioteca › Guardado por estado (G2-A, 9 nov 2026): las cuatro tarjetas y sus mini pósters.
+    enum SavedBoard {
+        static let columns = 2
+        static let miniPoster: CGFloat = 26
+        static let miniPosters = 4
+    }
 }
