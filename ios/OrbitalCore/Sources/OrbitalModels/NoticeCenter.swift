@@ -19,6 +19,10 @@ public struct Notice: Equatable, Sendable {
     public var symbol: String?
     /// Su número: cada aviso es otro aunque diga lo mismo (para animar el cambio y quitar justo ese).
     public var serial = 0
+    /// Una segunda salida, solo ícono («Vista hoy · Otra fecha · ↩︎»): su número de `perform`, su nombre (VoiceOver) y su ícono.
+    public var second: Int?
+    public var secondTitle: String?
+    public var secondSymbol: String?
 
     public init(text: String, tone: NoticeTone, action: NoticeAction? = nil, detail: String? = nil, actionTitle: String? = nil, actionSymbol: String? = nil, symbol: String? = nil, serial: Int = 0) {
         self.text = text; self.tone = tone; self.action = action; self.detail = detail
@@ -80,5 +84,8 @@ public final class NoticeCenter: ObservableModel {
     /// Corre lo que pidió quien avisó con `.perform(n)` (si sigue vigente).
     public func perform(_ n: Int) { performs[n]?() }
 
-    private func forget(_ notice: Notice) { if case .perform(let n)? = notice.action { performs[n] = nil } }
+    private func forget(_ notice: Notice) {
+        if case .perform(let n)? = notice.action { performs[n] = nil }
+        if let n = notice.second { performs[n] = nil }
+    }
 }

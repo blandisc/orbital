@@ -378,6 +378,8 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
 
     /// Medidas fijas.
     enum Size {
+        /// El alto mínimo donde escribes «Tu nota» (gestor ola 3).
+        static let noteEditor: CGFloat = 160
         /// Cuánto se desvanece la orilla de una tira horizontal que no cabe (`edgeFade`).
         static let edgeFade: CGFloat = 28
         /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).

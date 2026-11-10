@@ -102,6 +102,7 @@ extension DemoHTTPClient {
 
     func traktDemo(_ request: HTTPRequest) async -> HTTPResponse? {
         let path = request.url.path, post = request.method == "POST"
+        if let found = historyDemo(request) { return found }   // historial, VIP, notas y temporadas (O3-B)
         let body = request.body.flatMap(JSON.parse)
         func iso(_ hoursAgo: Double) -> JSON { .string(StremioLibrary.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }
         func imdbs(_ body: JSON?) -> [String] { ((body?["movies"]?.array ?? []) + (body?["shows"]?.array ?? [])).compactMap { $0["ids"]?["imdb"]?.string } }

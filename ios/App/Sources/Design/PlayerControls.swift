@@ -270,6 +270,9 @@ struct Toast: View {
     var actionTitle: LocalizedStringKey?
     var actionSymbol: String?
     var action: (() -> Void)?
+    /// Una segunda salida, solo ícono (gestor ola 3: «Vista hoy · Otra fecha · ↩︎»).
+    struct Second { let title: String; let symbol: String; let run: () -> Void }
+    var second: Second?
     /// Otro ícono y color que el del tono (el de pasar a la TV: la tele en el color de Orbital).
     var symbol: String?
     var color: Color?
@@ -326,6 +329,18 @@ struct Toast: View {
                     if prominent { button.dsSolidPrimaryButton(shape: .capsule) } else { button.dsSecondaryButton() }
                 }
                 .fixedSize()
+                .opacity(textIn ? 1 : 0)
+            }
+            if let second {
+                Button { second.run(); dismiss() } label: {
+                    Image(systemName: second.symbol).font(DS.TextRecipe.footnote.font.weight(.semibold))
+                        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(DS.text)
+                .accessibilityLabel(Text(verbatim: second.title))
+                .accessibilityIdentifier("toast-second")
                 .opacity(textIn ? 1 : 0)
             }
         }

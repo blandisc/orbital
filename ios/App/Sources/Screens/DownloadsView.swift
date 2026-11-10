@@ -75,6 +75,7 @@ struct DownloadsView: View {
         .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
         .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
         .navigationDestination(for: SavedStateRoute.self) { SavedStateScreen(observer: saved, status: TitleStatus(rawValue: $0.status) ?? .watching) }
+        .navigationDestination(for: HistoryRoute.self) { _ in HistoryScreen() }
         .task { await model.run() }
         .onChange(of: part) { _, new in
             #if DEBUG

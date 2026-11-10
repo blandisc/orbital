@@ -1,0 +1,132 @@
+import XCTest
+
+/// O3-B (Fernando, 10 nov 2026: «Vamos con todo y tus sugerencias»): «Tus vistas» y «Tu nota» en la ficha, las estrellas de
+/// la temporada y la pantalla «Historial» con sus vistas repetidas. La demo tiene Dune vista tres veces (dos el mismo día).
+final class ViewingsUITests: XCTestCase {
+    override func setUp() { continueAfterFailure = false }
+
+    func shot(_ app: XCUIApplication, _ name: String) {
+        let a = XCTAttachment(screenshot: app.screenshot()); a.name = name; a.lifetime = .keepAlways; add(a)
+    }
+
+    func launch(_ extra: [String]) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-trakt", "-demo-no-idle", "-demo-appearance", "dark"] + extra
+        app.launch()
+        return app
+    }
+
+    /// La hoja «¿Cuándo la viste?»: «Ahora».
+    func answerWhen(_ app: XCUIApplication) {
+        let now = app.buttons["watched-now"], no = app.buttons["watched-earlier-no"], done = app.buttons["watched-when-done"]
+        XCTAssertTrue(now.waitForExistence(timeout: 5) || no.exists || done.exists, "la hoja de cuándo")
+        if no.exists { no.tap() }
+        if now.waitForExistence(timeout: 2) { now.tap() }
+        if done.waitForExistence(timeout: 2) { done.tap() }
+    }
+
+    func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
+        for _ in 0..<8 where !(element.exists && element.isHittable) { app.swipeUp() }
+    }
+
+    func testTusVistasYTuNotaEnLaFicha() {
+        let app = launch(["-demo-title", "movie:tt1160419"])
+        // En la demo Dune aún no cuenta como vista aquí (Trakt ya tiene sus tres vistas): «Vista» desde el menú.
+        let status = app.buttons["title-status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 25))
+        status.tap()
+        if !app.buttons["Vista"].waitForExistence(timeout: 3) { status.tap() }
+        XCTAssertTrue(app.buttons["Vista"].waitForExistence(timeout: 5))
+        app.buttons["Vista"].tap()
+        answerWhen(app)
+        let viewings = app.buttons["title-your-viewings"]
+        XCTAssertTrue(viewings.waitForExistence(timeout: 25), "«Tus vistas» en la ficha de una película vista")
+        scrollTo(viewings, in: app)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS '3 veces'")).firstMatch.waitForExistence(timeout: 10)
+                      || viewings.label.contains("3 veces"), "la viste 3 veces")
+        shot(app, "ficha")
+        viewings.tap()
+        XCTAssertTrue(app.otherElements["viewings-sheet"].waitForExistence(timeout: 5) || app.navigationBars["Tus vistas"].waitForExistence(timeout: 5))
+        let trash = app.buttons.matching(identifier: "viewing-delete")
+        XCTAssertTrue(trash.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertEqual(trash.count, 3, "una fila por vista")
+        shot(app, "tus-vistas")
+        trash.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Deshacer"].waitForExistence(timeout: 5) || app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Borr'")).firstMatch.exists,
+                      "el aviso con Deshacer")
+        let fewer = NSPredicate(format: "count == 2")
+        expectation(for: fewer, evaluatedWith: trash)
+        waitForExpectations(timeout: 8)
+        app.buttons["viewing-add"].tap()
+        XCTAssertTrue(app.buttons["viewing-date-save"].waitForExistence(timeout: 5), "«La vi otra vez» pide la fecha")
+        shot(app, "otra-vez")
+        app.buttons["viewing-date-save"].tap()
+        expectation(for: NSPredicate(format: "count == 3"), evaluatedWith: trash)
+        waitForExpectations(timeout: 8)
+        app.navigationBars.buttons["Listo"].tap()
+
+        let note = app.buttons.matching(identifier: "title-your-note").firstMatch
+        scrollTo(note, in: app)
+        XCTAssertTrue(note.waitForExistence(timeout: 5), "«Tu nota» en la ficha")
+        note.tap()
+        let where_ = app.staticTexts["note-where"]
+        XCTAssertTrue(where_.waitForExistence(timeout: 5))
+        XCTAssertTrue(where_.label.contains("solo en este iPhone"), "sin VIP la nota se queda en el iPhone: \(where_.label)")
+        app.textViews["note-editor"].tap()
+        app.textViews["note-editor"].typeText("La vi en el cine con Ana.")
+        shot(app, "nota")
+        app.buttons["note-save"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'con Ana'")).firstMatch.waitForExistence(timeout: 5), "la nota sale en la ficha")
+        shot(app, "ficha-con-nota")
+    }
+
+    func testLaNotaConVIPVaATrakt() {
+        let app = launch(["-demo-vip", "-demo-title", "movie:tt1160419"])
+        let note = app.buttons.matching(identifier: "title-your-note").firstMatch
+        XCTAssertTrue(note.waitForExistence(timeout: 25))
+        scrollTo(note, in: app)
+        note.tap()
+        let where_ = app.staticTexts["note-where"]
+        XCTAssertTrue(where_.waitForExistence(timeout: 5))
+        XCTAssertTrue(where_.label.contains("Trakt (VIP)"), "con VIP la nota vive en Trakt: \(where_.label)")
+        shot(app, "nota-vip")
+    }
+
+    func testEstrellasDeLaTemporada() {
+        let app = launch(["-demo-title", "series:tt0386676"])
+        // Un capítulo visto de la temporada: aparecen sus estrellas.
+        let mark = app.buttons["Marcar como vista"].firstMatch
+        XCTAssertTrue(mark.waitForExistence(timeout: 25))
+        scrollTo(mark, in: app)
+        mark.tap()
+        let season = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Solo la temporada'")).firstMatch
+        XCTAssertTrue(season.waitForExistence(timeout: 5))
+        season.tap()
+        answerWhen(app)
+        let stars = app.otherElements["season-rating"]
+        XCTAssertTrue(stars.waitForExistence(timeout: 25), "estrellas de la temporada bajo «N de M vistos»")
+        scrollTo(stars, in: app)
+        shot(app, "temporada")
+    }
+
+    func testHistorialYRepetidas() {
+        let app = launch(["-demo-tab", "3"])
+        let watched = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Vistas'")).firstMatch
+        XCTAssertTrue(watched.waitForExistence(timeout: 20), "«Vistas» en el tablero")
+        watched.tap()
+        let history = app.buttons["saved-history"]
+        XCTAssertTrue(history.waitForExistence(timeout: 10), "el reloj de «Historial» en Vistas")
+        history.tap()
+        let repeatRow = app.descendants(matching: .any)["history-row-repeat"]
+        XCTAssertTrue(repeatRow.waitForExistence(timeout: 10), "Dune repetida el mismo día")
+        shot(app, "historial")
+        app.buttons["history-clean-repeats"].tap()
+        let confirm = app.buttons["Borrar"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: repeatRow)
+        waitForExpectations(timeout: 8)
+        XCTAssertTrue(app.descendants(matching: .any)["history-row"].exists, "las demás vistas se quedan")
+        shot(app, "historial-limpio")
+    }
+}

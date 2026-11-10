@@ -356,6 +356,15 @@ struct SavedStateScreen: View {
         }
         .navigationTitle(LibrarySavedView.name(status)).navigationBarTitleDisplayMode(.inline)
         .toolbar { if !every.isEmpty || selection.editing { ListSelectToolbar(selection: selection, all: every.map(\.imdb)) } }
+        .toolbar {
+            // G5-B (gestor ola 3): en Vistas, «Historial» con cada vista y su fecha.
+            if status == .watched, !selection.editing {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(value: HistoryRoute()) { Label("Historial", systemImage: "clock.arrow.circlepath") }
+                        .accessibilityIdentifier("saved-history")
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             if selection.editing {
                 SavedSelectionBar(model: model, selection: selection, listID: nil, pile: status, items: every)

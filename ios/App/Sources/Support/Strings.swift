@@ -160,7 +160,7 @@ enum Strings {
 
     /// Cómo se escribe una fecha: «12 de agosto», «jueves 12 de agosto», «jueves», «agosto de 2026».
     /// Y para los ejes de una gráfica: la inicial del día («L»), el número del día, la inicial del mes, el año en dos cifras.
-    enum DateStyle { case dayMonth, dayMonthShort, weekdayDayMonth, weekday, monthYear, weekdayInitial, dayNumber, monthInitial, yearShort }
+    enum DateStyle { case dayMonth, dayMonthShort, dayMonthYear, weekdayDayMonth, weekday, monthYear, weekdayInitial, dayNumber, monthInitial, yearShort }
 
     /// Una fecha en el idioma de la app (no en el del teléfono): la misma en Lo que ves, el Wrapped, la ficha y los estrenos.
     static func date(_ date: Date, _ style: DateStyle, language: String) -> String {
@@ -168,6 +168,7 @@ enum Strings {
         let format: Date.FormatStyle = switch style {
         case .dayMonth: .dateTime.day().month(.wide)
         case .dayMonthShort: .dateTime.day().month(.abbreviated)
+        case .dayMonthYear: .dateTime.day().month(.abbreviated).year()
         case .weekdayDayMonth: .dateTime.weekday(.wide).day().month(.wide)
         case .weekday: .dateTime.weekday(.wide)
         case .monthYear: .dateTime.month(.wide).year()

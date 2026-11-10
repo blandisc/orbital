@@ -93,6 +93,13 @@ extension WatchService {
                 let chunks = stride(from: 0, to: snapshot.traktWatched.count, by: 100).map { Array(snapshot.traktWatched[$0..<min($0 + 100, snapshot.traktWatched.count)]) }
                 retry.traktWatched = await attempt(chunks) { chunk in try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) }) }.flatMap { $0 }
             }
+            // Primero lo nuevo y luego lo borrado: una fecha cambiada sin red nunca se queda sin ninguna de las dos.
+            if !snapshot.traktRewatched.isEmpty {
+                retry.traktRewatched = await attempt([snapshot.traktRewatched]) { chunk in try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) }) }.flatMap { $0 }
+            }
+            if !snapshot.traktViewingRemovals.isEmpty {
+                retry.traktViewingRemovals = await attempt([snapshot.traktViewingRemovals]) { try await trakt.removeViewings($0) }.flatMap { $0 }
+            }
             retry.playbackRemovals = await attempt(snapshot.playbackRemovals) { removal in
                 let stale = try await trakt.playback(fresh: true).filter { $0.target.imdb == removal.target.imdb && $0.pausedAt.timeIntervalSince1970 <= removal.at + 1 }
                 for item in stale { try await trakt.removePlayback(id: item.id) }
@@ -106,6 +113,7 @@ extension WatchService {
         } else {
             retry.traktWatched = snapshot.traktWatched; retry.traktUnwatched = snapshot.traktUnwatched
             retry.traktProgress = snapshot.traktProgress; retry.playbackRemovals = snapshot.playbackRemovals
+            retry.traktViewingRemovals = snapshot.traktViewingRemovals; retry.traktRewatched = snapshot.traktRewatched
         }
         // Lo que se subió sale; lo que falló se queda; lo que llegó durante el vaciado también se queda.
         let current = pending.load()
@@ -115,6 +123,8 @@ extension WatchService {
         next.traktUnwatched = current.traktUnwatched.filter { !snapshot.traktUnwatched.contains($0) } + retry.traktUnwatched
         next.traktProgress = current.traktProgress.filter { !snapshot.traktProgress.contains($0) } + retry.traktProgress
         next.playbackRemovals = current.playbackRemovals.filter { !snapshot.playbackRemovals.contains($0) } + retry.playbackRemovals
+        next.traktViewingRemovals = current.traktViewingRemovals.filter { !snapshot.traktViewingRemovals.contains($0) } + retry.traktViewingRemovals
+        next.traktRewatched = current.traktRewatched.filter { !snapshot.traktRewatched.contains($0) } + retry.traktRewatched
         pending.save(next)
         return next
     }
@@ -128,6 +138,7 @@ extension WatchService {
         for item in items {
             do { try await send(item) }
             catch let error as TraktError { if Self.shouldRetry(error) { again.append(item) } }
+            catch is URLError { again.append(item) }   // sin red (lo que no pasó por `NetworkError`): espera
             catch {}
         }
         return again

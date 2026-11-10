@@ -94,6 +94,9 @@ struct RootView: View {
                       close: { ui.openStory = nil })
         }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
+        .sheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
+            ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: r.at) { date in Task { await env.redate(r, to: date) } }
+        }
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
             Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
             Button("No", role: .cancel) { env.askFinished = nil }
@@ -514,7 +517,9 @@ struct BannerView: View {
             let hasAction = banner.action != nil
             Toast(tone: banner.tone, title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
                   actionTitle: hasAction ? banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver" : nil, actionSymbol: banner.actionSymbol,
-                  action: hasAction ? { env.runBannerAction(banner) } : nil, symbol: banner.symbol,
+                  action: hasAction ? { env.runBannerAction(banner) } : nil,
+                  second: banner.second.map { n in Toast.Second(title: banner.secondTitle ?? "", symbol: banner.secondSymbol ?? "arrow.uturn.backward") { env.notices.perform(n) } },
+                  symbol: banner.symbol,
                   seconds: Toast.duration(banner.tone, hasAction: hasAction), dismiss: { env.dismissBanner(banner.serial) })
                 .id(banner.serial)
                 .transition(DS.Motion.notice(reduceMotion))

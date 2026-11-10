@@ -150,13 +150,17 @@ public struct PendingWork: Sendable, Equatable, Codable {
     public var traktProgress: [ProgressEvent] = []
     /// Lo que quitaste de «Seguir viendo» (id del título y cuándo): se borra de Trakt lo que estaba a medias hasta esa hora.
     public var playbackRemovals: [TraktWatched] = []
+    /// Vistas que borraste (id en tu historial de Trakt) y aún no llegan (gestor ola 3).
+    public var traktViewingRemovals: [Int] = []
+    /// «La vi otra vez» o una fecha cambiada: se suben aunque haya otra vista cerca (las pediste tú).
+    public var traktRewatched: [TraktWatched] = []
     public init() {}
     public struct TraktWatched: Sendable, Equatable, Codable {
         public var target: TraktTarget
         public var at: Double
         public init(target: TraktTarget, at: Double) { self.target = target; self.at = at }
     }
-    public var isEmpty: Bool { progress.isEmpty && traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty }
+    public var isEmpty: Bool { progress.isEmpty && traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty && traktViewingRemovals.isEmpty && traktRewatched.isEmpty }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -165,8 +169,10 @@ public struct PendingWork: Sendable, Equatable, Codable {
         traktUnwatched = try c.decodeIfPresent([TraktTarget].self, forKey: .traktUnwatched) ?? []
         traktProgress = try c.decodeIfPresent([ProgressEvent].self, forKey: .traktProgress) ?? []
         playbackRemovals = try c.decodeIfPresent([TraktWatched].self, forKey: .playbackRemovals) ?? []
+        traktViewingRemovals = try c.decodeIfPresent([Int].self, forKey: .traktViewingRemovals) ?? []
+        traktRewatched = try c.decodeIfPresent([TraktWatched].self, forKey: .traktRewatched) ?? []
     }
-    enum Keys: String, CodingKey { case progress, traktWatched, traktUnwatched, traktProgress, playbackRemovals }
+    enum Keys: String, CodingKey { case progress, traktWatched, traktUnwatched, traktProgress, playbackRemovals, traktViewingRemovals, traktRewatched }
 }
 
 public protocol PendingStore: Sendable {

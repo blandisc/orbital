@@ -34,6 +34,8 @@ final class AppUI {
     var openCloudRequest: String?
     /// N1: una descarga que empezó: su póster vuela a la pestaña Biblioteca (`DownloadFlightLayer`).
     var downloadFlight: DownloadFlight?
+    /// «Otra fecha» del aviso de «Vista» (gestor ola 3): la vista que se acaba de marcar y que pasa a otro día.
+    var redate: RedateRequest?
     /// Biblioteca › Descargas está a la vista: la marca de la pestaña no sale (ya lo estás viendo).
     var seeingDownloads = false
     /// El Centro de control pidió el control de tu Orbital.
@@ -58,4 +60,12 @@ final class AppUI {
     var splashing = false
     /// Dónde está el logotipo de Inicio en la pantalla, si se ve: ahí termina la entrada.
     var homeLogoFrame: CGRect?
+}
+
+/// La vista recién marcada que pasa a otro día (gestor ola 3).
+struct RedateRequest: Identifiable, Equatable {
+    var kind: String
+    var videoID: String
+    var at: Date
+    var id: String { "\(videoID)@\(at.timeIntervalSince1970)" }
 }

@@ -40,6 +40,9 @@ struct TitleView: View {
     @State var saving = false
     /// «¿Cuándo la viste?»: qué se está marcando (la película, un episodio, la temporada o la serie).
     @State var marking: WatchedScope?
+    /// «Tus vistas» (gestor ola 3): de qué película o capítulo; y la hoja de «Tu nota».
+    @State var viewingsFor: ViewingsTarget?
+    @State var noting = false
     /// Lo que mide la pantalla visible (sin la barra de pestañas) y lo que hay bajo el arte hasta las acciones: el arte
     /// se ajusta para que «Ver», Guardar, Descargar y Fuente queden a la vista al abrir, en un SE y en un Pro.
     @State private var viewport: CGSize = .zero
@@ -132,6 +135,7 @@ struct TitleView: View {
         // Un pedido cambió de estado (quedó listo, lo cancelaste): la versión y el botón se ponen al día.
         .onChange(of: model.debridRequest?.state) { _, _ in Task { await model.loadBestSource(onCellular: env.connectivity.isCellular) } }
         .modifier(TitleWatchedWhen(model: model, scope: $marking))
+        .modifier(TitleViewingsAndNote(model: model, viewingsFor: $viewingsFor, noting: $noting))
         .sheet(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
             if let r = replacing {
                 DownloadVersionSheet(current: describe(r.existing), new: describe(r.source),
@@ -229,6 +233,8 @@ struct TitleView: View {
         case .details:
             creditLine(model)
             yourRating(model)
+            yourViewings(model)
+            yourNote(model)
             if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
             if let info = letterboxdInfo, !info.reviews.isEmpty {
                 LetterboxdPublicReviews(reviews: info.reviews, link: info.slug.flatMap { URL(string: "\(Letterboxd.site)/film/\($0)/reviews/by/activity/") })
@@ -252,6 +258,8 @@ struct TitleView: View {
         if withSynopsis { synopsis(model) }
         creditLine(model)
         yourRating(model)
+        yourViewings(model)
+        yourNote(model)
         // Tu reseña en Letterboxd (si la conectaste y la reseñaste o calificaste).
         if let review = env.letterboxdReview(model.metaID) { LetterboxdReviewCard(entry: review, watched: LetterboxdWords.watched(review, language: env.services.appSettings.uiLanguage)) }
         if let info = letterboxdInfo, !info.reviews.isEmpty {
@@ -442,6 +450,7 @@ struct TitleView: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             seasonControl(model)
             if progress.total > 0 { Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote, color: DS.textMuted) }
+            seasonRating(model, progress)
         }
     }
 
@@ -525,7 +534,8 @@ struct TitleView: View {
                                resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil,
-                               rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id), accent: artAccent)
+                               rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id), accent: artAccent,
+                               viewings: viewings(model, row))
                 Divider().overlay(DS.hairline)
             }
         }
@@ -538,7 +548,8 @@ struct TitleView: View {
                        resumeDownload: { Task { await model.resumeDownload(row.id) } },
                        downloadFraction: model.downloadFraction(row.id),
                        playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil,
-                       rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id), accent: artAccent, card: card)
+                       rating: env.ratings.stars(row.id), rate: rateEpisode(model, row.id), accent: artAccent, card: card,
+                       viewings: viewings(model, row))
     }
 
     // MARK: acciones

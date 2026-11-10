@@ -43682,6 +43682,391 @@
           }
         }
       }
+    },
+    "%@, temporada %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, season %lld"
+          }
+        }
+      }
+    },
+    "Borrar %lld vistas repetidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %lld repeated viewings"
+          }
+        }
+      }
+    },
+    "Borrar 1 vista repetida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete 1 repeated viewing"
+          }
+        }
+      }
+    },
+    "Borrar esta vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this viewing"
+          }
+        }
+      }
+    },
+    "Borré %lld vistas repetidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted %lld repeated viewings"
+          }
+        }
+      }
+    },
+    "Borré 1 vista repetida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleted 1 repeated viewing"
+          }
+        }
+      }
+    },
+    "Cambiar la fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the date"
+          }
+        }
+      }
+    },
+    "De cada título se queda la primera vista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first viewing of each title stays."
+          }
+        }
+      }
+    },
+    "Espera a que haya internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for internet"
+          }
+        }
+      }
+    },
+    "Fecha cambiada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date changed"
+          }
+        }
+      }
+    },
+    "Historial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
+    "La temporada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This season"
+          }
+        }
+      }
+    },
+    "La vi otra vez…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched it again…"
+          }
+        }
+      }
+    },
+    "La viste %lld veces": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched %lld times"
+          }
+        }
+      }
+    },
+    "La viste 1 vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched once"
+          }
+        }
+      }
+    },
+    "La última, el %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last on %@"
+          }
+        }
+      }
+    },
+    "Lo que veas o marques como visto aparece aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watch or mark as watched shows up here."
+          }
+        }
+      }
+    },
+    "Nada en tu historial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in your history"
+          }
+        }
+      }
+    },
+    "No pude cambiar la fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't change the date"
+          }
+        }
+      }
+    },
+    "No pude deshacerlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't undo it"
+          }
+        }
+      }
+    },
+    "No pude traer tu historial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load your history"
+          }
+        }
+      }
+    },
+    "No pude traer tus vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load your viewings"
+          }
+        }
+      }
+    },
+    "Otra fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other date"
+          }
+        }
+      }
+    },
+    "Privada, en tu Trakt (VIP). Nadie más la ve.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private, in your Trakt (VIP). Nobody else sees it."
+          }
+        }
+      }
+    },
+    "Privada. Sin Trakt VIP se guarda solo en este iPhone; si un día tienes VIP, pasa sola a tu Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private. Without Trakt VIP it's saved only on this iPhone; if you get VIP one day, it moves to your Trakt on its own."
+          }
+        }
+      }
+    },
+    "Repetida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeated"
+          }
+        }
+      }
+    },
+    "Repetida: el mismo título o capítulo con menos de una hora de otra vista. Se queda la primera.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeated: the same title or episode less than an hour from another viewing. The first one stays."
+          }
+        }
+      }
+    },
+    "Sin internet. Bórrala en «Tus vistas» de su ficha.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet. Delete it in “Your viewings” on its page."
+          }
+        }
+      }
+    },
+    "Sin internet. Cámbiala en «Tus vistas» de su ficha.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet. Change it in “Your viewings” on its page."
+          }
+        }
+      }
+    },
+    "Tu calificación de la temporada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your rating for the season"
+          }
+        }
+      }
+    },
+    "Tu nota": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your note"
+          }
+        }
+      }
+    },
+    "Tus vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your viewings"
+          }
+        }
+      }
+    },
+    "Tus vistas…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your viewings…"
+          }
+        }
+      }
+    },
+    "Vista borrada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewing deleted"
+          }
+        }
+      }
+    },
+    "¿Borrar las vistas repetidas?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the repeated viewings?"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -81,6 +81,8 @@ enum Demo {
     /// `-demo-trakt`: Trakt «conectado» con una watchlist y listas propias de mentira (unas recientes, otras viejas) que tardan
     /// ~1,5 s en llegar, como la red de verdad: para ver «Guardar en…» cargando y ya cargada. `-demo-open save` lo prende solo.
     static var trakt: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt") || open == "save" }
+    /// `-demo-vip`: tu Trakt de mentira es VIP (tu nota se guarda en Trakt; sin esto, en el iPhone). O3-B, G6.
+    static var vip: Bool { ProcessInfo.processInfo.arguments.contains("-demo-vip") }
     /// `-demo-scroll 240`: la ficha abre ya desplazada esos puntos (para capturar el arte a medio recoger).
     static var scroll: Double? { value(after: "-demo-scroll").flatMap(Double.init) }
     /// `-demo-autoscroll`: la ficha baja sola y suave hasta ~600 pt, espera y regresa arriba (para grabar el arte en video).

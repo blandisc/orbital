@@ -46,6 +46,8 @@ final class AppEnvironment {
     @ObservationIgnored lazy var advancedFilter = AdvancedFilterModel(services, watched: { [unowned self] in await self.collections.watchedIDs() })
     /// Tus calificaciones y el recordatorio de calificar (como en Trakt): uno para toda la app (la ficha y la pastilla ven lo mismo).
     @ObservationIgnored lazy var ratings = RatingsModel(services)
+    /// «Tu nota» de cada título (gestor ola 3): en tu Trakt con VIP; si no, en este iPhone.
+    @ObservationIgnored lazy var notes = NotesModel(services)
     /// Ver, guardar, quitar, favoritos y marcar como vista desde un póster: la lógica en `TitleActions` (OrbitalModels, con pruebas).
     @ObservationIgnored lazy var titles = TitleActions(services)
     /// «Un Simpson al azar»: la lógica vive en `SimpsonsModel` (OrbitalModels, con pruebas); aquí se le enchufan las imágenes y el aviso.
@@ -114,6 +116,19 @@ final class AppEnvironment {
         notices.show(Notice(text: Strings.message(text, language: language), tone: tone, action: .perform(serial),
                             detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
                             actionSymbol: actionSymbol))
+    }
+
+    /// Un aviso con dos salidas: la primera con nombre y la segunda solo ícono («Vista hoy · Otra fecha · ↩︎»).
+    func notify(_ text: String, detail: String? = nil, tone: NoticeTone = .success, actionTitle: String, actionSymbol: String? = nil,
+                perform: @escaping () -> Void, secondTitle: String, secondSymbol: String, second: @escaping () -> Void) {
+        let language = services.appSettings.uiLanguage
+        var notice = Notice(text: Strings.message(text, language: language), tone: tone, action: .perform(notices.register(perform)),
+                            detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language),
+                            actionSymbol: actionSymbol)
+        notice.second = notices.register(second)
+        notice.secondTitle = Strings.tr(secondTitle, language: language)
+        notice.secondSymbol = secondSymbol
+        notices.show(notice)
     }
 
     /// Se fue (se acabó su tiempo, lo tocaste o lo deslizaste): sale el siguiente que esperaba.

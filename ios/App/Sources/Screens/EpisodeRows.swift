@@ -21,6 +21,8 @@ struct EpisodeRowView: View {
     var accent: Color = DS.accent
     /// Como tarjeta (la fila de episodios del iPad y la Mac, como la TV): la imagen grande y el nombre debajo.
     var card = false
+    /// «Tus vistas…» (gestor ola 3): cambiar la fecha o borrar una vista de este capítulo; nil si no lo has visto.
+    var viewings: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
 
     /// El que vas viendo (con avance y sin terminar): se distingue en la lista (O1).
@@ -121,6 +123,7 @@ struct EpisodeRowView: View {
         if withDownload { Button("Descargar", systemImage: "arrow.down.circle", action: download) }
         Button("Versión de este episodio…", systemImage: "list.bullet.rectangle", action: chooseSource)   // el mismo ícono que «Versión» de la ficha
         // Ya visto: «Marcar como no visto» (sale de lo visto aquí y en Trakt).
+        if row.watched, let viewings { Button("Tus vistas…", systemImage: "calendar", action: viewings) }
         if row.watched { Button("Marcar como no visto", systemImage: "circle", action: markWatched) }
         else { Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched) }
         if let playOnTV { Button("Ver en la TV", systemImage: "tv.and.mediabox", action: playOnTV) }

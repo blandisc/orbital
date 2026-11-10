@@ -84,12 +84,34 @@ extension AppEnvironment {
 
     /// «Marcar como vista» (una película) desde el menú de un póster: en el teléfono y en Trakt, como en la ficha.
     func markWatched(_ s: Suggestion, at date: Date = Date()) async -> Bool {
+        let watch = services.watch
+        let wasSeen = await watch.isSeen(metaID: s.imdb, videoID: s.imdb)
         do { try await titles.markWatched(s, at: date) } catch {
             notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
             return false
         }
-        notify(format: "«%@» quedó como vista", s.title, tone: .success)
+        // Gestor ola 3: «Otra fecha» por si la viste antes y «Deshacer», que quita solo esta vista (las de antes se quedan).
+        let language = services.appSettings.uiLanguage
+        notify(String(format: Strings.tr("«%@» quedó como vista", language: language), s.title), tone: .success,
+               actionTitle: "Otra fecha", actionSymbol: "calendar", perform: { [weak self] in
+                   self?.ui.redate = RedateRequest(kind: s.kind, videoID: s.imdb, at: date)
+               }, secondTitle: "Deshacer", secondSymbol: "arrow.uturn.backward", second: { [weak self] in
+                   Task {
+                       let ok = await watch.undoViewing(kind: s.kind, metaID: s.imdb, videoID: s.imdb, at: date, wasSeen: wasSeen)
+                       self?.collections.forgetWatched()
+                       if !ok { self?.notify("No pude deshacerlo", detail: "Sin internet. Bórrala en «Tus vistas» de su ficha.", tone: .warn) }
+                   }
+               })
         return true
+    }
+
+    /// «Otra fecha» del aviso de «Vista»: la vista recién marcada pasa a ese día.
+    func redate(_ r: RedateRequest, to date: Date) async {
+        if await services.watch.redateViewing(kind: r.kind, videoID: r.videoID, at: r.at, to: date) {
+            notify("Fecha cambiada", detail: Strings.date(date, .dayMonthYear, language: services.appSettings.uiLanguage), tone: .success)
+        } else {
+            notify("No pude cambiar la fecha", detail: "Sin internet. Cámbiala en «Tus vistas» de su ficha.", tone: .warn)
+        }
     }
 
     /// El día que se estrenó (Cinemeta), para «¿Cuándo la viste?» › «El día que se estrenó».

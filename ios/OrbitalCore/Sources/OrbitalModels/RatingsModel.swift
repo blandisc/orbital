@@ -27,6 +27,8 @@ public final class RatingsModel: ObservableModel {
     /// Al volver a la app no se pregunta a Trakt otra vez antes de esto (son 3–4 llamadas; Trakt limita).
     public nonisolated static let minInterval: TimeInterval = 10 * 60
     private var lastRefresh: Date?
+    /// Las temporadas que acabas de terminar en el reproductor (G7-B): van primero en la fila y la recarga no las borra.
+    private var asked: [Candidate] = []
 
     public private(set) var ratings: [String: Int] = [:] { didSet { changed() } }
     public private(set) var queue: [Candidate] = [] { didSet { changed() } }
@@ -65,8 +67,9 @@ public final class RatingsModel: ObservableModel {
         // abrir, o la marcó vista otro aparato o Stremio sin que la vieras completa).
         var unfinished: [String: Date] = [:]
         for p in gotPaused ?? [] where !p.target.isEpisode { unfinished[p.target.imdb] = max(unfinished[p.target.imdb] ?? .distantPast, p.pausedAt) }
-        queue = Self.reminders(plays: gotPlays ?? [], rated: Set(ratings.keys).union(services.traktOutbox.pendingRatings.keys),
-                               dismissed: dismissed, unfinished: unfinished, now: now)
+        let done = Set(ratings.keys).union(services.traktOutbox.pendingRatings.keys), gone = dismissed
+        asked.removeAll { done.contains($0.imdb) || gone.contains($0.imdb) }
+        queue = asked + Self.reminders(plays: gotPlays ?? [], rated: done, dismissed: gone, unfinished: unfinished, now: now)
     }
 
     /// Calificar (o, con nil, quitar tu calificación). Sale de la fila y se manda a Trakt.
@@ -74,6 +77,7 @@ public final class RatingsModel: ObservableModel {
         let value = stars.map(RatingScale.trakt(stars:))
         if let value { ratings[imdb] = value } else { ratings[imdb] = nil }
         queue.removeAll { $0.imdb == imdb }
+        asked.removeAll { $0.imdb == imdb }
         services.traktOutbox.enqueue(.rating(imdb: imdb, series: kind == "series", value))
         await services.traktOutbox.flush(services.trakt)
     }
@@ -81,8 +85,34 @@ public final class RatingsModel: ObservableModel {
     /// «No calificar esta»: no vuelve a aparecer en el recordatorio.
     public func dismiss(_ imdb: String) {
         queue.removeAll { $0.imdb == imdb }
+        asked.removeAll { $0.imdb == imdb }
         let list = (services.kv.data(Self.dismissedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? []).filter { $0 != imdb } + [imdb]
         services.kv.set(Self.dismissedKey, data: try? JSONEncoder().encode(Array(list.suffix(Self.memory))))
+    }
+
+    /// G7-B (gestor ola 3, Fernando, 10 nov 2026: «Vamos con todo»): terminaste en el reproductor el último capítulo que ha
+    /// salido de una temporada: «¿Qué tal The Bear, temporada 3?» va primero en la fila. Una vez por temporada: si ya la
+    /// calificaste o dijiste «no», no vuelve.
+    public func askSeason(show: String, season: Int, title: String, poster: String) {
+        let key = RatingKey.season(show: show, season: season)
+        guard ratings[key] == nil, services.traktOutbox.pendingRatings[key] == nil, !dismissed.contains(key),
+              !queue.contains(where: { $0.imdb == key }) else { return }
+        let ask = Candidate(imdb: key, kind: "series", title: title, poster: poster, finished: clock())
+        asked.insert(ask, at: 0)
+        queue.insert(ask, at: 0)
+    }
+
+    /// La temporada que termina este capítulo, si es el último que ha salido de ella (sin los especiales).
+    public nonisolated static func endsSeason(meta: JSON?, videoID: String, now: Date = Date()) -> Int? {
+        let p = videoID.split(separator: ":").compactMap { Int($0) }
+        guard p.count >= 2, p[p.count - 2] > 0, let videos = meta?["videos"]?.array else { return nil }
+        let season = p[p.count - 2], episode = p[p.count - 1]
+        let out = videos.filter { $0["season"]?.intValue == season }.compactMap { v -> Int? in
+            if let r = v["released"]?.string, r.count >= 10, let d = try? Date(String(r.prefix(10)), strategy: .iso8601.year().month().day()), d > now { return nil }
+            return v["episode"]?.intValue ?? v["number"]?.intValue
+        }
+        guard let last = out.max(), last == episode else { return nil }
+        return season
     }
 
     private var dismissed: Set<String> {

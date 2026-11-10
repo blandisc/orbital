@@ -9,17 +9,21 @@ extension Trakt {
         async let movies = allPagesJSON("/sync/ratings/movies")
         async let shows = allPagesJSON("/sync/ratings/shows")
         async let episodes = allPagesJSON("/sync/ratings/episodes")
+        async let seasons = allPagesJSON("/sync/ratings/seasons")
         let eps: JSON? = (try? await episodes).flatMap { $0 }   // los capítulos son extra: si fallan, lo demás sigue
+        let seas: JSON? = (try? await seasons).flatMap { $0 }   // las temporadas también (G7, 10 nov 2026)
         // Cada `async let` se espera en su propia línea: esperarlo a media expresión (con `??`, `+` o un arreglo) rompía el
         // asignador de tareas con el compilador de la CI («freed pointer was not the last allocation», 31 oct 2026).
         let movieRows: JSON? = try await movies
         let showRows: JSON? = try await shows
-        let rows: [JSON] = (movieRows?.array ?? []) + (showRows?.array ?? []) + (eps?.array ?? [])
+        let rows: [JSON] = (movieRows?.array ?? []) + (showRows?.array ?? []) + (eps?.array ?? []) + (seas?.array ?? [])
         var out: [String: Int] = [:]
         for row in rows {
             guard let imdb = (row["movie"] ?? row["show"])?["ids"]?["imdb"]?.string, let value = row["rating"]?.intValue,
                   RatingScale.traktRange.contains(value) else { continue }
-            if let ep = row["episode"] {
+            if row["episode"] == nil, let s = row["season"]?["number"]?.intValue {
+                out[RatingKey.season(show: imdb, season: s)] = value
+            } else if let ep = row["episode"] {
                 guard let s = ep["season"]?.intValue, let n = ep["number"]?.intValue else { continue }
                 out[RatingKey.episode(show: imdb, season: s, number: n)] = value
             } else {
@@ -30,10 +34,11 @@ extension Trakt {
     }
 
     /// Califica un título (1…10) o, con nil, quita tu calificación.
-    /// `imdb` puede ser el video id de un capítulo («tt…:2:5»): entonces califica ese capítulo.
+    /// `imdb` puede ser el video id de un capítulo («tt…:2:5») o una temporada («tt…:2»): entonces califica eso.
     public func setRating(imdb: String, series: Bool, rating: Int?) async throws {
         let episode = RatingKey.parseEpisode(imdb)
-        let id = episode?.show ?? imdb
+        let season = RatingKey.parseSeason(imdb)
+        let id = episode?.show ?? season?.show ?? imdb
         guard Self.isIMDb(id) else { throw TraktError.invalid("Título inválido") }
         if let rating, !RatingScale.traktRange.contains(rating) { throw TraktError.invalid("Calificación inválida") }
         let value: [String: JSON] = rating.map { ["rating": .int($0)] } ?? [:]
@@ -42,6 +47,9 @@ extension Trakt {
             // Por la serie: {"shows":[{"ids":…,"seasons":[{"number":2,"episodes":[{"number":5,"rating":8}]}]}]}
             let ep = JSON.object(["number": .int(episode.number)].merging(value) { $1 })
             body = ["shows": [["ids": ["imdb": .string(id)], "seasons": [["number": .int(episode.season), "episodes": [ep]]]]]]
+        } else if let season {
+            // Una temporada: {"shows":[{"ids":…,"seasons":[{"number":2,"rating":8}]}]}
+            body = ["shows": [["ids": ["imdb": .string(id)], "seasons": [JSON.object(["number": .int(season.season)].merging(value) { $1 })]]]]
         } else {
             let item = JSON.object(["ids": ["imdb": .string(id)]].merging(value) { $1 })
             body = series ? ["shows": [item]] : ["movies": [item]]
@@ -54,6 +62,13 @@ extension Trakt {
 /// Cómo se nombra lo calificado: el IMDb de una película o serie, o el video id de un capítulo («tt…:temporada:número»).
 public enum RatingKey {
     public static func episode(show: String, season: Int, number: Int) -> String { "\(show):\(season):\(number)" }
+    /// Una temporada: «tt…:2».
+    public static func season(show: String, season: Int) -> String { "\(show):\(season)" }
+    public static func parseSeason(_ key: String) -> (show: String, season: Int)? {
+        let parts = key.split(separator: ":")
+        guard parts.count == 2, let s = Int(parts[1]) else { return nil }
+        return (String(parts[0]), s)
+    }
     public static func parseEpisode(_ key: String) -> (show: String, season: Int, number: Int)? {
         let parts = key.split(separator: ":")
         guard parts.count == 3, let s = Int(parts[1]), let n = Int(parts[2]) else { return nil }

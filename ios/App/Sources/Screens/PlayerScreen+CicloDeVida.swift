@@ -43,6 +43,13 @@ extension PlayerScreen {
         guard !finished else { return }
         finished = true
         let current = current
+        // G7-B: terminaste el último capítulo de una temporada: «¿Qué tal …, temporada 3?» sobre las pestañas.
+        let end = holder.model.snapshot
+        if current.kind == "series", StremioLibrary.finished(position: end.position, duration: end.duration, kind: current.kind),
+           let season = RatingsModel.endsSeason(meta: current.meta, videoID: current.videoID), env.services.trakt?.linked == true {
+            let name = String(format: Strings.tr("%@, temporada %lld", language: env.services.appSettings.uiLanguage), current.originalTitle, season)
+            env.ratings.askSeason(show: current.metaID, season: season, title: name, poster: current.poster ?? "")
+        }
         if current.localFile != nil {
             let id = DownloadItem.makeID(metaID: current.metaID, videoID: current.videoID)
             let snapshot = holder.model.snapshot
