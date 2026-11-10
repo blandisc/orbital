@@ -45,6 +45,12 @@ TOKENS_KEY = "trakt_tokens"
 # https://, así que va https://localhost; las aplicaciones viejas tienen el valor de antes.
 REDIRECTS = ("https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob")  # Trakt le agrega la «/»
 KINDS = {"movie": "movies", "series": "shows"}
+# Donde se esconde una serie («Esconder», la campana apagada) y, para «La dejé» (G1-A, 9 nov 2026), también las «dejadas»
+# de trakt.tv (/users/hidden/dropped), como `Trakt.hiddenSections` y `droppedSections` del iPhone.
+HIDDEN_SECTIONS = ("calendar", "progress_watched")
+DROPPED_SECTIONS = (*HIDDEN_SECTIONS, "dropped")
+PRIVACIES = ("private", "link", "friends", "public")
+PROGRESS_SHOWS = 40  # el tablero de Guardado pide el avance exacto de tus 40 series más recientes (Trakt dejó de mandarlo junto)  # «Quién la ve» (G4-A), los valores que entiende Trakt
 
 
 SCROBBLE_ACTIONS = ("start", "pause", "stop")
@@ -190,11 +196,13 @@ def activity_stamps(data) -> dict[str, str]:
             "watched": stamp(("movies", "watched_at"), ("episodes", "watched_at")),
             "watchlist": stamp(("watchlist", "updated_at"), ("movies", "watchlisted_at"), ("shows", "watchlisted_at")),
             # SS1-A: «Esconder» en el iPhone (o «Dejar de seguir» aquí) cambia esta marca.
-            "hidden": stamp(("shows", "hidden_at"))}
+            "hidden": stamp(("shows", "hidden_at"), ("shows", "dropped_at"))}
 
 
 class TraktError(Exception):
-    pass
+    def __init__(self, message: str = "", status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status  # el código de Trakt cuando respondió con un error (para saber si vale la pena reintentar)
 
 
 class TraktAuthError(TraktError):
@@ -461,7 +469,7 @@ class Trakt:
         if status == 401:
             raise TraktAuthError("Trakt no acepta tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
         if status not in (200, 201, 204):
-            raise (errors or {}).get(status) or TraktError(f"Trakt respondió HTTP {status}")
+            raise (errors or {}).get(status) or TraktError(f"Trakt respondió HTTP {status}", status)
         return data
 
     @staticmethod
@@ -558,8 +566,138 @@ class Trakt:
             ids = row.get("ids") if isinstance(row.get("ids"), dict) else {}
             name, trakt_id = row.get("name"), ids.get("trakt")
             if isinstance(name, str) and name.strip() and trakt_id:
-                found.append({"id": str(trakt_id), "name": name.strip()})
+                count = row.get("item_count")
+                found.append({"id": str(trakt_id), "name": name.strip(),
+                              "privacy": row.get("privacy") if row.get("privacy") in PRIVACIES else "private",
+                              "count": count if isinstance(count, int) else None})
         return found
+
+    # --- tus listas completas (G4-A, 10 nov 2026, como `Trakt+Lists.swift`): todo necesita conexión ---------------------
+    def update_list(self, list_id: str, name: str | None = None, privacy: str | None = None) -> None:
+        """Cambia el nombre o quién la ve de una de tus listas."""
+        if not str(list_id).isdigit():
+            raise TraktError("Lista inválida")
+        body: dict[str, str] = {}
+        if name is not None:
+            clean = name.strip()
+            if not clean:
+                raise TraktError("Ponle nombre a la lista")
+            body["name"] = clean[:100]
+        if privacy is not None:
+            if privacy not in PRIVACIES:
+                raise TraktError("Privacidad inválida")
+            body["privacy"] = privacy
+        if body:
+            self._send("PUT", f"/users/me/lists/{list_id}", body)
+
+    def delete_list(self, list_id: str) -> None:
+        """Borra una de tus listas (no se deshace; los títulos siguen en Mi lista y en tus otras listas)."""
+        if not str(list_id).isdigit():
+            raise TraktError("Lista inválida")
+        self._send("DELETE", f"/users/me/lists/{list_id}")
+
+    def list_rows(self, list_id: str) -> list[tuple[int, str]]:
+        """Cada título de una lista (o de tu watchlist, con «watchlist») con el id de su renglón: lo que pide ordenar a mano."""
+        if list_id == "watchlist":
+            path = "/sync/watchlist"
+        elif str(list_id).isdigit():
+            path = f"/users/me/lists/{list_id}/items"
+        else:
+            raise TraktError("Lista inválida")
+        found = []
+        for row in self._all_pages(path):
+            item = _dict(row).get("movie") or _dict(row).get("show")
+            imdb = _dict(_dict(item).get("ids")).get("imdb")
+            if isinstance(_dict(row).get("id"), int) and isinstance(imdb, str):
+                found.append((row["id"], imdb))
+        return found
+
+    def reorder(self, list_id: str, imdbs: list[str]) -> None:
+        """Ordena a mano una lista (o tu watchlist) en el orden de `imdbs`; lo que no venga se queda al final, como estaba."""
+        rows = self.list_rows(list_id)
+        by_imdb: dict[str, int] = {}
+        for row_id, imdb in rows:
+            by_imdb.setdefault(imdb, row_id)
+        rank = [by_imdb[i] for i in imdbs if i in by_imdb]
+        placed = set(rank)
+        rank += [r for r, _ in rows if r not in placed]
+        if not rank:
+            return
+        path = "/sync/watchlist/reorder" if list_id == "watchlist" else f"/users/me/lists/{list_id}/items/reorder"
+        self._send("POST", path, {"rank": rank})
+
+    def set_items(self, target: str, items: list[tuple[str, str]], add: bool) -> None:
+        """Pone o quita varios títulos ([(kind, imdb)]) de tu watchlist («watchlist») o de una de tus listas, de cien en cien:
+        un envío por lista (elegir varios, G3-A)."""
+        if target != "watchlist" and not str(target).isdigit():
+            raise TraktError("Lista inválida")
+        clean = [(k, i) for k, i in items if k in KINDS and re.fullmatch(r"tt[0-9]{1,12}", str(i))]
+        base = "/sync/watchlist" if target == "watchlist" else f"/users/me/lists/{target}/items"
+        for start in range(0, len(clean), 100):
+            body: dict[str, list] = {}
+            for kind, imdb in clean[start:start + 100]:
+                body.setdefault(KINDS[kind], []).append({"ids": {"imdb": imdb}})
+            self._send("POST", base + ("" if add else "/remove"), body)
+
+    def duplicate_list(self, list_id: str, name: str) -> str:
+        """«Duplicar»: una lista nueva, Solo tú, con los mismos títulos en el mismo orden. Su id."""
+        items = self.list_items(list_id)
+        made = self.create_list(name)
+        if items:
+            self.set_items(made, [(e["kind"], e["imdb"]) for e in items], True)
+            try:
+                self.reorder(made, [e["imdb"] for e in items])
+            except TraktError as exc:  # el orden es lo de menos: los títulos ya están
+                log.info("Trakt: no pude ordenar la copia: %s", exc)
+        return made
+
+    def watched_state(self) -> dict:
+        """Lo que viste según Trakt para el tablero de Guardado (G2-A, como `watchedState` del iPhone): cada película y cada
+        serie con su nombre, su año y la última vez que la viste; las series con cuánto llevas (0 a 1 de lo que ha salido) y si
+        siguen saliendo."""
+        def rows(data) -> list[dict]:
+            return [_dict(r) for r in data] if isinstance(data, list) else []
+
+        movies: dict[str, dict] = {}
+        for row in rows(self._get("/sync/watched/movies")):
+            item = entry(row.get("movie"), "movie")
+            if item:
+                movies[item["imdb"]] = {**item, "last": _when(row.get("last_watched_at"))}
+        shows: dict[str, dict] = {}
+        for row in rows(self._get("/sync/watched/shows", extended="full")):
+            raw = _dict(row.get("show"))
+            item = entry(raw, "series")
+            if not item:
+                continue
+            aired = raw.get("aired_episodes")
+            # Trakt ya no manda las temporadas aquí (10 nov 2026: llegan sin «seasons»): de entrada, las veces que viste
+            # episodios entre los que han salido (una repetida cuenta de más); las más recientes se corrigen abajo.
+            plays = row.get("plays") if isinstance(row.get("plays"), int) else 0
+            seen = sum(len(_dict(s).get("episodes") or []) for s in row.get("seasons") or [] if (_dict(s).get("number") or 0) > 0) or plays
+            fraction = min(1.0, seen / aired) if isinstance(aired, int) and aired > 0 else 1.0
+            shows[item["imdb"]] = {**item, "last": _when(row.get("last_watched_at")), "fraction": fraction,
+                                   "airing": raw.get("status") in ("returning series", "in production")}
+        # Las que viste más recientemente, con su avance exacto (vistos entre los que han salido, sin especiales).
+        recent = sorted(shows, key=lambda i: -(shows[i]["last"] or 0))[:PROGRESS_SHOWS]
+
+        def exact(imdb: str) -> tuple[str, float | None]:
+            try:
+                data = _dict(self._get(f"/shows/{imdb}/progress/watched", hidden="false", specials="false"))
+            except TraktAuthError:
+                raise
+            except TraktError:  # una que falla se queda con la cuenta de arriba
+                return imdb, None
+            aired, completed = data.get("aired"), data.get("completed")
+            ok = isinstance(aired, int) and aired > 0 and isinstance(completed, int)
+            return imdb, (min(1.0, completed / aired) if ok else None)
+
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="trakt-avance") as pool:
+            for imdb, fraction in pool.map(exact, recent):
+                if fraction is not None:
+                    shows[imdb]["fraction"] = fraction
+        return {"movies": movies, "shows": shows}
 
     def create_list(self, name: str) -> str:
         """Una lista privada nueva en tu cuenta; su id."""
@@ -594,11 +732,25 @@ class Trakt:
     def set_following(self, imdb: str, following: bool) -> None:
         """Dejar de seguir una serie (o volver a seguirla), como el iPhone: Trakt la oculta de tu calendario y de tu progreso,
         así que no sale en tus estrenos. Lo que viste no se toca."""
-        if not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+        self.set_hidden([imdb], not following)
+
+    def set_hidden(self, imdbs: list[str], hidden: bool, sections: tuple[str, ...] = HIDDEN_SECTIONS) -> None:
+        """Esconde varias series en esas secciones de Trakt (o las vuelve a mostrar), un envío por sección (como
+        `Trakt.setHidden` del iPhone). «dejadas» es extra: si Trakt no la acepta (y no es que esté ocupado o caído), lo
+        demás ya quedó."""
+        valid = [i for i in imdbs if re.fullmatch(r"tt[0-9]{1,12}", i or "")]
+        if not valid:
             raise TraktError("Título inválido")
-        body = {"shows": [{"ids": {"imdb": imdb}}]}
-        for section in ("calendar", "progress_watched"):
-            self._send("POST", f"/users/hidden/{section}{'/remove' if following else ''}", body)
+        body = {"shows": [{"ids": {"imdb": i}} for i in valid]}
+        for section in sections:
+            try:
+                self._send("POST", f"/users/hidden/{section}{'' if hidden else '/remove'}", body)
+            except TraktAuthError:
+                raise
+            except TraktError as exc:
+                if section == "dropped" and exc.status is not None and exc.status != 429 and exc.status < 500:
+                    continue
+                raise
 
     def my_rating(self, kind: str, imdb: str) -> int | None:
         """Tu calificación de un título (1–10) o None si no lo has calificado."""
@@ -756,11 +908,18 @@ class Trakt:
         return activity_stamps(self._get("/sync/last_activities"))
 
     def hidden_shows(self) -> set[str]:
-        """Las series que escondiste (SS1-A: «Esconder» en el iPhone, «Dejar de seguir» aquí): {IMDb}. Algunas rutas de
-        Trakt ya las quitan solas y otras no (/sync/playback, /sync/history), así que la consola las quita ella."""
+        """Las series que escondiste (SS1-A: «Esconder» en el iPhone, «Dejar de seguir» aquí) y las que dejaste en trakt.tv
+        («Drop», G1-A): {IMDb}. Algunas rutas de Trakt ya las quitan solas y otras no (/sync/playback, /sync/history), así
+        que la consola las quita ella."""
         rows = self._get("/users/hidden/progress_watched", type="show", limit=1000)
+        try:
+            dropped = self._get("/users/hidden/dropped", type="show", limit=1000)
+        except TraktAuthError:
+            raise
+        except TraktError:  # «dejadas» es extra: sin ella, cuentan las escondidas
+            dropped = []
         found = set()
-        for row in rows if isinstance(rows, list) else []:
+        for row in [*(rows if isinstance(rows, list) else []), *(dropped if isinstance(dropped, list) else [])]:
             imdb = _dict(_dict(_dict(row).get("show")).get("ids")).get("imdb")
             if isinstance(imdb, str) and imdb.startswith("tt"):
                 found.add(imdb)

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { otherDayMenu, starText, STARS, watchedMenu } from "../../orbital/web/js/app/yours-commands.js";
+import { otherDayMenu, starText, STARS, statusMenu, watchedMenu } from "../../orbital/web/js/app/yours-commands.js";
 import { freshDiscards } from "../../orbital/web/js/components/match-deck.js";
 import { gameMenu, mineChannelMenu } from "../../orbital/web/js/core/menus.js";
-import { titleActions } from "../../orbital/web/js/core/watch.js";
+import { STATUS_WORDS, titleActions, titleStatus } from "../../orbital/web/js/core/watch.js";
 
 test("¿Cuándo la viste?: las opciones del iPhone, y la serie entera dice «cada episodio»", () => {
   const movie = watchedMenu({ kind: "movie", id: "tt1", title: "Coco" });
@@ -30,15 +30,47 @@ test("Opciones de una película o serie con Trakt: calificar, marcarla y, una se
   assert.deepEqual(mineChannelMenu("Friends", "tt0108778", true).options[1].command, { type: "tv-mine", id: "tt0108778", title: "Friends", add: false });
 });
 
-test("la ficha con Trakt lleva Calificar y Marcar como vista", () => {
-  assert.deepEqual(titleActions({ kind: "movie", resume: null }, { trakt: true }).map((a) => a.id), ["play", "mylist", "rate", "watched", "sources"]);
+test("la ficha con Trakt lleva el estado y Calificar; «Vista» y la campana viven en «¿Cómo vas con…?» (G1-A)", () => {
+  assert.deepEqual(titleActions({ kind: "movie", resume: null }, { trakt: true }).map((a) => a.id), ["play", "status", "rate", "sources"]);
+  const series = { kind: "series", seasons: [{ season: 1, episodes: [{ id: "tt1:1:1", episode: 1 }] }] };
+  assert.ok(!titleActions(series, { kind: "series", trakt: true }).some((a) => ["follow", "watched", "mylist"].includes(a.id)));
 });
 
-test("una serie con Trakt lleva la campana, como el iPhone: «Siguiendo» o «Seguir» (sin saber aún, no sale)", () => {
-  const series = { kind: "series", seasons: [{ season: 1, episodes: [{ id: "tt1:1:1", episode: 1 }] }] };
-  const bell = (following) => titleActions(series, { kind: "series", trakt: true, following }).find((a) => a.id === "follow");
-  assert.deepEqual([bell(true).label, bell(true).active, bell(false).label, bell(null)], ["Siguiendo", true, "Seguir", undefined]);
-  assert.equal(titleActions(series, { kind: "series", trakt: false, following: true }).some((a) => a.id === "follow"), false);
+test("el estado de la ficha sigue las reglas del iPhone (TitleStatus)", () => {
+  const now = Date.parse("2026-11-10");
+  const eps = [{ id: "tt1:1:1", episode: 1, released: "2026-01-01" }, { id: "tt1:1:2", episode: 2, released: "2026-01-08" },
+    { id: "tt1:1:3", episode: 3, released: "2026-12-01" }];
+  const series = (extra) => ({ kind: "series", seasons: [{ season: 1, episodes: eps }], watched: [], ...extra });
+  const st = (d, o = {}) => titleStatus(d, { now, ...o });
+  assert.equal(st({ kind: "movie" }), "none");
+  assert.equal(st({ kind: "movie", in_library: true }), "in_list");
+  assert.equal(st({ kind: "movie", seen: true }), "watched");
+  assert.equal(st({ kind: "movie", seen: true, in_library: true }), "in_list"); // la quieres ver otra vez
+  assert.equal(st(series({ in_library: true })), "in_list");
+  assert.equal(st(series({ watched: ["tt1:1:1"] })), "watching");
+  assert.equal(st(series({ watched: ["tt1:1:1", "tt1:1:2"] })), "watching"); // al día, falta el que sale el 1 dic
+  assert.equal(st(series({ watched: ["tt1:1:1", "tt1:1:2", "tt1:1:3"] }), { now: Date.parse("2027-01-01") }), "watched");
+  assert.equal(st(series({ resume: { video_id: "tt1:1:2", position: 0 } })), "watching"); // ya pasó del primero
+  assert.equal(st(series({ watched: ["tt1:1:1"] }), { dropped: true }), "dropped");
+  assert.deepEqual(["none", "in_list", "watching", "watched", "dropped"].map((s) => STATUS_WORDS[s].label),
+    ["Mi lista", "En Mi lista", "Viendo", "Vista", "La dejé"]);
+});
+
+test("«¿Cómo vas con…?» trae las respuestas, la campana y tus listas (como el menú del iPhone)", () => {
+  const base = { kind: "series", id: "tt1", title: "The Office", trakt: true, following: true, canDrop: true, seenAny: true };
+  const labels = (m) => m.options.map((o) => o.label);
+  const watching = statusMenu({ ...base, status: "watching" });
+  assert.equal(watching.title, "¿Cómo vas con The Office?");
+  assert.deepEqual(labels(watching), ["En Mi lista", "Viendo", "Vista", "La dejé", "Avisarme de episodios nuevos", "Agregar a una lista…"]);
+  assert.equal(watching.options[1].value, "✓");
+  const dropped = statusMenu({ ...base, status: "dropped" });
+  assert.ok(!labels(dropped).includes("Avisarme de episodios nuevos")); // «La dejé» apaga la campana
+  assert.equal(dropped.options.find((o) => o.label === "La dejé").command.type, "status-resume");
+  // Una película sin Trakt: solo Mi lista
+  assert.deepEqual(labels(statusMenu({ kind: "movie", id: "tt2", title: "Dune", status: "in_list", trakt: false })), ["En Mi lista"]);
+  // Una película en Mi lista: «La dejé» la saca de Mi lista y de Seguir viendo
+  const movie = statusMenu({ kind: "movie", id: "tt2", title: "Dune", status: "in_list", trakt: true, canDrop: true });
+  assert.deepEqual(labels(movie), ["En Mi lista", "Vista", "La dejé", "Agregar a una lista…"]);
 });
 
 test("«Para hoy» vale solo el día que la elegiste (al otro día, Mi lista vuelve a su orden)", async () => {

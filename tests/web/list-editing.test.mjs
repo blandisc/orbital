@@ -34,23 +34,28 @@ test("Opciones de un póster de una lista tuya: «Quitar de esta lista» despué
   assert.ok(!gameMenu(item, { trakt: false, list }).options.some((o) => o.command?.type === "list-remove"));
 });
 
-test("☰ de una lista tuya empieza con «Editar esta lista» (dice su atajo, X) y «Agregar a esta lista…»", () => {
+test("☰ de una lista tuya empieza con «Elegir varios» (dice su atajo, X) y «Agregar a esta lista…» (G3-A)", () => {
   const off = listEditOptions({ where: "watchlist", name: "Mi lista" }, false);
-  assert.deepEqual(off.map((o) => o.label), ["Mi lista", "Editar esta lista", "Agregar a esta lista…"]);
+  assert.deepEqual(off.map((o) => o.label), ["Mi lista", "Elegir varios", "Agregar a esta lista…"]);
   assert.match(off[1].hint, /X$/);
   assert.deepEqual(off[1].command, { type: "list-edit", on: true });
   const on = listEditOptions({ where: "watchlist", name: "Mi lista" }, true);
   assert.equal(on[1].label, "Listo");
   assert.deepEqual(on[1].command, { type: "list-edit", on: false });
+  assert.equal(on[2].label, "Elegir todas");
+  // Guardado no se agrega a mano: sin «Agregar a esta lista…».
+  assert.deepEqual(listEditOptions({ where: "saved", name: "Guardado", add: false }, false).map((o) => o.label), ["Guardado", "Elegir varios"]);
 });
 
-test("las cuatro superficies: X y ☰ (mando y teclado), «Editar» y el «−» (mouse y dedo), clic secundario o mantener el dedo", () => {
+test("las cuatro superficies: X y ☰ (mando y teclado), «Editar», la casilla y «Con las elegidas…» (mouse y dedo), clic secundario o mantener el dedo", () => {
   const screen = read("components", "list-screen.js");
   const main = read("main.js");
   assert.match(screen, /action === "alt" && list\.editable/, "X pone y quita el modo Editar");
-  assert.match(screen, /action === "select" && editing/, "A quita, editando");
+  assert.match(screen, /action === "select" && editing\) \{ toggleChosen/, "A elige, editando");
+  assert.match(screen, /action === "options" && editing && chosen\.size/, "Y: con las elegidas");
+  assert.match(screen, /label: "Con las elegidas…"/, "lo mismo a la vista para el mouse y el dedo");
   assert.match(screen, /action === "back" && editing/, "B es «Listo» antes que cerrar la lista");
-  assert.match(screen, /RemoveMark\(/, "el «−» en cada póster, editando");
+  assert.match(screen, /SelectMark\(/, "la casilla en cada póster, editando");
   assert.match(screen, /label: "Editar"/, "el botón «Editar» a la vista");
   assert.match(read("components", "card.js"), /onContextmenu: onMore/, "clic secundario o mantener el dedo: Opciones");
   assert.match(main, /editable: c\.type === "list" && traktLinked\(\) && isEditableList\(l\.id\)/, "solo tus listas se abren editables");

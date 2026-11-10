@@ -32,8 +32,97 @@ export function otherDayMenu(base, now = Date.now()) {
   };
 }
 
-export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, openShowcase, renderHints, setUnseeded, sound, ui }) {
+/** «¿Cómo vas con…?» (G1-A, como `statusMenu` del iPhone): las respuestas (la elegida con ✓), la campana de una serie y
+ * tus listas. `about`: { kind, id, title, status, trakt, following, canDrop, seenAny, library }. Sin Trakt solo hay Mi lista. */
+export function statusMenu(about) {
+  const { kind, id, title, status, trakt, following, canDrop, seenAny } = about;
+  const series = kind === "series";
+  const base = { kind, id, title, status, library: !!about.library, following: !!following, trakt: !!trakt };
+  const mark = (on) => (on ? "✓" : undefined);
+  const options = [
+    { icon: "bookmark", label: "En Mi lista", value: mark(status === "in_list"), ok: status === "in_list",
+      hint: status === "in_list" ? "Quitarla de Mi lista" : "", command: { type: "status-list", ...base } },
+  ];
+  if (trakt && series && (status === "watching" || (status === "dropped" && seenAny))) {
+    options.push({ icon: "watching", label: "Viendo", value: mark(status === "watching"), ok: status === "watching",
+      hint: status === "dropped" ? "Regresa a Seguir viendo" : "", command: { type: status === "dropped" ? "status-resume" : "close", ...base } });
+  }
+  if (trakt) {
+    options.push({ icon: "checkCircle", label: "Vista", value: mark(status === "watched"), ok: status === "watched",
+      hint: series && status !== "watched" ? "Marca los episodios que faltan" : "", command: { type: "watched", kind, id, title } });
+  }
+  if (trakt && canDrop) {
+    options.push({ icon: "hide", label: "La dejé", value: mark(status === "dropped"), ok: status === "dropped",
+      hint: status === "dropped" ? "Regresarla" : series ? "Ya no sale en Seguir viendo ni te avisa" : "Sale de Mi lista y de Seguir viendo",
+      command: { type: status === "dropped" ? "status-resume" : "status-drop", ...base } });
+  }
+  if (trakt && series && status !== "dropped") {
+    options.push({ icon: following ? "bell" : "bellOff", label: "Avisarme de episodios nuevos", value: following ? "Sí" : "No", ok: !!following,
+      command: { type: "status-bell", ...base } });
+  }
+  if (trakt) {
+    options.push({ icon: "list", label: "Agregar a una lista…", hint: "Mi lista y tus listas",
+      command: { type: "save-open", kind, id, title, library: !!about.library } });
+  }
+  return { title: `¿Cómo vas con ${title}?`, options };
+}
+
+export function yoursCommands({ api, nested, openFilter, openMenu, openMatch, openShowcase, renderHints, setUnseeded, sound, ui, undoable }) {
+  /** Lo que cambió el estado: la ficha abierta se pone al día. */
+  const changed = (command, patch) => ui.title.statusChanged?.(command.id, patch);
+  const offline = (r) => (r?.queued ? "Sin internet: se manda a Trakt en cuanto haya" : "");
+  // Mi lista es tu watchlist de Trakt; sin Trakt, la biblioteca de Stremio (como «Guardar en…»).
+  const setListed = (c, add) => (c.trakt ? api.saveTo(c.kind, c.id, "watchlist", add) : api.setInLibrary(c.kind, c.id, add));
   return {
+    "status": async (command, context) => openMenu(statusMenu(command), nested(context)),
+    // «En Mi lista»: la guarda o la quita (una serie dejada, además, regresa), con «Deshacer».
+    "status-list": async (command) => {
+      ui.sheet.close();
+      const add = command.status !== "in_list";
+      if (command.status === "dropped") await api.setDropped(command.kind, command.id, false, command.following);
+      await setListed(command, add);
+      changed(command, { in_library: add, dropped: false });
+      sound.play(add ? "success" : "select");
+      undoable(add ? "Guardada en Mi lista" : "Quitada de Mi lista", command.title, async () => {
+        await setListed(command, !add);
+        changed(command, { in_library: !add, dropped: command.status === "dropped" });
+      });
+      return renderHints();
+    },
+    // «La dejé»: una serie se esconde (y sale de Mi lista); una película sale de Mi lista y de Seguir viendo. Lo visto se queda.
+    "status-drop": async (command) => {
+      ui.sheet.close();
+      const r = await api.setDropped(command.kind, command.id, true);
+      changed(command, { dropped: command.kind === "series", in_library: false, following: false });
+      sound.play("select");
+      undoable("La dejaste", offline(r) || (command.kind === "series" ? command.title : "Ya no sale en Mi lista ni en Seguir viendo"), async () => {
+        if (command.kind === "series") await api.setDropped(command.kind, command.id, false, command.following);
+        if (command.status === "in_list" || command.library) await setListed(command, true);
+        changed(command, { dropped: false, in_library: command.status === "in_list" || command.library, following: command.following });
+      });
+      return renderHints();
+    },
+    // «Viendo» desde «La dejé»: regresa a Seguir viendo (sin la campana, como estaba al dejarla).
+    "status-resume": async (command) => {
+      ui.sheet.close();
+      const r = await api.setDropped(command.kind, command.id, false, false);
+      changed(command, { dropped: false, following: false });
+      sound.play("success");
+      ui.toast.show("Otra vez en Seguir viendo", { tone: "info", detail: offline(r) || command.title });
+      return renderHints();
+    },
+    "status-bell": async (command) => {
+      ui.sheet.close();
+      const on = !command.following;
+      await api.setFollowing(command.id, on);
+      changed(command, { following: on });
+      sound.play("select");
+      undoable(on ? "Te aviso de episodios nuevos" : "Sin avisos de episodios nuevos", command.title, async () => {
+        await api.setFollowing(command.id, !on);
+        changed(command, { following: !on });
+      });
+      return renderHints();
+    },
     "filter": async () => {
       ui.sheet.close();
       return openFilter();

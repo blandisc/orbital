@@ -126,6 +126,14 @@ export const api = {
   rate: (kind, id, stars) => post("/api/foryou/rating", { kind, id, stars }),
   following: (id) => request(`/api/foryou/follow?id=${encodeURIComponent(id)}`),
   setFollowing: (id, following) => post("/api/foryou/follow", { id, following }),
+  // El gestor tipo Trakt (G1–G4, como el iPhone): «La dejé», el tablero de Guardado, varios a la vez y tus listas.
+  setDropped: (kind, id, dropped = true, following = false) => post("/api/foryou/drop", { kind, id, dropped, following }),
+  board: () => request("/api/foryou/board"),
+  myLists: () => request("/api/foryou/my-lists"),
+  setMany: (where, items, add) => post("/api/foryou/many", { where, items, add }),
+  dropMany: (items) => post("/api/foryou/drop-many", { items }),
+  watchedMany: (items, undo = false) => post("/api/foryou/watched-many", { items, undo }),
+  manageList: (action, body = {}) => post("/api/foryou/list-manage", { action, ...body }),
   markWatched: ({ kind, id, video_id = null, when = "now" }) => post("/api/foryou/watched", { kind, id, video_id, when }),
   consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>

@@ -99,6 +99,8 @@ export const ICONS = {
   watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
   heart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5c-4.6-3-7.75-5.9-7.75-9.4a4.1 4.1 0 0 1 7.75-2.1 4.1 4.1 0 0 1 7.75 2.1c0 3.5-3.15 6.4-7.75 9.4z"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
   bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  // «En Mi lista» en el botón de estado de la ficha (G1-A), como bookmark.fill del iPhone.
+  bookmarkFill: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/></svg>',
   calendar: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="15.5" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>',
   menu: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15"/></svg>',
   list: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6.5h9.5M10 12h9.5M10 17.5h5.5M4.75 6.5h.01M4.75 12h.01M4.75 17.5h.01"/><circle cx="19.25" cy="17.5" r="1.6" fill="currentColor" stroke="none"/></svg>',

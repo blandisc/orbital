@@ -52,6 +52,37 @@ class FollowRequest(BaseModel):
     following: bool
 
 
+class DropRequest(BaseModel):
+    kind: str
+    id: str
+    dropped: bool = True
+    following: bool = False  # regresar a «Viendo» con la campana prendida (como estaba antes de dejarla)
+
+
+class TitleRef(BaseModel):
+    kind: str
+    id: str
+
+
+class ManyRequest(BaseModel):
+    where: str  # «watchlist» o «list:123»
+    items: list[TitleRef]
+    add: bool
+
+
+class ItemsRequest(BaseModel):
+    items: list[TitleRef]
+    undo: bool = False
+
+
+class ListManageRequest(BaseModel):
+    action: str  # create · rename · privacy · delete · duplicate · reorder
+    where: str = ""
+    name: str = ""
+    privacy: str = ""
+    ids: list[str] = []
+
+
 class RateRequest(BaseModel):
     kind: str
     id: str
@@ -213,8 +244,76 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/follow")
     def following(id: str) -> dict:
-        """¿Sigues esta serie? (la campana de la ficha)."""
-        return {"following": id[:20] not in foryou.unfollowed()}
+        """¿Sigues esta serie (la campana) y la dejaste? (el botón de estado de la ficha, G1-A)."""
+        return foryou.gestor.state_of(id[:20])
+
+    # --- el gestor tipo Trakt (G1–G4, como el iPhone): orbital/gestor.py ---------------------------------------------
+    def _pairs(items: list[TitleRef]) -> list[tuple[str, str]]:
+        pairs = [(i.kind, i.id[:20]) for i in items[:500] if i.kind in ("movie", "series")]
+        if not pairs:
+            raise HTTPException(400, "Elige algún título")
+        return pairs
+
+    @r.post("/drop")
+    def drop(body: DropRequest) -> dict:
+        """«La dejé» (o regresar a «Viendo»); sin internet se queda hecha y espera en la cola de Trakt."""
+        if body.kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        sent = _trakt_call(lambda: foryou.gestor.set_dropped(body.kind, body.id[:20], body.dropped, body.following),
+                           "No pude guardarlo en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True, "queued": sent == "queued"}
+
+    @r.get("/board")
+    def board() -> dict:
+        """Biblioteca › Guardado por estado (G2-A): los cuatro montones, «¿Las dejaste?», tus listas y lo que cambió solo."""
+        found = _trakt_call(foryou.gestor.board, "No pude traer lo tuyo de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        if found.get("trakt"):
+            found["changes"] = foryou.gestor.automatic_changes(found)
+        return found
+
+    @r.get("/my-lists")
+    def my_lists() -> dict:
+        """Tus listas de Trakt con quién las ve y cuántos títulos tienen (☰ de Guardado y de cada lista)."""
+        return {"lists": _trakt_call(foryou.gestor.lists, "No pude leer tus listas de Trakt. Revisa tu conexión e inténtalo de nuevo.")}
+
+    @r.post("/many")
+    def many_titles(body: ManyRequest) -> dict:
+        """Elegir varios (G3-A): ponerlos o quitarlos de Mi lista o de una de tus listas, en un solo envío."""
+        sent = _trakt_call(lambda: foryou.gestor.set_many(body.where[:40], _pairs(body.items), body.add),
+                           "No pude cambiar tu lista de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True, "queued": sent == "queued"}
+
+    @r.post("/drop-many")
+    def drop_many(body: ItemsRequest) -> dict:
+        """«Las dejé» con varios."""
+        sent = _trakt_call(lambda: foryou.gestor.drop_many(_pairs(body.items)),
+                           "No pude guardarlo en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True, "queued": sent == "queued"}
+
+    @r.post("/watched-many")
+    def watched_many(body: ItemsRequest) -> dict:
+        """«Vistas» con varios (solo películas, hoy); `undo` las quita de lo visto."""
+        movies = [i for k, i in _pairs(body.items) if k == "movie"]
+        fn = foryou.gestor.unmark_movies_watched if body.undo else foryou.gestor.mark_movies_watched
+        _trakt_call(lambda: fn(movies), "No pude marcarlas en Trakt. Revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True, "movies": movies}
+
+    @r.post("/list-manage")
+    def list_manage(body: ListManageRequest) -> dict:
+        """El «···» de cada lista tuya (G4-A) y «Nueva lista»: necesita conexión."""
+        g = foryou.gestor
+        actions = {
+            "create": lambda: g.create_list(body.name),
+            "rename": lambda: g.rename_list(body.where, body.name),
+            "privacy": lambda: g.set_privacy(body.where, body.privacy),
+            "delete": lambda: g.delete_list(body.where),
+            "duplicate": lambda: g.duplicate_list(body.where, body.name),
+            "reorder": lambda: g.reorder(body.where, [i[:20] for i in body.ids[:5000]]),
+        }
+        if body.action not in actions:
+            raise HTTPException(400, "¿Qué hago con la lista?")
+        found = _trakt_call(actions[body.action], "Esto necesita internet: revisa tu conexión e inténtalo de nuevo.")
+        return {"ok": True, **(found if isinstance(found, dict) else {})}
 
     @r.post("/follow")
     def follow(body: FollowRequest) -> dict:

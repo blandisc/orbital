@@ -278,6 +278,14 @@ class TraktLibrary:
         nxt, when = found.get("next"), found.get("last_watched")
         return watched, ((f"{imdb}:{nxt[0]}:{nxt[1]}", when) if nxt and when is not None else None)
 
+    def note_watchlist(self, kind: str, imdb: str, add: bool) -> None:
+        """Lo pusiste o quitaste de Mi lista desde aquí: la ficha ya lo dice, sin esperar a que Trakt avise del cambio."""
+        with self._lock:
+            if self.watchlist is not None:
+                rows = [e for e in self.watchlist if e["imdb"] != imdb]
+                self.watchlist = [{"kind": kind, "imdb": imdb, "title": "", "listed_at": self.clock()}, *rows] if add else rows
+        self.forget("watchlist")
+
     def in_watchlist(self, imdb: str) -> bool | None:
         """¿Está en tu watchlist? None si no se sabe (sin Trakt o aún sin leer)."""
         if not self.active or self.watchlist is None:

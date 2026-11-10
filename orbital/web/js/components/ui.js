@@ -51,13 +51,13 @@ export const LineSkeleton = ({ className = null, label = "" } = {}) =>
 export const CornerRibbon = (text = "Nuevo", { className = null } = {}) =>
   h("span", { class: ["corner-ribbon", className], "aria-label": text }, h("span", { class: "corner-ribbon__band", "aria-hidden": "true" }, text));
 
-/** El «−» de un póster mientras editas una lista tuya (como DSRemoveMark del iPhone): rojo, en la esquina, imposible de no
- *  ver. Se toca o se le hace clic (`onPress`) y quita el póster de la lista; con el mando, A sobre el póster hace lo mismo. Va
- *  dentro de la pieza que lo lleva (posición relativa). */
-export const RemoveMark = (listName, { onPress = null, className = null } = {}) =>
-  h("span", { class: ["remove-mark", className], role: "button", "aria-label": `Quitar de ${listName}`,
-    onClick: onPress && ((event) => { event.stopPropagation(); onPress(); }) },
-  h("span", { class: "remove-mark__disc", "aria-hidden": "true" }, svg(ICONS.minus)));
+/** La casilla de un póster mientras eliges varios en una lista tuya o en Guardado (G3-A, como `ListSelection` del iPhone):
+ *  vacía (vidrio) o elegida (blanca con la palomita), en la esquina. Se toca o se le hace clic (`onPress`); con el mando, A
+ *  sobre el póster. Va dentro de la pieza que la lleva (posición relativa). */
+export const SelectMark = (on, { label = "", onPress = null, className = null } = {}) =>
+  h("span", { class: ["select-mark", on && "select-mark--on", className], role: "checkbox", "aria-checked": on ? "true" : "false",
+    "aria-label": label ? `Elegir ${label}` : "Elegir", onClick: onPress && ((event) => { event.stopPropagation(); onPress(); }) },
+  h("span", { class: "select-mark__disc", "aria-hidden": "true" }, on ? svg(ICONS.check) : null));
 
 /** Las plataformas con píldora a color (sus colores de `--platform-*`, los de design/tokens.json › platforms que usa el
  *  iPhone) y su logo de JustWatch (los mismos de orbital/library/charts.py › JUSTWATCH_PACKAGES). */

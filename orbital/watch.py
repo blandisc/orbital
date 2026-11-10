@@ -2278,7 +2278,9 @@ class Watch:
         if listed is not None:
             details["in_library"] = listed
         best: tuple[float, dict] | None = None
-        playback, _, _, _ = self.trakt_library.snapshot()
+        playback, _, movies, _ = self.trakt_library.snapshot()
+        if kind == "movie":  # el botón de estado de la ficha (G1-A): «Vista»
+            details["seen"] = meta_id in movies
         for row in playback:
             if row["meta_id"] == meta_id and (best is None or row["paused_at"] > best[0]):
                 length = row.get("runtime") or 0

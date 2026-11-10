@@ -62,6 +62,9 @@ export function gameMenu(item, { running = null, phone = false, page = false, tr
     const about = { kind, id: metaId, title: item.title };
     options.push({ icon: "check", label: kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", command: { type: "watched", ...about } },
       { icon: "star", label: "Calificar", command: { type: "rate", ...about } });
+    // Un póster de Guardado (G2-A): «Mover a…» otro montón sin abrir su ficha, como mantener el dedo en el iPhone.
+    if (item.pile) options.unshift({ icon: "swap", label: "Mover a…", hint: "Mi lista, Viendo, Vistas o Las dejé",
+      command: { type: "saved-move-menu", item: { kind, meta_id: metaId, title: item.title, pile: item.pile } } });
     if (kind === "series") options.push({ icon: "tv", label: "Agregar a Tus canales", hint: "Al aire todo el día en TV en vivo", command: { type: "tv-mine", id: metaId, title: item.title, add: true } });
   }
   if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
@@ -110,10 +113,11 @@ export function listEditOptions(list, editing = false) {
   return [
     { heading: true, label: list.name },
     editing
-      ? { icon: "check", label: "Listo", hint: "Deja de editar · X o B", command: { type: "list-edit", on: false } }
-      : { icon: "minus", label: "Editar esta lista", hint: "Un «−» en cada póster para quitarlo · X", command: { type: "list-edit", on: true } },
-    { icon: "plus", label: "Agregar a esta lista…", hint: "Busca una película o serie", command: { type: "list-add" } },
-  ];
+      ? { icon: "check", label: "Listo", hint: "Deja de elegir · X o B", command: { type: "list-edit", on: false } }
+      : { icon: "checkCircle", label: "Elegir varios", hint: "Para moverlos o quitarlos de una vez · X", command: { type: "list-edit", on: true } },
+    editing && { icon: "checkCircle", label: "Elegir todas", hint: "Otra vez, ninguna", command: { type: "list-choose-all" } },
+    list.add !== false && { icon: "plus", label: "Agregar a esta lista…", hint: "Busca una película o serie", command: { type: "list-add" } },
+  ].filter(Boolean);
 }
 
 /** Cambiar emulador: solo esta vez, o siempre. */
@@ -329,6 +333,8 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
   options.push({ icon: "spark", label: "Decide por mí", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
   options.push({ icon: "bookmark", label: "¿Qué vemos hoy?", hint: "Encuentra tu match perfecto", command: { type: "match" } });
+  // Guardado (G2-A): lo tuyo por estado y tus listas, como Biblioteca › Guardado del iPhone.
+  options.push({ icon: "bookmark", label: "Guardado", hint: "Mi lista, Viendo, Vistas, Las dejé y tus listas", command: { type: "saved" } });
   options.push({ icon: "trophy", label: "Colecciones", hint: "Los premios y las listas famosas", command: { type: "collections" } });
   options.push({ icon: "search", label: "Filtro avanzado", hint: "Género, época, calificación, dónde verla…", command: { type: "filter" } });
   options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });

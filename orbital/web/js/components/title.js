@@ -11,7 +11,7 @@ import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 import { flight, motion, reducedMotion, rollNumber } from "../core/motion.js";
 import { tokenMs, tokenPx } from "../core/tokens.js";
-import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress } from "../core/watch.js";
+import { actionStep, availability, episodeStates, episodesLed, titleActions, titleProgress, titleStatus } from "../core/watch.js";
 import { Flag } from "./flag.js";
 
 /**
@@ -31,7 +31,7 @@ const EPISODE_PX = 360;
 
 export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = () => {}, onPerson = () => {}, onDownload = null, downloadOf = () => null,
   onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {},
-  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, onRequest = () => {}, returnTo = () => null }) {
+  hasTrakt = () => false, onRate = () => {}, onWatched = () => {}, onStatus = () => {}, onRequest = () => {}, returnTo = () => null }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -111,6 +111,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   let revealed = new Set(); // las reseñas con spoilers que ya abriste (A)
   let rolled = new Set(); // las calificaciones que ya rodaron hasta su número en esta ficha
   let following = null; // una serie: ¿la sigues? (la campana, como el iPhone); null mientras no se sabe
+  let dropped = false; // la serie que dejaste («La dejé», G1-A)
   let own = null; // desde Mi media: { have: Set(video_id), versions: [...] } (tu carpeta de OneDrive)
   let season = 0;
   let index = 0;
@@ -366,9 +367,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
   // «Pedirlo a Real-Debrid» primero: si no hay versión que arranque, es lo único que sirve (RD-1); al final quedaba en «Más».
-  const SECONDARY_ORDER = ["rd-request", "restart", "mylist", "follow", "trailer", "rate", "watched", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
-  // Una serie con Trakt: Guardar, la campana, Tráiler, Calificar y Vista, todos a la vista; una película, cuatro (su «Ver» trae la
-  // versión al lado y con cinco no cabían en un renglón).
+  const SECONDARY_ORDER = ["rd-request", "restart", "status", "trailer", "rate", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
+  // Una serie con Trakt: el estado, Tráiler y Calificar, todos a la vista; una película, cuatro (su «Ver» trae la versión al
+  // lado y con cinco no cabían en un renglón).
   const secondaryShown = () => (kindOf() === "series" ? 5 : 4);
 
   function arrange(all) {
@@ -382,7 +383,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = arrange(titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt(), following,
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length }, plays, trakt: hasTrakt(), status: statusNow(),
       request: ask?.offer ? ask.offer : ask?.can_request ? "ask" : ask?.why === "requested" ? (ask.request?.percent ?? 0) : null }));
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // Un renglón, como Apple TV: el principal con el botón del mando que lo hace (A / Enter) y, a su lado, los demás
@@ -619,11 +620,30 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     if (t) onPlay({ ...t, from_start: fromStart, own: !!own?.have.has(t.video_id) });
   }
 
+  /** Cómo vas con el título (G1-A): lo que dice el botón de estado. */
+  const statusNow = () => titleStatus(details, { kind: kindOf(), dropped });
+
+  /** Lo del estado para su menú «¿Cómo vas con…?» y para guardarla de un toque. */
+  function statusAbout() {
+    const s = statusNow();
+    const series = kindOf() === "series";
+    return { kind: kindOf(), id: details?.id || item.meta_id, title: details?.title || item.title, status: s, trakt: hasTrakt(),
+      following: following !== false, library: !!details?.in_library, seenAny: (details?.watched || []).length > 0,
+      canDrop: series ? true : !!details?.in_library || details?.resume?.position > 0 };
+  }
+
+  /** El botón de estado: sin estado, un toque la guarda en Mi lista (como «Guardar»); con estado, abre «¿Cómo vas con…?».
+   * X (o ☰ › «¿Cómo vas con…?» de la hoja de Opciones) siempre abre el menú. */
+  function runStatus({ menu = false } = {}) {
+    if (!details || details.error) return;
+    onStatus(statusAbout(), { quick: !menu && statusNow() === "none" });
+  }
+
   function run(button) {
     if (button.id === "play") play(episodeById(button.video_id));
     else if (button.id === "restart") play(episodeById(button.video_id), { fromStart: true });
     else if (button.id === "sources") sources();
-    else if (button.id === "mylist") save();
+    else if (button.id === "status") runStatus();
     else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
     else if (button.id === "rate" || button.id === "watched") {
@@ -631,29 +651,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       (button.id === "rate" ? onRate : onWatched)(about);
     }
     else if (button.id === "download") download();
-    else if (button.id === "follow") follow();
     else if (button.id === "versions") { const t = target(); if (t && own) onVersions({ ...t, own: true }, own.versions); }
     else if (button.id === "fix") onFix({ kind: kindOf(), imdb: details?.id || item.meta_id, title: details?.title || item.title });
     else if (button.id === "retry") load();
     else if (button.id === "rd-request") requestDebrid();
     else if (button.id === "more-actions") { expanded = true; renderActions(); onChange(); }
-  }
-
-  /** La campana (como el iPhone): dejar de seguir la serie la saca de tus estrenos; volver a tocarla la sigue otra vez. */
-  async function follow() {
-    const id = details?.id || item?.meta_id;
-    const title = details?.title || item?.title;
-    const next = !following;
-    following = next;
-    renderActions();
-    try {
-      await api.setFollowing(id, next);
-      onNotice(next ? `Sigues ${title} otra vez: sale en tus estrenos` : `Dejaste de seguir ${title}: ya no sale en tus estrenos`);
-    } catch (err) {
-      following = !next;
-      renderActions();
-      onNotice(err?.message || "No pude guardarlo en Trakt", true);
-    }
   }
 
   /** Descargar para ver sin internet: la película, o el episodio enfocado (si no, el que sigue). */
@@ -723,7 +725,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
           onChange();
         }).catch(() => {});
       }
-      if (hasTrakt() && kind === "series") api.following(id).then((r) => { if (mine === token) { following = r?.following !== false; renderActions(); } }).catch(() => {});
+      if (hasTrakt()) api.following(id).then((r) => { if (mine === token) { following = r?.following !== false; dropped = !!r?.dropped; renderActions(); } }).catch(() => {});
       if (hasTrakt()) api.myRating(kind, id).then((r) => { if (mine === token) { rated.mine = r?.stars || null; showRatings(rated.ratings, mine); } }).catch(() => {});
       const settled = () => { if (mine === token) ratings.classList.remove("title__ratings--waiting"); };
       api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {}).finally(settled);
@@ -1038,6 +1040,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       return true;
     }
     if (act === "select" && buttons[action]) run(buttons[action]);
+    else if (act === "alt" && buttons[action]?.id === "status") runStatus({ menu: true });
     else if (act === "options" && hasTarget()) sources();
     else if ((act === "prevsection" || act === "nextsection") && series) {
       // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
@@ -1111,7 +1114,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && !led() && !onVersion && { glyph: g.options, label: "Versión" },
+    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.id === "status" && buttons[action].status === "none" ? "Guardar en Mi lista"
+      : buttons[action]?.id === "status" ? "¿Cómo vas?" : buttons[action]?.label?.split(" · ")[0] || "Ver" },
+    !onVersion && buttons[action]?.id === "status" && buttons[action].status === "none" && { glyph: g.alt, label: "¿Cómo vas?" }, hasTarget() && !led() && !onVersion && { glyph: g.options, label: "Versión" },
       led() ? { glyph: g.rows, label: "Episodios" } : panelZone() && { glyph: g.rows, label: PANEL_NAMES[panelZone()] },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
@@ -1123,6 +1128,17 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       if (!details || details.error || (details.id || item?.meta_id) !== id) return;
       details.in_library = library;
       details.saved_elsewhere = elsewhere;
+      renderActions();
+      onChange();
+    },
+    /** Cambió cómo vas con este título (desde «¿Cómo vas con…?» o Guardado): el botón lo dice ya (`patch`: { in_library,
+     *  dropped, following }); sin `patch`, se pide otra vez, sin mover el foco. */
+    statusChanged(metaId, patch = null) {
+      if (el.hidden || !item || !details || details.error || (details.id || item.meta_id) !== metaId) return;
+      if (!patch) { load({ quiet: true }); return; }
+      if ("in_library" in patch) details.in_library = patch.in_library;
+      if ("dropped" in patch) dropped = patch.dropped;
+      if ("following" in patch) following = patch.following;
       renderActions();
       onChange();
     },

@@ -5,7 +5,7 @@ import { Button } from "./button.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
 import { PersonHead } from "./people.js";
-import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons, RemoveMark } from "./ui.js";
+import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons, SelectMark } from "./ui.js";
 
 /**
  * Una lista abierta de Películas y series (como SortableGrid del iPhone): arriba la lista en grande (estatuilla o logo,
@@ -16,10 +16,13 @@ import { Chip, CornerRibbon, EmptyState, Pill, PosterSkeletons, RemoveMark } fro
  * open({ id, title, meta, media: { statue?, logo? }, source?, person?, editable?, tabs: [{ id, label, load, ranked?, brand? }] })
  * Una persona (`person`: foto, de dónde es y biografía, como PersonView del iPhone) va arriba de su filmografía; X
  * despliega la biografía.
- * Una lista tuya (`editable: { name, where }`: Mi lista y tus listas de Trakt, como ListEditing del iPhone) se edita: X
- * (o ☰ › Editar esta lista, o el botón «Editar» de arriba) pone el «−» en cada póster; A o el «−» lo quitan, B o «Listo»
- * terminan, y «Agregar» busca qué poner. Un ranking, un catálogo o Para ti no se editan.
- * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose() · onRemove(item) · onAdd() · onChange()
+ * Una lista tuya (`editable: { name, where }`: Mi lista, tus listas de Trakt y los montones de Guardado) se edita como el
+ * iPhone (G3-A, 10 nov 2026): X (o ☰ › Elegir varios, o el botón «Editar» de arriba) pone la casilla en cada póster; A (o
+ * un clic) elige o quita, Y («Con las elegidas…») abre lo que se puede hacer con ellas, «Todas» las elige todas y B o
+ * «Listo» terminan; «Agregar» busca qué poner. Un ranking, un catálogo o Para ti no se editan.
+ * Ordenar a mano (G4-A, ☰ de una lista tuya): A toma el póster enfocado, las flechas lo mueven, A lo suelta y B o «Listo»
+ * guardan el orden (`onReorder`).
+ * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose() · onBatch(screen) · onReorder(screen, ids) · onAdd() · onChange()
  */
 // Sin «Como viene»: si no eliges orden, la lista va como llega (elegir otra vez el que está puesto lo quita).
 // Los mismos órdenes que el iPhone (ListSort), con sus nombres.
@@ -46,7 +49,7 @@ export function chooseSort(listId, current, id) {
   return next;
 }
 
-export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRemove, onAdd, onChange, ratings, watched }) {
+export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBatch, onReorder, onAdd, onChange, ratings, watched }) {
   const media = h("span", { class: "list-screen__media", "aria-hidden": "true" });
   const title = h("h2", { class: "list-screen__title" });
   const meta = h("span", { class: "list-screen__meta" });
@@ -68,7 +71,10 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
   let zone = "grid"; // "tabs" | "grid"
   let index = 0;
   let attempt = 0;
-  let editing = false; // una lista tuya, con el «−» en cada póster
+  let editing = false; // una lista tuya, eligiendo varios (G3-A)
+  let chosen = new Set(); // los elegidos (meta_id)
+  let reordering = false; // ordenar a mano (G4-A)
+  let grabbed = false; // con el póster tomado: las flechas lo mueven
   let settings = { sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
   /** La calificación de un título juntando los servicios que la tengan (el promedio de IMDb y Trakt), como el iPhone. */
   const score = (i) => {
@@ -105,19 +111,69 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
    *  y el dedo. */
   function paintTools() {
     tools.hidden = !list.editable;
-    mount(tools, !list.editable ? null : editing
-      ? [Button({ label: "Agregar", onPress: () => onAdd?.() }), Button({ label: "Listo", variant: "primary", onPress: () => setEditing(false) })]
+    const count = chosen.size;
+    mount(tools, !list.editable ? null : reordering
+      ? Button({ label: "Listo", variant: "primary", onPress: () => setReordering(false) })
+      : editing
+      ? [h("span", { class: "list-screen__count" }, count ? `${count} ${count === 1 ? "elegida" : "elegidas"} de ${shown.length}` : "Elige cuáles"),
+        Button({ label: "Todas", onPress: () => chooseAll() }),
+        count > 0 && Button({ label: "Con las elegidas…", onPress: () => onBatch?.(api) }),
+        list.editable.add !== false && Button({ label: "Agregar", onPress: () => onAdd?.() }),
+        Button({ label: "Listo", variant: "primary", onPress: () => setEditing(false) })].filter(Boolean)
       : Button({ label: "Editar", onPress: () => setEditing(true) }));
   }
 
   function setEditing(on) {
     if (!list?.editable || editing === on) return;
     editing = on;
+    reordering = false;
+    chosen = new Set();
     zone = "grid";
     onMove?.();
     paintTools();
     paintGrid();
     onChange?.();
+  }
+
+  /** Elegir (o soltar) un póster; «Todas» elige lo que se ve (otra vez, ninguna). */
+  function toggleChosen(item) {
+    if (!item) return;
+    if (chosen.has(item.meta_id)) chosen.delete(item.meta_id); else chosen.add(item.meta_id);
+    paintTools();
+    paintGrid();
+    onChange?.();
+  }
+  function chooseAll() {
+    chosen = chosen.size === shown.length ? new Set() : new Set(shown.map((i) => i.meta_id));
+    paintTools();
+    paintGrid();
+    onChange?.();
+  }
+
+  /** Ordenar a mano: la lista va como viene (sin otro orden ni filtros) y, al terminar, se guarda tu orden. */
+  function setReordering(on) {
+    if (!list?.editable || reordering === on) return;
+    if (!on) onReorder?.(api, (loaded.get(tab) || []).map((i) => i.meta_id));
+    reordering = on;
+    editing = false;
+    grabbed = false;
+    if (on) settings = { ...settings, sort: "default", kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
+    zone = "grid";
+    onMove?.();
+    refresh();
+    paintTools();
+    onChange?.();
+  }
+
+  /** Con el póster tomado, ← → ↑ ↓ lo cambian de lugar. */
+  function moveGrabbed(to) {
+    const items = [...(loaded.get(tab) || [])];
+    if (to < 0 || to >= items.length) return;
+    const [item] = items.splice(index, 1);
+    items.splice(to, 0, item);
+    loaded.set(tab, items);
+    index = to;
+    refresh();
   }
 
   /** Lo de la persona que llega después (TMDB): su foto, de dónde es y su biografía. */
@@ -185,13 +241,14 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
     else mount(grid, shown.map((item, i) => {
       const focusHere = () => { zone = "grid"; index = i; paintFocus(); };
       // Editando, el póster ya no abre la ficha (para no tropezar, como el iPhone): se quita con su «−» (o A).
-      const options = { caption: true, onPress: () => { focusHere(); if (!editing) onPick?.(item); },
+      const options = { caption: true, onPress: () => { focusHere(); if (editing) toggleChosen(item); else if (!reordering) onPick?.(item); },
         onMore: () => { focusHere(); onMore?.(item); } };
       const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
       built.card.dataset.focusId = `item:${i}`;
       if (item.day_label === "Nuevo") built.card.append(CornerRibbon()); // como en la fila: el listón, no una placa
       else if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
-      if (editing) built.card.append(RemoveMark(list.editable.name, { onPress: () => { focusHere(); onRemove?.(item); } }));
+      if (editing) built.card.append(SelectMark(chosen.has(item.meta_id), { label: item.title, onPress: () => { focusHere(); toggleChosen(item); } }));
+      if (reordering && grabbed && i === index) built.card.classList.add("list-screen__grabbed");
       return built.el ?? built.card;
     }));
     grid.dataset.shift = "0";
@@ -245,15 +302,18 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
   function open(next) {
     cancelExit();
     list = { ...next, tabs: next.tabs?.length ? next.tabs : [] };
-    tab = 0;
+    tab = Math.min(next.tab || 0, Math.max(0, list.tabs.length - 1)); // al ponerse al día (Guardado), en la pestaña que tenías
     index = 0;
     zone = "grid";
     editing = false;
+    reordering = false;
+    grabbed = false;
+    chosen = new Set();
     loaded.clear();
     settings = { sort: storage.get(sortKey(list.id), "default"), kind: "all", genre: null, minRating: null, decade: null, hideWatched: false };
     paintHead();
     el.hidden = false;
-    load(0);
+    load(tab);
   }
 
   function close() {
@@ -275,6 +335,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
   function handle(action) {
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back" && editing) { setEditing(false); return true; } // B: «Listo»
+    if (action === "back" && reordering) { setReordering(false); return true; }
     if (action === "back") { close(); return true; }
     if (action === "menu") { onSort?.(api); return true; }
     if (action === "prevsection" || action === "nextsection") { switchTab(tab + (action === "nextsection" ? 1 : -1)); return true; }
@@ -285,6 +346,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
     }
     const cols = columns();
     const moves = { left: -1, right: 1, up: -cols, down: cols, pageleft: -cols * 3, pageright: cols * 3 };
+    if (action in moves && reordering && grabbed) { moveGrabbed(index + moves[action]); onMove?.(); return true; }
     if (action in moves) {
       const to = index + moves[action];
       if (action === "up" && to < 0 && list.tabs.length > 1) { zone = "tabs"; onMove?.(); paintFocus(); return true; }
@@ -295,8 +357,13 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
       return true;
     }
     const item = shown[index];
+    if (reordering) {
+      if (action === "select" || action === "alt") { grabbed = !grabbed; onMove?.(); paintGrid(); onChange?.(); }
+      return true;
+    }
     if (action === "alt" && list.editable) { setEditing(!editing); return true; } // X: Editar · Listo
-    if (action === "select" && editing) { if (item) onRemove?.(item); return true; }
+    if (action === "select" && editing) { toggleChosen(item); return true; }
+    if (action === "options" && editing && chosen.size) { onBatch?.(api); return true; }
     if (action === "alt" && list.person?.biography) { about.firstChild?.classList.toggle("person-head--open"); onMove?.(); return true; }
     if (action === "select" || action === "alt") { if (item) onPick?.(item); return true; }
     if (action === "options") { if (item) onMore?.(item); return true; }
@@ -340,6 +407,15 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
     get editable() { return list?.editable ?? null; },
     get editing() { return editing; },
     setEditing,
+    /** La pestaña que ves (en Guardado, el montón: «in_list», «watching»…). */
+    get tabId() { return current()?.id; },
+    /** Los elegidos, en el orden en que se ven. */
+    get chosen() { return shown.filter((i) => chosen.has(i.meta_id)); },
+    chooseAll,
+    get reordering() { return reordering; },
+    setReordering,
+    /** Lo que hay en la pestaña (duplicar, «Sí, las dejé»). */
+    get items() { return [...(loaded.get(tab) || [])]; },
     /** Saca un título de lo cargado (cambia al instante); devuelve dónde estaba, para `restore` («Deshacer»). */
     without(metaId) {
       const removed = [];
@@ -376,12 +452,15 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onRe
     },
   };
 
-  const hints = (g) => (editing ? [
-    { glyph: g.select, label: "Quitar" },
-    { glyph: g.options, label: "Opciones" },
+  const hints = (g) => (reordering ? [
+    { glyph: g.select, label: grabbed ? "Soltar" : "Tomar" },
+    { glyph: g.back, label: "Listo", end: true },
+  ] : editing ? [
+    { glyph: g.select, label: chosen.has(shown[index]?.meta_id) ? "Quitar la marca" : "Elegir" },
+    chosen.size > 0 && { glyph: g.options, label: `Con las elegidas (${chosen.size})` },
     { glyph: g.alt, label: "Listo" },
     { glyph: g.back, label: "Atrás", end: true },
-  ] : [
+  ].filter(Boolean) : [
     { glyph: g.select, label: "Ver" },
     list?.editable && { glyph: g.alt, label: "Editar" },
     list?.person?.biography && { glyph: g.alt, label: "Biografía" },

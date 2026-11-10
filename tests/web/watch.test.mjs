@@ -9,9 +9,9 @@ const seasons = [
 ];
 
 test("película: Ver, o Continuar con lo que queda y Desde el principio", () => {
-  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Guardar", "Versión"]);
+  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Mi lista", "Versión"]);
   const half = titleActions({ kind: "movie", resume: { position: 3600, duration: 7200 } });
-  assert.deepEqual(half.map((a) => a.id), ["play", "mylist", "sources", "restart"]); // el orden del iPhone
+  assert.deepEqual(half.map((a) => a.id), ["play", "status", "sources", "restart"]); // el orden del iPhone
   assert.equal(half[0].label, "Continuar");
   assert.equal(half[0].hint, undefined); // lo que queda va en la línea de avance, no en el botón
   assert.ok(half[0].primary);
@@ -21,8 +21,8 @@ test("serie con episodios: se ve desde la lista; a la izquierda solo lo de la se
   const going = { kind: "series", seasons, trailer: "x", resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } };
   assert.ok(episodesLed(going));
   // Sin «Continuar» aparte ni «Versión»/«Descargar» (son del episodio enfocado: A, Y, X).
-  assert.deepEqual(titleActions(going, { download: null }).map((a) => a.id), ["mylist", "trailer"]);
-  assert.deepEqual(titleActions(going, { phone: true }).map((a) => a.id), ["mylist", "trailer", "phone-download", "phone-open"]);
+  assert.deepEqual(titleActions(going, { download: null }).map((a) => a.id), ["status", "trailer"]);
+  assert.deepEqual(titleActions(going, { phone: true }).map((a) => a.id), ["status", "trailer", "phone-download", "phone-open"]);
   // Sin episodios en la lista (Cinemeta no los trae): el botón de siempre, con el que ibas.
   const bare = titleActions({ kind: "series", seasons: [], resume: { video_id: "s:2:1", label: "T2 E1", position: 600 } });
   assert.ok(!episodesLed({ kind: "series", seasons: [] }));
@@ -65,21 +65,21 @@ test("qué hay disponible, antes de elegir", async () => {
   assert.deepEqual(availability([{ resolution: "720p", hdr: [], languages: [] }]), ["720p"]);
 });
 
-test("tráiler y Mi lista en la ficha", async () => {
+test("tráiler y el estado en la ficha (G1-A: «En Mi lista»)", async () => {
   const { titleActions } = await import("../../orbital/web/js/core/watch.js");
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
-  assert.deepEqual(labels, ["Ver", "Guardada", "Tráiler", "Versión"]);
+  assert.deepEqual(labels, ["Ver", "En Mi lista", "Tráiler", "Versión"]);
 });
 
 test("serie sin episodios: sin «Elegir versión» (no había nada que elegir)", () => {
-  assert.deepEqual(titleActions({ kind: "series", seasons: [], resume: null }).map((a) => a.id), ["mylist"]);
+  assert.deepEqual(titleActions({ kind: "series", seasons: [], resume: null }).map((a) => a.id), ["status"]);
 });
 
 test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhone conectado", () => {
   const movie = { kind: "movie", resume: null };
   assert.ok(!titleActions(movie).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label),
-    ["Ver", "Guardar", "Descargar en el iPhone", "Versión", "Enviar al iPhone"]);
+    ["Ver", "Mi lista", "Descargar en el iPhone", "Versión", "Enviar al iPhone"]);
   assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.id).filter((id) => id.startsWith("phone")), ["phone-download", "phone-open"]);
   // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
   assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
@@ -154,7 +154,7 @@ test("Descargar en la ficha dice cómo va (para ver sin internet), como el iPhon
   assert.equal(downloadAction({ status: "failed" }).short, "Reintentar");
   const movie = { kind: "movie", in_library: false };
   assert.ok(!titleActions(movie).some((b) => b.id === "download")); // sin descargas (el demo viejo, pruebas): no aparece
-  assert.deepEqual(titleActions(movie, { download: null }).map((b) => b.id), ["play", "mylist", "download", "sources"]);
+  assert.deepEqual(titleActions(movie, { download: null }).map((b) => b.id), ["play", "status", "download", "sources"]);
 });
 
 test("Versión: con «Cualquiera», latino y castellano son tu idioma; la casilla enseña la primera del servidor", async () => {

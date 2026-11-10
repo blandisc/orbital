@@ -80,6 +80,10 @@ export function libraryCommands({ addToList, removeFromList, api, artConfirmMenu
     "list-edit": async (command) => {
       return ui.listScreen.sorter.setEditing(!!command.on);
     },
+    "list-choose-all": async () => {
+      ui.sheet.close();
+      return ui.listScreen.sorter.chooseAll();
+    },
     "list-add": async () => {
       return addToList(ui.listScreen.sorter.editable);
     },

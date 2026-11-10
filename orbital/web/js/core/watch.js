@@ -56,7 +56,47 @@ export function debridAction(request) {
   return null;
 }
 
-export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false, following = null, request = null } = {}) {
+/** Cómo vas con un título (G1-A, como `TitleStatus.decide` del iPhone): «none», «in_list», «watching», «watched» o
+ * «dropped». Se deduce de lo que ya se sabe (Mi lista, lo visto, lo dejado). `dropped`: la serie está dejada. */
+export function decideStatus({ series, inList, watched, released, upcoming, dropped }) {
+  if (series) {
+    if (dropped) return "dropped";
+    // Trakt saca una serie de Mi lista al ver su primer episodio: si sigue ahí, la volviste a poner tú y manda mientras no la empiezas.
+    if (watched > 0) return released > 0 && watched >= released && !upcoming ? "watched" : "watching";
+    return inList ? "in_list" : "none";
+  }
+  // Una película vista que está en Mi lista la volviste a guardar para verla otra vez.
+  if (inList) return "in_list";
+  return watched > 0 ? "watched" : "none";
+}
+
+/** El estado de la ficha abierta, con lo que trae `details` (`in_library`, `watched`, `seen`, `resume`, `seasons`). */
+export function titleStatus(details, { kind = "movie", dropped = false, now = Date.now() } = {}) {
+  if (!details || details.error) return "none";
+  const series = (details.kind || kind) === "series";
+  if (!series) return decideStatus({ series, inList: !!details.in_library, watched: details.seen ? 1 : 0, released: 1, upcoming: false, dropped });
+  const episodes = (details.seasons || []).filter((s) => s.season !== 0).flatMap((s) => s.episodes || []);
+  const out = (e) => { const t = Date.parse(e.released || ""); return Number.isNaN(t) || t <= now; };
+  const ids = new Set(episodes.map((e) => e.id));
+  let watched = (details.watched || []).filter((id) => ids.has(id)).length;
+  // A medias o ya pasado del primero: también la estás viendo, aunque aún no llegue lo visto.
+  const resume = details.resume;
+  if (!watched && resume && (resume.position > 0 || (resume.video_id && resume.video_id !== episodes[0]?.id))) watched = 1;
+  return decideStatus({ series, inList: !!details.in_library, watched, released: episodes.filter(out).length,
+    upcoming: episodes.some((e) => !out(e)), dropped });
+}
+
+/** El botón de estado (G1-A): lo que dice y su ícono, como `statusTitle` y `statusSymbol` del iPhone. */
+export const STATUS_WORDS = {
+  none: { label: "Mi lista", icon: "bookmark" },
+  in_list: { label: "En Mi lista", icon: "bookmarkFill" },
+  watching: { label: "Viendo", icon: "watching" },
+  watched: { label: "Vista", icon: "checkCircle" },
+  dropped: { label: "La dejé", icon: "hide" },
+};
+const statusAction = (status) => ({ id: "status", status, ...STATUS_WORDS[status], active: status !== "none" });
+
+export function titleActions(details, { kind = "movie", phone = false, download = undefined, own = null, plays = null, trakt = false, request = null, status = null } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -69,13 +109,10 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   const ask = debridAction(request);
   if (episodesLed(details, kind)) {
     if (ask) out.push(ask); // lo primero de la fila: es lo único que sirve si no hay versión que arranque
-    out.push(saved
-      ? { id: "mylist", icon: "check", label: "Guardada", active: true }
-      : { id: "mylist", icon: "plus", label: "Guardar" });
+    // G1-A: un solo botón dice cómo vas (reemplaza a «Guardar», «Marcar como vista» y la campana, que viven en su menú).
+    out.push(statusAction(status || (saved ? "in_list" : "none")));
     if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
-    out.push(...yours(trakt, "series"));
-    // La campana, como el iPhone: «Siguiendo» (sale en tus estrenos) o «Seguir» (la dejaste de seguir).
-    if (trakt && following !== null) out.push(following ? { id: "follow", icon: "bell", label: "Siguiendo", active: true } : { id: "follow", icon: "bellOff", label: "Seguir" });
+    if (trakt) out.push(RATE);
     if (phone) {
       out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" },
         { id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
@@ -111,11 +148,8 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // pondría el video de aviso de Real-Debrid. Con algo al instante, el pedido va al lado («Pedir a la nube en latino»).
   if (ask && request === "ask" && out[0]?.id === "play") out[0] = { ...ask, primary: true, video_id: out[0].video_id };
   else if (ask) out.push(ask);
-  // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
-  // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
-  out.push(saved
-    ? { id: "mylist", icon: "check", label: "Guardada", active: true }
-    : { id: "mylist", icon: "plus", label: "Guardar" });
+  // G1-A: el botón de estado (Mi lista · En Mi lista · Vista · La dejé), como el iPhone; «Marcar como vista» vive en su menú.
+  out.push(statusAction(status || (saved ? "in_list" : "none")));
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
   // Descargar aquí, para ver sin internet (el episodio que sigue o la película), como el iPhone.
@@ -123,7 +157,7 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
   if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
-  out.push(...yours(trakt, details.kind || kind));
+  if (trakt) out.push(RATE);
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
   if (playable) out.push({ id: "sources", icon: "list", label: "Versión", short: "Versión" });
   if (restart) out.push(restart);
@@ -134,9 +168,8 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   return out;
 }
 
-/** Con Trakt, lo tuyo con el título (como el iPhone): calificar con estrellas y «¿Cuándo la viste?». */
-const yours = (trakt, kind) => (trakt ? [{ id: "rate", icon: "star", label: "Calificar" },
-  { id: "watched", icon: "check", label: kind === "series" ? "Marcar la serie como vista" : "Marcar como vista", short: "Vista" }] : []);
+/** Con Trakt, calificar con estrellas (como el iPhone); «¿Cuándo la viste?» está en el menú del estado (G1-A). */
+const RATE = { id: "rate", icon: "star", label: "Calificar" };
 
 const RELEASE_FORMAT = { day: "numeric", month: "short" };
 

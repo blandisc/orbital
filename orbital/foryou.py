@@ -480,6 +480,9 @@ class ForYou:
         self._logo_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="logos")  # calentar logos, de uno en uno
         self._studio_logos_busy = False
         self._logo_misses: dict[str, float] = {}
+        from .gestor import Gestor
+
+        self.gestor = Gestor(self)  # el gestor tipo Trakt (G1–G4), como el iPhone
 
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
@@ -808,7 +811,7 @@ class ForYou:
             found = [pool.submit(members, row["id"]) for row in lists]
             in_watch = any(e["imdb"] == imdb for e in watch.result())
             in_favs = any(e["imdb"] == imdb for e in favs.result())
-            out = [{**row, "contains": any(e["imdb"] == imdb for e in f.result() or [])}
+            out = [{"id": row["id"], "name": row["name"], "contains": any(e["imdb"] == imdb for e in f.result() or [])}
                    for row, f in zip(lists, found, strict=True) if f.result() is not None]
         return {"trakt": True, "watchlist": in_watch, "favorite": in_favs, "lists": out}
 
@@ -818,6 +821,9 @@ class ForYou:
         if where == "watchlist":
             self.trakt.set_watchlist(kind, imdb, add)
             self.cache.clear("trakt:watchlist")
+            library = getattr(getattr(self.catalog, "watch", None), "trakt_library", None)
+            if library is not None:
+                library.note_watchlist(kind, imdb, add)
         elif where == "favorites":
             self.trakt.set_favorite(kind, imdb, add)  # Trakt ya olvida lo que tenía guardado de tus favoritos
         elif where.startswith("list:") and where[5:].isdigit():

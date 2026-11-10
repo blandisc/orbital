@@ -54,6 +54,8 @@ SHOWS = {
     "penguin": _s("tt15435876", "The Penguin", 2024, 8), "lotus": _s("tt13406094", "The White Lotus", 2021, 21),
 }
 M, S = MOVIES, SHOWS
+# Las que tienen ficha en la demo (DEMO_TITLES de demo_server.py) y no salen en las filas: así se pueden guardar y abrir.
+WITH_PAGE = [_s("tt0386676", "The Office", 2005, 201)]
 
 if __import__("os").environ.get("ORBITAL_DEMO_LONG") == "1":  # pruebas: nombres larguísimos (¿algo se corta o se encima?)
     for n, entry in enumerate([*MOVIES.values(), *SHOWS.values()]):
@@ -95,7 +97,7 @@ class DemoTrakt:
 
     def _edited(self, which, base):
         added, removed = self._edits[which]
-        known = {e["imdb"]: e for e in [*S.values(), *M.values()]}
+        known = {e["imdb"]: e for e in [*S.values(), *M.values(), *WITH_PAGE]}
         seen = set(removed)
         return [e for e in [*(known.get(i, _m(i, i, 2020, 100)) for i in added), *base] if not (e["imdb"] in seen or seen.add(e["imdb"]))]
 
@@ -122,7 +124,10 @@ class DemoTrakt:
 
     def lists(self):
         # Un nombre largo de verdad (como las listas que la gente copia en Trakt): no debe cortarse feo.
-        return [{"id": "1", "name": "The 25 Best Sci-Fi Movies of the 21st Century (So Far)"}] +             [{"id": i, "name": row["name"]} for i, row in self._mine.items()]
+        meta = getattr(self, "_meta", {})
+        rows = [{"id": "1", "name": "The 25 Best Sci-Fi Movies of the 21st Century (So Far)", "privacy": "public", "count": 7}] + \
+            [{"id": i, "name": row["name"], "privacy": "private", "count": len(row["items"])} for i, row in self._mine.items()]
+        return [{**r, **meta.get(r["id"], {})} for r in rows]
 
     def named_list(self, name, create=False):
         found = next((row["id"] for row in self.lists() if row["name"].casefold() == name.casefold()), None)
@@ -156,6 +161,57 @@ class DemoTrakt:
 
     def public_list_items(self, user, slug):
         return []
+
+    # --- el gestor tipo Trakt (olas 1 y 2): lo visto, lo dejado, varios a la vez y tus listas --------------------------
+    def watched_state(self):
+        now = time.time()
+        day = 86400
+        movies = {e["imdb"]: {**e, "last": now - n * 9 * day} for n, e in enumerate([M["dune1"], M["inter"], M["arrival"], M["br"], M["inception"]])}
+        shows = {S["bear"]["imdb"]: {**S["bear"], "last": now - day, "fraction": .6, "airing": True},
+                 S["andor"]["imdb"]: {**S["andor"], "last": now - 3 * day, "fraction": 1, "airing": False},
+                 S["silo"]["imdb"]: {**S["silo"], "last": now - 5 * day, "fraction": .4, "airing": True},
+                 S["dark"]["imdb"]: {**S["dark"], "last": now - 40 * day, "fraction": 1, "airing": False},
+                 S["lotus"]["imdb"]: {**S["lotus"], "last": now - 250 * day, "fraction": .3, "airing": True},
+                 S["futurama"]["imdb"]: {**S["futurama"], "last": now - 60 * day, "fraction": .2, "airing": True}}
+        for target, _ in self.history:  # lo que marcaste aquí
+            imdb = (target.get("movie") or {}).get("ids", {}).get("imdb")
+            if imdb:
+                known = next((e for e in M.values() if e["imdb"] == imdb), _m(imdb, imdb, 2020, 100))
+                movies[imdb] = {**known, "last": now}
+        return {"movies": movies, "shows": shows}
+
+    def watched_movies(self):  # la ficha de una película vista dice «Vista»
+        return {imdb: row["last"] for imdb, row in self.watched_state()["movies"].items()}
+
+    def hidden_shows(self):
+        return set(getattr(self, "_hidden", {S["futurama"]["imdb"]}))
+
+    def set_hidden(self, imdbs, hidden, sections=trakt_api.HIDDEN_SECTIONS):
+        current = self.hidden_shows()
+        self._hidden = current | set(imdbs) if hidden else current - set(imdbs)
+
+    def set_items(self, target, items, add):
+        for kind, imdb in items:
+            (self.set_watchlist(kind, imdb, add) if target == "watchlist" else self.set_list_item(target, kind, imdb, add))
+
+    def remove_history(self, target):
+        self.history = [(t, w) for t, w in self.history if t != target]
+
+    def update_list(self, list_id, name=None, privacy=None):
+        self._meta = getattr(self, "_meta", {})
+        self._meta.setdefault(list_id, {}).update({k: v for k, v in (("name", name), ("privacy", privacy)) if v})
+
+    def delete_list(self, list_id):
+        self._mine.pop(list_id, None)
+
+    def reorder(self, list_id, imdbs):
+        if list_id in self._mine:
+            self._mine[list_id]["items"] = [i for i in imdbs if i in self._mine[list_id]["items"]]
+
+    def duplicate_list(self, list_id, name):
+        made = self.create_list(name)
+        self._mine[made]["items"] = [e["imdb"] for e in self.list_items(list_id)]
+        return made
 
     def show_progress(self, imdb):  # la ficha de una serie: dónde vas (aquí, en ninguna)
         return None

@@ -49,6 +49,7 @@ import { systemCommands } from "./app/system-commands.js";
 import { accountCommands } from "./app/account-commands.js";
 import { libraryCommands } from "./app/library-commands.js";
 import { yoursCommands } from "./app/yours-commands.js";
+import { listManageOptions, savedCommands, savedMenuOptions } from "./app/saved-commands.js";
 import { createMatchDeck } from "./components/match-deck.js";
 import { createShowcase } from "./components/showcase.js";
 import { createFilterPanel } from "./components/filter-panel.js";
@@ -152,6 +153,8 @@ const ui = {
     hasTrakt: () => traktLinked(),
     onRate: (about) => runCommand({ type: "rate", ...about }),
     onWatched: (about) => runCommand({ type: "watched", ...about }),
+    // G1-A: sin estado, un toque la guarda en Mi lista; con estado (o X), «¿Cómo vas con…?».
+    onStatus: (about, { quick }) => runCommand(quick ? { type: "status-list", ...about } : { type: "status", ...about }),
     downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
@@ -194,6 +197,7 @@ const ui = {
   }),
   login: createLogin({
     onDone: (res, form) => {
+      if (form.done) return form.done(res.res, res.values); // el nombre de una lista (Guardado)
       if (loginFrom) loginFrom.done = true;
       if (form.id === "realdebrid") return debridSaved(res);
       if (form.id === "opensubtitles") {
@@ -255,9 +259,10 @@ const ui = {
     onPick: (item) => openListItem(item),
     // Una lista tuya: «Quitar de esta lista» en Opciones (como mantener el dedo en el iPhone).
     onMore: (item) => openMenu(item.file ? looseMenu(item) : gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked(),
-      list: ui.listScreen.sorter.editable && { ...ui.listScreen.sorter.editable, here: true } })),
+      list: ui.listScreen.sorter.editable?.where !== "saved" && ui.listScreen.sorter.editable && { ...ui.listScreen.sorter.editable, here: true } })),
     onSort: (screen) => openMenu(listSortMenu(screen)),
-    onRemove: (item) => removeFromList(ui.listScreen.sorter.editable, item),
+    onBatch: () => runCommand({ type: "batch-open" }), // G3-A: «Con las elegidas…»
+    onReorder: (screen, ids) => saveOrder(screen.editable, ids), // G4-A: ordenar a mano
     onAdd: () => addToList(ui.listScreen.sorter.editable),
     onChange: () => renderHints(),
     onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
@@ -1726,6 +1731,8 @@ function listSortMenu(s) {
   const check = (on) => (on ? "✓" : "");
   const options = [];
   if (s.editable) options.push(...listEditOptions(s.editable, s.editing));
+  if (s.id === "saved") options.push(...savedMenuOptions(s.tabId, savedTable().lists, { online: navigator.onLine !== false }));
+  options.push(...listManageOptions(s.editable, { online: navigator.onLine !== false }));
   if (!s.ranked) {
     options.push({ heading: true, label: "Ordenar" },
       ...SORTS.map((o) => ({ icon: "list", label: o.label, value: check(st.sort === o.id), command: { type: "list-sort", value: o.id } })));
@@ -1966,8 +1973,9 @@ function commands() {
   if (commandTable) return commandTable;
   const torrentioMenus = { main: (entry) => torrentioMenu(entry, state.settings?.languages || []), languages: torrentioLanguagesMenu, language: torrentioLanguageMenu, add: torrentioLanguageAddMenu,
     qualities: torrentioQualitiesMenu, providers: torrentioProvidersMenu };
-  const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
-  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }) };
+  const deps = { UNDO_MS, openSources, debridCancelMenu, deviceMenu, deviceRemoveMenu, stremioLogoutMenu, explainerMenu, torrentioMenus, moviesSetupMenu, addonMenu, alexaMenu, api, applySettings, artConfirmMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, debridAccountMenu, debridRequestMenu, debridRequestsMenu, diagnosticsMenu, edenBuildMenu, emulatorMenu, emulatorsMenu, exitMenu, fixTitle, folderMenu, foldersMenu, genreNames, keysMenu, launch, loadCuration, loadDownloads, loadLibrary, memoryMenu, nested, offerUndoHide, addToList, removeFromList, onedriveFolderMenu, onedriveMenu, openListItem, openMenu, openQuick, openTitle, playerMenu, playersMenu, playersRestartMenu, pollStatus, powerConfirmMenu, powerMenu, quickMenu, rememberedMenu, renderHints, resumeRunning, runnerMenu, sendToPhone, setupMenu, sound, state, stillThere, stopMenu, stremioAccountMenu, toggleSave, tourMenu, traktAccountMenu, ui, undoable, updateMenu, voiceGroupMenu, voiceHelpMenu, voiceLogMenu, watch, windowsMenu };
+  commandTable = { ...systemCommands(deps), ...accountCommands(deps), ...libraryCommands(deps), ...yoursCommands({ ...deps, openMatch, openShowcase, openFilter, setUnseeded }),
+    ...savedTable() };
   return commandTable;
 }
 
@@ -2117,6 +2125,47 @@ function openMenu(menu, options = {}) {
 
 /** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
 const UNDO_MS = 8000;
+
+// --- Guardado y tus listas (el gestor tipo Trakt, olas 1 y 2: app/saved-commands.js) ------------------------------------
+let savedCommandsTable = null;
+function savedTable() {
+  savedCommandsTable ??= savedCommands({ api, nested, openMenu, renderHints, sound, ui, undoable, openListForm,
+    openCollectionList: ({ id, title }) => openCollection({ collection: { type: "list", source: "trakt", list: { id, title, meta: "Tu lista" } } }) });
+  return savedCommandsTable;
+}
+
+/** El nombre de una lista (nueva o cambiada), con el teclado de la tele. */
+function openListForm({ title, lead = "", submitLabel, value = "", submit, done }) {
+  sound.play("open");
+  ui.login.open({ id: "list-form", eyebrow: "Tus listas", title, lead, submitLabel, missing: "Ponle nombre a la lista",
+    fields: [{ name: "name", label: "Nombre", value, forget: true }],
+    submit: async (values) => ({ res: await submit(values), values }), done });
+  renderHints();
+}
+
+/** «Ordenar a mano» terminó: tu orden se guarda en Trakt (necesita internet). */
+async function saveOrder(editable, ids) {
+  if (!/^list:\d+$/.test(editable?.where || "")) return;
+  try {
+    await api.manageList("reorder", { where: editable.where, ids });
+    sound.play("success");
+    ui.toast.show("Guardé tu orden", { tone: "success", detail: editable.name });
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show("No pude guardar tu orden", { error: true, detail: err?.message || "" });
+  }
+}
+
+/** Un cambio con «Deshacer» (Y mientras se ve el aviso; con el mouse o el dedo, en el aviso): el gestor de lo tuyo. */
+function undoable(message, detail, undo) {
+  ui.toast.show(message, { tone: "info", detail: detail || "", duration: UNDO_MS,
+    ...offerToastAction({ label: "Deshacer", button: "options", duration: UNDO_MS, run: () => {
+      Promise.resolve(undo()).then(() => sound.play("select")).catch((err) => {
+        sound.play("error");
+        ui.toast.show("No pude deshacerlo", { error: true, detail: err?.message || "" });
+      });
+    } }) });
+}
 
 /** Un aviso de voz con acción («No era eso», «Lo que puedes decir»): el botón que la hace mientras se ve, y con el mouse o
  *  el dedo se toca en el aviso. */
