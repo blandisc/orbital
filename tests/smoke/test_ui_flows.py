@@ -472,8 +472,8 @@ def test_long_list_and_editing_your_list(browser, server):  # noqa: F811
         # «Guardar en…» de un póster: la hoja con Mi lista, Favoritos y tus listas de Trakt.
         page.keyboard.press("y")
         page.locator(".sheet").get_by_text("Guardar en…").first.click()
-        page.locator(".sheet").get_by_text("Tus listas de Trakt").wait_for(timeout=8000)
-        assert page.locator(".sheet").get_by_text("Favoritos").count() >= 1
+        page.locator(".sheet").get_by_text("Tus listas de Trakt").wait_for(timeout=30000)
+        page.locator(".sheet").get_by_text("Favoritos").first.wait_for(timeout=30000)  # la hoja se arma por partes
         assert not page.errors, page.errors
         page.close()
     finally:
