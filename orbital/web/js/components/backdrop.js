@@ -34,6 +34,15 @@ async function paletteOf(img, url) {
   return palette;
 }
 
+/** El tono que ya midió el servidor (V3, `art_tone` de cada ítem, orbital/art_tone.py): el mismo cálculo que paletteOf, hecho
+ *  una vez por imagen y guardado. Con él no se pide la copia de 160 px ni se leen píxeles en cada cambio de foco (~15 ms
+ *  con la CPU a 4x). null si no vino (aún no se mide, o el arte es de fuera): entonces se calcula aquí, como antes. */
+export function paletteOfTone(tone) {
+  if (!tone || typeof tone !== "object") return null;
+  if (tone.neutral) return paletteFor(null);
+  return typeof tone.tint === "string" && typeof tone.accent === "string" ? { tint: tone.tint, accent: tone.accent } : null;
+}
+
 /** El arte de fuera (TMDB, Steam, metahub) no se deja leer tal cual: una copia aparte pedida con CORS da su tono.
  *  Aparte, para que un servidor sin CORS no deje la pantalla sin fondo (solo se queda en grafito). */
 function remotePalette(url, done) {
@@ -134,8 +143,13 @@ export function createBackdrop({ settle = 150 } = {}) {
 
   /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). `color`: sin imagen,
    *  el fondo solo con ese color (una consola: su variable CSS, core/home.js · systemColor). `fallback`: la portada si el arte
-   *  ancho no carga (T10: un título sin fanart en Películas y series se ve con su póster desenfocado, no en gris). */
-  function show(url, { poster = false, pixel = false, color = null, fallback = null } = {}) {
+   *  ancho no carga (T10: un título sin fanart en Películas y series se ve con su póster desenfocado, no en gris).
+   *  `tone`: el `art_tone` del ítem (V3), el color de `url` ya medido por el servidor. */
+  function show(url, { poster = false, pixel = false, color = null, fallback = null, tone = null } = {}) {
+    // Solo para el arte que sirve Orbital (/api/…): es el que midió el servidor (`tone_path`); un fondo de fuera (metahub)
+    // con una portada local mediría otra imagen.
+    const known = /^\/api\//.test(url || "") && paletteOfTone(tone);
+    if (known) palettes.set(url, known);
     const mine = ++token;
     // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo (y cambia cuando se detiene).
     setTimeout(() => {

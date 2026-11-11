@@ -309,7 +309,7 @@ const ui = {
   // La página de un juego (Opciones › Ver ficha), como la de producto del Apple TV.
   gamePage: createGamePage({
     onAction: (action, item) => gamePageAction(action, item),
-    onShow: (item) => ui.backdrop.show(item.hero || item.image || null),
+    onShow: (item) => ui.backdrop.show(item.hero || item.image || null, { tone: item.art_tone }),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { delete document.body.dataset.gamePage; sound.play("back"); restoreBackdrop(); renderHints(); },
   }),
@@ -574,7 +574,7 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
     ui.hero.update(item, glyphs(), { runningId: state.running?.id });
     // El fondo a pantalla completa, del ancho de la pantalla (el original de metahub o de Steam pesaba hasta ~8 MB ya abierto).
     ui.backdrop.show(sized(item?.hero || item?.image, innerWidth), { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres,
-      fallback: item?.hero && item.image ? item.image : null });
+      fallback: item?.hero && item.image ? item.image : null, tone: item?.art_tone });
     const count = state.rows[next.r]?.items.length ?? 1;
     ui.backdrop.parallax(count > 1 ? next.c / (count - 1) : 0);
   }
@@ -741,7 +741,7 @@ function renderView() {
 /** El fondo toma el color de la sugerencia enfocada y su luz se acerca a ella (como en el Inicio). */
 function forYouFocused(item) {
   if (!inForYou()) return;
-  if (item) ui.backdrop.show(item.hero || item.image || null);
+  if (item) ui.backdrop.show(item.hero || item.image || null, { tone: item.art_tone });
   const node = document.querySelector(".foryou-mosaic__tile.is-focused");
   if (node) {
     const r = node.getBoundingClientRect();
@@ -849,7 +849,7 @@ function gamesFocused(target) {
   consoleOpened(ui.games.console?.id);
   const item = target?.item ?? target?.console?.last ?? null;
   // Al ancho de la pantalla, como el Inicio: entera (hasta 2560 px) tardaba más y su tono se sacaba de ella, no de la copia chica.
-  if (item) ui.backdrop.show(sized(item.hero || item.image, innerWidth) || null);
+  if (item) ui.backdrop.show(sized(item.hero || item.image, innerWidth) || null, { tone: item.art_tone });
   const node = document.querySelector(`.games [data-focus-id="${ui.games.focusId}"]`);
   if (node) {
     const r = node.getBoundingClientRect();
@@ -956,7 +956,7 @@ function loadAiring() {
 function homeFocused(target) {
   if (!inHome()) return;
   if (target?.kind === "console") ui.backdrop.show(null, { color: systemColor(target.console?.system) });
-  else ui.backdrop.show(target?.item?.hero || target?.item?.image || null);
+  else ui.backdrop.show(target?.item?.hero || target?.item?.image || null, { tone: target?.item?.art_tone });
   // La luz del fondo se acerca a lo enfocado.
   const node = document.querySelector(`[data-focus-id="${ui.home.focusId}"]`);
   if (node) {
