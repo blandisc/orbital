@@ -12,10 +12,12 @@ extension DS {
         /// del iPhone, de casi toda la pantalla). En ventana ancha y de pie (iPad vertical) la portada es menos apaisada que
         /// acostada: con 1.9 quedaba en un tercio de la pantalla.
         static let wideFrom: CGFloat = 700, aspectWidePortrait: CGFloat = 1.4
-        /// La de esta ventana (la portada y su esqueleto, `HeroSkeleton`, miden lo mismo).
+        /// La de esta ventana (la portada y su esqueleto, `HeroSkeleton`, miden lo mismo), con lo que de verdad le queda
+        /// (`WindowMetrics.column`): con el control abierto a la derecha (iPad acostado, Mac) se calculaba con la ventana
+        /// entera y la portada quedaba más baja y más apaisada que sin él.
         static var current: CGFloat {
-            let size = WindowMetrics.size
-            if size.width >= wideFrom {
+            let size = WindowMetrics.column
+            if WindowMetrics.size.width >= wideFrom {   // ancha o no la decide la ventana (con el panel sigue siendo la del iPad)
                 // Acostado (iPad, Mac a pantalla completa) 1.9 dejaba la portada en casi toda la ventana y «Seguir viendo»
                 // abajo, fuera de la vista: no pasa de `maxHeightShare` del alto de la ventana (más apaisada si hace falta).
                 let base = size.height > size.width ? aspectWidePortrait : aspectWide
