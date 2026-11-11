@@ -24,8 +24,9 @@ struct SavedStateTile: View {
             }
             title.recipe(.secondary, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
             if let detail {
-                detail.recipe(.footnote, color: DS.textMuted).lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: DS.SavedBoard.miniPoster / DS.Poster.aspect, alignment: .topLeading)
+                // Sin reservar el alto de los pósters (aire parejo, 11 nov): en el iPhone Historial va sola en su renglón y le
+                // sobraban 20 pt abajo; en una fila (iPad, Mac) la pila ya se estira al alto de las demás.
+                detail.recipe(.footnote, color: DS.textMuted).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
             } else { miniPosters }
         }
         .padding(DS.Space.s3)

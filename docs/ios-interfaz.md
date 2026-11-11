@@ -78,6 +78,29 @@ Un estado discreto dice «Stremio al día» o «N cambios por subir» (si no hub
   evaluó el `body` de cada pantalla. Se corre antes y después de tocar cómo avisan los modelos: menos es mejor, y nada
   debe dejar de actualizarse. Los modelos que avisan por propiedad usan `@Tracked` (`OrbitalModels/ObservableModel.swift`).
 
+### Aire parejo (11 nov 2026)
+
+Fernando: «"Guardar / Viendo" como que tiene muy poco espacio abajo… establecer una regla para que ya no vuelva a pasar».
+
+- **Todo contenedor con fondo** (tarjeta, botón, cápsula, hoja) tiene **el mismo aire arriba y abajo** de su contenido, y
+  ese aire sale de un token (`DS.Space.*` o el de su pieza), nunca de un número suelto. Se escribe con un solo
+  `padding(.vertical, …)` (o `padding(…)`), no con un `.top` y un `.bottom` distintos.
+- **Si el contenido puede tener un renglón más** (un estado, un nombre que parte en dos), el contenedor lo contempla: crece
+  con su aire intacto (alto *mínimo*, no fijo) y, en una fila de tarjetas iguales, todas reservan ese renglón para medir lo
+  mismo y tener el ícono y el nombre a la misma altura.
+- **Tarjeta de acción** (ícono + nombre + estado opcional): una sola pieza, `ActionTileLabel` (`Design/TitleActions.swift`),
+  con sus medidas en `DS.ActionTile` (relleno vertical, alto mínimo y caja del ícono, que crece con la letra). La usan la
+  ficha (Guardar, Descargar, Tráiler), «Mi media» y las teclas del control (`style: .key`). La fila de la ficha avisa con
+  `actionTileRow(reservesDetail:)` cuando «Guardar» lleva su estado; las filas de teclas llevan
+  `fixedSize(horizontal: false, vertical: true)` para que sus teclas midan lo mismo.
+- **Lo que no se puede todo a la vez**: con el renglón de estado reservado, Descargar y Tráiler quedan con su lugar vacío
+  abajo (el ícono y el nombre alineados con los de «Guardar» mandan sobre su centrado propio).
+- Lo cuidan `DesignRulesTests+Air.swift`: que la ficha, «Mi media» y el control usen la pieza; que sus medidas no se usen
+  fuera de ella; que la pieza tenga un solo relleno vertical y reserve el estado; y que ningún contenedor con fondo de
+  `ios/App/Sources/Design` tenga distinto relleno arriba que abajo sin `ds-exception: <motivo>`.
+- Se comprueba en las capturas, midiendo: del borde de la tarjeta a lo primero que se ve, arriba y abajo (±1 pt), en el
+  iPhone grande, el SE y el SE con accessibility-large en claro (`ios/scripts/bordes.sh`, pantalla `ficha-viendo`).
+
 ### Íconos: uno por idea (revisión 2 del 11 nov 2026)
 
 Cada idea tiene un solo símbolo del sistema y vive en `DS.Symbol` (`ios/App/Sources/Design/Icons.swift`). Nunca un carácter

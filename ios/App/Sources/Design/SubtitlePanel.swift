@@ -303,7 +303,7 @@ struct SubtitleDock: View {
             if open == id { content() }
         }
         .padding(.horizontal, DS.Space.s3)
-        .padding(.bottom, open == id ? DS.Space.s3 : 0)
+        .padding(.bottom, open == id ? DS.Space.s3 : 0)   // ds-exception: arriba el aire lo da el renglón de 44 (su texto al centro, ~12); abierto, abajo lleva el mismo s3
         .dsCard(.row, translucent: true)
     }
 

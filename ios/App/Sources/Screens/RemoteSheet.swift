@@ -449,6 +449,7 @@ struct RemoteSheet: View {
             RemoteKey(symbol: DS.Symbol.skipForward, title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
             if series { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
         }
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
         // Las pistas: si la consola las manda, se eligen aquí; si no, X (audio y subtítulos en la TV). Episodios o Fuentes
         // abre ese panel en la TV y cambia el control al pad para moverte por él.
         HStack(spacing: DS.Space.s2) {
@@ -465,6 +466,7 @@ struct RemoteSheet: View {
                 Task { await model.press(.back) }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
     }
 
     /// «0:53 para el siguiente susto» (o que ya no quedan).
@@ -498,14 +500,9 @@ struct RemoteSheet: View {
             } label: {
                 // Como las demás teclas: el ícono a la misma altura (antes «Salir» quedaba más abajo) y solo lo primero de la
                 // pista («Inglés», no «Inglés · Subtítulos · de…» cortado); el nombre completo está en el menú.
-                VStack(spacing: DS.Space.s1) {
-                    Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).frame(height: DS.Remote.keyIcon)
-                    (tracks.first(where: \.selected).map { Text(verbatim: Self.shortTrack($0.label)) } ?? Text("Sin subtítulos"))
-                        .recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-                }
-                .foregroundStyle(DS.text)
-                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
-                .dsCard(translucent: true)
+                ActionTileLabel(style: .key, title: tracks.first(where: \.selected).map { Text(verbatim: Self.shortTrack($0.label)) } ?? Text("Sin subtítulos"),
+                                symbol: symbol)
+                    .foregroundStyle(DS.text)
             }
             .accessibilityLabel(title)
             .accessibilityValue(tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos"))
@@ -527,6 +524,7 @@ struct RemoteSheet: View {
                 withAnimation(DS.Motion.smooth(reduceMotion)) { showsPad = true }   // la guía se recorre con el pad
             }
         }
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
     }
 
     /// El pad en lugar de lo de arriba (reproduciendo o en vivo): para moverte por la TV o por el panel que abriste
@@ -542,6 +540,7 @@ struct RemoteSheet: View {
             key(model, "line.3.horizontal", "menu", Text("Menú"), .menu)
             key(model, "magnifyingglass", "search", Text("Buscar"), .search)
         }
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
     }
 
     /// Navegar la interfaz de la TV: las secciones, el pad (tocar elige) y las teclas con lo que hace cada una.
@@ -557,7 +556,9 @@ struct RemoteSheet: View {
                 }
             }
             key(model, "chevron.right.2", nil, Text("Siguiente"), .nextsection)
-        }
+   
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
+    }
         TouchPad(selectLabel: model.legend["select"]) { action in collapse(); Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
@@ -567,6 +568,7 @@ struct RemoteSheet: View {
             key(model, "bolt", "alt", Text("Atajo"), .alt)   // lo que haga en esa pantalla lo dice la leyenda
             key(model, "ellipsis", "options", Text("Opciones"), .options)
         }
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
         HStack(spacing: DS.Space.s2) {
             // Saltan 5 en la fila de la TV (la leyenda «De 5 en 5» de la TV era igual en las dos, A16). Antes «5 atrás» sin
             // unidad y con los íconos de pista anterior/siguiente, justo bajo «Anterior / Siguiente» (revisión del 11 nov).
@@ -576,6 +578,7 @@ struct RemoteSheet: View {
             key(model, "magnifyingglass", "search", Text("Buscar"), .search)
             key(model, DS.Symbol.rowForward, nil, Text("+5 en la fila"), .pageright)
         }
+        .fixedSize(horizontal: false, vertical: true)   // las teclas de la fila, del mismo alto
     }
 
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.

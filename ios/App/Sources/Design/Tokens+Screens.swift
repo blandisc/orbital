@@ -92,7 +92,7 @@ extension DS {
         /// La letra del color del arte sobre el papel («más» de la sinopsis): más honda, para pasar el AA (4.5:1) aun con un arte
         /// blanco o amarillo puro (con 0.45 quedaba entre 3.2 y 4.4; con 0.6, de 4.95 a 6.9). I13, revisión del 10 nov.
         static let lightTextDeepen: Double = 0.6
-        static let tile: CGFloat = 64, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
+        static let ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
         /// Cuántos renglones de sinopsis antes de «más».
         static let synopsisLines = 3
         /// El alto del arte de la ficha (proporción ancho / alto) y el ancho máximo del logo centrado. 1.1: un poco más

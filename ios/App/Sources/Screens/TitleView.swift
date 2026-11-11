@@ -363,6 +363,8 @@ struct TitleView: View {
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
             }
+            // Aire parejo (11 nov 2026): si «Guardar» lleva su estado («Viendo»), las tres reservan ese renglón y crecen igual.
+            .actionTileRow(reservesDetail: hasStatusLine(model))
             .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
     }

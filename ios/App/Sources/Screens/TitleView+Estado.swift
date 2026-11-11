@@ -30,6 +30,13 @@ extension TitleView {
         .accessibilityIdentifier("title-status")
     }
 
+    /// «Guardar» lleva el renglón de su estado (ya está en alguna parte): la fila de acciones lo reserva en las tres.
+    func hasStatusLine(_ model: TitleModel) -> Bool {
+        let follow = env.follow
+        let _ = follow.track()
+        return model.status(dropped: follow.hidden.contains(model.metaID)) != .none
+    }
+
     static func statusTitle(_ status: TitleStatus) -> Text {
         switch status {
         case .none: Text("Mi lista")

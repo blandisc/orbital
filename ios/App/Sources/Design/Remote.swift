@@ -117,7 +117,6 @@ struct RemoteKey: View {
     /// El dedo encima: la tecla se hunde un poco, como un botón de verdad.
     @GestureState private var pressed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View { bodyContent.pointerHover(.highlight) }
     @ViewBuilder private var bodyContent: some View {
@@ -127,23 +126,13 @@ struct RemoteKey: View {
             heldAt = nil
             taps += 1; action()
         } label: {
-            VStack(spacing: DS.Space.s1) {
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).frame(height: DS.Remote.keyIcon)
-                // Completo o solo el ícono (I3, 10 nov): con letra grande en un renglón de cinco, «5 atr…» no decía nada. Con letra
-                // normal el nombre parte en dos renglones si no cabe (revisión 2 del 11 nov: «−5 en la fila» se salía de la tecla).
-                if !typeSize.isAccessibilitySize {
-                    title.recipe(.caption, color: DS.textMuted).lineLimit(2).multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.horizontal, DS.Space.s1)   // el nombre no toca la orilla de la tecla: parte en dos renglones antes
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(title)
-            .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
-            .dsCard(translucent: true)
-            .opacity(idle ? DS.Opacity.disabled : 1)
-            .scaleEffect(pressed && !reduceMotion ? DS.Remote.keyPress : 1)
-            .animation(DS.Motion.snap(reduceMotion), value: pressed)
+            // La tarjeta de acción del catálogo (aire parejo arriba y abajo, 11 nov 2026).
+            ActionTileLabel(style: .key, title: title, symbol: symbol)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(title)
+                .opacity(idle ? DS.Opacity.disabled : 1)
+                .scaleEffect(pressed && !reduceMotion ? DS.Remote.keyPress : 1)
+                .animation(DS.Motion.snap(reduceMotion), value: pressed)
         }
         .buttonStyle(.plain)
         .foregroundStyle(DS.text)
