@@ -381,7 +381,7 @@ def main(argv: list[str] | None = None) -> None:
             log.info("Orbital ya estaba abierta: traigo su ventana" if outcome == "shown" else "No abrí Orbital (ver lanzador.log)")
             return
     if supervising:  # el candado es del vigilante; el Orbital de verdad corre como su hijo
-        raise SystemExit(supervisor.run(raw_argv))
+        raise SystemExit(supervisor.run(raw_argv, port=config.server.port))  # con latido a /api/health (A7)
     from .kiosk import KioskWindow
     from .server import create_app, create_public_app
 

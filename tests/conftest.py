@@ -95,6 +95,15 @@ def _no_real_para_ti(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_updating_flag(monkeypatch, tmp_path):
+    """Ninguna prueba toca la marca de «actualizando» de verdad: el actualizador corre estas pruebas mientras la
+    tiene puesta, y si una prueba la borrara el vigilante podría reiniciar a Orbital a media actualización."""
+    from orbital import supervisor
+
+    monkeypatch.setattr(supervisor, "updating_flag", lambda: tmp_path / "updating-flag")
+
+
+@pytest.fixture(autouse=True)
 def _no_real_tv(monkeypatch):
     """Ninguna prueba baja la lista de canales ni les pide video de verdad (test_tv pone sus dobles)."""
     from orbital.library import iptv, iptv_health, iptv_logos

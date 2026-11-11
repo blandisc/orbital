@@ -50,6 +50,9 @@ class Updater:
         self.run = run
         self.python = python
         self._checked: tuple[float, UpdateInfo] | None = None
+        from .supervisor import updating_flag
+
+        self.updating_flag = updating_flag()
 
     def dirty(self) -> bool:
         """¿Hay cambios sin guardar en archivos de Orbital? (Lo no versionado no cuenta.)"""
@@ -98,7 +101,20 @@ class Updater:
         return result.returncode == 0
 
     def apply(self, progress=lambda message: None) -> tuple[bool, str]:
-        """(True, mensaje) si quedó la versión nueva; (False, por qué) si se quedó la anterior."""
+        """(True, mensaje) si quedó la versión nueva; (False, por qué) si se quedó la anterior. Mientras tanto deja la
+        marca de «actualizando»: el vigilante no reinicia a Orbital por lento (las pruebas cargan la consola)."""
+        flag = self.updating_flag
+        try:
+            flag.parent.mkdir(parents=True, exist_ok=True)
+            flag.write_text(str(time.time()), encoding="utf-8")
+        except OSError:
+            log.debug("No pude dejar la marca de «actualizando»", exc_info=True)
+        try:
+            return self._apply(progress)
+        finally:
+            flag.unlink(missing_ok=True)
+
+    def _apply(self, progress) -> tuple[bool, str]:
         info = self.check(force=True)
         if info.error:
             return False, info.error
