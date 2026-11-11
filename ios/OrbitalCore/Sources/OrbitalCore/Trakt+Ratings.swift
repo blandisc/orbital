@@ -16,7 +16,14 @@ extension Trakt {
         // asignador de tareas con el compilador de la CI («freed pointer was not the last allocation», 31 oct 2026).
         let movieRows: JSON? = try await movies
         let showRows: JSON? = try await shows
-        let rows: [JSON] = (movieRows?.array ?? []) + (showRows?.array ?? []) + (eps?.array ?? []) + (seas?.array ?? [])
+        // Una suma de cuatro `?? []` en una sola expresión tardaba demasiado en el verificador de tipos de la CI (10 nov 2026).
+        var rows: [JSON] = movieRows?.array ?? []
+        let showList: [JSON] = showRows?.array ?? []
+        let episodeList: [JSON] = eps?.array ?? []
+        let seasonList: [JSON] = seas?.array ?? []
+        rows.append(contentsOf: showList)
+        rows.append(contentsOf: episodeList)
+        rows.append(contentsOf: seasonList)
         var out: [String: Int] = [:]
         for row in rows {
             guard let imdb = (row["movie"] ?? row["show"])?["ids"]?["imdb"]?.string, let value = row["rating"]?.intValue,
