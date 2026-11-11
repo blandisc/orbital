@@ -131,8 +131,10 @@ public actor WatchService {
     }
 
     /// Lo mismo, lanzando el error (la cola decide si lo reintenta).
+    /// Sin Trakt no se da por mandado: lanza (se reintenta), nunca regresa como si hubiera llegado.
     func sendCheckpoint(_ event: ProgressEvent, _ target: TraktTarget) async throws {
-        guard let trakt, let percent = TraktProgressRule.percent(.pause, position: event.position, duration: event.duration, kind: event.kind, finished: event.finished) else { return }
+        guard let trakt, trakt.linked else { throw TraktError.auth("Trakt sin conectar") }
+        guard let percent = TraktProgressRule.percent(.pause, position: event.position, duration: event.duration, kind: event.kind, finished: event.finished) else { return }
         lastTraktWrite[event.videoID] = clock()
         try await trakt.scrobble(.start, target, progress: percent)
         await sleep(TraktProgressRule.backupGap)

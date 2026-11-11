@@ -116,4 +116,45 @@ final class TraktQueueTests: XCTestCase {
         XCTAssertEqual(http.bodies(for: "\(api)/sync/ratings").count, 1, "tu calificación también, por la misma cola")
         XCTAssertTrue(left.discards.isEmpty)
     }
+
+    /// Revisión del 11 nov 2026: el aviso de tu avance que pidió un `WatchService` que `Services.rebuild()` ya soltó se manda
+    /// de verdad en la vuelta siguiente. Antes (`[weak self]`) la llamada no hacía nada, no lanzaba, y la cola lo daba por
+    /// enviado: tu avance desaparecía sin llegar a Trakt.
+    func testElAvanceQuePidioUnServicioYaSueltoLlegaATrakt() async throws {
+        let http = FakeHTTP(), clock = Clock(), store = InMemoryPendingStore(), queue = TraktQueue(store: store, clock: { clock.now })
+        let trakt = makeTrakt(http, clock: clock)
+        http.json["\(api)/sync/history"] = ["added": ["movies": 1]]
+        http.json["\(api)/scrobble/start"] = [:]; http.json["\(api)/scrobble/pause"] = [:]
+        http.prefix["\(api)/sync/playback"] = []
+        http.delays["\(api)/sync/history"] = 150   // la vuelta del servicio viejo tarda: a media vuelta se rearman los servicios
+        let old = makeWatch(http, trakt: trakt, store: store, queue: queue, clock: clock)
+        store.update { $0.traktWatched = [.init(target: self.dune, at: clock.now.timeIntervalSince1970)] }
+        let flushing = Task { await old.flushPending() }
+        try await Task.sleep(nanoseconds: 40_000_000)
+        weak var released: WatchService?
+        do {
+            // El servicio nuevo (tras `rebuild()`) anota tu avance y pide vaciar mientras el viejo vacía; luego también lo suelta
+            // otro `rebuild()`: lo suyo sale en la vuelta siguiente del viejo.
+            let rebuilt = makeWatch(http, trakt: trakt, store: store, queue: queue, clock: clock)
+            released = rebuilt
+            await rebuilt.queue(progress: ProgressEvent(kind: "movie", metaID: "tt1160419", videoID: "tt1160419", originalTitle: "Dune",
+                                                       position: 3000, duration: 9000, watched: 60, at: clock.now.timeIntervalSince1970))
+            await rebuilt.flushPending()
+        }
+        _ = await flushing.value
+        XCTAssertNil(released, "el servicio que pidió el aviso ya se soltó (como tras `Services.rebuild()`)")
+        XCTAssertEqual(http.bodies(for: "\(api)/scrobble/start").count, 1, "tu avance se mandó de verdad")
+        XCTAssertEqual(http.bodies(for: "\(api)/scrobble/pause").count, 1)
+        XCTAssertTrue(store.load().traktProgress.isEmpty, "y solo entonces sale de la cola")
+    }
+
+    /// Sin nadie que sepa mandar tu avance (sin Trakt en el servicio), la cola no lo da por enviado: espera.
+    func testSinTraktElAvanceNoSeDaPorEnviado() async throws {
+        let http = FakeHTTP(), clock = Clock()
+        let service = WatchService(cinemeta: Cinemeta(http: http), trakt: nil, pending: InMemoryPendingStore(), clock: { clock.now }, sleep: { _ in })
+        let target = TraktTarget(videoID: "tt1160419", kind: "movie")!
+        let event = ProgressEvent(kind: "movie", metaID: "tt1160419", videoID: "tt1160419", originalTitle: "Dune", position: 3000, duration: 9000, watched: 60, at: 1)
+        do { try await service.sendCheckpoint(event, target); XCTFail("debía lanzar") }
+        catch { XCTAssertTrue(TraktQueue.retry(error), "y el error se reintenta: el avance se queda en la cola") }
+    }
 }
