@@ -11,6 +11,7 @@ import contextlib
 import hmac
 import ipaddress
 import logging
+import mimetypes
 import os
 import re
 import threading
@@ -151,9 +152,28 @@ def emulator_updates_for(d: Deps):
         variant=lambda source_id: d.catalog.state.settings().get("eden_build", "standard") if source_id == "eden" else None)
 
 
+# Los tipos que la interfaz y el iPhone necesitan con su nombre correcto. En Windows, `mimetypes` lee el registro, que
+# puede no conocer .webp (Python 3.11 tampoco lo trae) o decir cualquier cosa de .js (un programa que se adueñó de la
+# extensión): una imagen .webp salía como «application/octet-stream» y un .js como «text/plain». Esto manda encima.
+WEB_TYPES = {
+    ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".woff": "font/woff",
+    ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json",
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".ico": "image/x-icon", ".txt": "text/plain",
+}
+
+
+def register_web_types() -> None:
+    """Pone los tipos de WEB_TYPES por encima de lo que diga el registro de Windows. Se puede llamar varias veces."""
+    if not mimetypes.inited:
+        mimetypes.init()  # primero lo del sistema (si no, su lectura perezosa después pisaría lo nuestro)
+    for ext, kind in WEB_TYPES.items():
+        mimetypes.add_type(kind, ext)
+
+
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False,
                log_path: Path | None = None, updater=None) -> FastAPI:
     """`shortcuts`: activa los atajos globales del mando (Home, Select+Start, Legion L)."""
+    register_web_types()
     catalog = catalog or Catalog(config)
     if kiosk is not None:
         catalog.kiosk = kiosk

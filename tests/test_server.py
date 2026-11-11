@@ -352,3 +352,18 @@ def test_diagnostics_groups_games_by_system_not_by_subtitle():
              NS(category="apps", subtitle="Steam", system=None, source="steam"),
              NS(category="media", subtitle="Buscar", system=None, source="search")]
     assert library_counts(items) == {"Steam": 2, "GeForce NOW": 1, "Nintendo Switch": 1, "gba": 1}
+
+
+def test_new_images_and_fonts_go_out_with_their_real_type(make_client):
+    """Windows puede no conocer .webp (o decir cualquier cosa de .js): la interfaz los manda con su tipo de verdad."""
+    import mimetypes
+
+    from orbital.server import WEB_TYPES, register_web_types
+    mimetypes.add_type("application/octet-stream", ".webp")  # como un registro de Windows que no sabe qué es
+    mimetypes.add_type("text/plain", ".js")
+    register_web_types()
+    for ext, kind in WEB_TYPES.items():
+        assert mimetypes.guess_type("x" + ext)[0] == kind
+    c = make_client()
+    assert c.get("/img/consoles/ps4.webp").headers["content-type"] == "image/webp"
+    assert c.get("/js/main.js").headers["content-type"].startswith("text/javascript")
