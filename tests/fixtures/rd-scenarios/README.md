@@ -14,7 +14,8 @@ contesta cada servicio y la salida en claves; el texto que debe ser idéntico sa
 
 - `escenarios/NN-nombre.json`: uno por escenario (entrada y `expected`). Del 01 al 23, los primeros; del 24 al 32, los que
   pidió la TV; el 33, tu orden de idiomas con inglés y castellano al instante; el 34 y el 35, «Muchas descargas activas» en el
-  siguiente vistazo (N3-A).
+  siguiente vistazo (N3-A); del 36 al 38, los códigos de error de Real-Debrid que cambian de causa con la tabla única
+  (A15, `design/realdebrid-errors.json`: 36 y 23 son «Muchas descargas activas», 28 rechaza la versión).
 - `torrentio/<video>.json`: lo que contestó Torrentio **sin Real-Debrid** el 3 nov 2026 (público, sin clave, solo lectura),
   tal cual: `https://torrentio.strem.fun/stream/<tipo>/<video>.json`.
 - `cinemeta/<id>.json`: el `meta` de Cinemeta del mismo día, tal cual (`kitsu_1.json`: el del complemento Anime Kitsu).

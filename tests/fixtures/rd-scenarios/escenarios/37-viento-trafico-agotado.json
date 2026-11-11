@@ -1,0 +1,157 @@
+{
+  "id": "37-viento-trafico-agotado",
+  "name": "Hasta el viento tiene miedo · tráfico agotado",
+  "why": "A15: el error 23 (traffic_exhausted) es un límite de tu cuenta: igual que el 21.",
+  "now": "2026-11-03T18:00:00Z",
+  "app": {
+    "language": "es-MX",
+    "audio": "es",
+    "spanish": "es-419",
+    "languages": [
+      "es-419",
+      "original",
+      "en",
+      "es-ES"
+    ],
+    "quality": "1080p"
+  },
+  "title": {
+    "kind": "movie",
+    "id": "tt0061752",
+    "video_id": "tt0061752"
+  },
+  "tmdb": {
+    "source": "a mano: TMDB pide clave (lo que contestó el 3 nov con es-MX); el id de TMDB es inventado (solo enlaza find → detail)",
+    "find": {
+      "movie_results": [
+        {
+          "id": 991752,
+          "title": "Even the Wind Is Afraid",
+          "original_title": "Hasta el viento tiene miedo",
+          "original_language": "es"
+        }
+      ]
+    },
+    "detail": {
+      "id": 991752,
+      "title": "Even the Wind Is Afraid",
+      "original_title": "Hasta el viento tiene miedo",
+      "original_language": "es",
+      "origin_country": [
+        "MX"
+      ],
+      "overview": "Unas alumnas castigadas…"
+    }
+  },
+  "cinemeta": "cinemeta/tt0061752.json",
+  "torrentio": {
+    "file": "torrentio/tt0061752.json",
+    "captured": "2026-11-03",
+    "url": "https://torrentio.strem.fun/stream/movie/tt0061752.json",
+    "status": "ok",
+    "options": {
+      "only_instant": false,
+      "languages_first": []
+    }
+  },
+  "addons": [
+    "torrentio"
+  ],
+  "rd": {
+    "key": true,
+    "instant": [],
+    "account": {
+      "id": "A",
+      "premium": true,
+      "expires": "2027-06-01T00:00:00Z",
+      "problem": null
+    },
+    "torrents": [],
+    "book": [],
+    "error": {
+      "code": 23,
+      "http": 503,
+      "name": "traffic_exhausted"
+    }
+  },
+  "act": "request",
+  "expected": {
+    "_note": "A15 (design/realdebrid-errors.json): 23 = «too_many», como el 21.",
+    "title": "Hasta el viento tiene miedo",
+    "logo": false,
+    "video_id": "tt0061752",
+    "primary": "request",
+    "cause": "not_in_rd",
+    "cause_arg": null,
+    "fix": "request",
+    "offer": {
+      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+      "language": "es-419",
+      "res": "1080p"
+    },
+    "request_aside": null,
+    "instant_aside": null,
+    "recommended": {
+      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+      "file": 0,
+      "language": "es-419",
+      "res": "1080p"
+    },
+    "rows": [
+      {
+        "code": "es-419",
+        "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": true,
+        "other": false
+      },
+      {
+        "code": "es-419",
+        "hash": "71dba5d524b5c6dda7eeb5bc83e8118ae8fe9ad1",
+        "res": "720p",
+        "state": "to_request",
+        "recommended": false,
+        "other": false
+      },
+      {
+        "code": "es",
+        "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      },
+      {
+        "code": "en",
+        "hash": "f3fbc8374054e4cad7ac7fa700cac6565868bc0c",
+        "res": "1080p",
+        "state": "to_request",
+        "recommended": false,
+        "other": true
+      }
+    ],
+    "to_request": [
+      {
+        "code": "es-419",
+        "hash": "88c1570543cf3cd00ce81874699059ebb3aa5774",
+        "res": "SD"
+      },
+      {
+        "code": "ru",
+        "hash": "568ad8f0058b1faeab84044284d026b08fd75a1c",
+        "res": "SD"
+      }
+    ],
+    "hidden": 0,
+    "play_now": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+    "request": {
+      "hash": "b3bdbf12d9d59e94fcff16bf1e7f893a37a75d78",
+      "state": "too_many",
+      "percent": 0,
+      "stuck": false,
+      "auto_retry": true
+    },
+    "other_account": null
+  }
+}

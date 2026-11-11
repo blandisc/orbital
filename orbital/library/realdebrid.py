@@ -16,10 +16,42 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 from ..net import NET_ERRORS, read_body
 
 log = logging.getLogger(__name__)
+
+# A15 · qué quiere decir cada error de Real-Debrid, la misma tabla que lee el iPhone.
+ERRORS_FILE = Path(__file__).resolve().parents[2] / "design" / "realdebrid-errors.json"
+CAUSES = ("invalid_session", "no_premium", "refused", "too_many", "slow_down", "gone", "other")
+
+
+def load_errors(path: Path = ERRORS_FILE) -> tuple[dict[int, str], dict[int, str]]:
+    """(error_code → causa, HTTP → causa) de design/realdebrid-errors.json. Si el archivo falta o viene roto, solo lo
+    mínimo por HTTP (y queda anotado): Orbital sigue, aunque distinga menos."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        codes = {int(k): v["cause"] for k, v in data["codes"].items() if v.get("cause") in CAUSES}
+        http = {int(k): v for k, v in data["http"].items() if k.isdigit() and v in CAUSES}
+        return codes, http
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        log.error("No pude leer %s: los errores de Real-Debrid se distinguen solo por su HTTP", path)
+        return {}, {401: "invalid_session", 403: "no_premium", 404: "gone", 429: "slow_down", 509: "too_many"}
+
+
+ERROR_CODES, ERROR_HTTP = load_errors()
+
+
+def cause_of(status: int | None, code: int | None) -> str:
+    """La causa de un error: primero su error_code; sin él (o desconocido), su HTTP; otro 5xx es «slow_down»."""
+    if code is not None and code in ERROR_CODES:
+        return ERROR_CODES[code]
+    if status is not None and status in ERROR_HTTP:
+        return ERROR_HTTP[status]
+    if status is not None and status >= 500:
+        return "slow_down"
+    return "other"
 
 API = "https://api.real-debrid.com/rest/1.0"
 TIMEOUT = 12
@@ -30,33 +62,45 @@ _TOKEN = re.compile(r"realdebrid=([A-Za-z0-9]+)")
 
 
 class RealDebridError(Exception):
-    """Real-Debrid dijo que no (o no contestó). El mensaje va en palabras; `status` es el HTTP y `code` su error_code
-    (21 = muchas descargas a la vez, 34–36 = no permitido, 8/9 = clave que ya no sirve, 20 = sin Premium)."""
+    """Real-Debrid dijo que no (o no contestó). El mensaje va en palabras; `status` es el HTTP y `code` su error_code.
+    Qué quiere decir cada uno lo dice design/realdebrid-errors.json (`cause`), igual que en el iPhone. Sin `status` ni
+    `code` (no contestó, o una falla de Orbital) la causa es «other»."""
 
     def __init__(self, message: str, status: int | None = None, code: int | None = None) -> None:
         super().__init__(message)
         self.status, self.code = status, code
 
     @property
+    def cause(self) -> str:
+        return cause_of(self.status, self.code)
+
+    @property
     def gone(self) -> bool:
         """Ese torrent ya no está en tu cuenta (lo borraste o lo canceló otro aparato)."""
-        return self.status == 404
+        return self.cause == "gone"
 
     @property
     def too_many(self) -> bool:
-        return self.code == 21 or self.status == 509
+        """Un límite de tu cuenta (descargas a la vez, tráfico, uso justo): se vuelve a pedir cuando haya lugar."""
+        return self.cause == "too_many"
 
     @property
     def refused(self) -> bool:
-        return self.code in (34, 35, 36)
+        """Real-Debrid no deja bajar esa versión: no se vuelve a pedir."""
+        return self.cause == "refused"
+
+    @property
+    def slow_down(self) -> bool:
+        """Muchas preguntas seguidas o un servicio de paso caído: se espera y se vuelve a preguntar."""
+        return self.cause == "slow_down"
 
     @property
     def bad_key(self) -> bool:
-        return self.status in (401, 403) and self.code in (8, 9, None)
+        return self.cause == "invalid_session"
 
     @property
     def no_premium(self) -> bool:
-        return self.code == 20 or (self.status == 403 and self.code not in (8, 9, None))
+        return self.cause == "no_premium"
 
 
 def token_in(url: str) -> str | None:
@@ -166,16 +210,11 @@ def _why(exc: urllib.error.HTTPError) -> tuple[str, int | None]:
         code = json.loads(exc.read().decode() or "{}").get("error_code")
     except (ValueError, OSError, AttributeError):
         code = None
-    code = code if isinstance(code, int) else None
-    if exc.code in (401, 403) and code in (8, 9, None):
-        return "Vuelve a conectar Real-Debrid", code
-    if code == 20 or exc.code == 403:
-        return "Tu cuenta no tiene Premium", code
-    if code in (34, 35, 36):
-        return "Real-Debrid no lo dejó bajar", code
-    if exc.code == 509 or code == 21:
-        return "Muchas descargas activas", code
-    if exc.code == 404:
-        return "Ya no está en tu Real-Debrid", code
-    return "Real-Debrid no pudo con ese pedido", code
+    code = code if isinstance(code, int) and not isinstance(code, bool) else None
+    return WORDS.get(cause_of(exc.code, code), WORDS["other"]), code
+
+
+WORDS = {"invalid_session": "Vuelve a conectar Real-Debrid", "no_premium": "Tu cuenta no tiene Premium",
+         "refused": "Real-Debrid no lo dejó bajar", "too_many": "Muchas descargas activas",
+         "gone": "Ya no está en tu Real-Debrid", "other": "Real-Debrid no pudo con ese pedido"}
 
