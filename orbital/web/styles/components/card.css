@@ -162,6 +162,8 @@
 /* CardGrid: la cuadrícula de portadas (Juegos, una lista abierta). Todas con la misma forma (--grid-ratio, .667 si no se dice) y la
    enfocada crece hacia arriba; en la primera y la última columna, hacia adentro: no se sale del margen (markGridEdge). */
 .card-grid .card { --ratio: var(--grid-ratio, .667) !important; }
+/* V4: el hueco de una cuadrícula larga, lejos de la vista (browse.js · windowCells): su lugar y su tamaño, sin sombra que pintar. */
+.card--slot { background: none; box-shadow: none; }
 .card-grid .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
 .card-grid .is-focused.card[data-edge="start"] { transform-origin: left bottom; }
 .card-grid .is-focused.card[data-edge="end"] { transform-origin: right bottom; }

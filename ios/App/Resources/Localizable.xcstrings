@@ -33303,13 +33303,13 @@
         }
       }
     },
-    "Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».": {
+    "Tu Orbital de la tele necesita actualizarse para esto.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your Orbital is an older version: update it to use “Watch on TV”."
+            "value": "Your Orbital on the TV needs an update for this."
           }
         }
       }

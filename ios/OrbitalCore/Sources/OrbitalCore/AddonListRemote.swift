@@ -40,6 +40,7 @@ public struct AddonListRemote: Sendable {
 
     private func send(_ method: String, query: [URLQueryItem] = [], body: Data?) async -> Reply {
         let remote = remote()
+        guard remote.supports("addons") else { return .outdated }   // F1: la TV no anuncia la lista compartida
         guard let request = try? remote.request(Self.path, method: method, query: query, body: body, timeout: 12),
               let response = try? await remote.http.send(request) else { return .unreachable }
         switch response.status {

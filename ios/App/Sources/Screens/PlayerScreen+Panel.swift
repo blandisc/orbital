@@ -6,26 +6,29 @@ import OrbitalModels
 /// El panel de «Audio y subtítulos», «Versión» y «Episodios». (Parte de `PlayerScreen`, separada por responsabilidad.)
 extension PlayerScreen {
     // MARK: subtítulos rápidos
+    /// Lo que va dentro del panel chico: episodios, sincronizar subtítulos, la versión o audio y subtítulos.
+    @ViewBuilder private func dockContent(_ model: PlayerModel) -> some View {
+        if dockState.dockPage == .episodes { episodesPage(model) }
+        else if let syncLines = dockState.syncLines { subtitleSyncView(model, lines: syncLines) }
+        else if dockState.dockPage == .version { versionPage(model) }
+        else {
+            // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
+            // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
+            ViewThatFits(in: .vertical) {
+                subtitleDockView(model)
+                // Nunca más alto que el panel: un ScrollView toma todo el alto que le dan y la tarjeta quedaba arriba con
+                // espacio muerto abajo (con un video 4:3, al cambiar de versión o de subtítulos).
+                ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
+                    .frame(maxHeight: landscape || dockState.dockNeed <= 0 ? .infinity : dockState.dockNeed)
+            }
+        }
+    }
+
     /// El panel chico: en horizontal abajo y al centro, sobre el video; en vertical bajo el video (en el lugar de los controles).
     func subtitleDockLayer(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
             let rect = videoRect(in: geo.size)
-            let dock = Group {
-                if dockState.dockPage == .episodes { episodesPage(model) }
-                else if let syncLines = dockState.syncLines { subtitleSyncView(model, lines: syncLines) }
-                else if dockState.dockPage == .version { versionPage(model) }
-                else {
-                    // Si cabe, sin desplazarse ni rebotar (antes siempre iba en un ScrollView: en vertical se movía y al jalarlo
-                    // hacia abajo parecía «actualizar»); solo si un renglón abierto ya no cabe, se desplaza.
-                    ViewThatFits(in: .vertical) {
-                        subtitleDockView(model)
-                        // Nunca más alto que el panel: un ScrollView toma todo el alto que le dan y la tarjeta quedaba arriba con
-                        // espacio muerto abajo (con un video 4:3, al cambiar de versión o de subtítulos).
-                        ScrollView { subtitleDockView(model) }.scrollBounceBehavior(.basedOnSize)
-                            .frame(maxHeight: landscape || dockState.dockNeed <= 0 ? .infinity : dockState.dockNeed)
-                    }
-                }
-            }
+            let dock = dockContent(model)
             if landscape {
                 // A la derecha, de arriba abajo, con dos pestañas fijas: «Audio y subtítulos» y «Versión» (antes la versión no se
                 // veía: el panel cortaba su pie). El video queda a la izquierda, a la vista.

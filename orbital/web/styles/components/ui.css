@@ -41,7 +41,8 @@
 .pill--on { color: var(--color-text); background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); }
 /* Pestañas de texto (tone "tab", como DSTextTabs del iPhone): para cambiar lo que ves (los filtros de una consola, Series ·
    Películas de una lista, las temporadas). Sin cápsula: el texto tenue y la elegida en blanco, en negrita, con su rayita. */
-.pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; }
+.pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; text-shadow: var(--shadow-text-strong); } /* sin cápsula: se lee sobre el arte (AA, P4) */
+.is-focused.pill--tab { text-shadow: none; }
 .pill--tab.pill--on { color: var(--color-text); font-weight: var(--weight-bold); background: transparent; }
 .pill--tab.pill--on::after {
   content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 0; height: var(--tab-mark);
@@ -65,7 +66,7 @@
    foto (glass-switch--compact, lo pone quien la usa al medir). */
 .glass-switch {
   position: relative; display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; padding: var(--space-1); border-radius: var(--radius-pill);
-  background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
+  background: var(--color-glass-legible); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
 }
 /* La cápsula de la elegida es una sola y viaja de una a otra (glassSwitchGlide), como la de la barra de secciones. */
 .glass-switch__glide {
@@ -270,9 +271,9 @@
 /* RowCount (T12): el contador de una fila, el mismo en toda la TV («3 / 15», «15», «21 juegos»). Con velo sobre el arte. */
 .row-count {
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
-  letter-spacing: normal; font-variant-numeric: tabular-nums; white-space: nowrap;
+  letter-spacing: normal; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: var(--shadow-text-strong); /* sobre el arte (AA, P4) */
 }
 .row-count--veil {
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text); text-shadow: none;
 }
 .row-count:empty { display: none; }

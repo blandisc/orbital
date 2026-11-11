@@ -64,3 +64,36 @@ test("las cuatro superficies: X y ☰ (mando y teclado), «Editar», la casilla 
   // Buscar eligiendo qué agregar va encima de la lista y se queda con los botones.
   assert.match(main, /ui\.search\.isPicking \? \[ui\.search, \.\.\.OVERLAYS\]/);
 });
+
+// P4: las reseñas de Letterboxd caben enteras (tres a la vista, de tres en tres) y la última parte de la ficha sube hasta su
+// lugar como las demás (antes se detenía al fondo y «Más como esto» quedaba a medias). Texto sobre el arte: vidrio legible.
+test("P4: la ficha no deja nada a medias y lo de encima del arte se lee", () => {
+  const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+  const js = read("js/components/title.js");
+  const css = read("styles/components/title.css");
+  assert.match(js, /const REVIEWS_PER_VIEW = 3;/);
+  assert.match(css, /\.title__more-row--reviews \{ --reviews-per-view: 3;/);
+  assert.match(css, /width: calc\(\(100% - \(var\(--reviews-per-view\) - 1\) \* var\(--card-gap\)\) \/ var\(--reviews-per-view\)\)/);
+  assert.match(js, /const shift = box \? Math\.max\(0, box\.offsetTop - track\.offsetTop\) : 0;/);
+  assert.doesNotMatch(js, /track\.scrollHeight - clip\.clientHeight/);
+  assert.match(read("styles/components/ui.css"), /\.glass-switch \{[^}]*background: var\(--color-glass-legible\)/);
+  assert.match(read("styles/components/status-bar.css"), /\.status-bar__tabs \{[^}]*background: var\(--color-glass-legible\)/);
+  assert.match(read("styles/components/ui.css"), /\.pill--tab \{[^}]*text-shadow: var\(--shadow-text-strong\)/);
+});
+
+// V4 (P4): las cuadrículas largas (Juegos, una lista) arman solo lo que está cerca de la vista; cada casilla conserva su lugar y
+// su data-focus-id, así el foco, keepInView, la memoria, la rueda y el dedo siguen igual.
+test("V4: las cuadrículas largas arman solo lo cercano y la enfocada siempre está armada", () => {
+  const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+  const browse = read("js/components/browse.js");
+  assert.match(browse, /export const LAZY_FROM = 60;/);
+  assert.match(browse, /class: \["card", "card--slot"\], "data-focus-id": focusIdOf\(i\)/);
+  assert.match(browse, /const node = armed\(grid, grid\.querySelector/); // la enfocada, con su pie, antes de medir
+  assert.match(browse, /fillWindow\(grid, viewport\);\r?\n\}/); // al final de keepInView
+  assert.match(browse, /!c\.node\.classList\.contains\("is-focused"\)/); // la enfocada nunca se vacía
+  const games = read("js/components/games.js");
+  assert.match(games, /windowCells\(grid, games\.length,/);
+  assert.match(games, /onScroll: \(\) => fillWindow\(grid, viewport\)/); // lo que el dedo trae
+  assert.match(read("js/components/list-screen.js"), /windowCells\(grid, shown\.length, \(i\) => cell\(shown\[i\], i\)/);
+  assert.match(read("styles/components/card.css"), /\.card--slot \{ background: none; box-shadow: none; \}/);
+});

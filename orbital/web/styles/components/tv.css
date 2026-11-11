@@ -16,10 +16,10 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
 .tv__cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tv__cat .icon { flex: none; width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; align-self: center; }
-.tv__cat-count { flex: none; color: var(--color-text-faint-strong); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
+.tv__cat-count { flex: none; color: var(--color-text-faint-strong); text-shadow: var(--shadow-text-strong); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
 .tv__cat--on { background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); color: var(--color-text); font-weight: var(--weight-semibold); }
 .is-focused.tv__cat { background: var(--inverse-bg); color: var(--inverse-fg); }
-.is-focused.tv__cat .tv__cat-count { color: inherit; opacity: var(--opacity-near); }
+.is-focused.tv__cat .tv__cat-count { color: inherit; opacity: var(--opacity-near); text-shadow: none; }
 
 .tv__main { display: flex; flex-direction: column; gap: var(--layout-between-subsections); min-width: 0; min-height: 0; }
 /* Arriba: la miniatura en vivo (o el logo mientras conecta o si el canal no da vista previa) y qué canal es. */

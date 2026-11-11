@@ -115,7 +115,7 @@ final class DebridRequestsTests: XCTestCase {
         XCTAssertEqual(error(401, nil), .invalidKey)
         XCTAssertEqual(error(403, nil), .notPremium)
         XCTAssertEqual(error(404, 7), .notFound)
-        XCTAssertEqual(error(502, nil), .network)
+        XCTAssertEqual(error(502, nil), .slowDown, "otro 5xx: se espera y se reintenta, como en la TV (design/realdebrid-errors.json)")
     }
 
     // MARK: la libreta (R12)

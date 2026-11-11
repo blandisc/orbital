@@ -131,25 +131,7 @@ struct MatchDeck: View {
         GeometryReader { geo in
             ZStack {
                 ForEach(Array(cards.prefix(3).enumerated().reversed()), id: \.element.imdb) { i, s in
-                    let top = i == 0
-                    MatchCard(suggestion: s, genres: genres(s), lean: top ? Double(drag.width / (geo.size.width / 2)) : 0,
-                              rise: top ? Double(max(0, -drag.height) / (geo.size.height / 2)) : 0,
-                              onPlay: top ? onPlay.map { play in { play(s) } } : nil)
-                        // Un tamaño fijo dentro del mazo: el póster a sangre no la estira más allá de la pantalla.
-                        // En el iPad y la Mac (mazo ancho y bajo) la carta no se ensancha más que un póster: se angosta y se centra.
-                        .frame(width: geo.size.width > DS.Match.wideDeck ? min(geo.size.width, geo.size.height / DS.Match.cardAspectMin) : geo.size.width,
-                               height: min(geo.size.height, geo.size.width * DS.Match.cardAspect))
-                        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
-                        .scaleEffect(top ? 1 : 1 - CGFloat(i) * DS.Match.behindShrink)
-                        .offset(y: top ? 0 : CGFloat(i) * DS.Match.behindDrop)
-                        .offset(top ? drag : .zero)
-                        .rotationEffect(.degrees(top ? Double(drag.width) / DS.Match.tiltDivisor : 0))
-                        .allowsHitTesting(top)
-                        .gesture(top ? swipe(width: geo.size.width, s) : nil)
-                        .onTapGesture { if top { onOpen(s) } }
-                        .accessibilityAction(named: Text("Guardar")) { onSave(s) }
-                        .accessibilityAction(named: Text("Paso")) { onDiscard(s) }
-                        .accessibilityAction(named: Text("Para hoy")) { onTonight(s) }
+                    card(s, at: i, in: geo.size)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -161,6 +143,34 @@ struct MatchDeck: View {
             command = nil
             fly(asked == .tonight ? .up : asked == .save ? .right : .left, s, from: .zero)
         }
+    }
+
+    /// Una carta del mazo: la de arriba se arrastra, las de atrás asoman. Aparte del cuerpo: el compilador de la CI (Xcode 26.3)
+    /// no alcanzaba a revisarlo todo junto.
+    private func card(_ s: Suggestion, at i: Int, in size: CGSize) -> some View {
+        let top = i == 0
+        let lean: Double = top ? Double(drag.width / (size.width / 2)) : 0
+        let rise: Double = top ? Double(max(0, -drag.height) / (size.height / 2)) : 0
+        let play: (() -> Void)? = top ? onPlay.map { play in { play(s) } } : nil
+        // Un tamaño fijo dentro del mazo: el póster a sangre no la estira más allá de la pantalla. En el iPad y la Mac (mazo
+        // ancho y bajo) la carta no se ensancha más que un póster: se angosta y se centra.
+        let cardWidth: CGFloat = size.width > DS.Match.wideDeck ? min(size.width, size.height / DS.Match.cardAspectMin) : size.width
+        let cardHeight: CGFloat = min(size.height, size.width * DS.Match.cardAspect)
+        let scale: CGFloat = top ? 1 : 1 - CGFloat(i) * DS.Match.behindShrink
+        let drop: CGFloat = top ? 0 : CGFloat(i) * DS.Match.behindDrop
+        return MatchCard(suggestion: s, genres: genres(s), lean: lean, rise: rise, onPlay: play)
+            .frame(width: cardWidth, height: cardHeight)
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            .scaleEffect(scale)
+            .offset(y: drop)
+            .offset(top ? drag : .zero)
+            .rotationEffect(.degrees(top ? Double(drag.width) / DS.Match.tiltDivisor : 0))
+            .allowsHitTesting(top)
+            .gesture(top ? swipe(width: size.width, s) : nil)
+            .onTapGesture { if top { onOpen(s) } }
+            .accessibilityAction(named: Text("Guardar")) { onSave(s) }
+            .accessibilityAction(named: Text("Paso")) { onDiscard(s) }
+            .accessibilityAction(named: Text("Para hoy")) { onTonight(s) }
     }
 
     private enum Direction { case left, right, up }

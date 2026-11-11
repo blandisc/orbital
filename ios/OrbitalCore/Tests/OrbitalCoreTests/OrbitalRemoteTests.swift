@@ -32,7 +32,7 @@ final class OrbitalRemoteTests: XCTestCase {
 
     func testEachRequestSaysWhichDevice() async throws {
         let http = FakeHTTP()
-        http.json["https://tv.example/api/companion/now"] = ["now": .null]
+        http.json["https://tv.example/api/companion/now"] = try Fixtures.json("contract/companion_now.json")["response"]
         let device = OrbitalRemote.Device(name: "iPad de Fernando", kind: "ipad", id: "ABC-123")
         _ = try? await OrbitalRemote(http: http, address: "tv.example", token: "x", device: device).snapshot()
         let headers = try XCTUnwrap(http.headers.last)
@@ -71,20 +71,17 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(keys, OrbitalRemote.Keys(tmdbKey: "k", traktClientID: "c", region: "MX"))
     }
 
+    /// Con las respuestas reales de la TV (`tests/fixtures/contract`), no con JSON escrito a mano.
     func testNowParsesAMovieOrNilWhenNothingPlays() async throws {
         let http = FakeHTTP()
-        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "meta_id": .string("tt1"),
-                                     "video_id": .string("tt1"), "title": .string("Interstellar"), "episode_label": .string(""),
-                                     "poster": .string("https://p"), "position": .int(100), "duration": .double(6000.5),
-                                     "paused": .bool(false)])
-        http.json["https://tv.example/api/companion/now"] = .object(["playing": playing])
+        http.json["https://tv.example/api/companion/now"] = try Fixtures.json("contract/companion_now_movie.json")["response"]
         let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
         let now = try await remote.now()
         XCTAssertEqual(now?.title, "Interstellar")
-        XCTAssertEqual(now?.duration, 6000.5)
-        XCTAssertEqual(now?.poster, "https://p")
+        XCTAssertEqual(now?.duration, 6000)
+        XCTAssertEqual(now?.poster, "https://img/x.jpg")
 
-        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null])
+        http.json["https://tv.example/api/companion/now"] = try Fixtures.json("contract/companion_now.json")["response"]
         let empty = try await remote.now()
         XCTAssertNil(empty)
     }
@@ -121,7 +118,7 @@ final class OrbitalRemoteTests: XCTestCase {
         catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, "No encontré de dónde verlo") }
         http.json["https://tv.example/api/companion/player"] = ["detail": "Not Found"]
         do { _ = try await remote.control(action: "toggle"); XCTFail() }
-        catch { XCTAssertTrue((error as? OrbitalRemote.Failure)?.description.contains("versión anterior") == true) }
+        catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, OrbitalRemote.updateLine, "nunca «Not Found» crudo") }
     }
 
     func testAClosedGameArrivesAsASessionSummary() async throws {

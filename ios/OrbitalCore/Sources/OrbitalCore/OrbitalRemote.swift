@@ -31,6 +31,8 @@ public struct OrbitalRemote: Sendable {
     private let device: Device?
     /// K1 · la llave de este aparato («od1.<id>.<secreto>», del llavero): si está, va en lugar del token del túnel.
     private let deviceKey: String
+    /// F1 · dónde se guarda lo que anunció cada TV (`api` y `capabilities`). Las pruebas usan uno propio.
+    public var contracts: TVContractBook = .shared
     /// A quién avisarle de un 401 con `device_key_required` o `device_removed` (Services: la frase de «Escanear»).
     public var authProblem: (@Sendable (Failure) -> Void)?
 
@@ -102,11 +104,6 @@ public struct OrbitalRemote: Sendable {
         return parts[0] == 100 && (64...127).contains(parts[1])
     }
 
-    /// ¿Contesta y acepta el token?
-    public func check() async throws {
-        _ = try await send("api/ping", method: "GET", body: nil)
-    }
-
     /// Lo de «Para ti» que ya está en tu Orbital (para no escribirlo otra vez en el iPhone): la clave de TMDB, el Client ID de
     /// la aplicación de Trakt y el país. La sesión de Trakt de la consola no viaja: cada dispositivo conecta la suya con un código.
     public struct Keys: Sendable, Equatable {
@@ -115,6 +112,8 @@ public struct OrbitalRemote: Sendable {
         public var pairing = 1
         /// TEC-30 · el id de esta instalación de la TV (`tv_id`); vacío en una TV de antes.
         public var tvID = ""
+        /// F1 · la versión del contrato y lo que sabe hacer (vacío en una TV de antes).
+        public var contract = TVContract.unknown
         public init(tmdbKey: String, traktClientID: String, region: String) {
             self.tmdbKey = tmdbKey; self.traktClientID = traktClientID; self.region = region
         }
@@ -126,6 +125,8 @@ public struct OrbitalRemote: Sendable {
         var keys = Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
         keys.pairing = json?["pairing"]?.intValue ?? 1
         keys.tvID = json?["tv_id"]?.nonEmptyString ?? ""
+        keys.contract = TVContract.parse(json)
+        contracts.record(keys.contract, for: base)
         return keys
     }
 
@@ -484,7 +485,7 @@ public struct OrbitalRemote: Sendable {
         }
         let json: JSON?
         do { json = try await send("api/companion/choices", method: "POST", body: JSON.object(["since": .int(since), "changes": .object(body)]).serialized()) }
-        catch Failure.refused(let why) where why.contains("versión anterior") { return nil }
+        catch Failure.refused(let why) where why == Self.updateLine { return nil }
         guard let json, let rev = json["rev"]?.intValue else { return nil }
         var changed: [String: TitleChoice] = [:]
         for (id, raw) in json["changed"]?.object ?? [:] {
@@ -551,6 +552,10 @@ public struct OrbitalRemote: Sendable {
     /// La petición a `path` con el token y el aparato (sin mandarla).
     func request(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?, timeout: TimeInterval) throws -> HTTPRequest {
         guard let base, isConfigured else { throw Failure.notConfigured }
+        // F1: lo que la TV no anuncia no se pide (y no se adivina por un 404).
+        if let capability = TVContract.capability(for: path), !supports(capability) {
+            throw Self.padPaths.contains(path) ? Failure.outdated : Failure.refused(Self.updateLine)
+        }
         // K1: con llave, la llave (y la TV ignora `X-Orbital-Device-Id`, así que ya no va); sin ella, el token del túnel.
         var headers = ["Authorization": "Bearer \(hasDeviceKey ? deviceKey : token)"]
         if let device { headers.merge(device.headers) { mine, _ in mine } }
@@ -573,28 +578,16 @@ public struct OrbitalRemote: Sendable {
         case 403 where path == "api/devices/invite": throw Failure.refused(Self.inviteOnlyIPhoneLine)   // CX4-A
         case 401, 403: throw authFailure(response)
         case 429: throw Failure.refused(Self.waitLine)
-        case 404 where path == "api/companion/input" || path == "api/companion/text" || path == "api/voice/hints":
+        case 404 where Self.padPaths.contains(path):
             throw Failure.outdated
-        case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"):
-            // Solo es «versión anterior» si la ruta no existe (FastAPI dice «Not Found»). La consola también contestaba 404
-            // cuando en ese momento no halló de dónde verlo, y el iPhone decía que había que actualizarla (a veces sí
-            // mandaba y a veces no): ese motivo se dice tal cual.
+        case 404:
+            // Solo es «versión anterior» si la ruta no existe (FastAPI dice «Not Found»): eso nunca se muestra crudo. La consola
+            // también contesta 404 cuando en ese momento no halló de dónde verlo: ese motivo se dice tal cual.
             if let detail = JSON.parse(response.data)?["detail"]?.string, detail != "Not Found" { throw Failure.refused(detail) }
-            throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
+            throw Failure.refused(Self.updateLine)
         default:
             let detail = JSON.parse(response.data)?["detail"]?.string
             throw Failure.refused(detail ?? "Tu Orbital contestó con un error (\(response.status)).")
         }
     }
 }
-
-/// «Escribir en la TV»: la tele agrega cada letra que recibe al campo con foco (y «\u{8}» borra una). Mandar el texto completo
-/// en cada cambio lo repetía («hola» → «holahola mundo»): se manda solo la diferencia con lo ya enviado.
-public enum RemoteTyping {
-    /// Borrados («\u{8}») hasta lo que tienen en común y luego lo nuevo.
-    public static func delta(from sent: String, to text: String) -> String {
-        let common = zip(sent, text).prefix { $0 == $1 }.count
-        return String(repeating: "\u{8}", count: sent.count - common) + String(text.dropFirst(common))
-    }
-}
-

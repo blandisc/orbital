@@ -33,59 +33,89 @@ struct SimpsonsRoulette: View {
     @AppStorage(PlayerScreen.portraitCenterKey) private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
 
     var body: some View {
-        ZStack {
-                // El mismo fondo de Inicio (con el tono de su destacado): la tele aparece sobre lo que ya veías. Al crecer, se
-                // oscurece despacio al negro del reproductor (la imagen queda como el video, no flotando en la sala).
-                Backdrop(tint: tint).ignoresSafeArea()
-                DS.video.ignoresSafeArea().opacity(expanded ? 1 : 0)
-                // El brillo de la tele entra con ella (antes ya estaba ahí desde el primer cuadro).
-                RadialGradient(colors: [DS.Simpsons.amarillo.opacity(DesignTokens.Opacity.faint), .clear], center: .center, startRadius: 0, endRadius: DS.Simpsons.glow)
-                    .ignoresSafeArea().opacity(expanded ? 0 : landed ? 1 : shown ? DS.Simpsons.ghost : 0)
-                VStack(spacing: DS.Space.s6) {
-                    Spacer(minLength: 0)
-                    tv
-                    caption.opacity(expanded ? 0 : 1)
-                    Spacer(minLength: 0)
-                    Button("Cancelar") { run?.cancel(); dismiss() }.buttonStyle(.glass).opacity(expanded ? 0 : 1)
-                }
-                .padding(.vertical, DS.Space.s8)
-                // El episodio, justo encima de la pantalla de la tele; al crecer, de ese rectángulo al lugar del video en el
-                // reproductor vertical (a lo ancho, en su proporción): el episodio empieza justo donde quedó la imagen.
-                if landed, let still, screenRect != .zero {
-                    GeometryReader { geo in
-                        let inset = PlayerScreen.windowSafeArea
-                        let safe = CGSize(width: geo.size.width, height: max(0, geo.size.height - inset.top - inset.bottom))
-                        let rect = expanded ? PlayerScreen.portraitVideoRect(in: safe, center: portraitCenter).offsetBy(dx: 0, dy: inset.top) : screenRect
-                        let shape = RoundedRectangle(cornerRadius: expanded ? 0 : DS.Simpsons.screenRadius, style: .continuous)
-                        PosterView(url: still, title: "", aspect: nil, bleed: true)
-                            // El viñeteado y el marco de la pantalla siguen encima de la imagen (antes la imagen los tapaba y la
-                            // tele se quedaba sin su contorno); al crecer hacia el reproductor se desvanecen.
-                            .overlay { Self.vignette.opacity(expanded ? 0 : 1) }
-                            .frame(width: rect.width, height: rect.height)
-                            .clipShape(shape)
-                            .overlay(shape.strokeBorder(DS.Simpsons.tvShade, lineWidth: DS.Simpsons.screenFrame).opacity(expanded ? 0 : 1))
-                            .position(x: rect.midX, y: rect.midY)
-                    }
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                }
-        }
-        .environment(\.colorScheme, .dark)
-        .dsFeedback(.selection, trigger: clicks)
-        .dsFeedback(.success, trigger: landed) { _, now in now }
-        // Gira una vez. Esta vista vuelve a «aparecer» con el episodio ya encima (al mandar el video a la ventana de PiP o salir
-        // de la app lo vuelve a presentar el sistema), y antes cada vez giraba otra vez y abría otro episodio al azar debajo.
-        .task { guard playing == nil, !finished else { return }; await roll() }
-        .onDisappear { run?.cancel() }
-        // Al cerrar el reproductor, la ruleta ya cumplió: se va también, sin animación (debajo está Inicio, como siempre).
-        .fullScreenCover(item: $playing, onDismiss: {
-            finished = true
-            var quiet = Transaction(); quiet.disablesAnimations = true
-            withTransaction(quiet) { dismiss() }
-        }) { request in PlayerScreen(request: request).interactiveDismissDisabled() }
+        withPlayer(room)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Un Simpson al azar"))
+    }
+
+    /// La sala: el fondo, la tele y, al caer, el episodio encima.
+    private var room: some View {
+        ZStack {
+            backdropLayers
+            stage
+            if landed, let still = still, screenRect != .zero { stillLayer(still) }
+        }
+    }
+
+    /// Los toques, girar una vez y el reproductor que se abre encima.
+    private func withPlayer<V: View>(_ content: V) -> some View {
+        let justLanded: (Bool, Bool) -> Bool = { _, now in now }
+        return content
+            .environment(\.colorScheme, .dark)
+            .dsFeedback(.selection, trigger: clicks)
+            .dsFeedback(.success, trigger: landed, condition: justLanded)
+            // Gira una vez. Esta vista vuelve a «aparecer» con el episodio ya encima (al mandar el video a la ventana de PiP o salir
+            // de la app lo vuelve a presentar el sistema), y antes cada vez giraba otra vez y abría otro episodio al azar debajo.
+            .task { guard playing == nil, !finished else { return }; await roll() }
+            .onDisappear { run?.cancel() }
+            // Al cerrar el reproductor, la ruleta ya cumplió: se va también, sin animación (debajo está Inicio, como siempre).
+            .fullScreenCover(item: $playing, onDismiss: closeQuietly, content: playerCover)
+    }
+
+    private func playerCover(_ request: PlayRequest) -> some View {
+        PlayerScreen(request: request).interactiveDismissDisabled()
+    }
+
+    private func closeQuietly() {
+        finished = true
+        var quiet = Transaction(); quiet.disablesAnimations = true
+        withTransaction(quiet) { dismiss() }
+    }
+
+    /// El fondo: el de Inicio, el negro del reproductor al crecer y el brillo de la tele.
+    @ViewBuilder private var backdropLayers: some View {
+        // El mismo fondo de Inicio (con el tono de su destacado): la tele aparece sobre lo que ya veías. Al crecer, se
+        // oscurece despacio al negro del reproductor (la imagen queda como el video, no flotando en la sala).
+        Backdrop(tint: tint).ignoresSafeArea()
+        DS.video.ignoresSafeArea().opacity(expanded ? 1 : 0)
+        // El brillo de la tele entra con ella (antes ya estaba ahí desde el primer cuadro).
+        RadialGradient(colors: [DS.Simpsons.amarillo.opacity(DesignTokens.Opacity.faint), .clear], center: .center, startRadius: 0, endRadius: DS.Simpsons.glow)
+            .ignoresSafeArea().opacity(expanded ? 0 : landed ? 1 : shown ? DS.Simpsons.ghost : 0)
+    }
+
+    /// La tele, su letrero y «Cancelar».
+    private var stage: some View {
+        VStack(spacing: DS.Space.s6) {
+            Spacer(minLength: 0)
+            tv
+            caption.opacity(expanded ? 0 : 1)
+            Spacer(minLength: 0)
+            Button("Cancelar") { run?.cancel(); dismiss() }.buttonStyle(.glass).opacity(expanded ? 0 : 1)
+        }
+        .padding(.vertical, DS.Space.s8)
+    }
+
+    /// El episodio, justo encima de la pantalla de la tele; al crecer, de ese rectángulo al lugar del video en el reproductor
+    /// vertical (a lo ancho, en su proporción): el episodio empieza justo donde quedó la imagen. Aparte del cuerpo: el
+    /// compilador de la CI (Xcode 26.3) no alcanzaba a revisarlo todo junto.
+    private func stillLayer(_ still: String) -> some View {
+        GeometryReader { geo in
+            let inset = PlayerScreen.windowSafeArea
+            let safe = CGSize(width: geo.size.width, height: max(0, geo.size.height - inset.top - inset.bottom))
+            let rect: CGRect = expanded ? PlayerScreen.portraitVideoRect(in: safe, center: portraitCenter).offsetBy(dx: 0, dy: inset.top) : screenRect
+            let shape = RoundedRectangle(cornerRadius: expanded ? 0 : DS.Simpsons.screenRadius, style: .continuous)
+            PosterView(url: still, title: "", aspect: nil, bleed: true)
+                // El viñeteado y el marco de la pantalla siguen encima de la imagen (antes la imagen los tapaba y la
+                // tele se quedaba sin su contorno); al crecer hacia el reproductor se desvanecen.
+                .overlay { Self.vignette.opacity(expanded ? 0 : 1) }
+                .frame(width: rect.width, height: rect.height)
+                .clipShape(shape)
+                .overlay(shape.strokeBorder(DS.Simpsons.tvShade, lineWidth: DS.Simpsons.screenFrame).opacity(expanded ? 0 : 1))
+                .position(x: rect.midX, y: rect.midY)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var still: String? {

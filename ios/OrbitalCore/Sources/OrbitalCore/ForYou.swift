@@ -7,7 +7,10 @@ public actor ForYou {
     public static let recsTTL: TimeInterval = 3600
     public static let popularTTL: TimeInterval = 6 * 3600
     public static let slowTTL: TimeInterval = 24 * 3600
-    public static let mosaicSize = 48
+    /// El mosaico de Explorar sin tu Orbital: tantas piezas como el de la TV (`foryou/base.py` › `MOSAIC_SIZE`, `PER_SOURCE`).
+    /// Con 48 (lo de la TV de antes) se repetían al pasear por el muro; con la TV conectada ya llegaba el suyo de 96.
+    public static let mosaicSize = 96
+    static let mosaicPerSource = 16
     public static let calendarDays = 14
     public static let dawnHour = 6
     public static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
@@ -487,7 +490,7 @@ public actor ForYou {
         }
         let batches = await withTaskGroup(of: (Int, [Suggestion]).self) { group in
             for (i, source) in sources.enumerated() {
-                group.addTask { (i, Array(((try? await self.items(listID: source.0, kind: source.1)) ?? []).prefix(10))) }
+                group.addTask { (i, Array(((try? await self.items(listID: source.0, kind: source.1)) ?? []).prefix(Self.mosaicPerSource))) }
             }
             var out = [[Suggestion]](repeating: [], count: sources.count)
             for await (i, b) in group { out[i] = b }

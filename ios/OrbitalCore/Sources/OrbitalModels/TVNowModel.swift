@@ -177,6 +177,9 @@ public final class TVNowModel: ObservableModel {
             legend = snapshot.legend
             section = snapshot.section
             screen = snapshot.screen
+            // F1: si la TV ya dice qué sabe hacer y no anuncia el control completo, el pad se esconde sin esperar un 404.
+            let remote = services.orbital
+            if remote.contract.isKnown { remoteOutdated = !remote.supports("remote_input") }
             if let v = snapshot.volume, !sendingVolume, Date() >= volumeHeldUntil { volume = v }
             failures = 0
             fetchedAt = Date()

@@ -1,6 +1,6 @@
 import { h, hideAfterExit, markGridEdge, mount } from "../core/dom.js";
 import { storage } from "../core/storage.js";
-import { keepInView } from "./browse.js";
+import { fillWindow, keepInView, windowCells } from "./browse.js";
 import { Button } from "./button.js";
 import { Card, RankedCard } from "./card.js";
 import { SourceBadge } from "./collection-card.js";
@@ -241,22 +241,28 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     if (items && !items.length) mount(status, EmptyState({ icon: "list", title: "Esta lista está vacía por ahora" }));
     else if (items && !shown.length) mount(status, EmptyState({ icon: "list", title: "Nada con esos filtros", text: "Cámbialos con ☰." }));
     if (!items) mount(grid, PosterSkeletons(12));
-    else mount(grid, shown.map((item, i) => {
-      const focusHere = () => { zone = "grid"; index = i; paintFocus(); };
-      // Editando, el póster ya no abre la ficha (para no tropezar, como el iPhone): se quita con su «−» (o A).
-      const options = { caption: true, onPress: () => { focusHere(); if (editing) toggleChosen(item); else if (!reordering) onPick?.(item); },
-        onMore: () => { focusHere(); onMore?.(item); } };
-      const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
-      built.card.dataset.focusId = `item:${i}`;
-      if (item.day_label === "Nuevo") built.card.append(CornerRibbon()); // como en la fila: el listón, no una placa
-      else if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
-      if (editing) built.card.append(SelectMark(chosen.has(item.meta_id), { label: item.title, onPress: () => { focusHere(); toggleChosen(item); } }));
-      if (reordering && grabbed && i === index) built.card.classList.add("list-screen__grabbed");
-      return built.el ?? built.card;
-    }));
+    // V4: una lista de cientos (un género, tu historial) arma solo lo que está cerca de la vista (browse.js · windowCells). El
+    // Top 10 no: son diez y cada uno va con su cifra.
+    else if (ranked()) mount(grid, shown.map((item, i) => cell(item, i)));
+    else mount(grid, windowCells(grid, shown.length, (i) => cell(shown[i], i), { focusIdOf: (i) => `item:${i}` }));
     grid.dataset.shift = "0";
     grid.style.transform = "";
     paintFocus();
+  }
+
+  /** Una portada de la lista, con su foco, su nota y, editando, su marca. */
+  function cell(item, i) {
+    const focusHere = () => { zone = "grid"; index = i; paintFocus(); };
+    // Editando, el póster ya no abre la ficha (para no tropezar, como el iPhone): se quita con su «−» (o A).
+    const options = { caption: true, onPress: () => { focusHere(); if (editing) toggleChosen(item); else if (!reordering) onPick?.(item); },
+      onMore: () => { focusHere(); onMore?.(item); } };
+    const built = ranked() ? RankedCard(item, { ...options, brand: current()?.brand }) : { card: Card(item, options) };
+    built.card.dataset.focusId = `item:${i}`;
+    if (item.day_label === "Nuevo") built.card.append(CornerRibbon()); // como en la fila: el listón, no una placa
+    else if (item.award_year || item.day_label) built.card.append(Chip(String(item.award_year || item.day_label), { plate: true, className: "list-screen__note" }));
+    if (editing) built.card.append(SelectMark(chosen.has(item.meta_id), { label: item.title, onPress: () => { focusHere(); toggleChosen(item); } }));
+    if (reordering && grabbed && i === index) built.card.classList.add("list-screen__grabbed");
+    return built.el ?? built.card;
   }
 
   function paintFocus() {
@@ -268,6 +274,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
     });
     paintTabs();
     if (zone === "grid" && shown.length) keepInView(grid, viewport, `item:${index}`);
+    else fillWindow(grid, viewport); // V4: con el foco en las pestañas, lo que se ve también va armado
   }
 
   function refresh() {
