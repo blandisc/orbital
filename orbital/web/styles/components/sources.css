@@ -26,9 +26,17 @@
   /* Abajo, aire para que la última fila se alcance entera bajo el fundido; el margen solo se come el hueco del panel, así
      la lista termina donde empieza «lo que trae» (antes se metía 22 px debajo y ese renglón quedaba sobre las tarjetas). */
   overflow-y: auto; scrollbar-width: none; padding: var(--space-2) var(--space-2) var(--space-10); margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-4));
-  /* Lo que sigue abajo se funde (antes la cuadrícula se cortaba en seco a media fila). */
-  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);
 }
+/* Lo que sigue se funde, solo del lado donde hay más (sources.js · edges): antes la cuadrícula se cortaba en seco arriba y
+   la última fila quedaba siempre velada. */
+.sources__list--down { -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
+.sources__list--up { -webkit-mask-image: linear-gradient(0deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(0deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
+.sources__list--up.sources__list--down {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
+}
+/* Elegir versión abierta: el aviso sale abajo, sobre el pie, y no tapa las tarjetas de arriba (revisión 2, punto 11). */
+body:has(.sources:not([hidden])) .toast { top: auto; bottom: calc(var(--space-5) + var(--safe-y) + 3rem + var(--space-4)); }
 
 /* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
 .sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); max-width: 64rem; }

@@ -32,6 +32,14 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
   // Un episodio: ¿esta versión es solo para él o la serie sigue así? (LB/RB; como «Solo este | Desde aquí» del iPhone).
   const scopeRow = h("div", { class: "sources__scope", hidden: true });
   const list = h("div", { class: "sources__list", role: "group" });
+  // El fundido solo donde hay más (revisión 2, punto 11): arriba si ya bajaste (antes la fila de arriba se cortaba en seco) y
+  // abajo si falta algo; al llegar al final, la última fila («Ver los demás») se ve entera, sin velo.
+  const edges = () => {
+    list.classList.toggle("sources__list--up", list.scrollTop > 2);
+    list.classList.toggle("sources__list--down", list.scrollTop + list.clientHeight < list.scrollHeight - 2);
+  };
+  list.addEventListener("scroll", edges, { passive: true });
+  new MutationObserver(() => requestAnimationFrame(edges)).observe(list, { childList: true });
   const why = h("div", { class: "sources__why", role: "status" });
   const status = h("div", { class: "sources__status", role: "status" });
   const retry = h("div", { class: "sources__retry", hidden: true },
