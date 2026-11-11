@@ -46,7 +46,7 @@ extension AppEnvironment {
             try await titles.setSaved(s, in: destination, add: true)
             notify(saved: destination, undo: true) { [weak self] in Task { try? await self?.titles.setSaved(s, in: destination, add: false) } }
         } catch {
-            notify("No pude cambiar Mi lista", detail: "\(error)", tone: .warn)   // la causa, traducida
+            notify("No pude cambiar Mi lista", failure: error, tone: .warn)   // la causa, traducida
         }
     }
 
@@ -62,7 +62,7 @@ extension AppEnvironment {
             }
         } catch {
             shown(true)
-            notify("No pude cambiar Mi lista", detail: "\(error)", tone: .warn)
+            notify("No pude cambiar Mi lista", failure: error, tone: .warn)
         }
     }
 
@@ -78,7 +78,7 @@ extension AppEnvironment {
             }
         } catch {
             FavoriteChange.post(s, add: true)
-            notify("No pude cambiar tus favoritos de Trakt", detail: "\(error)", tone: .warn)
+            notify("No pude cambiar tus favoritos de Trakt", failure: error, tone: .warn)
         }
     }
 
@@ -87,7 +87,7 @@ extension AppEnvironment {
         let watch = services.watch
         let wasSeen = await watch.isSeen(metaID: s.imdb, videoID: s.imdb)
         do { try await titles.markWatched(s, at: date) } catch {
-            notify(format: "No pude marcar «%@» como vista", s.title, detail: "\(error)", tone: .warn)
+            notify(format: "No pude marcar «%@» como vista", s.title, failure: error, tone: .warn)
             return false
         }
         // Gestor ola 3: «Otra fecha» por si la viste antes y «Deshacer», que quita solo esta vista (las de antes se quedan).

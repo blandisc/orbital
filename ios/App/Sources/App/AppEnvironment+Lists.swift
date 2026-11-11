@@ -22,7 +22,7 @@ extension AppEnvironment {
             }
         } catch {
             shown(!add)
-            notify(format: "No pude cambiar «%@»", listName(listID, name: name), detail: "\(error)", tone: .warn)
+            notify(format: "No pude cambiar «%@»", listName(listID, name: name), failure: error, tone: .warn)
         }
     }
 

@@ -154,19 +154,12 @@ public extension DownloadTransport {
     func discard(id: String) async { await cancel(id: id) }
 }
 
+/// Lo que dice en la pantalla (su clave del catálogo y sus datos) está en `UserText.swift` (F10).
 public enum DownloadError: Error, Sendable, Equatable, CustomStringConvertible {
     case notEnoughSpace(needed: Int64, free: Int64)
     case alreadyDownloaded
     case noURL
     case unsafePath
-    public var description: String {
-        switch self {
-        case .notEnoughSpace(let needed, let free): return "Hacen falta \(needed / 1_000_000) MB y hay \(free / 1_000_000) MB libres."
-        case .alreadyDownloaded: return "Ya está descargado."
-        case .noURL: return "Esta versión no tiene un enlace para descargar."
-        case .unsafePath: return "El nombre de este título no sirve para guardarlo."
-        }
-    }
 }
 
 /// Otra fuente del mismo video, para cuando la de una descarga no da el archivo.

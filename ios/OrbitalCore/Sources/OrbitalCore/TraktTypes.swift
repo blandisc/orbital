@@ -2,17 +2,11 @@ import Foundation
 
 /// Los tipos de Trakt (errores, entradas, estrenos, código de aparato, scrobble, destino) y cómo se leen sus respuestas.
 
+/// Lo que dice en la pantalla (su clave del catálogo y sus datos) está en `UserText.swift` (F10).
 public enum TraktError: Error, Sendable, CustomStringConvertible {
     case network(String), http(Int), invalid(String)
     /// Trakt ya no acepta la sesión: hay que volver a conectar la cuenta.
     case auth(String)
-    public var description: String {
-        switch self {
-        case .network(let reason): return "No pude conectar con Trakt: \(reason)"
-        case .http(let s): return "Trakt respondió HTTP \(s)"
-        case .invalid(let m), .auth(let m): return m
-        }
-    }
 }
 
 /// Una película o serie de Trakt, con su id de IMDb (sin él no se podría ver).

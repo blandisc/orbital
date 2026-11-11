@@ -39,6 +39,28 @@ enum Strings {
         return text
     }
 
+    /// Un error en el idioma de la app (F10). Las familias con tipo (red, Trakt, Real-Debrid, descargas: `UserFacingError`)
+    /// se traducen por su clave y sus datos; lo demás, como siempre, por la forma de su texto (`message(_:language:)`).
+    static func message(_ error: Error, language: String) -> String {
+        guard let typed = error as? UserFacingError else { return message("\(error)", language: language) }
+        return text(typed.userText, language: language)
+    }
+
+    /// Un `UserText` en el idioma de la app: la clave se busca directo en el catálogo y se llena con sus datos. Lo técnico (un
+    /// código, un error del sistema) se vuelve antes una frase normal (`humanize`), como siempre.
+    static func text(_ t: UserText, language: String) -> String {
+        let spanish = t.description
+        guard !t.args.isEmpty, !language.hasPrefix("es"), humanize(spanish) == spanish else { return message(spanish, language: language) }
+        let values: [CVarArg] = t.args.map { arg in
+            switch arg {
+            case .text(let s): message(s, language: language)
+            case .number(let n): n
+            case .nested(let inner): text(inner, language: language)
+            }
+        }
+        return String(format: tr(t.key, language: language), arguments: values)
+    }
+
     /// Lo técnico no llega a la pantalla (ver `UserMessages.humanize`).
     static func humanize(_ text: String) -> String { UserMessages.humanize(text) }
 

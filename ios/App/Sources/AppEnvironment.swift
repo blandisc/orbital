@@ -169,18 +169,20 @@ final class AppEnvironment {
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
     /// Neutral si nadie dice otra cosa: el ámbar es para lo que te necesita y el rojo, para cuando algo se perdió.
-    func notify(_ text: String, detail: String? = nil, tone: NoticeTone = .info, action: BannerAction? = nil, actionTitle: String? = nil) {
+    /// `failure`: la causa, si es un error (F10: los de red, Trakt, Real-Debrid y descargas se traducen por su clave).
+    func notify(_ text: String, detail: String? = nil, failure: Error? = nil, tone: NoticeTone = .info, action: BannerAction? = nil, actionTitle: String? = nil) {
         let language = services.appSettings.uiLanguage
         notices.show(Notice(text: Strings.message(text, language: language), tone: tone, action: action,
-                            detail: detail.map { Strings.message($0, language: language) }, actionTitle: actionTitle.map { Strings.tr($0, language: language) }))
+                            detail: detail.map { Strings.message($0, language: language) } ?? failure.map { Strings.message($0, language: language) },
+                            actionTitle: actionTitle.map { Strings.tr($0, language: language) }))
     }
     /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
     func message(_ text: String) -> String { Strings.message(text, language: services.appSettings.uiLanguage) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
-    func notify(format key: String, _ args: CVarArg..., detail: String? = nil, tone: NoticeTone = .info, action: BannerAction? = nil) {
+    func notify(format key: String, _ args: CVarArg..., detail: String? = nil, failure: Error? = nil, tone: NoticeTone = .info, action: BannerAction? = nil) {
         let language = services.appSettings.uiLanguage
         notices.show(Notice(text: String(format: Strings.tr(key, language: language), arguments: args), tone: tone, action: action,
-                            detail: detail.map { Strings.message($0, language: language) }))
+                            detail: detail.map { Strings.message($0, language: language) } ?? failure.map { Strings.message($0, language: language) }))
     }
 
     /// Lo que bajaste de ese video, sin red (si ya no está, a Descargas).

@@ -128,7 +128,7 @@ struct SavedSelectionBar: View {
     private func createAndMove(_ name: String) async {
         switch await model.createList(named: name) {
         case .success(let id): await moveTo(id)
-        case .failure(let error): env.notify("No pude crear la lista", detail: "\(error)", tone: .warn)
+        case .failure(let error): env.notify("No pude crear la lista", failure: error, tone: .warn)
         }
     }
 
