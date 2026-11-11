@@ -5,7 +5,7 @@ import { nextFocus } from "../../orbital/web/js/core/spatial.js";
 
 // T7 (revisión del 10 nov): Buscar con el teclado compacto a la izquierda y los resultados en vivo a la derecha, en cuadrícula,
 // con la misma portada y el mismo foco que el resto; con la caja vacía, más sugerencias.
-const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8").replaceAll("\r\n", "\n");
 const js = read("js/components/search.js");
 const css = read("styles/components/search.css");
 

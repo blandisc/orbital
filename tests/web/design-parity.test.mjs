@@ -201,7 +201,7 @@ const walk = (dir, exts) => readdirSync(dir).flatMap((name) => {
 });
 /** Los textos entre comillas de un archivo, sin comentarios ni docstrings (ahí se vale citar lo que se evita). */
 function literals(path) {
-  let text = readFileSync(path, "utf8");
+  let text = readFileSync(path, "utf8").replaceAll("\r\n", "\n");
   if (path.endsWith(".xcstrings")) return Object.keys(JSON.parse(text).strings ?? {});
   if (path.endsWith(".py")) text = text.replace(/"""[\s\S]*?"""|'''[\s\S]*?'''/g, "").replace(/(^|\s)#.*$/gm, "");
   else text = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}(,])\/\/.*$/gm, "$1");

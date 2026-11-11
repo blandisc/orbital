@@ -8,7 +8,7 @@ import { gameMenu, mainMenu } from "../../orbital/web/js/core/menus.js";
 test("Guardado ya no está en ☰ (D5-A): su camino visible es el ícono de Películas y series (G2-A)", async () => {
   assert.ok(!mainMenu({ running: null, hiddenCount: 0 }).options.some((o) => o.label === "Guardado"));
   const { readFileSync } = await import("node:fs");
-  const main = readFileSync(new URL("../../orbital/web/js/main.js", import.meta.url), "utf8");
+  const main = readFileSync(new URL("../../orbital/web/js/main.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
   assert.match(main, /\{ id: "saved", icon: "bookmark", label: "Guardado", command: \{ type: "saved" \} \}/);
 });
 

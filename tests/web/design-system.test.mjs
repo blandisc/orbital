@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const WEB = join(ROOT, "orbital", "web");
 const STYLES = join(WEB, "styles");
-const read = (path) => readFileSync(path, "utf8");
+const read = (path) => readFileSync(path, "utf8").replaceAll("\r\n", "\n");
 const list = (dir, ext) => readdirSync(dir).filter((f) => f.endsWith(ext)).sort();
 
 const DOC = read(join(ROOT, "docs", "sistema-de-diseno.md"));

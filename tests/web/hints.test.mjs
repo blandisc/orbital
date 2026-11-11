@@ -97,7 +97,7 @@ test("T5: en la primera fila de Películas y series, ↑ lleva a «Todo · Pelí
   assert.deepEqual(labels(footerHints(GLYPHS.gamepad, { kinds: "on", primary: "Ver", alt: "Ficha" })), ["Mostrar", "Volver a la fila", "Menú"]);
   // El mando llega: ↑ desde la fila 0 de «media» entra a las pestañas (como los filtros de Juegos) y ◀ ▶ / A / ↓ las recorren.
   const { readFileSync } = await import("node:fs");
-  const main = readFileSync(new URL("../../orbital/web/js/main.js", import.meta.url), "utf8");
+  const main = readFileSync(new URL("../../orbital/web/js/main.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
   assert.match(main, /case "up": \{\s*if \(r === 0 && state\.section === "media"[^\n]*enterKinds\(\)/);
   assert.match(main, /if \(kindFocus != null\) return handleKinds\(action\);/);
   assert.match(main, /return MEDIA_KINDS\[kindFocus\]\[0\] === mediaFilter/);
