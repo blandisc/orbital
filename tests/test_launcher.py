@@ -566,6 +566,7 @@ def test_missing_emulator_keeps_the_running_game(library, tmp_path):
     assert closed == [] and library.launcher.current["id"] == "steam:367520"
 
 
+@pytest.mark.reloj  # mide segundos de reloj: fuera de la pasada antes de actualizar, sí en la CI
 def test_measuring_windows_memory_never_holds_the_launch(monkeypatch):
     """Los contadores de DWM tardan hasta medio minuto: medir va en su hilo (antes la pantalla de carga se quedaba)."""
     from orbital import health
@@ -630,3 +631,4 @@ def test_cloud_game_ends_when_its_window_drops_the_name_even_if_the_app_stays():
     assert wait_for(lambda: ended)
     assert ended[0][:2] == ("gfn:1", "Hogwarts Legacy") and lau.status() is None
     assert closed == [1]  # y la app se cierra (se quedaba en su biblioteca gastando detrás de Orbital)
+

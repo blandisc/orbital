@@ -51,6 +51,8 @@ def test_update_applies_when_tests_pass(repos):
     ok, _ = Updater(repos, run=run).apply()
     assert ok and (repos / "a.txt").read_text() == "2"
     assert any("pytest" in c for c in calls)
+    tests = next(c for c in calls if "pytest" in c)
+    assert tests[len(tests) - 1 - tests[::-1].index("-m") + 1] == "not reloj"  # lo que depende del reloj no rechaza una versión buena
 
 
 def test_update_rolls_back_when_tests_fail(repos):
@@ -166,3 +168,23 @@ def test_f9_with_new_dependencies_it_tests_in_place_as_before(repos, tmp_path):
         return SimpleNamespace(returncode=0, stdout="", stderr="")
     ok, _ = Updater(repos, run=run_or_pip).apply()
     assert ok and seen[0]["cwd"] == repos  # el .venv es uno solo: se prueba en la carpeta, con rollback si falla
+
+
+def test_once_the_tv_saw_the_tag_it_never_falls_back_to_the_tip_of_main(repos):
+    """Revisión del 11 nov 2026: si la etiqueta tv-estable desaparece de GitHub, una tele que ya la usaba no se pone a
+    actualizarse desde la punta de main (sin pasar por la CI): no actualiza y lo dice."""
+    other = repos.parent / "otra"
+    _stable(other)
+    assert Updater(repos).check().ref == "refs/tags/tv-estable"  # la vio: queda anotado en su repositorio
+    git(other, "push", "-q", "origin", ":refs/tags/tv-estable")  # alguien la borró
+    (other / "a.txt").write_text("3")
+    git(other, "commit", "-qam", "Sin aprobar")
+    git(other, "push", "-q", "origin", "main")
+    info = Updater(repos).check()
+    assert info.available == 0 and "tv-estable" in info.error  # «Actualizar ahora» lo dice
+    run, calls = fake_run(0)
+    ok, message = Updater(repos, run=run).apply()
+    assert not ok and "tv-estable" in message and calls == []
+    assert (repos / "a.txt").read_text() == "1"  # ni se tocó
+    _stable(other)  # la etiqueta regresa: todo sigue como antes
+    assert Updater(repos).check().ref == "refs/tags/tv-estable" and not Updater(repos).check().error

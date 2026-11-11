@@ -43,6 +43,9 @@ orbital = ["remote_input_page.html", "web/*.html", "web/js/**/*.js", "web/styles
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "reloj: depende del reloj real (esperas o tiempos medidos); no corre en la prueba previa a actualizar la tele (updater.py), sí en la CI",
+]
 
 [tool.ruff]
 line-length = 130

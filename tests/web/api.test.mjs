@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { api, DEFAULT_TIMEOUT } from "../../orbital/web/js/core/api.js";
+import { api, DEFAULT_TIMEOUT, TITLE_STALE_EVENTS } from "../../orbital/web/js/core/api.js";
 
 /** Un fetch de mentiras que anota con qué señal se llamó. */
 function stubFetch(respond = () => new Response("{}")) {
@@ -80,4 +80,57 @@ test("una ficha que falla no se guarda", async () => {
     assert.equal((await api.stremioTitle("movie", "tt8")).title, "Ok");
     assert.equal(f.calls.length, 2);
   } finally { f.restore(); }
+});
+
+test("una ficha pedida antes de un cambio llega pero no se guarda (17b)", async () => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let n = 0;
+  const f = stubFetch((options) => {
+    if (options.method === "POST") return new Response("{}");
+    n += 1;
+    const body = JSON.stringify({ id: "tt7", title: n === 1 ? "vieja" : "nueva" });
+    return n === 1 ? gate.then(() => new Response(body)) : new Response(body);
+  });
+  try {
+    const pending = api.stremioTitle("movie", "tt7"); // sale el GET…
+    await api.markWatched({ kind: "movie", id: "tt7" }); // …y mientras tanto se marca vista
+    release();
+    assert.equal((await pending).title, "vieja", "quien la pidió la recibe");
+    assert.equal((await api.stremioTitle("movie", "tt7")).title, "nueva", "pero no quedó guardada");
+  } finally { f.restore(); }
+});
+
+test("lo que cambia en otro lado (iPhone, Trakt, cerrar el video) borra las fichas guardadas (17b)", async () => {
+  for (const type of ["foryou-changed", "returned", "closed", "trakt-linked"]) assert.ok(TITLE_STALE_EVENTS.has(type), type);
+  assert.ok(!TITLE_STALE_EVENTS.has("toast") && !TITLE_STALE_EVENTS.has("input"), "un aviso o una tecla no cambian una ficha");
+  const listeners = [];
+  const saved = globalThis.EventSource;
+  globalThis.EventSource = class { constructor() { listeners.push(this); } close() {} };
+  const f = stubFetch(() => new Response(JSON.stringify({ id: "tt6", title: "Uno" })));
+  try {
+    await api.stremioTitle("movie", "tt6");
+    api.events(() => {});
+    listeners[0].onmessage({ data: JSON.stringify({ type: "toast", text: "hola" }) });
+    await api.stremioTitle("movie", "tt6");
+    assert.equal(f.calls.length, 1, "un aviso no la borra");
+    listeners[0].onmessage({ data: JSON.stringify({ type: "foryou-changed" }) });
+    await api.stremioTitle("movie", "tt6");
+    assert.equal(f.calls.length, 2, "tras «foryou-changed» se vuelve a pedir");
+  } finally { globalThis.EventSource = saved; f.restore(); }
+});
+
+test("Guardado, tus listas y el historial esperan más que lo normal (17c)", async () => {
+  const f = stubFetch(() => new Response("{}"));
+  const realTimeout = AbortSignal.timeout;
+  const asked = [];
+  AbortSignal.timeout = (ms) => { asked.push(ms); return realTimeout.call(AbortSignal, ms); };
+  try {
+    await api.board();
+    await api.myLists();
+    await api.history();
+    await api.status();
+    assert.ok(asked.slice(0, 3).every((ms) => ms >= 30000), `límites: ${asked}`);
+    assert.equal(asked[3], DEFAULT_TIMEOUT);
+  } finally { AbortSignal.timeout = realTimeout; f.restore(); }
 });

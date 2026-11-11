@@ -9,6 +9,7 @@ import http.server
 import json
 import socket
 import threading
+import time
 import urllib.error
 
 import pytest
@@ -196,6 +197,97 @@ def test_the_breaker_reopens_after_the_cooldown_and_one_success_closes_it():
     breaker.success("h")
     breaker.failure("h")
     assert not breaker.down("h")
+
+
+def test_after_the_cooldown_only_one_probe_goes_through_and_a_success_closes_at_once():
+    """Revisión del 11 nov 2026: pasada la espera dejaba pasar todo de golpe a un servicio que quizá seguía caído."""
+    now = [0.0]
+    recovered = []
+    breaker = net.Breaker(failures=2, cooldown=60, clock=lambda: now[0])
+    breaker.on_recover = recovered.append
+    breaker.failure("h")
+    breaker.failure("h")
+    now[0] = 61
+    breaker.check("h")  # la prueba
+    for _ in range(5):  # las demás que llegan mientras la prueba va en camino, no
+        with pytest.raises(net.ServiceDown):
+            breaker.check("h")
+    assert breaker.down("h")
+    breaker.success("h")  # la primera prueba contestó: cerrado de inmediato, sin más pruebas
+    assert recovered == ["h"] and not breaker.down("h")
+    for _ in range(5):
+        breaker.check("h")
+    breaker.failure("h")  # y vuelve a contar desde cero: un fallo suelto no lo abre
+    breaker.check("h")
+
+
+def test_a_failed_probe_reopens_for_a_full_cooldown():
+    now = [0.0]
+    breaker = net.Breaker(failures=2, cooldown=60, clock=lambda: now[0])
+    breaker.failure("h")
+    breaker.failure("h")
+    now[0] = 61
+    breaker.check("h")
+    breaker.failure("h")  # la prueba falló
+    now[0] = 61 + 59
+    with pytest.raises(net.ServiceDown):
+        breaker.check("h")  # otra espera completa, no solo un rato
+    now[0] = 61 + 61
+    breaker.check("h")  # y luego otra prueba, una sola
+    with pytest.raises(net.ServiceDown):
+        breaker.check("h")
+
+
+def test_a_probe_that_never_reports_back_does_not_lock_the_service_forever():
+    now = [0.0]
+    breaker = net.Breaker(failures=1, cooldown=60, clock=lambda: now[0], probe_timeout=30)
+    breaker.failure("h")
+    now[0] = 61
+    breaker.check("h")  # quien la hizo se cayó por otra cosa y nunca dijo cómo le fue
+    now[0] = 61 + 29
+    with pytest.raises(net.ServiceDown):
+        breaker.check("h")
+    now[0] = 61 + 31
+    breaker.check("h")  # caducó: sale otra prueba
+
+
+def test_with_real_requests_only_one_probe_reaches_a_service_that_is_back(monkeypatch):
+    """Diez hilos piden a la vez justo al terminar la espera: solo uno llega al servicio; al contestar bien, se cierra."""
+    net.reset()
+    now = [0.0]
+    monkeypatch.setattr(net, "breaker", net.Breaker(failures=1, cooldown=60, clock=lambda: now[0]))
+    monkeypatch.setattr(net, "_proxied", lambda: False)
+    reached = []
+    gate = threading.Event()
+
+    def service(url, method, data, headers, timeout, safe):
+        reached.append(url)
+        gate.wait(5)  # la prueba tarda: los demás llegan mientras tanto
+        return 200, b"{}", {}
+
+    monkeypatch.setattr(net, "_via_pool", service)
+    net.breaker.failure("api.trakt.tv")
+    now[0] = 61
+    results = []
+
+    def ask(i):
+        try:
+            results.append(net.http_json(f"https://api.trakt.tv/{i}", retries=0)[0])
+        except net.ServiceDown:
+            results.append("down")
+
+    threads = [threading.Thread(target=ask, args=(i,)) for i in range(10)]
+    for t in threads:
+        t.start()
+    deadline = time.monotonic() + 5
+    while results.count("down") < 9 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    gate.set()
+    for t in threads:
+        t.join(5)
+    assert len(reached) == 1 and results.count(200) == 1 and results.count("down") == 9
+    assert net.http_json("https://api.trakt.tv/despues", retries=0)[0] == 200  # cerrado: ya pasa todo
+    net.reset()
 
 
 def test_net_failures_leave_out_generic_errors():

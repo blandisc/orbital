@@ -10,12 +10,15 @@ export const DEFAULT_TIMEOUT = 15000;
 const SLOW = { timeout: 60000 };
 // Lo que puede tardar minutos (instalar, actualizar, reiniciar algo de Windows): sin límite, como antes.
 const UNBOUNDED = { timeout: 0 };
+// Lo que arma una pantalla entera con Trakt detrás (Guardado, tus listas, el historial): con muchas cosas o Trakt lento
+// pasa de los 15 s y antes se cortaba con «No hubo respuesta a tiempo» (revisión 2, punto 17c).
+const LONG = { timeout: 45000 };
 
 /** `timeout` (ms; 0 = sin límite) corta una espera que nunca termina; `signal` deja cancelarla (B mientras conecta). */
 async function request(path, { timeout = DEFAULT_TIMEOUT, signal, ...options } = {}) {
   // Algo cambió (marcar vista, calificar, ver, borrar…): la ficha guardada puede ya no ser cierta. Lo de /api/ui/ (qué hay al
   // frente, el diagnóstico del mando) no toca ninguna ficha.
-  if (options.method && options.method !== "GET" && !path.startsWith("/api/ui/")) titles.clear();
+  if (options.method && options.method !== "GET" && !path.startsWith("/api/ui/")) forgetTitles();
   const signals = [signal, timeout && AbortSignal.timeout?.(timeout)].filter(Boolean);
   let res;
   try {
@@ -54,12 +57,23 @@ async function request(path, { timeout = DEFAULT_TIMEOUT, signal, ...options } =
  *  pasar de una a otra y regresar) ya no espera al servidor. `fresh`: pedirla de nuevo (ponerse al día tras ver algo). */
 export const TITLE_TTL = 60000;
 const titles = new Map(); // "kind:id" → { at, data }
+// Cuántas veces se olvidaron las fichas: una que se pidió ANTES de un cambio (marcar vista en el iPhone, un POST de aquí)
+// puede llegar ya vieja; si mientras tanto se olvidaron, se muestra pero no se guarda (revisión 2, punto 17b).
+let titlesEra = 0;
+/** Olvida las fichas guardadas: algo cambió aquí (un POST) o en otro lado (un evento del servidor). */
+export function forgetTitles() {
+  titles.clear();
+  titlesEra += 1;
+}
+/** Eventos del servidor tras los que una ficha guardada puede ya no ser cierta: lo visto, Trakt, se cerró lo que veías. */
+export const TITLE_STALE_EVENTS = new Set(["foryou-changed", "library-changed", "trakt-linked", "returned", "closed"]);
 async function titleDetails(kind, id, { fresh = false } = {}) {
   const key = `${kind}:${id}`;
   const kept = titles.get(key);
   if (!fresh && kept && Date.now() - kept.at < TITLE_TTL) return structuredClone(kept.data);
+  const era = titlesEra;
   const data = await request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`);
-  if (data && typeof data === "object" && (data.id || data.title)) {
+  if (era === titlesEra && data && typeof data === "object" && (data.id || data.title)) {
     titles.set(key, { at: Date.now(), data: structuredClone(data) });
     if (titles.size > 40) titles.delete(titles.keys().next().value); // la más vieja
   }
@@ -155,8 +169,8 @@ export const api = {
   setFollowing: (id, following) => post("/api/foryou/follow", { id, following }),
   // El gestor tipo Trakt (G1–G4, como el iPhone): «La dejé», el tablero de Guardado, varios a la vez y tus listas.
   setDropped: (kind, id, dropped = true, following = false) => post("/api/foryou/drop", { kind, id, dropped, following }),
-  board: () => request("/api/foryou/board"),
-  myLists: () => request("/api/foryou/my-lists"),
+  board: () => request("/api/foryou/board", LONG),
+  myLists: () => request("/api/foryou/my-lists", LONG),
   setMany: (where, items, add) => post("/api/foryou/many", { where, items, add }),
   dropMany: (items) => post("/api/foryou/drop-many", { items }),
   watchedMany: (items, undo = false) => post("/api/foryou/watched-many", { items, undo }),
@@ -165,7 +179,7 @@ export const api = {
   viewings: (kind, id, videoId = null) =>
     request(`/api/foryou/viewings?kind=${kind}&id=${encodeURIComponent(id)}${videoId ? `&video_id=${encodeURIComponent(videoId)}` : ""}`),
   changeViewing: (body) => post("/api/foryou/viewings", body),
-  history: (page = 1) => request(`/api/foryou/history?page=${page}`),
+  history: (page = 1) => request(`/api/foryou/history?page=${page}`, LONG),
   removeViewings: (ids) => post("/api/foryou/history/remove", { ids }),
   note: (kind, id) => request(`/api/foryou/note?kind=${kind}&id=${encodeURIComponent(id)}`),
   saveNote: (kind, id, text) => post("/api/foryou/note", { kind, id, text }),
@@ -255,8 +269,13 @@ export const api = {
     let lost = false;
     const connect = () => {
       const source = new EventSource("/api/events");
-      source.onopen = () => { if (lost) { lost = false; onReconnect(); } };
-      source.onmessage = (msg) => onEvent(JSON.parse(msg.data));
+      // Sin conexión pudo cambiar cualquier cosa: al volver, ninguna ficha guardada es de fiar.
+      source.onopen = () => { if (lost) { lost = false; forgetTitles(); onReconnect(); } };
+      source.onmessage = (msg) => {
+        const event = JSON.parse(msg.data);
+        if (TITLE_STALE_EVENTS.has(event?.type)) forgetTitles();
+        onEvent(event);
+      };
       source.onerror = () => { lost = true; source.close(); setTimeout(connect, 3000); };
     };
     connect();

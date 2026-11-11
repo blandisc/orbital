@@ -223,18 +223,11 @@
 .brand-name--paramount { color: var(--brand-paramount); }
 .brand-name--crunchyroll { color: var(--brand-crunchyroll); }
 [data-input="touch"] .pill { min-height: var(--touch-target); }
-/* CornerRibbon: «Nuevo» en la esquina de un póster, como DSCornerRibbon del iPhone. El cuadro de la esquina recorta la banda
-   (la tarjeta no lleva overflow: su pie va por fuera); la banda va en diagonal, en el turquesa de lo nuevo con un brillo arriba, en letra normal. */
+/* CornerRibbon: «Nuevo» en la esquina de un póster (R2-10): un punto turquesa con su filo oscuro, discreto, arriba a la
+   derecha; antes un listón en diagonal que tapaba el arte. */
 .corner-ribbon {
-  position: absolute; top: 0; right: 0; z-index: var(--z-above); width: var(--ribbon-corner); height: var(--ribbon-corner);
-  overflow: hidden; border-top-right-radius: inherit; pointer-events: none;
-}
-.corner-ribbon__band {
-  position: absolute; top: var(--ribbon-center); right: calc(var(--ribbon-length) / -2 + var(--ribbon-center));
-  width: var(--ribbon-length); transform: translateY(-50%) rotate(45deg); text-align: center;
-  padding-block: var(--space-1); background: linear-gradient(var(--color-shine), transparent 60%), var(--color-new);
-  color: var(--color-on-primary); font-size: var(--type-badge); font-weight: var(--type-badge-weight);
-  letter-spacing: var(--type-badge-tracking); box-shadow: var(--shadow-badge);
+  position: absolute; top: var(--inset-poster); right: var(--inset-poster); z-index: var(--z-above); width: var(--ribbon-dot); height: var(--ribbon-dot);
+  border-radius: var(--radius-pill); background: var(--color-new); box-shadow: 0 0 0 .15rem var(--color-badge-bg), var(--shadow-badge); pointer-events: none;
 }
 
 /* RemoveMark: el «−» de un póster al editar una lista tuya (DSRemoveMark): un disco rojo con el «−» blanco, en la esquina de

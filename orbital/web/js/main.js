@@ -293,7 +293,7 @@ const ui = {
     onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
-    onDeck: () => { ui.decide.close(); runCommand({ type: "match" }); }, // D5-A: «Una por una» es «¿Qué vemos hoy?»
+    onDeck: () => runCommand({ type: "match" }), // D5-A: «Una por una», la segunda pestaña, se abre encima de Decide
   }),
   // Ajustes a pantalla completa (☰ › Ajustes): el riel de categorías y la lámina de la elegida.
   settings: createSettings({
@@ -326,6 +326,7 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
     onReady: () => renderHints(),
+    onDecide: () => ui.match.close(), // «Tres que caben»: Decide sigue abierta debajo, como la dejaste
   }),
   // Colecciones (como la repisa del iPhone): los premios y las listas famosas, con cuánto llevas.
   showcase: createShowcase({
@@ -460,7 +461,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.match, ui.showcase, ui.filter, ui.gamePage, ui.calendar, ui.search, ui.settings];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.match, ui.decide, ui.showcase, ui.filter, ui.gamePage, ui.calendar, ui.search, ui.settings];
 /** De la de más arriba a la de más abajo. Buscar eligiendo una ficha («Agregar» a una lista tuya) va encima de la lista abierta. */
 const overlays = () => (ui.search.isPicking ? [ui.search, ...OVERLAYS] : OVERLAYS);
 const topOverlay = () => overlays().find((view) => view.isOpen) ?? null;
@@ -1233,9 +1234,8 @@ function handleKinds(action) {
     }
     case "select": {
       if (kindFocus >= MEDIA_KINDS.length) {
-        const tool = MEDIA_TOOLS[kindFocus - MEDIA_KINDS.length];
-        leaveKinds();
-        return runCommand(tool.command);
+        // R2-9: el foco se queda en el ícono que la abrió (Guardado, Colecciones, Filtro): al cerrar, ahí regresas.
+        return runCommand(MEDIA_TOOLS[kindFocus - MEDIA_KINDS.length].command);
       }
       return MEDIA_KINDS[kindFocus][0] === mediaFilter ? sound.play("select") : runCommand({ type: "media-filter", value: MEDIA_KINDS[kindFocus][0] });
     }
@@ -1772,6 +1772,8 @@ function openShowcaseItem(c) {
 
 function openMatch() {
   sound.play("open");
+  // D5-A (R2-7): el mazo vive dentro de Decide (su segunda pestaña): B regresa a «Tres que caben», no a Explorar.
+  if (!ui.decide.isOpen) ui.decide.open();
   ui.match.open({ glyphs: glyphs() });
   renderHints();
 }
@@ -1855,7 +1857,8 @@ function listSortMenu(s) {
   const check = (on) => (on ? "✓" : "");
   const options = [];
   if (s.editable) options.push(...listEditOptions(s.editable, s.editing));
-  if (s.id === "saved") options.push(...savedMenuOptions(s.tabId, savedTable().lists, { online: navigator.onLine !== false }));
+  if (s.id === "saved") options.push(...savedMenuOptions(s.tabId, savedTable().lists,
+    { online: navigator.onLine !== false, stale: (s.items || []).filter((i) => i.pile === "stale").length }));
   options.push(...listManageOptions(s.editable, { online: navigator.onLine !== false }));
   if (!s.ranked) {
     options.push({ heading: true, label: "Ordenar" },

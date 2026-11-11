@@ -23,10 +23,13 @@
 .shelf__heading .source-logo--letterboxd { top: .1em; }
 .shelf__count { letter-spacing: normal; } /* RowCount (ui.css); no hereda el apretado del título */
 .shelf__row:not(.shelf__row--current) .shelf__heading { opacity: var(--opacity-faint); }
-/* Hay más a la derecha: la orilla se desvanece, como las filas del Inicio (home.css · home__viewport--more); al final, no. */
-.shelf__edge--more {
-  -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) 0, var(--mask-solid) 86%, transparent 100%);
-  mask-image: linear-gradient(90deg, var(--mask-solid) 0, var(--mask-solid) 86%, transparent 100%);
+/* Hay más a la derecha: la orilla se desvanece, como las filas del Inicio (home.css · home__viewport--more); al final, no.
+   R2-10: si la fila ya avanzó, lo que quedó antes del margen se corta en seco (antes asomaba una tira del póster anterior). */
+.shelf__edge--more { --edge-end: transparent; --edge-end-at: 86%; }
+.shelf__edge--less { --edge-start-at: calc(var(--page-gutter) - var(--space-3)); }
+:is(.shelf__edge--more, .shelf__edge--less) {
+  -webkit-mask-image: linear-gradient(90deg, transparent var(--edge-start-at, 0), var(--mask-solid) var(--edge-start-at, 0), var(--mask-solid) var(--edge-end-at, 100%), var(--edge-end, var(--mask-solid)) 100%);
+  mask-image: linear-gradient(90deg, transparent var(--edge-start-at, 0), var(--mask-solid) var(--edge-start-at, 0), var(--mask-solid) var(--edge-end-at, 100%), var(--edge-end, var(--mask-solid)) 100%);
 }
 .shelf__track {
   display: flex; align-items: flex-end; gap: var(--card-gap);
@@ -98,6 +101,7 @@
 .shelf__dated { --today-room: 3.4rem; position: relative; flex: none; }
 .shelf__day {
   position: absolute; left: 0; bottom: calc(100% + var(--space-2)); display: flex; align-items: center; gap: var(--space-2);
+  text-shadow: var(--shadow-text-strong); /* R2-10: sobre arte claro «Sábado 15» se perdía */
   max-width: calc(100% + var(--card-gap) - var(--space-2)); overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; color: var(--color-text); font-size: var(--type-label); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking);
   transition: opacity var(--duration-fast) var(--ease-out);

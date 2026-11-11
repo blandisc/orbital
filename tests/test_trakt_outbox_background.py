@@ -10,6 +10,8 @@ import threading
 import time
 from types import SimpleNamespace
 
+import pytest
+
 from orbital import net
 from orbital.gestor import Gestor
 from orbital.library import trakt
@@ -85,6 +87,7 @@ def fill(outbox: TraktOutbox, n: int) -> None:
         outbox.enqueue({"target": NOTE, "imdb": f"tt{500 + i}", "kind": "movie", "text": "x", "add": True})
 
 
+@pytest.mark.reloj  # mide segundos de reloj: fuera de la pasada antes de actualizar, sí en la CI
 def test_an_action_answers_at_once_even_with_a_long_queue_and_a_slow_trakt():
     t = SlowTrakt(delay=0.2)
     g, events = make_gestor(t)

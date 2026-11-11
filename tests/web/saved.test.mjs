@@ -58,8 +58,10 @@ test("el «···» de una lista tuya vive en su ☰ (G4-A); Mi lista no lo llev
 
 test("☰ de Guardado: «Sí, las dejé» en «¿Las dejaste?», tus listas y «Nueva lista»", () => {
   const lists = [{ id: "7", name: "Para ver con Ana", count: 18, privacy: "private" }];
-  const stale = savedMenuOptions("stale", lists).map((o) => o.label);
+  // R2-9: las que no ves hace meses van al final de Viendo (no en una pestaña aparte); ☰ de Viendo pregunta si las dejaste.
+  const stale = savedMenuOptions("watching", lists, { stale: 2 }).map((o) => o.label);
   assert.deepEqual(stale, ["¿Las dejaste?", "Sí, las dejé", "Tus listas", "Para ver con Ana", "Nueva lista"]);
+  assert.ok(!savedMenuOptions("watching", lists).some((o) => o.label === "Sí, las dejé"));
   assert.equal(savedMenuOptions("in_list", lists)[1].hint, "18 títulos · solo tú");
   assert.ok(!savedMenuOptions("watched", lists).some((o) => o.label === "Sí, las dejé"));
 });

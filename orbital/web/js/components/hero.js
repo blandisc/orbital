@@ -147,7 +147,8 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     const left = said || null;
     const list = item.category === "cloud" ? [h("span", {}, item.subtitle || "")] // PT22: «Bajando en la nube · 42 % · Lo acabas de pedir aquí»
       : item.source === "cinemeta" ? [
-      extra.episode, extra.year, traktScore(extra.trakt) || (extra.rating && `★ ${extra.rating}`), genres(extra.genres).slice(0, 2).join(", "),
+      // R2-10: «T2 E7» una vez: si la línea de abajo ya dice «T2 E7 · Su nombre», no se repite en los datos.
+      !(extra.episode && about.includes(extra.episode)) && extra.episode, extra.year, traktScore(extra.trakt) || (extra.rating && `★ ${extra.rating}`), genres(extra.genres).slice(0, 2).join(", "),
       extra.minutes > 0 ? duration(extra.minutes * 60) : runtime(extra.runtime),
     ].filter(Boolean).map((text) => (typeof text === "object" ? text : h("span", {}, String(text)))) : item.source === "stremio" ? [
       ...episodeOf(item), left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "),

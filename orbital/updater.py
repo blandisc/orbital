@@ -5,7 +5,8 @@ Pasos de "Actualizar ahora":
   1. Solo si no hay cambios a medio hacer en la carpeta (nunca se pisa trabajo sin guardar).
   2. git merge --ff-only con lo nuevo (sin mezclas raras). En `main`, si el repositorio tiene la etiqueta `tv-estable`
      (la mueve la CI cuando todo pasa, D8-A), se actualiza hasta esa etiqueta y no hasta la punta de `main`: la TV nunca
-     baja algo que la CI no aprobó. Sin la etiqueta, como siempre: hasta lo último de la rama.
+     baja algo que la CI no aprobó. Sin la etiqueta, hasta lo último de la rama, PERO solo si esta tele nunca la ha visto:
+     si ya la vio alguna vez y luego falta, no se actualiza y lo dice (en la bitácora y en «Actualizar ahora»).
   3. Sin dependencias nuevas (requirements.lock igual): la versión nueva se prueba en una copia aparte (`git worktree`
      temporal) mientras Orbital sigue sirviendo la de siempre desde su carpeta, sin mezclar archivos viejos y nuevos
      (F9). Solo si pasa, la carpeta avanza (un merge --ff-only, al instante). Si falla, la carpeta ni se tocó.
@@ -32,6 +33,9 @@ REPO = Path(__file__).resolve().parents[1]
 CHECK_EVERY = 600.0  # s: no preguntar a GitHub más seguido
 STABLE_TAG = "tv-estable"  # la mueve la CI cuando todo pasa en main (D8-A)
 STABLE_BRANCH = "main"
+SEEN_KEY = "orbital.stableseen"  # en el repositorio de la tele: ya se actualizó alguna vez desde tv-estable
+MISSING_TAG = ("La etiqueta tv-estable ya no está en GitHub. Esta tele se actualiza solo con lo que la revisión "
+               "automática aprobó, así que no actualizo hasta que vuelva.")
 
 
 @dataclass
@@ -81,6 +85,13 @@ class Updater:
             info.branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
             self.git("fetch", "--quiet", "origin", info.branch, timeout=60)
             info.ref = self._stable_ref() if info.branch == STABLE_BRANCH else ""
+            if info.branch == STABLE_BRANCH and not info.ref and self._seen_stable():
+                # Esta tele ya se actualizaba desde la etiqueta: si falta, no se baja la punta de main sin la CI.
+                info.error = MISSING_TAG
+                log.warning("La etiqueta %s ya no está en GitHub: no actualizo desde main sin la aprobación de la CI",
+                            STABLE_TAG)
+                self._checked = (time.monotonic(), info)
+                return info
             info.ref = info.ref or f"origin/{info.branch}"
             log_lines = self.git("log", "--format=%s", f"HEAD..{info.ref}")
             info.changes = [line for line in log_lines.splitlines() if line][:20]
@@ -93,11 +104,24 @@ class Updater:
         return info
 
     def _stable_ref(self) -> str:
-        """La etiqueta tv-estable al día si existe en GitHub ("" si no). Se trae a la fuerza: la etiqueta se mueve."""
+        """La etiqueta tv-estable al día si existe en GitHub ("" si no). Se trae a la fuerza: la etiqueta se mueve. Que
+        esta tele la vio queda anotado en su repositorio (`git config orbital.stableseen`): desde entonces, si un día
+        falta, no se actualiza (`check`)."""
         if not self.git("ls-remote", "--tags", "origin", f"refs/tags/{STABLE_TAG}", timeout=60):
             return ""
         self.git("fetch", "--quiet", "--force", "origin", f"+refs/tags/{STABLE_TAG}:refs/tags/{STABLE_TAG}", timeout=60)
+        if not self._seen_stable():
+            try:
+                self.git("config", "--local", SEEN_KEY, "true")
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                log.info("No pude anotar que esta tele ya vio la etiqueta %s", STABLE_TAG, exc_info=True)
         return f"refs/tags/{STABLE_TAG}"
+
+    def _seen_stable(self) -> bool:
+        try:
+            return self.git("config", "--local", "--get", SEEN_KEY) == "true"
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            return False  # sin la clave, git sale con 1
 
     def _lock_id(self, ref: str = "HEAD") -> str:
         """Qué versión de requirements.lock hay en `ref` ("" si no hay)."""
@@ -156,7 +180,10 @@ class Updater:
         where = where or self.repo
         env = {**os.environ, "PYTHONPATH": str(where) + (os.pathsep + os.environ["PYTHONPATH"]
                                                          if os.environ.get("PYTHONPATH") else "")}
-        result = self.run([self.python, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", "--ignore=tests/smoke"],
+        # `-m "not reloj"`: las pocas pruebas que dependen del reloj real (con la consola cargada podrían rechazar al azar una
+        # versión buena) no corren aquí; sí en la CI, que ya las pasó antes de mover la etiqueta tv-estable.
+        result = self.run([self.python, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", "--ignore=tests/smoke",
+                           "-m", "not reloj"],
                           cwd=where, capture_output=True, text=True, timeout=900, env=env,
                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         if result.returncode:

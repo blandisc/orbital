@@ -399,6 +399,7 @@ def test_player_title_fits_on_a_4_3_screen():
         player_ui.set_canvas(1920, 1080)
 
 
+@pytest.mark.reloj  # mide segundos de reloj: fuera de la pasada antes de actualizar, sí en la CI
 def test_a_frozen_mpv_does_not_freeze_orbital(monkeypatch):
     import threading as th
     import time as _t

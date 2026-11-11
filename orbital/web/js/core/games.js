@@ -5,8 +5,9 @@
 import { duration, shortAgo } from "./format.js";
 import { consoleList } from "./home.js";
 
+// R2-12: «Recientes» (antes «Jugados»): es un orden (lo último que jugaste arriba), no un filtro de los ya jugados.
 export const FILTERS = [
-  { id: "recent", label: "Jugados" },
+  { id: "recent", label: "Recientes" },
   { id: "added", label: "Añadidos" },
   { id: "favorites", label: "Favoritos" },
   { id: "az", label: "A–Z" },
@@ -27,8 +28,14 @@ export const playsWithController = (item) => item.category === "emulators" || ["
 /** ¿Está en tu consola? Los de tu cuenta de Steam sin instalar dicen que no (extra.installed === false). */
 export const isInstalled = (item) => item.extra?.installed !== false;
 
-/** Tus consolas, la que usaste más recientemente primero (la misma lista que el Inicio). */
-export const gameConsoles = (rows) => consoleList(rows);
+/** Tus consolas en Juegos, en un orden fijo (el de tu biblioteca): no brincan de lugar cada vez que juegas (R2-12; el Inicio
+ * sí pone primero la última). La última que usaste lleva `recent`. */
+export function gameConsoles(rows) {
+  const order = rows.map((r) => r.id);
+  const list = consoleList(rows);
+  const latest = list[0]?.last ? list[0].id : null; // consoleList: la más reciente primero
+  return list.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)).map((c) => ({ ...c, recent: c.id === latest }));
+}
 
 const byTitle = (a, b) => String(a.title ?? "").localeCompare(String(b.title ?? ""), "es", { sensitivity: "base" });
 
@@ -59,7 +66,7 @@ export function stepConsole(list, id, delta) {
 /** ¿En qué consola entrar? La que pediste (desde el Inicio), la última en la que estabas o la más reciente. */
 export function pickConsole(list, wanted, previous) {
   for (const id of [wanted, previous]) if (id && list.some((c) => c.id === id)) return id;
-  return list[0]?.id ?? null;
+  return (list.find((c) => c.recent) || list[0])?.id ?? null;
 }
 
 /**

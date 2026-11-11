@@ -1,6 +1,8 @@
 /** Guardado y tus listas en la TV (el gestor tipo Trakt del iPhone, olas 1 y 2; docs/producto/live-activity-2026-11-08/):
- *  - G2-A: «Guardado» (☰) abre lo tuyo por estado en pestañas con su cifra: En Mi lista · Viendo · Vistas · Las dejé (y
- *    «¿Las dejaste?» si hay series a medias que no ves hace seis meses). Y sobre un póster: «Mover a…».
+ *  - G2-A: «Guardado» (☰) abre lo tuyo por estado en pestañas con su cifra: En Mi lista · Viendo · Vistas · Las dejé. Las
+ *    series a medias que no ves hace seis meses van al final de Viendo, cada una con «¿La dejaste?» arriba, y ☰ de Viendo
+ *    pregunta «¿Las dejaste?» (R2-9: como el iPhone; antes era una pestaña junto a «Las dejé», dos nombres para lo mismo).
+ *    Y sobre un póster: «Mover a…».
  *  - G3-A: «Editar» elige varios; Y («Con las elegidas…») trae lo que se puede hacer ahí, con un solo «Deshacer».
  *  - G4-A: ☰ de una lista tuya: cambiar nombre, quién la ve, ordenar a mano, duplicar, compartir enlace y borrar; «Nueva
  *    lista» en ☰ de Guardado. Todo eso necesita internet (como el iPhone).
@@ -8,7 +10,7 @@
 import { curatedItem } from "../core/curation.js";
 
 /** Los montones de Guardado, en el orden del tablero del iPhone, con su nombre. */
-export const PILES = [["in_list", "En Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["dropped", "Las dejé"], ["stale", "¿Las dejaste?"]];
+export const PILES = [["in_list", "En Mi lista"], ["watching", "Viendo"], ["watched", "Vistas"], ["dropped", "Las dejé"]];
 /** «Quién la ve» (`Trakt.privacies`): Solo tú · Con el enlace · Todos en Trakt; «Solo amigos» solo si ya lo era. */
 export const PRIVACY = [["private", "Solo tú", "Nadie más la ve"], ["link", "Con el enlace", "Quien tenga el enlace"],
   ["public", "Todos en Trakt", "Sale en tu perfil"], ["friends", "Solo amigos", "Tus amigos de Trakt"]];
@@ -124,14 +126,16 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
     }
     board = found;
     lists = found.lists || [];
-    const tabs = PILES.filter(([id]) => id !== "stale" || found.stale?.length).map(([id, label]) => {
-      const items = (found[id] || []).map((i) => ({ ...curatedItem(i), pile: i.pile }));
+    const tabs = PILES.map(([id, label]) => {
+      const raw = id === "watching" ? [...(found.watching || []), ...(found.stale || [])] : found[id] || [];
+      const items = raw.map((i) => ({ ...curatedItem(i), pile: i.pile }));
       return { id, label: `${label} · ${items.length}`, load: () => Promise.resolve(items) };
     });
     const at = Math.max(0, tabs.findIndex((t) => t.id === tab));
     if (!ui.listScreen.isOpen) sound.play("open");
     ui.listScreen.open({ id: "saved", title: "Guardado", source: "trakt", media: {}, tab: at,
-      meta: `${lists.length} ${lists.length === 1 ? "lista tuya" : "listas tuyas"} en ☰`,
+      // R2-9: antes «1 lista tuya en ≡»; ahora dice dónde, con la palabra del pie («M Menú»).
+      meta: lists.length ? (lists.length === 1 ? "Tu lista está en Menú" : `Tus ${lists.length} listas están en Menú`) : null,
       editable: { where: "saved", name: "Guardado", add: false }, tabs });
     renderHints();
     const changes = found.changes || [];
@@ -264,7 +268,7 @@ export function savedCommands({ api, nested, openMenu, renderHints, sound, ui, u
       }
     },
     // «¿Las dejaste?» › «Sí, las dejé»: todas las de esa pestaña.
-    "saved-stale-drop": async () => runBatch("drop", "watching", screen().items),
+    "saved-stale-drop": async () => runBatch("drop", "watching", screen().items.filter((i) => i.pile === "stale")),
     // G4-A: tus listas (necesita internet).
     "list-open": async (command) => {
       ui.sheet.close();
@@ -359,9 +363,9 @@ export function shareMenu(where, name) {
 }
 
 /** ☰ de Guardado (G2-A y G4-A): «¿Las dejaste?», tus listas (cada una se abre) y «Nueva lista». */
-export function savedMenuOptions(tabId, lists, { online = true } = {}) {
+export function savedMenuOptions(tabId, lists, { online = true, stale = 0 } = {}) {
   const out = [];
-  if (tabId === "stale") {
+  if ((tabId === "watching" || tabId === "stale") && stale > 0) {
     out.push({ heading: true, label: "¿Las dejaste?" },
       { icon: "hide", label: "Sí, las dejé", hint: "No las ves hace seis meses: salen de Viendo y dejan de avisarte", command: { type: "saved-stale-drop" } });
   }

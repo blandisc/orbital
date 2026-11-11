@@ -106,6 +106,19 @@ de la CI la mueve solo cuando `main` queda en verde (si el commit falla, la etiq
 retrocede aunque dos corridas terminen en desorden). La TV se actualiza desde esa etiqueta y no desde `main`, así que
 nunca recibe algo que la CI no aprobó. Para ver dónde está: `git fetch origin tag tv-estable -f && git log -1 tv-estable`.
 
+Si la TV ya vio la etiqueta una vez (lo recuerda en `git config orbital.stableseen`) y un día no la encuentra, no se
+actualiza desde la punta de `main`: lo dice en la bitácora y en la pantalla de actualización, y espera a que la etiqueta
+vuelva. Solo una TV que nunca la vio (una instalación vieja) sigue usando `main`.
+
+### Pruebas que dependen del reloj (`@pytest.mark.reloj`)
+
+Las pocas pruebas que miden segundos de verdad (que algo conteste en menos de un segundo, que no se quede esperando)
+llevan la marca `reloj` (declarada en `pyproject.toml`). Antes de actualizarse, la TV corre la batería con
+`-m "not reloj"`: si la Legion Go está ocupada, una prueba de tiempos podría fallar sin que nada esté roto y frenar la
+actualización. La CI sí las corre todas. Lo demás que espera a un hilo no usa `sleep` fijo: pregunta en bucle hasta que se
+cumple o vence un tope amplio (`eventually` en `tests/test_player.py`). Para correr solo las de reloj:
+`python -m pytest -q -m reloj`.
+
 ## El contrato con el iPhone (`tests/fixtures/contract`)
 
 La TV y la app del iPhone hablan por el puerto público. Para que un cambio en la TV no rompa al iPhone sin que nadie se

@@ -11,6 +11,7 @@ cualquier otro error de red, con un plazo TOTAL (no solo por lectura) y un tama�
 - reutiliza la conexión con cada servidor (una reserva por host, segura entre hilos): sin un apretón TLS por pedido;
 - un cortacircuitos por servicio: tras `BREAKER_FAILURES` fallos seguidos lo da por caído `BREAKER_COOLDOWN` s y
   responde al momento con `ServiceDown`, para que quien llama use lo que tiene guardado en vez de esperar al plazo;
+  pasada la espera deja pasar una sola petición de prueba y, según le vaya, lo cierra o espera otra vez;
 - los fallos de red salen como `NetError` (que es un OSError: quien atrapa `NET_ERRORS` u `OSError` sigue igual).
 
 `NET_FAILURES` es «la red o el servicio fallaron», sin OSError ni ValueError genéricos (un disco lleno o un error
@@ -72,6 +73,7 @@ RETRY_SAFE_STATUSES = frozenset({500, 502, 503, 504})
 IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "PUT", "DELETE", "OPTIONS"})
 BREAKER_FAILURES = 5  # fallos seguidos de un servicio…
 BREAKER_COOLDOWN = 60.0  # …y se da por caído este tiempo (s)
+BREAKER_PROBE_TIMEOUT = 120.0  # una petición de prueba que no avisa en este tiempo se da por perdida (s)
 POOL_PER_HOST = 4  # conexiones libres que se guardan por servidor
 POOL_IDLE = 30.0  # s: una conexión parada más tiempo se cierra (los servidores cortan las ociosas)
 REDIRECTS = 5
@@ -157,28 +159,40 @@ def read_json(res, *, timeout: float, limit: int = MAX_BYTES):
 
 # --- cortacircuitos ---------------------------------------------------------------------------------------------------
 class Breaker:
-    """Fallos seguidos por servicio (host): errores de red y 5xx. Cualquier otra respuesta pone la cuenta en cero."""
+    """Fallos seguidos por servicio (host): errores de red y 5xx. Cualquier otra respuesta pone la cuenta en cero.
 
-    def __init__(self, failures: int = BREAKER_FAILURES, cooldown: float = BREAKER_COOLDOWN, clock=time.monotonic) -> None:
-        self.failures, self.cooldown, self.clock = failures, cooldown, clock
+    Cerrado: todo pasa. Abierto (tras `failures` fallos seguidos): nada pasa durante `cooldown` s. Medio abierto (pasada la
+    espera): pasa UNA petición de prueba y las demás siguen rechazadas hasta saber cómo le fue; si contesta, se cierra de
+    inmediato, y si falla, se vuelve a abrir otra espera completa. Una prueba que nunca avisa (quien la hizo se cayó por
+    otra cosa) caduca a los `probe_timeout` s y se deja pasar otra."""
+
+    def __init__(self, failures: int = BREAKER_FAILURES, cooldown: float = BREAKER_COOLDOWN, clock=time.monotonic,
+                 probe_timeout: float = BREAKER_PROBE_TIMEOUT) -> None:
+        self.failures, self.cooldown, self.clock, self.probe_timeout = failures, cooldown, clock, probe_timeout
         self._lock = threading.Lock()
         self._count: dict[str, int] = {}
         self._until: dict[str, float] = {}
+        self._probe: dict[str, float] = {}  # servicio medio abierto → cuándo salió su petición de prueba
         self.on_recover: Callable[[str], None] | None = None  # un servicio que fallaba volvió a contestar
 
     def check(self, host: str) -> None:
         with self._lock:
             until = self._until.get(host, 0.0)
-            if until and self.clock() < until:
-                raise ServiceDown(f"{host} no contesta; lo vuelvo a intentar en {until - self.clock():.0f} s")
-            if until:  # pasó la espera: se deja intentar otra vez (si falla, se vuelve a abrir de inmediato)
-                self._until.pop(host, None)
-                self._count[host] = self.failures - 1
+            now = self.clock()
+            if until and now < until:
+                raise ServiceDown(f"{host} no contesta; lo vuelvo a intentar en {until - now:.0f} s")
+            if not until:
+                return
+            sent = self._probe.get(host)
+            if sent is not None and now - sent < self.probe_timeout:
+                raise ServiceDown(f"{host} no contestaba; estoy probando si ya volvió")
+            self._probe[host] = now  # medio abierto: esta es la petición de prueba
 
     def success(self, host: str) -> None:
         with self._lock:
             was_failing = self._count.pop(host, None) is not None
             was_failing = self._until.pop(host, None) is not None or was_failing
+            self._probe.pop(host, None)
         if was_failing and self.on_recover is not None:
             self.on_recover(host)
 
@@ -186,18 +200,28 @@ class Breaker:
         with self._lock:
             count = self._count.get(host, 0) + 1
             self._count[host] = count
-            if count >= self.failures and host not in self._until:
+            if host in self._probe:  # la prueba falló: otra espera completa
+                self._probe.pop(host)
+                self._until[host] = self.clock() + self.cooldown
+                log.info("%s sigue sin contestar: lo doy por caído otros %.0f s", host, self.cooldown)
+            elif count >= self.failures and host not in self._until:
                 self._until[host] = self.clock() + self.cooldown
                 log.info("%s falló %d veces seguidas: lo doy por caído %.0f s", host, count, self.cooldown)
 
     def down(self, host: str) -> bool:
+        """Si ahora mismo se rechazaría una petición (abierto, o medio abierto con la prueba en camino)."""
         with self._lock:
-            return self.clock() < self._until.get(host, 0.0)
+            now = self.clock()
+            if now < self._until.get(host, 0.0):
+                return True
+            sent = self._probe.get(host)
+            return sent is not None and now - sent < self.probe_timeout
 
     def reset(self) -> None:
         with self._lock:
             self._count.clear()
             self._until.clear()
+            self._probe.clear()
 
 
 # --- reserva de conexiones --------------------------------------------------------------------------------------------

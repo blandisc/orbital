@@ -182,7 +182,8 @@ def test_the_busy_mark_counts_only_while_its_processes_live(tmp_path):
     assert supervisor.game_open(mark, table={40: ("notepad.exe", 1)}) == ""  # Windows reusó el pid: ya no es el juego
     assert supervisor.game_open(mark, table={}) == ""  # cerraste el juego con Orbital colgado: la marca ya no cuenta
     supervisor.write_busy({"title": "Stremio", "pids": {}, "exe": "stremio.exe"}, mark)
-    assert supervisor.game_open(mark, table={7: ("stremio.exe", 1)}) == "Stremio"
+    stremio_in_front = lambda: {"pid": 7, "exe": "stremio.exe", "fullscreen": True, "orbital": False, "idle": 0}  # noqa: E731
+    assert supervisor.game_open(mark, table={7: ("stremio.exe", 1)}, front=stremio_in_front) == "Stremio"
     mark.write_text("{roto")
     assert supervisor.game_open(mark, table={}) == ""
     supervisor.write_busy(None, mark)

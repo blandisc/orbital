@@ -50,6 +50,7 @@ def test_odd_orbital_answers_are_still_speakable(skill, monkeypatch, body):
     answer(skill, monkeypatch, body, {"request": {"type": "IntentRequest", "intent": {"name": "PauseIntent"}}})
 
 
+@pytest.mark.reloj  # mide segundos de reloj: fuera de la pasada antes de actualizar, sí en la CI
 def test_slow_tunnel_answers_before_alexa_gives_up(skill, monkeypatch):
     import time
 

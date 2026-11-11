@@ -7,7 +7,8 @@ import { TONIGHT, today, tonightPick } from "../core/tonight.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
 import { Glyph } from "./glyph.js";
-import { EmptyState, Eyebrow, Veil } from "./ui.js";
+import { DecideHead, DecideModes } from "./decide.js";
+import { EmptyState, Eyebrow } from "./ui.js";
 
 /**
  * «¿Qué vemos hoy?» · Encuentra tu match perfecto, como el iPhone (MatchDeckScreen y MatchCard, «como Tinder», 1 nov 2026): un
@@ -37,16 +38,18 @@ const WAYS = {
   keep: { label: "Guardar", stamp: "Guardar", icon: "heart", glyph: "→" },
 };
 
-export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady }) {
+export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, onClose, onReady, onDecide = null }) {
   const backdrop = h("div", { class: "match__backdrop", "aria-hidden": "true" });
   const saved = h("span", { class: "match__saved", hidden: true });
   const stage = h("div", { class: "match__stage" });
   const actions = h("div", { class: "match__actions" });
-  const el = h("section", { class: "match screen", hidden: true, "aria-label": "¿Qué vemos hoy?" },
+  // D5-A (R2-7): el mazo es la segunda pestaña de Decide, con su mismo encabezado; «Tres que caben» (tocarla, o Q / LB)
+  // regresa a la primera, igual que B.
+  const modes = h("div", { class: "decide__modes", role: "tablist", "aria-label": "Cómo decidir" });
+  DecideModes(modes, { on: 1, onPick: (i) => (i === 0 ? toDecide() : null) });
+  const el = h("section", { class: "match screen", hidden: true, "aria-label": "Decide por mí · Una por una" },
     backdrop,
-    h("header", { class: "match__head" },
-      h("div", { class: "match__titles" }, Eyebrow("Encuentra tu match perfecto", { className: "match__eyebrow" }), h("h1", { class: "match__title" }, "¿Qué vemos hoy?")),
-      saved),
+    h("header", { class: "match__head" }, DecideHead(), modes, saved),
     stage, actions);
 
   let cards = [];
@@ -114,17 +117,18 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     paintActions();
   }
 
-  /** Una carta: el póster de orilla a orilla, su velo, y encima por qué, el nombre, los datos y los géneros (como MatchCard). */
+  /** Una carta: el póster arriba y, debajo (R2-7: ya no encima, tapaba el logo del arte), por qué, el nombre, los datos y los
+   * géneros (como MatchCard). */
   function Card(c, { behind = false } = {}) {
     const length = typeof c.runtime === "number" ? duration(c.runtime * 60) : runtime(c.runtime);
     const facts = [c.year, length, c.kind === "series" ? "Serie" : c.kind === "movie" ? "Película" : null].filter(Boolean).join(" · ");
-    const kinds = genreNames(c.genres || []).slice(0, GENRES);
+    const kinds = genreNames(c.genres || []).slice(0, Math.min(GENRES, 2)); // dos: en un renglón bajo el póster
     const poster = h("img", { class: "match__poster", src: c.image || c.hero || "", alt: "", decoding: "async" });
     poster.addEventListener("error", () => poster.remove(), { once: true });
     if (behind) return h("div", { class: ["match__card", "match__card--behind"], "aria-hidden": "true" }, poster);
     const rating = Number(c.rating) > 0 ? Math.round(Number(c.rating) * 10) : null;
     return h("div", { class: "match__card", role: "button", tabindex: "-1", "aria-label": `${c.title}: ver la ficha`, onClick: () => onOpen?.(c) },
-      poster, Veil("bottom"),
+      poster,
       rating && h("span", { class: "match__rating", "aria-label": `Calificación en Trakt: ${rating} por ciento` },
         h("img", { class: "match__rating-mark", src: "img/ratings/trakt.svg", alt: "" }), `${rating} %`),
       h("div", { class: "match__info" },
@@ -217,6 +221,12 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (card) onPlay?.(card);
   }
 
+  /** A «Tres que caben»: el mazo se cierra y Decide (abierta debajo) queda a la vista. */
+  function toDecide() {
+    if (onDecide) onDecide();
+    else close();
+  }
+
   function close() {
     if (el.hidden) return;
     token++;
@@ -228,6 +238,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
+    if (action === "prevsection") { toDecide(); return true; } // Q / LB: la otra pestaña
     if (action === "left") { decide("pass"); return true; }
     if (action === "right") { decide("keep"); return true; }
     if (action === "up") { decide("tonight"); return true; }
