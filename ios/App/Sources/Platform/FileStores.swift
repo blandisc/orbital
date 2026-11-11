@@ -30,13 +30,15 @@ enum AppFiles {
 }
 
 /// El índice de descargas (sin enlaces: esos van en el Keychain).
+/// Con `StoredFile`, como la biblioteca (F10, 10 nov 2026): un índice dañado ya no se lee como vacío en silencio (y luego se
+/// pisaba, perdiendo de vista las descargas que siguen en disco): se aparta como `downloads.json.corrupt` y queda en la bitácora.
 enum DownloadIndex {
     static func load() -> [DownloadItem] {
-        (try? Data(contentsOf: AppFiles.downloadIndex)).flatMap { try? JSONDecoder().decode([DownloadItem].self, from: $0) } ?? []
+        StoredFile.read([DownloadItem].self, from: AppFiles.downloadIndex, what: "el índice de descargas") ?? []
     }
 
     private static let queue = DispatchQueue(label: "orbital.download-index")
     static func save(_ items: [DownloadItem]) {
-        queue.async { if let data = try? JSONEncoder().encode(items) { try? data.write(to: AppFiles.downloadIndex, options: .atomic) } }
+        queue.async { StoredFile.write(items, to: AppFiles.downloadIndex, what: "el índice de descargas") }
     }
 }

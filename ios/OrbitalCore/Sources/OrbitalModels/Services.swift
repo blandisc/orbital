@@ -66,6 +66,7 @@ public final class Services: ObservableModel {
 
     /// Los sustos de una película (id de IMDb), guardados la primera vez; nil si no hay mapa. El nombre en inglés y el año
     /// salen de Cinemeta (como los escribe el sitio); si no contesta, el que se da.
+    static let savedScaresLimit = 300
     public func scares(imdb: String, fallbackTitle: String) async -> [JumpScare]? {
         let key = "jumpscares.\(imdb)"
         if let data = kv.data(key), let saved = try? JSONDecoder().decode([JumpScare].self, from: data) { return saved.isEmpty ? nil : saved }
@@ -73,7 +74,9 @@ public final class Services: ObservableModel {
         let title = meta?["name"]?.string ?? fallbackTitle
         let year = (meta?["year"]?.string ?? meta?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) }
         let found = await jumpScares.scares(title: title, year: year, imdb: imdb)
-        if let found { kv.set(key, data: try? JSONEncoder().encode(found)) }
+        if let found, let data = try? JSONEncoder().encode(found) {
+            BoundedKeys(store: kv, prefix: "jumpscares", limit: Self.savedScaresLimit).set(key, data: data)   // con tope (F10)
+        }
         return (found?.isEmpty ?? true) ? nil : found
     }
     /// TMDB directo (la ficha rica: elenco, saga, «Más como esto»…); sin clave, `configured` es false.

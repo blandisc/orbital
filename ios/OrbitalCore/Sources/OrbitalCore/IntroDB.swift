@@ -21,6 +21,8 @@ public struct IntroDB: Sendable {
     /// Las marcas ya encontradas, guardadas en el teléfono: una descarga las tiene en el avión (sin red no hay IntroDB) y un
     /// episodio que ya se vio no vuelve a depender de que IntroDB conteste a tiempo.
     let store: KeyValueStore?
+    /// Cuántos videos con marcas se recuerdan (los más recientes).
+    static let savedLimit = 1000
     public init(http: HTTPClient, recent: IntroDBRecent? = nil, store: KeyValueStore? = nil) { self.http = http; self.recent = recent; self.store = store }
 
     /// Las marcas de un video (`tt0944947:1:1` o `tt0133093`); nil sin id de IMDb, sin red o sin marcas.
@@ -28,7 +30,9 @@ public struct IntroDB: Sendable {
         let key = "introdb.\(videoID)"
         if let data = store?.data(key), let saved = try? JSONDecoder().decode(SkipSegments.self, from: data) { return saved }
         let found = if let recent { await recent.shared(videoID) { await self.fetch(videoID: videoID) } } else { await fetch(videoID: videoID) }
-        if let found, let store { store.set(key, data: try? JSONEncoder().encode(found)) }
+        if let found, let store, let data = try? JSONEncoder().encode(found) {
+            BoundedKeys(store: store, prefix: "introdb", limit: Self.savedLimit).set(key, data: data)   // con tope (F10)
+        }
         return found
     }
 
