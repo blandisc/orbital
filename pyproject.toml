@@ -28,10 +28,17 @@ dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
 [project.scripts]
 orbital = "orbital.__main__:main"
 
-[tool.setuptools.packages.find]
-include = ["orbital*"]
+[tool.setuptools]
+# `orbital.design` es la carpeta design/ de la raíz (las tablas que comparten la TV y el iPhone: reglas para elegir versión,
+# errores de Real-Debrid, premios): así entra al paquete sin copiarla (orbital/shared.py la busca en los dos lados). La lista
+# va a mano: tests/test_packaging.py revisa que no falte ningún subpaquete.
+packages = ["orbital", "orbital.api", "orbital.foryou", "orbital.library", "orbital.watch", "orbital.design"]
+
+[tool.setuptools.package-dir]
+"orbital.design" = "design"
 
 [tool.setuptools.package-data]
+"orbital.design" = ["*.json"]
 orbital = ["remote_input_page.html", "web/*.html", "web/js/**/*.js", "web/styles/**/*.css", "web/styles/*.json", "web/icons/*", "web/img/**/*"]
 
 [tool.pytest.ini_options]

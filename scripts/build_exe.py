@@ -36,6 +36,26 @@ start "" "%DEST%\Orbital.exe"
 """
 
 
+def pyinstaller_args(entry: Path, sep: str) -> list[str]:
+    """Lo que se le pasa a PyInstaller (aparte, para que una prueba revise que lleva todo lo que Orbital lee)."""
+    return [
+        str(entry), "--name", "Orbital", "--noconfirm", "--clean", "--windowed",
+        "--icon", str(ROOT / "orbital" / "web" / "icons" / "orbital.ico"),
+        "--paths", str(ROOT),
+        "--add-data", f"{ROOT / 'orbital' / 'web'}{sep}orbital/web",
+        "--add-data", f"{ROOT / 'orbital' / 'remote_input_page.html'}{sep}orbital",
+        # Las tablas compartidas con el iPhone (idiomas para elegir versión, errores de Real-Debrid, premios): sin ellas
+        # el ejecutable no reconoce idiomas ni distingue errores. Van a orbital/design (orbital/shared.py las busca ahí).
+        *[arg for table in sorted((ROOT / "design").glob("*.json")) for arg in ("--add-data", f"{table}{sep}orbital/design")],
+        "--add-data", f"{ROOT / 'alexa'}{sep}alexa",
+        "--collect-submodules", "orbital",
+        "--collect-submodules", "uvicorn",
+        "--collect-submodules", "winrt",  # «Ahora suena» (los controles de medios de Windows)
+        "--distpath", str(ROOT / "dist"), "--workpath", str(ROOT / "build" / "pyinstaller"),
+        "--specpath", str(ROOT / "build"),
+    ]
+
+
 def main() -> None:
     import PyInstaller.__main__
 
@@ -43,19 +63,7 @@ def main() -> None:
     entry.parent.mkdir(exist_ok=True)
     entry.write_text("from orbital.__main__ import main\n\nmain()\n", encoding="utf-8")
     sep = ";" if sys.platform == "win32" else ":"
-    PyInstaller.__main__.run([
-        str(entry), "--name", "Orbital", "--noconfirm", "--clean", "--windowed",
-        "--icon", str(ROOT / "orbital" / "web" / "icons" / "orbital.ico"),
-        "--paths", str(ROOT),
-        "--add-data", f"{ROOT / 'orbital' / 'web'}{sep}orbital/web",
-        "--add-data", f"{ROOT / 'orbital' / 'remote_input_page.html'}{sep}orbital",
-        "--add-data", f"{ROOT / 'alexa'}{sep}alexa",
-        "--collect-submodules", "orbital",
-        "--collect-submodules", "uvicorn",
-        "--collect-submodules", "winrt",  # «Ahora suena» (los controles de medios de Windows)
-        "--distpath", str(ROOT / "dist"), "--workpath", str(ROOT / "build" / "pyinstaller"),
-        "--specpath", str(ROOT / "build"),
-    ])
+    PyInstaller.__main__.run(pyinstaller_args(entry, sep))
     # El reproductor, dentro: Orbital.exe lo busca en su propia carpeta (playback.find_mpv).
     mpv = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv"
     if (mpv / "mpv.exe").exists():

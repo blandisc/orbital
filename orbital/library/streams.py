@@ -28,6 +28,7 @@ from pathlib import Path
 from urllib.parse import quote, urlparse
 
 from ..net import NET_FAILURES
+from ..shared import design_file
 from . import addons, opensubtitles
 from . import subtitles as subtitle_lib
 
@@ -36,7 +37,7 @@ log = logging.getLogger(__name__)
 CACHE_SECONDS = 600
 
 # F2 · las tablas para elegir versión viven en design/streams-rules.json, las mismas que debe leer el iPhone.
-RULES_FILE = Path(__file__).resolve().parents[2] / "design" / "streams-rules.json"
+RULES_FILE = design_file("streams-rules.json")  # desde git o dentro del paquete (shared.py)
 
 
 def load_rules(path: Path = RULES_FILE) -> dict:
@@ -53,20 +54,78 @@ def load_rules(path: Path = RULES_FILE) -> dict:
 RULES = load_rules()
 
 
-def _patterns(name: str) -> list[tuple[re.Pattern, str]]:
-    return [(re.compile(r["pattern"], re.I if "i" in r.get("flags", "") else 0), r["lang"]) for r in RULES.get(name) or []]
+# Un archivo que se lee bien pero trae una regla mal escrita (un patrón inválido, un número que no es número) no puede
+# impedir que Orbital arranque: cada regla se revisa sola; la mala se anota en la bitácora y se usa el respaldo.
+def _bad(where: str, value, exc: Exception | str) -> None:
+    log.error("streams-rules.json: regla inválida en %s (%r): %s; la salto", where, value, exc)
 
 
-_SIZE = RULES.get("size") or {}
-TOO_BIG_GB: dict[str, float] = dict(_SIZE.get("too_big_gb") or {"4K": 60, "1080p": 25})
-TOO_BIG_DEFAULT_GB = float(_SIZE.get("too_big_default_gb", 15))
-SERIES_SIZE_FACTOR = float(_SIZE.get("series_factor", .3))
-TOO_SMALL_GB: dict[str, float] = dict(_SIZE.get("too_small_gb") or {"movie": .7, "series": .12})
-REQUEST_TIMEOUT = float((RULES.get("waits") or {}).get("per_addon_s", 10))
+def _patterns(name: str, rules: dict | None = None) -> list[tuple[re.Pattern, str]]:
+    rows = (RULES if rules is None else rules).get(name) or []
+    if not isinstance(rows, list):
+        _bad(name, rows, "no es una lista")
+        return []
+    out = []
+    for n, r in enumerate(rows):
+        try:
+            flags = r.get("flags", "")
+            lang = r["lang"]
+            if not isinstance(lang, str) or not isinstance(flags, str):
+                raise TypeError("lang y flags van como texto")
+            out.append((re.compile(r["pattern"], re.I if "i" in flags else 0), lang))
+        except (KeyError, TypeError, AttributeError, re.error) as exc:
+            _bad(f"{name}[{n}]", r, exc)
+    return out
+
+
+def _number(section: dict, key: str, default: float) -> float:
+    value = section.get(key, default) if isinstance(section, dict) else default
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        if key in section:
+            _bad(key, value, "no es un número")
+        return float(default)
+    return float(value)
+
+
+def _table(value, default: dict, where: str, kind: type) -> dict:
+    """Un diccionario de la regla con sus valores del tipo pedido, sobre el respaldo: lo que no sirve se salta y su lugar
+    lo toma el valor de respaldo."""
+    if value is None:
+        return dict(default)
+    if not isinstance(value, dict):
+        _bad(where, value, "no es una tabla")
+        return dict(default)
+    out = {}
+    for k, v in value.items():
+        if kind is float:
+            ok = isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0
+        else:
+            ok = isinstance(v, kind)
+        if isinstance(k, str) and ok:
+            out[k] = float(v) if kind is float else v
+        else:
+            _bad(f"{where}.{k}", v, "valor inválido")
+    return {**default, **out}
+
+
+def _section(name: str) -> dict:
+    value = RULES.get(name)
+    if value is not None and not isinstance(value, dict):
+        _bad(name, value, "no es una tabla")
+    return value if isinstance(value, dict) else {}
+
+
+_SIZE = _section("size")
+_WAITS = _section("waits")
+TOO_BIG_GB: dict[str, float] = _table(_SIZE.get("too_big_gb"), {"4K": 60, "1080p": 25}, "size.too_big_gb", float)
+TOO_BIG_DEFAULT_GB = _number(_SIZE, "too_big_default_gb", 15)
+SERIES_SIZE_FACTOR = _number(_SIZE, "series_factor", .3)
+TOO_SMALL_GB: dict[str, float] = _table(_SIZE.get("too_small_gb"), {"movie": .7, "series": .12}, "size.too_small_gb", float)
+REQUEST_TIMEOUT = _number(_WAITS, "per_addon_s", 10)
 
 # Banderas e indicios de idioma en los títulos de Torrentio y compañía. Torrentio solo pone 🇲🇽 cuando el nombre dice
 # latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).
-FLAG_LANG: dict[str, str] = dict(RULES.get("flags") or {})
+FLAG_LANG: dict[str, str] = _table(RULES.get("flags"), {}, "flags", str)
 WORD_LANG = _patterns("words")  # en orden: el primero que coincide de cada idioma
 # Las de WORD_LANG que no se confunden con palabras del título (códigos en mayúsculas, el cirílico): se buscan en todo el
 # nombre; las demás, solo en lo técnico («The Italian Job» no es italiano).
@@ -79,7 +138,7 @@ RELEASE_MARKER = re.compile(
 # «DUBBED» sin idioma (RARBG, GalaxyRG): doblaje al inglés de una película extranjera, no su audio original.
 DUBBED_WORD = re.compile(r"\bdubbed\b", re.I)
 # Sitios de un solo idioma: lo que suben ahí va doblado a ese idioma (MejorTorrent = castellano, Cinecalidad = latino).
-SITE_LANG: dict[str, str] = dict(RULES.get("sites") or {})
+SITE_LANG: dict[str, str] = _table(RULES.get("sites"), {}, "sites", str)
 # Lo que va después de esto en un nombre es la lista de SUBTÍTULOS, no de audio: «[Multiple Subtitle] [ENG][SPA-LA]»,
 # «sub ita.eng», «Lektor i napisy PL».
 SUBS_FROM = re.compile(
@@ -220,7 +279,7 @@ def _size_number(text: str) -> float:
         return 0.0
 
 
-FIND_DEADLINE = float((RULES.get("waits") or {}).get("find_deadline_s", 8.0))  # s para juntar fuentes: lo que llegó, se usa
+FIND_DEADLINE = _number(_WAITS, "find_deadline_s", 8.0)  # s para juntar fuentes: lo que llegó, se usa
 CACHE_MAX = 200
 RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
 def stable_index(addon_url: str, stream: dict) -> int:

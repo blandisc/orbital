@@ -23,6 +23,7 @@ from ..library import stremio_api
 from ..library import tmdb as tmdb_api
 from ..library import trakt as trakt_api
 from ..net import NET_FAILURES
+from ..shared import design_file
 
 log = logging.getLogger("orbital.foryou")  # el mismo nombre de siempre: la bitácora no cambia
 
@@ -91,7 +92,7 @@ TRAKT_FAVORITES = "trakt-favorites"
 # credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
 # Películas y series (como Para ti › Listas del iPhone): premios fijos, «Nuevo en tus plataformas», estudios, género,
 # temporada y por año.
-AWARDS_FILE = Path(__file__).resolve().parents[2] / "design" / "awards.json"  # compartido con el iPhone
+AWARDS_FILE = design_file("awards.json")  # compartido con el iPhone (también empaquetado)
 
 AWARD_TINTS = ("gold", "silver", "bronze")
 
