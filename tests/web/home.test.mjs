@@ -131,13 +131,16 @@ test("«+N nuevos» se apaga en cuanto entras a esa consola (no espera los 7 dí
   assert.equal(buildHome([{ ...row, opened: 1000 }]).consoles[0].fresh, 0);
 });
 
-test("D4-B: Seguir viendo (lo que tienes a medias) y Mi lista van en el Inicio; sin internet, no", () => {
-  const watching = [show, { id: "stremio:tt2", title: "Dune", source: "stremio", category: "continue", progress: .3, extra: { kind: "movie" } }];
+test("P4: una sola fila «A continuación»: lo que tienes a medias que no cupo va después, una vez; Mi lista aparte", () => {
+  const dune = { id: "stremio:tt2", title: "Dune", source: "stremio", category: "continue", progress: .3, extra: { kind: "movie" } };
   const mine = [{ id: "cinemeta:movie:tt3", title: "Oppenheimer", source: "cinemeta", meta_id: "tt3", extra: { meta_id: "tt3" } }, { title: "sin id" }];
-  const home = buildHome([...rows, { id: "continue", items: [...watching, game("mario", "switch")] }], { mylist: mine });
-  assert.deepEqual(home.watching.map((i) => i.id), ["stremio:tt1", "stremio:tt2"]); // un juego no es «Seguir viendo»
+  const home = buildHome([...rows, { id: "continue", items: [show, dune, game("mario", "switch")] }], { mylist: mine });
+  assert.equal(home.feature.id, "stremio:tt1");
+  // los cuatro de siempre y Dune al final; The Simpsons ya está arriba y un juego no es «a medias»
+  assert.deepEqual(home.cards.map((c) => c.id), ["mario", "pikmin", "a", "b", "stremio:tt2"]);
+  assert.equal(home.watching, undefined); // ya no hay fila «Seguir viendo» en el Inicio
   assert.deepEqual(home.mylist.map((i) => i.title), ["Oppenheimer"]); // sin id de la ficha no se puede abrir: fuera
-  const offline = buildHome([...rows, { id: "continue", items: watching }], { mylist: mine, offline: true });
-  assert.equal(offline.watching.length + offline.mylist.length, 0);
-  assert.equal(buildHome(rows).watching.length, 0); // sin la fila «continue», vacía (la fila no se ve)
+  const offline = buildHome([...rows, { id: "continue", items: [show, dune] }], { mylist: mine, offline: true });
+  assert.ok(!offline.cards.some((c) => c.id === "stremio:tt2"));
+  assert.equal(offline.mylist.length, 0);
 });

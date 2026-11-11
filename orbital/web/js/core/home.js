@@ -4,7 +4,9 @@
  *   · destacado: lo último que jugaste o viste (lo abierto, primero); al bajar por la lista de la
  *     derecha, el destacado enseña lo enfocado;
  *   · a la derecha («Continuar»): lo que sigue de esa lista, sin repetir el destacado;
- *   · Seguir viendo: las películas y series a medias (la fila «continue» de la biblioteca, lo más reciente primero);
+ *     Una sola fila «A continuación» (P4, Fernando, 10 nov 2026): juegos, películas y series por lo último que usaste,
+ *     cada cosa una vez; lo que tienes a medias y no cupo entre lo último (la fila «continue») va después. Ya no hay
+ *     «Seguir viendo» aparte en el Inicio: repetía lo mismo (en Películas y series sigue);
  *   · Mi lista: tu watchlist de Trakt (o Mi lista de Stremio), la misma de Películas y series (D4-B, 10 nov 2026);
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
@@ -133,6 +135,15 @@ export const ROW_LIMIT = 20;
 const HALFWAY_DAYS = 3; // un episodio que dejaste hace más ya no le gana al juego de hoy
 const recent = (item, now) => !item.last_played || now / 1000 - item.last_played < HALFWAY_DAYS * 86400;
 
+/** Una sola vez cada cosa (la serie a medias y su episodio siguiente, un juego en dos consolas). */
+const unique = (items) => items.filter((item, i) => items.findIndex((o) => sameAs(o, item)) === i);
+
+/** Lo que tienes a medias (la fila «continue», lo más reciente primero) que no está ya entre lo último. Sin internet, nada. */
+function halfwayRest(rows, ordered, offline) {
+  if (offline) return [];
+  return (rows.find((r) => r.id === "continue")?.items ?? []).filter((item) => isWatchable(item) && !ordered.some((o) => sameAs(o, item)));
+}
+
 export function buildHome(rows, { runningId = null, now = Date.now(), offline = false, mylist = [] } = {}) {
   const jump = rows.find((r) => r.id === "jump")?.items ?? [];
   const favorites = rows.find((r) => r.id === "favorites")?.items ?? [];
@@ -151,11 +162,8 @@ export function buildHome(rows, { runningId = null, now = Date.now(), offline = 
     pending: jump.length,
     pendingItems: jump,
     feature: ordered[0] ?? null,
-    cards: ordered.slice(1).filter((item, i, rest) => !sameAs(item, ordered[0]) && rest.findIndex((o) => sameAs(o, item)) === i)
-      .slice(0, CARDS),
-    // Seguir viendo: todo lo que tienes a medias (aunque lo de arriba ya enseñe el más reciente: aquí está la lista entera,
-    // como en Películas y series). Sin internet no se ve nada de esto: la fila se va.
-    watching: offline ? [] : (rows.find((r) => r.id === "continue")?.items ?? []).filter(isWatchable).slice(0, ROW_LIMIT),
+    cards: unique([...ordered.slice(1).filter((item) => !sameAs(item, ordered[0])).slice(0, CARDS), ...halfwayRest(rows, ordered, offline)])
+      .slice(0, ROW_LIMIT - 1),
     mylist: offline ? [] : mylist.filter((item) => item && (item.meta_id || item.extra?.meta_id)).slice(0, ROW_LIMIT),
     consoles: list,
     games: list.reduce((n, c) => n + c.count, 0),

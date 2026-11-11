@@ -52,7 +52,7 @@
 .home__track { display: flex; align-items: flex-end; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* «A continuación»: tarjetas anchas (16:9) con su logo y su avance; la enfocada crece y dice su nombre debajo. */
 .home__viewport--card { --row-grow: calc(8.4rem * .1); }
-.home__viewport--watch, .home__viewport--mine { --row-grow: calc(9.6rem * .1); }
+.home__viewport--mine { --row-grow: calc(9.6rem * .1); }
 .home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-3); /* lo que crece la enfocada */ }
 .home__track--upnext .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 

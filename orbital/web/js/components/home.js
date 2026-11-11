@@ -10,7 +10,8 @@ import { SectionHead } from "./ui.js";
 /**
  * Inicio, como el Apple TV (Fernando, 31 oct 2026, dirección B «A continuación»; D4-B, 10 nov 2026): arriba, lo enfocado a
  * pantalla completa —su arte lo pone el fondo— con su porqué, su logo, su dato y sus botones; abajo, las filas de lo tuyo:
- * «A continuación» (tarjetas anchas con su avance), «Seguir viendo» y «Mi lista» (portadas) y Tus consolas. Lo de arriba
+ * «A continuación» (tarjetas anchas con su avance: juegos, películas y series juntos, una vez cada cosa; P4, 10 nov 2026: ya
+ * no hay «Seguir viendo» aparte, repetía lo mismo), «Mi lista» (portadas) y Tus consolas. Lo de arriba
  * sigue al foco en todas las filas (un episodio, una película de Mi lista, una consola con sus juegos y el último que
  * jugaste) y se queda quieto bajo la barra: al bajar, las filas suben y la enfocada queda justo debajo de lo de arriba, con
  * la siguiente asomando. El foco se mueve por filas (↑↓ recuerdan dónde ibas en cada una; ← → dentro de la fila); LT/RT
@@ -30,10 +31,9 @@ function emptyFeature(hasGames, hidden = 0) {
     h("span", { class: "feature-hero__detail" }, detail));
 }
 
-/** Las filas del Inicio, de arriba abajo: la clave es el prefijo de su foco («card:3», «watch:0»…). */
+/** Las filas del Inicio, de arriba abajo: la clave es el prefijo de su foco («card:3», «mine:0»…). */
 const ROWS = [
   { key: "card", track: "home__track--upnext" },
-  { key: "watch", track: "home__track--posters" },
   { key: "mine", track: "home__track--posters" },
   { key: "console", track: "home__track--consoles", row: "home__consoles" },
 ];
@@ -119,7 +119,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     queue.forEach((item) => { const src = item.hero || item.image; if (src) new Image().src = src; });
 
     // Lo tuyo de películas y series (D4-B): las mismas portadas de Películas y series; el nombre lo dice lo de arriba.
-    for (const [key, title, items, extra] of [["watch", "Seguir viendo", model.watching, {}], ["mine", "Mi lista", model.mylist, { list: mylistEdit }]]) {
+    for (const [key, title, items, extra] of [["mine", "Mi lista", model.mylist, { list: mylistEdit }]]) {
       fill(rowOf[key], items.length > 0 && SectionHead(title), items.map((item, i) => {
         targets.set(`${key}:${i}`, { kind: "item", item, ...extra });
         const card = Card(item, { onPress: pick(`${key}:${i}`) });
