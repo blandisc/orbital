@@ -144,7 +144,7 @@
    su propio color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .is-focused.card {
   transform: translateY(-.35rem) scale(var(--card-focus-scale));
-  margin-right: calc(var(--card-height) * var(--ratio, .667) * (var(--card-focus-scale) - 1)); /* ds-exception: margen que deja lugar al foco */
+  margin-right: calc(var(--card-height) * var(--ratio, .667) * (var(--card-focus-scale) - 1)); /* ds-exception: margen que deja lugar al foco. Medido (revisión 2, 17a, 11 nov): 72 saltos de foco con la CPU a 1/4 → layout 0,12–0,16 s en total contra 1,4–1,6 s de estilos; quitar la transición del margen no cambia nada, así que se queda */
   box-shadow: var(--focus-lift), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--art-accent) 38%, transparent);
   transition:
     transform var(--duration-snap) var(--ease-pop), margin var(--duration-base) var(--ease-out),
