@@ -35,24 +35,14 @@ extension DesignRulesTests {
         "TorrentioSettings+Opciones.swift": "Ajustes › Torrentio (instantStreams)",
         "VoiceGuideView.swift": "la voz de la TV (console)",
         "OrbitalIntents.swift": "atajos de Siri de la TV (console; las frases se compilan por versión)",
+        "Explainer.swift": "«¿Qué es esto?» de la nube: solo lo abren pantallas con instantStreams (y el fallo del reproductor, con `instant`)",
+        "DownloadSpeedTest.swift": "la prueba de velocidad mide a Real-Debrid: Ajustes › Descargas solo la ofrece con instantStreams",
+        "DownloadSpeedTestView.swift": "la prueba de velocidad mide a Real-Debrid: Ajustes › Descargas solo la ofrece con instantStreams",
     ]
 
-    /// Lo que todavía se cuela en pantallas compartidas (archivo y un pedazo del texto). Pendiente de D1-B: cada uno
-    /// necesita su texto para la versión Orbital. Solo puede encogerse.
-    static let stillLeaks: [(file: String, text: String)] = [
-        ("Explainer.swift", "Real-Debrid"), ("Explainer.swift", "complementos"), ("Explainer.swift", "Torrentio"),
-        ("Guide.swift", "Usa tu Real-Debrid"),
-        ("PlayerFailureView.swift", "Tus complementos no contestan"), ("PlayerFailureView.swift", "Real-Debrid aún no tiene"),
-        ("VersionList.swift", "Real-Debrid no lo dejó bajar"),
-        ("OpenSubtitlesSettings.swift", "complemento de siempre"),
-        ("ParaTiPieces.swift", "De tus complementos"),
-        ("PlayerScreen.swift", "Real-Debrid aún no tiene esta versión"),
-        ("SettingsView.swift", "la consola Orbital"), ("SettingsView.swift", "Real-Debrid"),
-        ("SourcesSheet.swift", "Torrentio"),
-        ("TitleView+Acciones.swift", "Tus complementos no contestan"),
-        ("OnboardingChoose.swift", "Real-Debrid"),
-        ("DownloadSpeedTest.swift", "Real-Debrid"), ("DownloadSpeedTestView.swift", "Real-Debrid"),
-    ]
+    /// Lo que todavía se cuela en pantallas compartidas (archivo y un pedazo del texto). Vacía desde el 11 nov (D1-B): cada
+    /// texto tiene ya su versión para Orbital. Solo puede encogerse.
+    static let stillLeaks: [(file: String, text: String)] = []
 
     func testOrbitalEditionNeverNamesTheCloudOrTheConsole() throws {
         let files = try sources([""])

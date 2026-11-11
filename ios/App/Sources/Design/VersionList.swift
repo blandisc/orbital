@@ -77,7 +77,7 @@ struct VersionMark: Equatable {
             marks.append(VersionMark(symbol: DS.Symbol.otherTitle, color: DS.textMuted, words: tr("¿Otro título? El nombre dice otro año: puede ser otra película."), tip: true))
         }
         if option.refused {
-            marks.append(VersionMark(symbol: DebridRequestWords.Icon.refused, color: DS.warning, words: tr("Real-Debrid no lo dejó bajar")))
+            marks.append(VersionMark(symbol: DebridRequestWords.Icon.refused, color: DS.warning, words: tr("Real-Debrid no lo dejó bajar")))   // edición: un rechazo solo existe con pedidos a la nube (instantStreams)
         } else if option.speed == .realDebridMustDownload, let cloud {
             marks.append(VersionMark(symbol: cloud.symbol, color: cloud.warn ? DS.warning : DS.textMuted, words: cloud.title))
         } else if option.speed == .realDebridMustDownload {

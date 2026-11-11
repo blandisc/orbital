@@ -519,7 +519,7 @@ struct PlayerScreen: View {
         let _ = BodyCount.tick("player", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = holder.model
         tracked(model)   // en partes (`dressed`, `alive`, `tracked`): de una pieza, el Swift de la CI no la revisaba a tiempo
-        .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {
+        .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {   // edición: solo al elegir una por pedir (instantStreams)
             Button("Abrirla de todos modos") {
                 if let index = dockState.slowPick { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }; Task { await model.switchSource(to: index) } }
                 dockState.slowPick = nil

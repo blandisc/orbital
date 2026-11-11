@@ -39,6 +39,8 @@ struct PlayerFailureView: View {
     /// «Ajustes» de los avisos del iPhone, cuando están apagados (un problema siempre trae su arreglo).
     var openNotificationSettings: (() -> Void)? = nil
     let close: () -> Void
+    /// ¿Esta versión ve al instante (Real-Debrid y complementos)? Sin eso (Orbital, App Store), los textos no los nombran.
+    var instant = true
     /// «¿Qué es esto?» (O2), en las causas de Real-Debrid.
     @State private var explaining = false
 
@@ -101,7 +103,7 @@ struct PlayerFailureView: View {
                 } else {
                     option(Text("Cerrar"), primary: true, action: close)
                 }
-                if aboutDebrid {
+                if aboutDebrid, instant {
                     Button { explaining = true } label: { Text("¿Qué es esto?").font(DS.TextRecipe.label.font).frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget) }
                         .buttonStyle(.borderless).tint(DS.accent)
                         .accessibilityIdentifier("player-debrid-explain")
@@ -158,7 +160,7 @@ struct PlayerFailureView: View {
         case .noSources: Text("Todavía no hay dónde verlo")
         case .noneWorked: Text("No pude reproducirlo")
         case .sourceDied: Text("Se cortó el video")
-        case .network: online ? Text("Tus complementos no contestan") : Text("Sin conexión")
+        case .network: !online ? Text("Sin conexión") : instant ? Text("Tus complementos no contestan") : Text("La búsqueda de versiones no contesta")   // edición: el primero solo con instantStreams
         case .localFile: Text("No se puede abrir la descarga")
         }
     }
@@ -176,8 +178,9 @@ struct PlayerFailureView: View {
         }
         if cause != nil { return Text(verbatim: "") }
         return switch failure {
-        case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
-            : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")
+        case .noSources where !instant: isEpisode ? Text("Aún no hay versiones de este episodio. Prueba más tarde.") : Text("Aún no hay versiones de esta película. Prueba más tarde.")
+        case .noSources: isEpisode ? Text("Real-Debrid aún no tiene este episodio. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")   // edición: solo con instantStreams (arriba, el de Orbital)
+            : Text("Real-Debrid aún no tiene esta película. Los estrenos suelen aparecer unas horas después; vuelve a intentarlo más tarde.")   // edición: solo con instantStreams
         case .noneWorked: Text("Probamos las versiones que hay y ninguna respondió. A veces es momentáneo.")
         case .sourceDied: Text("La versión dejó de responder. Al reintentar seguimos donde ibas, con otra si hace falta.")
         case .network: online ? Text("Hay internet, pero ninguno respondió. Suele ser momentáneo; intenta de nuevo en un rato.")

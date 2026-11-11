@@ -169,7 +169,7 @@ extension TitleView {
         let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
         let spoken = model.recommendedSource.map { [languageName].compactMap { $0 } + $0.qualitySummary } ?? []
         let cause = model.unavailableCause.map { Text(verbatim: $0.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }) }
-        let version: Text = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (env.isOnline ? Text("Tus complementos no contestan") : Text("Sin conexión"))
+        let version: Text = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (!env.isOnline ? Text("Sin conexión") : model.offersInstant ? Text("Tus complementos no contestan") : Text("La búsqueda de versiones no contesta"))   // edición: el primero solo con instantStreams
             : Text.withFlagImages(quality.joined(separator: " · "))
         let pending = model.sourceCheck != .none && model.sourceCheck != .offline && quality.isEmpty
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil

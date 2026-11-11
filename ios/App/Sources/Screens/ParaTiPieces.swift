@@ -170,7 +170,7 @@ func badgeSymbol(_ badge: PosterBadge) -> String? {
     case "trend": return Text("Lo más visto esta semana en Trakt")
     case "popular": return Text("De todos los tiempos")
     case "critics": return Text("Películas y series recientes con buena crítica")
-    default: return plan.style == .platform ? Text("Lo más popular") : plan.id.hasPrefix("addon:") ? Text("De tus complementos") : Text("Una lista para ti")
+    default: return plan.style == .platform ? Text("Lo más popular") : plan.id.hasPrefix("addon:") ? addonEyebrow : Text("Una lista para ti")
     }
 }
 
@@ -215,3 +215,8 @@ struct PlanPoster: View {
     }
 }
 
+
+/// Las listas que traen tus complementos: sin ellos en esta versión (Orbital, App Store), no se nombran.
+@MainActor private var addonEyebrow: Text {
+    AppEnvironment.shared.services.capabilities.instantStreams ? Text("De tus complementos") : Text("De tus listas")   // edición: el primero solo con instantStreams
+}

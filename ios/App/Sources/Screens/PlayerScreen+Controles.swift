@@ -27,7 +27,8 @@ extension PlayerScreen {
                               request: model.debridRequests?.canRequest == true ? { Task { await requestFromPlayer(model) } } : nil,
                               notifyAnswer: notices.notifyAnswer.flatMap { $0.videoID == model.request?.videoID ? $0.answer : nil },
                               openNotificationSettings: { DebridRequestNotifier.openSystemSettings() },
-                              close: { Task { await close() } })
+                              close: { Task { await close() } },
+                              instant: env.services.capabilities.instantStreams)
                 .accessibilityHint(Text(verbatim: env.message(message)))
         default:
             // Con o sin controles, la misma ruedita en el mismo lugar (antes, con controles, brincaba al botón grande).

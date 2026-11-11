@@ -180,26 +180,6 @@ struct GuideCode: View {
     }
 }
 
-/// Un complemento: su nombre y, debajo, qué aporta («Usa tu Real-Debrid», «Subtítulos») y si se importó.
-struct AddonLabel: View {
-    let name: String
-    let usesDebrid: Bool
-    let subtitles: Bool
-    let imported: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text(verbatim: name).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
-            detail.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-        }
-    }
-
-    private var detail: Text {
-        let what = usesDebrid ? Text("Usa tu Real-Debrid") : subtitles ? Text("Subtítulos") : Text("Fuentes y listas")
-        return imported ? Text("\(what) · \(Text("Importado"))") : what
-    }
-}
-
 /// La ilustración de una página del tutorial de Orbital: un recuadro con un ícono grande en su color y, si hace falta, lo
 /// que se toca de verdad debajo (los botones «Ver» y «Ver en la TV»).
 struct GuideArt<Detail: View>: View {

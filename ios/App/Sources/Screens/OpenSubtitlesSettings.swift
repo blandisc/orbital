@@ -35,7 +35,10 @@ struct OpenSubtitlesSettings: View {
             if model.connected {
                 Section {
                     Button("Desconectar OpenSubtitles", role: .destructive) { confirmDisconnect = true }
-                } footer: { Text("Sin tu cuenta, los subtítulos vuelven a salir del complemento de siempre (menos opciones).") }
+                } footer: {
+                    if env.services.capabilities.instantStreams { Text("Sin tu cuenta, los subtítulos vuelven a salir del complemento de siempre (menos opciones).") }   // edición: solo con instantStreams
+                    else { Text("Sin tu cuenta, los subtítulos vuelven a salir de los de siempre (menos opciones).") }
+                }
             }
         }
         .tint(DS.accent)

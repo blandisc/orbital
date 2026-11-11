@@ -323,12 +323,16 @@ struct SourcesSheet: View {
 
 /// Qué quiere decir cada etiqueta de las fuentes, en corto.
 struct SourcesGlossary: View {
-    private let entries: [(String, LocalizedStringKey, LocalizedStringKey)] = [
+    /// La marca de Torrentio y Comet solo donde hay complementos (D1-B).
+    private var entries: [(String, LocalizedStringKey, LocalizedStringKey)] {
+        AppEnvironment.shared.services.capabilities.instantStreams ? Self.all : Self.all.filter { $0.0 != "t.circle" }
+    }
+    private static let all: [(String, LocalizedStringKey, LocalizedStringKey)] = [
         ("sparkles", "Recomendada", "La que elegimos por calidad, idioma y tamaño. Es la que arranca sola."),
         ("bolt.fill", "Al instante", "Ya está en la nube: empieza sin esperar."),
         (DS.Symbol.cloud, "Hay que pedirla", "Aún no está en la nube: tocarla la pide y te avisamos cuando llegue."),
         ("info.circle", "Tal vez", "Hay pistas del idioma, pero no seguras. Mantén presionado para ver por qué."),
-        ("t.circle", "Torrentio · Comet", "De qué complemento viene: Ⓣ Torrentio y Ⓒ Comet. Las de otros complementos no llevan marca."),
+        ("t.circle", "Torrentio · Comet", "De qué complemento viene: Ⓣ Torrentio y Ⓒ Comet. Las de otros complementos no llevan marca."),   // edición: se quita sin instantStreams (`entries`)
         ("4k.tv", "4K · 1080p · 720p", "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido."),
         ("sun.max", "HDR · DV", "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce."),
         ("hifispeaker.2", "Atmos · 5.1", "Sonido envolvente. Con audífonos AirPods, Atmos se oye espacial."),

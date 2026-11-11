@@ -168,7 +168,7 @@ struct OnboardingHave: View {
 
     static func words(_ piece: OnboardingModel.Piece) -> (symbol: String, tint: Color, title: LocalizedStringKey, detail: LocalizedStringKey) {
         switch piece {
-        case .debrid: ("cloud.fill", DS.ListTint.flame, "Real-Debrid", "Para ver aquí mismo, al instante.")
+        case .debrid: ("cloud.fill", DS.ListTint.flame, "Real-Debrid", "Para ver aquí mismo, al instante.")   // edición: la pieza solo sale con `offersDebrid` (instantStreams)
         case .trakt: ("checkmark.seal.fill", DS.ListTint.chart, "Trakt", "Tu avance, en todos tus aparatos. Gratis.")
         case .tv: ("tv.fill", DS.ListTint.series, "Orbital en la TV", "Tu iPhone como su control.")
         }

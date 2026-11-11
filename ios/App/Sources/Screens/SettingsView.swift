@@ -241,7 +241,7 @@ struct SettingsView: View {
             }
         } header: { Text("Orbital en la TV") } footer: {
             on ? Text("Apágalo cuando quieras: la app vuelve a ser solo del iPhone. Lo que viste sigue en Trakt.")
-               : Text("¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle.")
+               : Text("¿Tienes la consola Orbital en tu TV? Prende esto para mandarle lo que ves, usar el iPhone de control y hablarle.")   // edición: la sección solo existe con `settingsEntries.orbital` (console)
         }
         .listRowBackground(DS.surface)
         .onChange(of: on) { _, now in ReleaseNotifier.registerCategory(language: model.settings.uiLanguage, tv: now) }
@@ -260,7 +260,7 @@ struct SettingsView: View {
     private func connections(_ model: SettingsModel) -> Text {
         var parts: [String] = []
         if case .linked = model.trakt { parts.append("Trakt") }
-        if debrid.model.hasToken, env.services.settingsEntries.realDebrid { parts.append("Real-Debrid") }
+        if debrid.model.hasToken, env.services.settingsEntries.realDebrid { parts.append("Real-Debrid") }   // edición: solo con `settingsEntries.realDebrid`
         if env.services.orbital.isConfigured { parts.append("Orbital") }
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
         return Text("Conectado: \(parts.joined(separator: " · "))")
@@ -313,12 +313,13 @@ struct SettingsView: View {
         }
         .listRowBackground(DS.surface)
         // R8, R9-B: el mismo nombre y el mismo momento que en la TV (Ajustes › Ver › «Pedir solo el siguiente episodio»).
-        Section {
+        // Solo donde hay nube (D1-B: Orbital, de la App Store, no pide a Real-Debrid).
+        if env.services.capabilities.instantStreams { Section {
             DSToggleRow("Pedir solo el siguiente episodio", detail: "Si la nube aún no lo tiene, se lo pide 3 min antes del final del que ves.",
                         isOn: Binding(get: { s.autoRequestNextEpisode }, set: { v in model.update { $0.autoRequestNextEpisode = v } }))
                 .accessibilityIdentifier("settings-auto-request-next")
-        } header: { Text(verbatim: "Real-Debrid") }
-        .listRowBackground(DS.surface)
+        } header: { Text(verbatim: "Real-Debrid") }   // edición: solo con instantStreams
+        .listRowBackground(DS.surface) }
     }
 
     @ViewBuilder private func downloads(_ model: SettingsModel) -> some View {
@@ -330,13 +331,16 @@ struct SettingsView: View {
             Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
         }
         .listRowBackground(DS.surface)
-        Section {
-            NavigationLink { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
-                .accessibilityIdentifier("speed-test")
-        } footer: {
-            Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.")
+        // La prueba mide a Real-Debrid: solo donde hay nube (D1-B).
+        if env.services.capabilities.instantStreams {
+            Section {
+                NavigationLink { DownloadSpeedTestView() } label: { Label("Probar la velocidad", systemImage: "speedometer") }
+                    .accessibilityIdentifier("speed-test")
+            } footer: {
+                Text("Si las descargas van lentas: mide tu internet, Real-Debrid y la forma en que baja la app.")   // edición: solo con instantStreams
+            }
+            .listRowBackground(DS.surface)
         }
-        .listRowBackground(DS.surface)
     }
 
     /// «Ya salió»: un aviso en cuanto sale un episodio de lo que sigues en Trakt (tenga o no ya fuente en Real-Debrid).
@@ -355,7 +359,11 @@ struct SettingsView: View {
             }))
             .accessibilityIdentifier("release-alerts")
         } footer: {
-            Text("De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")
+            if env.services.capabilities.instantStreams {
+                Text("De las series que sigues en Trakt. Te avisa en cuanto sale, aunque Real-Debrid todavía no lo tenga, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")   // edición: solo con instantStreams
+            } else {
+                Text("De las series que sigues en Trakt. Te avisa en cuanto sale. De las 23 a las 8 el aviso espera a la mañana; cada episodio llega en su propio aviso.")
+            }
         }
         .listRowBackground(DS.surface)
         // Lo que cuenta es tu sesión de Trakt en el iPhone. Antes se pedía el Client ID de Ajustes, que quedó vacío desde que
