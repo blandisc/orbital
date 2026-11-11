@@ -14,6 +14,8 @@ import re
 import struct
 from pathlib import Path
 
+from ..atomic import atomic_write_text
+
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
 # Respaldo para lo que no tiene arte (generado con Grok Imagine): siempre hay una imagen.
 PLACEHOLDER_DIR = Path(__file__).resolve().parents[1] / "web" / "img" / "placeholders"
@@ -147,8 +149,8 @@ class MediaStore:
 
     def save_meta(self, system: str, key: str, data: dict) -> None:
         path = self.root / system / "meta" / f"{key}.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        # La ficha se vuelve a bajar si falta: sin fsync (se guardan muchas seguidas al buscar el arte).
+        atomic_write_text(path, json.dumps(data, ensure_ascii=False, indent=1), durable=False)
 
     # Lo que no te gustó: no se vuelve a poner aunque una fuente lo ofrezca otra vez.
     def _rejected_file(self) -> Path:
@@ -168,7 +170,7 @@ class MediaStore:
         if url not in data[f"{system}/{key}/{kind}"]:
             data[f"{system}/{key}/{kind}"].append(url)
         self.root.mkdir(parents=True, exist_ok=True)
-        self._rejected_file().write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        atomic_write_text(self._rejected_file(), json.dumps(data, ensure_ascii=False, indent=1))
 
     def unreject(self, system: str, key: str, kind: str, values: list[str]) -> None:
         """Deshace un rechazo (no se encontró otra imagen: la de antes se queda, o la elegiste tú a mano)."""
@@ -181,7 +183,7 @@ class MediaStore:
             data[slot] = kept
         else:
             data.pop(slot, None)
-        self._rejected_file().write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        atomic_write_text(self._rejected_file(), json.dumps(data, ensure_ascii=False, indent=1))
 
     def is_rejected(self, system: str, key: str, kind: str, url: str) -> bool:
         return url in self.rejected().get(f"{system}/{key}/{kind}", [])

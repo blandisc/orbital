@@ -16,6 +16,8 @@ import re
 import sys
 from pathlib import Path
 
+from .atomic import atomic_write_text
+
 log = logging.getLogger(__name__)
 
 # Zona de Windows -> zona IANA (la que entienden los emuladores). Lo que no esté aquí: «Etc/GMT±N» por la diferencia.
@@ -67,7 +69,7 @@ def sync_ryujinx(config: Path, zone: str) -> bool:
         return False
     data.update(want)
     try:
-        config.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_text(config, json.dumps(data, indent=2, ensure_ascii=False))
     except OSError as exc:
         log.info("No pude poner la hora de Ryujinx en %s: %s", config, exc)
         return False
@@ -86,7 +88,7 @@ def sync_yuzu(config: Path) -> bool:
     if fixed == text:
         return False
     try:
-        config.write_text(fixed, encoding="utf-8")
+        atomic_write_text(config, fixed)
     except OSError as exc:
         log.info("No pude poner la hora de %s: %s", config, exc)
         return False

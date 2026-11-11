@@ -22,6 +22,8 @@ import re
 import shutil
 from pathlib import Path
 
+from .atomic import atomic_write_text
+
 log = logging.getLogger(__name__)
 
 Device = tuple[int, int]  # (marca, modelo): VendorId y ProductId del control
@@ -168,7 +170,7 @@ def arrange_eden(config: Path, order: list[Device], versions: dict[Device, int] 
         return False
     try:
         _backup(config)
-        config.write_text(newline.join(lines[:start] + section + lines[end:]) + newline, encoding="utf-8")
+        atomic_write_text(config, newline.join(lines[:start] + section + lines[end:]) + newline)
     except OSError as exc:
         log.info("No pude acomodar los controles de %s: %s", config, exc)
         return False
@@ -257,7 +259,7 @@ def arrange_ryujinx(config: Path, order: list[Device], profiles: dict[Device, di
     data["input_config"] = wanted
     try:
         _backup(config)
-        config.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_text(config, json.dumps(data, indent=2, ensure_ascii=False))
     except OSError as exc:
         log.info("No pude acomodar los controles de %s: %s", config, exc)
         return False
@@ -331,7 +333,7 @@ def dolphin_borderless(config_dir: Path) -> bool:
     try:
         if path.exists():
             _backup(path)
-        path.write_text(_ini_set(text, "Settings", "BorderlessFullscreen", "True"), encoding="utf-8")
+        atomic_write_text(path, _ini_set(text, "Settings", "BorderlessFullscreen", "True"))
     except OSError:
         return False
     return True
@@ -363,7 +365,7 @@ def arrange_dolphin(config_dir: Path, slots: list[int]) -> int:
                 new = _ini_set(new, section.format(n=n), "Device", f"XInput/{slot}/Gamepad")
         if new != text:
             _backup(path)
-            path.write_text(new, encoding="utf-8")
+            atomic_write_text(path, new)
             changed += 1
     main = config_dir / "Dolphin.ini"
     try:
@@ -376,7 +378,7 @@ def arrange_dolphin(config_dir: Path, slots: list[int]) -> int:
             new = _ini_set(new, "Core", f"SIDevice{n}", SI_STANDARD)
     if new != text:
         _backup(main)
-        main.write_text(new, encoding="utf-8")
+        atomic_write_text(main, new)
         changed += 1
     return changed
 

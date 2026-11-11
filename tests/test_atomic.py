@@ -91,3 +91,16 @@ def test_credentials_stay_private(tmp_path):
     creds.set("a", "1")
     creds.set("a", "2")
     assert path.stat().st_mode & 0o777 == 0o600 and backup_path(path).stat().st_mode & 0o777 == 0o600
+
+
+def test_atomic_text_writes_the_same_bytes_as_write_text(tmp_path, monkeypatch):
+    """Las configuraciones de los emuladores pasan a atómico sin cambiar ni un byte (en Windows, «\\r\\n» como antes)."""
+    text = "[Settings]\nBorderlessFullscreen = True\n\n[Core]\nSIDevice0 = 6\n"
+    plain, safe = tmp_path / "a.ini", tmp_path / "b.ini"
+    plain.write_text(text, encoding="utf-8")
+    atomic.atomic_write_text(safe, text)
+    assert safe.read_bytes() == plain.read_bytes()
+    monkeypatch.setattr(atomic.os, "linesep", "\r\n")
+    atomic.atomic_write_text(safe, text)
+    assert safe.read_bytes() == text.replace("\n", "\r\n").encode("utf-8")
+    assert not atomic.tmp_path(safe).exists()

@@ -54,6 +54,12 @@ def atomic_write(path: Path, data: str | bytes, *, encoding: str = "utf-8", erro
         _sync_dir(path.parent)  # en Unix el cambio de nombre también tiene que llegar al disco
 
 
+def atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8", **kwargs) -> None:
+    """`atomic_write` de un texto con los saltos de línea de `Path.write_text`: en Windows, «\r\n». Para cambiar a
+    atómico un `write_text` sin que el archivo cambie ni un byte (las configuraciones de los emuladores)."""
+    atomic_write(path, text.replace("\n", os.linesep) if os.linesep != "\n" else text, encoding=encoding, **kwargs)
+
+
 def _keep_backup(path: Path, mode: int | None) -> None:
     """Copia el archivo actual a `.bak` (también atómico). Si no se puede, se avisa y se sigue: no estorba guardar."""
     bak = backup_path(path)

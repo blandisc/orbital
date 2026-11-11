@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from . import system
+from .atomic import atomic_write_text
 
 log = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ def mark_clean_exit(profile_dir: Path) -> None:
         profile = data.setdefault("profile", {})
         profile["exit_type"] = "Normal"
         profile["exited_cleanly"] = True
-        prefs.write_text(json.dumps(data), encoding="utf-8")
+        atomic_write_text(prefs, json.dumps(data))
     except (OSError, ValueError) as exc:
         log.debug("No se pudo ajustar %s: %s", prefs, exc)
 
@@ -111,7 +112,7 @@ def allow_microphone(profile_dir: Path, url: str) -> bool:
             return True
         mic[key] = {"last_modified": str(int(time.time() * 1_000_000)), "setting": 1}  # 1 = Permitir
         prefs.parent.mkdir(parents=True, exist_ok=True)
-        prefs.write_text(json.dumps(data), encoding="utf-8")
+        atomic_write_text(prefs, json.dumps(data))
         return True
     except (OSError, ValueError) as exc:
         log.debug("No se pudo permitir el micrófono en %s: %s", prefs, exc)
