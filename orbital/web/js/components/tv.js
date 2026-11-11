@@ -8,7 +8,7 @@ import { clock } from "../core/format.js";
 import { sized } from "../core/images.js";
 import { airingLine, ALL, nextLine, categoriesOf, categoryHue, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay } from "./browse.js";
-import { Badge, Chip, EmptyState } from "./ui.js";
+import { Badge, Chip, EmptyState, Eyebrow } from "./ui.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
 const TYPE_MS = 1300; // tecleando un número: lo que se espera al siguiente dígito antes de sintonizar
@@ -153,8 +153,7 @@ export function createTv({ onFocus, onPick }) {
     const live = channel.id === playing;
     if (channel.synthetic) { // un canal de Orbital: qué episodio va y a qué hora termina
       mount(nowText,
-        h("span", { class: ["tv__now-eyebrow", live && "tv__now-eyebrow--live"] }, live ? "Al aire en grande"
-          : channel.categories?.includes("Tus canales") ? "Tu canal · Español latino" : "Canal de Orbital · Español latino"),
+        Eyebrow(live ? "Al aire en grande" : channel.categories?.includes("Tus canales") ? "Tu canal" : "Canal de Orbital", { className: "tv__now-eyebrow" }),
         h("h2", { class: "tv__now-title" }, channel.name),
         h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || channel.tagline || "Al aire todo el día"),
         nextLine(channel, clock) && h("span", { class: "tv__now-meta" }, nextLine(channel, clock)),
@@ -162,7 +161,7 @@ export function createTv({ onFocus, onPick }) {
       return;
     }
     mount(nowText,
-      h("span", { class: ["tv__now-eyebrow", "tv__now-eyebrow--live"] }, live ? "Al aire en grande" : "En vivo · sin sonido"),
+      Eyebrow(live ? "Al aire en grande" : "En vivo", { className: "tv__now-eyebrow" }),
       h("h2", { class: "tv__now-title" }, channel.name),
       h("span", { class: "tv__now-meta" }, [channel.categories?.[0], channel.quality, channel.number && `Canal ${channel.number}`].filter(Boolean).join(" · ")),
       h("span", { class: "tv__now-hint" }, live ? "Elígelo para volver a él." : `Elígelo para verlo en grande · ${headMeta(data)}`));

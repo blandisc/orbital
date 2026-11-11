@@ -7,7 +7,7 @@ import { tokenPx } from "../core/tokens.js";
 import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
-import { Badge, EmptyState, PosterSkeletons, RowCount, rowCountText, SectionHead } from "./ui.js";
+import { Badge, EmptyState, Eyebrow, PosterSkeletons, RowCount, rowCountText, SectionHead } from "./ui.js";
 
 /** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
 const SECTION_ICONS = { platforms: "tv", awards: "trophy", studios: "movie", "genre-top": "star", seasons: "sun", years: "calendar", lists: "list" };
@@ -141,7 +141,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     // Una fila de tarjetas de colección (Tus plataformas, Premios, Estudios, Temporadas…) es una sección: su rótulo con
     // ícono y línea, y cuántas a la derecha. Las demás son subsecciones: el título blanco con su sello.
     // El porqué junto al título, en la misma línea (de dónde viene la fila: «… · de tus series en Trakt»).
-    const reason = row.reason && h("span", { class: "shelf__reason" }, row.reason);
+    const reason = Eyebrow(row.reason, { className: "shelf__reason" });
     const heading = row.cards
       ? h("div", { class: "shelf__heading shelf__heading--section" },
         SectionHead(row.title, { level: "section", icon: SECTION_ICONS[row.group] || "grid", meta: count }))

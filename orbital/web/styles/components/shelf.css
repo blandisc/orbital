@@ -121,4 +121,4 @@
 .shelf__today-chip { position: absolute; bottom: calc(100% + var(--space-1)); left: 50%; translate: -50% 0; max-width: none; color: var(--color-new); }
 
 /* El porqué de una fila, en la línea de su título (de dónde viene: «… · de tus series en Trakt»), en el color del porqué. */
-.shelf__reason { color: var(--color-reason); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); letter-spacing: normal; }
+.shelf__reason { display: inline; }

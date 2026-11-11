@@ -14,7 +14,6 @@
 .match__head > * { pointer-events: auto; }
 /* Solo en el lado libre: de la orilla a la carta (que mide a lo más --match-card-height de alto y 2/3 de ancho), con aire. */
 .match__titles { display: grid; gap: var(--space-1); max-width: calc(50% - var(--match-card-height) / 3 - var(--space-8)); }
-.match__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); }
 .match__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
 /* Cuántas guardaste en esta vuelta (el ♥ verde de Guardar). */
 .match__saved {
@@ -47,7 +46,6 @@
 .match__rating-mark { width: var(--icon-sm); height: var(--icon-sm); }
 /* Abajo: por qué te la propone, el nombre, año · duración · tipo y sus géneros. */
 .match__info { left: var(--space-4); right: calc(var(--control-height) + var(--space-5)); bottom: var(--space-4); display: grid; gap: var(--space-2); }
-.match__why { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); text-shadow: var(--shadow-text-strong); }
 .match__name {
   font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight); text-shadow: var(--shadow-text); /* en la carta de la tele, un paso menos que title: cabe el nombre */

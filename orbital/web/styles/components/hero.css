@@ -23,15 +23,12 @@
   opacity: 0; transform: translateY(.35rem);
   transition-duration: var(--duration-instant); transition-timing-function: var(--ease-in);
 }
-.hero__eyebrow {
-  display: flex; align-items: center; gap: var(--space-2); min-height: 1.3rem;
-  color: var(--color-text-muted); font-weight: var(--type-label-large-weight); font-size: var(--type-label-large);
-  transition: color var(--duration-tint) var(--ease-out);
-}
-.hero__eyebrow--reason { color: var(--color-reason); }
-.hero__eyebrow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hero__eyebrow-icon { flex: none; width: var(--icon-md); height: var(--icon-md); object-fit: contain; }
-.hero__eyebrow svg { flex: none; width: var(--icon-md); height: var(--icon-md); stroke: currentColor; fill: none; stroke-width: var(--stroke-regular); }
+/* El porqué (Eyebrow, turquesa) o nada: su lugar se guarda para que el título no salte entre uno con porqué y otro sin él. */
+.hero__eyebrow { display: flex; align-items: center; min-height: 1.3rem; min-width: 0; }
+.hero__eyebrow > .eyebrow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero__fact-mark--platform { flex: none; width: var(--icon-md); height: var(--icon-md); object-fit: contain; }
+.hero__fact--where { display: inline-flex; align-items: center; gap: var(--space-2); }
+.hero__fact--where svg { flex: none; width: var(--icon-md); height: var(--icon-md); stroke: currentColor; fill: none; stroke-width: var(--stroke-regular); }
 .hero__title {
   /* Interlínea snug y solo .08em de relleno: la cola de g, p, j, y cabe, y con más relleno line-clamp dejaba asomar la tercera línea. */
   margin: var(--space-2) 0 var(--space-3);

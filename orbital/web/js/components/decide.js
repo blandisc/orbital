@@ -44,13 +44,13 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = nul
   const lead = h("p", { class: "decide__lead" });
   const picksEl = h("div", { class: "decide__picks", role: "group" });
   const name = h("h3", { class: "decide__name" });
-  const why = h("p", { class: "decide__why" });
+  const why = h("p", { class: "decide__facts" }); // R2: los datos (año, IMDb, géneros), no un porqué: en gris
   const overview = h("p", { class: "decide__overview" });
   const status = h("p", { class: "decide__status", role: "status" });
   const questions = h("div", { class: "decide__questions" });
   const modes = h("div", { class: "decide__modes", role: "tablist", "aria-label": "Cómo decidir" });
   const el = h("section", { class: "decide screen", hidden: true, "aria-label": "Decide por mí" },
-    ScreenHead({ eyebrow: "Explorar", title: "Decide por mí" }), modes, lead,
+    ScreenHead({ eyebrow: "Para cuando no sabes qué ver", title: "Decide por mí" }), modes, lead,
     h("div", { class: "decide__stage" }, picksEl, h("div", { class: "decide__about" }, name, why, overview)), status, questions);
 
   let choice = { time: "", mood: "", kind: "" };

@@ -9,7 +9,6 @@
 body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv) { visibility: hidden; }
 .game-page__top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-10); min-height: 0; }
 .game-page__body { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 56%); }
-.game-page__reason { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); text-shadow: var(--shadow-text-strong); }
 .game-page__logo { max-width: min(28rem, 100%); max-height: 8rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .game-page__title {
   font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-tight);

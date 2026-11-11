@@ -13,7 +13,7 @@
 .sources__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 30rem); align-items: end; column-gap: var(--space-8); }
 .sources__head > .sources__heading, .sources__head > .sources__title { grid-column: 1; }
 .sources__head > .sources__subtitle { grid-column: 2; grid-row: 1 / span 2; }
-.sources__heading { color: var(--color-accent); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
+.sources__heading { display: flex; }
 .sources__title { margin: 0; font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); line-height: var(--leading-snug); }
 .sources__title:empty { display: none; }
 .sources__scope { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }

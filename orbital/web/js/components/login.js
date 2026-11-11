@@ -251,7 +251,7 @@ export function createLogin({ onDone, onMove, onClose, onRemote }) {
     form = next;
     fields = form.fields.map((f) => ({ ...f, value: f.value ?? (saved.get(`${form.id}:${f.name}`) || ""),
       node: h("div", { class: `login__field${f.secret ? " login__field--secret" : ""}` }) }));
-    const top = ScreenHead({ eyebrow: form.eyebrow || "Cuentas", title: form.title, className: "login__head", lead: form.lead });
+    const top = ScreenHead({ eyebrow: form.eyebrow || null, title: form.title, className: "login__head", lead: form.lead });
     head.replaceWith(top);
     head = top;
     mount(box, ...fields.map((f) => f.node), message, phoneShort);

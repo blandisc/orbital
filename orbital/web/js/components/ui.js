@@ -1,5 +1,6 @@
 import { h, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { reasonOnly } from "../core/format.js";
 import { reducedMotion } from "../core/motion.js";
 import { Glyph } from "./glyph.js";
 
@@ -77,10 +78,21 @@ export const PlatformBadge = (text, brand, { large = false, className = null } =
   return h("span", { class: ["badge", "badge--platform", `badge--platform-${brand}`, large && "badge--lg", className] }, logo, text);
 };
 
+/**
+ * La etiqueta de arriba (R2, 11 nov 2026): una sola receta en toda la interfaz, la del `Eyebrow` del iPhone. Va sobre el
+ * logo o el título, en turquesa (`--color-reason`), y dice el porqué: «Seguir viendo», «En Mi lista», «En tendencia», «Lo que
+ * pediste». Nunca un dato (tipo, año, «T1 E3», duración): eso va en la línea de datos; si llega uno, no se pinta
+ * (`reasonOnly`). `className` solo la coloca (márgenes); su color y su letra son de `.eyebrow` (prueba del sistema).
+ */
+export const Eyebrow = (text, { className = null, tag = "span", icon = null } = {}) => {
+  const why = reasonOnly(text);
+  return why ? h(tag, { class: ["eyebrow", className] }, icon, why) : null;
+};
+
 /** Encabezado de una pantalla completa (Conectar Stremio, Conectar Trakt): de dónde es, el título y una línea. */
 export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
   h("div", { class: ["screen-head", className] },
-    eyebrow && h("div", { class: "screen-head__eyebrow" }, eyebrow),
+    Eyebrow(eyebrow, { tag: "div", className: "screen-head__eyebrow" }),
     h("h1", { class: "screen-head__title" }, title),
     lead && h("p", { class: "screen-head__lead" }, lead));
 
@@ -214,7 +226,7 @@ export function SectionHead(title, { level = "subsection", icon = null, reason =
       (meta || end) && h("span", { class: "section-head__end" }, meta, end));
   }
   return h("div", { class: ["section-head", reason && "section-head--reason", className] },
-    reason && h("p", { class: "section-head__reason" }, reason),
+    Eyebrow(reason, { tag: "p", className: "section-head__reason" }),
     h("h2", { class: "section-head__title" }, title),
     end && h("span", { class: "section-head__end" }, end));
 }

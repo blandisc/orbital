@@ -145,3 +145,16 @@ export function firstSentence(text) {
   const cut = ends.find((at) => at >= 40);
   return cut ? clean.slice(0, cut) : clean;
 }
+
+/**
+ * R2 (11 nov 2026): la etiqueta de arriba (`Eyebrow`, en turquesa) dice el PORQUÉ («Seguir viendo», «En Mi lista», «En
+ * tendencia», «Sale hoy · 19:00»), nunca un dato: el tipo («Película», «Serie»), el año, la temporada y el episodio
+ * («T1 E3»), lo que queda o lo que dura van en la línea de datos. Lo que parece dato no pasa: devuelve null.
+ */
+const DATA_ONLY = [/^(película|serie|series|películas)\b/i, /\bT\d+\s*E\d+\b/, /^\s*(19|20)\d{2}(\s*[–-]\s*((19|20)\d{2})?)?\s*$/,
+  /\bquedan\b/i, /^\s*\d+\s*(h|min)\b/i, /^Sigue:/];
+export function reasonOnly(text) {
+  const clean = String(text ?? "").trim();
+  if (!clean) return null;
+  return DATA_ONLY.some((re) => re.test(clean)) ? null : clean;
+}

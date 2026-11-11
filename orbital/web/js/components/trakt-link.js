@@ -71,7 +71,7 @@ export function createTraktLink({ onMove, onClose }) {
 
   function open(service = "trakt") {
     svc = SERVICES[service] || SERVICES.trakt;
-    mount(head, ScreenHead({ eyebrow: "Cuentas", title: `Conectar ${svc.name}` }));
+    mount(head, ScreenHead({ title: `Conectar ${svc.name}` }));
     mount(list, svc.bullets.map((b) => h("li", {}, b)));
     qrImage.src = svc.qr;
     qrImage.alt = `Código QR de ${svc.site}`;

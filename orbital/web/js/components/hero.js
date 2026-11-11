@@ -5,9 +5,46 @@ import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerN
 import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
-import { Pill, PlatformMark } from "./ui.js";
+import { Eyebrow, Pill, PlatformMark } from "./ui.js";
+import { eyebrowOf } from "./tiles.js";
+import { reasonOnly } from "../core/format.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
+
+/** El porqué de lo enfocado (R2): el de su lista («En tendencia», «Lo que pediste»), «Seguir viendo» o «Seguir jugando». */
+export function reasonOf(item) {
+  if (!item) return null;
+  const extra = item.extra || {};
+  if (item.source === "collection") return item.collection?.type === "platform" ? reasonOnly(extra.eyebrow) : null;
+  if (item.category === "cloud") return reasonOnly(extra.eyebrow);
+  if (item.source === "cinemeta" || item.source === "genre") return reasonOnly(extra.eyebrow) || (item.progress > 0 ? "Seguir viendo" : null);
+  return eyebrowOf(item);
+}
+
+/** De dónde es lo enfocado, al principio de la línea de datos: su ícono (el de su app, su consola o su colección) y su nombre
+ * («Steam», «Nintendo Switch», «Premio»). Una película o serie no: su tipo ya lo dicen el arte y sus datos. */
+function whereOf(item) {
+  if (item.source === "cinemeta" || item.source === "stremio" || item.source === "genre" || item.category === "cloud") return null;
+  const collection = item.source === "collection";
+  if (collection && item.collection?.type === "platform") return null;
+  const text = collection ? item.extra?.eyebrow : item.subtitle || item.category;
+  if (!text) return null;
+  const icon = appIcon(item);
+  const mark = icon ? h("img", { class: "hero__fact-mark--platform", src: icon, alt: "" })
+    : collection ? svg(ICONS[item.collection?.type === "award" ? "trophy" : "list"])
+      : isTitleItem(item) ? null : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)]));
+  return h("span", { class: "hero__fact--where" }, mark, text);
+}
+
+/** El episodio de algo que vas viendo («T1 E3» y su nombre, si no es solo «Episodio 3»), al principio de la línea de datos. */
+export function episodeOf(item) {
+  const text = [item.subtitle, item.extra?.eyebrow].filter(Boolean).join(" · ");
+  const ep = /T(\d+)\s*E(\d+)/.exec(text);
+  if (!ep) return [];
+  const name = String(item.extra?.episode_title || "").trim();
+  const plain = !name || /^(episodio|episode)\s*\d+$/i.test(name) || new RegExp(`^E${ep[2]}$`).test(name);
+  return [`T${ep[1]} E${ep[2]}`, !plain && name].filter(Boolean);
+}
 
 export function createHero({ onAction, onKind = null, onTool = null }) {
   // Todo · Películas · Series a la vista (como la franja del Inicio del iPhone): pestañas de texto que filtran toda la
@@ -77,22 +114,13 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
       mount(actions);
       return;
     }
-    const runner = item.runners?.length > 1 ? ` · ${runnerName(item)}` : "";
+    const runner = item.runners?.length > 1 ? runnerName(item) : null;
     const extra = item.extra || {};
-    // Seguir viendo: "Serie · T8 E23 · Homer's Enemy" (antes "Stremio · T8 E23").
-    // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
-    const icon = appIcon(item);
-    const above = `${extra.eyebrow || item.subtitle || item.category}${runner}`;
-    // Una colección: su propio ícono (un premio, la estatuilla; las demás, una lista), no el de Apps.
-    const collectionIcon = item.source === "collection" ? (item.collection?.type === "award" ? "trophy" : "list") : null;
-    // El porqué de un título (N.º 1 en Netflix, Nuevo en tus plataformas, Porque viste…) va en turquesa, como el iPhone; lo que
-    // solo dice qué es (un premio, una plataforma, «Serie · T8 E23») se queda tenue.
-    // PT22: la fila de la nube no es un porqué (es lo tuyo): su nombre va en blanco, no en turquesa.
-    eyebrow.classList.toggle("hero__eyebrow--reason", !!extra.eyebrow && item.source !== "collection" && item.category !== "cloud");
-    mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
-      : collectionIcon ? svg(ICONS[collectionIcon]) : isTitleItem(item) ? null : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
-      h("span", {}, above));
-
+    // R2 (11 nov 2026): arriba, solo el porqué en turquesa (Eyebrow), como en toda la interfaz: «Seguir viendo», «N.º 1 en
+    // Netflix», «Lo que pediste», «Seguir jugando». Lo que dice qué es («Serie · T1 E3», «Steam», «Premio») ya no va arriba:
+    // de dónde es (con su ícono) y el episodio abren la línea de datos, sin repetirse.
+    const where = whereOf(item);
+    mount(eyebrow, Eyebrow(reasonOf(item)));
     title.textContent = item.title;
     title.dataset.long = item.title.length > 28 ? "1" : "";
     title.classList.toggle("hero__title--long", item.title.length > 28);
@@ -116,18 +144,20 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
 
     const watchable = isWatchable(item);
     const said = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
-    const left = said && !above.includes(said) ? said : null;
+    const left = said || null;
     const list = item.category === "cloud" ? [h("span", {}, item.subtitle || "")] // PT22: «Bajando en la nube · 42 % · Lo acabas de pedir aquí»
       : item.source === "cinemeta" ? [
-      extra.year, traktScore(extra.trakt) || (extra.rating && `★ ${extra.rating}`), genres(extra.genres).slice(0, 2).join(", "),
+      extra.episode, extra.year, traktScore(extra.trakt) || (extra.rating && `★ ${extra.rating}`), genres(extra.genres).slice(0, 2).join(", "),
       extra.minutes > 0 ? duration(extra.minutes * 60) : runtime(extra.runtime),
     ].filter(Boolean).map((text) => (typeof text === "object" ? text : h("span", {}, String(text)))) : item.source === "stremio" ? [
-      left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "),
+      ...episodeOf(item), left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "),
       lastPlayed(item.last_played, Date.now(), "Visto"),
     ].filter(Boolean).map((text) => h("span", {}, text)) : [
       lastPlayed(item.last_played, Date.now(), watchable ? "Visto" : "Jugado") || (isGame(item) ? "Sin jugar todavía" : null),
       watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,
     ].filter(Boolean).map((text) => h("span", {}, text));
+    if (where) list.unshift(where);
+    if (runner) list.push(h("span", {}, runner));
     if (item.source === "steam") { // Steam: tamaño en disco y si le falta una actualización
       if (bytes(extra.size)) list.push(h("span", {}, bytes(extra.size)));
       if (extra.update) list.push(h("span", { class: "hero__fact--warning" }, "Actualización pendiente"));
@@ -136,7 +166,7 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
     if (item.source === "collection") { // una tarjeta de colección: qué es y cuántos tiene, no «Sin jugar todavía»
       const c = item.collection || {};
-      list.splice(0, list.length, ...[c.detail, c.count != null && `${c.count} títulos`].filter(Boolean).map((text) => h("span", {}, text)));
+      list.splice(0, list.length, ...[where, ...[c.detail, c.count != null && `${c.count} títulos`].filter(Boolean).map((text) => h("span", {}, text))].filter(Boolean));
     }
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 
