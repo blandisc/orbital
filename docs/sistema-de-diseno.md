@@ -86,7 +86,7 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 | Lo de Orbital | `--color-orbital` (la luna) | El ícono de un rótulo de sección |
 | En vivo · bien | `--color-live`, `--color-ok` | Turquesa |
 | Aviso · peligro | `--color-warning`, `--color-danger` | Ámbar · rojo |
-| Nuevo | `--color-new` | El puntito «Nuevo», «Hoy»: el turquesa del puntito del logo (`DS.fresh`), no el verde |
+| Nuevo | `--color-new` | El listón «Nuevo», «Hoy»: el turquesa del puntito del logo (`DS.fresh`), no el verde (11 nov 2026: Fernando deshizo el puntito, «no quiero que quites la cinta de nuevo») |
 | Acento por categoría | `--rainbow-*` | El arcoíris del azul de Orbital: categorías de TV en vivo (filtros, después) |
 | Marcas | `--platform-*`, `--brand-*`, `--system-*`, `--color-source-*` | El color de cada plataforma, consola o fuente; nunca para la interfaz |
 
@@ -192,7 +192,7 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | Barra de arriba | Vidrio con íconos; la sección elegida, en blanco con su nombre; se va al bajar en Juegos |
 | Inicio | Rediseñado: «A continuación» (B), una sola fila con juegos, películas y series por lo último que usaste, una vez cada cosa (R2, 11 nov: lo que estás viendo ya no se corta tras los cuatro primeros: la serie que sigues en Trakt sale aunque haya más juegos recientes) (P4, 10 nov: «Seguir viendo» aparte repetía lo mismo y se quitó del Inicio); debajo, «Mi lista» y «Tus consolas» (D4-B, 10 nov). Lo de arriba sigue al foco: el episodio, la película de Mi lista o la consola con sus juegos y lo último que jugaste; ↑↓ (o LT/RT) pasan de fila y cada fila recuerda dónde ibas |
 | Juegos | Rediseñado: dos pisos y el juego a pantalla (A); la página de cada juego (C) en Opciones › «Ver ficha» (A sigue jugando directo) |
-| Películas y series | Por las piezas: héroe con «Ver» en blanco y secundarios de vidrio, portadas que se levantan. El héroe dice un renglón de datos (año, Trakt con su marca y «81 %», dos géneros, duración) y una oración de la sinopsis en un renglón (`format.js · firstSentence`); para que quepa sin mover las filas, el logo cede hasta 2,25 rem. Sin arte ancho, el fondo es su póster desenfocado (`backdrop.show(…, { fallback })`) (T10, 10 nov) |
+| Películas y series | Por las piezas: héroe con «Ver» en blanco y secundarios de vidrio, portadas que se levantan. De fondo, el arte horizontal del título; de datos, solo el año (en «Lo nuevo de lo tuyo», antes el episodio «T2 E7»). El 11 nov 2026 Fernando deshizo T10 (el renglón con Trakt, géneros y duración, la oración de la sinopsis y el póster desenfocado de fondo): «dejemos solamente el año como estaba antes». La sinopsis vive en la ficha |
 | La ficha | Por las piezas: «Ver» en blanco, acciones de vidrio, episodios que se levantan |
 | Explorar | Por las piezas: el mosaico se levanta sin anillo; sus marcas, de vidrio |
 | TV en vivo | Por las piezas: canales que se levantan |
