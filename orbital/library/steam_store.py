@@ -19,6 +19,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, http_json
 from .rawg import plain
 
@@ -125,8 +126,6 @@ class SteamStore:
             text = json.dumps(self._data, ensure_ascii=False, separators=(",", ":"))
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(text, encoding="utf-8")
-            tmp.replace(self.path)
+            atomic_write(self.path, text, encoding="utf-8")
         except OSError as exc:
             log.info("No pude guardar las fichas de la tienda de Steam: %s", exc)

@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from . import player
+from .atomic import atomic_write
 from .library import cinemeta, streams, stremio_api
 
 if TYPE_CHECKING:
@@ -179,9 +180,7 @@ class Coverage:
             text = json.dumps(self._data, separators=(",", ":"))
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(text, encoding="utf-8")
-            tmp.replace(self.path)
+            atomic_write(self.path, text, encoding="utf-8")
         except OSError as exc:
             log.warning("No pude guardar qué episodios tienen doblaje: %s", exc)
 

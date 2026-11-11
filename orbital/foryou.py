@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any
 
 from . import decide as decide_api
+from .atomic import atomic_write
 from .library import charts as charts_api
 from .library import letterboxd as letterboxd_api
 from .library import mdblist as mdblist_api
@@ -221,9 +222,7 @@ class Cache:
             out[key] = [when, value]
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
-            tmp.replace(path)
+            atomic_write(path, json.dumps(out, ensure_ascii=False), encoding="utf-8")
         except OSError as exc:
             log.info("Para ti: no pude guardar lo traído: %s", exc)
 
@@ -1749,9 +1748,7 @@ class ForYou:
         if path is not None:
             try:
                 path.parent.mkdir(parents=True, exist_ok=True)
-                tmp = path.with_suffix(".tmp")
-                tmp.write_bytes(png)
-                tmp.replace(path)
+                atomic_write(path, png, durable=False)
                 return png
             except OSError as exc:
                 log.info("No pude guardar un logo: %s", exc)

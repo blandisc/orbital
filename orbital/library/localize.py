@@ -15,6 +15,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
+from ..atomic import atomic_write
 from . import tmdb as tmdb_api
 
 log = logging.getLogger(__name__)
@@ -170,9 +171,7 @@ class TitleNames:
             data = json.dumps(self._names, ensure_ascii=False)
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(data, encoding="utf-8")
-            tmp.replace(self.path)
+            atomic_write(self.path, data, encoding="utf-8")
         except OSError as exc:
             log.info("No pude guardar los nombres traducidos: %s", exc)
 

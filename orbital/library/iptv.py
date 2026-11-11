@@ -21,6 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, read_body
 
 log = logging.getLogger(__name__)
@@ -223,9 +224,7 @@ def save_copy(path: Path | None, text: str) -> None:
         return
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(text, encoding="utf-8")
-        tmp.replace(path)
+        atomic_write(path, text, encoding="utf-8")
     except OSError as exc:
         log.warning("No pude guardar la copia de la lista de canales: %s", exc)
 

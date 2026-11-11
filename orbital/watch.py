@@ -21,6 +21,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 
 from . import companion, flags, player, player_ui, rd_requests, remote_art, ytdlp
+from .atomic import atomic_write
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -469,9 +470,7 @@ class HeardTracks:
                 return
             try:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
-                tmp = self.path.with_suffix(".tmp")
-                tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-                tmp.replace(self.path)
+                atomic_write(self.path, json.dumps(data, ensure_ascii=False), encoding="utf-8")
             except OSError:
                 log.warning("No pude guardar las pistas que vio el reproductor", exc_info=True)
 
@@ -931,9 +930,7 @@ class Watch:
         try:
             with _CACHE_LOCK:  # la descarga y el enriquecimiento en segundo plano guardan a la vez
                 self._stremio_cache.parent.mkdir(parents=True, exist_ok=True)
-                tmp = self._stremio_cache.with_suffix(".tmp")
-                tmp.write_text(json.dumps([i.to_dict() for i in items], ensure_ascii=False), encoding="utf-8")
-                tmp.replace(self._stremio_cache)
+                atomic_write(self._stremio_cache, json.dumps([i.to_dict() for i in items], ensure_ascii=False), encoding="utf-8")
         except OSError:
             log.warning("No pude guardar la biblioteca de Stremio en caché", exc_info=True)
 

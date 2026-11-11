@@ -10,7 +10,16 @@ import threading
 import time
 from pathlib import Path
 
+from .atomic import atomic_write, backup_path
+
 log = logging.getLogger(__name__)
+
+
+def _parse(text: str) -> dict:
+    loaded = json.loads(text)
+    if not isinstance(loaded, dict):
+        raise ValueError("no es un objeto")
+    return loaded
 
 
 MAX_DISMISSED = 2000  # «No me interesa» guardados (los más viejos se olvidan)
@@ -86,18 +95,28 @@ class State:
             log.warning("No pude leer %s; esta sesión no lo modifica: %s", path, exc)
             return
         try:
-            loaded = json.loads(text)
-            if not isinstance(loaded, dict):
-                raise ValueError("no es un objeto")
+            loaded = _parse(text)
         except (ValueError, RecursionError) as exc:
-            # Dañado: queda a salvo con fecha (otro daño después no pisa este respaldo) y se empieza de cero.
+            # Dañado: queda a salvo con fecha (otro daño después no pisa este respaldo) y se empieza de cero…
             backup = path.with_name(f"{path.stem}-{time.strftime('%Y%m%d-%H%M%S')}.bak")
             try:
                 path.replace(backup)
             except OSError:
                 self._frozen, backup = True, path
-            log.warning("No se pudo leer %s (queda en %s); empiezo de cero: %s", path, backup, exc)
-            return
+            loaded = self._from_backup(path)  # …salvo que la copia de la vez anterior (state.json.bak) sí sirva
+            if loaded is None:
+                log.warning("No se pudo leer %s (queda en %s); empiezo de cero: %s", path, backup, exc)
+                return
+            log.warning("No se pudo leer %s (queda en %s); recuperé la copia anterior: %s", path, backup, exc)
+        self._apply(loaded)
+
+    def _from_backup(self, path: Path) -> dict | None:
+        try:
+            return _parse(backup_path(path).read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError, RecursionError):
+            return None
+
+    def _apply(self, loaded: dict) -> None:
         for key in self._data:
             value = loaded.get(key, {})
             self._data[key] = dict(value) if isinstance(value, dict) else {}
@@ -123,12 +142,10 @@ class State:
         tumba lo que se estaba haciendo (abrir un juego, cerrarlo)."""
         if not self.path or self._frozen:
             return
+        text = json.dumps(self._data, ensure_ascii=False, indent=1)
         for attempt in range(3):
             try:
-                self.path.parent.mkdir(parents=True, exist_ok=True)
-                tmp = self.path.with_suffix(".tmp")
-                tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8", errors="replace")
-                tmp.replace(self.path)
+                atomic_write(self.path, text, errors="replace", backup=True)  # la copia anterior queda en state.json.bak
                 return
             except OSError as exc:
                 if attempt == 2:

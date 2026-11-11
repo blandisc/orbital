@@ -10,6 +10,7 @@ import threading
 import time
 from pathlib import Path
 
+from .atomic import atomic_write
 from .library import cinemeta, onedrive, streams
 
 log = logging.getLogger(__name__)
@@ -93,10 +94,8 @@ class OneDriveLibrary:
             return
         try:
             self.cache.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.cache.with_suffix(".tmp")
-            tmp.write_text(json.dumps({"files": self.files, "matches": self.matches, "scanned_at": self.scanned_at},
-                                      ensure_ascii=False), encoding="utf-8")
-            tmp.replace(self.cache)
+            data = {"files": self.files, "matches": self.matches, "scanned_at": self.scanned_at}
+            atomic_write(self.cache, json.dumps(data, ensure_ascii=False))
         except OSError as exc:
             log.info("OneDrive: no pude guardar lo encontrado: %s", exc)
 

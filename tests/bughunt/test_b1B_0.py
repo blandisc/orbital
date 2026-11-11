@@ -1,4 +1,3 @@
-import pathlib
 import threading
 import time
 
@@ -8,18 +7,17 @@ from orbital import downloads
 def test_a_concurrent_save_cannot_lose_a_download(tmp_path, monkeypatch):
     dl = downloads.Downloads(tmp_path, resolve=lambda j: ('', ''), publish=lambda e: None, autostart=False)
     dl.add('movie', 'tt1', 'tt1', 'Uno')
-    tmp_name = dl.index_path.with_suffix('.tmp').name
-    real_write = pathlib.Path.write_text
+    real_write = downloads.atomic_write
     gate, blocked, release = {'block': True}, threading.Event(), threading.Event()
 
-    def write_text(self, data, encoding=None, errors=None):
-        if gate['block'] and self.name == tmp_name:
+    def write(path, data, **kw):
+        if gate['block'] and path == dl.index_path:
             gate['block'] = False
             blocked.set()
             release.wait(5)
-        return real_write(self, data, encoding=encoding, errors=errors)
+        return real_write(path, data, **kw)
 
-    monkeypatch.setattr(pathlib.Path, 'write_text', write_text)
+    monkeypatch.setattr(downloads, 'atomic_write', write)
     saver = threading.Thread(target=dl._save, daemon=True)
     saver.start()
     assert blocked.wait(5)

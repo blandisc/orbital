@@ -26,6 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import quote
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, read_json
 from .models import LibraryItem
 
@@ -318,9 +319,7 @@ class SteamArt:
             self._dirty = False
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(data), encoding="utf-8")
-            tmp.replace(self.path)
+            atomic_write(self.path, json.dumps(data), encoding="utf-8")
         except OSError as exc:
             log.info("No pude guardar la caché de portadas: %s", exc)
 

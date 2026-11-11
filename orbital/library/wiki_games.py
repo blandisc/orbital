@@ -20,6 +20,7 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, http_json
 
 log = logging.getLogger(__name__)
@@ -161,8 +162,6 @@ class WikiGames:
             text = json.dumps(self._data, ensure_ascii=False, separators=(",", ":"))
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(text, encoding="utf-8")
-            tmp.replace(self.path)
+            atomic_write(self.path, text, encoding="utf-8")
         except OSError as exc:
             log.info("No pude guardar las fichas de Wikipedia: %s", exc)

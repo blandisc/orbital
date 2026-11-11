@@ -24,6 +24,8 @@ import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 
+from .atomic import atomic_write
+
 log = logging.getLogger(__name__)
 
 CHUNK = 1 << 20  # 1 MB por lectura
@@ -113,9 +115,7 @@ class Downloads:
                 data = json.dumps(list(self._jobs.values()), ensure_ascii=False, indent=1)
             try:
                 self.folder.mkdir(parents=True, exist_ok=True)
-                tmp = self.index_path.with_suffix(".tmp")
-                tmp.write_text(data, encoding="utf-8", errors="replace")  # un surrogate suelto no tumba el hilo
-                tmp.replace(self.index_path)
+                atomic_write(self.index_path, data, errors="replace")  # un surrogate suelto no tumba el hilo
             except OSError as exc:
                 log.warning("No pude guardar la lista de descargas: %s", exc)
 

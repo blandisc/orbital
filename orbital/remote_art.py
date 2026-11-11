@@ -20,6 +20,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from . import thumbs
+from .atomic import atomic_write
 from .net import NET_ERRORS, read_body
 
 log = logging.getLogger(__name__)
@@ -80,9 +81,7 @@ def sized(url: str, width: int, root: Path | None = None, download=None) -> Path
                     with _slots:
                         data = (download or fetch)(url)
                     raw.parent.mkdir(parents=True, exist_ok=True)
-                    tmp = raw.with_suffix(".part")
-                    tmp.write_bytes(data)
-                    tmp.replace(raw)
+                    atomic_write(raw, data, durable=False)
                 except NET_ERRORS as exc:
                     log.debug("No pude bajar %s: %s", url, exc)
                     if len(_misses) > 5000:

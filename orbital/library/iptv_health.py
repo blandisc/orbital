@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, read_body
 from .iptv import HTTP, Channel
 
@@ -197,9 +198,7 @@ class HealthStore:
             payload = {"channels": self._records, "numbers": self._numbers, "recent": self._recent}
             try:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
-                tmp = self.path.with_suffix(".tmp")
-                tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-                tmp.replace(self.path)
+                atomic_write(self.path, json.dumps(payload, ensure_ascii=False), encoding="utf-8")
             except OSError as exc:
                 log.warning("No pude guardar la salud de los canales: %s", exc)
 

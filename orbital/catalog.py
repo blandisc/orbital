@@ -25,6 +25,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from . import player
+from .atomic import atomic_write
 from .config import Config, expand
 from .credentials import Credentials
 from .downloads import Downloads
@@ -290,9 +291,7 @@ class Catalog:
             return
         try:
             self._snapshot.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self._snapshot.with_suffix(".tmp")
-            tmp.write_text(json.dumps([i.to_dict() for i in items]), encoding="utf-8")
-            tmp.replace(self._snapshot)
+            atomic_write(self._snapshot, json.dumps([i.to_dict() for i in items]), encoding="utf-8")
         except (OSError, TypeError, ValueError) as exc:
             log.info("No pude guardar la biblioteca: %s", exc)
 

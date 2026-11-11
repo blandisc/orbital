@@ -27,6 +27,7 @@ from urllib.parse import urlsplit
 
 from PIL import Image, ImageDraw
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, read_body
 
 log = logging.getLogger(__name__)
@@ -205,9 +206,7 @@ class LogoCache:
         path = self.directory / f"{key}.png"
         try:
             self.directory.mkdir(parents=True, exist_ok=True)
-            tmp = path.with_suffix(".tmp")
-            tmp.write_bytes(png)
-            tmp.replace(path)
+            atomic_write(path, png, durable=False)
             path.with_suffix(".none").unlink(missing_ok=True)
         except OSError as exc:
             log.info("No pude guardar un logo: %s", exc)

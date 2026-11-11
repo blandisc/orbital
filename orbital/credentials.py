@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import threading
 import time
 from pathlib import Path
 
 from . import dpapi
+from .atomic import atomic_write, backup_path
 
 log = logging.getLogger(__name__)
 FORMAT = "orbital-dpapi-1"
@@ -28,34 +28,50 @@ class Credentials:
         self._data: dict = {}
         self._unreadable = False  # no se pudo leer: antes de escribir encima se respalda (AD-15)
         if path and path.exists():
-            try:
-                raw = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, ValueError) as exc:
-                log.warning("No se pudo leer %s: %s", path, exc)
-                self._unreadable = True
+            data, raw = self._read(path)
+            if data is None:
+                recovered, _ = self._read(backup_path(path)) if backup_path(path).exists() else (None, None)
+                if recovered is None:
+                    self._unreadable = True
+                    return
+                # El principal está dañado pero la copia de la vez anterior sirve: se usa y el dañado se respalda.
+                log.warning("Recuperé las claves de %s", backup_path(path))
+                self._data, self._unreadable = recovered, True
+                with self._lock:
+                    self._save()
                 return
-            if isinstance(raw, dict) and raw.get("format") == FORMAT:
-                plain = dpapi.unprotect(str(raw.get("data") or ""))
-                if plain is None:
-                    log.warning("No pude descifrar %s (¿otro usuario de Windows u otro equipo?): "
-                                "vuelve a conectar Stremio", path)
-                    self._unreadable = True
-                    return
-                try:
-                    data = json.loads(plain)
-                except ValueError:
-                    data = None
-                if not isinstance(data, dict):
-                    log.warning("Credenciales ilegibles en %s: vuelve a conectar Stremio", path)
-                    self._unreadable = True
-                    return
-                self._data = data
-            elif isinstance(raw, dict):
-                self._data = raw
-                if raw and dpapi.available():
-                    with self._lock:
-                        self._save()  # el archivo viejo en texto plano queda cifrado
-                    log.info("Credenciales cifradas con tu usuario de Windows (DPAPI)")
+            self._data = data
+            if raw is not None and data and dpapi.available():
+                with self._lock:
+                    self._save()  # el archivo viejo en texto plano queda cifrado
+                log.info("Credenciales cifradas con tu usuario de Windows (DPAPI)")
+
+    @staticmethod
+    def _read(path: Path) -> tuple[dict | None, dict | None]:
+        """(claves, None) si venía cifrado; (claves, crudo) si venía en texto plano; (None, None) si no se pudo."""
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            log.warning("No se pudo leer %s: %s", path, exc)
+            return None, None
+        if isinstance(raw, dict) and raw.get("format") == FORMAT:
+            plain = dpapi.unprotect(str(raw.get("data") or ""))
+            if plain is None:
+                log.warning("No pude descifrar %s (¿otro usuario de Windows u otro equipo?): "
+                            "vuelve a conectar Stremio", path)
+                return None, None
+            try:
+                data = json.loads(plain)
+            except ValueError:
+                data = None
+            if not isinstance(data, dict):
+                log.warning("Credenciales ilegibles en %s: vuelve a conectar Stremio", path)
+                return None, None
+            return data, None
+        if isinstance(raw, dict):
+            return raw, raw
+        log.warning("No se pudo leer %s: no es un objeto", path)
+        return None, None
 
     def get(self, key: str) -> str | None:
         with self._lock:
@@ -86,8 +102,4 @@ class Credentials:
         sealed = dpapi.protect(text) if dpapi.available() else None
         if sealed is not None:
             text = json.dumps({"format": FORMAT, "data": sealed})
-        tmp = self.path.with_suffix(".tmp")
-        tmp.write_text(text, encoding="utf-8")
-        if os.name != "nt":
-            tmp.chmod(0o600)
-        tmp.replace(self.path)
+        atomic_write(self.path, text, backup=True, mode=0o600)  # la copia anterior queda en secrets.json.bak

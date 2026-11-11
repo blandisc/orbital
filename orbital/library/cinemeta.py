@@ -24,6 +24,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote
 
+from ..atomic import atomic_write
 from ..net import NET_ERRORS, read_json
 from . import addons as addons_mod
 from .models import LibraryItem
@@ -90,9 +91,7 @@ class Cinemeta:
             data = {url: [at, d] for url, (at, d) in self._cache.items() if "/meta/" in url}
         try:
             self.saved.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.saved.with_suffix(".tmp")
-            tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-            tmp.replace(self.saved)
+            atomic_write(self.saved, json.dumps(data, ensure_ascii=False), encoding="utf-8")
         except OSError as exc:
             log.info("No pude guardar las fichas: %s", exc)
 
