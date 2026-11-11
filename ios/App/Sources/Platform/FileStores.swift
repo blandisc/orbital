@@ -29,16 +29,16 @@ enum AppFiles {
     static var downloadIndex: URL { support.appendingPathComponent("downloads.json") }
 }
 
-/// El índice de descargas (sin enlaces: esos van en el Keychain).
-/// Con `StoredFile`, como la biblioteca (F10, 10 nov 2026): un índice dañado ya no se lee como vacío en silencio (y luego se
-/// pisaba, perdiendo de vista las descargas que siguen en disco): se aparta como `downloads.json.corrupt` y queda en la bitácora.
+/// El índice de descargas (sin enlaces: esos van en el Keychain), con `StoredFile` como la biblioteca (F10): uno dañado se aparta
+/// con fecha y uno que falta o está dañado se rearma desde la carpeta de descargas (`DownloadIndexFile`, revisión del 11 nov
+/// 2026: antes las descargas seguían en disco pero ya no se veían). Uno que solo no se pudo leer ahora no se pisa.
 enum DownloadIndex {
-    static func load() -> [DownloadItem] {
-        StoredFile.read([DownloadItem].self, from: AppFiles.downloadIndex, what: "el índice de descargas") ?? []
-    }
+    private static let file = DownloadIndexFile(url: AppFiles.downloadIndex, root: AppFiles.downloadsRoot)
+
+    static func load() -> [DownloadItem] { file.load() }
 
     private static let queue = DispatchQueue(label: "orbital.download-index")
     static func save(_ items: [DownloadItem]) {
-        queue.async { StoredFile.write(items, to: AppFiles.downloadIndex, what: "el índice de descargas") }
+        queue.async { file.save(items) }
     }
 }

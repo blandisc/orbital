@@ -96,11 +96,28 @@ public final class LocalLibrary: @unchecked Sendable {
     /// El archivo se escribe aquí, fuera del candado: quien cambia algo no espera a codificar toda la biblioteca.
     private let writer = DispatchQueue(label: "orbital.local-library", qos: .utility)
     private var version = 0
+    /// El archivo existe pero no se pudo leer al abrir (pasajero: el iPhone bloqueado con el archivo protegido). Mientras
+    /// tanto no se escribe encima: lo que cambies vive en memoria y se junta con el archivo en cuanto se pueda leer.
+    private var unread = false
+    /// Al cerrar sesión con el archivo sin leer: lo que tenía ya no cuenta.
+    private var clearedWhileUnread = false
+    private let read: @Sendable (URL) -> StoredRead<[String: LibraryEntry]>
 
-    public init(url: URL? = nil) {
+    public convenience init(url: URL? = nil) {
+        self.init(url: url, read: { StoredFile.load([String: LibraryEntry].self, from: $0, what: "la biblioteca") })
+    }
+
+    /// `read`: cómo se lee el archivo (las pruebas simulan un tropiezo pasajero).
+    init(url: URL?, read: @escaping @Sendable (URL) -> StoredRead<[String: LibraryEntry]>) {
         self.url = url
-        // Un archivo dañado no se lee como vacío (la siguiente escritura lo pisaría): se aparta y se registra.
-        entries = url.flatMap { StoredFile.read([String: LibraryEntry].self, from: $0, what: "la biblioteca") } ?? [:]
+        self.read = read
+        // Un archivo dañado no se lee como vacío (la siguiente escritura lo pisaría): se aparta con fecha y se registra. Uno que
+        // solo no se pudo leer ahora se deja como está.
+        switch url.map(read) ?? .missing {
+        case .loaded(let all): entries = all
+        case .missing, .corrupt: entries = [:]
+        case .unreadable: entries = [:]; unread = true
+        }
     }
 
     public var isEmpty: Bool { lock.withLock { entries.isEmpty } }
@@ -126,12 +143,26 @@ public final class LocalLibrary: @unchecked Sendable {
     }
 
     /// Al cerrar la sesión de todo: el teléfono olvida lo tuyo.
-    public func clear() { lock.withLock { entries = [:]; persist() } }
+    public func clear() { lock.withLock { entries = [:]; if unread { clearedWhileUnread = true }; persist() } }
+
+    /// ¿Ya se pudo leer el archivo? (con el candado puesto). Si al abrir no se pudo, lo intenta otra vez y, si ahora sí, junta lo
+    /// del archivo con lo que cambiaste mientras tanto (lo tuyo de ahora gana por título).
+    private func readyToWrite(_ url: URL) -> Bool {
+        guard unread else { return true }
+        switch read(url) {
+        case .loaded(let all):
+            if !clearedWhileUnread { entries = all.merging(entries) { _, mine in mine } }
+        case .missing, .corrupt: break
+        case .unreadable: return false
+        }
+        unread = false; clearedWhileUnread = false
+        return true
+    }
 
     /// Se llama con el candado puesto: toma una copia (barata: el diccionario se copia al escribirse) y la escribe la fila.
     /// Si llegan varios cambios seguidos, solo se escribe el último (cada uno trae todo).
     private func persist() {
-        guard let url else { return }
+        guard let url, readyToWrite(url) else { return }   // sin poder leerlo, nunca se pisa
         version += 1
         let mine = version, snapshot = entries
         writer.async {   // retiene la biblioteca hasta escribir: lo último que cambiaste no se pierde

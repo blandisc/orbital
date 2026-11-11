@@ -54,18 +54,20 @@ public final class TraktOutbox: Sendable {
     }
 
     /// Lo que esperaba en UserDefaults (antes de la cola única) pasa al archivo, sin perder nada y sin pisar lo que ya esté
-    /// ahí; luego se borra de UserDefaults. Si se vuelve a llamar, no hace nada.
+    /// ahí; luego se borra de UserDefaults, SOLO si el archivo quedó escrito (si no, se intenta otra vez la próxima vez que
+    /// abras la app). Si se vuelve a llamar, no duplica.
     private func migrate() {
         guard let data = kv.data(Self.legacyKey) else { return }
         let old = (try? JSONDecoder().decode([Item].self, from: data)) ?? []
         let now = clock().timeIntervalSince1970
-        store.update { work in
+        let saved = store.commit { work in
             for var item in old where !work.outbox.contains(where: { $0.target == item.target && $0.imdb == item.imdb }) {
                 item.queuedAt = item.queuedAt ?? now
                 work.outbox.append(item)
             }
         }
-        kv.set(Self.legacyKey, data: nil)
+        if saved { kv.set(Self.legacyKey, data: nil) }
+        else { Log.storage.error("La cola de Trakt no se pudo guardar en el archivo: lo de antes se queda en los ajustes hasta poder") }
     }
 
     public var pending: [Item] { store.load().outbox }
