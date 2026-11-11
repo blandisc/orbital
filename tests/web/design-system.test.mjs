@@ -262,3 +262,29 @@ test("ritmo: los radios de la escala solo valen .5rem, 1rem o la cápsula", () =
   assert.ok(radii.length > 0);
   for (const value of radii) assert.ok([".5rem", "1rem", "999px"].includes(value), `radio fuera del ritmo: ${value}`);
 });
+
+// R2 (11 nov 2026): la etiqueta de arriba es una sola receta (`Eyebrow` + `.eyebrow`, ui.js/ui.css): turquesa y solo un porqué.
+// Ninguna otra regla con «eyebrow» o «reason» en su nombre le cambia el color o la letra (solo la coloca), nadie más pinta
+// con --color-reason, y ningún componente arma una etiqueta así a mano (sin Eyebrow, que deja fuera los datos).
+test("la etiqueta de arriba (eyebrow) es una sola receta: turquesa, sin otros colores y solo con Eyebrow()", () => {
+  const problems = [];
+  for (const file of COMPONENT_CSS) {
+    const css = read(file).replace(/\r\n/g, "\n").replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const sel = selector.trim();
+      const isTheOne = /(^|,)\s*\.eyebrow\s*(,|$)/.test(sel);
+      if (/color-reason/.test(body) && !isTheOne) problems.push(`${file.split(/[\\/]/).pop()}: ${sel} pinta con --color-reason`);
+      if (!isTheOne && /(eyebrow|__reason)/.test(sel) && /(^|;)\s*(color|font-size|font-weight)\s*:/.test(body)) {
+        problems.push(`${file.split(/[\\/]/).pop()}: ${sel} cambia el color o la letra de la etiqueta de arriba`);
+      }
+    }
+  }
+  for (const file of JS_FILES) {
+    read(file).replace(/\r\n/g, "\n").split("\n").forEach((line, i) => {
+      if (/h\(\s*"[a-z0-9]+"\s*,\s*\{\s*class:\s*(\[[^\]]*|"[^"]*)(eyebrow|__reason)/.test(line) && !/"hero__eyebrow"/.test(line)) {
+        problems.push(`${file.split(/[\\/]/).pop()}:${i + 1}: arma la etiqueta de arriba a mano (usa Eyebrow)`);
+      }
+    });
+  }
+  assert.deepEqual(problems, []);
+});

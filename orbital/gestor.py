@@ -16,8 +16,9 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
+from . import net
 from .library import trakt as trakt_api
-from .trakt_outbox import HIDDEN, HISTORY, NOTE, WATCHLIST, TraktOutbox, retryable
+from .trakt_outbox import HIDDEN, HISTORY, JOURNAL_KEY, NOTE, WATCHLIST, TraktOutbox, retryable
 
 if TYPE_CHECKING:
     from .foryou import ForYou
@@ -106,7 +107,25 @@ class Gestor:
     def __init__(self, foryou: ForYou) -> None:
         self.foryou = foryou
         state = foryou.catalog.state
-        self.outbox = TraktOutbox(lambda: state.settings().get("trakt_outbox"), lambda v: state.set_setting("trakt_outbox", v))
+        self.outbox = TraktOutbox(lambda: state.settings().get("trakt_outbox"), lambda v: state.set_setting("trakt_outbox", v),
+                                  lambda: state.settings().get(JOURNAL_KEY), lambda v: state.set_setting(JOURNAL_KEY, v))
+        self.outbox.on_sent = self._sent_from_queue
+        net.on_recover(self._trakt_back)
+
+    def _trakt_back(self, host: str) -> None:
+        """Trakt vuelve a contestar tras unos fallos (regresó el internet): lo que esperaba sale, en segundo plano."""
+        if host == trakt_api.HOST and self.outbox.pending:
+            self.outbox.kick(self.trakt)
+
+    def _sent_from_queue(self, targets: set[str]) -> None:
+        """Lo que la cola mandó en segundo plano: se olvida lo guardado de esos lugares y la interfaz se entera."""
+        keys = {"trakt:watched", "trakt:watched-state"} if HISTORY in targets else set()
+        if WATCHLIST in targets:
+            keys.add("trakt:watchlist")
+        if HIDDEN in targets:
+            keys |= {"trakt:hidden", "trakt:calendar", "trakt:watching"}
+        keys |= {f"trakt:list:{t}" for t in targets if t.isdigit()}
+        self._changed(*sorted(keys))
 
     # --- de dónde sale cada cosa -------------------------------------------------------------------------------------
     @property
@@ -163,18 +182,40 @@ class Gestor:
             else:
                 library.hidden.difference_update(imdbs)
 
+    def _queue(self, items: list[dict]) -> str:
+        for item in items:
+            self.outbox.enqueue(item)
+        self.outbox.kick(self.trakt)
+        return "queued"
+
     def _send(self, item: dict, run) -> str:
-        """Lo manda ya; sin internet (o con Trakt caído) lo deja en la cola. «sent» o «queued»."""
-        self.outbox.flush(self.trakt)
+        """Lo manda ya; sin internet (o con Trakt caído) lo deja en la cola. «sent» o «queued». Nunca espera a que la cola
+        se vacíe (eso va en segundo plano): solo si ese mismo título en ese mismo lugar ya esperaba, va detrás en la cola."""
+        if self.outbox.waiting([item]):
+            return self._queue([item])
         try:
             run()
-            return "sent"
         except Exception as exc:
             if not retryable(exc):
                 raise
             log.info("Trakt: a la cola (%s): %s", item, exc)
-            self.outbox.enqueue(item)
-            return "queued"
+            return self._queue([item])
+        self.outbox.kick(self.trakt)  # Trakt contestó: si algo esperaba, ya
+        return "sent"
+
+    def _send_many(self, items: list[dict], run) -> str:
+        """Como `_send`, con varios en un solo envío: si alguno ya esperaba, todos van a la cola (en orden)."""
+        if self.outbox.waiting(items):
+            return self._queue(items)
+        try:
+            run()
+        except Exception as exc:
+            if not retryable(exc):
+                raise
+            log.info("Trakt: a la cola (%d): %s", len(items), exc)
+            return self._queue(items)
+        self.outbox.kick(self.trakt)
+        return "sent"
 
     def _changed(self, *keys: str) -> None:
         for key in keys:
@@ -193,19 +234,11 @@ class Gestor:
     def set_watchlist(self, items: list[tuple[str, str]], add: bool) -> str:
         """Pone o quita varios ([(kind, imdb)]) de Mi lista, con la cola."""
         self._require()
-        done = "sent"
         clean = [(k, i) for k, i in items if k in trakt_api.KINDS and str(i).startswith("tt")]
         if not clean:
             raise ValueError("Título inválido")
-        try:
-            self.outbox.flush(self.trakt)
-            self.trakt.set_items(WATCHLIST, clean, add)
-        except Exception as exc:
-            if not retryable(exc):
-                raise
-            for kind, imdb in clean:
-                self.outbox.enqueue({"target": WATCHLIST, "imdb": imdb, "kind": kind, "add": add})
-            done = "queued"
+        queued = [{"target": WATCHLIST, "imdb": imdb, "kind": kind, "add": add} for kind, imdb in clean]
+        done = self._send_many(queued, lambda: self.trakt.set_items(WATCHLIST, clean, add))
         if self.library is not None:
             for kind, imdb in clean:
                 self.library.note_watchlist(kind, imdb, add)
@@ -250,7 +283,7 @@ class Gestor:
         from .foryou import MINE_TTL, video_item
 
         t = self.trakt
-        self.outbox.flush(t)
+        self.outbox.kick(t)  # lo que esperaba sale en segundo plano; lo pendiente ya se cuenta abajo
         watchlist = list(self.foryou.cache.get("trakt:watchlist", MINE_TTL, t.watchlist))
         pending = self.outbox.pending_in(WATCHLIST)
         watchlist = [e for e in watchlist if pending.get(e["imdb"]) is not False]
@@ -291,16 +324,8 @@ class Gestor:
         self._require()
         list_id = where[5:]
         clean = [(k, i) for k, i in items if k in trakt_api.KINDS and str(i).startswith("tt")]
-        try:
-            self.outbox.flush(self.trakt)
-            self.trakt.set_items(list_id, clean, add)
-            done = "sent"
-        except Exception as exc:
-            if not retryable(exc):
-                raise
-            for kind, imdb in clean:
-                self.outbox.enqueue({"target": list_id, "imdb": imdb, "kind": kind, "add": add})
-            done = "queued"
+        queued = [{"target": list_id, "imdb": imdb, "kind": kind, "add": add} for kind, imdb in clean]
+        done = self._send_many(queued, lambda: self.trakt.set_items(list_id, clean, add))
         self._changed(f"trakt:list:{list_id}", "trakt:lists")
         return done
 
@@ -312,14 +337,8 @@ class Gestor:
         done = "sent"
         if shows:
             sections = trakt_api.DROPPED_SECTIONS
-            try:
-                self.trakt.set_hidden(shows, True, sections)
-            except Exception as exc:
-                if not retryable(exc):
-                    raise
-                for imdb in shows:
-                    self.outbox.enqueue({"target": HIDDEN, "imdb": imdb, "kind": "series", "add": True, "sections": list(sections)})
-                done = "queued"
+            hidden = [{"target": HIDDEN, "imdb": imdb, "kind": "series", "add": True, "sections": list(sections)} for imdb in shows]
+            done = self._send_many(hidden, lambda: self.trakt.set_hidden(shows, True, sections))
             self._remember_dropped(shows, True)
             bell = set(self._settings().get("unfollowed_shows") or []) | set(shows)
             self.foryou.catalog.state.set_setting("unfollowed_shows", sorted(bell))
@@ -425,13 +444,14 @@ class Gestor:
         t = self._require()
         target = self._target(kind, imdb, video_id)
         ep = target.get("episode") or {}
-        if self.outbox.pending:  # regresó el internet: lo que esperaba se manda antes de leer
-            self.outbox.flush(t)
+        self.outbox.kick(t)  # lo que esperaba sale en segundo plano; mientras, se muestra desde la cola
         adds, gone = self._pending_history()
         queued = [{"id": 0, "at": i["at"]} for i in adds if i.get("video") == target]
         try:
             remote = [v for v in t.viewings(kind, imdb, ep.get("season"), ep.get("number")) if v["id"] not in gone]
             offline = False
+            # La cola pudo haberla mandado mientras se leía: la misma vista no sale dos veces.
+            queued = [q for q in queued if not any(abs(r["at"] - q["at"]) <= trakt_api.SAME_VIEWING_WINDOW for r in remote)]
         except trakt_api.TraktAuthError:
             raise
         except trakt_api.TraktError as exc:
@@ -529,8 +549,9 @@ class Gestor:
                     self.outbox.enqueue({"target": NOTE, "imdb": key, "kind": k, "text": text, "add": True})
             if local:
                 self.foryou.catalog.state.set_setting("notes_local", None)
-                self.outbox.flush(self.trakt)
-                notes = self.trakt.my_notes()
+                self.outbox.kick(self.trakt)  # salen en segundo plano; la de este título ya se sabe
+                if imdb in local and imdb not in notes:
+                    return {"text": local[imdb][0], "vip": True}
             return {"text": (notes.get(imdb) or {}).get("text") or "", "vip": True}
         return {"text": (local.get(imdb) or ["", kind])[0], "vip": vip}
 

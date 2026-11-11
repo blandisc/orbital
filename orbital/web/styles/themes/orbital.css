@@ -215,7 +215,7 @@
    otra vez, en cada pieza que recibe ese color (js/components/backdrop.js · TINTED). Así el color cambia solo ahí, sin
    recalcular el estilo de toda la página en cada tecla. */
 [data-theme="orbital"],
-[data-theme="orbital"] :is(.backdrop, .screen, .side-panel, .launch, .toast, .is-focused.card, .card--chosen) {
+[data-theme="orbital"] :is(.backdrop, .screen, .side-panel, .launch, .toast, .is-focused.card, .is-focused.shelf__stage, .card--chosen) {
   --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
   --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000)); /* el mismo tono que el iPhone (Projection) */
   /* La órbita (D3-A): el filo de lo enfocado, del color de su arte con un piso claro (se ve sobre arte oscuro o sin arte). */

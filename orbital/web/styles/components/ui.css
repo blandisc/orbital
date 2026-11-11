@@ -140,7 +140,7 @@
 /* SectionHead, en dos niveles como el iPhone. Subsección: el título blanco y, si ayuda, su porqué arriba en turquesa. */
 .section-head { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
 .section-head--reason { flex-wrap: wrap; row-gap: var(--space-1); }
-.section-head__reason { flex-basis: 100%; margin: 0; color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section-head__reason { flex-basis: 100%; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .section-head__title { font-family: var(--font-sans); font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--tracking-tight); white-space: nowrap; }
 .section-head__end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
 /* Sección: el rótulo (ícono en el azul de Orbital, nombre en minúsculas y negrita, línea fina hasta la orilla y el dato). Antes en
@@ -204,7 +204,10 @@
 :is(.card, .tile, .button, .pill, .chip):active { scale: .97; transition: scale var(--duration-instant) var(--ease-out); }
 @keyframes press { 35% { scale: .97; } }
 .screen-head { display: grid; gap: var(--space-2); justify-items: center; text-align: center; max-width: 46rem; }
-.screen-head__eyebrow { color: var(--color-accent); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); }
+/* R2 (11 nov 2026): la etiqueta de arriba, una sola receta (Eyebrow): turquesa y solo un porqué. Las demás clases con
+   «eyebrow» o «reason» solo la colocan (márgenes, recortes); su color y su letra son estos (design-system.test.mjs). */
+.eyebrow { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); text-shadow: var(--shadow-text-strong); }
+.eyebrow svg, .eyebrow img { flex: none; width: var(--icon-md); height: var(--icon-md); object-fit: contain; stroke: currentColor; fill: none; stroke-width: var(--stroke-regular); }
 .screen-head__title { font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); }
 .screen-head__lead { color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); line-height: var(--leading-relaxed); }
 

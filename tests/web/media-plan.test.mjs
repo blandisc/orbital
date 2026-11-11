@@ -253,8 +253,8 @@ test("Lo nuevo de lo tuyo: una línea de tiempo como el iPhone (lo que salió, h
   assert.equal(latestItem(ep("x", "2026-10-18", { label: "Domingo 18" }), "2026-10-15").left, "en 3 días");
   assert.equal(latestItem(ep("x", "2026-10-16", { label: "Mañana" }), "2026-10-15").left, "");
   // NU-7: el destacado dice el episodio y cuándo.
-  assert.equal(latestItem(ep("x", "2026-10-18", { label: "Domingo 18", time: "9:00 p. m." }), "2026-10-15").extra.eyebrow, "T1 E2 · sale el domingo 18 a las 9:00 p. m.");
-  assert.equal(latestItem(ep("x", "2026-10-14", { label: "Ayer", released: true }), "2026-10-15").extra.eyebrow, "T1 E2 · salió ayer");
-  assert.equal(latestItem(ep("x", "2026-10-15", { label: "Hoy", today: true, time: "Desde la madrugada" }), "2026-10-15").extra.eyebrow, "T1 E2 · sale hoy");
+  assert.equal(latestItem(ep("x", "2026-10-18", { label: "Domingo 18", time: "9:00 p. m." }), "2026-10-15").extra.eyebrow, "Sale el domingo 18 a las 9:00 p. m.");
+  assert.equal(latestItem(ep("x", "2026-10-14", { label: "Ayer", released: true }), "2026-10-15").extra.eyebrow, "Salió ayer");
+  assert.equal(latestItem(ep("x", "2026-10-15", { label: "Hoy", today: true, time: "Desde la madrugada" }), "2026-10-15").extra.eyebrow, "Sale hoy");
   assert.equal(row.group, "nuevo");
 });

@@ -7,7 +7,7 @@ import { TONIGHT, today, tonightPick } from "../core/tonight.js";
 import { tokenMs } from "../core/tokens.js";
 import { Button } from "./button.js";
 import { Glyph } from "./glyph.js";
-import { EmptyState, Veil } from "./ui.js";
+import { EmptyState, Eyebrow, Veil } from "./ui.js";
 
 /**
  * «¿Qué vemos hoy?» · Encuentra tu match perfecto, como el iPhone (MatchDeckScreen y MatchCard, «como Tinder», 1 nov 2026): un
@@ -45,7 +45,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
   const el = h("section", { class: "match screen", hidden: true, "aria-label": "¿Qué vemos hoy?" },
     backdrop,
     h("header", { class: "match__head" },
-      h("div", { class: "match__titles" }, h("span", { class: "match__eyebrow" }, "Encuentra tu match perfecto"), h("h1", { class: "match__title" }, "¿Qué vemos hoy?")),
+      h("div", { class: "match__titles" }, Eyebrow("Encuentra tu match perfecto", { className: "match__eyebrow" }), h("h1", { class: "match__title" }, "¿Qué vemos hoy?")),
       saved),
     stage, actions);
 
@@ -128,7 +128,7 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
       rating && h("span", { class: "match__rating", "aria-label": `Calificación en Trakt: ${rating} por ciento` },
         h("img", { class: "match__rating-mark", src: "img/ratings/trakt.svg", alt: "" }), `${rating} %`),
       h("div", { class: "match__info" },
-        c.why && h("span", { class: "match__why" }, c.why),
+        Eyebrow(c.why, { className: "match__why" }),
         h("strong", { class: "match__name" }, c.title),
         facts && h("span", { class: "match__facts" }, facts),
         kinds.length > 0 && h("span", { class: "match__genres" }, kinds.map((g) => h("span", { class: "match__genre" }, g)))),

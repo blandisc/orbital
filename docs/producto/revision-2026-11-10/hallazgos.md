@@ -41,6 +41,13 @@ no cada agente.
 - **Tanda 3 (11 nov), verificada:** servidor partido (`orbital/watch/`, `orbital/foryou/`), Inicio de la TV con una sola fila
   «A continuación» (Fernando, 11 nov: «¿no es lo mismo?»), menú solo para sistema, Buscar, sin el sello de Stremio
   (Fernando, 11 nov).
+- **Segunda revisión independiente (11 nov):** cuatro revisores. Calificaciones nuevas: servidor 7,5 / 8 / 7,5; interfaz
+  7 / 7,5 / 7,5 / 8; diseño de la TV 8 / 8,5 / 7 / 7,5 / 7; iPhone por dentro 7,5 / 7,5 / 7,5; una sola app 7; salud 6.
+  Encontró regresiones de la víspera (vistas duplicadas en Trakt, acciones lentas tras estar sin red, `atomic_write` que
+  choca entre hilos, «Serie · Serie» en Inicio, capacidades por edición con fugas, un avance que se puede perder) y que no
+  se cumplió «no construir sobre rojo» (12 de 60 corridas en verde). Tres agentes las corrigen (servidor, interfaz, iPhone).
+- **D1-B:** hecho en Ajustes (`b889d277`); la ficha, widgets y Siri aún no preguntan a las capacidades (en corrección).
+- **V9** (repintado fino) no se hizo: queda como trabajo aparte, empezando por medir en el iPhone real.
 - **En curso:** pulido de la TV y listas largas (V4); el iPhone adopta contrato y reglas; cimientos del iPhone en rama
   aparte (D1-B, F4, F5, F8, F10, V9).
 - **Pendiente de Fernando:** desbloquear la Mac para correr el recorrido `OrbitalMac` (la app de Mac compila pero nadie la
@@ -74,7 +81,7 @@ no cada agente.
 - [x] **A14** (`07335b1e`) Peso: Release sin quitar símbolos (`DEPLOYMENT_POSTPROCESSING`, `STRIP_INSTALLED_PRODUCT`,
   `STRIP_STYLE=non-global` en `ios/App/project.yml`); el widget empaca todo el arte (`project.yml:133`);
   `simpsons.donut.svg` 323 KB.
-- [~] **A15** (4a47432c: tabla única, la TV ya la lee; falta el iPhone) Códigos de Real-Debrid distintos: `orbital/library/realdebrid.py:46-51` vs
+- [x] **A15** (`4a47432c`, `9b0aa95c`) Códigos de Real-Debrid distintos: `orbital/library/realdebrid.py:46-51` vs
   `ios/OrbitalCore/Sources/OrbitalAddons/RealDebridTorrents.swift:98-100`. Tabla código → causa en
   `design/addons-contract.json`, leída por ambos.
 - [x] **A16** (`f84b3d37`) Control del iPhone: quitar LB/RB/LT/RT/A/B/X/Y y «A · desliza para moverte»; «De 5 en 5» → «−5 min / +5 min».
@@ -126,7 +133,7 @@ no cada agente.
 - [~] **V2** (296af40c: falta el margen animado de la tarjeta) `shelf.js:206-228` (`setFocus` recorre todo), `hero.js:37-53`, `shelf.js:270-289` (lecturas y escrituras
   mezcladas, ~9 layouts por tecla); `main.js:1006` `void view.offsetWidth` al cambiar de sección; `card.css:12-14` margen animado.
 - [x] **V3** (`deea8308, f4041767`) `backdrop.js:31` `getImageData` (~15 ms por título): que el servidor mande el tono.
-- [ ] **V4** Rejillas sin virtualizar (`list-screen.js`, `games.js`, `browse.js`).
+- [x] **V4** (`351cfa95`: Juegos y listas; falta TV en vivo) Rejillas sin virtualizar (`list-screen.js`, `games.js`, `browse.js`).
 - [x] **V5** (`64a09baa`) `orbital/net.py:76`: conexión nueva por petición; sin cortacircuitos (`api/foryou.py:163-166`).
 - [x] **V6** (`9ce00186`) `orbital/foryou.py:167-300`: caché sin tope; serializa todo dos veces por cambio (`:217`, `:225`).
 - [x] **V7** (`7e640bf9`) `ios/App/Sources/Design/Posters.swift:153-171`, `Platform/FocalPoint.swift:10,27-39`: punto focal a disco,
@@ -142,29 +149,29 @@ no cada agente.
 
 ## F · Arquitectura y cimientos
 
-- [~] **F1** (e04bf1d1: hecho en la TV (29 ejemplos); falta que el iPhone los adopte) Contrato TV ↔ iPhone: `api: N` y capacidades en `/api/ping` y `/api/companion`; fixtures que escribe una
+- [x] **F1** (`e04bf1d1`, `b0d0dab2`: TV e iPhone; falta distinguir «TV más nueva que el iPhone», en corrección) Contrato TV ↔ iPhone: `api: N` y capacidades en `/api/ping` y `/api/companion`; fixtures que escribe una
   prueba de Python (`tests/fixtures/contract/*.json`) y decodifica Swift. `OrbitalRemote.swift:106-108,576-583`.
-- [~] **F2** (3b549a37, ed5f5000: hecho en la TV; falta el iPhone) Reglas compartidas como datos (`design/streams-rules.json`…): banderas e idiomas
+- [x] **F2** (`3b549a37`, `ed5f5000`, `f63dd0e4`: reglas iguales; en Swift son constantes vigiladas por prueba, no leídas) Reglas compartidas como datos (`design/streams-rules.json`…): banderas e idiomas
   (`Streams+Language.swift:16-23` vs `orbital/library/streams.py:41`), topes (25 GB vs 15 GB en 1440p: `streams.py:692,697`
   / `Streams.swift:533`), esperas (15 s vs 8 s), mosaico de Explorar (96 vs 48: `foryou.py:72-73` / `ForYou.swift:10`).
 - [ ] **F3** Tokens generados desde `design/tokens.json` hacia CSS y Swift; sumar curvas, sombras y tamaño real de letra.
   El vocabulario se compara por subcadena (`tests/web/design-parity.test.mjs:218-226`).
-- [~] **F4** (85e2282b: hecho en la TV; falta la cola única del iPhone) iPhone: una sola cola para Trakt (`TraktOutbox.swift:81-127` vs `WatchService.swift:89-95`,
+- [~] **F4** (`85e2282b`, `0a67f642`: cola única; la segunda revisión halló duplicados en la TV y un avance que se puede perder en el iPhone, en corrección) iPhone: una sola cola para Trakt (`TraktOutbox.swift:81-127` vs `WatchService.swift:89-95`,
   `WatchService+Queue.swift:10-12,123-154`); descartes con bitácora. TV: scrobble por `trakt_outbox.py`
   (`orbital/scrobble.py:144-151`).
-- [ ] **F5** iPhone: `HistoryModel`/`ViewingsModel` en OrbitalModels con pruebas (`HistoryScreen.swift:133-185`,
+- [x] **F5** (`41d52997`) iPhone: `HistoryModel`/`ViewingsModel` en OrbitalModels con pruebas (`HistoryScreen.swift:133-185`,
   `TitleView+TusVistas.swift:123,206`).
 - [~] **F6** (1b5ba6ea, 4c84f943: `watch` y `foryou` partidos; faltan `main.js`, `menus.js`, reproductor, voz, `server.py`, `PlayerScreen`) Partir gigantes: `orbital/watch.py` (2525, clase `Watch` con 120 métodos), `foryou.py`, `Catalog` como
   localizador; `orbital/web/js/main.js` (2798) y `core/menus.js` (2207); `PlayerScreen*` (43 `@State`), `RootView`.
 - [~] **F7** (09f257ca y siguientes: Xcode fijo, goldens, `tv-estable`; la app del iPhone compila en la CI como paso provisional) CI completa: `xcodegen` + `xcodebuild build` Debug y Release sin firma; humo de la TV; `scripts/ios_golden.py`
   con `git diff --exit-code`; etiqueta `tv-estable` (D8-A).
-- [~] **F8** (5600905f: README, docs, .gitignore; falta el Stremio muerto del iPhone) Limpieza: Stremio muerto en el iPhone (`authKey: { nil }` en `Services.swift:287,482`; `StremioAPI.swift`);
+- [x] **F8** (`5600905f`, `b8d23f2a`) Limpieza: Stremio muerto en el iPhone (`authKey: { nil }` en `Services.swift:287,482`; `StremioAPI.swift`);
   README aún con Stremio como base (líneas 4, 32, 140); docs con Multica/CEN-; `docs/ios-companera.md:37`; `.gitignore`
   para `.playwright-mcp/`, `orbital/mpv-input.conf`, `orbital/orbital-mouse.lua`; `opentelemetry-api` sin uso.
 - [x] **F9** (43a4d524, 59790ea4, 40208057: incluye probar la versión nueva en copia aparte y el vigilante que no quita la pantalla) Servidor, estabilidad: mpv huérfano (`player.py:1423-1431`, Job Object o barrido); `SERVICE_ERRORS` con
   `OSError`/`ValueError` (`net.py:19`, `foryou.py:54`) → `NetError`; un hilo por comando a mpv (`mpv.py:66-69`); SSE que
   descarta eventos (`api/live.py:49-52`); actualización con versiones mezcladas (`updater.py:113-121`).
-- [~] **F10** (9af65644: índice de descargas y topes; falta lo demás) iPhone, estabilidad y deuda: índice de descargas que se traga la corrupción (`Platform/FileStores.swift:35-37`);
+- [~] **F10** (`9af65644`, `0217cce2`, `505fd8fd`, `3204d514`: quedan 10 errores por forma del texto, `NSAllowsArbitraryLoads` y `StoredFile`, en corrección) iPhone, estabilidad y deuda: índice de descargas que se traga la corrupción (`Platform/FileStores.swift:35-37`);
   UserDefaults sin tope (`IntroDB.swift:28-31`, `Services.swift:70-76`, `ForYou.swift:416-420`); AetherEngine fijado por
   etiqueta y `Package.resolved` sin versionar; errores como texto traducidos por regex (`Support/Strings.swift:26-73`);
   banderas de demo regadas (leer `ProcessInfo` una sola vez); `NSAllowsArbitraryLoads` y `com.example…` en `project.yml`.

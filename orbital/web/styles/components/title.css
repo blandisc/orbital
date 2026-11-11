@@ -224,7 +224,6 @@
   box-shadow: var(--edge-hairline);
   transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-out);
 }
-.episode__next { position: absolute; left: var(--inset-poster); top: var(--inset-poster); } /* «Continuar» / «Sigue»: el que ve A al abrir */
 .episode__number { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); }
 .episode__thumb:has(.episode__progress) .episode__number { bottom: calc(var(--inset-poster) + var(--space-3)); } /* sobre la barra, no encima de ella */
 .episode__check {
@@ -300,8 +299,9 @@
 }
 /* Las caras, alineadas arriba: un nombre de dos renglones («Patricia Arquette») ya no sube su foto sobre las demás. */
 .title__more-row--cast { align-items: flex-start; }
-/* «Los datos de la ficha»: lo que es en gris y su valor en blanco, en dos columnas (el Grid del iPhone). */
-.title__details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0; font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+/* «Detalles»: lo que es en gris y su valor en blanco, en dos columnas (el Grid del iPhone). R2-8: el texto no tiene foco
+   que crezca, así que no lleva la orilla extra de la fila (--space-2): su columna de nombres va al ras del encabezado. */
+.title__details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0 0 0 calc(-1 * var(--space-2)); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .title__details dt { color: var(--color-text-faint); }
 .title__details dd { margin: 0; color: var(--color-text); }
 .title__more-row--details { padding-top: 0; }

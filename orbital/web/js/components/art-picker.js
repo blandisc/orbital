@@ -13,7 +13,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
   const lead = h("p", { class: "art-picker__lead" });
   const body = h("div", { class: "art-picker__body" });
   const el = h("section", { class: "art-picker screen", hidden: true, "aria-label": "Cambiar el arte" },
-    h("div", { class: "art-picker__box" }, ScreenHead({ eyebrow: "Imagen", title: "Cambiar el arte" }), lead, body));
+    h("div", { class: "art-picker__box" }, ScreenHead({ title: "Cambiar el arte" }), lead, body));
   let target = null; // { kind, metaId, title } o, de un juego, { kind: "game", id, title }
   let rows = []; // [{ which, label, options: [{ url, el }] }]
   let focus = { r: 0, c: 0 };

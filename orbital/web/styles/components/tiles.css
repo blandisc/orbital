@@ -5,7 +5,6 @@
 /* --- Destacado (FeatureHero): sobre el arte a pantalla completa, como el Apple TV. Su porqué en turquesa, el logo, el dato,
    el avance y la fila de botones (blanco el principal; los demás, vidrio). Lo pone abajo a la izquierda quien lo usa. */
 .feature-hero { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); max-width: min(46rem, 52%); }
-.feature-hero__eyebrow { color: var(--color-reason); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); text-shadow: var(--shadow-text-strong); }
 .feature-hero__logo { max-width: min(100%, 26rem); max-height: 7rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
 .feature-hero__title {
   max-width: 100%; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); line-height: var(--leading-tight);

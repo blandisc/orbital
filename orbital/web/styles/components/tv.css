@@ -39,8 +39,6 @@
 .tv__preview--live .tv__preview-badge::before { content: ""; display: inline-block; width: .5em; height: .5em; margin-right: .4em; border-radius: 50%; background: var(--color-live); vertical-align: .1em; } /* «En vivo» siempre del mismo color */
 .tv__now-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 /* El rótulo solo lleva el color de «en vivo» cuando de verdad está al aire (antes, también en un canal apagado). */
-.tv__now-eyebrow { color: var(--color-text-muted); font-size: var(--type-eyebrow); font-weight: var(--type-eyebrow-weight); letter-spacing: var(--type-eyebrow-tracking); }
-.tv__now-eyebrow--live { color: var(--color-live); }
 .tv__now-title { margin: 0; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight); overflow: clip; overflow-clip-margin: var(--clip-tail); min-width: 0; min-height: 0; padding-bottom: .1em; overflow-wrap: break-word;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; } /* un nombre largo, en dos líneas (antes: «Cine de Barrio Int…») */

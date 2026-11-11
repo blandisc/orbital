@@ -19,11 +19,12 @@ import urllib.request
 from pathlib import Path
 
 from ..net import NET_FAILURES, read_body, urlopen
+from ..shared import design_file
 
 log = logging.getLogger(__name__)
 
 # A15 · qué quiere decir cada error de Real-Debrid, la misma tabla que lee el iPhone.
-ERRORS_FILE = Path(__file__).resolve().parents[2] / "design" / "realdebrid-errors.json"
+ERRORS_FILE = design_file("realdebrid-errors.json")  # desde git o dentro del paquete (shared.py)
 CAUSES = ("invalid_session", "no_premium", "refused", "too_many", "slow_down", "gone", "other")
 
 
@@ -32,8 +33,14 @@ def load_errors(path: Path = ERRORS_FILE) -> tuple[dict[int, str], dict[int, str
     mínimo por HTTP (y queda anotado): Orbital sigue, aunque distinga menos."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-        codes = {int(k): v["cause"] for k, v in data["codes"].items() if v.get("cause") in CAUSES}
-        http = {int(k): v for k, v in data["http"].items() if k.isdigit() and v in CAUSES}
+        codes: dict[int, str] = {}
+        for k, v in data["codes"].items():  # renglón por renglón: uno mal escrito se salta, no tumba la tabla
+            try:
+                if v.get("cause") in CAUSES:
+                    codes[int(k)] = v["cause"]
+            except (ValueError, KeyError, TypeError, AttributeError):
+                log.error("realdebrid-errors.json: el código %r está mal escrito; lo salto", k)
+        http = {int(k): v for k, v in data["http"].items() if isinstance(k, str) and k.isdigit() and v in CAUSES}
         return codes, http
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         log.error("No pude leer %s: los errores de Real-Debrid se distinguen solo por su HTTP", path)

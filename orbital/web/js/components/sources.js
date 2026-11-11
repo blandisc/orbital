@@ -1,6 +1,6 @@
 import { api } from "../core/api.js";
 import { motion } from "../core/motion.js";
-import { Badge, Chip, LineSkeleton } from "./ui.js";
+import { Badge, Chip, Eyebrow, LineSkeleton } from "./ui.js";
 import { AddonMark } from "./addon-mark.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
@@ -25,7 +25,8 @@ import { requestLabel } from "../core/menus.js";
 const ASK_WAIT = "La nube las baja por ti: suele tardar de minutos a horas.";
 
 export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], onMove, onClose, onChange }) {
-  const heading = h("div", { class: "sources__heading" }, "Versión");
+  // R2: arriba, la etiqueta del sistema (Eyebrow, turquesa), no el salmón del arte.
+  const heading = Eyebrow("Elige la versión", { tag: "div", className: "sources__heading" });
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
   // Un episodio: ¿esta versión es solo para él o la serie sigue así? (LB/RB; como «Solo este | Desde aquí» del iPhone).

@@ -4,6 +4,7 @@ import { gameReason } from "../core/games.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
+import { Eyebrow } from "./ui.js";
 
 /**
  * La página de un juego (Juegos «C», como la página de producto del Apple TV; Opciones › «Ver ficha»): su arte a pantalla
@@ -40,7 +41,7 @@ export function createGamePage({ onAction, onShow, onMove, onClose }) {
     const logo = extra.logo ? h("img", { class: "game-page__logo", src: extra.logo, alt: it.title, decoding: "async" }) : null;
     logo?.addEventListener("error", () => logo.replaceWith(title), { once: true });
     mount(body,
-      h("span", { class: "game-page__reason" }, gameReason(it)),
+      Eyebrow(gameReason(it), { className: "game-page__reason" }),
       logo || title,
       h("p", { class: "game-page__facts" }, h("b", {}, it.subtitle || ""),
         ...[extra.year, genres(extra.genres || []).slice(0, 3).join(", "), extra.developer].filter(Boolean).map((f) => ` · ${f}`)),

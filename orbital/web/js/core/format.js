@@ -145,3 +145,32 @@ export function firstSentence(text) {
   const cut = ends.find((at) => at >= 40);
   return cut ? clean.slice(0, cut) : clean;
 }
+
+/**
+ * R2 (11 nov 2026): la etiqueta de arriba (`Eyebrow`, en turquesa) dice el PORQUÉ («Seguir viendo», «En Mi lista», «En
+ * tendencia», «Sale hoy · 19:00»), nunca un dato: el tipo («Película», «Serie»), el año, la temporada y el episodio
+ * («T1 E3»), lo que queda o lo que dura van en la línea de datos. Lo que parece dato no pasa: devuelve null.
+ */
+const DATA_ONLY = [/^(película|serie|series|películas)\b/i, /\bT\d+\s*E\d+\b/, /^\s*(19|20)\d{2}(\s*[–-]\s*((19|20)\d{2})?)?\s*$/,
+  /\bquedan\b/i, /^\s*\d+\s*(h|min)\b/i, /^Sigue:/];
+export function reasonOnly(text) {
+  const clean = String(text ?? "").trim();
+  if (!clean) return null;
+  return DATA_ONLY.some((re) => re.test(clean)) ? null : clean;
+}
+
+// R2-8: de qué idioma es una reseña (Letterboxd no lo dice). Cuenta palabras muy comunes de cada uno; sin las suficientes,
+// null (no se adivina). Las en español van primero; las demás dicen su idioma.
+const COMMON = {
+  es: ["el", "la", "los", "las", "que", "de", "y", "es", "una", "un", "por", "con", "para", "pero", "muy", "más", "esta", "como", "lo", "se", "no", "me", "su"],
+  en: ["the", "and", "is", "it", "of", "to", "a", "this", "that", "was", "but", "with", "for", "you", "his", "he", "i", "my", "so", "not", "be", "if"],
+  pt: ["o", "os", "um", "uma", "não", "é", "muito", "mais", "isso", "esse", "você", "mas", "com", "pra"],
+};
+export const LANGUAGE_NAMES = { es: "español", en: "inglés", pt: "portugués" };
+export function textLanguage(text) {
+  const words = String(text ?? "").toLowerCase().match(/[a-záéíóúñãõç]+/g) || [];
+  if (words.length < 3) return null;
+  const score = Object.fromEntries(Object.entries(COMMON).map(([lang, list]) => [lang, words.filter((w) => list.includes(w)).length]));
+  const [best, hits] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+  return hits >= 2 && hits > (Object.values(score).sort((a, b) => b - a)[1] ?? 0) ? best : null;
+}

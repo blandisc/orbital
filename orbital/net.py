@@ -32,6 +32,8 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import weakref
+from collections.abc import Callable
 from urllib.parse import urlencode, urljoin, urlsplit
 
 log = logging.getLogger(__name__)
@@ -162,6 +164,7 @@ class Breaker:
         self._lock = threading.Lock()
         self._count: dict[str, int] = {}
         self._until: dict[str, float] = {}
+        self.on_recover: Callable[[str], None] | None = None  # un servicio que fallaba volvió a contestar
 
     def check(self, host: str) -> None:
         with self._lock:
@@ -174,8 +177,10 @@ class Breaker:
 
     def success(self, host: str) -> None:
         with self._lock:
-            self._count.pop(host, None)
-            self._until.pop(host, None)
+            was_failing = self._count.pop(host, None) is not None
+            was_failing = self._until.pop(host, None) is not None or was_failing
+        if was_failing and self.on_recover is not None:
+            self.on_recover(host)
 
     def failure(self, host: str) -> None:
         with self._lock:
@@ -252,6 +257,32 @@ def _connect(key: tuple, timeout: float) -> http.client.HTTPConnection:
 
 breaker = Breaker()
 pool = Pool()
+_listeners: list[Callable[[], Callable[[str], None] | None]] = []
+_listeners_lock = threading.Lock()
+
+
+def on_recover(callback: Callable[[str], None]) -> None:
+    """Avísame cuando un servicio que fallaba vuelva a contestar (regresó el internet): la cola de Trakt sale sola. Un
+    método se guarda con referencia débil: un gestor que ya no existe no se queda escuchando."""
+    try:
+        ref: Callable[[], Callable[[str], None] | None] = weakref.WeakMethod(callback)  # type: ignore[arg-type]
+    except TypeError:
+        ref = lambda: callback  # noqa: E731 - una función suelta vive lo que el módulo
+    with _listeners_lock:
+        _listeners[:] = [r for r in _listeners if r() is not None] + [ref]
+
+
+def _recovered(host: str) -> None:
+    with _listeners_lock:
+        callbacks = [cb for cb in (r() for r in _listeners) if cb is not None]
+    for callback in callbacks:
+        try:
+            callback(host)
+        except Exception:  # noqa: BLE001 - quien escucha nunca tumba una petición
+            log.exception("Error avisando que %s volvió", host)
+
+
+breaker.on_recover = _recovered
 
 
 def reset() -> None:

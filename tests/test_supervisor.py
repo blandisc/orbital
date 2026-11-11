@@ -279,3 +279,86 @@ def test_the_launcher_writes_no_mark_outside_the_supervisor(tmp_path, monkeypatc
     monkeypatch.setenv(supervisor.CHILD_ENV, "1")
     assert Launcher()._marker == supervisor.busy_flag()  # junto a la de «actualizando» (en pruebas, en tmp_path)
     assert supervisor.busy_flag().name == supervisor.BUSY_FILE
+
+
+# --------------------------------------------------- lo de enfrente manda, no el nombre del proceso (11 nov 2026)
+def front(pid=0, exe="", fullscreen=False, orbital=False, idle=0.0):
+    return lambda: {"pid": pid, "exe": exe, "fullscreen": fullscreen, "orbital": orbital, "idle": idle}
+
+
+def mark(tmp_path, title, pids, exe="", at=None):
+    path = tmp_path / "busy.json"
+    supervisor.write_busy({"id": title, "title": title, "pids": pids, "exe": exe, **({"at": at} if at else {})}, path)
+    return path
+
+
+def test_a_launcher_left_in_the_tray_does_not_count(tmp_path):
+    path = mark(tmp_path, "Stremio", {}, exe="stremio.exe")
+    table = {7: ("stremio.exe", 1), 9: ("explorer.exe", 1)}
+    assert supervisor.game_open(path, table, front=front(9, "explorer.exe")) == ""  # en la bandeja, el escritorio al frente
+    assert supervisor.game_open(path, table, front=front(5, "msedge.exe", fullscreen=True, orbital=True)) == ""  # Orbital
+
+
+def test_a_launcher_in_front_counts_if_full_screen_or_being_used(tmp_path):
+    path = mark(tmp_path, "GeForce NOW", {"40": "geforcenow.exe"})
+    table = {40: ("geforcenow.exe", 1)}
+    assert supervisor.game_open(path, table, front=front(40, "geforcenow.exe", fullscreen=True, idle=7200)) == "GeForce NOW"
+    assert supervisor.game_open(path, table, front=front(40, "geforcenow.exe", idle=60)) == "GeForce NOW"  # la usas
+    assert supervisor.game_open(path, table, front=front(40, "geforcenow.exe", idle=supervisor.IDLE_LIMIT + 1)) == ""
+
+
+def test_a_real_game_always_counts_until_the_time_limit(tmp_path):
+    path = mark(tmp_path, "Zelda", {"40": "eden.exe"}, at=1000.0)
+    table = {40: ("eden.exe", 1)}
+    desk = front(9, "explorer.exe")
+    assert supervisor.game_open(path, table, front=desk, now=1000.0 + 3600) == "Zelda"  # aunque no esté al frente
+    late = 1000.0 + supervisor.HOLD_LIMIT + 1
+    assert supervisor.game_open(path, table, front=desk, now=late) == ""  # pasado el tope y sin usarlo: sí se reabre
+    assert supervisor.game_open(path, table, front=front(40, "eden.exe", idle=99999), now=late) == "Zelda"  # al frente
+    assert supervisor.game_open(path, table, front=front(3, "mpv.exe", fullscreen=True), now=late) == "Zelda"  # un video
+
+
+def test_when_the_front_cannot_be_known_it_never_steals_the_screen(tmp_path):
+    path = mark(tmp_path, "Stremio", {"7": "stremio.exe"}, at=1.0)
+    assert supervisor.game_open(path, {7: ("stremio.exe", 1)}, front=lambda: None, now=1e9) == "Stremio"
+
+
+def test_rewriting_the_mark_keeps_when_it_was_opened(tmp_path):
+    path = mark(tmp_path, "Zelda", {"40": "eden.exe"}, at=1000.0)
+    supervisor.write_busy({"id": "Zelda", "title": "Zelda", "pids": {"40": "eden.exe", "41": "eden.exe"}, "exe": ""}, path)
+    import json
+    assert json.loads(path.read_text(encoding="utf-8"))["at"] == 1000.0  # se conoció otro proceso: no reinicia el tope
+    supervisor.write_busy({"id": "Halo", "title": "Halo", "pids": {"50": "halo.exe"}, "exe": ""}, path)
+    assert json.loads(path.read_text(encoding="utf-8"))["at"] > 1000.0  # otra cosa: hora nueva
+
+
+def test_after_a_crash_a_launcher_in_the_tray_does_not_hold_orbital_forever(tmp_path):
+    path = mark(tmp_path, "Stremio", {"7": "stremio.exe"})
+    table = {7: ("stremio.exe", 1)}
+    slept = []
+    supervisor.hold_while_open(lambda: supervisor.game_open(path, table, front=front(9, "explorer.exe")), slept.append)
+    assert slept == []  # reabre de inmediato
+
+
+def test_the_hung_orbital_is_reopened_when_only_a_tray_launcher_remains(tmp_path):
+    path = mark(tmp_path, "GeForce NOW", {"40": "geforcenow.exe"})
+    table = {40: ("geforcenow.exe", 1)}
+    child = Child()
+    answers = iter([True] + [False] * 20)
+    away = lambda: supervisor.away_reason(  # noqa: E731
+        1, game=lambda: supervisor.game_open(path, table, front=front(5, "msedge.exe", orbital=True)), front=lambda pid: True)
+    assert supervisor.watch(child, lambda: next(answers), clock_from(), busy=lambda: False, away=away) == supervisor.HUNG
+
+
+def test_foreground_info_reads_the_window():
+    class Full(Win):
+        def is_fullscreen(self, hwnd):
+            return True
+
+        def input_idle_seconds(self):
+            return 12.0
+
+    got = supervisor.foreground_info(1, Full(pid=40, exe="Ryujinx.exe", title="Mario Kart", tree=(1,)))
+    assert got == {"pid": 40, "exe": "ryujinx.exe", "fullscreen": True, "orbital": False, "idle": 12.0}
+    assert supervisor.foreground_info(1, Win())["orbital"] is True
+    assert supervisor.foreground_info(1, Win(fg=0)) is None

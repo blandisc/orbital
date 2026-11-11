@@ -119,7 +119,11 @@ export function latestItem(i, now = localDay()) {
   // El día arriba, corto («Jueves 5»); cuánto falta, en la placa del episodio sobre el póster («T4 E4 · en 3 días»), como el iPhone.
   const left = soon && days >= 2 ? `en ${days} días` : "";
   const base = curatedItem(i, { rowTitle: "Lo nuevo de lo tuyo" });
-  return { ...base, extra: { ...base.extra, eyebrow: whenLine(i, days) || base.extra.eyebrow }, subtitle: i.episode_label || "", left,
+  // R2 (11 nov 2026): arriba, solo el porqué («Sale el jueves 5 a las 9:00 p. m.», «Salió ayer»); el episodio («T1 E3») va en la
+  // línea de datos (`extra.episode`), no en la etiqueta turquesa.
+  const when = whenLine({ ...i, episode_label: "" }, days);
+  return { ...base, extra: { ...base.extra, eyebrow: when ? when[0].toUpperCase() + when.slice(1) : base.extra.eyebrow, episode: i.episode_label || undefined },
+    subtitle: i.episode_label || "", left,
     when_label: i.day_label || "", soon,
     fresh: !!i.today, today: false, day_label: undefined };
 }

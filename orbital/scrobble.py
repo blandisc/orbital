@@ -165,9 +165,9 @@ class TraktScrobbler:
             self._error = None
             self._last = {"title": title, "action": action, "at": self.clock()}
         log.info("Trakt: %s %s al %.1f %%", "+".join(steps), title, progress)
-        if self.outbox is not None and self.outbox.pending:  # Trakt contesta otra vez: lo que esperaba, ya
+        if self.outbox is not None:  # Trakt contesta otra vez: lo que esperaba sale en segundo plano (no frena los avisos)
             try:
-                self.outbox.flush(trakt)
+                self.outbox.kick(trakt)
             except Exception:  # noqa: BLE001 - la cola nunca tumba el reproductor
                 log.exception("Trakt: no pude mandar lo pendiente")
 
@@ -193,5 +193,7 @@ class TraktScrobbler:
             return {"last": dict(self._last) if self._last else None, "error": self._error}
 
     def wait(self) -> None:
-        """Espera a que salgan los avisos pendientes (las pruebas)."""
+        """Espera a que salgan los avisos pendientes y la cola que dispararon (las pruebas)."""
         self._pool.submit(lambda: None).result(timeout=10)
+        if self.outbox is not None:
+            self.outbox.idle()

@@ -61,6 +61,9 @@ class Cache:
         # enseñan eso (vencido, pero mejor que nada); con conexión, se renueva como siempre.
         self.path = path
         self._save_timer: threading.Timer | None = None
+        # Un guardado a la vez, de la foto a la escritura: `clear()` guarda al momento y el temporizador puede estar a media
+        # foto; sin esto, la foto vieja (con lo borrado) podía escribirse después y lo borrado regresaba del disco.
+        self._save_lock = threading.Lock()
         if path is not None:
             self._load()
 
@@ -116,6 +119,10 @@ class Cache:
             self._save_timer.start()
 
     def _save(self) -> None:
+        with self._save_lock:
+            self._save_now()
+
+    def _save_now(self) -> None:
         with self._lock:
             self._save_timer = None
             self._purge()

@@ -9,7 +9,7 @@ import { dragScroll } from "../core/swipe.js";
 import { fillFilters, fillWindow, fitBar, keepInView, replay, showFilter, windowCells } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
-import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark, RowCount, rowCountText } from "./ui.js";
+import { EmptyState, Eyebrow, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark, RowCount, rowCountText } from "./ui.js";
 
 /**
  * Juegos, como el Apple TV (Fernando, 31 oct 2026): dos pisos arriba —la barra de secciones y, debajo, tus consolas en el
@@ -156,7 +156,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     const logo = extra.logo ? h("img", { class: "games__logo", src: extra.logo, alt: item.title, decoding: "async" }) : null;
     logo?.addEventListener("error", () => logo.replaceWith(title), { once: true });
     mount(hero,
-      h("span", { class: "games__reason" }, gameReason(item)),
+      Eyebrow(gameReason(item), { className: "games__reason" }),
       logo || title,
       // Los datos, como la línea del destacado del Inicio: la marca de su consola con su nombre corto («Switch», no «Nintendo
       // Switch»: el logo ya lo dice), el año, sus géneros y cuántos juegan con su ícono. Cada dato en su pieza, con su punto.

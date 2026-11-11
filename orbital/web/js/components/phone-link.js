@@ -13,7 +13,7 @@ export function createPhoneLink({ onMove, onClose }) {
   const status = h("p", { class: "phone-link__status", role: "status" });
   const el = h("section", { class: "phone-link screen", hidden: true, "aria-label": "Conectar un aparato" },
     h("div", { class: "phone-link__box" },
-      ScreenHead({ eyebrow: "Cuentas", title: "Conectar un aparato" }),
+      ScreenHead({ title: "Conectar un aparato" }),
       qr, status,
       h("ol", { class: "phone-link__steps" },
         // PT21 (Fernando, 4 nov): primero el camino del iPhone (lo que dice su pantalla); la cámara también sirve.

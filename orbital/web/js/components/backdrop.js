@@ -64,7 +64,7 @@ function remotePalette(url, done) {
  * styles/themes/orbital.css, para que --color-accent y --color-tinted-bg salgan del color de cada pieza
  * (tests/web/tint.test.mjs cuida que coincidan).
  */
-export const TINTED = [".backdrop", ".screen", ".side-panel", ".launch", ".toast", ".is-focused.card", ".card--chosen"];
+export const TINTED = [".backdrop", ".screen", ".side-panel", ".launch", ".toast", ".is-focused.card", ".is-focused.shelf__stage", ".card--chosen"];
 let tintRule = null;
 function tintStyle() {
   if (!tintRule) {

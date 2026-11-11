@@ -20,9 +20,13 @@ test("película: Ver, o Continuar con lo que queda y Desde el principio", () => 
 test("serie con episodios: se ve desde la lista; a la izquierda solo lo de la serie", () => {
   const going = { kind: "series", seasons, trailer: "x", resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } };
   assert.ok(episodesLed(going));
-  // Sin «Continuar» aparte ni «Versión»/«Descargar» (son del episodio enfocado: A, Y, X).
-  assert.deepEqual(titleActions(going, { download: null }).map((a) => a.id), ["status", "trailer"]);
-  assert.deepEqual(titleActions(going, { phone: true }).map((a) => a.id), ["status", "trailer", "phone-download", "phone-open"]);
+  // R2-8: el principal blanco «Continuar T2 E1» (como el iPhone); «Versión»/«Descargar» de otro episodio son de la lista (A, Y, X).
+  const led = titleActions(going, { download: null });
+  assert.deepEqual(led.map((a) => a.id), ["play", "status", "trailer"]);
+  assert.deepEqual([led[0].label, led[0].video_id, led[0].primary], ["Continuar T2 E1", "s:2:1", true]);
+  assert.equal(titleActions({ ...going, resume: { ...going.resume, position: 0 } })[0].label, "Ver T2 E1");
+  // Un solo botón para el iPhone (antes dos casi iguales).
+  assert.deepEqual(titleActions(going, { phone: true }).map((a) => a.id), ["play", "status", "trailer", "phone"]);
   // Sin episodios en la lista (Cinemeta no los trae): el botón de siempre, con el que ibas.
   const bare = titleActions({ kind: "series", seasons: [], resume: { video_id: "s:2:1", label: "T2 E1", position: 600 } });
   assert.ok(!episodesLed({ kind: "series", seasons: [] }));
@@ -77,12 +81,13 @@ test("serie sin episodios: sin «Elegir versión» (no había nada que elegir)",
 
 test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhone conectado", () => {
   const movie = { kind: "movie", resume: null };
-  assert.ok(!titleActions(movie).some((a) => a.id.startsWith("phone-")));
-  assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label),
-    ["Ver", "Mi lista", "Descargar en el iPhone", "Versión", "Enviar al iPhone"]);
-  assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.id).filter((id) => id.startsWith("phone")), ["phone-download", "phone-open"]);
+  assert.ok(!titleActions(movie).some((a) => a.id === "phone"));
+  // R2-8: un solo botón «Al iPhone» (abre «Enviar» y «Descargar»); sin cápsula de versión en «Ver», el botón «Versión».
+  assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label), ["Ver", "Mi lista", "Versión", "Al iPhone"]);
+  // Con la cápsula al lado de «Ver» («🇲🇽 · 1080p · CC»), «Versión» no se repite en un botón.
+  assert.ok(!titleActions(movie, { plays: { line: "Latino · 1080p" } }).some((a) => a.id === "sources"));
   // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
-  assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
+  assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id === "phone"));
   assert.deepEqual(titleActions({ error: true }, { phone: true }).map((a) => a.id), ["retry"]);
 });
 
@@ -194,8 +199,9 @@ test("«Ver» dice cómo va a sonar, y la lista dice latino o castellano", async
   assert.equal(titleActions({ kind: "movie", resume: null }, { plays })[0].hint, plays.line);
   const seasons = [{ season: 1, episodes: [{ id: "s:1:1", episode: 1 }, { id: "s:1:2", episode: 2 }] }];
   const going = { kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", position: 0 } };
-  // Una serie con episodios se ve desde su lista (no hay «Ver» en la ficha): nada que describir ahí.
-  assert.ok(!titleActions(going, { plays: { video_id: "s:1:2", line: "Latino · 720p · Sin subtítulos" } }).some((a) => a.hint));
+  // R2-8: una serie con episodios trae «Ver T1 E2» con su cápsula, si la versión es de ese episodio (no de otro).
+  assert.equal(titleActions(going, { plays: { video_id: "s:1:2", line: "Latino · 720p · Sin subtítulos" } })[0].hint, "Latino · 720p · Sin subtítulos");
+  assert.ok(!titleActions(going, { plays: { video_id: "s:1:1", line: "Latino · 720p" } }).some((a) => a.hint));
   const lat = { id: 7, resolution: "1080p", languages: ["Español", "Inglés"], dub: "latino" };
   const spa = { id: 8, resolution: "1080p", languages: ["Español"], dub: "" };
   assert.deepEqual(sourceLanguages(lat), ["Latino", "Inglés"]);

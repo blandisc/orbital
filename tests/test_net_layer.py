@@ -20,6 +20,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"  # deja la conexión abierta entre pedidos (keep-alive)
     script: list = []  # (código, encabezados) por pedido; luego 200
     seen: list = []
+    close_after = False
 
     def log_message(self, *args):
         pass
@@ -39,6 +40,8 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+        if self.close_after:  # cierra sin decirlo en los encabezados (una conexión ociosa que el servidor corta)
+            self.close_connection = True
 
     do_GET = do_POST = _reply
 
@@ -107,10 +110,17 @@ def test_a_post_with_429_is_repeated_and_an_idempotent_post_with_503_too(server)
 
 
 def test_a_post_on_a_connection_the_server_closed_goes_once_by_a_new_one(server):
+    """El servidor cierra una conexión ociosa sin avisar (como Cloudflare): el POST se va por una nueva, una sola vez."""
+    import time
+
     base, handler, _ = server
-    assert net.http_json(f"{base}/a")[0] == 200
-    for conn, _ in next(iter(net.pool._free.values())):
-        conn.sock.shutdown(socket.SHUT_RDWR)
+    handler.close_after = True
+    try:
+        assert net.http_json(f"{base}/a")[0] == 200
+        assert net.pool._free  # el cliente la guardó: no le dijeron que se cerraba
+        time.sleep(.2)  # llega el cierre del servidor
+    finally:
+        handler.close_after = False
     assert net.http_json(f"{base}/scrobble/stop", method="POST", body={"a": 1})[0] == 200
     assert [s[0] for s in handler.seen].count("POST") == 1
 

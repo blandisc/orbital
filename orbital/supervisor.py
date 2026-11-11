@@ -13,6 +13,12 @@ El acceso directo arranca este "vigilante", que abre el Orbital de verdad como p
     escribe el lanzador, con sus procesos aún vivos) o la ventana al frente no es la de Orbital, no mata ni reabre:
     lo anota y espera a que regreses (los latidos fallidos no cuentan mientras tanto, para que un juego que acapara
     la CPU no se lea como cuelgue). Tras un tropiezo, tampoco reabre encima de un juego que sigue abierto.
+  * Pero «abierto» se decide por lo que está AL FRENTE, no solo por el nombre del proceso (revisión del 11 nov 2026):
+    un lanzador que se queda residente (Stremio, GeForce NOW en la bandeja) solo cuenta si su ventana está al frente
+    (a pantalla completa, o con alguien usándola); y pasado `HOLD_LIMIT` desde que se abrió, cualquier cosa abierta
+    cuenta solo si su ventana está al frente o lo de enfrente es un juego o un video a pantalla completa. Si no se
+    puede saber qué hay al frente (fuera de Windows, o justo no hay ventana), cuenta: nunca se le quita la pantalla a
+    un juego o a un video que de verdad se está usando.
 """
 
 from __future__ import annotations
@@ -43,6 +49,10 @@ UPDATING_STALE = 30 * 60.0  # s: una marca de «actualizando» más vieja ya no 
 HOLD_EVERY = 10.0  # s entre revisiones mientras espera a que cierres el juego para reabrir Orbital
 BUSY_FILE = "busy.json"  # lo que Orbital tiene abierto (juego, emulador, video): {"title", "pids": {pid: exe}, "exe"}
 BROWSERS = ("msedge.exe", "chrome.exe", "chromium.exe")
+# Lanzadores que se quedan vivos aunque ya no los uses (en la bandeja): su proceso no dice que estés viendo o jugando.
+RESIDENT = frozenset({"stremio.exe", "geforcenow.exe", "steam.exe", "steamwebhelper.exe", "epicgameslauncher.exe"})
+HOLD_LIMIT = 2 * 3600.0  # s: pasado esto, algo abierto solo cuenta si de verdad está al frente
+IDLE_LIMIT = 30 * 60.0  # s sin tocar teclado ni ratón: un lanzador al frente en ventana (no a pantalla completa) ya no cuenta
 
 
 def updating_flag() -> Path:
@@ -73,9 +83,40 @@ def write_busy(info: dict | None, path: Path | None = None) -> None:
             path.unlink(missing_ok=True)
         else:
             from .atomic import atomic_write
+            info = {**info, "at": info.get("at") or _opened_at(path, info)}
             atomic_write(path, json.dumps(info, ensure_ascii=False), durable=False)
     except OSError:
         log.debug("No pude actualizar la marca de «hay algo abierto»", exc_info=True)
+
+
+def _opened_at(path: Path, info: dict) -> float:
+    """Desde cuándo está abierto: si la marca de antes es de lo mismo (se reescribe al conocer más procesos), su hora."""
+    try:
+        old = json.loads(path.read_text(encoding="utf-8"))
+        if old.get("id") == info.get("id") and old.get("title") == info.get("title") and isinstance(old.get("at"), (int, float)):
+            return float(old["at"])
+    except (OSError, ValueError, AttributeError):
+        pass
+    return time.time()
+
+
+def foreground_info(child_pid: int | None = None, win=None) -> dict | None:
+    """Lo que está al frente: {pid, exe, fullscreen, orbital (es la ventana de Orbital), idle (s sin teclado ni ratón)}.
+    None si no se puede saber (fuera de Windows, o en el instante en que no hay ninguna ventana al frente)."""
+    if win is None:
+        if sys.platform != "win32":
+            return None
+        from . import windows as win
+    hwnd = win.foreground()
+    if not hwnd:
+        return None
+    pid = win.pid_of(hwnd)
+    exe = (win.exe_name(pid) or "").lower()
+    orbital = bool(child_pid and pid and pid in win.process_tree(child_pid)) or (
+        "Orbital" in win.title(hwnd) and exe in BROWSERS)
+    fullscreen = getattr(win, "is_fullscreen", lambda h: False)(hwnd)
+    idle = getattr(win, "input_idle_seconds", lambda: 0.0)()
+    return {"pid": pid, "exe": exe, "fullscreen": bool(fullscreen), "orbital": orbital, "idle": float(idle)}
 
 
 def _alive(pid: int, exe: str, table: dict[int, tuple[str, int]] | None) -> bool:
@@ -91,24 +132,52 @@ def _alive(pid: int, exe: str, table: dict[int, tuple[str, int]] | None) -> bool
     return True
 
 
-def game_open(path: Path | None = None, table: dict[int, tuple[str, int]] | None = None) -> str:
-    """El título de lo que Orbital tiene abierto si alguno de sus procesos sigue vivo, o "". Una marca vieja (Orbital
-    se colgó y luego cerraste el juego) no cuenta: sus procesos ya no están."""
+def game_open(path: Path | None = None, table: dict[int, tuple[str, int]] | None = None, front=None,
+              now: float | None = None) -> str:
+    """El título de lo que Orbital tiene abierto si de verdad sigue en uso, o "". Una marca vieja (Orbital se colgó y
+    luego cerraste el juego) no cuenta: sus procesos ya no están. Un lanzador residente vivo (Stremio, GeForce NOW en
+    la bandeja) o algo abierto hace más de `HOLD_LIMIT` cuentan solo si lo de enfrente lo dice (`in_use`).
+    `front()` (pruebas) dice qué hay al frente; por omisión, `foreground_info()`."""
     try:
         info = json.loads((path or busy_flag()).read_text(encoding="utf-8"))
         pids = {int(pid): str(exe or "") for pid, exe in (info.get("pids") or {}).items()}
         exe = str(info.get("exe") or "").lower()
+        opened = float(info.get("at") or 0)
     except (OSError, ValueError, AttributeError, TypeError):
         return ""
     if table is None and sys.platform == "win32":
         from . import windows
         table = windows.processes()
     title = str(info.get("title") or "algo")
-    if any(_alive(pid, name, table) for pid, name in pids.items()):
+    alive = {pid: (table.get(pid, (name, 0))[0] if table is not None else name).lower()
+             for pid, name in pids.items() if _alive(pid, name, table)}
+    by_exe = bool(exe and table is not None and any(name == exe for name, _ in table.values()))
+    if not alive and not by_exe:
+        return ""
+    names = set(alive.values()) | ({exe} if by_exe and not alive else set())
+    resident = bool(names) and names <= RESIDENT
+    stale = bool(opened) and (time.time() if now is None else now) - opened > HOLD_LIMIT
+    if not resident and not stale:
+        return title  # un juego, un emulador o un video recién abiertos: cuentan siempre
+    seen = (front or foreground_info)()
+    if in_use(seen, set(alive), names, resident):
         return title
-    if exe and table is not None and any(name == exe for name, _ in table.values()):
-        return title  # apps de un solo ejecutable (Stremio) o el pid que aún no se conocía
+    why = "se quedó en la bandeja" if resident else f"lleva más de {HOLD_LIMIT / 3600:.0f} h y no está al frente"
+    log.info("%s sigue vivo pero %s: no lo cuento como abierto", title, why)
     return ""
+
+
+def in_use(seen: dict | None, pids: set[int], names: set[str], resident: bool) -> bool:
+    """¿Lo de enfrente dice que lo abierto se está usando? Sin saber qué hay al frente: sí (nunca se le quita la pantalla
+    a algo que se está usando). Orbital al frente: no. Su ventana al frente: sí (un lanzador en ventana, solo con alguien
+    tocándolo). Otra cosa a pantalla completa (un juego o un video, no Orbital): sí."""
+    if seen is None:
+        return True
+    if seen.get("orbital"):
+        return False
+    if seen.get("pid") in pids or seen.get("exe") in names:
+        return bool(seen.get("fullscreen")) or not resident or float(seen.get("idle") or 0) < IDLE_LIMIT
+    return bool(seen.get("fullscreen"))
 
 
 def orbital_in_front(child_pid: int, win=None) -> bool | None:
@@ -127,9 +196,9 @@ def orbital_in_front(child_pid: int, win=None) -> bool | None:
     return "Orbital" in win.title(hwnd) and win.exe_name(pid) in BROWSERS
 
 
-def away_reason(child_pid: int, game=game_open, front=orbital_in_front) -> str:
+def away_reason(child_pid: int, game=None, front=orbital_in_front) -> str:
     """Por qué no conviene cerrar y reabrir Orbital ahora («Mario Kart sigue abierto»), o "" si estás en Orbital."""
-    title = game()
+    title = game() if game is not None else game_open(front=lambda: foreground_info(child_pid))
     if title:
         return f"{title} sigue abierto"
     if front(child_pid) is False:

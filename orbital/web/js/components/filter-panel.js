@@ -56,7 +56,7 @@ export function createFilterPanel({ count, onResults, onMove, onClose }) {
     cancelExit();
     glyphs = options.glyphs || glyphs;
     el.hidden = false;
-    mount(head, ScreenHead({ eyebrow: "Películas y series", title: "Filtro avanzado" }));
+    mount(head, ScreenHead({ eyebrow: "Justo lo que se te antoja", title: "Filtro avanzado" }));
     at = 0;
     paint();
     recount();

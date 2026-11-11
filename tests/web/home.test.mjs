@@ -83,16 +83,45 @@ test("GeForce NOW con arte de Steam también usa la cápsula de la tienda", () =
   assert.equal(thumbOf({ id: "gfn:1", title: "Sin Steam", hero: "/h.jpg" }).src, "/h.jpg");
 });
 
-test("el destacado lleva rótulo como el iPhone: «Seguir viendo», «Sigue» o «Seguir jugando»", async () => {
+test("el destacado lleva rótulo como el iPhone: «Seguir viendo», «Seguir jugando» o el porqué de su lista", async () => {
   const { eyebrowOf } = await import("../../orbital/web/js/components/tiles.js");
   const series = { id: "cinemeta:series:tt1", source: "cinemeta" };
   assert.equal(eyebrowOf({ ...series, progress: .4 }), "Seguir viendo");
-  assert.equal(eyebrowOf({ ...series, progress: 0 }), "Sigue"); // el episodio que toca
+  // R2: el episodio que toca de lo que sigues en Trakt (Seguir viendo, sin avance) también es «Seguir viendo».
+  assert.equal(eyebrowOf({ id: "stremio:tt9", source: "stremio", category: "continue", subtitle: "Sigue: T1 E3",
+    extra: { kind: "series", eyebrow: "Serie · T1 E3" } }), "Seguir viendo");
   assert.equal(eyebrowOf({ id: "cinemeta:movie:tt2", source: "cinemeta", progress: 0 }), null);
   const game = { id: "g", system: "steam", category: "games", last_played: Date.now() / 1000 };
   assert.equal(eyebrowOf(game), "Seguir jugando");
   assert.equal(eyebrowOf(game, "g"), null); // abierto: su botón ya dice «Volver al juego»
   assert.equal(eyebrowOf({ id: "a", category: "apps", last_played: 1 }), null);
+});
+
+test("R2: una serie de Mi lista que nunca empezaste dice «En Mi lista» y «Serie · 2008», sin «Sigue» ni el tipo dos veces", async () => {
+  const { eyebrowOf, detailOf } = await import("../../orbital/web/js/components/tiles.js");
+  const { curatedItem } = await import("../../orbital/web/js/core/curation.js");
+  const { kicker } = await import("../../orbital/web/js/core/home.js");
+  const bb = curatedItem({ meta_id: "tt0903747", kind: "series", title: "Breaking Bad", year: 2008, why: "En Mi lista" }, { rowTitle: "Mi lista" });
+  assert.equal(eyebrowOf(bb), "En Mi lista");
+  assert.equal([kicker(bb), detailOf(bb)].filter(Boolean).join(" · "), "Serie · 2008");
+  // Sin año: solo el tipo, una vez.
+  const noYear = curatedItem({ meta_id: "tt1", kind: "series", title: "X", why: "En Mi lista" }, { rowTitle: "Mi lista" });
+  assert.equal([kicker(noYear), detailOf(noYear)].filter(Boolean).join(" · "), "Serie");
+  // Un dato nunca llega a la etiqueta de arriba, aunque venga en `eyebrow`.
+  assert.equal(eyebrowOf({ ...bb, extra: { ...bb.extra, eyebrow: "Serie · T1 E3" } }), null);
+  // El episodio que toca: arriba el porqué, abajo solo «T1 E3».
+  const next = { id: "stremio:tt9", source: "stremio", category: "continue", subtitle: "Sigue: T1 E3", extra: { kind: "series" } };
+  assert.equal([kicker(next), detailOf(next)].join(" · "), "Serie · T1 E3");
+});
+
+test("R2: la etiqueta de arriba solo deja pasar porqués (reasonOnly)", async () => {
+  const { reasonOnly } = await import("../../orbital/web/js/core/format.js");
+  for (const why of ["Seguir viendo", "En Mi lista", "En tendencia", "Lo que pediste", "N.º 1 en Netflix", "Sale hoy · 19:00", "Lo jugaste hace 3 h · 48 h en total"]) {
+    assert.equal(reasonOnly(why), why);
+  }
+  for (const data of ["Serie · T1 E3 · Episodio 3", "Película", "2008", "2005–2013", "T2 E7", "quedan 20 min", "Sigue: T1 E3", "", null]) {
+    assert.equal(reasonOnly(data), null, data);
+  }
 });
 
 test("la columna de la derecha dice qué es y no repite el destacado", async () => {
@@ -143,4 +172,16 @@ test("P4: una sola fila «A continuación»: lo que tienes a medias que no cupo 
   const offline = buildHome([...rows, { id: "continue", items: [show, dune] }], { mylist: mine, offline: true });
   assert.ok(!offline.cards.some((c) => c.id === "stremio:tt2"));
   assert.equal(offline.mylist.length, 0);
+});
+
+test("R2: la serie que sigues en Trakt sale en «A continuación» aunque haya muchos juegos más recientes, una sola vez", () => {
+  const office = { id: "stremio:tt0386676", title: "The Office", source: "stremio", category: "continue", subtitle: "Sigue: T1 E3",
+    extra: { kind: "series", meta_id: "tt0386676" } };
+  const games = ["hades", "mario", "pikmin", "hollow", "emerald"].map((id, i) => game(id, "steam", 100 - i));
+  const home = buildHome([{ id: "jump", items: [...games, office] }, { id: "continue", items: [office] }]);
+  const queue = [home.feature, ...home.cards].map((i) => i.id);
+  assert.ok(queue.includes("stremio:tt0386676"), queue.join());
+  assert.equal(queue.filter((id) => id === "stremio:tt0386676").length, 1);
+  // los juegos de siempre siguen primero, por lo último que usaste
+  assert.deepEqual(queue.slice(0, 5), ["hades", "mario", "pikmin", "hollow", "emerald"]);
 });

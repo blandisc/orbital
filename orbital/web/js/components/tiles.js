@@ -4,7 +4,8 @@ import { kicker, platformColor, systemColor } from "../core/home.js";
 import { ICONS, isTitleItem, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
-import { Badge, PlatformMark, Progress } from "./ui.js";
+import { Badge, Eyebrow, PlatformMark, Progress } from "./ui.js";
+import { reasonOnly } from "../core/format.js";
 
 /**
  * Tiles del sistema de diseño: piezas grandes de las pantallas nuevas (Inicio y las que vienen). La consola es enfocable
@@ -32,20 +33,30 @@ function featureLogo(src, title) {
 export function detailOf(item, now = Date.now()) {
   // «Película · quedan 1 h 40 min» → «Quedan 1 h 40 min»: la barra ya dice que es un video. Solo lo que falta, sin la hora.
   // Empieza con mayúscula, como todo texto suelto de Orbital («Jugaste hace 12 h», «Quedan 52 min»).
+  // R2 (11 nov 2026): tampoco «Serie · »: «Serie · Serie · 2008» repetía el tipo, que ya dice `kicker`. Ni «Sigue: »: el
+  // porqué va arriba; aquí, solo el dato («T1 E3», «2008»).
   const capital = (text) => (text ? text[0].toUpperCase() + text.slice(1) : null);
-  if (isWatchable(item)) return capital(item.subtitle?.replace(/^Película · /, "") || null);
+  if (isWatchable(item)) {
+    const rest = (item.subtitle || "").replace(/^(Película|Serie)(?: · |$)/, "").replace(/^Sigue: /, "");
+    return capital(rest || null);
+  }
   const when = lastPlayed(item.last_played, now, "Jugaste");
   const total = item.playtime >= 600 ? duration(item.playtime) : null;
   return capital([when, total && `${total} en total`].filter(Boolean).join(" · "));
 }
 
 /**
- * El rótulo sobre el título del destacado, como el `Eyebrow` del iPhone: «Seguir viendo» (a medias), «Sigue» (el
- * episodio que toca) o «Seguir jugando». Lo abierto ya lo dice su botón («Volver al juego»): sin rótulo.
+ * El porqué sobre el título del destacado, como el `Eyebrow` del iPhone: «Seguir viendo» (a medias o el episodio que toca de
+ * lo que sigues), «Seguir jugando», o el porqué que trae el título de su lista («En Mi lista», «En tendencia»). Lo abierto ya
+ * lo dice su botón («Volver al juego»): sin rótulo. R2 (11 nov 2026): una serie de Mi lista que nunca empezaste decía
+ * «Sigue»; ahora «En Mi lista». Nunca un dato («Serie · T1 E3»): ese va en la línea de datos (`reasonOnly`).
  */
 export function eyebrowOf(item, runningId = null) {
   if (item.id === runningId) return null;
-  if (isWatchable(item)) return item.progress > 0 ? "Seguir viendo" : isSeries(item) || item.extra?.kind === "series" ? "Sigue" : null;
+  if (isWatchable(item)) {
+    if (item.progress > 0 || item.category === "continue") return "Seguir viendo";
+    return reasonOnly(item.source === "cinemeta" ? item.extra?.eyebrow : null);
+  }
   return isGame(item) && item.last_played ? "Seguir jugando" : null;
 }
 
@@ -67,7 +78,7 @@ export function FeatureHero(item, { runningId = null, glyphs = {}, onAction, rea
   const why = reason || eyebrowOf(item, runningId) || (open ? "Abierto ahora" : null);
   const detail = detailOf(item);
   return h("div", { class: ["feature-hero", needsInternet(item) && "needs-internet"] },
-    why && h("span", { class: "feature-hero__eyebrow" }, why),
+    Eyebrow(why, { className: "feature-hero__eyebrow" }),
     item.extra?.logo ? featureLogo(item.extra.logo, item.title) : h("h2", { class: "feature-hero__title" }, item.title),
     h("span", { class: "feature-hero__detail", style: tint(item) }, mark(item), [kicker(item), detail].filter(Boolean).join(" · ")),
     Progress(item.progress, { className: "feature-hero__progress" }),
@@ -90,7 +101,7 @@ export function ConsoleHero(system, { glyphs = {}, onAction, now = Date.now() })
   const played = last ? lastPlayed(last.last_played, now, `Jugaste ${last.title}`) : null;
   const why = system.fresh > 0 ? `${system.fresh} juego${system.fresh === 1 ? "" : "s"} nuevo${system.fresh === 1 ? "" : "s"}` : null;
   return h("div", { class: ["feature-hero", "feature-hero--console", system.system === "geforcenow" && "needs-internet"] },
-    why && h("span", { class: "feature-hero__eyebrow" }, why),
+    Eyebrow(why, { className: "feature-hero__eyebrow" }),
     h("h2", { class: "feature-hero__title" }, system.name),
     h("span", { class: "feature-hero__detail", style: { "--platform": systemColor(system.system) } },
       svg(ICONS.gamepad), [games, played].filter(Boolean).join(" · ")),

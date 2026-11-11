@@ -139,3 +139,11 @@ test("PT20 (4 nov): en una frase, horas y días completos; «min» se queda", ()
   assert.equal(sentenceAgo(ago(15 * 60), now), "15 min");
   assert.equal(sentenceAgo(ago(26 * 3600), now), "ayer");
 });
+
+test("R2-8: el idioma de una reseña se reconoce por sus palabras comunes; sin bastantes, no se adivina", async () => {
+  const { textLanguage } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(textLanguage("my favourite part is how he doesn't give an absolute shit about his son"), "en");
+  assert.equal(textLanguage("Una de las mejores películas que he visto, pero el final es muy largo"), "es");
+  assert.equal(textLanguage("Oh. My. God."), null);
+  assert.equal(textLanguage(""), null);
+});

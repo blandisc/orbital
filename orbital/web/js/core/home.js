@@ -158,11 +158,15 @@ export function buildHome(rows, { runningId = null, now = Date.now(), offline = 
   const first = running ?? halfway;
   const ordered = first ? [first, ...pool.filter((i) => i !== first)] : pool;
   const list = consoleList(rows);
+  // R2 (11 nov 2026): de lo último, los primeros CARDS van tal cual (juegos, películas o series); de lo demás solo se queda lo
+  // que estás viendo. Antes se cortaba en CARDS y la serie que sigues en Trakt (su episodio siguiente llega sin hora y va al
+  // final de «jump») no aparecía nunca: el Inicio salía solo con juegos.
+  const after = ordered.slice(1).filter((item) => !sameAs(item, ordered[0]));
   return {
     pending: jump.length,
     pendingItems: jump,
     feature: ordered[0] ?? null,
-    cards: unique([...ordered.slice(1).filter((item) => !sameAs(item, ordered[0])).slice(0, CARDS), ...halfwayRest(rows, ordered, offline)])
+    cards: unique([...after.slice(0, CARDS), ...after.slice(CARDS).filter(isWatchable), ...halfwayRest(rows, ordered, offline)])
       .slice(0, ROW_LIMIT - 1),
     mylist: offline ? [] : mylist.filter((item) => item && (item.meta_id || item.extra?.meta_id)).slice(0, ROW_LIMIT),
     consoles: list,
