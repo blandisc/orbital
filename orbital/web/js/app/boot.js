@@ -1,9 +1,9 @@
 /**
  * La entrada (la marca de Orbital, como el iPhone) y el regreso de un juego: cuándo se va, qué dice mientras
- * espera y "Tu consola" la primera vez.
+ * espera y el aviso de «Tu consola» la primera vez.
  */
 import { api } from "../core/api.js";
-import { setupMenu } from "../core/menus.js";
+import { setupMenu, welcomeNotice } from "../core/menus.js";
 import { reducedMotion } from "../core/motion.js";
 import { tokenMs } from "../core/tokens.js";
 
@@ -33,16 +33,18 @@ const stillMotion = () => reducedMotion() || !!globalThis.matchMedia?.("(prefers
 /** Cuánto está escalada la marca al centro (--boot-brand-scale): su ancho sin escalar es el de la barra. */
 const scaleOf = (node) => new DOMMatrixReadOnly(getComputedStyle(node).transform).a || 1;
 
-export function createBoot({ state, applySettings, openMenu, busy = () => false, el = document.getElementById("boot") }) {
+export function createBoot({ state, applySettings, openMenu, notify = null, busy = () => false, el = document.getElementById("boot") }) {
   let leavingAt = 0;
-  /** La primera vez: "Tu consola" (qué encontró Orbital y qué falta), una sola vez. */
+  /** La primera vez: un aviso de «Tu consola» (qué encontró Orbital), una sola vez. Ya no tapa Inicio con la hoja (T6,
+   *  10 nov 2026): el aviso la abre con su botón y queda en Ajustes › Resumen. Sin quién avise, la hoja de antes. */
   async function welcome() {
     try {
       const settings = state.settings.welcomed === undefined ? await api.settings() : state.settings;
       if (settings.welcomed) return;
       const status = await api.setup();
       // Después de que aterrice la interfaz, y no encima de algo que ya abriste (un juego cargando).
-      const show = () => (busy() ? setTimeout(show, 1500) : openMenu(setupMenu(status)));
+      const open = () => openMenu(setupMenu(status));
+      const show = () => (busy() ? setTimeout(show, 1500) : notify ? notify(welcomeNotice(status), open) : open());
       setTimeout(show, 1200);
       applySettings(await api.setSettings({ welcomed: true }));
     } catch { /* sin servidor: ya saldrá la próxima vez */ }

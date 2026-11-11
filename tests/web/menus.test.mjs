@@ -589,7 +589,7 @@ test("Ajustes › Resumen: lo que falta primero (la voz que no llega, cuentas), 
   const settings = { alexa: true, stremio_linked: true, trakt: { configured: true, linked: false }, companion_devices: [{ seen: 1 }], tv: { configured: true } };
   assert.deepEqual(settingsMissing(settings, { voice, now }).map((o) => o.label), ["La voz no ha llegado en 8 días", "Trakt sin conectar"]);
   const page = settingsCategory("summary", settings, { voice, now });
-  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "La tele"]);
+  assert.deepEqual(page.options.map((o) => o.label), ["Lo que falta", "La voz no ha llegado en 8 días", "Trakt sin conectar", "Ya está bien", "La tele", "Tu consola", "Qué encontré"]);
   assert.equal(settingsMeta("summary", settings, { voice, now }), "2 cosas por hacer");
   // Sin saber de la voz (el servidor no contestó), no se inventa que falla.
   assert.deepEqual(settingsMissing(settings, { now }).map((o) => o.label), ["Trakt sin conectar"]);

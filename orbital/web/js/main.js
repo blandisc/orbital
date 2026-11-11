@@ -1050,6 +1050,11 @@ let libraryRetry = 0;
 // ---------------------------------------------------------------- arranque y regreso
 sound.warm(); // abrir el audio cuesta ~200 ms: mientras se ve la entrada, no en el primer botón
 const boot = createBoot({ state, applySettings: (settings) => applySettings(settings), openMenu: (menu) => openMenu(menu),
+  // T6: la primera vez, «Tu consola» es un aviso que no tapa Inicio; ☰ / M (o tocarlo) abre la hoja de siempre.
+  notify: ({ heading, message }, open) => {
+    const duration = tokenMs("--duration-notice-long");
+    ui.toast.show(message, { heading, duration, ...offerToastAction({ label: "Ver", button: "menu", duration, run: open }) });
+  },
   busy: () => ui.launch.visible || ui.sheet.isOpen || !!topOverlay() });
 
 async function loadLibrary({ refresh = false, keepId = null } = {}) {

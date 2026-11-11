@@ -995,6 +995,9 @@ function summary(settings, voice, now) {
   return { title: "Resumen", lead: missing.length ? "Lo que falta, primero. Lo demás ya está bien." : "Todo está listo.", options: [
     missing.length && { heading: true, label: "Lo que falta" }, ...missing,
     fine.length && { heading: true, label: "Ya está bien" }, ...fine,
+    // «Tu consola» (T6): lo que salía encima de Inicio la primera vez, siempre aquí.
+    { heading: true, label: "Tu consola" },
+    { icon: "check", label: "Qué encontré", hint: "Tus juegos, Películas y series y lo que falta", command: { type: "setup" } },
   ].filter(Boolean) };
 }
 
@@ -2091,6 +2094,12 @@ function paraTiRow(trakt) {
   if (trakt.linked) return { icon: "spark", label: "Explorar", value: "✓ Trakt", command: { type: "section", id: "foryou" } };
   if (trakt.configured) return { icon: "spark", label: "Explorar", value: "Conectar Trakt", command: { type: "trakt-link" } };
   return { icon: "spark", label: "Explorar", hint: "Con Trakt", value: "Configurar", command: { type: "keys", service: "trakt" } };
+}
+
+/** El aviso de la primera vez (T6): qué encontró, sin tapar Inicio. `{ heading, message }` para el aviso de la TV. */
+export function welcomeNotice(status = {}) {
+  const games = status.games || 0;
+  return { heading: "Tu consola", message: `${games ? `Encontré ${games} juego${games === 1 ? "" : "s"}` : "Aún no encontré juegos"} · lo demás, en Ajustes › Resumen` };
 }
 
 export function setupMenu(status = {}) {
