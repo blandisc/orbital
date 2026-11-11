@@ -177,7 +177,7 @@ Un aviso dice una cosa, se lee de un vistazo y no se pierde. Valen para los de l
 | `GlassSwitch(items, { label, onPick })` | `ui` | El selector de vidrio del segundo piso (las consolas de Juegos): cada opción con su foto y su nombre; la elegida en blanco tenue, la enfocada invertida; si no caben, las demás quedan en su foto (`glass-switch--compact`). |
 | `FeatureHero(item, { runningId, glyphs, onAction, reason })` | `tiles` | El destacado sobre el arte del Inicio: porqué, logo o título, de dónde es y su dato, avance y botones. |
 | `ConsoleHero(system, { glyphs, onAction })` | `tiles` | Lo de arriba del Inicio cuando enfocas una consola: «N juegos nuevos» como porqué, su nombre, «9 juegos · Jugaste Hades hace 36 min» y «Entrar» · «Seguir Hades». |
-| `Card(item, { caption: "focus" })` | `card` | La portada que solo dice su nombre cuando está enfocada. |
+| `Card(item, { caption: "focus" })` | `card` | La portada que solo dice su nombre cuando está enfocada. Clic y clic secundario llegan por un solo oyente en el documento (V10, P4), no dos por tarjeta. |
 | `Button({ variant: "primary" })` · `Button({ icon })` | `button` | El principal en blanco · el secundario redondo de vidrio con su nombre debajo. |
 
 ### Revisión por pantalla
@@ -787,6 +787,7 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 | iniciales de un canal sin logo | `core/tv.js` | Las iniciales dentro del círculo de un canal sin logo (como el avatar de una persona) van en mayúsculas. |
 | siglas de calidad de video | iPhone: `Design/AddonPieces.swift` (`TorrentioWords.quality`) y la lista de siglas de `DesignRulesTests` | «CAM» y «DVD» son como la gente reconoce esas copias en las listas de versiones, así que van tal cual junto a su nombre en palabras: «Grabada en el cine (CAM)», «Otras copias (DVD)» (Fernando, 3 nov 2026). |
 | sello del mazo | `match-deck.css` (`.match__stamp`) | El sello que asoma al decidir en «¿Qué vemos hoy?» (PASO, GUARDAR, ★ PARA HOY) va en mayúsculas, como el de `MatchCard` del iPhone y el de Tinder. |
+| margen que deja lugar al foco | `card.css` (`.is-focused.card`, en las filas; las cuadrículas no lo usan) | V2 (P4, 10 nov): la enfocada crece y empuja a sus vecinas con un margen animado, que se recalcula en cada cuadro. Hacerlo con `transform` pediría mover cada tarjeta de la derecha (un selector `~` que recalcula toda la fila en cada tecla) y que `keepInView` dejara de medir con `offsetLeft`: más trabajo, no menos, y riesgo de que la fila se desacomode al volver. Medido: quitar esa transición no baja los elementos recalculados por tecla de forma clara (dentro del ruido, CPU 4x). Se queda el margen. |
 
 (Antes de agregar una, intenta un token o una pieza nueva.)
 

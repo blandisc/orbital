@@ -31,6 +31,29 @@ export const WIDE_RATIO = 16 / 9;
 /** ¿Es el arte de respaldo de Orbital (el cielo genérico) y no el del título? Entonces no dice qué es. */
 export const isStandInArt = (src) => typeof src === "string" && /(^|\/)img\/placeholders\//.test(src);
 
+/**
+ * V10 (P4, 10 nov): un solo oyente para todas las tarjetas, en el documento, en vez de dos por tarjeta (clic y clic
+ * secundario). Cada tarjeta guarda qué hace (`actions`); una pieza de adentro que no quiere abrir la tarjeta (la casilla de
+ * «Elegir varios») sigue deteniendo el clic como antes, y el arrastre táctil (swipe.js) lo sigue tragando antes.
+ */
+const actions = new WeakMap();
+let delegated = false;
+function delegate() {
+  if (delegated || typeof document === "undefined") return;
+  delegated = true;
+  document.addEventListener("click", (event) => {
+    const card = event.target.closest?.(".card");
+    actions.get(card)?.onPress?.(event);
+  });
+  document.addEventListener("contextmenu", (event) => {
+    const card = event.target.closest?.(".card");
+    const onMore = actions.get(card)?.onMore;
+    if (!onMore) return;
+    event.preventDefault();
+    onMore();
+  });
+}
+
 export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption = false, pop = false, ranked = false, wide = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
@@ -92,10 +115,9 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
       standIn && "card--stand-in", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,
-    onClick: onPress,
-    // Clic secundario o mantener el dedo: sus Opciones (lo mismo que Y), como el menú del iPhone al mantener presionado.
-    onContextmenu: onMore && ((event) => { event.preventDefault(); onMore(); }),
   });
+  // Clic: lo que hace (onPress). Clic secundario o mantener el dedo: sus Opciones (lo mismo que Y), como el menú del iPhone.
+  if (onPress || onMore) { actions.set(card, { onPress, onMore }); delegate(); }
   if (fill) card.style.setProperty("--fill", fill);
   const setRatio = (ratio) => {
     card.dataset.ratio = String(ratio);

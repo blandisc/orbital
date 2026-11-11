@@ -57,7 +57,9 @@ test("las cuatro superficies: X y ☰ (mando y teclado), «Editar», la casilla 
   assert.match(screen, /action === "back" && editing/, "B es «Listo» antes que cerrar la lista");
   assert.match(screen, /SelectMark\(/, "la casilla en cada póster, editando");
   assert.match(screen, /label: "Editar"/, "el botón «Editar» a la vista");
-  assert.match(read("components", "card.js"), /onContextmenu: onMore/, "clic secundario o mantener el dedo: Opciones");
+  // V10 (P4): un solo oyente delegado en el documento; cada tarjeta guarda su onMore.
+  assert.match(read("components", "card.js"), /document\.addEventListener\("contextmenu"/, "clic secundario o mantener el dedo: Opciones");
+  assert.match(read("components", "card.js"), /actions\.set\(card, \{ onPress, onMore \}\)/);
   assert.match(main, /editable: c\.type === "list" && traktLinked\(\) && isEditableList\(l\.id\)/, "solo tus listas se abren editables");
   // Buscar eligiendo qué agregar va encima de la lista y se queda con los botones.
   assert.match(main, /ui\.search\.isPicking \? \[ui\.search, \.\.\.OVERLAYS\]/);
