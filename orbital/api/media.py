@@ -14,6 +14,7 @@ from .. import player_ui, watch
 from ..library import cinemeta, stremio_api
 from ..library import trakt as trakt_api
 from .deps import Deps
+from .slow import slow
 
 log = logging.getLogger(__name__)
 
@@ -190,6 +191,7 @@ def router(d: Deps) -> APIRouter:
     catalog = d.catalog
 
     @r.get("/search")
+    @slow
     def search(q: str = "") -> dict:
         q = q.strip()[:120]  # nadie busca con más de 120 letras (y la URL de Cinemeta tiene límite)
         if len(q) < 2:
@@ -221,6 +223,7 @@ def router(d: Deps) -> APIRouter:
         raise error or cinemeta.CinemetaError("Sin resultados")
 
     @r.get("/genre")
+    @slow
     def genre(kind: str = "movie", genre: str = "") -> dict:
         """Lo más popular de un género en el catálogo de Stremio (Películas y series · estantes por género)."""
         if kind not in ("movie", "series") or genre not in GENRES:
@@ -231,6 +234,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(502, "Sin conexión con el catálogo de películas y series.")
 
     @r.get("/title/{kind}/{meta_id}")
+    @slow
     def title(kind: str, meta_id: str) -> dict:
         """La ficha: datos, reparto, temporadas y dónde ibas."""
         if kind not in ("movie", "series"):
@@ -243,6 +247,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(502, "No pude cargar la ficha. Revisa tu conexión e inténtalo de nuevo.")
 
     @r.get("/episodes/{meta_id}")
+    @slow
     def episodes(meta_id: str) -> dict:
         try:
             meta = catalog.cinemeta.meta("series", meta_id)
@@ -287,6 +292,7 @@ def router(d: Deps) -> APIRouter:
         return {"titles": catalog.watch.remembered()}
 
     @r.get("/sources")
+    @slow
     def sources(kind: str, id: str, video: str | None = None) -> dict:
         """Fuentes ordenadas por tus preferencias; la primera es la recomendada. Sin URLs."""
         if kind not in ("movie", "series"):
@@ -321,6 +327,7 @@ def router(d: Deps) -> APIRouter:
                 "quality": prefs.quality, "meta": info, "recommended": recommended}
 
     @r.get("/availability")
+    @slow
     def availability(kind: str, id: str, video: str | None = None) -> dict:
         """Por qué no hay una versión que arranque ya y qué se puede hacer (la ficha lo dice; RD-1, RD-5)."""
         if kind not in ("movie", "series") or not _clean_id(id) or (video is not None and not _clean_id(video)):

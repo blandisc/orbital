@@ -8,9 +8,11 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from typing import cast
 
 from ..library import trakt as trakt_api
+from . import pools
 from .base import MINE_TTL, SERVICE_ERRORS, _Base
 
 log = logging.getLogger("orbital.foryou")  # el mismo nombre de siempre: la bitácora no cambia
@@ -34,14 +36,12 @@ class _Mine(_Base):
             except SERVICE_ERRORS:  # una lista que no responde no tumba las demás
                 return None
 
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            watch = pool.submit(t.watchlist)
-            favs = pool.submit(t.favorites)
-            found = [pool.submit(members, row["id"]) for row in lists]
-            in_watch = any(e["imdb"] == imdb for e in watch.result())
-            in_favs = any(e["imdb"] == imdb for e in favs.result())
-            out = [{"id": row["id"], "name": row["name"], "contains": any(e["imdb"] == imdb for e in f.result() or [])}
-                   for row, f in zip(lists, found, strict=True) if f.result() is not None]
+        watch, favs, *found = pools.DETAILS.run([t.watchlist, t.favorites, *[partial(members, row["id"]) for row in lists]],
+                                                at_most=6)
+        in_watch = any(e["imdb"] == imdb for e in cast("list[dict]", watch))
+        in_favs = any(e["imdb"] == imdb for e in cast("list[dict]", favs))
+        out = [{"id": row["id"], "name": row["name"], "contains": any(e["imdb"] == imdb for e in f or [])}
+               for row, f in zip(lists, found, strict=True) if f is not None]
         return {"trakt": True, "watchlist": in_watch, "favorite": in_favs, "lists": out}
 
     def save_to(self, kind: str, imdb: str, where: str, add: bool) -> None:

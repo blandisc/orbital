@@ -7,7 +7,6 @@ import logging
 import re
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
 from ..library import letterboxd as letterboxd_api
@@ -15,6 +14,7 @@ from ..library import mdblist as mdblist_api
 from ..library import stremio_api
 from ..library import tmdb as tmdb_api
 from ..net import NET_FAILURES, read_json, request, urlopen
+from . import pools
 from .base import (
     CANON,
     CANON_TTL,
@@ -132,8 +132,7 @@ class _Sources(_Mine):
                 return None
             return {"imdb": found["imdb"], "kind": found.get("kind") or "movie", "title": f["title"], "year": f.get("year")} if found.get("imdb") else None
 
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            return [e for e in pool.map(one, films[:200]) if e]
+        return [e for e in pools.DETAILS.map(one, films[:200], at_most=4) if e]
 
     def _recent_seeds(self) -> list[dict]:
         """Tus últimos cinco títulos distintos (Trakt), para «Porque viste X»."""
@@ -224,8 +223,7 @@ class _Sources(_Mine):
         if not platform:
             return []
         rows = self.tmdb.discover(kind, platform["id"], self.region)[:20]
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            details = list(pool.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows))
+        details = pools.DETAILS.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows, at_most=6)
         _mark_partial(len(details), sum(1 for d in details if d is None))
         name = tmdb_api.PLATFORMS[brand][0]
         return [video_item(d, f"En {name}", title=d["title"], poster=d["poster"], wide=d["backdrop"],
@@ -234,8 +232,7 @@ class _Sources(_Mine):
 
     def _tmdb_items(self, rows: list[dict], kind: str, why: str, limit: int = 20) -> list[dict]:
         """Filas de TMDB (discover) → video_item con su IMDb (la ficha y el reproductor lo necesitan)."""
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            details = list(pool.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows[:limit]))
+        details = pools.DETAILS.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows[:limit], at_most=6)
         _mark_partial(len(details), sum(1 for d in details if d is None))
         return [video_item(d, why, title=d["title"], poster=d["poster"], wide=d["backdrop"], overview=d["overview"],
                            seasons=d.get("seasons"))
@@ -298,8 +295,7 @@ class _Sources(_Mine):
             return video_item(detail, why, title=detail["title"], poster=detail.get("poster"), wide=detail.get("backdrop"),
                               overview=detail.get("overview"), seasons=detail.get("seasons"))
 
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            items = [item for item in pool.map(one, picked) if item][:limit]
+        items = [item for item in pools.DETAILS.map(one, picked, at_most=6) if item][:limit]
         _mark_partial(len(picked), len(failed))
         if ranked:
             for n, item in enumerate(items, start=1):
@@ -352,8 +348,7 @@ class _Sources(_Mine):
 
     def _rawg(self, which: str) -> list[dict]:
         games = self.rawg.games(which)
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            appids = list(pool.map(lambda g: self._safe(lambda: self.rawg.steam_appid(g["rawg_id"])), games))
+        appids = pools.DETAILS.map(lambda g: self._safe(lambda: self.rawg.steam_appid(g["rawg_id"])), games, at_most=6)
         why = {"new": "Novedad", "popular": "Popular", "best": "Mejor calificado"}[which]
         found = []
         for g, appid in zip(games, appids, strict=True):
