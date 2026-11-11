@@ -24,6 +24,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field, replace
 from datetime import date
+from pathlib import Path
 from urllib.parse import quote, urlparse
 
 from ..net import NET_ERRORS
@@ -33,56 +34,43 @@ from . import subtitles as subtitle_lib
 log = logging.getLogger(__name__)
 
 CACHE_SECONDS = 600
-REQUEST_TIMEOUT = 15
+
+# F2 · las tablas para elegir versión viven en design/streams-rules.json, las mismas que debe leer el iPhone.
+RULES_FILE = Path(__file__).resolve().parents[2] / "design" / "streams-rules.json"
+
+
+def load_rules(path: Path = RULES_FILE) -> dict:
+    """Las reglas compartidas; {} (y queda anotado) si el archivo falta o viene roto: las versiones se siguen ordenando,
+    solo sin reconocer idiomas por banderas ni palabras."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        log.error("No pude leer %s: sin reglas de idioma para elegir versión", path)
+        return {}
+
+
+RULES = load_rules()
+
+
+def _patterns(name: str) -> list[tuple[re.Pattern, str]]:
+    return [(re.compile(r["pattern"], re.I if "i" in r.get("flags", "") else 0), r["lang"]) for r in RULES.get(name) or []]
+
+
+_SIZE = RULES.get("size") or {}
+TOO_BIG_GB: dict[str, float] = dict(_SIZE.get("too_big_gb") or {"4K": 60, "1080p": 25})
+TOO_BIG_DEFAULT_GB = float(_SIZE.get("too_big_default_gb", 15))
+SERIES_SIZE_FACTOR = float(_SIZE.get("series_factor", .3))
+TOO_SMALL_GB: dict[str, float] = dict(_SIZE.get("too_small_gb") or {"movie": .7, "series": .12})
+REQUEST_TIMEOUT = float((RULES.get("waits") or {}).get("per_addon_s", 15))
 
 # Banderas e indicios de idioma en los títulos de Torrentio y compañía. Torrentio solo pone 🇲🇽 cuando el nombre dice
 # latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).
-FLAG_LANG = {
-    "🇬🇧": "en", "🇺🇸": "en", "🇲🇽": "es-419", "🇪🇸": "es", "🇦🇷": "es-419", "🇫🇷": "fr", "🇮🇹": "it", "🇩🇪": "de",
-    "🇵🇹": "pt", "🇧🇷": "pt", "🇷🇺": "ru", "🇯🇵": "ja", "🇰🇷": "ko", "🇨🇳": "zh", "🇮🇳": "hi", "🇵🇱": "pl",
-    "🇹🇷": "tr", "🇺🇦": "uk", "🇳🇱": "nl", "🇨🇿": "cs", "🇸🇰": "sk", "🇭🇺": "hu", "🇬🇷": "el", "🇸🇪": "sv",
-    "🇩🇰": "da", "🇳🇴": "no", "🇫🇮": "fi", "🇷🇴": "ro", "🇧🇬": "bg", "🇭🇷": "hr", "🇷🇸": "sr", "🇮🇱": "he",
-    "🇸🇦": "ar", "🇹🇭": "th", "🇻🇳": "vi", "🇮🇩": "id", "🇱🇹": "lt", "🇱🇻": "lv", "🇪🇪": "et",
-}
-WORD_LANG = [
-    # «LAT», «CAST», «ESP» solo en mayúsculas: en minúsculas son palabras del título («Cast.Away»).
-    (re.compile(r"\b(latino|latam|es-?419|spa-la|hispanoam[eé]rica(no)?|latinoam[eé]rica(no)?|latin[ ._-]?american)\b|"
-                r"dual[-. ]?lat\b", re.I), "es-419"),
-    (re.compile(r"\bLAT\b"), "es-419"),
-    (re.compile(r"\b(castellano|castilian|es-es)\b", re.I), "es-ES"),
-    (re.compile(r"\bCAST\b"), "es-ES"),
-    (re.compile(r"\b(spanish|español|espanol|spa)\b", re.I), "es"),
-    (re.compile(r"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"), "es"),  # «EN/FR/ES»
-    (re.compile(r"\b(eng|english|ingles)\b|(?<![A-Za-z])EN(?=/)", re.I), "en"),
-    (re.compile(r"\b(jpn|japanese|jap)\b", re.I), "ja"),  # «Eng 5.1 AAC Jap 5.1 AAC»
-    (re.compile(r"(?i:\b(mvo|dvo|avo)\b)|[А-Яа-яЁё]{4,}"), "ru"),  # voces rusas; un nombre en cirílico es un lanzamiento ruso
-    (re.compile(r"(?i:\b(french|fre|vff|vf|vf2|vfq|truefrench)\b)|(?<![-\w])FR\b"), "fr"),
-    (re.compile(r"\b(ita|italian)\b", re.I), "it"),
-    (re.compile(r"\b(german|deutsch|ger)\b", re.I), "de"),
-    (re.compile(r"\b(rus|russian)\b", re.I), "ru"),
-    (re.compile(r"\b(hindi)\b", re.I), "hi"),
-    # "CZ dabing", "SK dabing", "PL lektor", "dublado": doblajes que antes pasaban por inglés.
-    # «CZ», «SK», «PL» solo en mayúsculas y no tras un guion: «x264-pl» es el grupo que lo subió, no polaco.
-    (re.compile(r"(?i:\b(cze|czech|cesky|český|dabing)\b)|(?<![-\w])CZ\b"), "cs"),
-    (re.compile(r"(?i:\b(slovak|slovensky|slovenský)\b)|(?<![-\w])SK\b"), "sk"),
-    (re.compile(r"(?i:\b(polish|polski|lektor)\b)|(?<![-\w])PL\b"), "pl"),
-    (re.compile(r"\b(hun|hungarian|magyar)\b", re.I), "hu"),
-    (re.compile(r"\b(ptbr|pt-br|dublado|portuguese|portugues|português)\b", re.I), "pt"),
-    (re.compile(r"\b(ukr|ukrainian)\b", re.I), "uk"),
-    (re.compile(r"\b(turkish|türkçe|turkce)\b", re.I), "tr"),
-    (re.compile(r"\b(arabic)\b", re.I), "ar"),
-    (re.compile(r"\b(korean|kor)\b", re.I), "ko"),
-    # «NORDiC» no: son subtítulos nórdicos con el audio original.
-    (re.compile(r"\b(swedish|danish|norwegian|finnish)\b", re.I), "sv"),
-]
+FLAG_LANG: dict[str, str] = dict(RULES.get("flags") or {})
+WORD_LANG = _patterns("words")  # en orden: el primero que coincide de cada idioma
 # Las de WORD_LANG que no se confunden con palabras del título (códigos en mayúsculas, el cirílico): se buscan en todo el
 # nombre; las demás, solo en lo técnico («The Italian Job» no es italiano).
-CODE_LANG = [
-    (re.compile(r"\bLAT\b"), "es-419"), (re.compile(r"\bCAST\b"), "es-ES"),
-    (re.compile(r"\bESP\b|\[Esp\]|(?<=/)ES\b|\bES(?=/)"), "es"), (re.compile(r"(?<![A-Za-z])EN(?=/)", re.I), "en"),
-    (re.compile(r"[А-Яа-яЁё]{4,}"), "ru"), (re.compile(r"(?<![-\w])FR\b"), "fr"),
-    (re.compile(r"(?<![-\w])CZ\b"), "cs"), (re.compile(r"(?<![-\w])SK\b"), "sk"), (re.compile(r"(?<![-\w])PL\b"), "pl"),
-]
+CODE_LANG = _patterns("codes")
 # Donde empieza lo técnico de un nombre (el año, la temporada, la calidad, el origen o un corchete): antes va el título, y
 # sus palabras no son idiomas («The Italian Job», «The Spanish Prisoner», «Russian Doll»).
 RELEASE_MARKER = re.compile(
@@ -91,8 +79,7 @@ RELEASE_MARKER = re.compile(
 # «DUBBED» sin idioma (RARBG, GalaxyRG): doblaje al inglés de una película extranjera, no su audio original.
 DUBBED_WORD = re.compile(r"\bdubbed\b", re.I)
 # Sitios de un solo idioma: lo que suben ahí va doblado a ese idioma (MejorTorrent = castellano, Cinecalidad = latino).
-SITE_LANG = {"mejortorrent": "es-ES", "wolfmax4k": "es-ES", "cinecalidad": "es-419", "ilcorsaronero": "it",
-             "rutor": "ru", "rutracker": "ru", "torrent9": "fr", "comando": "pt", "bludv": "pt", "besttorrents": "pl"}
+SITE_LANG: dict[str, str] = dict(RULES.get("sites") or {})
 # Lo que va después de esto en un nombre es la lista de SUBTÍTULOS, no de audio: «[Multiple Subtitle] [ENG][SPA-LA]»,
 # «sub ita.eng», «Lektor i napisy PL».
 SUBS_FROM = re.compile(
@@ -233,7 +220,7 @@ def _size_number(text: str) -> float:
         return 0.0
 
 
-FIND_DEADLINE = 8.0  # s para juntar fuentes: lo que llegó, se usa
+FIND_DEADLINE = float((RULES.get("waits") or {}).get("find_deadline_s", 8.0))  # s para juntar fuentes: lo que llegó, se usa
 CACHE_MAX = 200
 RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
 def stable_index(addon_url: str, stream: dict) -> int:
@@ -354,7 +341,7 @@ def parse(stream: dict, addon: str, transport_url: str, index: int, original: st
     return src
 
 
-FLAG_RE = re.compile("|".join(map(re.escape, FLAG_LANG)))
+FLAG_RE = re.compile("|".join(map(re.escape, FLAG_LANG)) or r"(?!)")  # sin tabla, ninguna bandera
 MARKS = re.compile(r"\b(Dubbed|Dual Audio|Multi Audio|Multi Subs)\b")
 
 
@@ -694,10 +681,10 @@ def score(src: Source, prefs: Preferences, kind: str = "movie") -> float:
     s += 200 - 60 * abs(have - want) - (40 if have > want else 0)  # peor que lo pedido pesa más
     gb = src.size / 1e9
     # Demasiado grande para transmitir con soltura (REMUX de 95 GB); en 4K lo normal ya es 15-60 GB.
-    too_big = {"4K": 60, "1080p": 25}.get(res, 15) * (1 if kind == "movie" else .3)
+    too_big = TOO_BIG_GB.get(res, TOO_BIG_DEFAULT_GB) * (1 if kind == "movie" else SERIES_SIZE_FACTOR)
     if gb > too_big:
         s -= 150
-    if src.size and gb < (0.7 if kind == "movie" else 0.12):
+    if src.size and gb < TOO_SMALL_GB["movie" if kind == "movie" else "series"]:
         s -= 120  # sospechosamente pequeño: mala calidad
     if "DV" in src.hdr and "HDR" not in src.hdr and "HDR10+" not in src.hdr:
         s -= 200  # Dolby Vision sin HDR de respaldo: colores raros en pantallas sin DV

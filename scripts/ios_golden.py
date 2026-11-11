@@ -155,6 +155,38 @@ def spanish_cases() -> list[dict]:
     return out
 
 
+# F2 · 1440p y órdenes de idioma distintos al de omisión (design/streams-rules.json). Las 1440p de 12 GB y de 20 GB
+# muestran el tope por resolución: la TV la cuenta como 1080p (tope 25 GB); `unify` propone lo mismo para el iPhone.
+RULES_STREAMS = [
+    {"name": "Torrentio\n1440p [RD+]", "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB", "url": "https://rd.example/r/0"},
+    {"name": "Torrentio\n1440p [RD+]", "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵", "url": "https://rd.example/r/1"},
+    {"name": "Torrentio\n1080p [RD+]", "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧", "url": "https://rd.example/r/2"},
+    {"name": "Torrentio\n1080p [RD download]", "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB", "url": "https://rd.example/r/3"},
+    {"name": "Torrentio\n4K [RD+]", "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽", "url": "https://rd.example/r/4"},
+    {"name": "Torrentio\n720p [RD+]", "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸", "url": "https://rd.example/r/5"},
+]
+
+
+def rules_cases() -> list[dict]:
+    """Tu orden de idiomas (Ajustes › Tus idiomas) y la calidad, con el idioma original del título («ja»)."""
+    out = []
+    orders = (["es-419", "original", "en", "es-ES"], ["en", "original", "es-419"], ["es-ES", "en", "original"],
+              ["ja", "en"], ["original", "es-419"])
+    for languages in orders:
+        for quality in ("1440p", "1080p", "4K"):
+            base = streams.prefs_from_languages(languages, quality)
+            prefs = streams.Preferences(audio=base.audio, quality=base.quality, spanish=base.spanish, original="ja",
+                                        plan=base.plan)
+            sources = [streams.parse(s, "Torrentio", "https://t.example/manifest.json", i) for i, s in enumerate(RULES_STREAMS)]
+            for kind in ("movie", "series"):
+                order = streams.rank(sources, prefs, kind)
+                out.append({"languages": languages, "original": "ja", "quality": quality, "kind": kind,
+                            "streams": RULES_STREAMS, "order": [s.index for s in order],
+                            "scores": {str(s.index): s.score for s in order},
+                            "resolution": {str(s.index): s.resolution for s in order}})
+    return out
+
+
 def cinemeta_cases() -> dict:
     fx = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "cinemeta"
     meta = json.loads((fx / "meta_series_tt0386676.json").read_text(encoding="utf-8"))
@@ -218,6 +250,7 @@ def main() -> None:
     write("parse_item", parse_item_cases())
     write("streams", streams_cases())
     write("streams_spanish", spanish_cases())
+    write("streams_rules", rules_cases())
     write("cinemeta", cinemeta_cases())
     write("localize", localize_cases())
     write("trakt", trakt_cases())

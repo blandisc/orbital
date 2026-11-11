@@ -1,0 +1,314 @@
+{
+  "_": "F2 · Las reglas para elegir versión como datos, para la TV y el iPhone. La TV las lee en orbital/library/streams.py. Los patrones son expresiones regulares (sintaxis común de Python y NSRegularExpression); `flags: \"i\"` = sin distinguir mayúsculas. `unify` dice, sin cambiarlo aún, en qué difieren hoy las dos apps y el valor propuesto para las dos.",
+  "version": 1,
+  "flags": {
+    "🇬🇧": "en",
+    "🇺🇸": "en",
+    "🇲🇽": "es-419",
+    "🇪🇸": "es",
+    "🇦🇷": "es-419",
+    "🇫🇷": "fr",
+    "🇮🇹": "it",
+    "🇩🇪": "de",
+    "🇵🇹": "pt",
+    "🇧🇷": "pt",
+    "🇷🇺": "ru",
+    "🇯🇵": "ja",
+    "🇰🇷": "ko",
+    "🇨🇳": "zh",
+    "🇮🇳": "hi",
+    "🇵🇱": "pl",
+    "🇹🇷": "tr",
+    "🇺🇦": "uk",
+    "🇳🇱": "nl",
+    "🇨🇿": "cs",
+    "🇸🇰": "sk",
+    "🇭🇺": "hu",
+    "🇬🇷": "el",
+    "🇸🇪": "sv",
+    "🇩🇰": "da",
+    "🇳🇴": "no",
+    "🇫🇮": "fi",
+    "🇷🇴": "ro",
+    "🇧🇬": "bg",
+    "🇭🇷": "hr",
+    "🇷🇸": "sr",
+    "🇮🇱": "he",
+    "🇸🇦": "ar",
+    "🇹🇭": "th",
+    "🇻🇳": "vi",
+    "🇮🇩": "id",
+    "🇱🇹": "lt",
+    "🇱🇻": "lv",
+    "🇪🇪": "et"
+  },
+  "words": [
+    {
+      "pattern": "\\b(latino|latam|es-?419|spa-la|hispanoam[eé]rica(no)?|latinoam[eé]rica(no)?|latin[ ._-]?american)\\b|dual[-. ]?lat\\b",
+      "flags": "i",
+      "lang": "es-419"
+    },
+    {
+      "_": "«LAT», «CAST», «ESP» solo en mayúsculas: en minúsculas son palabras del título («Cast.Away»).",
+      "pattern": "\\bLAT\\b",
+      "flags": "",
+      "lang": "es-419"
+    },
+    {
+      "pattern": "\\b(castellano|castilian|es-es)\\b",
+      "flags": "i",
+      "lang": "es-ES"
+    },
+    {
+      "pattern": "\\bCAST\\b",
+      "flags": "",
+      "lang": "es-ES"
+    },
+    {
+      "pattern": "\\b(spanish|español|espanol|spa)\\b",
+      "flags": "i",
+      "lang": "es"
+    },
+    {
+      "_": "«EN/FR/ES».",
+      "pattern": "\\bESP\\b|\\[Esp\\]|(?<=/)ES\\b|\\bES(?=/)",
+      "flags": "",
+      "lang": "es"
+    },
+    {
+      "pattern": "\\b(eng|english|ingles)\\b|(?<![A-Za-z])EN(?=/)",
+      "flags": "i",
+      "lang": "en"
+    },
+    {
+      "_": "«Eng 5.1 AAC Jap 5.1 AAC».",
+      "pattern": "\\b(jpn|japanese|jap)\\b",
+      "flags": "i",
+      "lang": "ja"
+    },
+    {
+      "_": "Voces rusas; un nombre en cirílico es un lanzamiento ruso.",
+      "pattern": "(?i:\\b(mvo|dvo|avo)\\b)|[А-Яа-яЁё]{4,}",
+      "flags": "",
+      "lang": "ru"
+    },
+    {
+      "pattern": "(?i:\\b(french|fre|vff|vf|vf2|vfq|truefrench)\\b)|(?<![-\\w])FR\\b",
+      "flags": "",
+      "lang": "fr"
+    },
+    {
+      "pattern": "\\b(ita|italian)\\b",
+      "flags": "i",
+      "lang": "it"
+    },
+    {
+      "pattern": "\\b(german|deutsch|ger)\\b",
+      "flags": "i",
+      "lang": "de"
+    },
+    {
+      "pattern": "\\b(rus|russian)\\b",
+      "flags": "i",
+      "lang": "ru"
+    },
+    {
+      "pattern": "\\b(hindi)\\b",
+      "flags": "i",
+      "lang": "hi"
+    },
+    {
+      "_": "«CZ dabing», «SK dabing», «PL lektor», «dublado»: doblajes que antes pasaban por inglés. «CZ», «SK», «PL» solo en mayúsculas y no tras un guion: «x264-pl» es el grupo que lo subió, no polaco.",
+      "pattern": "(?i:\\b(cze|czech|cesky|český|dabing)\\b)|(?<![-\\w])CZ\\b",
+      "flags": "",
+      "lang": "cs"
+    },
+    {
+      "pattern": "(?i:\\b(slovak|slovensky|slovenský)\\b)|(?<![-\\w])SK\\b",
+      "flags": "",
+      "lang": "sk"
+    },
+    {
+      "pattern": "(?i:\\b(polish|polski|lektor)\\b)|(?<![-\\w])PL\\b",
+      "flags": "",
+      "lang": "pl"
+    },
+    {
+      "pattern": "\\b(hun|hungarian|magyar)\\b",
+      "flags": "i",
+      "lang": "hu"
+    },
+    {
+      "pattern": "\\b(ptbr|pt-br|dublado|portuguese|portugues|português)\\b",
+      "flags": "i",
+      "lang": "pt"
+    },
+    {
+      "pattern": "\\b(ukr|ukrainian)\\b",
+      "flags": "i",
+      "lang": "uk"
+    },
+    {
+      "pattern": "\\b(turkish|türkçe|turkce)\\b",
+      "flags": "i",
+      "lang": "tr"
+    },
+    {
+      "pattern": "\\b(arabic)\\b",
+      "flags": "i",
+      "lang": "ar"
+    },
+    {
+      "pattern": "\\b(korean|kor)\\b",
+      "flags": "i",
+      "lang": "ko"
+    },
+    {
+      "_": "«NORDiC» no: son subtítulos nórdicos con el audio original.",
+      "pattern": "\\b(swedish|danish|norwegian|finnish)\\b",
+      "flags": "i",
+      "lang": "sv"
+    }
+  ],
+  "codes": [
+    {
+      "pattern": "\\bLAT\\b",
+      "flags": "",
+      "lang": "es-419"
+    },
+    {
+      "pattern": "\\bCAST\\b",
+      "flags": "",
+      "lang": "es-ES"
+    },
+    {
+      "pattern": "\\bESP\\b|\\[Esp\\]|(?<=/)ES\\b|\\bES(?=/)",
+      "flags": "",
+      "lang": "es"
+    },
+    {
+      "pattern": "(?<![A-Za-z])EN(?=/)",
+      "flags": "i",
+      "lang": "en"
+    },
+    {
+      "pattern": "[А-Яа-яЁё]{4,}",
+      "flags": "",
+      "lang": "ru"
+    },
+    {
+      "pattern": "(?<![-\\w])FR\\b",
+      "flags": "",
+      "lang": "fr"
+    },
+    {
+      "pattern": "(?<![-\\w])CZ\\b",
+      "flags": "",
+      "lang": "cs"
+    },
+    {
+      "pattern": "(?<![-\\w])SK\\b",
+      "flags": "",
+      "lang": "sk"
+    },
+    {
+      "pattern": "(?<![-\\w])PL\\b",
+      "flags": "",
+      "lang": "pl"
+    }
+  ],
+  "sites": {
+    "mejortorrent": "es-ES",
+    "wolfmax4k": "es-ES",
+    "cinecalidad": "es-419",
+    "ilcorsaronero": "it",
+    "rutor": "ru",
+    "rutracker": "ru",
+    "torrent9": "fr",
+    "comando": "pt",
+    "bludv": "pt",
+    "besttorrents": "pl"
+  },
+  "size": {
+    "too_big_gb": {
+      "4K": 60,
+      "1080p": 25
+    },
+    "too_big_default_gb": 15,
+    "series_factor": 0.3,
+    "too_small_gb": {
+      "movie": 0.7,
+      "series": 0.12
+    },
+    "_": "Más que esto (en GB, por resolución después de res_class: 1440p cuenta como 1080p) resta 150; en series se multiplica por series_factor. Menos que too_small_gb resta 120."
+  },
+  "waits": {
+    "per_addon_s": 15,
+    "find_deadline_s": 8.0,
+    "_": "per_addon_s: lo más que se espera a un complemento; find_deadline_s: lo más que se espera para juntar versiones (lo que llegó, se usa)."
+  },
+  "_flags": "Torrentio solo pone 🇲🇽 cuando el nombre dice latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).",
+  "_words": "En orden. Se buscan solo en lo técnico del nombre (después del año, la temporada o la calidad): «The Italian Job» no es italiano.",
+  "_codes": "Las de `words` que no se confunden con palabras del título (códigos en mayúsculas, el cirílico): se buscan en todo el nombre.",
+  "_sites": "Sitios de un solo idioma: lo que suben ahí va doblado a ese idioma (MejorTorrent = castellano, Cinecalidad = latino).",
+  "unify": [
+    {
+      "rule": "flags",
+      "tv": "🇲🇽 y 🇦🇷 son latino",
+      "ios": "también 🇨🇴 🇨🇱 🇵🇪 🇻🇪 (Streams.flagLanguages)",
+      "proposed": {
+        "🇨🇴": "es-419",
+        "🇨🇱": "es-419",
+        "🇵🇪": "es-419",
+        "🇻🇪": "es-419"
+      },
+      "changes": "tv",
+      "why": "Son doblajes latinos; Torrentio casi no las usa, pero otros complementos sí. La TV las suma a `flags`."
+    },
+    {
+      "rule": "words",
+      "tv": "sin estas marcas",
+      "ios": "Streams.moreWordLanguages: «[lat]», «Esp-Lat», «Spa.Lat», «Lat-Ing», «es-MX», «spa_mx», «mexicano», «homero» (latino); «[cast]», «Esp-Cast», «es_ES», «español de España» (castellano); «episódio» (portugués)",
+      "proposed": [
+        {
+          "pattern": "[\\[(]lat[\\])]|\\b(esp|spa|dual)[ ._-]lat\\b|\\blat[ ._-](ing|eng|en)\\b|\\b(es|spa)[-_]mx\\b|\\bmexicano\\b",
+          "flags": "i",
+          "lang": "es-419"
+        },
+        {
+          "pattern": "\\bhomero\\b",
+          "flags": "i",
+          "lang": "es-419"
+        },
+        {
+          "pattern": "[\\[(]cast[\\])]|\\b(esp|spa)[ ._-]cast\\b|\\b(es|spa)[-_]es\\b|espa[ñn]ol[ ._(-]+(de[ ._]+)?espa[ñn]a\\b",
+          "flags": "i",
+          "lang": "es-ES"
+        },
+        {
+          "pattern": "\\bepisódio\\b",
+          "flags": "i",
+          "lang": "pt"
+        }
+      ],
+      "changes": "tv",
+      "why": "Salieron de nombres reales de Torrentio (Los Simpson, 9 nov) y la TV hoy los deja en «no dice cuál» o en inglés. La TV los suma al final de `words` (y el doblaje de Los Simpson por «Homer/Homero» queda como regla aparte)."
+    },
+    {
+      "rule": "size.too_big_gb.1440p",
+      "tv": 25,
+      "ios": 15,
+      "proposed": 25,
+      "changes": "ios",
+      "why": "En todo lo demás 1440p cuenta como 1080p (res_class de la TV, `resolutionClass` del iPhone); el iPhone le aplica el tope de «sin calidad» (15 GB) y castiga una 1440p de 20 GB que la TV acepta."
+    },
+    {
+      "rule": "waits.per_addon_s",
+      "tv": 15,
+      "ios": 10,
+      "proposed": 10,
+      "changes": "tv",
+      "why": "El iPhone espera 8 s a un complemento antes de darlo por lento y lo corta a los 10 (`StreamFinder.slowAfter` + 2); la TV espera hasta 15 s por petición, aunque igual junta lo que llegó a los 8 s (`find_deadline_s`). Con 10 en las dos, un complemento lento deja de ocupar un hilo 5 s de más en la TV."
+    }
+  ]
+}

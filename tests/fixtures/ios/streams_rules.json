@@ -1,0 +1,1976 @@
+[
+ {
+  "kind": "movie",
+  "languages": [
+   "es-419",
+   "original",
+   "en",
+   "es-ES"
+  ],
+  "order": [
+   0,
+   4,
+   5,
+   1,
+   2,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 1503.0,
+   "1": 902.5,
+   "2": 868.0,
+   "3": -578.5,
+   "4": 1441.0,
+   "5": 940.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "es-419",
+   "original",
+   "en",
+   "es-ES"
+  ],
+  "order": [
+   4,
+   0,
+   5,
+   2,
+   1,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 1353.0,
+   "1": 752.5,
+   "2": 868.0,
+   "3": -578.5,
+   "4": 1441.0,
+   "5": 1060.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "es-419",
+   "original",
+   "en",
+   "es-ES"
+  ],
+  "order": [
+   0,
+   4,
+   5,
+   1,
+   2,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 1503.0,
+   "1": 902.5,
+   "2": 868.0,
+   "3": -578.5,
+   "4": 1441.0,
+   "5": 940.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "es-419",
+   "original",
+   "en",
+   "es-ES"
+  ],
+  "order": [
+   4,
+   0,
+   5,
+   2,
+   1,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 1353.0,
+   "1": 752.5,
+   "2": 868.0,
+   "3": -578.5,
+   "4": 1441.0,
+   "5": 1060.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "es-419",
+   "original",
+   "en",
+   "es-ES"
+  ],
+  "order": [
+   4,
+   0,
+   5,
+   1,
+   2,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 1403.0,
+   "1": 802.5,
+   "2": 768.0,
+   "3": -678.5,
+   "4": 1501.0,
+   "5": 880.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "es-419",
+   "original",
+   "en",
+   "es-ES"
+  ],
+  "order": [
+   4,
+   0,
+   5,
+   2,
+   1,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 1253.0,
+   "1": 652.5,
+   "2": 768.0,
+   "3": -678.5,
+   "4": 1501.0,
+   "5": 1000.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "en",
+   "original",
+   "es-419"
+  ],
+  "order": [
+   2,
+   5,
+   4,
+   1,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 863.0,
+   "1": 902.5,
+   "2": 1508.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 1240.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "en",
+   "original",
+   "es-419"
+  ],
+  "order": [
+   2,
+   5,
+   4,
+   1,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 713.0,
+   "1": 752.5,
+   "2": 1508.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 1360.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "en",
+   "original",
+   "es-419"
+  ],
+  "order": [
+   2,
+   5,
+   4,
+   1,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 863.0,
+   "1": 902.5,
+   "2": 1508.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 1240.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "en",
+   "original",
+   "es-419"
+  ],
+  "order": [
+   2,
+   5,
+   4,
+   1,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 713.0,
+   "1": 752.5,
+   "2": 1508.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 1360.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "en",
+   "original",
+   "es-419"
+  ],
+  "order": [
+   2,
+   4,
+   5,
+   1,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 763.0,
+   "1": 802.5,
+   "2": 1408.0,
+   "3": -1898.5,
+   "4": 1261.0,
+   "5": 1180.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "en",
+   "original",
+   "es-419"
+  ],
+  "order": [
+   2,
+   5,
+   4,
+   1,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 613.0,
+   "1": 652.5,
+   "2": 1408.0,
+   "3": -1898.5,
+   "4": 1261.0,
+   "5": 1300.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "es-ES",
+   "en",
+   "original"
+  ],
+  "order": [
+   5,
+   2,
+   1,
+   4,
+   3,
+   0
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -397.0,
+   "1": 862.5,
+   "2": 908.0,
+   "3": 101.5,
+   "4": 601.0,
+   "5": 940.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "es-ES",
+   "en",
+   "original"
+  ],
+  "order": [
+   5,
+   2,
+   1,
+   4,
+   3,
+   0
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -547.0,
+   "1": 712.5,
+   "2": 908.0,
+   "3": 101.5,
+   "4": 601.0,
+   "5": 1060.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "es-ES",
+   "en",
+   "original"
+  ],
+  "order": [
+   5,
+   2,
+   1,
+   4,
+   3,
+   0
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -397.0,
+   "1": 862.5,
+   "2": 908.0,
+   "3": 101.5,
+   "4": 601.0,
+   "5": 940.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "es-ES",
+   "en",
+   "original"
+  ],
+  "order": [
+   5,
+   2,
+   1,
+   4,
+   3,
+   0
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -547.0,
+   "1": 712.5,
+   "2": 908.0,
+   "3": 101.5,
+   "4": 601.0,
+   "5": 1060.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "es-ES",
+   "en",
+   "original"
+  ],
+  "order": [
+   5,
+   2,
+   1,
+   4,
+   3,
+   0
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -497.0,
+   "1": 762.5,
+   "2": 808.0,
+   "3": 1.5,
+   "4": 661.0,
+   "5": 880.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "es-ES",
+   "en",
+   "original"
+  ],
+  "order": [
+   5,
+   2,
+   4,
+   1,
+   3,
+   0
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -647.0,
+   "1": 612.5,
+   "2": 808.0,
+   "3": 1.5,
+   "4": 661.0,
+   "5": 1000.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "ja",
+   "en"
+  ],
+  "order": [
+   1,
+   4,
+   2,
+   5,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -397.0,
+   "1": 1502.5,
+   "2": 908.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 640.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "ja",
+   "en"
+  ],
+  "order": [
+   1,
+   4,
+   2,
+   5,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -547.0,
+   "1": 1352.5,
+   "2": 908.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 760.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "ja",
+   "en"
+  ],
+  "order": [
+   1,
+   4,
+   2,
+   5,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -397.0,
+   "1": 1502.5,
+   "2": 908.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 640.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "ja",
+   "en"
+  ],
+  "order": [
+   1,
+   4,
+   2,
+   5,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -547.0,
+   "1": 1352.5,
+   "2": 908.0,
+   "3": -1798.5,
+   "4": 1201.0,
+   "5": 760.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "ja",
+   "en"
+  ],
+  "order": [
+   1,
+   4,
+   2,
+   5,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -497.0,
+   "1": 1402.5,
+   "2": 808.0,
+   "3": -1898.5,
+   "4": 1261.0,
+   "5": 580.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "ja",
+   "en"
+  ],
+  "order": [
+   4,
+   1,
+   2,
+   5,
+   0,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": -647.0,
+   "1": 1252.5,
+   "2": 808.0,
+   "3": -1898.5,
+   "4": 1261.0,
+   "5": 700.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "original",
+   "es-419"
+  ],
+  "order": [
+   0,
+   4,
+   2,
+   1,
+   5,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 903.0,
+   "1": -397.5,
+   "2": -392.0,
+   "3": -1798.5,
+   "4": 841.0,
+   "5": -619.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "original",
+   "es-419"
+  ],
+  "order": [
+   4,
+   0,
+   2,
+   5,
+   1,
+   3
+  ],
+  "original": "ja",
+  "quality": "1440p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 753.0,
+   "1": -547.5,
+   "2": -392.0,
+   "3": -1798.5,
+   "4": 841.0,
+   "5": -499.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "original",
+   "es-419"
+  ],
+  "order": [
+   0,
+   4,
+   2,
+   1,
+   5,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 903.0,
+   "1": -397.5,
+   "2": -392.0,
+   "3": -1798.5,
+   "4": 841.0,
+   "5": -619.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "original",
+   "es-419"
+  ],
+  "order": [
+   4,
+   0,
+   2,
+   5,
+   1,
+   3
+  ],
+  "original": "ja",
+  "quality": "1080p",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 753.0,
+   "1": -547.5,
+   "2": -392.0,
+   "3": -1798.5,
+   "4": 841.0,
+   "5": -499.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "movie",
+  "languages": [
+   "original",
+   "es-419"
+  ],
+  "order": [
+   4,
+   0,
+   2,
+   1,
+   5,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 803.0,
+   "1": -497.5,
+   "2": -492.0,
+   "3": -1898.5,
+   "4": 901.0,
+   "5": -679.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ },
+ {
+  "kind": "series",
+  "languages": [
+   "original",
+   "es-419"
+  ],
+  "order": [
+   4,
+   0,
+   2,
+   5,
+   1,
+   3
+  ],
+  "original": "ja",
+  "quality": "4K",
+  "resolution": {
+   "0": "1440p",
+   "1": "1440p",
+   "2": "1080p",
+   "3": "1080p",
+   "4": "4K",
+   "5": "720p"
+  },
+  "scores": {
+   "0": 653.0,
+   "1": -647.5,
+   "2": -492.0,
+   "3": -1898.5,
+   "4": 901.0,
+   "5": -559.5
+  },
+  "streams": [
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.WEB-DL.Latino\n👤 30 💾 12 GB",
+    "url": "https://rd.example/r/0"
+   },
+   {
+    "name": "Torrentio\n1440p [RD+]",
+    "title": "Frieren.S01E01.1440p.BluRay.REMUX.JPN\n👤 25 💾 20 GB\n🇯🇵",
+    "url": "https://rd.example/r/1"
+   },
+   {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.ENG\n👤 80 💾 1.4 GB\n🇬🇧",
+    "url": "https://rd.example/r/2"
+   },
+   {
+    "name": "Torrentio\n1080p [RD download]",
+    "title": "Frieren.S01E01.1080p.WEB-DL.Castellano\n👤 15 💾 1.3 GB",
+    "url": "https://rd.example/r/3"
+   },
+   {
+    "name": "Torrentio\n4K [RD+]",
+    "title": "Frieren.S01E01.2160p.WEB-DL.Multi\n👤 10 💾 6 GB\n🇯🇵 / 🇬🇧 / 🇲🇽",
+    "url": "https://rd.example/r/4"
+   },
+   {
+    "name": "Torrentio\n720p [RD+]",
+    "title": "Frieren.S01E01.720p.HDTV\n👤 5 💾 500 MB\n🇪🇸",
+    "url": "https://rd.example/r/5"
+   }
+  ]
+ }
+]
