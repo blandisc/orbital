@@ -68,3 +68,34 @@ def test_tmdb_poster_needs_a_key_and_waits_after_a_failure(library, monkeypatch)
     monkeypatch.setattr(foryou.tmdb, "poster", lambda imdb: calls.append(imdb) or (_ for _ in ()).throw(TmdbError("x")))
     assert foryou.tmdb_poster("tt0361243") is None and foryou.tmdb_poster("tt1") is None
     assert calls == ["tt0361243"]  # sin TMDB, no se espera por cada póster
+
+
+def _file(path, size, mtime):
+    import os
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"x" * size)
+    os.utime(path, (mtime, mtime))
+
+
+def test_prune_keeps_the_newest_by_count_and_by_size(tmp_path):
+    import time
+
+    now = time.time()
+    for i in range(6):
+        _file(tmp_path / "raw" / f"{i}.img", 100, now - 1000 + i)
+        _file(tmp_path / "sized" / f"{i}.webp", 10, now - 1000 + i)
+    _file(tmp_path / "raw" / "cut.part", 5, now - 7200)  # una bajada que se cortó hace dos horas
+    _file(tmp_path / "sized" / "new.tmp", 5, now)  # otra que va a la mitad: no se toca
+    removed = remote_art.prune(tmp_path, keep=4, max_bytes=10_000)
+    raw = sorted(p.name for p in (tmp_path / "raw").iterdir())
+    assert raw == ["2.img", "3.img", "4.img", "5.img"]  # por cantidad: los dos más viejos
+    assert len(list((tmp_path / "sized").glob("*.webp"))) == 6  # las copias tienen su propio tope (4 x 3)
+    assert (tmp_path / "sized" / "new.tmp").exists() and removed == 3
+    remote_art.prune(tmp_path, keep=100, max_bytes=250)  # por tamaño: de lo más viejo a lo más nuevo hasta caber
+    left = sorted((p for p in tmp_path.rglob("*") if p.is_file() and p.suffix != ".tmp"), key=lambda p: p.stat().st_mtime)
+    assert sum(p.stat().st_size for p in left) <= 250 and (tmp_path / "raw" / "5.img").exists()
+
+
+def test_prune_without_a_cache_does_nothing(tmp_path):
+    assert remote_art.prune(tmp_path / "nada") == 0

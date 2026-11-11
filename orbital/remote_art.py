@@ -33,6 +33,9 @@ WIDTHS = (160, 240, 320, 480, 640, 960, 1280, 1920)
 MAX_BYTES = 12 * 1024 * 1024
 RETRY_AFTER = 15 * 60  # una imagen que no se pudo bajar no se vuelve a pedir en un rato (va la original)
 KEEP_RAW = 3000  # originales en disco; los más viejos se borran
+SIZED_PER_RAW = 3  # copias reducidas por original, de media (cada original se pide en uno a tres anchos)
+MAX_DISK = 1024 * 1024 * 1024  # 1 GB entre originales y copias: el disco de la Legion Go no es infinito
+PRUNE_DELAY = 120  # s tras arrancar
 
 _slots = threading.BoundedSemaphore(4)  # pocas a la vez: la TV no se ahoga
 _locks: dict[str, threading.Lock] = {}
@@ -91,18 +94,68 @@ def sized(url: str, width: int, root: Path | None = None, download=None) -> Path
     return thumbs.thumbnail(raw, snap(width), root / "sized")
 
 
-def prune(root: Path | None = None, keep: int = KEEP_RAW) -> int:
-    """Borra los originales más viejos si hay demasiados (y sus copias reducidas se rehacen solas si se piden)."""
-    folder = (root or cache_root()) / "raw"
-    try:
-        files = sorted(folder.glob("*.img"), key=lambda p: p.stat().st_mtime)
-    except OSError:
-        return 0
+def prune(root: Path | None = None, keep: int = KEEP_RAW, max_bytes: int = MAX_DISK) -> int:
+    """Pone el caché a dieta: los originales (raw/) y las copias reducidas (sized/) más viejos se borran si hay más de
+    `keep` originales, más de `keep * SIZED_PER_RAW` copias o si entre los dos pasan de `max_bytes`. Lo que se borre se
+    vuelve a bajar o a reducir solo cuando se pida. También limpia temporales abandonados. Devuelve cuántos borró."""
+    base = root or cache_root()
+    now = time.time()
+    found: dict[str, list[tuple[float, int, Path]]] = {"raw": [], "sized": []}
     removed = 0
-    for path in files[: max(0, len(files) - keep)]:
+    for name in found:
         try:
-            path.unlink()
-            removed += 1
+            entries = list(os.scandir(base / name))
         except OSError:
-            pass
+            continue
+        for entry in entries:
+            try:
+                if not entry.is_file():
+                    continue
+                stat = entry.stat()
+            except OSError:
+                continue
+            path = Path(entry.path)
+            if path.suffix in (".tmp", ".part"):  # una escritura que se cortó (más de una hora: ya nadie la termina)
+                if now - stat.st_mtime > 3600 and _unlink(path):
+                    removed += 1
+                continue
+            found[name].append((stat.st_mtime, stat.st_size, path))
+    doomed: set[Path] = set()
+    for name, limit in (("raw", keep), ("sized", keep * SIZED_PER_RAW)):
+        files = sorted(found[name], key=lambda f: f[0])
+        doomed.update(path for _, _, path in files[: max(0, len(files) - limit)])
+    left = sorted((f for f in found["raw"] + found["sized"] if f[2] not in doomed), key=lambda f: f[0])
+    total = sum(size for _, size, _ in left)
+    for _, size, path in left:  # por tamaño: de lo más viejo a lo más nuevo hasta caber
+        if total <= max_bytes:
+            break
+        doomed.add(path)
+        total -= size
+    for path in doomed:
+        if _unlink(path):
+            removed += 1
+    if removed:
+        log.info("Arte de internet: borré %d archivos viejos del caché", removed)
     return removed
+
+
+def _unlink(path: Path) -> bool:
+    try:
+        path.unlink()
+        return True
+    except OSError:  # en uso (se está sirviendo) o ya no estaba
+        return False
+
+
+def prune_later(delay: float = PRUNE_DELAY) -> threading.Thread:
+    """Al arrancar, en segundo plano y tras un rato (que el arranque termine primero)."""
+    def run() -> None:
+        time.sleep(delay)
+        try:
+            prune()
+        except Exception:  # noqa: BLE001 - limpiar el caché nunca tumba a Orbital
+            log.exception("Arte de internet: no pude limpiar el caché")
+
+    thread = threading.Thread(target=run, daemon=True, name="art-prune")
+    thread.start()
+    return thread

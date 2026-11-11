@@ -206,6 +206,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             # Y al volver de un juego (los emuladores Vulkan le dejan memoria a DWM): mientras la tele regresa a 4K.
             catalog.sessions.release_video_memory = lambda: dwm_release.release_if_full("al volver de un juego")
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
+            from . import remote_art
+
+            remote_art.prune_later()  # el caché de arte de internet no crece sin fin (A5)
         else:
             await run_in_threadpool(catalog.refresh)
         status = asyncio.create_task(live.watch_status(d))
