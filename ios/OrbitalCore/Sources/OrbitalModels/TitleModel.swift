@@ -31,31 +31,33 @@ public enum SourceCheck: Equatable, Sendable { case unknown, available, none, of
 /// descargado), Mi lista (Stremio), watchlist (Trakt) y las acciones de ver y descargar.
 @MainActor
 public final class TitleModel: ObservableModel {
+    /// V9: cada parte de la ficha se vuelve a pintar solo con lo que lee (ver `@Tracked`).
+    public override var observesByProperty: Bool { true }
     public private(set) var kind: String
     public private(set) var metaID: String
-    public private(set) var title = "" { didSet { changed() } }
-    public private(set) var originalTitle = "" { didSet { changed() } }
-    public private(set) var info = MetaInfo(year: "", rating: "", genres: [], description: "", logo: nil, runtime: "") { didSet { changed() } }
-    public private(set) var credits = Credits(cast: [], directors: [], writers: [], released: "", awards: "", country: "") { didSet { changed() } }
-    public private(set) var poster: String? { didSet { changed() } }
-    public private(set) var background: String? { didSet { changed() } }
-    public private(set) var seasons: [Season] = [] { didSet { changed() } }
-    public private(set) var selectedSeason = 1 { didSet { if oldValue != selectedSeason { changed() } } }
+    @Tracked(always: true) public private(set) var title = ""
+    @Tracked(always: true) public private(set) var originalTitle = ""
+    @Tracked(always: true) public private(set) var info = MetaInfo(year: "", rating: "", genres: [], description: "", logo: nil, runtime: "")
+    @Tracked(always: true) public private(set) var credits = Credits(cast: [], directors: [], writers: [], released: "", awards: "", country: "")
+    @Tracked(always: true) public private(set) var poster: String? = nil
+    @Tracked(always: true) public private(set) var background: String? = nil
+    @Tracked(always: true) public private(set) var seasons: [Season] = []
+    @Tracked public private(set) var selectedSeason = 1
     /// Ya se puso la temporada de entrada (o la elegiste tú): de aquí en adelante no salta sola.
     private var seasonSettled = false
-    public private(set) var rows: [EpisodeRow] = [] { didSet { changed() } }
+    @Tracked(always: true) public private(set) var rows: [EpisodeRow] = []
     /// En Mi lista (el teléfono, al día con tu watchlist de Trakt).
-    public private(set) var inLibrary = false { didSet { changed() } }
+    @Tracked(always: true) public private(set) var inLibrary = false
     /// Tus listas de Trakt y si este título está en cada una («Guardar en…»); `nil` mientras no se han pedido.
-    public private(set) var lists: [SavedList]? { didSet { changed() } }
-    public private(set) var loadingLists = false { didSet { changed() } }
+    @Tracked(always: true) public private(set) var lists: [SavedList]? = nil
+    @Tracked(always: true) public private(set) var loadingLists = false
     /// ¿Está guardado en algún lado? (Mi lista, tu watchlist o una de tus listas): el botón dice «Guardado».
     public var isSaved: Bool { inLibrary || (lists.map { $0.contains(where: \.contains) } ?? inSomeList) }
     /// Está en alguna de tus listas de Trakt (sin abrir «Guardar en…»; al abrirla manda lo que diga cada lista).
-    public private(set) var inSomeList = false { didSet { changed() } }
-    public private(set) var traktAvailable = false { didSet { changed() } }
+    @Tracked(always: true) public private(set) var inSomeList = false
+    @Tracked(always: true) public private(set) var traktAvailable = false
     /// Está en tus favoritos de Trakt (el corazón de la ficha). Va aparte de «Guardar»: no cuenta para «Guardada».
-    public private(set) var isFavorite = false { didSet { changed() } }
+    @Tracked(always: true) public private(set) var isFavorite = false
     /// El corazón solo se enseña con Trakt conectado y un título con IMDb (Trakt no conoce los demás).
     public var canFavorite: Bool { traktAvailable && metaID.hasPrefix("tt") }
     /// Cambios del corazón que aún no contesta Trakt: una lectura que llega mientras tanto no lo regresa a como estaba.
@@ -63,49 +65,49 @@ public final class TitleModel: ObservableModel {
     /// Cuántas veces se ha tocado «Mi lista»: una lectura de lo tuyo que salió antes de un toque trae el valor viejo y no lo
     /// pisa (al abrir la ficha llegaban los episodios de Trakt y «Mi lista» se regresaba sola).
     private var libraryEdits = 0
-    public private(set) var isLoading = false { didSet { changed() } }
-    public private(set) var error: String? { didSet { changed() } }
-    public private(set) var message: String? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var isLoading = false
+    @Tracked(always: true) public private(set) var error: String? = nil
+    @Tracked(always: true) public private(set) var message: String? = nil
     /// La sinopsis que dio tu Orbital (en español cuando puede) y si su logo es oscuro (se pinta blanco); nil si no hay consola.
-    public private(set) var consoleOverview: String? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var consoleOverview: String? = nil
     /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
-    public private(set) var extras: TitleExtras? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var extras: TitleExtras? = nil
     /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
     /// Lo mejor que hay (para «Disponible: 4K · Dolby Vision» en los detalles).
-    public private(set) var bestSource: Source? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var bestSource: Source? = nil
     /// La que va a sonar al tocar «Ver»: la recomendada (idioma, calidad y tamaño; la primera de «Elegir la fuente»). Su
     /// calidad es la que dice el botón (antes decía la mejor, 4K, y luego sonaba la recomendada en 1080p).
-    public private(set) var recommendedSource: Source? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var recommendedSource: Source? = nil
     /// En qué idioma va a sonar la recomendada («es-419»): «Ver» dice «Latino · 1080p» (nada a escondidas).
-    public private(set) var recommendedLanguage: String? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var recommendedLanguage: String? = nil
     /// N5-A: la de un idioma que va antes en tu orden y no ganó «Ver» porque aquí no se ve bien (la ficha lo dice en una línea).
-    public private(set) var poorFit: PoorFit? { didSet { if oldValue != poorFit { changed() } } }
+    @Tracked public private(set) var poorFit: PoorFit? = nil
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
-    public internal(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
+    @Tracked(always: true) public internal(set) var sourceCheck: SourceCheck = .unknown
     /// Por qué no hay qué ver, si se sabe algo mejor que «no hay» (D5): «Tu Real-Debrid venció» con «Renovar», «No tienes
     /// complementos prendidos»…; nil si hay versiones o no se sabe.
-    public internal(set) var unavailableCause: UnavailableCause? { didSet { if oldValue != unavailableCause { changed() } } }
+    @Tracked public internal(set) var unavailableCause: UnavailableCause? = nil
     /// «Pedirlo y avisarme» (R2-A, R4): la versión que existe pero Real-Debrid todavía no tiene, lista para pedir; nil si la
     /// recomendada arranca al instante, si no hay qué pedir o sin clave de Real-Debrid.
-    public internal(set) var debridOffer: DebridOffer? { didSet { if oldValue != debridOffer { changed() } } }
+    @Tracked public internal(set) var debridOffer: DebridOffer? = nil
     /// FQ1-A (Fernando, 3 nov): «Ver» arranca ya en otro idioma de tu orden y el tuyo existe pero hay que pedirlo: al lado,
     /// «Pedir a la nube en latino» con esta versión.
-    public internal(set) var wantedOffer: DebridOffer? { didSet { if oldValue != wantedOffer { changed() } } }
+    @Tracked public internal(set) var wantedOffer: DebridOffer? = nil
     /// La calificación de Trakt (0–10), si alguien votó.
-    public private(set) var traktRating: Double? { didSet { changed() } }
+    @Tracked(always: true) public private(set) var traktRating: Double? = nil
 
     let services: Services
     /// Si Torrentio sin Real-Debrid contestó que no hay ningún torrent (por título): la causa 11.
-    var lookupEmpty: [String: Bool] = [:]
+    @Tracked var lookupEmpty: [String: Bool] = [:]
     /// Las huellas que Torrentio dio para cada video (la última búsqueda): un paquete pedido desde otro episodio las comparte.
-    var listedHashes: [String: Set<String>] = [:]
-    private(set) var meta: JSON?           // la ficha ORIGINAL
-    private var localized: JSON?
+    @Tracked var listedHashes: [String: Set<String>] = [:]
+    @Tracked private(set) var meta: JSON? = nil           // la ficha ORIGINAL
+    @Tracked private var localized: JSON? = nil
     /// Lo tuyo de este título en el teléfono (dónde ibas, lo visto, Mi lista).
-    private var entry: LibraryEntry?
-    private(set) var watched = Set<String>()   // lo visto (ids de video); lo lee «¿Cuándo la viste?» (TitleModel+Watched)
-    private var downloadStates: [String: DownloadState] = [:]
-    private var downloadProgress: [String: Double] = [:]
+    @Tracked private var entry: LibraryEntry? = nil
+    @Tracked private(set) var watched = Set<String>()   // lo visto (ids de video); lo lee «¿Cuándo la viste?» (TitleModel+Watched)
+    @Tracked private var downloadStates: [String: DownloadState] = [:]
+    @Tracked private var downloadProgress: [String: Double] = [:]
     /// Cómo va la descarga de un video de este título (nil: no se ha pedido).
     public func downloadState(_ videoID: String?) -> DownloadState? { videoID.flatMap { downloadStates[$0] } }
     /// Cuánto lleva (0…1) una descarga en curso de este título.
@@ -129,7 +131,7 @@ public final class TitleModel: ObservableModel {
         guard states != downloadStates || progress != downloadProgress else { return }
         let stateChanged = states != downloadStates
         downloadStates = states; downloadProgress = progress
-        if stateChanged { buildRows() } else { changed() }
+        if stateChanged { buildRows() }   // el avance solo: ya avisó `downloadProgress` (V9)
     }
 
     /// Qué versión de un video se enseña en la ficha: la que bajando, luego en cola, en pausa, lista y, al final, la fallida.

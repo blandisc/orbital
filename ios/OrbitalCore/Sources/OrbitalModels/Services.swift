@@ -49,9 +49,11 @@ public final class Services: ObservableModel {
     /// K1 · `"pairing"` de `GET /api/companion`: 2 si tu TV reparte llaves por aparato. Se sabe al conectar (cada arranque).
     public internal(set) var tvPairing = 1 { didSet { if oldValue != tvPairing { changed() } } }
     /// IOS-2 · ¿contestó tu TV? «Conectada» solo si contestó hace menos de 2 min (como la TV con tus aparatos, `PHONE_LIVE`).
-    public internal(set) var tvLink: TVLink = .unknown { didSet { if oldValue != tvLink { changed() } } }
+    /// V9: cambia con cada vez que se le pregunta a la TV; solo repinta a quien lo lee (no a toda la app, como antes).
+    @Tracked(alone: true) public internal(set) var tvLink: TVLink = .unknown
     /// CX2-A · qué dice la copia de tu clave que comparten tus aparatos Apple (al abrir y al volver a la app).
-    public internal(set) var sharedDebrid: SharedDebrid = .none { didSet { if oldValue != sharedDebrid { changed() } } }
+    /// V9: como `tvLink`, solo repinta a quien lo lee.
+    @Tracked(alone: true) public internal(set) var sharedDebrid: SharedDebrid = .none
     public private(set) var finder: StreamFinder { didSet { notify() } }
     /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
     public let oneDrive: OneDrive

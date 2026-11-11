@@ -27,7 +27,22 @@ open class ObservableModel: Observable {
     }
 
     /// Registra la lectura del modelo en el seguimiento de Observation en curso (la vista que se está pintando).
-    public final func track() { registrar.access(self, keyPath: \.version) }
+    /// En un modelo que se observa por propiedad (`observesByProperty`) no hace nada: la vista sigue solo lo que lee (V9).
+    public final func track() { if !observesByProperty { trackAll() } }
+    /// Sigue TODO el modelo (cualquier `changed()` vuelve a pintar), también en uno que se observa por propiedad.
+    public final func trackAll() { registrar.access(self, keyPath: \.version) }
+
+    /// V9 (repintado fino): `true` en los modelos cuyas propiedades publicadas son todas `@Tracked` (o leen una que lo es).
+    /// La vista que lee una de ellas se vuelve a pintar solo cuando cambia esa, no con cualquier cambio del modelo.
+    open var observesByProperty: Bool { false }
+
+    /// Lo que usan `@Tracked` y los modelos que avisan a mano por propiedad: la lectura y el cambio de una sola llave.
+    public final func access<Model: ObservableModel, Member>(_ model: Model, _ keyPath: KeyPath<Model, Member>) {
+        registrar.access(model, keyPath: keyPath)
+    }
+    public final func mutate<Model: ObservableModel, Member>(_ model: Model, _ keyPath: KeyPath<Model, Member>, _ apply: () -> Void) {
+        registrar.withMutation(of: model, keyPath: keyPath, apply)
+    }
 
     /// Dentro de `coalescing` los cambios se juntan: se avisa una sola vez al final (una pasada de la vista, no una por campo).
     private var coalesceDepth = 0
@@ -47,6 +62,51 @@ open class ObservableModel: Observable {
     public final func changed() {
         if coalesceDepth > 0 { pendingChange = true; return }
         registrar.withMutation(of: self, keyPath: \.version) { version &+= 1 }
-        for handler in observers.values { handler() }
+        notifyListeners()
+    }
+
+    /// Solo a quien escucha desde código (`onChange`), sin volver a pintar a quien sigue todo el modelo: lo usa una propiedad
+    /// `@Tracked(alone: true)`, que avisa a las vistas por su propia llave.
+    public final func notifyListeners() { for handler in observers.values { handler() } }
+}
+
+/// Una propiedad publicada que avisa sola (V9): la vista que la lee se vuelve a pintar solo cuando ESTA cambia, y quien
+/// escucha todo el modelo (`onChange`, `trackAll`) se entera igual que antes con `changed()`. Con un valor `Equatable`, poner
+/// el mismo valor no avisa (como el `didSet { if oldValue != … }` de antes); `always: true` avisa siempre.
+@MainActor
+@propertyWrapper
+public struct Tracked<Value> {
+    private var value: Value
+    private let same: ((Value, Value) -> Bool)?
+    /// Solo avisa por su llave (y a `onChange`): quien sigue todo el modelo (`track()`, `trackAll()`) no se vuelve a pintar.
+    private let alone: Bool
+
+    public init(wrappedValue: Value) { value = wrappedValue; same = nil; alone = false }
+    public init(wrappedValue: Value) where Value: Equatable { value = wrappedValue; same = { $0 == $1 }; alone = false }
+    /// `always: true`: avisa con cada asignación aunque sea el mismo valor (como el `didSet { changed() }` de antes).
+    public init(wrappedValue: Value, always: Bool) { precondition(always); value = wrappedValue; same = nil; alone = false }
+    public init(wrappedValue: Value, alone: Bool) where Value: Equatable { value = wrappedValue; same = { $0 == $1 }; self.alone = alone }
+
+    @available(*, unavailable, message: "@Tracked solo vale en un ObservableModel")
+    public var wrappedValue: Value {
+        get { fatalError() }
+        set { fatalError() }
+    }
+
+    public static subscript<Model: ObservableModel>(
+        _enclosingInstance model: Model,
+        wrapped wrappedKeyPath: ReferenceWritableKeyPath<Model, Value>,
+        storage storageKeyPath: ReferenceWritableKeyPath<Model, Tracked<Value>>
+    ) -> Value {
+        get {
+            model.access(model, wrappedKeyPath)
+            return model[keyPath: storageKeyPath].value
+        }
+        set {
+            let storage = model[keyPath: storageKeyPath]
+            if let same = storage.same, same(storage.value, newValue) { return }
+            model.mutate(model, wrappedKeyPath) { model[keyPath: storageKeyPath].value = newValue }
+            if storage.alone { model.notifyListeners() } else { model.changed() }
+        }
     }
 }

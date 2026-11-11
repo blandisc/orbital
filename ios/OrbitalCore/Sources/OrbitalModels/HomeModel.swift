@@ -24,24 +24,26 @@ public struct HomeItem: Sendable, Codable, Equatable, Identifiable {
 /// pantalla vacía.
 @MainActor
 public final class HomeModel: ObservableModel {
-    public private(set) var continueWatching: [HomeItem] = [] { didSet { if oldValue != continueWatching { changed() } } }
-    public private(set) var myList: [HomeItem] = [] { didSet { if oldValue != myList { changed() } } }
+    /// V9: cada fila de Inicio se vuelve a pintar solo con lo suyo (ver `@Tracked`).
+    public override var observesByProperty: Bool { true }
+    @Tracked public private(set) var continueWatching: [HomeItem] = []
+    @Tracked public private(set) var myList: [HomeItem] = []
     /// Mi lista como la pinta Inicio: lo del teléfono, con los datos de tu watchlist de Trakt (sinopsis, año) si ya llegaron.
-    public private(set) var traktPending: [Suggestion] = [] { didSet { if oldValue != traktPending { changed() } } }
+    @Tracked public private(set) var traktPending: [Suggestion] = []
     /// Tu watchlist tal como la dio Trakt (con sus datos), para vestir Mi lista.
     private var watchlistDetails: [Suggestion] = []
     /// Tus favoritos de Trakt (el corazón de la ficha), lo último que marcaste primero. Vacío sin Trakt: la fila no se pinta.
-    public private(set) var favorites: [Suggestion] = [] { didSet { if oldValue != favorites { changed() } } }
+    @Tracked public private(set) var favorites: [Suggestion] = []
     /// «Destacado»: lo que abre Inicio. Lo en tendencia, lo popular de la semana y lo recomendado para ti, películas y series
     /// entreveradas, sin lo que ya estás viendo.
-    public private(set) var spotlight: [Suggestion] = [] { didSet { if oldValue != spotlight { changed() } } }
+    @Tracked public private(set) var spotlight: [Suggestion] = []
     /// Solo películas («movie»), solo series («series») o todo (nil).
-    public var spotlightKind: String? { didSet { if oldValue != spotlightKind { changed() } } }
+    @Tracked public var spotlightKind: String? = nil
     public var spotlightShown: [Suggestion] { spotlightKind.map { k in spotlight.filter { $0.kind == k } } ?? spotlight }
     /// Cuántos títulos pasan por la portada de Inicio.
     public static let heroCount = 10
     /// «Para ti»: tus recomendaciones de Trakt (películas y series entreveradas), lo personal que antes iba arriba.
-    public private(set) var forYouPicks: [Suggestion] = [] { didSet { if oldValue != forYouPicks { changed() } } }
+    @Tracked public private(set) var forYouPicks: [Suggestion] = []
     /// El Top 10 de un servicio: el de Netflix (oficial, semanal, en tu país) o la tendencia del día en JustWatch de los
     /// demás. Series y películas por separado (cada una con su propio 1 al 10).
     public struct TopService: Sendable, Identifiable {
@@ -54,11 +56,11 @@ public final class HomeModel: ObservableModel {
     public static let topServices: [TopService] = [TopService(brand: "netflix", name: "Netflix", logo: Charts.netflixLogo)]
         + Charts.justWatchPlatforms.map { TopService(brand: $0.brand, name: $0.name, logo: Charts.justWatchLogo($0.brand)) }
     /// El servicio elegido (se recuerda): su Top 10 es el que se ve.
-    public private(set) var topBrand: String { didSet { if oldValue != topBrand { changed() } } }
+    @Tracked public private(set) var topBrand: String
     public var topService: TopService { Self.topServices.first { $0.brand == topBrand } ?? Self.topServices[0] }
     /// Lo que trajo cada servicio, por «marca:tipo» («netflix:series»).
-    public private(set) var topItems: [String: [Suggestion]] = [:] { didSet { if oldValue != topItems { changed() } } }
-    public private(set) var loadingTop = false { didSet { if oldValue != loadingTop { changed() } } }
+    @Tracked public private(set) var topItems: [String: [Suggestion]] = [:]
+    @Tracked public private(set) var loadingTop = false
     /// Hay algo de algún servicio (o se está trayendo): la fila se pinta.
     public var hasAnyTop: Bool { loadingTop || !topItems.isEmpty }
     public func top(kind: String) -> [Suggestion] { topItems["\(topBrand):\(kind)"] ?? [] }
@@ -73,13 +75,13 @@ public final class HomeModel: ObservableModel {
         if topBrand == brand { saveLists() }
     }
     static let spotlightLimit = 16, rowLimit = 20
-    public private(set) var isLoading = false { didSet { if oldValue != isLoading { changed() } } }
+    @Tracked public private(set) var isLoading = false
     /// Lo que sale de tus series en los próximos días (Trakt): «Sale hoy» (portada) y «Sale pronto» en Inicio.
-    public private(set) var upcoming: [Airing] = [] { didSet { if oldValue != upcoming { changed() } } }
+    @Tracked public private(set) var upcoming: [Airing] = []
     /// Lo primero que sale hoy: la portada de Inicio y el título al bajar («Sale hoy: Severance»).
     public var airingToday: Airing? { upcoming.first { Calendar.current.isDateInToday($0.day) } }
     /// Lo que salió de tus series en los últimos días (Trakt): la parte de «ya salió» de «Lo nuevo de lo tuyo».
-    public private(set) var recentAirings: [Airing] = [] { didSet { if oldValue != recentAirings { changed() } } }
+    @Tracked public private(set) var recentAirings: [Airing] = []
     /// Cuántos días hacia atrás entra en «Lo nuevo de lo tuyo».
     static let recentDays = 7
     /// «Lo nuevo de lo tuyo»: lo que ya salió y lo que viene, en una sola línea de tiempo (de lo más viejo a lo que sigue).
@@ -94,8 +96,8 @@ public final class HomeModel: ObservableModel {
     public nonisolated static func nowIndex(in timeline: [Airing], now: Date) -> Int {
         timeline.firstIndex { $0.aired > now } ?? timeline.count
     }
-    public private(set) var offline = false { didSet { if oldValue != offline { changed() } } }
-    public private(set) var error: String? { didSet { if oldValue != error { changed() } } }
+    @Tracked public private(set) var offline = false
+    @Tracked public private(set) var error: String? = nil
     private let services: Services
     static let cacheKey = "home-cache"
 
@@ -111,7 +113,7 @@ public final class HomeModel: ObservableModel {
                 MainActor.assumeIsolated { self?.setFavorite(change.suggestion, shown: change.add) }
             }
         }
-        topBrand = services.kv.data(Self.topBrandKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { b in Self.topServices.contains { $0.brand == b } ? b : nil } ?? "netflix"
+        _topBrand = Tracked(wrappedValue: services.kv.data(Self.topBrandKey).flatMap { String(data: $0, encoding: .utf8) }.flatMap { b in Self.topServices.contains { $0.brand == b } ? b : nil } ?? "netflix")
         super.init()
         if let data = services.caches.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
             let hidden = ForYou.hidden(services.kv)
