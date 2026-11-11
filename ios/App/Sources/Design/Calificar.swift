@@ -33,7 +33,7 @@ struct RatingStars: View {
                     .simultaneousGesture(drag(width: geo.size.width))
             }
         }
-        .dsFeedback(.selection, trigger: dragging) { old, new in old != nil && new != nil && old != new }
+        .dsFeedback(.selection, trigger: dragging) { (old: Double?, new: Double?) -> Bool in old != nil && new != nil && old != new }
         .accessibilityElement()
         .accessibilityLabel(Text("Tu calificación"))
         .accessibilityValue(value.map { Text("\($0.formatted()) de 5 estrellas") } ?? Text("Sin calificar"))

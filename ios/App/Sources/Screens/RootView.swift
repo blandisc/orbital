@@ -301,12 +301,8 @@ struct MainTabs: View {
         } : nil
     }
 
-    var body: some View {
-        // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
-        let selection = Binding(get: { tab }, set: { new in
-            if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
-            tab = new
-        })
+    /// Las cuatro pestañas, cada una con su pila de navegación.
+    private func tabs(_ selection: Binding<Int>) -> some View {
         TabView(selection: selection) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
             Tab("Explorar", image: OrbitalIcon.spark.asset, value: 1) {   // antes «Para ti» (Fernando, 31 oct 2026)
@@ -325,6 +321,15 @@ struct MainTabs: View {
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
+    }
+
+    var body: some View {
+        // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
+        let selection = Binding(get: { tab }, set: { new in
+            if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
+            tab = new
+        })
+        tabs(selection)   // las pestañas en su propia función: en una sola expresión, el Swift de la CI no alcanzaba
         // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
         .tabViewStyle(.sidebarAdaptable)
         // Como Apple (TV, Música): la barra arriba también acostado; la lateral, a un toque del botón de la barra (DK1, 4 nov 2026).
@@ -358,7 +363,7 @@ struct MainTabs: View {
             }
         }
         // Terminó una descarga: un toque de «listo» en la mano, estés en la pantalla que estés.
-        .dsFeedback(.success, trigger: finishedDownloads) { old, new in new > old }
+        .dsFeedback(.success, trigger: finishedDownloads) { (old: Int, new: Int) -> Bool in new > old }
         // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
         .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {
@@ -525,8 +530,13 @@ struct BannerView: View {
                   seconds: Toast.duration(banner.tone, hasAction: hasAction), dismiss: { env.dismissBanner(banner.serial) })
                 .id(banner.serial)
                 .transition(DS.Motion.notice(reduceMotion))
-                .dsFeedback(banner.tone == .error || banner.tone == .warn ? .warning : .success, trigger: banner.serial)
+                .dsFeedback(bannerFeedback(banner), trigger: banner.serial)
         }
+    }
+
+    /// Un error o una advertencia vibran como aviso; lo demás, como logro. Aparte: en línea, el Swift de la CI no la resolvía a tiempo.
+    private func bannerFeedback(_ banner: Notice) -> SensoryFeedback {
+        banner.tone == .error || banner.tone == .warn ? .warning : .success
     }
 }
 

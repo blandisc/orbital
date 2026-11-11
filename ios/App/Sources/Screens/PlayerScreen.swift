@@ -163,8 +163,8 @@ struct PlayerScreen: View {
     /// Lo que miden los controles de abajo en vertical (para que nunca se salgan de la pantalla).
     @State var controlsNeed: CGFloat = 0
 
-    var body: some View {
-        let model = holder.model
+    /// Todo lo que se ve del reproductor, de abajo hacia arriba: el video, los gestos, los controles y lo que flota encima.
+    @ViewBuilder private func stage(_ model: PlayerModel) -> some View {
         ZStack {
             if let face = ipod { Rectangle().fill(face.body).ignoresSafeArea() } else { DS.video.ignoresSafeArea() }
             // Fondo negro, también en vertical (ya no la imagen del episodio difuminada detrás: distraía del video).
@@ -302,6 +302,12 @@ struct PlayerScreen: View {
                 }
             }
         }
+    }
+
+    var body: some View {
+        let model = holder.model
+        // El escenario va en su propia función: en una sola expresión, el Swift de la CI (Xcode 26.3) no alcanzaba a revisarla.
+        stage(model)
         .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
         // Los arrastres verticales (brillo, volumen) que empiezan cerca del borde no abren el Centro de control ni el de
         // notificaciones: iOS pide un segundo deslizamiento, como en cualquier reproductor.

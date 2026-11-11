@@ -297,12 +297,12 @@ final class AppEnvironment {
         // La tarea continua de iOS: que sigan a toda velocidad aunque salgas de la app.
         let lanes = self.transport
         downloadContinuation.language = { settings.value.uiLanguage }
-        let liveActivity = liveActivity
+        let activity = liveActivity   // otro nombre: el Swift de la CI no deja que un cierre de arriba vea uno con el mismo
         downloadContinuation.onStarted = {
             await lanes.setForeground(true)
-            await liveActivity.setSuppressed(true)   // una sola actividad: la de iOS mientras dura la tarea
+            await activity.setSuppressed(true)   // una sola actividad: la de iOS mientras dura la tarea
         }
-        downloadContinuation.onEnded = { await liveActivity.setSuppressed(false) }
+        downloadContinuation.onEnded = { await activity.setSuppressed(false) }
         services.titlePrefs.onPendingChoice = { [weak self] in Task { @MainActor in self?.scheduleChoiceSync() } }
         let orbital = services.orbital
         services.titlePrefs.exchangeResume = { changes, want in

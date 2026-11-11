@@ -46,8 +46,11 @@ struct GuideOrbit: View {
     private func slot(_ i: Int) -> CGSize {
         let angle = Double.pi * (0.9 + 1.3 * Double(i) / Double(max(DS.Welcome.posters - 1, 1)))
         let a = DS.GuideScene.orbitWidth / 2, b = DS.GuideScene.orbitHeight / 2
-        let x = a * cos(angle), y = b * sin(angle), t = DS.Welcome.tilt * .pi / 180
-        return CGSize(width: x * cos(t) - y * sin(t), height: x * sin(t) + y * cos(t))
+        // Con tipos dichos: el Swift de la CI no sabía qué `cos` usar (Double o CGFloat).
+        let t: Double = DS.Welcome.tilt * .pi / 180
+        let x: CGFloat = a * CGFloat(Foundation.cos(angle)), y: CGFloat = b * CGFloat(Foundation.sin(angle))
+        let ct = CGFloat(Foundation.cos(t)), st = CGFloat(Foundation.sin(t))
+        return CGSize(width: x * ct - y * st, height: x * st + y * ct)
     }
 }
 

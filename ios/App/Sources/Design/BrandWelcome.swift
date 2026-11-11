@@ -81,9 +81,11 @@ struct OrbitCatch: View {
     /// Un punto de la elipse inclinada (como el anillo), desde el centro de la escena.
     private func orbitPoint(_ angle: Double, scale: CGFloat) -> CGPoint {
         let a = DS.Welcome.orbitWidth / 2 * scale, b = DS.Welcome.orbitHeight / 2 * scale
-        let x = a * cos(angle), y = b * sin(angle)
-        let tilt = DS.Welcome.tilt * .pi / 180
-        return CGPoint(x: x * cos(tilt) - y * sin(tilt), y: x * sin(tilt) + y * cos(tilt))
+        // Con tipos dichos: el Swift de la CI no sabía qué `cos` usar (Double o CGFloat).
+        let x: CGFloat = a * CGFloat(Foundation.cos(angle)), y: CGFloat = b * CGFloat(Foundation.sin(angle))
+        let tilt: Double = DS.Welcome.tilt * .pi / 180
+        let ct = CGFloat(Foundation.cos(tilt)), st = CGFloat(Foundation.sin(tilt))
+        return CGPoint(x: x * ct - y * st, y: x * st + y * ct)
     }
 
     @ViewBuilder private func poster(_ p: Placed) -> some View {
