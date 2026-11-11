@@ -92,3 +92,57 @@ def test_every_card_says_what_it_is(browser, server, width, height):  # noqa: F8
     found["Películas y series"] = page.evaluate(NAMELESS)
     assert not any(found.values()), found
     assert not page.errors, page.errors
+
+
+FOCUS_CLIP = (__import__("pathlib").Path(__file__).parent / "focus_clip.js").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
+def test_focused_piece_is_never_cut(browser, server, width, height):  # noqa: F811
+    """P4 (Fernando, 10 nov: «la tarjeta enfocada de A continuación se ve cortada por arriba»): lo enfocado, ya crecido y
+    con su órbita, se ve entero en cada fila y rejilla: ningún contenedor lo recorta y no se sale de la pantalla."""
+    page = open_at(browser, server, width, height)
+    cuts, seen = {}, {}
+
+    def look(name):
+        page.wait_for_timeout(900)
+        seen[name] = page.evaluate("() => document.querySelectorAll('.is-focused:is(.card, .tile, .person-chip, .episode)').length")
+        found = page.evaluate(FOCUS_CLIP)
+        if found:
+            cuts[name] = found
+
+    def press(*keys, wait=350):
+        for key in keys:
+            page.keyboard.press(key)
+            page.wait_for_timeout(wait)
+
+    look("Inicio · A continuación")
+    press("ArrowRight", "ArrowRight")
+    look("Inicio · A continuación, a media fila")
+    press("ArrowDown")
+    look("Inicio · la fila de abajo")
+    press("e", wait=900)
+    look("Juegos")
+    press("ArrowDown", "ArrowRight")
+    look("Juegos · la rejilla")
+    press("e", wait=1200)
+    look("Películas y series")
+    press("ArrowDown", "ArrowRight")
+    look("Películas y series · otra fila")
+    press("e", wait=1200)
+    press("ArrowRight")
+    look("TV en vivo")
+    press("s", wait=600)
+    page.keyboard.type("office")
+    page.locator(".search button.card").first.wait_for(timeout=5000)
+    press(*["ArrowRight"] * 10, wait=120)
+    look("Buscar · resultados")
+    press("Enter", wait=2500)
+    page.locator("section.title:not([hidden])").wait_for(timeout=8000)
+    press("ArrowDown", wait=700)
+    look("La ficha · episodios")
+    press("ArrowDown", wait=700)
+    look("La ficha · abajo")
+    assert all(seen.values()), f"sin foco que medir: {seen}"
+    assert not cuts, cuts
+    assert not page.errors, page.errors

@@ -43,7 +43,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const rows = ROWS.map(({ key, track: trackClass, row: rowClass }) => {
     const head = h("div", { class: "home__row-head" });
     const track = h("div", { class: ["home__track", trackClass], role: "group" });
-    const viewport = h("div", { class: "home__viewport" }, track);
+    const viewport = h("div", { class: ["home__viewport", `home__viewport--${key}`] }, track);
     const row = h("div", { class: ["home__row", rowClass], hidden: true, "data-row": key }, head, viewport);
     // Con el dedo, como en el celular: las filas se deslizan de lado bajo el dedo.
     dragScroll(viewport, track, { axis: "x", onScroll: (s) => edges(viewport, track, s) });

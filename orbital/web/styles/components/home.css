@@ -38,8 +38,12 @@
 .home__row[hidden] { display: none; }
 .home__viewport {
   --fade-left: var(--mask-solid); --fade-right: var(--mask-solid);
-  /* Abajo y a los lados, aire para la sombra de la enfocada (antes se cortaba en un cuadro oscuro); el margen lo devuelve. */
-  overflow: hidden; padding: var(--space-3) var(--space-10) var(--space-14); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-10)) calc(var(--space-2) - var(--space-14));
+  /* Arriba, lo que crece la enfocada y su órbita (P4, Fernando, 10 nov 2026: la de «A continuación» salía cortada por arriba,
+     pegada al título): ese aire es de la fila, así lo enfocado nunca se monta en su título. Abajo y a los lados, aire para la
+     sombra de la enfocada (antes se cortaba en un cuadro oscuro); el margen lo devuelve. */
+  --row-grow: 0px;
+  overflow: hidden; padding: max(var(--space-3), calc(var(--row-grow) + var(--orbit-width) + var(--orbit-gap) + var(--space-1))) var(--space-10) var(--space-14);
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-10)) calc(var(--space-2) - var(--space-14));
   -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%);
   mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%);
 }
@@ -47,6 +51,8 @@
 .home__viewport--before { --fade-left: transparent; }
 .home__track { display: flex; align-items: flex-end; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* «A continuación»: tarjetas anchas (16:9) con su logo y su avance; la enfocada crece y dice su nombre debajo. */
+.home__viewport--card { --row-grow: calc(8.4rem * .1); }
+.home__viewport--watch, .home__viewport--mine { --row-grow: calc(9.6rem * .1); }
 .home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-3); /* lo que crece la enfocada */ }
 .home__track--upnext .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
