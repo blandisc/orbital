@@ -26,11 +26,10 @@ struct HomeChannels: View {
                 DSSectionHead(title: Text("Canales"), eyebrow: Text("Siempre hay un episodio al aire"))
                 Spacer(minLength: DS.Space.s2)
                 if let simpsons, let simpsonsZoom {
-                    Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
-                        .dsIconButtonLook().buttonBorderShape(.circle).controlSize(.regular)
+                    DSIconButton(asset: "Glyphs/donut", label: "Un Simpson al azar", size: .regular, action: simpsons)
                         .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-                        .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons")
+                        .accessibilityIdentifier("home-random-simpsons")
                 }
                 DSIconButton(symbol: "plus", label: "Elegir canales", size: .regular) { choosing = true }
                     .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }

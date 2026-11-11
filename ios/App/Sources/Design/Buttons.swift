@@ -114,14 +114,24 @@ struct DSIconButton: View {
     var size: Size = .large
     let action: () -> Void
 
+    /// Un dibujo del catálogo en vez de un símbolo (la dona de «Un Simpson al azar»), con sus colores.
+    var asset: String?
+
     init(symbol: String, label: LocalizedStringKey, prominent: Bool = false, size: Size = .large, action: @escaping () -> Void) {
         self.symbol = symbol; self.label = label; self.prominent = prominent; self.size = size; self.action = action
     }
 
+    init(asset: String, label: LocalizedStringKey, size: Size = .large, action: @escaping () -> Void) {
+        self.init(symbol: "", label: label, size: size, action: action)
+        self.asset = asset
+    }
+
+    private var glyph: Image { asset.map { Image($0).renderingMode(.original) } ?? Image(systemName: symbol) }
+
     var body: some View {
         Group {
-            if prominent { Button(action: action) { Image(systemName: symbol) }.dsPrimaryButton() }
-            else { Button(action: action) { Image(systemName: symbol) }.dsIconButtonLook() }
+            if prominent { Button(action: action) { glyph }.dsPrimaryButton() }
+            else { Button(action: action) { glyph }.dsIconButtonLook() }
         }
         .buttonBorderShape(.circle).controlSize(size.control)
         .accessibilityLabel(Text(label))
