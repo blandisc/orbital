@@ -168,5 +168,10 @@ export function createHero({ onAction, onKind = null }) {
       onClick: (event) => { event.stopPropagation(); onKind?.(value); } })));
   }
 
-  return { el, update, setKinds };
+  /** T5: el foco del mando en una pestaña (su índice), o en ninguna (null). */
+  function focusKind(index = null) {
+    [...kinds.children].forEach((pill, i) => pill.classList.toggle("is-focused", i === index));
+  }
+
+  return { el, update, setKinds, focusKind };
 }

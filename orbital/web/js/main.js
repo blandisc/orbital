@@ -539,6 +539,7 @@ function renderHints() {
     running: state.running?.managed ? state.running : null,
     rows: state.rows.length,
     heroButtons: !!item, // el héroe enseña los botones de lo enfocado
+    kinds: state.section === "media" ? (kindFocus != null ? "on" : r === 0 ? "above" : null) : null, // T5
   }));
 }
 
@@ -1152,7 +1153,47 @@ let yearsLoaded = 0;
 let mediaFilter = storage.get("orbital.media.filter", "all"); // ☰ › Mostrar: Todo · Series · Películas
 const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Películas"]];
 /** Todo · Películas · Series a la vista sobre el destacado, solo en Películas y series (el Inicio del iPhone lo lleva arriba). */
-const paintMediaKinds = () => ui.hero.setKinds(state.section === "media" ? [["all", "Todo"], ["movie", "Películas"], ["series", "Series"]] : null, mediaFilter);
+const MEDIA_KINDS = [["all", "Todo"], ["movie", "Películas"], ["series", "Series"]]; // las pestañas del héroe, en su orden
+// T5 (10 nov 2026): con el mando o el teclado, ↑ desde la primera fila entra a «Todo · Películas · Series» (como los filtros de
+// Juegos); ◀ ▶ cambian de pestaña, A la elige, ↓ o B regresan a la fila. `kindFocus`: cuál está enfocada (null: ninguna).
+let kindFocus = null;
+const paintMediaKinds = () => {
+  ui.hero.setKinds(state.section === "media" ? MEDIA_KINDS : null, mediaFilter);
+  if (kindFocus != null) ui.hero.focusKind(kindFocus);
+};
+function enterKinds() {
+  kindFocus = Math.max(0, MEDIA_KINDS.findIndex(([k]) => k === mediaFilter));
+  ui.hero.focusKind(kindFocus);
+  ui.shelf.rest(true);
+  sound.play("move");
+  renderHints();
+}
+function leaveKinds() {
+  if (kindFocus == null) return;
+  kindFocus = null;
+  ui.hero.focusKind(null);
+  ui.shelf.rest(false);
+  renderHints();
+}
+addEventListener("pointerdown", () => leaveKinds(), true); // con el dedo o el mouse, el foco del mando se va de las pestañas
+function handleKinds(action) {
+  switch (action) {
+    case "left":
+    case "right": {
+      const to = Math.min(MEDIA_KINDS.length - 1, Math.max(0, kindFocus + (action === "right" ? 1 : -1)));
+      if (to === kindFocus) return sound.play("edge");
+      kindFocus = to;
+      ui.hero.focusKind(to);
+      sound.play("move");
+      return renderHints();
+    }
+    case "select": return MEDIA_KINDS[kindFocus][0] === mediaFilter ? sound.play("select") : runCommand({ type: "media-filter", value: MEDIA_KINDS[kindFocus][0] });
+    case "up": return sound.play("edge");
+    case "down":
+    case "back": sound.play("move"); return leaveKinds();
+    default: leaveKinds(); return handleRows(action);
+  }
+}
 
 // «Porque viste»: el que elegiste con X se queda hasta mañana (luego vuelve el del día, que ya es otro).
 const today = () => new Date().toLocaleDateString("sv");
@@ -2058,7 +2099,9 @@ async function runCommand(command, context = null) {
         storage.set("orbital.media.filter", mediaFilter);
         sound.play("select");
         paintMediaKinds();
-        return buildCuration();
+        buildCuration();
+        if (kindFocus != null) ui.shelf.rest(true); // T5: el foco sigue en las pestañas
+        return;
       case "decide":
         ui.sheet.close();
         return openDecide();
@@ -2332,10 +2375,14 @@ function menuStillLoading(action) {
 
 /** Las filas de portadas (Películas y series). */
 function handleRows(action, { repeat = false } = {}) {
+  if (kindFocus != null) return handleKinds(action);
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
-    case "up": { const t = rowJump(state.rows, state.memory, r, -1); return setFocus(t.r, t.c); }
+    case "up": {
+      if (r === 0 && state.section === "media" && !repeat) return enterKinds(); // T5: arriba de la primera fila, las pestañas
+      const t = rowJump(state.rows, state.memory, r, -1); return setFocus(t.r, t.c);
+    }
     case "down": { const t = rowJump(state.rows, state.memory, r, 1); return setFocus(t.r, t.c); }
     case "left": return setFocus(r, c - 1, { edge: "left", repeat });
     case "right": { const moved = setFocus(r, c + 1, { edge: "right", repeat }); moreYears(); return moved; }

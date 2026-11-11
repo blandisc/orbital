@@ -32,6 +32,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     }
   });
   let rowEls = [];
+  let resting = false; // T5: el foco está arriba, en las pestañas
   let focus = { r: 0, c: 0 };
   // Lo que ya está pintado en las filas de ahora ({r, c}); null tras rearmarlas. Moverse solo toca la fila y la tarjeta de
   // antes y las de ahora (V2, 10 nov 2026): antes cada tecla cambiaba clases, tabIndex y contadores de TODAS las tarjetas de
@@ -224,7 +225,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     (cols ?? cards.map((_, col) => col)).forEach((col) => {
       const card = cards[col];
       if (!card) return;
-      const focused = isCurrent && col === c;
+      const focused = isCurrent && col === c && !resting; // con el foco arriba (las pestañas, T5), ninguna
       card.classList.toggle("is-focused", focused);
       card.classList.toggle("card--dimmed", !isCurrent);
       card.tabIndex = focused ? 0 : -1;
@@ -342,5 +343,13 @@ export function createShelf({ onPick, onMore, onSwipe }) {
   });
 
   window.addEventListener("resize", () => { measure(); applied = null; setFocus(focus.r, focus.c); });
-  return { el, setRows, prepare, updateRow, setFocus, bump, focused, slide };
+  /** El foco se fue arriba de las filas (las pestañas Todo · Películas · Series, T5): la tarjeta deja de verse enfocada y
+   *  la fila se queda donde estaba; al volver, la misma tarjeta. */
+  function rest(on) {
+    if (resting === on) return;
+    resting = on;
+    if (rowEls.length) paintRow(focus.r, focus.r, focus.c, [focus.c]);
+  }
+
+  return { el, setRows, prepare, updateRow, setFocus, bump, focused, slide, rest };
 }
