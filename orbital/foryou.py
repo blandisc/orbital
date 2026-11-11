@@ -170,13 +170,21 @@ def _has_items(value: Any) -> bool:
 
 class Cache:
     """Lo que se trajo de internet, con fecha. Si al renovar falla la red se queda lo de antes; dos
-    peticiones a la vez por lo mismo esperan a una sola descarga."""
+    peticiones a la vez por lo mismo esperan a una sola descarga.
+
+    Con tope (V6): cada prefijo de clave («poster:», «details:», «imdb:»…) guarda a lo más `PREFIX_LIMIT` entradas (se
+    olvidan las más viejas) y lo que pasa de `MAX_AGE` sin renovarse se borra al cargar y al guardar. Cada entrada se
+    convierte a texto una sola vez: al guardar, solo lo que cambió se vuelve a serializar."""
 
     SAVE_DELAY = 5.0  # s: varias listas que llegan juntas se guardan de una vez
+    PREFIX_LIMIT = 2000  # entradas por prefijo
+    MAX_AGE = 60 * 24 * 3600  # s: ni sin internet sirve algo de hace dos meses (los pósters duran 30 días)
 
     def __init__(self, clock: Callable[[], float] = time.time, path: Path | None = None) -> None:
         self.clock = clock
         self._data: dict[str, tuple[float, Any]] = {}
+        self._by_prefix: dict[str, dict[str, None]] = {}  # claves por prefijo, de la más vieja a la más nueva
+        self._encoded: dict[str, str] = {}  # la entrada ya en JSON (se borra al cambiar)
         self._locks: dict[str, threading.Lock] = {}
         self._lock = threading.Lock()
         # Modo sin internet: lo último que se trajo queda en disco. Al arrancar sin conexión, Para ti y Películas y series
@@ -186,15 +194,46 @@ class Cache:
         if path is not None:
             self._load()
 
+    @staticmethod
+    def _prefix(key: str) -> str:
+        return key.split(":", 1)[0]
+
+    def _put(self, key: str, when: float, value: Any) -> None:
+        """Con self._lock tomado."""
+        self._data[key] = (when, value)
+        self._encoded.pop(key, None)
+        keys = self._by_prefix.setdefault(self._prefix(key), {})
+        keys.pop(key, None)
+        keys[key] = None
+        while len(keys) > self.PREFIX_LIMIT:
+            self._drop(next(iter(keys)))
+
+    def _drop(self, key: str) -> None:
+        """Con self._lock tomado."""
+        self._data.pop(key, None)
+        self._encoded.pop(key, None)
+        keys = self._by_prefix.get(self._prefix(key))
+        if keys is not None:
+            keys.pop(key, None)
+
+    def _purge(self) -> None:
+        """Con self._lock tomado: borra lo que pasó de MAX_AGE."""
+        oldest = self.clock() - self.MAX_AGE
+        for key in [k for k, (when, _) in self._data.items() if when < oldest]:
+            self._drop(key)
+
     def _load(self) -> None:
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8")) if self.path and self.path.exists() else {}
         except (OSError, ValueError) as exc:
             log.info("Para ti: no pude leer lo guardado (%s): empiezo de cero", exc)
             return
-        for key, entry in raw.items() if isinstance(raw, dict) else []:
-            if isinstance(entry, list) and len(entry) == 2 and isinstance(entry[0], (int, float)):
-                self._data[key] = (float(entry[0]), entry[1])
+        entries = [(key, entry) for key, entry in (raw.items() if isinstance(raw, dict) else [])
+                   if isinstance(entry, list) and len(entry) == 2 and isinstance(entry[0], (int, float))]
+        with self._lock:
+            for key, entry in sorted(entries, key=lambda e: e[1][0]):  # de lo más viejo a lo más nuevo (el tope olvida lo viejo)
+                self._put(key, float(entry[0]), entry[1])
+            self._purge()
 
     def _schedule_save(self) -> None:
         if self.path is None:
@@ -209,20 +248,29 @@ class Cache:
     def _save(self) -> None:
         with self._lock:
             self._save_timer = None
+            self._purge()
             data = dict(self._data)
+            encoded = dict(self._encoded)
         path = self.path
         if path is None:
             return
-        out = {}
+        parts, fresh = [], {}
         for key, (when, value) in data.items():
-            try:
-                json.dumps(value)  # solo lo que se puede guardar tal cual (listas y fichas)
-            except (TypeError, ValueError):
-                continue
-            out[key] = [when, value]
+            text = encoded.get(key)
+            if text is None:
+                try:  # solo lo que se puede guardar tal cual (listas y fichas)
+                    text = json.dumps(key, ensure_ascii=False) + ":" + json.dumps([when, value], ensure_ascii=False)
+                except (TypeError, ValueError):
+                    continue
+                fresh[key] = text
+            parts.append(text)
+        with self._lock:  # lo que cambió mientras tanto ya no está en _data con esa fecha: no se guarda su texto viejo
+            for key, text in fresh.items():
+                if self._data.get(key) is data[key]:
+                    self._encoded[key] = text
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
-            atomic_write(path, json.dumps(out, ensure_ascii=False), encoding="utf-8")
+            atomic_write(path, "{" + ",".join(parts) + "}")
         except OSError as exc:
             log.info("Para ti: no pude guardar lo traído: %s", exc)
 
@@ -254,7 +302,7 @@ class Cache:
                     return hit[1]
                 raise
             with self._lock:
-                self._data[key] = (self.clock(), value)
+                self._put(key, self.clock(), value)
             self._schedule_save()
             return value
 
@@ -277,7 +325,7 @@ class Cache:
         if partial or not _has_items(value):
             return hit[1] if hit and _has_items(hit[1]) else value  # lo bueno de antes gana a lo incompleto de ahora
         with self._lock:
-            self._data[key] = (self.clock(), value)
+            self._put(key, self.clock(), value)
         self._schedule_save()
         return value
 
@@ -285,7 +333,7 @@ class Cache:
         try:
             value = load()
             with self._lock:
-                self._data[key] = (self.clock(), value)
+                self._put(key, self.clock(), value)
             self._schedule_save()
         except SERVICE_ERRORS as exc:  # sin red: se queda lo de antes
             log.warning("Para ti: no pude renovar %s: %s", key, exc)
@@ -297,7 +345,7 @@ class Cache:
     def clear(self, prefix: str = "") -> None:
         with self._lock:
             for key in [k for k in self._data if k.startswith(prefix)]:
-                del self._data[key]
+                self._drop(key)
         self._save()  # de inmediato: si no, lo borrado regresa del disco al reiniciar
 
     def peek(self, key: str) -> Any:
