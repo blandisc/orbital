@@ -1,5 +1,7 @@
 # Para ti en el iPhone: brief de UX/UI (rework de Listas, mosaico fluido, widget)
 
+> Nota (10 nov 2026): Multica ya no se usa desde el 26 oct 2026; las tareas «CEN-» y los backlogs en Multica son historia. El plan y el estado viven en `docs/` del repo.
+
 Objetivo del usuario: **descubrir qué ver tiene que ser fácil, bonito y agradable.** Hoy el mosaico tiene la
 firma de la consola pero se traba, y Listas es «chips de texto + cuadrícula», que no invita a explorar.
 

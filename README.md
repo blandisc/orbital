@@ -1,7 +1,7 @@
 # Orbital
 
 Interfaz tipo consola para la **Lenovo Legion Go**: conéctala a la TV, navega con el mando y abre
-tus juegos de **Steam**, tus **emuladores**, **Stremio** y otras apps desde una sola pantalla. Además
+tus juegos de **Steam**, tus **emuladores**, tus series y películas (sincronizadas con **Trakt**) y otras apps desde una sola pantalla. Además
 se controla con la voz a través de **Alexa**.
 
 ```
@@ -11,7 +11,7 @@ se controla con la voz a través de **Alexa**.
  │  interfaz + mando (Gamepad API)       ├─ Steam                  │
  │            ▲                          ├─ Emuladores (detectados)│
  │            └──── eventos SSE ─────────├─ ES-DE (portadas, favs) │
- │                                       ├─ Stremio (Seguir viendo)│
+ │                                       ├─ Trakt (Seguir viendo)  │
  │                                       └─ voz                    │
  │                                             ▲                   │
  │                     Orbital :8711 (solo voz, con token)         │
@@ -29,7 +29,7 @@ se controla con la voz a través de **Alexa**.
 | **Steam** | Lee `libraryfolders.vdf` + `appmanifest_*.acf` (todas las bibliotecas y discos), filtra Proton y runtimes, usa la portada local o la del CDN y lanza con `steam://rungameid/<id>`. Incluye un atajo a Big Picture. |
 | **Emuladores** | Se **detectan solos** (Ryujinx, Eden, Dolphin, mGBA, xemu, Xenia, DuckStation, PCSX2, PPSSPP, melonDS, Cemu…) en Descargas, Escritorio, `C:\Emuladores`, etc. Si quieres cambiar algo, se sobrescribe en `config.yaml`. Cada sistema tiene su propia fila. |
 | **ES-DE** | Si usas ES-DE, Orbital toma de ahí la carpeta de ROMs, los nombres del scraper, las portadas de `downloaded_media`, tus **favoritos** (fila propia) y oculta los juegos marcados como ocultos. También agrega un acceso a ES-DE. |
-| **Stremio** | Abre Stremio 4/5 y, si vinculas tu cuenta, muestra la fila **Seguir viendo** con pósters, progreso y episodio (T2 E4); con A abre directo la ficha de ese episodio. Por voz: "sigue viendo", "continúa The Office", "busca Dune en Stremio". |
+| **Trakt y Stremio** | **Trakt es la base**: sincroniza lo que ves, tu lista y tus calificaciones entre la consola y el iPhone. **Stremio es solo respaldo**: si vinculas tu cuenta, sigue mostrando la fila **Seguir viendo** (pósters, progreso, episodio T2 E4) y con A abre la ficha en Stremio 4/5. Por voz: "sigue viendo", "continúa The Office". Ver `docs/producto/desacoplar-stremio/`. |
 | **iPhone** | Con la app de iPhone conectada (Ajustes › Cuentas › iPhone), desde la TV puedes **Enviar al iPhone** o **Descargar en el iPhone** lo que ves (reproductor Y › Más, ficha, Seguir viendo); el iPhone lo recoge al abrir Orbital o, con suerte, en segundo plano. Ver `ios/README.md` › «Desde la TV» |
 | **Apps** | Cualquier ejecutable o URL (`apps:` en `config.yaml`). Ya no tienen sección propia en la barra: se abren con Buscar (⧉) o por voz. |
 | **Voz** | `/api/voice` acepta intents de Alexa o texto libre en español ("abre hollow knight", "busca dune en stremio", "cierra el juego", "ve a la derecha"). |
@@ -137,7 +137,9 @@ cp scripts/orbital.service ~/.config/systemd/user/ && systemctl --user enable --
 ```
 En Game Mode puedes añadir Chromium como "juego no de Steam" apuntando a `http://127.0.0.1:8710`.
 
-## Stremio: "Seguir viendo"
+## Stremio (respaldo): "Seguir viendo"
+
+> Desde octubre de 2026 la sincronización la lleva **Trakt**; Stremio quedó como respaldo opcional (la app del iPhone ya funciona sin él). Si no usas Stremio, sáltate esta sección. Detalle y estado: `docs/producto/desacoplar-stremio/avance.md`.
 
 Vincula tu cuenta una vez (en la Legion Go, con teclado):
 

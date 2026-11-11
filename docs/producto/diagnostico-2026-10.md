@@ -1,5 +1,7 @@
 # Orbital · Diagnóstico de producto y plan (octubre 2026)
 
+> Nota (10 nov 2026): Multica ya no se usa desde el 26 oct 2026; las tareas «CEN-» y los backlogs en Multica son historia. El plan y el estado viven en `docs/` del repo.
+
 Documento del Product Manager. Qué es Orbital hoy, cómo se compara con lo mejor que hay afuera, qué
 le falta y en qué orden se ataca. Lo que se verificó en código, pruebas y simulador se dice como hecho;
 lo que viene de investigación externa lleva su fuente.

@@ -1,5 +1,7 @@
 # Orbital para iPhone: plan de la app compañera
 
+> Nota (10 nov 2026): Fernando decidió el 4 nov **no pagar** la cuenta de desarrollador. La app se instala por cable con el Apple ID gratuito y vence cada 7 días (hay que reinstalarla; sin notificaciones push). Donde este plan supone cuenta de pago, TestFlight o perfil de un año, vale esta nota.
+
 App de iOS para uso personal que reproduce películas y series con los mismos complementos de Stremio,
 la misma cuenta y las mismas preferencias que Orbital. Este documento es solo investigación y plan;
 todavía no hay código de la app.
@@ -34,8 +36,8 @@ todavía no hay código de la app.
 - **Descargas**: `URLSession` en segundo plano con el enlace directo de Real-Debrid, guardando la URL
   «resolver» del complemento para pedir un enlace nuevo si el viejo caduca; subtítulos y ficha junto
   al video; el avance offline se encola y se sube al volver la red.
-- **Instalación**: con tu cuenta de desarrollador de pago (perfil de un año, o TestFlight interno).
-  Con Apple ID gratuito la app caduca a los 7 días.
+- **Instalación**: por cable con un Apple ID gratuito; la app caduca a los 7 días y se reinstala (decisión del 4 nov
+  2026: no se paga la cuenta de desarrollador). Un perfil de un año o TestFlight interno exigirían cuenta de pago.
 - **Primera versión mínima** (§12, etapa 1): entrar con Stremio, «Seguir viendo», buscar, ficha con
   episodios, lista de fuentes ordenada como en Orbital, reproducir con MPVKit con audio y subtítulos
   en tu idioma, y guardar el avance en Stremio. Sin descargas ni Trakt todavía.
@@ -326,8 +328,8 @@ externo)**. Con enlaces http directos de Real-Debrid funciona como «abrir URL»
 
 | Vía | Duración | Límites |
 |---|---|---|
-| Apple ID gratuito + Xcode | 7 días, luego reinstalar | Pocas apps instaladas a la vez con ese perfil, sin algunas capacidades **(verificar si afecta a descargas en segundo plano y PiP)** |
-| **Programa de desarrolladores de pago** (99 USD/año) + Xcode | El perfil de desarrollo dura **un año** | Se reinstala al renovar. La opción recomendada |
+| **Apple ID gratuito + Xcode (la opción elegida)** | 7 días, luego reinstalar | Pocas apps instaladas a la vez con ese perfil, sin algunas capacidades **(verificar si afecta a descargas en segundo plano y PiP)** |
+| Programa de desarrolladores de pago (99 USD/año) + Xcode | El perfil de desarrollo dura un año | Se reinstala al renovar. Era la opción recomendada; **descartada el 4 nov 2026** |
 | TestFlight (pruebas internas) con la misma cuenta | Cada build caduca a los 90 días | Las pruebas internas no pasan por revisión de Apple **(verificar)**; cómodo para instalar sin cable |
 | AltStore / SideStore | Refresco cada 7 días con Apple ID gratuito | Útil sin cuenta de pago; más mantenimiento |
 | Tiendas alternativas (UE) | — | Solo en la UE y con notarización; no aplica |
@@ -394,7 +396,7 @@ de terceros sin autorización. Tampoco tiene sentido para algo personal.
 - Reproductor: reanudar, audio y subtítulos en tu idioma (y los recuerda por serie), subtítulos de
   complementos si el video no trae, ±10 s, otra fuente si falla.
 - Avance a Stremio (60 s, pausa, segundo plano, fin) y episodio visto en el bitfield.
-- Interfaz en español e inglés. Instalación con tu cuenta de desarrollador.
+- Interfaz en español e inglés. Instalación por cable con Apple ID gratuito (vence a los 7 días).
 
 **Etapa 2 — Experiencia de reproductor (lo de Infuse)**
 - Up Next con cuenta atrás, Skip intro por capítulos, «¿Sigues viendo?».

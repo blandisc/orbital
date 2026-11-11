@@ -84,3 +84,23 @@
 - [ ] Con una serie puesta: "…que ponga el siguiente episodio".
 - [ ] "…que abra (un juego) en la nube" abre tu juego de GeForce NOW.
 - [ ] Con la Legion Go apagada: Alexa dice que no pudo conectar con tu consola.
+
+## La CI manda
+
+La CI es la revisión automática de GitHub (`.github/workflows/ci.yml`). Corre en cada commit, y la regla es una:
+**nadie construye sobre rojo**. Si la CI está en rojo, lo primero es arreglarla; no se agrega nada nuevo encima.
+
+Qué corre:
+
+- **Windows (la TV):** revisión de código (ruff), tipos (pyright), pruebas de Python, pruebas de la interfaz web, pruebas
+  de humo en un navegador real (Playwright), que los ejemplos compartidos Python a Swift (`tests/fixtures/ios`) estén al
+  día (`scripts/ios_golden.py` y `git diff`) y que el paquete incluya la interfaz y los íconos.
+- **macOS, pruebas:** `swift test` del paquete `OrbitalCore` (incluye la prueba del sistema de diseño del iPhone), con una
+  versión de Xcode fija (`XCODE_VERSION` arriba del archivo).
+- **macOS, app del iPhone:** XcodeGen genera el proyecto y `xcodebuild` compila la app para el simulador, sin firma, en
+  Debug y en Release. Usa un `Secrets.xcconfig` con claves vacías (las reales no están en git).
+
+`tv-estable`: es una etiqueta de git que apunta al último commit de `main` donde **todo lo anterior pasó**. Un último paso
+de la CI la mueve solo cuando `main` queda en verde (si el commit falla, la etiqueta se queda donde estaba; si llegó un
+commit más nuevo mientras corría la CI, no se mueve). La TV se actualiza desde esa etiqueta y no desde `main`, así que
+nunca recibe algo que la CI no aprobó. Para ver dónde está: `git fetch origin tag tv-estable -f && git log -1 tv-estable`.

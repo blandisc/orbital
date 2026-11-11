@@ -15,3 +15,8 @@ ios/App/Build/
 
 # La clave de TMDB incluida en la app del iPhone (el repo es público)
 ios/App/Secrets.xcconfig
+
+# Archivos generados en la consola y herramientas locales (no se suben)
+.playwright-mcp/
+orbital/mpv-input.conf
+orbital/orbital-mouse.lua

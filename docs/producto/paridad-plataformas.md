@@ -1,5 +1,7 @@
 # Una sola experiencia: paridad entre la consola (TV) y el iPhone
 
+> Nota (10 nov 2026): Multica ya no se usa desde el 26 oct 2026; las tareas «CEN-» y los backlogs en Multica son historia. El plan y el estado viven en `docs/` del repo.
+
 Análisis holístico del 2026-10-15 con capturas de las dos plataformas (consola en `scripts/demo_server.py`,
 iPhone en el simulador en modo demostración). La pregunta no es «¿se parecen?» sino **«¿se sienten como el
 mismo producto, igual de pulido, y se ayudan entre sí?»**. Complementa `diagnostico-2026-10.md` y
