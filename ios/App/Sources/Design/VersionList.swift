@@ -61,6 +61,8 @@ struct VersionMark: Equatable {
     let symbol: String
     let color: Color
     let words: String
+    /// Se explica al tocarlo (un globito con `words`): «¿Otro título?», que antes era un aviso amarillo de texto (R4).
+    var tip = false
 
     /// ⚡ al instante, ☁︎ hay que pedirla (o cómo va, si ya la pediste), el triángulo si Real-Debrid no la dejó bajar y ⓘ si
     /// el idioma es «tal vez» (el triángulo es solo de «no lo dejó bajar», PT10; amarillo solo para eso, I6).
@@ -68,6 +70,12 @@ struct VersionMark: Equatable {
         var marks: [VersionMark] = []
         // I6 · la duda va en gris (ⓘ): el amarillo queda para el riesgo de verdad (Real-Debrid no la dejó bajar).
         if option.evidence == .maybe { marks.append(VersionMark(symbol: "info.circle", color: DS.textMuted, words: tr("Tal vez"))) }
+        // R4 · «¿Otro título?» (u otro episodio): su ícono, que se explica al tocarlo y en VoiceOver; nunca una cápsula de texto.
+        if option.otherEpisode {
+            marks.append(VersionMark(symbol: DS.Symbol.otherTitle, color: DS.textMuted, words: tr("¿Otro episodio? El nombre dice otra temporada."), tip: true))
+        } else if option.otherTitle {
+            marks.append(VersionMark(symbol: DS.Symbol.otherTitle, color: DS.textMuted, words: tr("¿Otro título? El nombre dice otro año: puede ser otra película."), tip: true))
+        }
         if option.refused {
             marks.append(VersionMark(symbol: DebridRequestWords.Icon.refused, color: DS.warning, words: tr("Real-Debrid no lo dejó bajar")))
         } else if option.speed == .realDebridMustDownload, let cloud {
@@ -150,7 +158,9 @@ struct VersionListRow<Menu: View>: View {
 
     @ViewBuilder private func trailing(_ marks: [VersionMark], _ size: String?) -> some View {
         ForEach(marks, id: \.symbol) { mark in
-            Image(systemName: mark.symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(mark.color)
+            if mark.tip { VersionMarkTip(mark: mark) } else {
+                Image(systemName: mark.symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(mark.color)
+            }
         }
         if let size { Text(verbatim: size).recipe(.footnote).monospacedDigit().lineLimit(1).fixedSize() }
     }
@@ -171,14 +181,13 @@ struct VersionPreview: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("\(Text.flag(code))\(Text(verbatim: "\(language) · \(option.quality)"))").recipe(.cardTitle, color: DS.text)
                 let facts = [VersionText.size(option, locale: locale), option.badges.isEmpty ? nil : option.badges.joined(separator: " · ")]
-                    .compactMap { $0 } + marks.map(\.words)
+                    .compactMap { $0 } + marks.filter { !$0.tip }.map(\.words)
                 Text(verbatim: facts.joined(separator: " · ")).recipe(.footnote)
                 HStack(spacing: DS.Space.s1) { AddonMark(kind: option.from); AddonMark.name(option.from).recipe(.caption) }
             }
-            if option.otherEpisode {
-                DSNotice(text: "¿Otro episodio? El nombre dice otra temporada.", tone: .warn)
-            } else if option.otherTitle {
-                DSNotice(text: "¿Otro título? El nombre dice otro año: puede ser otra película.", tone: .warn)
+            // Su ícono con la explicación (R4: antes, un aviso amarillo de texto).
+            ForEach(marks.filter(\.tip), id: \.symbol) { mark in
+                Label { Text(verbatim: mark.words) } icon: { Image(systemName: mark.symbol) }.recipe(.footnote)
             }
             VersionEvidence(evidence: option.evidence, language: language, release: option.release, site: option.site)
             if !option.alsoHas.isEmpty {
@@ -218,5 +227,28 @@ struct VersionLegend: View {
             .font(DS.TextRecipe.caption.font)
         Label { Text("Lista al instante").recipe(.caption) } icon: { Image(systemName: DS.Symbol.instant).foregroundStyle(DS.success) }
             .font(DS.TextRecipe.caption.font)
+    }
+}
+
+/// El ícono de un aviso que se explica al tocarlo (`VersionMark.tip`): un globito con sus palabras, que VoiceOver lee igual.
+/// El toque es del ícono, no del renglón (tocar el resto del renglón la sigue abriendo).
+struct VersionMarkTip: View {
+    let mark: VersionMark
+    @State private var shown = false
+
+    var body: some View {
+        Image(systemName: mark.symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(mark.color)
+            .padding(.horizontal, DS.Space.s1)
+            .frame(minHeight: DS.Size.touchTarget)
+            .contentShape(Rectangle())
+            .onTapGesture { shown = true }
+            .popover(isPresented: $shown) {
+                Text(verbatim: mark.words).recipe(.footnote, color: DS.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: DS.Version.preview)
+                    .padding(DS.Space.s3)
+                    .presentationCompactAdaptation(.popover)
+            }
+            .accessibilityLabel(Text(verbatim: mark.words))
     }
 }
