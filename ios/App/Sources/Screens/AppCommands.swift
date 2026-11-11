@@ -72,14 +72,8 @@ struct PlayerCommands: Equatable {
     static func == (_: Self, _: Self) -> Bool { true }
 }
 
-/// Lo que la ficha abierta deja hacer desde el menú y el teclado (lo publica `TitleView`).
-struct TitleCommands: Equatable {
-    var play: () -> Void
-    var save: () -> Void
-    var versions: () -> Void
-    /// Siempre «igual», por la misma razón que `PlayerCommands` (un valor enfocado que cambia repinta todo sin parar).
-    static func == (_: Self, _: Self) -> Bool { true }
-}
+// Lo que la ficha abierta deja hacer desde el menú y el teclado: `TitleCommands` (OrbitalModels), igual mientras es la misma
+// ficha y distinto en cuanto cambia el título (revisión del 11 nov 2026; antes, siempre «igual»).
 
 extension FocusedValues {
     @Entry var playerCommands: PlayerCommands?

@@ -83,7 +83,8 @@ struct TitleView: View {
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
         // Teclado y barra de menús (iPad, Mac): ⌘↩ ver, ⌘D guardar, ⌥⌘V versión (`AppCommands`).
-        .focusedSceneValue(\.titleCommands, TitleCommands(play: { let go = continueAction(model); if go.enabled { go.play() } },
+        .focusedSceneValue(\.titleCommands, TitleCommands(kind: model.kind, metaID: model.metaID,
+                                                           play: { let go = continueAction(model); if go.enabled { go.play() } },
                                                            save: { saving = true }, versions: { if let v = model.continueVideoID { openVersions(v) } }))
     }
 
