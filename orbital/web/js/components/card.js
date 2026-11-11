@@ -28,6 +28,9 @@ export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon ||
 /** Una pieza ancha (Destacados, como el carrusel de Stremio): el arte 16:9 a su tamaño real y el logo del título encima. */
 export const WIDE_RATIO = 16 / 9;
 
+/** ¿Es el arte de respaldo de Orbital (el cielo genérico) y no el del título? Entonces no dice qué es. */
+export const isStandInArt = (src) => typeof src === "string" && /(^|\/)img\/placeholders\//.test(src);
+
 export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption = false, pop = false, ranked = false, wide = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
@@ -57,8 +60,18 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
   const label = item.label ? h("span", { class: "card__label" }, item.label) : null;
   // Ancha: el logo del título sobre el arte (sin él, el arte de fondo no dice qué es); si no carga, el nombre.
   const logoUrl = item.extra?.logo || (/^tt\d+$/.test(item.meta_id ?? "") ? titleLogo(item.meta_id) : null);
-  const logo = wide && logoUrl ? h("img", { class: "card__logo", src: trimmedLogo(logoUrl), alt: item.title, decoding: "async" }) : null;
-  logo?.addEventListener("error", () => logo.replaceWith(h("span", { class: "card__label" }, item.title)), { once: true });
+  // Regla de toda tarjeta (P4, 10 nov 2026: The Office salía en blanco en «A continuación»): sin un logo que ya se vea, el
+  // nombre va sobre el arte. El logo no se enseña hasta que cargó (`card--logo-ready` esconde el nombre); si tarda o no
+  // llega, se queda el nombre: nunca una tarjeta muda.
+  const logo = wide && logoUrl ? h("img", { class: "card__logo", src: trimmedLogo(logoUrl), alt: "", decoding: "async" }) : null;
+  if (logo) {
+    const ready = () => { if (logo.naturalWidth) card.classList.add("card--logo-ready"); else logo.remove(); };
+    if (logo.complete) queueMicrotask(ready);
+    else {
+      logo.addEventListener("load", ready, { once: true });
+      logo.addEventListener("error", () => logo.remove(), { once: true });
+    }
+  }
   const icon = appIcon(item);
   // Sin arte: la tarjeta toma el color de su consola o, si es video, el de las películas y series (card.css · .card--no-art),
   // no el grafito de siempre (unslop, 2 nov 2026: «un rectángulo negro con un ícono»).
@@ -70,10 +83,12 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
   // Sin portada propia: la foto de su consola sobre el color de la consola, con el nombre completo (antes una imagen
   // genérica, la misma para todos, con un punto negro y «Nintendo …» cortado).
   const standIn = item.extra?.placeholder_cover && SYSTEMS[systemOf(item)]?.photo && !wide;
+  // Un póster que es el arte de respaldo (`img/placeholders/`) no dice qué es: lleva su nombre encima, como un juego sin portada.
+  const genericArt = !wide && !standIn && isStandInArt(item.image);
   const card = h("button", {
     // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.
     // caption "focus": el nombre solo bajo la enfocada, como el Apple TV (Juegos, «A continuación»).
-    class: ["card", wide && "card--wide", caption === "focus" && "card--name-on-focus", item.image || (wide && item.hero) ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named",
+    class: ["card", wide && "card--wide", caption === "focus" && "card--name-on-focus", item.image || (wide && item.hero) ? "card--has-art" : "card--no-art", (item.extra?.placeholder_cover || genericArt) && "card--named",
       standIn && "card--stand-in", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,

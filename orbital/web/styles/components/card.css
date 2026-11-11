@@ -111,6 +111,13 @@
   padding: var(--space-3);
 }
 .card--has-art .card__meta { display: none; }
+/* Ancha (Destacados, «A continuación»): su nombre sobre el arte mientras no se vea su logo (P4: sin logo, nunca muda). */
+.card--wide .card__meta { display: flex; z-index: var(--z-raised); padding: var(--inset-poster) calc(var(--inset-poster) + var(--space-1)); }
+.card--wide.card--logo-ready .card__meta { display: none; }
+.card--wide .card__title { -webkit-line-clamp: 2; font-size: var(--type-card-title); font-weight: var(--type-card-title-weight); letter-spacing: var(--type-card-title-tracking); text-shadow: var(--shadow-text-strong); }
+.card--wide .card__subtitle { color: var(--color-on-art-secondary); text-shadow: var(--shadow-text-strong); }
+.card__logo { opacity: 0; }
+.card--logo-ready .card__logo { opacity: 1; }
 /* Respaldo genérico: el nombre sí va encima (si no, todas se verían iguales). */
 .card--named .card__meta { display: flex; z-index: var(--z-raised); }
 .card--named::before {
@@ -158,7 +165,7 @@
    tapaba el «1»). */
 .card-grid .card-ranked .is-focused.card:not([data-edge="end"]) { transform-origin: left bottom; }
 .card__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; } /* auto: el ancho lo dan left y right */
-.card--has-progress:not(.card--has-art) .card__meta { padding-bottom: calc(var(--space-3) + var(--progress-height) + var(--space-1)); }
+.card--has-progress:is(:not(.card--has-art), .card--wide, .card--named) .card__meta { padding-bottom: calc(var(--space-3) + var(--progress-height) + var(--space-1)); }
 
 /* Abierto ahora: píldora arriba a la izquierda, con el punto vivo de la barra de estado. */
 .card__live {
