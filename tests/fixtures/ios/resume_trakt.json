@@ -1,0 +1,189 @@
+{
+ "latest": [
+  {
+   "duration": 9300.0,
+   "seconds": 3487.5,
+   "stremio_seconds": 600.0,
+   "stremio_when": 1759996340.0,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 37.5,
+    "runtime": 9300.0
+   }
+  },
+  {
+   "duration": 9300.0,
+   "seconds": 600.0,
+   "stremio_seconds": 600.0,
+   "stremio_when": 1759996460.0,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 37.5,
+    "runtime": 9300.0
+   }
+  },
+  {
+   "duration": null,
+   "seconds": 3487.5,
+   "stremio_seconds": 0.0,
+   "stremio_when": null,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 37.5,
+    "runtime": 9300.0
+   }
+  },
+  {
+   "duration": null,
+   "seconds": 0.0,
+   "stremio_seconds": 0.0,
+   "stremio_when": null,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 37.5,
+    "runtime": null
+   }
+  },
+  {
+   "duration": 9300.0,
+   "seconds": 0.0,
+   "stremio_seconds": 0.0,
+   "stremio_when": null,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 0.0,
+    "runtime": 9300.0
+   }
+  },
+  {
+   "duration": 9300.0,
+   "seconds": 1234.5,
+   "stremio_seconds": 1234.5,
+   "stremio_when": null,
+   "trakt": null
+  },
+  {
+   "duration": 9300.0,
+   "seconds": 0.0,
+   "stremio_seconds": 0.0,
+   "stremio_when": 1759996400.0,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 37.5,
+    "runtime": 9300.0
+   }
+  },
+  {
+   "duration": 1320.0,
+   "seconds": 161.7,
+   "stremio_seconds": 0.0,
+   "stremio_when": null,
+   "trakt": {
+    "paused_at": 1759996400.0,
+    "percent": 12.25,
+    "runtime": 1320.0
+   }
+  }
+ ],
+ "playback": [
+  {
+   "info": {
+    "paused_at": 1759996800.0,
+    "percent": 37.5,
+    "runtime": 9300.0
+   },
+   "key": "tt1160419",
+   "row": {
+    "movie": {
+     "ids": {
+      "imdb": "tt1160419"
+     },
+     "runtime": 155,
+     "title": "Dune"
+    },
+    "paused_at": "2025-10-09T08:00:00.000Z",
+    "progress": 37.5,
+    "type": "movie"
+   }
+  },
+  {
+   "info": {
+    "paused_at": 1759995000.0,
+    "percent": 12.25,
+    "runtime": 1320.0
+   },
+   "key": "tt0386676:2:5",
+   "row": {
+    "episode": {
+     "number": 5,
+     "runtime": 22,
+     "season": 2
+    },
+    "paused_at": "2025-10-09T07:30:00.000Z",
+    "progress": 12.25,
+    "show": {
+     "ids": {
+      "imdb": "tt0386676"
+     },
+     "title": "The Office"
+    },
+    "type": "episode"
+   }
+  },
+  {
+   "info": {
+    "paused_at": 1759995000.0,
+    "percent": 50.0,
+    "runtime": null
+   },
+   "key": "tt0386676:2:6",
+   "row": {
+    "episode": {
+     "number": 6,
+     "season": 2
+    },
+    "paused_at": "2025-10-09T07:30:00.000Z",
+    "progress": 50,
+    "show": {
+     "ids": {
+      "imdb": "tt0386676"
+     }
+    },
+    "type": "episode"
+   }
+  },
+  {
+   "info": null,
+   "key": null,
+   "row": {
+    "movie": {
+     "ids": {
+      "imdb": "tt1"
+     }
+    },
+    "paused_at": null,
+    "progress": 10,
+    "type": "movie"
+   }
+  },
+  {
+   "info": null,
+   "key": null,
+   "row": {
+    "movie": {
+     "ids": {
+      "imdb": "raro"
+     }
+    },
+    "paused_at": "2025-10-09T07:30:00.000Z",
+    "progress": 10,
+    "type": "movie"
+   }
+  },
+  {
+   "info": null,
+   "key": null,
+   "row": "raro"
+  }
+ ]
+}

@@ -73,6 +73,43 @@ def resume_cases() -> list[dict]:
             for r, v in ((raw, "tt1:1:2"), (raw, "tt1:1:3"), (done, "tt1:1:2"), (None, "x"), ({"state": "raro"}, "x"))]
 
 
+def resume_trakt_cases() -> dict:
+    """D6-A · seguir en el punto exacto desde Trakt (`trakt.latest_resume`, `ResumePoint.latest` del iPhone): lo más
+    reciente entre Stremio y la pausa de Trakt, sin regresar unos segundos. Aparte de resume.json (que solo es Stremio)
+    para que la prueba de Swift de ese archivo no cambie."""
+    rows = [
+        {"progress": 37.5, "paused_at": "2025-10-09T08:00:00.000Z", "type": "movie",
+         "movie": {"title": "Dune", "runtime": 155, "ids": {"imdb": "tt1160419"}}},
+        {"progress": 12.25, "paused_at": "2025-10-09T07:30:00.000Z", "type": "episode",
+         "show": {"title": "The Office", "ids": {"imdb": "tt0386676"}}, "episode": {"season": 2, "number": 5, "runtime": 22}},
+        {"progress": 50, "paused_at": "2025-10-09T07:30:00.000Z", "type": "episode",
+         "show": {"ids": {"imdb": "tt0386676"}}, "episode": {"season": 2, "number": 6}},  # sin duración en Trakt
+        {"progress": 10, "paused_at": None, "type": "movie", "movie": {"ids": {"imdb": "tt1"}}},  # sin fecha: no cuenta
+        {"progress": 10, "paused_at": "2025-10-09T07:30:00.000Z", "type": "movie", "movie": {"ids": {"imdb": "raro"}}},
+        "raro",
+    ]
+    parsed = []
+    for row in rows:
+        got = trakt.playback_entry(row)
+        parsed.append({"row": row, "key": got[0] if got else None, "info": got[1] if got else None})
+    trakt_at = NOW - 3600  # Trakt: hace una hora
+    pause = {"percent": 37.5, "paused_at": trakt_at, "runtime": 155 * 60.0}
+    runs = [
+        # (Stremio: segundos, cuándo, duración del video; Trakt)
+        dict(stremio_seconds=600.0, stremio_when=trakt_at - 60, duration=9300.0, trakt=pause),   # Trakt más nuevo: 37,5 % exacto
+        dict(stremio_seconds=600.0, stremio_when=trakt_at + 60, duration=9300.0, trakt=pause),   # Stremio más nuevo
+        dict(stremio_seconds=0.0, stremio_when=None, duration=None, trakt=pause),                # sin duración: la de Trakt
+        dict(stremio_seconds=0.0, stremio_when=None, duration=None, trakt={**pause, "runtime": None}),  # sin ninguna: inicio
+        dict(stremio_seconds=0.0, stremio_when=None, duration=9300.0, trakt={**pause, "percent": 0.0}),
+        dict(stremio_seconds=1234.5, stremio_when=None, duration=9300.0, trakt=None),             # solo Stremio
+        dict(stremio_seconds=0.0, stremio_when=trakt_at, duration=9300.0, trakt=pause),           # empate: gana Stremio
+        dict(stremio_seconds=0.0, stremio_when=None, duration=1320.0, trakt={"percent": 12.25, "paused_at": trakt_at,
+                                                                              "runtime": 1320.0}),  # 161,7 s, sin restar 10
+    ]
+    latest = [{**run, "seconds": trakt.latest_resume(**run)} for run in runs]
+    return {"playback": parsed, "latest": latest}
+
+
 def toggle_cases() -> list[dict]:
     args = dict(meta_id="tt9", kind="movie", name="Peli", poster=None, now=NOW)
     added = stremio_api.library_toggled(None, add=True, **args)
@@ -246,6 +283,7 @@ def main() -> None:
     write("watched", watched_cases())
     write("progress", progress_cases())
     write("resume", resume_cases())
+    write("resume_trakt", resume_trakt_cases())
     write("toggle", toggle_cases())
     write("parse_item", parse_item_cases())
     write("streams", streams_cases())
