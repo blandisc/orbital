@@ -81,3 +81,19 @@ test("P4: la ficha no deja nada a medias y lo de encima del arte se lee", () => 
   assert.match(read("styles/components/ui.css"), /\.pill--tab \{[^}]*text-shadow: var\(--shadow-text-strong\)/);
 });
 
+// V4 (P4): las cuadrículas largas (Juegos, una lista) arman solo lo que está cerca de la vista; cada casilla conserva su lugar y
+// su data-focus-id, así el foco, keepInView, la memoria, la rueda y el dedo siguen igual.
+test("V4: las cuadrículas largas arman solo lo cercano y la enfocada siempre está armada", () => {
+  const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+  const browse = read("js/components/browse.js");
+  assert.match(browse, /export const LAZY_FROM = 60;/);
+  assert.match(browse, /class: \["card", "card--slot"\], "data-focus-id": focusIdOf\(i\)/);
+  assert.match(browse, /const node = armed\(grid, grid\.querySelector/); // la enfocada, con su pie, antes de medir
+  assert.match(browse, /fillWindow\(grid, viewport\);\n\}/); // al final de keepInView
+  assert.match(browse, /!c\.node\.classList\.contains\("is-focused"\)/); // la enfocada nunca se vacía
+  const games = read("js/components/games.js");
+  assert.match(games, /windowCells\(grid, games\.length,/);
+  assert.match(games, /onScroll: \(\) => fillWindow\(grid, viewport\)/); // lo que el dedo trae
+  assert.match(read("js/components/list-screen.js"), /windowCells\(grid, shown\.length, \(i\) => cell\(shown\[i\], i\)/);
+  assert.match(read("styles/components/card.css"), /\.card--slot \{ background: none; box-shadow: none; \}/);
+});

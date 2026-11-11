@@ -261,3 +261,77 @@ def test_tabs_are_reached_with_up(browser, server):  # noqa: F811
     page.wait_for_timeout(900)
     assert page.locator(".pill--tab.is-focused").inner_text().strip() == "Películas"
     assert not page.errors, page.errors
+
+
+# V4 (P4): una consola con cientos de juegos arma solo lo que está cerca de la vista, y todo sigue igual: el foco llega a
+# donde vas y siempre armado y entero, la consola recuerda el juego al volver, la rueda del ratón baja y el dedo trae portadas
+# ya armadas (ningún hueco vacío a la vista).
+def many_games(page, n=300) -> None:
+    def library(route):
+        res = route.fetch()
+        data = res.json()
+        now = time.time()
+        for row in data["rows"]:
+            if row["id"] == "steam":
+                base = row["items"][0]
+                row["items"] = [{**base, "id": f"steam:v4-{i}", "title": f"Juego {i}", "image": f"/img/placeholders/cover-generic-{1 + i % 3}.jpg",
+                                 "last_played": now - i * 60, "extra": {**(base.get("extra") or {}), "logo": None}} for i in range(n)]
+        route.fulfill(response=res, json=data)
+
+    page.route("**/api/library*", library)
+
+
+GRID_STATE = """() => {
+  const grid = document.querySelector('.games .card-grid'); const view = grid.parentElement.getBoundingClientRect();
+  const f = grid.querySelector('.is-focused'); const r = f && f.getBoundingClientRect();
+  const inView = [...grid.children].filter((c) => { const b = c.getBoundingClientRect(); return b.bottom > view.top && b.top < view.bottom; });
+  return { focus: f && f.dataset.focusId, armed: !!f && !f.classList.contains('card--slot') && !!f.querySelector('img'),
+    whole: !!r && r.top >= 0 && r.bottom <= innerHeight, slots: grid.querySelectorAll('.card--slot').length,
+    emptyInView: inView.filter((c) => c.classList.contains('card--slot')).length, cards: grid.children.length };
+}"""
+
+
+def test_long_grid_arms_only_what_is_near(browser, server):  # noqa: F811
+    page = browser.new_page(viewport={"width": 1920, "height": 1080})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    many_games(page)
+    page.goto(server)
+    ready(page)
+    page.keyboard.press("e")
+    page.wait_for_timeout(1500)
+    page.keyboard.press("ArrowDown")
+    state = page.evaluate(GRID_STATE)
+    assert state["cards"] == 300 and state["slots"] > 200, state  # cada juego tiene su lugar; casi todos, hueco
+    for _ in range(20):
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(120)
+    page.wait_for_timeout(800)
+    deep = page.evaluate(GRID_STATE)
+    assert deep["focus"] not in (None, state["focus"]) and deep["armed"] and deep["whole"] and deep["emptyInView"] == 0, deep
+    # La consola recuerda el juego: a otra y de regreso, el mismo.
+    page.keyboard.press("PageDown")
+    page.wait_for_timeout(900)
+    page.keyboard.press("PageUp")
+    page.wait_for_timeout(1200)
+    back = page.evaluate(GRID_STATE)
+    assert back["focus"] == deep["focus"] and back["armed"] and back["emptyInView"] == 0, back
+    # La rueda del ratón baja como ↓.
+    page.mouse.move(960, 700)
+    for _ in range(6):
+        page.mouse.wheel(0, 120)
+        page.wait_for_timeout(250)
+    page.wait_for_timeout(800)
+    wheeled = page.evaluate(GRID_STATE)
+    assert int(wheeled["focus"].split(":")[1]) > int(back["focus"].split(":")[1]) and wheeled["armed"] and wheeled["emptyInView"] == 0, wheeled
+    # El dedo: arrastrar hacia arriba trae lo de abajo, ya armado.
+    page.evaluate("""() => {
+      const v = document.querySelector('.games__viewport'); const fire = (type, y) => v.dispatchEvent(new PointerEvent(type,
+        { pointerType: 'touch', clientX: 900, clientY: y, bubbles: true, pointerId: 7 }));
+      fire('pointerdown', 900); for (let y = 880; y >= 200; y -= 40) fire('pointermove', y); fire('pointerup', 200);
+    }""")
+    page.wait_for_timeout(1500)
+    dragged = page.evaluate(GRID_STATE)
+    assert dragged["emptyInView"] == 0, dragged
+    assert not errors, errors
+    page.close()

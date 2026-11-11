@@ -1,4 +1,4 @@
-import { mount } from "../core/dom.js";
+import { h, mount } from "../core/dom.js";
 import { Pill } from "./ui.js";
 
 /**
@@ -47,8 +47,8 @@ export function showFilter(filters, node) {
 /** La portada enfocada siempre a la vista. Si hay que recorrer la cuadrícula, su fila sube hasta arriba: recorrerla «lo justo»
  *  dejaba la fila de antes a medias y desvanecida, una franja vacía entre lo de arriba y los canales (TV-4, 2 nov 2026). */
 export function keepInView(grid, viewport, focusId) {
-  const node = grid.querySelector(`[data-focus-id="${focusId}"]`);
-  if (!node) return;
+  const node = armed(grid, grid.querySelector(`[data-focus-id="${focusId}"]`)); // V4: la enfocada, siempre armada (con su pie)
+  if (!node) { fillWindow(grid, viewport); return; } // el foco está arriba (filtros, consolas): lo que se ve, armado igual
   const top = node.offsetTop;
   const shift = Number(grid.dataset.shift || 0);
   // Lo que de verdad se ve: sin el relleno de arriba y abajo ni el fundido del borde (browse.css).
@@ -70,6 +70,66 @@ export function keepInView(grid, viewport, focusId) {
   // Lo que ya quedó arriba se desvanece: su nombre y su año asomaban sobre la fila de arriba del todo (en una persona, bajo su
   // biografía). El relleno de arriba es para que la enfocada crezca, no para enseñar el renglón anterior.
   for (const card of grid.children) card.classList.toggle("is-above", card.offsetTop < next - 1);
+  fillWindow(grid, viewport);
+}
+
+/**
+ * V4 (P4): una cuadrícula larga (cientos de juegos o de películas) no arma todas sus portadas. Cada casilla existe desde el
+ * principio, con su lugar, su tamaño y su `data-focus-id` (el foco, keepInView, la memoria de posición, la rueda y el dedo
+ * la siguen midiendo igual), pero lejos de la vista es un hueco vacío (`.card--slot`): sin imagen, sin pie, sin oyentes. Lo
+ * que se acerca a la vista se arma (fillWindow) y lo que se aleja vuelve a ser hueco, así la memoria no crece al recorrer.
+ * Por debajo de LAZY_FROM no cambia nada: cada portada se arma como siempre.
+ */
+export const LAZY_FROM = 60;
+const cellsOf = new WeakMap(); // cuadrícula → [{ make, node, slot }]
+
+/** Las casillas de `grid`: `make(i)` arma la portada i. Las primeras FIRST (lo que se ve al abrir) ya vienen armadas. */
+export function windowCells(grid, count, make, { focusIdOf = (i) => String(i) } = {}) {
+  if (count < LAZY_FROM) { cellsOf.delete(grid); return Array.from({ length: count }, (_, i) => make(i)); }
+  const FIRST = 36;
+  const cells = Array.from({ length: count }, (_, i) => {
+    const slot = h("div", { class: ["card", "card--slot"], "data-focus-id": focusIdOf(i), "aria-hidden": "true" });
+    return { make: () => make(i), slot, node: i < FIRST ? make(i) : slot };
+  });
+  cellsOf.set(grid, cells);
+  return cells.map((c) => c.node);
+}
+
+/** Lo que pasa de una casilla a la otra al armarla o vaciarla: el foco y su lugar en la cuadrícula. */
+const CARRIED = ["is-focused", "is-above"];
+function swap(from, to) {
+  for (const name of CARRIED) to.classList.toggle(name, from.classList.contains(name));
+  if (from.dataset.edge !== undefined) to.dataset.edge = from.dataset.edge;
+  to.tabIndex = from.tabIndex;
+  from.replaceWith(to);
+}
+
+/** Si `node` es un hueco de la cuadrícula, lo arma ya y devuelve la portada (si no, `node` tal cual). */
+function armed(grid, node) {
+  const cell = node && cellsOf.get(grid)?.find((c) => c.node === node && c.node === c.slot);
+  if (!cell) return node;
+  const card = cell.make();
+  swap(cell.slot, card);
+  cell.node = card;
+  return card;
+}
+
+/** Arma lo que está a la vista (y una pantalla de más arriba y abajo) y vacía lo que quedó a más de dos pantallas. */
+export function fillWindow(grid, viewport) {
+  const cells = cellsOf.get(grid);
+  if (!cells || !grid.isConnected || !grid.getClientRects().length) return; // oculta no mide: no se arma de golpe
+  const shift = Number(grid.dataset.shift || 0);
+  const screen = viewport.clientHeight || window.innerHeight;
+  const near = [shift - screen, shift + 2 * screen];
+  const far = [shift - 2 * screen, shift + 3 * screen];
+  // Primero se mide todo (un solo cálculo de la página) y luego se cambia: hueco y portada miden lo mismo.
+  const spots = cells.map((c) => [c.node.offsetTop, c.node.offsetTop + c.node.offsetHeight]);
+  cells.forEach((c, i) => {
+    const [top, bottom] = spots[i];
+    const empty = c.node === c.slot;
+    if (empty && bottom >= near[0] && top <= near[1]) { const card = c.make(); swap(c.slot, card); c.node = card; }
+    else if (!empty && (bottom < far[0] || top > far[1]) && !c.node.classList.contains("is-focused")) { swap(c.node, c.slot); c.node = c.slot; }
+  });
 }
 
 /** Cambio de sección: el contenido nuevo aparece con un fundido corto (nada cruza la pantalla). */

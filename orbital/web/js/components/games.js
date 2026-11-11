@@ -6,7 +6,7 @@ import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll } from "../core/swipe.js";
-import { fillFilters, fitBar, keepInView, replay, showFilter } from "./browse.js";
+import { fillFilters, fillWindow, fitBar, keepInView, replay, showFilter, windowCells } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
 import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark, RowCount, rowCountText } from "./ui.js";
@@ -32,7 +32,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   const main = h("div", { class: "games__main" }, consoles, hero, shelf);
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => { fitBar(bar, filters); fitConsoles(); }).observe(main);
   // Con el dedo, como en el celular: las portadas se desplazan bajo el dedo; tocar enfoca y volver a tocar abre.
-  dragScroll(viewport, grid, { extra: 48 });
+  dragScroll(viewport, grid, { extra: 48, onScroll: () => fillWindow(grid, viewport) }); // V4: lo que el dedo trae, se arma
   // Al bajar, lo de arriba se encoge y la cuadrícula gana alto: se vuelve a acomodar con lo justo de desplazamiento (si no, se
   // quedaba el de antes y la fila de arriba salía recortada en una franja, como aplastada).
   if (typeof ResizeObserver !== "undefined") {
@@ -121,12 +121,13 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     fillFilters(filters, filtersFor(consoleId), { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
     fitBar(bar, filters);
     // Solo el enfocado dice su nombre (debajo, como el Apple TV): los demás son puro arte (card.css · .games__grid).
-    mount(grid, games.length ? games.map((item, i) => {
-      targets.set(`game:${i}`, { kind: "game", item, console: c });
-      const card = Card(item, { caption: "focus", onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
+    // V4: con cientos de juegos, solo se arman las portadas cerca de la vista (browse.js · windowCells).
+    games.forEach((item, i) => targets.set(`game:${i}`, { kind: "game", item, console: c }));
+    mount(grid, games.length ? windowCells(grid, games.length, (i) => {
+      const card = Card(games[i], { caption: "focus", onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
       card.dataset.focusId = `game:${i}`;
       return card;
-    }) : EmptyState(filter === "favorites"
+    }, { focusIdOf: (i) => `game:${i}` }) : EmptyState(filter === "favorites"
       ? { icon: "star", title: "Aún no tienes favoritos aquí", text: "Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos." }
       : c?.folder !== undefined
         ? { icon: "folder", title: "Ya tienes el emulador", text: `Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.` }
