@@ -61,7 +61,7 @@ final class ConnectWithOrWithoutIPhoneTests: XCTestCase {
                                 pending: InMemoryPendingStore(), downloadTransport: FakeDownloadTransport(),
                                 downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("cx-\(UUID().uuidString)"), freeSpace: { 1 },
                                 device: OrbitalRemote.Device(name: platform == "ipad" ? "iPad" : "iPhone", kind: platform == "iphone" ? "iphone" : "ipad", id: "I"),
-                                platform: platform, allowsOrbital: allows)
+                                platform: platform, capabilities: Capabilities(edition: .ultra, talksToOrbital: allows))
         return (services, secrets, house)
     }
 

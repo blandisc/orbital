@@ -186,12 +186,14 @@ public final class Services: ObservableModel {
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in },
                 builtInTraktClientID: String = Services.bundledTraktClientID, builtInTMDBKey: String = Services.bundledTMDBKey,
                 device: OrbitalRemote.Device? = nil, deviceName: String? = nil, platform: String? = nil,
-                allowsOrbital: Bool = true, detailsMemo: TmdbDetailsMemo? = nil) {
+                capabilities: Capabilities = .ultra, detailsMemo: TmdbDetailsMemo? = nil) {
         self.cacheRoot = cacheRoot
         self.caches = CacheStore(directory: cacheRoot?.appendingPathComponent("models", isDirectory: true), legacy: kv)
         self.detailsMemo = detailsMemo
         let detailsGate = self.detailsGate
-        self.allowsOrbital = allowsOrbital
+        self.capabilities = capabilities
+        let console = capabilities.console   // esta versión y este aparato hablan con la TV
+        let instant = capabilities.instantStreams   // sin Real-Debrid en la versión (Orbital) no se pide nada a la nube
         self.device = device
         let platform = platform ?? device?.kind ?? "iphone"
         self.platform = platform
@@ -253,9 +255,9 @@ public final class Services: ObservableModel {
         let orbitalAuth = OrbitalAuthState(secrets: secrets)
         self.orbitalAuth = orbitalAuth
         let makeOrbital: @Sendable () -> OrbitalRemote = {
-            Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: allowsOrbital, auth: orbitalAuth)
+            Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: console, auth: orbitalAuth)
         }
-        let systemName = allowsOrbital ? (device?.name).flatMap { $0.isEmpty ? nil : $0 } ?? deviceName : deviceName
+        let systemName = console ? (device?.name).flatMap { $0.isEmpty ? nil : $0 } ?? deviceName : deviceName
         // IOS-11: quién lo pidió es el nombre que escribiste al conectar («iPhone de Fernando», CX7-A); sin él, el de iOS (que
         // en un iPhone de verdad es solo «iPhone», y en el simulador, el modelo).
         let requestsBy: @Sendable () -> String = {
@@ -268,13 +270,13 @@ public final class Services: ObservableModel {
                                         sync: OrbitalRemoteDebridRequestSync(remote: makeOrbital))
         // K1: con llave, `enabled[<id de este aparato>]`; sin ella, `enabled[<plataforma>]` (lo de antes).
         self.addonSync = AddonTVSync(list: addonList, vault: vault, remote: AddonListRemote(remote: makeOrbital),
-                                     available: { allowsOrbital && settings.value.orbitalEnabled },
+                                     available: { console && settings.value.orbitalEnabled },
                                      device: { AddonDevice(platform: platform, id: (secrets.get(SecretKey.orbitalDeviceKey)).flatMap(OrbitalDeviceKey.deviceID(of:))) },
                                      deviceName: { requestsBy() }, manifest: Services.manifestReader(http: http))
         self.debridRequests = DebridRequestsModel(requester: requester, lookup: TorrentLookup(http: http), addonList: addonList,
-                                                  finder: { finder }, hasKey: { debrid.hasToken }, clock: clock)
+                                                  finder: { finder }, hasKey: { instant && debrid.hasToken }, clock: clock)
         self.debridRequests.alsoMine = [systemName]   // lo pedido antes de ponerle nombre sigue siendo tuyo (avisos)
-        self.debridRequests.notifiesTVRequests = platform == "iphone" && allowsOrbital   // R14-B: solo el iPhone
+        self.debridRequests.notifiesTVRequests = platform == "iphone" && console   // R14-B: solo el iPhone
         let requests = self.debridRequests, appearPrefs = self.titlePrefs
         self.appearWatch = AppearWatch(kv: kv, clock: clock) { entry in
             let wanted = appearPrefs.languages(for: entry.metaID, settings: settings.value).prefs
@@ -392,7 +394,7 @@ public final class Services: ObservableModel {
     /// «Trakt»); lanza si no contesta.
     @discardableResult
     public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
-        guard allowsOrbital else { return [] }   // la Mac no se empareja con tu Orbital (ni guarda la dirección)
+        guard capabilities.console else { return [] }   // la Mac no se empareja con tu Orbital (ni guarda la dirección)
         // Emparejar (el QR o a mano) prende «Usar con tu Orbital»; sin emparejar y apagado no se le pregunta nada.
         if address != nil || token != nil { settings.update { $0.orbitalEnabled = true } }
         guard orbitalOn else { return [] }
@@ -427,16 +429,17 @@ public final class Services: ObservableModel {
         return got
     }
 
-    /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes. Sin `allowsOrbital` (la Mac) nunca queda
+    /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes. Sin consola en esta versión o aparato (la Mac, Plus, Orbital) nunca queda
     /// configurado: ni control, ni «En la TV», ni lo que manda la TV, aunque el llavero traiga una dirección y un token.
     public var orbital: OrbitalRemote {
-        Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: allowsOrbital, auth: orbitalAuth)
+        Services.makeOrbital(http: http, settings: settings, secrets: secrets, device: device, allows: capabilities.console, auth: orbitalAuth)
     }
 
-    /// ¿Este aparato habla con tu Orbital? No en la Mac (decisión de Fernando, 29 oct 2026): ahí la app es solo para ver.
-    public let allowsOrbital: Bool
+    /// Qué trae esta versión (D1-B): la consola (nunca en la Mac, ni en Plus ni en Orbital), ver al instante con Real-Debrid…
+    /// Lo decide la raíz de composición una vez; nadie más pregunta por la versión.
+    public let capabilities: Capabilities
     /// ¿Prendiste «Usar con tu Orbital»? Apagado (como viene), no se ve nada de la consola: la app es de una sola pieza.
-    public var orbitalOn: Bool { allowsOrbital && settings.value.orbitalEnabled }
+    public var orbitalOn: Bool { capabilities.console && settings.value.orbitalEnabled }
 
     /// Apaga «Usar con tu Orbital»: se olvidan la dirección y el token (también del llavero) y la app queda sola otra vez.
     /// Lo que viste sigue aquí y en Trakt; volver a prenderla pide emparejar de nuevo.

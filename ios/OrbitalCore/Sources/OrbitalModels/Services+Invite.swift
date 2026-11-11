@@ -4,7 +4,7 @@ import OrbitalAddons
 
 /// CX4-A, CX5, CX7-A, CX8-A y TEC-30: el nombre de este aparato al conectar, la invitación de tu iPhone para tu iPad, quién
 /// puede quitar a quién, «Darle su propia conexión» y «Tu TV es nueva». La Mac nunca habla con tu TV (CX1-B): todo esto se
-/// apaga con `allowsOrbital`.
+/// apaga con `capabilities.console`.
 extension Services {
     nonisolated static let deviceNameKey = "orbital.device-name"
     static let tvNameKey = "orbital.tv-name"
@@ -69,7 +69,7 @@ extension Services {
 
     /// Entró con el QR de antes (el token) y la TV ya da una conexión a cada aparato: se ofrece sin volver a escanear.
     public var canUpgradeConnection: Bool {
-        allowsOrbital && orbitalOn && tvPairing >= 2 && !orbital.hasDeviceKey && orbitalAuth.problem == nil
+        capabilities.console && orbitalOn && tvPairing >= 2 && !orbital.hasDeviceKey && orbitalAuth.problem == nil
             && !(secrets.get(SecretKey.orbitalToken) ?? "").isEmpty
     }
 
@@ -83,7 +83,7 @@ extension Services {
 
     /// La invitación que llegó por el llavero de iCloud (vencida o no): solo en un iPad que todavía no está conectado.
     public var pendingInvite: OrbitalInvite? {
-        guard allowsOrbital, platform == "ipad", !hasOrbitalDeviceKey else { return nil }
+        guard capabilities.console, platform == "ipad", !hasOrbitalDeviceKey else { return nil }
         return OrbitalInvite.decode(secrets.get(SecretKey.orbitalInvite))
     }
 

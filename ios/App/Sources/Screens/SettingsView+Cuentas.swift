@@ -14,7 +14,7 @@ extension SettingsView {
     }
 
     @ViewBuilder func accounts(_ model: SettingsModel) -> some View {
-        debridSection
+        if env.services.settingsEntries.realDebrid { debridSection }   // D1-B: Orbital (App Store) no trae Real-Debrid
         Section {
             // La sesión de Trakt siempre es la de este iPhone (la de la consola ya no se presta): se abre, se ve y se desconecta aquí.
             NavigationLink { page("Trakt") { traktSection(model) } } label: {

@@ -16,10 +16,8 @@ struct DownloadsCloudPart: View {
     @Environment(AppEnvironment.self) private var env
     @Binding var sheets: CloudSheets
 
-    /// Hay nube: tienes clave de Real-Debrid o algún pedido en la libreta.
-    @MainActor static func shows(_ services: Services) -> Bool {
-        services.debrid.hasToken || !services.debridRequests.requests.isEmpty
-    }
+    /// Hay nube: la versión trae Real-Debrid y tienes clave o algún pedido en la libreta (`Services.showsCloudDownloads`).
+    @MainActor static func shows(_ services: Services) -> Bool { services.showsCloudDownloads }
 
     var body: some View {
         let model = env.services.debridRequests

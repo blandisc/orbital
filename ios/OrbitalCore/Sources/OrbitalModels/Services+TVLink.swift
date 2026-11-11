@@ -32,7 +32,7 @@ extension Services {
     /// Le pregunta a tu TV (`GET /api/ping`). Si contestó hace menos de 2 min no vuelve a preguntar, salvo `force`
     /// («Reintentar»). Con un problema de «Escanear» no se dice ni «Conectada» ni «no contesta»: manda ese problema.
     public func checkTV(force: Bool = false) async {
-        guard allowsOrbital, orbitalOn, orbital.isConfigured else { tvLink = .unknown; return }
+        guard capabilities.console, orbitalOn, orbital.isConfigured else { tvLink = .unknown; return }
         if !force, tvAnsweredRecently { return }
         tvLink = .checking
         do {

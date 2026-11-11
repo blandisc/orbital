@@ -2,14 +2,14 @@ import XCTest
 @testable import OrbitalCore
 @testable import OrbitalModels
 
-/// La Mac no habla con tu Orbital (`Services(allowsOrbital: false)`): aunque el llavero traiga dirección y token, la conexión no
+/// La Mac no habla con tu Orbital (`Capabilities(edition:talksToOrbital: false)`): aunque el llavero traiga dirección y token, la conexión no
 /// queda configurada y emparejar no guarda nada. El iPhone y el iPad (`allowsOrbital` por omisión) siguen igual.
 @MainActor
 final class OrbitalOffTests: XCTestCase {
     private func services(_ rig: ServicesRig, allowsOrbital: Bool) -> Services {
         Services(http: rig.http, secrets: rig.secrets, kv: InMemoryKeyValueStore(), pending: InMemoryPendingStore(),
                  downloadTransport: FakeDownloadTransport(), downloadsRoot: rig.root, freeSpace: { 50_000_000_000 },
-                 allowsOrbital: allowsOrbital)
+                 capabilities: Capabilities(edition: .ultra, talksToOrbital: allowsOrbital))
     }
 
     func testTheMacNeverConnectsEvenWithATokenInTheKeychain() async throws {

@@ -16,7 +16,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Los botones de los widgets: «Aquí» abre el enlace (reproducir donde ibas) y «En la TV» lo manda a tu Orbital sin abrir la app.
         OpenWidgetLinkIntent.open = { url in Task { await AppEnvironment.shared.handle(url: url) } }
         PlayOnTVIntent.send = { kind, metaID, videoID, name in
-            guard ThisDevice.talksToOrbital else { return false }
+            guard ThisDevice.capabilities.console else { return false }
             do { try await AppEnvironment.shared.services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: name); return true }
             catch { return false }
         }

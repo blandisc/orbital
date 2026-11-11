@@ -19,7 +19,7 @@ import OrbitalModels
 @MainActor
 private func answer(_ said: String) async -> String {
     // La Mac no controla tu Orbital (decisión de Fernando, 29 oct 2026): Siri y Atajos no le mandan nada a la TV.
-    guard ThisDevice.talksToOrbital else { return macNoTV }
+    guard ThisDevice.capabilities.console else { return macNoTV }
     let env = AppEnvironment.shared
     let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(said)
     // Seguir aquí necesita la pantalla: Siri no abre el reproductor.
@@ -274,7 +274,7 @@ struct PauseTVIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard ThisDevice.talksToOrbital else { return .result(dialog: IntentDialog(stringLiteral: macNoTV)) }
+        guard ThisDevice.capabilities.console else { return .result(dialog: IntentDialog(stringLiteral: macNoTV)) }
         await AppEnvironment.shared.tvNow.control("pause")
         return .result(dialog: "En pausa.")
     }
@@ -286,7 +286,7 @@ struct ResumeTVIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard ThisDevice.talksToOrbital else { return .result(dialog: IntentDialog(stringLiteral: macNoTV)) }
+        guard ThisDevice.capabilities.console else { return .result(dialog: IntentDialog(stringLiteral: macNoTV)) }
         await AppEnvironment.shared.tvNow.control("play")
         return .result(dialog: "Sigue.")
     }

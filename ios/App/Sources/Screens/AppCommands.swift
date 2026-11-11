@@ -16,7 +16,7 @@ struct AppCommands: Commands {
             Divider()
             Button("Atrás") { AppEnvironment.shared.ui.goBack = true }.keyboardShortcut("[")
             // La Mac no controla tu Orbital (29 oct 2026): sin «Control de la TV» ni ⌘R. iPad con teclado, igual que antes.
-            if ThisDevice.talksToOrbital {
+            if ThisDevice.capabilities.console {
                 Divider()
                 Button("Control de la TV") { AppEnvironment.shared.ui.openRemote = true }.keyboardShortcut("r")
             }

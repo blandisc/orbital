@@ -123,7 +123,7 @@ struct HomeView: View {
                 }
                 HomeBecause(model: because.model, kind: kind).entrance("home:because", order: 2)
                 if kind != "movie" {   // solo series; la dona de «Un Simpson al azar» va en su encabezado (I9)
-                    HomeChannels(model: channels.model, simpsons: { rollingSimpsons = true }, simpsonsZoom: simpsonsZoom).entrance("home:channels", order: 3)
+                    HomeChannels(model: channels.model, simpsons: env.services.capabilities.personal ? { rollingSimpsons = true } : nil, simpsonsZoom: simpsonsZoom).entrance("home:channels", order: 3)
                 }
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model).entrance("home:top", order: 4) }

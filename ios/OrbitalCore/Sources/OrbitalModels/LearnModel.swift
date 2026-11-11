@@ -29,8 +29,11 @@ public final class LearnModel: ObservableModel {
 
     // MARK: historias
 
-    /// Las historias de esta app (la de la TV, solo donde hay TV).
-    public var stories: [LearnStory] { LearnContent.all.filter { $0.needs != .tv || services.allowsOrbital } }
+    /// Las historias de esta versión: la de la TV, solo donde hay consola; la de ver al instante, solo con Real-Debrid.
+    public var stories: [LearnStory] {
+        let can = services.capabilities
+        return LearnContent.all.filter { ($0.needs != .tv || can.console) && ($0.needs != .instant || can.instantStreams) }
+    }
 
     public func seen(_ id: String) -> Bool { services.kv.data("learn.seen.\(id)") != nil }
 

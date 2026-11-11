@@ -80,7 +80,7 @@ extension Services {
     /// en `Authorization` para que la TV reemplace su renglón (TEC-32).
     @discardableResult
     public func pairOrbital(address: String, code: String, name: String? = nil) async throws -> String {
-        guard allowsOrbital else { return "" }
+        guard capabilities.console else { return "" }
         let open = OrbitalRemote(http: http, address: address, token: "", device: device)
         let name = rememberDeviceName(name)
         let old = secrets.get(SecretKey.orbitalDeviceKey)

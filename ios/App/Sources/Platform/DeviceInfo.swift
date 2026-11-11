@@ -44,6 +44,10 @@ enum ThisDevice {
     /// conecta con la TV para nada»). El iPhone y el iPad, sí. Solo recibe tu clave de Real-Debrid por iCloud (CX2-A).
     /// `MacNeverTalksToTheTVTests` cuida que esto no cambie.
     static let talksToOrbital = !ProcessInfo.processInfo.isiOSAppOnMac
+    /// Qué trae esta app aquí (D1-B): la versión de la compilación (`ORBITAL_EDITION` → Info.plist › `OrbitalEdition`, leída una
+    /// vez; sin ella, Ultra) y si este aparato habla con la TV. Lo que no recibe `Services` (Siri, el menú, la actividad en
+    /// vivo) pregunta aquí; lo demás, a `services.capabilities`, que se arma con esto mismo.
+    static let capabilities = Capabilities(edition: .bundled(), talksToOrbital: talksToOrbital)
     /// «iphone», «ipad» o «mac»: quién puso la copia compartida de tu clave, quién quita a quién (CX5) y quién ve la invitación.
     @MainActor static var platform: String {
         ProcessInfo.processInfo.isiOSAppOnMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"

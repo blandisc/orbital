@@ -28,10 +28,15 @@ public enum TitlePrimary: Equatable, Sendable {
 }
 
 extension TitleModel {
+    /// ¿Esta versión ve al instante con Real-Debrid? Sin eso (Orbital, App Store) la ficha no enseña pedidos, la nube ni
+    /// «Pedir a la nube» (D1-B).
+    public var offersInstant: Bool { services.capabilities.instantStreams }
+
     /// El botón principal ahora. nil mientras no se sabe qué video toca.
     public func primary(now: Date = Date()) -> TitlePrimary? {
         guard continueVideoID != nil else { return nil }
-        if continueAirs == nil, recommendedSource?.instant != true {
+        // Sin Real-Debrid en esta versión (Orbital) no hay pedidos ni «Lo tiene tu TV»: solo ver, avisar o la fecha (D1-B).
+        if offersInstant, continueAirs == nil, recommendedSource?.instant != true {
             // «Muchas descargas activas» (error 21): Real-Debrid no lo agregó y nadie lo vuelve a pedir solo. Se ofrece pedirlo
             // otra vez (con esa línea), como la TV; antes quedaba «en camino» para siempre (escenarios comunes, 3 nov).
             if let request = debridRequest, request.state != .ready, request.state != .tooMany {

@@ -47,9 +47,10 @@ struct SettingsView: View {
     var body: some View {
         let model = settings.model
         let s = model.settings
+        let entries = env.services.settingsEntries   // D1-B: qué renglones existen en esta versión
         Form {
             // CX4-A, IOS-10: la invitación de tu iPhone, lo primero de Ajustes (solo en un iPad sin conectar; nunca en la Mac).
-            if env.services.allowsOrbital { IPadInviteCard { orbitalSetup = .connect } }
+            if entries.orbital { IPadInviteCard { orbitalSetup = .connect } }
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
                 // «Lo que ves» ya no está aquí: vive en Explorar (Fernando, 2 nov 2026: «ya tenemos otro acceso en Explorar»).
@@ -76,8 +77,10 @@ struct SettingsView: View {
                     SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
                 }
                 // La dona de Inicio, al final: es un detalle de Inicio, no algo que todos vengan a cambiar (I13, 10 nov).
-                NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
-                    SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
+                if entries.simpsons {
+                    NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
+                        SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
+                    }
                 }
             } header: { Text("Preferencias") }
             .listRowBackground(DS.surface)
@@ -85,11 +88,13 @@ struct SettingsView: View {
             Section {
                 // Real-Debrid, Trakt · principal, Stremio · respaldo y tu Orbital, cada una con su papel.
                 NavigationLink { page("Cuentas") { accounts(model) } } label: {
-                    SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: debridValue)
+                    SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: entries.realDebrid ? debridValue : traktValue(model))
                 }
-                NavigationLink { AddonsSettings() } label: {
-                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
-                                value: addonsValue)
+                if entries.addons {
+                    NavigationLink { AddonsSettings() } label: {
+                        SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
+                                    value: addonsValue)
+                    }
                 }
                 // Tus películas y series de OneDrive como una fuente más (como en la TV).
                 NavigationLink { OneDriveSettings() } label: {
@@ -99,7 +104,7 @@ struct SettingsView: View {
             } header: { Text("Conexiones") }
             .listRowBackground(DS.surface)
             // La app es de una sola pieza: lo de la consola sale solo con esto prendido (en la Mac no hay consola).
-            if env.services.allowsOrbital { orbitalSettings(model) }
+            if entries.orbital { orbitalSettings(model) }
             // Lo que casi no se toca: complementos, la clave de TMDB y el país.
             Section {
                 NavigationLink { page("Avanzado") { suggestions(model) } } label: {
@@ -238,7 +243,7 @@ struct SettingsView: View {
     private func connections(_ model: SettingsModel) -> Text {
         var parts: [String] = []
         if case .linked = model.trakt { parts.append("Trakt") }
-        if debrid.model.hasToken { parts.append("Real-Debrid") }
+        if debrid.model.hasToken, env.services.settingsEntries.realDebrid { parts.append("Real-Debrid") }
         if env.services.orbital.isConfigured { parts.append("Orbital") }
         if parts.isEmpty { return Text("Sin cuentas conectadas") }
         return Text("Conectado: \(parts.joined(separator: " · "))")

@@ -85,6 +85,44 @@ Ultra = las dos; Plus = solo `ORBITAL_PLUS`; Orbital = ninguna. Tres destinos en
 
 Orden propuesto: A (separar) → B y C (entrar y ver) → D → E → F. Orbital (App Store) queda para después.
 
+## Cimientos de las tres versiones (D1-B, 11 nov 2026)
+
+Hecho (revisión del 10 nov, D1-B): la app ya sabe qué versión es, sin destinos nuevos. Para Fernando nada cambia: la
+versión por omisión es Ultra.
+
+- `Edition` (ultra · plus · orbital) y `Capabilities` en `ios/OrbitalCore/Sources/OrbitalCore/Edition.swift`. Se elige al
+  compilar con `ORBITAL_EDITION` en `ios/App/project.yml` (→ Info.plist › `OrbitalEdition`), se lee una vez en
+  `ThisDevice.capabilities` y la raíz de composición la pasa a `Services` (`services.capabilities`).
+- Qué enciende cada una:
+
+| Capacidad | Ultra | Plus | Orbital |
+|---|---|---|---|
+| `console`: la TV, control, voz, «Ver en la TV», «Desde la TV», Siri de la TV (nunca en la Mac) | Sí | No | No |
+| `instantStreams`: Real-Debrid, complementos, pedidos a la nube, «Real-Debrid · bajando para ti» | Sí | Sí | No |
+| `downloads`: guardar para ver sin internet (Real-Debrid u OneDrive) | Sí | Sí | Sí |
+| `emulation`: consolas en el teléfono (en estudio) | Sí | No | No |
+| `personal`: «Un Simpson al azar» y su dona | Sí | No | No |
+
+- Ya preguntan a las capacidades: Ajustes (`Services.settingsEntries`: Real-Debrid, Complementos, «Orbital en la TV», la
+  invitación del iPad, el Simpson), la ficha (`TitleModel.offersInstant`: sin pedidos ni «Lo tiene tu TV»; sin
+  `instantStreams` no se puede pedir a la nube), Biblioteca › Descargas (`Services.showsCloudDownloads`), la guía (sin las
+  piezas de Real-Debrid y la TV), Aprende (sin «Ver al instante» ni «Tu TV»), los atajos de Siri de la TV, el menú y la
+  actividad en vivo de la TV (`ThisDevice.capabilities.console`). Lo que depende de tu cuenta (tu clave, tu TV emparejada)
+  se sigue preguntando además. Prueba: `EditionTests`.
+
+Falta:
+
+1. **Destinos** `OrbitalPlus` y `OrbitalApp` en `project.yml` con su `ORBITAL_EDITION`, identificador
+   (`mx.iracheta.orbital.plus`, `.app`), ícono de lunas y textos de permisos propios (cámara y micrófono hablan de la TV).
+2. **Cuenta de desarrollador de pago** (TestFlight, sin vencer a los 7 días).
+3. **Separar módulos**: hoy el código de Real-Debrid y de la consola sigue dentro de las tres (solo no se ve). Para la App
+   Store (regla 2.5.19) hay que sacar `OrbitalAddons` y la consola del binario de Orbital (banderas de compilación o un
+   módulo por capacidad) y probarlo sobre el binario («real-debrid», «torrentio», «strem.io», «/api/companion»).
+4. En Orbital, «Ver» todavía busca en los complementos de fábrica si alguien los pusiera: con el destino aparte, el buscador
+   de versiones solo con tus archivos (OneDrive) y «Dónde verla».
+5. Los atajos de Siri de la TV y el control del Centro de control se declaran en el Info.plist de todas: con el destino
+   aparte, fuera de Plus y Orbital.
+
 ## Dónde estamos (auditoría del 30 oct)
 
 Lo grande ya está hecho: no hace falta cuenta de Stremio, lo tuyo vive en el teléfono y se sincroniza con Trakt, los

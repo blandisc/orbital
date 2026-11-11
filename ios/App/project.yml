@@ -58,6 +58,9 @@ targets:
         # El Client ID de la app de Trakt incluida (las nuevas, con PKCE, no tienen secreto): con él el iPhone conecta su propia
         # sesión con un código, sin consola. Vacío: se usa el de tu Orbital o el de Ajustes › Trakt › Avanzado.
         ORBITAL_TRAKT_CLIENT_ID: "azwc8vQEPFj8BHrEgryPl_8WKoLtfxGyhtq-alnd9U0"   # la app de Trakt de Orbital (público, no es secreto)
+        # Qué versión se compila (D1-B): ultra (la de Fernando, todo), plus (Real-Debrid sin consola) u orbital (App Store, sin
+        # Real-Debrid). La lee `ThisDevice.capabilities` una vez; vacía o desconocida, ultra. Los destinos aparte vienen después.
+        ORBITAL_EDITION: ultra
       # Release sin símbolos de depuración dentro del binario (A14, 10 nov 2026): pesa menos al instalar. Los dSYM se siguen
       # generando aparte para leer fallos.
       configs:
@@ -85,6 +88,7 @@ targets:
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations: [es, en]
         OrbitalTraktClientID: $(ORBITAL_TRAKT_CLIENT_ID)   # lo lee Services.bundledTraktClientID
+        OrbitalEdition: $(ORBITAL_EDITION)   # lo lee Edition.bundled() (D1-B)
         OrbitalTMDBKey: $(ORBITAL_TMDB_KEY)   # lo lee Services.bundledTMDBKey (de Secrets.xcconfig)
         OrbitalOpenSubtitlesKey: $(ORBITAL_OPENSUBTITLES_KEY)   # lo lee Services.bundledOpenSubtitlesKey (de Secrets.xcconfig)
         UILaunchScreen: {}

@@ -26,7 +26,7 @@ final class TVLiveActivityController {
             Task { await self.update(tv.now, tv: tv) }
         }
         TVControlIntent.run = { [weak tv] action in
-            guard let tv, ThisDevice.talksToOrbital else { return }
+            guard let tv, ThisDevice.capabilities.console else { return }
             switch action {
             case "back": await tv.control("skip", delta: -DesignTokens.Widget.tvSkip)
             case "forward": await tv.control("skip", delta: DesignTokens.Widget.tvSkip)

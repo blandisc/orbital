@@ -55,11 +55,13 @@ public final class OnboardingModel: ObservableModel {
 
     // MARK: los pasos
 
-    /// ¿La TV es parte de esta app? (En la Mac no: `allowsOrbital`.)
-    public var offersTV: Bool { services.allowsOrbital }
+    /// ¿La TV es parte de esta app? (En la Mac, Plus y Orbital no: `capabilities.console`.)
+    public var offersTV: Bool { services.capabilities.console }
+    /// ¿Ver al instante (Real-Debrid) es parte de esta versión? En Orbital (App Store) no.
+    public var offersDebrid: Bool { services.capabilities.instantStreams }
     /// ¿Hay cómo conectar Trakt en esta compilación?
     public var offersTrakt: Bool { if case .off = settings.trakt { return false }; return true }
-    public var pieces: [Piece] { Piece.allCases.filter { $0 != .tv || offersTV }.filter { $0 != .trakt || offersTrakt } }
+    public var pieces: [Piece] { Piece.allCases.filter { $0 != .tv || offersTV }.filter { $0 != .debrid || offersDebrid }.filter { $0 != .trakt || offersTrakt } }
 
     /// ¿Se ofrece conectar OpenSubtitles? Con la clave de la app y sin tu cuenta todavía (se lee al abrir la guía).
     public var offersSubtitles = false { didSet { if oldValue != offersSubtitles { changed() } } }
@@ -85,7 +87,7 @@ public final class OnboardingModel: ObservableModel {
     /// van juntos en una sola pantalla de «tus aparatos» (Q3).
     public var plan: [Step] {
         var out: [Step] = [.welcome, .likes, .have]
-        if !isConnected(.debrid), answers[.debrid] != .later { out.append(.debrid) }
+        if offersDebrid, !isConnected(.debrid), answers[.debrid] != .later { out.append(.debrid) }
         let trakt = offersTrakt && !isConnected(.trakt) && answers[.trakt] == .has
         let tv = offersTV && !isConnected(.tv) && answers[.tv] == .has
         if trakt { out.append(.trakt) }

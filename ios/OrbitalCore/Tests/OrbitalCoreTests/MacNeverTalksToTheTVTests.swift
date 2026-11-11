@@ -2,8 +2,8 @@ import XCTest
 
 /// CX1-B (Fernando, 3 nov: «La Mac no se conecta con la TV. La Mac no habla con la TV… para nada»): en la Mac no hay
 /// emparejar, invitación, «Tu Orbital», «Pasar a la TV», «Usar la de la TV», la lista de la TV ni «Ver en la TV». Solo le llega
-/// tu clave de Real-Debrid por iCloud (CX2-A). Lo de dentro lo cuida `ConnectWithOrWithoutIPhoneTests` (con `allowsOrbital`
-/// apagado no sale ni una petición a la TV); esta prueba cuida que la app arme `Services` así en la Mac.
+/// tu clave de Real-Debrid por iCloud (CX2-A). Lo de dentro lo cuida `ConnectWithOrWithoutIPhoneTests` (con la consola
+/// apagada en `Capabilities` no sale ni una petición a la TV); esta prueba cuida que la app arme `Services` así en la Mac.
 final class MacNeverTalksToTheTVTests: XCTestCase {
     private func source(_ path: String) throws -> String {
         var url = URL(fileURLWithPath: #filePath)
@@ -21,20 +21,23 @@ final class MacNeverTalksToTheTVTests: XCTestCase {
         let composition = try source("App/AppComposition.swift")
         let built = composition.components(separatedBy: "let services = Services(").count - 1
         XCTAssertGreaterThan(built, 0)
-        XCTAssertEqual(composition.components(separatedBy: "allowsOrbital: ThisDevice.talksToOrbital").count - 1, built,
-                       "cada `Services` (también el de la demostración) con `allowsOrbital: ThisDevice.talksToOrbital`")
+        XCTAssertEqual(composition.components(separatedBy: "capabilities: ThisDevice.capabilities").count - 1, built,
+                       "cada `Services` (también el de la demostración) con `capabilities: ThisDevice.capabilities`")
+        let device = try source("Platform/DeviceInfo.swift")
+        XCTAssertTrue(device.contains("Capabilities(edition: .bundled(), talksToOrbital: talksToOrbital)"),
+                      "las capacidades de la app salen de la versión y de si este aparato habla con la TV")
         XCTAssertEqual(composition.components(separatedBy: "platform: ThisDevice.platform").count - 1, built)
     }
 
     func testTheTVPartsOfSettingsHideOnTheMac() throws {
         let settings = try source("Screens/SettingsView.swift")
         // IOS-10: la invitación va arriba de Ajustes y «Orbital en la TV» más abajo; cada una con su guardia.
-        XCTAssertTrue(settings.contains("if env.services.allowsOrbital { IPadInviteCard"), "la invitación del iPhone, solo donde se habla con la TV")
-        XCTAssertTrue(settings.contains("if env.services.allowsOrbital { orbitalSettings(model) }"), "«Orbital en la TV» y «Tu Orbital», nunca en la Mac")
-        XCTAssertFalse(settings.replacingOccurrences(of: "if env.services.allowsOrbital { IPadInviteCard", with: "").contains("IPadInviteCard {"),
+        XCTAssertTrue(settings.contains("if entries.orbital { IPadInviteCard"), "la invitación del iPhone, solo donde se habla con la TV")
+        XCTAssertTrue(settings.contains("if entries.orbital { orbitalSettings(model) }"), "«Orbital en la TV» y «Tu Orbital», nunca en la Mac")
+        XCTAssertFalse(settings.replacingOccurrences(of: "if entries.orbital { IPadInviteCard", with: "").contains("IPadInviteCard {"),
                        "la invitación no sale en ningún otro lado de Ajustes sin su guardia")
-        for (file, gate) in [("App/AppDelegate.swift", "ThisDevice.talksToOrbital"), ("Platform/OrbitalIntents.swift", "ThisDevice.talksToOrbital"),
-                             ("Screens/RootView.swift", "env.services.allowsOrbital"), ("Screens/AppCommands.swift", "ThisDevice.talksToOrbital")] {
+        for (file, gate) in [("App/AppDelegate.swift", "ThisDevice.capabilities.console"), ("Platform/OrbitalIntents.swift", "ThisDevice.capabilities.console"),
+                             ("Screens/RootView.swift", "env.services.capabilities.console"), ("Screens/AppCommands.swift", "ThisDevice.capabilities.console")] {
             XCTAssertTrue(try source(file).contains(gate), "\(file): sin su guardia de la Mac")
         }
     }

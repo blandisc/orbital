@@ -41,7 +41,7 @@ public struct LearnStory: Sendable, Identifiable, Equatable {
     }
 
     /// Cuándo tiene sentido la historia.
-    public enum Needs: Sendable, Equatable { case always, tv }
+    public enum Needs: Sendable, Equatable { case always, tv, instant }
 
     public var id: String
     public var title: String
@@ -62,7 +62,7 @@ public enum LearnContent {
         .init(scene: .storageStill, title: "Tu iPhone, igual", line: "Se ve desde la nube, no ocupa espacio.", seconds: 3),
         .init(scene: .payPlans, title: "Desde unos 3 €", line: "Por 15 días, y no se renueva solo.", seconds: 5, mark: .trick),
         .init(scene: .twoPhones, title: "Una cuenta, una persona", line: "Si dos la usan a la vez, se corta.", seconds: 4),
-    ], action: ("Conectar Real-Debrid", .connectDebrid))
+    ], action: ("Conectar Real-Debrid", .connectDebrid), needs: .instant)
 
     public static let language = LearnStory(id: "language", title: "En tu idioma", symbol: "character.bubble.fill", tint: "watching", cards: [
         .init(scene: .typedVersion, title: "Habla como tú", line: "«Ver» elige tu idioma y tu calidad.", seconds: 4),
