@@ -36,6 +36,7 @@ struct VoiceRow: View {
     let actions: Actions
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var taps = 0
 
     var body: some View {
@@ -78,7 +79,7 @@ struct VoiceRow: View {
             // La pista: una frase del momento; tocarla la manda tal cual (atajo y lección a la vez).
             Button { tap { actions.say(hint) } } label: {
                 Text("Prueba: \(Text(verbatim: "«\(hint)»").foregroundStyle(DS.text).fontWeight(.medium))")
-                    .recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    .recipe(.caption, color: DS.textMuted).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)   // I3: «Prueba: «pau…»
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }

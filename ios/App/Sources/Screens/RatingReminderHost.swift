@@ -1,41 +1,30 @@
 import SwiftUI
 import OrbitalModels
 
-/// La pastilla de «¿Qué tal …?» sobre la barra de pestañas, conectada a tus calificaciones (`RatingsModel`): calificar
-/// desde ahí, descartar o abrir la fila completa en una hoja. Aparece al abrir la app y se va sola a los pocos segundos;
-/// calificar siempre se puede en la ficha (la película, la serie y cada capítulo visto).
+/// La tarjeta de «¿Qué tal …?» dentro del scroll de Inicio (D2-A, 10 nov 2026: antes flotaba sobre la barra de pestañas y tapaba
+/// lo de abajo en todas las pantallas), conectada a tus calificaciones (`RatingsModel`): calificar desde ahí, descartar o abrir
+/// la fila completa en una hoja. Se queda en su lugar hasta que calificas o la cierras; calificar siempre se puede en la ficha.
 struct RatingReminderHost: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.scenePhase) private var scenePhase
     @State private var showQueue = false
-    /// Se va sola a los pocos segundos (para no tapar nada) y vuelve la próxima vez que abras la app.
-    @State private var tucked = false
 
     var body: some View {
         let model = env.ratings
         let _ = model.track()
         Group {
-            if let item = model.current, !tucked {
+            if let item = model.current {
                 RatingReminder(title: item.title, poster: URL(string: item.poster), more: model.more,
                                onRate: { stars in Task { await model.rate(imdb: item.imdb, kind: item.kind, stars: stars) } },
                                onDismiss: { model.dismiss(item.imdb) },
                                onOpenQueue: { showQueue = true })
                     .id(item.imdb)
-                    .frame(maxWidth: DS.Toast.maxWidth)   // en el iPad y la Mac no cruza la pantalla, como los avisos
+                    .frame(maxWidth: DS.Toast.maxWidth, alignment: .leading)   // en el iPad y la Mac no cruza la pantalla
                     .padding(.horizontal, DS.Space.gutter)
-                    .transition(DS.Motion.notice(reduceMotion))
+                    .transition(DS.Motion.appear(reduceMotion))
             }
         }
         .animation(DS.Motion.enter(reduceMotion), value: model.current?.imdb)
-        .animation(DS.Motion.base(reduceMotion), value: tucked)
-        // Cada título nuevo en la pastilla (o volver a la app) le da otra vez su tiempo; con la fila abierta no se va.
-        .task(id: "\(model.current?.imdb ?? "")|\(tucked)|\(showQueue)") {
-            guard model.current != nil, !tucked, !showQueue else { return }
-            try? await Task.sleep(for: DS.Rating.reminderHold)
-            if !Task.isCancelled { tucked = true }
-        }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { tucked = false } }
         .sheet(isPresented: $showQueue) {
             NavigationStack {
                 RatingQueue(rows: model.queue.map { .init(id: $0.imdb, title: $0.title, poster: URL(string: $0.poster)) },

@@ -106,6 +106,8 @@ struct HomeView: View {
                 } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                     DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
+                // ¿Qué tal …? (D2-A): calificar lo que terminaste, en su lugar de la página, bajo lo que tienes a medias.
+                RatingReminderHost()
                 // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
                 if kind != "movie", !model.timeline.isEmpty {
                     ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
@@ -126,6 +128,9 @@ struct HomeView: View {
                 if !pending.isEmpty { watchlist(model, items: pending).entrance("home:watchlist", order: 5) }
                 // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
             }
+            // El ancho es el de la pantalla, siempre (I2): si una fila pide más (letra grande, el SE), no empuja la página entera
+            // a la izquierda y el margen se queda donde va.
+            .containerRelativeFrame(.horizontal, alignment: .leading)
             .refreshOrbitHost()   // la luna de tirar para actualizar
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final

@@ -132,8 +132,14 @@ struct RemoteKey: View {
         } label: {
             VStack(spacing: DS.Space.s1) {
                 Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).frame(height: DS.Remote.keyIcon)
-                title.recipe(.caption, color: DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+                // Completo o solo el ícono (I3, 10 nov): con letra grande en un renglón de cinco, «5 atr…» no decía nada.
+                ViewThatFits(in: .horizontal) {
+                    title.recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+                    EmptyView()
+                }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(title)
             .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
             .dsCard(translucent: true)
             .opacity(idle ? DS.Opacity.disabled : 1)

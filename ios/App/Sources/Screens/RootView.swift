@@ -120,14 +120,7 @@ struct RootView: View {
             .dsNoticePlacement(lift: reminderLift() + ui.noticeLift)
             .animation(DS.Motion.enter(reduceMotion), value: ui.noticeLift)
         }
-        // Calificar lo que terminaste: pegada a la barra de pestañas (y encima de «Viendo en la TV» cuando está), solo cuando no
-        // hay otro aviso.
-        .overlay(alignment: .bottom) {
-            if ui.handoff == nil, env.notices.current == nil {
-                // En el mismo lugar que los avisos (`dsNoticePlacement`).
-                RatingReminderHost().dsNoticePlacement(lift: reminderLift())
-            }
-        }
+        // Calificar lo que terminaste ya no flota aquí: es una tarjeta dentro de Inicio (D2-A, `RatingReminderHost`).
         .animation(DS.Motion.enter(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current)
         .task {
@@ -501,6 +494,9 @@ struct MainTabs: View {
         if Demo.open == "settings" || Demo.open == "year" || Demo.open == "orbital-setup" { paths[tab].append(SettingsRoute()) }
         if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
         if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
+        let library = AppEnvironment.downloadsTab   // `-demo-open history` / `vistas`: Guardado › Historial o Vistas (capturas)
+        if Demo.open == "history" { tab = library; paths[library].append(HistoryRoute()) }
+        if Demo.open == "vistas" { tab = library; paths[library].append(SavedStateRoute(status: TitleStatus.watched.rawValue)) }
         if let id = Demo.repisa { tab = 1; paths[1].append(RepisaRoute()); paths[1].append(id) }   // `-demo-repisa oscar`: una colección
         if let title = Demo.title {
             let route = TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)

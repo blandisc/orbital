@@ -548,10 +548,12 @@ struct RemoteSheet: View {
         HStack(spacing: DS.Space.s2) {
             key(model, "chevron.left.2", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
-                // Un renglón siempre: con letra grande se achica (antes se partía en «Pelícu-las y s…» entre las teclas).
-                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1)
-                    .minimumScaleFactor(DS.Size.statScale).multilineTextAlignment(.center)
-                    .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)   // con letra grande cede: «Ante…» no cabía
+                // Un renglón siempre, completo o nada (I3, 10 nov): si no cabe entero entre las teclas («Películas y se…» con
+                // letra grande), se esconde; es lo secundario, las teclas ya dicen qué hacen y la TV enseña la sección.
+                ViewThatFits(in: .horizontal) {
+                    Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+                    EmptyView()
+                }
             }
             key(model, "chevron.right.2", nil, Text("Siguiente"), .nextsection)
         }

@@ -44111,6 +44111,61 @@
           }
         }
       }
+    },
+    "y %lld más por calificar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and %lld more to rate"
+          }
+        }
+      }
+    },
+    "Quitar 1 vista repetida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove 1 repeated viewing"
+          }
+        }
+      }
+    },
+    "Quitar %lld vistas repetidas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %lld repeated viewings"
+          }
+        }
+      }
+    },
+    "¿Quitar las vistas repetidas?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove the repeated viewings?"
+          }
+        }
+      }
+    },
+    "Cada vista con su fecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every viewing with its date"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

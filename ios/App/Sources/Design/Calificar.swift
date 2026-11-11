@@ -110,8 +110,9 @@ struct RatingStars: View {
     }
 }
 
-/// El recordatorio de calificar: una pastilla de vidrio sobre la barra de pestañas con el póster, «¿Qué tal …?» y las
-/// estrellas en línea (calificas sin abrir nada). «y 2 más» abre la fila completa; la ✕ es «no calificar esta».
+/// El recordatorio de calificar (D2-A, 10 nov 2026): una tarjeta dentro del scroll de Inicio, nunca encima de otra cosa. El
+/// póster, «¿Qué tal …?» y las estrellas en línea (calificas sin abrir nada); «y 2 más» abre la fila completa y la ✕ es «no
+/// calificar esta». Todo en columna: con letra grande nada se parte letra por letra (antes «y 1 más» se apretaba a un lado).
 struct RatingReminder: View {
     let title: String
     let poster: URL?
@@ -125,10 +126,11 @@ struct RatingReminder: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
+        HStack(alignment: .top, spacing: DS.Space.s3) {
             posterThumb
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("¿Qué tal \(title)?").recipe(.label, color: DS.text).lineLimit(1)
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                Text("¿Qué tal \(title)?").recipe(.label, color: DS.text).lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: DS.Space.s2) {
                     RatingStars(value: rated, size: DS.Rating.starInline) { v in
                         guard let v, rated == nil else { return }
@@ -136,25 +138,24 @@ struct RatingReminder: View {
                         Task { try? await Task.sleep(for: DS.Rating.savedHold); onRate(v) }
                     }
                     if rated != nil {
-                        Label("Guardada", systemImage: "checkmark").recipe(.caption, color: DS.textMuted).labelStyle(.titleAndIcon)
+                        Text(Image(systemName: "checkmark")).recipe(.caption, color: DS.textMuted)
+                            .accessibilityLabel(Text("Guardada"))
                             .transition(.opacity)
                     }
                 }
                 .animation(DS.Motion.base(reduceMotion), value: rated)
+                if more > 0 {
+                    Button(action: onOpenQueue) { Text("y \(more) más por calificar").recipe(.caption, color: DS.textMuted).lineLimit(2) }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("rating-reminder-more")
+                }
             }
-            .layoutPriority(1)   // el título gana el espacio: «y 2 más» y la ✕ son chicos
-            Spacer(minLength: 0)
-            if more > 0 {
-                Button(action: onOpenQueue) { Text("y \(more) más").recipe(.caption, color: DS.textMuted) }
-                    .accessibilityIdentifier("rating-reminder-more")
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             DSIconButton(symbol: "xmark", label: "No calificar esta", size: .small, action: onDismiss)
                 .accessibilityIdentifier("rating-reminder-dismiss")
         }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-        // El vidrio de la barra de pestañas: el mismo material, interactivo como ella y con su mismo velo claro (sin él, sobre el
-        // fondo oscuro se veía más gris que la barra y que «Viendo en la TV»).
-        .glassEffect(.regular.tint(DS.Rating.glassTint).interactive(), in: Capsule())
+        .padding(DS.Space.s3)
+        .dsCard(.row)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("rating-reminder")
     }
