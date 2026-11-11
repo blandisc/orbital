@@ -15,13 +15,12 @@ import os
 import re
 import threading
 import time
-import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 from shutil import which
 
 from .emulator_updates import USER_AGENT, InstallError, download, http_get_json
-from .net import NET_ERRORS
+from .net import NET_FAILURES, read_body, request, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -77,8 +76,8 @@ def sha256_of(path: Path) -> str:
 def http_get_text(url: str, timeout: float = 15) -> str:
     if not url.startswith("https://"):
         raise InstallError("Esa descarga no es segura (no es https).")
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=timeout) as res:
-        return res.read(1024 * 64).decode("utf-8", "replace")
+    with urlopen(request(url, headers={"User-Agent": USER_AGENT}), timeout=timeout) as res:
+        return read_body(res, timeout=timeout, limit=1024 * 64, truncate=True).decode("utf-8", "replace")
 
 
 class YtDlp:
@@ -121,7 +120,7 @@ class YtDlp:
             data = self.get_json(f"https://api.github.com/repos/{REPO}/releases/latest")
             assets = {a["name"]: a["browser_download_url"] for a in data.get("assets") or [] if isinstance(a, dict)}  # type: ignore[union-attr]
             return str(data["tag_name"]), assets[EXE_NAME], assets[SUMS_NAME]  # type: ignore[index]
-        except (*NET_ERRORS, KeyError, TypeError, AttributeError) as exc:
+        except (*NET_FAILURES, KeyError, TypeError, AttributeError) as exc:
             raise YtDlpError("No pude buscar yt-dlp (revisa tu conexión).") from exc
 
     def install(self) -> str:
@@ -143,8 +142,11 @@ class YtDlp:
                     os.replace(part, self.exe)
                 except PermissionError as exc:  # se está usando (abriendo un video): se queda el de antes
                     raise YtDlpError("yt-dlp se está usando; lo actualizo después.") from exc
-            except (*NET_ERRORS, InstallError) as exc:
+            except (*NET_FAILURES, InstallError) as exc:
                 raise YtDlpError(str(exc) if isinstance(exc, InstallError) else "No pude bajar yt-dlp (revisa tu conexión).") from exc
+            except OSError as exc:  # el disco, no la red
+                log.warning("No pude guardar yt-dlp en %s: %s", self.dir, exc)
+                raise YtDlpError("No pude guardar yt-dlp en el disco.") from exc
             finally:
                 part.unlink(missing_ok=True)
             (self.dir / MANIFEST).write_text(json.dumps({"version": version, "installed_at": time.strftime("%Y-%m-%d %H:%M")}),

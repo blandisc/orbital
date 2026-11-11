@@ -15,13 +15,12 @@ import logging
 import os
 import threading
 import time
-import urllib.request
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from . import thumbs
 from .atomic import atomic_write
-from .net import NET_ERRORS, read_body
+from .net import NET_FAILURES, read_body, request, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +57,8 @@ def cache_root() -> Path:
 
 
 def fetch(url: str, timeout: float = 10) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "Orbital/0.1", "Accept": "image/*"})
-    with urllib.request.urlopen(req, timeout=timeout) as res:
+    req = request(url, headers={"User-Agent": "Orbital/0.1", "Accept": "image/*"})
+    with urlopen(req, timeout=timeout) as res:
         return read_body(res, timeout=timeout, limit=MAX_BYTES)
 
 
@@ -83,13 +82,17 @@ def sized(url: str, width: int, root: Path | None = None, download=None) -> Path
                 try:
                     with _slots:
                         data = (download or fetch)(url)
-                    raw.parent.mkdir(parents=True, exist_ok=True)
-                    atomic_write(raw, data, durable=False)
-                except NET_ERRORS as exc:
+                except NET_FAILURES as exc:
                     log.debug("No pude bajar %s: %s", url, exc)
                     if len(_misses) > 5000:
                         _misses.clear()
                     _misses[key] = time.monotonic()
+                    return None
+                try:
+                    raw.parent.mkdir(parents=True, exist_ok=True)
+                    atomic_write(raw, data, durable=False)
+                except OSError as exc:  # el disco, no la red: se anota como tal y se reintenta la próxima vez
+                    log.warning("No pude guardar el arte bajado en %s: %s", raw.parent, exc)
                     return None
     return thumbs.thumbnail(raw, snap(width), root / "sized")
 

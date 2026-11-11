@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, RedirectResponse, Response, Streamin
 from pydantic import BaseModel, Field
 
 from ..library import iptv_preview
-from ..net import NET_ERRORS
+from ..net import NET_FAILURES
 from .deps import Deps
 
 log = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def router(d: Deps) -> APIRouter:
             text = previews.playlist(channel)
         except iptv_preview.PreviewRedirect as go:
             return RedirectResponse(go.url, status_code=307, headers={"Cache-Control": "no-store"})
-        except (iptv_preview.PreviewError, *NET_ERRORS) as exc:
+        except (iptv_preview.PreviewError, *NET_FAILURES) as exc:
             log.debug("Sin vista previa de %s: %s", channel.name, exc)
             raise HTTPException(502, "Este canal no tiene vista previa.")
         return Response(text, media_type="application/vnd.apple.mpegurl", headers={"Cache-Control": "no-store"})
@@ -91,7 +91,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(404)
         try:
             chunks, kind = previews.segment(channel, u)
-        except NET_ERRORS:
+        except NET_FAILURES:
             raise HTTPException(502)
         return StreamingResponse(chunks, media_type=kind, headers={"Cache-Control": "no-store"})
 

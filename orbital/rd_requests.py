@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from .library import addons, realdebrid, streams
-from .net import NET_ERRORS
+from .net import NET_FAILURES
 
 log = logging.getLogger(__name__)
 
@@ -211,7 +211,7 @@ class RdRequests:
         base = realdebrid.without_debrid(addon.base)
         try:
             data = addons.fetch_json(f"{base}/stream/{kind}/{video_id}.json", self.finder.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             log.info("Sin torrents para pedir de %s: %s", video_id, exc)
             return []
         try:  # el idioma original del título (una de YTS de una película mexicana es «Latino (original)», no «Inglés»)

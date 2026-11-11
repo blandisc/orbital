@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .atomic import atomic_write
 from .library import cinemeta, onedrive, streams
+from .net import NET_FAILURES
 
 log = logging.getLogger(__name__)
 
@@ -304,7 +305,7 @@ class Linker:
                     return "cancelled"
             try:
                 result = self.library.client.poll_device(code)
-            except (onedrive.OneDriveError, *onedrive.NET_ERRORS, ValueError, TypeError):
+            except (onedrive.OneDriveError, *NET_FAILURES, ValueError, TypeError):  # sin red o una respuesta rara: se vuelve a preguntar
                 continue
             if result == "slow":
                 interval += 5

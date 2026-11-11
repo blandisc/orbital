@@ -717,7 +717,7 @@ def test_title_logos_lose_their_transparent_padding_and_are_kept(library, make_f
     def download(url, timeout=8):
         asked.append(url)
         if "tt404" in url:
-            raise OSError("404")
+            raise net_lib.NetError("404")
         return _logo_png()
 
     monkeypatch.setattr(iptv_logos, "download_logo", download)

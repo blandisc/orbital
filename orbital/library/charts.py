@@ -35,7 +35,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json, urlopen
 from . import cinemeta as cinemeta_api
 from .tmdb import Tmdb
 
@@ -123,7 +123,7 @@ def _jw_warn_once(brand: str, exc: Exception) -> None:
 # ---------------------------------------------------------------- Netflix: su página por país
 def _open(url: str, timeout: float):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "en-US"})
-    return urllib.request.urlopen(req, timeout=timeout)
+    return urlopen(req, timeout=timeout)
 
 
 def netflix_page_url(region: str, kind: str, week: str | None = None) -> str:
@@ -159,7 +159,7 @@ def _read_page(url: str, open_url: Callable[[str], Any] | None) -> tuple[list[di
     try:
         with opener(url) as res:
             return parse_netflix_page(res.read().decode("utf-8", errors="replace"))
-    except NET_ERRORS as exc:
+    except NET_FAILURES as exc:
         raise ChartsError(f"No pude leer el Top 10 de Netflix: {exc}") from exc
 
 
@@ -217,7 +217,7 @@ def netflix_entries(region: str, kind: str, *, open_url: Callable[[str], Any] | 
     def resolve(row: dict) -> dict | None:
         try:
             imdb = resolve_imdb(row["title"], kind, tmdb=tmdb, cinemeta=cinemeta)
-        except NET_ERRORS:
+        except NET_FAILURES:
             return None
         return {**row, "imdb": imdb} if imdb else None
 
@@ -257,7 +257,7 @@ def fetch_justwatch_chart(brand: str, region: str, kind: str, *,
     }
     try:
         status, data = send(JUSTWATCH_URL, method="POST", body=body, timeout=12)
-    except NET_ERRORS as exc:
+    except NET_FAILURES as exc:
         raise ChartsError(f"No pude conectar con JustWatch: {exc}") from exc
     if status != 200 or not isinstance(data, dict) or data.get("errors"):
         raise ChartsError(f"JustWatch respondió HTTP {status}" + (f": {data.get('errors')}" if isinstance(data, dict) else ""))

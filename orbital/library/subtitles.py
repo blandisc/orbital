@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import re
 import struct
-import urllib.request
 from dataclasses import dataclass
 
-from ..net import NET_ERRORS
+from ..net import NET_FAILURES, NetError, read_body, request, urlopen
 
 CHUNK = 65_536
 BUILTIN = "https://opensubtitles-v3.strem.io"  # OpenSubtitles, siempre (como el iPhone), aunque no lo tengas instalado
@@ -110,16 +109,19 @@ def fingerprint(head: bytes, tail: bytes, size: int) -> tuple[str, int] | None:
 def remote_fingerprint(url: str, timeout: float = 10) -> tuple[str, int] | None:
     """La huella de un video en línea con dos pedidos de 64 KB (el principio y el final). None si el servidor no los da."""
     def part(first: int, last: int) -> tuple[bytes, str]:
-        request = urllib.request.Request(url, headers={"Range": f"bytes={first}-{last}", "User-Agent": "Orbital"})
-        with urllib.request.urlopen(request, timeout=timeout) as reply:  # noqa: S310 - la URL es la de la fuente que ves
+        ask = request(url, headers={"Range": f"bytes={first}-{last}", "User-Agent": "Orbital"})
+        with urlopen(ask, timeout=timeout) as reply:  # la URL es la de la fuente que ves
             if reply.status != 206:
-                raise OSError(f"HTTP {reply.status}")
-            return reply.read(CHUNK), reply.headers.get("Content-Range") or ""
+                raise NetError(f"HTTP {reply.status}")
+            return read_body(reply, timeout=timeout, limit=CHUNK, truncate=True), reply.headers.get("Content-Range") or ""
     try:
         head, span = part(0, CHUNK - 1)
-        size = int(span.rsplit("/", 1)[1])
+        try:
+            size = int(span.rsplit("/", 1)[1])  # «bytes 0-65535/1234567»
+        except (ValueError, IndexError):
+            return None  # no dijo cuánto mide
         tail, _ = part(size - CHUNK, size - 1)
-    except (*NET_ERRORS, OSError, ValueError, IndexError):
+    except NET_FAILURES:
         return None
     return fingerprint(head, tail, size)
 

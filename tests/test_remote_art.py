@@ -5,6 +5,7 @@ import io
 from PIL import Image
 
 from orbital import remote_art
+from orbital.net import NetError
 
 
 def jpeg(size=(1920, 1080)) -> bytes:
@@ -40,7 +41,7 @@ def test_api_serves_the_small_copy_or_sends_to_the_original(make_client, monkeyp
     assert ok.status_code == 200 and ok.headers["content-type"] == "image/webp"
     assert Image.open(io.BytesIO(ok.content)).size == (240, 360)
     assert c.get("/api/img", params={"u": "https://evil.example/a.jpg"}).status_code == 404
-    monkeypatch.setattr(remote_art, "fetch", lambda url, timeout=10: (_ for _ in ()).throw(OSError("x")))
+    monkeypatch.setattr(remote_art, "fetch", lambda url, timeout=10: (_ for _ in ()).throw(NetError("x")))
     gone = c.get("/api/img", params={"u": "https://image.tmdb.org/t/p/original/z.jpg"}, follow_redirects=False)
     assert gone.status_code == 307 and gone.headers["location"] == "https://image.tmdb.org/t/p/original/z.jpg"
 

@@ -41,7 +41,7 @@ from .library import rawg as rawg_api
 from .library import stremio_api
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
-from .net import NET_ERRORS, NET_FAILURES, read_json
+from .net import NET_FAILURES, read_json, request, urlopen
 from .text import clock
 
 log = logging.getLogger(__name__)
@@ -678,9 +678,9 @@ class ForYou:
         kind = kind if kind in entry["kinds"] else entry["kinds"][0]
         url = f"{entry['base']}/catalog/{kind}/{urllib.parse.quote(entry['catalog'], safe='')}.json"
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Orbital"}), timeout=12) as res:
+            with urlopen(request(url, headers={"User-Agent": "Orbital"}), timeout=12) as res:
                 data = read_json(res, timeout=12)
-        except (*NET_ERRORS, ValueError) as exc:  # sin red, o algo que no es JSON
+        except NET_FAILURES as exc:  # sin red, o algo que no es JSON (BadResponse)
             raise stremio_api.StremioError(f"{entry['addon']} no respondió: {exc}") from exc
         metas = data.get("metas") if isinstance(data, dict) else None
         why = {"Watchlist": "En Mi lista", "Recommendations": "Recomendada"}.get(entry["title"], f"En {entry['title']}")
@@ -1792,7 +1792,7 @@ class ForYou:
             return None
         try:
             png = whiten_if_dark(iptv_logos.trim(iptv_logos.download_logo(METAHUB.format(kind="logo", imdb=imdb))))
-        except (iptv_logos.LogoError, *NET_ERRORS) as exc:
+        except (iptv_logos.LogoError, *NET_FAILURES) as exc:
             log.debug("Sin logo de %s: %s", imdb, exc)
             if len(self._logo_misses) > 2000:
                 self._logo_misses.clear()

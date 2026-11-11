@@ -12,6 +12,7 @@ import pytest
 from orbital.foryou import Cache
 from orbital.library import charts
 from orbital.library.tmdb import Tmdb
+from orbital.net import NetError
 
 FIXTURES = Path(__file__).parent / "fixtures" / "charts"
 
@@ -71,7 +72,7 @@ def test_netflix_top10_takes_this_week_and_compares_with_the_last():
 def test_netflix_without_last_week_has_no_arrows():
     def opener(url):
         if "?week=" in url:
-            raise OSError("sin red")
+            raise NetError("sin red")
         return io.BytesIO((FIXTURES / "netflix_mexico_tv.html").read_bytes())
     rows = charts.fetch_netflix_top10("MX", "series", open_url=opener)
     assert all(r["movement"] is None for r in rows)
@@ -136,7 +137,7 @@ def test_cache_keeps_the_previous_value_when_the_network_fails():
     assert [i["title"] for i in first] == ["Unabomber", "What a Father!"]
 
     def fails(url, **kwargs):
-        raise OSError("sin red")
+        raise NetError("sin red")
 
     second = cache.get("jw:netflix", 3600, lambda: charts.fetch_justwatch_chart("netflix", "MX", "movie", post=fails))
     assert second == first  # la red falló: se queda con lo de la vez pasada, no se tira

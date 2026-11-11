@@ -123,10 +123,10 @@ def _no_real_tv(monkeypatch):
 @pytest.fixture(autouse=True)
 def _no_real_web_art(monkeypatch, tmp_path):
     """Ninguna prueba baja arte de internet ni escribe en el caché real (remote_art.py)."""
-    from orbital import remote_art
+    from orbital import net, remote_art
 
     def offline(url, timeout=10):
-        raise OSError(f"Sin conexión (pruebas): {url}")
+        raise net.NetError(f"Sin conexión (pruebas): {url}")
 
     monkeypatch.setattr(remote_art, "fetch", offline)
     monkeypatch.setattr(remote_art, "cache_root", lambda: tmp_path / "art-web")
@@ -136,10 +136,10 @@ def _no_real_web_art(monkeypatch, tmp_path):
 @pytest.fixture(autouse=True)
 def _no_real_emulator_updates(monkeypatch):
     """Ninguna prueba pregunta a GitHub por versiones ni baja (o instala) un emulador de verdad."""
-    from orbital import emulator_updates
+    from orbital import emulator_updates, net
 
     def offline(*args, **kwargs):
-        raise OSError("Sin conexión (pruebas)")
+        raise net.NetError("Sin conexión (pruebas)")
 
     monkeypatch.setattr(emulator_updates, "http_get_json", offline)
     monkeypatch.setattr(emulator_updates, "download", offline)
@@ -149,10 +149,10 @@ def _no_real_emulator_updates(monkeypatch):
 @pytest.fixture(autouse=True)
 def _no_real_ytdlp(monkeypatch, tmp_path):
     """Ninguna prueba baja yt-dlp de verdad ni usa el que ya tienes instalado (ni escribe en tu carpeta de Orbital)."""
-    from orbital import ytdlp
+    from orbital import net, ytdlp
 
     def offline(*args, **kwargs):
-        raise OSError("Sin conexión (pruebas)")
+        raise net.NetError("Sin conexión (pruebas)")
 
     monkeypatch.setattr(ytdlp, "tools_dir", lambda: tmp_path / "tools")
     monkeypatch.setattr(ytdlp, "http_get_json", offline)

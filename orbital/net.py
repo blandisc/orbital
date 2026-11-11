@@ -85,6 +85,17 @@ def share_tls() -> None:
     urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPSHandler(context=tls_context())))
 
 
+def read_chunk(res, size: int) -> bytes:
+    """Un pedazo de la respuesta (read1 si lo hay: lo que ya llegó). Una respuesta cortada a media lectura
+    (IncompleteRead, un socket raro) sale como NetError; un plazo vencido, como TimeoutError."""
+    try:
+        return getattr(res, "read1", res.read)(size)
+    except (NetError, TimeoutError):
+        raise
+    except (OSError, http.client.HTTPException) as exc:
+        raise NetError(str(exc) or type(exc).__name__) from exc
+
+
 def read_body(res, *, timeout: float, limit: int = MAX_BYTES, truncate: bool = False) -> bytes:
     """Lee la respuesta completa en pedazos con un plazo total; corta si se pasa de `limit`.
     `truncate`: en vez de fallar, se queda con los primeros `limit` bytes (para probar que un video abre
@@ -95,12 +106,7 @@ def read_body(res, *, timeout: float, limit: int = MAX_BYTES, truncate: bool = F
         if time.monotonic() > deadline:
             raise TimeoutError("La respuesta tardó demasiado")
         # read1 devuelve lo que ya llegó (no espera a juntar 64 KB): el plazo se revisa en cada pedazo.
-        try:
-            chunk = getattr(res, "read1", res.read)(64 * 1024)
-        except (NetError, TimeoutError):
-            raise
-        except (OSError, http.client.HTTPException) as exc:  # cortada a media respuesta (IncompleteRead, un socket raro)
-            raise NetError(str(exc) or type(exc).__name__) from exc
+        chunk = read_chunk(res, 64 * 1024)
         if not chunk:
             return b"".join(chunks)
         size += len(chunk)

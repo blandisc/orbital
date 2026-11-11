@@ -7,6 +7,7 @@ import zipfile
 import pytest
 
 from orbital import emulator_updates as eu
+from orbital.net import NetError
 
 
 def release(tag, assets=(), published="2026-10-16T19:27:01Z"):
@@ -35,7 +36,7 @@ def service(tmp_path, exes, answers, versions=None, busy=False, mode="avisar", n
         for key, value in answers.items():
             if key in url:
                 return value
-        raise OSError("404")
+        raise NetError("404")
 
     def fetch(url, dest):
         return make_zip(dest, {"xemu.exe": b"nuevo", "data/x.bin": b"datos"})

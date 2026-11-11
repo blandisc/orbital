@@ -14,10 +14,9 @@ import re
 import secrets
 import threading
 import time
-import urllib.request
 from urllib.parse import quote, urljoin
 
-from ..net import read_body
+from ..net import read_body, request, urlopen
 from .iptv import Channel
 
 PLAYLIST_LIMIT = 512 * 1024
@@ -60,8 +59,8 @@ ORIGIN = "http://127.0.0.1:8710"  # la página de Orbital: si el canal le da per
 
 def fetch(channel: Channel, url: str, limit: int) -> tuple[bytes, str, str, bool]:
     """(contenido, dirección final tras redirecciones, tipo, ¿deja que una página lo lea directo?)."""
-    req = urllib.request.Request(url, headers={**_headers(channel), "Origin": ORIGIN})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
+    req = request(url, headers={**_headers(channel), "Origin": ORIGIN})
+    with urlopen(req, timeout=TIMEOUT) as res:
         cors = res.headers.get("Access-Control-Allow-Origin", "") in ("*", ORIGIN)
         return read_body(res, timeout=TIMEOUT, limit=limit), res.geturl(), res.headers.get("Content-Type", ""), cors
 
@@ -131,7 +130,7 @@ class Previews:
     def segment(self, channel: Channel, url: str):
         """(pedazos, tipo): se van pasando mientras llegan. Antes se bajaba el pedazo entero (hasta 4 MB en un canal sin
         calidades) y la miniatura tardaba tanto que se daba por perdida."""
-        res = urllib.request.urlopen(urllib.request.Request(url, headers=_headers(channel)), timeout=TIMEOUT)
+        res = urlopen(request(url, headers=_headers(channel)), timeout=TIMEOUT)
         # Pedazos grandes (menos vueltas entre hilos): el que pasa por aquí es un canal sin permiso CORS o con cabeceras.
         kind = res.headers.get("Content-Type", "") or "video/mp2t"
 

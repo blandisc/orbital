@@ -31,6 +31,7 @@ from .library import subtitles as subtitle_lib
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
 from .library.models import LibraryItem
+from .net import NET_FAILURES
 from .rd_requests import RdRequests
 from .scrobble import TraktScrobbler, not_the_video
 from .sessions import Sessions
@@ -894,7 +895,7 @@ class Watch:
             raise ValueError("Eso no es la dirección de un complemento (https://…/manifest.json o stremio://…)")
         try:
             found = addons.parse_manifest(addons.fetch_json(clean), clean)
-        except addons.NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise ValueError(f"El complemento no respondió ({addons.redact(clean)}): {exc}") from exc
         if not found:
             raise ValueError("Ese complemento no da fuentes, subtítulos, fichas ni catálogos")

@@ -26,14 +26,13 @@ import re
 import shutil
 import threading
 import time
-import urllib.request
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .net import NET_ERRORS, read_json
+from .net import NET_FAILURES, read_chunk, read_json, request, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -201,12 +200,12 @@ def http_get_json(url: str, timeout: float = 15):
     headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
     if "api.github.com" in url:
         headers["Accept"] = "application/vnd.github+json"
-    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=timeout) as res:
+    with urlopen(request(url, headers=headers), timeout=timeout) as res:
         return read_json(res, timeout=timeout)
 
 
 def latest_release(source: Source, get_json=http_get_json, asset: str | None = None) -> Release:
-    """La última versión publicada (lanza NET_ERRORS o ValueError si no se pudo saber). `asset`: qué archivo buscar en
+    """La última versión publicada (lanza algo de NET_FAILURES si no se pudo saber). `asset`: qué archivo buscar en
     vez del de siempre (la versión de Eden que elegiste)."""
     pattern = asset or source.asset
     if source.kind == "github":
@@ -275,10 +274,11 @@ def download(url: str, dest: Path, timeout: float = 30, limit: int = MAX_DOWNLOA
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
     size = 0
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/octet-stream"})
+    req = request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/octet-stream"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as res, open(tmp, "wb") as out:
-            while chunk := res.read(1024 * 1024):
+        # La red falla como algo de NET_FAILURES (read_chunk); el disco, como OSError: así se dice cuál de los dos fue.
+        with urlopen(req, timeout=timeout) as res, open(tmp, "wb") as out:
+            while chunk := read_chunk(res, 1024 * 1024):
                 size += len(chunk)
                 if size > limit:
                     raise InstallError("La descarga es demasiado grande.")
@@ -444,7 +444,7 @@ class EmulatorUpdates:
                 try:
                     status.latest = latest_release(source, self.get_json, self._asset(source))
                     status.update, status.likely = compare(source, exe, status.installed, status.latest)
-                except (*NET_ERRORS, KeyError, TypeError) as exc:
+                except (*NET_FAILURES, KeyError, TypeError) as exc:
                     status.error = "No pude revisar (sin conexión o el sitio no contestó)."
                     log.info("Actualizaciones: no pude revisar %s: %s", source.name, exc)
                 result.append(status)
@@ -493,7 +493,7 @@ class EmulatorUpdates:
                 raise InstallError(f"{source.name} ya está instalado.")
             try:
                 latest = latest_release(source, self.get_json)
-            except (*NET_ERRORS, KeyError, TypeError) as exc:
+            except (*NET_FAILURES, KeyError, TypeError) as exc:
                 raise InstallError("No pude revisar su versión (sin conexión o el sitio no contestó).") from exc
             if not latest.asset_url:
                 raise InstallError(f"{source.name} no publicó una versión para Windows que pueda instalar.")
@@ -501,8 +501,11 @@ class EmulatorUpdates:
             try:
                 self._cache().mkdir(parents=True, exist_ok=True)
                 zip_path = self.fetch(latest.asset_url, self._cache() / name)
-            except NET_ERRORS as exc:
+            except NET_FAILURES as exc:
                 raise InstallError("No pude bajarlo (revisa tu conexión).") from exc
+            except OSError as exc:  # el disco, no la red
+                log.warning("No pude guardar la descarga de %s: %s", source.name, exc)
+                raise InstallError("No pude guardar la descarga en el disco.") from exc
             folder.mkdir(parents=True, exist_ok=True)
             install_zip(zip_path, exe, latest.version)
             Path(zip_path).unlink(missing_ok=True)
@@ -551,8 +554,11 @@ class EmulatorUpdates:
             try:
                 cache.mkdir(parents=True, exist_ok=True)
                 zip_path = self.fetch(status.latest.asset_url, cache / name)
-            except NET_ERRORS as exc:
+            except NET_FAILURES as exc:
                 raise InstallError("No pude bajar la versión nueva (revisa tu conexión).") from exc
+            except OSError as exc:  # el disco, no la red
+                log.warning("No pude guardar la descarga de %s: %s", status.source.name, exc)
+                raise InstallError("No pude guardar la descarga en el disco.") from exc
             variant = self.variant(status.source.id) if status.source.id in VARIANTS else None
             version = f"{status.latest.version}-{variant}" if variant else status.latest.version
             install_zip(zip_path, status.exe, version, previous=status.installed)
