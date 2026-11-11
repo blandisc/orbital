@@ -122,7 +122,7 @@ struct MiMediaView<Top: View>: View {
         NavigationLink(value: MiMediaTitleRoute(id: t.id)) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: t.poster, title: model.name(t))
-                    .overlay(alignment: .topLeading) { if model.isNew(t) { DSNewDot(text: "Nuevo") } }   // el puntito de Inicio: se ve sobre cualquier póster
+                    .overlay(alignment: .topLeading) { if model.isNew(t) { DSCornerRibbon(text: "Nuevo") } }   // el listón de Inicio: se lee sobre cualquier póster
                     .overlay(alignment: .bottomTrailing) {
                         if model.onPhoneCount(t) > 0 {
                             Image(systemName: "arrow.down.circle.fill").font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.good, DS.backdropDeep)

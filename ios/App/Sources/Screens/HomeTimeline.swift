@@ -103,7 +103,7 @@ struct ReleaseTimeline: View {
                 .frame(minHeight: scaledLabelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: titleName(a.series.title, id: a.series.imdb, kind: "series"))
                     .overlay(alignment: .topLeading) {
-                        if moment == .new { DSNewDot(text: "Nuevo") }
+                        if moment == .new { DSCornerRibbon(text: "Nuevo") }
                     }
                     .overlay(alignment: .bottomLeading) {
                         if case .soon(let days) = moment, days >= 2 {

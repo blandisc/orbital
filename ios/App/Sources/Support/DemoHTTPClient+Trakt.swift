@@ -14,6 +14,8 @@ extension DemoHTTPClient {
                     "show": ["title": .string(title), "year": 2022, "network": .string(network), "ids": ["imdb": .string(imdb), "trakt": 1]]]
         }
         let rows: JSON = .array([row("tt14452776", "The Bear", days: 0, hour: 20, season: 3, episode: 4, network: "FX"),
+                                 // Ya salió hoy en la madrugada: lleva la cinta «Nuevo» en Inicio.
+                                 row("tt5180504", "The Witcher", days: 0, hour: 0, season: 4, episode: 1, network: "Netflix"),
                                  row("tt11280740", "Severance", days: 1, hour: 21, season: 2, episode: 7, network: "Apple TV+"),
                                  row("tt0903747", "Breaking Bad", days: 3, hour: 19, season: 1, episode: 4, network: "AMC"),
                                  // Para el calendario del mes: dos el mismo día, tres otro día y unos que ya salieron.
