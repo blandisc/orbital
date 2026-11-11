@@ -69,6 +69,8 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Flujo | Cómo | Estado |
 |---|---|---|
 | Abrir Stremio / YouTube / ES-DE / Big Picture | A | ✅ |
+| Guardado, Colecciones y Filtro avanzado (D5-A, 10 nov: ya no están en ☰) | En Películas y series, junto a «Todo · Películas · Series»: ↑ desde la primera fila, ▶ hasta el ícono (marcador, trofeo, lupa; al enfocarlo dice su nombre y el pie «A Guardado») y A. Con el mouse, clic en el ícono (al pasar el puntero dice su nombre); con el dedo, tocarlo | ✅ (nuevo) |
+| Decide por mí y «¿Qué vemos hoy?» (D5-A: una sola entrada) | En Explorar, X (también con el mosaico quieto; el pie dice «X Decide por mí» y se pica). Adentro, arriba, «Tres que caben · Una por una»: ↑ y A en «Una por una» abre el mazo. Con el dedo, el botón «Decide por mí» abajo a la izquierda de Explorar | ✅ (nuevo) |
 | Ver una película o episodio | La ficha: "Continuar T3 E5 · quedan 22 min" o "Ver" con el foco, "Desde el principio", reparto y dirección; en series, los episodios abren en el que ibas (vistos con ✓, a medias con su barra, por estrenar con su fecha). A arranca directo con la fuente recomendada (pantalla de carga con fases: Buscando dónde verlo → Conectando · 1080p · Al instante) | ✅ |
 | Qué hay disponible | La ficha busca las fuentes al abrirse y lo dice antes de elegir: "4K · Dolby Vision · Atmos · Inglés, Español · Al instante" (y Ver arranca casi al instante) | ✅ (nuevo) |
 | Episodios vistos | Los ✓ salen de tu cuenta de Stremio; terminar un episodio en Orbital lo marca también allá | ✅ (nuevo) |
@@ -136,7 +138,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 
 | Flujo | Cómo | Estado |
 |---|---|---|
-| Actualizar biblioteca, sonidos, mostrar ocultos | ☰ | ✅ |
+| Actualizar biblioteca, sonidos, mostrar ocultos | ☰ (desde el 10 nov, D5-A, ☰ es solo para el sistema: Panel rápido, Jugadores, Cómo se usa, Lo que puedes decir, Ajustes y Apagar; lo de ver vive en su pantalla) | ✅ |
 | Salir al escritorio y volver | ☰ → Salir al escritorio; Home para volver | ✅ |
 | Suspender, reiniciar, apagar | ☰ → Apagar. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
 | Tu consola | La primera vez (y en ☰ → Ajustes → Mantenimiento → Tu consola): qué encontró Orbital (Steam, emuladores, ES-DE, Stremio, reproductor, Alexa) y cómo resolver lo que falta | ✅ (nuevo) |

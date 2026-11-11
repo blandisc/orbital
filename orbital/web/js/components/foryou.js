@@ -2,6 +2,7 @@ import { api } from "../core/api.js";
 import { h, mount } from "../core/dom.js";
 import { playOf, primaryAction, titleOf } from "../core/foryou.js";
 import { createForYouMosaic } from "./foryou-mosaic.js";
+import { Button } from "./button.js";
 import { EmptyState } from "./ui.js";
 
 /**
@@ -24,7 +25,11 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     if (item?.key) detailTimer = setTimeout(() => fetchDetails(item), 250);
   };
   const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item), covered });
-  const el = h("section", { class: "foryou is-parked", hidden: true, "aria-label": "Explorar" }, h("div", { class: "foryou__stage" }, mosaic.el), notice);
+  // D5-A: «Decide por mí» (con «Una por una», el mazo) es la entrada de Explorar. Con el mando, el teclado o el mouse está en
+  // el pie (X, que también se pica); con el dedo no hay pie, así que va este botón.
+  const decide = onDecide && Button({ icon: "spark", label: "Decide por mí", onPress: () => onDecide() });
+  decide?.classList.add("foryou__decide");
+  const el = h("section", { class: "foryou is-parked", hidden: true, "aria-label": "Explorar" }, h("div", { class: "foryou__stage" }, mosaic.el), notice, decide);
 
   let data = null;
   let loading = null;
@@ -94,11 +99,11 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
     // Del ambiente: si la pieza que tenías sigue a la vista, se queda enfocada y el botón cuenta (A, Y, X, flechas);
     // si ya se fue, el primer botón solo despierta. Los que llevan a otro lado (sección, menú, buscar) siempre pasan.
     if (mosaic.ambient && ["prevsection", "nextsection", "menu", "search"].includes(action)) { mosaic.wake(); return false; }
+    if (action === "alt" && onDecide) { mosaic.wake(); onDecide(); return true; } // X: «Decide por mí», también en ambiente (el pie lo dice)
     if (mosaic.ambient && mosaic.wake() === true) return true;
     mosaic.wake();
     if (action === "select") return activate(mosaic.current);
     if (action === "options") { if (mosaic.current) onMore?.(mosaic.current); return mosaic.current ? true : "edge"; }
-    if (action === "alt" && onDecide) { onDecide(); return true; } // X: «Decide por mí» (el 🎲 del iPhone)
     return mosaic.handle(action);
   }
 
@@ -106,10 +111,11 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onDecide, onF
   function hints(g) {
     const end = { glyph: g.menu, label: "Menú", end: true }; // como en todas las pantallas base (las secciones ya las enseña la barra de arriba)
     if (!data) return [end];
-    if (mosaic.ambient) return [{ glyph: g.select, label: "Explorar" }, end]; // A entra al mosaico: el pie dice eso, no «Elegir»
+    const decide = onDecide && { glyph: g.alt, label: "Decide por mí" }; // D5-A: la entrada de Explorar, siempre a la vista
+    if (mosaic.ambient) return [{ glyph: g.select, label: "Explorar" }, decide, end].filter(Boolean); // A entra al mosaico: el pie dice eso, no «Elegir»
     const item = mosaic.current;
     return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Opciones" },
-      onDecide && { glyph: g.alt, label: "Decide por mí" }, end].filter(Boolean);
+      decide, end].filter(Boolean);
   }
 
   /** «No me interesa»: se quita de todos lados y no vuelve. */

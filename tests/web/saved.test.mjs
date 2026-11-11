@@ -5,9 +5,11 @@ import { gameMenu, mainMenu } from "../../orbital/web/js/core/menus.js";
 
 // El gestor tipo Trakt en la TV (olas 1 y 2): las mismas reglas que `SavedModel.moves`, `batchActions` y el «···» del iPhone.
 
-test("Guardado está en ☰, con su camino visible (G2-A)", () => {
-  const saved = mainMenu({ running: null, hiddenCount: 0 }).options.find((o) => o.label === "Guardado");
-  assert.deepEqual(saved.command, { type: "saved" });
+test("Guardado ya no está en ☰ (D5-A): su camino visible es el ícono de Películas y series (G2-A)", async () => {
+  assert.ok(!mainMenu({ running: null, hiddenCount: 0 }).options.some((o) => o.label === "Guardado"));
+  const { readFileSync } = await import("node:fs");
+  const main = readFileSync(new URL("../../orbital/web/js/main.js", import.meta.url), "utf8");
+  assert.match(main, /\{ id: "saved", icon: "bookmark", label: "Guardado", command: \{ type: "saved" \} \}/);
 });
 
 test("«Mover a…» desde cada montón, como el iPhone", () => {

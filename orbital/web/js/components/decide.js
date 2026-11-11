@@ -7,10 +7,14 @@ import { Pill, ScreenHead } from "./ui.js";
  * «¿Qué vemos?» (como DecideView del iPhone): tres de tus sugerencias que caben en el tiempo que tienes y en tu ánimo,
  * lado a lado; la enfocada dice por qué («58 min · IMDb 8.1 · Comedia»). Abajo, lo que puedes cambiar: tiempo (la hora
  * lo propone), ánimo y series o películas, con las píldoras de siempre (`Pill`).
- *   ←/→ propuesta · ↓ a las preguntas · A ver su ficha · X barajar · Y hoy no · B cerrar
+ *   ←/→ propuesta · ↓ a las preguntas · ↑ a «Tres que caben · Una por una» · A ver su ficha · X barajar · Y hoy no · B cerrar
  *
- * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · onPick(item) · onMove() · onClose()
+ * D5-A (revisión del 10 nov): «Decide por mí» y «¿Qué vemos hoy?» son una sola entrada de Explorar (X). Arriba, dos pestañas:
+ * «Tres que caben» (esta) y «Una por una» (el mazo, `onDeck`).
+ *
+ * load({ time, mood, kind }) → { time, mood, kind, picks } · skip(imdb) · onPick(item) · onMove() · onClose() · onDeck()
  */
+export const DECIDE_MODES = ["Tres que caben", "Una por una"];
 const QUESTIONS = [
   { id: "time", label: "Tiempo", options: [["short", "Media hora"], ["hour", "Una hora"], ["long", "Dos horas o más"]] },
   { id: "mood", label: "Ánimo", options: [["", "Cualquiera"], ["light", "Ligera"], ["intense", "Intensa"], ["think", "Para pensar"], ["together", "En pareja"]] },
@@ -36,7 +40,7 @@ export function pickFacts(p) {
     p.imdb_rating ? `IMDb ${p.imdb_rating}` : "", genreNames(p.genres || []).slice(0, 2).join(", ")].filter(Boolean).join(" · ");
 }
 
-export function createDecide({ load, skip, onPick, onMove, onClose, onChange = () => {} }) {
+export function createDecide({ load, skip, onPick, onMove, onClose, onDeck = null, onChange = () => {} }) {
   const lead = h("p", { class: "decide__lead" });
   const picksEl = h("div", { class: "decide__picks", role: "group" });
   const name = h("h3", { class: "decide__name" });
@@ -44,14 +48,15 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
   const overview = h("p", { class: "decide__overview" });
   const status = h("p", { class: "decide__status", role: "status" });
   const questions = h("div", { class: "decide__questions" });
+  const modes = h("div", { class: "decide__modes", role: "tablist", "aria-label": "Cómo decidir" });
   const el = h("section", { class: "decide screen", hidden: true, "aria-label": "Decide por mí" },
-    ScreenHead({ eyebrow: "Explorar", title: "Decide por mí" }), lead,
+    ScreenHead({ eyebrow: "Explorar", title: "Decide por mí" }), modes, lead,
     h("div", { class: "decide__stage" }, picksEl, h("div", { class: "decide__about" }, name, why, overview)), status, questions);
 
   let choice = { time: "", mood: "", kind: "" };
   let picks = [];
   let index = 0;
-  let zone = "picks"; // "picks" | 0..2 (una pregunta)
+  let zone = "picks"; // "modes" | "picks" | 0..2 (una pregunta)
   let option = 0;
   let token = 0;
   let cancelExit = () => {};
@@ -81,11 +86,17 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
       }))))));
   }
 
+  function paintModes() {
+    mount(modes, DECIDE_MODES.map((label, i) => Pill(label, { on: i === 0, tone: "tab", role: "tab", tabindex: "-1",
+      className: zone === "modes" && option === i && "is-focused", onClick: () => (i === 1 ? onDeck?.() : null) })));
+  }
+
   function paint() {
     [...picksEl.children].forEach((card, i) => card.classList.toggle("is-focused", zone === "picks" && i === index));
     paintAbout();
+    paintModes();
     paintQuestions();
-    el.dataset.zone = zone === "picks" ? "picks" : "questions";
+    el.dataset.zone = zone === "picks" || zone === "modes" ? zone : "questions";
   }
 
   async function shuffle() {
@@ -152,10 +163,21 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
     if (action === "back") { close(); return true; }
     if (action === "menu" || action === "search") return false;
     if (action === "alt") { onMove?.(); shuffle(); return true; }
+    if (zone === "modes") {
+      if (action === "left" && option > 0) option--;
+      else if (action === "right" && option < DECIDE_MODES.length - 1) option++;
+      else if (action === "down") zone = "picks";
+      else if (action === "select") { if (option === 1) onDeck?.(); return true; }
+      else return true;
+      onMove?.();
+      paint();
+      return true;
+    }
     if (zone === "picks") {
       if (action === "left" && index > 0) index--;
       else if (action === "right" && index < picks.length - 1) index++;
       else if (action === "down") { zone = 0; option = QUESTIONS[0].options.findIndex(([v]) => v === (choice.time || "")); option = Math.max(0, option); }
+      else if (action === "up" && onDeck) { zone = "modes"; option = 1; } // arriba espera «Una por una»: lo otro ya lo estás viendo
       else if (action === "select") { if (picks[index]) onPick?.(picks[index]); return true; }
       else if (action === "options") { notToday(); return true; }
       else return true;
@@ -179,7 +201,9 @@ export function createDecide({ load, skip, onPick, onMove, onClose, onChange = (
     return true;
   }
 
-  const hints = (g) => (zone === "picks"
+  const hints = (g) => (zone === "modes"
+    ? [{ glyph: g.select, label: option === 1 ? "Una por una" : "Elegir" }, { glyph: g.back, label: "Atrás", end: true }]
+    : zone === "picks"
     ? [picks.length && { glyph: g.select, label: "Ver la ficha" }, { glyph: g.alt, label: "Barajar" },
       picks.length && { glyph: g.options, label: "Hoy no" }, { glyph: g.rows, label: "Cambiar" }, { glyph: g.back, label: "Atrás", end: true }]
     : [{ glyph: g.select, label: "Elegir" }, { glyph: g.alt, label: "Barajar" }, { glyph: g.back, label: "Atrás", end: true }]).filter(Boolean);

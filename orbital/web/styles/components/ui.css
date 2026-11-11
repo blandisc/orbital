@@ -48,6 +48,17 @@
   border-radius: var(--tab-mark); background: currentColor;
 }
 .is-focused.pill--tab.pill::after, .is-focused.pill--tab::after { content: none; }
+/* Píldora de ícono (D5-A, las herramientas de Películas y series): solo el ícono; su nombre sale al enfocarla o al pasar el
+   mouse (con el dedo, el ícono basta y su nombre lo lee el lector de pantalla). */
+.pill--icon { gap: 0; padding-inline: var(--space-3); }
+.pill--icon .icon { width: var(--icon-md); height: var(--icon-md); }
+.pill--icon .pill__name { display: none; }
+.pill--icon.is-focused { gap: var(--space-2); }
+.pill--icon.is-focused .pill__name { display: inline; }
+@media (hover: hover) {
+  .pill--icon:hover { gap: var(--space-2); color: var(--color-text); }
+  .pill--icon:hover .pill__name { display: inline; }
+}
 .is-focused.pill, .is-focused.pill { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
 /* GlassSwitch: el selector de vidrio del segundo piso (las consolas de Juegos). La cápsula es vidrio; la elegida, blanco tenue;
    la enfocada, el foco invertido de toda píldora. Si no caben con su nombre, las que no están elegidas ni enfocadas quedan en su

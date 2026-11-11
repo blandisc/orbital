@@ -314,7 +314,7 @@ export function voiceHelpMenu(status = null, { now = Date.now() } = {}) {
 }
 
 /**
- * Menú (☰): solo lo de todos los días. Lo técnico vive en Ajustes → Mantenimiento.
+ * Menú (☰): solo lo del sistema (D5-A). Lo técnico vive en Ajustes → Mantenimiento; lo de ver, en su pantalla.
  */
 export function mainMenu({ running, hiddenCount, canExit = false, alexa = false }) {
   const options = [
@@ -329,14 +329,9 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   if (hiddenCount) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
-  // Como el iPhone: «¿Qué vemos?» (Para ti › 🎲). «Lo que ves» es solo del iPhone (Fernando, 1 nov 2026).
+  // D5-A (revisión del 10 nov): ☰ es solo para el sistema. Guardado, Colecciones y Filtro avanzado viven a la vista en
+  // Películas y series (junto a Todo · Películas · Series); «Decide por mí» (con «Una por una», el mazo) en Explorar (X).
   options.push({ icon: "gamepad", label: "Jugadores", hint: "Quién es el Jugador 1, 2…", command: { type: "players" } });
-  options.push({ icon: "spark", label: "Decide por mí", hint: "Tres que caben en tu tiempo", command: { type: "decide" } });
-  options.push({ icon: "bookmark", label: "¿Qué vemos hoy?", hint: "Encuentra tu match perfecto", command: { type: "match" } });
-  // Guardado (G2-A): lo tuyo por estado y tus listas, como Biblioteca › Guardado del iPhone.
-  options.push({ icon: "bookmark", label: "Guardado", hint: "Mi lista, Viendo, Vistas, Las dejé y tus listas", command: { type: "saved" } });
-  options.push({ icon: "trophy", label: "Colecciones", hint: "Los premios y las listas famosas", command: { type: "collections" } });
-  options.push({ icon: "search", label: "Filtro avanzado", hint: "Género, época, calificación, dónde verla…", command: { type: "filter" } });
   options.push({ icon: "info", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });

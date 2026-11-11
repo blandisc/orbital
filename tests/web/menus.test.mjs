@@ -32,12 +32,14 @@ test("opciones de un juego favorito y sin alternativas", () => {
   assert.equal(gameMenu(null), null);
 });
 
-test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento", () => {
+test("menú ☰: solo el sistema (D5-A); lo técnico en Ajustes → Mantenimiento", () => {
   const basic = mainMenu({ running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Jugadores", "Decide por mí", "¿Qué vemos hoy?", "Guardado", "Colecciones", "Filtro avanzado", "Cómo se usa", "Ajustes", "Apagar"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Jugadores", "Cómo se usa", "Ajustes", "Apagar"]);
+  assert.deepEqual(mainMenu({ running: null, hiddenCount: 0, alexa: true }).options.map((o) => o.label),
+    ["Panel rápido", "Jugadores", "Cómo se usa", "Lo que puedes decir", "Ajustes", "Apagar"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Volver a Zelda", "Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Jugadores", "Decide por mí", "¿Qué vemos hoy?", "Guardado", "Colecciones", "Filtro avanzado", "Cómo se usa", "Ajustes", "Apagar"]);
+    ["Volver a Zelda", "Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Jugadores", "Cómo se usa", "Ajustes", "Apagar"]);
   // Volver a lo abierto (Home en el mando) siempre tiene su camino en ☰: el pie no siempre lo enseña (tres pistas).
   assert.deepEqual(full.options[0], { icon: "play", label: "Volver a Zelda", hint: "Home en el mando", command: { type: "resume" } });
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.

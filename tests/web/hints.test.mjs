@@ -92,7 +92,7 @@ test("aviso de voz: «No era eso» con B (cierra y busca lo que oyó) y «Lo que
 
 test("T5: en la primera fila de Películas y series, ↑ lleva a «Todo · Películas · Series» y el pie lo dice", async () => {
   const above = footerHints(GLYPHS.gamepad, { kinds: "above", groups: true });
-  assert.ok(above.some((i) => i.glyph === "↑" && i.label === "Mostrar" && !i.offscreen));
+  assert.ok(above.some((i) => i.glyph === "↑" && i.label === "Mostrar y Guardado" && !i.offscreen)); // D5-A: y los íconos
   // Ya en las pestañas: A elige, ↓ regresa a la fila; nada de la tarjeta (no está enfocada).
   assert.deepEqual(labels(footerHints(GLYPHS.gamepad, { kinds: "on", primary: "Ver", alt: "Ficha" })), ["Mostrar", "Volver a la fila", "Menú"]);
   // El mando llega: ↑ desde la fila 0 de «media» entra a las pestañas (como los filtros de Juegos) y ◀ ▶ / A / ↓ las recorren.
@@ -100,7 +100,9 @@ test("T5: en la primera fila de Películas y series, ↑ lleva a «Todo · Pelí
   const main = readFileSync(new URL("../../orbital/web/js/main.js", import.meta.url), "utf8");
   assert.match(main, /case "up": \{\s*if \(r === 0 && state\.section === "media"[^\n]*enterKinds\(\)/);
   assert.match(main, /if \(kindFocus != null\) return handleKinds\(action\);/);
-  assert.match(main, /case "select": return MEDIA_KINDS\[kindFocus\]\[0\] === mediaFilter/);
+  assert.match(main, /return MEDIA_KINDS\[kindFocus\]\[0\] === mediaFilter/);
+  // D5-A: en un ícono, A dice qué abre.
+  assert.equal(footerHints(GLYPHS.gamepad, { kinds: "on", kindAction: "Colecciones" })[0].label, "Colecciones");
 });
 
 test("D4-B: con una consola enfocada, lo de arriba ya enseña «Entrar» y «Seguir…»: el pie no los repite", async () => {

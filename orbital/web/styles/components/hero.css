@@ -108,4 +108,7 @@
 .hero--steady .hero__facts:empty::before { content: "\200b"; } /* sin datos: el renglón queda, vacío */
 :is([data-text-size="large"], [data-text-size="xlarge"]) .hero--steady :is(.hero__logo, .hero__title) { height: 5rem; margin: var(--space-2) 0; }
 /* Todo · Películas · Series (pestañas de texto) arriba del porqué, como la franja del Inicio del iPhone. */
-.hero__kinds { display: flex; align-self: flex-start; flex-shrink: 0; gap: var(--space-1); margin: 0 0 var(--space-3) calc(var(--space-3) * -1); }
+.hero__kinds { display: flex; align-items: center; align-self: flex-start; flex-shrink: 0; gap: var(--space-1); margin: 0 0 var(--space-3) calc(var(--space-3) * -1); }
+/* D5-A: después de las pestañas, Guardado, Colecciones y Filtro avanzado como íconos (lo que antes vivía en ☰). Una rayita los
+   separa: las pestañas cambian lo que ves; los íconos abren otra pantalla. */
+.hero__kinds-gap { flex: none; align-self: stretch; margin: var(--space-2) var(--space-2); box-shadow: -1px 0 0 var(--color-hairline-strong); }

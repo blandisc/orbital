@@ -307,25 +307,27 @@ def test_no_text_is_cut_in_half(server, width, height, size):
             look("La ficha de un juego")
             page.keyboard.press("Escape")
             page.wait_for_timeout(500)
-            page.keyboard.press("m")
-            page.locator(".sheet__item", has_text="¿Qué vemos hoy?").first.click()
-            page.locator(".match__card").first.wait_for(timeout=8000)
-            look("¿Qué vemos hoy?")
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(500)
+            # D5-A: Filtro avanzado y Colecciones son íconos de Películas y series (ya no están en ☰).
+            page.keyboard.press("e")  # de Juegos a Películas y series
+            page.wait_for_timeout(800)
             for screen, ready_sel in (("Filtro avanzado", ".filter__row"), ("Colecciones", ".showcase__item, .showcase .empty-state")):
-                page.keyboard.press("m")
-                page.locator(".sheet__item", has_text=screen).first.click()
+                page.locator(f'.hero__kinds .pill--icon[aria-label="{screen}"]').click()
                 page.locator(ready_sel).first.wait_for(timeout=10000)
                 look(screen)
                 page.keyboard.press("Escape")
                 page.wait_for_timeout(500)
-            # Las pantallas menos comunes también (Fernando, 2 nov: «pantallas secundarias, no tan comunes»): Decide por mí,
-            # Buscar con resultados y las hojas del menú.
-            page.keyboard.press("m")
-            page.locator(".sheet__item", has_text="Decide por mí").first.click()
+            # Las pantallas menos comunes también (Fernando, 2 nov: «pantallas secundarias, no tan comunes»): Decide por mí
+            # (X en Explorar) y, adentro, «Una por una» (el mazo de «¿Qué vemos hoy?»), Buscar con resultados y las hojas del menú.
+            for _ in range(3):  # de Películas y series a Explorar
+                page.keyboard.press("q")
+                page.wait_for_timeout(400)
+            page.keyboard.press("x")
             page.wait_for_timeout(1500)
             look("Decide por mí")
+            page.keyboard.press("ArrowUp")
+            page.keyboard.press("Enter")
+            page.locator(".match__card").first.wait_for(timeout=8000)
+            look("¿Qué vemos hoy?")
             page.keyboard.press("Escape")
             page.wait_for_timeout(500)
             for sheet in ("Panel rápido", "Jugadores"):

@@ -9,7 +9,7 @@ import { Pill, PlatformMark } from "./ui.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
 
-export function createHero({ onAction, onKind = null }) {
+export function createHero({ onAction, onKind = null, onTool = null }) {
   // Todo · Películas · Series a la vista (como la franja del Inicio del iPhone): pestañas de texto que filtran toda la
   // sección. Con el mando, ☰ › Mostrar; con el dedo o el mouse, aquí mismo. Solo en Películas y series (setKinds).
   const kinds = h("div", { class: "hero__kinds", role: "tablist", "aria-label": "Mostrar", hidden: true });
@@ -159,18 +159,26 @@ export function createHero({ onAction, onKind = null }) {
     }, 110);
   }
 
-  /** Las pestañas Todo · Películas · Series: [[valor, nombre]] y el elegido; sin `choices`, se esconden. */
-  function setKinds(choices = null, current = "all") {
+  /**
+   * Las pestañas Todo · Películas · Series: [[valor, nombre]] y el elegido; sin `choices`, se esconden.
+   * `tools` (D5-A): lo que antes vivía en ☰, a la vista después de las pestañas como íconos (Guardado, Colecciones, Filtro
+   * avanzado): [{ id, icon, label }]. Su nombre sale al enfocarlo o al pasar el mouse; con el dedo, el ícono basta.
+   */
+  function setKinds(choices = null, current = "all", tools = []) {
     kinds.hidden = !choices;
     el.classList.toggle("hero--steady", !!choices); // Películas y series: el héroe no cambia de alto entre títulos
     if (!choices) return mount(kinds);
-    mount(kinds, choices.map(([value, label]) => Pill(label, { on: value === current, tone: "tab", role: "tab", tabindex: "-1",
-      onClick: (event) => { event.stopPropagation(); onKind?.(value); } })));
+    const tabs = choices.map(([value, label]) => Pill(label, { on: value === current, tone: "tab", role: "tab", tabindex: "-1",
+      onClick: (event) => { event.stopPropagation(); onKind?.(value); } }));
+    const icons = tools.map((tool) => Pill(h("span", { class: "pill__name" }, tool.label), {
+      icon: svg(ICONS[tool.icon]), tone: "tab", className: "pill--icon", tabindex: "-1", "aria-label": tool.label, title: tool.label,
+      onClick: (event) => { event.stopPropagation(); onTool?.(tool.id); } }));
+    mount(kinds, ...tabs, icons.length ? h("span", { class: "hero__kinds-gap", "aria-hidden": "true" }) : null, ...icons);
   }
 
-  /** T5: el foco del mando en una pestaña (su índice), o en ninguna (null). */
+  /** T5: el foco del mando en una pestaña o un ícono (su índice, contando las pestañas primero), o en ninguno (null). */
   function focusKind(index = null) {
-    [...kinds.children].forEach((pill, i) => pill.classList.toggle("is-focused", i === index));
+    [...kinds.querySelectorAll(".pill")].forEach((pill, i) => pill.classList.toggle("is-focused", i === index));
   }
 
   return { el, update, setKinds, focusKind };

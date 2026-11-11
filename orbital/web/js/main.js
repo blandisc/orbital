@@ -99,7 +99,8 @@ const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "to
 const ui = {
   backdrop: createBackdrop(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
-  hero: createHero({ onAction: (action) => handleAction(action), onKind: (value) => runCommand({ type: "media-filter", value }) }),
+  hero: createHero({ onAction: (action) => handleAction(action), onKind: (value) => runCommand({ type: "media-filter", value }),
+    onTool: (id) => runCommand(MEDIA_TOOLS.find((t) => t.id === id).command) }),
   home: createHome({
     outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
     onFocus: (target) => homeFocused(target),
@@ -278,7 +279,7 @@ const ui = {
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
     watched: () => api.forYouWatched().then((r) => r.ids || []),
   }),
-  // Como el iPhone: «¿Qué vemos?» (X en Para ti, o ☰) y «Tu año» (☰).
+  // Como el iPhone: «Decide por mí» (X en Explorar, o su botón con el dedo), con «Una por una» (el mazo) arriba.
   decide: createDecide({
     load: (choice) => api.forYouDecide(choice),
     skip: (imdb) => api.forYouDecideSkip(imdb),
@@ -286,6 +287,7 @@ const ui = {
     onChange: () => renderHints(),
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
+    onDeck: () => { ui.decide.close(); runCommand({ type: "match" }); }, // D5-A: «Una por una» es «¿Qué vemos hoy?»
   }),
   // Ajustes a pantalla completa (☰ › Ajustes): el riel de categorías y la lámina de la elegida.
   settings: createSettings({
@@ -541,6 +543,7 @@ function renderHints() {
     rows: state.rows.length,
     heroButtons: !!item, // el héroe enseña los botones de lo enfocado
     kinds: state.section === "media" ? (kindFocus != null ? "on" : r === 0 ? "above" : null) : null, // T5
+    kindAction: kindAction(), // D5-A: «Mostrar» en una pestaña; en un ícono, su nombre («Guardado»)
     status: kindFocus == null && item?.state_big ? item.state_label : null, // T9: el estado de un pedido, con palabras
   }));
 }
@@ -1174,8 +1177,18 @@ const MEDIA_KINDS = [["all", "Todo"], ["movie", "Películas"], ["series", "Serie
 // T5 (10 nov 2026): con el mando o el teclado, ↑ desde la primera fila entra a «Todo · Películas · Series» (como los filtros de
 // Juegos); ◀ ▶ cambian de pestaña, A la elige, ↓ o B regresan a la fila. `kindFocus`: cuál está enfocada (null: ninguna).
 let kindFocus = null;
+// D5-A (revisión del 10 nov): lo que vivía en ☰ y es de ver, a la vista después de las pestañas, como íconos. Con el mando
+// o el teclado, ↑ desde la primera fila y ▶ hasta el ícono; A lo abre. Con el mouse o el dedo, un clic o un toque.
+const MEDIA_TOOLS = [
+  { id: "saved", icon: "bookmark", label: "Guardado", command: { type: "saved" } },
+  { id: "collections", icon: "trophy", label: "Colecciones", command: { type: "collections" } },
+  { id: "filter", icon: "search", label: "Filtro avanzado", command: { type: "filter" } },
+];
+const kindStops = () => MEDIA_KINDS.length + MEDIA_TOOLS.length; // las pestañas y luego los íconos
+/** Lo que hace A donde está el foco de arriba: la pestaña («Mostrar») o el nombre del ícono. */
+const kindAction = () => (kindFocus == null ? null : kindFocus < MEDIA_KINDS.length ? "Mostrar" : MEDIA_TOOLS[kindFocus - MEDIA_KINDS.length].label);
 const paintMediaKinds = () => {
-  ui.hero.setKinds(state.section === "media" ? MEDIA_KINDS : null, mediaFilter);
+  ui.hero.setKinds(state.section === "media" ? MEDIA_KINDS : null, mediaFilter, MEDIA_TOOLS);
   if (kindFocus != null) ui.hero.focusKind(kindFocus);
 };
 function enterKinds() {
@@ -1197,14 +1210,21 @@ function handleKinds(action) {
   switch (action) {
     case "left":
     case "right": {
-      const to = Math.min(MEDIA_KINDS.length - 1, Math.max(0, kindFocus + (action === "right" ? 1 : -1)));
+      const to = Math.min(kindStops() - 1, Math.max(0, kindFocus + (action === "right" ? 1 : -1)));
       if (to === kindFocus) return sound.play("edge");
       kindFocus = to;
       ui.hero.focusKind(to);
       sound.play("move");
       return renderHints();
     }
-    case "select": return MEDIA_KINDS[kindFocus][0] === mediaFilter ? sound.play("select") : runCommand({ type: "media-filter", value: MEDIA_KINDS[kindFocus][0] });
+    case "select": {
+      if (kindFocus >= MEDIA_KINDS.length) {
+        const tool = MEDIA_TOOLS[kindFocus - MEDIA_KINDS.length];
+        leaveKinds();
+        return runCommand(tool.command);
+      }
+      return MEDIA_KINDS[kindFocus][0] === mediaFilter ? sound.play("select") : runCommand({ type: "media-filter", value: MEDIA_KINDS[kindFocus][0] });
+    }
     case "up": return sound.play("edge");
     case "down":
     case "back": sound.play("move"); return leaveKinds();

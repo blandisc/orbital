@@ -5,7 +5,7 @@ import { Button } from "./button.js";
 import { ScreenHead } from "./ui.js";
 
 /**
- * El filtro avanzado (☰ › Filtro avanzado; como el del iPhone, ola 3 de «Una sola Orbital»): una fila por filtro —formato,
+ * El filtro avanzado (el ícono junto a «Todo · Películas · Series» en Películas y series, D5-A; como el del iPhone, ola 3 de «Una sola Orbital»): una fila por filtro —formato,
  * género, época, calificación, fama, dónde verla y país—, cada uno con su color del arcoíris del azul de Orbital (el formato
  * y «Dónde verla», en el azul de Orbital: son de Orbital). ↑↓ de filtro en filtro, ←→ (o A) cambian su valor, y abajo
  * «Ver N títulos» abre los resultados. X borra todo. Con el dedo o el ratón: tocar una fila avanza su valor; ‹ › también.

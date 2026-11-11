@@ -1,6 +1,9 @@
 /* «¿Qué vemos?» (js/components/decide.js), como DecideView del iPhone: tres carteles lado a lado, el porqué de la
    enfocada y abajo las preguntas en píldora (`Pill`). El marco es .screen. */
 .decide { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.decide__modes { display: flex; gap: var(--space-1); }
+/* En pantallas bajas (la Legion Go) las pestañas de arriba le quitan aire a las preguntas: los carteles bajan un poco. */
+@media (max-height: 900px) { .decide { --decide-poster-height: 13rem; } }
 .decide__lead { margin: 0; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .decide__stage { display: flex; align-items: center; gap: var(--space-10); min-height: calc(var(--decide-poster-height) * var(--card-focus-scale) + var(--space-6)); padding-top: var(--space-6); }
 .decide__picks { display: flex; align-items: center; gap: var(--card-gap); }
