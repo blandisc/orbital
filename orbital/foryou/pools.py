@@ -9,7 +9,7 @@ DETAILS (lo de cada título: TMDB, Cinemeta, Trakt). WARM es lo que se calienta 
 en un nivel y pide otro igual o más afuera lo hace en su propio hilo, sin encolar: así ningún hilo se queda esperando
 a otro que espera por él (el bloqueo de tareas anidadas).
 
-Quién es dueño de qué: cada `Pool` es dueño de su `_lock` (crear el grupo una sola vez); cada llamada a `map` es dueña
+Quién es dueño de qué: cada `Pool` es dueño de su `_lock` (abrir y cerrar el grupo, y contar `_active`); cada llamada a `map` es dueña
 de su `lock` local (repartir los elementos entre sus hilos). Nada más se comparte.
 """
 
@@ -34,12 +34,23 @@ class Pool:
         self.name, self.level, self.workers = name, level, workers
         self._lock = threading.Lock()
         self._pool: ThreadPoolExecutor | None = None
+        self._active = 0  # cuántas llamadas a `map` lo usan ahora
 
-    def _executor(self) -> ThreadPoolExecutor:
+    def _enter(self) -> ThreadPoolExecutor:
         with self._lock:
+            self._active += 1
             if self._pool is None:
                 self._pool = ThreadPoolExecutor(max_workers=self.workers, thread_name_prefix=f"parati-{self.name}")
             return self._pool
+
+    def _leave(self) -> None:
+        """Cuando ya nadie lo usa, el grupo suelta sus hilos (no se quedan dormidos ocupando memoria; el siguiente pedido
+        abre los suyos, que es barato)."""
+        with self._lock:
+            self._active -= 1
+            if self._active == 0 and self._pool is not None:
+                self._pool.shutdown(wait=False)
+                self._pool = None
 
     def map(self, fn: Callable[[T], R], items: Iterable[T], at_most: int | None = None) -> list[R]:
         todo = list(items)
@@ -68,7 +79,11 @@ class Pool:
                 _here.level = before
 
         n = min(at_most or self.workers, self.workers, len(todo))
-        wait([self._executor().submit(drain) for _ in range(n)])
+        pool = self._enter()
+        try:
+            wait([pool.submit(drain) for _ in range(n)])
+        finally:
+            self._leave()
         if errors:
             raise min(errors, key=lambda e: e[0])[1]  # el primero en orden, como lo lanzaba pool.map
         return results

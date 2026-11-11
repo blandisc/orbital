@@ -116,3 +116,13 @@ def test_nested_calls_never_wait_on_each_other():
     t.join(5)
     assert not t.is_alive(), "las tareas anidadas se bloquearon"
     assert out == [[[[11, 12, 10, 10]] * 2, [[21, 22, 20, 20]] * 2]]
+
+
+def test_a_pool_lets_its_threads_go_when_nobody_uses_it():
+    """Sin hilos dormidos de más: en Windows, el perfil del arranque mira cada hilo vivo en cada muestra."""
+    pool = pools.Pool("suelta", level=1, workers=4)
+    assert pool.map(lambda x: x + 1, range(8)) == list(range(1, 9))
+    deadline = time.monotonic() + 5
+    while any(t.name.startswith("parati-suelta") for t in threading.enumerate()) and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert not [t.name for t in threading.enumerate() if t.name.startswith("parati-suelta")]
