@@ -258,9 +258,9 @@ def offline_cinemeta(monkeypatch):
     from orbital.library import cinemeta
 
     monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path: {"metas": []})
-    from orbital import watch
+    from orbital.watch import library as watch_library  # F6: la espera vive en la pieza de la biblioteca
 
-    monkeypatch.setattr(watch, "RETRY_SECONDS", 0)
+    monkeypatch.setattr(watch_library, "RETRY_SECONDS", 0)
 
 
 @pytest.fixture(autouse=True)
