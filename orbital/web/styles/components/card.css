@@ -136,6 +136,10 @@
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title); overflow-wrap: break-word; hyphens: auto; }
 .card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); font-weight: var(--type-caption-weight); letter-spacing: var(--type-caption-tracking); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
+/* Lo que te falta de algo a medias («T2 E3 · quedan 12 min») sobre un póster con el nombre encima: entero
+   (P4, pasada del 10 nov: «Seguir viendo» de Películas y series y Buscar decían «T2 E3 · queda…» y «quedan 1 h 10…»); en los
+   renglones que necesite (hasta tres, en la portada chica de 1280 × 800). */
+.card--named.card--has-progress:not(.card--wide) .card__subtitle { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; white-space: normal; }
 /* Foco: el juego salta (resorte con rebote), se eleva y flota con su sombra, sin anillo (Apple TV), y proyecta un brillo de
    su propio color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .is-focused.card {

@@ -71,10 +71,8 @@
 /* Todas enseñan el título en dos líneas (antes solo la enfocada: «Hollow Kni…» sobraba lugar): «Harry Potter and the Deat…» ×2 no se distinguían. */
 .search .card:not(.card--no-art, .card--named) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 /* Sin portada, el nombre va encima del arte como en cualquier lista, entero (P4: antes, en la portada chica de Buscar, se
-   cortaba en dos renglones: «Zelda Tears of the…»): hasta cuatro renglones, que caben bajo el ícono de su consola. Lo que
-   dice debajo (T2 E3 · quedan 12 min) también en dos renglones, no «T2 E3 · queda…». */
+   cortaba en dos renglones: «Zelda Tears of the…»): hasta cuatro renglones, que caben bajo el ícono de su consola. */
 .search :is(.card--no-art, .card--named) .card__title { -webkit-line-clamp: 4; }
-.search .card--named.card--has-progress .card__subtitle { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
 
 /* El teclado es el componente común (keyboard.css): aquí, compacto y debajo del campo. */
 .search .keyboard { grid-column: 1; grid-row: 2; align-self: start; width: 100%; min-height: 0; }

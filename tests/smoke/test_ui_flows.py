@@ -90,6 +90,10 @@ def test_every_card_says_what_it_is(browser, server, width, height):  # noqa: F8
     page.wait_for_timeout(1500)
     found["Películas y series"] = page.evaluate(NAMELESS)
     assert not any(found.values()), found
+    # Lo que te falta de algo a medias se lee entero: «T2 E3 · quedan 12 min», no «T2 E3 · queda…» (pasada P4).
+    cut = page.evaluate("""() => [...document.querySelectorAll('.card--named.card--has-progress .card__subtitle')]
+      .filter((s) => s.getClientRects().length && s.scrollHeight > s.clientHeight + 1).map((s) => s.textContent)""")
+    assert not cut, cut
     assert not page.errors, page.errors
 
 
