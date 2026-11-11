@@ -136,19 +136,19 @@ const ui = {
   }),
   search: createSearch({
     // Películas y series: su ficha encima de la búsqueda; un juego se abre (y la búsqueda se cierra).
-    onOpen: (result) => (isWatchable(result) || result.kind ? openTitle(result) : (ui.search.close(), launch(result))),
+    // Un género (caja vacía, P4): su lista completa, en lugar de la búsqueda.
+    onOpen: (result) => (result.source === "genre" ? (ui.search.close(), openGenre(result))
+      : isWatchable(result) || result.kind ? openTitle(result) : (ui.search.close(), launch(result))),
     localSearch: (query) => searchLibrary(state.allRows, query),
-    // Populares: lo primero de películas y series, intercalado.
-    popular: () => {
-      const rows = ["movies", "series"].map((id) => state.allRows.find((r) => r.id === id)?.items ?? []);
-      return rows[0].flatMap((m, i) => [m, rows[1][i]]).filter(Boolean);
-    },
     // T7: con la caja vacía, también lo que jugaste (A continuación y favoritos), sin repetir.
     played: () => {
       const seen = new Set();
       return ["jump", "favorites"].flatMap((id) => state.allRows?.find((r) => r.id === id)?.items ?? [])
         .filter((item) => isGame(item) && !seen.has(item.id) && seen.add(item.id));
     },
+    // P4: con la caja vacía, también lo que estás viendo (Seguir viendo) y los géneros de Películas y series (si ya cargaron).
+    watching: () => state.allRows?.find((r) => r.id === "continue")?.items ?? [],
+    genres: () => genreRows(mediaGenres)[0]?.id === "curated:genres" ? genreRows(mediaGenres)[0].items : [],
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
   }),

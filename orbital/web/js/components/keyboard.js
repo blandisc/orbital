@@ -10,6 +10,8 @@ import { clampKey, moveKey, normalizeLayout } from "../core/keyboard.js";
  * Teclas especiales (opcionales en cada tecla):
  *   icon: nombre de ICONS · tone: "action" (gris) | "go" (la acción principal) · on: activa (Mayúsculas)
  *   glyph: el botón del mando que hace lo mismo sin ir hasta la tecla (Dictar: ☰)
+ *   iconOnly: solo el ícono (Atrás); el nombre queda para el lector de pantalla
+ * Cuántas columnas tiene sale de la distribución (la fila más ancha): Buscar usa 7, Conectar Stremio 10.
  */
 export function createKeyboard({ onPress, label = "Teclado" }) {
   const el = h("div", { class: "keyboard", role: "group", "aria-label": label });
@@ -21,11 +23,12 @@ export function createKeyboard({ onPress, label = "Teclado" }) {
   function setLayout(layout) {
     rows = normalizeLayout(layout);
     pos = clampKey(rows, pos);
+    el.style.setProperty("--keyboard-columns", String(Math.max(1, ...rows.map((cells) => cells.reduce((sum, k) => sum + k.span, 0)))));
     nodes = rows.map((cells, r) => cells.map((cell, c) => h("button", {
       class: ["keyboard__key", cell.span > 1 && "keyboard__key--wide", cell.tone && `keyboard__key--${cell.tone}`, cell.on && "keyboard__key--on"],
-      type: "button", tabindex: "-1", style: { gridColumn: `span ${cell.span}` },
+      type: "button", tabindex: "-1", style: { gridColumn: `span ${cell.span}` }, "aria-label": cell.iconOnly ? cell.label : null,
       onClick: () => { pos = { row: r, col: c }; paint(); onPress?.(cell.key); },
-    }, cell.icon && svg(ICONS[cell.icon]), cell.label, cell.glyph && Glyph(cell.glyph, { small: true }))));
+    }, cell.icon && svg(ICONS[cell.icon]), !cell.iconOnly && cell.label, cell.glyph && Glyph(cell.glyph, { small: true }))));
     mount(el, nodes.flat());
     paint();
   }

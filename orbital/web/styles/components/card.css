@@ -196,10 +196,12 @@
 /* Con avance (A continuación): el logo y el nombre se suben arriba de la barra; antes el logo la tapaba. */
 .card--has-progress :is(.card__logo, .card__label) { bottom: calc(2 * var(--inset-poster) + var(--progress-height)); }
 
-/* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. */
+/* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. Entero, en
+   dos renglones si hace falta (P4: «Ciencia fi…» en el póster de Buscar). */
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--type-section-weight); letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-title); text-shadow: var(--shadow-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
+  line-height: var(--leading-title); text-shadow: var(--shadow-text-strong); overflow: hidden; padding-bottom: .1em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; }
 
 /* «Porque viste»: el título del que salen las sugerencias de abajo, con un aro del acento (como el iPhone) mientras
    el foco está en otra parte. */

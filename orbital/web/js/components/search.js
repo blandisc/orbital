@@ -1,5 +1,5 @@
 import { api } from "../core/api.js";
-import { h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { h, hideAfterExit, markGridEdge, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { ERASE_WORD, typingGlyphs } from "../core/input.js";
@@ -15,25 +15,29 @@ import { EmptyState, Pill } from "./ui.js";
  *   · tus juegos y apps aparecen al instante (se buscan aquí, en tu biblioteca);
  *   · resultados vivos desde la 2ª letra (Cinemeta tolera errores: "ofice" -> The Office),
  *     agrupados: Tus juegos, Películas, Series;
- *   · T7 (revisión del 10 nov): a la izquierda el campo y un teclado QWERTY compacto (el mismo de Conectar Stremio y del
- *     iPhone); a la derecha los resultados en vivo, con las mismas portadas y el mismo foco que el resto, en cuadrícula.
+ *   · T7 (revisión del 10 nov): a la izquierda el campo y un teclado compacto (P4: alfabético, de 7 columnas); a la
+ *     derecha los resultados en vivo, en la misma cuadrícula de portadas que una lista (mismo tamaño y mismo foco).
  *     A escribe, X borra, Y espacio, B vuelve, → desde la orilla del teclado (o RT) a los resultados y ← de vuelta; con la
- *     caja vacía, tus búsquedas recientes, lo popular y tus juegos;
+ *     caja vacía, tus búsquedas recientes, lo que estás viendo, tus juegos y los géneros;
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
+// P4 (10 nov): compacto y en orden alfabético, 7 columnas (antes un QWERTY de 10): con el mando se llega a cualquier letra
+// en menos pasos (en promedio 3.5 contra 4.6) y sin buscarla, como el teclado del Apple TV y de Netflix. Los números van
+// debajo de las letras; con un teclado físico o el del iPhone se escribe directo, y con el dedo las teclas son más grandes.
 const layout = (cleared, dictateGlyph = "", listening = false, goGlyph = "") => [
-  [..."1234567890"],
-  [..."QWERTYUIOP"],
-  [..."ASDFGHJKLÑ"],
-  [..."ZXCVBNM-.'"],
-  [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 },
-    { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
-  // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
-  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
-    { key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 3, icon: "mic", glyph: dictateGlyph, on: listening },
+  [..."ABCDEFG"],
+  [..."HIJKLMN"],
+  [..."ÑOPQRST"],
+  [..."UVWXYZ'"],
+  [..."1234567"],
+  [..."890-.", { key: "delete", label: "Borrar", span: 2 }],
+  [{ key: "space", label: "Espacio", span: 4 }, { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
+  // Acciones claras con dedo o con mando: salir (su ícono), dictar y ver los resultados.
+  [{ key: "back", label: "Atrás", icon: "back", iconOnly: true, tone: "action" }, // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
+    { key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 3, icon: "mic", glyph: listening ? "" : dictateGlyph, on: listening },
     // «Buscar» enseña su atajo (RT / AvPág), como Dictar: se pulsa desde cualquier tecla, sin ir hasta abajo.
-    { key: "go", label: "Buscar", span: 5, tone: "go", glyph: goGlyph }],
+    { key: "go", label: "Buscar", span: 3, tone: "go", glyph: goGlyph }],
 ];
 const MIN_CHARS = 2;
 const MAX_CHARS = 120; // lo mismo que corta el servidor
@@ -58,7 +62,7 @@ export function rememberSearch(recent, query) {
   return [q, ...recent.filter((r) => r !== q)].slice(0, RECENT_MAX);
 }
 
-export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], popular = () => [], played = () => [] }) {
+export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], played = () => [], watching = () => [], genres = () => [] }) {
   let picking = null; // { kind, onPick }: «Corregir ficha»
   const field = h("div", { class: "search__field" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
@@ -91,7 +95,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let dictateGlyph = ""; // el botón del mando que dicta (☰, o M con teclado): se ve en la tecla
   let goGlyph = ""; // el que busca ya (RT, o AvPág con teclado): se ve en la tecla «Buscar»
   keyboard.setLayout(layout(false));
-  keyboard.reset(2, 0); // la primera vez, en la «A» (no en el «1»); después recuerda la última tecla
+  keyboard.reset(0, 0); // la primera vez, en la «A»; después recuerda la última tecla
 
   function render() {
     if (text !== shownText) { shownText = text; editedAt = Date.now(); }
@@ -107,7 +111,9 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     keyboard.active = zone === "keys";
     focusables.forEach((node, i) => {
       node.dataset.focusId = String(i); // para moverse en la cuadrícula (nextFocus)
-      node.classList.toggle("is-focused", zone === "results" && i === resultIndex);
+      const on = zone === "results" && i === resultIndex;
+      node.classList.toggle("is-focused", on);
+      if (on && node.classList.contains("card")) markGridEdge(node); // en la primera o la última columna crece hacia adentro
     });
     field.classList.toggle("search__field--listening", !!listening);
   }
@@ -135,7 +141,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       sets.at(-1).cards.push(card);
     });
     mount(results, sets.map((s) => h("div", { class: "search__set" },
-      h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[s.group]), h("div", { class: "search__set-cards" }, s.cards))),
+      h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[s.group]), h("div", { class: ["search__set-cards", "card-grid"] }, s.cards))),
     searching && h("div", { class: ["search__set", "search__set--ghost"], "aria-hidden": "true" },
       h("span", { class: "search__group" }, picking?.kind === "series" ? "Series" : picking?.kind === "movie" ? "Películas" : "Películas y series"),
       h("div", { class: "search__set-cards" }, [0, 1, 2, 3].map(() => h("span", { class: "search__ghost" })))));
@@ -145,29 +151,35 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     render();
   }
 
-  /** Caja vacía: tus búsquedas recientes (para repetir una con dos botones), lo popular y tus juegos (T7: más sugerencias). */
+  /** Caja vacía (P4): tus búsquedas recientes (para repetir una con dos botones), lo que estás viendo, tus juegos y los
+   *  géneros: siempre hay algo que elegir sin escribir. Lo popular ya no (vive en Películas y series), como el iPhone (BX). */
   function showRecent() {
-    // Caja vacía: tus búsquedas recientes, lo popular ahora (como Google TV) y lo que jugaste, no una pantalla en blanco.
     const recent = storage.get(RECENT_KEY, []);
-    const trending = popular().slice(0, 12);
-    const mine = played().slice(0, 6);
+    const seen = new Set();
+    const fresh = (list, n) => list.filter((item) => item && !seen.has(item.id) && seen.add(item.id)).slice(0, n);
+    const going = fresh(watching(), 6);
+    const mine = fresh(played(), 6);
+    const kinds = fresh(genres(), 8);
     el.classList.remove("search--searching");
-    items = [...recent.map((q) => ({ recent: q })), ...trending, ...mine];
+    const groups = [["Seguir viendo", going], ["Tus juegos", mine], ["Por género", kinds]];
+    items = [...recent.map((q) => ({ recent: q })), ...groups.flatMap(([, list]) => list)];
     const chips = recent.map((q, i) => Pill(q, {
       tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = i; zone = "results"; open(); },
     }));
-    // El pie de un póster chico: el año (con «Película · 2…» recortado no se leía nada).
-    const poster = (item, at) => Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
-      caption: true, onPress: () => { zone = "results"; resultIndex = at; open(); },
-    });
-    const cards = trending.map((item, i) => poster(item, recent.length + i));
-    const games = mine.map((item, i) => poster(item, recent.length + trending.length + i));
-    focusables = [...chips, ...cards, ...games];
-    // Como los resultados: cada grupo con su nombre encima (antes «Populares» iba a un lado, a media altura de las portadas).
-    const set = (name, nodes, extra = null) => nodes.length > 0 && h("div", { class: ["search__set", extra] },
-      h("span", { class: "search__group", "aria-hidden": "true" }, name), h("div", { class: "search__set-cards" }, nodes));
-    mount(results, [set("Recientes", chips, "search__set--pills"), set("Populares", cards), set("Tus juegos", games)]);
-    results.classList.toggle("search__results--recent", !cards.length && !games.length);
+    // El pie de un póster: el año (con «Película · 2…» recortado no se leía nada).
+    let at = recent.length;
+    const sets = groups.map(([name, list]) => [name, list.map((item) => {
+      const i = at++;
+      return Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
+        caption: !item.label, onPress: () => { zone = "results"; resultIndex = i; open(); },
+      });
+    })]);
+    focusables = [...chips, ...sets.flatMap(([, nodes]) => nodes)];
+    // Como los resultados: cada grupo con su nombre encima y sus portadas en la cuadrícula de una lista.
+    const set = (name, nodes, pills = false) => nodes.length > 0 && h("div", { class: ["search__set", pills && "search__set--pills"] },
+      h("span", { class: "search__group", "aria-hidden": "true" }, name), h("div", { class: ["search__set-cards", !pills && "card-grid"] }, nodes));
+    mount(results, [set("Recientes", chips, true), ...sets.map(([name, nodes]) => set(name, nodes))]);
+    results.classList.toggle("search__results--recent", focusables.length === chips.length);
     if (!items.length && zone === "results") zone = "keys";
     render();
   }

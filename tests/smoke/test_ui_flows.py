@@ -146,3 +146,27 @@ def test_focused_piece_is_never_cut(browser, server, width, height):  # noqa: F8
     assert all(seen.values()), f"sin foco que medir: {seen}"
     assert not cuts, cuts
     assert not page.errors, page.errors
+
+
+@pytest.mark.parametrize(("width", "height"), [(1920, 1080), (1280, 800)])
+def test_search_looks_like_the_rest(browser, server, width, height):  # noqa: F811
+    """P4-3 (10 nov): Buscar con el teclado alfabético de 7 columnas, sugerencias con la caja vacía (lo que estás viendo y
+    tus juegos) y los resultados en la cuadrícula de una lista: todas las portadas del mismo tamaño, sin nombres cortados."""
+    page = open_at(browser, server, width, height)
+    page.keyboard.press("s")
+    page.locator(".search .keyboard__key").first.wait_for(timeout=5000)
+    page.wait_for_timeout(600)
+    first_row = page.evaluate("() => [...document.querySelectorAll('.search .keyboard__key')].slice(0, 7).map((k) => k.textContent)")
+    assert first_row == list("ABCDEFG"), first_row
+    groups = page.evaluate("() => [...document.querySelectorAll('.search__group')].map((g) => g.textContent)")
+    assert groups[:2] == ["Seguir viendo", "Tus juegos"], groups
+    page.keyboard.type("zelda")
+    page.locator(".search .card-grid button.card").first.wait_for(timeout=5000)
+    page.wait_for_timeout(1200)
+    sizes = page.evaluate("() => [...document.querySelectorAll('.search .card-grid .card')].map((c) => [c.offsetWidth, c.offsetHeight])")
+    assert sizes and len(set(map(tuple, sizes))) == 1, sizes  # una sola forma y un solo tamaño
+    cut = page.evaluate("""() => [...document.querySelectorAll('.search .card-grid .card :is(.card__title, .card__label)')]
+      .filter((t) => getComputedStyle(t.closest('.card__meta') || t).display !== 'none' && t.scrollHeight > t.clientHeight + 1)
+      .map((t) => t.textContent)""")
+    assert not cut, cut
+    assert not page.errors, page.errors

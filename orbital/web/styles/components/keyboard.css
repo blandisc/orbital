@@ -1,7 +1,7 @@
 /* Keyboard: teclado en pantalla del sistema de diseño (Buscar, Conectar Stremio).
    Teclas grandes (se aciertan desde el sofá); la enfocada usa el foco invertido común. */
 .keyboard {
-  display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--space-2);
+  display: grid; grid-template-columns: repeat(var(--keyboard-columns, 10), 1fr); gap: var(--space-2); /* keyboard.js las cuenta */
   width: min(var(--keyboard-width), 100%);
 }
 .keyboard__key {
