@@ -67,20 +67,45 @@ public struct RDFile: Equatable, Sendable {
     }
 }
 
+/// A15 · qué quiere decir cada error de Real-Debrid, igual que en la TV: la tabla de `design/realdebrid-errors.json` (la TV la
+/// lee en `orbital/library/realdebrid.py`). `RDErrorTableTests` comprueba que esta copia sea esa tabla y corre sus `cases`.
+public enum RDErrorCause: String, Sendable, CaseIterable {
+    case invalidSession = "invalid_session", noPremium = "no_premium", refused, tooMany = "too_many", slowDown = "slow_down", gone, other
+
+    /// `codes` de la tabla: el `error_code` de Real-Debrid → la causa.
+    public static let codes: [Int: RDErrorCause] = [
+        -1: .other, 1: .other, 2: .other, 3: .other, 4: .other, 5: .slowDown, 6: .slowDown, 7: .gone, 8: .invalidSession,
+        9: .noPremium, 10: .invalidSession, 11: .invalidSession, 12: .invalidSession, 13: .invalidSession, 14: .noPremium,
+        15: .noPremium, 16: .refused, 17: .slowDown, 18: .tooMany, 19: .slowDown, 20: .noPremium, 21: .tooMany, 22: .noPremium,
+        23: .tooMany, 24: .refused, 25: .slowDown, 26: .refused, 27: .refused, 28: .refused, 29: .refused, 30: .refused,
+        31: .other, 32: .other, 33: .other, 34: .slowDown, 35: .refused, 36: .tooMany, 37: .other,
+    ]
+    /// `http` de la tabla: solo sin `error_code` (o con uno que no está en `codes`).
+    public static let http: [Int: RDErrorCause] = [401: .invalidSession, 403: .noPremium, 404: .gone, 429: .slowDown, 451: .refused,
+                                                   503: .slowDown, 509: .tooMany]
+
+    /// Primero manda `error_code`; sin él (o con uno desconocido), el HTTP; otro 5xx es «espera», lo demás «otra cosa».
+    public static func of(status: Int?, code: Int?) -> RDErrorCause {
+        if let code, let cause = codes[code] { return cause }
+        guard let status else { return .other }
+        return http[status] ?? ((500..<600).contains(status) ? .slowDown : .other)
+    }
+}
+
 /// Lo que Real-Debrid contestó cuando dijo que no (su `error_code`, o el código HTTP si no lo dio), en lo que importa para
 /// decirlo con palabras (R13, R7). Nunca lleva la clave.
 public enum RDRequestError: Error, Equatable, Sendable {
     /// No hay clave en la app.
     case noKey
-    /// La clave ya no sirve (401, código 8): «Vuelve a conectar Real-Debrid».
+    /// La clave ya no sirve (401; códigos 8, 10–13): «Vuelve a conectar Real-Debrid».
     case invalidKey
-    /// Sin Premium, vencida o bloqueada (403, códigos 9, 14, 20): se le pregunta a Real-Debrid cuál.
+    /// Sin Premium, vencida, bloqueada o desde una IP no permitida (403; códigos 9, 14, 15, 20, 22).
     case notPremium
-    /// No deja bajar ese archivo (código 35 «Infringing file», 28, 24, 29, 30, 16): «Real-Debrid no lo dejó bajar».
+    /// No deja bajar ese archivo (451; códigos 16, 24, 26–30, 35): se ofrece otra versión.
     case refused
-    /// Ya tienes el máximo de descargas a la vez, o se acabó tu tráfico (códigos 21, 23, 36): «Muchas descargas activas».
+    /// Un límite de tu cuenta: descargas a la vez, tráfico o uso justo (509; códigos 18, 21, 23, 36): se reintenta.
     case tooManyActive
-    /// Demasiadas preguntas seguidas (429, códigos 5 y 34): se espera y se vuelve a preguntar.
+    /// Demasiadas preguntas o un servicio caído (429, 503 y otros 5xx; códigos 5, 6, 17, 19, 25, 34): se espera y se reintenta.
     case slowDown
     /// Ese torrent ya no está (404, código 7): lo borraste en real-debrid.com.
     case notFound
@@ -88,27 +113,21 @@ public enum RDRequestError: Error, Equatable, Sendable {
     case network
     case unexpected
 
-    /// Del cuerpo de la respuesta (`{"error": "…", "error_code": 35}`) y su código HTTP.
+    /// Del cuerpo de la respuesta (`{"error": "…", "error_code": 35}`) y su código HTTP, con la tabla compartida.
     public static func from(status: Int, body: Data) -> RDRequestError {
         let code = ((try? JSONSerialization.jsonObject(with: body)) as? [String: Any])?["error_code"] as? Int
-        if let code {
-            switch code {
-            case 8: return .invalidKey
-            case 9, 14, 20: return .notPremium
-            case 35, 28, 24, 29, 30, 16, 26, 27: return .refused
-            case 21, 23, 36: return .tooManyActive
-            case 5, 34: return .slowDown
-            case 7: return .notFound
-            default: break
-            }
-        }
-        switch status {
-        case 401: return .invalidKey
-        case 403: return .notPremium
-        case 404: return .notFound
-        case 429: return .slowDown
-        case 500...: return .network
-        default: return .unexpected
+        return from(RDErrorCause.of(status: status, code: code))
+    }
+
+    public static func from(_ cause: RDErrorCause) -> RDRequestError {
+        switch cause {
+        case .invalidSession: .invalidKey
+        case .noPremium: .notPremium
+        case .refused: .refused
+        case .tooMany: .tooManyActive
+        case .slowDown: .slowDown
+        case .gone: .notFound
+        case .other: .unexpected
         }
     }
 }
