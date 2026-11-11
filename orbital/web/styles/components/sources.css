@@ -91,7 +91,8 @@
 .version__state--good { color: var(--color-live); }
 .version__state--warn { color: var(--color-warning); }
 .version__facts { overflow: hidden; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); text-overflow: ellipsis; white-space: nowrap; }
-.version__badge { position: absolute; top: var(--space-3); right: var(--space-3); } /* arriba a la derecha: no empuja ni se corta */
+.version__badge { display: inline-flex; flex: none; color: var(--color-orbital); } /* la recomendada: ✦ antes de la calidad (como el iPhone) */
+.version__badge .icon { width: var(--icon-sm); height: var(--icon-sm); }
 .version__other { justify-self: start; white-space: normal; text-wrap: balance; } /* con letra grande pasa a dos renglones en vez de cortarse */
 
 /* Foco invertido, como las fuentes y el menú. */
@@ -99,6 +100,7 @@
 .is-focused.version .version__res--4k { color: inherit; }
 .is-focused.version .version__state--good { color: var(--on-light-live); }
 .is-focused.version .version__state--warn { color: var(--on-light-warning); }
+.is-focused.version .version__badge { color: var(--on-light-live); } /* el turquesa oscuro sobre el blanco del foco */
 .is-focused.version .version__facts { color: inherit; opacity: var(--opacity-near); }
 .is-focused.version .badge { background: var(--color-on-primary); color: var(--color-primary); }
 .is-focused.version .chip { background: var(--on-light-fill); }

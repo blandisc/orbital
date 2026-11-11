@@ -3,7 +3,7 @@ import { Badge, Chip, LineSkeleton, Pill, Progress, SectionHead } from "./ui.js"
 import { ArtFit } from "./art-fit.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
-import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { clampWords, cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { sized } from "../core/images.js";
 import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
@@ -412,15 +412,18 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   function versionCapsule(line) {
     const flag = plays?.line === line && plays.lang ? Flag(plays.lang, plays.dub) : null;
     const rest = flag ? String(line).split(" · ").slice(1).join(" · ") : line;
+    // T10: nunca «· 1080p». El punto entre la bandera y el texto lo pone el CSS (`.flag + span::before`), así que si la
+    // bandera no carga se va con ella; y lo de adentro no empieza ni termina con un punto suelto (un idioma vacío).
+    flag?.addEventListener("error", () => flag.remove());
     // Fernando, 4 nov: también es una parada de la fila (A la abre), no solo el atajo Y: con el control se la saltaba.
     return h("button", { class: ["title__version", zone === "actions" && onVersion && "is-focused"], type: "button",
       "aria-label": `Versión: ${line}`, onClick: () => sources() },
-      glyphs.options && Glyph(glyphs.options, { small: true }), flag, h("span", {}, [flag && rest && "· ", versionShort(rest, line)].filter(Boolean)));
+      glyphs.options && Glyph(glyphs.options, { small: true }), flag, h("span", {}, versionShort(rest, line)));
   }
 
   /** «Inglés · 1080p · Subtítulos en inglés» → «Inglés · 1080p · CC»; con otro idioma de subtítulos, «CC español». */
   function versionShort(line, full = line) {
-    const parts = String(line).split(" · ");
+    const parts = String(line).split("·").map((p) => p.trim()).filter(Boolean); // sin pedazos vacíos: nada de « · » suelto
     const audio = (String(full).split(" · ")[0] || "").toLowerCase();
     return parts.map((p) => {
       const sub = /^Subtítulos en (.+)$/i.exec(p);
@@ -503,14 +506,14 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     episodeHead.hidden = !(kindOf() === "series" && seasons().length);
     if (!ep || !current) {
       episodeHead.textContent = "";
-      description.textContent = about;
+      clampWords(description, about); // T10: corta en una palabra entera, con «…»
       paintAbout();
       return;
     }
     const st = states.get(ep.id) || {};
     episodeHead.textContent = [current.season === 0 ? "Especial" : `T${current.season}`, `E${ep.episode}`, ep.title, st.upcoming]
       .filter(Boolean).join(" · ");
-    description.textContent = ep.overview || about;
+    clampWords(description, ep.overview || about);
     paintAbout();
   }
 

@@ -1,7 +1,8 @@
 /* Riel lateral (js/components/rail.js): las categorías de Ajustes.
    Cerrado: una columna de casillas. Enfocado: se abre como pestaña, con el nombre y un dato de cada una. */
+/* Las medidas, también para Ajustes (settings.css): su lámina se recorre justo lo que se abre el riel. */
+:where(.settings, .rail) { --rail-width: 6.2rem; --rail-open: 21rem; --rail-tile: 4rem; --rail-tile-current: 5rem; }
 .rail {
-  --rail-width: 6.2rem; --rail-open: 21rem; --rail-tile: 4rem; --rail-tile-current: 5rem;
   position: absolute; z-index: var(--z-above); left: 0; top: var(--space-2); bottom: var(--space-4); width: var(--rail-width);
   display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); min-height: 0;
   transition: width var(--duration-slow) var(--ease-out);

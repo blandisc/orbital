@@ -133,8 +133,9 @@ export function createBackdrop({ settle = 150 } = {}) {
   }
 
   /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). `color`: sin imagen,
-   *  el fondo solo con ese color (una consola: su variable CSS, core/home.js · systemColor). */
-  function show(url, { poster = false, pixel = false, color = null } = {}) {
+   *  el fondo solo con ese color (una consola: su variable CSS, core/home.js · systemColor). `fallback`: la portada si el arte
+   *  ancho no carga (T10: un título sin fanart en Películas y series se ve con su póster desenfocado, no en gris). */
+  function show(url, { poster = false, pixel = false, color = null, fallback = null } = {}) {
     const mine = ++token;
     // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo (y cambia cuando se detiene).
     setTimeout(() => {
@@ -167,6 +168,7 @@ export function createBackdrop({ settle = 150 } = {}) {
       img.onerror = () => {
         clearTimeout(stale);
         if (mine !== token) return;
+        if (fallback && fallback !== url) return show(fallback, { poster: true });
         applyPalette(paletteFor(null));
         swap(null, false);
       };

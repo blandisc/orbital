@@ -5,7 +5,8 @@ import { AddonMark } from "./addon-mark.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
 import { isOwnSource, languageLine, versionRows, versionStart, versionStep } from "../core/watch.js";
-import { h, hideAfterExit, mount } from "../core/dom.js";
+import { h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { Flag, Flags } from "./flag.js";
 import { requestLabel } from "../core/menus.js";
 
@@ -113,15 +114,19 @@ export function createSources({ onPlay, onAsk, onFirstAsk, requests = () => [], 
       h("span", { class: "version__facts" }, rows[r].names.slice(0, 3).join(", ") + (rows[r].names.length > 3 ? "…" : "")));
     }
     const [label, tone] = rows[r].ask ? askState(opt.source) : state(opt.source);
+    const recommended = r === start.row && c === start.col && opt.source === best();
     const button = h("button", {
       class: ["version", r === at.row && c === at.col && "is-focused"], type: "button",
-      "aria-label": `${rows[r].name} · ${opt.res}`,
+      "aria-label": [rows[r].name, opt.res, recommended && "Recomendada"].filter(Boolean).join(" · "),
       onClick: () => (r === at.row && c === at.col ? act(opt.source, rows[r].ask) : focus({ row: r, col: c })),
     },
-    h("span", { class: "version__top" }, h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res), mark(opt.source)),
+    // La recomendada: un destello antes de la calidad, como el iPhone (VersionListRow · sparkles), no la cápsula «Recomendada»
+    // en la esquina, que tapaba la marca del complemento en las tarjetas angostas (T12, revisión del 10 nov).
+    h("span", { class: "version__top" },
+      recommended && h("span", { class: "version__badge", title: "Recomendada", "aria-hidden": "true" }, svg(ICONS.spark)),
+      h("span", { class: ["version__res", opt.res === "4K" && "version__res--4k"] }, opt.res), mark(opt.source)),
     h("span", { class: ["version__state", tone && `version__state--${tone}`] }, label),
     h("span", { class: "version__facts" }, [...facts(opt.source).slice(0, 2), opt.proof === "maybe" && "tal vez"].filter(Boolean).join(" · ")),
-    r === start.row && c === start.col && opt.source === best() && Badge("Recomendada", { className: "version__badge" }),
     // Fernando, 4 nov: que se entienda qué quiere decir (antes «¿Otro episodio?» y «¿Otro título?»).
     opt.source.other_episode ? Chip("Parece de otra temporada", { tone: "warn", className: "version__other" })
       : opt.source.other_title && Chip(request?.kind === "series" ? "Puede ser otra serie" : "Puede ser otra película",

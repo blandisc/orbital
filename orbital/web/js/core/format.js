@@ -134,3 +134,14 @@ export function softHyphens(text, min = 11) {
     return out;
   });
 }
+
+/**
+ * La primera oración de una sinopsis (el héroe de Películas y series, T10): hasta el primer «.», «!» o «?» seguido de espacio
+ * y mayúscula, para no cortar en «Dr.» o «3.5». Si la primera es muy corta (menos de 40 letras), se queda la segunda también.
+ */
+export function firstSentence(text) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  const ends = [...clean.matchAll(/[.!?…](?=\s+[«"¿¡(]?[A-ZÁÉÍÓÚÑ])/g)].map((m) => m.index + 1);
+  const cut = ends.find((at) => at >= 40);
+  return cut ? clean.slice(0, cut) : clean;
+}

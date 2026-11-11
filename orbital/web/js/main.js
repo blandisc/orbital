@@ -573,7 +573,8 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
     preloadAround(next.r, next.c);
     ui.hero.update(item, glyphs(), { runningId: state.running?.id });
     // El fondo a pantalla completa, del ancho de la pantalla (el original de metahub o de Steam pesaba hasta ~8 MB ya abierto).
-    ui.backdrop.show(sized(item?.hero || item?.image, innerWidth), { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
+    ui.backdrop.show(sized(item?.hero || item?.image, innerWidth), { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres,
+      fallback: item?.hero && item.image ? item.image : null });
     const count = state.rows[next.r]?.items.length ?? 1;
     ui.backdrop.parallax(count > 1 ? next.c / (count - 1) : 0);
   }

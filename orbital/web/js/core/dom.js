@@ -94,3 +94,36 @@ export function markGridEdge(card) {
   const right = Math.max(...cells.map((c) => c.offsetLeft + c.offsetWidth));
   card.dataset.edge = cell.offsetLeft <= left + 2 ? "start" : cell.offsetLeft + cell.offsetWidth >= right - 2 ? "end" : "";
 }
+
+/**
+ * Un texto recortado por renglones (`-webkit-line-clamp`) que termina en una palabra entera y «…» (T10, revisión del 10 nov:
+ * el recorte del navegador partía la última palabra, «Un hombre descu…»). Pone el texto completo y, en el siguiente cuadro,
+ * si no cabe, busca cuántas palabras caben (por mitades: pocas mediciones). `wordsThatFit` es la parte pura (con pruebas).
+ */
+export function clampWords(node, text) {
+  node.textContent = text;
+  const mine = (node._clampToken = (node._clampToken || 0) + 1);
+  requestAnimationFrame(() => {
+    if (mine !== node._clampToken || !node.isConnected) return;
+    const fits = () => node.scrollHeight <= node.clientHeight + 1;
+    if (fits()) return;
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const count = wordsThatFit(words.length, (n) => { node.textContent = ellipsize(words, n); return fits(); });
+    node.textContent = ellipsize(words, count);
+  });
+}
+
+/** «Uno dos tres» → «Uno dos…» (sin la coma o el punto que quedaba antes de los puntos suspensivos). */
+export const ellipsize = (words, n) => `${words.slice(0, n).join(" ").replace(/[\s,;:.—-]+$/u, "")}…`;
+
+/** El mayor `n` (de 1 a `total`) con `fits(n)` verdadero, buscando por mitades; si ni una cabe, 1. */
+export function wordsThatFit(total, fits) {
+  let lo = 1;
+  let hi = total;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (fits(mid)) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}

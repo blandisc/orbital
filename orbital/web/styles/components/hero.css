@@ -99,12 +99,12 @@
 /* Películas y series (.hero--steady): al pasar de un título a otro (el carrusel de Destacados, o tú) nada cambia de alto, así
    «Todo · Películas · Series», el porqué y los botones no brincan (Fernando, 2 nov 2026: antes subían y bajaban unos px según
    lo alto del logo o si el título traía año). El logo y el nombre ocupan siempre la misma caja; los datos, su renglón. */
-.hero--steady .hero__logo { height: 6rem; max-height: none; min-height: 3rem; }
+.hero--steady .hero__logo { height: 6rem; max-height: none; min-height: 2.25rem; margin: var(--space-2) 0 var(--space-3); }
 /* Si no cabe (pantalla baja, letra grande), cede el logo y no los botones; lo demás siempre mide lo mismo, así que se encoge
    igual en todos los títulos y nada brinca. Las pestañas van fuera del bloque: este toma solo lo que queda. */
 .hero--steady .hero__content { flex: 0 1 auto; max-height: none; }
 .hero--steady .hero__content > .hero__title { flex-shrink: 1; min-height: calc(var(--type-hero) * var(--leading-tight)); } /* sin logo, el nombre cede igual */
-.hero--steady .hero__title { height: 6rem; margin: var(--space-3) 0 var(--space-4); display: -webkit-box; align-content: end; }
+.hero--steady .hero__title { height: 6rem; margin: var(--space-2) 0 var(--space-3); display: -webkit-box; align-content: end; }
 .hero--steady .hero__facts:empty::before { content: "\200b"; } /* sin datos: el renglón queda, vacío */
 :is([data-text-size="large"], [data-text-size="xlarge"]) .hero--steady :is(.hero__logo, .hero__title) { height: 5rem; margin: var(--space-2) 0; }
 /* Todo · Películas · Series (pestañas de texto) arriba del porqué, como la franja del Inicio del iPhone. */
@@ -112,3 +112,12 @@
 /* D5-A: después de las pestañas, Guardado, Colecciones y Filtro avanzado como íconos (lo que antes vivía en ☰). Una rayita los
    separa: las pestañas cambian lo que ves; los íconos abren otra pantalla. */
 .hero__kinds-gap { flex: none; align-self: stretch; margin: var(--space-2) var(--space-2); box-shadow: -1px 0 0 var(--color-hairline-strong); }
+/* T10: la calificación de Trakt con su marca, como en «Una por una». */
+.hero__fact-score { display: inline-flex; align-items: center; gap: var(--space-1); }
+.hero__fact-mark { width: var(--icon-sm); height: var(--icon-sm); }
+/* Películas y series: una oración de sinopsis en un renglón bajo los datos; sin sinopsis, el renglón queda (nada brinca). Para
+   que quepa sin mover las filas, el logo cede hasta 2.25rem (antes 3rem), su aire y el de los botones bajan un paso. */
+.hero--steady .hero__description { -webkit-line-clamp: 1; margin-top: 0; line-height: var(--leading-snug); } /* un renglón: sin interlineado de párrafo */
+.hero--steady .hero__row { margin-top: var(--space-4); padding-bottom: var(--space-1); } /* la letra del mando (X, Y) cuelga bajo el botón: que cuente, o fit() quitaba la sinopsis por 5 px */
+.hero--steady .hero__description[hidden] { display: -webkit-box; visibility: hidden; }
+.hero--steady .hero__description:empty::before { content: "\200b"; }

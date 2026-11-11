@@ -42,6 +42,8 @@
 .card__badge .icon { width: var(--icon-xs); height: var(--icon-xs);
 }
 .card__badge--owned { color: var(--color-text); }
+/* La estrella de favorito va abajo (T12, revisión del 10 nov): arriba pisaba el logo de las portadas («HOLLOW KNIGHT»). */
+.card__badge--favorite { top: auto; bottom: var(--inset-poster); }
 /* El estado de un pedido a la nube (T9): al doble, para leerse a 3 m; enfocada, el pie lo dice con palabras. */
 .card__badge--state { width: 3rem; height: 3rem; }
 .card__badge--state .icon { width: var(--icon-lg); height: var(--icon-lg); }

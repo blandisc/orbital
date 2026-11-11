@@ -1,12 +1,20 @@
 /* Ajustes a pantalla completa (js/components/settings.js): el riel de categorías a la izquierda y la lámina de la elegida.
    Las filas son las de una hoja (sheet.css); aquí, la composición, la ayuda al pie y lo que cambia con el foco. */
-.settings { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--space-6); background: var(--color-bg); } /* el vidrio del riel sobresale arriba (rail.css): con space-4 tocaba la «j» de «Ajustes» */
-.settings__title { font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); }
+.settings { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-6); background: var(--color-bg); }
+/* «Ajustes»: etiqueta chica sobre el único título grande, el de la categoría (T10). */
+.settings__title { padding: 0 var(--space-3); color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .settings__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-10); min-height: 0; }
 /* El riel de Juegos, en su columna (allá flota sobre la cuadrícula). Abierto, empuja la lámina en vez de taparla. */
 .settings .rail { position: relative; left: auto; top: auto; bottom: auto; height: 100%; }
-.settings__page { display: flex; flex-direction: column; min-height: 0; max-width: 66rem; }
-.settings__page-title { padding: 0 var(--space-3); font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-title); }
+/* T10 (10 nov 2026): la lámina mide lo mismo con el riel abierto o cerrado y en todas las categorías. Abierto, el riel no la
+   angosta: la recorre a la derecha, entera (antes la columna pasaba de 1426 a 1259 px y los valores brincaban de lugar). */
+.settings .rail { transition: width var(--duration-slow) var(--ease-out), margin var(--duration-slow) var(--ease-out); }
+.settings .rail--open { margin-right: calc(var(--rail-width) - var(--rail-open)); }
+.settings__page { transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-base) var(--ease-out); }
+.settings[data-zone="rail"] .settings__page { transform: translateX(calc(var(--rail-open) - var(--rail-width)));
+  -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) 60%, transparent 85%); mask-image: linear-gradient(90deg, var(--mask-solid) 60%, transparent 85%); } /* lo que sale de la pantalla se desvanece, no se corta */
+.settings__page { display: flex; flex-direction: column; min-height: 0; width: 66rem; max-width: 100%; } /* ancho fijo (T10) */
+.settings__page-title { padding: 0 var(--space-3); font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--type-display-weight); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); }
 .settings__lead { padding: var(--space-1) var(--space-3) var(--space-4); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 /* La lista se desplaza sola con el foco (y con la rueda o el dedo); sin barra a la vista. */
 .settings__list { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow-y: auto; scrollbar-width: none; padding-bottom: var(--space-4); }
@@ -24,5 +32,3 @@
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 .settings__help .icon { flex: none; width: var(--icon-sm); height: var(--icon-sm); }
 .settings__help-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Con el dedo: «Atrás» va arriba a la derecha; el título le deja su lugar. */
-[data-input="touch"] .settings__title { padding-right: var(--touch-back-room); }

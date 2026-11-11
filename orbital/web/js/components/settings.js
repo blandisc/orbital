@@ -28,8 +28,10 @@ export function createSettings({ load, onCommand, onMove, onClose }) {
   const helpText = h("span", { class: "settings__help-text" });
   const help = h("p", { class: "settings__help", "aria-live": "polite" }, svg(ICONS.info), helpText);
   const el = h("section", { class: "settings screen", hidden: true, "aria-label": "Ajustes" },
-    h("h1", { class: "settings__title" }, "Ajustes"),
-    h("div", { class: "settings__body" }, rail.el, h("div", { class: "settings__page" }, pageTitle, lead, list)),
+    // T10 (10 nov 2026): un solo título grande, el de la categoría; «Ajustes» queda como etiqueta chica encima (antes eran
+    // dos títulos grandes, «Ajustes» y «Ver», uno sobre otro).
+    h("div", { class: "settings__body" }, rail.el, h("div", { class: "settings__page" },
+      h("h1", { class: "settings__title" }, "Ajustes"), pageTitle, lead, list)),
     help);
 
   let data = { settings: {}, voice: null, canExit: false };

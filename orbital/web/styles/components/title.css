@@ -165,6 +165,7 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 .title__version > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.title__version > .flag + span::before { content: "· "; } /* el punto va con la bandera: si no hay bandera, no hay punto (T10) */
 .title__version:hover { background: var(--color-glass-hover); }
 /* Aún buscando la versión: la misma cápsula con un renglón gris del tamaño de «🇲🇽 · 1080p · CC» (ContinueAction.versionPending
    del iPhone). Quieta y sin clic: todavía no hay qué elegir. */

@@ -33,7 +33,7 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
   // Una esquina: tu favorito (estrella) o, en una lista de afuera (Para ti), que ya lo tienes (palomita).
-  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star))
+  const badge = item.favorite ? h("span", { class: ["card__badge", "card__badge--favorite", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star))
     : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check))
       : item.extra?.installed === false ? h("span", { class: "card__badge", "aria-label": "Sin instalar" }, svg(ICONS.cloud))
         // PT22: un pedido a la nube dice su estado (bajando, en cola, sin gente, listo, no se dejó) con su ícono.

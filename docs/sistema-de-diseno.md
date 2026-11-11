@@ -55,7 +55,7 @@ en la mano, 1280×800: alto ≤ 900 px) el texto sube un paso más con `--text-r
 | Receta | Tamaño | ≈ px a 1080p | Peso | Para |
 |---|---|---|---|---|
 | `hero` | `--text-display` 3,7 rem | 80 | negrita | El título del héroe de Películas y series sin logo |
-| `display` | `--text-3xl` 2,9 rem | 63 | negrita | El título de un destacado sin logo (Inicio, Juegos), el de una pantalla (Ajustes) |
+| `display` | `--text-3xl` 2,9 rem | 63 | negrita | El título de un destacado sin logo (Inicio, Juegos), el de una pantalla (la categoría de Ajustes) |
 | `title` | `--text-2xl` 2,4 rem | 52 | negrita | Un título largo que baja un paso, una pregunta grande |
 | `heading` | `--text-xl` 1,6 rem | 35 | negrita | El encabezado de una zona o de una hoja |
 | `section` | `--text-lg` 1,4 rem | 30 | negrita | El título de una fila («A continuación», «Tus 13 juegos») |
@@ -131,7 +131,9 @@ Cada una corrigió algo que se veía distinto en una pantalla poco común; las q
 | Lo que crece al enfocarse tiene su aire arriba y a los lados dentro de su caja: nunca se monta en el título de su fila ni se le corta la sombra | `home.css`, `title.css`, `game-page.css` | smoke · `test_no_text_is_cut_in_half` |
 | Una cuadrícula que se desliza desvanece lo que quedó arriba (`is-above`, `browse.js · keepInView`) y lo que sigue abajo se funde; nada se corta en seco a media fila | `browse.css`, `list-screen.css`, `sources.css` | — |
 | Un botón del mando en la esquina de una pieza solo si es corto (A, X, Y); el de teclado («Enter») lo dice el pie | `match-deck.js`, `button.css` | — |
-| Un aviso no se encima con una hoja abierta: se corre a su izquierda, con su margen | `toast.css` | — |
+| Un aviso no se encima con una hoja abierta: se corre a su izquierda, con su margen. En Juegos baja un piso, bajo el selector de consolas, sobre el arte (T12, 10 nov) | `toast.css` | — |
+| Un texto recortado termina en palabra entera y «…», sin coma colgando (la sinopsis de la ficha, T10) | `dom.js · clampWords` | `text-trim.test.mjs` |
+| Una cápsula de versión nunca empieza con « · »: el punto entre la bandera y el texto lo pone el CSS y se va con la bandera | `title.js · versionCapsule` | — |
 | Un texto que viene de afuera se dice en español y sin ruido: los cargos de TMDB («Producer» → «Producción», «Self» → «Como sí mismo»), el nombre de una captura sin lo que pone Windows | `tmdb.py · role_es`, `menus.js · captureName` | `test_tmdb.py`, `menus.test.mjs` |
 | Un pie no repite lo que ya dice su grupo (en «Películas», el año; no «Película · 2021») | `search.js` | — |
 
@@ -188,14 +190,14 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | Barra de arriba | Vidrio con íconos; la sección elegida, en blanco con su nombre; se va al bajar en Juegos |
 | Inicio | Rediseñado: «A continuación» (B); debajo, «Seguir viendo», «Mi lista» y «Tus consolas» (D4-B, 10 nov). Lo de arriba sigue al foco: el episodio, la película de Mi lista o la consola con sus juegos y lo último que jugaste; ↑↓ (o LT/RT) pasan de fila y cada fila recuerda dónde ibas |
 | Juegos | Rediseñado: dos pisos y el juego a pantalla (A); la página de cada juego (C) en Opciones › «Ver ficha» (A sigue jugando directo) |
-| Películas y series | Por las piezas: héroe con «Ver» en blanco y secundarios de vidrio, portadas que se levantan |
+| Películas y series | Por las piezas: héroe con «Ver» en blanco y secundarios de vidrio, portadas que se levantan. El héroe dice un renglón de datos (año, Trakt con su marca y «81 %», dos géneros, duración) y una oración de la sinopsis en un renglón (`format.js · firstSentence`); para que quepa sin mover las filas, el logo cede hasta 2,25 rem. Sin arte ancho, el fondo es su póster desenfocado (`backdrop.show(…, { fallback })`) (T10, 10 nov) |
 | La ficha | Por las piezas: «Ver» en blanco, acciones de vidrio, episodios que se levantan |
 | Explorar | Por las piezas: el mosaico se levanta sin anillo; sus marcas, de vidrio |
 | TV en vivo | Por las piezas: canales que se levantan |
 | Buscar · Conectar Stremio | Buscar rediseñado (T7, 10 nov): sobre el fondo del sistema (`--color-bg`, no el café del arte); a la izquierda el campo y un teclado compacto (`--keyboard-width` 30 rem; con el dedo, 36 rem y teclas más altas); a la derecha los resultados en vivo en cuadrícula que baja, por grupo, con la portada y el foco de siempre; → desde la orilla del teclado entra y ← regresa; con la caja vacía, Recientes, Populares y Tus juegos. Conectar Stremio, por las piezas |
 | Menús, panel rápido, Opciones, confirmaciones | Menú flotante de vidrio |
-| Elegir versión | Menú flotante de vidrio, abajo |
-| Ajustes | Por las piezas: filas con foco invertido, `Segmented` en cápsula |
+| Elegir versión | Menú flotante de vidrio, abajo. La recomendada lleva un destello (`spark`, turquesa) antes de la calidad, como el iPhone; ya no la cápsula «Recomendada» en la esquina, que tapaba la marca del complemento (T12, 10 nov) |
+| Ajustes | Por las piezas: filas con foco invertido, `Segmented` en cápsula. Un solo título grande, el de la categoría (`display`), con «Ajustes» como etiqueta chica encima; la lámina mide lo mismo en todas las categorías y con el riel abierto (el riel la recorre, no la angosta; lo que sale se desvanece) (T10, 10 nov) |
 | Calendario · ¿Qué vemos? · listas | Por las piezas: casillas y pósters que se levantan |
 | Cambiar el arte | Por las piezas: casillas que se levantan |
 | Pantalla de carga · arranque · avisos | Sin cambio (ya eran del lenguaje) |
