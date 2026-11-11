@@ -304,9 +304,8 @@ struct PlayerScreen: View {
         }
     }
 
-    var body: some View {
-        let model = holder.model
-        // El escenario va en su propia función: en una sola expresión, el Swift de la CI (Xcode 26.3) no alcanzaba a revisarla.
+    /// El escenario con lo que siempre lleva: modo oscuro, gestos del sistema, VoiceOver, animaciones y el aviso de los gestos.
+    private func dressed(_ model: PlayerModel) -> some View {
         stage(model)
         .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
         // Los arrastres verticales (brillo, volumen) que empiezan cerca del borde no abren el Centro de control ni el de
@@ -328,6 +327,11 @@ struct PlayerScreen: View {
         // A1: la primera vez que pausas, el aviso chico de los gestos (nunca encima de una escena que corre).
         .learnCoach(.playerGestures, title: "Doble toque a los lados: 10 s", detail: "Pellizca para llenar la pantalla; el candado está en «Más».",
                     active: model.snapshot.state == .paused)
+    }
+
+    var body: some View {
+        let model = holder.model
+        dressed(model)   // el escenario y su ropa, aparte: en una sola expresión, el Swift de la CI (Xcode 26.3) no alcanzaba
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
             #if DEBUG

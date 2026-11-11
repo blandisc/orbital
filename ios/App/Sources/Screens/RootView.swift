@@ -195,12 +195,12 @@ struct RootView: View {
             // Las descargas en cola se crean antes de irse (en segundo plano iOS las posterga): ver `Downloads.setBackgrounded`.
             if phase == .background || phase == .active {
                 let background = phase == .background
-                let id = background ? UIApplication.shared.beginBackgroundTask(withName: "orbital.downloads") : .invalid
+                let id: UIBackgroundTaskIdentifier = background ? UIApplication.shared.beginBackgroundTask(withName: "orbital.downloads") : UIBackgroundTaskIdentifier.invalid
                 Task {
                     // Primero el carril (lo que arranque la cola al irte ya nace en segundo plano), luego la cola.
                     await env.setDownloadsBackgrounded(background)
                     await env.services.downloads.setBackgrounded(background)
-                    if id != .invalid { UIApplication.shared.endBackgroundTask(id) }
+                    if id != UIBackgroundTaskIdentifier.invalid { UIApplication.shared.endBackgroundTask(id) }
                 }
             }
         }

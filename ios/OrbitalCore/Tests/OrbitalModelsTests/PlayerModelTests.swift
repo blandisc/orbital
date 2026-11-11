@@ -378,7 +378,9 @@ final class PlayerModelTests: XCTestCase {
         await model.handle(rig.playing(5))
         await model.handle(rig.playing(5.6))
         XCTAssertNil(model.skipIntroTo)
-        try await Task.sleep(nanoseconds: 200_000_000)
+        // Se espera a que llegue (con un tope amplio), no un tiempo fijo: en un runner cargado 0.2 s no alcanzaban.
+        let deadline = Date().addingTimeInterval(10)
+        while model.skipIntroTo == nil, Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
         XCTAssertEqual(calls.n, 2, "la primera falla y se pide otra vez")
         XCTAssertEqual(model.skipIntroTo, 31, "sin esperar el siguiente aviso del motor")
     }
