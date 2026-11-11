@@ -21,4 +21,13 @@ final class TitleExtrasRepeatsTests: XCTestCase {
         XCTAssertEqual(x.originalLanguage, "ko")
         XCTAssertEqual(x.languages, ["en", "ko"])
     }
+
+    /// Revisión 2 del 11 nov: el tráiler en inglés salía aunque hubiera uno en español.
+    func testTrailerInYourLanguageFirst() {
+        let raw: JSON = ["videos": ["results": [
+            ["site": "YouTube", "key": "en1", "type": "Trailer", "iso_639_1": "en"],
+            ["site": "YouTube", "key": "es1", "type": "Trailer", "iso_639_1": "es"]]]]
+        XCTAssertEqual(Tmdb.parseExtras(raw, kind: "movie", region: "MX", language: "es").trailer?.key, "es1")
+        XCTAssertEqual(Tmdb.parseExtras(raw, kind: "movie", region: "MX", language: "fr").trailer?.key, "en1", "sin el tuyo, el primero")
+    }
 }
