@@ -254,8 +254,16 @@
 .title__more {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-raised); max-height: 100%; display: flex; flex-direction: column;
   padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) var(--hints-room);
-  background: linear-gradient(180deg, transparent, var(--color-tinted-bg) 22%);
   transform: translateY(100%); transition: transform var(--duration-slow) var(--ease-out);
+}
+/* T8 (10 nov): abajo sigue el arte de la ficha, desenfocado (antes un tono liso tapaba todo): un vidrio que se funde desde
+   arriba, con el tono del arte encima para que el texto se lea. Quieto: no se anima. */
+.title__more::before {
+  content: ""; position: absolute; inset: 0; z-index: var(--z-behind); pointer-events: none;
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--color-tinted-bg) 72%, transparent) 22%);
+  backdrop-filter: var(--filter-glass);
+  -webkit-mask-image: linear-gradient(180deg, transparent, var(--mask-solid) 22%);
+  mask-image: linear-gradient(180deg, transparent, var(--mask-solid) 22%);
 }
 /* Llega a las orillas de la pantalla, como las filas de Películas y series (antes cortaba la última tarjeta en el margen). */
 .title__more-clip { flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0 calc(-1 * var(--page-gutter)); padding: 0 var(--page-gutter); }
@@ -283,7 +291,12 @@
 }
 /* Las portadas crecen hacia arriba al enfocarlas (desde la esquina de abajo): arriba les queda ese lugar (antes el anillo
    de la enfocada se cortaba). */
-.title__more-row:is(.title__more-row--saga, .title__more-row--more) { padding-top: calc(var(--card-height) * (var(--card-focus-scale) - 1) + .35rem + var(--space-2)); }
+/* T8: aquí lo enfocado crece como un tile (la órbita ya lo marca), así entre el título y las portadas queda
+   --layout-title-to-content más solo lo que la enfocada necesita para crecer (antes ~4 rem de hueco). */
+.title__more-row:is(.title__more-row--saga, .title__more-row--more) {
+  --card-focus-scale: var(--tile-focus-scale);
+  padding-top: calc(var(--card-height) * (var(--card-focus-scale) - 1) + .35rem + var(--space-4)); /* + el filo y la orilla que se desvanece arriba */
+}
 /* Las caras, alineadas arriba: un nombre de dos renglones («Patricia Arquette») ya no sube su foto sobre las demás. */
 .title__more-row--cast { align-items: flex-start; }
 /* «Los datos de la ficha»: lo que es en gris y su valor en blanco, en dos columnas (el Grid del iPhone). */
