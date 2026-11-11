@@ -168,13 +168,16 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Mover la etiqueta tv-estable a este commit
         run: |
-          # Si mientras corría la CI llegó un commit más nuevo, este ya no es el último: lo moverá el nuevo si pasa.
-          head="$(git ls-remote origin refs/heads/main | cut -f1)"
-          if [ "$head" != "$GITHUB_SHA" ]; then
-            echo "main ya avanzó ($head); no se mueve la etiqueta desde $GITHUB_SHA."
+          # La etiqueta solo avanza: si ya apunta a un commit más nuevo (otra corrida terminó antes), no se toca.
+          git fetch --tags --force origin
+          if git rev-parse -q --verify refs/tags/tv-estable >/dev/null \
+             && ! git merge-base --is-ancestor tv-estable "$GITHUB_SHA"; then
+            echo "tv-estable ($(git rev-parse --short tv-estable)) ya está más adelante que $GITHUB_SHA; no se mueve."
             exit 0
           fi
           git tag -f tv-estable "$GITHUB_SHA"
