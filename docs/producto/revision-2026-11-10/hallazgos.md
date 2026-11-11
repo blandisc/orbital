@@ -34,7 +34,18 @@ no cada agente.
 - **Tanda 1 (10 nov), verificada:** pruebas web 311/311; servidor con los mismos 17 fallos propios de Windows que antes en la Mac;
   CI en verde tras A1. D6-A y D8-A (lado servidor) hechos (`bddcabb6`, `190c4005`). Pendiente de ver en la tele real: latido
   del vigilante, barrido de mpv, conexiones reutilizadas y la velocidad con tarjeta gráfica.
-- **Tanda 2 (en curso):** diseño del iPhone, diseño y foco de la TV, contrato y reglas compartidas. iPad y Mac en rama aparte.
+- **Tanda 2 (10–11 nov), verificada:** diseño del iPhone (pastilla como tarjeta, Historial como quinta pila, «Versión» en llano,
+  una sola puerta para guardar, control único de tipo, regla de bordes), foco «la órbita» y letra de la TV, contrato con
+  versión, tabla de Real-Debrid y reglas de versiones en `design/`. iPad: dos pasadas mezcladas (cierre del reproductor,
+  ventana ancha, atajos, pilas de Guardado, «Versión» medida).
+- **Tanda 3 (11 nov), verificada:** servidor partido (`orbital/watch/`, `orbital/foryou/`), Inicio de la TV con una sola fila
+  «A continuación» (Fernando, 11 nov: «¿no es lo mismo?»), menú solo para sistema, Buscar, sin el sello de Stremio
+  (Fernando, 11 nov).
+- **En curso:** pulido de la TV y listas largas (V4); el iPhone adopta contrato y reglas; cimientos del iPhone en rama
+  aparte (D1-B, F4, F5, F8, F10, V9).
+- **Pendiente de Fernando:** desbloquear la Mac para correr el recorrido `OrbitalMac` (la app de Mac compila pero nadie la
+  ha usado). **Pendiente de ver en aparatos reales:** vigilante con un juego abierto, barrido de mpv, velocidad con tarjeta
+  gráfica en la Legion Go, letra grande y pantalla dividida en un iPad físico.
 
 ## A · Arreglos chicos
 
@@ -63,49 +74,49 @@ no cada agente.
 - [x] **A14** (`07335b1e`) Peso: Release sin quitar símbolos (`DEPLOYMENT_POSTPROCESSING`, `STRIP_INSTALLED_PRODUCT`,
   `STRIP_STYLE=non-global` en `ios/App/project.yml`); el widget empaca todo el arte (`project.yml:133`);
   `simpsons.donut.svg` 323 KB.
-- [ ] **A15** Códigos de Real-Debrid distintos: `orbital/library/realdebrid.py:46-51` vs
+- [~] **A15** (4a47432c: tabla única, la TV ya la lee; falta el iPhone) Códigos de Real-Debrid distintos: `orbital/library/realdebrid.py:46-51` vs
   `ios/OrbitalCore/Sources/OrbitalAddons/RealDebridTorrents.swift:98-100`. Tabla código → causa en
   `design/addons-contract.json`, leída por ambos.
 - [x] **A16** (`f84b3d37`) Control del iPhone: quitar LB/RB/LT/RT/A/B/X/Y y «A · desliza para moverte»; «De 5 en 5» → «−5 min / +5 min».
 
 ## I · Diseño y uso en el iPhone
 
-- [ ] **I1** = D2-A.
-- [ ] **I2** Inicio sin margen izquierdo en el SE; con letra grande ~8 pt.
-- [ ] **I3** Letra grande: «y 1 más» partido letra por letra; en el control «De 5 en…», «Películas y seri…». `ViewThatFits`.
-- [ ] **I4** = D7-A (`Screens/LibrarySavedView.swift:363`, `Screens/HistoryScreen.swift:108`).
-- [ ] **I5** Vistas e Historial: fondo sin cielo, encabezados de mes distintos, fechas largas en vez de «hoy/ayer».
-- [ ] **I6** Hoja «Versión»: jerga («se supone», «(no dice cuál)»), «¿Otro título?» amarillo en cada renglón, rompecabezas
+- [x] **I1** (`D2-A`) = D2-A.
+- [x] **I2** (`tanda 2`) Inicio sin margen izquierdo en el SE; con letra grande ~8 pt.
+- [x] **I3** (`tanda 2`) Letra grande: «y 1 más» partido letra por letra; en el control «De 5 en…», «Películas y seri…». `ViewThatFits`.
+- [x] **I4** (`D7-A`) = D7-A (`Screens/LibrarySavedView.swift:363`, `Screens/HistoryScreen.swift:108`).
+- [x] **I5** (`tanda 2`) Vistas e Historial: fondo sin cielo, encabezados de mes distintos, fechas largas en vez de «hoy/ayer».
+- [x] **I6** (`5a056c2f`) Hoja «Versión»: jerga («se supone», «(no dice cuál)»), «¿Otro título?» amarillo en cada renglón, rompecabezas
   sin explicar. Idioma y tamaño por renglón, dudas tras ⓘ, amarillo solo con riesgo real.
-- [ ] **I7** Ficha: dos «guardar» (corazón y «Mi lista») → una sola puerta; «Versión» dentro del renglón «🇲🇽 · 1080p».
-- [ ] **I8** Un solo control para «Todo/Películas/Series» (hoy tres: Inicio, Explorar/Buscar, Top 10).
-- [ ] **I9** Encabezado de Inicio con seis cosas; la dona a Canales.
-- [ ] **I10** Explorar sin datos (abanicos vacíos, «Disney +» partido) → esqueleto o esconder; velo superior para los
+- [x] **I7** (`65bb2abe`) Ficha: dos «guardar» (corazón y «Mi lista») → una sola puerta; «Versión» dentro del renglón «🇲🇽 · 1080p».
+- [x] **I8** (`a2a80baf`) Un solo control para «Todo/Películas/Series» (hoy tres: Inicio, Explorar/Buscar, Top 10).
+- [x] **I9** (`889c487d`) Encabezado de Inicio con seis cosas; la dona a Canales.
+- [x] **I10** (`3463f66c`) Explorar sin datos (abanicos vacíos, «Disney +» partido) → esqueleto o esconder; velo superior para los
   íconos; el botón de cuadrícula suelto al encabezado.
-- [ ] **I11** Logo ancho choca con la cápsula al recoger la ficha (`Screens/TitleScrollChrome.swift:45`).
-- [ ] **I12** Regla y prueba: cada pasada de diseño también en SE, letra grande y modo claro.
-- [ ] **I13** Menores: pestañas de Biblioteca pierden el texto en SE; «Hoy» repetido en «Lo nuevo de lo tuyo»; modo claro
+- [x] **I11** (`3463f66c`) Logo ancho choca con la cápsula al recoger la ficha (`Screens/TitleScrollChrome.swift:45`).
+- [x] **I12** (`acb51afb`) Regla y prueba: cada pasada de diseño también en SE, letra grande y modo claro.
+- [~] **I13** (3463f66c: falta ver el vacío de Descargas; el botón de buscar «amarillo» es reflejo del vidrio) Menores: pestañas de Biblioteca pierden el texto en SE; «Hoy» repetido en «Lo nuevo de lo tuyo»; modo claro
   (puntos del cielo, «más» pálido en `Screens/TitleView+Detalles.swift:18`); buscar teñido de amarillo con historias;
   estados vacíos desiguales (Descargas centrado, Historial arriba); «▲ 2» sin explicar; «Un Simpson al azar» en Ajustes y
   grupo sin título; «T… E…» fijo en `HistoryScreen.swift:116-119` (usar `episodeLabel`).
 
 ## T · Diseño y uso en la TV
 
-- [ ] **T1** = D3-A (`tokens.css:301`, `themes/orbital.css:207`).
-- [ ] **T2** Letra chica: `caption`/`footnote`/`secondary` 18,6–21 px (`tokens.css:68-70`) → tres pasos 21/24/26; piso de
+- [x] **T1** (`0ac5c3dc`) = D3-A (`tokens.css:301`, `themes/orbital.css:207`).
+- [x] **T2** (`f84b7484`) Letra chica: `caption`/`footnote`/`secondary` 18,6–21 px (`tokens.css:68-70`) → tres pasos 21/24/26; piso de
   `--root-size` más alto en pantallas chicas (Legion Go).
-- [ ] **T3** = D5-A. **T4** = D4-B.
-- [ ] **T5** «Todo · Películas · Series» enfocables con ↑ como los filtros de Juegos (`main.js:1124,1768`).
-- [ ] **T6** «Tu consola» tapa Inicio en la primera carga → aviso o tarjeta en Ajustes › Resumen.
-- [ ] **T7** Buscar: fondo del sistema, resultados a la derecha en vivo, teclado compacto, más sugerencias.
-- [ ] **T8** Ficha abajo: mantener el fondo desenfocado; `--layout-title-to-content` de verdad; foco del reparto.
-- [ ] **T9** Íconos de estado de la nube al doble y estado en el pie; «Real-Debrid · bajando para ti» → «Lo que pediste».
-- [ ] **T10** Clasificación «B» sin caja de glifo; sinopsis cortada a media palabra; píldora que empieza con « · »; héroe
+- [~] **T3** (= D5-A hecho (374263f8). **T4** = D4-B hecho (9367acec, 7ee08b19: una sola fila «A continuación»))
+- [x] **T5** (`bcf3aa68`) «Todo · Películas · Series» enfocables con ↑ como los filtros de Juegos (`main.js:1124,1768`).
+- [x] **T6** (`5a57ab41`) «Tu consola» tapa Inicio en la primera carga → aviso o tarjeta en Ajustes › Resumen.
+- [x] **T7** (`717f2eeb`) Buscar: fondo del sistema, resultados a la derecha en vivo, teclado compacto, más sugerencias.
+- [x] **T8** (`2daa4af9`) Ficha abajo: mantener el fondo desenfocado; `--layout-title-to-content` de verdad; foco del reparto.
+- [x] **T9** (`639fdbbf`) Íconos de estado de la nube al doble y estado en el pie; «Real-Debrid · bajando para ti» → «Lo que pediste».
+- [x] **T10** (`810cded8`) Clasificación «B» sin caja de glifo; sinopsis cortada a media palabra; píldora que empieza con « · »; héroe
   de Películas y series con datos y fondo; Ajustes (un solo título grande, columna de ancho fijo).
-- [ ] **T11** Sistema: 312 medidas rem sueltas (60 valores) vs 9 pasos; 45 duraciones, 15 curvas; 7 nombres de radio para
+- [~] **T11** (953f3435: 2 radios y duraciones juntadas; quedan ~66 medidas rem y las curvas) Sistema: 312 medidas rem sueltas (60 valores) vs 9 pasos; 45 duraciones, 15 curvas; 7 nombres de radio para
   2 valores; dos clases de foco (`--focused` e `.is-focused`); faltan «foco sobre superficie oscura», estados
   deshabilitados y contador de fila único (hoy «6», «3 / 6», «1 / 16» y puntos).
-- [ ] **T12** Menores: «1 de 9» sin velo; aviso de error tapa el selector de consolas; con algo abierto Inicio dice
+- [x] **T12** (`810cded8`) Menores: «1 de 9» sin velo; aviso de error tapa el selector de consolas; con algo abierto Inicio dice
   «Stremio» (verificar); «S» de teclado en modo touch; «Recomendada» tapa un ícono; estrella pisa el logo.
 
 ## V · Velocidad
@@ -114,7 +125,7 @@ no cada agente.
   (`tokens.css:345-354`). Medido a 4x: p95 292 → 80 ms sin tinte. Ponerlas solo donde se usan.
 - [~] **V2** (296af40c: falta el margen animado de la tarjeta) `shelf.js:206-228` (`setFocus` recorre todo), `hero.js:37-53`, `shelf.js:270-289` (lecturas y escrituras
   mezcladas, ~9 layouts por tecla); `main.js:1006` `void view.offsetWidth` al cambiar de sección; `card.css:12-14` margen animado.
-- [ ] **V3** `backdrop.js:31` `getImageData` (~15 ms por título): que el servidor mande el tono.
+- [x] **V3** (`deea8308, f4041767`) `backdrop.js:31` `getImageData` (~15 ms por título): que el servidor mande el tono.
 - [ ] **V4** Rejillas sin virtualizar (`list-screen.js`, `games.js`, `browse.js`).
 - [x] **V5** (`64a09baa`) `orbital/net.py:76`: conexión nueva por petición; sin cortacircuitos (`api/foryou.py:163-166`).
 - [x] **V6** (`9ce00186`) `orbital/foryou.py:167-300`: caché sin tope; serializa todo dos veces por cambio (`:217`, `:225`).
@@ -131,9 +142,9 @@ no cada agente.
 
 ## F · Arquitectura y cimientos
 
-- [ ] **F1** Contrato TV ↔ iPhone: `api: N` y capacidades en `/api/ping` y `/api/companion`; fixtures que escribe una
+- [~] **F1** (e04bf1d1: hecho en la TV (29 ejemplos); falta que el iPhone los adopte) Contrato TV ↔ iPhone: `api: N` y capacidades en `/api/ping` y `/api/companion`; fixtures que escribe una
   prueba de Python (`tests/fixtures/contract/*.json`) y decodifica Swift. `OrbitalRemote.swift:106-108,576-583`.
-- [ ] **F2** Reglas compartidas como datos (`design/streams-rules.json`…): banderas e idiomas
+- [~] **F2** (3b549a37, ed5f5000: hecho en la TV; falta el iPhone) Reglas compartidas como datos (`design/streams-rules.json`…): banderas e idiomas
   (`Streams+Language.swift:16-23` vs `orbital/library/streams.py:41`), topes (25 GB vs 15 GB en 1440p: `streams.py:692,697`
   / `Streams.swift:533`), esperas (15 s vs 8 s), mosaico de Explorar (96 vs 48: `foryou.py:72-73` / `ForYou.swift:10`).
 - [ ] **F3** Tokens generados desde `design/tokens.json` hacia CSS y Swift; sumar curvas, sombras y tamaño real de letra.
@@ -143,14 +154,14 @@ no cada agente.
   (`orbital/scrobble.py:144-151`).
 - [ ] **F5** iPhone: `HistoryModel`/`ViewingsModel` en OrbitalModels con pruebas (`HistoryScreen.swift:133-185`,
   `TitleView+TusVistas.swift:123,206`).
-- [ ] **F6** Partir gigantes: `orbital/watch.py` (2525, clase `Watch` con 120 métodos), `foryou.py`, `Catalog` como
+- [~] **F6** (1b5ba6ea, 4c84f943: `watch` y `foryou` partidos; faltan `main.js`, `menus.js`, reproductor, voz, `server.py`, `PlayerScreen`) Partir gigantes: `orbital/watch.py` (2525, clase `Watch` con 120 métodos), `foryou.py`, `Catalog` como
   localizador; `orbital/web/js/main.js` (2798) y `core/menus.js` (2207); `PlayerScreen*` (43 `@State`), `RootView`.
-- [ ] **F7** CI completa: `xcodegen` + `xcodebuild build` Debug y Release sin firma; humo de la TV; `scripts/ios_golden.py`
+- [~] **F7** (09f257ca y siguientes: Xcode fijo, goldens, `tv-estable`; la app del iPhone compila en la CI como paso provisional) CI completa: `xcodegen` + `xcodebuild build` Debug y Release sin firma; humo de la TV; `scripts/ios_golden.py`
   con `git diff --exit-code`; etiqueta `tv-estable` (D8-A).
-- [ ] **F8** Limpieza: Stremio muerto en el iPhone (`authKey: { nil }` en `Services.swift:287,482`; `StremioAPI.swift`);
+- [~] **F8** (5600905f: README, docs, .gitignore; falta el Stremio muerto del iPhone) Limpieza: Stremio muerto en el iPhone (`authKey: { nil }` en `Services.swift:287,482`; `StremioAPI.swift`);
   README aún con Stremio como base (líneas 4, 32, 140); docs con Multica/CEN-; `docs/ios-companera.md:37`; `.gitignore`
   para `.playwright-mcp/`, `orbital/mpv-input.conf`, `orbital/orbital-mouse.lua`; `opentelemetry-api` sin uso.
-- [~] **F9** (43a4d524: falta la actualización con versiones mezcladas) Servidor, estabilidad: mpv huérfano (`player.py:1423-1431`, Job Object o barrido); `SERVICE_ERRORS` con
+- [x] **F9** (43a4d524, 59790ea4, 40208057: incluye probar la versión nueva en copia aparte y el vigilante que no quita la pantalla) Servidor, estabilidad: mpv huérfano (`player.py:1423-1431`, Job Object o barrido); `SERVICE_ERRORS` con
   `OSError`/`ValueError` (`net.py:19`, `foryou.py:54`) → `NetError`; un hilo por comando a mpv (`mpv.py:66-69`); SSE que
   descarta eventos (`api/live.py:49-52`); actualización con versiones mezcladas (`updater.py:113-121`).
 - [~] **F10** (9af65644: índice de descargas y topes; falta lo demás) iPhone, estabilidad y deuda: índice de descargas que se traga la corrupción (`Platform/FileStores.swift:35-37`);
