@@ -48,11 +48,10 @@ export const LineSkeleton = ({ className = null, label = "" } = {}) =>
   h("span", { class: ["skeleton", "skeleton--line", className], ...(label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" }) });
 
 /** «Nuevo» sobre un póster: el listón en diagonal de la esquina (como DSCornerRibbon del iPhone). Va dentro de la pieza
- *  que lo lleva (posición relativa); «HOY» sigue siendo una insignia. */
-// R2-10 (11 nov): ya no es un listón en diagonal (tapaba el arte y era texto en cápsula): un punto turquesa discreto en la
-// esquina, el mismo turquesa de «ya salió» en «Lo nuevo de lo tuyo». El lector de pantalla lo lee «Nuevo».
+ *  que lo lleva (posición relativa); «HOY» sigue siendo una insignia. Fernando (11 nov 2026) deshizo el puntito turquesa
+ *  de R2-10: «no quiero que quites la cinta de nuevo». */
 export const CornerRibbon = (text = "Nuevo", { className = null } = {}) =>
-  h("span", { class: ["corner-ribbon", className], role: "img", "aria-label": text });
+  h("span", { class: ["corner-ribbon", className], "aria-label": text }, h("span", { class: "corner-ribbon__band", "aria-hidden": "true" }, text));
 
 /** La casilla de un póster mientras eliges varios en una lista tuya o en Guardado (G3-A, como `ListSelection` del iPhone):
  *  vacía (vidrio) o elegida (blanca con la palomita), en la esquina. Se toca o se le hace clic (`onPress`); con el mando, A
