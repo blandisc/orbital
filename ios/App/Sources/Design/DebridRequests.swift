@@ -129,7 +129,7 @@ struct DebridRequestSheet: View {
                 .accessibilityIdentifier("debrid-notifications-off")
             }
             if otherAccount {
-                Text("Lo pidieron con otra cuenta de Real-Debrid: se cancela desde ahí.").recipe(.footnote, color: DS.textMuted)
+                Text("Lo pidió otra cuenta: se cancela desde ahí.").recipe(.footnote, color: DS.textMuted)
                     .accessibilityIdentifier("debrid-other-account")
             }
             VStack(spacing: DS.Space.s2) {

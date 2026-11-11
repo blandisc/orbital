@@ -88,9 +88,16 @@ public enum DesignTokens {
         /// turquesa del puntito del logo de Orbital, la firma de la app (Fernando, 2 nov 2026, B4 y D3: antes era el verde de
         /// «listo», un segundo acento junto al turquesa de los porqués). En claro, el mismo turquesa oscurecido para leerse.
         case fresh, onFresh
+        /// El texto atenuado y el más tenue del iPhone (`DS.textMuted`, `DS.textFaint`). Casi todas las pantallas tiñen su
+        /// fondo con el color del arte (`Backdrop`), así que se miden contra el peor tono posible del arte, no solo contra el
+        /// fondo liso (revisión del 11 nov: «0 de 22 vistos» daba 3,15:1 sobre la ficha de una serie). En oscuro, un paso más
+        /// claros que `secondaryLabel`/`tertiaryLabel` de la TV; en claro, los mismos. `DesignTests` lo vigila (≥ 4.5:1).
+        case mutedOnArt, faintOnArt
 
         public var hex: (dark: String, light: String) {
             switch self {
+            case .mutedOnArt: (palette["ink-200"]!, "#4c4c53")
+            case .faintOnArt: ("#bcbcc2", "#5f5f66")
             case .success: (palette["pad-green"]!, "#1f7a3a")
             case .onSuccess: (palette["ink-1000"]!, palette["paper"]!)
             case .fresh: (palette["teal-300"]!, "#0b7a6e")
@@ -104,8 +111,26 @@ public enum DesignTokens {
             case .onSuccess: ("#000000", "#ffffff")
             case .fresh: ("#99f6e4", "#065a51")
             case .onFresh: ("#000000", "#ffffff")
+            case .mutedOnArt: ("#e4e4e8", "#34343a")
+            case .faintOnArt: ("#d4d4d9", "#48484f")
             }
         }
+    }
+
+    /// Los tonos con que el arte puede teñir el fondo (`Backdrop.tone`): en oscuro, el `tint` de `ArtPalette`; en claro, su
+    /// `accent` mezclado con el papel. Para medir el texto contra todos (un tono cada 3°, saturación baja y alta).
+    public static func artBackdrops(light: Bool) -> [String] {
+        var out: [String] = []
+        for hue in stride(from: 0.0, to: 360, by: 3) {
+            for saturation in [0.2, 0.55, 1.0] {
+                let (tint, accent) = ArtPalette.palette(for: (hue, saturation))
+                if !light { out.append(String(format: "#%02x%02x%02x", tint.r, tint.g, tint.b)); continue }
+                let paper = rgb(hex: palette["paper"]!)!, mix = Projection.lightMix
+                func blend(_ a: Int, _ b: Double) -> Int { Int((Double(a) * (1 - mix) + b * 255 * mix).rounded()) }
+                out.append(String(format: "#%02x%02x%02x", blend(accent.r, paper.r), blend(accent.g, paper.g), blend(accent.b, paper.b)))
+            }
+        }
+        return out
     }
 
     /// Las capas translúcidas (líneas, rellenos, velos) se calculan sobre el color de texto de cada modo: blanco en oscuro y

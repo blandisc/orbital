@@ -52,7 +52,7 @@ enum ThisDevice {
     @MainActor static var platform: String {
         ProcessInfo.processInfo.isiOSAppOnMac ? "mac" : UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
     }
-    /// El símbolo de este aparato («En este iPhone · sin internet», RX1-A).
+    /// El símbolo de este aparato («Para ver sin internet», RX1-A).
     @MainActor static var symbol: String { ["mac": "laptopcomputer", "ipad": "ipad"][platform] ?? "iphone" }
     /// Brillo y volumen con el dedo sobre el video (iPhone, iPad). En la Mac no aplican.
     static let hasTouchScreenControls = !ProcessInfo.processInfo.isiOSAppOnMac

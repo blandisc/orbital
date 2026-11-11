@@ -119,9 +119,9 @@ struct BrowseView: View {
         .background(Backdrop(tint: tint.colors))
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        // Automático: a la vista al abrir y se guarda al bajar. En iOS 27, al esconderse la barra de abajo el campo sube
-        // bajo el título, y con `.always` se quedaba ahí fijo estorbando.
-        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text("Películas y series"))
+        // Siempre a la vista (revisión del 11 nov): con `.automatic`, en iOS 27 el campo solo salía al jalar hacia abajo y,
+        // ya con texto, no se veía qué buscaste. Al bajar por los resultados se va con la barra de arriba y vuelve al subir.
+        .searchable(text: $query, isPresented: $searching, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Películas y series"))
         .searchFocused($typing)
         .onChange(of: ui.focusSearch, initial: true) { _, wants in
             guard wants else { return }
@@ -195,10 +195,21 @@ struct BrowseView: View {
     // MARK: resultados
     @ViewBuilder private var results: some View {
         let model = search.model
-        // «Sin resultados» solo cuando ya contestó la búsqueda de lo que está escrito (no durante la espera de la última letra).
-        let answered = !model.isSearching && model.searchedQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
-        else if model.results.isEmpty && answered { DSEmptyState(symbol: "magnifyingglass", title: Text("Sin resultados"), message: Text("Nada con «\(query)». Prueba con otro nombre.")) }
+        // El modelo dice en qué va lo escrito: una búsqueda siempre termina (con resultados, sin ellos o con «Reintentar»).
+        let status = model.status(for: query)
+        let answered = status != .waiting
+        switch status {
+        case .failed(let error):
+            DSEmptyState(symbol: "exclamationmark.triangle", title: Text("No se pudo buscar"), message: Text(verbatim: env.message(error))) {
+                Button("Reintentar", systemImage: "arrow.clockwise") { Task { await model.search(query) } }
+            }
+        case .empty:
+            DSEmptyState(symbol: "magnifyingglass", title: Text("Sin resultados"),
+                         message: Text("Nada con «\(query.trimmingCharacters(in: .whitespaces))». Revisa cómo se escribe o prueba con el nombre original.")) {
+                Button("Búsqueda avanzada", systemImage: "slider.horizontal.3") { filterStart = nil; showFilter = true }
+            }
+        default: EmptyView()
+        }
         let shown = kind.isEmpty ? model.results : model.results.filter { $0.kind == kind }
         let movieCount = model.results.filter { $0.kind == "movie" }.count, seriesCount = model.results.filter { $0.kind == "series" }.count
         if model.results.count > 1 || !kind.isEmpty {
@@ -219,7 +230,7 @@ struct BrowseView: View {
         if answered, !model.results.isEmpty, shown.isEmpty {
             DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada de ese tipo"), message: Text("Prueba con «Todo»."))
         }
-        if !answered && model.results.isEmpty && model.error == nil {
+        if status == .waiting && model.results.isEmpty {
             // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
             DSPosterGrid(items: DSPosterSlot.slots(9)) { _, width in
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill).frame(width: width).aspectRatio(DS.Poster.aspect, contentMode: .fit)

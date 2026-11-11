@@ -6,7 +6,7 @@ import OrbitalModels
 /// La pestaña Biblioteca (Fernando, 3 nov 2026: BI2-A), con tres pestañas de texto arriba: «Descargas» · «Mi media» ·
 /// «Guardado». Abre donde la dejaste (en este aparato); la primera vez, en Guardado. Un aviso de descargas abre «Descargas».
 ///
-/// «Descargas», en dos partes (RX1-A, 3 nov): «En este iPhone · sin internet» arriba (lo que se está bajando a este aparato,
+/// «Descargas», en dos partes (RX1-A, 3 nov): «Para ver sin internet» arriba (lo que se está bajando a este aparato,
 /// con su avance, lo listo para ver sin conexión agrupado por título y la descarga inteligente) y, abajo, «Lo que
 /// pediste» (lo que pediste a la nube, `DownloadsCloudPart`; Fernando, 4 nov: primero el aparato). Sin Real-Debrid (Plus, App Store) solo hay la segunda
 /// y no lleva rótulo. El fondo toma el color de lo que se está bajando. «Mi media» es tu OneDrive (luego Plex y Jellyfin) y
@@ -134,8 +134,7 @@ struct DownloadsView: View {
         // «Descargas» (Real-Debrid y este aparato, RX1-A; dice cuántas bajan), Mi media (tu OneDrive; luego Plex y Jellyfin), con
         // carpeta: la nube es solo Real-Debrid (Fernando, 3 nov), y Guardado (Mi lista y tus listas de Trakt, BI1-A).
         let bajando = cloudActive + observer.model.active.count
-        let downloads = bajando > 0 ? Text("Descargas · \(bajando)") : Text("Descargas")
-        return DSTextTabs(options: [.init(id: Part.phone, title: downloads, symbol: "arrow.down.circle"), .init(id: .media, title: Text("Mi media"), symbol: "folder"),
+        return DSTextTabs(options: [.init(id: Part.phone, title: Text("Descargas"), symbol: "arrow.down.circle", badge: bajando), .init(id: .media, title: Text("Mi media"), symbol: "folder"),
                                     .init(id: .saved, title: Text("Guardado"), symbol: "bookmark")], selection: $part)
             .accessibilityIdentifier("library-parts")
     }
@@ -146,10 +145,10 @@ struct DownloadsView: View {
         let level: DSSectionHead.Level = showsCloud ? .subsection : .section
         let symbol = { (name: String) in showsCloud ? nil : name }
         return List {
-            // Primero «En este iPhone · sin internet» y abajo «Lo que pediste» (Fernando, 4 nov 2026, la 1774).
+            // Primero «Para ver sin internet» y abajo «Lo que pediste» (Fernando, 4 nov 2026, la 1774).
             if showsCloud {
                 Section {
-                    DSSectionHead(title: DeviceWords.text("En este iPhone · sin internet", mac: "En esta Mac · sin internet"), level: .section, symbol: ThisDevice.symbol)
+                    DSSectionHead(title: Text("Para ver sin internet"), level: .section, symbol: ThisDevice.symbol)   // antes «En este iPhone · sin internet», que se leía como aviso de que no hay red (revisión del 11 nov)
                         .listHeadRow().accessibilityIdentifier("downloads-device")
                     if model.items.isEmpty { deviceEmpty.listRowBackground(Color.clear) }
                 }

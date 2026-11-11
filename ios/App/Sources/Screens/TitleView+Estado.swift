@@ -11,7 +11,10 @@ extension TitleView {
         let follow = env.follow
         let _ = follow.track()
         let status = model.status(dropped: follow.hidden.contains(model.metaID))
-        let label = ActionTileLabel(title: Self.statusTitle(status), symbol: Self.statusSymbol(status), active: status != .none, tint: artAccent)
+        // Siempre «Guardar» (decisión del 11 nov, por confirmar con Fer): el marcador se rellena si ya está en alguna parte y el
+        // estado va abajo en chico. Antes el botón se llamaba «Mi lista», «Viendo» o «Vista» según el caso.
+        let label = ActionTileLabel(title: Text("Guardar"), symbol: status == .none ? DS.Symbol.save : DS.Symbol.saved, active: status != .none, tint: artAccent,
+                                    detail: status == .none ? nil : Self.statusTitle(status))
         return Group {
             if status == .none {
                 Menu { statusMenu(model, status, follow) } label: { label } primaryAction: { Task { await quickSave(model) } }
@@ -23,6 +26,7 @@ extension TitleView {
         .menuStyle(.button).buttonStyle(.plain)
         .dsFeedback(.success, trigger: status) { _, now in now != .none }
         .animation(DS.Motion.base(reduceMotion), value: status)
+        .accessibilityValue(status == .none ? Text(verbatim: "") : Self.statusTitle(status))
         .accessibilityIdentifier("title-status")
     }
 

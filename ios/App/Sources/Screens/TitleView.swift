@@ -477,43 +477,16 @@ struct TitleView: View {
     }
 
     /// La versión de la serie (lo que recuerda: latino, castellano, inglés…); tocarla elige otra «desde aquí».
-    @ViewBuilder private func seriesVersion(_ model: TitleModel, wanted: String) -> some View {
-        if let next = model.continueVideoID {
-            Button { sourcesFor = SourcesTarget(videoID: next, purpose: .watch, fromHere: true) } label: {
-                // La bandera y el idioma, sin el ícono de lista (Fernando, 2 nov 2026, N2: la bandera ya dice qué es, como en el
-                // renglón bajo «Continuar»).
-                HStack(spacing: DS.Space.s2) {
-                    // «es» es «cualquier español» (lo que pediste), no una versión que no dice cuál.
-                    Text("\(Text.flag(wanted))\(Text(verbatim: wanted == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage) : Streams.versionLanguageName(wanted, in: env.services.appSettings.uiLanguage)))")
-                        .recipe(.labelLarge, color: DS.text).lineLimit(1)
-                    Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
-                }
-            }
-            .dsSecondaryButton()
-            .accessibilityLabel(Text("Versión de la serie"))
-            .accessibilityIdentifier("series-version")
-        }
-    }
-
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
         // Un solo renglón de controles: a la izquierda la temporada en lista desplegable (Fernando, 1 nov 2026: las cápsulas
         // «T1, T2…» van solo en el reproductor; la misma pieza que Mi media y la hoja de episodios) y a la derecha la versión de
         // la serie, su cápsula gemela; abajo, el avance de la temporada.
-        let wanted = env.services.titlePrefs.languages(for: model.metaID, settings: env.services.appSettings).prefs.wanted
         // ET1 (Fernando, 9 nov): la temporada con cuántos llevas debajo, y a su lado dos botones de ícono (⬇︎ bajarla, ✓ marcarla
-        // vista) con su texto chico; la versión de la serie a la derecha o, si no cabe, en su renglón.
+        // vista) con su texto chico. La versión de la serie ya no va aquí (revisión del 11 nov: eran dos controles de versión
+        // en la misma ficha): es el renglón bajo «Continuar», que abre la hoja «Versión».
         let progress = model.seasonProgress
         if !model.seasons.isEmpty || model.continueVideoID != nil {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: DS.Space.s3) {
-                    seasonHeading(model, progress); Spacer(minLength: DS.Space.s2)
-                    seriesVersion(model, wanted: wanted); seasonActions(model, progress)
-                }
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    HStack(alignment: .top, spacing: DS.Space.s3) { seasonHeading(model, progress); Spacer(minLength: DS.Space.s2); seasonActions(model, progress) }
-                    seriesVersion(model, wanted: wanted)
-                }
-            }
+            HStack(alignment: .top, spacing: DS.Space.s3) { seasonHeading(model, progress); Spacer(minLength: DS.Space.s2); seasonActions(model, progress) }
             if progress.total > 0 {
                 ProgressView(value: Double(progress.watched), total: Double(progress.total)).tint(DS.accent)
             }

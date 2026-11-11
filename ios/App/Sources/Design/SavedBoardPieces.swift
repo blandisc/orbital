@@ -9,6 +9,9 @@ struct SavedStateTile: View {
     let title: Text
     let count: Int?
     let posters: [String]
+    /// En lugar de los pósters, lo que distingue a la pila (Historial: cuándo fue la última vez). Revisión del 11 nov:
+    /// Historial y Vistas enseñaban los mismos tres pósters.
+    var detail: Text? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -20,6 +23,20 @@ struct SavedStateTile: View {
                     .contentTransition(.numericText())
             }
             title.recipe(.secondary, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            if let detail {
+                detail.recipe(.footnote, color: DS.textMuted).lineLimit(2)
+                    .frame(maxWidth: .infinity, minHeight: DS.SavedBoard.miniPoster / DS.Poster.aspect, alignment: .topLeading)
+            } else { miniPosters }
+        }
+        .padding(DS.Space.s3)
+        // En una fila, todas del mismo ancho y del alto de la más alta.
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)   // ds-exception: sin `minWidth: 0` la pila de cuatro pósters salía más ancha
+        .dsCard(translucent: true)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var miniPosters: some View {
             HStack(spacing: DS.Space.s1) {
                 ForEach(Array(posters.prefix(DS.SavedBoard.miniPosters).enumerated()), id: \.offset) { _, url in
                     PosterView(url: url, title: "").frame(width: DS.SavedBoard.miniPoster)
@@ -29,12 +46,5 @@ struct SavedStateTile: View {
                    maxHeight: DS.SavedBoard.miniPoster / DS.Poster.aspect, alignment: .leading)
             .clipped()   // en una pila angosta los pósters que no caben se cortan, no la ensanchan
             .accessibilityHidden(true)
-        }
-        .padding(DS.Space.s3)
-        // En una fila, todas del mismo ancho y del alto de la más alta.
-        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)   // ds-exception: sin `minWidth: 0` la pila de cuatro pósters salía más ancha
-        .dsCard(translucent: true)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
     }
 }

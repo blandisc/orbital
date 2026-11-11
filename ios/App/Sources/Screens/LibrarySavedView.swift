@@ -262,8 +262,9 @@ struct LibrarySavedView: View {
     private func history(_ board: SavedBoard) -> some View {
         NavigationLink(value: HistoryRoute()) {
             // El número: cuántos títulos tienen fecha en tu historial (lo que hay adentro), como las otras cuatro pilas.
+            // Lo que la distingue de «Vistas» (los títulos que ya viste): cuándo fue la última vez que viste algo.
             SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: model.loadedOnce ? board.lastWatched.count : nil,
-                           posters: recentPosters(board))
+                           posters: [], detail: lastTime(board))
         }
         .accessibilityHint(Text("Cada vista con su fecha"))
         .accessibilityIdentifier("saved-history")
@@ -279,9 +280,10 @@ struct LibrarySavedView: View {
         }
     }
 
-    /// Lo último que viste, para los pósters chicos de «Historial».
-    private func recentPosters(_ board: SavedBoard) -> [String] {
-        board.items(.watched).sorted { (board.lastWatched[$0.imdb] ?? .distantPast) > (board.lastWatched[$1.imdb] ?? .distantPast) }.map(\.poster)
+    /// «Última vez: Ayer · 21:30» en «Historial» (nil sin nada visto todavía).
+    private func lastTime(_ board: SavedBoard) -> Text? {
+        guard let last = board.lastWatched.values.max() else { return nil }
+        return Text("Última vez: \(HistoryScreen.when(last, locale: env.uiLocale))")
     }
 
     private func tile(_ status: TitleStatus, _ title: Text, _ board: SavedBoard, ready: Bool) -> some View {

@@ -44,7 +44,7 @@ struct TorrentioSettings: View {
                 }
                 .accessibilityIdentifier("torrentio-qualities")
                 // T8-A: apagado, también salen las que se pueden pedir (y se piden desde «Versión», R4).
-                DSToggleRow("Solo lo que ya está en Real-Debrid",
+                DSToggleRow("Solo lo que ya está en la nube",
                             detail: options.debridOptions.contains("nodownloadlinks") ? "Prendido: solo ves lo que arranca al instante" : "Apagado: también ves lo que se puede pedir",
                             isOn: Binding(get: { options.debridOptions.contains("nodownloadlinks") }, set: { on in
                                 model.change { o in

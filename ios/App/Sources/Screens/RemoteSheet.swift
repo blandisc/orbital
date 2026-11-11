@@ -443,9 +443,9 @@ struct RemoteSheet: View {
         }
         HStack(spacing: DS.Space.s2) {
             if series { RemoteKey(symbol: "backward.end.fill", title: Text("Anterior")) { Task { await model.press(.pageleft) } } }
-            RemoteKey(symbol: "gobackward.10", title: Text("−10 s")) { Task { await model.control("skip", delta: -10) } }
+            RemoteKey(symbol: DS.Symbol.skipBack, title: Text("−10 s")) { Task { await model.control("skip", delta: -10) } }
             RemoteKey(symbol: now.paused ? "play.fill" : "pause.fill", title: now.paused ? Text("Continuar") : Text("Pausa")) { Task { await model.control("toggle") } }
-            RemoteKey(symbol: "goforward.10", title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
+            RemoteKey(symbol: DS.Symbol.skipForward, title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
             if series { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
         }
         // Las pistas: si la consola las manda, se eligen aquí; si no, X (audio y subtítulos en la TV). Episodios o Fuentes
@@ -567,11 +567,13 @@ struct RemoteSheet: View {
             key(model, "ellipsis", "options", Text("Opciones"), .options)
         }
         HStack(spacing: DS.Space.s2) {
-            key(model, "backward.end", nil, Text("5 atrás"), .pageleft)   // la leyenda «De 5 en 5» de la TV era igual en las dos (A16)
+            // Saltan 5 en la fila de la TV (la leyenda «De 5 en 5» de la TV era igual en las dos, A16). Antes «5 atrás» sin
+            // unidad y con los íconos de pista anterior/siguiente, justo bajo «Anterior / Siguiente» (revisión del 11 nov).
+            key(model, DS.Symbol.rowBack, nil, Text("−5 en la fila"), .pageleft)
             key(model, "house", nil, Text("Inicio"), .home)
             key(model, "line.3.horizontal", "menu", Text("Menú"), .menu)
             key(model, "magnifyingglass", "search", Text("Buscar"), .search)
-            key(model, "forward.end", nil, Text("5 adelante"), .pageright)
+            key(model, DS.Symbol.rowForward, nil, Text("+5 en la fila"), .pageright)
         }
     }
 

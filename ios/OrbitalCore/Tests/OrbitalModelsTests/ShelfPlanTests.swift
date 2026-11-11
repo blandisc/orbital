@@ -166,6 +166,17 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertTrue(model.needsSources)
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676"])
     }
+
+    /// Revisión 2 del 11 nov: Explorar enseña su esqueleto desde el primer cuadro; antes de la primera carga no está «vacío».
+    func testExploreShowsItsSkeletonBeforeTheFirstLoad() async throws {
+        let rig = try ServicesRig(traktLinked: true, traktClientID: "cid")
+        TraktPublicListsTests.trending(rig, series: [("tt0386676", "The Office", 2005)], movies: [])
+        let model = ParaTiModel(rig.services)
+        XCTAssertTrue(model.showsFirstSkeleton, "antes de cargar: esqueleto")
+        XCTAssertFalse(model.feedIsEmpty, "antes de cargar no se invita a sumar fuentes")
+        await model.load()
+        XCTAssertFalse(model.showsFirstSkeleton, "ya cargó: sin esqueleto")
+    }
 }
 
 final class DecideRulesTests: XCTestCase {

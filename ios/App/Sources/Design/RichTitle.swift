@@ -57,7 +57,7 @@ struct RatingsRow: View {
     @ViewBuilder private var marks: some View {
         if let imdb, (Double(imdb) ?? 0) > 0 { rating(.imdb, Text(verbatim: imdb)) }
         if let tmdb, tmdb > 0 { rating(.tmdb, Text(verbatim: "\(Int((tmdb * 10).rounded()))\u{00A0}%")) }
-        if let trakt, trakt > 0 { rating(.trakt, Text(verbatim: "\(Int((trakt * 10).rounded()))\u{00A0}%")) }
+        if let trakt, trakt > 0 { rating(.trakt, Text(verbatim: "\(TraktRatings.percent(trakt))\u{00A0}%")) }
         if let letterboxd, letterboxd > 0 {
             HStack(spacing: DS.Space.s2) {
                 LetterboxdMark().accessibilityHidden(false).accessibilityLabel(Text(verbatim: "Letterboxd"))

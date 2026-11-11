@@ -33,7 +33,12 @@ struct YearView: View {
                         stat(Text(verbatim: genreName(r.topGenre)), Text("tu género"))
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        DSSectionHead(title: Text("Día por día"), trailing: Text("\(r.movies) películas · \(r.episodes) episodios"), level: .section, symbol: "calendar")
+                        // La cuenta bajo el título, no a su lado: a la derecha se cortaba («272 episodi…», revisión 2 del 11 nov).
+                        VStack(alignment: .leading, spacing: DS.Space.s1) {
+                            DSSectionHead(title: Text("Día por día"), level: .section, symbol: "calendar")
+                            Text("\(r.movies) películas · \(r.episodes) episodios").recipe(.footnote, color: DS.textMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         ScrollView(.horizontal, showsIndicators: false) { heatMap(r) }
                             .defaultScrollAnchor(.trailing, for: .initialOffset)   // lo reciente a la vista
                             .defaultScrollAnchor(.leading, for: .alignment)   // si cabe entero (iPad, Mac), a la izquierda

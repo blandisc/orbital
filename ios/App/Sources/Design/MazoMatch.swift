@@ -20,7 +20,7 @@ struct MatchCard: View {
 
     /// Hacia dónde va y cuánto (lo que más se haya arrastrado manda).
     private var pull: (color: Color, label: LocalizedStringKey, amount: Double, alignment: Alignment, tilt: Double)? {
-        if rise > abs(lean), rise > DS.Match.hintFrom { return (DS.Match.tonight, "★ Para hoy", rise, .bottom, 0) }
+        if rise > abs(lean), rise > DS.Match.hintFrom { return (DS.Match.tonight, "Para hoy", rise, .bottom, 0) }
         guard abs(lean) > DS.Match.hintFrom else { return nil }
         return lean > 0 ? (DS.Match.keep, "Guardar", abs(lean), .topLeading, -DS.Match.stampTilt) : (DS.Match.pass, "Paso", abs(lean), .topTrailing, DS.Match.stampTilt)
     }
@@ -48,10 +48,10 @@ struct MatchCard: View {
             .onArt()
         }
         .overlay(alignment: .topTrailing) {
-            if let rating = suggestion.traktRating, rating > 0 {
+            if let rating = TraktRatings.shown(suggestion.imdb, fallback: suggestion.traktRating), rating > 0 {
                 HStack(spacing: DS.Space.s1) {
                     Image("rating-trakt").resizable().scaledToFit().frame(width: DS.Match.ratingLogo, height: DS.Match.ratingLogo)
-                    Text(verbatim: "\(Int((rating * 10).rounded())) %").recipe(.label, color: DS.paper)
+                    Text(verbatim: "\(TraktRatings.percent(rating))\u{00A0}%").recipe(.label, color: DS.paper)
                 }
                 .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
                 .background(DS.badgeBackground, in: Capsule())

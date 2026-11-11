@@ -125,7 +125,11 @@ public final class ParaTiModel: ObservableModel {
     private var visibleMemo: [ShelfPlan]?
     private var hubsMemo: [PlatformHub]?
     /// Ninguna fuente dio estantes: el feed cae a lo que está en tendencia y a la invitación a conectar fuentes.
-    public var feedIsEmpty: Bool { !isLoading && visibleShelves.isEmpty }
+    /// Vacío de verdad: ya terminó una carga y no hay nada. Antes de la primera carga no está vacío, está por llegar (revisión 2 del
+    /// 11 nov: Explorar se veía en blanco o invitaba a sumar fuentes un instante antes de que llegara lo primero).
+    public var feedIsEmpty: Bool { hasLoaded && !isLoading && visibleShelves.isEmpty }
+    /// Lo que se ve antes de que llegue algo: el esqueleto desde el primer cuadro, no un hueco.
+    public var showsFirstSkeleton: Bool { !hasLoaded || isLoading }
     /// Mostrar «Conecta Trakt o tu Orbital»: no hay ninguna fuente tuya (solo lo que está en tendencia).
     public var needsSources: Bool { feedIsEmpty || isGeneric }
     /// «Series · Películas» solo tiene sentido si algún estante lo respeta.
@@ -157,10 +161,12 @@ public final class ParaTiModel: ObservableModel {
         await load()
     }
     private var lastLoad: Date?
+    /// Ya terminó al menos una carga (con o sin resultado).
+    public private(set) var hasLoaded = false
 
     public func load() async {
         isLoading = true
-        defer { isLoading = false; if !Task.isCancelled { lastLoad = services.now() } }
+        defer { if !Task.isCancelled { lastLoad = services.now() }; hasLoaded = true; isLoading = false }
         triedThisLoad = []
         // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
         // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.

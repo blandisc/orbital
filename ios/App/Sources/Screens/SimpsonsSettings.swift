@@ -2,7 +2,18 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «Un Simpson al azar» (Ajustes): de qué temporadas sale el episodio de la dona de Inicio. Las temporadas que existen llegan
+/// Las temporadas de la dona, en su propia página: se llega desde «Tus canales» (el + junto a la dona de Inicio). Antes vivía
+/// en Ajustes (revisión del 11 nov: es un detalle de Inicio, no un ajuste de la app).
+struct SimpsonsSeasonsPage: View {
+    var body: some View {
+        Form { SimpsonsSeasonsSection() }
+            .tint(DS.accent)
+            .scrollContentBackground(.hidden).background(Backdrop())
+            .navigationTitle("Un Simpson al azar").navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// «Un Simpson al azar»: de qué temporadas sale el episodio de la dona de Inicio. Las temporadas que existen llegan
 /// de Cinemeta al abrirla.
 struct SimpsonsSeasonsSection: View {
     @Environment(AppEnvironment.self) private var env

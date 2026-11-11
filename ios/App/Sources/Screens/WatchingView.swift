@@ -132,7 +132,8 @@ struct WatchingView: View {
             .padding(DS.Space.gutter)
             .onArt()
         }
-        .frame(height: sizeClass == .regular && width > 0 ? width / DS.Watching.heroAspectWide : DS.Watching.heroHeight)
+        .frame(height: sizeClass == .regular && width > 0
+               ? min(width / DS.Watching.heroAspectWide, WindowMetrics.size.height * DS.Watching.heroMaxShare) : DS.Watching.heroHeight)
         .padding(.horizontal, -DS.Space.gutter)   // de orilla a orilla
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }

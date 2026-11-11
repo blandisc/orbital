@@ -145,6 +145,37 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(!search.results.isEmpty && search.results.allSatisfy { $0.kind == "movie" })
     }
 
+    /// Revisión del 11 nov: una búsqueda sin resultados dejaba el esqueleto para siempre. Siempre termina: vacía, con error o
+    /// porque tardó demasiado (y entonces se puede reintentar).
+    func testSearchAlwaysEndsEmptyFailedOrSlow() async throws {
+        let rig = try ServicesRig()
+        let movieURL = "https://v3-cinemeta.strem.io/catalog/movie/top/search=zzqx.json", seriesURL = "https://v3-cinemeta.strem.io/catalog/series/top/search=zzqx.json"
+        rig.http.json[movieURL] = ["metas": []]
+        rig.http.json[seriesURL] = ["metas": []]
+        let search = SearchModel(rig.services)
+        XCTAssertEqual(search.status(for: "z"), .idle)
+        XCTAssertEqual(search.status(for: "zzqx"), .waiting, "antes de contestar, el esqueleto")
+        await search.search("zzqx")
+        XCTAssertEqual(search.status(for: "zzqx"), .empty, "contestaron sin nada: «Sin resultados», no el esqueleto")
+        XCTAssertEqual(search.status(for: "zzqx "), .empty, "los espacios de la orilla no cuentan")
+        XCTAssertEqual(search.status(for: "zzqxy"), .waiting, "una letra más: espera la respuesta nueva")
+
+        // Nadie contesta (404 en las dos): error con «Reintentar».
+        await search.search("nadie")
+        guard case .failed = search.status(for: "nadie") else { return XCTFail("sin respuesta debe decir que no se pudo") }
+
+        // Tardan más que el límite: también termina.
+        rig.http.json[movieURL.replacingOccurrences(of: "zzqx", with: "lento")] = ["metas": []]
+        rig.http.json[seriesURL.replacingOccurrences(of: "zzqx", with: "lento")] = ["metas": []]
+        rig.http.delays = [movieURL.replacingOccurrences(of: "zzqx", with: "lento"): 3000, seriesURL.replacingOccurrences(of: "zzqx", with: "lento"): 3000]
+        search.timeout = 300_000_000
+        let start = Date()
+        await search.search("lento")
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2.5, "no espera a la red más que el límite")
+        guard case .failed(let why) = search.status(for: "lento") else { return XCTFail("lo lento termina en error") }
+        XCTAssertTrue(why.contains("tardó"))
+    }
+
     // MARK: ficha
     func titleRig() throws -> ServicesRig {
         let rig = try ServicesRig()

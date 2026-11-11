@@ -56,11 +56,16 @@ final class CoachMarkUITests: XCTestCase {
     func testSettingsButtonBringsThemBack() {
         app.launchArguments = ["-demo", "-demo-no-idle", "-demo-free-tabs", "-demo-tab", "3", "-demo-open", "settings"]
         app.launch()
-        let reset = app.buttons["settings-coach-reset"]
+        // Desde el 11 nov, dentro de Ajustes › Aprende (una sola entrada).
+        let learn = app.buttons["settings-learn"]
         XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 20))
+        for _ in 0..<6 where !(learn.exists && learn.isHittable) { app.swipeUp() }
+        learn.tap()
+        let reset = app.buttons["learn-reset"]
         for _ in 0..<6 where !(reset.exists && reset.isHittable) { app.swipeUp() }
         reset.tap()
         app.buttons["Volver a verlos"].firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(coach("downloads").waitForExistence(timeout: 15), "de vuelta en Biblioteca, su aviso")
     }

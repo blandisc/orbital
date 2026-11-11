@@ -54,7 +54,9 @@ struct DSKindFilter: View {
 /// blanco y negrita con una rayita blanca debajo, las otras en gris; con ícono si lo traen. Sin cápsula (Fernando, 30 oct
 /// 2026). Se lee sobre el arte con su sombra.
 struct DSTextTabs<ID: Hashable>: View {
-    struct Option { let id: ID; let title: Text; var symbol: String? = nil }
+    /// `badge`: cuántos hay (Descargas bajando), en un numerito sobre el ícono. Va aparte del nombre para que la barra no
+    /// cambie de forma: con «Descargas · 3» no cabían los íconos y desaparecían (revisión del 11 nov).
+    struct Option { let id: ID; let title: Text; var symbol: String? = nil; var badge: Int? = nil }
     let options: [Option]
     @Binding var selection: ID
     /// La rayita de la elegida (blanca; turquesa solo en Inicio).
@@ -88,8 +90,10 @@ struct DSTextTabs<ID: Hashable>: View {
                             label(option, titles: titles, icons: icons, bold: true).hidden()
                             label(option, titles: titles, icons: icons, bold: on)
                         }
+                        .overlay(alignment: .topTrailing) { if let badge = option.badge, badge > 0 { countBadge(badge) } }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(option.title)
+                        .accessibilityValue(option.badge.map { Text("\($0) bajando") } ?? Text(verbatim: ""))
                         .font(DS.TextRecipe.cardTitle.font)
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
@@ -101,6 +105,15 @@ struct DSTextTabs<ID: Hashable>: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
+    }
+
+    /// El numerito de cuántos hay: encima de la orilla, sin ocupar lugar en el renglón.
+    private func countBadge(_ count: Int) -> some View {
+        Text(verbatim: "\(count)").recipe(.caption, color: DS.onFresh).monospacedDigit()
+            .padding(.horizontal, DS.Space.s1)
+            .background(DS.fresh, in: Capsule())
+            .alignmentGuide(.top) { $0[VerticalAlignment.center] }
+            .alignmentGuide(.trailing) { $0[HorizontalAlignment.center] }
     }
 
     /// El ícono con el mismo trazo siempre; solo el nombre cambia de peso.
@@ -152,7 +165,9 @@ struct DSGenreMenu: View {
 /// que las temporadas (`DSSeasonMenu`) y los géneros (`DSGenreMenu`), para elegir uno entre opciones que cambian y no caben
 /// como pestañas: la lista de Biblioteca › Guardado (Mi lista o una tuya de Trakt; Fernando, 3 nov 2026, BI1-A).
 struct DSChoiceMenu<ID: Hashable>: View {
-    struct Option { let id: ID; let title: Text; var symbol: String? = nil }
+    /// `badge`: cuántos hay (Descargas bajando), en un numerito sobre el ícono. Va aparte del nombre para que la barra no
+    /// cambie de forma: con «Descargas · 3» no cabían los íconos y desaparecían (revisión del 11 nov).
+    struct Option { let id: ID; let title: Text; var symbol: String? = nil; var badge: Int? = nil }
     let options: [Option]
     @Binding var selection: ID
     /// Qué se elige (para VoiceOver): «Lista».

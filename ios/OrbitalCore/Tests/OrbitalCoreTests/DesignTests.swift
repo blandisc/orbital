@@ -71,6 +71,30 @@ final class DesignTests: XCTestCase {
         }
     }
 
+    /// Revisión del 11 nov: «0 de 22 vistos» daba 3,15:1 sobre el fondo teñido de la serie. El texto atenuado y el tenue del
+    /// iPhone se leen (AA, 4.5:1) sobre cualquier tono que el arte le dé al fondo, en los dos modos y con «Aumentar contraste».
+    func testMutedTextIsReadableOnEveryArtTint() {
+        typealias P = DesignTokens.PhoneRole
+        for light in [false, true] {
+            let backs = DesignTokens.artBackdrops(light: light) + [light ? DesignTokens.Role.background.hex.light : DesignTokens.Role.background.hex.dark,
+                                                                   light ? DesignTokens.Role.surface.hex.light : DesignTokens.Role.surface.hex.dark]
+            for role in [P.mutedOnArt, .faintOnArt] {
+                for high in [false, true] {
+                    let pair = high ? role.highContrastHex : role.hex
+                    let worst = backs.map { DesignTokens.contrast(light ? pair.light : pair.dark, $0) }.min() ?? 0
+                    XCTAssertGreaterThanOrEqual(worst, 4.5, "\(role) en \(light ? "claro" : "oscuro")\(high ? " con alto contraste" : ""): \(worst)")
+                }
+            }
+        }
+        // El de la TV (ink-250) no alcanza sobre el arte: por eso el iPhone tiene el suyo.
+        let tv = DesignTokens.artBackdrops(light: false).map { DesignTokens.contrast(DesignTokens.Role.secondaryLabel.hex.dark, $0) }.min() ?? 0
+        XCTAssertLessThan(tv, 4.5)
+        // Y ninguna pantalla vuelve al de la TV para el texto atenuado (`DS.textMuted` es el que se lee sobre el arte).
+        let tokens = (try? String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Design/Tokens.swift"), encoding: .utf8)) ?? ""
+        XCTAssertTrue(tokens.contains("static let textMuted = role(DesignTokens.PhoneRole.mutedOnArt)"))
+        XCTAssertTrue(tokens.contains("static let textFaint = role(DesignTokens.PhoneRole.faintOnArt)"))
+    }
+
     /// Modo claro y oscuro: el texto se lee en los dos (WCAG AA), y el acento y la acción principal se distinguen del fondo.
     func testBothAppearancesHaveReadableContrast() {
         typealias R = DesignTokens.Role
@@ -332,6 +356,59 @@ final class DesignTests: XCTestCase {
             }
         }
         XCTAssertEqual(users, ["HomeView.swift"], "«¿Qué tal …?» vive solo dentro de Inicio")
+    }
+
+    /// Revisión del 11 nov: «12:47 AM» en Historial y «8:00 p.m.» en Inicio. Una sola manera de escribir la hora, en el idioma
+    /// de la app (`Strings.date(_, .time, language:)`), no la del teléfono.
+    func testOneClockFormatterInTheAppLanguage() throws {
+        let roots = ["ios/App/Sources", "ios/App/Shared"].map { repo.appendingPathComponent($0) }
+        var problems: [String] = []
+        for root in roots {
+            let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+            for file in files where file.lastPathComponent != "Strings.swift" {
+                for (i, line) in try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n").enumerated() {
+                    if line.contains("time: .shortened") || line.contains("timeStyle") || line.range(of: #"\.dateTime\.hour\("#, options: .regularExpression) != nil {
+                        problems.append("\(file.lastPathComponent):\(i + 1)")
+                    }
+                }
+            }
+        }
+        XCTAssertEqual(problems, [], "la hora se escribe con Strings.date(_, .time, language:)")
+    }
+
+    /// Revisión del 11 nov: la bandera sola a 16 pt (sobre todo la de mitad España y mitad México) parecía un ícono roto. La
+    /// bandera va siempre con su idioma escrito: ninguna pantalla usa `LanguageFlags.flagOnly`.
+    func testFlagsNeverStandAlone() throws {
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+        let users = try files.filter { try String(contentsOf: $0, encoding: .utf8).contains("LanguageFlags.flagOnly(") }.map(\.lastPathComponent)
+        XCTAssertEqual(users, [], "la bandera con su idioma: LanguageFlags.flagged")
+    }
+
+    /// Revisión 2 del 11 nov: un ícono por idea. Cada símbolo de `DS.Symbol` está en la tabla de `docs/ios-interfaz.md`, y
+    /// ningún texto usa un carácter como ícono («✓ En la TV», «▲ 2»): va el símbolo del sistema.
+    func testOneIconPerIdea() throws {
+        let icons = try String(contentsOf: repo.appendingPathComponent("ios/App/Sources/Design/Icons.swift"), encoding: .utf8)
+        let doc = try String(contentsOf: repo.appendingPathComponent("docs/ios-interfaz.md"), encoding: .utf8)
+        let block = icons.components(separatedBy: "enum Symbol").last ?? ""
+        let names = block.matches(of: /static let ([a-zA-Z]+) =|, ([a-zA-Z]+) =/).compactMap { m in (m.output.1 ?? m.output.2).map(String.init) }
+        XCTAssertGreaterThan(names.count, 8, "se leyeron los símbolos de DS.Symbol")
+        let table = doc.components(separatedBy: "### Íconos").dropFirst().first ?? ""
+        let missing = names.filter { !table.contains($0) }
+        XCTAssertTrue(missing.isEmpty, "Símbolos de DS.Symbol sin fila en docs/ios-interfaz.md § Íconos: \(missing)")
+
+        let root = repo.appendingPathComponent("ios/App/Sources")
+        let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? []).filter { $0.pathExtension == "swift" }
+        var found: [String] = []
+        for file in files {
+            for (i, line) in try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n").enumerated() {
+                let code = line.components(separatedBy: "//").first ?? ""
+                if code.contains(#"Text("✓"#) || code.contains(#"Text("▲"#) || code.contains(#"Text("›"#) || code.contains(#""★ "#) {
+                    found.append("\(file.lastPathComponent):\(i + 1)")
+                }
+            }
+        }
+        XCTAssertTrue(found.isEmpty, "Caracteres de texto usados como ícono (usa el símbolo de DS.Symbol): \(found)")
     }
 
     func testSheetsWithTheirOwnHeaderUseTheSameTop() throws {
