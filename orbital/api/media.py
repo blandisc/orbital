@@ -82,8 +82,11 @@ def _clean_id(value) -> bool:
     return True
 
 
-# Los géneros que se piden por estante (los nombres de Cinemeta).
-GENRES = {"Horror", "Comedy", "Action", "Sci-Fi", "Drama", "Animation", "Thriller", "Romance", "Crime", "Documentary", "Adventure", "Family"}
+# Los géneros que se piden por estante: los 19 que el catálogo «top» de Cinemeta tiene para películas y series (su
+# manifest.json, 10 nov 2026). La TV pide los mismos (orbital/web/js/core/curation.js · GENRE_SHELVES); antes aquí había 12
+# y siete estantes salían vacíos con «Género inválido». tests/web/genres.test.mjs falla si las dos listas no coinciden.
+GENRES = {"Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy",
+          "History", "Horror", "Mystery", "Romance", "Sci-Fi", "Sport", "Thriller", "War", "Western"}
 
 
 class ArtChoice(BaseModel):
