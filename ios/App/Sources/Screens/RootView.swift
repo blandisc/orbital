@@ -395,7 +395,9 @@ struct MainTabs: View {
         .dsFeedback(.success, trigger: finishedDownloads) { (old: Int, new: Int) -> Bool in new > old }
         // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
         // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
-        .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {
+        // Con el control abierto como panel (iPad acostado, Mac) la barrita se esconde: repetía lo que ya dice el panel
+        // (revisión 2 del 11 nov).
+        .bottomAccessory(isEnabled: (tvNow.model.now != nil || tvNow.model.game != nil) && !(showRemote && remoteAsPanel)) {
             // Un juego en la consola: su acompañante (como el control lo es de lo que suena).
             Group {
                 if let game = tvNow.model.game {
@@ -539,7 +541,8 @@ struct MainTabs: View {
         #if DEBUG
         guard Demo.isOn else { return }
         tab = Demo.tab
-        if Demo.open == "settings" || Demo.open == "year" || Demo.open == "orbital-setup" { paths[tab].append(SettingsRoute()) }
+        // `-demo-open settings-avatar` (la hoja del avatar) también vive en Ajustes.
+        if Demo.open?.hasPrefix("settings") == true || Demo.open == "year" || Demo.open == "orbital-setup" { paths[tab].append(SettingsRoute()) }
         if Demo.open == "repisa" { tab = 1; paths[1].append(RepisaRoute()) }   // `-demo-open repisa`: Colecciones
         if Demo.open == "watching" { tab = 1; paths[1].append(WatchingRoute()) }   // `-demo-open watching`: Lo que ves
         let library = AppEnvironment.downloadsTab   // `-demo-open history` / `vistas`: Guardado › Historial o Vistas (capturas)

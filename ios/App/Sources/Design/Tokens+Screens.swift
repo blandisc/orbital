@@ -179,6 +179,9 @@ extension DS {
         static let veilFrom = 0.2, heroHeight: CGFloat = 300, topCount = 10
         /// En el iPad y la Mac la portada va en esta proporción (ancho / alto): el arte llena sin bordes (`ArtFit`).
         static let heroAspectWide: CGFloat = 2.3
+        /// En ventana ancha el arte toma a lo más el 40 % del alto (revisión 2 del 11 nov: en el iPad acostado era ~60 % y
+        /// tus horas quedaban chiquitas abajo).
+        static let heroMaxShare: CGFloat = 0.4
         static let barsHeight: CGFloat = 120, barMin: CGFloat = 3
         /// La racha que se dice en la portada (desde 3 días) y el piso del azul del calendario (`DS.orbitalBlue`).
         static let streakShown = 3, dayFloor = 0.35

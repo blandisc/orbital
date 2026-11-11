@@ -71,7 +71,14 @@ struct HomeHeader: View {
         .dsFeedback(.selection, trigger: open)
         .onChange(of: stories.isEmpty) { _, empty in if empty { open = false } }
         #if DEBUG
-        .task { if Demo.isOn, Demo.has("-demo-stories-open") { open = true } }   // capturas: ya abiertas
+        // Capturas: ya abiertas. Sin la guía terminada (la demo no la enseña) no hay círculos y la bandera no abría nada
+        // (revisión del 11 nov): se da por hecha y se vuelven a enseñar.
+        .task {
+            guard Demo.isOn, Demo.has("-demo-stories-open") else { return }
+            let learn = LearnModel(env.services)
+            learn.reset(); learn.guideFinished()
+            open = true
+        }
         #endif
     }
 
@@ -97,7 +104,10 @@ struct HomeHeader: View {
         }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.bottom, DS.Space.s1)
-        .frame(maxWidth: WindowMetrics.size.width)   // nunca más ancho que la pantalla (si no, toda Inicio se recorre)
+        // Nunca más ancho que su lugar (si no, toda Inicio se recorre). Antes topaba con el ancho de la ventana, y en el iPad
+        // acostado con el control abierto (que encoge Inicio) el encabezado era más ancho que su columna y empujaba todo
+        // fuera de la pantalla: «bital», «iendo» (revisión 2 del 11 nov).
+        .containerRelativeFrame(.horizontal)
     }
 
     /// La cápsula: el control y tu foto (se hace a un lado mientras eliges en el selector, SX1).
