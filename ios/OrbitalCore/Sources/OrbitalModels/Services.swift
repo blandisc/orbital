@@ -460,11 +460,20 @@ public final class Services: ObservableModel {
     public static let tvFollowsDebridKey = "debrid-tv-follows-code"
 
     public func syncLibrary(force: Bool = false) async {
-        await freshenDebrid()
-        await traktOutbox.flush(trakt)
-        await watch.flushPending()
-        await sync.pull(force: force)
+        // Si ya va una en camino (el arranque y la carga de Inicio la piden casi juntas), se espera esa en vez de repetirla
+        // (V8, 10 nov 2026). `force` sí arranca otra.
+        if !force, let running = librarySync { await running.value; return }
+        let task = Task { [self] in
+            await freshenDebrid()
+            await traktOutbox.flush(trakt)
+            await watch.flushPending()
+            await sync.pull(force: force)
+        }
+        librarySync = task
+        await task.value
+        if librarySync == task { librarySync = nil }
     }
+    private var librarySync: Task<Void, Never>?
     public var appSettings: AppSettings { settings.value }
 
     /// Tras cambiar una clave (TMDB, Trakt): se rearman las piezas que dependen de ellas.

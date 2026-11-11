@@ -175,18 +175,24 @@ struct RootView: View {
             env.tvNow.setActive(phase == .active)
             if phase == .background { foreground.wentToBackground() }
             if phase == .active {
-                Task { await env.services.refreshSharedDebrid() }   // CX2-A, TEC-6: lo de iCloud puede llegar en cualquier momento
                 let decision = foreground.becameActive(at: Date())
-                if decision != .skip {
-                    Task { await env.ratings.refresh() }; Task { await ReleaseNotifier.check(origin: "al-abrir") }
-                    Task { await env.syncChoices() }; Task { await DebridReminderNotifier.refresh(env.services) }
-                    Task { await env.services.addonSync.refresh() }   // S6: tu lista y la de tu TV (solo Ultra con TV)
-                    Task { await AppearNotifier.check() }   // R15: lo que nadie tenía, una vez al día
-                    Task { await env.services.renewInviteIfNeeded() }   // CX4-A, TEC-16: la invitación para tu iPad no se vence
-                }
+                // V8 (10 nov 2026): antes salían 8 tareas a la vez al volver a la app, todas peleando con la pantalla que se
+                // pinta. Ahora va primero lo que se ve (tu biblioteca y tus estrellas) y lo demás después, una cosa tras otra
+                // y con prioridad baja.
                 if decision == .refresh {
-                    Task { await env.services.syncLibrary() }   // al abrir ya la pide el arranque
+                    Task { await env.services.syncLibrary() }   // al abrir ya la pide el arranque (y si va una en camino, se une a ella)
                     env.ui.returnedToApp += 1   // la pantalla abierta (Explorar, una ficha) se pone al día
+                }
+                if decision != .skip { Task { await env.ratings.refresh() } }
+                Task(priority: .utility) {
+                    await env.services.refreshSharedDebrid()   // CX2-A, TEC-6: lo de iCloud puede llegar en cualquier momento
+                    guard decision != .skip else { return }
+                    await env.syncChoices()
+                    await env.services.addonSync.refresh()   // S6: tu lista y la de tu TV (solo Ultra con TV)
+                    await env.services.renewInviteIfNeeded()   // CX4-A, TEC-16: la invitación para tu iPad no se vence
+                    await DebridReminderNotifier.refresh(env.services)
+                    await ReleaseNotifier.check(origin: "al-abrir")
+                    await AppearNotifier.check()   // R15: lo que nadie tenía, una vez al día
                 }
             }
             #if DEBUG

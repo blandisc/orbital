@@ -193,9 +193,7 @@ public enum TraktParsing {
 
     /// «2025-10-16T01:00:00.000Z» (con o sin milésimas).
     static func date(_ text: String) -> Date? {
-        let precise = ISO8601DateFormatter()
-        precise.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return precise.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+        TraktDates.precise.date(from: text) ?? TraktDates.plain.date(from: text)
     }
 
     /// Las filas de `/sync/favorites/movies` y `/sync/favorites/shows` juntas: lo que marcaste al último primero (por
@@ -214,4 +212,15 @@ public enum TraktParsing {
         }
         return found
     }
+}
+
+/// Los formateadores de fechas de Trakt, creados una sola vez (V10, 10 nov 2026): armar uno por fecha costaba en listas de
+/// cientos de renglones. `ISO8601DateFormatter` es seguro entre hilos.
+enum TraktDates {
+    nonisolated(unsafe) static let precise: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    nonisolated(unsafe) static let plain = ISO8601DateFormatter()
 }

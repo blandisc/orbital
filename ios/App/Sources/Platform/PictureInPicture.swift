@@ -93,7 +93,11 @@ struct AirPlayButton: UIViewRepresentable {
 final class NowPlaying {
     private var targets: [(MPRemoteCommand, Any)] = []
     private var artworkURL: String?
-    private var artwork: MPMediaItemArtwork?
+    private var artwork: MPMediaItemArtwork? { didSet { written = nil } }   // llegó la carátula: se vuelve a escribir
+    /// Lo último que se escribió y cuándo: iOS avanza el tiempo solo (con la velocidad), así que no hace falta reescribir cada
+    /// segundo (V10, 10 nov 2026); solo si algo cambió o la posición se movió (adelantar, atrasar, un corte).
+    private var written: (key: String, position: Double, rate: Double, at: Date)?
+    static let driftTolerance: Double = 2
 
     func start(model: PlayerModel) {
         let center = MPRemoteCommandCenter.shared()
@@ -115,17 +119,24 @@ final class NowPlaying {
     }
 
     func update(title: String, subtitle: String, poster: String?, snapshot: EngineSnapshot) {
+        loadArtwork(poster)
+        let rate = snapshot.state == .playing ? 1.0 : 0.0
+        let key = "\(title)|\(subtitle)|\(rate)|\(snapshot.duration)"
+        if let written, written.key == key {
+            let expected = written.position + written.rate * Date().timeIntervalSince(written.at)
+            if abs(snapshot.position - expected) < Self.driftTolerance { return }
+        }
+        written = (key, snapshot.position, rate, Date())
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: subtitle.isEmpty ? title : subtitle,
             MPMediaItemPropertyArtist: title,
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.video.rawValue,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: snapshot.position,
-            MPNowPlayingInfoPropertyPlaybackRate: snapshot.state == .playing ? 1.0 : 0.0,
+            MPNowPlayingInfoPropertyPlaybackRate: rate,
         ]
         if snapshot.duration > 0 { info[MPMediaItemPropertyPlaybackDuration] = snapshot.duration }
         if let artwork { info[MPMediaItemPropertyArtwork] = artwork }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        loadArtwork(poster)
     }
 
     /// El póster para la pantalla bloqueada (una sola descarga por título).

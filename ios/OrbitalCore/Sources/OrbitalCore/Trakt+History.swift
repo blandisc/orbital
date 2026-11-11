@@ -104,11 +104,7 @@ extension Trakt {
 
     static func date(_ value: JSON?) -> Date? {
         guard let text = value?.string else { return nil }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: text) { return d }
-        f.formatOptions = [.withInternetDateTime]
-        return f.date(from: text)
+        return TraktDates.precise.date(from: text) ?? TraktDates.plain.date(from: text)
     }
 
     // MARK: tu nota privada (G6): Trakt solo guarda notas con VIP
