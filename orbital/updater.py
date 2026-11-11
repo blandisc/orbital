@@ -6,16 +6,22 @@ Pasos de "Actualizar ahora":
   2. git merge --ff-only con lo nuevo (sin mezclas raras). En `main`, si el repositorio tiene la etiqueta `tv-estable`
      (la mueve la CI cuando todo pasa, D8-A), se actualiza hasta esa etiqueta y no hasta la punta de `main`: la TV nunca
      baja algo que la CI no aprobó. Sin la etiqueta, como siempre: hasta lo último de la rama.
-  3. Si cambiaron las dependencias (requirements.lock), se instalan.
-  4. Se corren las pruebas. Si fallan: git reset a la versión anterior (y sus dependencias).
+  3. Sin dependencias nuevas (requirements.lock igual): la versión nueva se prueba en una copia aparte (`git worktree`
+     temporal) mientras Orbital sigue sirviendo la de siempre desde su carpeta, sin mezclar archivos viejos y nuevos
+     (F9). Solo si pasa, la carpeta avanza (un merge --ff-only, al instante). Si falla, la carpeta ni se tocó.
+  4. Con dependencias nuevas, como antes: se avanza la carpeta, se instalan y se prueba ahí (las dependencias viven en
+     el mismo .venv, no se pueden probar aparte). Si fallan: git reset a la versión anterior (y sus dependencias).
   5. Orbital se reabre solo con la versión nueva (el vigilante lo reabre: código RESTART).
 """
 
 from __future__ import annotations
 
 import logging
+import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -93,12 +99,50 @@ class Updater:
         self.git("fetch", "--quiet", "--force", "origin", f"+refs/tags/{STABLE_TAG}:refs/tags/{STABLE_TAG}", timeout=60)
         return f"refs/tags/{STABLE_TAG}"
 
-    def _lock_id(self) -> str:
-        """Qué versión de requirements.lock hay ("" si no hay)."""
+    def _lock_id(self, ref: str = "HEAD") -> str:
+        """Qué versión de requirements.lock hay en `ref` ("" si no hay)."""
         try:
-            return self.git("rev-parse", "HEAD:requirements.lock")
+            return self.git("rev-parse", f"{ref}:requirements.lock")
         except RuntimeError:
             return ""
+
+    def _apply_aside(self, info: UpdateInfo, target: str, before: str, progress) -> tuple[bool, str]:
+        """F9: prueba `target` en una copia aparte y solo si pasa avanza la carpeta. Orbital sigue sirviendo la versión de
+        siempre, completa, mientras tanto."""
+        aside = Path(tempfile.mkdtemp(prefix="orbital-update-"))
+        try:
+            progress(f"Descargando {info.available} cambio{'s' if info.available != 1 else ''}…")
+            self.git("worktree", "add", "--detach", "--force", str(aside), target, timeout=300)
+            progress("Probando la versión nueva…")
+            if not self._tests_pass(aside):
+                self._checked = None
+                return False, "La versión nueva no pasó sus pruebas: sigues con la versión que tenías."
+            self.git("merge", "--ff-only", target)
+        except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+            self._checked = None
+            try:  # el merge --ff-only no deja nada a medias, pero si avanzó y algo después falló, de regreso
+                if self.git("rev-parse", "HEAD") != before:
+                    self.git("reset", "--hard", before)
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                return False, f"No se pudo actualizar ({exc}). No pude volver del todo a tu versión: reinicia Orbital."
+            return False, f"No se pudo actualizar ({exc}): sigues con la versión que tenías."
+        finally:
+            self._drop_aside(aside)
+        log.info("Orbital actualizado (probado aparte): %s -> %s", before[:7], self.git("rev-parse", "--short", "HEAD"))
+        self._checked = None  # «hay N cambios» ya no es cierto
+        return True, "Listo: Orbital se reabre con la versión nueva."
+
+    def _drop_aside(self, aside: Path) -> None:
+        """Quita la copia aparte; si Windows aún tiene un archivo abierto, la borra como pueda y git la olvida."""
+        try:
+            self.git("worktree", "remove", "--force", str(aside), timeout=120)
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            shutil.rmtree(aside, ignore_errors=True)
+        try:
+            self.git("worktree", "prune", timeout=60)
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            log.debug("No pude limpiar la lista de copias de git", exc_info=True)
+        shutil.rmtree(aside, ignore_errors=True)
 
     def _pip(self) -> None:
         lock = self.repo / "requirements.lock"
@@ -106,9 +150,14 @@ class Updater:
             self.run([self.python, "-m", "pip", "install", "-q", "-r", str(lock)], cwd=self.repo, check=True,
                      capture_output=True, timeout=600, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
-    def _tests_pass(self) -> bool:
+    def _tests_pass(self, where: Path | None = None) -> bool:
+        """Las pruebas de la versión en `where` (la carpeta de Orbital, o la copia aparte). En la copia, PYTHONPATH
+        primero: así se importa SU `orbital` y no el de la carpeta (que el .venv puede tener instalado como editable)."""
+        where = where or self.repo
+        env = {**os.environ, "PYTHONPATH": str(where) + (os.pathsep + os.environ["PYTHONPATH"]
+                                                         if os.environ.get("PYTHONPATH") else "")}
         result = self.run([self.python, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", "--ignore=tests/smoke"],
-                          cwd=self.repo, capture_output=True, text=True, timeout=900,
+                          cwd=where, capture_output=True, text=True, timeout=900, env=env,
                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         if result.returncode:
             log.warning("Las pruebas de la versión nueva fallaron:\n%s", (result.stdout or "")[-2000:])
@@ -136,6 +185,9 @@ class Updater:
             return False, "Ya tienes la versión más reciente."
         before = self.git("rev-parse", "HEAD")
         lock_before = self._lock_id()
+        target = info.ref or f"origin/{info.branch}"
+        if self._lock_id(target) == lock_before:
+            return self._apply_aside(info, target, before, progress)
         try:
             progress(f"Descargando {info.available} cambio{'s' if info.available != 1 else ''}…")
             self.git("merge", "--ff-only", info.ref or f"origin/{info.branch}")

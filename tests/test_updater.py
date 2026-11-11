@@ -118,3 +118,51 @@ def test_a_tag_that_is_behind_means_nothing_new(repos):
 def test_without_the_tag_it_updates_from_the_branch_as_before(repos):
     info = Updater(repos).check()
     assert info.ref == "origin/main" and info.available == 1
+
+
+def recording_run(code, seen):
+    """Como fake_run, pero anota dónde corrieron las pruebas y qué había ahí en ese momento."""
+    def run(cmd, **kwargs):
+        from pathlib import Path
+        where = Path(kwargs["cwd"])
+        seen.append({"cwd": where, "a": (where / "a.txt").read_text(), "pythonpath": kwargs["env"]["PYTHONPATH"]})
+        return SimpleNamespace(returncode=code, stdout="", stderr="")
+    return run
+
+
+def test_f9_the_new_version_is_tested_aside_and_the_folder_moves_only_after(repos):
+    seen = []
+    ok, _ = Updater(repos, run=recording_run(0, seen)).apply()
+    assert ok and (repos / "a.txt").read_text() == "2"
+    (test,) = seen
+    assert test["cwd"] != repos and test["a"] == "2"  # la copia aparte ya tenía la versión nueva
+    assert test["pythonpath"].split(__import__("os").pathsep)[0] == str(test["cwd"])  # importa SU orbital
+    assert not test["cwd"].exists()  # y se borró
+    assert git(repos, "worktree", "list").count("\n") == 0  # git ya no la recuerda
+
+
+def test_f9_if_the_copy_fails_the_folder_was_never_touched(repos):
+    before = git(repos, "rev-parse", "HEAD")
+    seen = []
+    ok, message = Updater(repos, run=recording_run(1, seen)).apply()
+    assert not ok and "versión que tenías" in message
+    assert git(repos, "rev-parse", "HEAD") == before and (repos / "a.txt").read_text() == "1"
+    assert seen[0]["a"] == "2" and not seen[0]["cwd"].exists()
+    assert git(repos, "worktree", "list").count("\n") == 0
+
+
+def test_f9_with_new_dependencies_it_tests_in_place_as_before(repos, tmp_path):
+    other = tmp_path / "otra"
+    (other / "requirements.lock").write_text("fastapi==1\n")
+    git(other, "add", ".")
+    git(other, "commit", "-qm", "Dependencias nuevas")
+    git(other, "push", "-q", "origin", "main")
+    seen = []
+    run = recording_run(0, seen)
+
+    def run_or_pip(cmd, **kwargs):
+        if "pytest" in cmd:
+            return run(cmd, **kwargs)
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    ok, _ = Updater(repos, run=run_or_pip).apply()
+    assert ok and seen[0]["cwd"] == repos  # el .venv es uno solo: se prueba en la carpeta, con rollback si falla
