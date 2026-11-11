@@ -174,8 +174,8 @@ def test_a_video_never_restarts_dwm_and_waits_if_it_was_just_restarted():
         dwm_release._last_restart[0] = real_last
     import inspect
 
-    from orbital import server
-    assert "before_open = dwm_release.wait_settled" in inspect.getsource(server)
+    from orbital.server import app  # create_app vive en server/app.py
+    assert "before_open = dwm_release.wait_settled" in inspect.getsource(app)
 
 
 def test_sudden_dwm_growth_logs_who_was_in_front_and_measures_every_minute(tmp_path, caplog, monkeypatch):
