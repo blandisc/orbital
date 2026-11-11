@@ -16,10 +16,10 @@ BIG_JS = "export const hola = " + repr("orbital " * 400) + ";\n"
 
 
 def client(tmp_path):
-    (tmp_path / "app.js").write_text(BIG_JS, encoding="utf-8")
-    (tmp_path / "tiny.css").write_text("a{}", encoding="utf-8")
+    (tmp_path / "app.js").write_bytes(BIG_JS.encode())  # bytes: en Windows write_text pondría \r\n
+    (tmp_path / "tiny.css").write_bytes(b"a{}")
     (tmp_path / "art.png").write_bytes(b"\x89PNG" + b"0" * 4000)
-    (tmp_path / "index.html").write_text("<!doctype html><title>Orbital</title>" + "<p>hola</p>" * 200, encoding="utf-8")
+    (tmp_path / "index.html").write_bytes(("<!doctype html><title>Orbital</title>" + "<p>hola</p>" * 200).encode())
     app = Starlette(routes=[Mount("/", WebFiles(directory=tmp_path, html=True))])
     return TestClient(app)
 
@@ -64,7 +64,7 @@ def test_after_an_update_the_reload_brings_the_new_file(tmp_path):
     old, _ = raw(c, "/app.js", **{"accept-encoding": "gzip"})
     newer = BIG_JS.replace("hola", "adios")
     path = tmp_path / "app.js"
-    path.write_text(newer, encoding="utf-8")
+    path.write_bytes(newer.encode())
     st = path.stat()
     os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns + 2_000_000_000))  # la actualización deja otra fecha
     res, body = raw(c, "/app.js", **{"accept-encoding": "gzip", "if-none-match": old.headers["etag"]})

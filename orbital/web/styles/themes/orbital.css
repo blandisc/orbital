@@ -40,7 +40,10 @@
   --color-glass-legible: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05)), rgba(28, 28, 32, .72);
   --color-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .09)), rgba(28, 28, 32, .3);
   /* Lo elegido dentro de un vidrio (la sección de la barra): un vidrio más claro, con su propio filo. */
-  --color-glass-selected: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .1)); /* R3-6: antes .32/.16: «Juegos» 4,1 */
+  --color-glass-selected: linear-gradient(180deg, rgba(255, 255, 255, .32), rgba(255, 255, 255, .16));
+  /* R3-6 (11 nov): lo elegido que viaja sobre el arte (la sección de arriba, la consola): menos claro, para que el blanco
+     encima pase AA contra lo más claro del fondo («Juegos» y «Steam» daban 4,1 y 3,8). El reproductor no lo usa. */
+  --color-glass-selected-legible: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .1));
   --edge-glass-selected: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 0 0 1px rgba(255, 255, 255, .14);
   /* Un control de vidrio dentro de una fila o de un panel (teclas, versiones, chips): el mismo filo, sin la sombra que despega. */
   --edge-glass-hairline: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .08);
@@ -118,7 +121,7 @@
   /* Los glifos del mando y las teclas (LB, RB, LT, RT, A…) son de cristal, como los botones (Fernando, 1 nov 2026): la misma
      luz que baja, un filo claro arriba y, debajo, un oscuro apenas para leerse sobre un arte claro. Sobre algo blanco (el
      botón principal, el foco invertido) el disco va sólido (--glyph-bg-solid): el cristal ahí no se vería. */
-  --glyph-bg: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .05)), rgba(24, 24, 28, .58); /* R3-6: antes .2/.06 y .42: LB/RB 4,2 */
+  --glyph-bg: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .06)), rgba(24, 24, 28, .42);
   --glyph-bg-solid: var(--palette-ink-850);
   --edge-glyph: inset 0 1px 0 rgba(255, 255, 255, .32);
   --glyph-ring: rgba(255, 255, 255, .16);

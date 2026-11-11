@@ -57,10 +57,11 @@ body[data-chrome="away"] .status-bar { opacity: 0; translate: 0 -100%; pointer-e
 /* Se mueve con Web Animations (status-bar.js · placePill): el borde de adelante corre y el de atrás lo alcanza. */
 .status-bar__pill {
   position: absolute; left: 0; top: 0; border-radius: var(--radius-pill);
-  background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); pointer-events: none; will-change: transform, width;
+  background: var(--color-glass-selected-legible); /* R3-6: como la cápsula de las consolas («Juegos» AA) */
+  box-shadow: var(--edge-glass-selected); pointer-events: none; will-change: transform, width;
 }
 .status-bar__tab { position: relative; } /* encima de la píldora */
-.status-bar__tabs .glyph { margin: 0 var(--space-2); }
+.status-bar__tabs .glyph { margin: 0 var(--space-2); --glyph-bg: var(--color-glass-legible); } /* R3-6: LB/RB sobre el arte, con la base del vidrio legible */
 /* Una sección: su ícono y, plegado, su nombre. La activa lo despliega (grid 0fr → 1fr: el ancho se anima sin medirlo)
    y la píldora la persigue mientras crece; la que dejas lo pliega a la vez, así los íconos de en medio se deslizan. */
 .status-bar__tab {
