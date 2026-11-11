@@ -192,9 +192,10 @@ struct DownloadsView: View {
             }
             if showsCloud { DownloadsCloudPart(sheets: $cloud) }
         }
-        .overlay {
-            // Sin nube y sin nada en cola ni listo: el vacío nativo, con qué hacer (con nube, cada parte tiene el suyo).
-            if model.items.isEmpty && !showsCloud { deviceEmpty }
+        .overlay(alignment: .top) {
+            // Sin nube y sin nada en cola ni listo: el vacío nativo, con qué hacer (con nube, cada parte tiene el suyo). Arriba,
+            // donde empezaría la lista, como en Guardado e Historial (I13: aquí iba centrado y allá arriba).
+            if model.items.isEmpty && !showsCloud { deviceEmpty.padding(.top, DS.Space.s2) }
         }
         .modifier(CloudSheetsHost(sheets: $cloud, active: showsCloud))
         .perfTag("downloads")   // «downloads.shown» con la lista (o el vacío), «downloads.image» con la primera imagen

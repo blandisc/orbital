@@ -15,7 +15,7 @@ extension TitleView {
                 Text(model.overview).recipe(.secondary, color: DS.text).lineLimit(fullSynopsis ? nil : DS.TitleAction.synopsisLines)
                 if model.overview.count > DS.Size.synopsisFold {
                     Button(fullSynopsis ? "menos" : "más") { withAnimation(DS.Motion.base(reduceMotion)) { fullSynopsis.toggle() } }
-                        .font(DS.TextRecipe.label.font).foregroundStyle(artAccent).buttonStyle(.plain)
+                        .font(DS.TextRecipe.label.font).foregroundStyle(artInk).buttonStyle(.plain)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

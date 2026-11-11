@@ -9,6 +9,9 @@ struct TitleScrollChrome: ViewModifier {
     let topInset: CGFloat, heroHeight: CGFloat
     let logo: String?, title: String, buttons: Int
     @State private var scrolled: CGFloat = 0
+    /// I11 · lo que ocupan ‹ y cada botón de la cápsula crece con la letra (como los botones de verdad), hasta `barGrowth`.
+    @ScaledMetric(relativeTo: .body) private var scaledButton = DS.TitleAction.barButton
+    private var growth: CGFloat { min(DS.TitleAction.barGrowth, max(1, scaledButton / DS.TitleAction.barButton)) }
 
     /// Desde aquí ya no cambia nada (todo desvanecido y el logo entero).
     private var settled: CGFloat { heroHeight * max(DS.TitleAction.fadeAt, DS.TitleAction.titleFrom + DS.TitleAction.titleSpan) }
@@ -41,8 +44,8 @@ struct TitleScrollChrome: ViewModifier {
                 // Entre ‹ y la cápsula de botones (que es más ancha que ‹): el nombre a la izquierda, sin meterse debajo.
                 BarLogo(url: logo, title: title)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, DS.TitleAction.barTitleLeading)
-                    .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * CGFloat(buttons) + DS.TitleAction.barLogoGap)
+                    .padding(.leading, DS.TitleAction.barTitleLeading * growth)
+                    .padding(.trailing, DS.TitleAction.barGroupPadding + DS.TitleAction.barButton * growth * CGFloat(buttons) + DS.TitleAction.barLogoGap)
                     .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
                     .offset(y: -DS.Size.touchTarget - DS.Space.s2)
                     .opacity(shown)

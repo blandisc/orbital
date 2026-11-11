@@ -56,8 +56,6 @@ extension DS {
 
     /// Para ti B: los círculos del índice, la portada del mosaico (su muro inclinado y el velo) y la tarjeta de «¿Qué vemos hoy?».
     enum ParaTiB {
-        /// El botón del mosaico sobre el muro de Para ti (blanco, redondo, abajo a la derecha).
-        static let walkButton: CGFloat = 52
         /// El muro: ocho columnas (con siete, girado, quedaba una orilla sin pósters) de trece pósters cada vuelta.
         static let coverHeight: CGFloat = 300, coverWall: CGFloat = 828, coverColumns = 8, coverPosters = 96, coverTilt: Double = -10
         static let coverRows = 13, coverWallHeight: CGFloat = 1900
@@ -70,7 +68,7 @@ extension DS {
         static let coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.8, coverBaseAt: Double = 0.6
         /// Cuánto sube el muro (hasta la orilla de la pantalla, detrás del título y la barra: sin corte) y cuánto baja bajo los
         /// círculos; qué tanto se ve hasta arriba y el velo que deja leer el título encima.
-        static let coverBleedUp: CGFloat = 900, coverTitleZone: CGFloat = 260, coverBleedDown: CGFloat = 72, coverUnderBar: Double = 0.85, coverTitleVeil: Double = 0.55
+        static let coverBleedUp: CGFloat = 900, coverTitleZone: CGFloat = 260, coverBleedDown: CGFloat = 72, coverUnderBar: Double = 0.85, coverTitleVeil: Double = 0.72
         /// Cada columna del muro baja sola, a su ritmo (puntos por segundo, una por columna: ninguna va pareja con su vecina), y
         /// arranca en otra parte de su vuelta (`coverPhaseStep`). Corre solo con la portada a la vista (`coverVisibleFrom`). Lo
         /// mueve Core Animation (`CoreDrift`), no SwiftUI: por eso van en números y no como `Animation`.

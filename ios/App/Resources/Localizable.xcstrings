@@ -44199,6 +44199,39 @@
           }
         }
       }
+    },
+    "Sube %lld esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up %lld this week"
+          }
+        }
+      }
+    },
+    "Baja %lld esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Down %lld this week"
+          }
+        }
+      }
+    },
+    "Preferencias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferences"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

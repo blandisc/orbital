@@ -28,6 +28,8 @@ extension DS {
         static let bandWidth: CGFloat = 0.36, bandBlur: CGFloat = 56, bandOpacity = 0.08, bandOpacityLight = 0.5
         /// Hasta dónde llega el tono del cielo antes de fundirse con el fondo, y cuánto se ven las estrellas de día.
         static let duskFade = 0.7, lightStars = 0.5
+        /// De día, solo la capa de cerca: las 72 diminutas de lejos, oscuras sobre el papel, parecían polvo en la pantalla (I13).
+        static let dayFromLayer = 1
         /// La estrella fugaz: cada cuánto, cuánto dura, qué tan larga, brillante y gruesa.
         static let shootEvery: TimeInterval = 60, shootFor: TimeInterval = 0.8, shootLength: CGFloat = 80
         static let shootOpacity = 0.6, shootWidth: CGFloat = 1

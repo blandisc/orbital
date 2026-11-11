@@ -212,6 +212,11 @@ struct ListsView: View {
                 Button(action: onDecide) { Image(systemName: "dice") }
                     .accessibilityLabel(Text("Decide por mí")).accessibilityIdentifier("paraTi-decide")
             }
+            // I10 · el mosaico, en la barra con los demás (antes, un círculo blanco suelto sobre el muro).
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { model.mode = .mosaic } label: { Image(systemName: "square.grid.3x3") }
+                    .accessibilityLabel(Text("Pasear por el mosaico")).accessibilityIdentifier("paraTi-walk-mosaic")
+            }
             ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
             ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }

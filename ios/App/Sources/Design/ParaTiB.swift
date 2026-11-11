@@ -43,24 +43,10 @@ struct MosaicCover: View {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
-            .overlay(alignment: .bottomTrailing) {
-                // El ícono del mosaico abajo a la derecha, negro sobre blanco (Fernando, 31 oct 2026: en vez de «Pasear por
-                // el mosaico»).
-                Button(action: onWalk) {
-                    // El ícono no crece más que su círculo: con letra de accesibilidad máxima se salía de él y de la orilla
-                    // derecha. Lo que dice va en la etiqueta para VoiceOver.
-                    Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.cardTitle.font)
-                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                        .foregroundStyle(DS.backdropDeep)
-                        .frame(width: DS.ParaTiB.walkButton, height: DS.ParaTiB.walkButton)
-                        .background(DS.paper, in: Circle())   // ds-exception: sobre el arte de la portada
-                        .shadow(DS.Elevation.high)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Pasear por el mosaico"))
-                .accessibilityIdentifier("paraTi-walk-mosaic")
-                .padding(.horizontal, DS.Space.gutter)
-            }
+            // I10 (revisión del 10 nov): el botón del mosaico ya no flota suelto sobre el muro; va en la barra de arriba
+            // (`ListsView`, «Pasear por el mosaico»). Tocar el muro también entra (VoiceOver usa el de la barra).
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onWalk)
             .overlay { demoProbe }
             .onScrollVisibilityChange(threshold: DS.ParaTiB.coverVisibleFrom) { onScreen = $0 }
             // Otro muro solo cuando llegan pósters de verdad distintos; al volver del mosaico, el mismo de antes (Fernando,

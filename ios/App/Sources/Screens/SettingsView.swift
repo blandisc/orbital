@@ -58,13 +58,10 @@ struct SettingsView: View {
             // Idiomas y subtítulos, arriba y juntos (N4-A, Fernando, 4 nov: «que sea fácil configurar los subtítulos y los
             // idiomas»; los mismos cuatro que la TV en Ajustes › Ver).
             languagesSection(model)
-            // Lo tuyo: cómo se ve y cómo se reproduce.
+            // Lo tuyo: cómo se ve y cómo se reproduce, con su título (I13: era el único grupo sin nombre).
             Section {
                 NavigationLink { page("Apariencia") { appearance(model) } } label: {
                     SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
-                }
-                NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
-                    SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
                 }
                 NavigationLink { page("Idioma de la app") { appLanguage(model) } } label: {
                     SettingsRow(title: "Idioma de la app", symbol: "character.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
@@ -78,7 +75,11 @@ struct SettingsView: View {
                 NavigationLink { page("Descargas") { downloads(model) } } label: {
                     SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
                 }
-            }
+                // La dona de Inicio, al final: es un detalle de Inicio, no algo que todos vengan a cambiar (I13, 10 nov).
+                NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
+                    SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
+                }
+            } header: { Text("Preferencias") }
             .listRowBackground(DS.surface)
             // Con qué se conecta.
             Section {

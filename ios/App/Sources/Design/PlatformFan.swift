@@ -56,9 +56,18 @@ struct FanCard<Emblem: View>: View {
         .padding(.top, DS.PlatformFan.posterTop)
     }
 
+    /// Sin póster (aún no llega, o sin TMDB): su forma en gris, como `ShelfSkeleton`. Antes el póster vacío escribía el
+    /// nombre de la plataforma en su lugar y se partía («Disney» / «+») (I10, revisión del 10 nov).
     @ViewBuilder private func card(_ index: Int) -> some View {
-        PosterView(url: index < posters.count ? posters[index] : nil, title: name).frame(width: DS.PlatformFan.poster)
-            .shadow(DS.Elevation.high)
+        if index < posters.count, let url = posters[index], !url.isEmpty {
+            PosterView(url: url, title: name).frame(width: DS.PlatformFan.poster)
+                .shadow(DS.Elevation.high)
+        } else {
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill)
+                .aspectRatio(DS.Poster.aspect, contentMode: .fit)
+                .frame(width: DS.PlatformFan.poster)
+                .accessibilityHidden(true)
+        }
     }
 }
 

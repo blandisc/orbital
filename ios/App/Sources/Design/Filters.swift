@@ -63,8 +63,11 @@ struct DSTextTabs<ID: Hashable>: View {
     var body: some View {
         // Si con la letra grande no caben los nombres, solo los íconos (cada uno con su nombre para VoiceOver): nunca se sale
         // de la pantalla (antes «T… Pe…» quedaba cortado por la orilla izquierda).
+        // I13 · antes de quedarse solo con íconos, los nombres sin ícono: en un SE «Descargas · Mi media · Guardado» no cabía
+        // con ícono y la Biblioteca se quedaba sin palabras.
         ViewThatFits(in: .horizontal) {
             tabs(titles: true)
+            tabs(titles: true, icons: false)
             tabs(titles: options.allSatisfy { $0.symbol == nil })
         }
         // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
@@ -72,7 +75,7 @@ struct DSTextTabs<ID: Hashable>: View {
         .dsFeedback(.selection, trigger: selection)
     }
 
-    private func tabs(titles: Bool) -> some View {
+    private func tabs(titles: Bool, icons: Bool = true) -> some View {
         HStack(spacing: DS.Space.s5) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 let on = selection == option.id
@@ -82,8 +85,8 @@ struct DSTextTabs<ID: Hashable>: View {
                         // que no tiene relleno) y el ancho es el de la letra gruesa en las dos: al cambiar de pestaña no cambia
                         // ningún ícono ni se recorre nada (Fernando, 4 nov 2026, la 1774: «cambian los íconos»).
                         ZStack {
-                            label(option, titles: titles, bold: true).hidden()
-                            label(option, titles: titles, bold: on)
+                            label(option, titles: titles, icons: icons, bold: true).hidden()
+                            label(option, titles: titles, icons: icons, bold: on)
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(option.title)
@@ -101,9 +104,9 @@ struct DSTextTabs<ID: Hashable>: View {
     }
 
     /// El ícono con el mismo trazo siempre; solo el nombre cambia de peso.
-    private func label(_ option: Option, titles: Bool, bold: Bool) -> some View {
+    private func label(_ option: Option, titles: Bool, icons: Bool, bold: Bool) -> some View {
         HStack(spacing: DS.Space.s1) {
-            if let symbol = option.symbol { Image(systemName: symbol).fontWeight(.semibold) }   // ds-exception: el trazo fijo del ícono de la pestaña
+            if icons, let symbol = option.symbol { Image(systemName: symbol).fontWeight(.semibold) }   // ds-exception: el trazo fijo del ícono de la pestaña
             if titles { option.title.lineLimit(1).fontWeight(bold ? .bold : .medium) }   // ds-exception: la pestaña elegida se distingue por el peso
         }
     }

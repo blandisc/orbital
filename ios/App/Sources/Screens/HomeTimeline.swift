@@ -93,7 +93,7 @@ struct ReleaseTimeline: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
                     Circle().fill(soon ? DS.ink500 : DS.fresh).frame(width: DS.HomeTimeline.dot, height: DS.HomeTimeline.dot)
-                    when(a.day).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1)
+                    when(a).recipe(.badge, color: soon ? DS.textMuted : DS.text).lineLimit(1)
                 }
                 .frame(height: DS.HomeTimeline.labelRow, alignment: .leading)
                 PosterView(url: a.series.poster, title: a.series.title)
@@ -121,9 +121,16 @@ struct ReleaseTimeline: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// «Ayer», «Hoy», «Mañana» o el día de la semana.
-    private func when(_ day: Date) -> Text {
-        Calendar.current.isDateInYesterday(day) ? Text("Ayer") : dayName(day, locale: env.uiLocale)
+    /// «Ayer», «Mañana» o el día de la semana. Lo de hoy dice su hora («21:00»): «Hoy» ya lo dice la marca de la línea, y
+    /// repetido en cada tarjeta sobraba (I13, revisión del 10 nov). Sin hora conocida (medianoche o de madrugada), nada.
+    private func when(_ a: Airing) -> Text {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(a.day) {
+            let parts = calendar.dateComponents([.hour, .minute], from: a.aired)
+            guard !a.atDawn, calendar.isDateInToday(a.aired), parts.hour != 0 || parts.minute != 0 else { return Text(verbatim: " ") }
+            return Text(verbatim: Strings.date(a.aired, .time, language: env.services.appSettings.uiLanguage))
+        }
+        return calendar.isDateInYesterday(a.day) ? Text("Ayer") : dayName(a.day, locale: env.uiLocale)
     }
 }
 

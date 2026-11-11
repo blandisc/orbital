@@ -138,6 +138,7 @@ private struct SkyPainter {
         var haloed = 0
         for star in Self.stars {
             let layer = star.layer
+            if !dark, layer < DS.Sky.dayFromLayer { continue }
             let shift = CGFloat(time) * DS.Sky.drift[layer] + tilt.x * DS.Sky.tilt[layer]
             let x = (star.x * size.width + shift).truncatingRemainder(dividingBy: size.width)
             let p = CGPoint(x: x < 0 ? x + size.width : x, y: star.y * size.height + tilt.y * DS.Sky.tilt[layer])

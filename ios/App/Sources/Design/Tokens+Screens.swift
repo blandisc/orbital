@@ -69,6 +69,9 @@ extension DS {
         static let barLogo: CGFloat = 24   // el logo ya recortado (sin su margen vacío): cabe entero en la barra
         /// El aire entre el logo y los botones de la derecha (Fernando, 2 nov 2026, N1: «the office» quedaba a 3 pt de ellos).
         static let barLogoGap = DS.Space.s3
+        /// I11 · con letra grande los botones de la barra crecen (y el ‹ también): el lugar del logo crece con ellos, hasta
+        /// esta proporción (los íconos de la barra dejan de crecer antes que la letra). Antes un logo ancho chocaba con la cápsula.
+        static let barGrowth: CGFloat = 1.35
         /// El ancho máximo de la ficha en ventanas anchas (iPad, Mac): a todo lo ancho, en horizontal el arte llenaba la
         /// pantalla y las acciones quedaban abajo, fuera de la vista. El iPhone (440 pt como mucho) no lo alcanza.
         static let readableWidth: CGFloat = 720
@@ -86,6 +89,9 @@ extension DS {
         static let titleFrom: CGFloat = 0.7, titleSpan: CGFloat = 0.25
         /// Cuánto se oscurece el color del arte en el modo claro (para que se lea sobre el papel).
         static let lightDeepen: Double = 0.45
+        /// La letra del color del arte sobre el papel («más» de la sinopsis): más honda, para pasar el AA (4.5:1) aun con un arte
+        /// blanco o amarillo puro (con 0.45 quedaba entre 3.2 y 4.4; con 0.6, de 4.95 a 6.9). I13, revisión del 10 nov.
+        static let lightTextDeepen: Double = 0.6
         static let tile: CGFloat = 64, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
         /// Cuántos renglones de sinopsis antes de «más».
         static let synopsisLines = 3

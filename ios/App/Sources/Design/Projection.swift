@@ -116,8 +116,14 @@ struct MovementBadge: View {
             if isNew { DSFreshMark(text: "Nuevo") }   // el punto turquesa y «Nuevo» en gris (2 nov 2026, D3)
             // Sin cambio: nada a la vista (un «=» suelto bajo el póster parecía un error); el renglón guarda su alto.
             else if let movement, movement == 0 { Text("Nuevo").recipe(.eyebrow).hidden().accessibilityHidden(true) }
-            else if let movement, movement > 0 { Label { Text(verbatim: "\(movement)") } icon: { Image(systemName: "arrowtriangle.up.fill") }.recipe(.data, color: DS.accent) }
-            else if let movement { Label { Text(verbatim: "\(-movement)") } icon: { Image(systemName: "arrowtriangle.down.fill") }.recipe(.data) }
+            // «▲ 2» a la vista; con VoiceOver dice qué es (I13, revisión del 10 nov: el triángulo solo no se explicaba).
+            else if let movement, movement > 0 {
+                Label { Text(verbatim: "\(movement)") } icon: { Image(systemName: "arrowtriangle.up.fill") }.recipe(.data, color: DS.accent)
+                    .accessibilityLabel(Text("Sube \(movement) esta semana"))
+            } else if let movement {
+                Label { Text(verbatim: "\(-movement)") } icon: { Image(systemName: "arrowtriangle.down.fill") }.recipe(.data)
+                    .accessibilityLabel(Text("Baja \(-movement) esta semana"))
+            }
         }
         .labelStyle(.titleAndIcon)
     }

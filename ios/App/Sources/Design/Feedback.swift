@@ -144,7 +144,8 @@ struct DSSegmented<Value: Hashable>: View {
 /// `DSErrorState` con «Reintentar». Dentro de una sección, un aviso → `DSNotice` y lo que espera junto a un botón, el
 /// `ProgressView` chico con su texto («Conectando…»).
 /// Un área vacía (Descargas vacía, sin resultados, nada con estos filtros): el vacío nativo de iOS con un ícono, qué pasa y,
-/// si lo hay, qué hacer.
+/// si lo hay, qué hacer. Va arriba, donde empezaría la lista, nunca al centro de la pantalla: igual en las partes de la
+/// Biblioteca (I13, revisión del 10 nov).
 struct DSEmptyState<Actions: View>: View {
     let symbol: String
     let title: Text

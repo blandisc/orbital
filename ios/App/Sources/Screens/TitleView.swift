@@ -318,6 +318,9 @@ struct TitleView: View {
     }
 
     var artAccent: Color { tint.colors?.accent ?? DS.accent }
+    /// El color del arte para letra sobre el fondo: en claro, oscurecido como en las acciones (`TitleActions`); el tono claro
+    /// sobre papel no pasaba el contraste AA (I13, «más» de la sinopsis). En el iPad y la Mac la ficha siempre es oscura.
+    var artInk: Color { scheme == .light && sizeClass != .regular ? artAccent.mix(with: DS.backdropDeep, by: DS.TitleAction.lightTextDeepen) : artAccent }
 
     /// El botón principal (`ContinueAction`: el botón dice una sola cosa; el avance, la versión y «Desde el principio» van
     /// debajo) y las acciones del mismo tamaño: Mi lista, Descargar y Tráiler. Cada una cambia en su lugar (Guardada, el anillo
