@@ -33,8 +33,9 @@ def backup_path(path: Path) -> Path:
 # Dos hilos que guardan el mismo archivo (la caché de «Para ti» y su temporizador, los tonos del arte) se turnan: así el
 # que guarda después queda al final, sin pisarse a la mitad. Un número fijo de candados (por el nombre): no crece.
 _LOCKS = [threading.Lock() for _ in range(64)]
-REPLACE_TRIES = 10  # Windows: un lector con el archivo abierto impide cambiarlo un instante («Acceso denegado»)
-REPLACE_WAIT = 0.02  # s entre intentos (en total, a lo más ~1 s)
+REPLACE_TRIES = 60  # Windows: un lector con el archivo abierto impide cambiarlo un instante («Acceso denegado»)
+REPLACE_WAIT = 0.005  # s: la primera espera; crece hasta REPLACE_WAIT_MAX (en total, a lo más ~3 s)
+REPLACE_WAIT_MAX = 0.05
 WINDOWS = os.name == "nt"
 
 
@@ -58,7 +59,7 @@ def _replace(src: Path, dst: Path) -> None:
         except PermissionError:
             if not WINDOWS or attempt == REPLACE_TRIES - 1:
                 raise
-            time.sleep(REPLACE_WAIT * (attempt + 1))
+            time.sleep(min(REPLACE_WAIT * (attempt + 1), REPLACE_WAIT_MAX))
 
 
 def _permissions(tmp: Path, path: Path, mode: int | None) -> None:

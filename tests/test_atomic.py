@@ -110,6 +110,7 @@ def test_threads_writing_and_reading_the_same_file_never_see_half_a_file(tmp_pat
     """Revisión del 11 nov 2026: con el temporal fijo, 2 hilos × 300 escrituras daban 165 FileNotFoundError y 188 lecturas
     de JSON roto. Ahora: 3 escritores, 3 lectores; nadie falla, nadie lee a medias y queda la última escritura."""
     import threading
+    import time
 
     path = tmp_path / "foryou-cache.json"
     atomic_write(path, json.dumps({"writer": -1, "n": -1, "pad": ""}), durable=False)
@@ -133,6 +134,7 @@ def test_threads_writing_and_reading_the_same_file_never_see_half_a_file(tmp_pat
                 continue
             except Exception as exc:  # noqa: BLE001
                 errors.append(("read", repr(exc)))
+            time.sleep(.001)  # un lector de verdad lee y suelta; uno pegado sin pausa no deja a Windows cambiarlo nunca
 
     readers = [threading.Thread(target=reader) for _ in range(3)]
     writers = [threading.Thread(target=writer, args=(w,)) for w in range(3)]
