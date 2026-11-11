@@ -78,14 +78,18 @@ extension TraktQueue {
         }
         let outboxDone = await flushOutbox(snapshot.outbox, trakt)
         // Lo que se subió sale; lo que falló se queda; lo que llegó mientras tanto (de este u otro `WatchService`) también:
-        // todo en una sola escritura sobre lo último del archivo, nunca sobre una copia vieja.
+        // todo en una sola escritura sobre lo último del archivo, nunca sobre una copia vieja. Lo que falló se queda SOLO si
+        // sigue en la cola: si mientras se mandaba marcaste lo contrario (no vista, visto otra vez) o lo quitaste, gana lo último
+        // que hiciste (revisión del 11 nov 2026: antes se volvía a sumar y Trakt terminaba en «visto» tras un «no visto»).
         return store.update { current in
-            current.traktWatched = current.traktWatched.filter { !snapshot.traktWatched.contains($0) } + retry.traktWatched
-            current.traktUnwatched = current.traktUnwatched.filter { !snapshot.traktUnwatched.contains($0) } + retry.traktUnwatched
-            current.traktProgress = current.traktProgress.filter { !snapshot.traktProgress.contains($0) } + retry.traktProgress
-            current.playbackRemovals = current.playbackRemovals.filter { !snapshot.playbackRemovals.contains($0) } + retry.playbackRemovals
-            current.traktViewingRemovals = current.traktViewingRemovals.filter { !snapshot.traktViewingRemovals.contains($0) } + retry.traktViewingRemovals
-            current.traktRewatched = current.traktRewatched.filter { !snapshot.traktRewatched.contains($0) } + retry.traktRewatched
+            current.traktWatched = Self.remaining(current.traktWatched, tried: snapshot.traktWatched, retry: retry.traktWatched)
+            current.traktUnwatched = Self.remaining(current.traktUnwatched, tried: snapshot.traktUnwatched, retry: retry.traktUnwatched)
+            current.traktProgress = Self.remaining(current.traktProgress, tried: snapshot.traktProgress, retry: retry.traktProgress)
+            current.playbackRemovals = Self.remaining(current.playbackRemovals, tried: snapshot.playbackRemovals, retry: retry.playbackRemovals)
+            // Las vistas viejas de una fecha cambiada que ya llegó no estaban en la cola: si su borrado falló, entran ahora.
+            let replacedLeft = retry.traktViewingRemovals.filter { replaced.contains($0) && !current.traktViewingRemovals.contains($0) }
+            current.traktViewingRemovals = Self.remaining(current.traktViewingRemovals, tried: snapshot.traktViewingRemovals, retry: retry.traktViewingRemovals) + replacedLeft
+            current.traktRewatched = Self.remaining(current.traktRewatched, tried: snapshot.traktRewatched, retry: retry.traktRewatched)
             for item in outboxDone { if let i = current.outbox.firstIndex(of: item) { current.outbox.remove(at: i) } }
         }
     }
@@ -110,6 +114,14 @@ extension TraktQueue {
             queue = queue.dropFirst(run.count)
         }
         return done
+    }
+
+    /// Lo que queda en la cola tras una vuelta, en el orden en que lo hiciste: sale lo intentado que llegó o se descartó; lo que
+    /// se reintenta se queda solo si sigue en `current` (la última intención del usuario por título manda: marcar lo contrario
+    /// lo sacó de la cola y no se resucita); lo que llegó durante la vuelta, también. Nunca hay a la vez «visto» y «no visto»
+    /// del mismo título: cada acción quita la opuesta al anotarse (`WatchService.markWatched`, `unmarkWatched`, `addViewing`).
+    static func remaining<T: Equatable>(_ current: [T], tried: [T], retry: [T]) -> [T] {
+        current.filter { !tried.contains($0) || retry.contains($0) }
     }
 
     /// ¿La vista nueva ya está en Trakt? Sin cómo saberlo (Trakt no dice), se confía en que la aceptó (contestó 2xx).
