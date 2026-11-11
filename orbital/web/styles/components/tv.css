@@ -18,6 +18,7 @@
 .tv__cat .icon { flex: none; width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: var(--stroke-fine); stroke-linecap: round; stroke-linejoin: round; align-self: center; }
 .tv__cat-count { flex: none; color: var(--color-text-faint-strong); text-shadow: var(--shadow-text-strong); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); font-variant-numeric: tabular-nums; }
 .tv__cat--on { background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); color: var(--color-text); font-weight: var(--weight-semibold); }
+.tv__cat--on .tv__cat-count { color: var(--color-text); } /* R3-6: con el blanco al 62 % daba 3,9 sobre el vidrio elegido */
 .is-focused.tv__cat { background: var(--inverse-bg); color: var(--inverse-fg); }
 .is-focused.tv__cat .tv__cat-count { color: inherit; opacity: var(--opacity-near); text-shadow: none; }
 

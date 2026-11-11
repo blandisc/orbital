@@ -41,7 +41,9 @@
 .pill--on { color: var(--color-text); background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected); }
 /* Pestañas de texto (tone "tab", como DSTextTabs del iPhone): para cambiar lo que ves (los filtros de una consola, Series ·
    Películas de una lista, las temporadas). Sin cápsula: el texto tenue y la elegida en blanco, en negrita, con su rayita. */
-.pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; text-shadow: var(--shadow-text-strong); } /* sin cápsula: se lee sobre el arte (AA, P4) */
+/* Sin cápsula: se lee sobre el arte (AA, P4). R3-6 (11 nov): en blanco también las no elegidas; en gris daban 2,8 contra lo
+   más claro del arte (Hades a 1280 × 800). Las distingue la elegida: negrita y su raya. */
+.pill--tab { position: relative; padding-inline: var(--space-3); background: transparent; box-shadow: none; color: var(--color-text); text-shadow: var(--shadow-text-strong); }
 .is-focused.pill--tab { text-shadow: none; }
 .pill--tab.pill--on { color: var(--color-text); font-weight: var(--weight-bold); background: transparent; }
 .pill--tab.pill--on::after {
@@ -74,7 +76,7 @@
   background: var(--color-glass-selected); box-shadow: var(--edge-glass-selected);
 }
 .glass-switch__item {
-  position: relative; padding: 0 var(--space-4) 0 var(--space-3); color: var(--color-text-muted);
+  position: relative; padding: 0 var(--space-4) 0 var(--space-3); color: var(--color-text); /* R3-6: en gris, 3,1 sobre arte claro */
   transition: padding var(--duration-slow) var(--ease-out), color var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
 }
 .glass-switch__item.pill--on { background: transparent; color: var(--color-text); }
