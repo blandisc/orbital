@@ -18,7 +18,7 @@ export function createHero({ onAction, onKind = null }) {
   // Logotipo del título (Stremio): más rico que el texto; si no carga, vuelve el texto.
   const logo = h("img", { class: "hero__logo", alt: "", hidden: true });
   logo.addEventListener("error", () => { logo.hidden = true; title.hidden = false; });
-  logo.addEventListener("load", () => { title.hidden = true; logo.hidden = false; fit(); });
+  logo.addEventListener("load", () => { title.hidden = true; logo.hidden = false; fitSoon(); });
   const facts = h("div", { class: "hero__facts" });
   const description = h("p", { class: "hero__description" });
   const actions = h("div", { class: "button-row hero__actions" });
@@ -53,6 +53,14 @@ export function createHero({ onAction, onKind = null }) {
     title.classList.add("hero__title--short");
   }
   if (globalThis.ResizeObserver) new ResizeObserver(() => fit()).observe(el);
+  // Medir en el siguiente cuadro, una sola vez (V2, 10 nov 2026): fit() lee el layout y, llamado en medio de pintar el
+  // título nuevo (y otra vez cuando llega su logo), obligaba al navegador a calcularlo de más. En requestAnimationFrame lee
+  // cuando ya se escribió todo lo de esa tecla, antes de pintar: lo que se ve es lo mismo, en el mismo cuadro.
+  let fitting = 0;
+  function fitSoon() {
+    if (fitting) return;
+    fitting = requestAnimationFrame(() => { fitting = 0; fit(); });
+  }
 
   function fill(item, glyphs, runningId) {
     if (!item) {
@@ -133,7 +141,7 @@ export function createHero({ onAction, onKind = null }) {
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       item.source !== "genre" && item.source !== "collection" && Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: () => onAction("options") }));
-    fit();
+    fitSoon();
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */

@@ -33,6 +33,10 @@ export function createShelf({ onPick, onMore, onSwipe }) {
   });
   let rowEls = [];
   let focus = { r: 0, c: 0 };
+  // Lo que ya está pintado en las filas de ahora ({r, c}); null tras rearmarlas. Moverse solo toca la fila y la tarjeta de
+  // antes y las de ahora (V2, 10 nov 2026): antes cada tecla cambiaba clases, tabIndex y contadores de TODAS las tarjetas de
+  // todas las filas y el navegador recalculaba el estilo de cientos de ellas (y luego medía las orillas de cada fila).
+  let applied = null;
   let introduced = false; // la entrada escalonada solo al abrir Orbital
   let metrics = null;
 
@@ -175,6 +179,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
       return;
     }
     rowEls = rows.map((row, r) => makeRow(row, r, popId));
+    applied = null;
     mount(rowsEl, rowEls.map((x) => x.rowEl));
     intro();
     setFocus(focus.r, focus.c);
@@ -196,6 +201,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
       if (built.length < rows.length) { preparing = idle(step); return; }
       preparing = 0;
       rowEls = built;
+      applied = null;
       shown = rows;
       mount(rowsEl, built.map((x) => x.rowEl));
       setFocus(focus.r, focus.c);
@@ -203,31 +209,44 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     preparing = idle(step);
   }
 
+
+  /** Una fila según el foco (r, c). `cols`: solo esas tarjetas (el foco se movió dentro de la misma fila). */
+  function paintRow(index, r, c, cols = null) {
+    const { rowEl, cards, count, dots, seeds, stage } = rowEls[index];
+    const isCurrent = index === r;
+    // «Porque viste»: con el foco en tus títulos, el escenario muestra ese; fuera de ahí, el elegido.
+    stage?.show(isCurrent && c < seeds ? c : undefined, isCurrent && c < seeds);
+    rowEl.classList.toggle("shelf__row--current", isCurrent);
+    // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno; en «Porque viste», entre lo relacionado).
+    const shown = cards.length - seeds;
+    count.textContent = isCurrent && shown > 1 && c >= seeds ? `${c - seeds + 1} / ${shown}` : shown ? String(shown) : "";
+    dots?.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === (isCurrent ? c : 0)));
+    (cols ?? cards.map((_, col) => col)).forEach((col) => {
+      const card = cards[col];
+      if (!card) return;
+      const focused = isCurrent && col === c;
+      card.classList.toggle("card--focused", focused);
+      card.classList.toggle("card--dimmed", !isCurrent);
+      card.tabIndex = focused ? 0 : -1;
+      if (focused) card.setAttribute("aria-current", "true");
+      else card.removeAttribute("aria-current");
+    });
+  }
+
   function setFocus(r, c) {
     focus = { r, c };
     if (!rowEls.length) return;
     if (!metrics) measure();
     rowsEl.style.transform = `translateY(${-r * metrics.rowHeight}px)`;
-    rowEls.forEach(({ rowEl, track, cards, count, dots, seeds, stage }, index) => {
-      const isCurrent = index === r;
-      // «Porque viste»: con el foco en tus títulos, el escenario muestra ese; fuera de ahí, el elegido.
-      stage?.show(isCurrent && c < seeds ? c : undefined, isCurrent && c < seeds);
-      rowEl.classList.toggle("shelf__row--current", isCurrent);
-      // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno; en «Porque viste», entre lo relacionado).
-      const shown = cards.length - seeds;
-      count.textContent = isCurrent && shown > 1 && c >= seeds ? `${c - seeds + 1} / ${shown}` : shown ? String(shown) : "";
-      dots?.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === (isCurrent ? c : 0)));
-      cards.forEach((card, col) => {
-        const focused = isCurrent && col === c;
-        card.classList.toggle("card--focused", focused);
-        card.classList.toggle("card--dimmed", !isCurrent);
-        card.tabIndex = focused ? 0 : -1;
-        if (focused) card.setAttribute("aria-current", "true");
-        else card.removeAttribute("aria-current");
-      });
-    });
+    const before = applied?.r < rowEls.length ? applied : null;
+    if (!before) rowEls.forEach((_, index) => paintRow(index, r, c));
+    else if (before.r === r) paintRow(r, r, c, [...new Set([before.c, c])]);
+    else { paintRow(before.r, r, c); paintRow(r, r, c); }
+    applied = { r, c };
+    // Primero todo lo que se escribe; luego place() y las orillas, que miden (una sola vez el layout).
     place();
-    rowEls.forEach((row, index) => index !== r && edges(row));
+    // Las orillas de las otras filas no cambian al moverte dentro de una: solo la que dejó de ser la actual.
+    (before ? (before.r !== r ? [before.r] : []) : rowEls.map((_, index) => index)).forEach((index) => index !== r && edges(rowEls[index]));
   }
 
   /** Cambia solo una fila (las demás se quedan como están): moverte por «Porque viste» ya no rehace toda la biblioteca. */
@@ -237,44 +256,53 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     const next = makeRow(row, r, null);
     rowEls[r].rowEl.replaceWith(next.rowEl);
     rowEls[r] = next;
+    applied = null;
     setFocus(focus.r, focus.c);
+  }
+
+  /** Lo que mide una fila: el ancho de cada tarjeta que se recorre y el ancho a la vista. Todas las lecturas del layout de
+   *  place() y edges() pasan por aquí, ANTES de escribir nada (V2, 10 nov 2026: antes se leía, se escribía la posición y se
+   *  volvía a leer, y el navegador recalculaba entre una y otra). */
+  function geometry(row) {
+    const seeds = row.seeds || 0;
+    const cards = row.cards.slice(seeds);
+    // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa. (Una tarjeta ancha se
+    // dibuja más grande que su caja: scrollWidth no lo ve.)
+    const widths = row.measured && !seeds ? row.els.map((node) => node.offsetWidth)
+      : cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+    return { widths, visible: row.rest ? row.rest.clientWidth : metrics.visible };
   }
 
   /** Desplaza la fila actual según el ancho real de cada tarjeta. */
   function place() {
     const row = rowEls[focus.r];
     if (!row || !metrics) return;
+    const geo = geometry(row);
+    const { widths, visible } = geo;
     if (row.seeds) { // escenario: solo se recorre lo relacionado, en el ancho que deja el escenario
-      const cards = row.cards.slice(row.seeds);
       const c = focus.c - row.seeds;
-      const widths = cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
-      const x = c < 0 ? 0 : rowOffset(widths, c, { gap: metrics.gap, grow: (widths[c] ?? 0) * (metrics.scale - 1), visible: row.rest.clientWidth });
+      const x = c < 0 ? 0 : rowOffset(widths, c, { gap: metrics.gap, grow: (widths[c] ?? 0) * (metrics.scale - 1), visible });
       row.track.style.transform = `translateX(${-x}px)`;
       row.track.dataset.x = String(x);
-      edges(row);
+      edges(row, geo);
       // La primera sugerida, al crecer, se salía por la izquierda del recorte: solo entonces se le deja ese lugar.
       row.rest.classList.toggle("shelf__stage-rest--first", c === 0 && x === 0);
       return;
     }
-    // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa.
-    const widths = row.measured ? row.els.map((node) => node.offsetWidth) : row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
     const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);
-    const x = (row.centered ? centeredOffset : rowOffset)(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
+    const x = (row.centered ? centeredOffset : rowOffset)(widths, focus.c, { gap: metrics.gap, grow, visible });
     row.track.style.transform = `translateX(${-x}px)`;
     row.track.dataset.x = String(x);
-    edges(row);
+    edges(row, geo);
   }
 
   /** Como en Inicio (Fernando, 4 nov): si hay más a la derecha, la orilla derecha de la fila se desvanece; al llegar al
-   *  final, el último se ve entero. También en las filas sin el foco (se calcula con lo que cada una ya se movió). */
-  function edges(row) {
+   *  final, el último se ve entero. También en las filas sin el foco (se calcula con lo que cada una ya se movió).
+   *  `geo`: lo que ya se midió de la fila (place()); sin él, se mide aquí. */
+  function edges(row, geo = null) {
     if (!metrics) return;
     const x = Number(row.track.dataset.x || 0);
-    const visible = row.rest ? row.rest.clientWidth : metrics.visible;
-    // El ancho como lo cuenta place() (una tarjeta ancha se dibuja más grande que su caja: scrollWidth no lo ve).
-    const cards = row.cards.slice(row.seeds || 0);
-    const widths = row.measured && !row.seeds ? row.els.map((node) => node.offsetWidth)
-      : cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+    const { widths, visible } = geo ?? geometry(row);
     const total = widths.reduce((sum, w) => sum + w, 0) + metrics.gap * Math.max(0, widths.length - 1);
     (row.rest || row.rowEl).classList.toggle("shelf__edge--more", total - x - visible > 4);
   }
@@ -300,13 +328,19 @@ export function createShelf({ onPick, onMore, onSwipe }) {
 
   /** Animación al cambiar de sección (dirección: 1 = a la derecha). */
   function slide(direction) {
+    const cls = direction > 0 ? "shelf--from-right" : "shelf--from-left";
+    const again = el.classList.contains(cls); // la misma entrada todavía corriendo (cambiaste dos veces muy rápido)
     el.classList.remove("shelf--from-right", "shelf--from-left");
-    // Para que la animación vuelva a empezar basta con que el navegador vea la clase quitada: getAnimations() actualiza solo
-    // los estilos. Antes `void el.offsetWidth` obligaba a calcular el layout de todas las filas dentro del botón (38 ms).
-    el.getAnimations?.({ subtree: true });
-    el.classList.add(direction > 0 ? "shelf--from-right" : "shelf--from-left");
+    // Para que vuelva a empezar, el navegador tiene que ver la clase quitada. Como al terminar la entrada la clase se quita
+    // (abajo), casi siempre basta con ponerla; solo si sigue corriendo se le pide al navegador ver el cambio:
+    // getAnimations() actualiza los estilos de las filas (V2, 10 nov 2026: antes se hacía siempre, ~19 ms con la CPU a 4x).
+    if (again) el.getAnimations?.({ subtree: true });
+    el.classList.add(cls);
   }
+  rowsEl.addEventListener("animationend", (event) => {
+    if (event.target === rowsEl && event.animationName.startsWith("section-in-")) el.classList.remove("shelf--from-right", "shelf--from-left");
+  });
 
-  window.addEventListener("resize", () => { measure(); setFocus(focus.r, focus.c); });
+  window.addEventListener("resize", () => { measure(); applied = null; setFocus(focus.r, focus.c); });
   return { el, setRows, prepare, updateRow, setFocus, bump, focused, slide };
 }

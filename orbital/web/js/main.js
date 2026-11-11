@@ -997,7 +997,8 @@ function goToSection(id, direction = 0) {
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
   if (inHome() || inGames() || inForYou() || inTv()) state.focus = { r, c };
   else setFocus(r, c, { silent: true });
-  ui.shelf.slide(direction || Math.sign(to - from));
+  // Las filas solo entran de lado si se ven: estacionadas (otra sección) la animación corría igual, sin verse.
+  if (document.body.dataset.view === "rows") ui.shelf.slide(direction || Math.sign(to - from));
   slideView(direction || Math.sign(to - from));
   renderHints();
   sound.play("move");
@@ -1005,12 +1006,24 @@ function goToSection(id, direction = 0) {
 }
 
 /** Inicio, Juegos, Para ti y TV en vivo entran de lado, como las filas de Películas y series (la dirección de LB/RB). */
+const sliding = new WeakSet(); // las vistas que ya quitan su clase al terminar la entrada
 function slideView(direction) {
   const view = inForYou() ? ui.foryou.el : inTv() ? ui.tv.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
   if (!view || !direction) return;
+  if (!sliding.has(view)) {
+    sliding.add(view);
+    view.addEventListener("animationend", (event) => {
+      if (event.target === view && event.animationName.startsWith("section-in-")) view.classList.remove("view--from-left", "view--from-right");
+    });
+  }
+  const cls = direction > 0 ? "view--from-right" : "view--from-left";
+  const again = view.classList.contains(cls); // la misma entrada todavía corriendo
   view.classList.remove("view--from-left", "view--from-right");
-  void view.offsetWidth;
-  view.classList.add(direction > 0 ? "view--from-right" : "view--from-left");
+  // Para que vuelva a empezar, el navegador tiene que ver la clase quitada. Al terminar la entrada la clase se quita (arriba),
+  // así que casi siempre basta con ponerla; solo si sigue corriendo se le pide ver el cambio con getAnimations(), que
+  // actualiza los estilos. Antes `void view.offsetWidth` calculaba además el layout de toda la vista (V2, 10 nov 2026).
+  if (again) view.getAnimations?.();
+  view.classList.add(cls);
 }
 
 function stepSection(delta) {
