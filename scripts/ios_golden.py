@@ -224,6 +224,28 @@ def rules_cases() -> list[dict]:
     return out
 
 
+# F2 · marcas de idioma que la TV aprendió del iPhone (`unify` en design/streams-rules.json): banderas 🇨🇴 🇨🇱 🇵🇪 🇻🇪 y las
+# de Streams.moreWordLanguages. Lo que la TV lee de cada nombre, para que el iPhone compruebe que lee lo mismo.
+MARKS_STREAMS = [
+    "Los.Simpson.S08E23.1080p.WEB-DL [lat]\n💾 1 GB", "Dune.2021.1080p.WEB-DL.Esp-Lat\n💾 2 GB", "Dune.2021.1080p.Lat-Ing\n💾 2 GB",
+    "Dune.2021.1080p.WEB-DL.es-MX\n💾 2 GB", "Dune.2021.1080p.spa_mx\n💾 2 GB", "Dune.2021.1080p.Mexicano\n💾 2 GB",
+    "Los.Simpson.S03E17.Homero.y.el.Bat.720p\n💾 300 MB", "Dune.2021.1080p [cast]\n💾 2 GB", "Dune.2021.1080p.Esp-Cast\n💾 2 GB",
+    "Dune.2021.1080p.es_ES\n💾 2 GB", "Dune 2021 1080p Español de España\n💾 2 GB",
+    "Show.S01.Dual\nEpisódio 02 - Radioactive Man.avi\n💾 300 MB", "Dune.2021.1080p.WEB-DL\n💾 2 GB\n🇨🇴",
+    "Dune.2021.1080p.WEB-DL\n💾 2 GB\n🇨🇱", "Dune.2021.1080p.WEB-DL\n💾 2 GB\n🇵🇪", "Dune.2021.1080p.WEB-DL\n💾 2 GB\n🇻🇪",
+    "Homero.2021.1080p\n💾 2 GB", "Cast.Away.2000.1080p\n💾 2 GB",
+]
+
+
+def marks_cases() -> list[dict]:
+    out = []
+    for i, title in enumerate(MARKS_STREAMS):
+        stream = {"name": "Torrentio\n1080p [RD+]", "title": title, "url": f"https://rd.example/m/{i}"}
+        src = streams.parse(stream, "Torrentio", "https://t.example/manifest.json", i)
+        out.append({"stream": stream, "audio_langs": src.audio_langs, "languages": src.languages, "dub": src.dub})
+    return out
+
+
 def cinemeta_cases() -> dict:
     fx = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "cinemeta"
     meta = json.loads((fx / "meta_series_tt0386676.json").read_text(encoding="utf-8"))
@@ -289,6 +311,7 @@ def main() -> None:
     write("streams", streams_cases())
     write("streams_spanish", spanish_cases())
     write("streams_rules", rules_cases())
+    write("streams_marks", marks_cases())
     write("cinemeta", cinemeta_cases())
     write("localize", localize_cases())
     write("trakt", trakt_cases())

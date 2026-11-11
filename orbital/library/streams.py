@@ -62,7 +62,7 @@ TOO_BIG_GB: dict[str, float] = dict(_SIZE.get("too_big_gb") or {"4K": 60, "1080p
 TOO_BIG_DEFAULT_GB = float(_SIZE.get("too_big_default_gb", 15))
 SERIES_SIZE_FACTOR = float(_SIZE.get("series_factor", .3))
 TOO_SMALL_GB: dict[str, float] = dict(_SIZE.get("too_small_gb") or {"movie": .7, "series": .12})
-REQUEST_TIMEOUT = float((RULES.get("waits") or {}).get("per_addon_s", 15))
+REQUEST_TIMEOUT = float((RULES.get("waits") or {}).get("per_addon_s", 10))
 
 # Banderas e indicios de idioma en los títulos de Torrentio y compañía. Torrentio solo pone 🇲🇽 cuando el nombre dice
 # latino; 🇪🇸 la pone a cualquier «Spanish»: no dice cuál de los dos («es» = español sin saber cuál).

@@ -1,5 +1,5 @@
 {
-  "_": "F2 · Las reglas para elegir versión como datos, para la TV y el iPhone. La TV las lee en orbital/library/streams.py. Los patrones son expresiones regulares (sintaxis común de Python y NSRegularExpression); `flags: \"i\"` = sin distinguir mayúsculas. `unify` dice, sin cambiarlo aún, en qué difieren hoy las dos apps y el valor propuesto para las dos.",
+  "_": "F2 · Las reglas para elegir versión como datos, para la TV y el iPhone. La TV las lee en orbital/library/streams.py. Los patrones son expresiones regulares (sintaxis común de Python y NSRegularExpression); `flags: \"i\"` = sin distinguir mayúsculas. `unify` dice en qué diferían las dos apps, el valor acordado para las dos y quién ya lo aplicó (`estado`).",
   "version": 1,
   "flags": {
     "🇬🇧": "en",
@@ -7,6 +7,10 @@
     "🇲🇽": "es-419",
     "🇪🇸": "es",
     "🇦🇷": "es-419",
+    "🇨🇴": "es-419",
+    "🇨🇱": "es-419",
+    "🇵🇪": "es-419",
+    "🇻🇪": "es-419",
     "🇫🇷": "fr",
     "🇮🇹": "it",
     "🇩🇪": "de",
@@ -168,6 +172,30 @@
       "pattern": "\\b(swedish|danish|norwegian|finnish)\\b",
       "flags": "i",
       "lang": "sv"
+    },
+    {
+      "_": "Del iPhone (Streams.moreWordLanguages), de Torrentio real (Los Simpson, 9 nov): «[lat]», «Esp-Lat», «Spa.Lat», «Lat-Ing», «es-MX», «spa_mx», «mexicano».",
+      "pattern": "[\\[(]lat[\\])]|\\b(esp|spa|dual)[ ._-]lat\\b|\\blat[ ._-](ing|eng|en)\\b|\\b(es|spa)[-_]mx\\b|\\bmexicano\\b",
+      "flags": "i",
+      "lang": "es-419"
+    },
+    {
+      "_": "Los Simpson latinos dicen «Homero» (los castellanos, «Homer»).",
+      "pattern": "\\bhomero\\b",
+      "flags": "i",
+      "lang": "es-419"
+    },
+    {
+      "_": "«[cast]», «Esp-Cast», «es_ES», «español de España».",
+      "pattern": "[\\[(]cast[\\])]|\\b(esp|spa)[ ._-]cast\\b|\\b(es|spa)[-_]es\\b|espa[ñn]ol[ ._(-]+(de[ ._]+)?espa[ñn]a\\b",
+      "flags": "i",
+      "lang": "es-ES"
+    },
+    {
+      "_": "«Episódio 02 - Radioactive Man.avi» (un «Dual» brasileño).",
+      "pattern": "\\bepisódio\\b",
+      "flags": "i",
+      "lang": "pt"
     }
   ],
   "codes": [
@@ -243,7 +271,7 @@
     "_": "Más que esto (en GB, por resolución después de res_class: 1440p cuenta como 1080p) resta 150; en series se multiplica por series_factor. Menos que too_small_gb resta 120."
   },
   "waits": {
-    "per_addon_s": 15,
+    "per_addon_s": 10,
     "find_deadline_s": 8.0,
     "_": "per_addon_s: lo más que se espera a un complemento; find_deadline_s: lo más que se espera para juntar versiones (lo que llegó, se usa)."
   },
@@ -254,7 +282,7 @@
   "unify": [
     {
       "rule": "flags",
-      "tv": "🇲🇽 y 🇦🇷 son latino",
+      "tv": "🇲🇽 🇦🇷 🇨🇴 🇨🇱 🇵🇪 🇻🇪 son latino",
       "ios": "también 🇨🇴 🇨🇱 🇵🇪 🇻🇪 (Streams.flagLanguages)",
       "proposed": {
         "🇨🇴": "es-419",
@@ -263,11 +291,12 @@
         "🇻🇪": "es-419"
       },
       "changes": "tv",
+      "estado": "vigente en las dos (la TV, desde el 10 nov)",
       "why": "Son doblajes latinos; Torrentio casi no las usa, pero otros complementos sí. La TV las suma a `flags`."
     },
     {
       "rule": "words",
-      "tv": "sin estas marcas",
+      "tv": "las mismas marcas, al final de `words`",
       "ios": "Streams.moreWordLanguages: «[lat]», «Esp-Lat», «Spa.Lat», «Lat-Ing», «es-MX», «spa_mx», «mexicano», «homero» (latino); «[cast]», «Esp-Cast», «es_ES», «español de España» (castellano); «episódio» (portugués)",
       "proposed": [
         {
@@ -292,6 +321,7 @@
         }
       ],
       "changes": "tv",
+      "estado": "vigente en las dos (la TV, desde el 10 nov)",
       "why": "Salieron de nombres reales de Torrentio (Los Simpson, 9 nov) y la TV hoy los deja en «no dice cuál» o en inglés. La TV los suma al final de `words` (y el doblaje de Los Simpson por «Homer/Homero» queda como regla aparte)."
     },
     {
@@ -300,14 +330,16 @@
       "ios": 15,
       "proposed": 25,
       "changes": "ios",
+      "estado": "pendiente en el iPhone",
       "why": "En todo lo demás 1440p cuenta como 1080p (res_class de la TV, `resolutionClass` del iPhone); el iPhone le aplica el tope de «sin calidad» (15 GB) y castiga una 1440p de 20 GB que la TV acepta."
     },
     {
       "rule": "waits.per_addon_s",
-      "tv": 15,
+      "tv": 10,
       "ios": 10,
       "proposed": 10,
       "changes": "tv",
+      "estado": "vigente en las dos (la TV, desde el 10 nov)",
       "why": "El iPhone espera 8 s a un complemento antes de darlo por lento y lo corta a los 10 (`StreamFinder.slowAfter` + 2); la TV espera hasta 15 s por petición, aunque igual junta lo que llegó a los 8 s (`find_deadline_s`). Con 10 en las dos, un complemento lento deja de ocupar un hilo 5 s de más en la TV."
     }
   ]
