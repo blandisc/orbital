@@ -1,6 +1,6 @@
 import { h, mount, svg } from "../core/dom.js";
 import { bytes, duration, firstSentence, genres, lastPlayed, percent, runtime } from "../core/format.js";
-import { ICONS, platformMark, systemIconName } from "../core/icons.js";
+import { ICONS, isTitleItem, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
@@ -90,7 +90,7 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     // PT22: la fila de la nube no es un porqué (es lo tuyo): su nombre va en blanco, no en turquesa.
     eyebrow.classList.toggle("hero__eyebrow--reason", !!extra.eyebrow && item.source !== "collection" && item.category !== "cloud");
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
-      : collectionIcon ? svg(ICONS[collectionIcon]) : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
+      : collectionIcon ? svg(ICONS[collectionIcon]) : isTitleItem(item) ? null : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
       h("span", {}, above));
 
     title.textContent = item.title;

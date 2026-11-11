@@ -136,10 +136,18 @@ export const ICONS = {
 
 /** La marca real de su plataforma (a color, la misma en todas las pantallas): el logo de Stremio para películas y
  * series, los de Steam y GeForce NOW, y la foto de la consola para un juego retro. null: va el ícono de líneas. */
+/**
+ * ¿Es una película o una serie (no un juego ni una app)? Su origen no se marca (P4, Fernando, 10 nov 2026): Stremio ya no es la
+ * base (Trakt sincroniza; Stremio es solo respaldo), así que su rombo junto a «Serie · T2 E3» no le decía nada a quien ve la
+ * tele. Stremio solo se nombra donde se habla de él como servicio (Ajustes › Cuentas, las listas de Stremio).
+ */
+export const isTitleItem = (item) => !!item && item.id !== "media:stremio"
+  && (["stremio", "cinemeta", "trakt", "tmdb", "onedrive"].includes(item.source) || ["media", "continue", "cloud"].includes(item.category));
+
 export function platformMark(item) {
   if (!item) return null;
   const file = (name) => `img/consoles/${name}`;
-  if (["stremio", "cinemeta"].includes(item.source) || item.category === "media") return file("stremio.svg");
+  if (isTitleItem(item)) return null; // una película o serie no lleva sello de origen (P4)
   if (item.source === "geforcenow" || item.category === "geforcenow") return file("geforcenow.svg");
   if (item.category === "steam" || item.source === "steam") return file("steam.svg");
   const text = `${item.source} ${item.subtitle} ${item.system ?? ""}`.toLowerCase();

@@ -1,7 +1,7 @@
 import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed } from "../core/format.js";
 import { kicker, platformColor, systemColor } from "../core/home.js";
-import { ICONS, platformMark, systemIconName } from "../core/icons.js";
+import { ICONS, isTitleItem, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, PlatformMark, Progress } from "./ui.js";
@@ -50,7 +50,7 @@ export function eyebrowOf(item, runningId = null) {
 }
 
 /** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»), con su color. */
-const mark = (item) => PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)] || ICONS.apps));
+const mark = (item) => (isTitleItem(item) ? null : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)] || ICONS.apps)));
 const tint = (item) => (platformColor(item) ? { "--platform": platformColor(item) } : undefined);
 
 /**
