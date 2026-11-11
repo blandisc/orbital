@@ -349,23 +349,27 @@ struct TitleView: View {
     /// debajo) y las acciones del mismo tamaño: Mi lista, Descargar y Tráiler. Cada una cambia en su lugar (Guardada, el anillo
     /// de la descarga): nada brinca. «Versión» ya no es un botón más (I7): se abre tocando la versión, debajo de «Ver».
     private func actions(_ model: TitleModel) -> some View {
-        VStack(spacing: DS.Space.s4) {
-            continueAction(model)
+        let primary = continueAction(model)
+        return VStack(spacing: DS.Space.s4) {
+            primary
             debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
-            // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize || model.extras?.trailer?.url == nil ? 2 : 3),
-                      spacing: DS.Space.s2) {
-                // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
-                statusAction(model).frame(maxWidth: .infinity)
-                downloadAction(model).frame(maxWidth: .infinity)
-                if let url = model.extras?.trailer?.url {
-                    Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
-                        .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
+            VStack(spacing: DS.Space.s2) {   // L2 (prueba del 11 nov): la versión, a la distancia que hay entre las tarjetas
+                versionRowTile(primary)
+                // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize || model.extras?.trailer?.url == nil ? 2 : 3),
+                          spacing: DS.Space.s2) {
+                    // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
+                    statusAction(model).frame(maxWidth: .infinity)
+                    downloadAction(model).frame(maxWidth: .infinity)
+                    if let url = model.extras?.trailer?.url {
+                        Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
+                            .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
+                    }
                 }
+                // Aire parejo (11 nov 2026): si «Guardar» lleva su estado («Viendo»), las tres reservan ese renglón y crecen igual.
+                .actionTileRow(reservesDetail: hasStatusLine(model))
+                .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
             }
-            // Aire parejo (11 nov 2026): si «Guardar» lleva su estado («Viendo»), las tres reservan ese renglón y crecen igual.
-            .actionTileRow(reservesDetail: hasStatusLine(model))
-            .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
     }
 

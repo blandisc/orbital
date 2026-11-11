@@ -49,6 +49,7 @@ extension TitleView {
             // Su propio tipo (no anidado en el de la ficha): ver `TitleFactsLine`.
             TitleFactsLine(line: line, certification: certification, leading: leading, lineLimit: typeSize.isAccessibilitySize ? 4 : 2)
             RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, letterboxd: letterboxdInfo?.average, centered: !leading)
+            versionRowWithFacts(model, leading: leading)   // L1 (prueba del 11 nov, `VersionRowStyle`)
         }
         .frame(maxWidth: .infinity, alignment: leading ? .leading : .center)
     }

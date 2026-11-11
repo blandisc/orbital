@@ -36,18 +36,26 @@ struct ContinueAction: View {
     var versions: (() -> Void)?
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
     var tint: Color = DS.accent
+    /// La prueba del renglón de la versión (`VersionRowStyle`, 11 nov 2026): con una de L1, L2 o L3, la versión sale de este
+    /// renglón (L1 y L2 las pinta la ficha; L3, el botón partido de aquí). nil: hoy.
+    var summary: VersionSummary?
+    private var style: VersionRowStyle { summary == nil ? .today : VersionRowStyle.current }
     @Environment(\.colorScheme) private var scheme
     /// En claro, el color del arte se oscurece como en las acciones de abajo (`TitleActions`): el tono claro sobre papel no se leía.
     private var ink: Color { scheme == .light ? tint.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : tint }
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            Button(action: play) { label }
-                .dsSolidPrimaryButton().disabled(!enabled)
-                .accessibilityIdentifier("title-play")
-                .coachAnchor("title-play")   // F3: el aviso con foco de la ficha señala este botón
+            if style == .split, let summary {
+                SplitPlayButton(title: label, summary: summary, enabled: enabled, play: play)
+            } else {
+                Button(action: play) { label }
+                    .dsSolidPrimaryButton().disabled(!enabled)
+                    .accessibilityIdentifier("title-play")
+                    .coachAnchor("title-play")   // F3: el aviso con foco de la ficha señala este botón
+            }
             if let progress { DSProgress(fraction: progress).padding(.top, DS.Space.s1) }
-            if versionPending {
+            if versionPending && style == .today {
                 // «quedan…» y «Desde el principio» como siempre; solo la versión, en gris con su forma.
                 HStack(spacing: DS.Space.s3) {
                     status(leftText, nil)
@@ -56,7 +64,7 @@ struct ContinueAction: View {
                     if restart == nil && aside == nil { Spacer(minLength: 0) }
                     restartRow
                 }
-            } else if left != nil || version != nil || restart != nil || aside != nil {
+            } else if left != nil || versionText != nil || restart != nil || aside != nil {
                 // Si no cabe todo en un renglón (versión larga, letra grande), «quedan…» y «Desde el principio» se quedan juntos
                 // (son el mismo asunto: el avance) y la versión baja sola.
                 ViewThatFits(in: .horizontal) {
@@ -96,7 +104,7 @@ struct ContinueAction: View {
     }
 
     private var leftText: Text? { left }
-    private var versionText: Text? { version }
+    private var versionText: Text? { style == .today ? version : nil }
 
     /// «quedan 50 min · 🇺🇸 Inglés · 1080p»: cuánto falta y la versión, en un solo texto gris.
     @ViewBuilder private func status(_ left: Text?, _ version: Text?) -> some View {

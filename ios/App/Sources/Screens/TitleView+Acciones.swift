@@ -152,7 +152,8 @@ extension TitleView {
             return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }
         if model.continueVideoID == nil {
-            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, versionPending: true, play: go)
+            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, versionPending: true, play: go,
+                                  summary: versionSummary(model, languageName: nil, pending: true))
         }
         // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
         if let debrid = debridContinueAction(model) { return debrid }
@@ -180,7 +181,7 @@ extension TitleView {
                               why: model.poorFit.map(poorFitReason),
                               versions: model.sourceCheck == .none || model.sourceCheck == .offline ? nil
                                   : model.continueVideoID.map { video in { openVersions(video) } },
-                              tint: artAccent)
+                              tint: artAccent, summary: versionSummary(model, languageName: languageName, pending: pending))
     }
 
     /// N5-A · «La de inglés pesa 64 GB y aquí no se ve bien» (o «…viene en AV1…»).
