@@ -25,6 +25,17 @@ extension DS {
         static let cloud = DebridRequestWords.Icon.cloud
         static let cloudFill = DebridRequestWords.Icon.cloud + ".fill"
         static let download = "arrow.down.circle"
+        /// Revisión 2 del 11 nov: un ícono por idea, con su tabla en `docs/ios-interfaz.md` § «Íconos» (DesignTests la cuida).
+        /// Guardar en una lista: el marcador, relleno cuando ya está en alguna.
+        static let save = "bookmark", saved = "bookmark.fill"
+        /// Más detalle técnico, escondido detrás de la ⓘ.
+        static let info = "info.circle"
+        /// Saltar segundos en lo que se reproduce (solo eso: nunca para moverse en una fila).
+        static let skipBack = "gobackward.10", skipForward = "goforward.10"
+        /// Saltar 5 en la fila de la TV (el control).
+        static let rowBack = "arrow.left.square", rowForward = "arrow.right.square"
+        /// Hecho (lo que llegó a la TV, lo que ya viste): la palomita, nunca el carácter «✓».
+        static let done = "checkmark"
         /// PT10: cancelar un pedido en camino (⊗) y quitar de tu Real-Debrid lo que ya terminó (basura).
         static let cancelRequest = DebridRequestWords.Icon.cancel
         static let removeRequest = DebridRequestWords.Icon.remove

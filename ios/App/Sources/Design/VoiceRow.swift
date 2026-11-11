@@ -74,7 +74,7 @@ struct VoiceRow: View {
         } else if heardNothing {
             Text("No te escuché. Toca y vuelve a intentar").recipe(.caption, color: DS.textMuted).lineLimit(2)
         } else if let lastAnswer {
-            Text("✓ \(lastAnswer)").recipe(.caption, color: DS.success).lineLimit(1)
+            Label { Text(verbatim: lastAnswer) } icon: { Image(systemName: DS.Symbol.done) }.recipe(.caption, color: DS.success).lineLimit(1)
         } else if let hint {
             // La pista: una frase del momento; tocarla la manda tal cual (atajo y lección a la vez).
             Button { tap { actions.say(hint) } } label: {
@@ -143,7 +143,7 @@ struct VoiceRow: View {
                     statusTile(ok: ok)
                 }
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    if ok { Text("✓ En la TV").recipe(.eyebrow, color: DS.success) }
+                    if ok { Label("En la TV", systemImage: DS.Symbol.done).recipe(.eyebrow, color: DS.success) }
                     Text(verbatim: reply?.speech.isEmpty == false ? reply!.speech : "Listo").recipe(.cardTitle).lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                     if let heard = reply?.heard, !heard.isEmpty { Text("Entendí: «\(heard)»").recipe(.caption, color: DS.textMuted).lineLimit(2) }
@@ -225,7 +225,7 @@ struct VoiceChoicesCarousel: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 0) {
-                    if reply.picked != nil { Text("✓ En la TV").recipe(.eyebrow, color: DS.success) }
+                    if reply.picked != nil { Label("En la TV", systemImage: DS.Symbol.done).recipe(.eyebrow, color: DS.success) }
                     else { Text("¿Cuál?").recipe(.cardTitle) }
                     if !reply.heard.isEmpty { Text("Entendí: «\(reply.heard)» · desliza para ver más").recipe(.caption, color: DS.textMuted).lineLimit(1) }
                 }

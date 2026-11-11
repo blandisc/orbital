@@ -78,7 +78,7 @@ struct AllSourcesList: View {
     }
 
     @ViewBuilder private var legendItems: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) { dot(DS.AllSourcesList.ready); Text("en Real-Debrid").recipe(.caption) }
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) { dot(DS.AllSourcesList.ready); Text("en la nube").recipe(.caption) }
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) { dot(DS.AllSourcesList.mustDownload); Text("Todavía no está en la nube").recipe(.caption) }
         // I6 · las marcas de complemento se explican aquí (las demás fuentes no llevan marca: antes, una pieza sin explicar).
         ForEach(addonKinds, id: \.self) { kind in
@@ -103,7 +103,7 @@ struct AllSourcesList: View {
                 .pickerStyle(.inline)
             }
             Section("Mostrar") {
-                Toggle("Solo las que ya están en Real-Debrid", isOn: $filter.onlyInRealDebrid).toggleStyle(.automatic)   // en el menú, la palomita del sistema
+                Toggle("Solo las que ya están en la nube", isOn: $filter.onlyInRealDebrid).toggleStyle(.automatic)   // en el menú, la palomita del sistema
                 Picker("Idioma", selection: $filter.language) {
                     Text("Todos").tag(String?.none)
                     ForEach(AllSources.languages(in: sources), id: \.self) { code in
@@ -245,7 +245,7 @@ struct AllSourcesList: View {
                 }
             }
             switch SourceSpeed(source) {
-            case .inRealDebrid: Text("Ya está en Real-Debrid").recipe(.footnote, color: DS.text)
+            case .inRealDebrid: Text("Ya está en la nube").recipe(.footnote, color: DS.text)
             case .realDebridMustDownload: Text("Todavía no está en la nube: puede tardar en abrir").recipe(.footnote)
             case .unknown: EmptyView()
             }
@@ -354,7 +354,7 @@ struct AllSourcesList: View {
 
     private func speedText(_ source: Source) -> Text? {
         switch SourceSpeed(source) {
-        case .inRealDebrid: Text("en Real-Debrid")
+        case .inRealDebrid: Text("en la nube")
         case .realDebridMustDownload: Text("Todavía no está en la nube")
         case .unknown: nil
         }
