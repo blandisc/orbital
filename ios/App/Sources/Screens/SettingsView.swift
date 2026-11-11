@@ -207,7 +207,7 @@ struct SettingsView: View {
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
             .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
-            // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › Real-Debrid · bajando para ti (RX1-A).
+            // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › Lo que pediste (RX1-A).
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { env.openTab = AppEnvironment.downloadsTab } }
             .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }

@@ -4,7 +4,7 @@ import OrbitalModels
 import OrbitalAddons
 
 /// RX1-A (Fernando, 3 nov: «RX1A me gusta»): lo que pides a la nube vive en Descargas, donde lo buscas, en su propia parte:
-/// «Real-Debrid · bajando para ti» (esto) arriba de «En este iPhone · sin internet». Antes era Ajustes › Cuentas › Real-Debrid ›
+/// «Lo que pediste» (esto) arriba de «En este iPhone · sin internet». Antes era Ajustes › Cuentas › Real-Debrid ›
 /// «Tus pedidos», que ahora solo trae aquí. Los dos grupos de siempre (P1-A): «Bajando» (con cuántas van de tu límite) y «Ya
 /// terminaron»; un grupo vacío no sale y, sin ningún pedido, el vacío con su única salida («¿Qué es esto?»). Cada pedido con
 /// su estado en palabras y su avance; tocarlo abre su hoja (P2-B, la misma de la ficha) con «Probar otra versión» si ayuda,
@@ -51,10 +51,11 @@ struct DownloadsCloudPart: View {
         }
     }
 
-    /// «Real-Debrid · bajando para ti» (Fernando, 3 nov): no «En la nube», que se confundiría con Mi media (tu OneDrive, Plex…);
-    /// la palabra «nube» queda en los textos del pedido («Pedir a la nube», «Bajando en la nube · 42 %»).
+    /// «Lo que pediste» (T9, 10 nov, como la TV; antes «Real-Debrid · bajando para ti»). Una sección va sola, sin porqué: de
+    /// dónde viene lo dice «¿Qué es esto?» al pie (en la TV, el sello de Real-Debrid de su fila). No «En la nube», que se confundiría con Mi media (tu OneDrive, Plex…); la palabra «nube»
+    /// queda en los textos del pedido («Pedir a la nube», «Bajando en la nube · 42 %»).
     private var chapter: some View {
-        DSSectionHead(title: Text("Real-Debrid · bajando para ti"), level: .section, symbol: DS.Symbol.cloud).listHeadRow()
+        DSSectionHead(title: Text("Lo que pediste"), level: .section, symbol: DS.Symbol.cloud).listHeadRow()
             .accessibilityIdentifier("downloads-cloud")
     }
 

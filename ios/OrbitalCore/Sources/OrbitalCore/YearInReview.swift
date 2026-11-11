@@ -7,6 +7,8 @@ struct SavedSuggestion: Codable {
     var kind, imdb, title, overview, poster, wide: String
     var year, runtime, rank, movement, nextSeason, nextEpisode: Int?
     var logo: String?
+    /// La calificación de Trakt: la portada de Inicio la enseña («81 %», como la TV). Lo guardado antes no la trae.
+    var traktRating: Double?
     var reason: String
     var reasonText: String?
     var isNew: Bool
@@ -14,6 +16,7 @@ struct SavedSuggestion: Codable {
     init(_ s: Suggestion) {
         kind = s.kind; imdb = s.imdb; title = s.title; overview = s.overview; poster = s.poster; wide = s.wide
         year = s.year; runtime = s.runtime; rank = s.rank; movement = s.movement; logo = s.logo; isNew = s.isNew
+        traktRating = s.traktRating
         nextSeason = s.next?.season; nextEpisode = s.next?.episode
         switch s.reason {
         case .recommended: reason = "recommended"
@@ -41,7 +44,7 @@ struct SavedSuggestion: Codable {
         var s = Suggestion(kind: kind, imdb: imdb, title: title, year: year, runtime: runtime, overview: overview, poster: poster, wide: wide,
                            logo: logo, reason: why)
         if let nextSeason, let nextEpisode { s.next = (nextSeason, nextEpisode) }
-        s.rank = rank; s.movement = movement; s.isNew = isNew
+        s.rank = rank; s.movement = movement; s.isNew = isNew; s.traktRating = traktRating
         return s
     }
 }

@@ -25,14 +25,37 @@ extension DS.TextRecipe {
 struct DataLine: View {
     let parts: [String]
     var color: Color?
+    /// La calificación de Trakt (0 a 10) con su marca, después de `traktAfter` partes («Película · 2024 · ⦿ 81 % · Drama»),
+    /// como la TV. Si no cabe todo, se van primero las partes del final; la calificación se queda.
+    var trakt: Double?
+    var traktAfter = 2
 
     var body: some View {
         let shown = parts.filter { !$0.isEmpty }
         ViewThatFits(in: .horizontal) {
             ForEach(Array((1...max(1, shown.count)).reversed()), id: \.self) { count in
-                Text.withFlagImages(shown.prefix(count).joined(separator: " · ")).recipe(.data, color: color).lineLimit(1)
+                line(Array(shown.prefix(count)))
             }
         }
+    }
+
+    @ViewBuilder private func line(_ parts: [String]) -> some View {
+        if let trakt, trakt > 0 {
+            let cut = min(traktAfter, parts.count)
+            HStack(spacing: DS.Space.s1) {
+                if cut > 0 { text(parts.prefix(cut).joined(separator: " · ") + " ·") }
+                RatingMark(service: .trakt)
+                text("\(Int((trakt * 10).rounded()))\u{00A0}%" + (parts.count > cut ? " · " + parts.dropFirst(cut).joined(separator: " · ") : ""))
+                    .accessibilityLabel(Text("Trakt \(Int((trakt * 10).rounded())) %"))
+            }
+            .fixedSize()
+        } else {
+            text(parts.joined(separator: " · "))
+        }
+    }
+
+    private func text(_ string: String) -> some View {
+        Text.withFlagImages(string).recipe(.data, color: color).lineLimit(1)
     }
 }
 

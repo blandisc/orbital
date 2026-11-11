@@ -362,15 +362,16 @@ struct SourcesGlossary: View {
     }
 }
 
-/// El alto de «Versión»: en el iPhone, la hoja grande de siempre; en ventana ancha (iPad, Mac) la tarjeta a la medida de su
-/// lista con tope (antes medía siempre lo mismo y con pocas versiones quedaba un hueco abajo, 10 nov 2026). La altura va
-/// también en `presentationDetents`: así iPadOS vuelve a medir la tarjeta cuando la lista termina de llegar.
+/// El alto de «Versión»: a la medida de su lista con tope (`DS.Sheet.maxShare` de la ventana), en el iPhone igual que en
+/// ventana ancha (iPad, Mac). Antes medía siempre lo mismo y con pocas versiones quedaba un hueco abajo (iPad 10 nov, iPhone
+/// 11 nov 2026). La altura va en `presentationDetents`: así iOS vuelve a medir la hoja cuando la lista termina de llegar;
+/// mientras no se mide, la hoja grande de siempre.
 private struct VersionSheetSizing: ViewModifier {
     let fitted: CGFloat?
 
     func body(content: Content) -> some View {
         // Sin `if`: cambiar de rama volvería a crear la hoja (y a cargar las versiones) al terminar de medir.
         let wide = WindowMetrics.size.width > DS.TitleAction.readableWidth ? fitted : nil
-        content.presentationDetents(wide.map { [.height($0)] } ?? [.large]).fittedFormSizing(idealHeight: wide)
+        content.presentationDetents(fitted.map { [.height($0)] } ?? [.large]).fittedFormSizing(idealHeight: wide)
     }
 }

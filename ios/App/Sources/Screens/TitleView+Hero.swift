@@ -41,15 +41,34 @@ extension TitleView {
         let year = model.info.year.trimmingCharacters(in: CharacterSet(charactersIn: "–- "))
         let facts = Vocabulary.titleFacts(year: Vocabulary.factLine([year, Strings.kind(model.kind, language: language)]),
                                           genres: Vocabulary.genres(model.info.genres, language: language), runtime: runtime, rating: "")
+        // Se parte solo entre datos, nunca dentro de uno («2 h 35 min» entero, en el SE): cada dato con espacios que no se
+        // separan. Si no cabe en un renglón, la clasificación baja a su propio renglón en vez de flotar junto a dos.
+        let line = Vocabulary.factLine(facts.map { $0.replacingOccurrences(of: " ", with: "\u{00A0}") })
+        let certification = model.extras?.certification
         return VStack(alignment: leading ? .leading : .center, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s2) {
-                Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(leading ? .leading : .center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
-                if let certification = model.extras?.certification {
-                    QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) {
+                    factsText(line, leading: leading).fixedSize()
+                    certificationBadge(certification)
+                }
+                VStack(alignment: leading ? .leading : .center, spacing: DS.Space.s1) {
+                    factsText(line, leading: leading)
+                    certificationBadge(certification)
                 }
             }
             RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, letterboxd: letterboxdInfo?.average, centered: !leading)
         }
         .frame(maxWidth: .infinity, alignment: leading ? .leading : .center)
+    }
+
+    private func factsText(_ line: String, leading: Bool) -> some View {
+        Text(verbatim: line).recipe(.footnote).multilineTextAlignment(leading ? .leading : .center)
+            .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+    }
+
+    @ViewBuilder private func certificationBadge(_ certification: String?) -> some View {
+        if let certification {
+            QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
+        }
     }
 }
