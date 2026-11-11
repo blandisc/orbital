@@ -19,6 +19,34 @@ public final class SearchModel: ObservableModel {
     public private(set) var recent: [String] { didSet { changed() } }
     private let services: Services
     private var latest = 0
+    /// Cuánto se espera a que alguien conteste antes de decir que no se pudo (revisión del 11 nov: tras 45 s seguía el
+    /// esqueleto). Las pruebas lo acortan.
+    public var timeout: UInt64 = 10_000_000_000
+
+    /// Qué enseña la pantalla para lo que está escrito. Vive aquí (no en la vista) para que una búsqueda siempre termine:
+    /// con resultados, sin resultados o con un error que se puede reintentar.
+    public enum Status: Equatable {
+        /// Menos de dos letras: las sugerencias, no resultados.
+        case idle
+        /// Esperando la primera respuesta de lo escrito: el esqueleto.
+        case waiting
+        /// Hay resultados (aunque falten los nombres en tu idioma o la otra fuente).
+        case found
+        /// Contestaron y no hay nada con ese nombre.
+        case empty
+        /// Nadie contestó o tardaron demasiado: aviso con «Reintentar».
+        case failed(String)
+    }
+
+    /// El estado para el texto del campo (puede ir una letra adelante de la última búsqueda).
+    public func status(for text: String) -> Status {
+        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard query.count >= 2 else { return .idle }
+        guard searchedQuery == query else { return .waiting }
+        if let error, !isSearching { return .failed(error) }
+        if !results.isEmpty { return .found }
+        return isSearching ? .waiting : .empty
+    }
 
     public init(_ services: Services) {
         self.services = services
@@ -40,7 +68,9 @@ public final class SearchModel: ObservableModel {
         error = nil   // un error de la búsqueda anterior no tapa lo que está cargando
         defer { if ticket == latest { isSearching = false } }
         do {
-            let (found, complete) = try await find(query) { [weak self] partial in
+            let answer = try await within(timeout) { [weak self] in
+                guard let self else { throw CancellationError() }
+                return try await self.find(query) { [weak self] partial in
                 guard let self, ticket == self.latest else { return }
                 let known = await self.knownNames(partial)
                 guard ticket == self.latest else { return }
@@ -48,9 +78,16 @@ public final class SearchModel: ObservableModel {
                                                     poster: $0.poster, year: $0.year) }
                 self.error = nil
                 self.searchedQuery = query
+                }
             }
             guard ticket == latest else { return }
             isSearching = false
+            // Tardaron demasiado: lo que ya llegó se queda (sin recordarse); si no llegó nada, se dice y se puede reintentar.
+            // Si la respuesta llega después, igual se pone (la búsqueda sigue siendo esta).
+            guard let (found, complete) = answer else {
+                if searchedQuery != query || results.isEmpty { results = []; error = SearchFailure(slow: true).description; searchedQuery = query }
+                return
+            }
             // Los nombres en tu idioma, a la vez (películas y series), y solo si la búsqueda sigue siendo esta.
             async let movieNames = names(found, kind: "movie")
             async let seriesNames = names(found, kind: "series")
@@ -66,6 +103,8 @@ public final class SearchModel: ObservableModel {
             if complete, !Task.isCancelled { remember(results: localized, for: key) }
             guard ticket == latest else { return }
             if localized != results { results = localized }
+            // Contestaron y no trajeron nada: también es una respuesta (antes la pantalla esperaba para siempre).
+            searchedQuery = query
         } catch {
             // Escribir otra letra cancela la búsqueda en vuelo: eso no es un error de red (ni vacía lo que ya se veía).
             guard !Task.isCancelled, ticket == latest else { return }
@@ -125,14 +164,35 @@ public final class SearchModel: ObservableModel {
         return (shown, failed.isEmpty && (trakt == nil || fromTrakt != nil))
     }
 
-    /// Lo de Cinemeta en su orden y, después, lo que solo trajo Trakt (en el suyo), sin repetir.
+    /// Lo de Cinemeta en su orden y, después, lo que solo trajo Trakt (en el suyo), sin repetir; lo de otro alfabeto al final.
     nonisolated static func merged(cinemeta: [SearchResult], trakt: [SearchResult]) -> [SearchResult] {
         var seen = Set(cinemeta.map(\.metaID))
-        return cinemeta + trakt.filter { seen.insert($0.metaID).inserted }
+        // Lo escrito en otro alfabeto («Бархан») al final: no se esconde, pero no se mezcla con lo que lees (11 nov).
+        return OtherScript.readableFirst(cinemeta + trakt.filter { seen.insert($0.metaID).inserted }) { $0.title }
+    }
+
+    /// `work` o nil si pasa `limit` antes. No espera a que `work` se rinda (la red no siempre atiende la cancelación): sigue
+    /// por su cuenta y lo que traiga se pone si la búsqueda sigue siendo la misma. Si cancelan la búsqueda, se cancela también.
+    private func within<T: Sendable>(_ limit: UInt64, _ work: @escaping @MainActor @Sendable () async throws -> T) async throws -> T? {
+        let gate = Gate<T?>()
+        let job = Task { @MainActor in
+            do { gate.open(.success(try await work())) } catch { gate.open(.failure(error)) }
+        }
+        let clock = Task { try? await Task.sleep(nanoseconds: limit); gate.open(.success(nil)) }
+        return try await withTaskCancellationHandler {
+            let value = try await gate.wait()
+            clock.cancel()
+            return value
+        } onCancel: {
+            job.cancel(); clock.cancel(); gate.open(.failure(CancellationError()))
+        }
     }
 
     /// Ni Trakt ni Cinemeta contestaron.
-    struct SearchFailure: Error, CustomStringConvertible { var description: String { "No pude buscar. Revisa tu conexión." } }
+    struct SearchFailure: Error, CustomStringConvertible {
+        var slow = false
+        var description: String { slow ? "La búsqueda tardó demasiado. Revisa tu conexión." : "No pude buscar. Revisa tu conexión." }
+    }
 
     /// Los nombres en tu idioma que ya se conocen (sin pedir nada).
     private func knownNames(_ found: [SearchResult]) async -> [String: String] {
@@ -187,4 +247,32 @@ public final class SearchModel: ObservableModel {
     }
 
     public func clearRecent() { recent = []; services.kv.set("recent-searches", data: nil) }
+}
+
+/// Una respuesta que se da una sola vez: la primera que llega (el trabajo, el reloj o la cancelación) gana.
+private final class Gate<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var result: Result<T, Error>?
+    private var waiter: CheckedContinuation<T, Error>?
+
+    func open(_ value: Result<T, Error>) {
+        let resume: CheckedContinuation<T, Error>? = lock.withLock {
+            guard result == nil else { return nil }
+            result = value
+            defer { waiter = nil }
+            return waiter
+        }
+        resume?.resume(with: value)
+    }
+
+    func wait() async throws -> T {
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<T, Error>) in
+            let ready: Result<T, Error>? = lock.withLock {
+                if let result { return result }
+                waiter = c
+                return nil
+            }
+            if let ready { c.resume(with: ready) }
+        }
+    }
 }

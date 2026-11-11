@@ -1,28 +1,6 @@
 {
   "sourceLanguage": "es",
   "strings": {
-    "5 adelante": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 forward"
-          }
-        }
-      }
-    },
-    "5 atrás": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 back"
-          }
-        }
-      }
-    },
     "Conectar con un código": {
       "extractionState": "manual",
       "localizations": {
@@ -1965,17 +1943,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "With your TV"
-          }
-        }
-      }
-    },
-    "Ver la guía de bienvenida": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "See the welcome guide"
           }
         }
       }
@@ -7356,17 +7323,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sites it searches"
-          }
-        }
-      }
-    },
-    "Solo lo que ya está en Real-Debrid": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only what's already on Real-Debrid"
           }
         }
       }
@@ -29994,17 +29950,6 @@
         }
       }
     },
-    "Solo las que ya están en Real-Debrid": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only those already on Real-Debrid"
-          }
-        }
-      }
-    },
     "Solo mira la carpeta que elijas después": {
       "extractionState": "manual",
       "localizations": {
@@ -35921,17 +35866,6 @@
         }
       }
     },
-    "Ya está en Real-Debrid": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Already on Real-Debrid"
-          }
-        }
-      }
-    },
     "Ya está en tu Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -36357,17 +36291,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "in %lld days"
-          }
-        }
-      }
-    },
-    "en Real-Debrid": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "on Real-Debrid"
           }
         }
       }
@@ -40407,17 +40330,6 @@
         }
       }
     },
-    "Lo pidieron con otra cuenta de Real-Debrid: se cancela desde ahí.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It was requested with another Real-Debrid account: it can only be canceled from there."
-          }
-        }
-      }
-    },
     "Quitar de tu Real-Debrid": {
       "extractionState": "manual",
       "localizations": {
@@ -41453,82 +41365,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing in the cloud"
-          }
-        }
-      }
-    },
-    "En este iPhone · sin internet": {
-      "extractionState": "manual",
-      "localizations": {
-        "es": {
-          "variations": {
-            "device": {
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En este iPhone · sin internet"
-                }
-              },
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En este iPad · sin internet"
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En esta Mac · sin internet"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "En este iPhone · sin internet"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "iphone": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On this iPhone · offline"
-                }
-              },
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On this iPad · offline"
-                }
-              },
-              "mac": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On this Mac · offline"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "On this iPhone · offline"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "En esta Mac · sin internet": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "On this Mac · offline"
           }
         }
       }
@@ -44174,6 +44010,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "Preferences"
+          }
+        }
+      }
+    },
+    "No se pudo buscar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search didn't work"
+          }
+        }
+      }
+    },
+    "Nada con «%@». Revisa cómo se escribe o prueba con el nombre original.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing for “%@”. Check the spelling or try the original title."
+          }
+        }
+      }
+    },
+    "La búsqueda tardó demasiado. Revisa tu conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The search took too long. Check your connection."
+          }
+        }
+      }
+    },
+    "−5 en la fila": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−5 in the row"
+          }
+        }
+      }
+    },
+    "+5 en la fila": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+5 in the row"
+          }
+        }
+      }
+    },
+    "Aprende": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Learn"
+          }
+        }
+      }
+    },
+    "Solo las que ya están en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the ones already in the cloud"
+          }
+        }
+      }
+    },
+    "Ya está en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in the cloud"
+          }
+        }
+      }
+    },
+    "Solo lo que ya está en la nube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only what is already in the cloud"
+          }
+        }
+      }
+    },
+    "Lo pidió otra cuenta: se cancela desde ahí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another account requested it: cancel it there."
+          }
+        }
+      }
+    },
+    "Lo que dicen en Letterboxd": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What people say on Letterboxd"
+          }
+        }
+      }
+    },
+    "Reseñas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviews"
+          }
+        }
+      }
+    },
+    "%lld bajando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld downloading"
+          }
+        }
+      }
+    },
+    "Última vez: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last time: %@"
           }
         }
       }
