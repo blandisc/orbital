@@ -75,3 +75,36 @@ def test_the_library_sends_the_tone_only_when_known(library, tmp_path):
     library.tones = art_tone.ArtTones(tmp_path)
     library.tones.warm([IMAGES[1]])
     assert library.describe(item)["art_tone"] == art_tone.tone_of(IMAGES[1], tmp_path)
+
+
+def test_two_warmups_at_startup_measure_each_cover_once(tmp_path, monkeypatch):
+    """Revisión del 11 nov 2026: el servidor y el escaneo del catálogo piden medir casi juntos; cada portada se mide una
+    sola vez y las que trae la segunda petición también quedan medidas."""
+    import threading
+    import time
+
+    copies = []
+    for n in range(6):
+        copy = tmp_path / f"art{n}{IMAGES[n % len(IMAGES)].suffix}"
+        shutil.copyfile(IMAGES[n % len(IMAGES)], copy)
+        copies.append(copy)
+    measured: list[Path] = []
+    real = art_tone.tone_of
+    started = threading.Event()
+
+    def slow_tone(path, thumbs_dir=None):
+        measured.append(path)
+        started.set()
+        time.sleep(0.05)  # medir tarda: la segunda petición llega a media medición
+        return real(path, thumbs_dir)
+
+    monkeypatch.setattr(art_tone, "tone_of", slow_tone)
+    tones = art_tone.ArtTones(tmp_path / "thumbs")
+    first = threading.Thread(target=tones.warm, args=(copies[:4],))
+    first.start()
+    started.wait(5)
+    assert tones.warm(copies) == 0  # la segunda no mide a la par: le deja sus portadas a la primera
+    first.join(10)
+    assert sorted(measured) == sorted(copies)  # cada una, una vez (también las dos nuevas)
+    assert all(tones.peek(p) for p in copies)
+    assert tones.warm(copies) == 0 and len(measured) == 6  # lo ya medido no se repite

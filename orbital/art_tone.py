@@ -129,6 +129,9 @@ class ArtTones:
         self.file = thumbs_dir / "tones.json"
         self._lock = threading.Lock()
         self._save_lock = threading.Lock()  # dos guardados a la vez: la foto más nueva queda al final
+        self._warm_lock = threading.Lock()
+        self._warming = False  # una medición en curso: otra que llegue le pasa sus portadas en vez de medir a la par
+        self._more: list[Path] = []
         self._tones: dict[str, dict] = {}
         try:
             data = json.loads(self.file.read_text(encoding="utf-8"))
@@ -177,11 +180,29 @@ class ArtTones:
                 log.info("No pude guardar los tonos del arte", exc_info=True)
 
     def warm(self, paths: list[Path]) -> int:
-        """Mide lo que falte y guarda una vez al final. Devuelve cuántos se midieron."""
+        """Mide lo que falte y guarda una vez al final. Devuelve cuántos se midieron. Una sola medición a la vez: al
+        arrancar la piden el servidor y el escaneo del catálogo casi juntos (medían las mismas portadas dos veces, con la
+        consola recién encendida); la segunda le deja sus portadas a la que ya corre y regresa."""
+        with self._warm_lock:
+            if self._warming:
+                self._more.extend(paths)
+                return 0
+            self._warming = True
         done = 0
-        for path in paths:
-            if self.peek(path) is None and path.is_file() and self.measure(path) is not None:
-                done += 1
+        try:
+            while True:
+                for path in paths:
+                    if self.peek(path) is None and path.is_file() and self.measure(path) is not None:
+                        done += 1
+                with self._warm_lock:
+                    if not self._more:
+                        self._warming = False
+                        break
+                    paths, self._more = self._more, []
+        except BaseException:
+            with self._warm_lock:
+                self._warming, self._more = False, []
+            raise
         if done:
             self.save()
         return done
