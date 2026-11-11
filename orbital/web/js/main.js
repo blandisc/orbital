@@ -400,7 +400,14 @@ async function refreshPhone() {
 }
 
 /** «Enviar al iPhone» / «Descargar en el iPhone»: la consola lo deja en su bandeja y dice, en palabras, qué pasará. */
-async function sendToPhone({ action, kind, metaId, videoId }) {
+async function sendToPhone({ action, kind, metaId, videoId, title }) {
+  // R2-8: el botón «Al iPhone» de la ficha abre las dos opciones (antes eran dos botones casi iguales).
+  if (action === "choose") {
+    const send = (to) => ({ type: "phone-send", action: to, kind, metaId, videoId, title });
+    return openMenu({ title: "Al iPhone", subtitle: title, options: [
+      { icon: "phoneSend", label: "Enviar al iPhone", hint: "Se abre allá, listo para ver", command: send("open") },
+      { icon: "download", label: "Descargar en el iPhone", hint: "Para verlo sin internet", command: send("download") }] });
+  }
   try {
     const res = await api.companionSend(action, kind, metaId, videoId);
     sound.play("select");
@@ -1189,7 +1196,7 @@ let kindFocus = null;
 const MEDIA_TOOLS = [
   { id: "saved", icon: "bookmark", label: "Guardado", command: { type: "saved" } },
   { id: "collections", icon: "trophy", label: "Colecciones", command: { type: "collections" } },
-  { id: "filter", icon: "search", label: "Filtro avanzado", command: { type: "filter" } },
+  { id: "filter", icon: "sliders", label: "Filtro avanzado", command: { type: "filter" } },
 ];
 const kindStops = () => MEDIA_KINDS.length + MEDIA_TOOLS.length; // las pestañas y luego los íconos
 /** Lo que hace A donde está el foco de arriba: la pestaña («Mostrar») o el nombre del ícono. */

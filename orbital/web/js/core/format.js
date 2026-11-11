@@ -158,3 +158,19 @@ export function reasonOnly(text) {
   if (!clean) return null;
   return DATA_ONLY.some((re) => re.test(clean)) ? null : clean;
 }
+
+// R2-8: de qué idioma es una reseña (Letterboxd no lo dice). Cuenta palabras muy comunes de cada uno; sin las suficientes,
+// null (no se adivina). Las en español van primero; las demás dicen su idioma.
+const COMMON = {
+  es: ["el", "la", "los", "las", "que", "de", "y", "es", "una", "un", "por", "con", "para", "pero", "muy", "más", "esta", "como", "lo", "se", "no", "me", "su"],
+  en: ["the", "and", "is", "it", "of", "to", "a", "this", "that", "was", "but", "with", "for", "you", "his", "he", "i", "my", "so", "not", "be", "if"],
+  pt: ["o", "os", "um", "uma", "não", "é", "muito", "mais", "isso", "esse", "você", "mas", "com", "pra"],
+};
+export const LANGUAGE_NAMES = { es: "español", en: "inglés", pt: "portugués" };
+export function textLanguage(text) {
+  const words = String(text ?? "").toLowerCase().match(/[a-záéíóúñãõç]+/g) || [];
+  if (words.length < 3) return null;
+  const score = Object.fromEntries(Object.entries(COMMON).map(([lang, list]) => [lang, words.filter((w) => list.includes(w)).length]));
+  const [best, hits] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+  return hits >= 2 && hits > (Object.values(score).sort((a, b) => b - a)[1] ?? 0) ? best : null;
+}

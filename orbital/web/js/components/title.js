@@ -1,11 +1,11 @@
 import { api } from "../core/api.js";
-import { Badge, Chip, LineSkeleton, Pill, Progress, SectionHead } from "./ui.js";
+import { Chip, LineSkeleton, Pill, Progress, SectionHead } from "./ui.js";
 import { ArtFit } from "./art-fit.js";
 import { Card } from "./card.js";
 import { PersonChip } from "./people.js";
 import { clampWords, cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { sized } from "../core/images.js";
-import { genres, runtime } from "../core/format.js";
+import { genres, LANGUAGE_NAMES, runtime, textLanguage } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
@@ -69,7 +69,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   list.addEventListener("scroll", markEpisodeEdges, { passive: true });
   const browser = h("div", { class: "title__browser" }, tabs, list);
   // Al bajar desde los botones, lo de abajo de la ficha del iPhone y en su orden: Reparto y equipo, La saga, Más como esto
-  // y Detalles. Cada parte con el encabezado de toda la app (su título y, a la derecha, lo que dice: «Quién sale y quién la
+  // y Detalles. Cada parte con el encabezado de toda la app, solo su título (R2-6: sin subtítulo que lo repita; antes «Quién sale y quién la
   // hizo»). El tráiler es un botón de arriba (con el mando no hay tira de clips: distinto a propósito).
   const PANEL = ["cast", "saga", "more", "reviews", "details"];
   // Como las filas del Inicio y de Películas y series (Fernando, 4 nov): si hay más a la derecha, esa orilla se desvanece;
@@ -177,7 +177,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       .map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t));
     // T10 (10 nov): en la TV, sin cajita: «B15» en un recuadro se leía como el botón B del mando. Un dato más, con su punto.
     if (extras?.certification) parts.push(h("span", { class: ["title__fact", "title__fact--cert"] }, h("span", { class: "title__sep", "aria-hidden": "true" }, "·"),
-      h("span", { class: "title__cert", "aria-label": `Clasificación ${extras.certification}` }, extras.certification)));
+      // R2-8: «B» solo parecía el botón B del mando o una letra suelta; dice qué es.
+      h("span", { class: "title__cert" }, `Clasificación ${extras.certification}`)));
     mount(facts, parts);
     requestAnimationFrame(() => {
       let top = null;
@@ -196,13 +197,13 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     if (details) fillInfo({ ...details, title: details.title || item.title, art: artOf(details), ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
     paintCredits();
     const card = (id) => (m, i) => Card(m, { onPress: () => pick(id, i) });
-    fillPanel("cast", (x?.people || []).filter((p) => p?.id && p.name), "Reparto y equipo", "Quién sale y quién la hizo",
+    fillPanel("cast", (x?.people || []).filter((p) => p?.id && p.name), "Reparto y equipo", null,
       (p, i) => PersonChip(p, { onPress: () => pick("cast", i) }));
     fillPanel("saga", (x?.saga?.items || []).filter((m) => m.meta_id), "La saga", x?.saga?.name || "", card("saga"));
-    fillPanel("more", (x?.more || []).filter((m) => m.meta_id && m.meta_id !== item?.meta_id), "Más como esto", "Si te gusta esta", card("more"));
+    fillPanel("more", (x?.more || []).filter((m) => m.meta_id && m.meta_id !== item?.meta_id), "Más como esto", null, card("more"));
     paintReviews();
     const rows = detailRows(x);
-    fillPanel("details", rows.length ? [rows] : [], "Detalles", "Los datos de la ficha",
+    fillPanel("details", rows.length ? [rows] : [], "Detalles", null,
       (list) => h("dl", { class: "title__details" }, list.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v)])));
     more.hidden = !PANEL.some((id) => panel[id].items.length);
     const again = restore && panel[restore.zone];
@@ -222,9 +223,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     const items = [
       ...(x?.mine ? [{ mine: true, author: "Tu reseña en Letterboxd", rating: x.mine.rating, liked: x.mine.liked, text: x.mine.review,
         when: x.mine.watched ? `Vista el ${new Date(`${x.mine.watched}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}${x.mine.rewatch ? " · otra vez" : ""}` : null }] : []),
-      ...(x?.reviews || []).slice(0, 3),
+      // R2-8: las populares en español primero; las de otro idioma dicen cuál («En inglés»), en su línea de datos.
+      ...(x?.reviews || []).slice(0, 3).map((r) => ({ ...r, lang: textLanguage(r.text) }))
+        .sort((a, b) => Number(b.lang === "es") - Number(a.lang === "es")),
     ];
-    fillPanel("reviews", items, "Reseñas en Letterboxd", x?.mine ? "La tuya y las más populares" : "Las más populares", (r, i) => {
+    fillPanel("reviews", items, "Reseñas en Letterboxd", null, (r, i) => {
       const hidden = r.spoiler && !revealed.has(i);
       return h("article", { class: ["title__review", r.mine && "title__review--mine"], onClick: () => pick("reviews", i) },
         h("header", { class: "title__review-head" },
@@ -232,7 +235,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
           r.rating > 0 && h("span", { class: "title__review-stars", "aria-label": `${r.rating} de 5` }, starsOf(r.rating)),
           r.liked && h("span", { class: "title__review-liked", "aria-label": "Te gustó" }, "♥"),
           r.likes > 0 && h("span", { class: "title__review-likes" }, `♥ ${compact.format(r.likes)}`)),
-        r.when && h("span", { class: "title__review-when" }, r.when),
+        (r.when || (r.lang && r.lang !== "es")) && h("span", { class: "title__review-when", lang: "es" },
+          r.when || `En ${LANGUAGE_NAMES[r.lang]}`),
         hidden ? h("p", { class: "title__review-text title__review-text--hidden" }, "Tiene spoilers · ábrela para leerla")
           : r.text && h("p", { class: "title__review-text" }, r.text));
     });
@@ -376,7 +380,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   /** Los redondos que se ven sin «Más»: los de siempre primero; los de menos uso (descargar, el iPhone, tu carpeta)
    * esperan en «Más» si no caben. */
   // «Pedirlo a Real-Debrid» primero: si no hay versión que arranque, es lo único que sirve (RD-1); al final quedaba en «Más».
-  const SECONDARY_ORDER = ["rd-request", "restart", "status", "trailer", "rate", "sources", "download", "phone-open", "phone-download", "versions", "fix"];
+  const SECONDARY_ORDER = ["rd-request", "restart", "status", "trailer", "rate", "sources", "download", "phone", "versions", "fix"];
   // Una serie con Trakt: el estado, Tráiler y Calificar, todos a la vista; una película, cuatro (su «Ver» trae la versión al
   // lado y con cinco no cabían en un renglón).
   const secondaryShown = () => (kindOf() === "series" ? 5 : 4);
@@ -487,11 +491,12 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       },
       // Encima del degradado de respaldo (title.css): sin miniatura, o si no carga, se queda el degradado.
       h("span", { class: "episode__thumb", style: ep.thumbnail ? { backgroundImage: `${cssUrl(sized(ep.thumbnail, EPISODE_PX))}, var(--gradient-card)` } : null },
-        ep.id === details?.resume?.video_id && Badge(details.resume.position > 0 ? "Continuar" : "Sigue", { className: "episode__next" }),
         st.watched && h("span", { class: "episode__check", "aria-label": "Visto" }, svg(ICONS.check)),
         Chip(String(ep.episode), { plate: true, className: "episode__number" }),
         // El que vas viendo resalta (como el iPhone, O1): ▶ sobre su imagen, la barra más gruesa y «quedan 20 min».
-        st.left && h("span", { class: "episode__play", "aria-hidden": "true" }, svg(ICONS.play)),
+        // R2-8: el que sigue (empezado o no) lleva ▶ sobre su imagen, sin cápsula de texto.
+        (st.left || ep.id === details?.resume?.video_id) && h("span", { class: "episode__play", role: "img",
+          "aria-label": details?.resume?.position > 0 ? "Continuar" : "Sigue" }, svg(ICONS.play)),
         Progress(st.progress, { className: "episode__progress" })),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
@@ -513,12 +518,18 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     episodeHead.hidden = !(kindOf() === "series" && seasons().length);
     if (!ep || !current) {
       episodeHead.textContent = "";
+      // R2-8: vacío, su renglón guardado va debajo de la sinopsis (aire antes de los botones), no como un hueco entre los
+      // datos y la sinopsis; con un episodio enfocado vuelve arriba de ella. Nada brinca: la altura es la misma.
+      if (episodeHead.previousElementSibling !== description) description.after(episodeHead);
       clampWords(description, about); // T10: corta en una palabra entera, con «…»
       paintAbout();
       return;
     }
+    if (episodeHead.nextElementSibling !== description) description.before(episodeHead);
     const st = states.get(ep.id) || {};
-    episodeHead.textContent = [current.season === 0 ? "Especial" : `T${current.season}`, `E${ep.episode}`, ep.title, st.upcoming]
+    // «Episodio 3» no es un nombre: «T1 · E3» ya lo dice (R2-8).
+    const named = ep.title && !/^(episodio|episode)\s*\d+$/i.test(ep.title.trim()) ? ep.title : null;
+    episodeHead.textContent = [current.season === 0 ? "Especial" : `T${current.season}`, `E${ep.episode}`, named, st.upcoming]
       .filter(Boolean).join(" · ");
     clampWords(description, ep.overview || about);
     paintAbout();
@@ -543,7 +554,12 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
   }
 
   function renderProgress() {
-    const info = titleProgress(details);
+    let info = titleProgress(details);
+    // R2-8: en una serie, «Continuar T1 E3» ya dice cuál; la línea de avance solo trae lo que falta (y nada si no empezaste).
+    if (info && kindOf() === "series" && details?.resume?.label) {
+      const rest = info.fraction == null ? "" : info.label.replace(`${details.resume.label} · `, "");
+      info = rest && rest !== details.resume.label ? { ...info, label: rest } : null;
+    }
     progress.hidden = !info;
     if (!info) return;
     progressLabel.textContent = info.label;
@@ -659,7 +675,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     else if (button.id === "restart") play(episodeById(button.video_id), { fromStart: true });
     else if (button.id === "sources") sources();
     else if (button.id === "status") runStatus();
-    else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
+    else if (button.id === "phone") sendPhone("choose", episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
     else if (button.id === "rate" || button.id === "watched") {
       const about = { kind: kindOf(), id: details?.id || item.meta_id, title: details?.title || item.title };
@@ -760,7 +776,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       const at = seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId));
       season = at >= 0 ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
       index = Math.max(0, seasons()[season]?.episodes.findIndex((e) => e.id === resumeId) ?? 0);
-      if (!quiet && led()) zone = "episodes"; // una serie abre en el episodio que sigue, en la lista
+      // Una serie abre en «Continuar T1 E3» (R2-8); sin episodio que siga, en la lista.
+      if (!quiet && led()) zone = data.resume?.video_id ? "actions" : "episodes";
       status.hidden = true;
       if (kind === "series" && !seasons().length) {
         status.textContent = "Esta serie todavía no tiene episodios.";
@@ -812,6 +829,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       instead = ready && rec.line ? { label: rec.line.split(" · ").slice(0, 2).join(" · "),
         play: { kind: t.kind, id: t.id, video_id: t.video_id, title: details?.title || item?.title || "", source: rec.id } } : null;
       renderActions(); // «Ver» dice cómo va a sonar
+      onChange(); // y el pie ya no repite «Versión» (R2-8: vive en la cápsula)
       // Un renglón de texto tenue (antes, cinco chips encima del arte): «4K · HDR · Inglés, Español · Al instante».
       // Solo lo que hay que saber: un aviso o que no hay versiones. Lo normal (calidad, idiomas) ya no ocupa un renglón.
       const warns = found.filter((c) => c.warn);
@@ -1134,9 +1152,11 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.id === "status" && buttons[action].status === "none" ? "Guardar en Mi lista"
-      : buttons[action]?.id === "status" ? "¿Cómo vas?" : buttons[action]?.label?.split(" · ")[0] || "Ver" },
-    !onVersion && buttons[action]?.id === "status" && buttons[action].status === "none" && { glyph: g.alt, label: "¿Cómo vas?" }, hasTarget() && !led() && !onVersion && { glyph: g.options, label: "Versión" },
+    // R2-8: el pie dice lo mismo que el botón enfocado («Vista», «En Mi lista»…); X siempre abre «¿Cómo vas?». «Versión» va
+    // en un solo lugar: si «Ver» trae su cápsula (con su Y adentro), el pie no la repite.
+    : [{ glyph: g.select, label: onVersion ? "Versión" : buttons[action]?.short || buttons[action]?.label?.split(" · ")[0] || "Ver" },
+    !onVersion && buttons[action]?.id === "status" && { glyph: g.alt, label: "¿Cómo vas?" },
+    hasTarget() && !led() && !onVersion && !buttons[0]?.hint && { glyph: g.options, label: "Versión" },
       led() ? { glyph: g.rows, label: "Episodios" } : panelZone() && { glyph: g.rows, label: PANEL_NAMES[panelZone()] },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));

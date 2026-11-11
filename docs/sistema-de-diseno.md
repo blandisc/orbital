@@ -358,6 +358,13 @@ que vive en Ajustes y se usa en otra pantalla va ahí también como interruptor 
 ícono que no dice solo lo que hace lleva su nombre debajo: el anillo de una descarga en pausa dice «Seguir»
 (`DownloadRingButton`, el mismo en Descargas y en la fila de un episodio).
 
+**Un ícono por idea (TV, R2, 11 nov 2026).** `list` es «Episodios» y las listas; «Versión» es `hd` (la calidad); «Filtro
+avanzado» es `sliders`, nunca la lupa (la lupa es Buscar); el iPhone es un solo botón `phone` («Al iPhone», que abre
+«Enviar al iPhone» y «Descargar en el iPhone»). «Versión» va en un solo lugar: la cápsula junto a «Ver» (con su Y adentro)
+o, si no hay cápsula, su botón; el pie no la repite. El pie dice lo mismo que el botón enfocado («Vista», «En Mi lista»).
+En la lista de episodios, el que sigue lleva ▶ sobre su imagen (sin cápsula «Sigue»). La clasificación se lee
+«Clasificación B», nunca una letra suelta que parece el botón B.
+
 **La versión en un renglón.** «🇲🇽 · 1080p»: la bandera sola, sin el nombre del idioma (la bandera ya distingue latino de
 castellano; sin bandera conocida, el nombre). VoiceOver lee el nombre. Bajo «Continuar», en la cápsula de la versión de la
 serie (sin ícono de lista) y en el reproductor (2 nov 2026, M2 y N2).

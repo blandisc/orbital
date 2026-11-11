@@ -108,15 +108,20 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   const saved = details.in_library || details.saved_elsewhere;
   const ask = debridAction(request);
   if (episodesLed(details, kind)) {
-    if (ask) out.push(ask); // lo primero de la fila: es lo único que sirve si no hay versión que arranque
+    // R2-8: el principal blanco «Continuar T1 E3» (o «Ver T1 E3»), como el iPhone; con su cápsula de versión al lado. En la
+    // lista, el que sigue lleva ▶ (antes una cápsula «Sigue» y, arriba, «Sigue: T1 E3», lo mismo dos veces).
+    if (resume?.video_id) {
+      const next = { id: "play", video_id: resume.video_id, primary: true, icon: "play",
+        label: `${resume.position > 0 ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() };
+      if (plays?.line && (!plays.video_id || plays.video_id === resume.video_id)) next.hint = plays.line;
+      out.push(ask && request === "ask" ? { ...ask, primary: true, video_id: resume.video_id } : next);
+      if (ask && request !== "ask") out.push(ask);
+    } else if (ask) out.push(ask); // lo primero de la fila: es lo único que sirve si no hay versión que arranque
     // G1-A: un solo botón dice cómo vas (reemplaza a «Guardar», «Marcar como vista» y la campana, que viven en su menú).
     out.push(statusAction(status || (saved ? "in_list" : "none")));
     if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
     if (trakt) out.push(RATE);
-    if (phone) {
-      out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" },
-        { id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
-    }
+    if (phone) out.push(PHONE);
     if (own?.versions > 1) out.push({ id: "versions", icon: "cover", label: `Versiones en tu carpeta (${own.versions})`, short: "Versiones" });
     if (own) out.push({ id: "fix", icon: "search", label: "¿No es esta serie? Corregir ficha", short: "Corregir ficha" });
     return out;
@@ -155,18 +160,21 @@ export function titleActions(details, { kind = "movie", phone = false, download 
   // Descargar aquí, para ver sin internet (el episodio que sigue o la película), como el iPhone.
   if (playable && download !== undefined) out.push(downloadAction(download));
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
-  if (playable && phone) out.push({ id: "phone-download", icon: "phoneDownload", label: "Descargar en el iPhone", short: "Bajar al iPhone" });
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   if (trakt) out.push(RATE);
-  // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
-  if (playable) out.push({ id: "sources", icon: "list", label: "Versión", short: "Versión" });
+  // R2-8: «Versión» en un solo lugar. Si «Ver» ya trae su cápsula («🇲🇽 · 1080p · CC», que con Y o un toque abre las versiones),
+  // no hay además un botón; sin cápsula, el botón con el ícono de calidad (`hd`: `list` es «Episodios»).
+  if (playable && !out[0]?.hint) out.push({ id: "sources", icon: "hd", label: "Versión", short: "Versión" });
   if (restart) out.push(restart);
-  if (playable && phone) out.push({ id: "phone-open", icon: "phoneSend", label: "Enviar al iPhone", short: "Al iPhone" });
+  if (playable && phone) out.push(PHONE);
   // Desde Mi media (tu OneDrive), como el iPhone: elegir cuál de tus versiones ver y corregir la ficha si no es esta.
   if (own?.versions > 1) out.push({ id: "versions", icon: "cover", label: `Versiones en tu carpeta (${own.versions})`, short: "Versiones" });
   if (own) out.push({ id: "fix", icon: "search", label: `¿No es esta ${(details.kind || kind) === "series" ? "serie" : "película"}? Corregir ficha`, short: "Corregir ficha" });
   return out;
 }
+
+/** R2-8: un solo botón para el iPhone (antes dos casi iguales, «Al iPhone» y «Bajar al iPhone»); abre las dos opciones. */
+const PHONE = { id: "phone", icon: "phone", label: "Al iPhone" };
 
 /** Con Trakt, calificar con estrellas (como el iPhone); «¿Cuándo la viste?» está en el menú del estado (G1-A). */
 const RATE = { id: "rate", icon: "star", label: "Calificar" };
