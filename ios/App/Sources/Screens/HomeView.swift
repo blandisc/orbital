@@ -142,9 +142,9 @@ struct HomeView: View {
             else if collapsed, scrolled < DS.HomeStories.expandAt { collapsed = false }
         }
         #if DEBUG
-        .modifier(DemoScroll())
-        .orbitalRefreshable { await reload() }   // tirar para actualizar, con la luna de Orbital   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
+        .modifier(DemoScroll())   // `-demo-scroll N`: abre ya desplazado (capturas de las filas de abajo)
         #endif
+        .orbitalRefreshable { await reload() }   // tirar para actualizar, con la luna de Orbital (también en Release: A2, 10 nov)
         .background(Backdrop(tint: tint.colors))
         // Sin título: arriba van el ícono y «Orbital» (el carácter de la app), también al bajar.
         .navigationTitle(Text(verbatim: "")).toolbarTitleDisplayMode(.inline)

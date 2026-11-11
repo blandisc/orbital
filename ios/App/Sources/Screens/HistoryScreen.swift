@@ -20,9 +20,11 @@ struct HistoryScreen: View {
     @State private var adding = false
     @State private var picked: SearchResult?
     @State private var confirmRepeats = false
+    // Las repetidas y los meses se calculan una vez por cambio de `entries`, no en cada pintado (A13, 10 nov 2026).
+    @State private var repeats: Set<Int> = []
+    @State private var months: [(String, [TraktHistoryEntry])] = []
 
     private var language: String { env.services.appSettings.uiLanguage }
-    private var repeats: Set<Int> { Trakt.repeats(entries) }
 
     var body: some View {
         List {
@@ -63,6 +65,8 @@ struct HistoryScreen: View {
         }
         .refreshable { await reload() }
         .task { if entries.isEmpty { await loadMore() } }
+        .onChange(of: entries.map(\.id), initial: true) { regroup() }
+        .onChange(of: language) { regroup() }
         .sheet(item: $editing) { e in
             ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: e.at) { date in move(e, to: date) }
         }
@@ -115,11 +119,16 @@ struct HistoryScreen: View {
 
     private func name(_ e: TraktHistoryEntry) -> String {
         guard let s = e.target.season, let n = e.target.episode else { return e.title }
-        return "\(e.title) · T\(s) E\(n)"
+        return "\(e.title) · " + Strings.episode(season: s, episode: n, language: language)   // «T2 E5» / «S2 E5» según el idioma
+    }
+
+    private func regroup() {
+        repeats = Trakt.repeats(entries)
+        months = Self.months(entries, language: language)
     }
 
     /// Por mes, lo más nuevo primero: «Noviembre 2026».
-    private var months: [(String, [TraktHistoryEntry])] {
+    private static func months(_ entries: [TraktHistoryEntry], language: String) -> [(String, [TraktHistoryEntry])] {
         var order: [String] = []
         var groups: [String: [TraktHistoryEntry]] = [:]
         for e in entries {

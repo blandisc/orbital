@@ -81,11 +81,11 @@ struct TouchPad: View {
             VStack { chevron("chevron.up", .up); Spacer(); chevron("chevron.down", .down) }
             HStack { chevron("chevron.left", .left); Spacer(); chevron("chevron.right", .right) }
             VStack(spacing: DS.Space.s1) {
-                // La A dice lo que va a pasar al tocar, como el pie de la TV; sin leyenda, la letra del mando.
-                Text(verbatim: selectLabel ?? "A").recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
+                // Dice lo que va a pasar al tocar, como el pie de la TV; sin leyenda, «Elegir» (no la letra del mando: A16).
+                (selectLabel.map { Text(verbatim: $0) } ?? Text("Elegir")).recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
                 // Con letra de accesibilidad el pad no da para dos renglones entre las flechas: queda solo lo que hace tocar.
                 if !typeSize.isAccessibilitySize {
-                    (selectLabel == nil ? Text("Desliza · toca para elegir") : Text("A · desliza para moverte")).recipe(.caption, color: DS.textFaint)
+                    Text("Desliza para moverte").recipe(.caption, color: DS.textFaint)
                         .lineLimit(1)
                 }
             }
@@ -104,12 +104,11 @@ struct TouchPad: View {
     }
 }
 
-/// Una tecla de la consola en el control completo: ícono, nombre (lo que hace en la pantalla de la TV, si la consola lo dice) y
-/// la letra del botón del mando en la esquina (A, B, X, LB…), para quien ya conoce el mando. Del mismo tamaño todas.
+/// Una tecla de la consola en el control completo: ícono y nombre (lo que hace en la pantalla de la TV, si la consola lo dice).
+/// Del mismo tamaño todas. Sin la letra del mando (A, B, LB…): el iPhone no es un mando (A16, 10 nov 2026).
 struct RemoteKey: View {
     let symbol: String
     let title: Text
-    var glyph: String?
     /// La TV dice que en esta pantalla no hace nada: se atenúa, sin moverse de lugar.
     var idle = false
     /// Mantener el dedo (como en el control del Apple TV: mantener «Atrás» lleva al inicio).
@@ -121,7 +120,6 @@ struct RemoteKey: View {
     @State private var heldAt: Date?
     /// El dedo encima: la tecla se hunde un poco, como un botón de verdad.
     @GestureState private var pressed = false
-    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View { bodyContent.pointerHover(.highlight) }
@@ -138,12 +136,6 @@ struct RemoteKey: View {
             }
             .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeightFitted)
             .dsCard(translucent: true)
-            .overlay(alignment: .topTrailing) {
-                if let glyph, !typeSize.isAccessibilitySize {   // con letra grande la letra del mando tapaba el ícono
-                    Text(verbatim: glyph).recipe(.caption, color: DS.textFaint).padding(.top, DS.Space.s1).padding(.trailing, DS.Space.s2)
-                        .accessibilityHidden(true)
-                }
-            }
             .opacity(idle ? DS.Opacity.disabled : 1)
             .scaleEffect(pressed && !reduceMotion ? DS.Remote.keyPress : 1)
             .animation(DS.Motion.snap(reduceMotion), value: pressed)

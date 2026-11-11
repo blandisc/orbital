@@ -1,6 +1,28 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "5 adelante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 forward"
+          }
+        }
+      }
+    },
+    "5 atrás": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 back"
+          }
+        }
+      }
+    },
     "Conectar con un código": {
       "extractionState": "manual",
       "localizations": {
@@ -8,6 +30,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect with a code"
+          }
+        }
+      }
+    },
+    "Desliza para moverte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe to move"
           }
         }
       }

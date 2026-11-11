@@ -238,10 +238,10 @@ struct RemoteSheet: View {
     /// Una tecla del mando: su nombre es el de la leyenda de la TV para esa tecla si la consola la manda (lo que dice el pie de
     /// la pantalla); si no, el de siempre. Que no salga en el pie no quiere decir que no haga nada (en Inicio A, X y Y están en
     /// los botones del destacado), así que nunca se atenúa.
-    private func key(_ model: TVNowModel, _ symbol: String, _ glyph: String?, _ legendKey: String?, _ fallback: Text,
+    private func key(_ model: TVNowModel, _ symbol: String, _ legendKey: String?, _ fallback: Text,
                      _ action: OrbitalRemote.InputAction, hold: OrbitalRemote.InputAction? = nil) -> some View {
         let named = legendKey.flatMap { model.legend[$0] }
-        return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback, glyph: glyph,
+        return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback,
                          longPress: hold.map { held in { Task { await model.press(held) } } }) {
             collapse()
             Task { await model.press(action) }
@@ -481,7 +481,7 @@ struct RemoteSheet: View {
     @ViewBuilder private func trackMenu(_ model: TVNowModel, title: Text, symbol: String, action: String, tracks: [OrbitalRemote.NowPlaying.Track],
                                         fallback: OrbitalRemote.InputAction, legendKey: String) -> some View {
         if tracks.isEmpty {
-            key(model, symbol, nil, legendKey, title, fallback)
+            key(model, symbol, legendKey, title, fallback)
         } else {
             Menu {
                 if action == "subtitles" {
@@ -536,45 +536,42 @@ struct RemoteSheet: View {
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             .frame(minHeight: DS.Remote.padHeightFitted, maxHeight: .infinity)   // llena el lugar de los botones (`deckOrPad`)
         HStack(spacing: DS.Space.s2) {
-            key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)
-            key(model, "house", nil, nil, Text("Inicio"), .home)
-            key(model, "line.3.horizontal", nil, "menu", Text("Menú"), .menu)
-            key(model, "magnifyingglass", nil, "search", Text("Buscar"), .search)
+            key(model, "chevron.backward", "back", Text("Atrás"), .back, hold: .home)
+            key(model, "house", nil, Text("Inicio"), .home)
+            key(model, "line.3.horizontal", "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", "search", Text("Buscar"), .search)
         }
     }
 
-    /// Navegar la interfaz de la TV: las secciones (LB / RB), el pad (A al tocar) y las teclas con lo que hace cada una.
+    /// Navegar la interfaz de la TV: las secciones, el pad (tocar elige) y las teclas con lo que hace cada una.
     @ViewBuilder private func navigation(_ model: TVNowModel) -> some View {
         HStack(spacing: DS.Space.s2) {
-            key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
+            key(model, "chevron.left.2", nil, Text("Anterior"), .prevsection)
             if let section = model.section {
                 // Un renglón siempre: con letra grande se achica (antes se partía en «Pelícu-las y s…» entre las teclas).
                 Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1)
                     .minimumScaleFactor(DS.Size.statScale).multilineTextAlignment(.center)
                     .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: false)   // con letra grande cede: «Ante…» no cabía
             }
-            key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
+            key(model, "chevron.right.2", nil, Text("Siguiente"), .nextsection)
         }
         TouchPad(selectLabel: model.legend["select"]) { action in collapse(); Task { await model.press(action) } }
             .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
             .frame(height: DS.Remote.padHeightFitted)   // en un SE, más bajito: las teclas de abajo y «Escribir» caben
         HStack(spacing: DS.Space.s2) {
-            key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
-            key(model, "bolt", "X", "alt", Text("Atajo"), .alt)   // lo que haga X en esa pantalla lo dice la leyenda
-            key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
+            key(model, "chevron.backward", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
+            key(model, "bolt", "alt", Text("Atajo"), .alt)   // lo que haga en esa pantalla lo dice la leyenda
+            key(model, "ellipsis", "options", Text("Opciones"), .options)
         }
         HStack(spacing: DS.Space.s2) {
-            key(model, "backward.end", narrowGlyph("LT"), "page", Text("−5"), .pageleft)
-            key(model, "house", nil, nil, Text("Inicio"), .home)
-            key(model, "line.3.horizontal", nil, "menu", Text("Menú"), .menu)
-            key(model, "magnifyingglass", nil, "search", Text("Buscar"), .search)
-            key(model, "forward.end", narrowGlyph("RT"), "page", Text("+5"), .pageright)
+            key(model, "backward.end", nil, Text("5 atrás"), .pageleft)   // la leyenda «De 5 en 5» de la TV era igual en las dos (A16)
+            key(model, "house", nil, Text("Inicio"), .home)
+            key(model, "line.3.horizontal", "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", "search", Text("Buscar"), .search)
+            key(model, "forward.end", nil, Text("5 adelante"), .pageright)
         }
     }
-
-    /// En la fila de cinco teclas de un teléfono bajito no cabe la letra del mando junto al ícono: se quita.
-    private func narrowGlyph(_ glyph: String) -> String? { DS.Remote.isShortScreen ? nil : glyph }
 
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
     private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
