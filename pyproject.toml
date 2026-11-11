@@ -32,7 +32,7 @@ orbital = "orbital.__main__:main"
 # `orbital.design` es la carpeta design/ de la raíz (las tablas que comparten la TV y el iPhone: reglas para elegir versión,
 # errores de Real-Debrid, premios): así entra al paquete sin copiarla (orbital/shared.py la busca en los dos lados). La lista
 # va a mano: tests/test_packaging.py revisa que no falte ningún subpaquete.
-packages = ["orbital", "orbital.api", "orbital.foryou", "orbital.library", "orbital.watch", "orbital.design"]
+packages = ["orbital", "orbital.api", "orbital.foryou", "orbital.library", "orbital.voice", "orbital.watch", "orbital.design"]
 
 [tool.setuptools.package-dir]
 "orbital.design" = "design"
