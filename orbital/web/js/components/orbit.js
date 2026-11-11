@@ -14,13 +14,20 @@ import { h } from "../core/dom.js";
 export const ORBIT_HOSTS = ".card, .tile:not(.showcase__item), .person-chip, .episode, .calendar__cell";
 
 const worn = new WeakMap(); // pieza → su anillo
+// P4 (10 nov): un solo anillo de repuesto. Al moverte, el de la pieza que deja el foco pasa a la nueva (se mueve el mismo
+// nodo): no se crea ni se tira un elemento por tecla. Se ve igual (el recorrido arranca al entrar, como antes).
+let spare = null;
+
+/** ¿Es un anillo? (focus-mark.js no revisa lo que agrega esta pieza.) */
+export const isOrbit = (node) => node.nodeType === 1 && node.classList.contains("orbit");
 
 /** Le pone su anillo a `el` si es de las que lo llevan y aún no lo tiene. El episodio lo lleva en su miniatura. */
 export function wearOrbit(el) {
   if (worn.has(el) || !el.matches?.(ORBIT_HOSTS)) return;
   const host = el.classList.contains("episode") ? el.querySelector(".episode__thumb") : el;
   if (!host) return;
-  const ring = h("span", { class: "orbit", "aria-hidden": "true" });
+  const ring = spare && !spare.isConnected ? spare : h("span", { class: "orbit", "aria-hidden": "true" });
+  spare = null;
   host.append(ring);
   worn.set(el, ring);
 }
@@ -31,4 +38,5 @@ export function shedOrbit(el) {
   if (!ring) return;
   ring.remove();
   worn.delete(el);
+  spare = ring;
 }

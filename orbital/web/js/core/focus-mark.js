@@ -3,7 +3,7 @@
  * `.is-focused` (T1, 10 nov 2026: antes cada una tenía la suya, `card--focused`…); aquí un solo observador lo refleja en `aria-current`,
  * así no hay que repetirlo en cada componente y ninguno se queda sin él. Respeta lo que una pieza ya marcó por su cuenta.
  */
-import { shedOrbit, wearOrbit } from "../components/orbit.js";
+import { isOrbit, shedOrbit, wearOrbit } from "../components/orbit.js";
 
 const FOCUSED = /(?:^|\s)is-focused(?:\s|$)/;
 const SELECTOR = '[class*="focused"]';
@@ -26,7 +26,7 @@ export function markFocus(root = document.body) {
     for (const record of records) {
       if (record.type === "attributes") { if (record.target.nodeType === 1) sync(record.target); continue; }
       for (const node of record.addedNodes) {
-        if (node.nodeType !== 1) continue;
+        if (node.nodeType !== 1 || isOrbit(node)) continue; // el anillo que acabamos de poner: nada que revisar adentro
         sync(node);
         node.querySelectorAll?.(SELECTOR).forEach(sync);
       }
