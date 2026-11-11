@@ -155,7 +155,8 @@ struct RootView: View {
             .dsNoticePlacement(lift: reminderLift() + ui.noticeLift)
             .animation(DS.Motion.enter(reduceMotion), value: ui.noticeLift)
         }
-        // Calificar lo que terminaste ya no flota aquí: es una tarjeta dentro de Inicio (D2-A, `RatingReminderHost`).
+        // Calificar lo que terminaste: la pastilla sobre la barra de pestañas (Fernando, 11 nov 2026: como estaba antes).
+        .overlay(alignment: .bottom) { FloatingRatingReminder(lift: reminderLift()) }
         .animation(DS.Motion.enter(reduceMotion), value: ui.handoff)
         .animation(DS.Motion.enter(reduceMotion), value: env.notices.current)
         .task {

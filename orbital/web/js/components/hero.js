@@ -1,5 +1,5 @@
 import { h, mount, svg } from "../core/dom.js";
-import { bytes, duration, firstSentence, genres, lastPlayed, percent, runtime } from "../core/format.js";
+import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js";
 import { ICONS, isTitleItem, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { trimmedLogo } from "../core/foryou.js";
@@ -99,13 +99,6 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     fitting = requestAnimationFrame(() => { fitting = 0; fit(); });
   }
 
-  /** La calificación de Trakt (0–10) con su marca, como en «Una por una»: «81 %». */
-  function traktScore(score) {
-    const value = Number(score) > 0 ? Math.round(Number(score) * 10) : null;
-    return value && h("span", { class: "hero__fact-score", "aria-label": `Calificación en Trakt: ${value} por ciento` },
-      h("img", { class: "hero__fact-mark", src: "img/ratings/trakt.svg", alt: "" }), `${value} %`);
-  }
-
   function fill(item, glyphs, runningId) {
     if (!item) {
       mount(eyebrow);
@@ -137,8 +130,9 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     if (extra.logo) logo.src = trimmedLogo(extra.logo);
     else logo.removeAttribute("src");
     logo.classList.toggle("hero__logo--mono", !!extra.logoMono); // el logo de un estudio, en blanco
-    // Películas y series: una sola oración de la sinopsis (T10); lo demás vive en la ficha.
-    const about = item.source === "cinemeta" ? firstSentence(extra.description) : extra.description || "";
+    // Películas y series: sin sinopsis, solo el año (Fernando, 11 nov 2026: «dejemos solamente el año como estaba antes»;
+    // deshace T10, que ponía una oración de la sinopsis). La sinopsis vive en la ficha.
+    const about = item.source === "cinemeta" ? "" : extra.description || "";
     description.textContent = about;
     description.hidden = !about;
 
@@ -146,11 +140,10 @@ export function createHero({ onAction, onKind = null, onTool = null }) {
     const said = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
     const left = said || null;
     const list = item.category === "cloud" ? [h("span", {}, item.subtitle || "")] // PT22: «Bajando en la nube · 42 % · Lo acabas de pedir aquí»
-      : item.source === "cinemeta" ? [
-      // R2-10: «T2 E7» una vez: si la línea de abajo ya dice «T2 E7 · Su nombre», no se repite en los datos.
-      !(extra.episode && about.includes(extra.episode)) && extra.episode, extra.year, traktScore(extra.trakt) || (extra.rating && `★ ${extra.rating}`), genres(extra.genres).slice(0, 2).join(", "),
-      extra.minutes > 0 ? duration(extra.minutes * 60) : runtime(extra.runtime),
-    ].filter(Boolean).map((text) => (typeof text === "object" ? text : h("span", {}, String(text)))) : item.source === "stremio" ? [
+      // Películas y series: de datos, solo el año (Fernando, 11 nov 2026, deshace T10: sin calificación, géneros ni duración);
+      // en «Lo nuevo de lo tuyo», antes el episodio («T2 E7», R2: una vez, aquí y no en la etiqueta turquesa).
+      : item.source === "cinemeta" ? [extra.episode, extra.year].filter(Boolean).map((text) => h("span", {}, String(text)))
+      : item.source === "stremio" ? [
       ...episodeOf(item), left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "),
       lastPlayed(item.last_played, Date.now(), "Visto"),
     ].filter(Boolean).map((text) => h("span", {}, text)) : [

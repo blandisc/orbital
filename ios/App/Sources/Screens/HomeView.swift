@@ -137,8 +137,6 @@ struct HomeView: View {
             } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
                 DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
             }
-            // ¿Qué tal …? (D2-A): calificar lo que terminaste, en su lugar de la página, bajo lo que tienes a medias.
-            RatingReminderHost()
             lowerRows(model, kind: kind, picks: picks, pending: pending)
             // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
         }

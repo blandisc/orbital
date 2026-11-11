@@ -103,7 +103,7 @@ private struct ReleaseWhen {
     }
 
     /// Lo que va en el renglón de arriba de cada póster, corto para que todos midan igual: la hora de hoy («21:00»), «Hoy»,
-    /// «Ayer», «Mañana» o el día abreviado («Vie»). «Nuevo» no va aquí: es el puntito del póster, como en Inicio.
+    /// «Ayer», «Mañana» o el día abreviado («Vie»). «Nuevo» no va aquí: es el listón del póster, como en Inicio.
     var label: Text {
         if !isOut, calendar.isDate(airing.date, inSameDayAs: now) { return hour }
         if calendar.isDate(airing.date, inSameDayAs: now) { return Text("Hoy") }
@@ -196,7 +196,7 @@ private struct ReleasesLine: View {
                 }
                 .frame(width: DS.Widget.releasePoster, alignment: .leading)
                 ReleasePoster(airing: airing).opacity(when.isOut ? 1 : DS.Opacity.dimmed)
-                    .overlay(alignment: .topLeading) { if when.isNew { DSNewDot(text: "Nuevo", compact: true) } }
+                    .overlay(alignment: .topLeading) { if when.isNew { DSCornerRibbon(text: "Nuevo", compact: true) } }
                 Text(verbatim: airing.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
                     .minimumScaleFactor(DS.Widget.labelShrink)
             }
@@ -221,7 +221,7 @@ private struct ReleasesSpotlight: View {
         if let airing = pick {
             let when = ReleaseWhen(airing: airing, now: entry.date, language: entry.language)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                // Lo nuevo lleva el puntito en la esquina (el de Inicio); lo que viene, su punto y cuándo.
+                // Lo nuevo lleva el listón en la esquina (el de Inicio); lo que viene, su punto y cuándo.
                 if !when.isNew {
                     HStack(spacing: DS.Space.s1) {
                         ReleaseDot(out: when.isOut, onArt: true)
@@ -248,7 +248,7 @@ private struct ReleasesSpotlight: View {
                 }
                 .overlay(alignment: .topLeading) {
                     // El fondo no hereda el idioma del widget (salía «NEW»): se le pasa aquí.
-                    if when.isNew { DSNewDot(text: "Nuevo").environment(\.locale, Locale(identifier: entry.language)) }
+                    if when.isNew { DSCornerRibbon(text: "Nuevo").environment(\.locale, Locale(identifier: entry.language)) }
                 }
             }
         } else {

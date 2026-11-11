@@ -145,10 +145,9 @@ export function createBackdrop({ settle = 150 } = {}) {
   }
 
   /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). `color`: sin imagen,
-   *  el fondo solo con ese color (una consola: su variable CSS, core/home.js · systemColor). `fallback`: la portada si el arte
-   *  ancho no carga (T10: un título sin fanart en Películas y series se ve con su póster desenfocado, no en gris).
+   *  el fondo solo con ese color (una consola: su variable CSS, core/home.js · systemColor).
    *  `tone`: el `art_tone` del ítem (V3), el color de `url` ya medido por el servidor. */
-  function show(url, { poster = false, pixel = false, color = null, fallback = null, tone = null } = {}) {
+  function show(url, { poster = false, pixel = false, color = null, tone = null } = {}) {
     // Solo para el arte que sirve Orbital (/api/…): es el que midió el servidor (`tone_path`); un fondo de fuera (metahub)
     // con una portada local mediría otra imagen.
     const known = toneFor(url, tone);
@@ -185,7 +184,6 @@ export function createBackdrop({ settle = 150 } = {}) {
       img.onerror = () => {
         clearTimeout(stale);
         if (mine !== token) return;
-        if (fallback && fallback !== url) return show(fallback, { poster: true });
         applyPalette(paletteFor(null));
         swap(null, false);
       };

@@ -422,7 +422,7 @@ def test_player_and_interface_share_one_palette():
 
     from orbital import player_ui
 
-    web = Path(player_ui.__file__).parent / "web" / "styles"
+    web = Path(player_ui.__file__).parent.parent / "web" / "styles"
     palette = json.loads((web / "palette.json").read_text(encoding="utf-8"))
     css = dict(re.findall(r"--palette-([\w-]+):\s*(#[0-9a-fA-F]{6});", (web / "tokens.css").read_text(encoding="utf-8")))
     assert {k: v.lower() for k, v in css.items()} == {k: v for k, v in palette.items() if k != "_"}
@@ -1511,7 +1511,7 @@ def test_player_glass_is_the_glass_of_the_interface():
     import re
     from pathlib import Path
 
-    css = (Path(player_ui.__file__).parent / "web" / "styles" / "themes" / "orbital.css").read_text(encoding="utf-8")
+    css = (Path(player_ui.__file__).parent.parent / "web" / "styles" / "themes" / "orbital.css").read_text(encoding="utf-8")
 
     def rgba(token: str) -> list[tuple]:
         found = re.search(rf"--{re.escape(token)}:([^;]+);", css)

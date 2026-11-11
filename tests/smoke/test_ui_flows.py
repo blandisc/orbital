@@ -416,9 +416,17 @@ def test_long_list_and_editing_your_list(browser, server):  # noqa: F811
     """V4 en una lista (revisión 2, 17d, 11 nov): Mi lista con 300 títulos arma solo lo cercano y la enfocada siempre está
     armada. Y editarla (lo que salió de main.js a app/list-editing.js): Y › «Quitar de esta lista» la quita al instante,
     «Deshacer» la regresa a su lugar; «Guardar en…» abre la hoja con tus listas de Trakt."""
+    import json
     import urllib.request
     post = lambda path: urllib.request.urlopen(urllib.request.Request(f"{server}/api/foryou/trakt/{path}", method="POST"), timeout=10).read()  # noqa: E731
     post("link")
+    # La demo «escribe el código en el celular» a los ~6 s (demo_foryou.poll_device): antes de abrir la página, Trakt ya está
+    # conectado. Si no, Para ti cargaba sin Mi lista y su tarjeta no llegaba nunca (fallaba a ratos en Windows, 11 nov).
+    linked = lambda: json.load(urllib.request.urlopen(f"{server}/api/foryou", timeout=10))["status"]["trakt"]["linked"]  # noqa: E731
+    deadline = time.monotonic() + 60
+    while not linked():
+        assert time.monotonic() < deadline, "La demo no conectó Trakt en 60 s"
+        time.sleep(.25)
     try:
         page = browser.new_page(viewport={"width": 1920, "height": 1080})
         page.errors = []
@@ -429,34 +437,43 @@ def test_long_list_and_editing_your_list(browser, server):  # noqa: F811
         ready(page)
         page.keyboard.press("e")
         page.keyboard.press("e")  # Películas y series
-        page.locator("button.card--list[aria-label='Mi lista']").first.wait_for(state="attached", timeout=30000)
-        page.locator("button.card--list[aria-label='Mi lista']").first.click()
-        page.wait_for_timeout(800)
+        mine = page.locator("button.card--list[aria-label='Mi lista']").first
+        mine.wait_for(state="attached", timeout=60000)
+        mine.click()
+        page.wait_for_function("() => document.activeElement?.matches?.(\"button.card--list[aria-label='Mi lista']\")"
+                               " || document.querySelector(\"button.card--list[aria-label='Mi lista'].is-focused\")", timeout=30000)
         page.keyboard.press("Enter")
-        page.locator(".list-screen .card-grid > *").first.wait_for(timeout=10000)
-        page.wait_for_timeout(1000)
-        first = page.evaluate(LIST_STATE)
+        # Sin esperas a reloj (11 nov): cada paso espera su condición, con tope amplio para el runner de Windows.
+        state = lambda: page.evaluate(LIST_STATE)  # noqa: E731
+        page.wait_for_function("() => document.querySelectorAll('.list-screen .card-grid > *').length === 300", timeout=30000)
+        page.wait_for_function("() => !!document.querySelector('.list-screen .card-grid .is-focused')", timeout=30000)
+        first = state()
         assert first["cards"] == 300 and first["slots"] > 200, first
         for _ in range(15):
+            before = page.evaluate("() => document.querySelector('.list-screen .card-grid .is-focused')?.dataset.focusId")
             page.keyboard.press("ArrowDown")
-            page.wait_for_timeout(120)
-        page.wait_for_timeout(800)
-        deep = page.evaluate(LIST_STATE)
+            page.wait_for_function("(id) => { const f = document.querySelector('.list-screen .card-grid .is-focused');"
+                                   " return !!f && f.dataset.focusId !== id; }", arg=before, timeout=30000)
+        # Que la cuadrícula termine de deslizarse y de armar lo cercano: la enfocada armada y entera, ninguna vacía a la vista.
+        page.wait_for_function(f"() => {{ const s = ({LIST_STATE})(); return s.armed && s.whole && s.emptyInView === 0; }}",
+                               timeout=30000)
+        deep = state()
         assert deep["focus"] not in (None, first["focus"]) and deep["armed"] and deep["whole"] and deep["emptyInView"] == 0, deep
         # Quitar la enfocada: sale ya, con «Deshacer».
         page.keyboard.press("y")
         page.locator(".sheet").get_by_text("Quitar de esta lista").click()
-        page.wait_for_timeout(700)
-        gone = page.evaluate(LIST_STATE)
+        page.wait_for_function("() => document.querySelectorAll('.list-screen .card-grid > *').length === 299"
+                               " && (document.querySelector('.toast')?.textContent || '').includes('Deshacer')", timeout=30000)
+        gone = state()
         assert gone["cards"] == 299 and "Quitada de «Mi lista»" in gone["toast"], gone
         page.locator(".toast").get_by_text("Deshacer").click()
-        page.wait_for_timeout(700)
-        assert page.evaluate(LIST_STATE)["cards"] == 300
+        page.wait_for_function("() => document.querySelectorAll('.list-screen .card-grid > *').length === 300", timeout=30000)
+        assert state()["cards"] == 300
         # «Guardar en…» de un póster: la hoja con Mi lista, Favoritos y tus listas de Trakt.
         page.keyboard.press("y")
         page.locator(".sheet").get_by_text("Guardar en…").first.click()
-        page.locator(".sheet").get_by_text("Tus listas de Trakt").wait_for(timeout=8000)
-        assert page.locator(".sheet").get_by_text("Favoritos").count() >= 1
+        page.locator(".sheet").get_by_text("Tus listas de Trakt").wait_for(timeout=30000)
+        page.locator(".sheet").get_by_text("Favoritos").first.wait_for(timeout=30000)  # la hoja se arma por partes
         assert not page.errors, page.errors
         page.close()
     finally:

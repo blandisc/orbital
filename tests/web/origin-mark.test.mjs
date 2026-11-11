@@ -21,7 +21,7 @@ test("una película o una serie no lleva sello de origen; un juego sí lleva su 
 
 test("el rombo de Stremio solo vive donde Stremio es el servicio", () => {
   const root = new URL("../../orbital/web/js/", import.meta.url);
-  const allowed = new Set(["core/menus.js", "components/card.js", "components/collection-card.js"]); // Cuentas, la app, las listas
+  const allowed = new Set(["core/menus-settings.js", "components/card.js", "components/collection-card.js"]); // Cuentas, la app, las listas
   const found = [];
   for (const dir of ["core", "components", "app"]) {
     for (const file of readdirSync(new URL(`${dir}/`, root))) {

@@ -323,9 +323,9 @@ final class DesignTests: XCTestCase {
     /// Toda hoja que arma su propio encabezado (sin barra de navegación) arranca a la misma distancia del asa:
     /// `dsSheetContent()` (`DS.Space.sheetTop`), en su archivo o donde se presenta (Fernando, 30 oct 2026: el calendario
     /// tenía el título pegado arriba y cada hoja usaba otro aire).
-    /// Los avisos de abajo (`Toast`) se colocan con `dsNoticePlacement(lift:)`: siempre a `DS.Toast.gap` de lo que tengan
-    /// debajo, nunca con un margen a ojo (antes uno quedaba a 28 pt de la barra y otro a 9). El reproductor pone los suyos
-    /// arriba, sobre el video, y no cuenta. Calificar ya no es aviso: es una tarjeta de Inicio (D2-A, la prueba de abajo).
+    /// Los avisos de abajo (`Toast`, la pastilla de calificar) se colocan con `dsNoticePlacement(lift:)`: siempre a
+    /// `DS.Toast.gap` de lo que tengan debajo, nunca con un margen a ojo (antes uno quedaba a 28 pt de la barra y otro a 9).
+    /// El reproductor pone los suyos arriba, sobre el video, y no cuenta.
     func testBottomNoticesKeepTheSameGap() throws {
         let root = repo.appendingPathComponent("ios/App/Sources")
         let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? [])
@@ -334,16 +334,19 @@ final class DesignTests: XCTestCase {
         for file in files {
             let text = try String(contentsOf: file, encoding: .utf8)
             let places = text.components(separatedBy: "\n").filter {
-                $0.contains("Toast(tone:") && !$0.contains("struct ")
+                ($0.contains("Toast(tone:") || $0.contains("RatingReminderHost()")) && !$0.contains("struct ")
             }
             if !places.isEmpty, !text.contains("dsNoticePlacement(") { problems.append(file.lastPathComponent) }
+            for line in text.components(separatedBy: "\n") where line.contains("RatingReminderHost()") && line.contains(".padding(") {
+                problems.append("\(file.lastPathComponent): \(line.trimmingCharacters(in: .whitespaces))")
+            }
         }
         XCTAssertTrue(problems.isEmpty, "Un aviso de abajo va con dsNoticePlacement (DS.Toast.gap de lo que tenga debajo):\n" + problems.joined(separator: "\n"))
     }
 
-    /// D2-A (10 nov 2026): «¿Qué tal …?» es una tarjeta dentro del scroll de Inicio y nunca flota sobre otra pantalla
-    /// (antes era una pastilla sobre la barra de pestañas que tapaba lo de abajo en todas).
-    func testRatingReminderLivesOnlyInHomeScroll() throws {
+    /// Fernando (11 nov 2026): «la pastilla de qué tal el contenido, sí, la dejas como estaba antes». «¿Qué tal …?» flota sobre
+    /// la barra de pestañas (`FloatingRatingReminder` en `RootView`, con `dsNoticePlacement`), nunca como tarjeta en una pantalla.
+    func testRatingReminderFloatsOverTheTabBar() throws {
         let root = repo.appendingPathComponent("ios/App/Sources")
         let files = (FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.allObjects as? [URL] ?? [])
             .filter { $0.pathExtension == "swift" }
@@ -352,10 +355,12 @@ final class DesignTests: XCTestCase {
             let text = try String(contentsOf: file, encoding: .utf8)
             if text.components(separatedBy: "\n").contains(where: { $0.contains("RatingReminderHost()") && !$0.contains("struct ") }) {
                 users.append(file.lastPathComponent)
-                XCTAssertFalse(text.contains("RatingReminderHost().dsNoticePlacement"), "\(file.lastPathComponent): calificar no flota")
+                XCTAssertTrue(text.contains("RatingReminderHost().dsNoticePlacement"), "\(file.lastPathComponent): calificar flota como aviso")
             }
         }
-        XCTAssertEqual(users, ["HomeView.swift"], "«¿Qué tal …?» vive solo dentro de Inicio")
+        XCTAssertEqual(users, ["RatingReminderHost.swift"], "«¿Qué tal …?» es la pastilla de la raíz, no una tarjeta de Inicio")
+        let rootView = try String(contentsOf: root.appendingPathComponent("Screens/RootView.swift"), encoding: .utf8)
+        XCTAssertTrue(rootView.contains("FloatingRatingReminder("), "La pastilla flota en la raíz, sobre todas las pestañas")
     }
 
     /// Revisión del 11 nov: «12:47 AM» en Historial y «8:00 p.m.» en Inicio. Una sola manera de escribir la hora, en el idioma
