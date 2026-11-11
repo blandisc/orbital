@@ -6,7 +6,8 @@ import OrbitalModels
 /// «Todas las fuentes»: la lista completa y plana para quien quiere ver todo, honesta con lo que sabemos. Arriba, «Filtrar»
 /// (orden, solo las que ya están en Real-Debrid, idioma, grabaciones de cine y tráileres) y qué quiere decir cada punto;
 /// luego una sección por calidad («4K · 6») con las primeras tres y «+N más». Cada renglón dice en dos líneas la calidad,
-/// la imagen y el tamaño (con el punto de qué tan rápido arranca) y sus idiomas («· se supone» si nada lo dice). Tocarlo lo
+/// la imagen y el tamaño (con el punto de qué tan rápido arranca) y sus idiomas (con una ⓘ gris si alguno se supone: el
+/// porqué está al abrirlo; I6, el amarillo solo para el riesgo de verdad). Tocarlo lo
 /// abre ahí mismo (uno a la vez): el nombre técnico, semillas, de dónde viene, cómo sabemos cada idioma y los botones.
 struct AllSourcesList: View {
     /// Ya ordenadas (la recomendada primero).
@@ -77,8 +78,17 @@ struct AllSourcesList: View {
     }
 
     @ViewBuilder private var legendItems: some View {
-        HStack(spacing: DS.Space.s1) { dot(DS.AllSourcesList.ready); Text("en Real-Debrid").recipe(.caption) }
-        HStack(spacing: DS.Space.s1) { dot(DS.AllSourcesList.mustDownload); Text("Todavía no está en la nube").recipe(.caption) }
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) { dot(DS.AllSourcesList.ready); Text("en Real-Debrid").recipe(.caption) }
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) { dot(DS.AllSourcesList.mustDownload); Text("Todavía no está en la nube").recipe(.caption) }
+        // I6 · las marcas de complemento se explican aquí (las demás fuentes no llevan marca: antes, una pieza sin explicar).
+        ForEach(addonKinds, id: \.self) { kind in
+            HStack(spacing: DS.Space.s1) { AddonMark(kind: kind).accessibilityHidden(true); AddonMark.name(kind).recipe(.caption) }
+        }
+    }
+
+    /// Ⓣ y Ⓒ, solo si alguna fuente viene de ahí.
+    private var addonKinds: [Streams.AddonKind] {
+        [.torrentio, .comet].filter { kind in sources.contains { Streams.addonKind($0) == kind } }
     }
 
     private var filterMenu: some View {
@@ -181,22 +191,42 @@ struct AllSourcesList: View {
     /// Las dos líneas: «● 1080p · DV · 12.3 GB … La que ves» y los idiomas.
     private func summary(_ source: Source) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-                HStack(spacing: DS.Space.s2) {
-                    if let color = speedColor(source) { dot(color) }
-                    Text(verbatim: facts(source)).recipe(.labelLarge, color: DS.text)
+            // Con letra grande, «Recomendada» baja a su propia línea en vez de partir la calidad en tres (ni «Recomen-dada»).
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                    factsLine(source).fixedSize()
+                    Spacer(minLength: DS.Space.s2)
+                    if let marker = marker(source) { marker.recipe(.badge, color: DS.brandMoon).lineLimit(1) }
+                    addonMark(source)
                 }
-                Spacer(minLength: DS.Space.s2)
-                if let marker = marker(source) { marker.recipe(.badge, color: DS.brandMoon) }
-                AddonMark(kind: Streams.addonKind(source))
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+                        factsLine(source)
+                        Spacer(minLength: DS.Space.s2)
+                        addonMark(source)
+                    }
+                    if let marker = marker(source) { marker.recipe(.badge, color: DS.brandMoon) }
+                }
             }
             languages(source).recipe(.footnote).fixedSize(horizontal: false, vertical: true)
             if let tag = AllSources.hiddenTag(source) {
                 (tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")).recipe(.caption, color: DS.warning)
             }
             if source.tags.contains(Streams.otherEpisodeTag) { Text("¿Otro episodio?").recipe(.caption, color: DS.warning) }
-            else if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.warning) }
+            else if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.textMuted) }
         }
+    }
+
+    private func factsLine(_ source: Source) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+            if let color = speedColor(source) { dot(color) }
+            Text(verbatim: facts(source)).recipe(.labelLarge, color: DS.text)
+        }
+    }
+
+    /// Ⓣ o Ⓒ; las de otros complementos no llevan marca (I6: la pieza de rompecabezas no se entendía).
+    @ViewBuilder private func addonMark(_ source: Source) -> some View {
+        if Streams.addonKind(source) != .other { AddonMark(kind: Streams.addonKind(source)) }
     }
 
     /// Lo que se ve al abrirlo: el nombre técnico, semillas y origen, cómo sabemos cada idioma, qué tan rápido arranca y los botones.
@@ -216,11 +246,11 @@ struct AllSourcesList: View {
             }
             switch SourceSpeed(source) {
             case .inRealDebrid: Text("Ya está en Real-Debrid").recipe(.footnote, color: DS.text)
-            case .realDebridMustDownload: Text("Todavía no está en la nube: puede tardar en abrir").recipe(.footnote, color: DS.warning)
+            case .realDebridMustDownload: Text("Todavía no está en la nube: puede tardar en abrir").recipe(.footnote)
             case .unknown: EmptyView()
             }
             if source.tags.contains(Streams.otherTitleTag) {
-                Text("¿Otro título? El nombre dice otro año: puede ser otra película.").recipe(.footnote, color: DS.warning)
+                Text("¿Otro título? El nombre dice otro año: puede ser otra película.").recipe(.footnote)
             }
             if let request, SourceSpeed(source) == .realDebridMustDownload {
                 if let status = requestStatus(source) { status.padding(.top, DS.Space.s1) } else {
@@ -272,29 +302,32 @@ struct AllSourcesList: View {
         return [source.resolution.isEmpty ? "SD" : source.resolution, AllSources.hdrBadge(source), size].compactMap { $0 }.joined(separator: " · ")
     }
 
-    /// «🇲🇽 Latino · también 🇺🇸 inglés»: el que va a sonar primero y marcado; los demás después, en gris. Y «· se supone»
-    /// (con cuáles, si no son todos) cuando nada lo dice.
-    private func languages(_ source: Source) -> Text {
+    /// «🇲🇽 Latino · también 🇺🇸 inglés»: el que va a sonar primero y marcado; los demás después, en gris. Si alguno se
+    /// supone, una ⓘ gris al final (I6: la duda detrás de un ícono; el porqué, al abrirlo). VoiceOver lo dice con palabras.
+    private func languages(_ source: Source, spoken: Bool = false) -> Text {
         let ui = uiLanguage
         let items = prefs.map { AllSources.languageEvidence(source, playingFirst: $0) } ?? AllSources.languageEvidence(source)
         guard let first = items.first else { return Text(verbatim: "") }
-        var text = Text("\(Text.flag(first.code))\(Text(verbatim: Streams.versionLanguageName(first.code, in: ui)).foregroundStyle(DS.text).fontWeight(.semibold))")
+        var text = Text("\(Text.flag(first.code))\(Text(verbatim: rowName(first.code)).foregroundStyle(DS.text).fontWeight(.semibold))")
         let rest = items.dropFirst()
         if !rest.isEmpty {
             text = Text("\(text)\(Text(verbatim: " · "))\(Text("también"))\(Text(verbatim: " "))")
             for (i, item) in rest.enumerated() {
                 if i > 0 { text = Text("\(text)\(Text(verbatim: ", "))") }
-                text = Text("\(text)\(Text.flag(item.code))\(Text(verbatim: VersionText.inline(Streams.versionLanguageName(item.code, in: ui), ui)))")
+                text = Text("\(text)\(Text.flag(item.code))\(Text(verbatim: VersionText.inline(rowName(item.code), ui)))")
             }
         }
-        let guessed = items.filter { $0.kind == .assumed }
-        if !guessed.isEmpty {
-            text = Text("\(text)\(Text(verbatim: " · "))\(Text("se supone"))")
-            if guessed.count < items.count {
-                text = Text("\(text)\(Text(verbatim: ": " + guessed.map { VersionText.inline(Streams.versionLanguageName($0.code, in: ui), ui) }.joined(separator: ", ")))")
-            }
+        let doubt = items.contains { $0.kind == .assumed || $0.code == "es" }
+        if doubt {
+            text = spoken ? Text("\(text)\(Text(verbatim: ", "))\(Text("el idioma no es seguro"))")
+                          : Text("\(text)\(Text(verbatim: " "))\(Text(Image(systemName: "info.circle")).foregroundStyle(DS.textMuted))")
         }
         return text
+    }
+
+    /// En el renglón, «Español» a secas: «(no dice cuál)» es una duda y va en la ⓘ (al abrirlo, el nombre completo).
+    private func rowName(_ code: String) -> String {
+        code == "es" ? Streams.languageName(code, in: uiLanguage) : Streams.versionLanguageName(code, in: uiLanguage)
     }
 
     private func evidence(_ kind: AllSources.EvidenceKind) -> Text {
@@ -328,7 +361,7 @@ struct AllSourcesList: View {
     }
 
     private func accessibilityLabel(_ source: Source) -> Text {
-        var label = Text("\(Text(verbatim: facts(source) + ", "))\(languages(source))")
+        var label = Text("\(Text(verbatim: facts(source) + ", "))\(languages(source, spoken: true))")
         if let speed = speedText(source) { label = Text("\(label)\(Text(verbatim: ", "))\(speed)") }
         if let marker = marker(source) { label = Text("\(label)\(Text(verbatim: ", "))\(marker)") }
         label = Text("\(label)\(Text(verbatim: ", "))\(AddonMark.name(Streams.addonKind(source)))")

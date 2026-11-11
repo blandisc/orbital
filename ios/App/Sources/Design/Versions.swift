@@ -92,7 +92,7 @@ struct VersionEvidence: View {
     }
 
     private var color: Color {
-        switch evidence { case .checked, .name, .site: DS.success; case .original, .unknown: DS.textMuted; case .maybe: DS.warning }
+        switch evidence { case .checked, .name, .site: DS.success; case .original, .unknown, .maybe: DS.textMuted }   // I6: la duda no es riesgo
     }
 
     private var title: Text {

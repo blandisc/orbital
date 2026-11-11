@@ -62,17 +62,18 @@ struct VersionMark: Equatable {
     let color: Color
     let words: String
 
-    /// ⚡ al instante, ☁︎ hay que pedirla (o cómo va, si ya la pediste), el triángulo si Real-Debrid no la dejó bajar y ? si
-    /// el idioma es «tal vez» (el triángulo es solo de «no lo dejó bajar», PT10).
+    /// ⚡ al instante, ☁︎ hay que pedirla (o cómo va, si ya la pediste), el triángulo si Real-Debrid no la dejó bajar y ⓘ si
+    /// el idioma es «tal vez» (el triángulo es solo de «no lo dejó bajar», PT10; amarillo solo para eso, I6).
     static func marks(_ option: VersionOption, cloud: DebridRequestStatus?, _ tr: (String) -> String) -> [VersionMark] {
         var marks: [VersionMark] = []
-        if option.evidence == .maybe { marks.append(VersionMark(symbol: "questionmark.circle", color: DS.warning, words: tr("Tal vez"))) }
+        // I6 · la duda va en gris (ⓘ): el amarillo queda para el riesgo de verdad (Real-Debrid no la dejó bajar).
+        if option.evidence == .maybe { marks.append(VersionMark(symbol: "info.circle", color: DS.textMuted, words: tr("Tal vez"))) }
         if option.refused {
             marks.append(VersionMark(symbol: DebridRequestWords.Icon.refused, color: DS.warning, words: tr("Real-Debrid no lo dejó bajar")))
         } else if option.speed == .realDebridMustDownload, let cloud {
             marks.append(VersionMark(symbol: cloud.symbol, color: cloud.warn ? DS.warning : DS.textMuted, words: cloud.title))
         } else if option.speed == .realDebridMustDownload {
-            marks.append(VersionMark(symbol: DS.Symbol.cloud, color: DS.warning, words: tr("Hay que pedirla")))
+            marks.append(VersionMark(symbol: DS.Symbol.cloud, color: DS.textMuted, words: tr("Hay que pedirla")))
         } else if option.speed == .inRealDebrid {
             marks.append(VersionMark(symbol: "bolt.fill", color: DS.success, words: tr(option.requested ? "Al instante · la pediste" : "Al instante")))
         }

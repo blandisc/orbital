@@ -44166,6 +44166,39 @@
           }
         }
       }
+    },
+    "el idioma no es seguro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the language is not certain"
+          }
+        }
+      }
+    },
+    "Torrentio · Comet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torrentio · Comet"
+          }
+        }
+      }
+    },
+    "De qué complemento viene: Ⓣ Torrentio y Ⓒ Comet. Las de otros complementos no llevan marca.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which add-on it comes from: Ⓣ Torrentio and Ⓒ Comet. Versions from other add-ons have no mark."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
