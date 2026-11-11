@@ -127,7 +127,7 @@ struct TitleView: View {
                 sourcesFor = nil
                 if let request = model.playRequest(videoID: target.videoID) { Task { await env.playExternal(request, source: source) } }
             }, request: env.services.debridRequests.canRequest ? { source in await sendRequest(model, source: source, videoID: target.videoID) } : nil)
-            .presentationDetents([.large]).presentationDragIndicator(.visible)
+            .presentationDragIndicator(.visible)   // el alto lo pone la hoja (`VersionSheetSizing`)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
         .sheet(item: $debridSheet) { kind in debridSheetContent(kind, model) }

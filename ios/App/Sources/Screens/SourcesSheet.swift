@@ -80,6 +80,10 @@ struct SourcesSheet: View {
     }
 
     @State private var showsGlossary = false
+    /// Lo que la lista no deja ver (cuánto le sobra o le falta a su marco) y el alto de la hoja: en ventana ancha (iPad,
+    /// Mac) la tarjeta mide lo que trae, con tope en el de la ventana, en vez de un hueco abajo con pocas versiones.
+    @State private var listSlack: CGFloat = 0
+    @State private var sheetHeight: CGFloat = 0
     @State private var showsMore = false
     /// «Todas» (la lista completa y plana), desde el enlace del pie.
     @State private var showsAll = SourcesSheet.demoShowsAll
@@ -142,6 +146,13 @@ struct SourcesSheet: View {
         return (Text("Ver \(Text.withFlagImages(LanguageFlags.flagged(name, match.0))), ya arranca"), { waiting = nil; pick(source, .watch, code: match.0) })
     }
 
+    /// Ventana ancha (iPad, Mac): la tarjeta mide lo que trae, con tope en el alto de la ventana. Sin `fixedSize` (cortaba la
+    /// lista): el alto de ahora más lo que a la lista le sobra o le falta. nil mientras no se ha medido.
+    private var fittedHeight: CGFloat? {
+        guard sheetHeight > 0 else { return nil }
+        return min(max(DS.Size.touchTarget * 6, sheetHeight + listSlack), WindowMetrics.size.height * DS.Sheet.maxShare)
+    }
+
     var body: some View {
         let model = observer.model
         let ui = env.services.appSettings.uiLanguage
@@ -181,11 +192,14 @@ struct SourcesSheet: View {
             .defaultScrollAnchor(Self.demoBottom ? .bottom : nil)   // `-demo-open sources-request`: abre abajo, en «Hay que pedirlas»
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)
             .contentMargins(.vertical, DS.Space.s1, for: .scrollContent)
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height + $0.contentInsets.top + $0.contentInsets.bottom - $0.containerSize.height } action: { _, slack in listSlack = slack }
             if env.connectivity.isCellular {
                 Text("Con datos móviles te avisamos antes de usar versiones de más de \(Int(env.services.appSettings.warnCellularOverGB)) GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
             }
         }
         .dsSheetContent(sides: false)   // el carrusel llega a las orillas: cada parte pone su margen
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { sheetHeight = $0 }
+        .modifier(VersionSheetSizing(fitted: fittedHeight))
         .task { await model.load(onCellular: env.connectivity.isCellular) }
         .sheet(item: $asking) { pending in DebridNotifyAsk { _ in asking = nil; await request?(pending.source) } }
         .debridFlowIntro(when: request != nil && !model.toRequest.isEmpty && !showsAll)   // RX3-A: «↓ Por pedir» a la vista
@@ -345,5 +359,18 @@ struct SourcesGlossary: View {
             }
         }
         .padding(DS.Space.s5)
+    }
+}
+
+/// El alto de «Versión»: en el iPhone, la hoja grande de siempre; en ventana ancha (iPad, Mac) la tarjeta a la medida de su
+/// lista con tope (antes medía siempre lo mismo y con pocas versiones quedaba un hueco abajo, 10 nov 2026). La altura va
+/// también en `presentationDetents`: así iPadOS vuelve a medir la tarjeta cuando la lista termina de llegar.
+private struct VersionSheetSizing: ViewModifier {
+    let fitted: CGFloat?
+
+    func body(content: Content) -> some View {
+        // Sin `if`: cambiar de rama volvería a crear la hoja (y a cargar las versiones) al terminar de medir.
+        let wide = WindowMetrics.size.width > DS.TitleAction.readableWidth ? fitted : nil
+        content.presentationDetents(wide.map { [.height($0)] } ?? [.large]).fittedFormSizing(idealHeight: wide)
     }
 }

@@ -206,7 +206,7 @@ struct MiMediaTitleView: View {
                             findingSource = nil
                             Task { await useSource(source, purpose: purpose, videoID: missing.id, tm) }
                         }
-                        .presentationDetents([.large]).presentationDragIndicator(.visible)
+                        .presentationDragIndicator(.visible)   // el alto lo pone la hoja (`VersionSheetSizing`)
                     }
                 }
                 .sheet(isPresented: $fixing) {
