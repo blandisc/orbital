@@ -298,12 +298,51 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
 
 class WebFiles(StaticFiles):
-    """La interfaz siempre se revalida (ETag): tras actualizar Orbital, Edge no mezcla CSS o JS viejos."""
+    """La interfaz siempre se revalida (ETag y Last-Modified, `no-cache`): tras actualizar Orbital, Edge no mezcla CSS o JS
+    viejos. R3-7 (11 nov 2026): el JS, el CSS, el SVG y el HTML viajan comprimidos con gzip si el navegador lo acepta (antes
+    solo en el puerto público): ~1,5 MB de texto en ~140 peticiones al arrancar pasan a ~0,4 MB. Se comprime una vez por
+    versión del archivo (su fecha y su tamaño) y se guarda en memoria; la ETag de lo comprimido es otra (`-gz`), así una
+    actualización cambia las dos y la recarga trae lo nuevo. Brotli no: pediría otra dependencia para poco más."""
 
-    def file_response(self, *args, **kwargs):
-        response = super().file_response(*args, **kwargs)
-        response.headers["Cache-Control"] = "no-cache"
-        return response
+    PACKED = frozenset({".js", ".mjs", ".css", ".svg", ".html", ".json", ".webmanifest", ".txt"})
+    MIN_SIZE = 1024  # lo más chico no gana nada
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._gzipped: dict[str, tuple[int, int, bytes]] = {}
+
+    def _gzip(self, path: str, stat_result: os.stat_result) -> bytes:
+        import gzip
+
+        mark = (stat_result.st_mtime_ns, stat_result.st_size)
+        cached = self._gzipped.get(path)
+        if cached and cached[:2] == mark:
+            return cached[2]
+        body = gzip.compress(Path(path).read_bytes(), compresslevel=6, mtime=0)
+        self._gzipped[path] = (*mark, body)
+        return body
+
+    def file_response(self, full_path, stat_result, scope, status_code=200):
+        from starlette.datastructures import Headers
+        from starlette.responses import Response
+        from starlette.staticfiles import NotModifiedResponse
+
+        path = str(full_path)
+        packable = status_code == 200 and Path(path).suffix.lower() in self.PACKED and stat_result.st_size >= self.MIN_SIZE
+        request_headers = Headers(scope=scope)
+        if not packable or "gzip" not in request_headers.get("accept-encoding", "").lower():
+            response = super().file_response(full_path, stat_result, scope, status_code)
+            response.headers["Cache-Control"] = "no-cache"
+            if packable:
+                response.headers["Vary"] = "Accept-Encoding"
+            return response
+        plain = FileResponse(full_path, stat_result=stat_result)  # su tipo, su fecha y su ETag
+        headers = {"etag": plain.headers["etag"].removesuffix('"') + '-gz"', "last-modified": plain.headers["last-modified"],
+                   "cache-control": "no-cache", "vary": "Accept-Encoding"}
+        if self.is_not_modified(Headers(headers=headers), request_headers):
+            return NotModifiedResponse(Headers(headers=headers))
+        return Response(self._gzip(path, stat_result), media_type=plain.media_type,
+                        headers={**headers, "content-encoding": "gzip"})
 
 
 class FailedTokens:
