@@ -87,14 +87,46 @@ class Launcher:
     STEAM_START_TIMEOUT = 120  # s que esperamos a que Steam marque el juego como iniciado
     POLL = 2.0
 
-    def __init__(self, on_exit: ExitCallback | None = None) -> None:
+    def __init__(self, on_exit: ExitCallback | None = None, marker=None) -> None:
         self._lock = threading.Lock()
-        self.current: Running | None = None
+        # La marca en disco de «hay algo abierto» para el vigilante (supervisor.py), que no le puede preguntar a un
+        # servidor colgado. Solo bajo el vigilante (ORBITAL_CHILD), o la que se le pase (pruebas).
+        if marker is None:
+            from . import supervisor
+            marker = supervisor.busy_flag() if supervisor.is_child() else False
+        self._marker = marker or None
+        self._current: Running | None = None
+        self.current = None  # de paso borra la marca que dejó un Orbital anterior
         self.on_exit = on_exit
         self.on_timeout = None  # (id, título): lo lanzado nunca arrancó (Steam no lo abrió)
         self.on_playtime = None  # (id, segundos): lo que se jugó de algo que otra cosa reemplazó
         self.last_stopped_by_user = False
         self.last_was_already_open = False
+
+    @property
+    def current(self) -> Running | None:
+        return self._current
+
+    @current.setter
+    def current(self, running: Running | None) -> None:
+        self._current = running
+        self._mark(running)
+
+    def _mark(self, running: Running | None) -> None:
+        """Anota (o borra) en disco qué está abierto y en qué procesos, para el vigilante."""
+        if self._marker is None:
+            return
+        from . import supervisor
+        if not isinstance(running, Running):
+            return supervisor.write_busy(None, self._marker)
+        pids = sorted({*(running.followers or ()), *([running.process.pid] if running.process is not None else [])})
+        if sys.platform == "win32":
+            from . import windows
+            named = {str(pid): windows.exe_name(pid) for pid in pids}
+        else:
+            named = {str(pid): "" for pid in pids}
+        supervisor.write_busy({"id": running.item_id, "title": running.title, "pids": named, "exe": running.exe or ""},
+                              self._marker)
 
     def open_uri(self, uri: str) -> None:
         log.info("Abriendo URI %s", redact(uri))
@@ -169,6 +201,7 @@ class Launcher:
                 return False
             cur.process, cur.followers, cur.switching = process, set(), False
             cur.adopted.set()
+            self._mark(cur)
             return True
 
     def relaunch(self, item_id: str, argv: list[str], cwd: str | None = None) -> bool:
@@ -285,7 +318,10 @@ class Launcher:
             if followers:
                 if not running.followers:
                     log.info("%s sigue abierto en otro proceso (%s)", running.title, sorted(followers))
+                changed = followers != running.followers
                 running.followers = followers
+                if changed and self.current is running:
+                    self._mark(running)  # el vigilante debe ver al juego en el proceso donde siguió
                 running.adopted.wait(self.POLL)  # como sleep, pero un relanzamiento lo despierta (su lanzador se va en 1 s)
             elif time.monotonic() < deadline and not running.followers:
                 time.sleep(.25)  # quizá el relevo aún no aparece
