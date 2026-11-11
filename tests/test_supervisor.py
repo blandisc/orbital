@@ -261,7 +261,10 @@ def test_the_launcher_writes_and_clears_the_mark(tmp_path):
     proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
     try:
         launcher.current = Running("game:1", "Zelda", proc)
-        assert supervisor.game_open(mark, table={proc.pid: ("", 0)} if sys.platform == "win32" else None) == "Zelda"
+        import json
+        exe = json.loads(mark.read_text(encoding="utf-8"))["pids"][str(proc.pid)] or "python.exe"
+        table = {proc.pid: (exe.lower(), 0)} if sys.platform == "win32" else None  # la foto de procesos de Windows
+        assert supervisor.game_open(mark, table=table) == "Zelda"
         launcher.current = None
         assert not mark.exists()
     finally:

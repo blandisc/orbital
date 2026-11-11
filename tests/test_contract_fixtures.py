@@ -79,6 +79,10 @@ def apps(library, monkeypatch, tmp_path):
     monkeypatch.setattr(health, "free_ram_mb", lambda: 4096)
     monkeypatch.setattr(system, "wifi", lambda: None)
     monkeypatch.setattr(gamepad, "connected_controllers", list)
+    # Qué ventana está al frente depende del escritorio donde corre la prueba (en la CI de Windows es otra): fijo,
+    # como en la TV de verdad, con el reproductor abierto él está al frente.
+    monkeypatch.setattr(companion, "_front", lambda catalog, shell: "player" if (catalog.launcher.status() or {})
+                        .get("id") == "media:player" else "ui")
     main = create_app(library.config, library)
     main.state.play_stremio = lambda body: {"ok": True}  # «Ver en la TV» sin abrir el reproductor de verdad
     local = TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1))

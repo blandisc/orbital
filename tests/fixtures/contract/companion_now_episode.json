@@ -51,7 +51,19 @@
       "video_id": "s1:1:1"
     },
     "ui": {
-      "screen": "home",
+      "legend": {
+        "alt": "Audio y subtítulos",
+        "back": "Salir",
+        "down": "Bajar volumen",
+        "left": "Atrasar",
+        "options": "Episodios y versión",
+        "pageleft": "Episodio anterior",
+        "pageright": "Episodio siguiente",
+        "right": "Adelantar",
+        "select": "Pausa",
+        "up": "Subir volumen"
+      },
+      "screen": "player",
       "text_field": false
     },
     "volume": {
