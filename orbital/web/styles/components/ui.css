@@ -270,6 +270,6 @@
   letter-spacing: normal; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: var(--shadow-text-strong); /* sobre el arte (AA, P4) */
 }
 .row-count--veil {
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text); text-shadow: none;
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-glass-legible); color: var(--color-text); text-shadow: none;
 }
 .row-count:empty { display: none; }

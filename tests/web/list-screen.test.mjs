@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const MAIN = readFileSync(join(ROOT, "orbital", "web", "js", "main.js"), "utf8");
+const MAIN = readFileSync(join(ROOT, "orbital", "web", "js", "main.js"), "utf8").replaceAll("\r\n", "\n");
 
 test("la ficha se monta después de la lista: A en un póster la deja encima", () => {
   // .screen comparte --z-overlay: el que va después en el DOM tapa al anterior. Antes la lista
@@ -42,7 +42,7 @@ test("quitar el orden de una lista también se recuerda (antes, al reabrirla, vo
 });
 
 test("la ficha nueva no enseña las calificaciones de la anterior mientras carga", () => {
-  const src = readFileSync(join(ROOT, "orbital", "web", "js", "components", "title.js"), "utf8");
+  const src = readFileSync(join(ROOT, "orbital", "web", "js", "components", "title.js"), "utf8").replaceAll("\r\n", "\n");
   const open = src.slice(src.indexOf("function open(info"), src.indexOf("function close()"));
   assert.match(open, /mount\(ratings\)/);
   assert.ok(open.indexOf("mount(ratings)") < open.indexOf("load();"));

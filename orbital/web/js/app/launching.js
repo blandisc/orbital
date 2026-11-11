@@ -10,6 +10,14 @@ import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
 const SLOW = Symbol("lento"); // el servidor no contestó a tiempo (sigue abriendo)
 
+/** Lo que dice el aviso cuando no arrancó: el servidor manda una frase larga; aquí, dos cortas (revisión 2, punto 11:
+ *  «Esa versión ya no está disponible; vuelve a abrir la lista» tapaba las tarjetas de Elegir versión). */
+export function playProblem(err) {
+  const message = err?.message || "No pude abrirlo";
+  if (/versión ya no está disponible/i.test(message)) return ["Esa versión ya no está.", "Elige otra de la lista."];
+  return [message, ""];
+}
+
 export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused() }) {
   // «¿Cerrar X?» o, si en Ajustes dijiste que abrir algo no cierra lo anterior, «¿Abrir Y también?» (no promete cerrar).
   const switchMenu = (args) => (state.settings?.close_previous === false && args.running.title !== args.title
@@ -88,7 +96,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       state.launchingTitle = null;
       ui.launch.hide();
       sound.play("error");
-      ui.toast.show(err.message, { error: true });
+      const [text, detail] = playProblem(err);
+      ui.toast.show(text, { error: true, detail });
     }
   }
 

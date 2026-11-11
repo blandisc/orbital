@@ -92,3 +92,9 @@ test("el juego se pide con el arte ya decodificado; B mientras tanto no abre nad
   await pending;
   assert.deepEqual(launched, []);
 });
+
+test("si la versión ya no está, el aviso son dos frases cortas (revisión 2, punto 11)", async () => {
+  const { playProblem } = await import("../../orbital/web/js/app/launching.js");
+  assert.deepEqual(playProblem(new Error("Esa versión ya no está disponible; vuelve a abrir la lista")), ["Esa versión ya no está.", "Elige otra de la lista."]);
+  assert.deepEqual(playProblem(new Error("Sin conexión")), ["Sin conexión", ""]);
+});

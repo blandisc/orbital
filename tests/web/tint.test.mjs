@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8").replaceAll("\r\n", "\n");
 
 test("la lista de piezas teñidas es la misma en backdrop.js y en el tema", () => {
   const js = read("js/components/backdrop.js").match(/export const TINTED = \[([^\]]*)\]/);
@@ -36,6 +36,6 @@ test("el tono del servidor (art_tone) se usa tal cual; neutral es el grafito; si
   assert.deepEqual(paletteOfTone({ neutral: false, hue: 210, saturation: .5, ...paletteFor({ hue: 210, saturation: .5 }) }),
     paletteFor({ hue: 210, saturation: .5 }));
   // Solo se usa con el arte que sirve Orbital (backdrop.js · show): el de fuera puede no ser el que midió.
-  const source = readFileSync(new URL("../../orbital/web/js/components/backdrop.js", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../../orbital/web/js/components/backdrop.js", import.meta.url), "utf8").replaceAll("\r\n", "\n");
   assert.match(source, /\/\^\\\/api\\\/\/\.test\(url \|\| ""\) && paletteOfTone\(tone\)/);
 });

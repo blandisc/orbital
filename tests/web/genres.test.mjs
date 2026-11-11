@@ -6,7 +6,7 @@ import test from "node:test";
 import { GENRE_SHELVES } from "../../orbital/web/js/core/curation.js";
 
 const serverGenres = () => {
-  const source = readFileSync(new URL("../../orbital/api/media.py", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../../orbital/api/media.py", import.meta.url), "utf8").replaceAll("\r\n", "\n");
   const set = source.match(/^GENRES = \{([^}]*)\}/m);
   assert.ok(set, "no encontré GENRES en orbital/api/media.py");
   return [...set[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();

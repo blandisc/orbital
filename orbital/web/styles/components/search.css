@@ -35,7 +35,7 @@
 /* Vacío: el texto de ayuda empieza justo donde está el cursor (como un campo de iOS): antes empezaba un poco a la derecha y lo
    que escribías aparecía corrido a la izquierda. La caja vacía de lo escrito no ocupa lugar. */
 /* La ayuda en letra de encabezado: «Juego, película o serie» cabe entera en la columna del teclado compacto (P4). */
-.search__placeholder { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(-1 * var(--space-3) - 3px); }
+.search__placeholder { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(2px - var(--space-3)); } /* justo después del cursor, sin que lo tape (revisión 2, 16) */
 .search__query:empty { display: none; }
 .search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
@@ -90,9 +90,10 @@
 .search__set:not(.search__set--pills) .search__set-cards { padding-bottom: var(--caption-room); }
 /* Un grupo donde todas llevan el nombre encima (Seguir viendo, Por género) no tiene pie: no le guarda lugar. */
 .search__set-cards:not(:has(.card:not(.card--named, .card--no-art) .card__caption)) { padding-bottom: 0; }
-.search__group {
-  flex: none; color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* El nombre del grupo es un encabezado de subsección (SectionHead), como el de una fila: blanco y del mismo tamaño (revisión 2,
+   punto 6: antes gris y más chico, un tercer estilo de encabezado). */
+.search__group { flex: none; }
+.search__group .section-head__title { overflow: hidden; text-overflow: ellipsis; }
 /* Los títulos de los resultados, legibles desde el sillón (antes en letra de pie de foto). */
 .search { --caption-size: var(--type-secondary); }
 /* Caja vacía, solo búsquedas recientes (sin portadas): las píldoras, sin el lugar de las portadas. */

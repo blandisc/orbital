@@ -632,3 +632,18 @@ def test_cloud_game_ends_when_its_window_drops_the_name_even_if_the_app_stays():
     assert ended[0][:2] == ("gfn:1", "Hogwarts Legacy") and lau.status() is None
     assert closed == [1]  # y la app se cierra (se quedaba en su biblioteca gastando detrás de Orbital)
 
+
+def test_retitle_names_what_is_open_and_its_busy_mark(tmp_path):
+    """«la película» mientras llegaba la ficha: al llegar, lo abierto y la marca del vigilante dicen el nombre."""
+    import json as _json
+
+    from orbital.launcher import Launcher, Running
+
+    mark = tmp_path / "busy.json"
+    launcher = Launcher(marker=mark)
+    launcher.current = Running("media:stremio", "la película", None, exe="stremio.exe")
+    assert launcher.retitle("la película", "Interstellar")
+    assert launcher.status()["title"] == "Interstellar"
+    assert _json.loads(mark.read_text(encoding="utf-8"))["title"] == "Interstellar"
+    assert not launcher.retitle("la película", "Otra")  # ya no se llama así: no se toca
+    launcher.current = None

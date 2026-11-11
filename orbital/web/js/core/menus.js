@@ -914,7 +914,8 @@ export function settingsMeta(id, settings, { voice = null, now = Date.now() } = 
     }
     case "watch": return `${langName((settings.languages || [])[0] || settings.audio)} · ${settingLabel("quality", settings.quality)}`;
     case "addons": return addonsMeta(settings.addons);
-    case "play": return settings.game_idle_minutes ? `En pausa, se cierran en ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "En pausa, no se cierran";
+    // Corto, para que quepa entero en el riel (revisión 2, 15: «En pausa, se cierran en 1 ho…»).
+    case "play": return settings.game_idle_minutes ? `Se cierran tras ${settingLabel("game_idle_minutes", settings.game_idle_minutes)}` : "No se cierran solos";
     case "voice": return voice ? `Voz: ${sinceVoice(lastVoice(voice), now).toLowerCase()}` : "La tele, Alexa y el iPhone";
     case "display": return `Texto ${settingLabel("text_size", settings.text_size ?? "normal").toLowerCase()}`;
     case "accounts": {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException
@@ -61,7 +62,77 @@ def content_title(catalog, kind: str, meta_id: str) -> str:
         name = None
     if isinstance(name, str) and name.strip():
         return name.strip()[:200]
+    return placeholder_title(kind)
+
+
+TITLE_WAIT = 0.15  # s: una ficha guardada llega en milisegundos; una que hay que pedir a internet ya no frena el video
+
+
+def placeholder_title(kind: str) -> str:
     return "la serie" if kind == "series" else "la película"
+
+
+class LateTitle:
+    """El nombre de lo que se va a ver, sin frenar el video (revisión del 11 nov 2026: «pon Interstellar» esperaba a que
+    Cinemeta contestara, hasta 10 s sin red lenta, antes de empezar a buscar fuentes). Se pide en segundo plano; si no
+    llega en `TITLE_WAIT`, el video arranca como «la película» o «la serie» y, cuando llega el nombre, se le pone a lo
+    que ya se está viendo (la barra de arriba, «Volver a…», el historial)."""
+
+    def __init__(self, catalog, kind: str, meta_id: str) -> None:
+        self.catalog, self.kind, self.meta_id = catalog, kind, meta_id
+        self.placeholder = placeholder_title(kind)
+        self._lock = threading.Lock()
+        self._name: str | None = None
+        self._started = False
+        self._done = threading.Event()
+
+    def begin(self) -> str:
+        threading.Thread(target=self._resolve, daemon=True, name=f"title:{self.meta_id}").start()
+        self._done.wait(TITLE_WAIT)
+        with self._lock:
+            return self._name or self.placeholder
+
+    def started(self) -> None:
+        """El video ya se pidió con el nombre provisional: si el bueno ya llegó, se le pone ahora."""
+        with self._lock:
+            self._started = True
+            name = self._name
+        if name:
+            self._apply(name)
+
+    def _resolve(self) -> None:
+        name = content_title(self.catalog, self.kind, self.meta_id)
+        with self._lock:
+            self._name = name
+            started = self._started
+        self._done.set()
+        if started:
+            self._apply(name)
+
+    def _apply(self, name: str) -> None:
+        if name == self.placeholder:
+            return
+        retitle(self.catalog, self.meta_id, self.placeholder, name)
+
+
+def retitle(catalog, meta_id: str, old: str, new: str) -> None:
+    """Le pone su nombre a lo que se abrió como `old`, si sigue siendo ese título (no a lo que abriste después)."""
+    watch_ = getattr(catalog, "watch", None)
+    player = getattr(watch_, "player", None)
+    current = getattr(player, "current", None)
+    ours = False
+    for item in (current, getattr(player, "segment", None)):
+        meta = getattr(item, "meta", None)
+        if isinstance(meta, dict) and meta.get("meta_id") == meta_id and getattr(item, "title", None) == old:
+            item.title, ours = new, True
+            if meta.get("title") == old:
+                meta["title"] = new
+    launcher = getattr(catalog, "launcher", None)
+    # En el reproductor de Orbital, solo si es este mismo título; en Stremio (sin video nuestro), lo abierto en Stremio.
+    stremio = not getattr(player, "playing", False) \
+        and (getattr(launcher, "status", lambda: None)() or {}).get("id") == "media:stremio"
+    if (ours or stremio) and launcher is not None and hasattr(launcher, "retitle"):
+        launcher.retitle(old, new)
 
 
 def stremio_message(exc: Exception) -> str:
@@ -277,7 +348,8 @@ def router(d: Deps) -> APIRouter:
         kind, meta_id = body.kind, body.id
         if kind not in ("movie", "series") or not _clean_id(meta_id) or (body.video_id is not None and not _clean_id(body.video_id)):
             raise HTTPException(400, "Falta qué reproducir")
-        title = body.title or content_title(catalog, kind, meta_id)
+        late = None if body.title else LateTitle(catalog, kind, meta_id)
+        title = body.title or (late.begin() if late is not None else "")
         video_id = body.video_id or (meta_id if kind == "movie" else None)
         player_ui.set_input("touch" if body.touch else "keyboard" if body.keyboard else "gamepad")
         if kind == "series" and not video_id and catalog.native_player:
@@ -291,12 +363,16 @@ def router(d: Deps) -> APIRouter:
             if body.source is not None and video_id:
                 catalog.watch.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,
                                     from_start=body.from_start)
+                if late is not None:
+                    late.started()
                 if body.remember:
                     catalog.watch.remember_version(kind, meta_id, video_id, body.source)
                 return {"ok": True, "reveal": catalog.revealing}
             if video_id and catalog.native_player:
                 chosen = catalog.watch.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start,
                                                  handoff=body.handoff())
+                if late is not None:
+                    late.started()
                 return {"ok": True, "reveal": catalog.revealing, **chosen}
         except stremio_api.StremioError as exc:
             raise HTTPException(409, stremio_message(exc))
@@ -307,6 +383,8 @@ def router(d: Deps) -> APIRouter:
         except OSError as exc:  # el reproductor no abrió (falta, sin permiso…)
             raise HTTPException(500, f"No pude abrir el reproductor: {exc.strerror or exc}")
         catalog.sessions.play_stremio(kind, meta_id, body.video_id, title)
+        if late is not None:
+            late.started()
         return {"ok": True}
 
     d.extra["play_stremio"] = play  # «Ver en la TV» del iPhone entra por el puerto público (server.create_public_app)

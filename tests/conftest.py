@@ -199,6 +199,12 @@ class FakeLauncher:
     def status(self):
         return self.current
 
+    def retitle(self, old, new):
+        if self.current is not None and self.current["title"] == old:
+            self.current = {**self.current, "title": new}
+            return True
+        return False
+
     def finish(self, seconds):
         """Simula que el juego en curso se cerró tras `seconds` segundos."""
         cur, self.current = self.current, None
