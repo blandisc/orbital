@@ -262,3 +262,17 @@ struct DSSectionHead: View {
         .accessibilityAddTraits(.isHeader)
     }
 }
+
+/// R4 · «En inglés»: el texto de al lado se quedó en otro idioma (TMDB no lo tiene en el tuyo y sale el de Cinemeta). Discreta,
+/// como la TV en las reseñas de Letterboxd (R2-8): no se esconde el título, se dice de qué idioma es.
+struct DSLanguageMark: View {
+    /// El código del idioma del texto («en»).
+    let code: String
+    /// El idioma de la app (para nombrarlo: «inglés» o «English»).
+    let uiLanguage: String
+
+    // Con espacio duro: «En %@» a secas ya es «On %@» en inglés (En Netflix); este es «In %@» (En inglés).
+    var body: some View {
+        Text("En\u{00A0}\(VersionText.inline(VersionText.name(code, uiLanguage), uiLanguage))").recipe(.caption, color: DS.textMuted).lineLimit(1)
+    }
+}

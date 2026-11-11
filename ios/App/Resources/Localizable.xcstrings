@@ -16803,6 +16803,18 @@
         }
       }
     },
+    "En %@": {
+      "comment": "R4: marca discreta del idioma de un título o sinopsis sin traducir («En inglés»). Lleva espacio duro: «En %@» a secas es «On %@» (las plataformas).",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In %@"
+          }
+        }
+      }
+    },
     "En Letterboxd": {
       "extractionState": "manual",
       "localizations": {

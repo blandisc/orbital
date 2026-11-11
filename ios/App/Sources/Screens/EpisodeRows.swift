@@ -24,6 +24,8 @@ struct EpisodeRowView: View {
     /// «Tus vistas…» (gestor ola 3): cambiar la fecha o borrar una vista de este capítulo; nil si no lo has visto.
     var viewings: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
+    @Environment(AppEnvironment.self) private var env
+    private var uiLanguage: String { env.services.appSettings.uiLanguage }
 
     /// El que vas viendo (con avance y sin terminar): se distingue en la lista (O1).
     private var inProgress: Bool { row.progress != nil && !row.watched && row.airs == nil }
@@ -53,6 +55,7 @@ struct EpisodeRowView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)"))
                         .font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(1)
+                    if let code = row.foreignLanguage { DSLanguageMark(code: code, uiLanguage: uiLanguage) }   // R4: el idioma colado
                     if hasStatus { status.font(inProgress ? DS.TextRecipe.badge.font : DS.TextRecipe.caption.font).foregroundStyle(inProgress ? ink : DS.textMuted) }
                     if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
                 }
@@ -92,6 +95,7 @@ struct EpisodeRowView: View {
                     .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(2)
+                        if let code = row.foreignLanguage { DSLanguageMark(code: code, uiLanguage: uiLanguage) }   // R4: el idioma colado
                         if hasStatus { status.font(inProgress ? DS.TextRecipe.badge.font : DS.TextRecipe.caption.font).foregroundStyle(inProgress ? ink : DS.textMuted) }
                         if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
                     }

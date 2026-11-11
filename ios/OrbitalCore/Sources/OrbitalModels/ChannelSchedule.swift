@@ -13,8 +13,10 @@ public enum ChannelSchedule {
         /// La imagen de ese capítulo (no el arte de la serie); vacía si Cinemeta no la tiene.
         public var still: String
         public var videoID: String
-        public init(season: Int, episode: Int, name: String, still: String, videoID: String) {
-            self.season = season; self.episode = episode; self.name = name; self.still = still; self.videoID = videoID
+        /// El idioma del nombre si no es el de la app («en»: TMDB no lo tiene traducido); nil si está en el tuyo.
+        public var nameLanguage: String?
+        public init(season: Int, episode: Int, name: String, still: String, videoID: String, nameLanguage: String? = nil) {
+            self.season = season; self.episode = episode; self.name = name; self.still = still; self.videoID = videoID; self.nameLanguage = nameLanguage
         }
     }
 

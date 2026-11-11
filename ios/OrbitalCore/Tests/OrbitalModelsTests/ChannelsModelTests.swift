@@ -30,6 +30,17 @@ final class ChannelsModelTests: XCTestCase {
         XCTAssertEqual(channel.logo, "https://logo")
     }
 
+    /// R4: el nombre que se quedó en inglés lo dice; el nombre original de la serie (con el que se buscan las fuentes) se queda.
+    func testNombreSinTraducirLlevaSuIdioma() throws {
+        let original = meta(runtime: "24 min")
+        var local = Localizer.markUntranslated(original: original, localized: original).object!
+        local["name"] = "Los Simpson"
+        let channel = try XCTUnwrap(ChannelsModel.channel(pick, meta: .object(local), now: now, originalTitle: "The Simpsons"))
+        XCTAssertEqual(channel.episodes.first?.nameLanguage, "en")
+        XCTAssertEqual(channel.originalTitle, "The Simpsons")
+        XCTAssertNil(try XCTUnwrap(ChannelsModel.channel(pick, meta: original, now: now)).episodes.first?.nameLanguage)
+    }
+
     func testSinDuracionUsaLaDeSiempre() throws {
         let channel = try XCTUnwrap(ChannelsModel.channel(pick, meta: meta(runtime: ""), now: now))
         XCTAssertEqual(channel.length, TimeInterval(ChannelsModel.defaultMinutes * 60))

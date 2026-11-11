@@ -88,13 +88,18 @@ public final class ChannelsModel: ObservableModel {
     private func loadMissing() async {
         let missing = picks.filter { loaded[$0.id] == nil }
         let cinemeta = services.cinemeta
+        let localizer = services.localizer
         let now = Date()
         await withTaskGroup(of: Channel?.self) { group in
             for pick in missing {
                 group.addTask {
                     // En disco: la ficha de una serie larga pesa y no se vuelve a bajar en cada arranque.
                     guard let meta = try? await cinemeta.meta(kind: "series", id: pick.id, persist: true) else { return nil }
-                    return Self.channel(pick, meta: meta, now: now)
+                    // Los nombres de los episodios en tu idioma primero (TMDB, con su respaldo); lo que no, con su idioma
+                    // marcado (R4: «Saddlesore Galactica» salía sin decir que es inglés). El nombre original de la serie se
+                    // queda: con él se buscan las fuentes.
+                    let local = await localizer.meta(kind: "series", meta: meta)
+                    return Self.channel(pick, meta: local, now: now, originalTitle: meta["name"]?.nonEmptyString)
                 }
             }
             for await channel in group { if let channel { loaded[channel.id] = channel } }
@@ -103,19 +108,20 @@ public final class ChannelsModel: ObservableModel {
     }
 
     /// Un canal desde la ficha de Cinemeta: los episodios que ya salieron (sin especiales), con su imagen y su nombre.
-    nonisolated static func channel(_ pick: Pick, meta: JSON, now: Date) -> Channel? {
+    nonisolated static func channel(_ pick: Pick, meta: JSON, now: Date, originalTitle: String? = nil) -> Channel? {
         let day = ISO8601DateFormatter()
         day.formatOptions = [.withFullDate]
         let episodes = CinemetaParsing.seasons(meta).filter { !$0.isSpecials }.flatMap { season in
             season.episodes.filter { e in
                 guard let released = e.released, let at = day.date(from: String(released.prefix(10))) else { return true }
                 return at <= now
-            }.map { ChannelSchedule.Episode(season: season.season, episode: $0.episode, name: $0.hasTitle ? $0.title : "", still: $0.thumbnail ?? "", videoID: $0.id) }
+            }.map { ChannelSchedule.Episode(season: season.season, episode: $0.episode, name: $0.hasTitle ? $0.title : "", still: $0.thumbnail ?? "", videoID: $0.id,
+                                            nameLanguage: $0.hasTitle ? $0.titleLanguage : nil) }
         }
         guard !episodes.isEmpty else { return nil }
         let info = CinemetaParsing.describe(meta)
         let minutes = Int(info.runtime.filter(\.isNumber)).flatMap { $0 >= 5 ? $0 : nil } ?? defaultMinutes
-        return Channel(pick: pick, originalTitle: meta["name"]?.nonEmptyString ?? pick.title, logo: info.logo, background: meta["background"]?.nonEmptyString ?? String(format: ForYou.metahubBackground, pick.id),
+        return Channel(pick: pick, originalTitle: originalTitle ?? meta["name"]?.nonEmptyString ?? pick.title, logo: info.logo, background: meta["background"]?.nonEmptyString ?? String(format: ForYou.metahubBackground, pick.id),
                        episodes: episodes, length: TimeInterval(minutes * 60))
     }
 

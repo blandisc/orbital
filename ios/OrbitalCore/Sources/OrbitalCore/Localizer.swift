@@ -126,12 +126,47 @@ public actor Localizer {
         return found.flatMap { $0.title.isEmpty ? nil : $0.title }
     }
 
-    /// La ficha en tu idioma (una copia; la original no se toca).
+    /// La ficha en tu idioma (una copia; la original no se toca). En una serie, los títulos y sinopsis de episodio que se
+    /// quedan como venían de Cinemeta (en inglés: TMDB no los tiene en tu idioma, o no hay clave) llevan su idioma
+    /// (`markUntranslated`), para que la app diga «En inglés» en vez de colarlos como si fueran tuyos.
     public func meta(kind: String, meta: JSON) async -> JSON {
         let imdb = meta["imdb_id"]?.string ?? meta["id"]?.string
-        guard let lang = active, kind == "movie" || kind == "series", let imdb, imdb.hasPrefix("tt"),
-              let found = await translation(kind: kind, imdb: imdb, lang: lang, episodes: kind == "series"), !found.isEmpty else { return meta }
-        return Localizer.apply(meta, found)
+        var out = meta
+        if let lang = active, kind == "movie" || kind == "series", let imdb, imdb.hasPrefix("tt"),
+           let found = await translation(kind: kind, imdb: imdb, lang: lang, episodes: kind == "series"), !found.isEmpty {
+            out = Localizer.apply(meta, found)
+        }
+        guard kind == "series", Localizer.tmdbLanguage(language()) != nil else { return out }
+        return Localizer.markUntranslated(original: meta, localized: out)
+    }
+
+    /// De qué idioma es lo que trae Cinemeta (siempre inglés).
+    public static let sourceLanguage = "en"
+    /// En cada episodio de `videos`: el idioma de su nombre y de su sinopsis cuando no están en el de la app.
+    public static let nameLanguageKey = "orbital_name_lang", overviewLanguageKey = "orbital_overview_lang"
+
+    /// Marca los episodios cuyo nombre o sinopsis siguen iguales que en Cinemeta (no se tradujeron): llevan
+    /// `nameLanguageKey` / `overviewLanguageKey` con `sourceLanguage`. Un nombre de relleno («Episode 3») no se marca: la app
+    /// lo dice en tu idioma («Episodio 3»).
+    public static func markUntranslated(original: JSON, localized: JSON) -> JSON {
+        guard var out = localized.object, let videos = localized["videos"]?.array else { return localized }
+        var before: [String: JSON] = [:]
+        for v in original["videos"]?.array ?? [] { if let id = v["id"]?.string { before[id] = v } }
+        func text(_ v: JSON?, _ a: String, _ b: String) -> String {
+            let first = (v?[a]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return first.isEmpty ? (v?[b]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines) : first
+        }
+        out["videos"] = .array(videos.map { video in
+            guard var v = video.object, let id = video["id"]?.string, let old = before[id] else { return video }
+            let name = text(video, "name", "title")
+            if !name.isEmpty, name == text(old, "name", "title"), !CinemetaParsing.isPlaceholderEpisodeName(name) {
+                v[nameLanguageKey] = .string(sourceLanguage)
+            }
+            let overview = text(video, "overview", "description")
+            if !overview.isEmpty, overview == text(old, "overview", "description") { v[overviewLanguageKey] = .string(sourceLanguage) }
+            return .object(v)
+        })
+        return .object(out)
     }
 
     /// Título y sinopsis de una fila (sin episodios: una consulta por título). Unas cuantas a la vez; al terminar una, entra

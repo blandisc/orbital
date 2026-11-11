@@ -17,6 +17,11 @@ public struct EpisodeRow: Equatable, Identifiable {
     public var download: DownloadState?
     /// Todavía no sale: cuándo (nil = ya salió o no se sabe). Se ve con su fecha y no se puede reproducir ni bajar.
     public var airs: Date? = nil
+    /// El idioma del nombre o de la sinopsis cuando no es el tuyo (no había traducción): la ficha dice «En inglés».
+    public var titleLanguage: String? = nil
+    public var overviewLanguage: String? = nil
+    /// Lo que se marca una vez en el renglón: el idioma colado del nombre o, si no, el de la sinopsis.
+    public var foreignLanguage: String? { (hasTitle ? titleLanguage : nil) ?? (overview.isEmpty ? nil : overviewLanguage) }
 }
 
 /// Lo que se sabe de las fuentes del video de «Ver» antes de abrir el reproductor.
@@ -337,7 +342,7 @@ public final class TitleModel: ObservableModel {
                               watched: watched.contains(ep.id), progress: ongoing ? progress : nil,
                               timeLeft: ongoing ? PlaybackRules.timeLeft(left) : "",
                               leftMinutes: ongoing ? PlaybackRules.minutesLeft(left) : 0, download: downloadStates[ep.id],
-                              airs: Self.airDate(ep.released, now: services.now()))
+                              airs: Self.airDate(ep.released, now: services.now()), titleLanguage: ep.titleLanguage, overviewLanguage: ep.overviewLanguage)
         }
     }
 

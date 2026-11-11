@@ -98,9 +98,13 @@ struct HomeChannels: View {
                     // Sobre la imagen, solo el nombre del capítulo; la serie y el dato van abajo, como en Seguir viendo
                     // (Fernando, 2 nov 2026, D6: antes era al revés).
                     if !air.episode.name.isEmpty {
-                        Text(verbatim: air.episode.name).recipe(.cardTitle).lineLimit(1)
-                            .onArt()
-                            .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s4)
+                        // R4: si el nombre se quedó en otro idioma (no hay traducción), lo dice, discreto.
+                        VStack(alignment: .leading, spacing: 0) {
+                            if let code = air.episode.nameLanguage { DSLanguageMark(code: code, uiLanguage: env.services.appSettings.uiLanguage) }
+                            Text(verbatim: air.episode.name).recipe(.cardTitle).lineLimit(1)
+                        }
+                        .onArt()
+                        .padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s4)
                     }
                     DSProgress(fraction: air.progress).padding(.horizontal, DS.Space.s3).padding(.bottom, DS.Space.s2)
                 }

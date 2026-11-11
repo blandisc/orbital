@@ -14,8 +14,13 @@ public struct Episode: Sendable, Equatable, Identifiable {
     public var released: String?
     /// `false` si no trae nombre propio («Episodio 5»): la interfaz puede mostrarlo en su idioma.
     public var hasTitle: Bool
-    public init(id: String, episode: Int, title: String, thumbnail: String?, overview: String, released: String?, hasTitle: Bool) {
+    /// El idioma del nombre y de la sinopsis cuando no son el de la app («en»: no había traducción); nil si están en el tuyo.
+    public var titleLanguage: String?
+    public var overviewLanguage: String?
+    public init(id: String, episode: Int, title: String, thumbnail: String?, overview: String, released: String?, hasTitle: Bool,
+                titleLanguage: String? = nil, overviewLanguage: String? = nil) {
         self.id = id; self.episode = episode; self.title = title; self.thumbnail = thumbnail; self.overview = overview; self.released = released; self.hasTitle = hasTitle
+        self.titleLanguage = titleLanguage; self.overviewLanguage = overviewLanguage
     }
 }
 
@@ -276,7 +281,9 @@ public enum CinemetaParsing {
             let overview = text(video["overview"]).isEmpty ? text(video["description"]) : text(video["overview"])
             bySeason[season, default: []].append(Episode(
                 id: id, episode: episode, title: named.isEmpty ? "Episodio \(episode)" : named, thumbnail: video["thumbnail"]?.nonEmptyString,
-                overview: overview.trimmingCharacters(in: .whitespacesAndNewlines), released: video["released"]?.nonEmptyString, hasTitle: !named.isEmpty))
+                overview: overview.trimmingCharacters(in: .whitespacesAndNewlines), released: video["released"]?.nonEmptyString, hasTitle: !named.isEmpty,
+                titleLanguage: named.isEmpty ? nil : video[Localizer.nameLanguageKey]?.nonEmptyString,
+                overviewLanguage: video[Localizer.overviewLanguageKey]?.nonEmptyString))
         }
         let order = bySeason.keys.sorted { ($0 == 0 ? 1 : 0, $0) < ($1 == 0 ? 1 : 0, $1) }
         return order.map { Season(season: $0, episodes: bySeason[$0]!.sorted { $0.episode < $1.episode }) }

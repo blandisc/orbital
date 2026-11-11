@@ -71,7 +71,9 @@ final class LocalizeTests: XCTestCase {
         let english = Localizer(tmdb: Tmdb(http: http, key: "K"), language: { "en" })
         let noKey = Localizer(tmdb: Tmdb(http: http, key: ""), language: { "es" })
         let a = await english.meta(kind: "series", meta: series), b = await noKey.meta(kind: "series", meta: series)
-        XCTAssertEqual(a, series); XCTAssertEqual(b, series)
+        XCTAssertEqual(a, series)
+        // R4: sin clave nada se traduce, pero lo que sigue en inglés lo dice (el nombre y la sinopsis no cambian).
+        XCTAssertEqual(Self.withoutMarks(b), series)
         XCTAssertTrue(http.calls.isEmpty)
     }
 
@@ -79,6 +81,17 @@ final class LocalizeTests: XCTestCase {
         let http = FakeHTTP(); http.fail = true
         let localizer = Localizer(tmdb: Tmdb(http: http, key: "K"), language: { "es" })
         let meta = await localizer.meta(kind: "series", meta: series)
-        XCTAssertEqual(meta, series)
+        XCTAssertEqual(Self.withoutMarks(meta), series)
+    }
+
+    /// La ficha sin las marcas de idioma de R4 (`Localizer.markUntranslated`).
+    static func withoutMarks(_ meta: JSON) -> JSON {
+        guard var out = meta.object, let videos = meta["videos"]?.array else { return meta }
+        out["videos"] = .array(videos.map { v in
+            guard var o = v.object else { return v }
+            o[Localizer.nameLanguageKey] = nil; o[Localizer.overviewLanguageKey] = nil
+            return .object(o)
+        })
+        return .object(out)
     }
 }

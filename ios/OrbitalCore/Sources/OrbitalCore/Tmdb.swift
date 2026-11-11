@@ -316,20 +316,53 @@ public struct Tmdb: Sendable {
         if let original = Tmdb.originalTitle(raw, language: language) { found.title = original; found.native = true }
         guard episodes, kind == "series" else { return found }
         let numbers = (raw["seasons"]?.array ?? []).compactMap { $0["season_number"]?.intValue }.filter { $0 >= 0 }
-        for start in stride(from: 0, to: numbers.count, by: 20) {  // TMDB: 20 por consulta
-            let batch = Array(numbers[start..<min(start + 20, numbers.count)])
-            let data = try await get("/tv/\(tmdbID)", [("language", language), ("append_to_response", batch.map { "season/\($0)" }.joined(separator: ","))])
-            for n in batch {
-                for ep in data["season/\(n)"]?["episodes"]?.array ?? [] {
-                    guard let number = ep["episode_number"]?.intValue else { continue }
-                    found.episodes[.init(season: n, episode: number)] = .init(
-                        name: (ep["name"]?.string ?? "").trimmingCharacters(in: .whitespaces),
-                        overview: (ep["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
+        found.episodes = try await episodeTexts(tmdbID: tmdbID, seasons: numbers, language: language)
+        // Respaldo (R4): lo que no está en el español de México, en el del mismo idioma de otro país («es»: el de España)
+        // antes que el inglés de Cinemeta. Solo las temporadas a las que les falta algo.
+        if let base = Tmdb.baseLanguage(language) {
+            let missing = Set(found.episodes.filter { Tmdb.untranslated($0.value) }.map(\.key.season))
+            if !missing.isEmpty, let other = try? await episodeTexts(tmdbID: tmdbID, seasons: numbers.filter(missing.contains), language: base) {
+                for (key, text) in other {
+                    guard var mine = found.episodes[key] else { continue }
+                    if Tmdb.genericName(mine.name), !Tmdb.genericName(text.name) { mine.name = text.name }
+                    if mine.overview.isEmpty { mine.overview = text.overview }
+                    found.episodes[key] = mine
                 }
             }
         }
         return found
     }
+
+    /// Nombre y sinopsis de los episodios de esas temporadas en ese idioma (TMDB: 20 temporadas por consulta).
+    private func episodeTexts(tmdbID: Int, seasons numbers: [Int], language: String) async throws -> [Translation.Key: Translation.EpisodeText] {
+        var episodes: [Translation.Key: Translation.EpisodeText] = [:]
+        for start in stride(from: 0, to: numbers.count, by: 20) {
+            let batch = Array(numbers[start..<min(start + 20, numbers.count)])
+            let data = try await get("/tv/\(tmdbID)", [("language", language), ("append_to_response", batch.map { "season/\($0)" }.joined(separator: ","))])
+            for n in batch {
+                for ep in data["season/\(n)"]?["episodes"]?.array ?? [] {
+                    guard let number = ep["episode_number"]?.intValue else { continue }
+                    episodes[.init(season: n, episode: number)] = .init(
+                        name: (ep["name"]?.string ?? "").trimmingCharacters(in: .whitespaces),
+                        overview: (ep["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
+                }
+            }
+        }
+        return episodes
+    }
+
+    /// «es-MX» → «es» (el mismo idioma, de respaldo); nil si ya no tiene país.
+    static func baseLanguage(_ language: String) -> String? {
+        let parts = language.split(separator: "-")
+        return parts.count > 1 ? String(parts[0]).lowercased() : nil
+    }
+
+    /// Sin nombre propio en ese idioma: vacío o «Episodio 3».
+    static func genericName(_ name: String) -> Bool {
+        name.isEmpty || Localizer.genericEpisode.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)) != nil
+    }
+
+    static func untranslated(_ text: Translation.EpisodeText) -> Bool { genericName(text.name) || text.overview.isEmpty }
 }
 
 
