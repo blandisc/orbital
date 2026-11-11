@@ -11,48 +11,54 @@ struct HistoryRoute: Hashable {}
 struct HistoryScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppEnvironment.self) private var env
-    @State private var entries: [TraktHistoryEntry] = []
-    @State private var page = 1
-    @State private var more = true
-    @State private var loading = false
-    @State private var failed = false
+    /// Lo que se carga, se borra y se deshace vive en `HistoryModel` (F5): la pantalla solo pinta.
+    @State private var history: ModelObserver<HistoryModel>
     @State private var editing: TraktHistoryEntry?
     @State private var adding = false
     @State private var picked: SearchResult?
     @State private var confirmRepeats = false
-    // Las repetidas y los meses se calculan una vez por cambio de `entries`, no en cada pintado (A13, 10 nov 2026).
-    @State private var repeats: Set<Int> = []
-    @State private var months: [(String, [TraktHistoryEntry])] = []
 
     private var language: String { env.services.appSettings.uiLanguage }
 
+    init() {
+        let services = AppEnvironment.shared.services
+        _history = State(wrappedValue: ModelObserver(HistoryModel(services, monthName: Self.monthName(services))))
+    }
+
+    /// «Noviembre», «Octubre 2025», en el idioma de la app de ahora (el mismo encabezado de mes que Vistas, I5).
+    private static func monthName(_ services: Services) -> @MainActor (Date) -> String {
+        { SavedStateScreen.month($0, language: services.appSettings.uiLanguage) }
+    }
+
     var body: some View {
+        let model = history.model
         List {
-            ForEach(months, id: \.0) { month, group in
+            ForEach(model.months) { month in
                 Section {
                     // Borrar deslizando el renglón o con «Editar» (D7-A, 10 nov): sin un bote rojo en cada uno.
-                    ForEach(group) { e in row(e).listRowBackground(Color.clear) }
-                        .onDelete { offsets in for i in offsets { remove(group[i]) } }
+                    ForEach(month.entries) { e in row(e, repeated: model.repeats.contains(e.id)).listRowBackground(Color.clear) }
+                        .onDelete { offsets in for i in offsets { remove(month.entries[i]) } }
                 } header: {
                     // El mismo encabezado de mes que Vistas (I5).
-                    DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection).textCase(nil)
+                    DSSectionHead(title: Text(verbatim: month.id), count: month.entries.count, level: .subsection).textCase(nil)
                 }
             }
-            if failed {
+            if model.failed {
                 DSEmptyState(symbol: "wifi.slash", title: Text("No pude traer tu historial"), message: Text("Revisa tu conexión e inténtalo otra vez.")) {
-                    Button("Reintentar") { Task { await loadMore() } }
+                    Button("Reintentar") { Task { await model.loadMore() } }
                 }
                 .listRowBackground(Color.clear)
-            } else if loading {
+            } else if model.loading {
                 DSLoadingState().listRowBackground(Color.clear)
-            } else if entries.isEmpty {
+            } else if model.entries.isEmpty {
                 DSEmptyState(symbol: "clock", title: Text("Nada en tu historial"), message: Text("Lo que veas o marques como visto aparece aquí."))
                     .listRowBackground(Color.clear)
-            } else if more {
-                Button("Ver más") { Task { await loadMore() } }.accessibilityIdentifier("history-more").listRowBackground(Color.clear)
+            } else if model.more {
+                Button("Ver más") { Task { await model.loadMore() } }.accessibilityIdentifier("history-more").listRowBackground(Color.clear)
             }
             // Las repetidas, al final y sin alarma (D7-A): es limpieza, no un error.
-            if !repeats.isEmpty {
+            if !model.repeats.isEmpty {
+                let repeats = model.repeats
                 Section {
                     Button { confirmRepeats = true } label: {
                         Label { Text(repeats.count == 1 ? "Quitar 1 vista repetida" : "Quitar \(repeats.count) vistas repetidas") } icon: { Image(systemName: "square.on.square") }
@@ -72,14 +78,13 @@ struct HistoryScreen: View {
                 Button { adding = true } label: { Label("Agregar", systemImage: "plus") }
                     .accessibilityIdentifier("history-add")
             }
-            if !entries.isEmpty {
+            if !model.entries.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) { EditButton().accessibilityIdentifier("history-edit") }
             }
         }
-        .refreshable { await reload() }
-        .task { if entries.isEmpty { await loadMore() } }
-        .onChange(of: entries.map(\.id), initial: true) { regroup() }
-        .onChange(of: language) { regroup() }
+        .refreshable { await model.reload() }
+        .task { await model.loadIfNeeded() }
+        .onChange(of: language) { model.monthName = Self.monthName(env.services) }   // los meses en el idioma nuevo
         .sheet(item: $editing) { e in
             ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: e.at) { date in move(e, to: date) }
         }
@@ -105,9 +110,8 @@ struct HistoryScreen: View {
 
     @State private var pickedReady: SearchResult?
 
-    private func row(_ e: TraktHistoryEntry) -> some View {
-        let repeated = repeats.contains(e.id)
-        return Button { editing = e } label: {
+    private func row(_ e: TraktHistoryEntry, repeated: Bool) -> some View {
+        Button { editing = e } label: {
             HStack(spacing: DS.Space.s3) {
                 PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: e.title).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -141,79 +145,38 @@ struct HistoryScreen: View {
         return "\(e.title) · " + Strings.episode(season: s, episode: n, language: language)   // «T2 E5» / «S2 E5» según el idioma
     }
 
-    private func regroup() {
-        repeats = Trakt.repeats(entries)
-        months = Self.months(entries, language: language)
-    }
-
-    /// Por mes, lo más nuevo primero: «Noviembre», «Octubre 2025».
-    private static func months(_ entries: [TraktHistoryEntry], language: String) -> [(String, [TraktHistoryEntry])] {
-        var order: [String] = []
-        var groups: [String: [TraktHistoryEntry]] = [:]
-        for e in entries {
-            let key = SavedStateScreen.month(e.at, language: language)   // «Noviembre»; con el año si no es este (como Vistas)
-            if groups[key] == nil { order.append(key) }
-            groups[key, default: []].append(e)
-        }
-        return order.map { ($0, groups[$0]!) }
-    }
-
-    private func reload() async {
-        guard !loading else { return }   // con una página en camino, reiniciar la dejaría caer en una lista vacía
-        entries = []; page = 1; more = true; await loadMore()
-    }
-
-    private func loadMore() async {
-        guard !loading else { return }
-        loading = true; failed = false
-        do {
-            let found = try await env.services.watch.history(page: page)
-            entries += found.entries.filter { f in !entries.contains { $0.id == f.id } }
-            more = found.full
-            page += 1
-        } catch { failed = true }
-        loading = false
-    }
-
     private func remove(_ e: TraktHistoryEntry) {
-        let watch = env.services.watch, env = env
-        let left = entries.filter { $0.target == e.target && $0.id != e.id }.count
-        withAnimation(DS.Motion.base(reduceMotion)) { entries.removeAll { $0.id == e.id } }
+        let model = history.model, env = env
+        let send = withAnimation(DS.Motion.base(reduceMotion)) { model.remove(e) }
         Task {
-            await watch.removeViewing(TraktViewing(id: e.id, at: e.at), kind: e.kind, metaID: e.target.imdb, videoID: videoID(e), remaining: left, sure: false)
+            await send()
             env.collections.forgetWatched()
             env.notify("Vista borrada", detail: name(e), tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-                Task { await watch.addViewing(kind: e.kind, metaID: e.target.imdb, videoID: videoID(e), name: e.title, at: e.at); await reload() }
+                Task { await model.undoRemove(e) }
             }
         }
     }
 
     private func move(_ e: TraktHistoryEntry, to date: Date) {
-        let watch = env.services.watch
-        Task { await watch.moveViewing(TraktViewing(id: e.id, at: e.at), kind: e.kind, videoID: videoID(e), to: date); await reload() }
+        let model = history.model
+        Task { await model.move(e, to: date) }
     }
 
     private func add(_ r: SearchResult, at date: Date) {
-        let watch = env.services.watch, env = env
+        let model = history.model, env = env
         Task {
-            await watch.addViewing(kind: "movie", metaID: r.metaID, videoID: r.metaID, name: r.title, at: date)
+            await model.addMovie(metaID: r.metaID, title: r.title, at: date)
             env.collections.forgetWatched()
-            await reload()
         }
     }
 
     private func cleanRepeats() {
-        let ids = Array(repeats), watch = env.services.watch, env = env
-        withAnimation(DS.Motion.base(reduceMotion)) { entries.removeAll { ids.contains($0.id) } }
+        let model = history.model, env = env
+        let (count, send) = withAnimation(DS.Motion.base(reduceMotion)) { model.removeRepeats() }
         Task {
-            await watch.removeViewings(ids)
-            if ids.count == 1 { env.notify("Borré 1 vista repetida", tone: .success) }
-            else { env.notify(format: "Borré %lld vistas repetidas", ids.count, tone: .success) }
+            await send()
+            if count == 1 { env.notify("Borré 1 vista repetida", tone: .success) }
+            else { env.notify(format: "Borré %lld vistas repetidas", count, tone: .success) }
         }
-    }
-
-    private func videoID(_ e: TraktHistoryEntry) -> String {
-        guard let s = e.target.season, let n = e.target.episode else { return e.target.imdb }
-        return "\(e.target.imdb):\(s):\(n)"
     }
 }

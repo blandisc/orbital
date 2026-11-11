@@ -17,7 +17,7 @@ extension TitleView {
     /// «La viste 2 veces · la última, el 14 mar 2025 ›» bajo tu calificación (películas vistas, con Trakt).
     @ViewBuilder func yourViewings(_ model: TitleModel) -> some View {
         if model.canFavorite, model.kind == "movie", model.isWatched(.movie) {
-            ViewingsLine(kind: model.kind, videoID: model.metaID, version: viewingsFor == nil ? 0 : 1) {
+            ViewingsLine(kind: model.kind, metaID: model.metaID, version: viewingsFor == nil ? 0 : 1) {
                 viewingsFor = ViewingsTarget(kind: model.kind, metaID: model.metaID, videoID: model.metaID, title: model.title)
             }
         }
@@ -96,21 +96,26 @@ struct TitleViewingsAndNote: ViewModifier {
 
 /// El renglón de la ficha: cuántas veces y la última.
 struct ViewingsLine: View {
-    let kind: String
-    let videoID: String
     /// Cambia cuando cambia lo visto: se vuelve a preguntar.
     let version: Int
     let open: () -> Void
     @Environment(AppEnvironment.self) private var env
-    @State private var found: [TraktViewing]?
+    @State private var viewings: ModelObserver<ViewingsModel>
+
+    init(kind: String, metaID: String, version: Int, open: @escaping () -> Void) {
+        self.version = version; self.open = open
+        _viewings = State(wrappedValue: ModelObserver(ViewingsModel(AppEnvironment.shared.services, kind: kind, metaID: metaID, videoID: metaID, title: "")))
+    }
 
     var body: some View {
+        let model = viewings.model
+        return
         Button(action: open) {
             HStack(spacing: DS.Space.s3) {
                 Image(systemName: "calendar").foregroundStyle(DS.textMuted)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    count.recipe(.secondary, color: DS.textMuted)
-                    if let last = found?.first { Text("La última, el \(Strings.date(last.at, .dayMonthYear, language: env.services.appSettings.uiLanguage))").recipe(.footnote, color: DS.text) }
+                    count(model).recipe(.secondary, color: DS.textMuted)
+                    if let last = model.last { Text("La última, el \(Strings.date(last.at, .dayMonthYear, language: env.services.appSettings.uiLanguage))").recipe(.footnote, color: DS.text) }
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(DS.TextRecipe.label.font).foregroundStyle(DS.textFaint)
@@ -120,11 +125,11 @@ struct ViewingsLine: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("title-your-viewings")
-        .task(id: version) { found = try? await env.services.watch.viewings(kind: kind, videoID: videoID) }
+        .task(id: version) { await model.peek() }
     }
 
-    private var count: Text {
-        guard let n = found?.count, n > 0 else { return Text("Tus vistas") }
+    private func count(_ model: ViewingsModel) -> Text {
+        guard let n = model.count, n > 0 else { return Text("Tus vistas") }
         return n == 1 ? Text("La viste 1 vez") : Text("La viste \(n) veces")
     }
 }
@@ -136,27 +141,33 @@ struct ViewingsSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @State private var viewings: [TraktViewing] = []
-    @State private var loading = true
-    @State private var offline = false
+    /// Las vistas y lo que se hace con ellas viven en `ViewingsModel` (F5): la hoja solo pinta.
+    @State private var viewings: ModelObserver<ViewingsModel>
     @State private var editing: TraktViewing?
     @State private var adding = false
 
     private var language: String { env.services.appSettings.uiLanguage }
 
+    init(target: ViewingsTarget, changed: @escaping () async -> Void) {
+        self.target = target; self.changed = changed
+        _viewings = State(wrappedValue: ModelObserver(ViewingsModel(AppEnvironment.shared.services, kind: target.kind, metaID: target.metaID,
+                                                                    videoID: target.videoID, title: target.title)))
+    }
+
     var body: some View {
-        NavigationStack {
+        let model = viewings.model
+        return NavigationStack {
             List {
-                if loading { DSLoadingState().listRowBackground(Color.clear) }
+                if model.loading { DSLoadingState().listRowBackground(Color.clear) }
                 else {
-                    if offline {   // sin internet: lo de la cola y «La vi otra vez» siguen a mano
+                    if model.offline {   // sin internet: lo de la cola y «La vi otra vez» siguen a mano
                         DSNotice(text: "Sin internet: solo lo que espera en este iPhone. Lo demás de tu Trakt sale cuando vuelva.", tone: .warn)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .accessibilityIdentifier("viewings-offline")
                     }
                     // Por posición: dos vistas pueden tener la misma hora (o id 0 en la cola) y cada botón debe ir a la suya.
-                    ForEach(Array(viewings.enumerated()), id: \.offset) { _, v in
+                    ForEach(Array(model.viewings.enumerated()), id: \.offset) { _, v in
                         HStack(spacing: DS.Space.s3) {
                             Button { editing = v } label: {
                                 HStack(spacing: DS.Space.s3) {
@@ -193,7 +204,7 @@ struct ViewingsSheet: View {
                 ViewingDatePicker(title: Text("La vi otra vez"), initial: Date()) { date in add(at: date) }
             }
         }
-        .task { await load() }
+        .task { await model.load() }
         .accessibilityIdentifier("viewings-sheet")
     }
 
@@ -201,39 +212,26 @@ struct ViewingsSheet: View {
         "\(Strings.date(date, .dayMonthYear, language: language)) · \(date.formatted(date: .omitted, time: .shortened))"
     }
 
-    private func load() async {
-        loading = true
-        (viewings, offline) = await env.services.watch.viewingsOrQueued(kind: target.kind, videoID: target.videoID)
-        loading = false
-    }
-
     private func remove(_ v: TraktViewing) {
-        let watch = env.services.watch, t = target, env = env, changed = changed
-        let left = viewings.count - 1
-        withAnimation(DS.Motion.base(reduceMotion)) { viewings.removeAll { $0 == v } }
+        let model = viewings.model, env = env, changed = changed, stamp = Self.stamp(v.at, language: language)
+        let send = withAnimation(DS.Motion.base(reduceMotion)) { model.remove(v) }
         Task {
-            await watch.removeViewing(v, kind: t.kind, metaID: t.metaID, videoID: t.videoID, remaining: left)
+            await send()
             await changed()
-            env.notify("Vista borrada", detail: Self.stamp(v.at, language: language), tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
-                Task { await watch.addViewing(kind: t.kind, metaID: t.metaID, videoID: t.videoID, at: v.at); await changed() }
+            env.notify("Vista borrada", detail: stamp, tone: .info, actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") {
+                Task { await model.undoRemove(v); await changed() }
             }
         }
     }
 
     private func move(_ v: TraktViewing, to date: Date) {
-        let watch = env.services.watch, t = target
-        Task {
-            await watch.moveViewing(v, kind: t.kind, videoID: t.videoID, to: date)
-            await load(); await changed()
-        }
+        let model = viewings.model, changed = changed
+        Task { await model.move(v, to: date); await changed() }
     }
 
     private func add(at date: Date) {
-        let watch = env.services.watch, t = target
-        Task {
-            await watch.addViewing(kind: t.kind, metaID: t.metaID, videoID: t.videoID, name: t.title, at: date)
-            await load(); await changed()
-        }
+        let model = viewings.model, changed = changed
+        Task { await model.add(at: date); await changed() }
     }
 }
 
