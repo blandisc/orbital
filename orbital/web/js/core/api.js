@@ -3,8 +3,16 @@
 export const OFFLINE = "Sin conexión con Orbital. Revisa que siga abierto e inténtalo de nuevo.";
 const TIMED_OUT = "No hubo respuesta a tiempo. Inténtalo de nuevo.";
 
-/** `timeout` (ms) corta una espera que nunca termina; `signal` deja cancelarla (B mientras conecta). */
-async function request(path, { timeout = 0, signal, ...options } = {}) {
+/** Lo que espera una petición si quien llama no dice otra cosa (A9, 10 nov): antes no había límite y, con el servidor
+ *  trabado, una vista se quedaba «cargando» para siempre. */
+export const DEFAULT_TIMEOUT = 15000;
+// Lo que tarda a propósito: armar listas con internet, buscar versiones, abrir algo (un juego, un video, un canal).
+const SLOW = { timeout: 60000 };
+// Lo que puede tardar minutos (instalar, actualizar, reiniciar algo de Windows): sin límite, como antes.
+const UNBOUNDED = { timeout: 0 };
+
+/** `timeout` (ms; 0 = sin límite) corta una espera que nunca termina; `signal` deja cancelarla (B mientras conecta). */
+async function request(path, { timeout = DEFAULT_TIMEOUT, signal, ...options } = {}) {
   const signals = [signal, timeout && AbortSignal.timeout?.(timeout)].filter(Boolean);
   let res;
   try {
@@ -43,9 +51,9 @@ const post = (path, body, options = {}) => request(path, { method: "POST", body:
 
 export const api = {
   library: () => request("/api/library"),
-  refresh: () => post("/api/library/refresh"),
-  launch: (id, runner = null, keep = false) => post("/api/launch", { id, runner, keep }),
-  beforePlay: (id) => request(`/api/before-play/${encodeURIComponent(id)}`),
+  refresh: () => post("/api/library/refresh", {}, SLOW),
+  launch: (id, runner = null, keep = false) => post("/api/launch", { id, runner, keep }, SLOW),
+  beforePlay: (id) => request(`/api/before-play/${encodeURIComponent(id)}`, SLOW),
   reveal: () => post("/api/launch/reveal"),
   launchArt: (shown) => post("/api/launch/art", { shown }),
   stop: (options) => post("/api/stop", options), // { cancelled: true }: B en la pantalla de carga (no cuenta como jugado)
@@ -65,9 +73,9 @@ export const api = {
   uiPad: (listening) => post("/api/ui/pad", { listening }), // ¿la interfaz lee el mando? (quieta lo suelta, ver pads.js)
   uiState: (body) => post("/api/ui/state", body), // qué hay al frente (el control del iPhone enseña «Escribir» si sirve)
   windows: () => request("/api/windows"),
-  power: (action) => post("/api/power", { action }),
+  power: (action) => post("/api/power", { action }, UNBOUNDED),
   stremioSearch: (q) => request(`/api/stremio/search?q=${encodeURIComponent(q)}`),
-  stremioPlay: (body) => post("/api/stremio/play", body),
+  stremioPlay: (body) => post("/api/stremio/play", body, SLOW),
   remembered: () => request("/api/stremio/remembered"),
   forgetRemembered: (id) => post("/api/stremio/remembered/forget", { id }),
   genre: (kind, genre) => request(`/api/stremio/genre?kind=${kind}&genre=${encodeURIComponent(genre)}`),
@@ -80,20 +88,20 @@ export const api = {
   music: () => request("/api/music"),
   musicCommand: (action) => post("/api/music", { action }),
   closeApp: (exe) => post("/api/memory/close", { exe }),
-  installEmulatorForced: (id) => post(`/api/emulators/updates/${encodeURIComponent(id)}?force=true`, {}),
-  installNewEmulator: (id) => post(`/api/emulators/install/${encodeURIComponent(id)}`, {}),
-  rollbackEmulator: (id) => post(`/api/emulators/rollback/${encodeURIComponent(id)}`, {}),
+  installEmulatorForced: (id) => post(`/api/emulators/updates/${encodeURIComponent(id)}?force=true`, {}, UNBOUNDED),
+  installNewEmulator: (id) => post(`/api/emulators/install/${encodeURIComponent(id)}`, {}, UNBOUNDED),
+  rollbackEmulator: (id) => post(`/api/emulators/rollback/${encodeURIComponent(id)}`, {}, UNBOUNDED),
   players: () => request("/api/players"),
   playerFirst: (slot) => post("/api/players/first", { slot }),
   identifyPlayer: (slot) => post("/api/players/identify", { slot }),
-  restartWithPlayers: () => post("/api/players/restart", {}),
-  releaseVideoMemory: () => post("/api/video-memory/release", {}),
-  setupVideoMemory: () => post("/api/video-memory/setup", {}),
+  restartWithPlayers: () => post("/api/players/restart", {}, UNBOUNDED),
+  releaseVideoMemory: () => post("/api/video-memory/release", {}, UNBOUNDED),
+  setupVideoMemory: () => post("/api/video-memory/setup", {}, UNBOUNDED),
   folders: () => request("/api/folders"),
-  checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`),
-  applyUpdate: () => post("/api/update"),
-  emulatorUpdates: (force = false) => request(`/api/emulators/updates${force ? "?force=true" : ""}`),
-  installEmulator: (id) => post(`/api/emulators/updates/${encodeURIComponent(id)}`),
+  checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`, SLOW),
+  applyUpdate: () => post("/api/update", {}, UNBOUNDED),
+  emulatorUpdates: (force = false) => request(`/api/emulators/updates${force ? "?force=true" : ""}`, SLOW),
+  installEmulator: (id) => post(`/api/emulators/updates/${encodeURIComponent(id)}`, {}, UNBOUNDED),
   setQuick: (changes) => post("/api/quick", changes),
   captures: () => request("/api/captures"),
   openCapture: (path) => post("/api/captures/open", { path }),
@@ -103,7 +111,7 @@ export const api = {
   // «Guardar en…» (como el iPhone): tu watchlist, tus favoritos y tus listas de Trakt.
   savedIn: (kind, id) => request(`/api/foryou/saved?kind=${kind}&id=${encodeURIComponent(id)}`),
   saveTo: (kind, id, where, add) => post("/api/foryou/save", { kind, id, where, add }),
-  trailer: (kind, id, keep = false) => post("/api/stremio/trailer", { kind, id, keep }),
+  trailer: (kind, id, keep = false) => post("/api/stremio/trailer", { kind, id, keep }, SLOW),
   stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),
   // Ajustes › Complementos (S1): tu lista, traerla de Stremio, prender, ordenar, quitar y de dónde salen.
@@ -119,7 +127,7 @@ export const api = {
   setSettings: (changes) => post("/api/settings", changes),
   // Lo tuyo con un título (como el iPhone): «¿Qué vemos hoy?», estrellas y «¿Cuándo la viste?».
   forYouFilter: (f, count = false) => request(`/api/foryou/filter?${new URLSearchParams({ ...f, count: count ? "true" : "false" })}`),
-  forYouCollections: () => request("/api/foryou/collections"), // Colecciones: los premios y las listas famosas
+  forYouCollections: () => request("/api/foryou/collections", SLOW), // Colecciones: los premios y las listas famosas
   matchDeck: () => request("/api/foryou/match"), // un solo mazo, de todo (sin ánimos)
   match: (kind, id, add = true) => post("/api/foryou/match", { kind, id, add }),
   myRating: (kind, id) => request(`/api/foryou/rating?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`),
@@ -147,19 +155,19 @@ export const api = {
   markWatched: ({ kind, id, video_id = null, when = "now" }) => post("/api/foryou/watched", { kind, id, video_id, when }),
   consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>
-    request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
+    request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`, SLOW),
   // Por qué no hay una versión que arranque ya, y «Pedirlo y avisarme» a Real-Debrid (orbital/rd_requests.py).
   stremioAvailability: (kind, id, video) =>
-    request(`/api/stremio/availability?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
-  stremioRequest: ({ kind, id, video, title, hash }) => post("/api/stremio/request", { kind, id, video, title, hash }),
+    request(`/api/stremio/availability?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`, SLOW),
+  stremioRequest: ({ kind, id, video, title, hash }) => post("/api/stremio/request", { kind, id, video, title, hash }, SLOW),
   focusWindow: (id) => post("/api/windows/focus", { id }),
   // «Para ti»
   voiceCommands: () => request("/api/voice/commands"),
-  voice: (text) => post("/api/voice", { text }), // una frase, como si se dijera (Ajustes › Tele y voz › Probar)
+  voice: (text) => post("/api/voice", { text }, SLOW), // una frase, como si se dijera (Ajustes › Tele y voz › Probar)
   voiceStatus: () => request("/api/voice/status"), // por dónde llegó la última orden y las últimas que llegaron
-  forYou: () => request("/api/foryou"),
-  forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
-  forYouLists: (lists) => post("/api/foryou/lists", { lists }),
+  forYou: () => request("/api/foryou", SLOW),
+  forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`, SLOW),
+  forYouLists: (lists) => post("/api/foryou/lists", { lists }, SLOW),
   forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),
   forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
   forYouRatings: (items) => request(`/api/foryou/ratings?ids=${encodeURIComponent(items.map((i) => `${i.kind}:${i.meta_id}`).join(","))}`),
@@ -175,12 +183,12 @@ export const api = {
   downloadAdd: (body) => post("/api/downloads", body),
   downloadRetry: (id) => post(`/api/downloads/${encodeURIComponent(id)}/retry`, {}),
   downloadRemove: (id) => request(`/api/downloads/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  downloadPlay: (videoId, fromStart = false) => post(`/api/downloads/play/${encodeURIComponent(videoId)}`, { from_start: fromStart }),
+  downloadPlay: (videoId, fromStart = false) => post(`/api/downloads/play/${encodeURIComponent(videoId)}`, { from_start: fromStart }, SLOW),
   traceInput: (entries) => post("/api/ui/trace", { entries }),
   titleRatings: (kind, id) => request(`/api/foryou/title-ratings?kind=${kind}&id=${encodeURIComponent(id)}`),
   titleLetterboxd: (kind, id) => request(`/api/foryou/letterboxd?kind=${kind}&id=${encodeURIComponent(id)}`),
   titleExtras: (kind, id) => request(`/api/foryou/title-extras?kind=${kind}&id=${encodeURIComponent(id)}`),
-  forYouToday: () => request("/api/foryou/today"),
+  forYouToday: () => request("/api/foryou/today", SLOW),
   forYouKeys: (service, values, signal) => post("/api/foryou/keys", { service, values }, { signal, timeout: 20000 }),
   traktLink: () => post("/api/foryou/trakt/link"),
   traktCancel: () => post("/api/foryou/trakt/cancel"),
@@ -201,19 +209,19 @@ export const api = {
   onedriveUnlink: () => post("/api/onedrive/unlink"),
   onedriveFolders: (path = "") => request(`/api/onedrive/folders?path=${encodeURIComponent(path)}`),
   onedriveFolder: (path) => post("/api/onedrive/folder", { path }),
-  onedriveScan: () => post("/api/onedrive/scan"),
+  onedriveScan: () => post("/api/onedrive/scan", {}, SLOW),
   onedriveTitles: () => request("/api/onedrive/titles"),
   onedriveLibrary: () => request("/api/onedrive/library", { timeout: 30000 }),
-  onedrivePlayFile: (id, name) => post("/api/onedrive/play-file", { id, name }),
-  onedrivePlay: (body) => post("/api/onedrive/play", body),
+  onedrivePlayFile: (id, name) => post("/api/onedrive/play-file", { id, name }, SLOW),
+  onedrivePlay: (body) => post("/api/onedrive/play", body, SLOW),
   onedriveTitle: (kind, imdb) => request(`/api/onedrive/title?kind=${kind}&imdb=${encodeURIComponent(imdb)}`),
   onedriveFix: (body) => post("/api/onedrive/fix", body),
   onedriveListing: (path = "") => request(`/api/onedrive/listing?path=${encodeURIComponent(path)}`, { timeout: 20000 }),
   // «TV en vivo»
   tv: () => request("/api/tv"),
   tvMine: (id, title, add) => post("/api/tv/mine", { id, title, add }), // «Tus canales» (tu lista de Trakt)
-  tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),
-  tvRefresh: () => post("/api/tv/refresh"),
+  tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }, SLOW),
+  tvRefresh: () => post("/api/tv/refresh", {}, SLOW),
   // La app del iPhone
   companionPair: () => request("/api/companion/pair"),
   /** Se cerró «Conectar iPhone»: el código del QR deja de servir (K1-11). */
