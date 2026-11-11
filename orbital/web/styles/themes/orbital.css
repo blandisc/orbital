@@ -25,7 +25,6 @@
   --color-on-art-secondary: color-mix(in oklab, var(--palette-paper) 82%, transparent); /* rótulo sobre el arte (iPhone: onArtSecondary) */
   --art-tint-neutral: rgb(24 24 28); /* sin color en la portada: grafito */
   --art-accent-neutral: rgb(205 205 211);
-  --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
   --color-focus: var(--palette-paper);
   --color-primary: var(--palette-paper);
   --color-on-primary: var(--palette-ink-1000);
@@ -122,8 +121,8 @@
   --glyph-ring: rgba(255, 255, 255, .16);
 
   /* El fondo toma el tono del juego, muy oscurecido, y solo arriba: como el iPhone (Backdrop), la luz del arte entra desde
-     arriba y a media pantalla ya es el grafito de siempre (--fade-backdrop). Antes teñía toda la pantalla de un café lodoso. */
-  --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000)); /* el mismo tono que el iPhone (Projection) */
+     arriba y a media pantalla ya es el grafito de siempre (--fade-backdrop). Antes teñía toda la pantalla de un café lodoso.
+     --color-tinted-bg vive abajo, en «El color del arte». */
   --fade-backdrop: linear-gradient(180deg, transparent 0%, transparent 34%, color-mix(in oklab, var(--color-backdrop-deep) 82%, transparent) 58%, var(--color-backdrop-deep) 76%);
   --color-scrim: color-mix(in oklab, var(--palette-ink-1000) 62%, transparent);
   /* Sobre el arte de orilla a orilla: un velo arriba para la barra, la hora y la batería (también sobre un arte claro, como The Invite), y uno oscuro a la izquierda para el destacado. */
@@ -205,4 +204,13 @@
   /* Foco (Apple TV, 31 oct 2026): lo enfocado se levanta —crece y flota con su sombra—; sin anillo y, desde el 2 nov 2026,
      sin brillo ni destello encima del arte (Fernando: «quita ese brillo»). */
   --focus-lift: var(--edge-hairline), 0 .9rem 2.2rem -.8rem rgba(0, 0, 0, .55); /* más corta y con su filo (unslop, 2 nov 2026): antes 0 1.2rem 2.6rem, una mancha negra */
+}
+
+/* El color del arte (V1, 10 nov 2026): --color-accent y --color-tinted-bg salen de --art-accent y --art-tint en la raíz y,
+   otra vez, en cada pieza que recibe ese color (js/components/backdrop.js · TINTED). Así el color cambia solo ahí, sin
+   recalcular el estilo de toda la página en cada tecla. */
+[data-theme="orbital"],
+[data-theme="orbital"] :is(.backdrop, .screen, .side-panel, .launch, .toast, .card--focused, .card--chosen) {
+  --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
+  --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000)); /* el mismo tono que el iPhone (Projection) */
 }

@@ -46,11 +46,33 @@ function remotePalette(url, done) {
   probe.src = url.replace(/^https:\/\/images\.metahub\.space\//, "https://live.metahub.space/");
 }
 
+/**
+ * Las piezas que usan el color del arte (V1, 10 nov 2026): el fondo, las pantallas encima (la ficha, Buscar…), el panel de
+ * versiones, la pantalla de carga, el aviso y la tarjeta enfocada (su brillo) o elegida (su aro). Antes el color se escribía
+ * en <html> y, por heredarse, cada cambio obligaba a recalcular el estilo de TODA la página (~1 800 elementos, 35–47 ms por
+ * tecla con la CPU a 4x). Ahora es una sola regla con estas clases: el navegador solo recalcula lo que las lleva. Una tarjeta
+ * que recibe el foco ya trae el color que había (como antes) y cambia cuando llega el del título nuevo. La misma lista va en
+ * styles/themes/orbital.css, para que --color-accent y --color-tinted-bg salgan del color de cada pieza
+ * (tests/web/tint.test.mjs cuida que coincidan).
+ */
+export const TINTED = [".backdrop", ".screen", ".side-panel", ".launch", ".toast", ".card--focused", ".card--chosen"];
+let tintRule = null;
+function tintStyle() {
+  if (!tintRule) {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(`${TINTED.join(", ")} {}`);
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+    tintRule = sheet.cssRules[0].style;
+  }
+  return tintRule;
+}
+
 /** Tiñe la interfaz con el color del juego (las variables tienen transición en CSS). */
 function applyPalette({ tint, accent }) {
-  const root = document.documentElement.style;
-  root.setProperty("--art-tint", tint);
-  root.setProperty("--art-accent", accent);
+  const rule = tintStyle();
+  if (rule.getPropertyValue("--art-tint") === tint && rule.getPropertyValue("--art-accent") === accent) return; // ya está
+  rule.setProperty("--art-tint", tint);
+  rule.setProperty("--art-accent", accent);
 }
 
 /** El fondo de un color dado (una consola): oscuro como el tono que sale de un arte, y su luz en el mismo color. */
