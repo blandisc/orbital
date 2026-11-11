@@ -20,19 +20,16 @@ enum KindGlyph {
 }
 
 /// El filtro de tipo de toda la app: Todo · Películas · Series (o solo Películas · Series), siempre el mismo control y en
-/// ese orden: las pestañas de texto con su ícono (`DSTextTabs`). Antes había cinco (cápsulas, un menú, solo íconos, un
-/// segmentado y pestañas); Fernando, 30 oct 2026: un solo selector en toda la app. Va debajo del título de su sección, no
-/// junto. `kind`: "" es todo, «movie» o «series». `counts`: cuántas hay de cada uno (Buscar).
+/// ese orden. I8 (revisión del 10 nov): había tres caras (la pastilla de Inicio, pestañas de texto en Explorar y Buscar, y
+/// un segmentado de íconos en el Top 10); ahora es una sola pieza, `KindPill`: los tres íconos en una pastilla de vidrio y
+/// lo elegido en el círculo blanco (Fernando: íconos, no cápsulas de texto). En Inicio va recogida junto al logo (solo lo
+/// que ves; al tocarla se abre, SX1); en las demás pantallas, siempre abierta. `kind`: "" es todo, «movie» o «series».
+/// `counts`: cuántas hay de cada uno (Buscar), para VoiceOver y al dejar el dedo encima.
 struct DSKindFilter: View {
     @Binding var kind: String
     var includeAll = true
     var counts: (movies: Int, series: Int)?
-    /// La pastilla chica junto al título (el Top 10, Fernando, 31 oct 2026): el segmentado con solo su ícono en cada opción
-    /// (2 nov 2026, D1).
-    var compact = false
-    /// La rayita de la elegida: blanca (lo elegido) o turquesa en Inicio (Fernando, 31 oct 2026: Inicio se queda como estaba).
-    var mark: Color = DS.text
-    /// EH1 (Fernando, 9 nov): un menú chico «Todo ▾» junto al logo de Inicio, en vez de un renglón de pestañas.
+    /// EH1 (Fernando, 9 nov): recogida junto al logo de Inicio; se abre al tocarla.
     var menu = false
     /// SX1: si la pastilla está abierta (Inicio quita la cápsula mientras eliges, para que quepa).
     var open: Binding<Bool>? = nil
@@ -40,42 +37,9 @@ struct DSKindFilter: View {
     var body: some View {
         if menu {
             KindPill(kind: $kind, open: open ?? .constant(false), options: options)
-        } else if compact {
-            // La pastilla propia: la nativa de iOS no pone ícono junto al texto.
-            HStack(spacing: 0) {
-                ForEach(options, id: \.0) { option in
-                    let on = kind == option.0
-                    Button { kind = option.0 } label: {
-                        HStack(spacing: DS.Space.s1) {
-                            Image(systemName: KindGlyph.symbol(option.0)).symbolVariant(on ? .fill : .none)
-                            // Solo el ícono, sin el nombre (Fernando, 2 nov 2026, D1): el nombre va para VoiceOver.
-                        }
-                        .accessibilityLabel(Text(option.1))
-                        .font(DS.TextRecipe.badge.font)   // chica: el título de al lado cabe en un renglón
-                        .foregroundStyle(on ? DS.text : DS.textMuted)
-                        .padding(.horizontal, DS.Space.s2)
-                        .frame(maxHeight: .infinity)
-                        .background(on ? DS.fillStrong : .clear, in: Capsule())
-                        .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)   // ds-exception: un segmento del control (no un botón suelto); el fondo marca el elegido
-                    .accessibilityAddTraits(on ? .isSelected : [])
-                }
-            }
-            .padding(DS.Space.s1 / 2)
-            .frame(height: DS.Size.touchTarget)
-            .background(DS.fill, in: Capsule())
-            .fixedSize()
-            .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
-            .sensoryFeedback(.selection, trigger: kind)
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(Text("Series o películas"))
         } else {
-            // Un grupo con su nombre; cada pestaña conserva el suyo (sin `.contain`, VoiceOver leía las tres como «Series o
-            // películas»).
-            DSTextTabs(options: options.map { DSTextTabs.Option(id: $0.0, title: Text($0.1), symbol: KindGlyph.symbol($0.0)) }, selection: $kind, mark: mark)
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel(Text("Series o películas"))
+            KindPill(kind: $kind, open: .constant(true), options: options, alwaysOpen: true)
+                .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
         }
     }
 
@@ -237,6 +201,8 @@ struct KindPill: View {
     @Binding var kind: String
     @Binding var open: Bool
     let options: [(String, LocalizedStringKey)]
+    /// I8 · fuera de Inicio la pastilla está siempre abierta: tocar un ícono lo elige y nada se recoge.
+    var alwaysOpen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var mark
 
@@ -262,6 +228,7 @@ struct KindPill: View {
                 .buttonStyle(KindPillPress())
                 .help(Text(option.1))
                 .accessibilityLabel(open ? Text(option.1) : Text(option.1) + Text(". Cambiar entre todo, películas y series"))
+                .accessibilityIdentifier("kind-\(option.0.isEmpty ? "all" : option.0)")
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .transition(.asymmetric(
                     insertion: .scale(scale: DS.KindPill.enterScale).combined(with: .opacity)
@@ -270,6 +237,10 @@ struct KindPill: View {
             }
         }
         .padding(DS.Space.s1 / 2)
+        // Los círculos son de tamaño fijo: el ícono crece hasta xxxLarge y no más (con letra de accesibilidad se salía del
+        // círculo); el nombre lo dice VoiceOver y la vista grande al mantener el dedo.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .accessibilityShowsLargeContentViewer()
         .glassEffect(.regular.interactive(), in: Capsule())
         .fixedSize()
         .sensoryFeedback(.selection, trigger: kind)
@@ -290,6 +261,7 @@ struct KindPill: View {
 
     /// Cerrada abre; abierta, el círculo se desliza a lo elegido y, un instante después, se encoge con él.
     private func choose(_ option: String) {
+        if alwaysOpen { withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { kind = option }; return }
         guard open else { withAnimation(motion) { open = true }; return }
         guard option != kind else { withAnimation(motion) { open = false }; return }
         withAnimation(DS.Motion.snap(reduceMotion) ?? DS.Motion.fade) { kind = option }

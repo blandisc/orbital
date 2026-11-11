@@ -79,7 +79,7 @@ extension DS {
         /// Lo elegido, en el color del texto (Fernando, 30 oct 2026: lo elegido siempre en blanco, nunca turquesa ni azul).
         static let selectedFill = DS.text.opacity(0.12)   // ds-exception: el velo de la selección (el texto al 12 %)
         static let resultWidth: CGFloat = 104
-        /// Las pestañas de texto de `DSKindFilter(tabs:)`: la marca turquesa bajo la elegida.
+        /// Las pestañas de texto (`DSTextTabs`): la marca bajo la elegida.
         static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3
     }
 }

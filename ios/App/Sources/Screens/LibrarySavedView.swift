@@ -145,7 +145,7 @@ struct SavedListScreen: View {
             if model.lists.count > 1 { listMenu }
             Spacer(minLength: 0)
             if showsGrid {   // sin nada en la lista, no hay qué filtrar (mientras llega, sí: no brinca)
-                DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), compact: true)
+                DSKindFilter(kind: Binding(get: { kind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }))
             }
             if let menu {
                 menu.font(DS.TextRecipe.section.font).foregroundStyle(DS.text)

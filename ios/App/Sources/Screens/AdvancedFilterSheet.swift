@@ -91,7 +91,7 @@ struct AdvancedFilterSheet: View {
                 model.filter.format = new == "movie" ? .movie : new == "series" ? .series : .all
                 if model.filter.format != .series { model.filter.seriesStatus = .any }
             })
-        DSKindFilter(kind: kind, mark: DS.orbitalBlue)
+        DSKindFilter(kind: kind)
         // «Ocultar lo que ya viste», dicho con palabras (el ojo tachado solo no se entendía; Fernando, 31 oct 2026).
         Toggle(isOn: Binding(get: { model.filter.hideWatched }, set: { model.filter.hideWatched = $0 })) {
             Label { Text("Ocultar lo que ya viste").recipe(.label, color: DS.text) } icon: {

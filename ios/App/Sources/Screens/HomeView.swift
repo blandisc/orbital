@@ -472,7 +472,7 @@ struct HomeView: View {
                 if !typeSize.isAccessibilitySize { Spacer(minLength: DS.Space.s2) }
                 // La pastilla junto al título, con ícono (Fernando, 31 oct 2026). Siempre ocupa su lugar (oculta si el servicio
                 // solo tiene uno de los dos): al cambiar de servicio nada brinca.
-                DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false, compact: true)
+                DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false)
                     .opacity(pageKind == nil && !series.isEmpty && !films.isEmpty ? 1 : 0).disabled(pageKind != nil || series.isEmpty || films.isEmpty)
             }
             .padding(.horizontal, DS.Space.gutter)
