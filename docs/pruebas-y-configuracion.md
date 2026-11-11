@@ -98,8 +98,10 @@ Qué corre:
 - **macOS, pruebas:** `swift test` del paquete `OrbitalCore` (incluye la prueba del sistema de diseño del iPhone), con una
   versión de Xcode fija (`XCODE_VERSION` arriba del archivo).
 - **macOS, app del iPhone:** XcodeGen genera el proyecto y `xcodebuild` compila la app para el simulador, sin firma, en
-  Debug y en Release. Usa un `Secrets.xcconfig` con claves vacías (las reales no están en git). Desde el 11 nov 2026 es **obligatorio**: si la
-  app no compila, la CI queda en rojo. No frena la etiqueta `tv-estable`, porque la tele no usa la app del iPhone.
+  Debug y en Release. Usa un `Secrets.xcconfig` con claves vacías (las reales no están en git). Desde el 11 nov 2026 es **obligatorio** y
+  corre en su propia revisión, «App del iPhone» (`.github/workflows/iphone-app.yml`): si la app no compila, esa revisión
+  queda en rojo. Va aparte para que, cuando se cancela porque llegó otro commit, «Pruebas» no salga como «cancelada».
+  No frena la etiqueta `tv-estable`, porque la tele no usa la app del iPhone.
 
 `tv-estable`: es una etiqueta de git que apunta al último commit de `main` donde **todo lo anterior pasó**. Un último paso
 de la CI la mueve solo cuando `main` queda en verde (si el commit falla, la etiqueta se queda donde estaba; solo avanza, nunca

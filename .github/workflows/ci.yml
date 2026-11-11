@@ -94,73 +94,11 @@ jobs:
         working-directory: ios/OrbitalCore
         run: swift test
 
-  # La app del iPhone/iPad/Mac misma: se genera el proyecto con XcodeGen y se compila para el simulador, sin firma,
-  # en Debug y en Release (Release ya rompió una vez cosas que Debug no veía).
-  #
-  # Obligatorio desde el 11 nov 2026: la app ya compila con el Xcode de la CI (más estricto que el de la Mac con las
-  # expresiones largas). Si una expresión vuelve a tardar, se parte en variables con tipo; para verlo antes de subir,
-  # compilar con `-Xfrontend -warn-long-expression-type-checking=150`.
-  iphone-app:
-    runs-on: macos-15
-    timeout-minutes: 40
-    # Cuando llega un commit nuevo, la compilación del anterior se cancela: los runners de macOS son pocos y con varios
-    # commits seguidos se forma fila.
-    concurrency:
-      group: iphone-app-${{ github.ref }}-${{ matrix.configuration }}
-      cancel-in-progress: true
-    strategy:
-      fail-fast: false
-      matrix:
-        configuration: [Debug, Release]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Fijar Xcode
-        run: |
-          app="/Applications/Xcode_${XCODE_VERSION}.app"
-          [ -d "$app" ] || { echo "::error::Xcode ${XCODE_VERSION} no está en la imagen"; exit 1; }
-          sudo xcode-select -s "$app"
-          xcodebuild -version
-
-      - name: Instalar XcodeGen
-        run: brew install xcodegen
-
-      # Secrets.xcconfig no está en git (el repo es público). Con las claves vacías la app compila igual y las pide en Ajustes.
-      - name: Secrets.xcconfig de mentira (claves vacías)
-        run: |
-          printf 'ORBITAL_TMDB_KEY =\nORBITAL_OPENSUBTITLES_KEY =\n' > ios/App/Secrets.xcconfig
-
-      - name: Generar el proyecto de Xcode
-        working-directory: ios/App
-        run: xcodegen
-
-      # Los paquetes de Swift (AetherEngine) se bajan una vez y se guardan para las siguientes corridas.
-      - uses: actions/cache@v4
-        with:
-          path: ~/spm
-          key: spm-${{ runner.os }}-${{ hashFiles('ios/App/project.yml', 'ios/OrbitalCore/Package.swift') }}
-          restore-keys: spm-${{ runner.os }}-
-
-      - name: Compilar (${{ matrix.configuration }}, simulador, sin firma)
-        working-directory: ios/App
-        run: |
-          xcodebuild build \
-            -project Orbital.xcodeproj -scheme Orbital \
-            -configuration "${{ matrix.configuration }}" \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/dd" -clonedSourcePackagesDirPath "$HOME/spm" \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
-            > "$RUNNER_TEMP/build.log" 2>&1 && { tail -n 5 "$RUNNER_TEMP/build.log"; exit 0; }
-          # Falló: se muestran solo los errores (el registro completo son miles de líneas).
-          grep -E "error:|BUILD FAILED|FAILED" "$RUNNER_TEMP/build.log" | sort -u | head -n 40
-          exit 1
-
   # Si todo lo demás pasó en `main`, la etiqueta `tv-estable` se mueve a este commit. La TV se actualiza desde esa
   # etiqueta, así que nunca recibe un commit que la CI no aprobó. Los commits que fallan no la tocan.
   tv-estable:
-    needs: [windows, macos, iphone-app]
-    # `iphone-app` no cuenta para la etiqueta a propósito: la tele no usa la app del iPhone, y ese job se cancela cuando
-    # llega otro commit, así que atarla lo dejaría sin avanzar en días de muchos cambios.
+    needs: [windows, macos]
+    # La app del iPhone se compila en su propio archivo (`iphone-app.yml`) y no cuenta para la etiqueta: la tele no la usa.
     if: >-
       always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       && needs.windows.result == 'success' && needs.macos.result == 'success'
