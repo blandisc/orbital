@@ -271,9 +271,7 @@
   --icon-xl: 1.75rem; /* el símbolo de un paso de «¿Qué es esto?» */
   --explain-tile: 3rem; /* «¿Qué es esto?»: el cuadro de color de cada idea (DSIconTile del iPhone, 44 pt, a escala de TV) */
   --explain-step: 3.75rem; /* y el de cada uno de los tres pasos (56 pt en el iPhone) */
-  --ribbon-corner: 4.6rem; /* el listón «Nuevo»: el cuadro de la esquina del póster que lo recorta (DS.Ribbon.corner del iPhone, a escala de TV) */
-  --ribbon-length: 8rem; /* su largo, de orilla a orilla en diagonal */
-  --ribbon-center: 1.7rem; /* qué tan adentro de la esquina pasa su centro */
+  --ribbon-dot: .8rem; /* «Nuevo» en un póster (R2-10): el punto turquesa de la esquina */
   --tab-mark: .14rem; /* la rayita bajo la pestaña de texto elegida (DSTextTabs) */
   /* Los espacios de una pantalla (DS.Layout del iPhone, design/tokens.json › layout). En la TV solo existe el del título a lo
      suyo: entre filas y secciones manda el alto fijo de cada fila (la pantalla es la medida, no hay pila que crezca). */

@@ -200,3 +200,4 @@ Ninguno (3 nov, tarde): «Aparatos conectados» y «Darle su propia conexión» 
 Descargas, gestos del reproductor, PiP, modo claro y el cielo que se mueve son del teléfono. Juegos, TV en vivo, la voz y el
 mando son de la TV. El aviso va abajo en el iPhone y arriba a la derecha en la TV. La superficie de las tarjetas es ink-850 en el
 iPhone e ink-900 en la TV.
+| «Nuevo» sobre el póster es un puntito turquesa en la esquina, no un listón que tape el arte (TV, 11 nov); en Lo nuevo de lo tuyo el día se lee sobre arte claro, sin rebanada de póster a la izquierda y sin «T2 E7» repetido en el titular | Pendiente: `DSCornerRibbon` sigue siendo listón | Ya (11 nov) |

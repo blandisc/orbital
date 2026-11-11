@@ -307,6 +307,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     const { widths, visible } = geo ?? geometry(row);
     const total = widths.reduce((sum, w) => sum + w, 0) + metrics.gap * Math.max(0, widths.length - 1);
     (row.rest || row.rowEl).classList.toggle("shelf__edge--more", total - x - visible > 4);
+    if (!row.rest) row.rowEl.classList.toggle("shelf__edge--less", x > 4); // «Porque viste»: lo de al lado del escenario no
   }
 
   /** Ya no hay más hacia ese lado: la tarjeta se empuja un poco para que se note. */

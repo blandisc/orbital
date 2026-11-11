@@ -170,7 +170,6 @@
   --color-video-bg: #000; /* detrás de un video o una captura: negro de verdad */
   --on-color-fill: rgba(0, 0, 0, .12); /* relleno tenue sobre un fondo de color (opción peligrosa enfocada) */
   --shadow-badge: 0 1px 6px rgba(0, 0, 0, .4);
-  --color-shine: rgba(255, 255, 255, .28); /* el brillo de arriba del listón «Nuevo» (DS.Ribbon.shine del iPhone) */
   --shadow-keycap: inset 0 -2px 0 rgba(0, 0, 0, .35);
   /* Dentro de algo con foco invertido (fondo claro): los acentos se oscurecen para leerse. */
   --on-light-fill: rgba(0, 0, 0, .08);
