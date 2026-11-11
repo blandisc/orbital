@@ -49,7 +49,7 @@ struct SaveView: View {
             CheckRow(title: Text("Favoritos"), symbol: DS.Favorites.symbol, color: DS.Favorites.filled, checked: m.isFavorite) {
                 Task { _ = await m.toggleFavorite() }
             }
-            .sensoryFeedback(.success, trigger: m.isFavorite) { _, now in now }
+            .dsFeedback(.success, trigger: m.isFavorite) { _, now in now }
             .accessibilityIdentifier("save-favorite")
         }
         ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
