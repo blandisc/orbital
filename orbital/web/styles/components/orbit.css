@@ -26,7 +26,7 @@
   background: conic-gradient(from 0deg, transparent 0 62%, var(--orbit-color) 88%, var(--orbit-light));
   transform: translate(-50%, -50%);
 }
-.is-focused > .orbit::after, .is-focused.episode .episode__thumb > .orbit::after { animation: orbit-sweep var(--duration-orbit) var(--ease-sweep); }
+.is-focused > .orbit::after, .is-focused.episode .episode__thumb > .orbit::after { animation: orbit-sweep var(--duration-tint) var(--ease-sweep); }
 @keyframes orbit-sweep {
   from { opacity: 1; transform: translate(-50%, -50%) rotate(0deg); }
   80% { opacity: 1; }
@@ -36,7 +36,7 @@
 /* Dónde va y con qué curva, por pieza: fuera de la pieza (--orbit-out = el grosor) donde no recorta; por dentro (0) donde sí. */
 .card--collection, .tile, .episode__thumb, .calendar__cell { --orbit-out: 0px; }
 .tile { --orbit-radius: var(--tile-radius); }
-.calendar__cell { --orbit-radius: var(--radius-md); }
+.calendar__cell { --orbit-radius: var(--radius-sm); }
 /* La cara del reparto: el anillo va alrededor de su foto (redonda), que crece con él. */
 .person-chip { position: relative; }
 .person-chip > .orbit {

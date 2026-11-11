@@ -24,7 +24,7 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
 }
 /* Lo tuyo con él: vidrio, a la derecha. */
 .game-page__panel {
-  flex: none; display: grid; gap: var(--space-4); min-width: 15rem; padding: var(--inset-feature); border-radius: var(--radius-2xl);
+  flex: none; display: grid; gap: var(--space-4); min-width: 15rem; padding: var(--inset-feature); border-radius: var(--radius-lg);
   background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
 }
 .game-page__panel[hidden] { display: none; }

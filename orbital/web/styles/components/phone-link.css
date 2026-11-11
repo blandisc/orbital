@@ -3,7 +3,7 @@
 .phone-link { display: grid; place-items: center; }
 .phone-link__box {
   display: flex; flex-direction: column; align-items: center; gap: var(--space-5); width: min(46rem, 100%);
-  padding: var(--space-8); border-radius: var(--radius-2xl); text-align: center;
+  padding: var(--space-8); border-radius: var(--radius-lg); text-align: center;
   background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
   animation: rise-in var(--duration-enter) var(--ease-out);
 }

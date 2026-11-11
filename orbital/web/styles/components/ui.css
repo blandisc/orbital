@@ -5,7 +5,7 @@
 /* Chip: un dato corto (4K, Inglés, Al instante). */
 .chip {
   display: inline-flex; align-items: center; gap: var(--space-1);
-  padding: .14rem .55rem; border-radius: var(--radius-xs); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
+  padding: .14rem .55rem; border-radius: var(--radius-sm); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); font-variant-numeric: tabular-nums;
   white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
@@ -113,7 +113,7 @@
 }
 .side-panel__panel {
   align-self: flex-start; max-height: calc(100% - 2 * (var(--space-5) + var(--safe-y))); margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0 0;
-  border-radius: var(--radius-2xl); background: var(--color-glass-strong); backdrop-filter: var(--filter-glass);
+  border-radius: var(--radius-lg); background: var(--color-glass-strong); backdrop-filter: var(--filter-glass);
   box-shadow: var(--edge-glass), var(--shadow-overlay);
   animation: slide-in-right var(--duration-slow) var(--ease-out);
 }
@@ -175,7 +175,7 @@
 .platform-mark { flex: none; width: var(--icon-lg); height: var(--icon-lg); object-fit: contain; filter: var(--shadow-drop-sm); }
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
-.badge--lg { padding: .22rem var(--space-3); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+.badge--lg { padding: var(--space-1) var(--space-3); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 /* «En Netflix» (PlatformBadge): una cápsula de vidrio con el logo de la plataforma a la izquierda y el texto en blanco. El
    color de la plataforma va solo en su logo (Fernando, 2 nov 2026, unslop): la cápsula roja o morada le competía al logo
    del título, que es lo que tiene que brillar. --platform-color se queda para lo que sí lleva su color (una pieza sin arte). */
@@ -188,7 +188,7 @@
 .badge--platform-hbo { --platform-color: var(--platform-hbo); }
 .badge--platform-prime { --platform-color: var(--platform-prime); }
 .badge--platform-paramount { --platform-color: var(--platform-paramount); }
-.badge__logo { flex: none; width: 1.15em; height: 1.15em; border-radius: var(--radius-xs); object-fit: cover; }
+.badge__logo { flex: none; width: 1.15em; height: 1.15em; border-radius: var(--radius-sm); object-fit: cover; }
 
 /* Pantalla completa encima de todo (Buscar, la ficha, Conectar Stremio…): el mismo fondo, margen y entrada. */
 .screen {

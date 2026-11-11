@@ -44,7 +44,7 @@
 .source:hover { background: var(--color-glass-hover); }
 
 .source__res {
-  display: grid; place-items: center; height: 3.4rem; border-radius: var(--radius-md);
+  display: grid; place-items: center; height: 3.4rem; border-radius: var(--radius-sm);
   background: var(--color-glass); box-shadow: var(--edge-glass-hairline); font-family: var(--font-sans); font-size: var(--type-card-title);
   font-weight: var(--type-card-title-weight); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums;
 }

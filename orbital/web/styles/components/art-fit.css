@@ -12,7 +12,7 @@
 }
 /* La copia desenfocada que llena la caja (también la del estuche del destacado, tiles.js · caseArt). */
 .art-fit__blur {
-  position: absolute; inset: -2rem; width: calc(100% + 4rem); height: calc(100% + 4rem); object-fit: cover;
+  position: absolute; inset: calc(-1 * var(--space-8)); width: calc(100% + 2 * var(--space-8)); height: calc(100% + 2 * var(--space-8)); object-fit: cover;
   filter: blur(var(--blur-case)) saturate(1.25) brightness(.7);
 }
 /* El póster entero: del alto de la caja menos su aire; a la derecha por omisión (el texto de estas cajas va a la izquierda). */

@@ -32,7 +32,7 @@
 .search__query:empty { display: none; }
 .search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
-.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: var(--radius-2xs); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
+.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: var(--radius-sm); background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
 .search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) var(--ease-float) infinite; }
@@ -42,7 +42,7 @@
 .search--searching .search__field::after {
   content: ""; position: absolute; inset: auto 0 -2px; height: 2px;
   background: linear-gradient(90deg, transparent, var(--color-accent), transparent) 0 0 / 40% 100% no-repeat;
-  animation: search-sweep var(--duration-launch-sweep) var(--ease-sweep) infinite;
+  animation: search-sweep var(--duration-loop) var(--ease-sweep) infinite;
 }
 @keyframes search-sweep { from { background-position: -70% 0; } to { background-position: 170% 0; } }
 .search__hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
@@ -94,7 +94,7 @@
 .search__ghost {
   flex: none; width: calc(var(--card-height) * .667); height: var(--card-height); border-radius: var(--card-radius);
   background: linear-gradient(100deg, var(--color-fill) 30%, var(--color-fill-hover) 50%, var(--color-fill) 70%) 0 0 / 300% 100%;
-  animation: search-shimmer var(--duration-launch-sweep) var(--ease-sweep) infinite, fade-in var(--duration-base) var(--ease-out);
+  animation: search-shimmer var(--duration-loop) var(--ease-sweep) infinite, fade-in var(--duration-base) var(--ease-out);
 }
 .search__ghost:nth-child(2) { animation-delay: var(--delay-1), var(--duration-none); }
 .search__ghost:nth-child(3) { animation-delay: var(--delay-2), var(--duration-none); }

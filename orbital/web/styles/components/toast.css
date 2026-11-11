@@ -25,7 +25,7 @@
 body[data-view="games"]:not([data-game-page]) .toast {
   top: calc(var(--status-room) + var(--space-3) + var(--control-height) + 2 * var(--space-1) + var(--space-3)); }
 /* Dos renglones o portada: menos redonda (una píldora alta se ve rara). */
-.toast--two-line { border-radius: var(--radius-xl); }
+.toast--two-line { border-radius: var(--radius-lg); }
 
 .toast__shade, .toast__surface, .toast__glass { position: absolute; z-index: var(--z-behind); border-radius: inherit; pointer-events: none; }
 .toast__shade { inset: 0; box-shadow: var(--shadow-overlay); animation: fade-in var(--duration-base) var(--ease-out) var(--delay-notice-text) both; }
@@ -60,7 +60,7 @@ body[data-view="games"]:not([data-game-page]) .toast {
 }
 .toast__icon .icon { width: var(--icon-sm); height: var(--icon-sm); stroke-width: var(--stroke-bold); }
 /* En curso: el ícono gira mientras se ve (chico y solo mientras está el aviso). */
-.toast--progress .toast__icon .icon { animation: toast-spin var(--duration-launch-sweep) linear infinite; }
+.toast--progress .toast__icon .icon { animation: toast-spin var(--duration-loop) linear infinite; }
 @keyframes toast-spin { to { transform: rotate(360deg); } }
 
 /* Con portada (al volver de un juego): la portada en lugar del ícono; entra ya decodificada. */

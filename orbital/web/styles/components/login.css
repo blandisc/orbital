@@ -20,7 +20,7 @@
 .login__phone { display: grid; justify-items: center; gap: var(--space-2); margin: 0; width: 9rem; text-align: center; color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 .login__phone strong { display: block; color: var(--color-text); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); }
 .login__phone-words { display: block; margin-top: var(--space-1); }
-.login__phone-qr { display: block; width: 7rem; height: 7rem; border-radius: var(--radius-md); animation: rise-in var(--duration-enter) var(--ease-out); }
+.login__phone-qr { display: block; width: 7rem; height: 7rem; border-radius: var(--radius-sm); animation: rise-in var(--duration-enter) var(--ease-out); }
 @media (max-height: 820px) { .login__phone-qr { width: 5.5rem; height: 5.5rem; } }
 .login__field {
   display: grid; gap: .2rem; min-width: 0; padding: var(--space-3) var(--space-5); border-radius: var(--radius-lg);

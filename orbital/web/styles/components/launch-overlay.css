@@ -14,14 +14,14 @@
 /* Ambiental: el arte dibujado una vez en un lienzo de 48×27 y estirado (sale difuminado sin filtros, casi gratis). */
 .launch__ambient {
   position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0;
-  transition: opacity var(--duration-enter-long) var(--ease-out), transform var(--duration-launch-reveal) var(--ease-in);
+  transition: opacity var(--duration-enter-long) var(--ease-out), transform var(--duration-tint) var(--ease-in);
 }
 .launch--ambient .launch__ambient { opacity: 1; }
 
 /* Nítido: el fondo propio del juego, ya decodificado (nunca a medio pintar), con fundido al llegar. Quieto: antes un
    zoom de 26 s obligaba a volver a rasterizar un JPEG de pantalla completa y salía por pedazos. */
 .launch__art { position: absolute; inset: 0; opacity: 0;
-  transition: opacity var(--duration-enter-long) var(--ease-out), transform var(--duration-launch-reveal) var(--ease-in); }
+  transition: opacity var(--duration-enter-long) var(--ease-out), transform var(--duration-tint) var(--ease-in); }
 .launch__art img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
 .launch--art .launch__art { opacity: 1; }
 
@@ -68,7 +68,7 @@
 
 /* --- Portada en el centro, con la órbita de la marca girando alrededor -------------------------------------------- */
 .launch__stage { position: relative; display: grid; place-items: center; height: 20rem;
-  animation: launch-float var(--duration-launch-float) var(--ease-float) var(--duration-enter-long) infinite; }
+  animation: launch-float var(--duration-alive) var(--ease-float) var(--duration-enter-long) infinite; }
 /* Flotar: unos pocos píxeles arriba y abajo, lento; sin esto el conjunto se veía pegado a la pantalla. */
 @keyframes launch-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.4rem); } }
 /* La tarjeta: mientras llega la portada, una tarjeta de reserva (nunca un hueco ni una imagen a medias). */
@@ -149,7 +149,7 @@
 .launch__progress::after {
   content: ""; position: absolute; inset: 0; width: 45%; border-radius: inherit;
   background: linear-gradient(90deg, transparent, var(--color-progress), transparent);
-  animation: launch-sweep var(--duration-launch-sweep) var(--ease-sweep) infinite;
+  animation: launch-sweep var(--duration-loop) var(--ease-sweep) infinite;
 }
 @keyframes launch-sweep { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
 
@@ -162,14 +162,14 @@
 /* --- Listo: todo se funde a negro, sin salto ----------------------------------------------- */
 .launch--revealing { background-color: var(--color-video-bg); }
 .launch--revealing .launch__ambient, .launch--revealing .launch__art { opacity: 0; transform: scale(1.06);
-  transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-launch-reveal) var(--ease-out); }
-.launch--revealing .launch__stars, .launch--revealing .launch__scrim { opacity: 0; transition: opacity var(--duration-launch-reveal) var(--ease-out); }
+  transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-tint) var(--ease-out); }
+.launch--revealing .launch__stars, .launch--revealing .launch__scrim { opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
 .launch--revealing .launch__cover { transform: scale(1.06); opacity: 0;
-  transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-reveal) var(--ease-in); }
+  transition: transform var(--duration-tint) var(--ease-out), opacity var(--duration-tint) var(--ease-in); }
 .launch--revealing .launch__orbit { transform: rotate(-24deg) scale(1.18); opacity: 0;
-  transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-out) var(--ease-in); }
+  transition: transform var(--duration-tint) var(--ease-out), opacity var(--duration-launch-out) var(--ease-in); }
 .launch--revealing .launch__text { opacity: 0; }
-.launch--revealing .launch__flash { visibility: visible; animation: launch-flash var(--duration-launch-reveal) var(--ease-out) forwards; }
+.launch--revealing .launch__flash { visibility: visible; animation: launch-flash var(--duration-tint) var(--ease-out) forwards; }
 @keyframes launch-flash { 0% { opacity: 0; } 35% { opacity: .22; } 100% { opacity: 0; } }
 
 @media (max-width: 700px), (max-height: 520px) {

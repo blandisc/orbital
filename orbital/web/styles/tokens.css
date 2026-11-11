@@ -44,13 +44,10 @@
   --space-14: 3.5rem;
 
   /* Radios: rectángulos suaves, no burbujas */
-  --radius-2xs: .5rem; /* lo diminuto: el cursor de escribir, la batería, las casillas de Tu año */
-  --radius-xs: .5rem;
-  --radius-sm: .5rem;
-  --radius-md: .5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1rem;
+  /* Dos esquinas y la cápsula (ritmo del 5 nov 2026; T11, 10 nov: antes siete nombres para estos dos valores). Las del
+     iPhone (DS.Radius.xs … .xxl) se mapean a estas dos en design/tokens.json. */
+  --radius-sm: .5rem; /* esquina chica: botones cuadrados, teclas, insignias y lo diminuto (el cursor, la batería) */
+  --radius-lg: 1rem; /* esquina de tarjeta: pósters, tarjetas, hojas, menús */
   --radius-pill: 999px;
 
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
@@ -156,8 +153,8 @@
   --duration-fast: 140ms;
   --duration-base: 220ms;
   --duration-slow: 320ms;
-  --duration-tint: 700ms;
-  --duration-explain-step: 1.6s; /* «¿Qué es esto?»: cada cuánto se enciende el siguiente paso (DebridFlowStrip del iPhone) */
+  --duration-tint: 700ms; /* lo lento que se ve: el color del arte, la órbita que recorre lo enfocado, la revelación al abrir un juego */
+  --duration-loop: 1.6s; /* un ciclo que se repite: el barrido de carga, el giro del aviso, cada paso de «¿Qué es esto?» (DebridFlowStrip del iPhone) */
   --duration-exit: 160ms;
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-in: cubic-bezier(.5, 0, .75, 0);
@@ -176,7 +173,6 @@
   --duration-snappy: 290ms; /* DS.Motion.snap: firme, con un rebote que casi no se ve; lo que se acomoda o se aprieta */
   --ease-snappy: linear(0, 0.029, 0.101, 0.196, 0.301, 0.407, 0.507, 0.598, 0.678, 0.748, 0.806, 0.854, 0.893, 0.923, 0.947, 0.966, 0.979, 0.989, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.006, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1);
   --duration-ken-burns: 16s; /* el fondo, quieto en un título, se acerca un 3 % y ahí se queda (un tramo, no un ciclo) */
-  --duration-orbit: 700ms; /* la órbita: el filo recorre lo enfocado una vez y se queda quieto */
   --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
   --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
@@ -185,7 +181,7 @@
   --duration-breathe: 1.4s; /* algo que espera: dictando */
   --duration-drift: 1.5s; /* el fondo sigue al foco (parallax) */
   --duration-glide: 4s; /* un tramo de la deriva de Para ti (la anima el compositor; JS solo trae piezas al empezar cada uno) */
-  --duration-alive: 9s; /* «cobra vida»: quieto en una pieza, su arte se acerca despacio */
+  --duration-alive: 9s; /* «cobra vida»: quieto en una pieza, su arte se acerca despacio; y lo que flota apenas al abrir un juego */
   --duration-notice: 4s; /* un aviso a la vista (el mismo del iPhone: design/tokens.json) */
   --duration-notice-long: 6.5s; /* un error: se lee de lejos, en el sillón (solo la TV) */
   /* Cómo aparece un aviso (Fernando, 6 nov 2026): primero la alerta (el ícono, con un «pop»), luego la cajita crece desde
@@ -198,10 +194,7 @@
   /* Pantalla de carga (cinemática: más lenta a propósito) */
   --duration-launch-travel: 5.5s;
   --duration-launch-orbit: 3.4s; /* una vuelta pausada: con 2.6 s se sentía ansiosa */
-  --duration-launch-sweep: 1.6s;
-  --duration-launch-reveal: 700ms;
   --duration-launch-out: 420ms;
-  --duration-launch-float: 9s; /* portada y órbita flotan apenas, como en ingravidez */
   /* La entrada de Orbital: idéntica a la del iPhone (Brand.swift › LaunchSplash, DS.Splash). Los resortes son los de
      SwiftUI spring(duration:bounce:), muestreados hasta asentarse (amortiguamiento = 1 − rebote). */
   --delay-brand-ring: 100ms; /* el anillo empieza */
@@ -251,7 +244,7 @@
   --card-height: 12.6rem; /* el ancho sale de la proporción de cada portada */
   --card-gap: 1.85rem;
   --card-focus-scale: 1.2;
-  --card-radius: var(--radius-md);
+  --card-radius: var(--radius-sm);
   --row-heading-height: 3.2rem; /* título + espacio para la elevación y el anillo del foco */
   --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
@@ -300,7 +293,7 @@
   --pip-room: 20vw; /* el video en pequeño: 30 % del ancho en 16:9 más su margen (player.PIP_WIDTH y PIP_MARGIN) */
   --keyboard-width: 54rem;
   /* Tiles (pantallas nuevas: Inicio): radio grande, foco que crece poco, vecinos atenuados. */
-  --tile-radius: var(--radius-xl);
+  --tile-radius: var(--radius-lg);
   --tile-focus-scale: 1.08; /* la órbita (D3-A): lo enfocado se levanta de verdad; antes 1.03 no se notaba a 3 m */
   /* El realce al enfocar: lo de dentro (la consola, el logo, la miniatura) crece y se levanta un poco, con resorte. */
   --pop-transform: scale(1.06) translateY(-.1rem);

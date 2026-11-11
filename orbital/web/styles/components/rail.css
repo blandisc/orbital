@@ -10,7 +10,7 @@
 /* La pestaña: una superficie que crece desde el borde, detrás de las casillas. */
 .rail::before {
   content: ""; position: absolute; z-index: var(--z-behind); inset: calc(-1 * var(--space-3)) 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
-  border-radius: var(--radius-2xl); background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
+  border-radius: var(--radius-lg); background: var(--color-glass-strong); box-shadow: var(--edge-glass), var(--shadow-overlay); backdrop-filter: var(--filter-glass);
   opacity: 0; transition: opacity var(--duration-base) var(--ease-out);
 }
 .rail--open { width: var(--rail-open); }
@@ -71,7 +71,7 @@
 
 .rail__img { display: block; width: 100%; height: 100%; object-fit: contain; filter: var(--shadow-drop-sm); }
 .rail__img--logo { width: 62%; height: 62%; }
-.rail__img--cover { border-radius: var(--radius-xs); object-fit: cover; }
+.rail__img--cover { border-radius: var(--radius-sm); object-fit: cover; }
 /* Un logo cuadrado de marca (Netflix, Disney+, HBO Max), a sangre: es su propia casilla. */
 .rail__tile--brand { padding: 0; background: none; }
 .rail__img--brand { object-fit: cover; filter: none; }

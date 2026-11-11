@@ -23,7 +23,7 @@
 [data-input="gamepad"] .glyph--x, [data-input="gamepad"] .glyph--y { width: var(--glyph-size); padding: 0 0 .06em; font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 /* Teclado: tecla de cristal con borde y una sombra abajo (se ve "presionable"). */
 [data-input="keyboard"] .glyph, [data-input="touch"] .glyph {
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   box-shadow: var(--edge-glyph), inset 0 0 0 1px var(--glyph-ring), var(--shadow-keycap);
 }
 /* Dentro de un botón: un poco más chico. Sobre lo claro (el botón principal, el foco invertido) el disco va sólido. */
