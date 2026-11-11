@@ -19348,17 +19348,6 @@
         }
       }
     },
-    "Infuse no pudo reproducirlo: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Infuse couldn't play it: %@"
-          }
-        }
-      }
-    },
     "Inicio": {
       "extractionState": "manual",
       "localizations": {
@@ -24407,17 +24396,6 @@
         }
       }
     },
-    "No pude marcarlo: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I couldn't mark it: %@"
-          }
-        }
-      }
-    },
     "No pude pedir el archivo a OneDrive": {
       "extractionState": "manual",
       "localizations": {
@@ -24436,17 +24414,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't get the file from OneDrive."
-          }
-        }
-      }
-    },
-    "No pude pedir las fuentes: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I couldn't get the sources: %@"
           }
         }
       }

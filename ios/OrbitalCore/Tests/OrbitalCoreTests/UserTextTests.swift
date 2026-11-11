@@ -26,8 +26,13 @@ final class UserTextTests: XCTestCase {
         [TraktError.network("x"), TraktError.http(503),
          DebridError.malformedToken, DebridError.invalidToken, DebridError.network("x"), DebridError.unexpected, DebridError.notEnoughPoints,
          DownloadError.notEnoughSpace(needed: 2_500_000_000, free: 1_000_000_000), DownloadError.alreadyDownloaded, DownloadError.noURL,
-         DownloadError.unsafePath]
+         DownloadError.unsafePath,
+         CinemetaError.network("x"), CinemetaError.unexpected, CinemetaError.notFound]
     }
+
+    /// Textos con esa forma que nunca pasan por `Strings.message`: los arma una vista con `Text("…\(x)")` y SwiftUI los busca
+    /// en el catálogo directo (AddonPieces: quién no contestó a tiempo).
+    static let builtByAView = ["No contestaron a tiempo: %@", "No contestó a tiempo: %@"]
 
     func testEveryTypedKeyIsInTheCatalogWithItsTranslation() throws {
         let strings = try catalog
@@ -57,20 +62,17 @@ final class UserTextTests: XCTestCase {
             key.hasSuffix(": %@") && english(key, in: strings) != nil
                 && ["No pude", "No contest", "Infuse no pudo"].contains(where: key.hasPrefix)
         }
-        XCTAssertEqual(shapes.filter { !byType.contains($0) }.sorted(), Self.stillByShape)
+        XCTAssertEqual(shapes.filter { !byType.contains($0) && !Self.builtByAView.contains($0) }.sorted(), Self.stillByShape)
         XCTAssertTrue(byType.contains("No pude conectar con Trakt: %@"), "lo de las familias ya no depende de la forma")
+        XCTAssertTrue(byType.contains("No pude leer el catálogo: %@"), "Cinemeta, con tipo desde el 11 nov 2026")
     }
 
+    /// Revisión del 11 nov 2026: de 10 a 4. Salieron Cinemeta (ya con tipo), tres textos que nadie armaba ya («No pude
+    /// marcarlo», «No pude pedir las fuentes», «Infuse no pudo reproducirlo»: fuera del catálogo) y los dos de una vista.
     static let stillByShape = [
-        "Infuse no pudo reproducirlo: %@",
-        "No contestaron a tiempo: %@",
-        "No contestó a tiempo: %@",
         "No pude cambiar tu lista de Trakt: %@",
         "No pude cambiar tus favoritos de Trakt: %@",
         "No pude crear la lista: %@",
         "No pude guardar el archivo: %@",
-        "No pude leer el catálogo: %@",
-        "No pude marcarlo: %@",
-        "No pude pedir las fuentes: %@",
     ]
 }

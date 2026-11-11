@@ -1,14 +1,8 @@
 import Foundation
 
-public enum CinemetaError: Error, Sendable, CustomStringConvertible {
+/// Lo que dice en pantalla: `userText` (UserText.swift).
+public enum CinemetaError: Error, Sendable {
     case network(String), unexpected, notFound
-    public var description: String {
-        switch self {
-        case .network(let reason): return "No pude leer el catálogo: \(reason)"
-        case .unexpected: return "Respuesta inesperada de Cinemeta"
-        case .notFound: return "Título no encontrado"
-        }
-    }
 }
 
 public struct Episode: Sendable, Equatable, Identifiable {

@@ -91,6 +91,7 @@ umbral de pantalla corta es 700 pt. Un commit por pantalla para revertir solo lo
 ### Instalar en el iPad y en la Mac
 
 - **iPad:** en Xcode, `Orbital` → tu iPad → Run (como en el iPhone). Con `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` para que cada instalación tenga su número.
+- **Los símbolos de cada instalación** (iPhone, iPad; desde el 11 nov 2026): al terminar de instalar, `ios/scripts/guardar-dsym.sh <…/Build/Products/Release-iphoneos>` copia los dSYM a `~/Library/Developer/Orbital-dSYMs/<número de compilación>/`. Sin ellos, un cierre que llega del aparato (.ips) solo trae direcciones; con ellos, `xcrun atos` dice en qué función pasó.
 - **Recorrido de la Mac sin manos** (con la sesión desbloqueada): `cd ios/App && xcodegen && xcodebuild test -scheme OrbitalMac -destination 'platform=macOS,arch=arm64,variant=Designed for iPad' -derivedDataPath /tmp/dd-orbital-ipad -allowProvisioningUpdates`. Las capturas quedan en la carpeta temporal de la app (`MAC-TOUR folder` en la bitácora).
 - **Mac (chip de Apple):** `cd ios/App && xcodegen && open Orbital.xcodeproj`, destino **My Mac (Designed for iPad)** → Run. La primera vez Xcode la instala y la abre; después queda en el Launchpad. Por terminal compila con
   `xcodebuild build -scheme Orbital -destination 'platform=macOS,arch=arm64,variant=Designed for iPad' -allowProvisioningUpdates`.

@@ -109,8 +109,7 @@ struct ViewingsLine: View {
 
     var body: some View {
         let model = viewings.model
-        return
-        Button(action: open) {
+        return Button(action: open) {
             HStack(spacing: DS.Space.s3) {
                 Image(systemName: "calendar").foregroundStyle(DS.textMuted)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {

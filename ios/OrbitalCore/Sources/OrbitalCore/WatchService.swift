@@ -13,9 +13,11 @@ public actor WatchService {
     let traktQueue: TraktQueue
     let scrobbleLog: ScrobbleLog?
     let sleep: @Sendable (TimeInterval) async -> Void
-    /// Avisa de cada guardado en el teléfono, cuando ya quedó (lo usan las pruebas del reproductor para contar cuándo y qué se
-    /// guarda; antes lo veían en la copia a Stremio). nil en la app.
+    #if DEBUG
+    /// Solo pruebas (revisión del 11 nov 2026: ya no existe en la app publicada): avisa de cada guardado en el teléfono, cuando
+    /// ya quedó (las pruebas del reproductor cuentan cuándo y qué se guarda).
     let onSave: (@Sendable (ProgressEvent) async -> Void)?
+    #endif
     /// Cuándo se le mandó a Trakt el último aviso de cada video que suena (para el respaldo cada 5 minutos).
     var lastTraktWrite: [String: Date] = [:]
     /// Videos cuyo último aviso fue un respaldo (`start` + `pause` mientras sonaba): la siguiente pausa o cierre llevan antes
@@ -25,11 +27,28 @@ public actor WatchService {
     public init(library: LocalLibrary = LocalLibrary(), cinemeta: Cinemeta,
                 trakt: Trakt? = nil, pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, queue: TraktQueue? = nil,
                 scrobbleLog: ScrobbleLog? = nil,
-                sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep,
-                onSave: (@Sendable (ProgressEvent) async -> Void)? = nil) {
+                sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep) {
         self.store = library; self.cinemeta = cinemeta; self.trakt = trakt
         self.pending = pending; self.clock = clock; self.traktQueue = queue ?? TraktQueue(store: pending, clock: clock); self.scrobbleLog = scrobbleLog; self.sleep = sleep
+        #if DEBUG
+        self.onSave = nil
+        #endif
+    }
+
+    #if DEBUG
+    /// Para las pruebas: el mismo servicio, avisando de cada guardado.
+    init(library: LocalLibrary, cinemeta: Cinemeta, trakt: Trakt?, pending: PendingStore, clock: @escaping @Sendable () -> Date,
+         scrobbleLog: ScrobbleLog?, sleep: @escaping @Sendable (TimeInterval) async -> Void, onSave: @escaping @Sendable (ProgressEvent) async -> Void) {
+        self.store = library; self.cinemeta = cinemeta; self.trakt = trakt
+        self.pending = pending; self.clock = clock; self.traktQueue = TraktQueue(store: pending, clock: clock); self.scrobbleLog = scrobbleLog; self.sleep = sleep
         self.onSave = onSave
+    }
+    #endif
+
+    private func savedLocally(_ event: ProgressEvent) async {
+        #if DEBUG
+        await onSave?(event)
+        #endif
     }
 
     // MARK: dónde seguir
@@ -61,7 +80,7 @@ public actor WatchService {
         // Se abrió y se cerró sin ver nada: no se toca lo tuyo (salvo que se haya dicho que se terminó).
         let trivial = final && !event.finished && event.watched < PlaybackRules.minWatchedToSave && event.position < PlaybackRules.minPositionToSave
         // Primero el teléfono (así Trakt, al contestar, ya encuentra el título y lo marca como «mandado desde aquí»).
-        if phase != .started && !trivial { await saveLocally(event); outcome.saved = true; await onSave?(event) }
+        if phase != .started && !trivial { await saveLocally(event); outcome.saved = true; await savedLocally(event) }
         if scrobbleToTrakt { await scrobble(event, phase) }
         return outcome
     }

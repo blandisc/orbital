@@ -1,27 +1,5 @@
 import Foundation
 
-/// Almacén de pares clave–valor para ajustes y cachés pequeñas (en la app, `UserDefaults`).
-public protocol KeyValueStore: Sendable {
-    func data(_ key: String) -> Data?
-    func set(_ key: String, data: Data?)
-}
-
-public final class InMemoryKeyValueStore: KeyValueStore, @unchecked Sendable {
-    private let lock = NSLock()
-    private var values: [String: Data] = [:]
-    public init() {}
-    public func data(_ key: String) -> Data? { lock.withLock { values[key] } }
-    public func set(_ key: String, data: Data?) { lock.withLock { values[key] = data } }
-}
-
-public final class UserDefaultsKeyValueStore: KeyValueStore, @unchecked Sendable {
-    private let defaults: UserDefaults
-    private let prefix: String
-    public init(defaults: UserDefaults = .standard, prefix: String = "orbital.") { self.defaults = defaults; self.prefix = prefix }
-    public func data(_ key: String) -> Data? { defaults.data(forKey: prefix + key) }
-    public func set(_ key: String, data: Data?) { defaults.set(data, forKey: prefix + key) }
-}
-
 /// Lo que eliges en Ajustes. El idioma de la app, el del audio y el de los subtítulos son tres cosas distintas.
 public struct AppSettings: Codable, Equatable, Sendable {
     public var uiLanguage = "es"               // idioma de la app y de las fichas: «es» | «en»

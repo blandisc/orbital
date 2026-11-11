@@ -30,6 +30,14 @@ public final class PosterSource: @unchecked Sendable {
         map = load().flatMap { try? JSONDecoder().decode([String: Entry].self, from: $0) } ?? [:]
     }
 
+    /// El tope de verdad (revisión del 11 nov 2026): antes, al pasar de `maxEntries` solo se quitaba lo vencido, y con más de
+    /// 4000 títulos vistos en 30 días la memoria crecía sin fin. Ahora se quita lo vencido y, si aún sobra, lo más viejo.
+    static func capped<V>(_ map: [String: V], at: (V) -> Date, now: Date, max: Int = maxEntries) -> [String: V] {
+        let fresh = map.filter { now.timeIntervalSince(at($0.value)) < ttl }
+        guard fresh.count > max else { return fresh }
+        return Dictionary(uniqueKeysWithValues: fresh.sorted { at($0.value) > at($1.value) }.prefix(max).map { ($0.key, $0.value) })
+    }
+
     /// Guardado en un almacén de claves (pruebas).
     public convenience init(store: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }, lookup: @escaping @Sendable (String) async -> String??) {
         self.init(load: { store.data(Self.storeKey) }, save: { store.set(Self.storeKey, data: $0) }, clock: clock, lookup: lookup)
@@ -109,7 +117,7 @@ public final class PosterSource: @unchecked Sendable {
             guard let answer else { return false }
             let now = clock()
             map[imdb] = Entry(path: answer ?? "", at: now)
-            if map.count > Self.maxEntries { map = map.filter { now.timeIntervalSince($0.value.at) < Self.ttl } }
+            if map.count > Self.maxEntries { map = Self.capped(map, at: \.at, now: now) }
             guard !saveScheduled else { return false }
             saveScheduled = true
             return true

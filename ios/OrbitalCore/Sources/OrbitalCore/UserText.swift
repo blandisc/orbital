@@ -67,6 +67,17 @@ extension DownloadError: UserFacingError {
     }
 }
 
+extension CinemetaError: UserFacingError {
+    /// Revisión del 11 nov 2026: ya no se traduce reconociendo «No pude leer el catálogo: …» por su forma.
+    public var userText: UserText {
+        switch self {
+        case .network(let reason): UserText("No pude leer el catálogo: %@", .text(reason))
+        case .unexpected: UserText("Respuesta inesperada de Cinemeta")
+        case .notFound: UserText("Título no encontrado")
+        }
+    }
+}
+
 extension DebridError: UserFacingError {
     /// Todos son textos fijos (la causa técnica de `.network` no se enseña).
     public var userText: UserText { UserText(description) }
