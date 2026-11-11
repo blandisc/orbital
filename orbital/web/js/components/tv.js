@@ -7,7 +7,7 @@ import { swipeArea } from "../core/swipe.js";
 import { clock } from "../core/format.js";
 import { sized } from "../core/images.js";
 import { airingLine, ALL, nextLine, categoriesOf, categoryHue, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
-import { keepInView, replay } from "./browse.js";
+import { keepInView, replay, windowCells } from "./browse.js";
 import { Badge, Chip, EmptyState, Eyebrow } from "./ui.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
@@ -79,7 +79,6 @@ export function createTv({ onFocus, onPick }) {
   /** Una casilla: su número, el logo (o las letras del nombre si no hay o no carga) y el nombre. */
   function tile(channel, i) {
     const id = `channel:${i}`;
-    targets.set(id, { kind: "channel", channel });
     const fallback = h("span", { class: "tv__initials" }, initials(channel.name));
     const logo = channel.logo && h("img", { class: "tv__logo", src: channel.logo, alt: "", loading: "lazy", decoding: "async" });
     logo?.addEventListener("error", () => logo.replaceWith(fallback), { once: true });
@@ -111,7 +110,11 @@ export function createTv({ onFocus, onPick }) {
     if (!list.some((c) => c.id === category)) category = list.some((c) => c.id === RECENT) ? RECENT : ALL;
     channels = channelsOf(category);
     renderCats();
-    mount(grid, channels.map(tile));
+    // Cientos de canales no se arman todos (V4, como Juegos y las listas): cada casilla existe con su lugar y su
+    // `data-focus-id`, pero lejos de la vista es un hueco; el foco, la rueda y el dedo la miden igual (browse.js).
+    channels.forEach((channel, i) => targets.set(`channel:${i}`, { kind: "channel", channel }));
+    mount(grid, windowCells(grid, channels.length, (i) => tile(channels[i], i),
+      { focusIdOf: (i) => `channel:${i}`, slotClass: ["tv__tile", "tv__tile--slot"] }));
     const empty = emptyState(data, { loading, error });
     mount(notice, empty && EmptyState({ icon: "tv", title: empty.title, text: empty.text, className: "tv__message" }));
     main.hidden = cats.hidden = !!empty;
@@ -126,6 +129,9 @@ export function createTv({ onFocus, onPick }) {
 
   /** Marca el foco, deja a la vista la casilla y pone la miniatura del canal donde te detienes. */
   function paint() {
+    const target = targets.get(focusId);
+    if (target?.kind === "channel") memory[category] = target.channel.id;
+    keepInView(grid, viewport, focusId); // antes de marcar: arma la casilla enfocada si era un hueco
     for (const node of el.querySelectorAll("[data-focus-id]")) {
       const on = node.dataset.focusId === focusId;
       node.classList.toggle("is-focused", on);
@@ -137,9 +143,6 @@ export function createTv({ onFocus, onPick }) {
     const cat = cats.querySelector(focusId.startsWith("cat:") ? `[data-focus-id="${focusId}"]` : ".tv__cat--on");
     cat?.scrollIntoView({ block: "nearest" });
     cats.classList.toggle("tv__cats--more", cats.scrollTop + cats.clientHeight < cats.scrollHeight - 2);
-    const target = targets.get(focusId);
-    if (target?.kind === "channel") memory[category] = target.channel.id;
-    keepInView(grid, viewport, focusId);
     // En los canales, el enfocado; en las categorías, el que ya se veía en la miniatura (o el al aire, o el último que viste).
     const shown = target?.kind === "channel" ? target.channel : byId(previewing) ?? byId(playing) ?? recent()[0] ?? channels[0] ?? null;
     describe(shown);

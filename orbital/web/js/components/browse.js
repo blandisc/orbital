@@ -84,11 +84,12 @@ export const LAZY_FROM = 60;
 const cellsOf = new WeakMap(); // cuadrícula → [{ make, node, slot }]
 
 /** Las casillas de `grid`: `make(i)` arma la portada i. Las primeras FIRST (lo que se ve al abrir) ya vienen armadas. */
-export function windowCells(grid, count, make, { focusIdOf = (i) => String(i) } = {}) {
+export function windowCells(grid, count, make, { focusIdOf = (i) => String(i), slotClass = ["card", "card--slot"] } = {}) {
   if (count < LAZY_FROM) { cellsOf.delete(grid); return Array.from({ length: count }, (_, i) => make(i)); }
   const FIRST = 36;
   const cells = Array.from({ length: count }, (_, i) => {
-    const slot = h("div", { class: ["card", "card--slot"], "data-focus-id": focusIdOf(i), "aria-hidden": "true" });
+    // El hueco mide lo que la pieza (TV en vivo: `tv__tile--slot`, del alto de un canal); sin imagen, pie ni sombra.
+    const slot = h("div", { class: slotClass, "data-focus-id": focusIdOf(i), "aria-hidden": "true" });
     return { make: () => make(i), slot, node: i < FIRST ? make(i) : slot };
   });
   cellsOf.set(grid, cells);

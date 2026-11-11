@@ -85,3 +85,5 @@
 .tv__cat[data-hue="lavanda"] .icon { color: var(--rainbow-lavanda); }
 .tv__cat[data-hue="rosa"] .icon { color: var(--rainbow-rosa); }
 .is-focused.tv__cat .icon { color: currentColor; }
+/* Un canal lejos de la vista (V4, R3): solo su lugar, del alto de una casilla; se arma al acercarse (browse.js · windowCells). */
+.tv__tile--slot { pointer-events: none; }

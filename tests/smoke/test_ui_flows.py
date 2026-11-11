@@ -520,3 +520,67 @@ def test_choose_version_is_whole_and_the_notice_does_not_cover(browser, server, 
     assert not toast["hit"], toast
     assert not errors, errors
     page.close()
+
+
+def test_live_tv_with_hundreds_of_channels_arms_only_what_is_near(browser, server):  # noqa: F811
+    """R3-2 (V4 en TV en vivo): con 400 canales la cuadrícula no los arma todos (lejos de la vista son huecos del alto de un
+    canal), y el foco, la vista previa del enfocado, el salto de categoría, la rueda y el dedo siguen como siempre."""
+    page = browser.new_page(viewport={"width": 1920, "height": 1080})
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+
+    def many(route):
+        res = route.fetch()
+        data = res.json()
+        extra = [{"id": f"demo:{n}", "name": f"Canal {n}", "categories": ["General"], "quality": "720p", "synthetic": False,
+                  "tagline": "", "logo": None, "number": 100 + n, "verified": True, "now": None} for n in range(400 - len(data["channels"]))]
+        data["channels"] = [*data["channels"], *extra]
+        for cat in data["categories"]:
+            if cat["id"] in ("todos", "general"):
+                cat["count"] += len(extra)
+        route.fulfill(response=res, json=data)
+
+    page.route("**/api/tv", many)
+    page.goto(server)
+    ready(page)
+    for _ in range(3):  # Inicio → Juegos → Películas y series → TV en vivo
+        page.keyboard.press("e")
+        page.wait_for_timeout(350)
+    page.locator(".tv__tile.is-focused").wait_for(timeout=8000)
+    page.wait_for_timeout(600)
+    count = """() => ({ cells: document.querySelectorAll('.tv__grid [data-focus-id^="channel:"]').length,
+      armed: document.querySelectorAll('.tv__grid .tv__tile.tile').length,
+      focused: document.querySelectorAll('.tv__grid .tile.is-focused').length,
+      name: document.querySelector('.tv__grid .tile.is-focused')?.getAttribute('aria-label') || '',
+      now: document.querySelector('.tv__now-title')?.textContent || '',
+      seen: (() => { const f = document.querySelector('.tv__grid .tile.is-focused'); if (!f) return false;
+        const r = f.getBoundingClientRect(), v = document.querySelector('.tv__viewport').getBoundingClientRect();
+        return r.top >= v.top - 1 && r.bottom <= v.bottom + 1; })() })"""
+    start = page.evaluate(count)
+    assert page.locator(".tv__cat--on").inner_text().startswith("Todos")
+    assert start["cells"] == 400, start
+    assert start["armed"] < 150, start  # antes: los 400 armados con su logo, su número y su nombre
+    for _ in range(40):
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(60)
+    page.wait_for_timeout(900)
+    deep = page.evaluate(count)
+    assert deep["focused"] == 1 and deep["seen"], deep
+    assert deep["armed"] < 150, deep
+    assert deep["now"] and deep["now"] in deep["name"], deep  # la vista previa es la del canal enfocado
+    page.mouse.move(1200, 800)
+    page.mouse.wheel(0, 120)
+    page.wait_for_timeout(700)
+    wheeled = page.evaluate(count)
+    assert wheeled["focused"] == 1 and wheeled["seen"] and wheeled["name"] != deep["name"], wheeled
+    page.keyboard.press("PageDown")  # la categoría siguiente
+    page.wait_for_timeout(500)
+    assert page.locator(".tv__cat--on").inner_text().startswith("Tus canales")
+    assert page.evaluate(count)["cells"] == 5
+    page.keyboard.press("PageUp")
+    page.wait_for_timeout(500)
+    back = page.evaluate(count)
+    assert page.locator(".tv__cat--on").inner_text().startswith("Todos") and back["cells"] == 400 and back["focused"] == 1, back
+    assert back["armed"] < 150, back
+    assert not errors, errors
+    page.close()
