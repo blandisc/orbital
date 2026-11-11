@@ -52,6 +52,18 @@ class PlayRequest(BaseModel):
                 "audio": {"lang": self.audio.lang, "title": self.audio.title} if self.audio else None, "subtitle": sub}
 
 
+def content_title(catalog, kind: str, meta_id: str) -> str:
+    """El nombre de lo que se va a ver cuando quien lo pide no lo manda (la voz, un atajo): la barra de arriba y «Volver
+    a…» dicen «The Office», no «Stremio». Sin ficha (sin red), «la película» o «la serie»."""
+    try:
+        name = (catalog.cinemeta.meta(kind, meta_id) or {}).get("name")
+    except Exception:  # noqa: BLE001 — sin ficha no se deja de reproducir
+        name = None
+    if isinstance(name, str) and name.strip():
+        return name.strip()[:200]
+    return "la serie" if kind == "series" else "la película"
+
+
 def stremio_message(exc: Exception) -> str:
     """El error de Stremio en palabras de la consola (no «Session not found»)."""
     from ..watch import expired_session
@@ -265,7 +277,7 @@ def router(d: Deps) -> APIRouter:
         kind, meta_id = body.kind, body.id
         if kind not in ("movie", "series") or not _clean_id(meta_id) or (body.video_id is not None and not _clean_id(body.video_id)):
             raise HTTPException(400, "Falta qué reproducir")
-        title = body.title or "Stremio"
+        title = body.title or content_title(catalog, kind, meta_id)
         video_id = body.video_id or (meta_id if kind == "movie" else None)
         player_ui.set_input("touch" if body.touch else "keyboard" if body.keyboard else "gamepad")
         if kind == "series" and not video_id and catalog.native_player:

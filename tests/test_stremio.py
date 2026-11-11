@@ -592,3 +592,24 @@ def test_a_meta_missing_everywhere_is_not_asked_again_but_a_network_error_is():
         with pytest.raises(cinemeta.CinemetaError):
             client.meta("movie", "tt3089630")
     assert len(calls) == 3  # sin conexión: se vuelve a intentar
+
+
+def test_play_without_title_says_what_is_playing_not_stremio(linked, monkeypatch):
+    """La voz o un atajo piden sin título: la barra de arriba y «Volver a…» dicen el nombre de lo que suena."""
+    from fastapi.testclient import TestClient
+
+    from orbital.api.media import content_title
+    from orbital.library import cinemeta
+    from orbital.server import create_app
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, meta_id, localized=True: {"name": "Interstellar"})
+    with TestClient(create_app(linked.config, linked), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        assert c.post("/api/stremio/play", json={"kind": "movie", "id": "tt0816692"}).json() == {"ok": True}
+    assert linked.launcher.status()["title"] == "Interstellar"
+
+    def offline(self, kind, meta_id, localized=True):
+        raise cinemeta.CinemetaError("sin red")
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", offline)
+    assert content_title(linked, "movie", "tt0816692") == "la película"
+    assert content_title(linked, "series", "tt0386676") == "la serie"
