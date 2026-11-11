@@ -171,12 +171,14 @@ struct TitleView: View {
                 hero(model)
                     .perfTag("title.hero").onAppear { Perf.mark("title.shown") }
                 VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
-                    VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
+                    // Tipos borrados a propósito (11 nov 2026): el cierre EXC_BAD_ACCESS de esta columna salía al copiar el tipo
+                    // anidado de datos + acciones + secciones; cada pedazo con su propio tipo lo acota (`TitleFactsLine`).
+                    AnyView(VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                         facts(model)
                         actions(model)
-                    }
+                    })
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { belowHero = $0 }
-                    readingSections(model)
+                    AnyView(readingSections(model))
                 }
                 .modifier(TitleEntrance())   // el arte llega con el zoom; lo de abajo entra detrás de él
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Layout.screenBottom)

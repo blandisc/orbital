@@ -46,27 +46,43 @@ extension TitleView {
         let line = Vocabulary.factLine(facts.map { $0.replacingOccurrences(of: " ", with: "\u{00A0}") })
         let certification = model.extras?.certification
         return VStack(alignment: leading ? .leading : .center, spacing: DS.Space.s2) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: DS.Space.s2) {
-                    factsText(line, leading: leading).fixedSize()
-                    certificationBadge(certification)
-                }
-                VStack(alignment: leading ? .leading : .center, spacing: DS.Space.s1) {
-                    factsText(line, leading: leading)
-                    certificationBadge(certification)
-                }
-            }
+            // Su propio tipo (no anidado en el de la ficha): ver `TitleFactsLine`.
+            TitleFactsLine(line: line, certification: certification, leading: leading, lineLimit: typeSize.isAccessibilitySize ? 4 : 2)
             RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, letterboxd: letterboxdInfo?.average, centered: !leading)
         }
         .frame(maxWidth: .infinity, alignment: leading ? .leading : .center)
     }
 
-    private func factsText(_ line: String, leading: Bool) -> some View {
-        Text(verbatim: line).recipe(.footnote).multilineTextAlignment(leading ? .leading : .center)
-            .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+}
+
+/// La línea de datos de la ficha («2005–2013 · Serie · Comedia · 22 min» y la clasificación): en un renglón si cabe; si no, la
+/// clasificación baja a su renglón. Es un tipo propio a propósito (11 nov 2026): metida en `TitleView.oneColumnLayout`, la
+/// `ViewThatFits` con dos pilas genéricas dejaba un tipo de vista anidado enorme, y una compilación Debug de la app cerró
+/// (EXC_BAD_ACCESS al copiar ese tipo, en `swift_retain`). Con un tipo con nombre la ficha no carga ese anidado.
+struct TitleFactsLine: View {
+    let line: String
+    let certification: String?
+    let leading: Bool
+    let lineLimit: Int
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Space.s2) {
+                text.fixedSize()
+                badge
+            }
+            VStack(alignment: leading ? .leading : .center, spacing: DS.Space.s1) {
+                text
+                badge
+            }
+        }
     }
 
-    @ViewBuilder private func certificationBadge(_ certification: String?) -> some View {
+    private var text: some View {
+        Text(verbatim: line).recipe(.footnote).multilineTextAlignment(leading ? .leading : .center).lineLimit(lineLimit)
+    }
+
+    @ViewBuilder private var badge: some View {
         if let certification {
             QualityBadges(items: [certification]).fixedSize().accessibilityLabel(Text("Clasificación \(certification)"))
         }
