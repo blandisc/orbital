@@ -89,7 +89,7 @@ test("V4: las cuadrículas largas arman solo lo cercano y la enfocada siempre es
   assert.match(browse, /export const LAZY_FROM = 60;/);
   assert.match(browse, /class: \["card", "card--slot"\], "data-focus-id": focusIdOf\(i\)/);
   assert.match(browse, /const node = armed\(grid, grid\.querySelector/); // la enfocada, con su pie, antes de medir
-  assert.match(browse, /fillWindow\(grid, viewport\);\n\}/); // al final de keepInView
+  assert.match(browse, /fillWindow\(grid, viewport\);\r?\n\}/); // al final de keepInView
   assert.match(browse, /!c\.node\.classList\.contains\("is-focused"\)/); // la enfocada nunca se vacía
   const games = read("js/components/games.js");
   assert.match(games, /windowCells\(grid, games\.length,/);
