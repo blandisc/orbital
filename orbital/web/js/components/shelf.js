@@ -130,7 +130,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     const stage = row.stage && Stage(row.stage, row.items.slice(0, seeds), els.slice(0, seeds), { more: els.length > seeds });
     const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
     // El contador de la fila (RowCount, T12): el mismo en todas, Destacados incluida (antes llevaba puntos).
-    const count = RowCount({ className: "shelf__count" });
+    const count = RowCount({ className: "shelf__count", veil: true }); // con velo: el titular de arriba puede ser claro (revisión 2, 15)
     count.textContent = rowCountText(null, row.items.length - seeds);
     const dots = null;
     // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
