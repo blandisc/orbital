@@ -35,7 +35,8 @@ struct YearView: View {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         DSSectionHead(title: Text("Día por día"), trailing: Text("\(r.movies) películas · \(r.episodes) episodios"), level: .section, symbol: "calendar")
                         ScrollView(.horizontal, showsIndicators: false) { heatMap(r) }
-                            .defaultScrollAnchor(.trailing)   // lo reciente a la vista
+                            .defaultScrollAnchor(.trailing, for: .initialOffset)   // lo reciente a la vista
+                            .defaultScrollAnchor(.leading, for: .alignment)   // si cabe entero (iPad, Mac), a la izquierda
                         HStack(spacing: DS.Space.s4) {
                             legend(DS.YearMap.movies, Text("Películas")); legend(DS.YearMap.series, Text("Series")); legend(DS.YearMap.both, Text("Las dos"))
                         }
@@ -126,7 +127,7 @@ struct YearView: View {
             guard offset >= 0, let day = cal.date(byAdding: .day, value: offset, to: start), day <= today else { return }
             selectedDay = day
         }
-        .sensoryFeedback(.selection, trigger: selectedDay)
+        .dsFeedback(.selection, trigger: selectedDay)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("\(r.days.count) días con algo visto"))
         .accessibilityHint(Text("Desliza hacia arriba o abajo para ir de un día con algo visto a otro"))

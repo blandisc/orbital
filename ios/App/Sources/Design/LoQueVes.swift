@@ -120,7 +120,7 @@ struct WatchingZoomMap: View {
             }
         }
         .animation(DS.Motion.smooth(reduceMotion), value: day)
-        .sensoryFeedback(.selection, trigger: day)
+        .dsFeedback(.selection, trigger: day)
         .onAppear {
             #if DEBUG
             if Demo.isOn, Demo.zoom == "day", let last = plays.map(\.at).max() { day = calendar.startOfDay(for: last) }
@@ -165,7 +165,8 @@ struct WatchingZoomMap: View {
                 }
             }
         }
-        .defaultScrollAnchor(.trailing)   // abre en lo de hoy
+        .defaultScrollAnchor(.trailing, for: .initialOffset)   // abre en lo de hoy
+        .defaultScrollAnchor(.leading, for: .alignment)   // si cabe entero (iPad, Mac), pegado a la izquierda y no a la derecha con un hueco
         .frame(height: DS.Watching.yearLabel + 8 * pitch)
         .accessibilityIdentifier("watching-heatmap")
     }
@@ -301,7 +302,7 @@ struct WatchingGenres: View {
                 built = false
                 Task { @MainActor in withAnimation(DS.Motion.enter(reduceMotion) ?? DS.Motion.fade) { built = true } }
             }
-            .sensoryFeedback(.selection, trigger: picked)
+            .dsFeedback(.selection, trigger: picked)
             .animation(DS.Motion.fade, value: picked)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(slices) { s in

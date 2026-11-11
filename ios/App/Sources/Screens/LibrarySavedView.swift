@@ -186,7 +186,7 @@ struct LibrarySavedView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if model.traktLinked {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.SavedBoard.columns), spacing: DS.Space.s2) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.SavedBoard.columns(forWidth: WindowMetrics.size.width, tiles: Self.tiles)), spacing: DS.Space.s2) {
                         NavigationLink(value: SavedListRoute(id: SavedModel.watchlist)) {
                             tile(.inList, Text("En Mi lista"), board, ready: model.loadedOnce)
                         }
@@ -242,6 +242,9 @@ struct LibrarySavedView: View {
             env.notify(format: "%@ y %d más cambiaron de estado", first.title, changes.count - 1, detail: "Lo viste en otro aparato o salió algo nuevo", tone: .info)
         }
     }
+
+    /// Cuántos montones lleva el tablero (En Mi lista y los tres estados): en ventana ancha, uno por columna.
+    static let tiles = 4
 
     static func name(_ status: TitleStatus) -> Text {
         switch status {

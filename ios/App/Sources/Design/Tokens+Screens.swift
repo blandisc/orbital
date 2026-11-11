@@ -579,6 +579,7 @@ extension DS {
         static let columnsPortrait = DesignTokens.Mosaic.columnsPortrait, columnsLandscape = DesignTokens.Mosaic.columnsLandscape
         static let columnsCompact = DesignTokens.Mosaic.columnsCompact, compactWidth = CGFloat(DesignTokens.Mosaic.compactWidth)
         static let uniform = DesignTokens.Mosaic.uniform
+        static let wideColumn: CGFloat = 170   // ventana ancha (iPad, Mac): más columnas de este ancho, no pósters gigantes
         static let growRatio = CGFloat(DesignTokens.Mosaic.growRatio)
         static let driftTick = DesignTokens.Mosaic.driftTick
         static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
@@ -590,6 +591,8 @@ extension DS {
     /// Biblioteca › Guardado por estado (G2-A, 9 nov 2026): las cuatro tarjetas y sus mini pósters.
     enum SavedBoard {
         static let columns = 2
+        /// En ventana ancha (iPad, Mac) los montones van en un solo renglón (dos columnas estiradas: un iPhone agrandado).
+        static func columns(forWidth width: CGFloat, tiles: Int) -> Int { width > TitleAction.readableWidth ? tiles : columns }
         static let miniPoster: CGFloat = 26
         static let miniPosters = 4
     }

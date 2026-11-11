@@ -75,7 +75,7 @@ struct MosaicCover: View {
         if Demo.isOn {
             Color.clear
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(verbatim: "\(order.count) " + order.prefix(DS.ParaTiB.coverColumns).map { $0.split(separator: "/").suffix(2).joined(separator: "/") }.joined(separator: ",")))
+                .accessibilityLabel(Text(verbatim: "\(order.count) " + order.prefix(columns).map { $0.split(separator: "/").suffix(2).joined(separator: "/") }.joined(separator: ",")))
                 .accessibilityIdentifier("paraTi-cover-wall")
                 .allowsHitTesting(false)
         }
@@ -87,7 +87,7 @@ struct MosaicCover: View {
     /// (`CoreDrift`): SwiftUI no repinta nada en cada cuadro. Quieto con «Reducir movimiento» y en las pruebas
     /// (`-demo-no-idle`); fuera de pantalla se pausa donde iba.
     private var moving: some View {
-        let columns = DS.ParaTiB.coverColumns
+        let columns = self.columns
         return HStack(spacing: DS.Space.s2) {
             ForEach(0..<columns, id: \.self) { c in
                 let posters = column(c)
@@ -99,10 +99,13 @@ struct MosaicCover: View {
                     .frame(width: Self.columnWidth, height: DS.ParaTiB.coverWallHeight)
             }
         }
-        .frame(width: DS.ParaTiB.coverWall, height: DS.ParaTiB.coverWallHeight)
+        .frame(width: CGFloat(columns) * Self.columnWidth + DS.Space.s2 * CGFloat(columns - 1), height: DS.ParaTiB.coverWallHeight)
         .rotationEffect(.degrees(DS.ParaTiB.coverTilt))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    /// Cuántas columnas lleva el muro en esta ventana (`DS.ParaTiB.coverColumns(forWidth:)`): ocho, o más en ventana ancha.
+    private var columns: Int { DS.ParaTiB.coverColumns(forWidth: WindowMetrics.size.width) }
 
     private var still: Bool {
         #if DEBUG
@@ -118,7 +121,7 @@ struct MosaicCover: View {
     /// Los pósters de una columna: uno de cada `coverColumns` del orden del muro (así las vecinas no repiten).
     private func column(_ c: Int) -> [String] {
         guard !order.isEmpty else { return [] }
-        return (0..<DS.ParaTiB.coverRows).map { order[(c + $0 * DS.ParaTiB.coverColumns) % order.count] }
+        return (0..<DS.ParaTiB.coverRows).map { order[(c + $0 * columns) % order.count] }
     }
 
     /// La tira de una columna, dos veces seguida: al bajar una vuelta entera queda igual que al principio y se repite sin corte.

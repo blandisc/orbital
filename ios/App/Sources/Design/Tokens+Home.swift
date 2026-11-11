@@ -15,9 +15,17 @@ extension DS {
         /// La de esta ventana (la portada y su esqueleto, `HeroSkeleton`, miden lo mismo).
         static var current: CGFloat {
             let size = WindowMetrics.size
-            if size.width >= wideFrom { return size.height > size.width ? aspectWidePortrait : aspectWide }
+            if size.width >= wideFrom {
+                // Acostado (iPad, Mac a pantalla completa) 1.9 dejaba la portada en casi toda la ventana y «Seguir viendo»
+                // abajo, fuera de la vista: no pasa de `maxHeightShare` del alto de la ventana (más apaisada si hace falta).
+                let base = size.height > size.width ? aspectWidePortrait : aspectWide
+                return min(aspectWideMax, max(base, size.width / (size.height * maxHeightShare)))
+            }
             return size.height < shortScreen ? aspectShort : aspect
         }
+        /// En ventana ancha, la portada mide a lo más esta parte del alto de la ventana (iPad acostado, Mac), sin pasar de
+        /// `aspectWideMax`: más apaisada, el fondo 16:9 ya no llenaba el marco (`ArtFit.narrowLimit`) y salía con franjas.
+        static let maxHeightShare: CGFloat = 0.6, aspectWideMax: CGFloat = 2.4
         /// Cuánto se enciman «Seguir viendo» sobre el borde de abajo de la portada (se ve sin bajar).
         static let overlap: CGFloat = 44
     }
@@ -53,6 +61,12 @@ extension DS {
         /// El muro: ocho columnas (con siete, girado, quedaba una orilla sin pósters) de trece pósters cada vuelta.
         static let coverHeight: CGFloat = 300, coverWall: CGFloat = 828, coverColumns = 8, coverPosters = 96, coverTilt: Double = -10
         static let coverRows = 13, coverWallHeight: CGFloat = 1900
+        /// En ventana ancha (iPad acostado o grande, Mac) el muro suma columnas del mismo ancho hasta cubrir la ventana (con
+        /// las ocho de siempre quedaba una cuña en blanco a la izquierda). Hasta el ancho del iPad de pie, las ocho de siempre.
+        static func coverColumns(forWidth width: CGFloat) -> Int {
+            let needed = Int((CGFloat(coverColumns) * width / coverWall).rounded(.up))
+            return needed > coverColumns ? needed + 1 : coverColumns
+        }
         static let coverClearAt: Double = 0.25, coverBaseVeil: Double = 0.8, coverBaseAt: Double = 0.6
         /// Cuánto sube el muro (hasta la orilla de la pantalla, detrás del título y la barra: sin corte) y cuánto baja bajo los
         /// círculos; qué tanto se ve hasta arriba y el velo que deja leer el título encima.

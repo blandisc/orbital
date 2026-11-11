@@ -48,10 +48,11 @@ struct DownloadsView: View {
         let model = observer.model
         Group {
             switch part {
-            // iPad y Mac: la lista al centro, no estirada a todo lo ancho. Guardado es una cuadrícula: llena el ancho (más columnas).
+            // iPad y Mac: la lista al centro, no estirada a todo lo ancho; Guardado también (sus montones van en un renglón y
+            // sus listas a lo ancho de Descargas: antes dos tarjetas de 1000 pt con cuatro pósters chiquitos).
             case .media: MiMediaView(observer: media) { EmptyView() }.readableListWidth()
             case .phone: phoneList(model).readableListWidth()
-            case .saved: LibrarySavedView(observer: saved)
+            case .saved: LibrarySavedView(observer: saved).readableListWidth()
             }
         }
         // Un solo fondo para las tres partes, también mientras cargan y vacías: antes solo Descargas lo traía y Mi media y

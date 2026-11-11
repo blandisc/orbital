@@ -197,7 +197,10 @@ struct Mosaic: View {
     }
 
     private static func columnCount(width: CGFloat, horizontalSizeClass: UserInterfaceSizeClass?) -> Int {
-        let landscape = width > DS.Poster.heroHeight * 2 || horizontalSizeClass == .regular
+        // Ventana ancha (iPad, Mac): tantas columnas como quepan de `wideColumn`; con cinco fijas, acostado cada póster medía
+        // más de 200 pt y solo se veían dos renglones (un iPhone estirado).
+        if horizontalSizeClass == .regular { return max(DS.Mosaic.columnsLandscape, Int(width / DS.Mosaic.wideColumn)) }
+        let landscape = width > DS.Poster.heroHeight * 2
         if landscape { return DS.Mosaic.columnsLandscape }
         return width < DS.Mosaic.compactWidth ? DS.Mosaic.columnsCompact : DS.Mosaic.columnsPortrait
     }
