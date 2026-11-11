@@ -37,7 +37,7 @@ struct RootView: View {
     init() {
         let env = AppEnvironment.shared
         #if DEBUG
-        let wanted = !Demo.isOn || ProcessInfo.processInfo.arguments.contains("-demo-splash")
+        let wanted = !Demo.isOn || Demo.has("-demo-splash")
         #else
         let wanted = true
         #endif
@@ -163,9 +163,7 @@ struct RootView: View {
             if Demo.isOn { Demo.showNotice(env) }
             if Demo.isOn { ui.showingGuide = Demo.firstRun } else if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
             // `-demo-story <id>`: una historia de «Aprende» abierta (capturas de sus escenas).
-            if Demo.isOn, let i = ProcessInfo.processInfo.arguments.firstIndex(of: "-demo-story"), i + 1 < ProcessInfo.processInfo.arguments.count {
-                ui.openStory = ProcessInfo.processInfo.arguments[i + 1]
-            }
+            if Demo.isOn, let story = Demo.value(after: "-demo-story") { ui.openStory = story }
             #else
             if OnboardingModel.shouldShow(env.services) { ui.showingGuide = true }
             #endif

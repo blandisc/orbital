@@ -251,9 +251,9 @@ struct KindPill: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Series o películas"))
         #if DEBUG
-        .task { if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-kind-open") { open = true } }   // capturas: abierta
+        .task { if Demo.isOn, Demo.has("-demo-kind-open") { open = true } }   // capturas: abierta
         .task {   // capturas en video: abre, elige Series, y regresa a Todo
-            guard Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-kind-cycle") else { return }
+            guard Demo.isOn, Demo.has("-demo-kind-cycle") else { return }
             for next in ["series", ""] {
                 try? await Task.sleep(for: .seconds(2)); choose(kind)   // ds-exception: guion de capturas, solo en DEBUG
                 try? await Task.sleep(for: .seconds(1.2)); choose(next)   // ds-exception: guion de capturas, solo en DEBUG

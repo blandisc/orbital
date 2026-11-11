@@ -10,33 +10,38 @@ import OrbitalAddons
 /// que da videos de prueba públicos. Cinemeta y los pósteres son los de verdad. Nada se guarda en el Keychain ni en disco:
 /// sirve para recorrer la app en el simulador sin tu cuenta.
 enum Demo {
-    static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-demo") }
+    /// Los argumentos de arranque, leídos una sola vez (F10): las pantallas preguntan aquí (`has`, `value(after:)`), nunca a
+    /// `ProcessInfo`. Solo existe en Debug; en Release la app no lee argumentos.
+    static let arguments = ProcessInfo.processInfo.arguments
+    static func has(_ flag: String) -> Bool { arguments.contains(flag) }
+
+    static var isOn: Bool { has("-demo") }
     /// `-start-tab N` y `-start-mode lists|mosaic`: abren esa pestaña con tus datos de verdad (sin `-demo`), para revisar
     /// un iPhone físico desde la Mac (`devicectl … process launch`) y capturarlo. Solo Debug.
     static var startTab: Int? { value(after: "-start-tab").flatMap(Int.init) }
     static var startMode: String? { value(after: "-start-mode") }
     /// `-demo-no-idle`: el mosaico no se mueve solo (las pruebas de arrastre miden solo lo que hace el dedo).
     /// Lo guardado (Inicio, el mosaico, los colores) sobrevive entre aperturas, como en el iPhone de verdad (para medir).
-    static var persist: Bool { ProcessInfo.processInfo.arguments.contains("-demo-persist") }
-    static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
+    static var persist: Bool { has("-demo-persist") }
+    static var noIdle: Bool { has("-demo-no-idle") }
     /// `-demo-free-tabs`: en demo se puede cambiar de pestaña (sin esto, la de `-demo-tab` vuelve siempre).
-    static var freeTabs: Bool { ProcessInfo.processInfo.arguments.contains("-demo-free-tabs") }
+    static var freeTabs: Bool { has("-demo-free-tabs") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
     /// `-demo-first-run`: la guía de la primera vez (sin Real-Debrid ni Trakt conectados).
-    static var firstRun: Bool { ProcessInfo.processInfo.arguments.contains("-demo-first-run") }
+    static var firstRun: Bool { has("-demo-first-run") }
     /// `-demo-coach`: como si ya hubieras hecho la guía, para que salgan los avisos sobre la pantalla (F3).
-    static var coach: Bool { ProcessInfo.processInfo.arguments.contains("-demo-coach") }
-    static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
+    static var coach: Bool { has("-demo-coach") }
+    static var noTV: Bool { has("-demo-no-tv") }
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
-    static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") || horror }
+    static var tvNow: Bool { has("-demo-tv-now") || horror }
     /// `-demo-tv-horror`: en la TV suena Insidious (con mapa de sustos de verdad) y la TV está en su reproductor.
-    static var horror: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-horror") }
+    static var horror: Bool { has("-demo-tv-horror") }
     /// `-demo-volume-extra 150`: con el reproductor de la TV (`-demo-tv-horror`), el Extra en ese nivel (V4-A).
     static var volumeExtra: Int? { value(after: "-demo-volume-extra").flatMap(Int.init) }
     /// `-demo-game`: la consola de mentira tiene un juego abierto (modo acompañante).
-    static var game: Bool { ProcessInfo.processInfo.arguments.contains("-demo-game") }
+    static var game: Bool { has("-demo-game") }
 
     /// `-demo-inbox download|open`: tu Orbital de mentira dejó algo para el iPhone («Descargar en el iPhone» o «Enviar al iPhone»):
     /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
@@ -71,32 +76,32 @@ enum Demo {
                                             displayTitle: "La Oficina", episodeLabel: "T2 · E5")
 
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
-    static var searchSlow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-search-slow") }
+    static var searchSlow: Bool { has("-demo-search-slow") }
     static let slowLanes = ["torrentio", "comet", "mediafusion"]
-    static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
+    static var scrobble: Bool { has("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
-    static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
+    static var because: Bool { has("-demo-because") }
     /// `-demo-rate`: lo que terminaste hace poco y aún no calificas (Moonlight, Parásitos y una serie): la pastilla de calificar.
-    static var rate: Bool { ProcessInfo.processInfo.arguments.contains("-demo-rate") }
+    static var rate: Bool { has("-demo-rate") }
     /// `-demo-trakt`: Trakt «conectado» con una watchlist y listas propias de mentira (unas recientes, otras viejas) que tardan
     /// ~1,5 s en llegar, como la red de verdad: para ver «Guardar en…» cargando y ya cargada. `-demo-open save` lo prende solo.
-    static var trakt: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt") || open == "save" }
+    static var trakt: Bool { has("-demo-trakt") || open == "save" }
     /// `-demo-vip`: tu Trakt de mentira es VIP (tu nota se guarda en Trakt; sin esto, en el iPhone). O3-B, G6.
-    static var vip: Bool { ProcessInfo.processInfo.arguments.contains("-demo-vip") }
+    static var vip: Bool { has("-demo-vip") }
     /// `-demo-scroll 240`: la ficha abre ya desplazada esos puntos (para capturar el arte a medio recoger).
     static var scroll: Double? { value(after: "-demo-scroll").flatMap(Double.init) }
     /// `-demo-autoscroll`: la ficha baja sola y suave hasta ~600 pt, espera y regresa arriba (para grabar el arte en video).
-    static var autoscroll: Bool { ProcessInfo.processInfo.arguments.contains("-demo-autoscroll") }
+    static var autoscroll: Bool { has("-demo-autoscroll") }
     /// `-demo-onedrive off|unlinked|linked`: OneDrive de mentira (Microsoft y la carpeta responden aquí; nada sale a tu cuenta).
     /// `linked` ya trae la carpeta «Películas» revisada: Dune Part Two (2024) y Severance T1 sale como fuente.
     static var oneDrive: String? { value(after: "-demo-onedrive") }
     /// `-demo-media`: Descargas abre en Mi media; `-demo-media-title movie:tt…` abre ese título.
-    static var media: Bool { ProcessInfo.processInfo.arguments.contains("-demo-media") }
+    static var media: Bool { has("-demo-media") }
     /// `-demo-library downloads|media|saved`: la parte de Biblioteca con la que abre (sin esto, Guardado; con `-demo-media`,
     /// Mi media; con `-demo-downloads`, Descargas).
     static var libraryPart: String? { value(after: "-demo-library") }
     /// `-demo-saved-empty`: Mi lista de Trakt vacía (el vacío de Guardado, con «Explorar»).
-    static var savedEmpty: Bool { ProcessInfo.processInfo.arguments.contains("-demo-saved-empty") }
+    static var savedEmpty: Bool { has("-demo-saved-empty") }
     static var mediaTitle: String? { value(after: "-demo-media-title") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
@@ -105,7 +110,7 @@ enum Demo {
     }
 
     static func value(after flag: String) -> String? {
-        let args = ProcessInfo.processInfo.arguments
+        let args = arguments
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
         return args[i + 1]
     }
@@ -123,7 +128,7 @@ enum Demo {
     /// `-demo-player-state skip-intro|error|upnext|locked`: ya reproduciendo, pone «Saltar intro», el error, la tarjeta de
     /// «Siguiente episodio» o el bloqueo (estados que el simulador no alcanza solo). `-demo-player-portrait`: abre en vertical.
     static var playerState: String? { value(after: "-demo-player-state") }
-    static var playerPortrait: Bool { ProcessInfo.processInfo.arguments.contains("-demo-player-portrait") }
+    static var playerPortrait: Bool { has("-demo-player-portrait") }
     /// `-demo-widget sample|empty|live`: lo que enseña el widget «Lo siguiente para ti» (por omisión un snapshot de ejemplo; `empty`,
     /// sin nada pendiente; `live`, el que arma Inicio con la biblioteca de demostración).
     static var widget: String? { value(after: "-demo-widget") }
@@ -155,7 +160,7 @@ enum Demo {
     }
 
     /// `-demo-airings`: Trakt «conectado» con un calendario de mentira (Próximos estrenos) para ver el estante en Listas.
-    static var airings: Bool { ProcessInfo.processInfo.arguments.contains("-demo-airings") }
+    static var airings: Bool { has("-demo-airings") }
     /// `-demo-shelf trend`: en Para ti › Listas, baja hasta ese estante al abrir (para capturarlo sin tocar la pantalla).
     static var shelf: String? { value(after: "-demo-shelf") }
     /// `-demo-mode lists`: en Para ti, abre en Listas (en vez de Mosaico).
@@ -170,7 +175,7 @@ enum Demo {
     static var language: String? { value(after: "-demo-lang") }
     /// `-demo-downloads`: Descargas con una película, dos episodios y una a medias (para ver y deslizar los renglones).
     static var downloads: [DownloadItem] {
-        guard ProcessInfo.processInfo.arguments.contains("-demo-downloads") else { return [] }
+        guard has("-demo-downloads") else { return [] }
         func item(_ kind: String, _ meta: String, _ video: String, _ title: String, _ sub: String, _ state: DownloadState, _ release: String) -> DownloadItem {
             var d = DownloadItem(id: DownloadItem.makeID(metaID: meta, videoID: video), kind: kind, metaID: meta, videoID: video, title: title, originalTitle: title,
                                  subtitle: sub, poster: "https://images.metahub.space/poster/medium/\(meta)/img", addon: "Torrentio", release: release,
@@ -193,7 +198,7 @@ enum Demo {
     /// La carpeta de descargas del modo demostración.
     static var demoDownloadsRoot: URL { FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads") }
     /// `-demo-offline`: como en modo avión: toda petición falla con «sin conexión» (las de mentira también).
-    static var offline: Bool { ProcessInfo.processInfo.arguments.contains("-demo-offline") }
+    static var offline: Bool { has("-demo-offline") }
     /// `-demo-down trakt,addons,rd,tmdb,cinemeta,orbital`: con internet, pero esos servicios contestan 503 (caídos). Para probar
     /// el modo degradado (`docs/producto/modo-degradado.md`): cada pantalla debe decir quién falló, no «revisa tu conexión».
     static var down: Set<String> { Set((value(after: "-demo-down") ?? "").split(separator: ",").map(String.init)) }
@@ -222,16 +227,16 @@ enum Demo {
     /// para ver el pie «Para ti de tu Orbital» y el número del Top 10 sin tener una consola real.
     /// `-demo-appearance light|dark`: fuerza el modo claro u oscuro (para las capturas de los dos).
     static var appearance: String? { value(after: "-demo-appearance") }
-    static var console: Bool { ProcessInfo.processInfo.arguments.contains("-demo-console") }
+    static var console: Bool { has("-demo-console") }
     /// `-demo-tmdb`: TMDB de mentira (elenco, saga, tráiler, dónde verlo) para ver la ficha rica sin clave.
-    static var tmdb: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tmdb") }
+    static var tmdb: Bool { has("-demo-tmdb") }
     /// `-demo-mosaic-focus 3`: en «Para ti» › Mosaico, enfoca esa sugerencia (su índice en `model.mosaic`) al abrir.
     static var mosaicFocus: Int? { value(after: "-demo-mosaic-focus").flatMap(Int.init) }
 
     /// `-demo-mosaic-bench`: el mosaico se desplaza y cambia de foco solo (ver `MosaicBench`) e imprime los fotogramas.
-    static var mosaicBench: Bool { ProcessInfo.processInfo.arguments.contains("-demo-mosaic-bench") }
+    static var mosaicBench: Bool { has("-demo-mosaic-bench") }
     /// `-demo-trakt-builtin`: Trakt conectado con el Client ID incluido en la app (Ajustes sin Client ID).
-    static var traktBuiltIn: Bool { ProcessInfo.processInfo.arguments.contains("-demo-trakt-builtin") }
+    static var traktBuiltIn: Bool { has("-demo-trakt-builtin") }
 
     /// `-demo-rd-request queued|downloading|stalled|nopeers|blocked|toomany|ready|all`: tus pedidos a Real-Debrid de
     /// mentira (la libreta ya llena: The Office T1 E2 en ese estado; `all`, uno de cada uno) para ver la ficha, «Seguir
@@ -283,12 +288,12 @@ enum Demo {
         services.debrid.rememberForDemo(DebridStatus(service: "Real-Debrid", username: "demo", isPremium: true, expires: Date().addingTimeInterval(18 * 86_400),
                                                      checkedAt: Date(), userID: "1"))
     }
-    static var rdSlow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-rd-slow") }
+    static var rdSlow: Bool { has("-demo-rd-slow") }
 
     /// Lo que tienes a medias en la demo («Seguir viendo»: The Office, Breaking Bad e Interstellar). Antes lo traía la cuenta
     /// de mentira de Stremio al abrir; sin Stremio (E1) se siembra aquí, igual que quedaba. Con `-demo-signed-out`, nada.
     @MainActor static func seedLibrary(_ services: Services) {
-        guard !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") else { return }
+        guard !has("-demo-signed-out") else { return }
         let now = Date().timeIntervalSince1970
         let rows: [(id: String, kind: String, name: String, video: String, at: Double, length: Double, hoursAgo: Double)] = [
             ("tt0386676", "series", "The Office", "tt0386676:2:5", 120, 1_320, 2),
@@ -314,7 +319,7 @@ enum Demo {
         let secrets = InMemorySecrets()
         // El complemento de demostración (videos de prueba), como uno que pegaste en Ajustes: antes llegaba con la cuenta de
         // mentira de Stremio y, sin ella (E1), el reproductor de la demo se quedaba sin versiones. Con `-demo-search-slow`, tres.
-        if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") {
+        if !has("-demo-signed-out") {
             let urls = searchSlow ? slowLanes.map { "https://demo.orbital.invalid/\($0)/manifest.json" } : [addonURL]
             secrets.set(SecretKey.ownAddons, urls.joined(separator: "\n"))
         }

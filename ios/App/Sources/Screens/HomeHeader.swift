@@ -28,7 +28,7 @@ struct HomeHeader: View {
     enum Hint { case ringOnAvatar, storyInCapsule }
     static var hint: Hint {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-demo-hint-hh3") { return .storyInCapsule }
+        if Demo.has("-demo-hint-hh3") { return .storyInCapsule }
         #endif
         return .ringOnAvatar
     }
@@ -71,7 +71,7 @@ struct HomeHeader: View {
         .dsFeedback(.selection, trigger: open)
         .onChange(of: stories.isEmpty) { _, empty in if empty { open = false } }
         #if DEBUG
-        .task { if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-stories-open") { open = true } }   // capturas: ya abiertas
+        .task { if Demo.isOn, Demo.has("-demo-stories-open") { open = true } }   // capturas: ya abiertas
         #endif
     }
 

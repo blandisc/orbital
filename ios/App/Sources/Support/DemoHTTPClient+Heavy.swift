@@ -6,7 +6,7 @@ extension DemoHTTPClient {
     /// `-demo-heavy` (N5-A): como «Dune: Parte dos» del escenario 05: la inglesa al instante es un REMUX 4K de 64 GB que aquí
     /// no se ve bien; gana la castellana y la ficha dice por qué. nil sin la bandera.
     static func heavyStreams(keyless: Bool = false) -> HTTPResponse? {
-        guard ProcessInfo.processInfo.arguments.contains("-demo-heavy") else { return nil }
+        guard Demo.has("-demo-heavy") else { return nil }
         let video = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
         let streams: [JSON] = [
             ["name": "[RD+] Torrentio\n4k DV", "title": "Dune.Part.Two.2024.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.REMUX-FraMeSToR\n👤 317 💾 64.29 GB ⚙️ ThePirateBay",

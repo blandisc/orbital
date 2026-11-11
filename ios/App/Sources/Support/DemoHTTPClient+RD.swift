@@ -11,7 +11,7 @@ extension DemoHTTPClient {
     static func requestStreams() -> HTTPResponse? {
         guard let rd = Demo.rdRequest, rd != "ready" else { return nil }
         guard rd != "none" else { return HTTPResponse(status: 200, data: JSON.object(["streams": []]).serialized()) }
-        let arguments = ProcessInfo.processInfo.arguments
+        let arguments = Demo.arguments
         let pending = "https://demo.orbital.invalid/resolve/realdebrid/DEMO/\(demoTorrent)/null/1/Demo.S02E06.1080p.LATINO.mkv"
         let instantTitle = arguments.contains("-demo-rd-instant-latino") ? "The.Office.S02E06.720p.WEB-DL.LATINO\n👤 40 💾 700 MB ⚙️ Cinecalidad\n🇲🇽"
                                                                           : "Demo.S02E06.720p.WEB-DL.ENG\n👤 40 💾 700 MB ⚙️ EZTV"

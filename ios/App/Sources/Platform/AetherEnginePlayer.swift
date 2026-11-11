@@ -28,7 +28,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         #if DEBUG
         // `-demo-software-path`: todo por la ruta de software del motor (la que usan los MKV raros, como algunos de Los Simpson),
         // para probar en el simulador fallas que antes solo salían en el iPhone.
-        if Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-software-path") { AetherEngine.setForceSoftwarePathForTesting(true) }
+        if Demo.isOn, Demo.has("-demo-software-path") { AetherEngine.setForceSoftwarePathForTesting(true) }
         #endif
         guard let engine = try? AetherEngine() else { return nil }
         self.engine = engine

@@ -81,7 +81,7 @@ struct DebridFlowIntroHost: ViewModifier {
 
     private var allowed: Bool {
         #if DEBUG
-        if Demo.isOn { return ProcessInfo.processInfo.arguments.contains("-demo-debrid-intro") }
+        if Demo.isOn { return Demo.has("-demo-debrid-intro") }
         #endif
         return true
     }

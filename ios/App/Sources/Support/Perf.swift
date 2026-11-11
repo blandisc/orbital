@@ -8,7 +8,7 @@ enum Perf {
     /// Solo en Debug (se mide con la demostración, que tampoco existe en Release): en la app de la tienda no lee argumentos
     /// ni escribe bitácoras, y el compilador quita las marcas (auditoría, 31 oct 2026, C2).
     #if DEBUG
-    static let isOn = ProcessInfo.processInfo.arguments.contains("-perf")
+    static let isOn = Demo.has("-perf")
     #else
     static let isOn = false
     #endif

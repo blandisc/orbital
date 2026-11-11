@@ -35,7 +35,7 @@ struct DownloadsView: View {
     /// que pida `-demo-library` (`-demo-media` y `-demo-downloads` abren su parte).
     private static var lastPart: Part {
         #if DEBUG
-        if Demo.isOn { return Demo.libraryPart.flatMap(Part.init(rawValue:)) ?? (Demo.media ? .media : ProcessInfo.processInfo.arguments.contains("-demo-downloads") ? .phone : .saved) }
+        if Demo.isOn { return Demo.libraryPart.flatMap(Part.init(rawValue:)) ?? (Demo.media ? .media : Demo.has("-demo-downloads") ? .phone : .saved) }
         #endif
         return UserDefaults.standard.string(forKey: partKey).flatMap(Part.init(rawValue:)) ?? .saved
     }

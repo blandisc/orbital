@@ -22,7 +22,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private var demoVolume = 40, demoMuted = false
 
     /// `-net-latency`: las respuestas de mentira tardan 80–150 ms, como un servidor de verdad.
-    private static let netLatency = ProcessInfo.processInfo.arguments.contains("-net-latency")
+    private static let netLatency = Demo.has("-net-latency")
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let start = Perf.now()
@@ -126,7 +126,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
 
     /// `-demo-release-alert`: pide permiso y manda el aviso de ejemplo unos segundos después (para verlo con la app cerrada).
     @MainActor static func postReleaseAlert(language: String) {
-        guard Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-release-alert") else { return }
+        guard Demo.isOn, Demo.has("-demo-release-alert") else { return }
         Task {
             guard await ReleaseNotifier.requestPermission() else { return }
             try? await Task.sleep(for: .seconds(4))
@@ -280,7 +280,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         ("tt14452776", "The Bear", "show", 400), ("tt1375666", "Inception", "movie", 450), ("tt7366338", "Chernobyl", "show", 500),
         ("tt5753856", "Dark", "show", 600), ("tt0068646", "The Godfather", "movie", 700)]
     var nextTraktList = 106
-    var traktHidden: Set<String> = ProcessInfo.processInfo.arguments.contains("-demo-hidden-shows") ? ["tt7366338"] : []   // SS1-A
+    var traktHidden: Set<String> = Demo.has("-demo-hidden-shows") ? ["tt7366338"] : []   // SS1-A
 
     /// Lo que manda `orbital/foryou.py` para un `video_item`, con `rank` si es de un chart.
     private static func demoRow(_ imdb: String, _ title: String, _ year: Int, _ kind: String, rank: Int? = nil, why: String) -> JSON {
@@ -465,7 +465,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         guard path.hasPrefix("/stream/") else { return HTTPResponse(status: 404, data: Data()) }
         // Como Torrentio con Real-Debrid: título con resolución, tamaño e idioma. Videos públicos de prueba.
         // `-demo-slow`: una «película» de 1 GB (un archivo de prueba de velocidad) para ver la descarga y su actividad en vivo.
-        if ProcessInfo.processInfo.arguments.contains("-demo-slow") {
+        if Demo.has("-demo-slow") {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
                                                                              "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
         }
@@ -473,13 +473,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if let heavy = Self.heavyStreams() { return heavy }   // `-demo-heavy` (N5-A, DemoHTTPClient+Heavy)
         // `-demo-video <url>` solo (sin `-demo-versions`): una sola versión con ese video, para cualquier título (p. ej. el MKV 4:3
         // de `scripts/ios_software_path.sh`, como los de Los Simpson). Antes solo valía junto con `-demo-versions`.
-        if let video = Demo.value(after: "-demo-video"), !ProcessInfo.processInfo.arguments.contains("-demo-versions") {
+        if let video = Demo.value(after: "-demo-video"), !Demo.has("-demo-versions") {
             return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n480p", "title": "Demo.4x3.mkv\n💾 50 MB",
                                                                              "url": .string(video)]]]).serialized())
         }
         // `-demo-versions`: las versiones reales de Intensa-Mente 2 (nombres de Torrentio, octubre de 2026), con videos de prueba,
         // para ver «Elegir versión» con latino, castellano, el original y los demás.
-        if ProcessInfo.processInfo.arguments.contains("-demo-versions") {
+        if Demo.has("-demo-versions") {
             // Un video largo (el de prueba de Apple): con uno de 10 s el reproductor se cerraba antes de poder verlo.
             // `-demo-video <url>`: otro video (p. ej. un MKV largo servido desde la Mac, para probar la vuelta de segundo plano).
             let video = Demo.value(after: "-demo-video") ?? "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
