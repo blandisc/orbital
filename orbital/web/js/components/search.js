@@ -8,7 +8,14 @@ import { dictationBase, dictationProblem } from "../core/keyboard.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
-import { EmptyState, Pill } from "./ui.js";
+import { EmptyState, Pill, SectionHead } from "./ui.js";
+
+/** El nombre de un grupo de resultados: un encabezado de subsección como el de cualquier fila (blanco, sin porqué). */
+const groupHead = (name) => {
+  const head = SectionHead(name, { className: "search__group" });
+  head.setAttribute("aria-hidden", "true"); // cada portada ya dice qué es
+  return head;
+};
 
 /**
  * Buscar juegos, películas y series con el mando, sin sufrir con títulos largos:
@@ -34,8 +41,9 @@ const layout = (cleared, dictateGlyph = "", listening = false, goGlyph = "") => 
   [..."890-.", { key: "delete", label: "Borrar", span: 2 }],
   [{ key: "space", label: "Espacio", span: 4 }, { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
   // Acciones claras con dedo o con mando: salir (su ícono), dictar y ver los resultados.
-  [{ key: "back", label: "Atrás", icon: "back", iconOnly: true, tone: "action" }, // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
-    { key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 3, icon: "mic", glyph: listening ? "" : dictateGlyph, on: listening },
+  // Sin tecla «<» (revisión 2, 16): repetía Esc/B, que ya están en el pie (y con el dedo, «Atrás» del pie o el borde).
+  // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
+  [{ key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 4, icon: "mic", glyph: listening ? "" : dictateGlyph, on: listening },
     // «Buscar» enseña su atajo (RT / AvPág), como Dictar: se pulsa desde cualquier tecla, sin ir hasta abajo.
     { key: "go", label: "Buscar", span: 3, tone: "go", glyph: goGlyph }],
 ];
@@ -141,9 +149,9 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       sets.at(-1).cards.push(card);
     });
     mount(results, sets.map((s) => h("div", { class: "search__set" },
-      h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[s.group]), h("div", { class: ["search__set-cards", "card-grid"] }, s.cards))),
+      groupHead(GROUPS[s.group]), h("div", { class: ["search__set-cards", "card-grid"] }, s.cards))),
     searching && h("div", { class: ["search__set", "search__set--ghost"], "aria-hidden": "true" },
-      h("span", { class: "search__group" }, picking?.kind === "series" ? "Series" : picking?.kind === "movie" ? "Películas" : "Películas y series"),
+      groupHead(picking?.kind === "series" ? "Series" : picking?.kind === "movie" ? "Películas" : "Películas y series"),
       h("div", { class: "search__set-cards" }, [0, 1, 2, 3].map(() => h("span", { class: "search__ghost" })))));
     results.classList.remove("search__results--recent");
     if (zone === "results") resultIndex = Math.min(resultIndex, Math.max(0, items.length - 1));
@@ -177,7 +185,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     focusables = [...chips, ...sets.flatMap(([, nodes]) => nodes)];
     // Como los resultados: cada grupo con su nombre encima y sus portadas en la cuadrícula de una lista.
     const set = (name, nodes, pills = false) => nodes.length > 0 && h("div", { class: ["search__set", pills && "search__set--pills"] },
-      h("span", { class: "search__group", "aria-hidden": "true" }, name), h("div", { class: ["search__set-cards", !pills && "card-grid"] }, nodes));
+      groupHead(name), h("div", { class: ["search__set-cards", !pills && "card-grid"] }, nodes));
     mount(results, [set("Recientes", chips, true), ...sets.map(([name, nodes]) => set(name, nodes))]);
     results.classList.toggle("search__results--recent", focusables.length === chips.length);
     if (!items.length && zone === "results") zone = "keys";
@@ -227,7 +235,6 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let cleared = ""; // lo que había antes de "Borrar todo" (para "Deshacer")
 
   function press(key) {
-    if (key === "back") return close();
     if (key === "go") return goToResults();
     if (key === "dictate") return dictate();
     if (key === "clear") {
