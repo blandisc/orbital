@@ -380,6 +380,16 @@ class Launcher:
             except Exception:  # noqa: BLE001 - un fallo aquí no debe tumbar el hilo vigilante
                 log.exception("Error en on_exit")
 
+    def retitle(self, old: str, new: str) -> bool:
+        """Lo abierto se llamaba `old` (un «la película» mientras llegaba la ficha) y ya se sabe su nombre."""
+        with self._lock:
+            cur = self.current
+            if cur is None or cur.title != old:
+                return False
+            cur.title = new
+            self._mark(cur)
+            return True
+
     def status(self) -> dict | None:
         with self._lock:
             cur = self.current

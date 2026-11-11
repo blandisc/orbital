@@ -613,3 +613,56 @@ def test_play_without_title_says_what_is_playing_not_stremio(linked, monkeypatch
     monkeypatch.setattr(cinemeta.Cinemeta, "meta", offline)
     assert content_title(linked, "movie", "tt0816692") == "la película"
     assert content_title(linked, "series", "tt0386676") == "la serie"
+
+
+def test_play_does_not_wait_for_the_title_card_and_names_it_when_it_arrives(linked, monkeypatch):
+    """Revisión del 11 nov 2026: sin título (la voz, un atajo), /play esperaba la ficha de Cinemeta antes de abrir nada.
+    Ahora abre al momento como «la película» y, cuando llega la ficha, la barra ya dice el nombre."""
+    import threading
+
+    from fastapi.testclient import TestClient
+
+    from orbital.library import cinemeta
+    from orbital.server import create_app
+
+    card = threading.Event()  # Cinemeta no contesta hasta que la prueba lo diga
+
+    def slow(self, kind, meta_id, localized=True):
+        card.wait(10)
+        return {"name": "Interstellar"}
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", slow)
+    with TestClient(create_app(linked.config, linked), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        assert c.post("/api/stremio/play", json={"kind": "movie", "id": "tt0816692"}).json() == {"ok": True}
+        assert not card.is_set()  # contestó sin la ficha: si la esperara, esta línea llegaría hasta los 10 s
+        assert linked.launcher.status()["title"] == "la película"  # mientras tanto
+        card.set()
+        deadline = time.monotonic() + 5
+        while linked.launcher.status()["title"] != "Interstellar" and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert linked.launcher.status()["title"] == "Interstellar"
+
+
+def test_a_late_title_card_never_renames_what_you_opened_after():
+    from types import SimpleNamespace
+
+    from orbital.api.media import retitle
+
+    class Launcher:
+        def __init__(self):
+            self.current = SimpleNamespace(title="la película", item_id="media:player")
+
+        def status(self):
+            return {"id": self.current.item_id, "title": self.current.title}
+
+        def retitle(self, old, new):
+            if self.current.title == old:
+                self.current.title = new
+
+    other = SimpleNamespace(title="la película", meta={"meta_id": "tt0133093", "title": "la película"})
+    catalog = SimpleNamespace(watch=SimpleNamespace(player=SimpleNamespace(current=other, segment=other, playing=True)),
+                              launcher=Launcher())
+    retitle(catalog, "tt0816692", "la película", "Interstellar")  # llegó la ficha del de antes
+    assert other.title == "la película" and catalog.launcher.current.title == "la película"
+    retitle(catalog, "tt0133093", "la película", "Matrix")
+    assert other.title == "Matrix" and other.meta["title"] == "Matrix" and catalog.launcher.current.title == "Matrix"
