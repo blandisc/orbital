@@ -69,8 +69,14 @@ struct DSTextTabs<ID: Hashable>: View {
         // con ícono y la Biblioteca se quedaba sin palabras.
         ViewThatFits(in: .horizontal) {
             tabs(titles: true)
-            tabs(titles: true, icons: false)
-            tabs(titles: true, icons: false, spacing: DS.Space.s3)
+            // R4: antes de soltar los íconos, más juntas (en el SE «Descargas · Mi media · Guardado» con ícono cabe así).
+            tabs(titles: true, spacing: DS.Space.s3)
+            // Con numerito (Descargas) no hay versión sin íconos: el numerito va en la esquina del ícono y nunca junto al
+            // nombre, donde tapaba la «s» o ensanchaba la barra (R4, 11 nov). Sin numerito, los nombres solos (I13).
+            if !hasBadge {
+                tabs(titles: true, icons: false)
+                tabs(titles: true, icons: false, spacing: DS.Space.s3)
+            }
             if options.allSatisfy({ $0.symbol == nil }) {
                 // Sin íconos a dónde bajar (Semana · Mes · Año · Siempre): se deslizan enteras en vez de cortarse en «Se…»
                 // (revisión 2 del 11 nov, letra grande en el SE).
@@ -99,7 +105,7 @@ struct DSTextTabs<ID: Hashable>: View {
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(option.title)
-                        .accessibilityValue(option.badge.map { Text("\($0) bajando") } ?? Text(verbatim: ""))
+                        .accessibilityValue(option.badge.flatMap { $0 > 0 ? Text("\($0) bajando") : nil } ?? Text(verbatim: ""))
                         .font(DS.TextRecipe.cardTitle.font)
                         .foregroundStyle(on ? DS.text : DS.textMuted)
                         Capsule().fill(on ? mark : .clear).frame(width: DS.Filter.tabMark, height: DS.Filter.tabMarkHeight)
@@ -113,29 +119,31 @@ struct DSTextTabs<ID: Hashable>: View {
         }
     }
 
-    /// El numerito de cuántos hay: encima de la orilla, sin ocupar lugar en el renglón.
-    private func countBadge(_ count: Int, inline: Bool = false) -> some View {
+    /// Alguna pestaña lleva numerito (aunque hoy valga cero): así la barra elige la misma forma con y sin él.
+    private var hasBadge: Bool { options.contains { $0.badge != nil && $0.symbol != nil } }
+
+    /// El numerito de cuántos hay: en la esquina de arriba del ícono, sin ocupar lugar en el renglón (la barra no cambia de
+    /// forma al aparecer o irse). Con la letra más grande se queda en su tamaño de insignia para no tapar el ícono entero.
+    private func countBadge(_ count: Int) -> some View {
         Text(verbatim: "\(count)").recipe(.badge, color: DS.onFresh).monospacedDigit()
             .padding(.horizontal, DS.Space.s1)
             .background(DS.fresh, in: Capsule())
-            .scaleEffect(inline ? 1 : DS.Filter.tabBadgeScale)   // sobre el ícono, chico: tapa solo su esquina, como en iOS
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .scaleEffect(DS.Filter.tabBadgeScale)   // chico: tapa solo la esquina del ícono, como en iOS
             .fixedSize()
-            .offset(x: inline ? 0 : DS.Space.s1, y: inline ? 0 : -DS.Space.s2)   // sobre la esquina de arriba del ícono
+            .offset(x: DS.Space.s1, y: -DS.Space.s2)
     }
 
     /// El ícono con el mismo trazo siempre; solo el nombre cambia de peso.
     private func label(_ option: Option, titles: Bool, icons: Bool, bold: Bool) -> some View {
         HStack(spacing: DS.Space.s1) {
-            // El numerito va sobre la esquina del ícono (revisión 2: sobre el nombre tapaba la «s» de «Descargas»); sin ícono,
-            // al lado del nombre.
+            // El numerito va siempre sobre la esquina del ícono (sobre el nombre tapaba la «s» de «Descargas»).
             let badge = option.badge.flatMap { $0 > 0 ? $0 : nil }
-            let iconShown = icons && option.symbol != nil
             if icons, let symbol = option.symbol {
                 Image(systemName: symbol).fontWeight(.semibold)   // ds-exception: el trazo fijo del ícono de la pestaña
                     .overlay(alignment: .topTrailing) { if let badge { countBadge(badge) } }
             }
             if titles { option.title.lineLimit(1).fontWeight(bold ? .bold : .medium) }   // ds-exception: la pestaña elegida se distingue por el peso
-            if !iconShown, let badge { countBadge(badge, inline: true) }
         }
     }
 }
