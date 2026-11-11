@@ -374,3 +374,90 @@ def _collection_and_stage(page):
       labels: [...document.querySelectorAll('.list-screen [aria-label]')].map((e) => e.getAttribute('aria-label')).filter((l) => /null|undefined/.test(l)) })""")
     assert found == {"nulls": 0, "labels": []}, found
     assert not page.errors, page.errors
+
+
+def long_watchlist(page, n=300) -> None:
+    """Tu Mi lista con `n` títulos (cada uno con su tt propio), para la lista larga (V4)."""
+    def lists(route):
+        res = route.fetch()
+        data = res.json()
+        for entry in data.get("lists", []):
+            if entry.get("id") == "watchlist" and entry.get("items"):
+                base = entry["items"][0]
+                entry["items"] = [{**base, "key": f"video:tt9{i:06d}", "id": f"cinemeta:movie:tt9{i:06d}", "meta_id": f"tt9{i:06d}",
+                                   "title": f"Película {i}"} for i in range(n)]
+        route.fulfill(response=res, json=data)
+    page.route("**/api/foryou/lists", lists)
+
+
+def linked_settings(page) -> None:
+    """Los ajustes dicen «Trakt conectado» (el servidor de pruebas no tiene la llave de la app, así que dice que no)."""
+    def settings(route):
+        res = route.fetch()
+        data = res.json()
+        data["trakt"] = {**(data.get("trakt") or {}), "configured": True, "linked": True}
+        route.fulfill(response=res, json=data)
+    page.route("**/api/settings", settings)
+
+
+LIST_STATE = """() => {
+  const s = document.querySelector('.list-screen'); const grid = s.querySelector('.card-grid');
+  const f = s.querySelector('.card-grid .is-focused'); const r = f && f.getBoundingClientRect();
+  const view = grid.parentElement.getBoundingClientRect();
+  const inView = [...grid.children].filter((c) => { const b = c.getBoundingClientRect(); return b.bottom > view.top && b.top < view.bottom; });
+  return { cards: grid.children.length, slots: grid.querySelectorAll('.card--slot').length, focus: f && f.dataset.focusId,
+    armed: !!f && !f.classList.contains('card--slot'), whole: !!r && r.top >= 0 && r.bottom <= innerHeight,
+    emptyInView: inView.filter((c) => c.classList.contains('card--slot')).length,
+    toast: document.querySelector('.toast')?.textContent || '' };
+}"""
+
+
+def test_long_list_and_editing_your_list(browser, server):  # noqa: F811
+    """V4 en una lista (revisión 2, 17d, 11 nov): Mi lista con 300 títulos arma solo lo cercano y la enfocada siempre está
+    armada. Y editarla (lo que salió de main.js a app/list-editing.js): Y › «Quitar de esta lista» la quita al instante,
+    «Deshacer» la regresa a su lugar; «Guardar en…» abre la hoja con tus listas de Trakt."""
+    import urllib.request
+    post = lambda path: urllib.request.urlopen(urllib.request.Request(f"{server}/api/foryou/trakt/{path}", method="POST"), timeout=10).read()  # noqa: E731
+    post("link")
+    try:
+        page = browser.new_page(viewport={"width": 1920, "height": 1080})
+        page.errors = []
+        page.on("pageerror", lambda exc: page.errors.append(str(exc)))
+        long_watchlist(page)
+        linked_settings(page)
+        page.goto(server)
+        ready(page)
+        page.keyboard.press("e")
+        page.keyboard.press("e")  # Películas y series
+        page.locator("button.card--list[aria-label='Mi lista']").first.wait_for(state="attached", timeout=30000)
+        page.locator("button.card--list[aria-label='Mi lista']").first.click()
+        page.wait_for_timeout(800)
+        page.keyboard.press("Enter")
+        page.locator(".list-screen .card-grid > *").first.wait_for(timeout=10000)
+        page.wait_for_timeout(1000)
+        first = page.evaluate(LIST_STATE)
+        assert first["cards"] == 300 and first["slots"] > 200, first
+        for _ in range(15):
+            page.keyboard.press("ArrowDown")
+            page.wait_for_timeout(120)
+        page.wait_for_timeout(800)
+        deep = page.evaluate(LIST_STATE)
+        assert deep["focus"] not in (None, first["focus"]) and deep["armed"] and deep["whole"] and deep["emptyInView"] == 0, deep
+        # Quitar la enfocada: sale ya, con «Deshacer».
+        page.keyboard.press("y")
+        page.locator(".sheet").get_by_text("Quitar de esta lista").click()
+        page.wait_for_timeout(700)
+        gone = page.evaluate(LIST_STATE)
+        assert gone["cards"] == 299 and "Quitada de «Mi lista»" in gone["toast"], gone
+        page.locator(".toast").get_by_text("Deshacer").click()
+        page.wait_for_timeout(700)
+        assert page.evaluate(LIST_STATE)["cards"] == 300
+        # «Guardar en…» de un póster: la hoja con Mi lista, Favoritos y tus listas de Trakt.
+        page.keyboard.press("y")
+        page.locator(".sheet").get_by_text("Guardar en…").first.click()
+        page.locator(".sheet").get_by_text("Tus listas de Trakt").wait_for(timeout=8000)
+        assert page.locator(".sheet").get_by_text("Favoritos").count() >= 1
+        assert not page.errors, page.errors
+        page.close()
+    finally:
+        post("unlink")
