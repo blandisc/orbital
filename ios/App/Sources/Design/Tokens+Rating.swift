@@ -15,9 +15,11 @@ extension DS {
         static let waveStep: Double = 0.06, wavePop: CGFloat = 1.3, waveIntensity: Double = 0.6
         /// Las estrellas de un capítulo visto (bajo su texto, en la lista de la serie) y el alto que le suman al renglón.
         static let starEpisode: CGFloat = 15, episodeRow: CGFloat = 22
-        /// El velo claro del vidrio (la repisa), para que se lea igual que la barra de pestañas (vidrio nativo de iOS).
+        /// Cuánto se queda el recordatorio a la vista antes de irse solo (vuelve la próxima vez que abras la app).
+        static let reminderHold: Duration = .seconds(8)
+        /// El velo claro del vidrio de la pastilla, para que se lea igual que la barra de pestañas (vidrio nativo de iOS).
         static let glassTint = DS.paper.opacity(0.12)   // ds-exception: velo del vidrio, medido contra la barra de pestañas
-        static let poster: CGFloat = 44, posterAspect: CGFloat = 1.5
+        static let poster: CGFloat = 30, posterAspect: CGFloat = 1.5
     }
 
     enum RatingBrand {

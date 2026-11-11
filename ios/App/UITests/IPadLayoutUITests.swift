@@ -125,7 +125,6 @@ final class IPadLayoutUITests: XCTestCase {
             sleep(name.hasPrefix("reproductor") || ["decidir", "match"].contains(name) ? 12 : 8)
             if name.hasPrefix("reproductor") { app.tap(); sleep(1) }
             if name == "subtitulos-pie" { sleep(4) }
-            if name == "calificar" { app.swipeUp(); sleep(2) }   // la tarjeta va bajo «Seguir viendo» (D2-A)
             FileManager.default.createFile(atPath: "\(dir)/ready_\(name)", contents: nil)
             for _ in 0..<60 where !FileManager.default.fileExists(atPath: "\(dir)/done_\(name)") { sleep(1) }
         }

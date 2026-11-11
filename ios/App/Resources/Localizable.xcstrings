@@ -43938,17 +43938,6 @@
         }
       }
     },
-    "y %lld más por calificar": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "and %lld more to rate"
-          }
-        }
-      }
-    },
     "Quitar 1 vista repetida": {
       "extractionState": "manual",
       "localizations": {
