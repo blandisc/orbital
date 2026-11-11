@@ -187,8 +187,12 @@ struct Mosaic: View {
     private var aliveToken: String { "\(runtime.mode)-\(runtime.focus?.col ?? -1)-\(runtime.focus?.row ?? -1)" }
     /// «Marea lenta» (Fernando, 1 nov 2026): todas casi a la misma velocidad, despacio, y una sube mientras la de al lado baja.
     private var driftSpeeds: [Double] {
-        (0..<max(1, runtime.columns.count)).map { c in
-            DesignTokens.Mosaic.driftPattern[c % DesignTokens.Mosaic.driftPattern.count] * (DesignTokens.Mosaic.driftAlternates && c % 2 == 1 ? -1 : 1)
+        let pattern: [Double] = DesignTokens.Mosaic.driftPattern
+        let alternates: Bool = DesignTokens.Mosaic.driftAlternates
+        return (0..<max(1, runtime.columns.count)).map { (c: Int) -> Double in
+            let speed: Double = pattern[c % pattern.count]
+            let sign: Double = alternates && c % 2 == 1 ? -1 : 1
+            return speed * sign
         }
     }
 
