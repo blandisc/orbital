@@ -191,7 +191,7 @@ struct LibrarySavedView: View {
                     let historyInGrid = columns == Self.tiles
                     Group {
                         if historyInGrid {
-                            // Una fila del mismo ancho y del alto de la más alta (Historial lleva una línea más).
+                            // Una fila del mismo ancho y del mismo alto: las cinco pilas se arman igual.
                             HStack(spacing: DS.Space.s2) { piles(board); history(board) }.fixedSize(horizontal: false, vertical: true)
                         } else {
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: columns), spacing: DS.Space.s2) {
@@ -261,9 +261,11 @@ struct LibrarySavedView: View {
     /// La quinta pila (D7-A, 10 nov): «Historial», cada vista con su fecha, a dos toques desde Biblioteca.
     private func history(_ board: SavedBoard) -> some View {
         NavigationLink(value: HistoryRoute()) {
-            SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: nil, posters: recentPosters(board),
-                           detail: Text("Cada vista con su fecha"))
+            // El número: cuántos títulos tienen fecha en tu historial (lo que hay adentro), como las otras cuatro pilas.
+            SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: model.loadedOnce ? board.lastWatched.count : nil,
+                           posters: recentPosters(board))
         }
+        .accessibilityHint(Text("Cada vista con su fecha"))
         .accessibilityIdentifier("saved-history")
     }
 
