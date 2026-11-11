@@ -102,17 +102,15 @@ public struct ProgressEvent: Sendable, Equatable, Codable {
 public struct ResumePoint: Sendable, Equatable {
     public var seconds: Double
     public var fraction: Double?
-    /// Segundos que se regresan al usar la fracción (vino de otro aparato).
-    public var rewind: Double = 0
-    public init(seconds: Double = 0, fraction: Double? = nil, rewind: Double = 0) { self.seconds = seconds; self.fraction = fraction; self.rewind = rewind }
+    public init(seconds: Double = 0, fraction: Double? = nil) { self.seconds = seconds; self.fraction = fraction }
     public static let start = ResumePoint()
-    /// Al seguir donde ibas en OTRO aparato se regresan 10 s (como la consola): cubre el redondeo de Trakt y los logos.
-    public static let otherDeviceRewind = 10.0
+    // Al seguir donde ibas en otro aparato se sigue en el punto exacto, sin regresar unos segundos (D6-A, Fernando, 10 nov
+    // 2026), como la TV (`latest_resume` en orbital/library/trakt.py). Antes el iPhone regresaba 10 s.
 
     /// El segundo donde seguir con una duración ya conocida (0 si no se sabe dónde).
     public func seconds(duration: Double) -> Double {
         guard let fraction else { return seconds }
-        return duration > 0 ? max(0, fraction * duration - rewind) : seconds
+        return duration > 0 ? fraction * duration : seconds
     }
 
     /// Lo MÁS RECIENTE entre este teléfono y la pausa de Trakt (`paused_at`, `progress`): así se sigue donde lo dejaste en
@@ -123,7 +121,7 @@ public struct ResumePoint: Sendable, Equatable {
         var mine = ResumePoint.start
         if same, let entry, entry.position > 0,
            !StremioLibrary.finished(position: entry.position, duration: entry.duration, kind: entry.kind) {
-            mine = entry.fraction.map { ResumePoint(seconds: entry.position, fraction: $0, rewind: otherDeviceRewind) } ?? ResumePoint(seconds: entry.position)
+            mine = entry.fraction.map { ResumePoint(seconds: entry.position, fraction: $0) } ?? ResumePoint(seconds: entry.position)
         }
         guard let trakt else { return mine }
         // Lo de aquí es más nuevo (o es lo que este teléfono mismo le mandó a Trakt): manda aquí.
@@ -132,9 +130,9 @@ public struct ResumePoint: Sendable, Equatable {
         // Casi nada, o ya casi visto (Trakt lo marca visto desde el 80 %): lo de aquí.
         guard fraction >= PlaybackRules.continueMinProgress, fraction < StremioLibrary.watchedAt else { return mine }
         if same, let entry, entry.duration > 0, entry.fraction == nil {
-            return ResumePoint(seconds: max(0, fraction * entry.duration - otherDeviceRewind))
+            return ResumePoint(seconds: fraction * entry.duration)
         }
-        return ResumePoint(seconds: 0, fraction: fraction, rewind: otherDeviceRewind)
+        return ResumePoint(seconds: 0, fraction: fraction)
     }
 }
 

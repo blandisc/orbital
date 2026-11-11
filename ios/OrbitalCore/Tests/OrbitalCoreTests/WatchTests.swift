@@ -392,7 +392,7 @@ final class ResumeTests: XCTestCase {
     func testTraktWinsWhenItsPauseIsNewerAndItsPercentBecomesSecondsWithThePhonesDuration() {
         let mine = local(at: "2026-10-25T10:00:00.000Z")                       // en el iPhone, 300 s
         let point = ResumePoint.latest(local: mine, videoID: "tt0386676:2:5", trakt: pause(50, at: "2026-10-25T21:00:00.000Z"))  // en la TV, después
-        XCTAssertEqual(point, ResumePoint(seconds: 650), "50 % de 1320 s, 10 s antes (otro aparato)")
+        XCTAssertEqual(point, ResumePoint(seconds: 660), "50 % de 1320 s, en el punto exacto (D6-A, como la TV)")
     }
 
     func testThePhoneWinsWhenItIsNewerOrTied() {
@@ -412,7 +412,7 @@ final class ResumeTests: XCTestCase {
     func testWithoutThePhoneTheTraktPercentWaitsForTheDuration() {
         let point = ResumePoint.latest(local: nil, videoID: "tt0386676:2:5", trakt: pause(25, at: "2026-10-25T21:00:00.000Z"))
         XCTAssertEqual(point.fraction, 0.25)
-        XCTAssertEqual(point.seconds(duration: 2000), 490, "en cuanto el reproductor sabe cuánto dura (10 s antes)")
+        XCTAssertEqual(point.seconds(duration: 2000), 500, "en cuanto el reproductor sabe cuánto dura (el punto exacto)")
         XCTAssertEqual(point.seconds(duration: 0), 0)
         // Otro episodio en el teléfono: su duración no sirve para este.
         let other = ResumePoint.latest(local: local(video: "tt0386676:2:4", at: "2026-10-20T10:00:00Z"), videoID: "tt0386676:2:5",
@@ -438,9 +438,9 @@ final class ResumeTests: XCTestCase {
     func testResumePointAsksTraktForThatEpisodeAndInfuseGetsSeconds() async throws {
         let both = service(local: local(at: "2026-10-25T10:00:00.000Z"))
         let point = await both.resumePoint(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
-        XCTAssertEqual(point, ResumePoint(seconds: 650))
+        XCTAssertEqual(point, ResumePoint(seconds: 660))
         let seconds = await both.resumePosition(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")
-        XCTAssertEqual(seconds, 650)
+        XCTAssertEqual(seconds, 660)
         // Solo el porcentaje (sin la duración en el teléfono): Infuse recibe lo del teléfono, que sí son segundos.
         let onlyTrakt = service(local: nil)
         let fraction = await onlyTrakt.resumePoint(metaID: "tt0386676", videoID: "tt0386676:2:5", kind: "series")

@@ -224,7 +224,6 @@ public final class PlayerModel: ObservableModel {
     var finalReported = false
     /// Dónde seguir según Trakt cuando solo se sabe el porcentaje (sin la duración): se busca en cuanto el motor la dice.
     var pendingResumeFraction: Double?
-    var pendingResumeRewind = 0.0     // vino de otro aparato: unos segundos antes (`ResumePoint.otherDeviceRewind`)
     var generation = 0
     var acceptingSnapshots = false     // false mientras se elige y se carga una fuente (lo que el motor diga entonces es del video anterior)
     var retrying = false
@@ -453,7 +452,7 @@ public final class PlayerModel: ObservableModel {
     /// cuando el motor diga cuánto dura (`seekToPendingResume`).
     private func resumeStart(_ resume: Task<ResumePoint, Never>?) async -> Double {
         guard let point = await resume?.value else { return 0 }
-        pendingResumeFraction = point.fraction; pendingResumeRewind = point.rewind
+        pendingResumeFraction = point.fraction
         return point.seconds
     }
 

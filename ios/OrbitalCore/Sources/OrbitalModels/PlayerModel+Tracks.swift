@@ -145,7 +145,7 @@ extension PlayerModel {
     func seekToPendingResume(_ s: EngineSnapshot) async {
         guard let fraction = pendingResumeFraction, s.duration > 0 else { return }
         pendingResumeFraction = nil
-        let target = max(0, fraction * s.duration - pendingResumeRewind)
+        let target = fraction * s.duration   // el punto exacto (D6-A)
         guard target > 5, abs(target - s.position) > 5 else { return }
         if !playbackSettled { startupPosition = target }   // los 2 s de arranque se cuentan desde donde va a seguir
         await engine.seek(to: target)

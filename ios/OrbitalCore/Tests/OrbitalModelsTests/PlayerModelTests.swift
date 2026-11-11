@@ -894,13 +894,13 @@ final class PlayerModelTests: XCTestCase {
     static let pausedOnTheTV: JSON = [["progress": 50, "paused_at": "2025-10-09T08:00:00.000Z", "id": 7, "type": "episode",
                                        "episode": ["season": 1, "number": 1], "show": ["ids": ["imdb": "tt0386676"]]]]
 
-    /// Lo dejaste en la TV después que en el iPhone: se sigue donde dice Trakt (10 s antes), con la duración que el teléfono ya conoce.
+    /// Lo dejaste en la TV después que en el iPhone: se sigue donde dice Trakt (el punto exacto), con la duración que el teléfono ya conoce.
     func testResumesFromTraktWhenItsPauseIsNewerThanStremio() async throws {
         let (rig, _) = try traktRig(remote: ["_id": "tt0386676", "state": ["video_id": "tt0386676:1:1", "timeOffset": 300_000, "duration": 1_320_000,
                                                                           "lastWatched": "2025-10-08T08:00:00.000Z"]],
                                     paused: Self.pausedOnTheTV)
         await rig.model.begin(rig.request())
-        XCTAssertEqual(rig.engine.loads.first?.start, 650, "50 % de 1320 s menos 10 s (Trakt es más reciente)")
+        XCTAssertEqual(rig.engine.loads.first?.start, 660, "50 % de 1320 s, el punto exacto (Trakt es más reciente; D6-A)")
     }
 
     func testStremioStillWinsWhenItIsNewer() async throws {
@@ -918,8 +918,8 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         XCTAssertEqual(rig.engine.loads.first?.start, 0)
         await rig.model.handle(rig.playing(0, duration: 2000))
-        XCTAssertTrue(rig.engine.calls.contains("seek 990"), "50 % de 2000 s, 10 s antes (viene de otro aparato)")
-        await rig.model.handle(rig.playing(990, duration: 2000))
+        XCTAssertTrue(rig.engine.calls.contains("seek 1000"), "50 % de 2000 s, el punto exacto (viene de otro aparato; D6-A)")
+        await rig.model.handle(rig.playing(1000, duration: 2000))
         XCTAssertEqual(rig.engine.calls.filter { $0.hasPrefix("seek") }.count, 1, "una sola vez")
         let progress = try XCTUnwrap(JSON.parse(try XCTUnwrap(probe.bodies("https://api.trakt.tv/scrobble/start").first))?["progress"]?.doubleValue)
         XCTAssertEqual(progress, 50, accuracy: 0.5)
