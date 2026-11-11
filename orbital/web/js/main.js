@@ -60,6 +60,7 @@ import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
 import { curatedItem, GENRE_SHELVES, genreRows, pickArt, spotlightRow } from "./core/curation.js";
+import { namedRows, onNameLearned } from "./core/title-names.js";
 import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, unkeyOf, mediaRows, miMediaItem, stageJump, stageSide } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
@@ -957,7 +958,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const itemId = moved || !wanted ? current()?.id : wanted;
     const rowId = state.rows[state.focus.r]?.id;
     const countBefore = (state.allRows || []).reduce((n, row) => n + (row.items?.length ?? 0), 0);
-    state.allRows = [...data.rows, ...curated]; // con la curaduría de Películas y series que ya llegó
+    state.allRows = [...namedRows(data.rows), ...curated]; // con la curaduría que ya llegó; R3-8: con los nombres de la ficha
     loadAiring();
     if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
     state.rows = sectionRows(state.allRows, state.section);
@@ -1207,6 +1208,17 @@ function buildCuration() {
   applyCuration([...cloudRow(state.settings?.realdebrid?.requests || [], { hiddenAt: state.settings?.cloud_row_hidden }), ...downloadsRow(), ...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice(), unseeded: unseeded() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
+
+// R3-8: la ficha trajo el nombre de un título en tu idioma: las filas que ya se ven lo toman (core/title-names.js).
+let renaming = 0;
+onNameLearned(() => {
+  clearTimeout(renaming);
+  renaming = setTimeout(() => {
+    if (state.allRows) state.allRows = namedRows(state.allRows); // la biblioteca: «A continuación», «Seguir viendo»
+    if (mediaLists.length) buildCuration(); // Películas y series y Mi lista del Inicio (rehace y repinta conservando el foco)
+    else applyCuration(curated);
+  }, 200);
+});
 
 /** Por año: al acercarte al final de lo que ya llegó, se piden los siguientes años. */
 let yearsBusy = false;

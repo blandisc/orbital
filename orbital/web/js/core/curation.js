@@ -2,6 +2,7 @@
  * Películas y series · piezas de la curaduría: un título de Para ti con la forma del catálogo (curatedItem), Destacados,
  * Por género y el próximo estreno. El orden y las filas de la sección viven en media-plan.js (el del iPhone).
  */
+import { knownName } from "./title-names.js";
 
 /** Las tendencias de una plataforma (JustWatch) mandan; lo popular en esa plataforma (TMDB) solo si no las hay. */
 const BRAND_FALLBACK = new Set(["netflix", "disney", "hbo", "prime", "appletv", "paramount"]);
@@ -15,7 +16,8 @@ export function curatedItem(item, { rowTitle = null } = {}) {
   const fold = (text) => String(text || "").toLowerCase().split(" · ")[0].trim();
   const why = item.why && !(rowTitle && fold(rowTitle).startsWith(fold(item.why))) ? item.why : undefined;
   return {
-    id: `cinemeta:${kind}:${item.meta_id}`, title: item.title, source: "cinemeta", kind, meta_id: item.meta_id,
+    // R3-8: el nombre que trajo la ficha, si ya se sabe (core/title-names.js): el mismo en la fila y en la ficha.
+    id: `cinemeta:${kind}:${item.meta_id}`, title: knownName(item.meta_id) || item.title, source: "cinemeta", kind, meta_id: item.meta_id,
     image: item.image, hero: item.hero, rank: item.rank ?? undefined, trend: item.trend ?? undefined,
     // Para ordenar y filtrar una lista abierta (list-screen), y la placa del año del premio o el día del estreno.
     year: item.year ?? undefined, rating: item.rating ?? undefined, genres: item.genres ?? undefined,

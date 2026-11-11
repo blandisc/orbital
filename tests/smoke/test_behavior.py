@@ -199,3 +199,40 @@ def test_moving_in_a_row_repaints_only_two_cards(browser, server):  # noqa: F811
         counts.append(page.evaluate("() => window.__touched.size"))
     assert max(counts) <= 2, counts
     assert not page.errors, page.errors
+
+
+# --- Un solo nombre por título (R3-8): lo que la ficha trae en tu idioma lo toman las filas al volver ------------------------
+
+FOCUSED_CARD = """() => { const f = document.querySelector('.shelf .card.is-focused'); if (!f) return null;
+  const row = f.closest('.shelf__row'); const rows = [...document.querySelectorAll('.shelf__row')];
+  return { at: [rows.indexOf(row), [...row.querySelectorAll('.card')].indexOf(f)], label: f.getAttribute('aria-label') || '' }; }"""
+CARD_AT = """([r, c]) => [...document.querySelectorAll('.shelf__row')][r]?.querySelectorAll('.card')[c]?.getAttribute('aria-label') || ''"""
+
+
+def test_the_title_page_name_is_the_one_the_rows_show(browser, server):  # noqa: F811
+    """La ficha llega con el nombre en tu idioma (aquí, «… en español»): al volver, la tarjeta de la fila dice lo mismo, sin
+    esperar a la siguiente vuelta del servidor (antes: «Dune: Part Two» en la fila y «Dune: Parte dos» en la ficha)."""
+    page = open_at(browser, server)
+
+    def spanish(route):
+        res = route.fetch()
+        data = res.json()
+        if isinstance(data, dict) and data.get("title"):
+            data["title"] = f"{data['title']} en español"
+        route.fulfill(response=res, json=data)
+
+    page.route("**/api/stremio/title/**", spanish)
+    page.route("**/api/launch", lambda route: route.fulfill(status=409, json={"detail": "prueba"}))  # nada se abre
+    to_media(page)
+    page.locator(".shelf .card.is-focused").wait_for()
+    before = page.evaluate(FOCUSED_CARD)
+    assert before and "en español" not in before["label"], before
+    press(page, "x", wait=600)  # X: la ficha (A en «Seguir viendo» lo pondría a ver)
+    page.locator(".title__name, .title h1, .title [class*=name]").first.wait_for(state="attached")
+    page.wait_for_function("() => /en español/.test(document.querySelector('section.title')?.textContent || '')", timeout=8000)
+    press(page, "Escape", wait=900)
+    page.wait_for_function(f"(at) => /en español/.test(({CARD_AT})(at))", arg=before["at"], timeout=5000)
+    after = page.evaluate(FOCUSED_CARD)
+    assert after["at"] == before["at"] and "en español" in after["label"], (before, after)
+    assert not page.errors, page.errors
+    page.close()

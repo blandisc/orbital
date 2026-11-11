@@ -10,6 +10,7 @@ import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 import { flight, motion, reducedMotion, rollNumber } from "../core/motion.js";
+import { learnName } from "../core/title-names.js";
 import { tokenMs, tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, episodesLed, finishedSeason, titleActions, titleProgress, titleStatus } from "../core/watch.js";
 import { Flag } from "./flag.js";
@@ -746,6 +747,7 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       if (mine !== token) return;
       if (!data || typeof data !== "object" || (!data.id && !data.title)) throw new Error("La ficha llegó incompleta. Intenta de nuevo.");
       details = data;
+      learnName(data.id || id, data.title, item.title); // R3-8: el nombre de la ficha, para todas las filas
       api.titleExtras(kind, id).then((x) => { if (mine === token) applyExtras(x); }).catch(() => {});
       showRatings({ imdb: Number(data.rating) || null }, mine);
       if (kind === "movie") {
