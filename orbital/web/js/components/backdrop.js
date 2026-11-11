@@ -37,6 +37,9 @@ async function paletteOf(img, url) {
 /** El tono que ya midió el servidor (V3, `art_tone` de cada ítem, orbital/art_tone.py): el mismo cálculo que paletteOf, hecho
  *  una vez por imagen y guardado. Con él no se pide la copia de 160 px ni se leen píxeles en cada cambio de foco (~15 ms
  *  con la CPU a 4x). null si no vino (aún no se mide, o el arte es de fuera): entonces se calcula aquí, como antes. */
+/** El tono medido solo vale para el arte que sirve Orbital (/api/…): es el que midió el servidor (`tone_path`). */
+export const toneFor = (url, tone) => (/^\/api\//.test(url || "") && paletteOfTone(tone)) || null;
+
 export function paletteOfTone(tone) {
   if (!tone || typeof tone !== "object") return null;
   if (tone.neutral) return paletteFor(null);
@@ -148,7 +151,7 @@ export function createBackdrop({ settle = 150 } = {}) {
   function show(url, { poster = false, pixel = false, color = null, fallback = null, tone = null } = {}) {
     // Solo para el arte que sirve Orbital (/api/…): es el que midió el servidor (`tone_path`); un fondo de fuera (metahub)
     // con una portada local mediría otra imagen.
-    const known = /^\/api\//.test(url || "") && paletteOfTone(tone);
+    const known = toneFor(url, tone);
     if (known) palettes.set(url, known);
     const mine = ++token;
     // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo (y cambia cuando se detiene).

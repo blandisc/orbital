@@ -7,7 +7,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 
 Con prueba de humo en un navegador de verdad (F11, 10 nov 2026, `tests/smoke/test_ui_flows.py`): ☰ llega a cada entrada del
 menú y da la vuelta; Inicio → la ficha → B regresa con el foco en la misma tarjeta; Buscar escribe, RT salta a los resultados
-y A abre lo elegido; ↑ llega a las pestañas de Películas y series y → cambia de pestaña.
+y A abre lo elegido; ↑ llega a las pestañas de Películas y series y → cambia de pestaña. Desde el 11 nov (R3) también con comportamiento en vez de buscar texto en el código (`tests/smoke/test_behavior.py`): lo que salió de ☰ se abre con ↑ ▶ A desde los íconos de Películas y series y B vuelve al mismo ícono (y con un clic); X en Explorar abre Decide, ↑ y A en «Una por una» abren el mazo y B regresa a Decide; Buscar escribe con el mando, filtra en vivo y → / ← entran y salen de los resultados.
 
 ## Arrancar y navegar
 

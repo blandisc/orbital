@@ -12,17 +12,9 @@ const body = (source, name) => {
   return source.slice(start, source.indexOf("\n  }\n", start));
 };
 
-test("moverse en las filas solo repinta la fila de antes y la de ahora", () => {
-  const shelf = read("components/shelf.js");
-  const setFocus = body(shelf, "setFocus");
-  assert.match(setFocus, /paintRow\(r, r, c, \[\.\.\.new Set\(\[before\.c, c\]\)\]\)/, "dentro de una fila: solo dos tarjetas");
-  assert.doesNotMatch(setFocus, /rowEls\.forEach\(\(\{ rowEl/, "volvió a recorrer todas las filas en cada tecla");
-  // Rearmar las filas obliga a pintarlas todas otra vez.
-  for (const rebuild of ["rowEls = rows.map", "rowEls = built", "rowEls[r] = next"]) {
-    const at = shelf.indexOf(rebuild);
-    assert.ok(at >= 0 && shelf.slice(at, at + 120).includes("applied = null"), `tras «${rebuild}» falta applied = null`);
-  }
-});
+// «Moverse en las filas solo repinta la fila de antes y la de ahora» se mide en un navegador: ▶ cambia la clase de dos
+// tarjetas y nada más (tests/smoke/test_behavior.py · test_moving_in_a_row_repaints_only_two_cards, R3-3). Lo de abajo
+// todavía cuida patrones del código: no hay una forma barata de medir un layout forzado desde fuera.
 
 test("place() y edges() miden antes de escribir (sin lecturas tras mover la fila)", () => {
   const shelf = read("components/shelf.js");

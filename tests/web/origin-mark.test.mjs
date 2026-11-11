@@ -27,7 +27,7 @@ test("el rombo de Stremio solo vive donde Stremio es el servicio", () => {
     for (const file of readdirSync(new URL(`${dir}/`, root))) {
       if (!file.endsWith(".js")) continue;
       const rel = `${dir}/${file}`;
-      if (readFileSync(new URL(rel, root), "utf8").includes("stremio.svg") && !allowed.has(rel)) found.push(rel);
+      if (readFileSync(new URL(rel, root), "utf8").replaceAll("\r\n", "\n").includes("stremio.svg") && !allowed.has(rel)) found.push(rel);
     }
   }
   assert.deepEqual(found, []);
