@@ -35,6 +35,9 @@ struct ActionTileLabel: View {
     var tint: Color = DS.accent
     /// DB1: cuántos tienes (los episodios de una serie en el iPhone), en la esquina.
     var badge: Int? = nil
+    /// El estado en letra chica bajo el nombre («En Mi lista», «Viendo»): el botón no cambia de nombre (revisión del 11 nov:
+    /// «Viendo» en el botón parecía un estado, no una puerta).
+    var detail: Text? = nil
     @Environment(\.colorScheme) private var scheme
 
     /// El color del arte suele ser claro: en el modo claro se oscurece para que «Guardada» se lea sobre el papel.
@@ -54,6 +57,9 @@ struct ActionTileLabel: View {
             .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
             title.font(DS.TextRecipe.badge.font).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 .contentTransition(.numericText())
+            if let detail {
+                detail.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            }
         }
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.tile)
         .dsCard(translucent: true, fill: active ? tint.opacity(DesignTokens.Opacity.track) : nil)

@@ -2,9 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «Guardar en…»: en qué listas va un título, varias a la vez. Arriba tus listas de Trakt (las recientes primero, y una
-/// nueva entra arriba); abajo, siempre en el mismo lugar, las fijas: Favoritos (con Trakt; I7, la única puerta para guardar)
-/// y Mi lista. **Nada salta al llegar las listas** (`SaveSheetPlan`): su zona aparta su alto al abrir, con renglones esqueleto
+/// «Guardar en…»: en qué listas va un título, varias a la vez. Arriba, siempre en el mismo lugar, las principales: Mi lista y
+/// Favoritos (con Trakt; I7, la única puerta para guardar); abajo tus listas de Trakt (las recientes primero, y una nueva
+/// entra arriba). **Nada salta al llegar las listas** (`SaveSheetPlan`): su zona aparta su alto al abrir, con renglones esqueleto
 /// del mismo alto que los de verdad, y las fijas no dependen de la red.
 struct SaveView: View {
     @Environment(AppEnvironment.self) private var env
@@ -37,12 +37,16 @@ struct SaveView: View {
         } message: { Text("Se crea en Trakt (privada) y este título entra en ella.") }
     }
 
-    /// Tus listas de Trakt y las fijas, renglón tras renglón.
+    /// Primero las principales (Mi lista y Favoritos, lo que más se usa) y luego tus listas de Trakt (revisión del 11 nov:
+    /// antes las fijas iban al final y había que bajar para la más común). Las fijas no dependen de la red, así que arriba
+    /// tampoco salta nada cuando llegan tus listas.
     @ViewBuilder private func rows(_ m: TitleModel) -> some View {
-        if m.traktAvailable {
-            PanelGroupTitle(title: "Tus listas de Trakt")
-            lists(m, reserved: reserved ?? reservedRows(m))
-            PanelGroupTitle(title: "Principales").padding(.top, DS.Space.s2)
+        if m.traktAvailable { PanelGroupTitle(title: "Principales") }
+        ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
+            CheckRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),
+                     color: SaveDestinationName.tint(destination), checked: m.isSaved(in: destination)) { Task { await m.toggle(destination) } }
+                .accessibilityIdentifier("save-fixed-\(destination.rawValue)")
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if index == 0 { rowHeight = $0 } }
         }
         if m.canFavorite {
             // I7 · Favoritos entra por aquí (antes era un corazón suelto arriba de la ficha): la misma puerta para guardar.
@@ -52,11 +56,9 @@ struct SaveView: View {
             .dsFeedback(.success, trigger: m.isFavorite) { _, now in now }
             .accessibilityIdentifier("save-favorite")
         }
-        ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
-            CheckRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),
-                     color: SaveDestinationName.tint(destination), checked: m.isSaved(in: destination)) { Task { await m.toggle(destination) } }
-                .accessibilityIdentifier("save-fixed-\(destination.rawValue)")
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if index == 0 { rowHeight = $0 } }
+        if m.traktAvailable {
+            PanelGroupTitle(title: "Tus listas de Trakt").padding(.top, DS.Space.s2)
+            lists(m, reserved: reserved ?? reservedRows(m))
         }
         if let message = m.message { DSNotice(verbatim: env.message(message), tone: .error) }
     }
