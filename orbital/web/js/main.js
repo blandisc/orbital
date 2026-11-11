@@ -64,6 +64,11 @@ import { trimmedLogo } from "./core/foryou.js";
 import { sized } from "./core/images.js";
 import { systemColor } from "./core/home.js";
 import { onConnected as onPadConnected, onDisconnected as onPadDisconnected, pads as readPads } from "./core/pads.js";
+import { captureErrors, createErrorReporter } from "./core/errors.js";
+
+// Un fallo de la interfaz queda en la bitácora de la consola (entrada.log), con freno: lo primero, para no perder ninguno.
+const reportError = createErrorReporter({ send: (entries) => api.traceInput(entries) });
+captureErrors(window, reportError);
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -2647,6 +2652,7 @@ const input = createInput({
   // aparecía y ese mando no hacía nada (el servidor lo busca cada 3 s y, si lo encuentra, manda «pad-wake»).
   canSleep: (pads) => padServer.xinput && !padServer.others && pads.filter(Boolean).every((pad) => XINPUT_ID.test(pad.id || "")),
   onReading: (listening) => tellPad(listening),
+  onError: (err, where) => reportError(err, { kind: "pad", ...where }), // el mando sigue; el fallo queda anotado (A3)
 });
 tellPad(true);
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
