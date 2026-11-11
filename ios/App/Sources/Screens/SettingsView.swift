@@ -108,7 +108,7 @@ struct SettingsView: View {
             }
             if entries.addons {
                 NavigationLink { AddonsSettings() } label: {
-                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
+                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,  // edición: dentro de `entries.addons`
                                 value: addonsValue)
                 }
             }

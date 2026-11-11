@@ -109,6 +109,16 @@ versión por omisión es Ultra.
   piezas de Real-Debrid y la TV), Aprende (sin «Ver al instante» ni «Tu TV»), los atajos de Siri de la TV, el menú y la
   actividad en vivo de la TV (`ThisDevice.capabilities.console`). Lo que depende de tu cuenta (tu clave, tu TV emparejada)
   se sigue preguntando además. Prueba: `EditionTests`.
+- Revisión 2 (11 nov): `plus` y `orbital` se compilan en Release (`ORBITAL_EDITION=plus|orbital`). Los textos fijos de
+  las pantallas no dicen «Real-Debrid», «Torrentio», «complemento», «consola» ni «controla la TV» fuera de las pantallas
+  que Orbital no abre: `DesignRulesTests.testOrbitalEditionNeverNamesTheCloudOrTheConsole` (la lista de pantallas con su
+  capacidad, los renglones marcados `// edición:` y lo que aún se cuela, que solo puede encogerse). «Real-Debrid no tiene
+  un archivo de este título» ya dice «No encontré un archivo de este título» sin `instantStreams`.
+- Lo que aún se cuela en pantallas compartidas (`stillLeaks` de esa prueba), cada uno con su texto para Orbital pendiente:
+  el explicador (Real-Debrid, complementos, Torrentio), la guía («Usa tu Real-Debrid»), los avisos de que falló el
+  reproductor y la ficha («Tus complementos no contestan», «Real-Debrid aún no tiene…»), «Versión» («Real-Debrid no lo
+  dejó bajar»), OpenSubtitles, Para ti («De tus complementos»), Ajustes (la consola, Real-Debrid), Fuentes (Torrentio),
+  la bienvenida y la prueba de velocidad.
 
 Falta:
 

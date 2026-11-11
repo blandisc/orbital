@@ -119,7 +119,7 @@ enum ListSource: Hashable {
     /// El nombre del servicio tal cual; «Complemento», en el idioma de la app.
     var name: Text {
         switch self {
-        case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .critics: Text(verbatim: "Rotten Tomatoes"); case .orbital: Text(verbatim: "Orbital")
+        case .trakt: Text(verbatim: "Trakt"); case .addon: Text("Complemento"); case .critics: Text(verbatim: "Rotten Tomatoes"); case .orbital: Text(verbatim: "Orbital")  // edición: solo con complementos (instantStreams), que la versión Orbital no trae
         }
     }
     /// Rotten Tomatoes y Trakt se dicen con su ícono, no con su nombre: caben junto a cualquier título (Fernando, 30 oct

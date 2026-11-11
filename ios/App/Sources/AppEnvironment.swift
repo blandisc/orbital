@@ -195,10 +195,16 @@ final class AppEnvironment {
 
     /// Lo que pasó al pedir una descarga, dicho igual en toda la app (la ficha, Para ti, Mi media y lo que manda la TV).
     /// `.queued` lo dice quien la pidió (cada uno a su manera: el anillo, «Bajando la recomendada»).
+    /// Sin archivo para bajar: «Real-Debrid no tiene…» solo donde hay Real-Debrid (Ultra y Plus); en Orbital, sin nombrarlo
+    /// (revisión 2, D1-B: la versión de la App Store nunca dice «Real-Debrid»).
+    var noFileWords: String {
+        services.capabilities.instantStreams ? "Real-Debrid no tiene un archivo de este título" : "No encontré un archivo de este título"   // edición: el primero solo con instantStreams
+    }
+
     func report(_ outcome: TitleModel.DownloadOutcome, downloaded video: (metaID: String, videoID: String)? = nil) {
         switch outcome {
         case .queued: break
-        case .noSources: notify("No hay una versión para bajar", detail: "Real-Debrid no tiene un archivo de este título")
+        case .noSources: notify("No hay una versión para bajar", detail: noFileWords)
         case .notEnoughSpace(let text): notify("No cabe en el iPhone", detail: text, tone: .warn, action: .downloads, actionTitle: "Descargas")
         case .already:
             if let video {
@@ -329,7 +335,7 @@ final class AppEnvironment {
         case .received(let name): notify(format: "La TV te mandó «%@»", name)
         case .downloadFailed(let name, let reason):
             switch reason {
-            case .noSources: notify(format: "No pude bajar «%@»", name, detail: "Real-Debrid no tiene un archivo de este título")
+            case .noSources: notify(format: "No pude bajar «%@»", name, detail: noFileWords)
             case .notEnoughSpace: notify(format: "«%@» no cabe en el iPhone", name, detail: "Libera espacio en Descargas", tone: .warn, action: .downloads)
             case .other: notify(format: "No pude bajar «%@»", name, detail: "Lo mandó la TV: intenta desde su ficha")
             }

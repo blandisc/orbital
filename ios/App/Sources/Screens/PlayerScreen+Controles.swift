@@ -338,7 +338,7 @@ extension PlayerScreen {
             show(PlayerNotice(title: String(format: tr("Bajando %@"), subtitle.isEmpty ? titleName(r.displayTitle, id: r.metaID, kind: r.kind) : subtitle), detail: tr("La misma versión que estás viendo"),
                               tone: .success, showsDownloads: true))
         case .already: inDownloads = true; alreadyDownloaded()
-        case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: tr("Real-Debrid no tiene un archivo de este título"), tone: .info))
+        case .noSources: show(PlayerNotice(title: tr("No hay una versión para bajar"), detail: tr(env.noFileWords), tone: .info))
         case .notEnoughSpace(let text): show(PlayerNotice(title: tr("No cabe en el iPhone"), detail: message(text), tone: .warn, showsDownloads: true))
         case .failed(let text): show(PlayerNotice(title: tr("No pude preparar la descarga"), detail: message(text), tone: .warn))
         }

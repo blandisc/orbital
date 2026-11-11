@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "No encontré un archivo de este título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find a file for this title"
+          }
+        }
+      }
+    },
     "copia de internet": {
       "extractionState": "manual",
       "localizations": {
