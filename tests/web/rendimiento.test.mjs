@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const read = (path) => readFileSync(new URL(`../../orbital/web/js/${path}`, import.meta.url), "utf8");
+// Sin retornos de carro: en Windows git entrega los archivos con CRLF y `body()` busca el cierre «\n  }\n».
+const read = (path) => readFileSync(new URL(`../../orbital/web/js/${path}`, import.meta.url), "utf8").replaceAll("\r\n", "\n");
 const body = (source, name) => {
   const start = source.indexOf(`function ${name}(`);
   assert.ok(start >= 0, `no encontré ${name}`);
