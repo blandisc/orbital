@@ -101,14 +101,14 @@ public final class TVNowModel: ObservableModel {
         failures = 0
         answeredSinceActive = false
         self.active = active
-        guard active else { return }
+        guard active, !localPlayerOpen else { return }   // con el reproductor del iPhone abierto, en pausa (A11)
         // Al volver de segundo plano se pregunta ya (el primer sondeo va sin espera); lo último que se supo se queda mientras
         // tanto: antes se borraba y el accesorio parpadeaba («de repente desaparece»).
         guard services.orbital.isConfigured else { now = nil; return }
         pollTask = Task { [weak self] in
             while let self, !Task.isCancelled {
                 await self.tick()
-                try? await Task.sleep(nanoseconds: self.remoteOpen ? Self.remoteInterval : self.intervalNanoseconds)
+                try? await Task.sleep(nanoseconds: Self.pollDelay(failures: self.failures, remoteOpen: self.remoteOpen, base: self.intervalNanoseconds))
             }
         }
     }
@@ -126,6 +126,26 @@ public final class TVNowModel: ObservableModel {
     /// Con el control abierto se pregunta más seguido (la leyenda y el avance siguen a la TV).
     static let remoteInterval: UInt64 = 1_500_000_000
     private var remoteOpen = false
+    /// Si la TV no contesta, se le pregunta cada vez menos: 5 s → 15 s → 60 s (A11, 10 nov 2026). Antes era cada 5 s para
+    /// siempre, con la TV apagada o lejos (batería y datos). «Intentar de nuevo» del control (`retryNow`) pregunta ya.
+    /// Con el intervalo normal de 5 s: ×3 = 15 s, ×12 = 60 s.
+    static let slowFactor: UInt64 = 3
+    static let slowestFactor: UInt64 = 12
+
+    /// Cuánto esperar antes del siguiente sondeo: lo normal (más seguido con el control abierto) mientras la TV contesta; un
+    /// tropiezo suelto con el control abierto tampoco frena; tras eso, ×3, y desde `failuresToHide` fallos seguidos, ×12.
+    static func pollDelay(failures: Int, remoteOpen: Bool, base: UInt64) -> UInt64 {
+        if failures == 0 || (remoteOpen && failures == 1) { return remoteOpen ? remoteInterval : base }
+        return base * (failures < failuresToHide ? slowFactor : slowestFactor)
+    }
+
+    /// El reproductor del iPhone está abierto: no se sondea la TV (lo que ves está aquí, no allá). Al cerrarlo, sigue.
+    private var localPlayerOpen = false
+    public func setLocalPlayerOpen(_ open: Bool) {
+        guard localPlayerOpen != open else { return }
+        localPlayerOpen = open
+        if active { setActive(true) }
+    }
 
     /// El control se abrió o se cerró: con él abierto, el sondeo va más rápido.
     public func setRemoteOpen(_ open: Bool) {

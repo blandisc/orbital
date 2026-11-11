@@ -511,19 +511,46 @@ public final class TitlePreferences: @unchecked Sendable {
                 saveSync()
             }
         }
-        let (since, sent) = lock.withLock { (sync.rev, sync.pending) }
-        guard let reply = try? await remote.syncChoices(since: since, changes: sent) else { return }
-        lock.withLock {
-            for (id, change) in sent where sync.pending[id] == change { sync.pending[id] = nil }   // lo que cambió mientras, se manda la próxima
-            for (id, theirs) in reply.changed {
-                sync.revs[id] = theirs.rev
-                if sync.pending[id] != nil { continue }   // aquí hay algo más nuevo: va en la siguiente
-                let value = Saved(audio: theirs.audio, subtitles: theirs.subtitles, spanish: theirs.spanish)
-                all[id] = value.audio == nil && value.subtitles == nil && value.spanish == nil ? nil : value
+        // De a lo más `syncBatch` títulos por vuelta: la TV no acepta más de 100 cambios ni más de 16 KB por petición, y todo
+        // junto se rechazaba entero sin que nadie se enterara (A10, 10 nov 2026). Sin nada pendiente va una vuelta vacía (para
+        // traer lo de la TV).
+        for batch in Self.batches(lock.withLock { sync.pending }) {
+            let since = lock.withLock { sync.rev }
+            let reply: OrbitalRemote.ChoicesReply?
+            do { reply = try await remote.syncChoices(since: since, changes: batch) }
+            catch OrbitalRemote.Failure.refused(let why) {
+                // La TV no quiso este lote (413 o 422: muy grande o un valor que no entiende): queda pendiente y se dice en la
+                // bitácora; los demás lotes siguen.
+                Log.network.error("La TV rechazó \(batch.count, privacy: .public) idiomas por título: \(why, privacy: .public)")
+                continue
+            } catch {
+                return   // sin conexión: lo pendiente espera
             }
-            sync.rev = reply.rev
-            kv.set(Self.key, data: try? JSONEncoder().encode(all))
-            saveSync()
+            guard let reply else { return }   // una Orbital de antes
+            lock.withLock {
+                for (id, change) in batch where sync.pending[id] == change { sync.pending[id] = nil }   // lo que cambió mientras, se manda la próxima
+                for (id, theirs) in reply.changed {
+                    sync.revs[id] = theirs.rev
+                    if sync.pending[id] != nil { continue }   // aquí hay algo más nuevo: va en la siguiente
+                    let value = Saved(audio: theirs.audio, subtitles: theirs.subtitles, spanish: theirs.spanish)
+                    all[id] = value.audio == nil && value.subtitles == nil && value.spanish == nil ? nil : value
+                }
+                sync.rev = reply.rev
+                kv.set(Self.key, data: try? JSONEncoder().encode(all))
+                saveSync()
+            }
+        }
+    }
+
+    /// Cuántos títulos van por petición: el tope de la TV (`ChoicesSync.changes`, `max_length=100` en `orbital/server.py`).
+    static let syncBatch = 100
+
+    /// Lo pendiente en lotes de `syncBatch`, en orden fijo; sin nada pendiente, un lote vacío.
+    static func batches(_ pending: [String: OrbitalRemote.ChoiceChange]) -> [[String: OrbitalRemote.ChoiceChange]] {
+        guard !pending.isEmpty else { return [[:]] }
+        let ids = pending.keys.sorted()
+        return stride(from: 0, to: ids.count, by: syncBatch).map { start in
+            Dictionary(uniqueKeysWithValues: ids[start..<min(start + syncBatch, ids.count)].map { ($0, pending[$0]!) })
         }
     }
 

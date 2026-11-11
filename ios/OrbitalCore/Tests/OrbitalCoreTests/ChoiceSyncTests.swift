@@ -10,6 +10,9 @@ final class FakeOrbital: HTTPClient, @unchecked Sendable {
     var revs: [String: Int] = [:]
     var calls = 0
     var offline = false
+    /// El lote más grande que llegó y un título que la TV rechaza con 422 (como un valor que no entiende).
+    var biggestBatch = 0
+    var refuse: String?
 
     func tvSets(_ id: String, _ key: String, _ value: String) { lock.withLock { rev += 1; titles[id, default: [:]][key] = value; revs[id] = rev } }
 
@@ -18,6 +21,10 @@ final class FakeOrbital: HTTPClient, @unchecked Sendable {
         let body = JSON.parse(request.body ?? Data())
         return lock.withLock {
             calls += 1
+            let changes = body?["changes"]?.object ?? [:]
+            biggestBatch = max(biggestBatch, changes.count)
+            if changes.count > 100 { return HTTPResponse(status: 422, data: Data(#"{"detail":[{"msg":"too many"}]}"#.utf8)) }   // `max_length=100`
+            if let refuse, changes[refuse] != nil { return HTTPResponse(status: 422, data: Data(#"{"detail":"valor inválido"}"#.utf8)) }
             var rejected: [JSON] = []
             for (id, c) in body?["changes"]?.object ?? [:] {
                 if (revs[id] ?? 0) > (c["base_rev"]?.intValue ?? 0) { rejected.append(.string(id)); continue }
@@ -92,6 +99,22 @@ final class ChoiceSyncTests: XCTestCase {
         await again.syncChoices(with: remote)
         XCTAssertEqual(tv.titles["tt1"]?["subtitles"], "")
         XCTAssertTrue(again.pendingChoices.isEmpty)
+    }
+
+    /// A10: 250 títulos pendientes llegan en lotes de 100 (la TV no acepta más); un lote rechazado no frena a los otros.
+    func testMuchosPendientesVanEnLotesDeCienYUnRechazoNoFrenaLosDemas() async {
+        let (prefs, tv, remote, _) = rig()
+        await prefs.syncChoices(with: remote)
+        for i in 0..<250 { prefs.remember(metaID: String(format: "tt%07d", i), audioTrack: "en") }
+        tv.lock.withLock { tv.refuse = "tt0000000" }   // cae en el primer lote (en orden)
+        await prefs.syncChoices(with: remote)
+        XCTAssertEqual(tv.biggestBatch, 100)
+        XCTAssertEqual(tv.titles.count, 150, "los otros dos lotes llegaron")
+        XCTAssertEqual(prefs.pendingChoices.count, 100, "el lote rechazado espera")
+        tv.lock.withLock { tv.refuse = nil }
+        await prefs.syncChoices(with: remote)
+        XCTAssertEqual(tv.titles.count, 250)
+        XCTAssertTrue(prefs.pendingChoices.isEmpty)
     }
 
     func testOlvidarTambienLlega() async {

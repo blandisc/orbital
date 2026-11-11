@@ -2,6 +2,7 @@ import SwiftUI
 import UserNotifications
 import UIKit
 import WidgetKit
+import os
 import OrbitalCore
 import OrbitalModels
 
@@ -157,7 +158,11 @@ final class AppEnvironment {
 
     /// Las imágenes de tu Orbital (logos de canales, arte de juegos) se piden con la llave de este aparato (K1) o, sin ella,
     /// con el token del túnel: tras el primer emparejado v2 el token ya no abre `/api/art` ni `/api/tv/logo` (K1-13).
+    /// La clave de TMDB para los pósters (A12): copiada aquí, fuera del hilo principal.
+    private let posterTmdb = OSAllocatedUnfairLock<Tmdb?>(initialState: nil)
+
     private func shareConsoleWithImages() {
+        let tmdb = services.tmdb; posterTmdb.withLock { $0 = tmdb }
         let key = services.secrets.get(SecretKey.orbitalDeviceKey).flatMap { OrbitalDeviceKey.isValid($0) ? $0 : nil }
         ImagePipeline.shared.setConsole(services.orbital.base, token: key ?? services.secrets.get(SecretKey.orbitalToken))
     }
@@ -234,13 +239,14 @@ final class AppEnvironment {
         }
         #endif
         // Cambiar el idioma (o una clave) vuelve a pintar toda la app (por Observation, ver `services`); aquí, la apariencia y las imágenes.
+        // P1: primero el póster de TMDB (con la clave que tenga la app en ese momento). La clave se copia aquí al cambiar, para
+        // que cada consulta no tenga que saltar al hilo principal a pedirla (A12, 10 nov 2026); lo encontrado vive en un archivo
+        // de Caches, ya no en UserDefaults.
         servicesSubscription = services.onChange { [weak self] in self?.applyAppearance(); self?.shareConsoleWithImages() }
         shareConsoleWithImages()
-        // P1: primero el póster de TMDB (con la clave que tenga la app en ese momento).
-        ImagePipeline.shared.setPosterSource(PosterSource(store: services.kv) { [weak services] imdb in
-            guard let tmdb = await MainActor.run(body: { services?.tmdb }), tmdb.configured else { return nil }
-            do { return .some(try await tmdb.posterPath(imdb: imdb)) } catch { return nil }
-        })
+        let posterFile = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("Orbital-SWR/poster-source.json")
+        let posterTmdb = self.posterTmdb
+        ImagePipeline.shared.setPosterSource(PosterSource(file: posterFile, legacy: services.kv) { posterTmdb.withLock { $0 } })
         session = SessionModel(services)
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)

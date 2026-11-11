@@ -74,6 +74,44 @@ final class TVNowModelTests: XCTestCase {
         XCTAssertEqual(rig.http.calls.count, callsAtStop)  // ya no sondea
     }
 
+    /// A11: si la TV no contesta, cada vez se le pregunta menos (5 → 15 → 60 s); un tropiezo con el control abierto no frena.
+    func testPollingSlowsDownWhileTheTVDoesNotAnswer() {
+        let base: UInt64 = 5_000_000_000
+        XCTAssertEqual(TVNowModel.pollDelay(failures: 0, remoteOpen: false, base: base), base)
+        XCTAssertEqual(TVNowModel.pollDelay(failures: 1, remoteOpen: false, base: base), 15_000_000_000)
+        XCTAssertEqual(TVNowModel.pollDelay(failures: 2, remoteOpen: false, base: base), 15_000_000_000)
+        XCTAssertEqual(TVNowModel.pollDelay(failures: 3, remoteOpen: false, base: base), 60_000_000_000)
+        XCTAssertEqual(TVNowModel.pollDelay(failures: 9, remoteOpen: true, base: base), 60_000_000_000)
+        XCTAssertEqual(TVNowModel.pollDelay(failures: 1, remoteOpen: true, base: base), TVNowModel.remoteInterval)
+    }
+
+    func testUnreachableTVIsAskedLessAndLess() async throws {
+        let rig = try connected()   // sin JSON para /now: no contesta
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        model.setActive(true)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        model.setActive(false)
+        // 10 ms, luego 30 ms y desde el tercero 120 ms: en 300 ms son unas 5 preguntas (antes, unas 30).
+        XCTAssertLessThanOrEqual(rig.http.calls.count, 8)
+    }
+
+    /// A11: con el reproductor del iPhone abierto no se pregunta a la TV; al cerrarlo, sigue.
+    func testLocalPlayerPausesThePolling() async throws {
+        let rig = try connected()
+        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),
+                                     "position": .int(10), "duration": .int(100), "paused": .bool(false)])
+        rig.http.json["https://tv.example/api/companion/now"] = .object(["playing": playing])
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        model.setLocalPlayerOpen(true)
+        model.setActive(true)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(rig.http.calls.count, 0)
+        model.setLocalPlayerOpen(false)
+        try await Task.sleep(nanoseconds: 30_000_000)
+        XCTAssertEqual(model.now?.title, "Interstellar")
+        model.setActive(false)
+    }
+
     func testBadTokenHidesTheCardAndFlagsTheProblem() async throws {
         let rig = try connected()
         rig.http.statuses["https://tv.example/api/companion/now"] = 401

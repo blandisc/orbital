@@ -316,8 +316,8 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
         .animation(DS.Motion.base(reduceMotion), value: drag.dragAxis)
         .animation(DS.Motion.base(reduceMotion), value: ipodFace)
-        .onAppear { Perf.mark("player.shown"); HardwareVolumeButtons.yieldsToPlayer = true }
-        .onDisappear { HardwareVolumeButtons.yieldsToPlayer = false }
+        .onAppear { Perf.mark("player.shown"); HardwareVolumeButtons.yieldsToPlayer = true; env.tvNow.setLocalPlayerOpen(true) }   // A11: sin sondear la TV
+        .onDisappear { HardwareVolumeButtons.yieldsToPlayer = false; env.tvNow.setLocalPlayerOpen(false) }
         .onChange(of: model.snapshot.state) { if model.snapshot.state == .playing { Perf.mark("player.firstFrame") } }
         // A1: la primera vez que pausas, el aviso chico de los gestos (nunca encima de una escena que corre).
         .learnCoach(.playerGestures, title: "Doble toque a los lados: 10 s", detail: "Pellizca para llenar la pantalla; el candado está en «Más».",
