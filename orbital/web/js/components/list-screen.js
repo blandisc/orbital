@@ -1,4 +1,5 @@
 import { h, hideAfterExit, markGridEdge, mount } from "../core/dom.js";
+import { rankOf } from "../core/foryou.js";
 import { storage } from "../core/storage.js";
 import { fillWindow, keepInView, windowCells } from "./browse.js";
 import { Button } from "./button.js";
@@ -91,7 +92,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, onBa
   let cancelExit = () => {};
 
   const current = () => list?.tabs[tab];
-  const ranked = () => !!current()?.ranked;
+  // Un ranking de verdad: la pestaña lo pide y sus títulos traen puesto (R2: Criterion pedía ranking sin puestos).
+  const ranked = () => !!current()?.ranked && (loaded.get(tab) || []).some((item) => rankOf(item) != null);
 
   function paintHead() {
     mount(media, list.media?.statue ? h("img", { class: "list-screen__statue", src: list.media.statue, alt: "" })

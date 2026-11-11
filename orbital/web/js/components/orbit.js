@@ -10,8 +10,10 @@
  */
 import { h } from "../core/dom.js";
 
-/** Quién lleva órbita (los renglones invertidos, como las colecciones de `showcase`, no). */
-export const ORBIT_HOSTS = ".card, .tile:not(.showcase__item), .person-chip, .episode, .calendar__cell";
+/** Quién lleva órbita (los renglones invertidos, como las colecciones de `showcase`, no). R2 (11 nov 2026): el escenario de
+ * «Porque viste» (`.shelf__stage`) también, como cualquier póster; sus portadas escondidas (la lista para el lector de
+ * pantalla) no: el anillo se quedaba en una tarjeta que no se ve. */
+export const ORBIT_HOSTS = ".card:not(.visually-hidden .card), .tile:not(.showcase__item), .person-chip, .episode, .calendar__cell, .shelf__stage";
 
 const worn = new WeakMap(); // pieza → su anillo
 // P4 (10 nov): un solo anillo de repuesto. Al moverte, el de la pieza que deja el foco pasa a la nueva (se mueve el mismo

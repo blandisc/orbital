@@ -175,6 +175,9 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
 const BRAND_COLORS = new Set(["netflix", "prime", "disney", "hbo", "paramount", "appletv"]);
 
 export function RankedCard(item, options = {}) {
+  // R2 (11 nov 2026): solo es ranking la tarjeta que trae su puesto. Una lista del canon (Colección Criterion) se abría como
+  // ranking sin puestos y enseñaba «null» gigante (y «Puesto null» al lector de pantalla): sin puesto, la portada de siempre.
+  if (rankOf(item) == null) return { card: Card(item, options) };
   const card = Card(item, { ...options, ranked: true });
   card.setAttribute("aria-label", `Puesto ${rankOf(item)}: ${item.title}`);
   const brand = BRAND_COLORS.has(options.brand) ? options.brand : null;

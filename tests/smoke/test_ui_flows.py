@@ -335,3 +335,42 @@ def test_long_grid_arms_only_what_is_near(browser, server):  # noqa: F811
     assert dragged["emptyInView"] == 0, dragged
     assert not errors, errors
     page.close()
+
+
+def test_collection_is_not_a_ranking_and_porque_viste_shows_focus(browser, server):  # noqa: F811
+    """R2-3 y R2-4 (11 nov): la Colección Criterion no es un ranking (sus pósters no traen puesto): ningún «null» grande ni
+    «Puesto null». Y el escenario de «Porque viste» lleva la órbita cuando el foco está en él, como cualquier póster."""
+    import urllib.request
+    post = lambda path: urllib.request.urlopen(urllib.request.Request(f"{server}/api/foryou/trakt/{path}", method="POST"), timeout=10).read()  # noqa: E731
+    post("link")  # «Porque viste» sale de tu historial de Trakt (la demostración trae uno)
+    try:
+        _collection_and_stage(open_at(browser, server, videos=False))
+    finally:
+        post("unlink")
+
+
+def _collection_and_stage(page):
+    page.keyboard.press("e")
+    page.keyboard.press("e")  # Películas y series
+    page.locator(".shelf__stage").wait_for(state="attached", timeout=30000)
+    page.wait_for_timeout(800)
+    stage = None
+    for _ in range(8):
+        stage = page.evaluate("() => { const s = document.querySelector('.shelf__stage'); return s && [s.classList.contains('is-focused'), !!s.querySelector(':scope > .orbit')]; }")
+        if stage and stage[0]:
+            break
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(500)
+    assert stage == [True, True], stage
+    page.locator("button.pill[aria-label=Colecciones]").click()
+    page.locator(".showcase__item").first.wait_for(timeout=5000)
+    page.wait_for_timeout(500)
+    page.locator(".showcase__item[aria-label^='Colección Criterion']").click()
+    page.keyboard.press("Enter")
+    page.locator(".list-screen .card").first.wait_for(timeout=8000)
+    page.wait_for_timeout(800)
+    found = page.evaluate("""() => ({
+      nulls: [...document.querySelectorAll('.list-screen *')].filter((e) => !e.childElementCount && /^\\s*null\\s*$/.test(e.textContent)).length,
+      labels: [...document.querySelectorAll('.list-screen [aria-label]')].map((e) => e.getAttribute('aria-label')).filter((l) => /null|undefined/.test(l)) })""")
+    assert found == {"nulls": 0, "labels": []}, found
+    assert not page.errors, page.errors

@@ -35,7 +35,7 @@
 
 /* Dónde va y con qué curva, por pieza: fuera de la pieza (--orbit-out = el grosor) donde no recorta; por dentro (0) donde sí. */
 .card--collection, .tile, .episode__thumb, .calendar__cell { --orbit-out: 0px; }
-.tile { --orbit-radius: var(--tile-radius); }
+.tile, .shelf__stage { --orbit-radius: var(--tile-radius); }
 .calendar__cell { --orbit-radius: var(--radius-sm); }
 /* La cara del reparto: el anillo va alrededor de su foto (redonda), que crece con él. */
 .person-chip { position: relative; }
