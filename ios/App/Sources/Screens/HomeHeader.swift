@@ -1,18 +1,17 @@
 import SwiftUI
 import OrbitalModels
 
-/// El encabezado de Inicio (HE1-B, Fernando, 4 nov 2026): el logo, la cápsula del control, la dona y tu foto, y «Todo ·
+/// El encabezado de Inicio (HE1-B, Fernando, 4 nov 2026): el logo, la cápsula del control y tu foto, y «Todo ·
 /// Películas · Series» (desde EH1, 9 nov, en un solo renglón con «Todo ▾»). Si hay historias de «Aprende» sin ver, tu foto
 /// lleva un anillo turquesa y tocarla las abre. Al deslizar a la izquierda todo sigue a tu dedo: lo de siempre se aleja y se
 /// apaga, y las historias entran ocupando el encabezado entero; al soltar, se acomoda con un resorte. Deslizar a la derecha o
 /// la ✕ lo regresa. Al bajar, los círculos se achican en su mismo lugar y su nombre se va. Con «Reducir movimiento», fundido.
+/// I9 (revisión del 10 nov): la dona de «Un Simpson al azar» se fue del encabezado (eran seis cosas): vive junto a Canales.
 struct HomeHeader: View {
     @Binding var kind: String
     let collapsed: Bool
     let showsRemote: Bool
     let remote: () -> Void
-    let simpsons: () -> Void
-    let simpsonsZoom: Namespace.ID
     let avatar: String
     @Environment(AppEnvironment.self) private var env
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -76,7 +75,7 @@ struct HomeHeader: View {
         #endif
     }
 
-    /// Lo de siempre en un renglón (EH1, Fernando, 9 nov): el logo, «Todo ▾» y la cápsula (el control, la dona y tu foto). Con
+    /// Lo de siempre en un renglón (EH1, Fernando, 9 nov): el logo, «Todo ▾» y la cápsula (el control y tu foto). Con
     /// historias sin ver, tu foto lleva un anillo turquesa y tocarla las abre (tu perfil sigue junto a la ✕ de las historias).
     private var standard: some View {
         let stories = LearnModel(env.services).rings()
@@ -101,16 +100,13 @@ struct HomeHeader: View {
         .frame(maxWidth: WindowMetrics.size.width)   // nunca más ancho que la pantalla (si no, toda Inicio se recorre)
     }
 
-    /// La cápsula: el control, la dona y tu foto (se hace a un lado mientras eliges en el selector, SX1).
+    /// La cápsula: el control y tu foto (se hace a un lado mientras eliges en el selector, SX1).
     private func capsule(_ stories: [LearnStory]) -> some View {
             HStack(spacing: Self.hint == .storyInCapsule ? DS.Space.s2 : DS.Space.s4) {
                 if showsRemote && !kindOpen {
                     Button(action: remote) { Image(systemName: "av.remote").font(DS.TextRecipe.section.font) }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
                 }
-                if !kindOpen { Button(action: simpsons) { Image("Glyphs/donut").renderingMode(.original) }
-                    .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
-                    .accessibilityLabel(Text("Un Simpson al azar")).accessibilityIdentifier("home-random-simpsons") }
                 if let first = stories.first, Self.hint == .storyInCapsule {
                     // HH3: un círculo de historia en la cápsula; tu foto sigue siendo tu perfil.
                     Button { openStories() } label: {

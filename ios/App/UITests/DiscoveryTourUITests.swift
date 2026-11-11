@@ -42,7 +42,8 @@ final class DiscoveryTourUITests: XCTestCase {
 
         // Inicio › Los Simpson.
         launch(["-demo-tab", "0"])
-        let donut = app.buttons["home-random-simpsons"]
+        let donut = app.buttons["home-random-simpsons"]   // junto a Canales (I9), más abajo de Inicio
+        for _ in 0..<6 where !donut.isHittable { app.swipeUp() }
         if donut.waitForExistence(timeout: 15) { donut.tap(); shot("simpsons") }
 
         // Para ti: encabezado, «Porque viste», rankings de una plataforma y un «Ver todo» de estante.

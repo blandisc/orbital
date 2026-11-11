@@ -15,13 +15,13 @@ final class HomeStoriesUITests: XCTestCase {
     func testSwipeLeftOpensTheStoriesAndTheCrossBringsTheHeaderBack() {
         let peek = app.buttons["home-stories-ring"]
         XCTAssertTrue(peek.waitForExistence(timeout: 20), "dos círculos se asoman a la derecha")
-        XCTAssertTrue(app.buttons["home-random-simpsons"].isHittable, "sin estorbar a la cápsula")
+        XCTAssertTrue(app.buttons["kind-all"].isHittable, "sin estorbar al encabezado")
         app.buttons["home-kind-filter"].firstMatch.exists ? app.otherElements["home-kind-filter"].swipeLeft() : peek.swipeLeft()
         let ring = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'learn-ring-'")).firstMatch
         XCTAssertTrue(ring.waitForExistence(timeout: 5) && ring.isHittable, "las historias ocupan el encabezado")
-        XCTAssertFalse(app.buttons["home-random-simpsons"].isHittable, "la cápsula se fue")
+        XCTAssertFalse(app.buttons["kind-all"].isHittable, "el encabezado se fue")
         app.buttons["home-stories-close"].tap()
-        XCTAssertTrue(app.buttons["home-random-simpsons"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["kind-all"].waitForExistence(timeout: 5))
         XCTAssertTrue(peek.waitForExistence(timeout: 5))
     }
 
@@ -43,11 +43,11 @@ final class HomeStoriesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["home-stories-close"].waitForExistence(timeout: 20))
         for _ in 0..<3 { app.swipeUp() }
         app.buttons["home-stories-close"].tap()
-        XCTAssertTrue(app.buttons["home-random-simpsons"].waitForExistence(timeout: 5), "regresa el encabezado")
+        XCTAssertTrue(app.buttons["kind-all"].waitForExistence(timeout: 5), "regresa el encabezado")
         for _ in 0..<3 { app.swipeDown() }
         sleep(2)
         XCTAssertEqual(app.state, .runningForeground, "y la app sigue viva")
-        XCTAssertTrue(app.buttons["home-random-simpsons"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["kind-all"].waitForExistence(timeout: 5))
     }
 
     /// Como Instagram: al deslizar a la izquierda dentro de una historia, sigue la próxima.

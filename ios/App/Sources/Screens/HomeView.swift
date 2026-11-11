@@ -122,7 +122,9 @@ struct HomeView: View {
                     .entrance("home:picks", order: 1)
                 }
                 HomeBecause(model: because.model, kind: kind).entrance("home:because", order: 2)
-                if kind != "movie" { HomeChannels(model: channels.model).entrance("home:channels", order: 3) }   // solo series
+                if kind != "movie" {   // solo series; la dona de «Un Simpson al azar» va en su encabezado (I9)
+                    HomeChannels(model: channels.model, simpsons: { rollingSimpsons = true }, simpsonsZoom: simpsonsZoom).entrance("home:channels", order: 3)
+                }
                 // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
                 if model.hasAnyTop { topTen(model).entrance("home:top", order: 4) }
                 if !pending.isEmpty { watchlist(model, items: pending).entrance("home:watchlist", order: 5) }
@@ -184,7 +186,7 @@ struct HomeView: View {
                        collapsed: collapsed,
                        // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
                        showsRemote: openRemote != nil && (tvNow.model.now == nil || !Self.hasTabAccessory),
-                       remote: { openRemote?() }, simpsons: { rollingSimpsons = true }, simpsonsZoom: simpsonsZoom,
+                       remote: { openRemote?() },
                        avatar: look.avatar)
         }
         .titleDestinations()
