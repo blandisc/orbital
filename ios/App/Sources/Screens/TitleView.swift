@@ -197,7 +197,7 @@ struct TitleView: View {
                         actions(model)
                         synopsis(model)
                     }
-                    .frame(maxWidth: DS.TitleAction.wideColumn, alignment: .leading)
+                    .frame(maxWidth: typeSize.isAccessibilitySize ? DS.TitleAction.readableWidth : DS.TitleAction.wideColumn, alignment: .leading)   // letra grande: más ancho, no cuatro botones apretados
                     .padding(.horizontal, side).padding(.bottom, DS.Layout.betweenSections)
                 }
                 // El arte sube detrás del reloj y de la barra, como en la TV.
