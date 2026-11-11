@@ -23,7 +23,6 @@ struct SettingsView: View {
     @State private var tmdbKey = ""
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
-    @State private var confirmCoachReset = false
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
@@ -91,12 +90,6 @@ struct SettingsView: View {
             NavigationLink { page("Descargas") { downloads(model) } } label: {
                 SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
             }
-            // La dona de Inicio, al final: es un detalle de Inicio, no algo que todos vengan a cambiar (I13, 10 nov).
-            if env.services.settingsEntries.simpsons {
-                NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
-                    SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
-                }
-            }
         } header: { Text("Preferencias") }
         .listRowBackground(DS.surface)
     }
@@ -130,21 +123,12 @@ struct SettingsView: View {
             NavigationLink { page("Avanzado") { suggestions(model) } } label: {
                 SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
             }
-            // Las historias, la guía otra vez y los avisos desde cero (G3).
-            NavigationLink { LearnView() } label: {
-                SettingsRow(title: "Aprende Orbital", symbol: "sparkles", tint: DS.ListTint.spark)
+            // «Aprende»: una sola entrada con las historias, la guía otra vez, los avisos desde cero y lo que se puede hacer con
+            // la TV (revisión del 11 nov: eran cuatro renglones casi iguales, dos con el mismo destello).
+            NavigationLink { LearnView(tvTutorial: env.services.settingsEntries.orbital && model.settings.orbitalEnabled ? { orbitalSetup = .tutorial } : nil) } label: {
+                SettingsRow(title: "Aprende", symbol: "sparkles", tint: DS.ListTint.spark)
             }
             .accessibilityIdentifier("settings-learn")
-            // Vivir otra vez la guía de bienvenida (Fernando, 4 nov: «que el onboarding sea accesible a través de ajustes»).
-            Button { env.ui.showingGuide = true } label: {
-                SettingsRow(title: "Ver la guía de bienvenida", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
-            }
-            .accessibilityIdentifier("settings-welcome")
-            // Fer, 4 nov: «un botoncito en ajustes donde se reinicien ese tipo de tutoriales para verlos».
-            Button { confirmCoachReset = true } label: {
-                SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.counterclockwise", tint: DS.ListTint.addon, linked: false)
-            }
-            .accessibilityIdentifier("settings-coach-reset")
         }
         .listRowBackground(DS.surface)
     }
@@ -191,10 +175,6 @@ struct SettingsView: View {
             .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
                 Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
             } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
-            .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmCoachReset, titleVisibility: .visible) {
-                Button("Volver a verlos") { LearnModel(env.services).reset() }
-                Button("Cancelar", role: .cancel) {}
-            } message: { Text("Las historias vuelven a decir que no las has visto.") }
             .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
                 Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
             } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
@@ -250,9 +230,6 @@ struct SettingsView: View {
                     VoiceGuideView(hints: env.tvNow.hints, nowTitle: env.tvNow.now?.title) { phrase in sayFromSettings(phrase) }
                 } label: {
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
-                }
-                Button { orbitalSetup = .tutorial } label: {
-                    SettingsRow(title: "Qué puedes hacer con la TV", symbol: "sparkles", tint: DS.ListTint.spark, linked: false)
                 }
             }
         } header: { Text("Orbital en la TV") } footer: {

@@ -157,6 +157,7 @@ struct ChannelsSheet: View {
                         // La nota va pegada a los pósters de arriba (antes tenía el aire de una sección y quedaba suelta).
                         section(Text("Tus canales"), model.picks, note: model.suggestions.isEmpty)
                         if !model.suggestions.isEmpty { section(Text("Te sugerimos"), model.suggestions, note: true) }
+                        if env.services.settingsEntries.simpsons { simpsonsSeasons }
                     }
                 }
                 .padding(DS.Space.gutter)
@@ -173,6 +174,24 @@ struct ChannelsSheet: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { dismiss() } } }
         }
         .presentationDetents([.large])
+    }
+
+    /// De qué temporadas sale la dona (antes en Ajustes; revisión del 11 nov: vive con la dona, junto a los canales).
+    private var simpsonsSeasons: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: Text("Un Simpson al azar"), level: .section)
+            NavigationLink { SimpsonsSeasonsPage() } label: {
+                HStack(spacing: DS.Space.s2) {
+                    SettingsRow(title: "Temporadas", symbol: "dice", tint: DS.ListTint.watching,
+                                value: SimpsonsSeasonsSection.summary(env.services.appSettings.simpsonsSeasons))
+                    Image(systemName: "chevron.right").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textFaint)
+                }
+                .padding(DS.Space.s3)
+                .dsCard()
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("channels-simpsons-seasons")
+        }
     }
 
     private func section(_ title: Text, _ picks: [ChannelsModel.Pick], note: Bool = false) -> some View {

@@ -1,14 +1,20 @@
 import SwiftUI
 import OrbitalModels
 
-/// Ajustes › Aprende Orbital (G3): todas las historias por tema (el punto de «nuevo» en las que no has visto), ver la guía
-/// otra vez y «Volver a ver los avisos» (los avisos sobre la pantalla y los círculos de Inicio, desde cero).
+/// Ajustes › Aprende (G3): todas las historias por tema (el punto de «nuevo» en las que no has visto), ver la guía otra vez,
+/// «Volver a ver los avisos» (los avisos sobre la pantalla y los círculos de Inicio, desde cero) y, con tu TV, lo que se puede
+/// hacer con ella. Una sola entrada en Ajustes (revisión del 11 nov: antes eran cuatro casi iguales).
 struct LearnView: View {
+    /// «Qué puedes hacer con la TV» (el recorrido de la TV), solo con tu Orbital prendida en Ajustes.
+    let tvTutorial: (() -> Void)?
     @State private var learn: ModelObserver<LearnModel>
     @State private var confirmReset = false
     @Environment(AppEnvironment.self) private var env
 
-    init() { _learn = State(wrappedValue: ModelObserver(LearnModel(AppEnvironment.shared.services))) }
+    init(tvTutorial: (() -> Void)? = nil) {
+        self.tvTutorial = tvTutorial
+        _learn = State(wrappedValue: ModelObserver(LearnModel(AppEnvironment.shared.services)))
+    }
 
     private static let groups: [(title: LocalizedStringKey, ids: [String])] = [
         ("Para empezar", ["instant", "language"]),
@@ -39,6 +45,15 @@ struct LearnView: View {
                 } header: { Text(group.title) }
                 .listRowBackground(DS.surface)
             }
+            if let tvTutorial {
+                Section {
+                    Button(action: tvTutorial) {
+                        SettingsRow(title: "Qué puedes hacer con la TV", symbol: "tv", tint: DS.ListTint.series, linked: false)
+                    }
+                    .accessibilityIdentifier("learn-tv-tutorial")
+                }
+                .listRowBackground(DS.surface)
+            }
             Section {
                 Button { env.ui.showingGuide = true } label: {
                     SettingsRow(title: "Ver la guía otra vez", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
@@ -52,7 +67,7 @@ struct LearnView: View {
             .listRowBackground(DS.surface)
         }
         .scrollContentBackground(.hidden).background(Backdrop())
-        .navigationTitle("Aprende Orbital").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Aprende").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()
         .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmReset, titleVisibility: .visible) {
             Button("Volver a verlos") { model.reset() }
