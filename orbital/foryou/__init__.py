@@ -71,6 +71,7 @@ from .base import TRAKT_ADDON as TRAKT_ADDON
 from .base import TRAKT_FAVORITES as TRAKT_FAVORITES
 from .base import TV_ONLY_PREFIXES as TV_ONLY_PREFIXES
 from .base import WEEKDAYS as WEEKDAYS
+from .base import Host as Host
 from .base import load_awards as load_awards
 from .cache import Cache as Cache
 from .cache import _build as _build
@@ -92,7 +93,7 @@ log = logging.getLogger("orbital.foryou")  # el mismo nombre de siempre: la bitÃ
 
 
 class ForYou(_Home):
-    def __init__(self, config, catalog) -> None:
+    def __init__(self, config, catalog: Host) -> None:
         self.settings = config.para_ti
         self.catalog = catalog
         self.region = self.settings.region

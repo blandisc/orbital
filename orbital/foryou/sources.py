@@ -373,7 +373,7 @@ class _Sources(_Mine):
     def _mark_owned(self, games: list[dict]) -> list[dict]:
         """Lo que ya tienes (por id de Steam o por nombre) se juega desde aquí: palomita y A = Jugar."""
         library = [i for i in self.catalog.items() if i.category in GAME_CATEGORIES]
-        by_appid = {i.steam_appid: i for i in library if i.steam_appid}
+        by_appid: dict = {i.steam_appid: i for i in library if i.steam_appid}  # la llave de RAWG puede venir vacía
         by_title = {fold(i.title): i for i in library}
         marked = []
         for g in games:

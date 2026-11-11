@@ -13,7 +13,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 from ..library import charts as charts_api
 from ..library import letterboxd as letterboxd_api
@@ -146,15 +146,42 @@ KEY_PREFIX = "para_ti."
 
 
 if TYPE_CHECKING:
+    from ..credentials import Credentials
+    from ..events import EventBus
     from ..gestor import Gestor
+    from ..library.localize import TitleNames
+    from ..library.models import LibraryItem
+    from ..state import State
+    from ..watch import Watch
     from .cache import Cache
+
+
+class Host(Protocol):
+    """Lo único que «Para ti» usa de Orbital (catalog.py le da el Catalog entero, que lo cumple).
+
+    pyright avisa si una pieza usa algo más: si una pieza nueva necesita otro servicio, entra aquí."""
+
+    @property
+    def credentials(self) -> Credentials: ...
+    @property
+    def state(self) -> State: ...
+    @property
+    def events(self) -> EventBus: ...
+    @property
+    def watch(self) -> Watch: ...
+    cinemeta: Any  # Catalog.cinemeta (el de Watch): un property(lambda …) que pyright no lee
+    @property
+    def names(self) -> TitleNames: ...
+    def items(self, include_hidden: bool = False) -> list[LibraryItem]: ...
+    def get(self, item_id: str) -> LibraryItem | None: ...
+    def describe(self, item: LibraryItem) -> dict: ...
 
 
 class _Base:
     """Lo que ForYou.__init__ arma (aquí solo se declara, con su tipo, para que cada pieza lo vea)."""
 
     settings: Any  # config.para_ti
-    catalog: Any  # lo que «Para ti» usa de Orbital: credenciales, avisos, biblioteca y Watch (ver __init__.py)
+    catalog: Host  # lo que «Para ti» usa de Orbital: credenciales, avisos, biblioteca y Watch (Host, arriba)
     region: Any
     cache: Cache  # dueño: cache.py (tiene su propio candado)
     snapshots: charts_api.ChartSnapshots
