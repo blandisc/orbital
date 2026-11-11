@@ -1,5 +1,6 @@
 import Observation
 import XCTest
+import OrbitalCore
 @testable import OrbitalModels
 
 /// V9 (repintado fino): Inicio, la ficha y los servicios avisan por propiedad. Lo que pinta una parte se vuelve a pintar

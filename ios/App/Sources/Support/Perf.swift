@@ -94,15 +94,16 @@ enum BodyCount {
     /// `-perf-why`: además, cada pantalla medida dice en la consola qué la hizo volver a pintarse (`_printChanges`).
     static let explains = Demo.has("-perf-why")
     #else
-    static let isOn = false
+    static let isOn = false, explains = false
     #endif
     static let file = FileManager.default.temporaryDirectory.appendingPathComponent("orbital-bodies.txt")
     @MainActor private static var counts: [String: Int] = [:]
     @MainActor private static var writing = false
 
     /// Una evaluación más del `body` de `name`. El resumen se escribe medio segundo después (juntando las de esa ráfaga).
-    @MainActor static func tick(_ name: String) {
+    @MainActor static func tick(_ name: String, why: () -> Void = {}) {
         guard isOn else { return }
+        if explains { why() }
         if counts.isEmpty { try? FileManager.default.removeItem(at: file) }
         counts[name, default: 0] += 1
         guard !writing else { return }

@@ -241,24 +241,6 @@ struct RootView: View {
     }
 }
 
-extension EnvironmentValues {
-    /// Abre el control de tu Orbital (el botón de la barra de Inicio); nil sin tu Orbital conectada.
-    @Entry var openRemote: RemoteOpener? = nil
-}
-
-/// El botón del control: siempre igual a otro (como `TitlePanelOpener`), para que Inicio no se vuelva a pintar entera cada
-/// vez que la raíz cambia de pestaña o regresa de una ficha.
-/// V9: el valor del entorno es solo datos (`wide`); la acción vive en `AppUI.remoteButton` (fuera de Observation). Con el
-/// cierre dentro, SwiftUI daba el entorno por cambiado en cada pasada de la raíz (cada sondeo de la TV) aunque `==` dijera
-/// que era igual, y volvía a pintar Inicio entera (`-perf-why`: «_openRemote changed», 25 veces al abrir una ficha).
-struct RemoteOpener: Equatable {
-    /// Lo único que cambia lo que hace: si el control abre como panel o como hoja.
-    let wide: Bool
-    /// De qué ventana es (su acción, en `AppUI.remoteButtons`).
-    let window: Int
-    @MainActor func callAsFunction() { AppEnvironment.shared.ui.remoteButtons[window]?() }
-}
-
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.

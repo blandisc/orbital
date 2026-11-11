@@ -20,7 +20,6 @@ struct TitleView: View {
     @Environment(\.horizontalSizeClass) var sizeClass
     /// La pestaña elegida bajo el arte en el iPad y la Mac (nil: la primera que haya).
     @State private var wideTab: WideTab?
-    @Environment(\.openURL) private var openURL
     /// Lo que dice Letterboxd de la película (su promedio y sus reseñas populares); las series casi nunca están.
     @State var letterboxdInfo: LetterboxdFilmInfo?
     @State private var observer: ModelObserver<TitleModel>
@@ -138,10 +137,7 @@ struct TitleView: View {
     }
 
     var body: some View {
-        let _ = BodyCount.tick("title")   // V9: cuántas veces se pinta (`-perf-bodies`)
-        #if DEBUG
-        let _ = BodyCount.explains ? Self._printChanges() : ()   // `-perf-why`: qué la hizo pintarse
-        #endif
+        let _ = BodyCount.tick("title", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = observer.model
         loaded(model)
         .sheet(item: $sourcesFor) { target in
@@ -363,7 +359,7 @@ struct TitleView: View {
                 statusAction(model).frame(maxWidth: .infinity)
                 downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {
-                    Button { openURL(url) } label: { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }
+                    Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
             }

@@ -31,8 +31,7 @@ public enum SourceCheck: Equatable, Sendable { case unknown, available, none, of
 /// descargado), Mi lista (Stremio), watchlist (Trakt) y las acciones de ver y descargar.
 @MainActor
 public final class TitleModel: ObservableModel {
-    /// V9: cada parte de la ficha se vuelve a pintar solo con lo que lee (ver `@Tracked`).
-    public override var observesByProperty: Bool { true }
+    public override var observesByProperty: Bool { true }   // V9: cada parte de la ficha se pinta con lo que lee (`@Tracked`)
     public private(set) var kind: String
     public private(set) var metaID: String
     @Tracked(always: true) public private(set) var title = ""

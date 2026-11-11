@@ -11,8 +11,8 @@ struct TitlePanelOpener: Equatable {
     /// La ficha y, si se sabe, el marco del póster que se tocó (en la ventana): de ahí sale el zoom hacia el panel. La acción
     /// vive en `AppUI.titlePanel` (V9, como `RemoteOpener`): con el cierre dentro, cada pasada de la raíz volvía a pintar cada
     /// póster que lee el entorno.
+    /// De qué ventana es (su acción, en `AppUI.titlePanels`; se llama desde `Screens/EnvironmentActions.swift`).
     let window: Int
-    @MainActor func callAsFunction(_ route: TitleRoute, from frame: CGRect? = nil) { AppEnvironment.shared.ui.titlePanels[window]?(route, frame) }
 }
 
 extension EnvironmentValues {

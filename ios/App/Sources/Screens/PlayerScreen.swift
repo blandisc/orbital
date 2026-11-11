@@ -513,14 +513,10 @@ struct PlayerScreen: View {
         .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !padlock.locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
-        // Una versión que Real-Debrid aún no tiene: la verdad antes de abrirla (puede tardar u horas; si manda su aviso, se vuelve).
     }
 
     var body: some View {
-        let _ = BodyCount.tick("player")   // V9: cuántas veces se pinta (`-perf-bodies`)
-        #if DEBUG
-        let _ = BodyCount.explains ? Self._printChanges() : ()   // `-perf-why`: qué la hizo pintarse
-        #endif
+        let _ = BodyCount.tick("player", why: Self._printChanges)   // V9: cuántas veces se pinta y por qué (`-perf-bodies`, `-perf-why`)
         let model = holder.model
         tracked(model)   // en partes (`dressed`, `alive`, `tracked`): de una pieza, el Swift de la CI no la revisaba a tiempo
         .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {
