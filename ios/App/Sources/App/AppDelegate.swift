@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
-        OrbitalShortcuts.updateAppShortcutParameters()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
+        SiriPhrases.refresh()   // Siri vuelve a leer los títulos que conoce (Los Simpson, siempre)
         OpenRemoteIntent.open = { AppEnvironment.shared.ui.openRemote = true }   // el control del Centro de control abre el control
         OpenSimpsonsIntent.open = { AppEnvironment.shared.ui.openSimpsons = true }   // «Un Simpson al azar» del Centro de control
         // Los botones de los widgets: «Aquí» abre el enlace (reproducir donde ibas) y «En la TV» lo manda a tu Orbital sin abrir la app.

@@ -76,7 +76,7 @@ public final class TitleModel: ObservableModel {
     /// N5-A: la de un idioma que va antes en tu orden y no ganó «Ver» porque aquí no se ve bien (la ficha lo dice en una línea).
     public private(set) var poorFit: PoorFit? { didSet { if oldValue != poorFit { changed() } } }
     /// Si ya se sabe que no hay fuentes (o no hay red), «Ver» lo dice en vez de abrir un reproductor que va a fallar.
-    public private(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
+    public internal(set) var sourceCheck: SourceCheck = .unknown { didSet { changed() } }
     /// Por qué no hay qué ver, si se sabe algo mejor que «no hay» (D5): «Tu Real-Debrid venció» con «Renovar», «No tienes
     /// complementos prendidos»…; nil si hay versiones o no se sabe.
     public internal(set) var unavailableCause: UnavailableCause? { didSet { if oldValue != unavailableCause { changed() } } }
@@ -265,7 +265,7 @@ public final class TitleModel: ObservableModel {
             if !Task.isCancelled { sourceCheck = error is StreamFinderError || Degraded.isOffline(error) || !services.isOnline() ? .offline : .unknown }
             // Hay internet y ningún complemento contestó: son ellos (la causa 8), no tu conexión. Si falló otra cosa (leer tus
             // complementos), no se pudo ni buscar (la causa 3), con el error en palabras.
-            if sourceCheck == .offline && services.isOnline() { unavailableCause = .addonsOffline }
+            if sourceCheck == .offline && services.isOnline() { unavailableCause = UnavailableCause.addonsOffline.shown(instant: offersInstant) }
             else if sourceCheck == .unknown && services.isOnline() && !Task.isCancelled {
                 unavailableCause = .cannotSearch(reason: UserMessages.humanize(String(describing: error))); sourceCheck = .none
             } else { unavailableCause = nil }

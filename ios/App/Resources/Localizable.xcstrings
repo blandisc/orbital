@@ -44343,6 +44343,17 @@
           }
         }
       }
+    },
+    "Esta versión de Orbital es para ver aquí mismo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This version of Orbital is for watching right here."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

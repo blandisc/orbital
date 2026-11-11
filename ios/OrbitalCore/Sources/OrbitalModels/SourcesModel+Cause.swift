@@ -9,9 +9,11 @@ extension SourcesModel {
     /// La causa de una hoja vacía. `thrown`: lo que tronó al buscar (nil si contestaron sin nada); `online`: hay internet;
     /// `hasToken`: tienes clave de Real-Debrid; `addonsOff`: tu lista no tiene ningún complemento de video prendido;
     /// `notices`: lo que dijo Torrentio en lugar de versiones; `canRequest`: hay versiones para pedir a la nube (abajo, en
-    /// «Hay que pedirlas»); `language`: el idioma que quieres.
+    /// «Hay que pedirlas»); `language`: el idioma que quieres; `instant`: la versión ve al instante (sin eso, Orbital, no se
+    /// habla de Real-Debrid ni de complementos, D1-B).
     public static func emptyCause(thrown: Error?, online: Bool, account: UnavailableCause.Account, hasToken: Bool, addonsOff: Bool,
-                                  notices: [StreamNotice], canRequest: Bool, language: String) -> UnavailableCause {
+                                  notices: [StreamNotice], canRequest: Bool, language: String, instant: Bool = true) -> UnavailableCause {
+        guard instant else { return thrown == nil ? .nobodyHasIt : UnavailableCause.addonsOffline.shown(instant: false) }
         if let byAccount = UnavailableCause.first(notice: nil, account: account, language: language) { return byAccount }
         if !hasToken { return .reconnectDebrid }
         if addonsOff { return .noAddonsOn }
@@ -34,6 +36,7 @@ extension SourcesModel {
         return Self.emptyCause(thrown: thrown, online: services.isOnline(),
                                account: .from(nil, saved: services.debrid.saved, now: services.now()), hasToken: services.debrid.hasToken,
                                addonsOff: list.isConfigured && !list.installed.contains { $0.enabled && $0.resources.contains("stream") },
-                               notices: await services.finder.notices(kind: kind, videoID: videoID), canRequest: canRequest, language: prefs.audio)
+                               notices: await services.finder.notices(kind: kind, videoID: videoID), canRequest: canRequest, language: prefs.audio,
+                               instant: services.capabilities.instantStreams)
     }
 }

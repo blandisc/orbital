@@ -50,4 +50,17 @@ public struct Capabilities: Sendable, Equatable {
 
     /// Todo prendido: Ultra en un aparato que habla con la TV (lo de siempre y lo que usan las pruebas).
     public static let ultra = Capabilities(edition: .ultra)
+
+    /// Un enlace que llega de fuera (el QR de la TV, un widget, el Centro de control): ¿se abre aquí? El QR de la TV y el control
+    /// solo donde hay consola; sin ella, el QR decía «Conectado con tu Orbital» sin conectar nada (D1-B).
+    public func opens(_ link: WidgetLink?, pairing: Bool = false) -> Bool {
+        if pairing || link == .remote { return console }
+        return true
+    }
+
+    /// Lo que contesta Siri (o un atajo guardado) cuando aquí no hay consola. En Ultra es la Mac; Plus y Orbital no tienen
+    /// consola en ningún aparato, así que no se culpa a la Mac ni se habla de la TV (la clave del catálogo de textos).
+    public static func noTVLine(edition: Edition) -> String {
+        edition == .ultra ? "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad." : "Esta versión de Orbital es para ver aquí mismo."
+    }
 }

@@ -27,6 +27,17 @@ public enum TitlePrimary: Equatable, Sendable {
     case unavailable
 }
 
+/// Lo que dice «Ver» cuando no hay qué poner (la vista lo pinta; la decisión vive aquí para que una prueba diga qué sale en
+/// cada versión, D1-B).
+public enum PlayFallback: Equatable, Sendable {
+    /// Un aviso con la causa de la tabla común y su salida.
+    case cause(UnavailableCause)
+    /// La primera vez sin Real-Debrid: la historia de Aprende (termina en «Conectar Real-Debrid»).
+    case story(String)
+    /// Sin internet en el aparato: «Sin internet · No pude buscar dónde verlo».
+    case noInternet
+}
+
 extension TitleModel {
     /// ¿Esta versión ve al instante con Real-Debrid? Sin eso (Orbital, App Store) la ficha no enseña pedidos, la nube ni
     /// «Pedir a la nube» (D1-B).
@@ -50,5 +61,21 @@ extension TitleModel {
         if sourceCheck == .none, unavailableCause == .nobodyHasIt || unavailableCause?.isUnreleased == true { return .notifyWhenAppears }
         if let airs = continueAirs { return .airs(airs) }
         return sourceCheck == .none || sourceCheck == .offline ? .unavailable : .watch
+    }
+
+    /// «Ver» sin versiones (`sourceCheck` .none) o sin respuesta de nadie (.offline); `online`: el aparato tiene internet. Sin
+    /// «ver al instante» en la versión (Orbital) nunca habla de Real-Debrid ni de complementos.
+    public func playFallback(online: Bool = true) -> PlayFallback {
+        if sourceCheck == .offline {
+            guard online else { return .noInternet }
+            // Ningún complemento contestó con red: son ellos (la causa 8 de la tabla común).
+            return .cause(unavailableCause ?? UnavailableCause.addonsOffline.shown(instant: offersInstant))
+        }
+        // Si se sabe por qué (tu Real-Debrid venció, sin Premium, complementos apagados…), eso es lo que pasa, con su salida.
+        if let cause = unavailableCause { return .cause(cause.shown(instant: offersInstant)) }
+        guard offersInstant else { return .cause(.nobodyHasIt) }
+        // Sin tu clave de Real-Debrid en la app casi no hay versiones que se vean aquí. D1: la primera vez, la historia.
+        if !services.debrid.hasToken { return LearnModel(services).seen(LearnContent.instant.id) ? .cause(.reconnectDebrid) : .story(LearnContent.instant.id) }
+        return .cause(.notInDebrid(language: recommendedLanguage ?? services.appSettings.audio))
     }
 }

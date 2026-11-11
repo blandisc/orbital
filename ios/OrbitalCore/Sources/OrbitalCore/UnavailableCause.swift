@@ -104,6 +104,18 @@ public enum UnavailableCause: Equatable, Sendable {
         }
     }
 
+    /// D1-B: la causa que se puede decir en una versión. Sin «ver al instante» (Orbital, App Store) no existen Real-Debrid, la
+    /// nube ni los complementos: lo de ellos queda en «Nadie lo tiene todavía» y «ningún complemento contestó», en «No puedo
+    /// buscar versiones · Revisa Internet».
+    public func shown(instant: Bool) -> UnavailableCause {
+        guard !instant else { return self }
+        switch self {
+        case .unreleased, .cannotSearch, .nobodyHasIt: return self
+        case .addonsOffline: return .cannotSearch(reason: "Revisa Internet e inténtalo de nuevo")
+        case .downloading, .debridExpired, .noPremium, .reconnectDebrid, .debridRefused, .noAddonsOn, .notInDebrid: return .nobodyHasIt
+        }
+    }
+
     /// Cómo está tu cuenta para decir la causa: lo que contestó Real-Debrid ahora o, si no, lo guardado.
     public enum Account: Equatable, Sendable { case ok, expired, free, invalidKey, unknown }
 

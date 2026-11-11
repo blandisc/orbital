@@ -27,8 +27,9 @@ private func answer(_ said: String) async -> String {
     return text.isEmpty ? String(localized: "Listo.") : Strings.message(text, language: env.services.appSettings.uiLanguage)
 }
 
-/// Lo que contesta Siri en la Mac, donde Orbital es solo para ver.
-private var macNoTV: String { String(localized: "En la Mac, Orbital no controla la TV. Usa tu iPhone o tu iPad.") }
+/// Lo que contesta Siri donde no hay consola: en Ultra, la Mac; en Plus y Orbital, en todos lados (y ahí no se habla de la
+/// TV, D1-B). La clave vive en `Capabilities.noTVLine`.
+private var macNoTV: String { String(localized: String.LocalizationValue(Capabilities.noTVLine(edition: .bundled()))) }
 
 /// «Dile a Orbital que ponga The Office»: la orden en texto libre.
 struct AskOrbitalIntent: AppIntent {
@@ -248,7 +249,7 @@ enum SiriTitles {
         let unique = Array(clean.prefix(limit))
         guard !unique.isEmpty, unique != (UserDefaults.standard.array(forKey: key) as? [[String]]) else { return }
         UserDefaults.standard.set(unique, forKey: key)
-        OrbitalShortcuts.updateAppShortcutParameters()
+        SiriPhrases.refresh()
     }
 }
 
@@ -304,7 +305,18 @@ struct TurnOnConsoleIntent: AppIntent {
     }
 }
 
-/// Las frases que Siri reconoce sin configurar nada (aparecen solas en Atajos).
+/// Las frases que Siri reconoce sin configurar nada (aparecen solas en Atajos). Todas mandan órdenes a la consola: Plus y
+/// Orbital no la tienen, así que ahí no se registra ninguna (D1-B; `EDITION_<versión>` en `project.yml`).
+/// Que Siri vuelva a leer los títulos que conoce; sin frases (Plus y Orbital) no hay nada que leer.
+enum SiriPhrases {
+    static func refresh() {
+        #if !(EDITION_plus || EDITION_orbital)
+        OrbitalShortcuts.updateAppShortcutParameters()
+        #endif
+    }
+}
+
+#if !(EDITION_plus || EDITION_orbital)
 struct OrbitalShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         // En la Mac las frases siguen registradas (el constructor no acepta `if` salvo #available), pero `answer` contesta que
@@ -329,3 +341,4 @@ struct OrbitalShortcuts: AppShortcutsProvider {
         ], shortTitle: "Prender la consola", systemImageName: "power")
     }
 }
+#endif

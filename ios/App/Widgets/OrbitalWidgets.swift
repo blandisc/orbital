@@ -7,14 +7,20 @@ import OrbitalCore
 @main
 struct OrbitalWidgets: WidgetBundle {
     var body: some Widget {
+        // Lo de la consola y lo solo de Fernando: solo en Ultra (D1-B). Plus y Orbital no tienen TV ni «Un Simpson al azar», así
+        // que esos widgets no aparecen en la galería (`EDITION_<versión>` en `project.yml`). El orden de Ultra es el de siempre.
         NextUpWidget()
         ReleasesWidget()   // «Lo nuevo de lo tuyo»: lo que ya salió de tus series y lo que viene
+        #if !(EDITION_plus || EDITION_orbital)
         SimpsonsWidget()   // «Los Simpson en la tele»
+        #endif
         ListMosaicWidget()   // «Mosaico de una lista»: la lista de Explorar que elijas
         DownloadLiveActivity()
+        #if !(EDITION_plus || EDITION_orbital)
         TVLiveActivity()   // «Viendo en la TV»: lo que pone tu Orbital, con pausa y ±10 s
         RemoteControlButton()   // el control de tu Orbital en el Centro de control (mismo kind de antes: el que ya estaba puesto revive)
         SimpsonsControlButton()   // «Un Simpson al azar» en el Centro de control
+        #endif
     }
 }
 

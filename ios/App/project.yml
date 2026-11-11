@@ -49,7 +49,8 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"         # iPhone y iPad (y la Mac con chip de Apple, «Diseñada para iPad»)
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
         SWIFT_VERSION: "6.0"                  # la app en modo Swift 6, como los paquetes (29 oct 2026)
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE"
+        # `EDITION_ultra`, `EDITION_plus` o `EDITION_orbital`: lo que no puede preguntarse en vivo (las frases de Siri, los widgets).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE EDITION_$(ORBITAL_EDITION)"
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -131,8 +132,18 @@ targets:
         # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.
         # App personal: los complementos (y a veces sus archivos) pueden usar http, no solo https. No basta
         # NSAllowsLocalNetworking (solo la red de la casa): un complemento en internet con http dejaría de abrir (F10, 11 nov).
+        # Solo Ultra y Plus tienen complementos: en Orbital (App Store) el paso de abajo lo quita y vale la regla de Apple
+        # (solo https).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+    postBuildScripts:
+      - name: "Orbital (App Store): solo https"
+        basedOnDependencyAnalysis: false
+        script: |
+          # D1-B: sin complementos no hace falta abrir http (NSAllowsArbitraryLoads). Ultra y Plus no cambian.
+          if [ "${ORBITAL_EDITION}" = "orbital" ]; then
+            /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity:NSAllowsArbitraryLoads" "${TARGET_BUILD_DIR}/${INFOPLIST_PATH}" || true
+          fi
     scheme:
       testTargets: [OrbitalUITests]
 
@@ -164,7 +175,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.widgets
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) WIDGET_EXTENSION"   # `WindowMetrics`: sin ventana ni UIApplication
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) WIDGET_EXTENSION EDITION_$(ORBITAL_EDITION)"   # `WindowMetrics`: sin ventana ni UIApplication
+        ORBITAL_EDITION: ultra   # la misma que la app (D1-B): sin los widgets de la consola en Plus y Orbital
         DEVELOPMENT_TEAM: B7KRCF776Z
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "6.0"

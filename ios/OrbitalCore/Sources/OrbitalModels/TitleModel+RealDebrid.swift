@@ -120,11 +120,14 @@ extension TitleModel {
     /// complementos apagados y lo que dijo Torrentio en lugar de versiones.
     func cause(videoID: String, language: String, offer: DebridOffer?) async -> UnavailableCause? {
         // 1 · Ya lo pediste y Real-Debrid lo está bajando: eso va primero.
-        if let request = services.debridRequests.request(metaID: metaID, videoID: videoID, listed: listedHashes[videoID] ?? []), request.state.isActive {
+        if offersInstant, let request = services.debridRequests.request(metaID: metaID, videoID: videoID, listed: listedHashes[videoID] ?? []),
+           request.state.isActive {
             return .downloading(percent: request.percent)
         }
         // 2 · Una película que aún no se estrena (un episodio lo dice el botón: «Sale el …»). Antes decía «Nadie lo tiene».
         if kind == "movie", offer == nil, let day = Self.airDate(meta?["released"]?.string, now: services.now()) { return .unreleased(day: releaseDay(day)) }
+        // D1-B: sin Real-Debrid en esta versión (Orbital) no hay cuenta, nube ni complementos de qué hablar.
+        guard offersInstant else { return lastLookupEmpty ? .nobodyHasIt : nil }
         let notices = await services.finder.notices(kind: kind, videoID: videoID)
         let health: DebridHealth? = notices.contains(where: \.aboutTheAccount) ? await services.debrid.refreshAfterTrouble() : nil
         let account = UnavailableCause.Account.from(health, saved: services.debrid.saved, now: services.now())

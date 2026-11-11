@@ -9,19 +9,12 @@ extension TitleView {
     /// «Ver»: si ya se sabe que no hay fuentes (o no hay red), lo dice aquí en vez de abrir un reproductor que va a fallar.
     func play(_ model: TitleModel) {
         switch model.sourceCheck {
-        case .none:
-            // Si se sabe por qué (tu Real-Debrid venció, sin Premium, complementos apagados…), eso es lo que pasa, con su salida
-            // (la tabla común con la TV, `UnavailableCause`).
-            if let cause = model.unavailableCause { tell(cause, model) }
-            // Sin tu clave de Real-Debrid en la app casi no hay versiones que se vean aquí: la causa de la tabla común.
-            // D1: la primera vez, en vez del aviso, la historia de Real-Debrid (termina en «Conectar Real-Debrid»).
-            else if !env.services.debrid.hasToken, !LearnModel(env.services).seen(LearnContent.instant.id) { env.ui.openStory = LearnContent.instant.id }
-            else if !env.services.debrid.hasToken { tell(.reconnectDebrid, model) }
-            else { tell(.notInDebrid(language: model.recommendedLanguage ?? env.services.appSettings.audio), model) }
-        case .offline:
-            // Ningún complemento contestó: sin red es el iPhone; con red, son ellos (la causa 8 de la tabla común).
-            if env.isOnline { tell(model.unavailableCause ?? .addonsOffline, model) }
-            else {
+        case .none, .offline:
+            // Qué decir lo decide el modelo (`playFallback`), con la tabla común con la TV y lo que trae esta versión (D1-B).
+            switch model.playFallback(online: env.isOnline) {
+            case .cause(let cause): tell(cause, model)
+            case .story(let id): env.ui.openStory = id
+            case .noInternet:
                 env.notify("Sin internet", detail: "No pude buscar dónde verlo", tone: .warn, actionTitle: "Reintentar") { start(model, videoID: nil) }
             }
         default: start(model, videoID: nil)
