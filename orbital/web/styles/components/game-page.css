@@ -28,6 +28,11 @@ body[data-game-page] :is(.status-bar, .home, .games, .hero, .shelf, .foryou, .tv
   background: var(--color-glass); box-shadow: var(--edge-glass); backdrop-filter: var(--filter-glass);
 }
 .game-page__panel[hidden] { display: none; }
+/* Con la letra más grande, la sinopsis cede un renglón y el logo se achica: si no, lo de arriba (el porqué) se salía por
+   arriba de la pantalla (la Legion Go, 1280×800, «Muy grande»). */
+[data-text-size="xlarge"] .game-page__synopsis { -webkit-line-clamp: 2; }
+[data-text-size="xlarge"] .game-page__logo { max-height: 6rem; }
+@media (max-height: 900px) { [data-text-size="large"] .game-page__synopsis { -webkit-line-clamp: 2; } }
 .game-page__stat { display: grid; gap: var(--space-1); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 .game-page__stat-label { color: var(--color-text-muted); font-size: var(--type-footnote); font-weight: var(--type-footnote-weight); }
 /* Los demás de su consola: una fila que se desliza; la enfocada crece y dice su nombre. */
