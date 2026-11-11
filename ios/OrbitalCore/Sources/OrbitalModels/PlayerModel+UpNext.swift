@@ -12,8 +12,9 @@ extension PlayerModel {
         Task { [weak self] in
             // Un tropiezo de red (o el límite de 6 s) no deja el video sin «Saltar intro»: se pide otra vez antes de rendirse.
             var found = await fetch(videoID)
+            let wait = self?.segmentRetryWait
             for delay in self?.segmentRetryDelays ?? [] where found == nil {
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                await wait?(delay)
                 guard let self, self.request?.videoID == videoID, self.phase != .closed else { return }
                 found = await fetch(videoID)
             }

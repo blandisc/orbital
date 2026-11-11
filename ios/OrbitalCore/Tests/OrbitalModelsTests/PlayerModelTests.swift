@@ -365,20 +365,25 @@ final class PlayerModelTests: XCTestCase {
     }
 
     /// IntroDB que no responde a la primera: se reintenta, y el botón sale en cuanto llegan las marcas (sin otro aviso del motor).
+    /// El reintento lo suelta la prueba (`RetryGate`), no un reloj: antes, con 0,01 s, el reintento a veces llegaba antes de la
+    /// primera comprobación y la prueba fallaba al azar (revisión del 11 nov 2026).
     func testCommunityMarksAreRetriedAndShowTheButtonAsSoonAsTheyArrive() async throws {
         let rig = try twoSources()
         final class Calls: @unchecked Sendable { var n = 0 }
         let calls = Calls()
+        let gate = RetryGate()
         let model = PlayerModel(engine: rig.engine, finder: rig.finder, watch: rig.watch, titlePrefs: rig.titlePrefs, settings: rig.settings, clock: { rig.clock.now },
                                 skipSegments: { _ in calls.n += 1; return calls.n == 1 ? nil : SkipSegments(intro: 0...31) })
-        model.segmentRetryDelays = [0.01]
+        model.segmentRetryDelays = [2]
+        model.segmentRetryWait = { _ in await gate.wait() }
         await model.begin(rig.request())
         await model.handle(rig.playing(5))
         await model.handle(rig.playing(5.6))
-        XCTAssertNil(model.skipIntroTo)
-        // Se espera a que llegue (con un tope amplio), no un tiempo fijo: en un runner cargado 0.2 s no alcanzaban.
-        let deadline = Date().addingTimeInterval(10)
-        while model.skipIntroTo == nil, Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        await gate.waitUntilSomeoneWaits()   // la primera petición falló y el reintento está detenido en el disparador
+        XCTAssertEqual(calls.n, 1)
+        XCTAssertNil(model.skipIntroTo, "sin marcas todavía, no hay botón")
+        await gate.open()
+        for _ in 0..<10_000 where model.skipIntroTo == nil { await Task.yield() }
         XCTAssertEqual(calls.n, 2, "la primera falla y se pide otra vez")
         XCTAssertEqual(model.skipIntroTo, 31, "sin esperar el siguiente aviso del motor")
     }
@@ -1284,4 +1289,20 @@ final class PlayerModelRobustnessTests: XCTestCase {
         XCTAssertEqual(scrobbles(probe), ["start", "pause"], "una pausa, no un cierre: Trakt guarda dónde ibas por si iOS suspende la app")
         XCTAssertEqual(rig.library.entry("tt0386676")?.position, 1200, "en el teléfono sí se guarda")
     }
+}
+
+/// Un disparador para reintentos: quien espera se queda detenido hasta que la prueba lo abre.
+actor RetryGate {
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    private var watchers: [CheckedContinuation<Void, Never>] = []
+    private var isOpen = false
+    func wait() async {
+        if isOpen { return }
+        await withCheckedContinuation { waiting.append($0); for w in watchers { w.resume() }; watchers = [] }
+    }
+    func waitUntilSomeoneWaits() async {
+        if !waiting.isEmpty { return }
+        await withCheckedContinuation { watchers.append($0) }
+    }
+    func open() { isOpen = true; for w in waiting { w.resume() }; waiting = [] }
 }

@@ -544,6 +544,8 @@ public final class PlayerModel: ObservableModel {
     /// Antes eran dos (2 y 5 s) y luego se rendía por toda la reproducción: con la red floja al empezar, el episodio se quedaba
     /// sin botón aunque la intro llegara minutos después (las de Game of Thrones empiezan pasados los 7 min).
     var segmentRetryDelays: [Double] = [2, 5, 15, 30, 60, 120]
+    /// Cómo se espera entre reintentos (las pruebas lo controlan con un disparador: sin relojes ni esperas de tiempo).
+    var segmentRetryWait: @Sendable (Double) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }
 
     /// La ficha traducida a tu idioma (la pide la pantalla con el traductor de la app): los nombres de los episodios en
     /// «Siguiente episodio» salen igual que en la ficha de la serie, no en inglés. Sin ella, la original.
