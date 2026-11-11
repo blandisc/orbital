@@ -213,11 +213,14 @@ public final class TitleModel: ObservableModel {
     public func loadExtras() async {
         guard metaID.hasPrefix("tt") else { return }
         let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region
-        async let rating = try? trakt?.rating(kind: kind, imdb: metaID)
+        // La calificación de Trakt: la misma que ya se enseñó en Inicio o en una lista (`TraktRatings`); solo se pide si no hay.
+        let known = TraktRatings.known(metaID)
+        if let known { traktRating = known }
+        async let rating = known == nil ? try? trakt?.rating(kind: kind, imdb: metaID) : nil
         if tmdb.configured, let id = try? await tmdb.findID(imdb: metaID, kind: kind) {
             extras = try? await tmdb.extras(kind: kind, tmdbID: id, region: region)
         }
-        traktRating = await rating?.rating
+        if known == nil { traktRating = TraktRatings.note(metaID, await rating?.rating) }
     }
 
     /// Busca las fuentes del video que toca (el mismo pedido que «Elegir fuente», así luego sale de la caché) y se queda con

@@ -47,7 +47,7 @@ extension TitleView {
         }
     }
 
-    /// Al final, los datos de referencia: estreno, duración, idiomas, lo disponible, clasificación y estudio.
+    /// Al final, los datos de referencia: estreno, idioma original, lo disponible y estudio (la duración y la clasificación van arriba).
     @ViewBuilder func details(_ model: TitleModel) -> some View {
         let rows = detailRows(model)
         if !rows.isEmpty {
@@ -73,14 +73,16 @@ extension TitleView {
         if let raw = model.extras?.releaseDate, let date = Self.day.date(from: raw) {
             rows.append((model.kind == "series" ? "Primer episodio" : "Estreno", date.formatted(Date.FormatStyle(date: .long, time: .omitted).locale(locale))))
         }
-        if !model.info.runtime.isEmpty { rows.append(("Duración", model.info.runtime)) }
-        let languages = (model.extras?.languages ?? []).compactMap { code in (locale.localizedString(forLanguageCode: code)?.capitalized(with: locale)).map { LanguageFlags.flagged($0, code) } }
-        if !languages.isEmpty { rows.append(("Idiomas", languages.prefix(4).joined(separator: ", "))) }
+        // La duración y la clasificación ya van arriba, junto al año (revisión del 11 nov: «2 h 35 min» arriba y «155 min»
+        // aquí; «PG-13» dos veces). El idioma: el original, no la lista de los que se hablan.
+        let original = model.extras?.originalLanguage ?? model.extras?.languages.first
+        if let code = original, let name = locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) {
+            rows.append(("Idioma original", LanguageFlags.flagged(name, code)))
+        }
         if let best = model.bestSource {
             let items = QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges)
             if !items.isEmpty { rows.append(("Disponible", items.joined(separator: " · "))) }
         }
-        if let rating = model.extras?.certification { rows.append(("Clasificación", rating)) }
         if let studios = model.extras?.studios, !studios.isEmpty { rows.append((model.kind == "series" ? "Cadena" : "Estudio", studios.map(\.name).joined(separator: ", "))) }
         return rows
     }

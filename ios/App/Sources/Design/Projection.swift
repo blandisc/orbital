@@ -45,8 +45,8 @@ struct DataLine: View {
             HStack(spacing: DS.Space.s1) {
                 if cut > 0 { text(parts.prefix(cut).joined(separator: " · ") + " ·") }
                 RatingMark(service: .trakt)
-                text("\(Int((trakt * 10).rounded()))\u{00A0}%" + (parts.count > cut ? " · " + parts.dropFirst(cut).joined(separator: " · ") : ""))
-                    .accessibilityLabel(Text("Trakt \(Int((trakt * 10).rounded())) %"))
+                text("\(TraktRatings.percent(trakt))\u{00A0}%" + (parts.count > cut ? " · " + parts.dropFirst(cut).joined(separator: " · ") : ""))
+                    .accessibilityLabel(Text("Trakt \(TraktRatings.percent(trakt)) %"))
             }
             .fixedSize()
         } else {

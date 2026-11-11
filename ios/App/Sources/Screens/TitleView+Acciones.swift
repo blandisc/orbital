@@ -170,8 +170,9 @@ extension TitleView {
         }
         let languageName = model.recommendedLanguage.map { $0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
                                                                   : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage) }
-        // «🇲🇽 · 1080p»: la bandera sola (M2); VoiceOver dice el nombre del idioma.
-        let language = languageName.map { LanguageFlags.flagOnly($0, model.recommendedLanguage) }
+        // «🇲🇽 Latino · 1080p»: la bandera con su idioma escrito (revisión del 11 nov: la bandera sola a 16 pt, sobre todo la de
+        // mitad España y mitad México, parecía un ícono roto). Es el único control de versión de la ficha.
+        let language = languageName.map { LanguageFlags.flagged($0, model.recommendedLanguage) }
         let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
         let spoken = model.recommendedSource.map { [languageName].compactMap { $0 } + $0.qualitySummary } ?? []
         let cause = model.unavailableCause.map { Text(verbatim: $0.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }) }

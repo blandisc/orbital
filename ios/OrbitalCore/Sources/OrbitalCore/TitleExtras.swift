@@ -62,12 +62,14 @@ public struct TitleExtras: Sendable, Equatable {
     public var releaseDate: String?
     /// Los idiomas que se hablan (códigos ISO 639-1: «en», «es»).
     public var languages: [String] = []
+    /// El idioma en que se hizo (`original_language`): la ficha dice «Idioma original», no «Idiomas» (revisión del 11 nov).
+    public var originalLanguage: String?
 
     public static func == (a: TitleExtras, b: TitleExtras) -> Bool {
         a.tmdbID == b.tmdbID && a.cast == b.cast && a.crew == b.crew && a.certification == b.certification && a.rating == b.rating
             && a.trailer == b.trailer && a.extras == b.extras && a.recommendations == b.recommendations && a.collection?.name == b.collection?.name
             && a.collection?.parts == b.collection?.parts && a.providers == b.providers && a.studios == b.studios
-            && a.tagline == b.tagline && a.releaseDate == b.releaseDate && a.languages == b.languages
+            && a.tagline == b.tagline && a.releaseDate == b.releaseDate && a.languages == b.languages && a.originalLanguage == b.originalLanguage
     }
 }
 
@@ -80,6 +82,16 @@ public struct PersonDetails: Sendable, Equatable {
     public var born: String?
     public var place: String?
     public var credits: [TmdbTitle]
+}
+
+extension TitleExtras {
+    /// Sin repetir (revisión del 11 nov): «Más como esto» no trae lo que ya está en «La saga» ni la ficha misma.
+    public func withoutRepeats(selfID: Int) -> TitleExtras {
+        var out = self
+        let saga = Set((collection?.parts ?? []).map(\.tmdbID)).union([selfID])
+        out.recommendations.removeAll { saga.contains($0.tmdbID) }
+        return out
+    }
 }
 
 extension Tmdb {
@@ -95,7 +107,7 @@ extension Tmdb {
                 .sorted { ($0.year ?? .max) < ($1.year ?? .max) }
             if parts.count > 1 { out.collection = (collection["name"]?.string ?? "", parts) }
         }
-        return out
+        return out.withoutRepeats(selfID: tmdbID)
     }
 
     /// Una persona y lo que ha hecho (películas y series), lo más popular primero y sin repetir.
@@ -164,6 +176,7 @@ extension Tmdb {
         out.tagline = raw["tagline"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines)
         out.releaseDate = (raw["release_date"]?.nonEmptyString ?? raw["first_air_date"]?.nonEmptyString)
         out.languages = (raw["spoken_languages"]?.array ?? []).compactMap { $0["iso_639_1"]?.nonEmptyString }
+        out.originalLanguage = raw["original_language"]?.nonEmptyString
         return out
     }
 

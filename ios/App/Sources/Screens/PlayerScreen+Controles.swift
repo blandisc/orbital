@@ -40,7 +40,7 @@ extension PlayerScreen {
     func versionText(_ src: Source, _ model: PlayerModel) -> String {
         let ui = env.services.appSettings.uiLanguage
         let playing = Streams.playingLanguage(src, heardPrefs(model)).flatMap { AllSources.EvidenceKind($0.evidence) == .assumed ? nil : $0 }
-        let language = playing.map { LanguageFlags.flagOnly(Streams.versionLanguageName($0.code, in: ui), $0.code) }
+        let language = playing.map { LanguageFlags.flagged(Streams.versionLanguageName($0.code, in: ui), $0.code) }   // la bandera nunca sola (revisión del 11 nov)
         return ([language].compactMap { $0 } + src.qualitySummary).joined(separator: " · ")
     }
 

@@ -109,10 +109,9 @@ struct LetterboxdPublicReviews: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(spacing: DS.Space.s2) {
-                LetterboxdMark()
-                DSSectionHead(title: Text("Reseñas en Letterboxd"), level: .subsection)
-            }
+            // Como los demás encabezados de la ficha (dos niveles): el título y su porqué turquesa arriba (revisión del 11 nov:
+            // era el único con el sello al lado y sin porqué).
+            DSSectionHead(title: Text("Reseñas"), eyebrow: Text("Lo que dicen en Letterboxd"))
             ForEach(reviews.prefix(DS.Letterboxd.publicShown)) { r in
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     HStack(spacing: DS.Space.s2) {

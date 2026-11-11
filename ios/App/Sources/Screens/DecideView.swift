@@ -341,7 +341,7 @@ struct DecideView: View {
         if s.kind == "series" { parts.append(m.minutes.map { String(format: Strings.tr("%@ por episodio", language: language), "\($0) min") } ?? Strings.tr("Serie", language: language)) }
         else if let minutes = m.minutes { parts.append("\(minutes) min") }
         if let r = m.imdbRating { parts.append(String(format: "IMDb %.1f", r)) }
-        else if let r = s.traktRating { parts.append(String(format: "Trakt %.1f", r)) }
+        else if let r = TraktRatings.shown(s.imdb, fallback: s.traktRating) { parts.append("Trakt \(TraktRatings.percent(r))\u{00A0}%") }
         if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }
         return parts.joined(separator: " · ")
     }
