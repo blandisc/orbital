@@ -133,7 +133,7 @@ def test_trakt_agrega_de_cien_en_cien(monkeypatch):
 
     client = trakt_api.Trakt("id", "secreto", credentials=None)
     sent = []
-    monkeypatch.setattr(client, "_send", lambda method, path, body=None, errors=None: sent.append((method, path, body)))
+    monkeypatch.setattr(client, "_send", lambda method, path, body=None, errors=None, **_: sent.append((method, path, body)))
     items = [("movie", f"tt{i}") for i in range(150)] + [("series", "tt999"), ("movie", "kitsu:1")]
     client.add_list_items("100", items)
     assert [len(b.get("movies", [])) + len(b.get("shows", [])) for _, _, b in sent] == [100, 51]  # sin lo que no es de IMDb

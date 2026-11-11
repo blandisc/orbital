@@ -6,7 +6,8 @@ cualquier otro error de red, con un plazo TOTAL (no solo por lectura) y un tama�
 
 `http_json` es la capa de red común de los servicios con API (A6, V5, F9 de la revisión del 10 nov 2026):
 
-- reintenta un 429 o un 5xx una o dos veces, esperando lo que diga `Retry-After`, sin pasar de `RETRY_BUDGET`;
+- reintenta un 429 (o un 5xx, solo en lo idempotente) una o dos veces, esperando lo que diga `Retry-After`, sin pasar de
+  `RETRY_BUDGET`; un POST que pudo haber llegado nunca se repite solo;
 - reutiliza la conexión con cada servidor (una reserva por host, segura entre hilos): sin un apretón TLS por pedido;
 - un cortacircuitos por servicio: tras `BREAKER_FAILURES` fallos seguidos lo da por caído `BREAKER_COOLDOWN` s y
   responde al momento con `ServiceDown`, para que quien llama use lo que tiene guardado en vez de esperar al plazo;
@@ -25,6 +26,7 @@ import functools
 import http.client
 import json
 import logging
+import select
 import ssl
 import threading
 import time
@@ -61,8 +63,11 @@ MAX_BYTES = 16 * 1024 * 1024  # una respuesta de catálogo nunca pesa tanto
 
 RETRIES = 2  # reintentos de un 429/5xx (tres intentos en total como mucho)
 RETRY_BUDGET = 8.0  # s: lo más que se espera en total entre reintentos; un Retry-After más largo no se espera
-RETRY_STATUSES = frozenset({429, 502, 503, 504})  # en cualquier método: el servidor no hizo nada
-RETRY_READ_STATUSES = frozenset({500})  # solo en lecturas: un POST con 500 pudo haberse aplicado
+RETRY_STATUSES = frozenset({429})  # en cualquier método: el servidor no hizo nada (Trakt frena antes de aplicar)
+# Solo en lo idempotente (GET, HEAD, PUT, DELETE o quien llama lo pide con `idempotent=True`): un 502/503/504 lo puede
+# dar el proxy de enfrente DESPUÉS de que el servidor ya aplicó un POST (el `stop` de un scrobble: la vista quedaba doble).
+RETRY_SAFE_STATUSES = frozenset({500, 502, 503, 504})
+IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "PUT", "DELETE", "OPTIONS"})
 BREAKER_FAILURES = 5  # fallos seguidos de un servicio…
 BREAKER_COOLDOWN = 60.0  # …y se da por caído este tiempo (s)
 POOL_PER_HOST = 4  # conexiones libres que se guardan por servidor
@@ -268,17 +273,34 @@ def _proxied() -> bool:
 _STALE = (http.client.RemoteDisconnected, ConnectionResetError, ConnectionAbortedError, BrokenPipeError)
 
 
-def _send(key: tuple, method: str, target: str, data: bytes | None, headers: dict, timeout: float):
-    """Un pedido por una conexión de la reserva. Si una conexión reutilizada ya estaba cerrada por el servidor, se
-    repite una vez con una nueva (el servidor no llegó a recibir el pedido)."""
+def _closed_by_peer(conn: http.client.HTTPConnection) -> bool:
+    """¿El servidor ya cerró esta conexión guardada? Una conexión ociosa sana no tiene nada que leer: si el socket se ve
+    legible, lo que hay es el cierre (o basura). Se revisa ANTES de mandar, así un POST nunca se repite a ciegas."""
+    sock = conn.sock
+    if sock is None:
+        return False
+    try:
+        readable, _, _ = select.select([sock], [], [], 0)
+    except (OSError, ValueError):  # un socket ya cerrado
+        return True
+    return bool(readable)
+
+
+def _send(key: tuple, method: str, target: str, data: bytes | None, headers: dict, timeout: float, safe: bool = True):
+    """Un pedido por una conexión de la reserva. Una conexión guardada que el servidor ya cerró se cambia por una nueva
+    antes de mandar nada. Si aun así falla al primer byte, se repite una vez con una nueva solo si el pedido es
+    idempotente (`safe`): un POST que pudo haber llegado no se repite."""
     for fresh in (False, True):
         conn, reused = pool.take(key, timeout) if not fresh else (_connect(key, timeout), False)
+        if reused and _closed_by_peer(conn):
+            conn.close()
+            conn, reused = _connect(key, timeout), False
         try:
             conn.request(method, target, body=data, headers=headers)
             res = conn.getresponse()
         except _STALE:
             conn.close()
-            if reused and not fresh:
+            if reused and not fresh and safe:
                 continue
             raise
         except BaseException:
@@ -297,14 +319,14 @@ def _send(key: tuple, method: str, target: str, data: bytes | None, headers: dic
     raise NetError("No pude conectar")  # no se llega: el segundo intento devuelve o lanza
 
 
-def _via_pool(url: str, method: str, data: bytes | None, headers: dict, timeout: float):
+def _via_pool(url: str, method: str, data: bytes | None, headers: dict, timeout: float, safe: bool = True):
     for _ in range(REDIRECTS + 1):
         parts = urlsplit(url)
         if parts.scheme not in ("http", "https") or not parts.hostname:
             raise NetError(f"Dirección inválida: {url[:80]}")
         key = (parts.scheme, parts.hostname, parts.port or (443 if parts.scheme == "https" else 80))
         target = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
-        status, raw, res_headers = _send(key, method, target, data, headers, timeout)
+        status, raw, res_headers = _send(key, method, target, data, headers, timeout, safe)
         location = res_headers.get("Location")
         if status not in (301, 302, 303, 307, 308) or not location:
             return status, raw, res_headers
@@ -320,7 +342,7 @@ def _via_pool(url: str, method: str, data: bytes | None, headers: dict, timeout:
     raise NetError("Demasiadas redirecciones")
 
 
-def _via_urllib(url: str, method: str, data: bytes | None, headers: dict, timeout: float):
+def _via_urllib(url: str, method: str, data: bytes | None, headers: dict, timeout: float, safe: bool = True):
     req = request(url, data=data, method=method, headers=headers)
     try:
         with urlopen(req, timeout=timeout) as res:
@@ -350,11 +372,13 @@ def retry_after(value: str | None, attempt: int) -> float:
 
 
 def http_json(url: str, *, method: str = "GET", headers: dict | None = None, body: dict | None = None,
-              timeout: float = 10, form: dict | None = None, retries: int = RETRIES) -> tuple[int, object]:
+              timeout: float = 10, form: dict | None = None, retries: int = RETRIES,
+              idempotent: bool | None = None) -> tuple[int, object]:
     """Una petición JSON que devuelve (código HTTP, cuerpo) también cuando el código es de error: Trakt
-    dice «todavía no» con un 400 y «más despacio» con un 429. Un 429/5xx se reintenta (`retries`, dentro de
-    `RETRY_BUDGET`); si sigue, se devuelve tal cual. Los fallos de red se lanzan como NetError (y ServiceDown
-    si el servicio está dado por caído)."""
+    dice «todavía no» con un 400 y «más despacio» con un 429. Un 429 se reintenta siempre; un 5xx, solo si el pedido es
+    idempotente (GET, HEAD, PUT, DELETE, o `idempotent=True` de quien sabe que repetirlo no cambia nada), siempre
+    dentro de `retries` y `RETRY_BUDGET`; si sigue, se devuelve tal cual. Los fallos de red se lanzan como NetError (y
+    ServiceDown si el servicio está dado por caído)."""
     # `form`: como formulario (el inicio de sesión de Microsoft lo pide así); `body`: JSON.
     data = urlencode(form).encode() if form is not None else json.dumps(body).encode() if body is not None else None
     kind = "application/x-www-form-urlencoded" if form is not None else "application/json"
@@ -363,11 +387,12 @@ def http_json(url: str, *, method: str = "GET", headers: dict | None = None, bod
     host = (urlsplit(url).hostname or "").lower()
     breaker.check(host)
     send = _via_urllib if _proxied() else _via_pool
+    safe = method.upper() in IDEMPOTENT_METHODS if idempotent is None else bool(idempotent)
     deadline = time.monotonic() + RETRY_BUDGET
     attempt = 0
     while True:
         try:
-            status, raw, res_headers = send(url, method, data, all_headers, timeout)
+            status, raw, res_headers = send(url, method, data, all_headers, timeout, safe)
         except NET_FAILURES as exc:
             breaker.failure(host)
             if isinstance(exc, NetError):
@@ -376,7 +401,7 @@ def http_json(url: str, *, method: str = "GET", headers: dict | None = None, bod
         except OSError as exc:  # gaierror, un socket raro: sigue siendo la red
             breaker.failure(host)
             raise NetError(str(exc) or type(exc).__name__) from exc
-        retryable = status in RETRY_STATUSES or (status in RETRY_READ_STATUSES and method in ("GET", "HEAD"))
+        retryable = status in RETRY_STATUSES or (status in RETRY_SAFE_STATUSES and safe)
         if not retryable:
             breaker.success(host)
             break

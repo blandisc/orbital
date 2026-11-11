@@ -95,6 +95,25 @@ class TraktOutbox:
         if hasattr(t, "forget_playback"):
             t.forget_playback()
 
+    def _send_viewing(self, t: trakt_api.Trakt, item: dict) -> None:
+        """Una vista que espera. Antes se pregunta a Trakt si ya la tiene (±10 min): el envío anterior pudo haber llegado
+        aunque la respuesta se perdiera (el `stop` del reproductor o «La vi otra vez» sin respuesta), y mandarla otra vez
+        la dejaría doble en tu historial. Si la pregunta falla por la red, la vista sigue esperando: nunca se pierde."""
+        at = item.get("at")
+        check = getattr(t, "viewed_near", None)
+        if isinstance(at, (int, float)) and callable(check):
+            try:
+                found = check(item["video"], float(at))
+            except Exception as exc:  # noqa: BLE001 - sin red espera; una respuesta rara no deja la vista sin mandar
+                if retryable(exc):
+                    raise
+                log.info("Trakt: no pude revisar si %s ya estaba (%s); la mando", item["imdb"], exc)
+                found = False
+            if found:
+                log.info("Trakt: %s ya estaba en tu historial; no la mando otra vez", item["imdb"])
+                return
+        t.add_history(item["video"], at)
+
     def flush(self, t: trakt_api.Trakt | None) -> int:
         """Manda lo pendiente, en orden. Se detiene al primer error que se puede reintentar; lo que no se puede (lista
         borrada, título inválido) se descarta."""
@@ -126,7 +145,7 @@ class TraktOutbox:
                         t.set_hidden([item["imdb"]], bool(item.get("add")), tuple(item.get("sections") or trakt_api.HIDDEN_SECTIONS))
                     elif item["target"] == HISTORY:  # ola 3: una vista que entra (con su fecha) o las que salen (por id)
                         if item.get("add"):
-                            t.add_history(item["video"], item["at"])
+                            self._send_viewing(t, item)
                         else:
                             t.remove_viewings(item.get("ids") or [])
                     elif item["target"] == NOTE:

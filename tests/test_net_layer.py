@@ -88,6 +88,33 @@ def test_a_post_with_500_is_not_repeated(server):
     assert status == 500 and len(handler.seen) == 1  # pudo haberse aplicado
 
 
+def test_a_post_with_503_is_not_repeated_because_it_may_have_arrived(server):
+    """El proxy de enfrente puede dar 502/503/504 DESPUÉS de que Trakt aplicó el POST (un `stop`: la vista quedaba doble)."""
+    base, handler, waits = server
+    for status in (502, 503, 504):
+        handler.script, handler.seen = [(status, {})], []
+        assert net.http_json(f"{base}/scrobble/stop", method="POST", body={"a": 1})[0] == status
+        assert len(handler.seen) == 1
+
+
+def test_a_post_with_429_is_repeated_and_an_idempotent_post_with_503_too(server):
+    base, handler, waits = server
+    handler.script = [(429, {"Retry-After": "1"})]
+    assert net.http_json(f"{base}/sync/history", method="POST", body={})[0] == 200 and len(handler.seen) == 2
+    handler.script, handler.seen = [(503, {})], []
+    assert net.http_json(f"{base}/sync/watchlist", method="POST", body={}, idempotent=True)[0] == 200
+    assert len(handler.seen) == 2  # quien llama sabe que repetirlo no cambia nada
+
+
+def test_a_post_on_a_connection_the_server_closed_goes_once_by_a_new_one(server):
+    base, handler, _ = server
+    assert net.http_json(f"{base}/a")[0] == 200
+    for conn, _ in next(iter(net.pool._free.values())):
+        conn.sock.shutdown(socket.SHUT_RDWR)
+    assert net.http_json(f"{base}/scrobble/stop", method="POST", body={"a": 1})[0] == 200
+    assert [s[0] for s in handler.seen].count("POST") == 1
+
+
 def test_errors_that_are_answers_are_not_retried(server):
     base, handler, waits = server
     handler.script = [(400, {})]

@@ -52,6 +52,7 @@ DROPPED_SECTIONS = (*HIDDEN_SECTIONS, "dropped")
 PRIVACIES = ("private", "link", "friends", "public")  # «Quién la ve» (G4-A), los valores que entiende Trakt
 PROGRESS_SHOWS = 40  # el tablero de Guardado pide el avance exacto de tus 40 series más recientes (Trakt dejó de mandarlo junto)
 NOTE_LIMIT = 500  # lo más largo que Trakt guarda en una nota
+SAME_VIEWING_WINDOW = 600  # s: una vista a ±10 min de la que se iba a mandar es esa misma (llegó y se perdió la respuesta)
 REPEAT_WINDOW = 3600  # s: dos vistas del mismo título más cerca que esto son repetidas (la tele y el iPhone a la vez)
 
 
@@ -414,15 +415,20 @@ class Trakt:
 
     # --- peticiones --------------------------------------------------------------------------
     def _call(self, method: str, path: str, *, body: dict | None = None, auth: bool = True, params: dict | None = None,
-              retries: int = RETRIES):
+              retries: int = RETRIES, idempotent: bool = False):
+        """`idempotent`: repetir este POST no cambia nada (poner en Mi lista dos veces es lo mismo), así que la red puede
+        reintentarlo ante un 5xx. Una vista o un scrobble no: dos veces es una vista doble en tu historial."""
         headers = {"trakt-api-version": "2", "trakt-api-key": self.client_id}
         if auth:
             headers["Authorization"] = f"Bearer {self._access()}"
         url = f"{API}{path}" + (f"?{urlencode(params)}" if params else "")
+        extra: dict = {}
+        if retries != RETRIES:  # solo si cambia: los dobles de las pruebas no saben de reintentos
+            extra["retries"] = retries
+        if idempotent:
+            extra["idempotent"] = True
         try:
-            if retries != RETRIES:  # solo si cambia: los dobles de las pruebas no saben de reintentos
-                return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout, retries=retries)
-            return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout)
+            return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout, **extra)
         except NET_FAILURES as exc:
             raise TraktError(f"No pude conectar con Trakt: {exc}") from exc
 
@@ -478,13 +484,14 @@ class Trakt:
             raise TraktError(f"Trakt respondió HTTP {status}", status)  # con su código: la cola decide si reintenta
 
     # --- guardar (como «Guardar en…» del iPhone) -------------------------------------------------
-    def _send(self, method: str, path: str, body: dict | None = None, errors: dict[int, TraktError] | None = None):
+    def _send(self, method: str, path: str, body: dict | None = None, errors: dict[int, TraktError] | None = None,
+              idempotent: bool = False):
         """Un cambio en tu cuenta: un 401 renueva la sesión una vez y reintenta. `errors`: el error de un código conocido
-        (el 420 de los favoritos) en vez de «HTTP 420»."""
-        status, data = self._call(method, path, body=body)
+        (el 420 de los favoritos) en vez de «HTTP 420». `idempotent`: ver `_call`."""
+        status, data = self._call(method, path, body=body, idempotent=idempotent)
         if status == 401:
             self._renew()
-            status, data = self._call(method, path, body=body)
+            status, data = self._call(method, path, body=body, idempotent=idempotent)
         if status == 401:
             raise TraktAuthError("Trakt no acepta tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
         if status not in (200, 201, 204):
@@ -498,12 +505,12 @@ class Trakt:
         return {KINDS[kind]: [{"ids": {"imdb": imdb}}]}
 
     def set_watchlist(self, kind: str, imdb: str, add: bool) -> None:
-        self._send("POST", "/sync/watchlist" + ("" if add else "/remove"), self._one(kind, imdb))
+        self._send("POST", "/sync/watchlist" + ("" if add else "/remove"), self._one(kind, imdb), idempotent=True)
 
     def set_list_item(self, list_id: str, kind: str, imdb: str, add: bool) -> None:
         if not str(list_id).isdigit():
             raise TraktError("Lista inválida")
-        self._send("POST", f"/users/me/lists/{list_id}/items" + ("" if add else "/remove"), self._one(kind, imdb))
+        self._send("POST", f"/users/me/lists/{list_id}/items" + ("" if add else "/remove"), self._one(kind, imdb), idempotent=True)
 
     def add_list_items(self, list_id: str, items: list[tuple[str, str]]) -> None:
         """Agrega muchos títulos de una vez a tu lista ([(kind, imdb)]), de cien en cien (Trakt deja un cambio por segundo:
@@ -515,7 +522,7 @@ class Trakt:
             body: dict[str, list] = {}
             for kind, imdb in clean[start:start + 100]:
                 body.setdefault(KINDS[kind], []).append({"ids": {"imdb": imdb}})
-            self._send("POST", f"/users/me/lists/{list_id}/items", body)
+            self._send("POST", f"/users/me/lists/{list_id}/items", body, idempotent=True)
 
     def set_favorite(self, kind: str, imdb: str, add: bool) -> None:
         """Pone o quita un título de tus favoritos de Trakt (el corazón; aparte de la watchlist y de los favoritos de tus
@@ -656,7 +663,7 @@ class Trakt:
             body: dict[str, list] = {}
             for kind, imdb in clean[start:start + 100]:
                 body.setdefault(KINDS[kind], []).append({"ids": {"imdb": imdb}})
-            self._send("POST", base + ("" if add else "/remove"), body)
+            self._send("POST", base + ("" if add else "/remove"), body, idempotent=True)
 
     def duplicate_list(self, list_id: str, name: str) -> str:
         """«Duplicar»: una lista nueva, Solo tú, con los mismos títulos en el mismo orden. Su id."""
@@ -764,7 +771,7 @@ class Trakt:
         body = {"shows": [{"ids": {"imdb": i}} for i in valid]}
         for section in sections:
             try:
-                self._send("POST", f"/users/hidden/{section}{'' if hidden else '/remove'}", body)
+                self._send("POST", f"/users/hidden/{section}{'' if hidden else '/remove'}", body, idempotent=True)
             except TraktAuthError:
                 raise
             except TraktError as exc:
@@ -799,7 +806,7 @@ class Trakt:
         """Borra solo esas vistas de tu historial (las demás se quedan)."""
         clean = [i for i in ids if isinstance(i, int) and i > 0]
         if clean:
-            self._send("POST", "/sync/history/remove", {"ids": clean})
+            self._send("POST", "/sync/history/remove", {"ids": clean}, idempotent=True)
 
     def history(self, page: int = 1, limit: int = 100) -> list[dict]:
         """Tu historial, lo más nuevo primero: {id, at, kind, imdb, title, year, season, episode, episode_title}."""
@@ -1108,12 +1115,37 @@ class Trakt:
         return found
 
     def add_history(self, target: dict, watched_at: float | str | None = None) -> None:
-        """Marca visto (una película o un episodio)."""
+        """Marca visto (una película o un episodio). No es idempotente: dos envíos son dos vistas."""
         self._send("POST", "/sync/history", history_body(target, watched_at))
+
+    def viewed_near(self, target: dict, at: float, window: float = SAME_VIEWING_WINDOW) -> bool:
+        """¿Trakt ya tiene una vista de esta película o de este capítulo a menos de `window` s de `at`? La cola lo pregunta
+        antes de mandar una vista: si el envío anterior sí llegó pero la respuesta se perdió, ya está y no se repite."""
+        if "movie" in target:
+            kind, imdb, ep = "movies", _dict(target["movie"].get("ids")).get("imdb"), None
+        elif "episode" in target:
+            kind, imdb, ep = "episodes", _dict(_dict(target.get("show")).get("ids")).get("imdb"), target["episode"]
+        else:
+            return False  # la serie completa: no hay una sola vista que buscar
+        rows = self._get(f"/sync/history/{kind}", start_at=_iso(at - window), end_at=_iso(at + window), limit=100)
+        for raw in rows if isinstance(rows, list) else []:
+            row = _dict(raw)
+            when = _when(row.get("watched_at"))
+            if when is None or abs(when - at) > window:
+                continue
+            if ep is None:
+                if _dict(_dict(row.get("movie")).get("ids")).get("imdb") == imdb:
+                    return True
+                continue
+            got = _dict(row.get("episode"))
+            if (_dict(_dict(row.get("show")).get("ids")).get("imdb") == imdb and got.get("season") == ep.get("season")
+                    and got.get("number") == ep.get("number")):
+                return True
+        return False
 
     def remove_history(self, target: dict) -> None:
         """Lo desmarca (todas las veces que lo viste)."""
-        self._send("POST", "/sync/history/remove", history_body(target))
+        self._send("POST", "/sync/history/remove", history_body(target), idempotent=True)
 
     def remove_playback(self, playback_id: int) -> None:
         """«Quitar de Seguir viendo»: borra ese avance de Trakt."""
