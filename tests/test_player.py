@@ -645,8 +645,19 @@ def test_paused_next_pill_only_with_a_next_episode_and_a_tap_goes_there():
         assert "Siguiente · T6 E1" in mpv.overlays[1]
         labels = [label for label, _ in player_ui._touch_items(p._hud(p.current), paused=True)]
         assert labels.index("⏭ Siguiente · T6 E1") == labels.index("+10 s") + 1  # justo después de «+10 s»
-        pill = next(t for t in player_ui.targets["hud"] if t[4] == "next")
-        p.tap(pill[0] + 5, pill[1] + 5)
+        # Las zonas táctiles son de todo el módulo: el temporizador que esconde la barra de un reproductor de otra prueba
+        # puede vaciarlas justo ahora (pasó en la CI de Windows). Se vuelve a dibujar hasta tenerla.
+        def shown_pill():
+            p.show_hud()
+            return next((t for t in player_ui.targets["hud"] if t[4] == "next"), None)
+
+        assert eventually(lambda: shown_pill() is not None)
+        for _ in range(20):
+            pill = shown_pill()
+            if pill is not None:
+                p.tap(pill[0] + 5, pill[1] + 5)
+                if "Cambio de episodio" in (mpv.overlays.get(p.EPISODE_CARD) or ""):
+                    break
         assert "Cambio de episodio" in mpv.overlays[p.EPISODE_CARD]
         assert eventually(lambda: asked == [1])
         p.current.meta = {**p.current.meta, "next": ""}  # el último: sin píldora
