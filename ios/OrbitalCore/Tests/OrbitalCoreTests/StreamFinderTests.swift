@@ -5,7 +5,7 @@ final class StreamFinderTests: XCTestCase {
     func makeFinder(_ http: FakeHTTP, clock: Clock = Clock()) -> StreamFinder {
         http.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream", "subtitles"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
         http.json["https://b.example/manifest.json"] = ["name": "Otro", "resources": ["stream"], "types": ["movie"]]
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://a.example", "https://b.example"] }, clock: { clock.now })
+        let registry = AddonRegistry(http: http, own: { ["https://a.example", "https://b.example"] }, clock: { clock.now })
         return StreamFinder(http: http, registry: registry, clock: { clock.now })
     }
 

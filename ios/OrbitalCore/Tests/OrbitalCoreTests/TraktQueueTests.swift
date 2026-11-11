@@ -17,7 +17,7 @@ final class TraktQueueTests: XCTestCase {
     }
 
     func makeWatch(_ http: FakeHTTP, trakt: Trakt, store: PendingStore, queue: TraktQueue, clock: Clock) -> WatchService {
-        WatchService(stremio: StremioAPI(http: http), authKey: { nil }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: store,
+        WatchService(cinemeta: Cinemeta(http: http), trakt: trakt, pending: store,
                      clock: { clock.now }, queue: queue, sleep: { _ in })
     }
 

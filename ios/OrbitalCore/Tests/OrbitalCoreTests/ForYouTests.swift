@@ -214,21 +214,19 @@ final class ForYouTests: XCTestCase {
     }
 }
 
-/// Los catálogos de tus complementos de Stremio, calculados en el iPhone con las mismas reglas que la TV (`addon_catalogs`).
+/// Los catálogos de tus complementos, calculados en el iPhone con las mismas reglas que la TV (`addon_catalogs`).
 final class ForYouAddonCatalogsTests: XCTestCase {
     func testAddonCatalogsAreShelvesWithTheTVsRules() async throws {
         let http = FakeHTTP()
-        http.json["https://api.strem.io/api/addonCollectionGet"] = ["result": ["addons": [
-            ["transportUrl": "https://listas.example/manifest.json", "manifest": ["name": "Mis Listas", "resources": ["catalog"], "types": ["movie", "series"],
-             "catalogs": [["id": "horror", "name": "Terror de culto", "type": "movie"], ["id": "horror", "name": "Terror de culto", "type": "series"],
-                          ["id": "pop", "name": "Popular", "type": "movie"],                                                   // genérico: fuera
-                          ["id": "buscar", "name": "Por género", "type": "movie", "extra": [["name": "genre", "isRequired": true]]]]]],   // pide algo: fuera
-            ["transportUrl": "https://v3-cinemeta.strem.io/manifest.json", "manifest": ["name": "Cinemeta", "resources": ["catalog"], "types": ["movie"],
-             "catalogs": [["id": "top", "name": "Top", "type": "movie"]]]],                                                     // Cinemeta: fuera
-        ]]]
+        http.json["https://listas.example/manifest.json"] = ["name": "Mis Listas", "resources": ["catalog"], "types": ["movie", "series"],
+            "catalogs": [["id": "horror", "name": "Terror de culto", "type": "movie"], ["id": "horror", "name": "Terror de culto", "type": "series"],
+                         ["id": "pop", "name": "Popular", "type": "movie"],                                                   // genérico: fuera
+                         ["id": "buscar", "name": "Por género", "type": "movie", "extra": [["name": "genre", "isRequired": true]]]]]   // pide algo: fuera
+        http.json["https://v3-cinemeta.strem.io/manifest.json"] = ["name": "Cinemeta", "resources": ["catalog"], "types": ["movie"],
+            "catalogs": [["id": "top", "name": "Top", "type": "movie"]]]                                                     // Cinemeta: fuera
         http.json["https://listas.example/catalog/series/horror.json"] = ["metas": [["id": "tt0108778", "name": "Friends", "releaseInfo": "1994–2004"],
                                                                                     ["id": "kitsu:1", "name": "Sin IMDb"]]]
-        let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" })
+        let registry = AddonRegistry(http: http, own: { ["https://listas.example", "https://v3-cinemeta.strem.io"] })
         let forYou = ForYou(trakt: nil, tmdb: nil, addons: registry, http: http, region: { "MX" }, kv: InMemoryKeyValueStore())
         let lists = await forYou.lists().filter { $0.id != Critics.listID }   // «Aprobadas por la crítica» siempre está
         XCTAssertEqual(lists.map(\.id), ["addon:mislistas:horror"], "uno por nombre; ni genéricos, ni los que piden algo, ni Cinemeta")

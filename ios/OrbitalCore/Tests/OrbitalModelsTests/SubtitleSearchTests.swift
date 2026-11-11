@@ -93,7 +93,7 @@ final class SubtitleSearchTests: XCTestCase {
         rig.http.json[os] = ["subtitles": [["url": "https://s.example/es.srt", "lang": "spa"]]]
         let on = await rig.finder.subtitleOptions(kind: "series", videoID: "tt0386676:1:1")
         XCTAssertTrue(on.contains { $0.language == "spa" }, "prendido (de fábrica): se busca en OpenSubtitles")
-        let off = StreamFinder(http: rig.http, registry: AddonRegistry(http: rig.http, account: nil, own: { [] }), internetSubtitles: { false })
+        let off = StreamFinder(http: rig.http, registry: AddonRegistry(http: rig.http, own: { [] }), internetSubtitles: { false })
         let before = rig.http.calls.filter { $0.hasPrefix("https://opensubtitles") }.count
         _ = await off.subtitleOptions(kind: "series", videoID: "tt0386676:1:2")
         XCTAssertEqual(rig.http.calls.filter { $0.hasPrefix("https://opensubtitles") }.count, before, "apagado: no se le pregunta")

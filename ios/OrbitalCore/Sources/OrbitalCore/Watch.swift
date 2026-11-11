@@ -120,7 +120,7 @@ public struct ResumePoint: Sendable, Equatable {
         let same = entry.map { $0.videoID == videoID && !$0.nextUp } ?? false
         var mine = ResumePoint.start
         if same, let entry, entry.position > 0,
-           !StremioLibrary.finished(position: entry.position, duration: entry.duration, kind: entry.kind) {
+           !LibraryRules.finished(position: entry.position, duration: entry.duration, kind: entry.kind) {
             mine = entry.fraction.map { ResumePoint(seconds: entry.position, fraction: $0) } ?? ResumePoint(seconds: entry.position)
         }
         guard let trakt else { return mine }
@@ -128,7 +128,7 @@ public struct ResumePoint: Sendable, Equatable {
         if same, let entry, trakt.pausedAt.timeIntervalSince1970 <= entry.localStamp { return mine }
         let fraction = trakt.progress / 100
         // Casi nada, o ya casi visto (Trakt lo marca visto desde el 80 %): lo de aquí.
-        guard fraction >= PlaybackRules.continueMinProgress, fraction < StremioLibrary.watchedAt else { return mine }
+        guard fraction >= PlaybackRules.continueMinProgress, fraction < LibraryRules.watchedAt else { return mine }
         if same, let entry, entry.duration > 0, entry.fraction == nil {
             return ResumePoint(seconds: fraction * entry.duration)
         }
@@ -136,12 +136,11 @@ public struct ResumePoint: Sendable, Equatable {
     }
 }
 
-/// Lo que espera para subirse cuando vuelva la red: la copia a Stremio, y lo que va a Trakt (vistos, desmarcados, tu avance,
-/// lo que quitaste de «Seguir viendo» y, desde la cola única (F4), tus listas, calificaciones y notas). Lo del teléfono ya
+/// Lo que espera para subirse a Trakt cuando vuelva la red: vistos, desmarcados, tu avance, lo que quitaste de «Seguir
+/// viendo» y, desde la cola única (F4), tus listas, calificaciones y notas. (La copia a Stremio, `progress`, se fue en F8: un
+/// archivo de antes que la traiga se lee igual y la ignora.) Lo del teléfono ya
 /// quedó guardado: esto solo es el viaje. Lo descartado queda en `discards`.
 public struct PendingWork: Sendable, Equatable, Codable {
-    /// La copia a Stremio (mientras dure la prueba).
-    public var progress: [ProgressEvent] = []
     public var traktWatched: [TraktWatched] = []
     /// «Marcar como no vista» que aún no llega a Trakt (y que una sincronización no debe regresar).
     public var traktUnwatched: [TraktTarget] = []
@@ -172,7 +171,7 @@ public struct PendingWork: Sendable, Equatable, Codable {
     /// Las vistas de Trakt que ya no se enseñan: las borradas y las que una fecha cambiada está reemplazando.
     public var goneViewings: Set<Int> { Set(traktViewingRemovals + traktRewatched.compactMap(\.replaces)) }
     /// Nada que mandar (la bitácora de descartes no cuenta: no se manda).
-    public var isEmpty: Bool { progress.isEmpty && !hasTraktWork }
+    public var isEmpty: Bool { !hasTraktWork }
     /// Algo espera para Trakt.
     public var hasTraktWork: Bool {
         !(traktWatched.isEmpty && traktUnwatched.isEmpty && traktProgress.isEmpty && playbackRemovals.isEmpty && traktViewingRemovals.isEmpty
@@ -181,7 +180,6 @@ public struct PendingWork: Sendable, Equatable, Codable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
-        progress = try c.decodeIfPresent([ProgressEvent].self, forKey: .progress) ?? []
         traktWatched = try c.decodeIfPresent([TraktWatched].self, forKey: .traktWatched) ?? []
         traktUnwatched = try c.decodeIfPresent([TraktTarget].self, forKey: .traktUnwatched) ?? []
         traktProgress = try c.decodeIfPresent([ProgressEvent].self, forKey: .traktProgress) ?? []
@@ -191,7 +189,7 @@ public struct PendingWork: Sendable, Equatable, Codable {
         outbox = try c.decodeIfPresent([TraktOutbox.Item].self, forKey: .outbox) ?? []
         discards = try c.decodeIfPresent([TraktDiscard].self, forKey: .discards) ?? []
     }
-    enum Keys: String, CodingKey { case progress, traktWatched, traktUnwatched, traktProgress, playbackRemovals, traktViewingRemovals, traktRewatched, outbox, discards }
+    enum Keys: String, CodingKey { case traktWatched, traktUnwatched, traktProgress, playbackRemovals, traktViewingRemovals, traktRewatched, outbox, discards }
 }
 
 public protocol PendingStore: Sendable {
@@ -247,12 +245,4 @@ public enum PlaybackPhase: Sendable, Equatable {
 public struct ReportOutcome: Sendable, Equatable {
     /// Quedó guardado en el teléfono.
     public var saved = false
-    /// La copia a Stremio quedó en la cola (sin conexión).
-    public var queued = false
 }
-
-enum WatchError: Error, CustomStringConvertible {
-    case noTitle
-    var description: String { "No encontré ese título." }
-}
-

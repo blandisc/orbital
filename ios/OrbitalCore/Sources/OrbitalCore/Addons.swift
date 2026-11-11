@@ -93,8 +93,6 @@ public actor AddonRegistry {
     public static let retryFailed: TimeInterval = 15
 
     private let http: HTTPClient
-    private let account: StremioAPI?
-    private let auth: @Sendable () -> String?
     private let own: @Sendable () -> [String]
     private let local: AddonList?
     private let clock: @Sendable () -> Date
@@ -104,18 +102,18 @@ public actor AddonRegistry {
     /// Dónde se guarda la última lista buena (stale-while-revalidate): al abrir se usa al instante y se pide la nueva aparte.
     private let disk: URL?
 
-    public init(http: HTTPClient, account: StremioAPI?, auth: @escaping @Sendable () -> String? = { nil },
-                own: @escaping @Sendable () -> [String] = { [] }, local: AddonList? = nil, disk: URL? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.account = account; self.auth = auth; self.own = own; self.local = local; self.disk = disk; self.clock = clock
+    public init(http: HTTPClient, own: @escaping @Sendable () -> [String] = { [] }, local: AddonList? = nil, disk: URL? = nil, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.http = http; self.own = own; self.local = local; self.disk = disk; self.clock = clock
     }
 
-    /// Lo que identifica la lista: la cuenta (vacía con la lista del teléfono: no se le pregunta) y las URLs en orden.
+    /// Lo que identifica la lista: las URLs en orden. El "" del principio era la cuenta de Stremio (ya no hay); se queda para
+    /// que los archivos guardados con la lista de antes sigan valiendo.
     private func key() -> [String] {
         if let local, local.isConfigured { return [""] + Addons.cleanURLs(local.enabledURLs()) }
-        return [auth() ?? ""] + Addons.cleanURLs(own())
+        return [""] + Addons.cleanURLs(own())
     }
 
-    /// Sin cuenta que responda y sin complementos propios, lanza el error de la cuenta.
+    /// Si ninguno contesta, lanza el error del primero.
     public func addons() async throws -> [Addon] {
         let key = key()
         if let cache, cache.key == key, clock() < cache.expires { return cache.addons }
@@ -136,8 +134,7 @@ public actor AddonRegistry {
     }
 
     private func fetch(_ key: [String]) async throws -> [Addon] {
-        var (entries, failed, error) = await fromAccount(key.first)
-        var found = entries.compactMap { Addons.parseManifest($0["manifest"], url: $0["transportUrl"]?.string) }
+        var entries: [JSON] = [], found: [Addon] = [], failed = false, error: Error?
         for url in key.dropFirst() where !found.contains(where: { $0.url == url }) {
             guard let target = URL(string: url) else { continue }
             do {
@@ -154,15 +151,7 @@ public actor AddonRegistry {
         return found
     }
 
-    private func fromAccount(_ authKey: String?) async -> ([JSON], Bool, Error?) {
-        guard let authKey, !authKey.isEmpty, let account else { return ([], false, nil) }
-        do {
-            let result = try await account.addonCollection(authKey: authKey)
-            return (result["addons"]?.array ?? [], false, nil)
-        } catch { return ([], true, error) }
-    }
-
-    /// Un archivo por cuenta y lista propia (el nombre es un hash: la clave de la sesión no queda escrita). `v2`: desde que
+    /// Un archivo por lista (el nombre es un hash). `v2`: desde que
     /// las URLs con clave ya no se escriben adentro (D2).
     private func diskFile(_ key: [String]) -> URL? {
         disk?.appendingPathComponent(Self.diskPrefix + SHA1.hex(Array(key.joined(separator: "\n").utf8)) + ".json")

@@ -6,16 +6,13 @@ import XCTest
 final class ContinueReturnTests: XCTestCase {
     func testAnEpisodeCountsAsSeenOnlyInItsLastStretch() {
         // Los Simpson (22 min): a 2 min del final (91 %) es la escena final, no los créditos.
-        XCTAssertFalse(StremioLibrary.finished(position: 1200, duration: 1320, kind: "series"))
-        XCTAssertTrue(StremioLibrary.finished(position: 1255, duration: 1320, kind: "series"))
-        XCTAssertFalse(StremioLibrary.finished(position: 3400, duration: 3600, kind: "series"))   // una hora: 90 s
-        XCTAssertTrue(StremioLibrary.finished(position: 3515, duration: 3600, kind: "series"))
-        XCTAssertTrue(StremioLibrary.finished(position: 9200, duration: 10140, kind: "movie"))     // películas: 90 %
-        XCTAssertFalse(StremioLibrary.finished(position: 9000, duration: 10140, kind: "movie"))
-        XCTAssertFalse(StremioLibrary.finished(position: 100, duration: 0, kind: "series"))
-        let item = StremioLibrary.withProgress(nil, metaID: "tt1", kind: "series", name: "X", poster: nil, videoID: "tt1:38:4",
-                                               position: 1200, duration: 1320, watched: 1200, nextVideo: nil, now: 0)
-        XCTAssertEqual(StremioLibrary.resumeSeconds(item, videoID: "tt1:38:4"), 1200)   // sigue en Seguir viendo, y se retoma ahí
+        XCTAssertFalse(LibraryRules.finished(position: 1200, duration: 1320, kind: "series"))
+        XCTAssertTrue(LibraryRules.finished(position: 1255, duration: 1320, kind: "series"))
+        XCTAssertFalse(LibraryRules.finished(position: 3400, duration: 3600, kind: "series"))   // una hora: 90 s
+        XCTAssertTrue(LibraryRules.finished(position: 3515, duration: 3600, kind: "series"))
+        XCTAssertTrue(LibraryRules.finished(position: 9200, duration: 10140, kind: "movie"))     // películas: 90 %
+        XCTAssertFalse(LibraryRules.finished(position: 9000, duration: 10140, kind: "movie"))
+        XCTAssertFalse(LibraryRules.finished(position: 100, duration: 0, kind: "series"))
     }
 
     private let now = 1_800_000_000.0
@@ -23,7 +20,7 @@ final class ContinueReturnTests: XCTestCase {
     private func show(e5: Double) -> JSON {
         let videos: [JSON] = [(3, now - 20 * 86400), (4, now - 5 * 86400), (5, e5)].map { n, at in
             .object(["id": .string("tt1:38:\(n)"), "season": .int(38), "episode": .int(n), "name": .string("E\(n)"),
-                     "released": .string(StremioLibrary.iso(at))])
+                     "released": .string(LibraryRules.iso(at))])
         }
         return .object(["id": "tt1", "name": "The Simpsons", "videos": .array(videos)])
     }
@@ -47,10 +44,5 @@ final class ContinueReturnTests: XCTestCase {
         let back = w.returning(videoID: new.id, released: new.released)
         XCTAssertTrue(back.inContinue && back.isNew)
         XCTAssertEqual(back.videoID, "tt1:38:5"); XCTAssertEqual(back.timeOffset, 1); XCTAssertEqual(back.lastWatched, new.released)
-
-        // «Quitar»: apunta al episodio nuevo para que no vuelva otra vez.
-        let gone = StremioLibrary.dismissed(.object(["_id": "tt1", "state": .object(["timeOffset": .int(0), "video_id": "tt1:38:4"])]),
-                                            now: now, videoID: "tt1:38:5")
-        XCTAssertEqual(StremioLibrary.state(of: gone)["video_id"]?.string, "tt1:38:5")
     }
 }

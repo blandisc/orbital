@@ -10,7 +10,7 @@ extension PlayerModel {
         // «suena» viejo daba por arrancada una versión que no había abierto, se quitaba su plazo y cargaba para siempre.
         if !engineOpened, raw.state != .loading, raw.state != .idle { return }
         var s = raw
-        s.position = StremioLibrary.finite(s.position); s.duration = StremioLibrary.finite(s.duration)   // NaN o infinito (en vivo) no valen
+        s.position = LibraryRules.finite(s.position); s.duration = LibraryRules.finite(s.duration)   // NaN o infinito (en vivo) no valen
         let now = clock()
         let previous = snapshot
         // Segundos vistos: solo cuenta el tiempo en que estuvo reproduciendo (y sin saltos raros).

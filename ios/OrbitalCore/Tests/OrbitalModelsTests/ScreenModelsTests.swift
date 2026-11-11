@@ -148,11 +148,7 @@ final class ScreenModelsTests: XCTestCase {
     // MARK: ficha
     func titleRig() throws -> ServicesRig {
         let rig = try ServicesRig()
-        rig.http.json[stremioGet] = ["result": [["_id": "tt0386676", "name": "The Office", "type": "series", "removed": false, "temp": false,
-            "state": ["video_id": "tt0386676:1:3", "timeOffset": 660_000, "duration": 1_320_000,
-                      "watched": .string(StremioLibrary.encodeWatched(["tt0386676:1:1", "tt0386676:1:2"], videoIDs: CinemetaParsing.seasonVideoIDs(try Fixtures.json("cinemeta/meta_series_tt0386676.json"))) ?? "")]]]]
-        rig.http.json[stremioPut] = ["result": ["success": true]]
-        // Lo mismo en el teléfono (la ficha lee de aquí; Stremio solo recibe copia).
+        // Lo tuyo vive en el teléfono (la ficha lee de aquí).
         rig.services.library.update("tt0386676", make: { LibraryEntry(metaID: "tt0386676", kind: "series", name: "The Office") }) {
             $0.videoID = "tt0386676:1:3"; $0.position = 660; $0.duration = 1320; $0.updatedAt = 1_759_000_000
             $0.seen = ["tt0386676:1:1", "tt0386676:1:2"]; $0.inList = true; $0.listedAt = 1

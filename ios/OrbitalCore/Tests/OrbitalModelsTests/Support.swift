@@ -92,13 +92,27 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
 
 let stremioGet = "https://api.strem.io/api/datastoreGet", stremioPut = "https://api.strem.io/api/datastorePut"
 
-/// Un entorno completo con red falsa: complementos con fuentes, una ficha de serie, y la cuenta de Stremio.
+/// Lo que el reproductor guardó en el teléfono, en orden; `delay` hace lento cada guardado (como una red lenta).
+final class SaveLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _all: [ProgressEvent] = [], _delay: TimeInterval = 0
+    var all: [ProgressEvent] { lock.withLock { _all } }
+    var delay: TimeInterval { get { lock.withLock { _delay } } set { lock.withLock { _delay = newValue } } }
+    func add(_ event: ProgressEvent) async {
+        let wait = delay
+        if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+        lock.withLock { _all.append(event) }
+    }
+}
+
+/// Un entorno completo con red falsa: complementos con fuentes y una ficha de serie.
 @MainActor
 final class Rig {
     let http = FakeHTTP(), clock = Clock(), engine = FakeEngine(), kv = InMemoryKeyValueStore(), pending = InMemoryPendingStore()
     let settings: SettingsStore, titlePrefs: TitlePreferences, finder: StreamFinder, watch: WatchService, model: PlayerModel
     let series: JSON
     let library: LocalLibrary
+    let saves: SaveLog
 
     init(streams: [String: [JSON]] = [:], remote: JSON? = nil, trakt: Trakt? = nil, scrobbleLog: ScrobbleLog? = nil) throws {
         series = try Fixtures.json("cinemeta/meta_series_tt0386676.json")
@@ -109,11 +123,7 @@ final class Rig {
             http.json["https://a.example/stream/\(kind)/\(video.replacingOccurrences(of: ":", with: "%3A")).json"] = ["streams": .array(list)]
         }
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
-        http.json[stremioGet] = ["result": remote.map { [$0] } ?? []]
-        http.json[stremioPut] = ["result": ["success": true]]
-        let secrets = InMemorySecrets()
-        secrets.set(SecretKey.stremioAuth, "KEY")
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://a.example"] }, clock: { clock.now })
+        let registry = AddonRegistry(http: http, own: { ["https://a.example"] }, clock: { clock.now })
         settings = SettingsStore(kv)
         settings.update { $0.audio = "es"; $0.subtitles = "es"; $0.quality = "1080p" }
         titlePrefs = TitlePreferences(kv)
@@ -122,16 +132,18 @@ final class Rig {
         // Lo de `remote` como si ya se hubiera traído de Stremio al teléfono (la app ya no le pregunta a Stremio dónde ibas).
         let library = LocalLibrary()
         if let remote, let id = remote["_id"]?.string {
-            let state = StremioLibrary.state(of: remote)
+            let state = remote["state"] ?? [:]
             var entry = LibraryEntry(metaID: id, kind: "series", name: remote["name"]?.string ?? "The Office")
             entry.videoID = state["video_id"]?.string
             entry.position = Double(state["timeOffset"]?.intValue ?? 0) / 1000; entry.duration = Double(state["duration"]?.intValue ?? 0) / 1000
-            entry.updatedAt = StremioLibrary.epoch(state["lastWatched"]) ?? 0
+            entry.updatedAt = LibraryRules.epoch(state["lastWatched"]) ?? 0
             library.update(id, make: { entry }) { _ in }
         }
         self.library = library
-        watch = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: cinemeta, trakt: trakt, pending: pending,
-                             clock: { clock.now }, scrobbleLog: scrobbleLog, sleep: { _ in })
+        let saves = SaveLog()
+        self.saves = saves
+        watch = WatchService(library: library, cinemeta: cinemeta, trakt: trakt, pending: pending,
+                             clock: { clock.now }, scrobbleLog: scrobbleLog, sleep: { _ in }, onSave: { await saves.add($0) })
         model = PlayerModel(engine: engine, finder: finder, watch: watch, titlePrefs: titlePrefs, settings: settings, clock: { clock.now })
         model.queued = QueuedOnRealDebrid()   // cada prueba con su propia lista de lo ya pedido a Real-Debrid
     }
@@ -146,7 +158,8 @@ final class Rig {
         PlayRequest(kind: "series", metaID: "tt0386676", videoID: video, originalTitle: "The Office", displayTitle: "La Oficina", episodeLabel: "T1 · E1", meta: series, fromStart: fromStart)
     }
 
-    func saved() throws -> [JSON] { try http.bodies(stremioPut).map { try XCTUnwrap(JSON.parse($0))["changes"]?.array?.first ?? .null } }
+    /// Cada guardado en el teléfono, en orden.
+    func saved() -> [ProgressEvent] { saves.all }
 
     func playing(_ position: Double, duration: Double = 1320, audio: [MediaTrack] = [], subs: [MediaTrack] = [], chapters: [Chapter] = [], state: EngineState = .playing,
                  selectedAudio: Int? = nil, selectedSubtitle: Int? = nil) -> EngineSnapshot {

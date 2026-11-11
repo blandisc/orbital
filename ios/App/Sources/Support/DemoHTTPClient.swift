@@ -5,31 +5,14 @@ import OrbitalModels
 
 #if DEBUG
 
-/// La red fingida del modo demostración: Stremio, Cinemeta, complementos, Trakt, TMDB y tu Orbital contestan desde aquí (solo Debug).
+/// La red fingida del modo demostración: Cinemeta, complementos, Trakt, TMDB y tu Orbital contestan desde aquí (solo Debug).
 
-/// Responde como Stremio y como un complemento; lo demás (Cinemeta, imágenes, TMDB) va a la red de verdad.
+/// Responde como un complemento (y Trakt, TMDB y la consola en sus extensiones); lo demás va a la red de verdad.
 final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private let real = URLSessionHTTPClient()
     let lock = NSLock()
-    private var library: [String: JSON]
 
-    init() {
-        let now = Date().timeIntervalSince1970
-        func iso(_ hoursAgo: Double) -> JSON { .string(StremioLibrary.iso(now - hoursAgo * 3600)) }
-        func poster(_ id: String) -> JSON { .string("https://images.metahub.space/poster/medium/\(id)/img") }
-        let items: [JSON] = [
-            ["_id": "tt0386676", "name": "The Office", "type": "series", "poster": poster("tt0386676"), "removed": false, "temp": false,
-             "state": ["video_id": "tt0386676:2:5", "timeOffset": 120_000, "duration": 1_320_000, "lastWatched": iso(2)]],
-            ["_id": "tt0903747", "name": "Breaking Bad", "type": "series", "poster": poster("tt0903747"), "removed": false, "temp": false,
-             "state": ["video_id": "tt0903747:1:3", "timeOffset": 1_200_000, "duration": 2_820_000, "lastWatched": iso(30)]],
-            ["_id": "tt0816692", "name": "Interstellar", "type": "movie", "poster": poster("tt0816692"), "removed": true, "temp": true,
-             "state": ["video_id": "tt0816692", "timeOffset": 3_000_000, "duration": 10_140_000, "lastWatched": iso(50)]],
-            ["_id": "tt1160419", "name": "Dune", "type": "movie", "poster": poster("tt1160419"), "removed": false, "temp": false, "state": [:]],
-            ["_id": "tt11280740", "name": "Severance", "type": "series", "poster": poster("tt11280740"), "removed": false, "temp": false, "state": [:]],
-            ["_id": "tt15239678", "name": "Dune: Part Two", "type": "movie", "poster": poster("tt15239678"), "removed": false, "temp": false, "state": [:]],
-        ]
-        library = Dictionary(uniqueKeysWithValues: items.map { ($0["_id"]!.string!, $0) })
-    }
+    init() {}
 
     /// Avance de mentira de «Viendo en la TV», que sigue corriendo mientras no esté en pausa (como la consola de verdad).
     private var nowPlayingPosition = 420.0
@@ -78,7 +61,6 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     /// La respuesta de mentira, o nada si la petición va a la red de verdad.
     private func fake(_ request: HTTPRequest) async throws -> HTTPResponse? {
         let url = request.url; if let found = DemoViento.respond(request) { return found }   // `-demo-viento` (3 nov)
-        if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" {
             // `-demo-search-slow`: tres complementos que contestan a destiempo (0.8, 1.6 y 2.4 s), para ver la órbita de
             // «Buscando la mejor versión» llenarse como con la red de verdad.
@@ -457,34 +439,6 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                    "page": "De 5 en 5", "section": "Secciones"],
                         "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted), "extra_max": 200]]
         return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
-    }
-
-    private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }
-
-    private func stremio(_ method: String, body: JSON?) async throws -> HTTPResponse {
-        try? await Task.sleep(nanoseconds: 300_000_000)     // ds-exception: demora de red simulada (solo modo demo), no es una espera de la interfaz
-        switch method {
-        case "login":
-            if body?["password"]?.string == "error" { return HTTPResponse(status: 200, data: JSON.object(["error": ["message": "Contraseña incorrecta"]]).serialized()) }
-            return ok(["authKey": "DEMO", "user": ["email": body?["email"] ?? "demo@orbital"]])
-        case "datastoreGet":
-            let ids = (body?["ids"]?.array ?? []).compactMap(\.string)
-            return ok(.array(lock.withLock { ids.isEmpty ? Array(library.values) : ids.compactMap { library[$0] } }))
-        case "datastorePut":
-            lock.withLock { for change in body?["changes"]?.array ?? [] { if let id = change["_id"]?.string { library[id] = change } } }
-            return ok(["success": true])
-        case "addonCollectionGet":
-            if Demo.searchSlow {
-                return ok(["addons": .array(Demo.slowLanes.map { lane in
-                    var manifest = Self.manifest.object ?? [:]
-                    manifest["id"] = .string("orbital.demo.\(lane)"); manifest["name"] = .string(lane.capitalized)
-                    return ["transportUrl": .string("https://demo.orbital.invalid/\(lane)/manifest.json"), "manifest": .object(manifest)]
-                })])
-            }
-            return ok(["addons": [["transportUrl": .string(Demo.addonURL), "manifest": Self.manifest]]])
-        default:
-            return ok(.null)
-        }
     }
 
     static var subtitlesDemo: JSON {

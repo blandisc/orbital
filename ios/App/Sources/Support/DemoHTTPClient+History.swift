@@ -26,7 +26,7 @@ extension DemoHTTPClient {
         let path = request.url.path, method = request.method
         let body = request.body.flatMap(JSON.parse)
         func json(_ value: JSON, status: Int = 200) -> HTTPResponse { HTTPResponse(status: status, data: value.serialized()) }
-        func iso(_ hoursAgo: Double) -> JSON { .string(StremioLibrary.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }
+        func iso(_ hoursAgo: Double) -> JSON { .string(LibraryRules.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }
         func ids(_ imdb: String) -> JSON { ["imdb": .string(imdb), "trakt": .int(Int(imdb.dropFirst(2)) ?? 0)] }
         func row(_ v: DemoViewing) -> JSON {
             let name = JSON.string(Self.historyNames[v.imdb] ?? v.imdb)

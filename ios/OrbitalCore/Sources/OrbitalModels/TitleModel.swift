@@ -357,7 +357,7 @@ public final class TitleModel: ObservableModel {
         guard let video = continueVideoID else { return (false, nil, nil) }
         let resume = entry?.videoID == video && entry?.nextUp == false && (entry?.position ?? 0) > 1
         if kind == "series" {
-            let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: metaID)
+            let numbers = LibraryRules.episodeNumbers(videoID: video, metaID: metaID)
             if let s = numbers.season, let e = numbers.episode { return (resume, s, e) }
         }
         return (resume, nil, nil)

@@ -41,44 +41,41 @@ final class AddonsTests: XCTestCase {
         XCTAssertNil(Addons.parseManifest("texto", url: "https://x/manifest.json"))
     }
 
-    func testRegistryMergesAccountAndOwnAndCaches() async throws {
+    func testRegistryReadsYourAddonsAndCaches() async throws {
         let http = FakeHTTP()
-        http.json["https://api.strem.io/api/addonCollectionGet"] = ["result": ["addons": [
-            ["transportUrl": "https://cuenta.example/manifest.json", "manifest": ["name": "Cuenta", "resources": ["stream"], "types": ["movie"]]],
-            ["transportUrl": "https://roto.example/manifest.json", "manifest": "raro"]]]]
-        http.json["https://propio.example/manifest.json"] = ["name": "Propio", "resources": ["subtitles"], "types": ["movie"]]
-        let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" }, own: { ["https://propio.example"] })
+        http.json["https://propio.example/manifest.json"] = ["name": "Propio", "resources": ["stream"], "types": ["movie"]]
+        http.json["https://subs.example/manifest.json"] = ["name": "Subs", "resources": ["subtitles"], "types": ["movie"]]
+        let registry = AddonRegistry(http: http, own: { ["https://propio.example", "https://subs.example"] })
         let first = try await registry.addons()
-        XCTAssertEqual(first.map(\.name), ["Cuenta", "Propio"])
+        XCTAssertEqual(first.map(\.name), ["Propio", "Subs"])
         _ = try await registry.addons()
-        XCTAssertEqual(http.calls.filter { $0.hasSuffix("addonCollectionGet") }.count, 1, "la lista se recuerda")
+        XCTAssertEqual(http.calls.filter { $0.hasSuffix("manifest.json") }.count, 2, "la lista se recuerda")
         let serving = try await registry.serving("stream", kind: "movie", itemID: "tt1")
-        XCTAssertEqual(serving.map(\.name), ["Cuenta"])
+        XCTAssertEqual(serving.map(\.name), ["Propio"])
     }
 
     func testRegistrySharesInFlightAndOpensFromDisk() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
-        let http = FakeHTTP(), url = "https://api.strem.io/api/addonCollectionGet"
-        http.json[url] = ["result": ["addons": [["transportUrl": "https://cuenta.example/manifest.json", "manifest": ["name": "Cuenta", "resources": ["stream"], "types": ["movie"]]]]]]
+        let http = FakeHTTP(), url = "https://propio.example/manifest.json"
+        http.json[url] = ["name": "Propio", "resources": ["stream"], "types": ["movie"]]
         http.delays[url] = 50
-        let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" }, disk: dir)
+        let registry = AddonRegistry(http: http, own: { ["https://propio.example"] }, disk: dir)
         async let a = registry.addons()
         async let b = registry.addons()
         let (first, second) = try await (a, b)
-        XCTAssertEqual(first.map(\.name), ["Cuenta"]); XCTAssertEqual(second.map(\.name), ["Cuenta"])
-        XCTAssertEqual(http.calls.filter { $0 == url }.count, 1, "a la vez: una sola addonCollectionGet")
+        XCTAssertEqual(first.map(\.name), ["Propio"]); XCTAssertEqual(second.map(\.name), ["Propio"])
+        XCTAssertEqual(http.calls.filter { $0 == url }.count, 1, "a la vez: una sola petición")
 
         // Otra apertura: la lista guardada sale sin esperar a la red y se revalida aparte.
         http.delays[url] = 2000
-        let reopened = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" }, disk: dir)
+        let reopened = AddonRegistry(http: http, own: { ["https://propio.example"] }, disk: dir)
         let saved = try await reopened.addons()
-        XCTAssertEqual(saved.map(\.name), ["Cuenta"])
+        XCTAssertEqual(saved.map(\.name), ["Propio"])
         for _ in 0..<200 where http.calls.filter({ $0 == url }).count < 2 { try await Task.sleep(nanoseconds: 5_000_000) }
         XCTAssertEqual(http.calls.filter { $0 == url }.count, 2, "revalidando en segundo plano")
     }
 
-    /// D2: el archivo de la lista guardada no lleva tu clave de Real-Debrid (ni en el nombre ni adentro), y los de antes se borran.
     func testTheSavedListDoesNotKeepYourKeyOnDisk() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -90,7 +87,7 @@ final class AddonsTests: XCTestCase {
         let http = FakeHTTP()
         http.json[keyed] = ["name": "Torrentio", "resources": ["stream"], "description": .string("Con realdebrid=\(key)")]
         http.json[plain] = ["name": "Subs", "resources": ["subtitles"]]
-        let registry = AddonRegistry(http: http, account: nil, own: { [keyed, plain] }, disk: dir)
+        let registry = AddonRegistry(http: http, own: { [keyed, plain] }, disk: dir)
         _ = try await registry.addons()
         XCTAssertFalse(FileManager.default.fileExists(atPath: old.path), "el archivo de antes (con la clave) se borra")
         let files = try FileManager.default.contentsOfDirectory(atPath: dir.path)
@@ -101,35 +98,16 @@ final class AddonsTests: XCTestCase {
         XCTAssertTrue(text.contains(plain), "una URL sin clave se guarda tal cual")
         // Al abrir otra vez: la URL con clave se recupera de la lista, no del archivo.
         http.fail = true
-        let reopened = AddonRegistry(http: http, account: nil, own: { [keyed, plain] }, disk: dir)
+        let reopened = AddonRegistry(http: http, own: { [keyed, plain] }, disk: dir)
         let saved = try await reopened.addons()
         XCTAssertEqual(saved.map(\.url), [keyed, plain])
-    }
-
-    func testRepeatedReadsShareAndRecentItemIsReused() async throws {
-        let http = FakeHTTP(), url = "https://api.strem.io/api/datastoreGet"
-        http.json[url] = ["result": [["_id": "tt1", "name": "Uno", "state": [:]]]]
-        http.delays[url] = 50
-        let api = StremioAPI(http: http)
-        async let a = api.libraryItem(authKey: "K", id: "tt1")
-        async let b = api.libraryItem(authKey: "K", id: "tt1")
-        _ = try await (a, b)
-        XCTAssertEqual(http.calls.count, 1, "la misma lectura a la vez: una petición")
-        _ = try await api.libraryItem(authKey: "K", id: "tt1", maxAge: 60)
-        XCTAssertEqual(http.calls.count, 1, "solo para leer: reusa la de hace un momento")
-        _ = try await api.libraryItem(authKey: "K", id: "tt1")
-        XCTAssertEqual(http.calls.count, 2, "para escribir: siempre la de Stremio")
-        http.json["https://api.strem.io/api/datastorePut"] = ["result": ["success": true]]
-        try await api.saveLibraryItem(authKey: "K", item: ["_id": "tt1"])
-        _ = try await api.libraryItem(authKey: "K", id: "tt1", maxAge: 60)
-        XCTAssertEqual(http.calls.filter { $0 == url }.count, 3, "después de escribir no se reusa lo leído antes")
     }
 
     func testRegistryShortCacheWhenSomethingFails() async throws {
         let http = FakeHTTP()
         http.json["https://ok.example/manifest.json"] = ["name": "Ok", "resources": ["stream"]]
         let clock = Clock()
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://ok.example", "https://caido.example"] }, clock: { clock.now })
+        let registry = AddonRegistry(http: http, own: { ["https://ok.example", "https://caido.example"] }, clock: { clock.now })
         _ = try await registry.addons()
         clock.now.addTimeInterval(10)
         _ = try await registry.addons()
@@ -139,10 +117,10 @@ final class AddonsTests: XCTestCase {
         XCTAssertEqual(http.calls.filter { $0.contains("ok.example") }.count, 2)
     }
 
-    func testRegistryThrowsAccountErrorWhenNothingWorks() async {
+    func testRegistryThrowsWhenNothingAnswers() async {
         let http = FakeHTTP()
         http.fail = true
-        let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" })
-        do { _ = try await registry.addons(); XCTFail("debía fallar") } catch { XCTAssertTrue("\(error)".contains("Stremio")) }
+        let registry = AddonRegistry(http: http, own: { ["https://propio.example"] })
+        do { _ = try await registry.addons(); XCTFail("debía fallar") } catch { XCTAssertTrue(error is NetworkError, "«no responden», no «no tienes complementos»") }
     }
 }

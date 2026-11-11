@@ -33,7 +33,7 @@ public final class TitleActions {
         let suggested = s.next.map { "\(s.imdb):\($0.season):\($0.episode)" }
         guard let video = current != nil ? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, entry: mine, seasons: seasons)
                                          : suggested ?? TitleModel.continueVideoID(kind: s.kind, metaID: s.imdb, entry: nil, seasons: seasons) else { return nil }
-        let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: s.imdb)
+        let numbers = LibraryRules.episodeNumbers(videoID: video, metaID: s.imdb)
         return SeriesStart(metaID: s.imdb, videoID: video, season: numbers.season, episode: numbers.episode,
                            isResume: current == video && mine?.nextUp == false && (mine?.position ?? 0) > 1, meta: meta)
     }

@@ -194,7 +194,7 @@ public final class AddonsModel: ObservableModel {
     /// La primera vez (la guía o la primera visita a Ajustes): con los recomendados, y lo que tenías en Stremio.
     public func prepare() async {
         services.addonList.startWithRecommended()
-        if !services.addonList.hasImported { _ = try? await services.importAddonsFromStremio() }
+        if !services.addonList.hasImported { _ = try? await services.importOwnAddons() }
         // C5 también para lo que ya tenías: un Torrentio traído antes pasa al de Orbital si este sigue como vino.
         if services.addonList.adoptImportedTorrentio() { await services.resetAccountCaches() }
         // M6: el que ya contestó solo con torrents se apaga aquí (una vez); en la TV sigue.

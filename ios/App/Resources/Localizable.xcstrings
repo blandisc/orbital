@@ -17569,17 +17569,6 @@
         }
       }
     },
-    "Error de Stremio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stremio error"
-          }
-        }
-      }
-    },
     "Es canal": {
       "extractionState": "manual",
       "localizations": {
@@ -24319,17 +24308,6 @@
         }
       }
     },
-    "No pude conectar con Stremio: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I couldn't connect to Stremio: %@"
-          }
-        }
-      }
-    },
     "No pude conectar con Trakt: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -27825,17 +27803,6 @@
         }
       }
     },
-    "Respuesta de Stremio sin resultado": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stremio's response had no result"
-          }
-        }
-      }
-    },
     "Respuesta inesperada de Cinemeta": {
       "extractionState": "manual",
       "localizations": {
@@ -30177,28 +30144,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Right stick"
-          }
-        }
-      }
-    },
-    "Stremio no devolvió la clave de sesión": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stremio didn't return the session key"
-          }
-        }
-      }
-    },
-    "Stremio respondió HTTP %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stremio answered HTTP %@"
           }
         }
       }

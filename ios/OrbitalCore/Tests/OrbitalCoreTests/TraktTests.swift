@@ -119,7 +119,7 @@ final class TraktTests: XCTestCase {
         let when = clock.now.addingTimeInterval(-3600)
         let movie = TraktTarget(imdb: "tt1160419")
         http.json["\(api)/search/imdb/tt1160419?type=movie"] = [["movie": ["ids": ["trakt": 55]]]]
-        let start = StremioLibrary.iso(when.addingTimeInterval(-12 * 3600).timeIntervalSince1970), end = StremioLibrary.iso(when.addingTimeInterval(12 * 3600).timeIntervalSince1970)
+        let start = LibraryRules.iso(when.addingTimeInterval(-12 * 3600).timeIntervalSince1970), end = LibraryRules.iso(when.addingTimeInterval(12 * 3600).timeIntervalSince1970)
         let historyURL = "\(api)/sync/history/movies/55?start_at=\(start)&end_at=\(end)&limit=100"
         http.json[historyURL] = [["id": 1]]
         http.json["\(api)/sync/history"] = [:]
@@ -130,7 +130,7 @@ final class TraktTests: XCTestCase {
         let added = try await trakt.addToHistory(movie, watchedAt: when)
         XCTAssertTrue(added)
         let body = try XCTUnwrap(http.bodies(for: "\(api)/sync/history").first.flatMap(JSON.parse))
-        XCTAssertEqual(body["movies"]?.array?.first?["watched_at"]?.string, StremioLibrary.iso(when.timeIntervalSince1970), "con la fecha real")
+        XCTAssertEqual(body["movies"]?.array?.first?["watched_at"]?.string, LibraryRules.iso(when.timeIntervalSince1970), "con la fecha real")
     }
 
     func testWritesAreSpacedOneSecondApart() async throws {
@@ -189,7 +189,7 @@ final class TraktTests: XCTestCase {
         let when = clock.now
         let target = TraktTarget(imdb: "tt0386676", season: 1, episode: 2)
         http.json["\(api)/search/imdb/tt0386676?type=show"] = [["show": ["ids": ["trakt": 1388]]]]
-        let start = StremioLibrary.iso(when.addingTimeInterval(-12 * 3600).timeIntervalSince1970), end = StremioLibrary.iso(when.addingTimeInterval(12 * 3600).timeIntervalSince1970)
+        let start = LibraryRules.iso(when.addingTimeInterval(-12 * 3600).timeIntervalSince1970), end = LibraryRules.iso(when.addingTimeInterval(12 * 3600).timeIntervalSince1970)
         http.json["\(api)/sync/history/shows/1388?start_at=\(start)&end_at=\(end)&limit=100"] = [["episode": ["season": 1, "number": 2]], ["episode": ["season": 1, "number": 3]]]
         http.json["\(api)/sync/history"] = [:]
         let already = try await trakt.addToHistory(target, watchedAt: when)

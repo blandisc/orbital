@@ -38,16 +38,11 @@ public extension RealDebridTorrents {
     init(http: HTTPClient, gate: RDGate = RDGate()) { self.init(fetch: RealDebrid.fetch(http), gate: gate) }
 }
 
-public enum StremioImport {
-    /// Los complementos de tu cuenta de Stremio (y los que pegaste en Ajustes › Avanzado), para traerlos una vez a la lista
-    /// del teléfono. Cinemeta no se trae: la app ya lo usa por su cuenta para las fichas.
-    public static func addons(account: [JSON], own: [String]) -> [AddonList.Imported] {
+public enum AddonImport {
+    /// Los complementos que pegaste en Ajustes › Avanzado, para traerlos una vez a la lista del teléfono. (Antes también los de
+    /// tu cuenta de Stremio; esa cuenta ya no se usa desde el 3 nov.)
+    public static func addons(own: [String]) -> [AddonList.Imported] {
         var out: [AddonList.Imported] = []
-        for entry in account {
-            guard let url = entry["transportUrl"]?.string, let addon = Addons.parseManifest(entry["manifest"], url: url),
-                  !addon.name.lowercased().contains("cinemeta") else { continue }
-            out.append(AddonList.Imported(name: addon.name, url: url, resources: addon.rules.keys.sorted()))
-        }
         for url in Addons.cleanURLs(own) where !out.contains(where: { $0.url == url }) {
             out.append(AddonList.Imported(name: URL(string: url)?.host ?? "Complemento", url: url, resources: []))
         }

@@ -65,7 +65,7 @@ public actor LibrarySync {
     /// Las series y películas vistas desde `since` (la primera vez, las recientes): episodios vistos y el que sigue.
     private func pullWatched(_ trakt: Trakt, since: String?) async -> Bool {
         guard let shows = try? await trakt.watchedTitles(kind: "series"), let movies = try? await trakt.watchedTitles(kind: "movie") else { return false }
-        let from = since.flatMap(TraktParsing.date) ?? clock().addingTimeInterval(-StremioLibrary.returnDays * 86400)
+        let from = since.flatMap(TraktParsing.date) ?? clock().addingTimeInterval(-LibraryRules.returnDays * 86400)
         let recent = Array(shows.filter { $0.lastWatchedAt > from }.sorted { $0.lastWatchedAt > $1.lastWatchedAt }.prefix(Self.showsPerPull))
         let progress = await withTaskGroup(of: (TraktWatchedTitle, TraktShowProgress?).self) { group in
             for show in recent {

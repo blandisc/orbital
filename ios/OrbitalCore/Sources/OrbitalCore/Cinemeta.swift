@@ -299,7 +299,7 @@ public enum CinemetaParsing {
 
     /// ¿Ya salió? Sin fecha (o con una rara) se da por emitido. Medio día de margen por los husos horarios.
     public static func aired(_ released: String?, now: Double = Date().timeIntervalSince1970) -> Bool {
-        guard let when = StremioLibrary.epoch(released.map(JSON.string)) else { return true }
+        guard let when = LibraryRules.epoch(released.map(JSON.string)) else { return true }
         return when <= now + 12 * 3600
     }
 
@@ -309,7 +309,7 @@ public enum CinemetaParsing {
                                   now: Double = Date().timeIntervalSince1970) -> (id: String, released: Double)? {
         guard let next = nextEpisode(meta, after: videoID, now: now),
               let episode = seasons(meta).flatMap(\.episodes).first(where: { $0.id == next }),
-              let when = StremioLibrary.epoch(episode.released.map(JSON.string)), when > since else { return nil }
+              let when = LibraryRules.epoch(episode.released.map(JSON.string)), when > since else { return nil }
         return (next, when)
     }
 

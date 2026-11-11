@@ -2,7 +2,7 @@ import XCTest
 @testable import OrbitalCore
 
 /// Desacoplar Stremio, corte A: lo tuyo vive en el teléfono y viaja por Trakt. Las pruebas de la propuesta (§4): fusión,
-/// visto que se suma, desmarcar que viaja, avance viejo descartado al volver la red, solo lo que cambió, importar de Stremio.
+/// visto que se suma, desmarcar que viaja, avance viejo descartado al volver la red, solo lo que cambió.
 final class LibrarySyncTests: XCTestCase {
     let api = "https://api.trakt.tv"
     let series = try! Fixtures.json("cinemeta/meta_series_tt0386676.json")
@@ -18,7 +18,7 @@ final class LibrarySyncTests: XCTestCase {
         func add(_ s: TimeInterval) { lock.withLock { _all.append(s) } }
     }
 
-    func rig(stremio: Bool = false) -> Rig {
+    func rig() -> Rig {
         let http = FakeHTTP(), clock = Clock(), library = LocalLibrary(), pending = InMemoryPendingStore(), kv = InMemoryKeyValueStore(), secrets = InMemorySecrets()
         secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(clock.now.timeIntervalSince1970 + 86400)}"#)
         let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in })
@@ -26,7 +26,7 @@ final class LibrarySyncTests: XCTestCase {
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         for action in ["start", "pause", "stop"] { http.json["\(api)/scrobble/\(action)"] = [:] }
         let queue = TraktQueue(store: pending, clock: { clock.now })
-        let watch = WatchService(library: library, stremio: StremioAPI(http: http), authKey: { stremio ? "KEY" : nil }, cinemeta: Cinemeta(http: http),
+        let watch = WatchService(library: library, cinemeta: Cinemeta(http: http),
                                  trakt: trakt, pending: pending, clock: { clock.now }, queue: queue, sleep: { sleeps.add($0) })
         let outbox = TraktOutbox(queue: queue, kv: kv, clock: { clock.now })
         let sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: outbox, pending: pending, clock: { clock.now })
@@ -148,7 +148,7 @@ final class LibrarySyncTests: XCTestCase {
         XCTAssertEqual(r.pending.load().traktProgress.count, 1, "sin red: tu avance espera")
         // Mientras, lo viste en la TV (una pausa más nueva en Trakt).
         r.http.failing = []
-        let later = StremioLibrary.iso(r.clock.now.timeIntervalSince1970 + 600)
+        let later = LibraryRules.iso(r.clock.now.timeIntervalSince1970 + 600)
         r.http.json["\(api)/sync/playback?extended=full"] = [["progress": 70, "paused_at": .string(later), "id": 5, "type": "episode",
                                                              "episode": ["season": 1, "number": 1], "show": ["ids": ["imdb": "tt0386676"]]]]
         let before = scrobbles(r).count
@@ -171,7 +171,7 @@ final class LibrarySyncTests: XCTestCase {
     func testDismissingRemovesThePausedEntryOnTrakt() async throws {
         let r = rig()
         r.library.update("tt0386676", make: { self.entry(at: r.clock.now.timeIntervalSince1970 - 60) }) { _ in }
-        r.http.json["\(api)/sync/playback?extended=full"] = [["progress": 20, "paused_at": .string(StremioLibrary.iso(r.clock.now.timeIntervalSince1970 - 60)),
+        r.http.json["\(api)/sync/playback?extended=full"] = [["progress": 20, "paused_at": .string(LibraryRules.iso(r.clock.now.timeIntervalSince1970 - 60)),
                                                              "id": 77, "type": "episode", "episode": ["season": 2, "number": 5], "show": ["ids": ["imdb": "tt0386676"]]]]
         r.http.json["\(api)/sync/playback/77"] = [:]; r.http.statuses["\(api)/sync/playback/77"] = 204
         await r.watch.dismissContinue(metaID: "tt0386676")
@@ -221,21 +221,6 @@ final class LibrarySyncTests: XCTestCase {
         XCTAssertEqual(r.http.calls.count, calls + 1, "nada cambió: solo la pregunta chiquita")
     }
 
-    func testStremioIsImportedOnceIntoThePhone() async throws {
-        let r = rig(stremio: true)
-        r.http.json["https://api.strem.io/api/datastoreGet"] = ["result": [
-            ["_id": "tt0386676", "name": "The Office", "type": "series", "removed": false, "temp": false,
-             "state": ["video_id": "tt0386676:2:5", "timeOffset": 600_000, "duration": 1_320_000, "lastWatched": "2026-10-20T00:00:00.000Z",
-                       "watched": .string(StremioLibrary.encodeWatched(["tt0386676:1:1"], videoIDs: CinemetaParsing.seasonVideoIDs(series)) ?? "")]]]]
-        let kv = InMemoryKeyValueStore()
-        let first = await r.watch.importFromStremio(kv: kv)
-        XCTAssertEqual(first, 1)
-        let mine = try XCTUnwrap(r.library.entry("tt0386676"))
-        XCTAssertEqual(mine.videoID, "tt0386676:2:5"); XCTAssertEqual(mine.position, 600); XCTAssertEqual(mine.seen, ["tt0386676:1:1"])
-        XCTAssertFalse(mine.inList, "Mi lista de Stremio no se trae: Mi lista es tu watchlist de Trakt")
-        let again = await r.watch.importFromStremio(kv: kv)
-        XCTAssertEqual(again, 0, "una sola vez")
-    }
 
     /// SS1-A: lo que escondiste en la TV o en trakt.tv (`shows.hidden_at` cambió) se trae, y solo cuando cambió.
     func testHiddenShowsArePulledWhenTheyChange() async throws {

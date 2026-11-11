@@ -9,7 +9,7 @@ final class StreamFinderLimitsTests: XCTestCase {
     func makeFinder(_ http: HTTPClient, fake: FakeHTTP, limits: SearchLimits = small) -> StreamFinder {
         fake.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
         fake.json["https://b.example/manifest.json"] = ["name": "Comet", "resources": ["stream"], "types": ["movie", "series"]]
-        let registry = AddonRegistry(http: fake, account: nil, own: { ["https://a.example", "https://b.example"] })
+        let registry = AddonRegistry(http: fake, own: { ["https://a.example", "https://b.example"] })
         return StreamFinder(http: http, registry: registry, limits: limits)
     }
 

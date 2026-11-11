@@ -29,7 +29,7 @@ final class VientoTieneMiedoTests: XCTestCase {
     func finder(_ http: FakeHTTP, streams: JSON) -> StreamFinder {
         http.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream"], "types": ["movie"], "idPrefixes": ["tt"]]
         http.json["https://a.example/stream/movie/\(Self.id).json"] = streams
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://a.example"] }, clock: { Date() })
+        let registry = AddonRegistry(http: http, own: { ["https://a.example"] }, clock: { Date() })
         return StreamFinder(http: http, registry: registry)
     }
 

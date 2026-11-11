@@ -21,7 +21,7 @@ final class ScrobbleTests: XCTestCase {
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json[get] = ["result": []]; http.json[put] = ["result": ["success": true]]
         let log = ScrobbleLog(kv: kv)
-        let service = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending,
+        let service = WatchService(cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending,
                                    clock: { clock.now }, scrobbleLog: log)
         return Rig(http: http, service: service, pending: pending, clock: clock, log: log, trakt: trakt, secrets: secrets)
     }

@@ -92,7 +92,7 @@ final class CinemetaTests: XCTestCase {
         let http = FakeHTTP()
         http.json["https://anime.example/manifest.json"] = ["name": "Anime", "resources": ["meta"], "types": ["series"], "idPrefixes": ["kitsu:"]]
         http.json["https://anime.example/meta/series/kitsu:1.json"] = ["meta": ["id": "kitsu:1", "name": "Anime"]]
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://anime.example"] })
+        let registry = AddonRegistry(http: http, own: { ["https://anime.example"] })
         let cinemeta = Cinemeta(http: http, registry: registry)
         let meta = try await cinemeta.meta(kind: "series", id: "kitsu:1")
         XCTAssertEqual(meta["name"]?.string, "Anime")
@@ -103,7 +103,7 @@ final class CinemetaTests: XCTestCase {
         let http = FakeHTTP()
         http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
         http.json["https://anime.example/manifest.json"] = ["name": "Anime", "resources": ["meta"], "types": ["series"], "idPrefixes": ["tt"]]
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://anime.example"] })
+        let registry = AddonRegistry(http: http, own: { ["https://anime.example"] })
         _ = try await Cinemeta(http: http, registry: registry).meta(kind: "series", id: "tt0386676")
         XCTAssertEqual(http.calls, ["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"], "Cinemeta respondió: los complementos ni se piden")
     }

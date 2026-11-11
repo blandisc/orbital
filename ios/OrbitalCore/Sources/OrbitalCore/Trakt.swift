@@ -575,7 +575,7 @@ public actor Trakt {
             if !showRows.isEmpty { out["shows"] = .array(showRows) }
             return .object(out)
         }
-        let iso = { (d: Date) in StremioLibrary.iso(d.timeIntervalSince1970) }
+        let iso = { (d: Date) in LibraryRules.iso(d.timeIntervalSince1970) }
         var (status, _) = try await write("/sync/history", body { $0 == Self.unknownDate ? "unknown" : iso($0) })
         // Si Trakt no conoce «unknown», «No sé cuándo» cae en la fecha de estreno («released») antes que perderse.
         if status == 400 || status == 422, valid.contains(where: { $0.at == Self.unknownDate }) {
@@ -590,8 +590,8 @@ public actor Trakt {
         guard Self.isIMDb(target.imdb) else { return false }
         guard let found = try await get("/search/imdb/\(target.imdb)", [("type", kind == "movie" ? "movie" : "show")])?.array?.first,
               let id = found[kind == "movie" ? "movie" : "show"]?["ids"]?["trakt"]?.intValue else { return false }
-        let params = [("start_at", StremioLibrary.iso(date.addingTimeInterval(-window).timeIntervalSince1970)),
-                      ("end_at", StremioLibrary.iso(date.addingTimeInterval(window).timeIntervalSince1970)), ("limit", "100")]
+        let params = [("start_at", LibraryRules.iso(date.addingTimeInterval(-window).timeIntervalSince1970)),
+                      ("end_at", LibraryRules.iso(date.addingTimeInterval(window).timeIntervalSince1970)), ("limit", "100")]
         // En Trakt `episodes/{id}` espera el id de un EPISODIO; el de una serie va en `shows/{id}`.
         let rows = try await get("/sync/history/\(kind == "movie" ? "movies" : "shows")/\(id)", params)?.array ?? []
         if !target.isEpisode { return !rows.isEmpty }

@@ -45,7 +45,7 @@ extension PlayerScreen {
         let current = current
         // G7-B: terminaste el último capítulo de una temporada: «¿Qué tal …, temporada 3?» sobre las pestañas.
         let end = holder.model.snapshot
-        if current.kind == "series", StremioLibrary.finished(position: end.position, duration: end.duration, kind: current.kind),
+        if current.kind == "series", LibraryRules.finished(position: end.position, duration: end.duration, kind: current.kind),
            let season = RatingsModel.endsSeason(meta: current.meta, videoID: current.videoID), env.services.trakt?.linked == true {
             let name = String(format: Strings.tr("%@, temporada %lld", language: env.services.appSettings.uiLanguage), current.originalTitle, season)
             env.ratings.askSeason(show: current.metaID, season: season, title: name, poster: current.poster ?? "")
@@ -53,7 +53,7 @@ extension PlayerScreen {
         if current.localFile != nil {
             let id = DownloadItem.makeID(metaID: current.metaID, videoID: current.videoID)
             let snapshot = holder.model.snapshot
-            if StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: current.kind) {
+            if LibraryRules.finished(position: snapshot.position, duration: snapshot.duration, kind: current.kind) {
                 Task { if let item = await env.services.downloads.item(id) { await DownloadsModel(env.services, freeSpace: { DiskSpace.freeBytes() }).afterWatching(item) } }
             }
         }

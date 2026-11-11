@@ -39,7 +39,7 @@ final class ViewingsTests: XCTestCase {
         let day = Date(timeIntervalSince1970: 1_700_000_000)
         // Trakt ya la tiene con la fecha nueva (así sabe la cola que llegó y borra la vieja).
         rig.http.prefix["\(api)/sync/history/movies/42"] = [["id": 900, "watched_at": "2024-01-02T18:30:00.000Z"],
-                                                             ["id": 902, "watched_at": .string(StremioLibrary.iso(day.timeIntervalSince1970))]]
+                                                             ["id": 902, "watched_at": .string(LibraryRules.iso(day.timeIntervalSince1970))]]
         await rig.services.watch.moveViewing(TraktViewing(id: 900, at: Date()), kind: "movie", videoID: "tt1160419", to: day)
         XCTAssertEqual(rig.http.bodies("\(api)/sync/history").count, 1, "la nueva entra")
         XCTAssertEqual(rig.http.bodies("\(api)/sync/history/remove").first.flatMap(JSON.parse)?["ids"]?.array?.compactMap(\.intValue), [900])

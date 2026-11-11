@@ -9,7 +9,7 @@ extension DemoHTTPClient {
     func calendarDemo() -> HTTPResponse {
         func row(_ imdb: String, _ title: String, days: Double, hour: Double, season: Int, episode: Int, network: String) -> JSON {
             let when = Calendar.current.startOfDay(for: Date()).addingTimeInterval(days * 86_400 + hour * 3600)
-            return ["first_aired": .string(StremioLibrary.iso(when.timeIntervalSince1970)),
+            return ["first_aired": .string(LibraryRules.iso(when.timeIntervalSince1970)),
                     "episode": ["season": .int(season), "number": .int(episode), "title": "Episodio de prueba"],
                     "show": ["title": .string(title), "year": 2022, "network": .string(network), "ids": ["imdb": .string(imdb), "trakt": 1]]]
         }
@@ -104,7 +104,7 @@ extension DemoHTTPClient {
         let path = request.url.path, post = request.method == "POST"
         if let found = historyDemo(request) { return found }   // historial, VIP, notas y temporadas (O3-B)
         let body = request.body.flatMap(JSON.parse)
-        func iso(_ hoursAgo: Double) -> JSON { .string(StremioLibrary.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }
+        func iso(_ hoursAgo: Double) -> JSON { .string(LibraryRules.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }
         func imdbs(_ body: JSON?) -> [String] { ((body?["movies"]?.array ?? []) + (body?["shows"]?.array ?? [])).compactMap { $0["ids"]?["imdb"]?.string } }
         func json(_ value: JSON, status: Int = 200) -> HTTPResponse { HTTPResponse(status: status, data: value.serialized()) }
         if path == "/users/me/lists", !post {

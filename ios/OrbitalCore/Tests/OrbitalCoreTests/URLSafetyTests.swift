@@ -26,7 +26,7 @@ final class URLSafetyTests: XCTestCase {
     }
 
     func testStremioDatesWithoutForcedUnwraps() {
-        XCTAssertEqual(StremioLibrary.iso(0), "1970-01-01T00:00:00.000Z")
-        XCTAssertEqual(StremioLibrary.iso(1_700_000_000.25), "2023-11-14T22:13:20.250Z")
+        XCTAssertEqual(LibraryRules.iso(0), "1970-01-01T00:00:00.000Z")
+        XCTAssertEqual(LibraryRules.iso(1_700_000_000.25), "2023-11-14T22:13:20.250Z")
     }
 }

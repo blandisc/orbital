@@ -477,8 +477,8 @@ public final class PlayerModel: ObservableModel {
     func event() -> ProgressEvent? {
         guard let r = request else { return nil }
         let known = snapshot.duration > 0 ? snapshot.duration : CinemetaParsing.runtimeSeconds(r.meta.map { CinemetaParsing.describe($0).runtime } ?? "")
-        return ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: Self.positionToSave(StremioLibrary.finite(snapshot.position), lastGood: lastGoodPosition),
-                             duration: StremioLibrary.finite(known), watched: 0, at: clock().timeIntervalSince1970)
+        return ProgressEvent(kind: r.kind, metaID: r.metaID, videoID: r.videoID, originalTitle: r.originalTitle, position: Self.positionToSave(LibraryRules.finite(snapshot.position), lastGood: lastGoodPosition),
+                             duration: LibraryRules.finite(known), watched: 0, at: clock().timeIntervalSince1970)
     }
 
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
@@ -559,7 +559,7 @@ public final class PlayerModel: ObservableModel {
         closing = true
         generation += 1                       // cualquier carga o cambio de episodio en curso queda sin efecto
         consuming?.cancel(); consuming = nil
-        let finished = (reachedEnd && endIsReal) || StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: request?.kind)
+        let finished = (reachedEnd && endIsReal) || LibraryRules.finished(position: snapshot.position, duration: snapshot.duration, kind: request?.kind)
         // Primero se calla (la pantalla ya se fue); guardar en la red puede tardar.
         await engine.pause()
         if !finalReported { await report(.stopped(finished: finished)) }

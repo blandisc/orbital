@@ -20,7 +20,7 @@ public enum TraktProgressRule {
 
     /// ¿Ya cuenta como visto? En los créditos (`finished`) o como Stremio: el 90 % de una película, el último tramo de un episodio.
     public static func done(position: Double, duration: Double, kind: String?, finished: Bool) -> Bool {
-        finished || StremioLibrary.finished(position: position, duration: duration, kind: kind)
+        finished || LibraryRules.finished(position: position, duration: duration, kind: kind)
     }
 
     /// El porcentaje que se manda; nil = no se manda nada (sin duración, o menos de 1 % en una pausa o un cierre).

@@ -27,7 +27,6 @@ public final class Services: ObservableModel {
     /// La cola única de Trakt (F4): la misma para el `WatchService` de antes y el de después de `rebuild()`, así que lo que uno
     /// anota mientras el otro vacía no se pierde. Lo que Trakt no aceptó queda en `traktQueue.discards`.
     public let traktQueue: TraktQueue
-    public let stremio: StremioAPI
 
     public private(set) var registry: AddonRegistry { didSet { notify() } }
     /// Tus complementos en el teléfono (en tu orden, con apagado) y tu Real-Debrid.
@@ -219,8 +218,6 @@ public final class Services: ObservableModel {
         let traktQueue = TraktQueue(store: pending, clock: clock)
         self.traktQueue = traktQueue
         self.traktOutbox = TraktOutbox(queue: traktQueue, kv: kv, clock: clock)
-        let stremio = StremioAPI(http: http)
-        self.stremio = stremio
         // Stremio fuera (E1, Fernando, 3 nov 2026): la sesión que quedara guardada se borra y nada vuelve a usarla.
         secrets.set(SecretKey.stremioAuth, nil)
         let vault = AppAddonVault(secrets: secrets, kv: kv)
@@ -231,7 +228,7 @@ public final class Services: ObservableModel {
         self.debridReminders = DebridReminderBook(vault: vault)
         let deviceName = deviceName ?? device?.name ?? "iPhone"
         self.deviceName = deviceName
-        let registry = AddonRegistry(http: http, account: stremio, auth: { nil },
+        let registry = AddonRegistry(http: http,
                                      own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) },
                                      local: addonList, disk: cacheRoot?.appendingPathComponent("addons"), clock: clock)
         let cinemeta = Cinemeta(http: http, cached: http is URLSessionHTTPClient ? URLSessionHTTPClient.publicCache("cinemeta") : nil,
@@ -293,7 +290,7 @@ public final class Services: ObservableModel {
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: makeOrbital, clock: clock)
-        self.watch = WatchService(library: library, stremio: stremio, authKey: { nil }, cinemeta: cinemeta, trakt: trakt,
+        self.watch = WatchService(library: library, cinemeta: cinemeta, trakt: trakt,
                                   pending: pending, clock: clock, queue: traktQueue, scrobbleLog: scrobbleLog)
         self.sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         // El audio de lo que no lo dice: el idioma original (TMDB, si hay clave) y el país (Cinemeta); lo comprobado al verla.
@@ -497,7 +494,7 @@ public final class Services: ObservableModel {
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, builtIn: builtInTraktClientID, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: caches, region: { settings.value.region }, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
-        watch = WatchService(library: library, stremio: stremio, authKey: { nil }, cinemeta: cinemeta, trakt: trakt,
+        watch = WatchService(library: library, cinemeta: cinemeta, trakt: trakt,
                              pending: pending, clock: clock, queue: traktQueue, scrobbleLog: scrobbleLog)
         sync = LibrarySync(trakt: trakt, library: library, kv: kv, outbox: traktOutbox, pending: pending, clock: clock)
         generation += 1
@@ -505,9 +502,9 @@ public final class Services: ObservableModel {
 
     /// Arma la lista del teléfono con los complementos que pegaste en Ajustes (una vez). Devuelve cuántos llegaron.
     @discardableResult
-    public func importAddonsFromStremio(again: Bool = false) async throws -> Int {
+    public func importOwnAddons(again: Bool = false) async throws -> Int {
         let own = (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init)
-        let added = addonList.importOnce(StremioImport.addons(account: [], own: own), again: again)
+        let added = addonList.importOnce(AddonImport.addons(own: own), again: again)
         await adoptDebridKeyFromImport()
         addonList.adoptImportedTorrentio()   // C5: un solo Torrentio de Stremio pasa al de Orbital con todas sus opciones
         await resetAccountCaches()

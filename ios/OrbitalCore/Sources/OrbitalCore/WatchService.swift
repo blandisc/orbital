@@ -1,38 +1,36 @@
 import Foundation
 
 /// Guarda lo que ves. **Primero en el teléfono** (`LocalLibrary`: la pantalla responde sin red), luego en **Trakt** (lo que
-/// comparten tus aparatos, con las reglas de `TraktProgressRule`) y, mientras dure la prueba, una **copia en Stremio** si lo
-/// conectaste. Lo que no se pueda subir espera en una cola (`PendingWork`) y se sube al volver, sin pisar algo más nuevo.
+/// comparten tus aparatos, con las reglas de `TraktProgressRule`). Lo que no se pueda subir espera en la cola única
+/// (`TraktQueue`) y se sube al volver, sin pisar algo más nuevo. (La copia a Stremio se fue en F8, 11 nov 2026.)
 public actor WatchService {
     let store: LocalLibrary
-    let stremio: StremioAPI
-    let authKey: @Sendable () -> String?
     let cinemeta: Cinemeta
     let trakt: Trakt?
     let pending: PendingStore
     let clock: @Sendable () -> Date
     /// La cola única de Trakt (la misma para todos los `WatchService` de la app).
     let traktQueue: TraktQueue
-    /// ¿Se está subiendo la copia a Stremio? (una vez a la vez)
-    var copying = false
     let scrobbleLog: ScrobbleLog?
     let sleep: @Sendable (TimeInterval) async -> Void
+    /// Avisa de cada guardado en el teléfono, cuando ya quedó (lo usan las pruebas del reproductor para contar cuándo y qué se
+    /// guarda; antes lo veían en la copia a Stremio). nil en la app.
+    let onSave: (@Sendable (ProgressEvent) async -> Void)?
     /// Cuándo se le mandó a Trakt el último aviso de cada video que suena (para el respaldo cada 5 minutos).
     var lastTraktWrite: [String: Date] = [:]
     /// Videos cuyo último aviso fue un respaldo (`start` + `pause` mientras sonaba): la siguiente pausa o cierre llevan antes
     /// un `start`, o Trakt no movería `paused_at`.
     var afterBackup: Set<String> = []
 
-    public init(library: LocalLibrary = LocalLibrary(), stremio: StremioAPI, authKey: @escaping @Sendable () -> String?, cinemeta: Cinemeta,
+    public init(library: LocalLibrary = LocalLibrary(), cinemeta: Cinemeta,
                 trakt: Trakt? = nil, pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, queue: TraktQueue? = nil,
                 scrobbleLog: ScrobbleLog? = nil,
-                sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep) {
-        self.store = library; self.stremio = stremio; self.authKey = authKey; self.cinemeta = cinemeta; self.trakt = trakt
+                sleep: @escaping @Sendable (TimeInterval) async -> Void = AsyncDefaults.sleep,
+                onSave: (@Sendable (ProgressEvent) async -> Void)? = nil) {
+        self.store = library; self.cinemeta = cinemeta; self.trakt = trakt
         self.pending = pending; self.clock = clock; self.traktQueue = queue ?? TraktQueue(store: pending, clock: clock); self.scrobbleLog = scrobbleLog; self.sleep = sleep
+        self.onSave = onSave
     }
-
-    /// ¿Hay copia a Stremio? Solo si lo conectaste (fases 1 y 2 de la transición).
-    var copiesToStremio: Bool { authKey() != nil }
 
     // MARK: dónde seguir
     /// Dónde ibas en segundos (0 si no se sabe). Si de Trakt solo se sabe el porcentaje (sin la duración), lo de este teléfono
@@ -63,16 +61,15 @@ public actor WatchService {
         // Se abrió y se cerró sin ver nada: no se toca lo tuyo (salvo que se haya dicho que se terminó).
         let trivial = final && !event.finished && event.watched < PlaybackRules.minWatchedToSave && event.position < PlaybackRules.minPositionToSave
         // Primero el teléfono (así Trakt, al contestar, ya encuentra el título y lo marca como «mandado desde aquí»).
-        if phase != .started && !trivial { await saveLocally(event); outcome.saved = true }
+        if phase != .started && !trivial { await saveLocally(event); outcome.saved = true; await onSave?(event) }
         if scrobbleToTrakt { await scrobble(event, phase) }
-        if outcome.saved && copiesToStremio { outcome.queued = await copyToStremio(event) }
         return outcome
     }
 
     /// El avance en el teléfono. Terminado: queda visto y la serie pasa al siguiente episodio (el de Cinemeta, ya emitido).
     func saveLocally(_ event: ProgressEvent) async {
-        let position = StremioLibrary.finite(event.position), duration = StremioLibrary.finite(event.duration)
-        let done = event.finished || StremioLibrary.finished(position: position, duration: duration, kind: event.kind)
+        let position = LibraryRules.finite(event.position), duration = LibraryRules.finite(event.duration)
+        let done = event.finished || LibraryRules.finished(position: position, duration: duration, kind: event.kind)
         var next: String?
         if done, event.kind == "series", let info = try? await cinemeta.meta(kind: event.kind, id: event.metaID) {
             next = CinemetaParsing.nextEpisode(info, after: event.videoID, now: event.at)

@@ -221,21 +221,20 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(10))
         for second in 1...59 { rig.clock.advance(1); await rig.model.handle(rig.playing(10 + Double(second))); await rig.model.tick() }
-        XCTAssertTrue(try rig.saved().isEmpty, "antes del minuto no se guarda")
+        XCTAssertTrue(rig.saved().isEmpty, "antes del minuto no se guarda")
         rig.clock.advance(1); await rig.model.handle(rig.playing(70)); await rig.model.tick()
-        XCTAssertEqual(try rig.saved().count, 1)
-        XCTAssertEqual(try rig.saved()[0]["state"]?["timeOffset"]?.intValue, 70_000)
+        XCTAssertEqual(rig.saved().count, 1)
+        XCTAssertEqual(rig.saved()[0].position, 70)
         // Pausar guarda
         rig.clock.advance(2); await rig.model.handle(rig.playing(72, state: .paused))
-        XCTAssertEqual(try rig.saved().count, 2)
+        XCTAssertEqual(rig.saved().count, 2)
         // Cerrar guarda dónde te quedaste y lo visto
         await rig.model.close()
-        XCTAssertEqual(try rig.saved().count, 3)
+        XCTAssertEqual(rig.saved().count, 3)
         XCTAssertEqual(rig.model.phase, .closed)
-        let state = try XCTUnwrap(rig.saved().last?["state"])
-        XCTAssertEqual(state["video_id"]?.string, "tt0386676:1:1")
-        let watchedAtFirstSave = try XCTUnwrap(rig.saved().first?["state"]?["timeWatched"]?.intValue)
-        XCTAssertTrue((58_000...62_000).contains(watchedAtFirstSave), "se sumaron los ~60 s que de verdad viste: \(watchedAtFirstSave)")
+        XCTAssertEqual(rig.saved().last?.videoID, "tt0386676:1:1")
+        let watchedAtFirstSave = try XCTUnwrap(rig.saved().first?.watched)
+        XCTAssertTrue((58...62).contains(watchedAtFirstSave), "se sumaron los ~60 s que de verdad viste: \(watchedAtFirstSave)")
     }
 
     func testPausedTimeDoesNotCountAsWatched() async throws {
@@ -247,8 +246,7 @@ final class PlayerModelTests: XCTestCase {
         rig.clock.advance(30); await rig.model.handle(rig.playing(13))
         rig.clock.advance(5); await rig.model.handle(rig.playing(18))
         await rig.model.close()
-        let state = try XCTUnwrap(rig.saved().last?["state"])
-        XCTAssertLessThan(state["timeWatched"]?.intValue ?? 0, 20_000)
+        XCTAssertLessThan(rig.saved().map(\.watched).reduce(0, +), 20)
     }
 
     /// Un canal de Inicio se ve como la tele: ni avance guardado ni Trakt, aunque lo veas un buen rato.
@@ -261,7 +259,7 @@ final class PlayerModelTests: XCTestCase {
         rig.clock.advance(120); await rig.model.handle(rig.playing(130)); await rig.model.tick()
         rig.clock.advance(2); await rig.model.handle(rig.playing(132, state: .paused))
         await rig.model.close()
-        XCTAssertTrue(try rig.saved().isEmpty)
+        XCTAssertTrue(rig.saved().isEmpty)
         XCTAssertNil(rig.library.entry("tt0386676"))
     }
 
@@ -270,7 +268,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(3))
         await rig.model.close()
-        XCTAssertTrue(try rig.saved().isEmpty)
+        XCTAssertTrue(rig.saved().isEmpty)
     }
 
     func testBackgroundSavesImmediately() async throws {
@@ -279,7 +277,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.handle(rig.playing(10))
         rig.clock.advance(30); await rig.model.handle(rig.playing(40))
         await rig.model.appDidEnterBackground()
-        XCTAssertEqual(try rig.saved().count, 1)
+        XCTAssertEqual(rig.saved().count, 1)
     }
 
     /// 4 nov: al volver del PiP la pantalla se puso gris y el motor dijo «segundo 0»; se guardó 0 y la película salió de
@@ -291,8 +289,8 @@ final class PlayerModelTests: XCTestCase {
         rig.clock.advance(30); await rig.model.handle(rig.playing(930))
         rig.clock.advance(5); await rig.model.handle(rig.playing(0, state: .buffering))
         await rig.model.appDidEnterBackground()
-        let offset = try XCTUnwrap(rig.saved().last?["state"]?["timeOffset"]?.doubleValue)
-        XCTAssertEqual(offset, 930_000, accuracy: 1000, "donde ibas, no el 0 del motor")
+        let offset = try XCTUnwrap(rig.saved().last?.position)
+        XCTAssertEqual(offset, 930, accuracy: 1, "donde ibas, no el 0 del motor")
         await rig.model.seek(to: 0)
         XCTAssertEqual(PlayerModel.positionToSave(0, lastGood: rig.model.lastGoodPosition), 0, "lo llevaste tú al principio")
     }
@@ -624,8 +622,7 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.handle(rig.playing(1304)); await rig.model.tick(); await rig.model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/e2.mkv", "la misma calidad (bingeGroup) en el siguiente")
         XCTAssertEqual(rig.engine.loads.last?.start, 0, "el siguiente empieza desde el principio")
-        let state = try XCTUnwrap(rig.saved().last?["state"])
-        XCTAssertEqual(state["video_id"]?.string, "tt0386676:1:2", "Stremio ya apunta al siguiente")
+        XCTAssertEqual(rig.library.entry("tt0386676")?.videoID, "tt0386676:1:2", "el teléfono ya apunta al siguiente")
     }
 
     /// «Episodios» y «Siguiente» en el reproductor: el siguiente ya se sabe al abrir, y elegir otro lo pone desde el principio.
@@ -701,8 +698,8 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.handle(rig.playing(1300))
         rig.clock.advance(1); await rig.model.handle(rig.playing(1320, state: .ended))
         XCTAssertEqual(rig.model.phase, .closed)
-        let state = try XCTUnwrap(rig.saved().last?["state"])
-        XCTAssertEqual(state["timeOffset"]?.intValue, 0, "terminada: sale de Seguir viendo")
+        XCTAssertEqual(rig.saved().last?.finished, true)
+        XCTAssertEqual(rig.library.entry("tt0386676")?.inContinue, false, "terminada: sale de Seguir viendo")
     }
 
     /// El caso del iPhone el 29 oct: volviste a la app, el video no avanzó, se pidió otra vez… y el motor se colgó abriendo el
@@ -1009,12 +1006,12 @@ final class PlayerModelRobustnessTests: XCTestCase {
         for sec in 1...30 { rig.clock.advance(1); await rig.model.handle(rig.playing(10 + Double(sec))) }
         async let a: Void = rig.model.close(), b: Void = rig.model.close()
         _ = await (a, b)
-        XCTAssertEqual(try rig.saved().count, 1)
+        XCTAssertEqual(rig.saved().count, 1)
     }
 
     func testClosingWhileMovingToTheNextEpisodeDoesNotReopenThePlayer() async throws {
         let rig = try nextEpisodeRig()
-        rig.http.delays[stremioPut] = 80                           // guardar el episodio terminado tarda
+        rig.saves.delay = 0.08                                     // guardar el episodio terminado tarda
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(10))
         rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
@@ -1059,15 +1056,15 @@ final class PlayerModelRobustnessTests: XCTestCase {
         await rig.model.handle(rig.playing(10))
         for sec in 1...59 { rig.clock.advance(1); await rig.model.handle(rig.playing(10 + Double(sec))) }
         rig.clock.advance(1); await rig.model.handle(rig.playing(70))
-        rig.http.delays[stremioPut] = 80
+        rig.saves.delay = 0.08
         async let saving: Void = rig.model.tick()                  // el guardado de las 60 s tarda…
         try await Task.sleep(nanoseconds: 20_000_000)
         for sec in 1...20 { rig.clock.advance(1); await rig.model.handle(rig.playing(70 + Double(sec))) }   // …y se sigue viendo
         await saving
-        rig.http.delays[stremioPut] = nil
+        rig.saves.delay = 0
         await rig.model.close()
-        let total = try rig.saved().compactMap { $0["state"]?["timeWatched"]?.intValue }.reduce(0, +)
-        XCTAssertTrue((78_000...82_000).contains(total), "los ~80 s vistos se reparten entre los guardados, sin perder ni repetir: \(total)")
+        let total = rig.saved().map(\.watched).reduce(0, +)
+        XCTAssertTrue((78...82).contains(total), "los ~80 s vistos se reparten entre los guardados, sin perder ni repetir: \(total)")
     }
 
     func testTheExternalSubtitleIsActivatedEvenForAMovie() async throws {
@@ -1286,6 +1283,5 @@ final class PlayerModelRobustnessTests: XCTestCase {
         await rig.model.appDidEnterBackground()
         XCTAssertEqual(scrobbles(probe), ["start", "pause"], "una pausa, no un cierre: Trakt guarda dónde ibas por si iOS suspende la app")
         XCTAssertEqual(rig.library.entry("tt0386676")?.position, 1200, "en el teléfono sí se guarda")
-        XCTAssertFalse(try rig.saved().isEmpty, "y la copia a Stremio")
     }
 }

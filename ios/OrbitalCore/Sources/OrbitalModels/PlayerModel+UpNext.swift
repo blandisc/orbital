@@ -181,7 +181,7 @@ extension PlayerModel {
         upNext = nil; upNextDeadline = nil
         let task = Task { [weak self] in
             guard let self else { return }
-            let watched = StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: base.kind)
+            let watched = LibraryRules.finished(position: snapshot.position, duration: snapshot.duration, kind: base.kind)
             if !finalReported { await report(.stopped(finished: watched)) }
             guard !closing, phase != .closed else { advancing = false; return }
             var next = base
@@ -233,7 +233,7 @@ extension PlayerModel {
             guard let self else { return }
             if !finalReported { await report(.stopped(finished: true)) }
             guard !closing, phase != .closed else { advancing = false; return }
-            if request.localFile != nil, StremioLibrary.finished(position: snapshot.position, duration: snapshot.duration, kind: request.kind) { onFinishedLocal?(request) }
+            if request.localFile != nil, LibraryRules.finished(position: snapshot.position, duration: snapshot.duration, kind: request.kind) { onFinishedLocal?(request) }
             var next = request
             next.videoID = card.videoID; next.fromStart = true; next.binge = source?.binge
             next.episodeLabel = card.title.isEmpty ? card.label : "\(card.label) · \(card.title)"   // si no, se queda el del episodio anterior
