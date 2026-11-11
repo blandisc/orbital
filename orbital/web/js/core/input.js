@@ -175,9 +175,10 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
 /**
  * `canSleep(pads)`: si con Orbital quieta se puede soltar el mando del navegador (pads.js); entonces el primer botón llega del
  * servidor y `wake()` lo vuelve a tomar. `onReading(sí)`: avisa cuando la interfaz empieza o deja de leer el mando ella misma.
+ * `onError(error, {from, action})`: algo falló dentro de la lectura del mando; se anota y el mando sigue funcionando.
  */
 export function createInput({ onAction, onModality, onTouch = () => {}, onText = null, typing = () => false, onTrace = null, resting = () => false,
-  canSleep = () => false, onReading = () => {} }) {
+  canSleep = () => false, onReading = () => {}, onError = (err) => console.error(err) }) {
   // Diagnóstico (entrada.log): lo que llega en bruto y lo que se dispara, con si Orbital tenía el foco.
   const trace = (entry) => onTrace?.({ ms: Date.now(), focus: document.hasFocus(), hidden: document.hidden, ...entry });
   // El cursor solo se ve mientras mueves el ratón: a los POINTER_IDLE quieto se esconde, en cualquier modo (antes solo con
@@ -264,7 +265,20 @@ export function createInput({ onAction, onModality, onTouch = () => {}, onText =
   let sleeping = false;
   let exposed = false; // el navegador ya enseña un mando que sirve
   let forwarded = false; // el servidor pudo haber mandado ya el botón que llega apretado (no se cuenta dos veces)
+  // El bucle del mando nunca se muere (A3, 10 nov): si algo dentro de una lectura lanza, se anota y la siguiente lectura
+  // se programa igual (antes una excepción en onAction dejaba el mando sin responder hasta recargar la página).
   const loop = (now) => {
+    let wait = 16;
+    try {
+      wait = read(now);
+    } catch (err) {
+      onError(err, { from: "pad" });
+    } finally {
+      if (wait !== null && !sleeping) next(wait); // dormido: lo vuelve a programar wake()
+    }
+  };
+  /** Una lectura del mando. Devuelve en cuántos ms leer otra vez, o null si el mando se soltó (lo despierta wake()). */
+  const read = (now) => {
     const pads = readPads();
     const usable = pads.some((pad) => pad && usablePad(pad));
     if (usable !== exposed) {
@@ -289,7 +303,8 @@ export function createInput({ onAction, onModality, onTouch = () => {}, onText =
     if (fire.length) { onModality("gamepad"); hidePointer(); }
     fire.forEach((action) => {
       trace({ src: "action", from: "pad", action, repeat: repeater.isRepeat(action) });
-      onAction(action, { repeat: repeater.isRepeat(action) });
+      // Una acción que falla no se lleva las demás ni el mando: se anota y se sigue (A3).
+      try { onAction(action, { repeat: repeater.isRepeat(action) }); } catch (err) { onError(err, { from: "pad", action }); }
     });
     // El mando se lee con temporizadores, nunca pidiendo cuadros: requestAnimationFrame obliga a Edge a armar uno aunque no
     // haya nada que dibujar (la página se quedaba arriba del 2 % los 12 s después de cada tecla). 60 lecturas por segundo
@@ -302,10 +317,11 @@ export function createInput({ onAction, onModality, onTouch = () => {}, onText =
         exposed = false;
         releasePads();
         onReading(false);
-        return;
+        return null;
       }
-      next(66);
-    } else next(active.size || now - lastPad < 2000 ? 16 : 33);
+      return 66;
+    }
+    return active.size || now - lastPad < 2000 ? 16 : 33;
   };
   const next = (ms) => setTimeout(() => loop(performance.now()), ms);
   acquirePads();

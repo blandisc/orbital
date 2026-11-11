@@ -113,3 +113,45 @@ test("borrar en Buscar: una pulsación borra una letra; mantener, palabra por pa
   typing.on = false;
   assert.deepEqual(r.update(held, 400), []); // fuera de Buscar, X (la ficha) no se repite
 });
+
+test("una acción que falla no mata el mando: el error se anota y el siguiente botón sigue llegando (A3)", async () => {
+  // Un documento mínimo: el marco de pads.js y un mando cuyo botón A se aprieta, se suelta y se vuelve a apretar.
+  let pressed = [];
+  const gamepad = () => ({ id: "Xbox 360 Controller (XInput STANDARD GAMEPAD)", mapping: "standard",
+    buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: pressed.includes(i) })), axes: [0, 0, 0, 0] });
+  const frame = { hidden: false, setAttribute() {}, remove() {},
+    contentWindow: { addEventListener() {}, navigator: { getGamepads: () => [gamepad()] } } };
+  const saved = { document: globalThis.document, window: globalThis.window };
+  globalThis.document = { addEventListener() {}, hasFocus: () => true, hidden: false, createElement: () => frame,
+    body: { dataset: {}, append() {} } };
+  globalThis.window = { addEventListener() {} };
+  const { createInput } = await import(`../../orbital/web/js/core/input.js?a3=${Date.now()}`);
+  const actions = [];
+  const errors = [];
+  let still = false; // al final, Orbital «quieta»: el bucle suelta el mando y deja de programarse (la prueba termina)
+  try {
+    createInput({
+      resting: () => still,
+      canSleep: () => still,
+      onModality() {},
+      onAction: (action) => { actions.push(action); if (actions.length === 1) throw new Error("se rompió la vista"); },
+      onError: (err, where) => errors.push({ message: err.message, ...where }),
+    });
+    const tick = (ms) => new Promise((done) => setTimeout(done, ms));
+    await tick(40);
+    pressed = [0]; // A: la primera vez la acción lanza
+    await tick(80);
+    pressed = [];
+    await tick(80);
+    pressed = [0]; // A otra vez: si el bucle hubiera muerto, no llegaría
+    await tick(80);
+    pressed = [];
+    still = true;
+    await tick(120);
+  } finally {
+    globalThis.document = saved.document;
+    globalThis.window = saved.window;
+  }
+  assert.deepEqual(actions, ["select", "select"]);
+  assert.deepEqual(errors, [{ message: "se rompió la vista", from: "pad", action: "select" }]);
+});
