@@ -181,6 +181,8 @@ jobs:
           fetch-depth: 0
 
       - name: Mover la etiqueta tv-estable a este commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # La etiqueta solo avanza: si ya apunta a un commit más nuevo (otra corrida terminó antes), no se toca.
           git fetch --tags --force origin
@@ -189,5 +191,10 @@ jobs:
             echo "tv-estable ($(git rev-parse --short tv-estable)) ya está más adelante que $GITHUB_SHA; no se mueve."
             exit 0
           fi
-          git tag -f tv-estable "$GITHUB_SHA"
-          git push -f origin tv-estable
+          # Por la API y no con `git push`: GitHub no deja que el token de la CI empuje una etiqueta si el commit toca
+          # `.github/workflows` («without workflows permission»); la API de referencias no tiene esa restricción.
+          if git rev-parse -q --verify refs/tags/tv-estable >/dev/null; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/tv-estable" -f sha="$GITHUB_SHA" -F force=true
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/tv-estable" -f sha="$GITHUB_SHA"
+          fi
