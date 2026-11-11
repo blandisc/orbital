@@ -186,26 +186,28 @@ struct LibrarySavedView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
                 if model.traktLinked {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: DS.SavedBoard.columns(forWidth: WindowMetrics.size.width, tiles: Self.tiles)), spacing: DS.Space.s2) {
-                        NavigationLink(value: SavedListRoute(id: SavedModel.watchlist)) {
-                            tile(.inList, Text("En Mi lista"), board, ready: model.loadedOnce)
-                        }
-                        ForEach([TitleStatus.watching, .watched, .dropped], id: \.self) { status in
-                            NavigationLink(value: SavedStateRoute(status: status.rawValue)) { tile(status, Self.name(status), board, ready: model.loadedOnce) }
+                    // En ventana ancha los cinco montones van en una fila (Historial, el quinto); en el iPhone, 2 × 2 y Historial abajo.
+                    let columns = DS.SavedBoard.columns(forWidth: WindowMetrics.size.width, tiles: Self.tiles)
+                    let historyInGrid = columns == Self.tiles
+                    Group {
+                        if historyInGrid {
+                            // Una fila del mismo ancho y del alto de la más alta (Historial lleva una línea más).
+                            HStack(spacing: DS.Space.s2) { piles(board); history(board) }.fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2), count: columns), spacing: DS.Space.s2) {
+                                piles(board)
+                            }
                         }
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, DS.Space.gutter)
                     .accessibilityElement(children: .contain).accessibilityIdentifier("saved-board")
-                    // La quinta pila (D7-A, 10 nov): «Historial», cada vista con su fecha, a dos toques desde Biblioteca.
-                    NavigationLink(value: HistoryRoute()) {
-                        SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: nil, posters: recentPosters(board),
-                                       detail: Text("Cada vista con su fecha"))
+                    if !historyInGrid {
+                        history(board)
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, DS.Space.gutter)
+                            .padding(.top, DS.Space.s2 - DS.Layout.betweenSections)   // pegada a las otras cuatro, como una más
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, DS.Space.gutter)
-                    .padding(.top, DS.Space.s2 - DS.Layout.betweenSections)   // pegada a las otras cuatro, como una más
-                    .accessibilityIdentifier("saved-history")
                     lists
                 } else {
                     noTrakt
@@ -243,8 +245,27 @@ struct LibrarySavedView: View {
         }
     }
 
-    /// Cuántos montones lleva el tablero (En Mi lista y los tres estados): en ventana ancha, uno por columna.
-    static let tiles = 4
+    /// Cuántos montones lleva el tablero (En Mi lista, los tres estados e Historial): en ventana ancha, uno por columna.
+    static let tiles = 5
+
+    /// Las cuatro pilas con número: En Mi lista y los tres estados.
+    @ViewBuilder private func piles(_ board: SavedBoard) -> some View {
+        NavigationLink(value: SavedListRoute(id: SavedModel.watchlist)) {
+            tile(.inList, Text("En Mi lista"), board, ready: model.loadedOnce)
+        }
+        ForEach([TitleStatus.watching, .watched, .dropped], id: \.self) { status in
+            NavigationLink(value: SavedStateRoute(status: status.rawValue)) { tile(status, Self.name(status), board, ready: model.loadedOnce) }
+        }
+    }
+
+    /// La quinta pila (D7-A, 10 nov): «Historial», cada vista con su fecha, a dos toques desde Biblioteca.
+    private func history(_ board: SavedBoard) -> some View {
+        NavigationLink(value: HistoryRoute()) {
+            SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: nil, posters: recentPosters(board),
+                           detail: Text("Cada vista con su fecha"))
+        }
+        .accessibilityIdentifier("saved-history")
+    }
 
     static func name(_ status: TitleStatus) -> Text {
         switch status {

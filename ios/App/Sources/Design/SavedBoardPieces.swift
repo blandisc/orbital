@@ -33,7 +33,7 @@ struct SavedStateTile: View {
             .accessibilityHidden(true)
         }
         .padding(DS.Space.s3)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)   // en una fila, todas del alto de la más alta
         .dsCard(translucent: true)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
