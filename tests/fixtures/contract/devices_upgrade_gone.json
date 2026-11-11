@@ -1,0 +1,10 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/devices/upgrade/<id>"
+  },
+  "response": {
+    "detail": "Ya no sirve: vuelve a pedirlo, o escanea el código de tu TV"
+  },
+  "status": 404
+}

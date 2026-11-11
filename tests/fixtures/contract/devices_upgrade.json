@@ -1,0 +1,15 @@
+{
+  "request": {
+    "body": {
+      "name": "iPhone de Fernando",
+      "platform": "iphone"
+    },
+    "method": "POST",
+    "path": "/api/devices/upgrade"
+  },
+  "response": {
+    "detail": "Confirma en la TV",
+    "id": "<id>"
+  },
+  "status": 202
+}

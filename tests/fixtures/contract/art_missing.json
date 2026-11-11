@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/art/steam:367520",
+    "query": {
+      "kind": "logo"
+    }
+  },
+  "response": {
+    "detail": "Not Found"
+  },
+  "status": 404
+}
