@@ -282,8 +282,9 @@ struct BrowseView: View {
 
     /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.
     private var recent: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Text("Buscaste hace poco").recipe(.footnote).padding(.horizontal, DS.Space.gutter)
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            // El mismo encabezado de subsección que «Por género» (y que la TV en su caja vacía), no una nota gris.
+            DSSectionHead(title: Text("Buscaste hace poco")).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Space.s2) {
                     ForEach(search.model.recent, id: \.self) { text in

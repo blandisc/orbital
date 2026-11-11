@@ -31,7 +31,7 @@ struct DSChip: View {
 
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas). `.fresh`: lo que ya se
 /// puede ver hoy (la marca «Hoy» de «Lo nuevo de lo tuyo»): el punto turquesa del logo y el texto en turquesa, sin cápsula
-/// (`DS.fresh`, 2 nov 2026: antes una cápsula verde). «Nuevo» sobre un póster es `DSCornerRibbon`; bajo él, `DSFreshMark`.
+/// (`DS.fresh`, 2 nov 2026: antes una cápsula verde). «Nuevo» sobre un póster es `DSNewDot`; bajo él, `DSFreshMark`.
 struct DSBadge: View {
     enum Tone { case onArt, fresh }
     let text: LocalizedStringKey

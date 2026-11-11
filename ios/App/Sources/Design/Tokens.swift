@@ -80,7 +80,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// él: cambian con el modo para leerse en los dos (≥ 4.5:1, `DesignTests`).
     static let success = role(.success)
     static let onSuccess = role(.onSuccess)
-    /// Lo nuevo y lo de hoy («Hoy», el listón «Nuevo», el «Nuevo» del Top 10): el turquesa del puntito del logo (2 nov 2026).
+    /// Lo nuevo y lo de hoy («Hoy», el puntito «Nuevo», el «Nuevo» del Top 10): el turquesa del puntito del logo (2 nov 2026).
     static let fresh = role(.fresh)
     static let onFresh = role(.onFresh)
     static let warning = role(.warning)
@@ -347,14 +347,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
     /// La píldora de una plataforma (`PlatformBadge`): el logo de la app a la izquierda, con sus esquinas.
     enum PlatformBadge { static let logo: CGFloat = 16, logoRadius = Radius.logo(16) }
-    /// El listón de la esquina (`DSCornerRibbon`): la caja que recorta la esquina, el largo de la banda, dónde cruza su
-    /// centro (en cada eje, desde la esquina) y el interletrado del texto en mayúsculas; el de siempre y el compacto (los
-    /// pósters de 50 pt del widget). Los dos con el mismo giro y el mismo brillo.
-    enum Ribbon {
-        struct Size { let corner: CGFloat, length: CGFloat, center: CGFloat }
-        static let regular = Size(corner: 60, length: 104, center: 22)
-        static let compact = Size(corner: 38, length: 66, center: 14)
-        static let angle: Double = -45, shine: Double = 0.28
+    /// «Nuevo» sobre el póster (`DSNewDot`): el puntito y su aro.
+    enum NewDot {
+        static let regular: CGFloat = 12, compact: CGFloat = 8
+        static let ring: Double = 0.6
     }
 
     enum Brand {
