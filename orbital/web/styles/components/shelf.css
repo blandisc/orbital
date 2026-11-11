@@ -21,10 +21,7 @@
    borde de abajo (sobresalía hacia arriba). Baja lo justo para quedar al centro de las letras. */
 .shelf__heading .source-logo { position: relative; top: .24em; }
 .shelf__heading .source-logo--letterboxd { top: .1em; }
-.shelf__count {
-  color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
-  font-variant-numeric: tabular-nums; letter-spacing: normal; /* no hereda el apretado del título */
-}
+.shelf__count { letter-spacing: normal; } /* RowCount (ui.css); no hereda el apretado del título */
 .shelf__row:not(.shelf__row--current) .shelf__heading { opacity: var(--opacity-faint); }
 /* Hay más a la derecha: la orilla se desvanece, como las filas del Inicio (home.css · home__viewport--more); al final, no. */
 .shelf__edge--more {

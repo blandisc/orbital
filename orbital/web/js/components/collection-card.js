@@ -56,12 +56,13 @@ export function AwardWordmark(name, tint = "gold", extra = "") {
 const SOURCE = {
   trakt: ["Trakt", "img/ratings/trakt.svg"], letterboxd: ["Letterboxd", "img/ratings/letterboxd.svg"],
   stremio: ["Stremio", "img/consoles/stremio.svg"], orbital: ["Orbital", null],
+  realdebrid: ["Real-Debrid", null, "cloudDownload"], // sin logo propio: su nube (la de «Tus pedidos»)
 };
 export function SourceBadge(source) {
-  const [name, logo] = SOURCE[source] ?? [];
+  const [name, logo, icon = "mark"] = SOURCE[source] ?? [];
   if (!name) return null;
   if (logo) return h("img", { class: `source-logo source-logo--${source}`, src: logo, alt: `De ${name}` });
-  return h("span", { class: `source-logo source-logo--${source}`, role: "img", "aria-label": `De ${name}` }, svg(ICONS.mark));
+  return h("span", { class: `source-logo source-logo--${source}`, role: "img", "aria-label": `De ${name}` }, svg(ICONS[icon]));
 }
 
 const POSTER_CLASS = ["collection__poster collection__poster--1", "collection__poster collection__poster--2",

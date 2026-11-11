@@ -9,7 +9,7 @@ import { dragScroll } from "../core/swipe.js";
 import { fillFilters, fitBar, keepInView, replay, showFilter } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
-import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark } from "./ui.js";
+import { EmptyState, GlassSwitch, glassSwitchGlide, glassSwitchSelect, PlatformMark, RowCount, rowCountText } from "./ui.js";
 
 /**
  * Juegos, como el Apple TV (Fernando, 31 oct 2026): dos pisos arriba —la barra de secciones y, debajo, tus consolas en el
@@ -24,7 +24,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   const consoles = h("div", { class: "games__consoles" });
   const hero = h("div", { class: "games__hero" });
   const filters = h("div", { class: "browse__filters", role: "tablist" });
-  const count = h("span", { class: "browse__count" });
+  const count = RowCount({ className: "browse__count", veil: true }); // «2 / 9» con su velo: va sobre el arte
   const grid = h("div", { class: ["card-grid", "browse__grid", "games__grid"], role: "group" });
   const viewport = h("div", { class: "browse__viewport games__viewport" }, grid);
   const bar = h("div", { class: "browse__bar" }, filters, count);
@@ -190,7 +190,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
     paintHero(shown);
     const n = games.length;
     const i = Number(focusId.split(":")[1]);
-    count.textContent = n ? (focusId.startsWith("game:") ? `${i + 1} de ${n}` : plural(n)) : "";
+    count.textContent = rowCountText(focusId.startsWith("game:") ? i + 1 : null, n, { unit: plural });
     // Más abajo de la primera fila, las barras y el juego se van y quedan los juegos (como el Apple TV al bajar).
     const node = grid.querySelector(`[data-focus-id="${focusId}"]`);
     setAway(!!node && node.offsetTop > (grid.firstElementChild?.offsetTop ?? 0) + 1);

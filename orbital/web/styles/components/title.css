@@ -73,8 +73,8 @@
 .title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
 .title__sep { opacity: var(--opacity-faint); }
 .title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
-/* PT1: la clasificación al final, en su cajita (como el iPhone). */
-.title__cert { padding: 0 var(--space-2); border-radius: var(--radius-sm); box-shadow: var(--edge-strong); color: var(--color-text-muted); font-size: var(--type-badge); font-weight: var(--type-badge-weight); letter-spacing: var(--type-badge-tracking); line-height: var(--leading-normal); }
+/* PT1: la clasificación al final (T10: tras un «·», sin la cajita del iPhone). */
+.title__cert { color: var(--color-text-muted); } /* T10: sin cajita (parecía el botón B del mando); un dato más */
 /* Calificaciones (RatingsRow del iPhone): cada servicio con su logotipo en sus colores de marca y su número. */
 .title__ratings { display: flex; align-items: center; gap: var(--space-4); min-height: 1.5rem; }
 /* Vacío se quita, salvo mientras llegan (title.js · title__ratings--waiting): su lugar ya está y nada salta al llegar. */

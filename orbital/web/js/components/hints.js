@@ -17,7 +17,9 @@ export function createHints({ onAction } = {}) {
     node.setAttribute("role", "button");
     node.addEventListener("click", (event) => { event.stopPropagation(); onAction?.(action); });
   };
-  const item = ({ glyph, label, end, secondary }) => {
+  const item = ({ glyph, label, end, secondary, status }) => {
+    // T9: un estado, sin tecla («Bajando en la nube · 42 %»): lo que tiene lo enfocado, dicho con palabras.
+    if (status) return h("span", { class: "hints__item hints__status", role: "status" }, label);
     const node = KeyHint(glyph, label, { small: false, className: ["hints__item", end && "hints__item--end", secondary && "hints__item--secondary"] });
     const actions = String(glyph).split(" ").map(glyphAction);
     if (actions.length === 1 && actions[0]) press(node, actions[0]);

@@ -540,6 +540,7 @@ function renderHints() {
     rows: state.rows.length,
     heroButtons: !!item, // el héroe enseña los botones de lo enfocado
     kinds: state.section === "media" ? (kindFocus != null ? "on" : r === 0 ? "above" : null) : null, // T5
+    status: kindFocus == null && item?.state_big ? item.state_label : null, // T9: el estado de un pedido, con palabras
   }));
 }
 
@@ -2551,7 +2552,7 @@ const EVENTS = {
   downloads: (event) => {
     return event.id ? downloadProgress(event) : loadDownloads();
   },
-  // Un pedido a la nube cambió (lo pediste, avanzó, terminó): la fila «Real-Debrid · bajando para ti» se vuelve a armar
+  // Un pedido a la nube cambió (lo pediste, avanzó, terminó): la fila «Lo que pediste» se vuelve a armar
   // solo si cambió algo que se ve (su estado o su avance de 10 en 10), como «Descargas».
   "rd-request": async () => {
     const res = await api.debridRequests().catch(() => null);

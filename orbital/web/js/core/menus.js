@@ -1501,10 +1501,11 @@ export function requestLabel(req) {
   return req.state === "downloading" ? `Bajando en la nube · ${Math.round(req.percent || 0)} %` : REQUEST_WORDS[req.state] || "En cola";
 }
 
-/** RX1-TV-A (Fernando, 3 nov): la fila «Real-Debrid · bajando para ti» de Películas y series, junto a Descargas, solo
+/** RX1-TV-A (Fernando, 3 nov): la fila «Lo que pediste» (antes «Real-Debrid · bajando para ti»; T9, 10 nov: el sello de
+ *  Real-Debrid dice de dónde viene) de Películas y series, junto a Descargas, solo
  *  cuando pediste algo. Primero lo que baja y luego lo que ya terminó (como «Tus pedidos»); A en lo listo abre su ficha y
  *  en lo que baja, su hoja (la misma de «Tus pedidos»). Ajustes › Cuentas › Real-Debrid › «Tus pedidos» sigue ahí. */
-export const CLOUD_ROW = "Real-Debrid · bajando para ti";
+export const CLOUD_ROW = "Lo que pediste";
 export function cloudRow(requests = [], { now = Date.now(), hiddenAt = 0 } = {}) {
   const live = requests.filter((r) => r?.hash && r.meta_id && r.state && r.state !== "gone");
   if (!live.length || cloudRowHidden(live, hiddenAt)) return [];
@@ -1516,10 +1517,11 @@ export function cloudRow(requests = [], { now = Date.now(), hiddenAt = 0 } = {})
     progress: req.state === "downloading" ? Math.max(0, Math.min(1, (req.percent || 0) / 100)) : null,
     // PT22 (Fernando, 4 nov): cada tarjeta dice su estado con un ícono en la esquina (los de «Tus pedidos»).
     state_icon: REQUEST_ICONS[req.state] || "cloudDownload", state_label: req.state === "ready" ? "Al instante · la pediste" : requestLabel(req),
+    state_big: true, // T9: el ícono de su estado al doble (se lee a 3 m); enfocada, el pie lo dice con palabras
     extra: { kind: req.kind || "movie", meta_id: req.meta_id, video_id: req.video_ids?.[0] || req.meta_id, eyebrow: CLOUD_ROW,
       description: req.state === "ready" ? "Ya está en la nube: empieza sin esperar." : DEBRID_CLOUD },
   }));
-  return [{ id: "curated:cloud", title: CLOUD_ROW, seal: "orbital", group: "downloads", items }];
+  return [{ id: "curated:cloud", title: CLOUD_ROW, seal: "realdebrid", group: "downloads", items }];
 }
 
 /** «Ocultar esta fila» (Fernando, 4 nov): `hiddenAt` es cuándo la ocultaste (segundos). Vuelve sola en cuanto pides algo

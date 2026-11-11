@@ -173,7 +173,9 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     // PT1 (Fernando, 4 nov): el orden del iPhone, año · tipo · género · duración, y la clasificación al final en su cajita.
     const parts = [info.year, kindName, genres(info.genres || []).slice(0, 2).join(", "), length].filter(Boolean)
       .map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t));
-    if (extras?.certification) parts.push(h("span", { class: ["title__fact", "title__fact--cert"] }, h("span", { class: "title__cert", "aria-label": `Clasificación ${extras.certification}` }, extras.certification)));
+    // T10 (10 nov): en la TV, sin cajita: «B15» en un recuadro se leía como el botón B del mando. Un dato más, con su punto.
+    if (extras?.certification) parts.push(h("span", { class: ["title__fact", "title__fact--cert"] }, h("span", { class: "title__sep", "aria-hidden": "true" }, "·"),
+      h("span", { class: "title__cert", "aria-label": `Clasificación ${extras.certification}` }, extras.certification)));
     mount(facts, parts);
     requestAnimationFrame(() => {
       let top = null;

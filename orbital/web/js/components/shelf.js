@@ -7,7 +7,7 @@ import { tokenPx } from "../core/tokens.js";
 import { ArtFit } from "./art-fit.js";
 import { Card, RankedCard } from "./card.js";
 import { CollectionCard, SourceBadge } from "./collection-card.js";
-import { Badge, EmptyState, PosterSkeletons, SectionHead } from "./ui.js";
+import { Badge, EmptyState, PosterSkeletons, RowCount, rowCountText, SectionHead } from "./ui.js";
 
 /** El ícono del rótulo de cada sección de tarjetas (en el azul de Orbital). */
 const SECTION_ICONS = { platforms: "tv", awards: "trophy", studios: "movie", "genre-top": "star", seasons: "sun", years: "calendar", lists: "list" };
@@ -129,9 +129,10 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     const track = h("div", { class: "shelf__track", role: "group" }, els.slice(seeds));
     const stage = row.stage && Stage(row.stage, row.items.slice(0, seeds), els.slice(0, seeds), { more: els.length > seeds });
     const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
-    const count = h("span", { class: "shelf__count" }, row.items.length - seeds ? String(row.items.length - seeds) : "");
-    // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
-    const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
+    // El contador de la fila (RowCount, T12): el mismo en todas, Destacados incluida (antes llevaba puntos).
+    const count = RowCount({ className: "shelf__count" });
+    count.textContent = rowCountText(null, row.items.length - seeds);
+    const dots = null;
     // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
     const logo = row.logo && h("img", { class: "shelf__logo", src: row.logo, alt: row.label || "", decoding: "async" });
     logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
@@ -144,7 +145,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     const heading = row.cards
       ? h("div", { class: "shelf__heading shelf__heading--section" },
         SectionHead(row.title, { level: "section", icon: SECTION_ICONS[row.group] || "grid", meta: count }))
-      : h("h2", { class: "shelf__heading" }, logo, row.title, seal, reason, dots || count);
+      : h("h2", { class: "shelf__heading" }, logo, row.title, seal, reason, count);
     const rowEl = h("div", { class: ["shelf__row", row.centered && "shelf__row--centered"] },
       heading, stage ? h("div", { class: "shelf__stage-row" }, stage.el, rest) : track);
     // `measured`: el ancho de cada pieza se mide (el Top 10 con su cifra, la marca «Hoy» con su lugar), no se calcula del póster.
@@ -220,7 +221,7 @@ export function createShelf({ onPick, onMore, onSwipe }) {
     rowEl.classList.toggle("shelf__row--current", isCurrent);
     // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno; en «Porque viste», entre lo relacionado).
     const shown = cards.length - seeds;
-    count.textContent = isCurrent && shown > 1 && c >= seeds ? `${c - seeds + 1} / ${shown}` : shown ? String(shown) : "";
+    count.textContent = rowCountText(isCurrent && c >= seeds ? c - seeds + 1 : null, shown);
     dots?.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === (isCurrent ? c : 0)));
     (cols ?? cards.map((_, col) => col)).forEach((col) => {
       const card = cards[col];

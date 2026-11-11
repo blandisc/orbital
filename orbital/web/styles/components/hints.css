@@ -14,6 +14,7 @@
 .hints__item .glyph + .glyph { margin-left: calc(-1 * var(--space-1)); } /* «LB RB»: un par, juntos */
 .hints__item .key-hint__label { padding-top: .05em; } /* alineado al centro óptico del ícono */
 .hints__item--end { margin-left: auto; }
+.hints__status { color: var(--color-text); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); } /* T9: el estado de lo enfocado */
 /* Respaldo táctil: cada glifo (o el letrero entero, si es uno solo) se toca y hace lo mismo que la tecla. */
 .hints__press { cursor: pointer; border-radius: var(--radius-sm); transition: color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
 .hints__press:hover { color: var(--color-text); }

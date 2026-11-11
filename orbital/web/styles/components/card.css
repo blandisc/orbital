@@ -42,6 +42,9 @@
 .card__badge .icon { width: var(--icon-xs); height: var(--icon-xs);
 }
 .card__badge--owned { color: var(--color-text); }
+/* El estado de un pedido a la nube (T9): al doble, para leerse a 3 m; enfocada, el pie lo dice con palabras. */
+.card__badge--state { width: 3rem; height: 3rem; }
+.card__badge--state .icon { width: var(--icon-lg); height: var(--icon-lg); }
 .card__badge--owned .icon { stroke-width: var(--stroke-bold); }
 .card__badge--pop { animation: badge-pop var(--duration-enter) var(--ease-spring); }
 @keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }

@@ -37,7 +37,7 @@ export function Card(item, { onPress, onMore, onRatio, showAgo = false, caption 
     : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check))
       : item.extra?.installed === false ? h("span", { class: "card__badge", "aria-label": "Sin instalar" }, svg(ICONS.cloud))
         // PT22: un pedido a la nube dice su estado (bajando, en cola, sin gente, listo, no se dejó) con su ícono.
-        : item.state_icon && ICONS[item.state_icon] ? h("span", { class: "card__badge", "aria-label": item.state_label || "" }, svg(ICONS[item.state_icon])) : null;
+        : item.state_icon && ICONS[item.state_icon] ? h("span", { class: ["card__badge", item.state_big && "card__badge--state"], "aria-label": item.state_label || "" }, svg(ICONS[item.state_icon])) : null;
   // El puesto del Top 10 (Netflix oficial, lo más visto de una plataforma): la otra esquina, siempre
   // legible sobre cualquier póster (la misma receta de insignia que el resto de la app).
   const place = rankOf(item);

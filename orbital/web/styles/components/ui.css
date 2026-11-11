@@ -255,3 +255,13 @@
 .skeleton--poster { width: calc(var(--card-height) * .667); height: var(--card-height); }
 .skeleton--line { height: 1em; border-radius: var(--radius-sm); } /* un renglón: su ancho y su letra los pone quien lo usa */
 .skeleton--heading { width: 14rem; height: var(--type-section); margin-block: var(--space-2) var(--space-5); border-radius: var(--radius-sm); }
+
+/* RowCount (T12): el contador de una fila, el mismo en toda la TV («3 / 15», «15», «21 juegos»). Con velo sobre el arte. */
+.row-count {
+  color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
+  letter-spacing: normal; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.row-count--veil {
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
+}
+.row-count:empty { display: none; }

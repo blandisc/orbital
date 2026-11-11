@@ -826,7 +826,7 @@ test("K1-A (Fernando, 3 nov): cerrar «¿Usar la cuenta?» sin contestar borra l
   assert.match(menu.subtitle, /Si cierras, se borra/);
 });
 
-test("RX1-TV-A (Fernando, 3 nov): «Real-Debrid · bajando para ti» solo cuando pediste algo; primero lo que baja", () => {
+test("RX1-TV-A (Fernando, 3 nov): «Lo que pediste» solo cuando pediste algo; primero lo que baja", () => {
   assert.deepEqual(cloudRow([]), []);
   assert.deepEqual(cloudRow([{ hash: "a", meta_id: "tt1", state: "gone" }]), []); // lo cancelado no cuenta
   const now = Date.now();
@@ -836,6 +836,9 @@ test("RX1-TV-A (Fernando, 3 nov): «Real-Debrid · bajando para ti» solo cuando
       percent: 42, by: "iPhone de Fernando" },
   ], { now });
   assert.equal(row.title, CLOUD_ROW);
+  assert.equal(row.title, "Lo que pediste"); // T9: antes «Real-Debrid · bajando para ti»; el sello dice de dónde viene
+  assert.equal(row.seal, "realdebrid");
+  assert.ok(row.items.every((i) => i.state_big)); // el ícono de su estado, al doble
   assert.deepEqual(row.items.map((i) => i.title), ["Breaking Bad · T1 E2", "Hasta el viento tiene miedo"]);
   assert.match(row.items[0].subtitle, /^Bajando en la nube · 42 % · Lo pidió el iPhone de Fernando/);
   assert.equal(row.items[0].progress, 0.42);
