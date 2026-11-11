@@ -68,9 +68,10 @@ struct RootView: View {
         return Text("desde \(time)")
     }
 
-    var body: some View {
+    /// Las pestañas con lo que se abre a pantalla completa encima (reproductor, guía, historias) y sus preguntas. Aparte del
+    /// cuerpo: de una sola pieza, el Swift de la CI (Xcode 26.3) no lo alcanzaba a revisar.
+    @ViewBuilder private func presented() -> some View {
         @Bindable var env = env
-        let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
         // Se entra sin cuenta de Stremio: lo tuyo vive en el teléfono (y viaja por Trakt). Stremio se conecta en Ajustes, como respaldo.
         MainTabs().onAppear { Perf.mark("app.tabs") }
         .environment(\.playerZoom, playerZoom)
@@ -103,6 +104,11 @@ struct RootView: View {
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
         // Los avisos, siempre abajo (al alcance del pulgar, sobre la barra de pestañas) y del mismo tipo (`Toast`).
         // «Sigue en tu Orbital · Deshacer» gana: los demás esperan a que se vaya.
+    }
+
+    var body: some View {
+        let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
+        presented()
         .overlay(alignment: .bottom) {
             Group {
                 if let h = ui.handoff {
@@ -323,13 +329,10 @@ struct MainTabs: View {
         }
     }
 
-    var body: some View {
-        // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
-        let selection = Binding(get: { tab }, set: { new in
-            if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
-            tab = new
-        })
-        tabs(selection)   // las pestañas en su propia función: en una sola expresión, el Swift de la CI no alcanzaba
+    /// Las pestañas con su barra, el panel de la derecha, los avisos y el accesorio «En la TV». En partes (`shell`, `wired`):
+    /// el cuerpo de una sola pieza no lo alcanzaba a revisar el Swift de la CI (Xcode 26.3).
+    private func shell(_ selection: Binding<Int>) -> some View {
+        tabs(selection)
         // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
         .tabViewStyle(.sidebarAdaptable)
         // Como Apple (TV, Música): la barra arriba también acostado; la lateral, a un toque del botón de la barra (DK1, 4 nov 2026).
@@ -382,6 +385,11 @@ struct MainTabs: View {
             }
             .modifier(AccessoryPlacementReport())   // si va encima de la barra o a su lado (la pastilla de calificar se acomoda)
         }
+    }
+
+    /// Lo que se le pasa a todas las pantallas y lo que abre el control o el juego de la TV.
+    private func wired(_ selection: Binding<Int>) -> some View {
+        shell(selection)
         .environment(\.openRemote, openRemoteAction)
         .environment(\.tallArt, TallArtLookup(env.services.tallArt))   // el póster sin texto en los marcos altos (ficha, «En tendencia»)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
@@ -413,6 +421,15 @@ struct MainTabs: View {
         .sheet(isPresented: Binding(get: { showRemote && !remoteAsPanel }, set: { if !$0 { showRemote = false } })) {
             RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }
+    }
+
+    var body: some View {
+        // Tocar «Buscar» estando ya en Buscar abre el campo con el teclado (TabView avisa aunque la pestaña no cambie).
+        let selection = Binding(get: { tab }, set: { new in
+            if new == 2, tab == 2, paths[2].isEmpty { ui.focusSearch = true }
+            tab = new
+        })
+        wired(selection)
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)
         .onAppear(perform: openPendingTitle)

@@ -329,9 +329,10 @@ struct PlayerScreen: View {
                     active: model.snapshot.state == .paused)
     }
 
-    var body: some View {
-        let model = holder.model
-        dressed(model)   // el escenario y su ropa, aparte: en una sola expresión, el Swift de la CI (Xcode 26.3) no alcanzaba
+    /// Lo que pasa al abrir y mientras se ve (la tarea de arranque, la escena, los avisos). Aparte del cuerpo: en una sola
+    /// expresión, el Swift de la CI (Xcode 26.3) no alcanzaba a revisarlo.
+    private func alive(_ model: PlayerModel) -> some View {
+        dressed(model)
         .task {
             // Abre como tienes el teléfono (Los Simpson, siempre vertical); boca arriba o sin saberlo, horizontal.
             #if DEBUG
@@ -473,6 +474,11 @@ struct PlayerScreen: View {
                 }
             }
         }
+    }
+
+    /// Lo que sigue al episodio, al giro y al zoom (aparte, por la misma razón).
+    private func tracked(_ model: PlayerModel) -> some View {
+        alive(model)
         .task(id: current.videoID) {
             // Otro episodio de la misma serie: la proporción se conserva hasta que el motor mida la nueva (antes se borraba y un 4:3
             // brincaba a 16:9 un momento). Otro título: se olvida.
@@ -505,6 +511,11 @@ struct PlayerScreen: View {
         .onChange(of: moreOpen) { _, open in if !open, controlsVisible, !padlock.locked { scheduleHide() } }   // cerrado el «⋯», vuelve a contar
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
         // Una versión que Real-Debrid aún no tiene: la verdad antes de abrirla (puede tardar u horas; si manda su aviso, se vuelve).
+    }
+
+    var body: some View {
+        let model = holder.model
+        tracked(model)   // en partes (`dressed`, `alive`, `tracked`): de una pieza, el Swift de la CI no la revisaba a tiempo
         .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {
             Button("Abrirla de todos modos") {
                 if let index = dockState.slowPick { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false; dockState.dockPage = .media }; Task { await model.switchSource(to: index) } }

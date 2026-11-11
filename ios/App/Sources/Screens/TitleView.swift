@@ -57,8 +57,9 @@ struct TitleView: View {
         _observer = State(wrappedValue: ModelObserver(TitleModel(AppEnvironment.shared.services, kind: route.kind, metaID: route.metaID, hint: (route.title, route.poster))))
     }
 
-    var body: some View {
-        let model = observer.model
+    /// La ficha con su arte, su barra y su fondo. En partes (`framed`, `loaded`): el cuerpo de una sola pieza no lo alcanzaba
+    /// a revisar el Swift de la CI (Xcode 26.3).
+    private func framed(_ model: TitleModel) -> some View {
         Group {
             // iPad y Mac (Fernando, 4 nov 2026, FE1): la ficha de la TV como esqueleto; el iPhone sigue en una columna.
             if sizeClass == .regular { wideLayout(model) } else { oneColumnLayout(model) }
@@ -84,6 +85,11 @@ struct TitleView: View {
         // Teclado y barra de menús (iPad, Mac): ⌘↩ ver, ⌘D guardar, ⌥⌘V versión (`AppCommands`).
         .focusedSceneValue(\.titleCommands, TitleCommands(play: { let go = continueAction(model); if go.enabled { go.play() } },
                                                            save: { saving = true }, versions: { if let v = model.continueVideoID { openVersions(v) } }))
+    }
+
+    /// Lo que la ficha carga y sigue mientras está abierta.
+    private func loaded(_ model: TitleModel) -> some View {
+        framed(model)
         .task { await model.followDownloads() }
         // F3: la primera vez que abres una ficha (si nunca has visto nada aquí), el foco en «Ver».
         .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca la versión, debajo de «Ver».",
@@ -119,6 +125,11 @@ struct TitleView: View {
             #endif
             await tint.load(model.background ?? model.poster)
         }
+    }
+
+    var body: some View {
+        let model = observer.model
+        loaded(model)
         .sheet(item: $sourcesFor) { target in
             SourcesSheet(model: model, videoID: target.videoID, fromHere: target.fromHere, choose: { source, purpose in
                 sourcesFor = nil
