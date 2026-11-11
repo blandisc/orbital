@@ -10,9 +10,10 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from .. import companion
-from ..foryou import SERVICE_ERRORS
+from ..foryou import SERVICE_ERRORS, pools
 from ..library import rawg, tmdb, trakt
 from .deps import Deps
+from .slow import slow
 
 log = logging.getLogger(__name__)
 
@@ -127,6 +128,7 @@ def router(d: Deps) -> APIRouter:
     foryou = d.catalog.foryou
 
     @r.get("")
+    @slow
     def overview() -> dict:
         """Lo que se ve al entrar: qué servicios hay, el riel de listas y el mosaico."""
         return foryou.overview()
@@ -143,15 +145,15 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(502, "No pude cargar esta lista. Revisa tu conexión e inténtalo de nuevo.")
 
     @r.get("/list")
+    @slow
     def items(id: str, kind: str | None = None) -> dict:
         return one(id, kind)
 
     @r.post("/lists")
+    @slow
     def many(body: ListsRequest) -> dict:
         """Varias listas en una sola petición (los estantes de Películas y series): antes eran ~70 al arrancar. Cada una
         llega con lo suyo o con su error, y una que falla no tumba a las demás."""
-        from concurrent.futures import ThreadPoolExecutor
-
         def safe(ref: ListRef) -> dict:
             try:
                 return one(ref.id, ref.kind)
@@ -162,8 +164,7 @@ def router(d: Deps) -> APIRouter:
                 return {"items": [], "error": "No pude cargar esta lista.", "status": 500}
 
         wanted = body.lists[:120]
-        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="listas") as pool:  # como las 4 colas que tenía la interfaz
-            payloads = list(pool.map(safe, wanted))
+        payloads = pools.BATCH.map(safe, wanted, at_most=4)  # como las 4 colas que tenía la interfaz
         return {"lists": [{"id": ref.id, "kind": ref.kind, **payload} for ref, payload in zip(wanted, payloads, strict=True)]}
 
     @r.get("/ratings")
@@ -211,6 +212,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(502, failed)
 
     @r.get("/filter")
+    @slow
     def filter_titles(kind: str = "movie", genre: str = "", decade: str = "", rating: str = "", fame: str = "",
                       platform: str = "", country: str = "", count: bool = False) -> dict:
         """El filtro avanzado (como el del iPhone): cuántos hay y, si no es solo contar, los primeros 20."""
@@ -223,6 +225,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(502, "No pude buscar con tu filtro. Revisa tu conexión e inténtalo de nuevo.")
 
     @r.get("/collections")
+    @slow
     def collections() -> dict:
         """Colecciones: los premios y las listas famosas, con cuántas ya viste de cada una."""
         return {"collections": foryou.collections(), "trakt": foryou.trakt.linked}
@@ -290,6 +293,7 @@ def router(d: Deps) -> APIRouter:
         return {"ok": True, "queued": sent == "queued"}
 
     @r.get("/board")
+    @slow
     def board() -> dict:
         """Biblioteca › Guardado por estado (G2-A): los cuatro montones, «¿Las dejaste?», tus listas y lo que cambió solo."""
         found = _trakt_call(foryou.gestor.board, "No pude traer lo tuyo de Trakt. Revisa tu conexión e inténtalo de nuevo.")
@@ -430,16 +434,19 @@ def router(d: Deps) -> APIRouter:
         return {"ok": True}
 
     @r.get("/title-extras")
+    @slow
     def title_extras(kind: str, id: str) -> dict:
         """Frase, clasificación, créditos y «Más como esto» de un título (la ficha, como el iPhone)."""
         return foryou.title_extras(kind, id[:20])
 
     @r.get("/title-ratings")
+    @slow
     def title_ratings(kind: str, id: str) -> dict:
         """IMDb, TMDB y Trakt de un título (la ficha, como el iPhone)."""
         return foryou.title_ratings(kind, id[:20])
 
     @r.get("/person/{person_id}")
+    @slow
     def person(person_id: int) -> dict:
         """Una persona del reparto: foto, biografía y filmografía (TMDB), como el iPhone."""
         try:
@@ -462,6 +469,7 @@ def router(d: Deps) -> APIRouter:
         return {"imdb": imdb}
 
     @r.get("/decide")
+    @slow
     def decide(time: str | None = None, mood: str | None = None, kind: str | None = None, genres: str = "",
                watched: bool = False) -> dict:
         """«¿Qué vemos?»: tres propuestas que caben en tu tiempo y tu ánimo, como el iPhone."""
@@ -474,6 +482,7 @@ def router(d: Deps) -> APIRouter:
         return {"ok": True}
 
     @r.get("/calendar")
+    @slow
     def calendar_month(month: str = "") -> dict:
         """El mes de estrenos de las series que sigues (vista calendario), como el iPhone. `month`: AAAA-MM (si no, este)."""
         import re as _re
@@ -500,6 +509,7 @@ def router(d: Deps) -> APIRouter:
         return {"ids": foryou.watched_ids()}
 
     @r.get("/details")
+    @slow
     def details(key: str, kind: str | None = None) -> dict:
         try:
             return foryou.details(key[:320], kind)
@@ -525,6 +535,7 @@ def router(d: Deps) -> APIRouter:
         return {"ok": True}
 
     @r.get("/today")
+    @slow
     def today() -> dict:
         """{IMDb: «19:00»} de lo que sale hoy de tus series (el Inicio lo marca «Sale hoy»)."""
         return {"airing": foryou.airing_today()}

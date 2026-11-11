@@ -137,3 +137,11 @@ carpeta temporal) se guarda normalizado: texto «`<llave>`» y números fijos de
 - `/api/ping` y `/api/companion` dicen `api` (la versión del contrato) y `capabilities` (lo que esta TV sabe hacer, con
   nombres estables). Al agregar una ruta para el iPhone, agrégala a `companion.CAPABILITIES`; la prueba revisa que cada
   capacidad apunte a rutas que existen.
+
+## Las rutas lentas y los hilos de «Para ti»
+
+Las listas y las fichas (`@slow`, `orbital/api/slow.py`) hacen fila aparte, 16 a la vez, para que `/api/status` y las
+demás rutas nunca esperen detrás de ellas. «Para ti» usa grupos de hilos fijos y compartidos por nivel
+(`orbital/foryou/pools.py`: listas → fuentes del mosaico → detalles de cada título, y calentar en segundo plano); cada
+llamada pide «a lo más n». `tests/test_slow_routes.py` mide el pico de hilos con 100 listas y que el estado conteste con
+100 listas lentas a la vez.

@@ -7,11 +7,11 @@ import json
 import logging
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 
 from .. import decide as decide_api
 from ..library import tmdb as tmdb_api
+from . import pools
 from .base import (
     JW_LIST_BRANDS,
     MINE_TTL,
@@ -67,8 +67,7 @@ class _Home(_Shelves):
                 self.trimmed_logo(imdb)
             return ok
 
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            return sum(pool.map(one, items[:limit]))
+        return sum(pools.WARM.map(one, items[:limit], at_most=2))
 
     def _build_mosaic(self) -> list[dict]:
         """Lo tuyo, mezclado: tus recomendaciones, tu watchlist, tus listas, tus series y tus juegos.
@@ -102,8 +101,7 @@ class _Home(_Shelves):
                 log.warning("Para ti: %s no respondió: %s", source[0], exc)
                 return []
 
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            batches = list(pool.map(fetch, sources))
+        batches = pools.SOURCES.map(fetch, sources, at_most=4)
         videos = self._interleave(batches)
         # El mosaico es de imágenes: sin arte, no entra. Y lleva más «Al azar» que la lista (hay lugar).
         games = [g for g in self.local_games(lucky=24) if not g["placeholder"]]
@@ -160,8 +158,7 @@ class _Home(_Shelves):
                         "minutes": decide_api.runtime_minutes(meta.get("runtime")), "rating": score}
             return imdb, self.cache.get(f"decide:{imdb}", SLOW_TTL, load) or {}
 
-        with ThreadPoolExecutor(max_workers=12) as pool:
-            return dict(pool.map(one, items[:60]))
+        return dict(pools.DETAILS.map(one, items[:60], at_most=12))
 
     def decide(self, time_choice: str | None = None, mood: str | None = None, kind: str | None = None,
                genres: list[str] | None = None, include_watched: bool = False, now: datetime | None = None) -> dict:

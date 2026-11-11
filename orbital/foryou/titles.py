@@ -8,13 +8,13 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 
 from ..atomic import atomic_write
 from ..library import letterboxd as letterboxd_api
 from ..library import rawg as rawg_api
 from ..library import tmdb as tmdb_api
 from ..net import NET_FAILURES
+from . import pools
 from .base import LOGO_RETRY, METAHUB, METAHUB_POSTER, POSTER_TTL, RECS_TTL, SERVICE_ERRORS, SLOW_TTL
 from .items import runtime_text, video_item, whiten_if_dark
 from .sources import _Sources
@@ -59,8 +59,7 @@ class _Titles(_Sources):
             return imdb, self.cache.get(f"imdb:rating:{imdb}", SLOW_TTL, load)
 
         pairs = [(k if k in ("movie", "series") else "movie", i) for k, i in wanted if isinstance(i, str) and i.startswith("tt")][:120]
-        with ThreadPoolExecutor(max_workers=12) as pool:
-            return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
+        return {imdb: rating for imdb, rating in pools.DETAILS.map(one, pairs, at_most=12) if rating}
 
     def title_extras(self, kind: str, imdb: str) -> dict:
         """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
@@ -142,10 +141,9 @@ class _Titles(_Sources):
             except Exception:  # noqa: BLE001 - una calificación que falla no tumba la ficha
                 return None
 
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            jobs = {name: pool.submit(safe, name, load) for name, load in
-                    (("imdb", imdb_rating), ("tmdb", tmdb_rating), ("trakt", trakt_rating))}
-            return {name: job.result() for name, job in jobs.items()}
+        loads = (("imdb", imdb_rating), ("tmdb", tmdb_rating), ("trakt", trakt_rating))
+        found = pools.DETAILS.map(lambda pair: safe(*pair), loads, at_most=3)
+        return {name: value for (name, _), value in zip(loads, found, strict=True)}
 
     def _studio_logos(self) -> dict[str, str]:
         """Los logos de los estudios (TMDB), sin hacer esperar al riel: si aún no están, se piden en segundo plano y mientras
@@ -156,8 +154,8 @@ class _Titles(_Sources):
 
             def load() -> None:
                 try:
-                    with ThreadPoolExecutor(max_workers=4) as pool:
-                        pairs = list(pool.map(lambda s: (str(s[0]), self._safe(lambda: self.tmdb.company_logo(s[0]))), tmdb_api.STUDIOS))
+                    pairs = pools.DETAILS.map(lambda s: (str(s[0]), self._safe(lambda: self.tmdb.company_logo(s[0]))), tmdb_api.STUDIOS,
+                                              at_most=4)
                     self.cache.get("tmdb:studio-logos", SLOW_TTL, lambda: {k: v for k, v in pairs if v})
                 finally:
                     self._studio_logos_busy = False
@@ -318,8 +316,7 @@ class _Titles(_Sources):
             except SERVICE_ERRORS:
                 return imdb, None
         groups: dict[int, dict] = {}
-        with ThreadPoolExecutor(max_workers=6) as pool:
-            for imdb, saga in pool.map(one, imdbs[:200]):
-                if saga and saga.get("id"):
-                    groups.setdefault(saga["id"], {"id": saga["id"], "name": saga["name"], "imdbs": []})["imdbs"].append(imdb)
+        for imdb, saga in pools.DETAILS.map(one, imdbs[:200], at_most=6):
+            if saga and saga.get("id"):
+                groups.setdefault(saga["id"], {"id": saga["id"], "name": saga["name"], "imdbs": []})["imdbs"].append(imdb)
         return sorted((g for g in groups.values() if len(g["imdbs"]) >= 2), key=lambda g: g["name"])
