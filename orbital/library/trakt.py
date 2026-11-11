@@ -39,6 +39,7 @@ def _positive(value) -> int | None:
 
 
 API = "https://api.trakt.tv"
+HOST = "api.trakt.tv"  # para saber cuándo Trakt vuelve a contestar (net.on_recover)
 TOKENS_KEY = "trakt_tokens"
 # Lo que se escribe en «Redirect URIs» al crear la aplicación. Orbital entra con un código (no usa
 # redirección), pero renovar la sesión lo pide y tiene que coincidir: developer.trakt.tv ya solo acepta
@@ -393,7 +394,8 @@ class Trakt:
                 self.credentials.set(TOKENS_KEY, None)
                 raise TraktAuthError("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes › Cuentas.")
             # Trakt caído o lento (5xx, 429): la sesión se queda; la próxima vez se vuelve a intentar renovar.
-            raise TraktError(f"No pude renovar tu sesión de Trakt (HTTP {status}): lo intento de nuevo más tarde.")
+            raise TraktError(f"No pude renovar tu sesión de Trakt (HTTP {status}): lo intento de nuevo más tarde.",
+                             status if isinstance(status, int) else None)
         self._save(data)
         return self._tokens() or {}
 

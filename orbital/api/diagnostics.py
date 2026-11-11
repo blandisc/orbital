@@ -81,7 +81,17 @@ def collect(d: Deps) -> dict:
                    "dwm_dedicated_mb": dwm[1] if dwm else None},
         "controllers": connected_controllers(),
         "problems": recent_problems(d.log_path),
+        "trakt_queue": trakt_queue(catalog),
     }
+
+
+def trakt_queue(catalog) -> dict | None:
+    """La cola de Trakt: cuántos esperan y lo último que salió sin mandarse (rechazado por Trakt o vencido a los 30 días),
+    como la bitácora que el iPhone deja ver. None si no hay «Para ti»."""
+    outbox = getattr(getattr(getattr(catalog, "foryou", None), "gestor", None), "outbox", None)
+    if outbox is None:
+        return None
+    return {"pending": len(outbox.pending), "discarded": outbox.discarded()[-20:]}
 
 
 def router(d: Deps) -> APIRouter:
