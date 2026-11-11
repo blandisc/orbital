@@ -16,7 +16,7 @@ extension OrbitalRemote {
         do {
             json = try await send("api/companion/resume", method: "POST", body: JSON.object(["changes": .object(body), "want": .array(want.map { .string($0) })]).serialized(),
                                   timeout: 6)
-        } catch Failure.refused(let why) where why.contains("versión anterior") { return nil }
+        } catch Failure.refused(let why) where why == Self.updateLine { return nil }
         guard let found = json?["resume"]?.object else { return nil }
         var out: [String: ResumeChoice] = [:]
         for (id, raw) in found {
