@@ -101,6 +101,6 @@ Qué corre:
   Debug y en Release. Usa un `Secrets.xcconfig` con claves vacías (las reales no están en git).
 
 `tv-estable`: es una etiqueta de git que apunta al último commit de `main` donde **todo lo anterior pasó**. Un último paso
-de la CI la mueve solo cuando `main` queda en verde (si el commit falla, la etiqueta se queda donde estaba; si ya hay uno más nuevo
-commit más nuevo mientras corría la CI, no se mueve). La TV se actualiza desde esa etiqueta y no desde `main`, así que
+de la CI la mueve solo cuando `main` queda en verde (si el commit falla, la etiqueta se queda donde estaba; solo avanza, nunca
+retrocede aunque dos corridas terminen en desorden). La TV se actualiza desde esa etiqueta y no desde `main`, así que
 nunca recibe algo que la CI no aprobó. Para ver dónde está: `git fetch origin tag tv-estable -f && git log -1 tv-estable`.
