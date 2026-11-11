@@ -351,6 +351,7 @@ struct MainTabs: View {
     /// el cuerpo de una sola pieza no lo alcanzaba a revisar el Swift de la CI (Xcode 26.3).
     private func shell(_ selection: Binding<Int>) -> some View {
         tabs(selection)
+        .tracksColumnSize()   // lo que queda sin el panel de la derecha (`WindowMetrics.column`): la portada y las tiras
         // iPhone: la barra de abajo de siempre. iPad y Mac: la barra de arriba que se abre como barra lateral.
         .tabViewStyle(.sidebarAdaptable)
         // Como Apple (TV, Música): la barra arriba también acostado; la lateral, a un toque del botón de la barra (DK1, 4 nov 2026).

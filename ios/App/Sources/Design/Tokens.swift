@@ -538,7 +538,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         static let stillAspect = DesignTokens.Aspect.still
         /// El póster de una tira: 112 pt en el iPhone; en una ventana ancha (iPad, Mac, desde `gridWideWidth`) más grande: con
         /// el tamaño del teléfono se veían diminutos en una pantalla de 13". Se lee al pintar: cambia solo al cambiar la ventana.
-        static var railWidth: CGFloat { WindowMetrics.size.width >= gridWideWidth ? railWidthWide : railWidthCompact }
+        static var railWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? railWidthWide : railWidthCompact }   // sin el panel de la derecha
         static let railWidthCompact: CGFloat = 112, railWidthWide: CGFloat = 148
         static let gridMinimum: CGFloat = 100
         /// `DSPosterGrid`: columnas fijas que llenan el ancho (3; 4 en pantallas anchas; 2 con letra de accesibilidad) y
@@ -560,7 +560,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// Mac) dos columnas hacían pósters de ~500 pt; ahí van tantas como quepan de al menos `wideMin`. El iPhone (vertical
         /// siempre, menos de `gridWideWidth`) queda igual: dos.
         static func pairColumns(spacing: CGFloat, wideMin: CGFloat = pairWideMin) -> [GridItem] {
-            guard WindowMetrics.size.width >= gridWideWidth else { return Array(repeating: GridItem(.flexible(), spacing: spacing), count: 2) }
+            guard WindowMetrics.column.width >= gridWideWidth else { return Array(repeating: GridItem(.flexible(), spacing: spacing), count: 2) }
             return [GridItem(.adaptive(minimum: wideMin), spacing: spacing, alignment: .top)]
         }
         static let pairWideMin: CGFloat = 170, stillWideMin: CGFloat = 280
@@ -569,7 +569,7 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
         /// iPhone de 375 pt las dos llenaban la pantalla y parecía una cuadrícula que terminaba a 5 pt del borde).
         static let peek: CGFloat = 28
         /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
-        static var stillWidth: CGFloat { WindowMetrics.size.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
+        static var stillWidth: CGFloat { WindowMetrics.column.width >= gridWideWidth ? stillWidthWide : stillWidthCompact }
         static let stillWidthCompact: CGFloat = 220, stillWidthWide: CGFloat = 280
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
