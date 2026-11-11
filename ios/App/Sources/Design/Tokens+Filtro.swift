@@ -81,5 +81,7 @@ extension DS {
         static let resultWidth: CGFloat = 104
         /// Las pestañas de texto (`DSTextTabs`): la marca bajo la elegida.
         static let tabMark: CGFloat = 18, tabMarkHeight: CGFloat = 3
+        /// El numerito sobre el ícono de una pestaña («Descargas» con 1 bajando): más chico que el texto, tapa solo la esquina.
+        static let tabBadgeScale: CGFloat = 0.75
     }
 }
