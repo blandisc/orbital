@@ -155,7 +155,7 @@ struct HistoryScreen: View {
     }
 
     private func name(_ e: TraktHistoryEntry) -> String {
-        guard let s = e.target.season, let n = e.target.episode else { return e.title }
+        guard let s = e.target.season, let n = e.target.episode else { return titleName(e.title, id: e.target.imdb, kind: "movie") }
         return "\(titleName(e.title, id: e.target.imdb, kind: "series")) · " + Strings.episode(season: s, episode: n, language: language)   // «T2 E5» / «S2 E5» según el idioma
     }
 

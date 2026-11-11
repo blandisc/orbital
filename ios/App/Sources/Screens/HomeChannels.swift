@@ -12,6 +12,7 @@ struct HomeChannels: View {
     var simpsons: (() -> Void)?
     var simpsonsZoom: Namespace.ID?
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.titleName) private var titleName
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var choosing = false
@@ -65,7 +66,10 @@ struct HomeChannels: View {
     }
 
     /// El nombre de la serie en el idioma de la app («The Simpsons» en inglés); los que vienen de la búsqueda, tal cual.
-    private func name(_ pick: ChannelsModel.Pick) -> String { Strings.tr(pick.title, language: env.services.appSettings.uiLanguage) }
+    /// El nombre del canal por la misma puerta que el resto de la app («La Oficina», no «The Office»; revisión 2).
+    private func name(_ pick: ChannelsModel.Pick) -> String {
+        titleName(Strings.tr(pick.title, language: env.services.appSettings.uiLanguage), id: pick.id, kind: "series")
+    }
 
     private func label(_ episode: ChannelSchedule.Episode) -> String {
         Strings.episode(season: episode.season, episode: episode.episode, language: env.services.appSettings.uiLanguage)
@@ -145,7 +149,10 @@ struct ChannelsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppEnvironment.self) private var env
 
-    private func name(_ pick: ChannelsModel.Pick) -> String { Strings.tr(pick.title, language: env.services.appSettings.uiLanguage) }
+    /// El nombre del canal por la misma puerta que el resto de la app («La Oficina», no «The Office»; revisión 2).
+    private func name(_ pick: ChannelsModel.Pick) -> String {
+        titleName(Strings.tr(pick.title, language: env.services.appSettings.uiLanguage), id: pick.id, kind: "series")
+    }
 
     var body: some View {
         let _ = model.track()

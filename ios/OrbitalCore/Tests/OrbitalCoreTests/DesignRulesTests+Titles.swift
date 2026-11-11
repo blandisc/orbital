@@ -30,7 +30,7 @@ extension DesignRulesTests {
     func testTitlesGoThroughOneDoor() throws {
         let files = try sources(["Design", "Screens"])
         let receiver = #"(?<who>[A-Za-z_][A-Za-z0-9_]*(?:\??\.[A-Za-z_][A-Za-z0-9_]*)*)"#
-        let read = #"(?:Text\((?:verbatim: )?|accessibilityLabel\((?:Text\((?:verbatim: )?)?|subject: Text\(verbatim: |[(,] *title: | \? |\\\()"#
+        let read = #"(?:Text\((?:verbatim: )?|accessibilityLabel\((?:Text\((?:verbatim: )?)?|subject: Text\(verbatim: |[(,] *title: | \? |\{ return |\\\()"#
         let pattern = read + receiver + #"\??\.(?<what>title|name|show|showTitle|displayTitle|originalTitle)\b(?!\s*[({])"#
         let regex = try NSRegularExpression(pattern: pattern)
         var raw: [String] = []
