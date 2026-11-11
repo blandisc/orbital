@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/addons"
+  },
+  "response": {
+    "code": "device_key_required",
+    "detail": "Vuelve a escanear el código de tu TV"
+  },
+  "status": 401
+}

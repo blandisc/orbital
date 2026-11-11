@@ -1,0 +1,43 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/foryou/list",
+    "query": {
+      "id": "continue"
+    }
+  },
+  "response": {
+    "items": [
+      {
+        "action": "Ver la serie",
+        "detail": "Sigue T2 E6",
+        "episode": "T2 E6",
+        "facts": [
+          [
+            "Sigue",
+            "T2 E6"
+          ],
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt0903747/img",
+        "id": "cinemeta:series:tt0903747",
+        "image": "https://images.metahub.space/poster/medium/tt0903747/img",
+        "key": "video:tt0903747",
+        "kind": "series",
+        "logo": "https://images.metahub.space/logo/medium/tt0903747/img",
+        "meta_id": "tt0903747",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Breaking Bad",
+        "video_id": "tt0903747:2:6",
+        "why": "Seguir viendo",
+        "year": 2019
+      }
+    ]
+  },
+  "status": 200
+}

@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/voice/hints"
+  },
+  "response": {
+    "hints": [
+      "pon The Office",
+      "sigue viendo",
+      "qué sale hoy"
+    ],
+    "moment": "home"
+  },
+  "status": 200
+}

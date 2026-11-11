@@ -1,0 +1,291 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/foryou"
+  },
+  "response": {
+    "lists": [
+      {
+        "group": "video",
+        "icon": "watching",
+        "id": "continue",
+        "meta": "Lo que dejaste a medias",
+        "source": "Stremio",
+        "title": "Seguir viendo"
+      },
+      {
+        "group": "video",
+        "icon": "library",
+        "id": "mylist",
+        "meta": "Tu biblioteca",
+        "source": "Stremio",
+        "title": "Mi lista"
+      },
+      {
+        "group": "video",
+        "icon": "flame",
+        "id": "cinemeta",
+        "meta": "Lo más visto hoy",
+        "source": "Cinemeta",
+        "split": true,
+        "title": "Lo más popular"
+      },
+      {
+        "group": "video",
+        "icon": "spark",
+        "id": "critics",
+        "meta": "Películas y series recientes con buena crítica",
+        "source": "Rotten Tomatoes",
+        "split": true,
+        "title": "Aprobadas por la crítica"
+      },
+      {
+        "brand": "netflix",
+        "group": "video",
+        "icon": "chart",
+        "id": "chart:netflix",
+        "logo": null,
+        "meta": "Esta semana en México",
+        "source": "Netflix",
+        "split": true,
+        "title": "Top 10 en Netflix"
+      },
+      {
+        "brand": "disney",
+        "group": "video",
+        "icon": "chart",
+        "id": "jw:disney",
+        "logo": "https://images.justwatch.com/icon/313118777/s100/disneyplus.png",
+        "meta": "Tendencia en JustWatch · México",
+        "source": "JustWatch",
+        "split": true,
+        "title": "Tendencias en Disney+"
+      },
+      {
+        "brand": "hbo",
+        "group": "video",
+        "icon": "chart",
+        "id": "jw:hbo",
+        "logo": "https://images.justwatch.com/icon/332884837/s100/max.png",
+        "meta": "Tendencia en JustWatch · México",
+        "source": "JustWatch",
+        "split": true,
+        "title": "Tendencias en HBO Max"
+      },
+      {
+        "brand": "prime",
+        "group": "video",
+        "icon": "chart",
+        "id": "jw:prime",
+        "logo": "https://images.justwatch.com/icon/322992749/s100/amazonprimevideo.png",
+        "meta": "Tendencia en JustWatch · México",
+        "source": "JustWatch",
+        "split": true,
+        "title": "Tendencias en Prime Video"
+      },
+      {
+        "brand": "appletv",
+        "group": "video",
+        "icon": "chart",
+        "id": "jw:appletv",
+        "logo": "https://images.justwatch.com/icon/338367329/s100/appletvplus.png",
+        "meta": "Tendencia en JustWatch · México",
+        "source": "JustWatch",
+        "split": true,
+        "title": "Tendencias en Apple TV+"
+      },
+      {
+        "brand": "paramount",
+        "group": "video",
+        "icon": "chart",
+        "id": "jw:paramount",
+        "logo": "https://images.justwatch.com/icon/242706661/s100/paramountplus.png",
+        "meta": "Tendencia en JustWatch · México",
+        "source": "JustWatch",
+        "split": true,
+        "title": "Tendencias en Paramount+"
+      }
+    ],
+    "mosaic": [
+      {
+        "action": "Ver la serie",
+        "detail": "2019",
+        "episode": null,
+        "facts": [
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt0903747/img",
+        "id": "cinemeta:series:tt0903747",
+        "image": "https://images.metahub.space/poster/medium/tt0903747/img",
+        "key": "video:tt0903747",
+        "kind": "series",
+        "logo": "https://images.metahub.space/logo/medium/tt0903747/img",
+        "meta_id": "tt0903747",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Breaking Bad",
+        "video_id": "tt0903747:2:6",
+        "why": "Seguir viendo",
+        "year": 2019
+      },
+      {
+        "action": "Ver",
+        "detail": "2 h 28 min",
+        "episode": null,
+        "facts": [
+          [
+            "Duración",
+            "2 h 28 min"
+          ],
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt1375666/img",
+        "id": "cinemeta:movie:tt1375666",
+        "image": "https://images.metahub.space/poster/medium/tt1375666/img",
+        "key": "video:tt1375666",
+        "kind": "movie",
+        "logo": "https://images.metahub.space/logo/medium/tt1375666/img",
+        "meta_id": "tt1375666",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Inception",
+        "video_id": "tt1375666",
+        "why": "En Mi lista",
+        "year": 2019
+      },
+      {
+        "action": "Ver la serie",
+        "detail": "2019",
+        "episode": null,
+        "facts": [
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt901/img",
+        "id": "cinemeta:series:tt901",
+        "image": "https://images.metahub.space/poster/medium/tt901/img",
+        "key": "video:tt901",
+        "kind": "series",
+        "logo": "https://images.metahub.space/logo/medium/tt901/img",
+        "meta_id": "tt901",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Popular 1",
+        "video_id": "tt901:1:1",
+        "why": "Popular",
+        "year": 2019
+      },
+      {
+        "action": "Ver",
+        "detail": "2 h 28 min",
+        "episode": null,
+        "facts": [
+          [
+            "Duración",
+            "2 h 28 min"
+          ],
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt900/img",
+        "id": "cinemeta:movie:tt900",
+        "image": "https://images.metahub.space/poster/medium/tt900/img",
+        "key": "video:tt900",
+        "kind": "movie",
+        "logo": "https://images.metahub.space/logo/medium/tt900/img",
+        "meta_id": "tt900",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Popular 0",
+        "video_id": "tt900",
+        "why": "Popular",
+        "year": 2019
+      },
+      {
+        "action": "Ver la serie",
+        "detail": "2019",
+        "episode": null,
+        "facts": [
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt903/img",
+        "id": "cinemeta:series:tt903",
+        "image": "https://images.metahub.space/poster/medium/tt903/img",
+        "key": "video:tt903",
+        "kind": "series",
+        "logo": "https://images.metahub.space/logo/medium/tt903/img",
+        "meta_id": "tt903",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Popular 3",
+        "video_id": "tt903:1:1",
+        "why": "Popular",
+        "year": 2019
+      },
+      {
+        "action": "Ver",
+        "detail": "2 h 28 min",
+        "episode": null,
+        "facts": [
+          [
+            "Duración",
+            "2 h 28 min"
+          ],
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt902/img",
+        "id": "cinemeta:movie:tt902",
+        "image": "https://images.metahub.space/poster/medium/tt902/img",
+        "key": "video:tt902",
+        "kind": "movie",
+        "logo": "https://images.metahub.space/logo/medium/tt902/img",
+        "meta_id": "tt902",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Popular 2",
+        "video_id": "tt902",
+        "why": "Popular",
+        "year": 2019
+      }
+    ],
+    "status": {
+      "letterboxd": null,
+      "mdblist": false,
+      "rawg": false,
+      "saved": [],
+      "steamgriddb": false,
+      "tmdb": false,
+      "trakt": {
+        "configured": false,
+        "linked": false,
+        "scrobble": {
+          "error": null,
+          "last": null
+        }
+      }
+    }
+  },
+  "status": 200
+}

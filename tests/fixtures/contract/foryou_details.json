@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/foryou/details",
+    "query": {
+      "key": "video:tt0386676"
+    }
+  },
+  "response": {
+    "facts": null,
+    "logo_dark": null,
+    "overview": ""
+  },
+  "status": 200
+}

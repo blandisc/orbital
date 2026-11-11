@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/companion/now"
+  },
+  "response": {
+    "game": null,
+    "inbox": [],
+    "playing": null,
+    "ui": {
+      "screen": "home",
+      "text_field": false
+    },
+    "volume": {
+      "extra_max": 200,
+      "level": 50,
+      "muted": false
+    }
+  },
+  "status": 200
+}

@@ -1,0 +1,50 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/addons"
+  },
+  "response": {
+    "addons": [
+      {
+        "enabled": {},
+        "id": "torrentio",
+        "name": "Torrentio",
+        "options": {
+          "language": [
+            "latino",
+            "spanish"
+          ],
+          "qualityfilter": [
+            "cam",
+            "scr",
+            "unknown"
+          ]
+        },
+        "order": 0,
+        "origin": "orbital",
+        "template": "torrentio"
+      },
+      {
+        "enabled": {},
+        "id": "comet",
+        "name": "Comet",
+        "order": 1,
+        "origin": "orbital",
+        "template": "comet"
+      },
+      {
+        "enabled": {},
+        "id": "opensubtitles",
+        "name": "OpenSubtitles",
+        "order": 2,
+        "origin": "orbital",
+        "template": "opensubtitles"
+      }
+    ],
+    "changed_at": null,
+    "changed_by": "tv",
+    "removed": [],
+    "revision": 0
+  },
+  "status": 200
+}

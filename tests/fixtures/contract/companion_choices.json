@@ -1,0 +1,26 @@
+{
+  "request": {
+    "body": {
+      "changes": {
+        "tt0386676": {
+          "audio": "es",
+          "base_rev": 0
+        }
+      },
+      "since": 0
+    },
+    "method": "POST",
+    "path": "/api/companion/choices"
+  },
+  "response": {
+    "changed": {
+      "tt0386676": {
+        "audio": "es",
+        "rev": 1
+      }
+    },
+    "rejected": [],
+    "rev": 1
+  },
+  "status": 200
+}

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/realdebrid"
+  },
+  "response": {
+    "days": 30,
+    "ends_with": "3F2A",
+    "expires": 1700000000.0,
+    "linked": true,
+    "premium": true,
+    "problem": null,
+    "source": "torrentio",
+    "user": "fer"
+  },
+  "status": 200
+}

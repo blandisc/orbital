@@ -1,0 +1,22 @@
+{
+  "request": {
+    "body": {
+      "source": "iphone",
+      "text": "abre hades"
+    },
+    "method": "POST",
+    "path": "/api/voice"
+  },
+  "response": {
+    "heard": "abre hades",
+    "hints": [
+      "pon The Office",
+      "sigue viendo",
+      "qué sale hoy"
+    ],
+    "intent": "LaunchGameIntent",
+    "ok": true,
+    "speech": "Abriendo Hades."
+  },
+  "status": 200
+}

@@ -1,0 +1,18 @@
+{
+  "request": {
+    "body": {
+      "code": "<code>",
+      "name": "iPhone de Fernando",
+      "platform": "iphone"
+    },
+    "method": "POST",
+    "path": "/api/devices/pair"
+  },
+  "response": {
+    "device_id": "<device_id>",
+    "key": "<key>",
+    "tv_id": "<tv_id>",
+    "tv_name": "Orbital"
+  },
+  "status": 200
+}

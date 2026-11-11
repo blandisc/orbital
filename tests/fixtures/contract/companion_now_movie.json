@@ -1,0 +1,65 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/companion/now"
+  },
+  "response": {
+    "game": null,
+    "inbox": [],
+    "playing": {
+      "duration": 6000.0,
+      "episode": null,
+      "episode_label": "",
+      "kind": "movie",
+      "live": false,
+      "meta_id": "tt1",
+      "paused": false,
+      "position": 100.0,
+      "poster": "https://img/x.jpg",
+      "season": null,
+      "title": "Interstellar",
+      "tracks": {
+        "audio": [
+          {
+            "id": 1,
+            "label": "Inglés · 5.1 · E-AC3",
+            "lang": "eng",
+            "selected": true
+          },
+          {
+            "id": 2,
+            "label": "Español latino · Estéreo · AAC",
+            "lang": "spa",
+            "selected": false
+          }
+        ],
+        "subtitles": [
+          {
+            "id": 1,
+            "label": "Inglés",
+            "lang": "eng",
+            "selected": true
+          },
+          {
+            "id": 2,
+            "label": "Español · Forzados",
+            "lang": "spa",
+            "selected": false
+          }
+        ]
+      },
+      "video_id": "tt1"
+    },
+    "ui": {
+      "screen": "home",
+      "text_field": false
+    },
+    "volume": {
+      "extra": 100,
+      "extra_max": 200,
+      "level": 50,
+      "muted": false
+    }
+  },
+  "status": 200
+}

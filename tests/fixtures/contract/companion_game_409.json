@@ -1,0 +1,13 @@
+{
+  "request": {
+    "body": {
+      "action": "resume"
+    },
+    "method": "POST",
+    "path": "/api/companion/game"
+  },
+  "response": {
+    "detail": "No hay ningún juego abierto"
+  },
+  "status": 409
+}

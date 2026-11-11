@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/devices"
+  },
+  "response": {
+    "devices": [
+      {
+        "device_id": "<device_id>",
+        "name": "iPhone de Fernando",
+        "paired_at": 1700000000.0,
+        "platform": "iphone",
+        "seen": 1700000000.0,
+        "this": true
+      }
+    ]
+  },
+  "status": 200
+}

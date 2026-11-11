@@ -1,0 +1,15 @@
+{
+  "request": {
+    "body": {
+      "platform": "ipad"
+    },
+    "method": "POST",
+    "path": "/api/devices/invite"
+  },
+  "response": {
+    "code": "<code>",
+    "expires": 1700000000.0,
+    "platform": "ipad"
+  },
+  "status": 200
+}

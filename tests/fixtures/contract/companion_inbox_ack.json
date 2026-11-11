@@ -1,0 +1,15 @@
+{
+  "request": {
+    "body": {
+      "ids": [
+        "nada"
+      ]
+    },
+    "method": "POST",
+    "path": "/api/companion/inbox/ack"
+  },
+  "response": {
+    "removed": 0
+  },
+  "status": 200
+}

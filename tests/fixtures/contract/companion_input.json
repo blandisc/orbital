@@ -1,0 +1,14 @@
+{
+  "request": {
+    "body": {
+      "action": "select"
+    },
+    "method": "POST",
+    "path": "/api/companion/input"
+  },
+  "response": {
+    "ok": true,
+    "target": "ui"
+  },
+  "status": 200
+}

@@ -1,0 +1,65 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/foryou/list",
+    "query": {
+      "id": "cinemeta",
+      "kind": "series"
+    }
+  },
+  "response": {
+    "items": [
+      {
+        "action": "Ver la serie",
+        "detail": "2019",
+        "episode": null,
+        "facts": [
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt901/img",
+        "id": "cinemeta:series:tt901",
+        "image": "https://images.metahub.space/poster/medium/tt901/img",
+        "key": "video:tt901",
+        "kind": "series",
+        "logo": "https://images.metahub.space/logo/medium/tt901/img",
+        "meta_id": "tt901",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Popular 1",
+        "video_id": "tt901:1:1",
+        "why": "Popular",
+        "year": 2019
+      },
+      {
+        "action": "Ver la serie",
+        "detail": "2019",
+        "episode": null,
+        "facts": [
+          [
+            "Año",
+            "2019"
+          ]
+        ],
+        "hero": "https://images.metahub.space/background/medium/tt903/img",
+        "id": "cinemeta:series:tt903",
+        "image": "https://images.metahub.space/poster/medium/tt903/img",
+        "key": "video:tt903",
+        "kind": "series",
+        "logo": "https://images.metahub.space/logo/medium/tt903/img",
+        "meta_id": "tt903",
+        "overview": "Sinopsis",
+        "runtime": 148,
+        "source": "cinemeta",
+        "title": "Popular 3",
+        "video_id": "tt903:1:1",
+        "why": "Popular",
+        "year": 2019
+      }
+    ]
+  },
+  "status": 200
+}

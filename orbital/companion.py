@@ -19,6 +19,42 @@ from .qrcodegen import QrCode
 SCHEME = "orbital-ios://pair"
 
 
+# F1 · el contrato con la app compañera. `api` sube solo cuando una ruta cambia de forma que un iPhone viejo ya no
+# entendería; lo nuevo que no rompe a nadie se anuncia como capacidad. Los nombres son estables: el iPhone pregunta
+# «¿esta TV sabe `resume_sync`?» en vez de adivinar por la versión de Orbital. Cada capacidad dice qué rutas del puerto
+# público la hacen posible (tests/test_contract_fixtures.py revisa que existan todas).
+API_VERSION = 1
+CAPABILITIES: dict[str, tuple[tuple[str, str], ...]] = {
+    "foryou": (("GET", "/api/foryou"), ("GET", "/api/foryou/list"), ("GET", "/api/foryou/details"),
+               ("POST", "/api/foryou/dismiss")),
+    "play_on_tv": (("POST", "/api/stremio/play"),),
+    "voice": (("POST", "/api/voice"),),
+    "voice_hints": (("GET", "/api/voice/hints"),),
+    "now_playing": (("GET", "/api/companion/now"),),
+    "remote_input": (("POST", "/api/companion/input"),),
+    "remote_text": (("POST", "/api/companion/text"),),
+    "player_control": (("POST", "/api/companion/player"),),
+    "game_control": (("POST", "/api/companion/game"),),
+    "console_state": (("GET", "/api/companion/console"), ("POST", "/api/companion/console")),
+    "choices_sync": (("POST", "/api/companion/choices"),),
+    "resume_sync": (("POST", "/api/companion/resume"),),
+    "inbox": (("POST", "/api/companion/inbox/ack"),),
+    "device_keys": (("POST", "/api/devices/pair"), ("GET", "/api/devices"), ("DELETE", "/api/devices/{device_id}")),
+    "device_invite": (("POST", "/api/devices/invite"),),
+    "device_upgrade": (("POST", "/api/devices/upgrade"), ("GET", "/api/devices/upgrade/{ident}")),
+    "realdebrid_share": (("GET", "/api/realdebrid"), ("PUT", "/api/realdebrid")),
+    "realdebrid_requests": (("GET", "/api/realdebrid/requests"), ("POST", "/api/realdebrid/requests")),
+    "opensubtitles_share": (("PUT", "/api/opensubtitles"),),
+    "addons": (("GET", "/api/addons"), ("PUT", "/api/addons")),
+    "art": (("GET", "/api/art/{item_id:path}"), ("GET", "/api/tv/logo")),
+}
+
+
+def contract() -> dict:
+    """Lo que `/api/ping` y `/api/companion` dicen de esta TV: la versión del contrato y lo que sabe hacer."""
+    return {"api": API_VERSION, "capabilities": sorted(CAPABILITIES)}
+
+
 def pair_link(url: str, code: str) -> str:
     return f"{SCHEME}?{urlencode({'v': 2, 'u': url, 'c': code}, quote_via=quote)}"
 

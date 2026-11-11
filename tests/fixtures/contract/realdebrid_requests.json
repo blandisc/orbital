@@ -1,0 +1,12 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/realdebrid/requests"
+  },
+  "response": {
+    "account": null,
+    "requests": [],
+    "version": 1
+  },
+  "status": 200
+}

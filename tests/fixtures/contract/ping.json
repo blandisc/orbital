@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/ping"
+  },
+  "response": {
+    "api": 1,
+    "capabilities": [
+      "addons",
+      "art",
+      "choices_sync",
+      "console_state",
+      "device_invite",
+      "device_keys",
+      "device_upgrade",
+      "foryou",
+      "game_control",
+      "inbox",
+      "now_playing",
+      "opensubtitles_share",
+      "play_on_tv",
+      "player_control",
+      "realdebrid_requests",
+      "realdebrid_share",
+      "remote_input",
+      "remote_text",
+      "resume_sync",
+      "voice",
+      "voice_hints"
+    ],
+    "ok": true,
+    "service": "orbital",
+    "version": "<version>"
+  },
+  "status": 200
+}

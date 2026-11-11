@@ -1,0 +1,14 @@
+{
+  "request": {
+    "body": {
+      "submit": false,
+      "text": "hola"
+    },
+    "method": "POST",
+    "path": "/api/companion/text"
+  },
+  "response": {
+    "ok": true
+  },
+  "status": 200
+}

@@ -1,0 +1,13 @@
+{
+  "request": {
+    "body": {
+      "key": "video:tt0386676"
+    },
+    "method": "POST",
+    "path": "/api/foryou/dismiss"
+  },
+  "response": {
+    "ok": true
+  },
+  "status": 200
+}

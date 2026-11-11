@@ -1,0 +1,16 @@
+{
+  "request": {
+    "body": {
+      "changes": {},
+      "want": [
+        "tt0386676"
+      ]
+    },
+    "method": "POST",
+    "path": "/api/companion/resume"
+  },
+  "response": {
+    "resume": {}
+  },
+  "status": 200
+}

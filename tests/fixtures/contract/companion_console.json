@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/companion/console"
+  },
+  "response": {
+    "battery": null,
+    "brightness": 50,
+    "controllers": [],
+    "memory": {
+      "apps": [],
+      "free_gb": 4.0
+    },
+    "power_mode": "balanced",
+    "wifi": null
+  },
+  "status": 200
+}

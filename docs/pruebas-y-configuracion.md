@@ -106,3 +106,20 @@ Qué corre:
 de la CI la mueve solo cuando `main` queda en verde (si el commit falla, la etiqueta se queda donde estaba; solo avanza, nunca
 retrocede aunque dos corridas terminen en desorden). La TV se actualiza desde esa etiqueta y no desde `main`, así que
 nunca recibe algo que la CI no aprobó. Para ver dónde está: `git fetch origin tag tv-estable -f && git log -1 tv-estable`.
+
+## El contrato con el iPhone (`tests/fixtures/contract`)
+
+La TV y la app del iPhone hablan por el puerto público. Para que un cambio en la TV no rompa al iPhone sin que nadie se
+entere, `tests/test_contract_fixtures.py` llama con datos de demostración a cada ruta que usa la app compañera y guarda la
+respuesta real en `tests/fixtures/contract/<nombre>.json` (con la petición, el estado y la respuesta). El lado Swift
+decodifica esos mismos archivos. Lo que cambia en cada corrida (fechas, ids, llaves, la versión de Orbital, rutas de la
+carpeta temporal) se guarda normalizado: texto «`<llave>`» y números fijos del mismo tipo.
+
+- Si la prueba falla, la forma de una respuesta cambió. Si fue a propósito, regenera y revisa el diff:
+  `ORBITAL_UPDATE_CONTRACT=1 python -m pytest -q tests/test_contract_fixtures.py` (en la consola:
+  `.venv\Scripts\python`). Después avisa al lado Swift para que sus pruebas decodifiquen lo nuevo.
+- Solo campos nuevos: un iPhone viejo ignora lo que no conoce. Si algo deja de existir o cambia de tipo, sube
+  `companion.API_VERSION` (`orbital/companion.py`).
+- `/api/ping` y `/api/companion` dicen `api` (la versión del contrato) y `capabilities` (lo que esta TV sabe hacer, con
+  nombres estables). Al agregar una ruta para el iPhone, agrégala a `companion.CAPABILITIES`; la prueba revisa que cada
+  capacidad apunte a rutas que existen.

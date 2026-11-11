@@ -1,0 +1,16 @@
+{
+  "request": {
+    "body": {
+      "id": "tt0386676",
+      "kind": "series",
+      "title": "The Office",
+      "video_id": "tt0386676:2:5"
+    },
+    "method": "POST",
+    "path": "/api/stremio/play"
+  },
+  "response": {
+    "ok": true
+  },
+  "status": 200
+}

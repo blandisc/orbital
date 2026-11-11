@@ -1,0 +1,13 @@
+{
+  "request": {
+    "body": {
+      "action": "toggle"
+    },
+    "method": "POST",
+    "path": "/api/companion/player"
+  },
+  "response": {
+    "detail": "No hay nada en la TV ahora mismo"
+  },
+  "status": 409
+}

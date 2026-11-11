@@ -771,7 +771,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
 
     @public.api_route("/api/ping", methods=["GET", "HEAD"])  # HEAD: los monitores de disponibilidad
     def ping() -> dict:
-        return {"ok": True, "service": "orbital", "version": __version__}
+        return {"ok": True, "service": "orbital", "version": __version__, **companion.contract()}  # F1
 
     @public.post("/api/voice")
     async def voice_command(body: VoiceRequest) -> dict:
@@ -815,7 +815,8 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
         return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
                 "pairing": 2,  # K1-12: esta TV reparte llaves por aparato
-                "tv_id": main_app.state.devices.tv_id()}  # TEC-30: una TV reinstalada tiene otro
+                "tv_id": main_app.state.devices.tv_id(),  # TEC-30: una TV reinstalada tiene otro
+                **companion.contract()}  # F1: versión del contrato y capacidades
 
     @public.get("/escribir/{code}")
     def remote_form(code: str) -> HTMLResponse:
