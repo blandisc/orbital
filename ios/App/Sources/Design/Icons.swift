@@ -45,5 +45,12 @@ extension DS {
         static let instant = "bolt.fill"
         /// «¿Otro título?»: el nombre de la versión dice otro año. Una vez explicado arriba de la lista, en cada renglón solo el ícono.
         static let otherTitle = "questionmark.circle"
+        /// Cambiar de versión para oír ese idioma (el panel de audio del reproductor): antes «↻» como letra.
+        static let switchVersion = "arrow.triangle.swap"
+        /// La que estás viendo (una lista de secciones): antes «✓» como letra.
+        static let current = "checkmark"
+        /// Los botones de los controles de otras consolas, en el acompañante (antes ✕ ○ □ △ ☰ ⧉ como letras).
+        static let padCross = "xmark", padCircle = "circle", padSquare = "square", padTriangle = "triangle"
+        static let padMenu = "line.3.horizontal", padView = "rectangle.on.rectangle"
     }
 }

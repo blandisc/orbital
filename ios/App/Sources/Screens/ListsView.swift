@@ -322,8 +322,8 @@ struct ListsView: View {
                         Task { @MainActor in withAnimation(DS.Motion.base(reduceMotion)) { position.scrollTo(id: section, anchor: .top) } }
                     }
                 } label: {
-                    // Cada sección con su ícono; la que ves, con ✓ al lado.
-                    Label { activeSection == section ? Text("\(section.title)\(Text(verbatim: "  ✓"))") : section.title } icon: { Image(systemName: section.symbol) }
+                    // Cada sección con su ícono; la que ves, con la palomita (`DS.Symbol.current`) al lado.
+                    Label { activeSection == section ? Text("\(section.title)  \(Image(systemName: DS.Symbol.current))") : section.title } icon: { Image(systemName: section.symbol) }
                 }
             }
         } label: { Image(systemName: "list.bullet.indent") }

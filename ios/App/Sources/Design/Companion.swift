@@ -194,7 +194,7 @@ struct ControlsPanel: View {
             if let map = Self.maps[system] {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     ForEach(map, id: \.0) { original, yours in
-                        HStack { Text(verbatim: original).recipe(.footnote, color: DS.text); Spacer(); Text(verbatim: yours).recipe(.footnote) }
+                        HStack { Self.buttons(original).recipe(.footnote, color: DS.text); Spacer(); Self.buttons(yours).recipe(.footnote) }
                     }
                 }
                 Text("La distribución habitual del emulador.").recipe(.caption, color: DS.textFaint)
@@ -204,15 +204,26 @@ struct ControlsPanel: View {
 
     static func supports(_ system: String) -> Bool { maps[system] != nil }
 
+    /// «:cross: · :circle:» con los símbolos de `DS.Symbol` (uno por idea, revisión 2: antes ✕ ○ □ △ ☰ ⧉ como letras); el
+    /// resto se escribe tal cual.
+    static func buttons(_ names: String) -> Text {
+        let symbols = ["cross": DS.Symbol.padCross, "circle": DS.Symbol.padCircle, "square": DS.Symbol.padSquare,
+                       "triangle": DS.Symbol.padTriangle, "menu": DS.Symbol.padMenu, "view": DS.Symbol.padView]
+        return names.components(separatedBy: ":").enumerated().reduce(Text(verbatim: "")) { text, part in
+            if part.offset % 2 == 1, let symbol = symbols[part.element] { return Text("\(text)\(Image(systemName: symbol))") }
+            return Text("\(text)\(Text(verbatim: part.element))")
+        }
+    }
+
     /// Original → tu control (posición de Xbox / Legion Go: A abajo, B derecha, X izquierda, Y arriba).
     static let maps: [String: [(String, String)]] = [
-        "gamecube": [("A", "A"), ("B", "X"), ("X", "B"), ("Y", "Y"), ("Z", "RB"), ("L · R", "LT · RT"), ("Start", "☰"), ("Stick C", "Stick derecho")],
-        "switch": [("A", "B"), ("B", "A"), ("X", "Y"), ("Y", "X"), ("L · R", "LB · RB"), ("ZL · ZR", "LT · RT"), ("+ · −", "☰ · ⧉")],
-        "ps2": [("✕", "A"), ("○", "B"), ("□", "X"), ("△", "Y"), ("L1 · R1", "LB · RB"), ("L2 · R2", "LT · RT"), ("Start · Select", "☰ · ⧉")],
-        "psx": [("✕", "A"), ("○", "B"), ("□", "X"), ("△", "Y"), ("L1 · R1", "LB · RB"), ("L2 · R2", "LT · RT"), ("Start · Select", "☰ · ⧉")],
-        "psp": [("✕", "A"), ("○", "B"), ("□", "X"), ("△", "Y"), ("L · R", "LB · RB"), ("Start · Select", "☰ · ⧉")],
-        "gba": [("A", "B"), ("B", "A"), ("L · R", "LB · RB"), ("Start · Select", "☰ · ⧉")],
-        "nds": [("A", "B"), ("B", "A"), ("X", "Y"), ("Y", "X"), ("L · R", "LB · RB"), ("Start · Select", "☰ · ⧉"), ("Pantalla táctil", "Stick derecho")],
+        "gamecube": [("A", "A"), ("B", "X"), ("X", "B"), ("Y", "Y"), ("Z", "RB"), ("L · R", "LT · RT"), ("Start", ":menu:"), ("Stick C", "Stick derecho")],
+        "switch": [("A", "B"), ("B", "A"), ("X", "Y"), ("Y", "X"), ("L · R", "LB · RB"), ("ZL · ZR", "LT · RT"), ("+ · −", ":menu: · :view:")],
+        "ps2": [(":cross:", "A"), (":circle:", "B"), (":square:", "X"), (":triangle:", "Y"), ("L1 · R1", "LB · RB"), ("L2 · R2", "LT · RT"), ("Start · Select", ":menu: · :view:")],
+        "psx": [(":cross:", "A"), (":circle:", "B"), (":square:", "X"), (":triangle:", "Y"), ("L1 · R1", "LB · RB"), ("L2 · R2", "LT · RT"), ("Start · Select", ":menu: · :view:")],
+        "psp": [(":cross:", "A"), (":circle:", "B"), (":square:", "X"), (":triangle:", "Y"), ("L · R", "LB · RB"), ("Start · Select", ":menu: · :view:")],
+        "gba": [("A", "B"), ("B", "A"), ("L · R", "LB · RB"), ("Start · Select", ":menu: · :view:")],
+        "nds": [("A", "B"), ("B", "A"), ("X", "Y"), ("Y", "X"), ("L · R", "LB · RB"), ("Start · Select", ":menu: · :view:"), ("Pantalla táctil", "Stick derecho")],
     ]
 }
 

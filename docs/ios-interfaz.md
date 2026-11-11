@@ -66,7 +66,7 @@ Un estado discreto dice «Stremio al día» o «N cambios por subir» (si no hub
 ### Íconos: uno por idea (revisión 2 del 11 nov 2026)
 
 Cada idea tiene un solo símbolo del sistema y vive en `DS.Symbol` (`ios/App/Sources/Design/Icons.swift`). Nunca un carácter
-de texto como ícono («✓», «▲», «›»): se usa el símbolo. Las estrellas «★» y «½» de Letterboxd no son íconos: son su forma de
+de texto como ícono («✓», «↻», «☰», «✕», «△», «▲»), en ningún archivo de la app: se usa el símbolo. Las estrellas «★» y «½» de Letterboxd no son íconos: son su forma de
 escribir la calificación. `DesignTests.testOneIconPerIdea` revisa que cada símbolo de `DS.Symbol` esté en esta tabla y que no
 haya caracteres de texto usados como ícono.
 
@@ -87,6 +87,9 @@ haya caracteres de texto usados como ícono.
 | La versión recomendada | `sparkles` (`DS.Symbol.recommended`) | «Versión»; la leyenda de la primera vez lo explica |
 | Lista al instante (ya en la nube) | `bolt.fill` (`DS.Symbol.instant`) | «Versión», reproductor; la leyenda lo explica |
 | ¿Otro título? (el nombre dice otro año) | `questionmark.circle` (`DS.Symbol.otherTitle`) | «Ver todas las versiones»: explicado una vez arriba |
+| Cambiar de versión para oír ese idioma | `arrow.triangle.swap` (`DS.Symbol.switchVersion`) | Reproductor › Audio, los idiomas de otra versión |
+| La que estás viendo | `checkmark` (`DS.Symbol.current`) | «Ir a una sección» de las listas |
+| Botones de otras consolas | `xmark`, `circle`, `square`, `triangle`, `line.3.horizontal`, `rectangle.on.rectangle` (`DS.Symbol.padCross`, `padCircle`, `padSquare`, `padTriangle`, `padMenu`, `padView`) | El acompañante del juego (cómo quedan los botones) |
 
 ## 4b. Bilingüe
 

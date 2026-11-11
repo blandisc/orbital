@@ -403,7 +403,10 @@ final class DesignTests: XCTestCase {
         for file in files {
             for (i, line) in try String(contentsOf: file, encoding: .utf8).components(separatedBy: "\n").enumerated() {
                 let code = line.components(separatedBy: "//").first ?? ""
-                if code.contains(#"Text("✓"#) || code.contains(#"Text("▲"#) || code.contains(#"Text("›"#) || code.contains(#""★ "#) {
+                // En toda la app: una letra-ícono dentro de un texto («✓», «↻», «☰», «✕», «△»…). Las estrellas de Letterboxd
+                // («★4», «½») son su forma de escribir la calificación, y «Ajustes › Ver» es un camino, no un ícono.
+                let glyph = code.range(of: #""[^"]*[✓✔↻☰⧉✕✖○□△▲▼▶◀⚡✦⇄]"#, options: .regularExpression) != nil
+                if glyph || code.contains(#"Text("›"#) || code.contains(#""★ "#) {
                     found.append("\(file.lastPathComponent):\(i + 1)")
                 }
             }

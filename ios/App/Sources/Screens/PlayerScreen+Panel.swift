@@ -226,7 +226,7 @@ extension PlayerScreen {
         // Los idiomas que solo trae otra versión: sin cine ni tráileres, la más parecida a la tuya y diciendo a qué va.
         let others: [SubtitleDock.Language] = model.otherVersionAudio(excluding: seenAudio).prefix(DS.PlayerPanel.otherVersionsShown).map { o in
             let speed = o.instant ? Strings.tr("en la nube", language: ui) : Strings.tr("Todavía no está en la nube", language: ui)
-            let detail = "↻ " + ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
+            let detail = ([o.sure ? nil : Strings.tr("se supone", language: ui), o.quality.isEmpty ? nil : o.quality, speed].compactMap { $0 }.joined(separator: " · "))
             return .init(id: String(o.sourceIndex), title: LanguageFlags.flagged(o.code == "es" ? VersionText.spanish(ui) : Streams.versionLanguageName(o.code, in: ui), o.code),
                          selected: false, detail: detail, guessed: !o.sure)
         }

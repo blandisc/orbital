@@ -328,13 +328,13 @@ struct SubtitleDock: View {
         }
     }
 
-    /// Un idioma que solo trae otra versión: «Latino» y, abajo, a qué va («↻ 1080p · en Real-Debrid»); si es una suposición,
+    /// Un idioma que solo trae otra versión: «Latino» y, abajo, a qué va («⇄ 1080p · en la nube», con el ícono de cambiar de versión); si es una suposición,
     /// con borde punteado y «se supone».
     private func otherPill(_ v: Language) -> some View {
         Button { pickVersion(v.id) } label: {
             VStack(alignment: .leading, spacing: 0) {
                 Text.flagged(v.title).font(DS.TextRecipe.label.font).foregroundStyle(DS.text)
-                if let detail = v.detail { Text(verbatim: detail).recipe(.caption, color: v.guessed ? DS.warning : DS.primary) }
+                if let detail = v.detail { Text("\(Image(systemName: DS.Symbol.switchVersion)) \(detail)").recipe(.caption, color: v.guessed ? DS.warning : DS.primary) }   // a qué va: cambia de versión
             }
             .lineLimit(1).fixedSize()
             .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
