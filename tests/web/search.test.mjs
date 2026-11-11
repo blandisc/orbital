@@ -24,7 +24,7 @@ test("T7: teclado a la izquierda, resultados a la derecha, sobre el fondo del si
   assert.doesNotMatch(css, /\.search \.card--no-art \.card__title/); // «Zelda Tears of the…» cortado en dos renglones
   // Las mismas portadas de siempre (Card), con el mismo foco (.is-focused).
   assert.match(js, /Card\(shown, \{ caption: true/);
-  assert.match(js, /const on = zone === "results" && i === resultIndex;\n\s*node\.classList\.toggle\("is-focused", on\)/);
+  assert.match(js, /const on = zone === "results" && i === resultIndex;\s*node\.classList\.toggle\("is-focused", on\)/);
 });
 
 test("T7: → desde la orilla del teclado entra a los resultados; ← desde la primera columna regresa", () => {
@@ -51,7 +51,7 @@ test("P4: con la caja vacía, recientes, lo que estás viendo, tus juegos y gén
 });
 
 test("P4: teclado alfabético de 7 columnas (menos pasos con el mando); las columnas salen de la distribución", () => {
-  assert.match(js, /\[\.\.\."ABCDEFG"\],\n  \[\.\.\."HIJKLMN"\],\n  \[\.\.\."ÑOPQRST"\],\n  \[\.\.\."UVWXYZ'"\]/);
+  assert.match(js, /\[\.\.\."ABCDEFG"\],\r?\n  \[\.\.\."HIJKLMN"\],\r?\n  \[\.\.\."ÑOPQRST"\],\r?\n  \[\.\.\."UVWXYZ'"\]/);
   assert.match(js, /keyboard\.reset\(0, 0\)/); // empieza en la «A»
   assert.match(read("js/components/keyboard.js"), /--keyboard-columns/);
   assert.match(read("styles/components/keyboard.css"), /repeat\(var\(--keyboard-columns, 10\), 1fr\)/);
