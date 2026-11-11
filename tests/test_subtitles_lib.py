@@ -3,6 +3,7 @@
 import struct
 
 from orbital.library import subtitles as subs
+from orbital.net import NetError
 
 
 def test_language_tags_become_iso_codes():
@@ -74,7 +75,7 @@ def test_finder_asks_your_addons_plus_opensubtitles_with_the_fingerprint(monkeyp
     assert [o["url"] for o in found] == ["https://s/1.srt", "https://s/2.srt"]  # sin repetidos
 
     def offline(url, timeout=None):
-        raise OSError("sin red")
+        raise NetError("sin red")
 
     monkeypatch.setattr(addons, "fetch_json", offline)
     assert finder.subtitle_options("movie", "tt1160419") is None  # sin internet ≠ no hay

@@ -13,8 +13,9 @@ cualquier otro error de red, con un plazo TOTAL (no solo por lectura) y un tama�
 - los fallos de red salen como `NetError` (que es un OSError: quien atrapa `NET_ERRORS` u `OSError` sigue igual).
 
 `NET_FAILURES` es «la red o el servicio fallaron», sin OSError ni ValueError genéricos (un disco lleno o un error
-de programación no son «sin internet»). `NET_ERRORS` se queda tan amplio como antes para quien lee con urlopen
-directo; los clientes se pasan a `NET_FAILURES` poco a poco.
+de programación no son «sin internet»: llegan a la bitácora). Quien lee con urllib directo abre con `urlopen` de aquí y
+lee con `read_body`/`read_json`: así todo fallo de la red sale como algo de `NET_FAILURES`. `NET_ERRORS` se queda tan
+amplio como antes solo para lo que todavía no se pasa.
 """
 
 from __future__ import annotations
@@ -94,7 +95,12 @@ def read_body(res, *, timeout: float, limit: int = MAX_BYTES, truncate: bool = F
         if time.monotonic() > deadline:
             raise TimeoutError("La respuesta tardó demasiado")
         # read1 devuelve lo que ya llegó (no espera a juntar 64 KB): el plazo se revisa en cada pedazo.
-        chunk = getattr(res, "read1", res.read)(64 * 1024)
+        try:
+            chunk = getattr(res, "read1", res.read)(64 * 1024)
+        except (NetError, TimeoutError):
+            raise
+        except (OSError, http.client.HTTPException) as exc:  # cortada a media respuesta (IncompleteRead, un socket raro)
+            raise NetError(str(exc) or type(exc).__name__) from exc
         if not chunk:
             return b"".join(chunks)
         size += len(chunk)
@@ -103,6 +109,29 @@ def read_body(res, *, timeout: float, limit: int = MAX_BYTES, truncate: bool = F
                 return b"".join(chunks + [chunk])[:limit]
             raise TooLarge("Respuesta demasiado grande")
         chunks.append(chunk)
+
+
+def request(url: str, **kwargs) -> urllib.request.Request:
+    """`urllib.request.Request` con una dirección que urllib no sabe abrir (la de un complemento o una lista mal escrita
+    en Ajustes: «unknown url type») como NetError, igual que si no contestara."""
+    try:
+        return urllib.request.Request(url, **kwargs)
+    except ValueError as exc:
+        raise NetError(f"Dirección inválida: {str(url)[:80]}") from exc
+
+
+def urlopen(req, *, timeout: float, **kwargs):
+    """`urllib.request.urlopen` con los fallos de la red como algo de `NET_FAILURES`: una dirección que urllib no sabe
+    abrir (la de un complemento o una lista mal escrita) o un socket raro salen como NetError; HTTPError (con su código),
+    URLError y TimeoutError, tal cual. Se busca `urllib.request.urlopen` en cada llamada: las pruebas lo reemplazan."""
+    try:
+        return urllib.request.urlopen(req, timeout=timeout, **kwargs)
+    except (urllib.error.URLError, NetError, TimeoutError, http.client.HTTPException):
+        raise
+    except ValueError as exc:  # «unknown url type»
+        raise NetError(f"Dirección inválida: {exc}") from exc
+    except OSError as exc:
+        raise NetError(str(exc) or type(exc).__name__) from exc
 
 
 def read_json(res, *, timeout: float, limit: int = MAX_BYTES):
@@ -286,14 +315,14 @@ def _via_pool(url: str, method: str, data: bytes | None, headers: dict, timeout:
 
 
 def _via_urllib(url: str, method: str, data: bytes | None, headers: dict, timeout: float):
-    req = urllib.request.Request(url, data=data, method=method, headers=headers)
+    req = request(url, data=data, method=method, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as res:
+        with urlopen(req, timeout=timeout) as res:
             return res.status, read_body(res, timeout=timeout), res.headers
     except urllib.error.HTTPError as exc:
         try:
             raw = exc.read(64 * 1024)
-        except NET_ERRORS:
+        except (OSError, http.client.HTTPException):  # el cuerpo del error, cortado: basta el código
             raw = b""
         return exc.code, raw, exc.headers
 

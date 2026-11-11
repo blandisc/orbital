@@ -20,7 +20,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 from .rawg import plain
 
 log = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ def fetch(appid: int, timeout: float = 10) -> dict | None:
     """La ficha de la tienda ({} si ese juego no está en la tienda); None si no se pudo preguntar (sin red, límite)."""
     try:
         status, data = http_json(URL.format(appid=int(appid)), timeout=timeout)
-    except NET_ERRORS:
+    except NET_FAILURES:
         return None
     if status != 200 or not isinstance(data, dict):
         return None  # 429: demasiadas consultas; se reintenta en la siguiente vuelta

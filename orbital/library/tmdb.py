@@ -17,7 +17,7 @@ from datetime import date
 from typing import NamedTuple
 from urllib.parse import urlencode
 
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -272,7 +272,7 @@ class Tmdb:
         params.setdefault("language", self.language)
         try:
             status, data = http_json(f"{API}{path}?{urlencode(params)}", headers=headers, timeout=self.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise TmdbError(f"No pude conectar con TMDB: {exc}") from exc
         if status == 401:
             raise TmdbKeyError("TMDB no aceptó la clave. Revísala en Ajustes › Cuentas.")

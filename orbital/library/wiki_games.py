@@ -21,7 +21,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ GAME = re.compile(r"videojuego|juego|video game", re.I)
 def _get(url: str) -> dict | None:
     try:
         status, data = http_json(url, headers=HEADERS, timeout=12)
-    except NET_ERRORS:
+    except NET_FAILURES:
         return None
     return data if status == 200 and isinstance(data, dict) else None
 

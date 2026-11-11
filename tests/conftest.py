@@ -106,10 +106,11 @@ def _no_real_updating_flag(monkeypatch, tmp_path):
 @pytest.fixture(autouse=True)
 def _no_real_tv(monkeypatch):
     """Ninguna prueba baja la lista de canales ni les pide video de verdad (test_tv pone sus dobles)."""
+    from orbital import net
     from orbital.library import iptv, iptv_health, iptv_logos
 
     def offline(*args, **kwargs):
-        raise OSError("Sin conexión (pruebas)")
+        raise net.NetError("Sin conexión (pruebas)")
 
     def unreachable(*args, **kwargs):
         raise iptv_health.Unreachable("Sin conexión (pruebas)")

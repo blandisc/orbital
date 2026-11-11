@@ -28,7 +28,7 @@ from urllib.parse import urlsplit
 from PIL import Image, ImageDraw
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, read_body
+from ..net import NET_FAILURES, read_body, request, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -164,11 +164,11 @@ def public_host(url: str) -> bool:
 
 
 def download_logo(url: str, *, timeout: float = 8) -> bytes:
-    """Los bytes del logo. Lanza NET_ERRORS (o LogoError) si no se puede."""
+    """Los bytes del logo. Lanza algo de NET_FAILURES (o LogoError) si no se puede."""
     if not public_host(url):
         raise LogoError("dirección no permitida")
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "image/*"})
-    with urllib.request.urlopen(req, timeout=timeout) as res:
+    req = request(url, headers={"User-Agent": USER_AGENT, "Accept": "image/*"})
+    with urlopen(req, timeout=timeout) as res:
         return read_body(res, timeout=timeout, limit=MAX_BYTES)
 
 
@@ -246,7 +246,7 @@ class LogoCache:
             with self._slots:
                 try:
                     return self._store(key, prepare(self._download(url)))
-                except (LogoError, *NET_ERRORS) as exc:
+                except (LogoError, *NET_FAILURES) as exc:
                     log.debug("Logo sin bajar (%s): %s", urlsplit(url).hostname, exc)
                     self._mark_missing(key, RETRY_SOON if transient(exc) else RETRY_AFTER)
                     return None

@@ -4,6 +4,7 @@ import pytest
 
 from orbital.library import addon_list, addons
 from orbital.library.addon_list import AddonList
+from orbital.net import NetError
 
 TORRENTIO = "https://torrentio.strem.fun/sort=seeders|language=latino|realdebrid=KEY/manifest.json"
 TPB = "https://thepiratebay-plus.strem.fun/manifest.json"
@@ -154,7 +155,7 @@ def test_un_manifiesto_que_ya_contesto_sirve_si_el_complemento_no_responde(monke
     assert "KEY" not in saved.read_text(encoding="utf-8")  # la dirección lleva tu clave: no se escribe tal cual
 
     def down(url, timeout=0):
-        raise OSError("sin red")
+        raise NetError("sin red")
 
     monkeypatch.setattr(addons, "fetch_json", down)
     again = addons.AddonRegistry(own=lambda: [TORRENTIO], manifests=saved)

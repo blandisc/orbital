@@ -25,7 +25,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, read_json
+from ..net import NET_FAILURES, read_json, urlopen
 from . import addons as addons_mod
 from .models import LibraryItem
 
@@ -103,9 +103,9 @@ class Cinemeta:
                 return hit[1]
         req = urllib.request.Request(url, headers={"User-Agent": "Orbital"})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as res:
+            with urlopen(req, timeout=self.timeout) as res:
                 data = read_json(res, timeout=self.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             if hit and not (isinstance(exc, urllib.error.HTTPError) and exc.code == 404):
                 return hit[1]  # sin internet: la de la última vez (vencida, pero es la misma ficha)
             raise CinemetaError(f"No pude leer el catálogo de Stremio: {exc}") from exc

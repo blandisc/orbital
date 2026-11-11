@@ -171,3 +171,45 @@ def test_retry_after_reads_seconds_and_dates():
     assert net.retry_after("3", 0) == 3.0
     assert net.retry_after(None, 0) == 0.5 and net.retry_after("", 1) == 1.5
     assert net.retry_after("Wed, 21 Oct 2015 07:28:00 GMT", 0) == 0.0  # una fecha pasada: ya
+
+
+def test_reading_with_urllib_fails_as_the_network_and_nothing_else(monkeypatch):
+    """F9 · quien lee con urllib (complementos, listas, logos) ve los fallos de la red como NET_FAILURES; una dirección
+    mal escrita también (antes era un ValueError suelto)."""
+    with pytest.raises(net.NetError):
+        net.request("localhost/sin-esquema")
+
+    class Cut:
+        def read1(self, n):
+            raise ConnectionAbortedError("cortada")
+
+        read = read1
+
+    with pytest.raises(net.NET_FAILURES):
+        net.read_body(Cut(), timeout=1)
+
+    def broken(req, timeout=None, **kwargs):
+        raise OSError(51, "Network is unreachable")
+
+    monkeypatch.setattr(net.urllib.request, "urlopen", broken)
+    with pytest.raises(net.NetError):
+        net.urlopen("https://example.test/", timeout=1)
+
+
+def test_a_programming_error_is_never_no_internet(monkeypatch):
+    """Un error de programación llega a la bitácora con su nombre: no se disfraza de «sin internet»."""
+    from orbital.library import tmdb
+
+    def bug(url, **kwargs):
+        raise TypeError("un error de programación")
+
+    monkeypatch.setattr(tmdb, "http_json", bug)
+    with pytest.raises(TypeError):
+        tmdb.Tmdb("clave")._get("/movie/1")
+
+    def offline(url, **kwargs):
+        raise net.NetError("sin red")
+
+    monkeypatch.setattr(tmdb, "http_json", offline)
+    with pytest.raises(tmdb.TmdbError):
+        tmdb.Tmdb("clave")._get("/movie/1")

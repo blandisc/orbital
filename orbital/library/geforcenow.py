@@ -27,7 +27,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, read_json
+from ..net import NET_FAILURES, read_json, urlopen
 from .models import LibraryItem
 
 log = logging.getLogger(__name__)
@@ -72,9 +72,9 @@ def fetch_public() -> list | None:
     """La lista pública de NVIDIA con todo lo que se puede jugar en GeForce NOW (sin cuenta). None si no se pudo."""
     try:
         req = urllib.request.Request(PUBLIC_LIST, headers={"User-Agent": "Mozilla/5.0 Orbital"})
-        with urllib.request.urlopen(req, timeout=20) as res:
+        with urlopen(req, timeout=20) as res:
             data = read_json(res, timeout=20, limit=8 * 1024 * 1024)
-    except NET_ERRORS:
+    except NET_FAILURES:
         return None
     return data if isinstance(data, list) else None
 
@@ -293,14 +293,14 @@ class SteamArt:
                 return self._cache[key]
         try:
             req = urllib.request.Request(STEAM_SEARCH.format(term=quote(title)), headers={"User-Agent": "Orbital"})
-            with urllib.request.urlopen(req, timeout=8) as res:
+            with urlopen(req, timeout=8) as res:
                 data = read_json(res, timeout=8)
             items = (data.get("items") if isinstance(data, dict) else None) or []
             # "Apex Legends™" en Steam es "Apex Legends" aquí.
             exact = next((i for i in items if clean_title(i.get("name", "")).lower() == key), None)
             found = (exact or (items[0] if items else {})).get("id")
             remember = True
-        except (*NET_ERRORS, AttributeError, TypeError):
+        except (*NET_FAILURES, AttributeError, TypeError):
             found, remember = None, False  # sin red: no se guarda en disco, se reintenta al arrancar
         with self._lock:
             self._cache[key] = found

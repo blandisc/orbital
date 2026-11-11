@@ -18,7 +18,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from ..net import NET_ERRORS, read_body
+from ..net import NET_FAILURES, read_body, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ def magnet(info_hash: str) -> str:
 class RealDebrid:
     def __init__(self, token: str, opener=None) -> None:
         self.token = token
-        self.opener = opener or urllib.request.urlopen
+        self.opener = opener or urlopen
 
     def _call(self, method: str, path: str, form: dict | None = None):
         data = urllib.parse.urlencode(form).encode() if form is not None else None
@@ -139,7 +139,7 @@ class RealDebrid:
         except urllib.error.HTTPError as exc:
             message, code = _why(exc)
             raise RealDebridError(message, exc.code, code) from exc
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise RealDebridError("No pude hablar con Real-Debrid. Revisa Internet") from exc
         return json.loads(body) if body.strip() else None
 

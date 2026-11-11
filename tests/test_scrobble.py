@@ -7,6 +7,7 @@ import logging
 import re
 import time
 
+from orbital import net as net_lib
 from orbital import player
 from orbital.library import trakt
 from orbital.scrobble import TraktScrobbler, label, percent
@@ -38,6 +39,8 @@ class FakeNet:
         for pattern, reply in self.routes:
             if re.search(pattern, url):
                 value = reply(url, body) if callable(reply) else reply
+                if isinstance(value, OSError) and not isinstance(value, net_lib.NetError):
+                    raise net_lib.NetError(str(value)) from value  # como http_json: la red falla como NetError
                 if isinstance(value, Exception):
                     raise value
                 return value

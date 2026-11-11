@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from orbital.library import iptv
+from orbital.net import NetError
 
 SAMPLE = Path(__file__).parent / "fixtures" / "iptv" / "mx-muestra.m3u"
 
@@ -111,7 +112,7 @@ def test_descarga_guarda_copia_y_la_usa_sin_internet(tmp_path, text):
     assert fresh and len(channels) == 8 and copy.exists()
 
     def offline() -> str:
-        raise OSError("Sin red")
+        raise NetError("Sin red")
 
     again, fresh = iptv.fetch_list(copy, download_fn=offline)
     assert not fresh and [c.id for c in again] == [c.id for c in channels]
@@ -119,7 +120,7 @@ def test_descarga_guarda_copia_y_la_usa_sin_internet(tmp_path, text):
 
 def test_sin_internet_ni_copia_la_lista_queda_vacia(tmp_path):
     def offline() -> str:
-        raise OSError("Sin red")
+        raise NetError("Sin red")
 
     assert iptv.fetch_list(tmp_path / "no-hay.m3u", download_fn=offline) == ([], False)
     assert iptv.fetch_list(None, download_fn=offline) == ([], False)

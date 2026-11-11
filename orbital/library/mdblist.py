@@ -16,7 +16,7 @@ import logging
 import re
 from urllib.parse import quote, urlencode
 
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class MdbList:
         for url in urls:
             try:
                 status, data = http_json(url, timeout=self.timeout)
-            except NET_ERRORS as exc:
+            except NET_FAILURES as exc:
                 last = str(exc)
                 continue
             if status == 200:
@@ -86,7 +86,7 @@ class MdbList:
         """Prueba la clave (Ajustes › Cuentas): MdbListError si MDBList no la acepta."""
         try:
             status, _ = http_json(f"{API}/user?" + urlencode({"apikey": self.key}), timeout=self.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise MdbListError(f"No pude conectar con MDBList: {exc}") from exc
         if status in (401, 403):
             raise MdbListError("MDBList no aceptó esa clave: cópiala otra vez de Preferences › API.")

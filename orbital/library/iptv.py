@@ -15,14 +15,13 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
-import urllib.request
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, read_body
+from ..net import NET_FAILURES, read_body, request, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -203,9 +202,9 @@ def _channel(pending: dict, url: str, taken: set[str]) -> Channel | None:
 
 # --- descargar y guardar una copia ---------------------------------------------------------------
 def download(url: str = SOURCE, *, timeout: float = 20) -> str:
-    """El texto de la lista. Lanza NET_ERRORS si no hay red o la respuesta no sirve."""
-    req = urllib.request.Request(url, headers={"User-Agent": "Orbital"})
-    with urllib.request.urlopen(req, timeout=timeout) as res:
+    """El texto de la lista. Lanza algo de NET_FAILURES si no hay red o la respuesta no sirve."""
+    req = request(url, headers={"User-Agent": "Orbital"})
+    with urlopen(req, timeout=timeout) as res:
         return read_body(res, timeout=timeout, limit=MAX_LIST_BYTES).decode("utf-8", "replace")
 
 
@@ -239,6 +238,6 @@ def fetch_list(copy: Path | None, *, download_fn: Callable[[], str] = download) 
             save_copy(copy, text)
             return fresh, True
         log.warning("La lista de canales llegó vacía o no es una lista M3U: uso la copia guardada")
-    except NET_ERRORS as exc:
+    except NET_FAILURES as exc:
         log.info("Sin lista de canales nueva (%s): uso la copia guardada", exc)
     return read_copy(copy), False

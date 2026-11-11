@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from datetime import UTC
 from urllib.parse import urlencode
 
-from ..net import NET_ERRORS, RETRIES, http_json
+from ..net import NET_FAILURES, RETRIES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -357,7 +357,7 @@ class Trakt:
             try:
                 http_json(f"{API}/oauth/revoke", method="POST", timeout=self.timeout,
                           body=self._client(token=tokens["access_token"]))
-            except NET_ERRORS:
+            except NET_FAILURES:
                 pass
 
     def device_code(self) -> DeviceCode:
@@ -423,7 +423,7 @@ class Trakt:
             if retries != RETRIES:  # solo si cambia: los dobles de las pruebas no saben de reintentos
                 return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout, retries=retries)
             return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise TraktError(f"No pude conectar con Trakt: {exc}") from exc
 
     def _get(self, path: str, *, auth: bool = True, **params):

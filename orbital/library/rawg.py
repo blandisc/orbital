@@ -16,7 +16,7 @@ import re
 from datetime import date, timedelta
 from urllib.parse import urlencode
 
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class Rawg:
     def _get(self, path: str, **params):
         try:
             status, data = http_json(f"{API}{path}?{urlencode({'key': self.key, **params})}", timeout=self.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise RawgError(f"No pude conectar con RAWG: {exc}") from exc
         if status in (401, 403):
             raise RawgKeyError("RAWG no aceptó la clave. Revísala en Ajustes › Cuentas.")
@@ -115,7 +115,7 @@ def steam_description(appid: int, timeout: float = 8) -> str:
     try:
         status, data = http_json(f"https://store.steampowered.com/api/appdetails?appids={int(appid)}&l=spanish&filters=basic",
                                  timeout=timeout)
-    except NET_ERRORS:
+    except NET_FAILURES:
         return ""
     entry = data.get(str(appid)) if status == 200 and isinstance(data, dict) else None
     body = entry.get("data") if isinstance(entry, dict) and entry.get("success") else None

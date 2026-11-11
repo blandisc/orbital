@@ -18,7 +18,7 @@ import time
 from pathlib import PurePosixPath
 from urllib.parse import quote
 
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 from .trakt import DeviceCode
 
 log = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class OneDrive:
         try:
             status, data = http_json(f"{LOGIN}/devicecode", method="POST", timeout=self.timeout,
                                      form={"client_id": self.client_id, "scope": SCOPE})
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise OneDriveError(f"No pude conectar con Microsoft: {exc}") from exc
         if status != 200 or not isinstance(data, dict) or not data.get("device_code"):
             detail = (data or {}).get("error_description", "") if isinstance(data, dict) else ""
@@ -160,7 +160,7 @@ class OneDrive:
                     status, data = http_json(f"{LOGIN}/token", method="POST", timeout=self.timeout, form={
                         "grant_type": "refresh_token", "client_id": self.client_id,
                         "refresh_token": tokens.get("refresh_token") or "", "scope": SCOPE})
-                except NET_ERRORS as exc:
+                except NET_FAILURES as exc:
                     raise OneDriveError(f"No pude conectar con Microsoft: {exc}") from exc
                 if status != 200 or not isinstance(data, dict) or not data.get("access_token"):
                     self.unlink()
@@ -174,7 +174,7 @@ class OneDrive:
         try:
             status, data = http_json(url if url.startswith("http") else f"{GRAPH}{url}", timeout=self.timeout,
                                      headers={"Authorization": f"Bearer {self._access()}"})
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise OneDriveError(f"No pude conectar con OneDrive: {exc}") from exc
         if status == 401:
             raise OneDriveAuthError("Tu sesión de OneDrive caducó: vuelve a conectarla en Ajustes › Cuentas.")

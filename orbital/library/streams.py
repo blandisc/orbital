@@ -27,7 +27,7 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
-from ..net import NET_ERRORS
+from ..net import NET_FAILURES
 from . import addons, opensubtitles
 from . import subtitles as subtitle_lib
 
@@ -822,7 +822,7 @@ class StreamFinder:
         try:
             streams = self._get_json(addon, f"stream/{kind}/{quote(video_id, safe='')}.json").get("streams")
             streams = streams if isinstance(streams, list) else []
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             log.info("Sin fuentes de %s: %s", addon.name, exc)
             return None
         self.health.ok(addon.url, time.monotonic() - started)
@@ -837,7 +837,7 @@ class StreamFinder:
             path = f"subtitles/{kind}/{quote(video_id, safe='')}.json"
             try:
                 data = self._get_json(addon, path) if addon else addons.fetch_json(f"{subtitle_lib.BUILTIN}/{path}", self.timeout)
-            except NET_ERRORS as exc:
+            except NET_FAILURES as exc:
                 log.info("Sin subtítulos de %s: %s", addon.name if addon else "OpenSubtitles", exc)
                 return []
             subs = data.get("subtitles")
@@ -865,7 +865,7 @@ class StreamFinder:
         def ask(base: str, name: str) -> list[dict] | None:
             try:
                 data = addons.fetch_json(f"{base}/subtitles/{kind}/{quote(video_id, safe='')}{extra}.json", self.timeout)
-            except NET_ERRORS as exc:
+            except NET_FAILURES as exc:
                 log.info("Sin subtítulos de %s: %s", name, exc)
                 return None
             return subtitle_lib.parse_options(data.get("subtitles") or [], "OpenSubtitles" if "opensubtitles" in base else name)

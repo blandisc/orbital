@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from ..net import NET_ERRORS, read_json
+from ..net import NET_FAILURES, read_json, urlopen
 
 log = logging.getLogger(__name__)
 
@@ -54,11 +54,11 @@ class StremioAPI:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as res:
+            with urlopen(req, timeout=self.timeout) as res:
                 body = read_json(res, timeout=self.timeout)
         except urllib.error.HTTPError as exc:
             raise StremioUnreachable(f"Stremio respondió HTTP {exc.code}") from exc
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise StremioUnreachable(f"No pude conectar con Stremio: {exc}") from exc
         if isinstance(body, dict) and body.get("error"):
             error = body["error"]

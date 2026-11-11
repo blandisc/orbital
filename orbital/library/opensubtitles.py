@@ -19,7 +19,7 @@ import time
 from urllib.parse import urlencode
 
 from .. import __version__
-from ..net import NET_ERRORS, http_json
+from ..net import NET_FAILURES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ class OpenSubtitles:
         try:
             code, body = self.http(f"{HOST}/login", method="POST", headers=self._headers(),
                                    body={"username": user, "password": password}, timeout=15)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             raise OpenSubtitlesError(*OFFLINE) from exc
         if code == 401:
             raise OpenSubtitlesError(*WRONG)
@@ -199,7 +199,7 @@ class OpenSubtitles:
                 return hit[1]
         try:
             code, body = self.http(url, headers=self._headers(), timeout=15)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             log.info("OpenSubtitles no contestó: %s", exc)
             return None
         if code >= 400:
@@ -228,7 +228,7 @@ class OpenSubtitles:
         try:
             code, body = self.http(f"{self._root(account)}/download", method="POST", headers=self._headers(account["token"]),
                                    body={"file_id": int(file_id)}, timeout=15)
-        except (*NET_ERRORS, TypeError) as exc:
+        except (*NET_FAILURES, TypeError) as exc:
             raise OpenSubtitlesError(*OFFLINE) from exc
         if code == 401:
             self._save(None)

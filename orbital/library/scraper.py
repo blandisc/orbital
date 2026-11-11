@@ -26,7 +26,7 @@ import urllib.request
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-from ..net import NET_ERRORS, read_body
+from ..net import NET_FAILURES, read_body, request, urlopen
 from .media import IMAGE_EXTS, MediaStore, good, image_look, image_size
 
 log = logging.getLogger(__name__)
@@ -125,10 +125,10 @@ class Http:
                 time.sleep(wait)
             self._last[host] = time.monotonic()
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
+            req = request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
+            with urlopen(req, timeout=TIMEOUT) as res:
                 return read_body(res, timeout=TIMEOUT)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             log.debug("Sin respuesta de %s: %s", url, exc)
             return None
 

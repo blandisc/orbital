@@ -23,7 +23,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from ..atomic import atomic_write
-from ..net import NET_ERRORS, read_body
+from ..net import NET_FAILURES, read_body, request, urlopen
 from .iptv import HTTP, Channel
 
 log = logging.getLogger(__name__)
@@ -72,15 +72,15 @@ def fetch(url: str, headers: dict, *, limit: int = MANIFEST_BYTES, timeout: floa
     (que viene de internet) podía mandar a leer un archivo del equipo con una calidad «file:///…»."""
     if not HTTP.match(url or ""):
         raise Unreachable("dirección que no es de internet")
-    req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=timeout, context=_context()) as res:
+        req = request(url, headers=headers)
+        with urlopen(req, timeout=timeout, context=_context()) as res:
             return read_body(res, timeout=timeout, limit=limit, truncate=True)
     except urllib.error.HTTPError as exc:
         raise Unreachable(f"HTTP {exc.code}") from exc
     except TimeoutError as exc:
         raise Unreachable("no responde a tiempo") from exc
-    except NET_ERRORS as exc:
+    except NET_FAILURES as exc:
         raise Unreachable(f"sin conexión ({type(exc).__name__})") from exc
 
 

@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from orbital import foryou as foryou_mod
+from orbital import net as net_lib
 from orbital.config import parse_config
 from orbital.foryou import Cache, ForYou, game_item, hours_text, runtime_text, video_item
 from orbital.library import charts, rawg, tmdb, trakt
@@ -32,7 +33,12 @@ class FakeNet:
         self.calls.append((method, url, body))
         for m, pattern, reply in self.routes:
             if m == method and re.search(pattern, url):
-                return reply(url, body) if callable(reply) else reply
+                try:
+                    return reply(url, body) if callable(reply) else reply
+                except OSError as exc:  # como http_json: un fallo de la red sale como NetError
+                    if isinstance(exc, net_lib.NetError):
+                        raise
+                    raise net_lib.NetError(str(exc)) from exc
         return 404, None
 
 

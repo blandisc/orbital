@@ -25,13 +25,12 @@ import json
 import logging
 import threading
 import time
-import urllib.request
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..net import NET_ERRORS, read_json
+from ..net import NET_FAILURES, read_json, request, urlopen
 from .stremio_api import StremioError
 
 log = logging.getLogger(__name__)
@@ -84,8 +83,9 @@ class Health:
 
 
 def fetch_json(url: str, timeout: float = REQUEST_TIMEOUT) -> dict:
-    req = urllib.request.Request(url, headers={"User-Agent": "Orbital"})
-    with urllib.request.urlopen(req, timeout=timeout) as res:
+    """El JSON de un complemento. Lanza algo de NET_FAILURES si no contestó, si no es JSON o si la dirección no sirve."""
+    req = request(url, headers={"User-Agent": "Orbital"})
+    with urlopen(req, timeout=timeout) as res:
         data = read_json(res, timeout=timeout)
     return data if isinstance(data, dict) else {}
 
@@ -243,7 +243,7 @@ class AddonRegistry:
         started = time.monotonic()
         try:
             data = fetch_json(url, self.timeout)
-        except NET_ERRORS as exc:
+        except NET_FAILURES as exc:
             log.info("No pude leer el complemento de %s: %s", redact(url), exc)
             self.health.fail(url)
             return self._saved().get(_slot(url)), False

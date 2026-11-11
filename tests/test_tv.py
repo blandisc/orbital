@@ -13,6 +13,7 @@ from orbital import player, tv
 from orbital.config import parse_config
 from orbital.library import iptv
 from orbital.library.iptv_health import Unreachable
+from orbital.net import NetError
 from orbital.server import create_app
 
 SAMPLE = (Path(__file__).parent / "fixtures" / "iptv" / "mx-muestra.m3u").read_text(encoding="utf-8")
@@ -126,7 +127,7 @@ def test_refresh_sin_internet_usa_la_copia_y_no_cuenta_fallos(tmp_path):
     assert len(first.visible()) == 8
 
     def offline() -> str:
-        raise OSError("Sin red")
+        raise NetError("Sin red")
 
     live = tv.LiveTV(parse_config({}), None, directory=tmp_path, download_fn=offline, fetch_fn=Net(up=[]), online=lambda: False)
     assert len(live.visible()) == 8  # nada más arrancar, sin red: la copia en disco y lo que se sabía
