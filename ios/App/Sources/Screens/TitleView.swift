@@ -81,6 +81,9 @@ struct TitleView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
+        // Teclado y barra de menús (iPad, Mac): ⌘↩ ver, ⌘D guardar, ⌥⌘V versión (`AppCommands`).
+        .focusedSceneValue(\.titleCommands, TitleCommands(play: { let go = continueAction(model); if go.enabled { go.play() } },
+                                                           save: { saving = true }, versions: { if let v = model.continueVideoID { openVersions(v) } }))
         .task { await model.followDownloads() }
         // F3: la primera vez que abres una ficha (si nunca has visto nada aquí), el foco en «Ver».
         .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca la versión, debajo de «Ver».",

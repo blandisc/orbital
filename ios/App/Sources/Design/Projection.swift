@@ -355,6 +355,18 @@ struct HeroActions<Content: View>: View {
 
 /// Una hoja tan alta como lo que trae (el control remoto de la TV, avisos cortos): mide su contenido y lo usa de alto, en
 /// vez de media pantalla con un hueco abajo. Si el contenido cambia de alto, la hoja lo sigue.
+/// Un botón invisible con Esc (`cancelAction`) que cierra la presentación de su hoja. Ver `escapeCloses()`.
+private struct EscapeCloses: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        content.background {
+            Button("Cerrar") { dismiss() }.keyboardShortcut(.cancelAction)
+                .opacity(0).accessibilityHidden(true).allowsHitTesting(false)   // ds-exception: atajo Esc sin botón visible (como ⌘A al elegir)
+        }
+    }
+}
+
 private struct FittedSheet: ViewModifier {
     @State private var height: CGFloat = DS.Size.touchTarget * 6
 
@@ -365,6 +377,7 @@ private struct FittedSheet: ViewModifier {
             .presentationDetents([.height(height)])
             .presentationDragIndicator(.visible)
             .fittedFormSizing()
+            .escapeCloses()
     }
 }
 
@@ -382,6 +395,7 @@ private struct FittedScrollSheet: ViewModifier {
             .presentationDetents([.height(height)])
             .presentationDragIndicator(.visible)
             .fittedFormSizing(idealHeight: height)
+            .escapeCloses()
     }
 }
 
@@ -402,7 +416,12 @@ extension View {
     /// `bottom: false` si la hoja mide justo lo que trae (`fittedSheet`): el margen de abajo del iPhone ya separa lo último.
     func dsSheetContent(sides: Bool = true, bottom: Bool = true) -> some View {
         padding(.horizontal, sides ? DS.Space.gutter : 0).padding(.top, DS.Space.sheetTop).padding(.bottom, bottom ? DS.Space.s4 : 0)
+            .escapeCloses()
     }
+    /// Receta: Esc cierra la hoja (iPad con teclado y Mac). iPadOS no lo hace solo en las hojas de SwiftUI: sin esto, quien usa
+    /// teclado se quedaba atrapado en «Guardar en…» o «Versión» (10 nov 2026). Ya va dentro de `dsSheetContent`,
+    /// `fittedSheet` y `fittedScrollSheet`; en el iPhone sin teclado no hace nada.
+    func escapeCloses() -> some View { modifier(EscapeCloses()) }
 }
 
 extension View {

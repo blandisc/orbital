@@ -5,6 +5,7 @@ import OrbitalModels
 /// en la app de escritorio. Sin teclado no se ve y no cambia nada. Las acciones son las mismas que tocan los botones.
 struct AppCommands: Commands {
     @FocusedValue(\.playerCommands) private var player
+    @FocusedValue(\.titleCommands) private var title
 
     var body: some Commands {
         CommandMenu("Ir") {
@@ -24,6 +25,15 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .appSettings) {
             Button("Ajustes…") { AppEnvironment.shared.ui.openSettings = true }.keyboardShortcut(",")
         }
+        // La ficha abierta: lo mismo que sus tres botones principales, con teclado y desde el menú (iPad y Mac).
+        CommandMenu("Título") {
+            Group {
+                Button("Ver o continuar") { title?.play() }.keyboardShortcut(.return, modifiers: .command)
+                Button("Guardar en una lista…") { title?.save() }.keyboardShortcut("d")
+                Button("Elegir versión…") { title?.versions() }.keyboardShortcut("v", modifiers: [.command, .option])
+            }
+            .disabled(title == nil || player != nil)   // solo con una ficha a la vista (con el video abierto, manda el reproductor)
+        }
         CommandMenu("Reproducción") {
             Group {
                 Button("Reproducir o pausar") { player?.togglePlay() }.keyboardShortcut(.space, modifiers: [])
@@ -31,9 +41,15 @@ struct AppCommands: Commands {
                 Button("Adelante 10 segundos") { player?.skip(true) }.keyboardShortcut(.rightArrow, modifiers: [])
                 Divider()
                 Button("Audio y subtítulos") { player?.openDock() }.keyboardShortcut("l")
-                Button("Cerrar el reproductor") { player?.close() }.keyboardShortcut(.escape, modifiers: [])
             }
             .disabled(player == nil)   // solo con el reproductor abierto (si no, la barra espaciadora es de quien escribe)
+            // Esc solo existe con el video abierto: aunque estuviera apagado, el menú se quedaba con la tecla y Esc ya no
+            // cerraba ninguna hoja («Guardar en…», «Versión») en el iPad con teclado ni en la Mac (10 nov 2026).
+            if let player {
+                Button("Cerrar el reproductor") { player.close() }.keyboardShortcut(.escape, modifiers: [])
+            } else {
+                Button("Cerrar el reproductor") {}.disabled(true)
+            }
         }
     }
 
@@ -56,6 +72,16 @@ struct PlayerCommands: Equatable {
     static func == (_: Self, _: Self) -> Bool { true }
 }
 
+/// Lo que la ficha abierta deja hacer desde el menú y el teclado (lo publica `TitleView`).
+struct TitleCommands: Equatable {
+    var play: () -> Void
+    var save: () -> Void
+    var versions: () -> Void
+    /// Siempre «igual», por la misma razón que `PlayerCommands` (un valor enfocado que cambia repinta todo sin parar).
+    static func == (_: Self, _: Self) -> Bool { true }
+}
+
 extension FocusedValues {
     @Entry var playerCommands: PlayerCommands?
+    @Entry var titleCommands: TitleCommands?
 }
