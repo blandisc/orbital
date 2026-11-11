@@ -107,6 +107,11 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 40
     continue-on-error: true
+    # Cuando llega un commit nuevo, la compilación del anterior se cancela: los runners de macOS son pocos y con varios
+    # commits seguidos se forma fila.
+    concurrency:
+      group: iphone-app-${{ github.ref }}-${{ matrix.configuration }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -158,7 +163,11 @@ jobs:
   # etiqueta, así que nunca recibe un commit que la CI no aprobó. Los commits que fallan no la tocan.
   tv-estable:
     needs: [windows, macos, iphone-app]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Mientras `iphone-app` sea provisional (ver arriba), no cuenta para la etiqueta; cuando deje de serlo, agregar
+    # `&& needs.iphone-app.result == 'success'` aquí.
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.windows.result == 'success' && needs.macos.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
