@@ -46,6 +46,7 @@ struct AllSourcesList: View {
                 Spacer(minLength: 0)
                 filterMenu
             }
+            otherTitleNote
             if groups.isEmpty {
                 VStack(spacing: DS.Space.s2) {
                     Text("Ninguna con estos filtros").recipe(.secondary)
@@ -213,7 +214,21 @@ struct AllSourcesList: View {
                 (tag == "CAM" ? Text("Grabada en el cine") : Text("Tráiler")).recipe(.caption, color: DS.warning)
             }
             if source.tags.contains(Streams.otherEpisodeTag) { Text("¿Otro episodio?").recipe(.caption, color: DS.warning) }
-            else if source.tags.contains(Streams.otherTitleTag) || source.otherTitle { Text("¿Otro título?").recipe(.caption, color: DS.textMuted) }
+        }
+    }
+
+    private func isOtherTitle(_ source: Source) -> Bool {
+        !source.tags.contains(Streams.otherEpisodeTag) && (source.tags.contains(Streams.otherTitleTag) || source.otherTitle)
+    }
+
+    /// Una sola vez, arriba de la lista: qué quiere decir el ícono de «¿Otro título?» (solo si alguna lo lleva).
+    @ViewBuilder private var otherTitleNote: some View {
+        if sources.contains(where: isOtherTitle) {
+            Label { Text("¿Otro título? El nombre dice otro año: puede ser otra película.").recipe(.caption) } icon: {
+                Image(systemName: DS.Symbol.otherTitle).foregroundStyle(DS.textMuted)
+            }
+            .font(DS.TextRecipe.caption.font)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -221,6 +236,10 @@ struct AllSourcesList: View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             if let color = speedColor(source) { dot(color) }
             Text(verbatim: facts(source)).recipe(.labelLarge, color: DS.text)
+            // «¿Otro título?» se explica una vez arriba de la lista; aquí, solo su ícono (revisión 2: se repetía en cada renglón).
+            if isOtherTitle(source) {
+                Image(systemName: DS.Symbol.otherTitle).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+            }
         }
     }
 
@@ -296,10 +315,11 @@ struct AllSourcesList: View {
 
     // MARK: Textos
 
-    /// «1080p · DV · 12,3 GB» (sin tamaño si no se sabe; una sola insignia de imagen).
+    /// «4K · Dolby Vision · 12,3 GB» en llano (sin tamaño si no se sabe; una sola palabra de imagen). Las siglas completas,
+    /// en el nombre técnico al abrir el renglón.
     private func facts(_ source: Source) -> String {
         let size: String? = source.size > 0 ? ByteSize.text(Int64(source.size), language: uiLanguage) : nil
-        return [source.resolution.isEmpty ? "SD" : source.resolution, AllSources.hdrBadge(source), size].compactMap { $0 }.joined(separator: " · ")
+        return [source.resolution.isEmpty ? "SD" : source.resolution, AllSources.pictureWords(source.hdr), size].compactMap { $0 }.joined(separator: " · ")
     }
 
     /// «🇲🇽 Latino · también 🇺🇸 inglés»: el que va a sonar primero y marcado; los demás después, en gris. Si alguno se

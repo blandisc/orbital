@@ -33,9 +33,26 @@ enum VersionText {
         option.sizeGB.map { ByteSize.text(Int64($0 * 1e9), locale: locale) }
     }
 
-    /// «2,9 GB · DV · Atmos».
+    /// De dónde salió la copia, en llano («WEB-DL» → «copia de internet»): para los subtítulos del reproductor (revisión 2).
+    static func copyWords(_ source: String?, _ ui: String) -> String? {
+        guard let source else { return nil }
+        let key: String
+        switch source.lowercased() {
+        case "web-dl", "webrip", "web": key = "copia de internet"
+        case "bluray", "blu-ray", "remux": key = "copia de Blu-ray"
+        case "hdtv": key = "copia de la tele"
+        case "dvd", "dvdrip": key = "copia de DVD"
+        default: return source
+        }
+        return Strings.tr(key, language: ui)
+    }
+
+    /// «2,9 GB · Dolby Vision · sonido envolvente»: en llano, sin siglas (revisión 2 del 11 nov).
     static func facts(_ option: VersionOption, locale: Locale) -> String {
-        ([size(option, locale: locale)] + option.badges.prefix(2).map { $0 == "Dolby Vision" ? "DV" : $0 }).compactMap { $0 }.joined(separator: " · ")
+        let ui = locale.language.languageCode?.identifier ?? "es"
+        let picture = AllSources.pictureWords(option.badges.map { $0 == "Dolby Vision" ? "DV" : $0 })
+        let sound = AllSources.soundWords(option.badges).map { Strings.tr($0, language: ui) }
+        return [size(option, locale: locale), picture, sound].compactMap { $0 }.joined(separator: " · ")
     }
 }
 

@@ -75,7 +75,7 @@ struct VersionMark: Equatable {
         } else if option.speed == .realDebridMustDownload {
             marks.append(VersionMark(symbol: DS.Symbol.cloud, color: DS.textMuted, words: tr("Hay que pedirla")))
         } else if option.speed == .inRealDebrid {
-            marks.append(VersionMark(symbol: "bolt.fill", color: DS.success, words: tr(option.requested ? "Al instante · la pediste" : "Al instante")))
+            marks.append(VersionMark(symbol: DS.Symbol.instant, color: DS.success, words: tr(option.requested ? "Al instante · la pediste" : "Al instante")))
         }
         return marks
     }
@@ -136,7 +136,7 @@ struct VersionListRow<Menu: View>: View {
     }
 
     private var recommendedMark: some View {
-        Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon)
+        Image(systemName: DS.Symbol.recommended).font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon)
             .frame(width: DS.Version.mark).opacity(option.recommended ? 1 : 0).accessibilityHidden(true)
     }
 
@@ -188,5 +188,35 @@ struct VersionPreview: View {
         }
         .padding(DS.Space.s4)
         .frame(width: DS.Version.preview, alignment: .leading)
+    }
+}
+
+/// La primera vez que abres «Versión»: qué quiere decir el destello (la recomendada) y el rayo (lista al instante). Después
+/// de verla una vez ya no sale (revisión 2 del 11 nov: los dos íconos no se explicaban en ningún lado).
+struct VersionLegend: View {
+    static let seenKey = "version-legend-seen"
+    @AppStorage(VersionLegend.seenKey) private var seen = false
+    /// Al abrir la hoja: si ya se había visto antes. Así no desaparece mientras la lees.
+    @State private var shownBefore: Bool?
+
+    var body: some View {
+        Group {
+            if shownBefore == false {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Space.s3) { items }
+                    VStack(alignment: .leading, spacing: DS.Space.s1) { items }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .onAppear { if shownBefore == nil { shownBefore = seen; seen = true } }
+    }
+
+    @ViewBuilder private var items: some View {
+        Label { Text("Recomendada").recipe(.caption) } icon: { Image(systemName: DS.Symbol.recommended).foregroundStyle(DS.brandMoon) }
+            .font(DS.TextRecipe.caption.font)
+        Label { Text("Lista al instante").recipe(.caption) } icon: { Image(systemName: DS.Symbol.instant).foregroundStyle(DS.success) }
+            .font(DS.TextRecipe.caption.font)
     }
 }

@@ -80,7 +80,9 @@ extension TitleView {
             rows.append(("Idioma original", LanguageFlags.flagged(name, code)))
         }
         if let best = model.bestSource {
-            let items = QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges)
+            // En llano («4K · Dolby Vision · sonido envolvente»); las siglas, en «Versión» al abrir un renglón (revisión 2).
+            let ui = env.services.appSettings.uiLanguage
+            let items = AllSources.plainQuality(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges).map { Strings.tr($0, language: ui) }
             if !items.isEmpty { rows.append(("Disponible", items.joined(separator: " · "))) }
         }
         if let studios = model.extras?.studios, !studios.isEmpty { rows.append((model.kind == "series" ? "Cadena" : "Estudio", studios.map(\.name).joined(separator: ", "))) }

@@ -195,4 +195,23 @@ public enum AllSources {
 
     /// La insignia de imagen que va en el renglón (una sola: la mejor; `hdr` ya viene de mejor a peor: DV, HDR10+, HDR).
     public static func hdrBadge(_ s: Source) -> String? { s.hdr.first }
+
+    /// La imagen en español llano para el renglón (revisión 2 del 11 nov: «4K · DV · 14,8 GB» no se entendía): «Dolby Vision»
+    /// o «HDR»; las siglas completas (DV, HDR10+, REMUX, WEB-DL) quedan en el nombre técnico, al abrir el renglón.
+    public static func pictureWords(_ hdr: [String]) -> String? {
+        if hdr.contains("DV") { return "Dolby Vision" }
+        return hdr.contains("HDR10+") || hdr.contains("HDR") ? "HDR" : nil
+    }
+
+    /// El sonido en español llano: «Dolby Atmos» si lo trae; cualquier otro de canales (TrueHD, DTS, DD+, 7.1, 5.1), «sonido
+    /// envolvente» (es una llave del catálogo: en inglés, «surround sound»).
+    public static func soundWords(_ audio: [String]) -> String? {
+        if audio.contains("Atmos") { return "Dolby Atmos" }
+        return audio.contains(where: { ["TrueHD", "DTS-HD", "DTS", "DD+", "7.1", "5.1"].contains($0) }) ? "sonido envolvente" : nil
+    }
+
+    /// «4K · Dolby Vision · Dolby Atmos»: lo que trae la mejor versión, sin siglas (Detalles de la ficha).
+    public static func plainQuality(resolution: String, hdr: [String], audio: [String]) -> [String] {
+        [resolution.isEmpty ? nil : resolution, pictureWords(hdr), soundWords(audio)].compactMap { $0 }
+    }
 }

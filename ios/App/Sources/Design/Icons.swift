@@ -39,5 +39,11 @@ extension DS {
         /// PT10: cancelar un pedido en camino (⊗) y quitar de tu Real-Debrid lo que ya terminó (basura).
         static let cancelRequest = DebridRequestWords.Icon.cancel
         static let removeRequest = DebridRequestWords.Icon.remove
+        /// La versión recomendada (el destello): solo eso. La leyenda de «Versión» lo explica la primera vez.
+        static let recommended = "sparkles"
+        /// Lista al instante (ya está en la nube): el rayo, solo eso.
+        static let instant = "bolt.fill"
+        /// «¿Otro título?»: el nombre de la versión dice otro año. Una vez explicado arriba de la lista, en cada renglón solo el ícono.
+        static let otherTitle = "questionmark.circle"
     }
 }

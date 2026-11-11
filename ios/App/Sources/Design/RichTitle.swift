@@ -18,11 +18,6 @@ struct QualityBadges: View {
         }
         .accessibilityElement(children: .combine)
     }
-
-    /// Lo que se enseña de una fuente: resolución, rango dinámico y sonido.
-    static func items(resolution: String, hdr: [String], audio: [String]) -> [String] {
-        ([resolution].filter { !$0.isEmpty } + hdr + audio)
-    }
 }
 
 /// IMDb · TMDB · Trakt, cada una con el logotipo oficial de su servicio y su calificación real: IMDb de Cinemeta

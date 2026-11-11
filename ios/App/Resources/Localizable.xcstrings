@@ -1,6 +1,72 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "copia de internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "web copy"
+          }
+        }
+      }
+    },
+    "copia de Blu-ray": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blu-ray copy"
+          }
+        }
+      }
+    },
+    "copia de la tele": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV recording"
+          }
+        }
+      }
+    },
+    "copia de DVD": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DVD copy"
+          }
+        }
+      }
+    },
+    "Lista al instante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready instantly"
+          }
+        }
+      }
+    },
+    "sonido envolvente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "surround sound"
+          }
+        }
+      }
+    },
     "Conectar con un código": {
       "extractionState": "manual",
       "localizations": {

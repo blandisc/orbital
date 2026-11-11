@@ -283,6 +283,7 @@ struct SourcesSheet: View {
     /// «Por idioma»: tu idioma con su encabezado, los demás bajo «Otros idiomas», los de más allá plegados, las que hay que
     /// pedir y cuántas se esconden.
     @ViewBuilder private func byLanguage(_ model: SourcesModel, _ ui: String) -> some View {
+        VersionLegend()
         VersionLanguageList(rows: model.languageRows, uiLanguage: ui) { row, option, showsLanguage in
             versionRow(row, option, showsLanguage: showsLanguage, model, ui)
         }

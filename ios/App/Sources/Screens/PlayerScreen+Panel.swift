@@ -150,11 +150,11 @@ extension PlayerScreen {
         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
     }
 
-    /// «WEB-DL · 1080p», «Del video» o «Versión 3».
+    /// «1080p · copia de internet», «Del video» o «Versión 3».
     func dockVersionTitle(_ v: SubtitleVersion, index: Int) -> String {
         let tr = { (k: String) in Strings.tr(k, language: env.services.appSettings.uiLanguage) }
         let res = v.name.flatMap { n in n.range(of: #"(2160|1080|720|480)[pi]"#, options: [.regularExpression, .caseInsensitive]).map { String(n[$0]).lowercased() } }
-        let named = [v.traits.source, res].compactMap { $0 }.joined(separator: " · ")
+        let named = [res, VersionText.copyWords(v.traits.source, env.services.appSettings.uiLanguage)].compactMap { $0 }.joined(separator: " · ")
         // Guardado con la descarga: «Español 2 · OpenSubtitles · para sordos» (la copia va debajo, en la hoja de versiones).
         if let saved = v.saved {
             let locale = Locale(identifier: env.services.appSettings.uiLanguage)
@@ -385,7 +385,7 @@ extension PlayerScreen {
         let v = versions[at]
         if v.fromVideo { return (title, Text("Del video")) }
         if v.saved != nil { return (title, Text("Guardado con la descarga")) }
-        let source = v.traits.source
+        let source = VersionText.copyWords(v.traits.source, env.services.appSettings.uiLanguage)
         if v.matchesCopy { return (title, source.map { Text("\($0) · coincide con tu copia") } ?? Text("Coincide con tu copia")) }
         if let d = v.downloads, d > 0 { return (title, Text("\(d.formatted(.number.notation(.compactName))) descargas")) }
         return (title, Text("De internet"))
