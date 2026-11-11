@@ -73,4 +73,25 @@ final class IPadKeyboardUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["Inicio"].waitForExistence(timeout: 5))
     }
 
+    /// Tab y flechas con «Acceso total con teclado» (o «Navegación con teclado» en la Mac) prendido: iOS solo mueve el foco por
+    /// botones con ese ajuste del sistema (documentación de `focusable(_:interactions:)`). Recorre Inicio, Biblioteca y la ficha
+    /// sin cerrarse y guarda capturas para ver el anillo del foco. Solo corre con `ORBITAL_FKA=1` (el ajuste se prende afuera:
+    /// `xcrun simctl spawn <udid> defaults write com.apple.Accessibility FullKeyboardAccessEnabled -bool true`).
+    func testTabMovesVisibleFocus() throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["ORBITAL_FKA"] == nil, "solo con ORBITAL_FKA")
+        for (name, args) in [("inicio", ["-demo-tab", "0"]), ("biblioteca", ["-demo-tab", "3", "-demo-trakt"]),
+                             ("ficha", ["-demo-tmdb", "-demo-title", "movie:tt1160419"])] {
+            open(args)
+            sleep(8)
+            for step in 1...6 {
+                app.typeKey(XCUIKeyboardKey.tab, modifierFlags: [])
+                sleep(1)
+                if [1, 3, 6].contains(step) { shot("foco-\(name)-tab\(step)") }
+            }
+            app.typeKey(XCUIKeyboardKey.rightArrow, modifierFlags: [])
+            sleep(1)
+            shot("foco-\(name)-flecha")
+            XCTAssertEqual(app.state, .runningForeground, "\(name): la app se cerró al mover el foco")
+        }
+    }
 }
