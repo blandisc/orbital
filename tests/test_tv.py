@@ -36,7 +36,8 @@ class Net:
 
 
 def make_tv(catalog=None, directory=None, *, up=None, text=SAMPLE, online=lambda: True, load=True) -> tv.LiveTV:
-    live = tv.LiveTV(parse_config({}), catalog, directory=directory, download_fn=lambda: text, fetch_fn=Net(up), online=online)
+    services = tv.TvServices.of(catalog) if catalog is not None else None  # solo lo que la TV usa del catálogo
+    live = tv.LiveTV(parse_config({}), services, directory=directory, download_fn=lambda: text, fetch_fn=Net(up), online=online)
     if load:
         live.set_channels(iptv.parse_m3u(text))
     return live
@@ -562,7 +563,8 @@ def test_tus_canales_vienen_de_tu_lista_de_trakt(client):
     arranque, para no perderlas."""
     c, tv = client
     fake = FakeTrakt()
-    tv.catalog.foryou = type("F", (), {"trakt": fake})()
+    foryou = type("F", (), {"trakt": fake})()
+    tv.services.foryou = lambda: foryou
     assert c.post("/api/tv/mine", json={"id": "x1"}).status_code == 400
     assert c.post("/api/tv/mine", json={"id": "tt2467372", "title": "Brooklyn Nine-Nine"}).status_code == 200
     assert fake.created == ["Tus canales"] and fake.lists["Tus canales"][-1] == "tt2467372"

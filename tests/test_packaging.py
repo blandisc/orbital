@@ -54,7 +54,7 @@ def test_the_wheel_carries_the_tables(tmp_path):
     names = zipfile.ZipFile(next((tmp_path / "dist").glob("*.whl"))).namelist()
     for name in READ_BY_PYTHON:
         assert f"orbital/design/{name}" in names
-    assert "orbital/web/index.html" in names and "orbital/library/streams.py" in names
+    assert "orbital/web/index.html" in names and "orbital/library/streams/__init__.py" in names
 
 
 def test_tables_are_found_from_git_and_from_the_package(tmp_path, monkeypatch):

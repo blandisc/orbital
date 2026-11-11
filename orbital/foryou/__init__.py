@@ -71,7 +71,7 @@ from .base import TRAKT_ADDON as TRAKT_ADDON
 from .base import TRAKT_FAVORITES as TRAKT_FAVORITES
 from .base import TV_ONLY_PREFIXES as TV_ONLY_PREFIXES
 from .base import WEEKDAYS as WEEKDAYS
-from .base import Host as Host
+from .base import Services as Services
 from .base import load_awards as load_awards
 from .cache import Cache as Cache
 from .cache import _build as _build
@@ -93,9 +93,9 @@ log = logging.getLogger("orbital.foryou")  # el mismo nombre de siempre: la bitÃ
 
 
 class ForYou(_Home):
-    def __init__(self, config, catalog: Host) -> None:
+    def __init__(self, config, services: Services) -> None:
         self.settings = config.para_ti
-        self.catalog = catalog
+        self.services = services
         self.region = self.settings.region
         folder = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if getattr(config, "source", None) else None
         self.cache = Cache(path=folder / "foryou-cache.json" if folder else None)
@@ -113,7 +113,7 @@ class ForYou(_Home):
         from ..gestor import Gestor
 
         self.gestor = Gestor(self)  # el gestor tipo Trakt (G1â€“G4), como el iPhone
-        scrobbler = getattr(getattr(catalog, "watch", None), "scrobbler", None)
+        scrobbler = getattr(getattr(services, "watch", None), "scrobbler", None)
         if scrobbler is not None:  # lo que el reproductor no pudo avisarle a Trakt espera en la misma cola (F4)
             scrobbler.outbox = self.gestor.outbox
 

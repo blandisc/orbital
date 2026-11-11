@@ -13,7 +13,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any
 
 from ..library import charts as charts_api
 from ..library import letterboxd as letterboxd_api
@@ -147,6 +147,9 @@ KEY_PREFIX = "para_ti."
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..catalog import Catalog
     from ..credentials import Credentials
     from ..events import EventBus
     from ..gestor import Gestor
@@ -157,32 +160,39 @@ if TYPE_CHECKING:
     from .cache import Cache
 
 
-class Host(Protocol):
-    """Lo único que «Para ti» usa de Orbital (catalog.py le da el Catalog entero, que lo cumple).
+class Services:
+    """Lo único que «Para ti» usa de Orbital: credenciales, ajustes, avisos, Watch, los nombres de los títulos y tu
+    biblioteca (antes recibía el Catalog entero). catalog.py lo arma con `Services.of(catalog)`; si una pieza nueva
+    necesita otro servicio, entra aquí (y pyright avisa si una pieza usa algo que no está)."""
 
-    pyright avisa si una pieza usa algo más: si una pieza nueva necesita otro servicio, entra aquí."""
+    def __init__(self, *, credentials: Credentials, state: State, events: EventBus, watch: Watch, names: TitleNames,
+                 items: Callable[..., list[LibraryItem]], get: Callable[[str], LibraryItem | None],
+                 describe: Callable[[LibraryItem], dict]) -> None:
+        self.credentials = credentials
+        self.state = state
+        self.events = events
+        self.watch = watch
+        self.names = names
+        self.items = items  # (include_hidden=False) -> tu biblioteca
+        self.get = get
+        self.describe = describe
 
     @property
-    def credentials(self) -> Credentials: ...
-    @property
-    def state(self) -> State: ...
-    @property
-    def events(self) -> EventBus: ...
-    @property
-    def watch(self) -> Watch: ...
-    cinemeta: Any  # Catalog.cinemeta (el de Watch): un property(lambda …) que pyright no lee
-    @property
-    def names(self) -> TitleNames: ...
-    def items(self, include_hidden: bool = False) -> list[LibraryItem]: ...
-    def get(self, item_id: str) -> LibraryItem | None: ...
-    def describe(self, item: LibraryItem) -> dict: ...
+    def cinemeta(self) -> Any:
+        """El de Watch, el de ahora (las pruebas lo cambian en Watch)."""
+        return self.watch.cinemeta
+
+    @classmethod
+    def of(cls, catalog: Catalog) -> Services:
+        return cls(credentials=catalog.credentials, state=catalog.state, events=catalog.events, watch=catalog.watch,
+                   names=catalog.names, items=catalog.items, get=catalog.get, describe=catalog.describe)
 
 
 class _Base:
     """Lo que ForYou.__init__ arma (aquí solo se declara, con su tipo, para que cada pieza lo vea)."""
 
     settings: Any  # config.para_ti
-    catalog: Host  # lo que «Para ti» usa de Orbital: credenciales, avisos, biblioteca y Watch (Host, arriba)
+    services: Services  # lo que «Para ti» usa de Orbital: credenciales, avisos, biblioteca y Watch (arriba)
     region: Any
     cache: Cache  # dueño: cache.py (tiene su propio candado)
     snapshots: charts_api.ChartSnapshots
@@ -207,14 +217,14 @@ class _Base:
     gestor: Gestor
 
     def _key(self, name: str) -> str:
-        return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
+        return (self.services.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
 
     def key(self, name: str) -> str:
         """La clave vigente (la escrita en la TV o la de config.yaml): también se la lleva la app del iPhone."""
         return self._key(name)
 
     def _build(self) -> None:
-        self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.catalog.credentials)
+        self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.services.credentials)
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
         self._posters_down_until = 0.0
         self.rawg = rawg_api.Rawg(self._key("rawg_key"))
@@ -255,28 +265,28 @@ class _Base:
 
             if SteamGridDB(Http(pause=0), lambda: values[0])._get("/search/autocomplete/mario") is None:  # noqa: SLF001
                 raise ValueError("SteamGridDB no aceptó esa clave: cópiala otra vez de Preferences › API.")
-        changed = any(self.catalog.credentials.get(KEY_PREFIX + n) != (v or None) for n, v in zip(names, values, strict=True))
+        changed = any(self.services.credentials.get(KEY_PREFIX + n) != (v or None) for n, v in zip(names, values, strict=True))
         if service == "trakt" and changed and self.trakt.linked:
             self.trakt.unlink()  # la sesión era de la otra aplicación de Trakt: ya no sirve
         for name, value in zip(names, values, strict=True):
-            self.catalog.credentials.set(KEY_PREFIX + name, value or None)
+            self.services.credentials.set(KEY_PREFIX + name, value or None)
         self._build()
         self.cache.clear()
         self.publish({"type": "foryou-changed"})
 
     def publish(self, event: dict) -> None:
-        self.catalog.events.publish(event)
+        self.services.events.publish(event)
 
     # --- qué hay -----------------------------------------------------------------------------
     def status(self) -> dict:
         return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked,
                           # Lo último que el reproductor le contó a Trakt (o por qué no pudo): Ajustes › Cuentas.
-                          "scrobble": self.catalog.watch.scrobbler.snapshot()},
+                          "scrobble": self.services.watch.scrobbler.snapshot()},
                 "tmdb": self.tmdb.configured, "rawg": self.rawg.configured, "mdblist": bool(self.mdblist.key),
                 "steamgriddb": bool(self._key("steamgriddb_key")),
                 "letterboxd": self.letterboxd.user,  # tu usuario («Cuentas» lo enseña) o None
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
-                "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}
+                "saved": [s for s, names in KEYS.items() if self.services.credentials.get(KEY_PREFIX + names[0])]}
 
     def _today(self) -> date:
         return date.today()

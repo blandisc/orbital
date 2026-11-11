@@ -178,7 +178,7 @@ class _Shelves(_Agenda):
 
     def list_items(self, list_id: str, kind: str | None = None) -> list[dict]:
         kind = kind if kind in ("movie", "series") else "series"
-        hidden = self.catalog.state.dismissed()
+        hidden = self.services.state.dismissed()
         items = self._list(list_id, kind)
         out = [self._with_art(i) for i in items if i["key"] not in hidden]
         self._warm_logos(out[:LOGO_WARM])
@@ -225,7 +225,7 @@ class _Shelves(_Agenda):
             return self.cache.get(f"tmdb:{list_id}:{kind}", POPULAR_TTL, lambda: self._platform(list_id, kind), whole=True)
         if list_id == "chart:netflix":
             entries = self.cache.get(f"charts:netflix:{kind}", SLOW_TTL, stale=True, load=lambda: charts_api.netflix_entries(
-                self.region, kind, tmdb=self.tmdb if self.tmdb.configured else None, cinemeta=self.catalog.cinemeta))
+                self.region, kind, tmdb=self.tmdb if self.tmdb.configured else None, cinemeta=self.services.cinemeta))
             return [self._chart_item(e, kind, "Netflix") for e in entries]
         if list_id.startswith("jw:"):
             brand = list_id.removeprefix("jw:")
