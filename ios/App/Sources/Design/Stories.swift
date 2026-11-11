@@ -236,7 +236,8 @@ struct LearnRings: View {
     let open: (LearnStory) -> Void
 
     var body: some View {
-        // Repartidos a lo ancho: caben cuatro en un iPhone SE y se quedan en su lugar al encogerse.
+        // Repartidos a lo ancho: caben cuatro en un iPhone SE y se quedan en su lugar al encogerse. Si la columna es más angosta
+        // que el círculo, el círculo se achica a su columna (R4: en el SE el primero se salía por la orilla izquierda).
         HStack(alignment: .top, spacing: DS.Space.s2) {
             ForEach(stories) { story in
                 Button { open(story) } label: { LearnRing(story: story, unseen: true, compact: compact).frame(maxWidth: .infinity) }
@@ -260,16 +261,24 @@ struct LearnRing: View {
         let ring = compact ? DS.HomeStories.compactRing : DS.Story.ring
         let tile = compact ? DS.HomeStories.compactTile : DS.Story.tile
         VStack(spacing: DS.Space.s2) {
-            LearnRingMark(story: story, unseen: unseen, drawn: drawn || reduceMotion, ring: ring, tile: tile)
+            // Hasta su tamaño, y más chico si su columna no le da (nunca empuja la fila fuera de la pantalla).
+            Color.clear.frame(maxWidth: ring, maxHeight: ring).aspectRatio(1, contentMode: .fit)   // ds-exception: un círculo es cuadrado
+                .overlay {
+                    GeometryReader { g in
+                        let side = min(g.size.width, ring)
+                        LearnRingMark(story: story, unseen: unseen, drawn: drawn || reduceMotion, ring: side, tile: tile * side / ring)
+                    }
+                }
             if !compact {
                 Text(LocalizedStringKey(story.title)).recipe(.footnote, color: unseen ? DS.text : DS.textMuted)
                     .lineLimit(2).multilineTextAlignment(.center)
-                    // Con la letra más grande, «Ver a tu manera» empujaba la ✕ fuera de la pantalla: el nombre crece hasta aquí.
-                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    // Con la letra más grande, «Ver a tu manera» empujaba la ✕ fuera de la pantalla: el nombre crece hasta aquí,
+                    // y si una palabra no cabe en su columna se achica un poco en vez de cortarse («Ver al insta…», R4).
+                    .minimumScaleFactor(DS.Size.statScale)
+                    .dynamicTypeSize(...DynamicTypeSize.xxLarge)
                     .transition(.opacity)
             }
         }
-        .frame(minWidth: DS.Story.ring)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(LocalizedStringKey(story.title)))
         .accessibilityHint(unseen ? Text("Sin ver") : Text(verbatim: ""))

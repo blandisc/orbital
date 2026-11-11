@@ -163,6 +163,8 @@ struct HomeHeader: View {
         }
         .padding(.horizontal, DS.Space.gutter)
         .padding(.vertical, DS.Space.s2)
+        // Como el renglón de siempre: nunca más ancho que su lugar (R4: en el SE los círculos se salían por las dos orillas).
+        .containerRelativeFrame(.horizontal)
     }
 
     /// Deslizar a la izquierda abre, a la derecha cierra; mientras, todo sigue al dedo.

@@ -80,7 +80,8 @@ struct VoiceRow: View {
             // La pista: una frase del momento; tocarla la manda tal cual (atajo y lección a la vez).
             Button { tap { actions.say(hint) } } label: {
                 Text("Prueba: \(Text(verbatim: "«\(hint)»").foregroundStyle(DS.text).fontWeight(.medium))")
-                    .recipe(.caption, color: DS.textMuted).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)   // I3: «Prueba: «pau…»
+                    .recipe(.caption, color: DS.textMuted).lineLimit(typeSize.isAccessibilitySize ? nil : 1)   // I3: «Prueba: «pau…»; R4: con letra grande, entera
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
