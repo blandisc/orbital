@@ -62,15 +62,17 @@
   /* El logotipo «orbital» (status-bar, boot), con su luna como punto final; en SemiBold (`--weight-semibold`), la única que trae. */
   --font-brand: "Orbital Wordmark", var(--font-sans);
   --tracking-brand: -.03em;
-  /* Legible a 3 m: a 1080p el texto secundario no baja de ~18 px ni el cuerpo de ~23 px.
-     --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño). */
+  /* Legible a 3 m (T2, 10 nov 2026): a 1080p lo más chico (caption) mide ~21 px, footnote ~24, secondary ~26 y el cuerpo ~27.
+     --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño); --text-room, la pantalla chica
+     (base.css: la Legion Go en la mano, 1280×800, sube el texto sin mover el lienzo). */
   --text-scale: 1;
-  --text-2xs: calc(.86rem * var(--text-scale)); /* ~18,5 px a 1080p: lo más chico (subtítulos de tarjeta, glifos) */
-  --text-xs: calc(.9rem * var(--text-scale));
-  --text-sm: calc(.98rem * var(--text-scale));
-  --text-md: calc(1.07rem * var(--text-scale));
-  --text-lg: calc(1.2rem * var(--text-scale));
-  --text-xl: calc(1.55rem * var(--text-scale));
+  --text-room: 1;
+  --text-2xs: calc(.97rem * var(--text-scale) * var(--text-room)); /* ~21 px a 1080p: lo más chico (subtítulos de tarjeta, glifos) */
+  --text-xs: calc(1.11rem * var(--text-scale) * var(--text-room)); /* ~24 px */
+  --text-sm: calc(1.2rem * var(--text-scale) * var(--text-room)); /* ~26 px */
+  --text-md: calc(1.25rem * var(--text-scale) * var(--text-room)); /* ~27 px: el cuerpo, siempre un paso arriba de secondary */
+  --text-lg: calc(1.4rem * var(--text-scale) * var(--text-room));
+  --text-xl: calc(1.6rem * var(--text-scale) * var(--text-room));
   --text-2xl: calc(2.4rem * var(--text-scale));
   --text-3xl: calc(2.9rem * var(--text-scale));
   --text-display: calc(3.7rem * var(--text-scale));

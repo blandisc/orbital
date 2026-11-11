@@ -47,19 +47,22 @@ pueden medir (marcadas «prueba»).
 
 ### Escala de texto (recetas `--type-*`)
 
-A 1080p, 1 rem ≈ 21,6 px (`--root-size`); «Tamaño del texto» multiplica todo por `--text-scale`.
+A 1080p, 1 rem ≈ 21,6 px (`--root-size`); «Tamaño del texto» multiplica todo por `--text-scale`. En pantalla chica (la Legion Go
+en la mano, 1280×800: alto ≤ 900 px) el texto sube un paso más con `--text-room` (×1,1, `base.css`) sin mover el lienzo de
+80 × 50 rem: así lo más chico no baja de ~17 px. Escala subida el 10 nov 2026 (T2): `caption`/`footnote`/`secondary` pasaron de
+18,6/19/21 px a 21/24/26 px, y el cuerpo y las secciones un paso arriba para no perder la jerarquía.
 
 | Receta | Tamaño | ≈ px a 1080p | Peso | Para |
 |---|---|---|---|---|
 | `hero` | `--text-display` 3,7 rem | 80 | negrita | El título del héroe de Películas y series sin logo |
 | `display` | `--text-3xl` 2,9 rem | 63 | negrita | El título de un destacado sin logo (Inicio, Juegos), el de una pantalla (Ajustes) |
 | `title` | `--text-2xl` 2,4 rem | 52 | negrita | Un título largo que baja un paso, una pregunta grande |
-| `heading` | `--text-xl` 1,55 rem | 33 | negrita | El encabezado de una zona o de una hoja |
-| `section` | `--text-lg` 1,2 rem | 26 | negrita | El título de una fila («A continuación», «Tus 13 juegos») |
-| `card-title` · `body` | `--text-md` 1,07 rem | 23 | medium · regular | El nombre en una opción o renglón · el cuerpo |
-| `secondary` · `eyebrow` | `--text-sm` 0,98 rem | 21 | regular · medium | Datos bajo un título · el porqué |
-| `footnote` · `data` | `--text-xs` 0,9 rem | 19 | regular | Notas · números (tabulares) |
-| `caption` | `--text-2xs` 0,86 rem | 18,6 | medium | El nombre bajo lo enfocado, rótulos chicos, glifos |
+| `heading` | `--text-xl` 1,6 rem | 35 | negrita | El encabezado de una zona o de una hoja |
+| `section` | `--text-lg` 1,4 rem | 30 | negrita | El título de una fila («A continuación», «Tus 13 juegos») |
+| `card-title` · `body` | `--text-md` 1,25 rem | 27 | medium · regular | El nombre en una opción o renglón · el cuerpo |
+| `secondary` · `eyebrow` | `--text-sm` 1,2 rem | 26 | regular · medium | Datos bajo un título · el porqué |
+| `footnote` · `data` | `--text-xs` 1,11 rem | 24 | regular | Notas · números (tabulares) |
+| `caption` | `--text-2xs` 0,97 rem | 21 | medium | El nombre bajo lo enfocado, rótulos chicos, glifos |
 
 Nada baja de `caption` (se lee a 3 m). Un componente usa la receta, nunca `--text-*` (prueba).
 

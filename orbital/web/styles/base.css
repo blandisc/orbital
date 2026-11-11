@@ -70,6 +70,9 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 /* Tamaño del texto (Ajustes → Pantalla). */
 [data-text-size="large"] { --text-scale: 1.12; }
 [data-text-size="xlarge"] { --text-scale: 1.25; }
+/* Pantalla chica (T2): la Legion Go en la mano (1280×800) deja el lienzo a 16 px de rem; el texto sube un paso para que
+   lo más chico no baje de ~17 px. Solo el texto: el lienzo de 80 × 50 rem sigue cabiendo. */
+@media (min-width: 701px) and (max-height: 900px) { :root { --text-room: 1.1; } }
 
 /* Cualquier cosa enfocable sin foco propio: un anillo visible, nunca nada. */
 :focus-visible { outline: var(--focus-outline) solid var(--color-focus); outline-offset: var(--focus-outline); }
