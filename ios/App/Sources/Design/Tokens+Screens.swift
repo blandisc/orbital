@@ -521,6 +521,13 @@ extension DS {
         /// El alto fijo del ícono de una tecla: los nombres quedan en el mismo renglón aunque los símbolos midan distinto.
         static let keyIcon: CGFloat = 24
         static var isShortScreen: Bool { WindowMetrics.size.height < shortScreen }
+        /// Aire entre los grupos del control: más junto en pantallas cortas (revisión 2 del 11 nov: en el SE «Escribir en la TV»
+        /// quedaba cortado abajo).
+        static var groupGap: CGFloat { isShortScreen ? DS.Space.s3 : DS.Space.s4 }
+        static var blockGap: CGFloat { isShortScreen ? DS.Space.s3 : DS.Space.s5 }
+        /// Lo que la hoja flotante de iOS 26 se come abajo (su margen y esquinas): sin esto, la hoja completa medía justo lo
+        /// del contenido y «Escribir en la TV» quedaba cortado contra la orilla.
+        static let sheetAllowance: CGFloat = DS.Space.s5
         /// El alto de una tecla y del pad según el teléfono.
         static var keyHeightFitted: CGFloat { isShortScreen ? keyHeightShort : keyHeight }
         /// Lo que mide el pad con su fila de teclas: el lugar mínimo que guardan los botones del reproductor (y los de en

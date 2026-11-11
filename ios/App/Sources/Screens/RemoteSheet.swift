@@ -64,7 +64,7 @@ struct RemoteSheet: View {
                         DSIconButton(symbol: "xmark", label: "Cerrar", size: .regular, action: close).accessibilityIdentifier("remote-panel-close")
                     }
                 }
-                VStack(alignment: .leading, spacing: DS.Space.s5) {
+                VStack(alignment: .leading, spacing: DS.Remote.blockGap) {
                     header(model)
                         // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
@@ -81,7 +81,7 @@ struct RemoteSheet: View {
                 }
             }
             .dsSheetContent()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() } }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { measuredFull = min($0 + DS.Remote.sheetAllowance, WindowMetrics.size.height * DS.Remote.maxShareFitted); settle() } }
         }
         .scrollDisabled(!large && compactHeight < WindowMetrics.size.height * DS.Remote.maxShareFitted)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
@@ -307,7 +307,7 @@ struct RemoteSheet: View {
     /// - **Navegando**: el pad, las secciones y las teclas con lo que hace cada una en esa pantalla.
     /// Arriba siempre la voz; el volumen en todas.
     @ViewBuilder private func full(_ model: TVNowModel) -> some View {
-        VStack(spacing: DS.Space.s4) {
+        VStack(spacing: DS.Remote.groupGap) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             voice(model).remoteMorph("voice", in: morph)
             switch model.context {
@@ -324,14 +324,14 @@ struct RemoteSheet: View {
                     volume(model)
                 }
             case .typing:
-                VStack(spacing: DS.Space.s4) {
+                VStack(spacing: DS.Remote.groupGap) {
                     typing(model, autoFocus: true)
                     navigation(model)
                     volume(model)
                 }
                 .transition(Self.reveal)
             case .browse:
-                VStack(spacing: DS.Space.s4) {
+                VStack(spacing: DS.Remote.groupGap) {
                     volume(model)
                     navigation(model)
                     typing(model, autoFocus: model.textField == true)
@@ -350,7 +350,7 @@ struct RemoteSheet: View {
     /// y solo se reacomoda lo de adentro: los botones se apagan y se encogen hacia arriba mientras el pad crece desde ahí
     /// (y al revés). Antes uno se iba, el otro llegaba y la hoja brincaba de alto un instante después.
     private func deckOrPad<Deck: View>(_ model: TVNowModel, @ViewBuilder deck: () -> Deck) -> some View {
-        VStack(spacing: DS.Space.s4) { deck() }
+        VStack(spacing: DS.Remote.groupGap) { deck() }
             .frame(minHeight: DS.Remote.padModeHeight, alignment: .top)
             .opacity(showsPad ? 0 : 1)
             .scaleEffect(showsPad ? DS.Remote.morphScale : 1, anchor: .top)
@@ -359,7 +359,7 @@ struct RemoteSheet: View {
             .accessibilityHidden(showsPad)
             .overlay(alignment: .top) {
                 if showsPad {
-                    VStack(spacing: DS.Space.s4) { padMode(model) }
+                    VStack(spacing: DS.Remote.groupGap) { padMode(model) }
                         .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: DS.Remote.morphScale, anchor: .top)))
                 }
             }

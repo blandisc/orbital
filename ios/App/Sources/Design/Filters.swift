@@ -70,15 +70,22 @@ struct DSTextTabs<ID: Hashable>: View {
         ViewThatFits(in: .horizontal) {
             tabs(titles: true)
             tabs(titles: true, icons: false)
-            tabs(titles: options.allSatisfy { $0.symbol == nil })
+            tabs(titles: true, icons: false, spacing: DS.Space.s3)
+            if options.allSatisfy({ $0.symbol == nil }) {
+                // Sin íconos a dónde bajar (Semana · Mes · Año · Siempre): se deslizan enteras en vez de cortarse en «Se…»
+                // (revisión 2 del 11 nov, letra grande en el SE).
+                ScrollView(.horizontal, showsIndicators: false) { tabs(titles: true, icons: false, spacing: DS.Space.s3) }
+            } else {
+                tabs(titles: false)
+            }
         }
         // Sin sombra (Fernando, 4 nov 2026): se veía como un halo sucio alrededor de las letras.
         .animation(DS.Motion.fade, value: selection)
         .dsFeedback(.selection, trigger: selection)
     }
 
-    private func tabs(titles: Bool, icons: Bool = true) -> some View {
-        HStack(spacing: DS.Space.s5) {
+    private func tabs(titles: Bool, icons: Bool = true, spacing: CGFloat = DS.Space.s5) -> some View {
+        HStack(spacing: spacing) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 let on = selection == option.id
                 Button { selection = option.id } label: {
