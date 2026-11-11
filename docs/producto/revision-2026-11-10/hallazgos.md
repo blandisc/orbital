@@ -1,6 +1,7 @@
 # Revisión a fondo del 10 nov 2026: hallazgos y estado
 
 Canvas con el resumen para Fernando: https://claude.ai/artifact/H6GJiFWAoCMejPkMuvTQTe
+Tablero de antes y después con el resumen ejecutivo (11 nov): https://claude.ai/artifact/2Lk2qHUES4sE8vRnFCH4ox
 
 Siete revisiones independientes (arquitectura, velocidad y UX/UI del iPhone; servidor, interfaz y UX/UI de la TV; cruce entre
 las dos apps). Fernando pidió el 10 nov corregir todo y aceptó las recomendaciones: **D1-B, D2-A, D3-A, D4-B, D5-A, D6-A,
@@ -48,8 +49,19 @@ no cada agente.
   se cumplió «no construir sobre rojo» (12 de 60 corridas en verde). Tres agentes las corrigen (servidor, interfaz, iPhone).
 - **D1-B:** hecho en Ajustes (`b889d277`); la ficha, widgets y Siri aún no preguntan a las capacidades (en corrección).
 - **V9** (repintado fino) no se hizo: queda como trabajo aparte, empezando por medir en el iPhone real.
-- **En curso:** pulido de la TV y listas largas (V4); el iPhone adopta contrato y reglas; cimientos del iPhone en rama
-  aparte (D1-B, F4, F5, F8, F10, V9).
+- **Cierre (11 nov):** tres agentes corrigieron lo de la segunda revisión y dos más cerraron lo abierto (TV: «Elegir
+  versión», TV en vivo por ventanas, prueba «el foco nunca se pierde», contraste estricto, `main.js` en 2,368 líneas,
+  estáticos comprimidos, un solo nombre por título; iPhone: un solo nombre por título, lenguaje de «Versión», letra
+  grande, íconos por `DS.Symbol`, ediciones `plus` y `orbital` compilando, bitácora «No llegó a Trakt», `StoredFile`).
+  En `f58964dd`: «Pruebas» y «App del iPhone» en verde, `tv-estable` al día; núcleo del iPhone 1,416 pruebas, web 337,
+  humo 38, servidor 2,199 en la Mac (más los 17 propios de Windows). No hubo tercera calificación.
+- **Sigue abierto:** recorrido de la Mac (pantalla bloqueada); V9; F3 (tokens de una sola fuente); `core/menus.js`,
+  reproductor, voz y `server.py` sin partir; dos pruebas de humo intermitentes en Windows (`test_long_list`,
+  `test_moving_feels_instant`); ~20 textos de la edición `orbital`; el desplazamiento de Inicio en iPad con el control
+  abierto; idioma colado en episodios; el cierre `EXC_BAD_ACCESS` de la ficha sin reproducir (remedio preventivo y
+  `ios/scripts/abrir-fichas.sh`). `main` sin protección en GitHub (decisión de Fernando).
+- **Decisiones tomadas sobre la marcha, por confirmar con Fernando:** botón «Guardar» en el iPhone (estado en chico
+  debajo); en la TV «Recientes» en vez de «Jugados», consolas en orden fijo, «Nuevo» como puntito.
 - **Pendiente de Fernando:** desbloquear la Mac para correr el recorrido `OrbitalMac` (la app de Mac compila pero nadie la
   ha usado). **Pendiente de ver en aparatos reales:** vigilante con un juego abierto, barrido de mpv, velocidad con tarjeta
   gráfica en la Legion Go, letra grande y pantalla dividida en un iPad físico.
