@@ -51,6 +51,8 @@ export function createKeyboard({ onPress, label = "Teclado" }) {
   return {
     el, setLayout, move,
     press: () => onPress?.(rows[pos.row]?.[pos.col]?.key),
+    /** ¿Moverse `dc` (−1 o 1) de lado le daría la vuelta a la fila? Buscar lo usa para pasar a los resultados (a la derecha). */
+    wraps: (dc) => { const length = rows[pos.row]?.length ?? 0; return pos.col + dc < 0 || pos.col + dc >= length; },
     reset: (row = 0, col = 0) => { pos = clampKey(rows, { row, col }); paint(); },
     set active(on) { active = !!on; paint(); },
     get current() { return rows[pos.row]?.[pos.col] ?? null; },

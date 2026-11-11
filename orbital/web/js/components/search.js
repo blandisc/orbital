@@ -3,6 +3,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { ERASE_WORD, typingGlyphs } from "../core/input.js";
+import { nextFocus } from "../core/spatial.js";
 import { dictationBase, dictationProblem } from "../core/keyboard.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
@@ -14,9 +15,10 @@ import { EmptyState, Pill } from "./ui.js";
  *   · tus juegos y apps aparecen al instante (se buscan aquí, en tu biblioteca);
  *   · resultados vivos desde la 2ª letra (Cinemeta tolera errores: "ofice" -> The Office),
  *     agrupados: Tus juegos, Películas, Series;
- *   · teclado QWERTY grande, el mismo de Conectar Stremio y del iPhone (antes alfabético: dos teclados distintos en la
- *     misma consola): A escribe, X borra, Y espacio, B vuelve, ↑ a los resultados; con la caja vacía, tus búsquedas
- *     recientes;
+ *   · T7 (revisión del 10 nov): a la izquierda el campo y un teclado QWERTY compacto (el mismo de Conectar Stremio y del
+ *     iPhone); a la derecha los resultados en vivo, con las mismas portadas y el mismo foco que el resto, en cuadrícula.
+ *     A escribe, X borra, Y espacio, B vuelve, → desde la orilla del teclado (o RT) a los resultados y ← de vuelta; con la
+ *     caja vacía, tus búsquedas recientes, lo popular y tus juegos;
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
@@ -56,7 +58,7 @@ export function rememberSearch(recent, query) {
   return [q, ...recent.filter((r) => r !== q)].slice(0, RECENT_MAX);
 }
 
-export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], popular = () => [] }) {
+export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], popular = () => [], played = () => [] }) {
   let picking = null; // { kind, onPick }: «Corregir ficha»
   const field = h("div", { class: "search__field" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
@@ -68,7 +70,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   const keyboard = createKeyboard({ label: "Teclado de búsqueda", onPress: (key) => press(key) });
   const keys = keyboard.el;
   const el = h("section", { class: ["screen", "search"], hidden: true, "aria-label": "Buscar" },
-    h("div", { class: "search__top" }, field, hint), results, keys);
+    h("div", { class: "search__top" }, field, hint), keys, results);
 
   let text = "";
   let shownText = "";
@@ -103,8 +105,10 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       keyboard.setLayout(layout(undo, dictateGlyph, shownListening, goGlyph));
     }
     keyboard.active = zone === "keys";
-    focusables.forEach((node, i) => node.classList.toggle("is-focused",
-      zone === "results" && i === resultIndex));
+    focusables.forEach((node, i) => {
+      node.dataset.focusId = String(i); // para moverse en la cuadrícula (nextFocus)
+      node.classList.toggle("is-focused", zone === "results" && i === resultIndex);
+    });
     field.classList.toggle("search__field--listening", !!listening);
   }
 
@@ -141,35 +145,35 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     render();
   }
 
-  /** Caja vacía: tus búsquedas recientes, para repetir una con dos botones. */
+  /** Caja vacía: tus búsquedas recientes (para repetir una con dos botones), lo popular y tus juegos (T7: más sugerencias). */
   function showRecent() {
-    // Caja vacía: tus búsquedas recientes y lo popular ahora (como Google TV), no una pantalla en blanco.
+    // Caja vacía: tus búsquedas recientes, lo popular ahora (como Google TV) y lo que jugaste, no una pantalla en blanco.
     const recent = storage.get(RECENT_KEY, []);
-    const trending = popular().slice(0, 10);
+    const trending = popular().slice(0, 12);
+    const mine = played().slice(0, 6);
     el.classList.remove("search--searching");
-    items = [...recent.map((q) => ({ recent: q })), ...trending];
+    items = [...recent.map((q) => ({ recent: q })), ...trending, ...mine];
     const chips = recent.map((q, i) => Pill(q, {
       tone: "fill", icon: svg(ICONS.search), onClick: () => { resultIndex = i; zone = "results"; open(); },
     }));
     // El pie de un póster chico: el año (con «Película · 2…» recortado no se leía nada).
-    const cards = trending.map((item, i) => Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
-      caption: true, onPress: () => { zone = "results"; resultIndex = recent.length + i; open(); },
-    }));
-    focusables = [...chips, ...cards];
+    const poster = (item, at) => Card({ ...item, subtitle: String(item.subtitle || "").replace(/^(Película|Serie)\s*·\s*/, "") }, {
+      caption: true, onPress: () => { zone = "results"; resultIndex = at; open(); },
+    });
+    const cards = trending.map((item, i) => poster(item, recent.length + i));
+    const games = mine.map((item, i) => poster(item, recent.length + trending.length + i));
+    focusables = [...chips, ...cards, ...games];
     // Como los resultados: cada grupo con su nombre encima (antes «Populares» iba a un lado, a media altura de las portadas).
-    mount(results, [
-      chips.length > 0 && h("div", { class: ["search__set", "search__set--pills"] },
-        h("span", { class: "search__group", "aria-hidden": "true" }, "Recientes"), h("div", { class: "search__set-cards" }, chips)),
-      cards.length > 0 && h("div", { class: "search__set" },
-        h("span", { class: "search__group", "aria-hidden": "true" }, "Populares"), h("div", { class: "search__set-cards" }, cards)),
-    ]);
-    results.classList.toggle("search__results--recent", !cards.length);
+    const set = (name, nodes, extra = null) => nodes.length > 0 && h("div", { class: ["search__set", extra] },
+      h("span", { class: "search__group", "aria-hidden": "true" }, name), h("div", { class: "search__set-cards" }, nodes));
+    mount(results, [set("Recientes", chips, "search__set--pills"), set("Populares", cards), set("Tus juegos", games)]);
+    results.classList.toggle("search__results--recent", !cards.length && !games.length);
     if (!items.length && zone === "results") zone = "keys";
     render();
   }
 
-  // Con el dedo no hay «↑»: se toca el resultado.
-  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ${document.body.dataset.input === "touch" ? "toca uno para abrirlo" : "↑ para elegir"}`;
+  // Con el dedo no hay «→»: se toca el resultado.
+  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ${document.body.dataset.input === "touch" ? "toca uno para abrirlo" : "→ para elegir"}`;
 
   function schedule(delay = DEBOUNCE_MS) {
     clearTimeout(timer);
@@ -329,9 +333,20 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   function moveKeys(dr, dc) {
     typedPhysically = false;
-    // Por arriba del teclado están los resultados.
-    if (keyboard.move(dr, dc) === "up" && items.length) zone = "results";
+    // A la derecha del teclado están los resultados: desde su orilla, → pasa a ellos (antes daba la vuelta a la fila).
+    if (dc > 0 && items.length && keyboard.wraps(dc)) { zone = "results"; resultIndex = Math.min(resultIndex, items.length - 1); }
+    else keyboard.move(dr, dc);
     render();
+  }
+
+  /** En la cuadrícula de resultados: a la pieza más cercana en esa dirección; ← desde la primera columna, al teclado. */
+  function moveResults(dir) {
+    const rects = focusables.map((node, i) => { const r = node.getBoundingClientRect(); return { id: String(i), x: r.left, y: r.top, w: r.width, h: r.height }; })
+      .filter((r) => r.w > 0 && r.h > 0);
+    const to = nextFocus(rects, String(resultIndex), dir);
+    if (to != null) { resultIndex = Number(to); return true; }
+    if (dir === "left") { zone = "keys"; return true; }
+    return false;
   }
 
   function handle(action, { repeat = false } = {}) {
@@ -357,13 +372,13 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       return true;
     }
     if (zone === "results") {
-      if (action === "left") resultIndex = Math.max(0, resultIndex - 1);
-      else if (action === "right") resultIndex = Math.min(items.length - 1, resultIndex + 1);
-      else if (action === "down") zone = "keys";
-      else if (action === "select") {
+      if (["left", "right", "up", "down"].includes(action)) {
+        if (!moveResults(action)) return true; // en la orilla: nada (ni sonido)
+      } else if (action === "select") {
         open();
         return true;
       } else return true; // LB/RB: nada que hacer aquí (ni sonido)
+      render();
       focusables[resultIndex]?.scrollIntoView({ inline: "nearest", behavior: motion(), block: "nearest" });
     } else if (action === "up") moveKeys(-1, 0);
     else if (action === "down") moveKeys(1, 0);

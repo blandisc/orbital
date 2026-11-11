@@ -6,7 +6,7 @@ import { api } from "./core/api.js";
 import { markFocus } from "./core/focus-mark.js";
 import { closedSummary, crashMessage } from "./core/format.js";
 import { createInput, ERASE_WORD, GLYPHS, usablePad } from "./core/input.js";
-import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
+import { alternativeRunner, clampFocus, isGame, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { capHints, footerHints, gamesHints, homeHints, legendOf, tvHints, voiceToastAction } from "./core/hints.js";
 import { edenBuildMenu, emulatorMenu, playerMenu, playersMenu, playersRestartMenu } from "./core/menus.js";
 import { torrentioLanguageAddMenu, torrentioLanguageMenu, torrentioLanguagesMenu, torrentioMenu, torrentioProvidersMenu, torrentioQualitiesMenu } from "./core/menus.js";
@@ -142,6 +142,12 @@ const ui = {
     popular: () => {
       const rows = ["movies", "series"].map((id) => state.allRows.find((r) => r.id === id)?.items ?? []);
       return rows[0].flatMap((m, i) => [m, rows[1][i]]).filter(Boolean);
+    },
+    // T7: con la caja vacía, también lo que jugaste (A continuación y favoritos), sin repetir.
+    played: () => {
+      const seen = new Set();
+      return ["jump", "favorites"].flatMap((id) => state.allRows?.find((r) => r.id === id)?.items ?? [])
+        .filter((item) => isGame(item) && !seen.has(item.id) && seen.add(item.id));
     },
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },

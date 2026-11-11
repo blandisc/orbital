@@ -192,7 +192,7 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | La ficha | Por las piezas: «Ver» en blanco, acciones de vidrio, episodios que se levantan |
 | Explorar | Por las piezas: el mosaico se levanta sin anillo; sus marcas, de vidrio |
 | TV en vivo | Por las piezas: canales que se levantan |
-| Buscar · Conectar Stremio | Por las piezas: teclas con foco invertido, resultados que se levantan |
+| Buscar · Conectar Stremio | Buscar rediseñado (T7, 10 nov): sobre el fondo del sistema (`--color-bg`, no el café del arte); a la izquierda el campo y un teclado compacto (`--keyboard-width` 30 rem; con el dedo, 36 rem y teclas más altas); a la derecha los resultados en vivo en cuadrícula que baja, por grupo, con la portada y el foco de siempre; → desde la orilla del teclado entra y ← regresa; con la caja vacía, Recientes, Populares y Tus juegos. Conectar Stremio, por las piezas |
 | Menús, panel rápido, Opciones, confirmaciones | Menú flotante de vidrio |
 | Elegir versión | Menú flotante de vidrio, abajo |
 | Ajustes | Por las piezas: filas con foco invertido, `Segmented` en cápsula |

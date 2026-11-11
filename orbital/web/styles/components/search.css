@@ -1,22 +1,22 @@
-/* Search: buscar películas y series con el mando (resultados vivos + teclado alfabético). El marco es .screen. */
+/* Search: buscar con el mando (T7, revisión del 10 nov). A la izquierda el campo y un teclado compacto; a la derecha los
+   resultados en vivo, en cuadrícula, con la misma portada y el mismo foco que el resto. El marco es .screen; el fondo, el del
+   sistema (antes el café plano del arte). */
 .search {
   /* La enfocada crece (scale) hacia arriba y a los lados: los resultados y cada grupo le dejan ese lugar. */
   --focus-grow: calc(var(--card-height) * (var(--card-focus-scale) - 1));
-  /* minmax(0, 1fr): una búsqueda larga no ensancha la cuadrícula (el teclado se salía de la pantalla). */
-  display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
-  /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
-     en la pantalla (antes el teclado bajaba hasta las pistas del pie). */
-  /* Teclado más grande (se acierta mejor desde el sillón: teclas ~10 % más altas y 15 % más anchas) y la portada cede un poco;
-     resultados + teclado + pie caben a 1080, 800 y 720 de alto (medido: el pie de la enfocada no toca las teclas). */
-  --card-height: min(11.5rem, 15vh); --key-height: min(3.1rem, 5.2vh); --keyboard-width: 62rem;
+  --card-height: min(11rem, 17vh); --key-height: min(2.75rem, 5vh); --keyboard-width: 30rem;
+  display: grid; grid-template-columns: min(var(--keyboard-width), 44%) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+  column-gap: var(--space-10); row-gap: var(--space-6); overflow: hidden;
+  background: var(--color-bg);
 }
-/* Letra más grande = pies de resultado más altos: la portada cede para que el teclado no los tape. */
+/* Letra más grande = pies de resultado más altos: la portada cede un poco. */
 [data-text-size="large"] .search, [data-text-size="xlarge"] .search {
-  --card-height: min(11rem, 14.5vh); --key-height: min(3rem, 4.9vh); gap: var(--space-3);
-  padding-top: calc(var(--space-6) + var(--safe-y));
+  --card-height: min(10.5rem, 16vh); padding-top: calc(var(--space-6) + var(--safe-y));
 }
+/* En la columna del teclado, el campo con letra muy grande usaría dos renglones: baja un paso. */
+[data-text-size="xlarge"] .search__field { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
 
-.search__top { min-width: 0; display: flex; align-items: baseline; gap: var(--space-6); }
+.search__top { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
 .search__field {
   display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0;
   padding-bottom: var(--space-3); border-bottom: 2px solid var(--color-hairline);
@@ -28,7 +28,7 @@
 .search__query { min-width: 0; white-space: pre; overflow: hidden; }
 /* Vacío: el texto de ayuda empieza justo donde está el cursor (como un campo de iOS): antes empezaba un poco a la derecha y lo
    que escribías aparecía corrido a la izquierda. La caja vacía de lo escrito no ocupa lugar. */
-.search__placeholder { color: var(--color-text-faint); margin-left: calc(-1 * var(--space-3) - 3px); }
+.search__placeholder { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-faint); margin-left: calc(-1 * var(--space-3) - 3px); }
 .search__query:empty { display: none; }
 .search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
@@ -45,23 +45,21 @@
   animation: search-sweep var(--duration-launch-sweep) var(--ease-sweep) infinite;
 }
 @keyframes search-sweep { from { background-position: -70% 0; } to { background-position: 170% 0; } }
-.search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+.search__hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
 
-/* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
+/* Resultados: la misma tarjeta que en el inicio, a la derecha, en cuadrícula que baja (los grupos uno debajo del otro). */
 .search__results {
-  display: flex; align-items: flex-start; gap: var(--card-gap); /* los nombres de los grupos en una línea (también «Recientes» junto a «Populares») */
-  min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
-  /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
-  /* Abajo: el pie de la enfocada entero (título en dos líneas + tipo, escalado como la portada). Antes 4.6rem fijos
-     cortaban la última línea; calculado desde la letra, también vale con letra grande. */
+  grid-column: 2; grid-row: 1 / -1; min-height: 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6);
+  /* Abajo: el pie de la enfocada entero (título en dos líneas + tipo, escalado como la portada), calculado desde la letra. */
   --caption-room: calc((.55rem + .2rem + 3 * var(--caption-size) * var(--leading-normal)) * var(--card-focus-scale));
-  /* Arriba solo el aire del anillo: lo que crece la enfocada ya lo aparta cada grupo entre su nombre y sus portadas (antes
-     se apartaba dos veces y los resultados quedaban tan abajo que el teclado tapaba sus pies). A la izquierda, lo mismo:
-     la enfocada crece desde su esquina de abajo a la izquierda, hacia la derecha; así la primera portada y el nombre del
-     grupo quedan en la misma línea que el campo de arriba y las pistas del pie (antes, 18 px más adentro). */
-  padding: var(--space-2) calc(var(--focus-grow) / 2 + var(--space-2)) var(--caption-room) var(--space-2);
-  margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: var(--space-2) calc(var(--focus-grow) / 2 + var(--space-2));
-  overflow-x: auto; scrollbar-width: none;
+  /* Alrededor, lo que crece la enfocada y su anillo (crece desde su esquina de abajo a la izquierda). */
+  padding: calc(var(--focus-grow) + var(--space-2)) calc(var(--focus-grow) / 2 + var(--space-2)) var(--space-6) var(--space-2);
+  margin: calc(-1 * var(--focus-grow) - var(--space-2)) 0 0 calc(-1 * var(--space-2));
+  scroll-padding-block: calc(var(--focus-grow) + var(--space-10)) calc(var(--caption-room) + var(--space-6));
+  overflow-x: hidden; overflow-y: auto; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
+  mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - var(--space-6)), transparent 100%);
 }
 /* Todas enseñan el título en dos líneas (antes solo la enfocada: «Hollow Kni…» sobraba lugar): «Harry Potter and the Deat…» ×2 no se distinguían. */
 .search .card:not(.card--no-art, .card--named) .card__caption strong { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -70,18 +68,20 @@
 .search .card--no-art .card__title { -webkit-line-clamp: 2; font-size: min(var(--type-secondary), calc(var(--card-height) * .115)); }
 .search .card--no-art .card__placeholder { inset: 0 0 55% 0; } /* el ícono arriba: el nombre (dos renglones) y la consola caben debajo sin encimarse */
 
-/* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
-.search .keyboard { align-self: end; justify-self: center; min-height: 0; }
-/* Con el dedo: sin pie de controles, el teclado ocupa ese lugar y todo el ancho, con teclas que se aciertan sin mirar. */
-[data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.5rem, 6.4vh); --card-height: min(11rem, 15vh); } /* teclas más altas: la portada cede (si no, el teclado tapaba el pie del resultado) */
-[data-input="touch"] .search .keyboard { width: min(72rem, 100%); }
-[data-input="touch"] .search .keyboard__key { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
+/* El teclado es el componente común (keyboard.css): aquí, compacto y debajo del campo. */
+.search .keyboard { grid-column: 1; grid-row: 2; align-self: start; width: 100%; min-height: 0; }
+.search .keyboard__key { font-size: var(--type-heading); font-weight: var(--type-heading-weight); letter-spacing: var(--type-heading-tracking); }
+.search .keyboard__key--wide { font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); letter-spacing: normal; }
+/* Con el dedo: sin pie de controles; teclas más altas (se aciertan sin mirar) y la columna del teclado más ancha. */
+[data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.8rem, 7.4vh); --keyboard-width: 36rem; }
+[data-input="touch"] .search__results { margin-top: var(--space-10); } /* «Atrás» (arriba a la derecha) no tapa el primer grupo */
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
-.search__set + .search__set { margin-left: var(--space-6); } /* entre grupos, más aire que entre portadas: se ve dónde empieza cada uno */
-.search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
-.search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
+.search__set { flex: none; max-width: 100%; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow) + .35rem); } /* + lo que sube la enfocada: el anillo rozaba el nombre */
+.search__set-cards { display: flex; flex-wrap: wrap; align-items: flex-end; gap: calc(var(--caption-room) + var(--focus-grow) + var(--space-3)) var(--card-gap); }
+/* El pie de cada portada cuelga debajo de ella: cada grupo le guarda su lugar (si no, el nombre del grupo siguiente lo tapaba). */
+.search__set:not(.search__set--pills) .search__set-cards { padding-bottom: var(--caption-room); }
 .search__group {
   flex: none; color: var(--color-text-muted); font-size: var(--type-label-large); font-weight: var(--type-label-large-weight); line-height: var(--leading-title);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -100,11 +100,10 @@
 .search__ghost:nth-child(3) { animation-delay: var(--delay-2), var(--duration-none); }
 .search__ghost:nth-child(4) { animation-delay: var(--delay-3), var(--duration-none); }
 @keyframes search-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
-.search__set--pills .search__set-cards { align-items: center; gap: var(--space-3); }
+.search__set--pills .search__set-cards { align-items: center; gap: var(--space-3); padding-bottom: 0; }
 
 @media (max-height: 640px) {
   .search { gap: var(--space-3); }
   .search__hint { display: none; }
 }
 @media (max-width: 760px) { .search__hint { display: none; } }
-[data-input="touch"] .search__top { padding-right: var(--touch-back-room); } /* «Atrás» (arriba a la derecha) no lo tapa */
