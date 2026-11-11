@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -39,6 +40,30 @@ NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # sin consola negra al p
 log = logging.getLogger(__name__)
 
 CHAPTER_SEEK = 60  # LB/RB sin capítulos: ±1 min
+
+
+def close_orphan_players(processes=None, command_line=None, kill=None) -> int:
+    """Al arrancar: cierra el mpv que quedó de un Orbital que se cerró de golpe (tronó, el vigilante lo mató, se fue la
+    luz a media película). Ese mpv seguía en pantalla completa encima de la interfaz, con la tubería ocupada, y el
+    siguiente video no abría (F9). Solo toca los mpv con la tubería de Orbital (PIPE): nunca otro mpv tuyo."""
+    if sys.platform != "win32" and processes is None:
+        return 0
+    if processes is None or command_line is None:
+        from . import windows
+
+        processes, command_line = processes or windows.processes, command_line or windows.command_line
+    marker = f"--input-ipc-server={PIPE}".lower()
+    pids = [pid for pid, (exe, _parent) in processes().items()
+            if exe == "mpv.exe" and marker in command_line(pid).lower()]
+    for pid in pids:
+        if kill is not None:
+            kill(pid)
+        else:
+            subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, creationflags=NO_WINDOW)
+    if pids:
+        log.warning("Cerré %d reproductor(es) que quedaron abiertos de la vez anterior", len(pids))
+    return len(pids)
+
 
 LB, RB = 0x0100, 0x0200
 STARTUP_TIMEOUT = 45.0  # s sin imagen: esa fuente no sirve, se prueba otra

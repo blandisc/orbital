@@ -9,13 +9,16 @@ película). Ahora hay dos conexiones:
     segundo (pausa, posición, duración…) y las guarda. `get()` de esas propiedades no habla con mpv.
 
 En Windows una misma conexión no puede leer en un hilo y escribir en otro a la vez (las operaciones
-se forman en fila): por eso son dos conexiones y no una.
+se forman en fila): por eso son dos conexiones y no una, y en la de comandos escribir y leer lo hace
+un mismo hilo fijo (`mpv-ipc`), que atiende los comandos uno tras otro. Antes era un hilo nuevo por
+comando (F9); ahora solo se cambia de hilo y de conexión si mpv deja de contestar.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import queue
 import threading
 import time
 from typing import Any
@@ -34,6 +37,7 @@ class Mpv:
         self.observe = observe
         self._lock = threading.Lock()
         self._fh = None  # conexión de comandos
+        self._jobs: queue.Queue | None = None  # lo que atiende el hilo fijo de comandos
         self._next_id = 0  # cada comando lleva su número y solo acepta la respuesta con ese número
         self._cache: dict[str, object] = {}
         self._cache_lock = threading.Lock()
@@ -51,8 +55,8 @@ class Mpv:
     TIMEOUT = 3.0  # s: si mpv no contesta (driver de video colgado), Orbital no se cuelga con él
 
     def _send(self, payload: dict, label) -> dict | None:
-        """Un comando y su respuesta, con plazo. La lectura de la tubería no tiene plazo propio: va en
-        un hilo y, si no termina a tiempo, esa conexión se abandona (la próxima abre otra)."""
+        """Un comando y su respuesta, con plazo. La lectura de la tubería no tiene plazo propio: la hace el hilo fijo
+        y, si no termina a tiempo, ese hilo y su conexión se abandonan (el próximo comando abre otros)."""
         if not self._lock.acquire(timeout=self.TIMEOUT):
             log.debug("mpv ocupado: se omite %s", label)
             return None
@@ -63,17 +67,34 @@ class Mpv:
             request_id = self._next_id
             line = (json.dumps({**payload, "request_id": request_id}) + "\n").encode()
             box: dict = {}
-            worker = threading.Thread(target=lambda: box.update(reply=self._exchange(line, label, request_id)), daemon=True,
-                                      name="mpv-ipc")
-            worker.start()
-            worker.join(self.TIMEOUT)
-            if worker.is_alive():
+            done = threading.Event()
+            if self._jobs is None:
+                self._jobs = queue.Queue()
+                threading.Thread(target=self._serve, args=(self._jobs,), daemon=True, name="mpv-ipc").start()
+            self._jobs.put((line, label, request_id, box, done))
+            if not done.wait(self.TIMEOUT):
                 log.warning("mpv no contestó a %s en %.0f s: dejo esa conexión", label, self.TIMEOUT)
+                self._jobs.put(None)  # el hilo atorado termina en cuanto mpv suelte la lectura
+                self._jobs = None
                 self._fh = None
                 return None
             return box.get("reply")
         finally:
             self._lock.release()
+
+    def _serve(self, jobs: queue.Queue) -> None:
+        """El hilo fijo de comandos: escribe y lee en la misma conexión, un comando a la vez."""
+        while True:
+            job = jobs.get()
+            if job is None:
+                return
+            line, label, request_id, box, done = job
+            try:
+                box["reply"] = self._exchange(line, label, request_id)
+            except Exception:  # noqa: BLE001 - un comando raro no deja a Orbital sin hablar con mpv
+                log.exception("mpv: falló %s", label)
+            finally:
+                done.set()
 
     def _exchange(self, line: bytes, label, request_id: int | None = None) -> dict | None:
         for attempt in (1, 2):  # si mpv se reinició, la conexión vieja ya no sirve: una nueva
@@ -179,3 +200,6 @@ class Mpv:
     def close(self) -> None:
         with self._lock:
             self._close_commands()
+            if self._jobs is not None:
+                self._jobs.put(None)
+                self._jobs = None

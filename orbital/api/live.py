@@ -31,8 +31,15 @@ class VoiceRequest(BaseModel):
     source: str | None = Field(None, max_length=20)  # "iphone": Siri o el micrófono del control (no cuenta como Alexa)
 
 
+CLOSE = {"type": "__close__"}  # marca interna: esta pantalla se atrasó; se le cierra la conexión (nunca se envía)
+
+
 class SseHub:
-    """Reparte eventos a las pantallas conectadas vía SSE (una cola por pantalla)."""
+    """Reparte eventos a las pantallas conectadas vía SSE (una cola por pantalla).
+
+    Si una pantalla no lee (pestaña dormida, red lenta) y su cola se llena, antes se tiraban los eventos nuevos en
+    silencio y esa pantalla quedaba desfasada para siempre. Ahora se le cierra la conexión (F9): el navegador se
+    reconecta solo, recibe el estado al momento y la interfaz vuelve a pedir lo suyo (onReconnect)."""
 
     def __init__(self) -> None:
         self._subscribers: set[asyncio.Queue] = set()
@@ -50,6 +57,12 @@ class SseHub:
         for queue in list(self._subscribers):
             if not queue.full():
                 queue.put_nowait(event)
+                continue
+            self._subscribers.discard(queue)  # atrasada: lo que tiene ya no sirve; que se reconecte
+            while not queue.empty():
+                queue.get_nowait()
+            queue.put_nowait(CLOSE)
+            log.info("Una pantalla se atrasó con los avisos: cierro su conexión para que se reconecte")
 
     def publish_threadsafe(self, event: dict) -> None:
         """Para hilos que no son el del servidor (p. ej. el vigilante de procesos)."""
@@ -162,6 +175,8 @@ def router(d: Deps, is_local) -> APIRouter:
                 while not await request.is_disconnected():
                     try:
                         event = await asyncio.wait_for(queue.get(), timeout=KEEPALIVE)
+                        if event is CLOSE:
+                            return  # el navegador se reconecta solo y recibe el estado
                         yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                     except TimeoutError:
                         yield ": ping\n\n"

@@ -209,6 +209,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             from . import remote_art
 
             remote_art.prune_later()  # el caché de arte de internet no crece sin fin (A5)
+            from .playback import close_orphan_players
+
+            # Un mpv que quedó de un cierre brusco (encima de todo, con la tubería ocupada): fuera, en segundo plano.
+            threading.Thread(target=close_orphan_players, daemon=True, name="mpv-orphans").start()
         else:
             await run_in_threadpool(catalog.refresh)
         status = asyncio.create_task(live.watch_status(d))
