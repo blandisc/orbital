@@ -263,7 +263,7 @@ def test_the_bar_of_a_trailer_does_not_offer_versions_on_any_surface(monkeypatch
     for draw, main_button in ((player_ui.hud_ass, "Pausa"), (paused, "Continuar")):
         assert "Versión" in draw(movie)
         assert "Versión" not in draw(clip) and main_button in draw(clip)  # el tráiler conserva lo demás
-    monkeypatch.setattr(player_ui, "TOUCH", True)
+    monkeypatch.setattr(player_ui.canvas, "TOUCH", True)  # vive en canvas.py (player_ui lo lee de ahí)
     labels = [label for label, _ in player_ui._touch_items(clip, paused=False)]
     assert "Versión" not in labels and labels[:2] == ["−10 s", "Pausa"] and labels[-1] == "Salir"
     assert "Versión" in [label for label, _ in player_ui._touch_items(movie, paused=False)]
