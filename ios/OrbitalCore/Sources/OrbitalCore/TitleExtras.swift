@@ -32,6 +32,8 @@ public struct VideoClip: Sendable, Equatable, Identifiable {
     public var key: String
     public var name: String
     public var type: String          // «Trailer», «Teaser», «Featurette», «Behind the Scenes», «Clip»
+    /// En qué idioma está («es», «en»; nil si TMDB no lo dice): para preferir el tuyo y avisar si solo hay otro.
+    public var language: String? = nil
     public var id: String { key }
     public var url: URL? { URL(string: "https://www.youtube.com/watch?v=\(key)") }
     public var thumbnail: String { "https://img.youtube.com/vi/\(key)/hqdefault.jpg" }
@@ -101,7 +103,7 @@ extension Tmdb {
         let rating = kind == "movie" ? "release_dates" : "content_ratings"
         let raw = try await get(path, [("append_to_response", "credits,\(rating),videos,recommendations,watch/providers"),
                                        ("include_video_language", "es,en,null")])
-        var out = Tmdb.parseExtras(raw, kind: kind, region: region)
+        var out = Tmdb.parseExtras(raw, kind: kind, region: region, language: String(language.prefix(2)))
         if let id = raw["belongs_to_collection"]?["id"]?.intValue, let collection = try? await get("/collection/\(id)") {
             let parts = (collection["parts"]?.array ?? []).compactMap { Tmdb.title($0, kind: "movie") }
                 .sorted { ($0.year ?? .max) < ($1.year ?? .max) }
@@ -139,7 +141,7 @@ extension Tmdb {
         return pick(region) ?? pick("US")
     }
 
-    static func parseExtras(_ raw: JSON, kind: String, region: String) -> TitleExtras {
+    static func parseExtras(_ raw: JSON, kind: String, region: String, language: String? = nil) -> TitleExtras {
         var out = TitleExtras(tmdbID: raw["id"]?.intValue ?? 0)
         out.cast = (raw["credits"]?["cast"]?.array ?? []).prefix(20).compactMap { c in
             guard let id = c["id"]?.intValue, let name = c["name"]?.nonEmptyString else { return nil }
@@ -163,10 +165,13 @@ extension Tmdb {
         out.votes = raw["vote_count"]?.intValue ?? 0
         let clips: [VideoClip] = (raw["videos"]?["results"]?.array ?? []).compactMap { v in
             guard v["site"]?.string == "YouTube", let key = v["key"]?.nonEmptyString else { return nil }
-            return VideoClip(key: key, name: v["name"]?.string ?? "", type: v["type"]?.string ?? "")
+            return VideoClip(key: key, name: v["name"]?.string ?? "", type: v["type"]?.string ?? "", language: v["iso_639_1"]?.nonEmptyString)
         }
-        // El tráiler oficial primero (en tu idioma si lo hay: TMDB los manda en el orden pedido); los demás, extras.
-        out.trailer = clips.first { $0.type == "Trailer" } ?? clips.first { $0.type == "Teaser" }
+        // El tráiler oficial primero, en tu idioma si lo hay (revisión 2 del 11 nov: TMDB no siempre manda primero el pedido
+        // y salía el de inglés teniendo el doblado); los demás, extras.
+        let mine = clips.filter { language != nil && $0.language == language }
+        out.trailer = mine.first { $0.type == "Trailer" } ?? mine.first { $0.type == "Teaser" }
+            ?? clips.first { $0.type == "Trailer" } ?? clips.first { $0.type == "Teaser" }
         out.extras = clips.filter { $0 != out.trailer && ["Teaser", "Trailer", "Featurette", "Behind the Scenes", "Clip"].contains($0.type) }.prefix(10).map { $0 }
         out.recommendations = (raw["recommendations"]?["results"]?.array ?? []).compactMap { title($0, kind: kind) }.prefix(15).map { $0 }
         let providers = raw["watch/providers"]?["results"]?[region]?["flatrate"]?.array ?? []

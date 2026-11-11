@@ -103,18 +103,26 @@ struct VersionListRow<Menu: View>: View {
         let language = VersionText.name(code, uiLanguage)
         let size = VersionText.size(option, locale: locale)
         Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
-                Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon)
-                    .frame(width: DS.Version.mark).opacity(option.recommended ? 1 : 0).accessibilityHidden(true)
-                Text(verbatim: option.quality).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
-                if showsLanguage {
-                    Text("\(Text.flag(code))\(Text(verbatim: language))").recipe(.footnote).lineLimit(1)
+            // En un renglón; si no cabe (letra grande, SE), el idioma baja a su propio renglón en vez de perderse (revisión 2
+            // del 11 nov: el renglón recomendado se quedaba sin el idioma, justo lo que decide).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) {
+                    recommendedMark
+                    quality
+                    if showsLanguage { languageText(language).fixedSize() }
+                    Spacer(minLength: DS.Space.s2)
+                    trailing(marks, size)
                 }
-                Spacer(minLength: DS.Space.s2)
-                ForEach(marks, id: \.symbol) { mark in
-                    Image(systemName: mark.symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(mark.color)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    HStack(spacing: DS.Space.s2) {
+                        recommendedMark
+                        quality
+                        Spacer(minLength: DS.Space.s2)
+                        trailing(marks, size)
+                    }
+                    if showsLanguage { languageText(language).fixedSize(horizontal: false, vertical: true).padding(.leading, DS.Version.mark + DS.Space.s2) }
                 }
-                if let size { Text(verbatim: size).recipe(.footnote).monospacedDigit().lineLimit(1).fixedSize() }
+                .padding(.vertical, DS.Space.s1)
             }
             .padding(.horizontal, DS.Space.s3)
             .frame(minHeight: DS.Size.touchTarget)
@@ -125,6 +133,26 @@ struct VersionListRow<Menu: View>: View {
         .accessibilityLabel(Text(verbatim: ([language, option.quality, size] + marks.map(\.words) + [option.recommended ? tr("Recomendada") : nil]).compactMap { $0 }.joined(separator: ", ")))
         .accessibilityHint(Text(option.speed == .realDebridMustDownload && !option.refused ? "Toca para pedirla. Mantén presionado para más." : "Toca para verla. Mantén presionado para más."))
         .accessibilityIdentifier("version-\(code)-\(option.quality)")
+    }
+
+    private var recommendedMark: some View {
+        Image(systemName: "sparkles").font(DS.TextRecipe.caption.font).foregroundStyle(DS.brandMoon)
+            .frame(width: DS.Version.mark).opacity(option.recommended ? 1 : 0).accessibilityHidden(true)
+    }
+
+    private var quality: some View {
+        Text(verbatim: option.quality).font(DS.TextRecipe.labelLarge.font).foregroundStyle(DS.text).lineLimit(1).fixedSize()
+    }
+
+    private func languageText(_ language: String) -> some View {
+        Text("\(Text.flag(code))\(Text(verbatim: language))").recipe(.footnote)
+    }
+
+    @ViewBuilder private func trailing(_ marks: [VersionMark], _ size: String?) -> some View {
+        ForEach(marks, id: \.symbol) { mark in
+            Image(systemName: mark.symbol).font(DS.TextRecipe.footnote.font).foregroundStyle(mark.color)
+        }
+        if let size { Text(verbatim: size).recipe(.footnote).monospacedDigit().lineLimit(1).fixedSize() }
     }
 }
 
