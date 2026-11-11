@@ -7,7 +7,7 @@ import { Pill } from "./ui.js";
  */
 
 /**
- * Filtros como pestañas de texto (Jugados · Añadidos… / Series · Películas), como DSTextTabs del iPhone. `options` = [{ id, label }]; cada uno
+ * Filtros como pestañas de texto (Recientes · Añadidos… / Series · Películas), como DSTextTabs del iPhone. `options` = [{ id, label }]; cada uno
  * se registra en `targets` como `filter:<n>` → { kind: "filter", value }.
  */
 export function fillFilters(container, options, { current, targets, onPick }) {

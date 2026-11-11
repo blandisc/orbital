@@ -1233,9 +1233,8 @@ function handleKinds(action) {
     }
     case "select": {
       if (kindFocus >= MEDIA_KINDS.length) {
-        const tool = MEDIA_TOOLS[kindFocus - MEDIA_KINDS.length];
-        leaveKinds();
-        return runCommand(tool.command);
+        // R2-9: el foco se queda en el ícono que la abrió (Guardado, Colecciones, Filtro): al cerrar, ahí regresas.
+        return runCommand(MEDIA_TOOLS[kindFocus - MEDIA_KINDS.length].command);
       }
       return MEDIA_KINDS[kindFocus][0] === mediaFilter ? sound.play("select") : runCommand({ type: "media-filter", value: MEDIA_KINDS[kindFocus][0] });
     }
@@ -1855,7 +1854,8 @@ function listSortMenu(s) {
   const check = (on) => (on ? "✓" : "");
   const options = [];
   if (s.editable) options.push(...listEditOptions(s.editable, s.editing));
-  if (s.id === "saved") options.push(...savedMenuOptions(s.tabId, savedTable().lists, { online: navigator.onLine !== false }));
+  if (s.id === "saved") options.push(...savedMenuOptions(s.tabId, savedTable().lists,
+    { online: navigator.onLine !== false, stale: (s.items || []).filter((i) => i.pile === "stale").length }));
   options.push(...listManageOptions(s.editable, { online: navigator.onLine !== false }));
   if (!s.ranked) {
     options.push({ heading: true, label: "Ordenar" },

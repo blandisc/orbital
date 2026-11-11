@@ -9,7 +9,7 @@ const rows = [
   { id: "steam", title: "Steam", items: [{ id: "steam:1", title: "Hades", last_played: 100 }] },
 ];
 
-test("recientes: lo jugado primero (lo más nuevo arriba) y luego el resto en orden alfabético", () => {
+test("Recientes: lo jugado primero (lo más nuevo arriba) y luego el resto en orden alfabético", () => {
   assert.deepEqual(consoleGames(rows, "emulators:switch").map((i) => i.id), ["Smash", "Mario", "Kirby", "Zelda"]);
 });
 
@@ -21,10 +21,12 @@ test("filtros: favoritos, A–Z y sin jugar", () => {
 });
 
 test("LT/RT dan la vuelta entre consolas; se entra a la pedida, a la última o a la más reciente", () => {
+  // R2-12: en Juegos las consolas van en el orden de tu biblioteca (no brincan al jugar); la última usada lleva `recent`.
   const list = gameConsoles(rows);
-  assert.deepEqual(list.map((c) => c.id), ["steam", "emulators:switch", "emulators:gba"]);
-  assert.equal(stepConsole(list, "emulators:gba", 1), "steam");
-  assert.equal(stepConsole(list, "steam", -1), "emulators:gba");
+  assert.deepEqual(list.map((c) => c.id), ["emulators:switch", "emulators:gba", "steam"]);
+  assert.deepEqual(list.filter((c) => c.recent).map((c) => c.id), ["steam"]);
+  assert.equal(stepConsole(list, "steam", 1), "emulators:switch");
+  assert.equal(stepConsole(list, "emulators:switch", -1), "steam");
   assert.equal(pickConsole(list, "emulators:gba", "steam"), "emulators:gba");
   assert.equal(pickConsole(list, null, "emulators:switch"), "emulators:switch");
   assert.equal(pickConsole(list, "borrada", null), "steam");

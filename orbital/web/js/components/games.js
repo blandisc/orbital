@@ -64,7 +64,7 @@ export function createGames({ onFocus, onPick, onAction, onChrome }) {
   const firstGame = () => (games.length ? `game:${Math.max(0, games.findIndex((g) => g.id === memory[consoleId]))}` : activeFilter());
 
   function render(nextRows, { glyphs = {}, runningId = null, consoleId: ask = null } = {}) {
-    // Se sigue al juego, no a la casilla: al volver de jugar, la lista se reordena (Jugados) y en la
+    // Se sigue al juego, no a la casilla: al volver de jugar, la lista se reordena (Recientes) y en la
     // misma posición quedaría otro (A abriría el equivocado).
     const kept = targets.get(focusId);
     rows = nextRows;

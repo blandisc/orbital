@@ -14,7 +14,10 @@
 .list-screen__title--long { font-size: var(--type-title); font-weight: var(--type-title-weight); letter-spacing: var(--type-title-tracking); }
 .list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 /* Una lista tuya: «Editar» (o «Agregar» y «Listo») junto a su nombre, para el mouse y el dedo (el mando usa X y ☰). */
-.list-screen__tools { flex: none; display: flex; gap: var(--space-3); align-self: center; }
+/* R2-9: «Editar» (y, editando, sus botones) al final del encabezado, al ras de abajo con la línea de datos; antes flotaba
+   junto al título. */
+.list-screen__tools { flex: none; display: flex; gap: var(--space-3); align-self: flex-end; margin-left: auto; }
+.list-screen__tools:not([hidden]) + .list-screen__chips { margin-left: 0; } /* el empuje a la derecha ya lo dio «Editar» */
 /* Eligiendo varios (G3-A): cuántas van, junto a «Todas» y «Con las elegidas…». */
 .list-screen__count { align-self: center; color: var(--color-text-muted); font-size: var(--type-body); font-weight: var(--type-body-weight); }
 /* Ordenar a mano (G4-A): el póster tomado se ve levantado y con su filo, aunque el foco se mueva con él. */
