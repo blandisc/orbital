@@ -197,3 +197,36 @@ targets:
         SWIFT_VERSION: "5.0"
         TEST_TARGET_NAME: Orbital
         GENERATE_INFOPLIST_FILE: YES
+
+  # Recorrido de la Mac («Diseñada para iPad»): Xcode no corre XCUITest ahí, así que esta prueba vive dentro de la app
+  # (en modo demostración) y la recorre por dentro con capturas de la ventana. Esquema `OrbitalMac` (abajo).
+  OrbitalMacTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MacTests
+    dependencies:
+      - target: Orbital
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.mactests
+        DEVELOPMENT_TEAM: B7KRCF776Z
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "6.0"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Orbital.app/Orbital"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  OrbitalMac:
+    build:
+      targets:
+        Orbital: all
+        OrbitalMacTests: [test]
+    test:
+      config: Debug
+      targets: [OrbitalMacTests]
+      commandLineArguments:
+        "-demo": true
+        "-demo-free-tabs": true
+        "-demo-no-idle": true
