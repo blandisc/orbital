@@ -33,7 +33,7 @@ class FakeNet:
         self.routes.append((pattern, reply))
         return self
 
-    def __call__(self, url, *, method="GET", headers=None, body=None, timeout=10):
+    def __call__(self, url, *, method="GET", headers=None, body=None, timeout=10, **_):
         self.calls.append((method, url, body))
         for pattern, reply in self.routes:
             if re.search(pattern, url):

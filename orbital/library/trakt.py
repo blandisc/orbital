@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from datetime import UTC
 from urllib.parse import urlencode
 
-from ..net import NET_ERRORS, http_json
+from ..net import NET_ERRORS, RETRIES, http_json
 
 log = logging.getLogger(__name__)
 
@@ -374,8 +374,8 @@ class Trakt:
 
     def poll_device(self, code: DeviceCode) -> str:
         """Una consulta: "linked", "pending", "slow" (más despacio) o "expired"/"denied"/"invalid"."""
-        status, data = self._call("POST", "/oauth/device/token", auth=False,
-                                  body=self._client(code=code.device_code))
+        status, data = self._call("POST", "/oauth/device/token", auth=False,  # su 429 es «consulta más despacio»
+                                  body=self._client(code=code.device_code), retries=0)
         if status == 200 and isinstance(data, dict):
             self._save(data)
             return "linked"
@@ -413,12 +413,15 @@ class Trakt:
         return float((self._tokens() or {}).get("expires_at") or 0)
 
     # --- peticiones --------------------------------------------------------------------------
-    def _call(self, method: str, path: str, *, body: dict | None = None, auth: bool = True, params: dict | None = None):
+    def _call(self, method: str, path: str, *, body: dict | None = None, auth: bool = True, params: dict | None = None,
+              retries: int = RETRIES):
         headers = {"trakt-api-version": "2", "trakt-api-key": self.client_id}
         if auth:
             headers["Authorization"] = f"Bearer {self._access()}"
         url = f"{API}{path}" + (f"?{urlencode(params)}" if params else "")
         try:
+            if retries != RETRIES:  # solo si cambia: los dobles de las pruebas no saben de reintentos
+                return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout, retries=retries)
             return http_json(url, method=method, headers=headers, body=body, timeout=self.timeout)
         except NET_ERRORS as exc:
             raise TraktError(f"No pude conectar con Trakt: {exc}") from exc

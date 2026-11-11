@@ -77,14 +77,16 @@ def _no_real_screenshots(monkeypatch):
 def _no_real_para_ti(monkeypatch):
     """Ninguna prueba habla con Trakt, TMDB, RAWG, JustWatch, el TSV de Netflix o la tienda de Steam
     de verdad (test_foryou y test_charts ponen sus dobles)."""
-    from orbital import foryou
+    from orbital import foryou, net
     from orbital.library import charts, rawg, tmdb, trakt
 
+    net.reset()  # ningún servicio queda «caído» de una prueba a otra
+
     def offline(url, **kwargs):
-        raise OSError(f"Sin conexión (pruebas): {url}")
+        raise net.NetError(f"Sin conexión (pruebas): {url}")
 
     def offline_open(url, timeout=None):
-        raise OSError(f"Sin conexión (pruebas): {url}")
+        raise net.NetError(f"Sin conexión (pruebas): {url}")
 
     for module in (trakt, tmdb, rawg, charts):
         monkeypatch.setattr(module, "http_json", offline)

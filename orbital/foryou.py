@@ -41,7 +41,7 @@ from .library import rawg as rawg_api
 from .library import stremio_api
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
-from .net import NET_ERRORS, read_json
+from .net import NET_ERRORS, NET_FAILURES, read_json
 from .text import clock
 
 log = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ LOGO_WARM = 12  # de cada lista, los logos que se bajan antes de que se pidan
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
 SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError,
-                  charts_api.ChartsError, mdblist_api.MdbListError) + NET_ERRORS
+                  charts_api.ChartsError, mdblist_api.MdbListError) + NET_FAILURES  # no OSError/ValueError genéricos
 # JustWatch, con su propio riel «Lo más visto en…» (Netflix ya tiene el Top 10 oficial: chart:netflix).
 JW_LIST_BRANDS = ("disney", "hbo", "prime", "appletv", "paramount")
 
@@ -289,6 +289,8 @@ class Cache:
             self._schedule_save()
         except SERVICE_ERRORS as exc:  # sin red: se queda lo de antes
             log.warning("Para ti: no pude renovar %s: %s", key, exc)
+        except Exception:  # noqa: BLE001 - un error de programación se ve en la bitácora; se queda lo de antes
+            log.exception("Para ti: falló la renovación de %s", key)
         finally:
             lock.release()
 
