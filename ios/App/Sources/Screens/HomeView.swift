@@ -114,46 +114,47 @@ struct HomeView: View {
             }
     }
 
-    var body: some View {
-        let model = home.model
-        // El tipo de la barra (Todo · Películas · Series) filtra toda la página, no solo la portada.
-        let kind = model.spotlightKind
+    /// La página de Inicio, fuera de `body` para que el compilador la revise a tiempo.
+    private func page(_ model: HomeModel, kind: String?) -> some View {
         let fits: (String) -> Bool = { kind == nil || $0 == kind }
         let continuing = model.continueWatching.filter { fits($0.kind) }
         let picks = model.forYouPicks.filter { fits($0.kind) && !dismissedPicks.contains($0.imdb) }
         let pending = model.traktPending.filter { fits($0.kind) }
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
-                topCards(model)
-                // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
-                if !model.spotlight.isEmpty { spotlightPart(model) }
-                if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
-                    HeroSkeleton()   // la primera vez: el lugar ya reservado mientras llega
-                }
-                // El orden del Inicio nuevo (docs/producto/inicio-benchmark/): lo tuyo primero, luego lo que sale de tus series,
-                // tus sugerencias, el Top 10 y Mi lista.
-                if !continuing.isEmpty {
-                    continueRail(model, items: continuing).perfTag("home.rail")
-                        // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
-                        // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
-                        .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
-                } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
-                    DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
-                }
-                // ¿Qué tal …? (D2-A): calificar lo que terminaste, en su lugar de la página, bajo lo que tienes a medias.
-                RatingReminderHost()
-                lowerRows(model, kind: kind, picks: picks, pending: pending)
-                // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
+        return VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
+            topCards(model)
+            // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
+            if !model.spotlight.isEmpty { spotlightPart(model) }
+            if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
+                HeroSkeleton()   // la primera vez: el lugar ya reservado mientras llega
             }
-            // El ancho es el de la pantalla, siempre (I2): si una fila pide más (letra grande, el SE), no empuja la página entera
-            // a la izquierda y el margen se queda donde va.
-            .containerRelativeFrame(.horizontal, alignment: .leading)
-            .refreshOrbitHost()   // la luna de tirar para actualizar
-            .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
-            .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
-            .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
-            .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
+            // El orden del Inicio nuevo (docs/producto/inicio-benchmark/): lo tuyo primero, luego lo que sale de tus series,
+            // tus sugerencias, el Top 10 y Mi lista.
+            if !continuing.isEmpty {
+                continueRail(model, items: continuing).perfTag("home.rail")
+                    // En oscuro, encimado en el borde de abajo de la portada (que se funde con el fondo): lo que tienes a
+                    // medias se ve sin bajar. En claro la portada es una tarjeta y su título no se leería encima.
+                    .padding(.top, model.spotlight.isEmpty ? 0 : (scheme == .dark ? -(DS.Layout.betweenSections + heroOverlap) : DS.Layout.betweenSubsections - DS.Layout.betweenSections))   // en claro, 24 de la tarjeta (antes 0: se tocaban)
+            } else if !model.isLoading, model.spotlight.isEmpty, model.continueWatching.isEmpty, !model.offline {   // sin red, el aviso de arriba ya lo dice
+                DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
+            }
+            // ¿Qué tal …? (D2-A): calificar lo que terminaste, en su lugar de la página, bajo lo que tienes a medias.
+            RatingReminderHost()
+            lowerRows(model, kind: kind, picks: picks, pending: pending)
+            // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
         }
+        // El ancho es el de la pantalla, siempre (I2): si una fila pide más (letra grande, el SE), no empuja la página entera
+        // a la izquierda y el margen se queda donde va.
+        .containerRelativeFrame(.horizontal, alignment: .leading)
+        .refreshOrbitHost()   // la luna de tirar para actualizar
+        .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
+        .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
+        .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
+        .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
+    }
+
+    var body: some View {
+        let model = home.model
+        ScrollView { page(model, kind: model.spotlightKind) }   // el tipo de la barra (Todo · Películas · Series) filtra toda la página
         // Un Bool (Equatable): el encabezado solo se vuelve a pintar al cruzar la línea, no en cada cuadro del desplazamiento.
         .scrollEdgeEffectStyle(.hard, for: .top)   // el encabezado propio (HE1-B) tapa lo que pasa por debajo, como la barra de antes
         // Con margen (se encoge pasando `collapseAt` y crece hasta volver bajo `expandAt`): al encogerse, el encabezado cambia de

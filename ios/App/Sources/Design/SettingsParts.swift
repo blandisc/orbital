@@ -11,10 +11,14 @@ struct SettingsRow: View {
     var value: Text?
     /// Lleva a otra página (con flecha). Sin ella, el valor se corre para quedar en la misma columna.
     var linked = true
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         LabeledContent {
-            if let value { value.lineLimit(1).padding(.trailing, linked ? 0 : DS.SettingsLook.chevronSlot) }
+            // Hasta dos renglones; con letra grande el valor baja bajo el nombre, completo y a la izquierda («Latino, Idioma ori…»
+            // se cortaba, revisión 2).
+            if let value { value.lineLimit(typeSize.isAccessibilitySize ? nil : 2).multilineTextAlignment(typeSize.isAccessibilitySize ? .leading : .trailing)
+                .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil, alignment: .leading).padding(.trailing, linked ? 0 : DS.SettingsLook.chevronSlot) }
         } label: {
             Label {
                 Text(title).foregroundStyle(DS.text)

@@ -412,7 +412,8 @@ struct FilterDoor: View {
                                 Text("Búsqueda avanzada").recipe(.cardTitle)
                                 Image(systemName: "chevron.forward").font(DS.TextRecipe.label.font).foregroundStyle(DS.textMuted)
                             }
-                            subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text).lineLimit(2)
+                            subtitle.recipe(.footnote, color: context.filter.isEmpty ? DS.textMuted : DS.text)
+                                .lineLimit(typeSize.isAccessibilitySize ? nil : 2)   // letra grande: completo («encuentra por géner…», revisión 2)
                         }
                         Spacer(minLength: 0)
                     }

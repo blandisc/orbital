@@ -66,6 +66,14 @@ struct ContinueAction: View {
                         status(nil, versionText)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    // Letra de accesibilidad: ni «quedan…» y «Desde el principio» caben juntos (revisión 2: «quedan 20…»,
+                    // «Desde el…»); cada uno en su renglón, completo.
+                    VStack(alignment: .leading, spacing: DS.Space.s2) {
+                        status(leftText, nil)
+                        restartButton
+                        status(nil, versionText)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             if let why {

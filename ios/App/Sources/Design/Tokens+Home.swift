@@ -35,7 +35,7 @@ extension DS {
         static let width: CGFloat = 112, labelRow: CGFloat = 18, dot: CGFloat = 7
         /// Con letra grande la tarjeta crece con el texto hasta este múltiplo (más, y la línea ya no se recorre de un vistazo);
         /// la hora o el día se encoge a lo más hasta `labelShrink` antes de cortarse.
-        static let maxGrowth: CGFloat = 1.8, labelShrink: CGFloat = 0.8
+        static let maxGrowth: CGFloat = 1.5, labelShrink: CGFloat = 0.8
         static let markLine: CGFloat = 2
         /// Dónde queda HOY al abrir (de 0 a 1 en el ancho): lo de antes a la izquierda y un poco de lo que viene.
         static let todayAnchor: CGFloat = 0.62
