@@ -375,18 +375,22 @@ struct SceneLanguages: View {
     }
 }
 
-/// La ficha: el dedo toca «Versión» y sube la lista, «Al instante» arriba y «Por pedir» abajo.
+/// La ficha: el dedo toca la versión, debajo de «Ver» (I7: ya no es un botón aparte), y sube la lista, «Al instante» arriba
+/// y «Por pedir» abajo.
 struct SceneVersionsSheet: View {
     var body: some View {
         SceneLoop(steps: 3) { step in
             ZStack(alignment: .bottom) {
                 VStack(spacing: DS.Space.s2) {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.ListTint.series.opacity(DS.Opacity.dimmed))
-                    HStack(spacing: DS.Space.s2) {
-                        SceneButton(title: "Ver", symbol: "play.fill")
-                        SceneButton(title: "Versión", prominent: false, pressed: step == 1)
-                            .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
+                    SceneButton(title: "Ver", symbol: "play.fill")
+                    HStack(spacing: DS.Space.s1) {
+                        Text(verbatim: "🇲🇽 · 1080p")
+                        Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font)
                     }
+                    .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+                    .scaleEffect(step == 1 ? DS.Scene.pressed : 1)
+                    .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
                     SceneLines(count: 2)
                 }
                 .padding(DS.Space.s3)

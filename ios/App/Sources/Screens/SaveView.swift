@@ -3,8 +3,8 @@ import OrbitalCore
 import OrbitalModels
 
 /// «Guardar en…»: en qué listas va un título, varias a la vez. Arriba tus listas de Trakt (las recientes primero, y una
-/// nueva entra arriba); abajo, siempre en el mismo lugar, las fijas: tu watchlist de Trakt (la de por omisión) y Mi lista de
-/// Stremio. **Nada salta al llegar las listas** (`SaveSheetPlan`): su zona aparta su alto al abrir, con renglones esqueleto
+/// nueva entra arriba); abajo, siempre en el mismo lugar, las fijas: Favoritos (con Trakt; I7, la única puerta para guardar)
+/// y Mi lista. **Nada salta al llegar las listas** (`SaveSheetPlan`): su zona aparta su alto al abrir, con renglones esqueleto
 /// del mismo alto que los de verdad, y las fijas no dependen de la red.
 struct SaveView: View {
     @Environment(AppEnvironment.self) private var env
@@ -43,6 +43,14 @@ struct SaveView: View {
             PanelGroupTitle(title: "Tus listas de Trakt")
             lists(m, reserved: reserved ?? reservedRows(m))
             PanelGroupTitle(title: "Principales").padding(.top, DS.Space.s2)
+        }
+        if m.canFavorite {
+            // I7 · Favoritos entra por aquí (antes era un corazón suelto arriba de la ficha): la misma puerta para guardar.
+            CheckRow(title: Text("Favoritos"), symbol: DS.Favorites.symbol, color: DS.Favorites.filled, checked: m.isFavorite) {
+                Task { _ = await m.toggleFavorite() }
+            }
+            .sensoryFeedback(.success, trigger: m.isFavorite) { _, now in now }
+            .accessibilityIdentifier("save-favorite")
         }
         ForEach(Array(m.fixedDestinations.enumerated()), id: \.element) { index, destination in
             CheckRow(title: SaveDestinationName.text(destination), symbol: SaveDestinationName.symbol(destination),

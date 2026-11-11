@@ -77,7 +77,8 @@ extension TitleView {
             }
         }
         if model.traktAvailable {
-            Section { Button("Agregar a una lista…", systemImage: "list.bullet") { saving = true } }
+            // I7 · una sola puerta para guardar: Mi lista, Favoritos y tus listas (el corazón de arriba ya no va).
+            Section { Button("Guardar en…", systemImage: "list.bullet") { saving = true } }
         }
     }
 

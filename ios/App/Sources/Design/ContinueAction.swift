@@ -32,6 +32,8 @@ struct ContinueAction: View {
     var why: Text?
     /// IOS-9 · el renglón de abajo dice un problema (atorado, rechazado): en ámbar, mientras el botón dice la acción.
     var warn = false
+    /// I7 · tocar la versión («🇲🇽 · 1080p ›») abre «Versión»: antes era un cuarto botón abajo. nil: el renglón solo informa.
+    var versions: (() -> Void)?
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
     var tint: Color = DS.accent
     @Environment(\.colorScheme) private var scheme
@@ -90,6 +92,24 @@ struct ContinueAction: View {
 
     /// «quedan 50 min · 🇺🇸 Inglés · 1080p»: cuánto falta y la versión, en un solo texto gris.
     @ViewBuilder private func status(_ left: Text?, _ version: Text?) -> some View {
+        if let version, let versions {
+            // La versión se toca: con su flechita, del alto de un dedo, y VoiceOver dice que abre «Versión».
+            Button(action: versions) {
+                HStack(spacing: DS.Space.s1) {
+                    statusText(left, version)
+                    Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
+                }
+                .frame(minHeight: DS.Size.touchTarget).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(Text("Toca para elegir otra versión"))
+            .accessibilityIdentifier("title-sources")
+        } else {
+            statusText(left, version)
+        }
+    }
+
+    @ViewBuilder private func statusText(_ left: Text?, _ version: Text?) -> some View {
         if let text = Self.join(left, version) {
             // Solo la versión (sin «quedan…»): hasta dos renglones («Muchas descargas activas · Lo vuelvo a pedir cuando se
             // libere un lugar» se cortaba a la mitad).

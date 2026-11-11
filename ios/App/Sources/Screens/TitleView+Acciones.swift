@@ -183,7 +183,10 @@ extension TitleView {
                               versionPending: pending,
                               versionLabel: spoken.isEmpty ? nil : Text("Se va a ver en: \(spoken.joined(separator: ", "))"),
                               play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model),
-                              why: model.poorFit.map(poorFitReason), tint: artAccent)
+                              why: model.poorFit.map(poorFitReason),
+                              versions: model.sourceCheck == .none || model.sourceCheck == .offline ? nil
+                                  : model.continueVideoID.map { video in { openVersions(video) } },
+                              tint: artAccent)
     }
 
     /// N5-A · «La de inglés pesa 64 GB y aquí no se ve bien» (o «…viene en AV1…»).

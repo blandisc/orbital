@@ -3728,7 +3728,7 @@
         }
       }
     },
-    "Si quieres otra, toca «Versión».": {
+    "Si quieres otra, toca la versión, debajo de «Ver».": {
       "extractionState": "manual",
       "localizations": {
         "es": {
@@ -3737,25 +3737,25 @@
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, toca «Versión»."
+                  "value": "Si quieres otra, toca la versión, debajo de «Ver»."
                 }
               },
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, toca «Versión»."
+                  "value": "Si quieres otra, toca la versión, debajo de «Ver»."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, haz clic en «Versión»."
+                  "value": "Si quieres otra, haz clic en la versión, debajo de «Ver»."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, toca «Versión»."
+                  "value": "Si quieres otra, toca la versión, debajo de «Ver»."
                 }
               }
             }
@@ -3767,25 +3767,25 @@
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, tap “Version”."
+                  "value": "If you want another one, tap the version under “Watch”."
                 }
               },
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, tap “Version”."
+                  "value": "If you want another one, tap the version under “Watch”."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, click “Version”."
+                  "value": "If you want another one, click the version under “Watch”."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, tap “Version”."
+                  "value": "If you want another one, tap the version under “Watch”."
                 }
               }
             }
@@ -42933,17 +42933,6 @@
         }
       }
     },
-    "Agregar a una lista…": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add to a list…"
-          }
-        }
-      }
-    },
     "Mantén presionado para ver las opciones": {
       "extractionState": "manual",
       "localizations": {
@@ -44196,6 +44185,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Which add-on it comes from: Ⓣ Torrentio and Ⓒ Comet. Versions from other add-ons have no mark."
+          }
+        }
+      }
+    },
+    "Toca para elegir otra versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to choose another version"
           }
         }
       }

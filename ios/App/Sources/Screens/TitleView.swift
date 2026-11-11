@@ -73,7 +73,7 @@ struct TitleView: View {
         // En el iPad y la Mac la barra de pestañas ocupa ese renglón: el nombre no sube a la barra (se encimaba).
         .modifier(TitleScrollChrome(topInset: topInset, heroHeight: heroHeight, logo: sizeClass == .regular ? nil : model.logo,
                                     title: sizeClass == .regular ? "" : model.title,
-                                    buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.canFavorite ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
+                                    buttons: (env.services.orbital.isConfigured ? 1 : 0) + (model.metaID.hasPrefix("tt") ? 1 : 0)))
         // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         // iPad y Mac (FE1): siempre oscura, como la sala de la TV; el arte no se corta contra un fondo claro.
@@ -83,7 +83,7 @@ struct TitleView: View {
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
         // F3: la primera vez que abres una ficha (si nunca has visto nada aquí), el foco en «Ver».
-        .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca «Versión».",
+        .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca la versión, debajo de «Ver».",
                     used: env.services.library.all.contains { $0.position > 0 || !$0.seen.isEmpty })
         // De vuelta a la app (quizá viste algo en la TV): lo visto, por dónde vas y lo que sigue, al día.
         .onChange(of: appEnv?.ui.returnedToApp) { Task { await model.refreshState() } }
@@ -293,7 +293,8 @@ struct TitleView: View {
     /// El ancho de la ficha: el de la ventana, hasta el ancho de lectura (`DS.TitleAction.readableWidth`).
     var contentWidth: CGFloat { min(viewport.width, DS.TitleAction.readableWidth) }
 
-    /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
+    /// En la TV y Compartir: botones de ícono en la barra de arriba (con su nombre para VoiceOver). El corazón ya no va aquí
+    /// (I7): favoritos entra por la misma puerta que Mi lista y tus listas, «Guardar en…».
     @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             if env.services.orbital.isConfigured {
@@ -305,10 +306,6 @@ struct TitleView: View {
                     .sensoryFeedback(.impact(flexibility: .soft), trigger: env.isSendingToTV(model.metaID)) { _, sending in sending }
                     .accessibilityLabel(Text("Ver en la TV"))
             }
-            // El corazón (tus favoritos de Trakt, aparte de «Guardar»): solo con Trakt conectado.
-            if model.canFavorite {
-                FavoriteButton(isFavorite: model.isFavorite) { Task { await toggleFavorite(model) } }
-            }
             // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
             if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
                 ShareLink(item: url, subject: Text(verbatim: model.title)) { Image(systemName: "square.and.arrow.up") }
@@ -317,24 +314,17 @@ struct TitleView: View {
         }
     }
 
-    /// El corazón cambia al instante; si Trakt lo acepta, un aviso con «Deshacer» (si no, regresa solo y la ficha dice por qué).
-    private func toggleFavorite(_ model: TitleModel) async {
-        guard await model.toggleFavorite() else { return }
-        env.notify(model.isFavorite ? "Agregada a tus favoritos" : "Quitada de tus favoritos", detail: "Trakt", tone: .info,
-                   actionTitle: "Deshacer", actionSymbol: "arrow.uturn.backward") { Task { await model.toggleFavorite() } }
-    }
-
     var artAccent: Color { tint.colors?.accent ?? DS.accent }
 
     /// El botón principal (`ContinueAction`: el botón dice una sola cosa; el avance, la versión y «Desde el principio» van
-    /// debajo) y cuatro acciones del mismo tamaño: Guardar, Descargar, Tráiler y Fuente. Cada una cambia en su lugar (Guardada,
-    /// el anillo de la descarga): nada brinca.
+    /// debajo) y las acciones del mismo tamaño: Mi lista, Descargar y Tráiler. Cada una cambia en su lugar (Guardada, el anillo
+    /// de la descarga): nada brinca. «Versión» ya no es un botón más (I7): se abre tocando la versión, debajo de «Ver».
     private func actions(_ model: TitleModel) -> some View {
         VStack(spacing: DS.Space.s4) {
             continueAction(model)
             debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
             // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize ? 2 : (model.extras?.trailer?.url == nil ? 3 : 4)),
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize || model.extras?.trailer?.url == nil ? 2 : 3),
                       spacing: DS.Space.s2) {
                 // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
                 statusAction(model).frame(maxWidth: .infinity)
@@ -343,10 +333,6 @@ struct TitleView: View {
                     Button { openURL(url) } label: { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }
                         .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
-                Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
-                    ActionTileLabel(title: Text("Versión"), symbol: "list.bullet.rectangle", tint: artAccent)
-                }
-                .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
             .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
