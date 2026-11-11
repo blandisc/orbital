@@ -14,7 +14,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Cambiar de sección (Para ti, Inicio, Juegos, Películas y series, TV en vivo) | LB / RB (también en TV en vivo: las categorías se cambian con LT / RT o con ↑↓ en su lista) | ✅ |
 | Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: En tu consola (juegos y apps), Películas, Series. Con un teclado físico se escribe directo | ✅ |
 | Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
-| Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
+| Inicio | "A continuación": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto". Debajo, «Seguir viendo» (A pone el episodio donde ibas), «Mi lista» (A abre la ficha; Y › Quitar de Mi lista) y «Tus consolas» (A entra; X sigue el último juego). ↑↓ o LT/RT pasan de fila y vuelven a donde ibas en cada una; lo de arriba enseña lo enfocado. Con el dedo, arrastrar sube las filas; con el mouse, la rueda | ✅ (nuevo) |
 | Volver al inicio | B | ✅ |
 | Cada fila recuerda su último juego | automático | ✅ |
 | Llegar al final de una fila | la tarjeta rebota y el mando vibra | ✅ |

@@ -520,8 +520,9 @@ function renderHints() {
       alt: item && altLabel(item),
       sections: visibleSections(state.allRows).length,
       // El destacado enseña sus botones (A, X, Y) también con un renglón enfocado: enseña ese renglón.
-      onScreen: ui.home.focusId === "feature" || ui.home.focusId.startsWith("card:"),
-      jump: ui.home.hasConsoles ? (ui.home.focusId.startsWith("console:") ? "Arriba" : "Tus consolas") : null,
+      // Lo de arriba sigue al foco en todas las filas (D4-B) y enseña sus botones: el pie no los repite.
+      onScreen: !["search", "alexa"].includes(ui.home.focusId),
+      jump: ui.home.nextRow ?? (ui.home.focusId.split(":")[0] !== "card" ? "Arriba" : null),
     }));
   }
   const { r, c } = state.focus;
@@ -914,8 +915,18 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
+  const mine = homeMyList();
   ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing,
-    offline: state.online === false });
+    offline: state.online === false, mylist: mine.items, mylistEdit: mine.edit });
+}
+
+/** «Mi lista» del Inicio (D4-B): la misma de Películas y series —tu watchlist de Trakt; sin Trakt, Mi lista de Stremio—, sin
+ * el filtro de esa sección (aquí va todo). Llega con las listas de Películas y series (`loadCuration`). */
+function homeMyList() {
+  const list = mediaLists.find((l) => l.id === "watchlist") ?? mediaLists.find((l) => l.id === "mylist");
+  if (!list) return { items: [], edit: null };
+  return { items: itemsOf(mediaItems, list).map((i) => curatedItem(i, { rowTitle: "Mi lista" })),
+    edit: list.id === "watchlist" && traktLinked() ? { where: "watchlist", name: "Mi lista" } : null };
 }
 
 /** Lo que sale hoy de tus series (Trakt): el Inicio lo marca «Sale hoy · 19:00». Cada media hora; sin Trakt, nada. */
@@ -962,7 +973,7 @@ function homeActivate(target, action = "select") {
     return goToSection("games", 1);
   }
   const item = target.item;
-  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked() }));
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone, trakt: traktLinked(), list: target.list ?? null }));
   if (action === "alt") {
     if (isWatchable(item)) return openTitle(item);
     const alt = alternativeRunner(item);
@@ -1847,6 +1858,7 @@ function mediaMenu() {
 function applyCuration(rows) {
   curated = rows;
   if (!state.allRows) return;
+  if (inHome()) renderHome(); // «Mi lista» del Inicio llega con estas listas
   state.allRows = [...state.allRows.filter((row) => !row.id.startsWith("curated:")), ...rows];
   if (state.section !== "media") return prepareMedia(); // listas para cuando entres
   const rowId = state.rows[state.focus.r]?.id;

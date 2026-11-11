@@ -97,8 +97,10 @@ export function shortTitle(title = "") {
 export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false, jump = null } = {}) {
   const list = [];
   if (target?.kind === "console") {
-    list.push({ glyph: glyphs.select, label: "Entrar" });
-    if (target.console.last) list.push({ glyph: glyphs.alt, label: `Seguir ${shortTitle(target.console.last.title)}` });
+    if (!onScreen) { // D4-B: lo de arriba ya enseña «Entrar» y «Seguir…» de la consola enfocada
+      list.push({ glyph: glyphs.select, label: "Entrar" });
+      if (target.console.last) list.push({ glyph: glyphs.alt, label: `Seguir ${shortTitle(target.console.last.title)}` });
+    }
   } else if (target?.kind === "search") {
     list.push({ glyph: glyphs.select, label: "Buscar" });
   } else if (target?.kind === "alexa") {

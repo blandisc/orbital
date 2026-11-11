@@ -78,6 +78,27 @@ export function FeatureHero(item, { runningId = null, glyphs = {}, onAction, rea
       Button({ label: "Opciones", glyph: glyphs.options, icon: "more", onPress: press("options") })));
 }
 
+/**
+ * El destacado cuando enfocas una consola (D4-B, 10 nov 2026): antes se quedaba arriba el juego anterior, apagado y con su
+ * «Jugar». Su nombre, cuántos juegos y el último que jugaste; «Entrar» en blanco y, si hay uno, «Seguir <juego>» de vidrio.
+ * Lo nuevo desde la última vez es su porqué. `onAction("select" | "alt")`.
+ */
+export function ConsoleHero(system, { glyphs = {}, onAction, now = Date.now() }) {
+  const press = (action) => (event) => { event.stopPropagation(); onAction?.(action); };
+  const last = system.last;
+  const games = `${system.count} juego${system.count === 1 ? "" : "s"}`;
+  const played = last ? lastPlayed(last.last_played, now, `Jugaste ${last.title}`) : null;
+  const why = system.fresh > 0 ? `${system.fresh} juego${system.fresh === 1 ? "" : "s"} nuevo${system.fresh === 1 ? "" : "s"}` : null;
+  return h("div", { class: ["feature-hero", "feature-hero--console", system.system === "geforcenow" && "needs-internet"] },
+    why && h("span", { class: "feature-hero__eyebrow" }, why),
+    h("h2", { class: "feature-hero__title" }, system.name),
+    h("span", { class: "feature-hero__detail", style: { "--platform": systemColor(system.system) } },
+      svg(ICONS.gamepad), [games, played].filter(Boolean).join(" · ")),
+    h("span", { class: "button-row feature-hero__actions" },
+      Button({ label: "Entrar", glyph: glyphs.select, variant: "primary", onPress: press("select") }),
+      last && Button({ label: `Seguir ${last.title}`, glyph: glyphs.alt, yields: true, onPress: press("alt") })));
+}
+
 /** Consola: su foto (o la portada de lo último, si no hay foto) y cuántos juegos. Lo último que jugaste ya no va aquí
  * (lo dice la leyenda: «X · Seguir Pikmin 2»): la tarjeta queda cuadrada, sin hueco. */
 export function ConsoleTile(system, { focusId, index = 0, onPress }) {

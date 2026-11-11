@@ -102,3 +102,11 @@ test("T5: en la primera fila de Películas y series, ↑ lleva a «Todo · Pelí
   assert.match(main, /if \(kindFocus != null\) return handleKinds\(action\);/);
   assert.match(main, /case "select": return MEDIA_KINDS\[kindFocus\]\[0\] === mediaFilter/);
 });
+
+test("D4-B: con una consola enfocada, lo de arriba ya enseña «Entrar» y «Seguir…»: el pie no los repite", async () => {
+  const { homeHints } = await import("../../orbital/web/js/core/hints.js");
+  const g = { select: "A", alt: "X", options: "Y", menu: "☰", page: "LT RT", section: "LB RB" };
+  const target = { kind: "console", console: { last: { title: "Hades" } } };
+  assert.ok(homeHints(g, target).some((i) => i.label === "Entrar"));
+  assert.ok(!homeHints(g, target, { onScreen: true }).some((i) => i.label === "Entrar" || i.label.startsWith("Seguir")));
+});

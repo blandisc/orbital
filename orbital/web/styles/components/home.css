@@ -6,21 +6,31 @@
   grid-row: 2 / 4; grid-column: 1; /* fija, como Para ti: se encima con la sección estacionada */ min-height: 0; overflow: hidden;
   padding: 0 var(--page-gutter) var(--space-5);
 }
-/* Con el dedo, abajo van «Atrás» y «Menú» (base.css): más altos que el pie que reemplazan; las consolas no quedan debajo. */
+/* Con el dedo, abajo van «Atrás» y «Menú» (base.css): más altos que el pie que reemplazan; las filas no quedan debajo. */
 [data-input="touch"] .home { padding-bottom: calc(var(--space-5) + var(--space-4)); }
-/* Todo el Inicio se desliza junto: arriba llena la pantalla; al bajar a Tus consolas, sube lo justo.
-   Lo que sale por arriba se desvanece (no queda cortado en seco). */
+/* Lo de arriba se queda quieto bajo la barra (D4-B, 10 nov 2026: antes subía con todo y su logo quedaba cortado bajo la barra);
+   las filas se deslizan debajo y la enfocada queda justo debajo de lo de arriba. `--home-stage` (el alto de lo de arriba) lo
+   pone home.js; lo que sube por detrás de lo de arriba se desvanece, y lo que asoma abajo también. */
+.home { position: relative; }
+.home__rows {
+  --rows-fade-top: transparent; --rows-fade-bottom: var(--mask-solid);
+  position: absolute; inset: 0 0 var(--space-5); padding: 0 var(--page-gutter); overflow: hidden; /* recorta en la orilla de la pantalla: la enfocada crece sin cortarse */
+  -webkit-mask-image: linear-gradient(180deg, var(--rows-fade-top) 0, var(--rows-fade-top) calc(var(--home-stage, 0px) - var(--space-10)), var(--mask-solid) var(--home-stage, 0px), var(--mask-solid) calc(100% - var(--home-peek)), var(--rows-fade-bottom) 100%);
+  mask-image: linear-gradient(180deg, var(--rows-fade-top) 0, var(--rows-fade-top) calc(var(--home-stage, 0px) - var(--space-10)), var(--mask-solid) var(--home-stage, 0px), var(--mask-solid) calc(100% - var(--home-peek)), var(--rows-fade-bottom) 100%);
+}
+.home__rows--more { --rows-fade-bottom: transparent; }
+[data-input="touch"] .home__rows { bottom: calc(var(--space-5) + var(--space-4)); }
 .home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--layout-between-sections); transition: transform var(--duration-slow) var(--ease-out); }
-.home--scrolled { -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); }
-/* Ahí lo de arriba no es lo enfocado: se aparta (antes seguía igual de presente y el fondo ya era el de la consola). */
-.home__hero { transition: opacity var(--duration-base) var(--ease-out); }
-.home--scrolled .home__hero { opacity: var(--opacity-dim); }
 
-/* Arriba: lo enfocado, abajo a la izquierda (el alto lo pone home.js: la pantalla menos «A continuación» y el título de
-   Tus consolas). Al cambiar, entra con un fundido. */
-.home__hero { flex: none; display: flex; flex-direction: column; justify-content: flex-end; min-height: 12rem; padding-bottom: var(--space-2); }
+/* Arriba: lo enfocado, abajo a la izquierda de su lugar. Al cambiar, entra con un fundido. */
+.home__hero {
+  position: absolute; z-index: var(--z-raised); top: 0; left: var(--page-gutter); right: var(--page-gutter); height: var(--home-stage, auto);
+  display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: var(--layout-between-sections);
+}
 .home__hero--swap > * { animation: fade-in var(--duration-enter) var(--ease-out); }
 .home__empty { align-self: flex-start; display: flex; flex-direction: column; gap: var(--space-2); max-width: 40rem; padding: var(--inset-feature); background: var(--color-glass); box-shadow: var(--edge-glass); }
+/* Más abajo de «A continuación», lo de arriba se aprieta un poco (el logo, un paso más chico) para dejarle lugar a la fila. */
+.home--scrolled .feature-hero__logo { max-height: 5.4rem; }
 
 
 /* Una fila del Inicio: su título y la pista que se desliza de lado (aire para lo que crece la enfocada). */
@@ -40,6 +50,10 @@
 .home__track--upnext { --card-height: 8.4rem; --card-focus-scale: 1.1; gap: var(--space-6); padding-bottom: var(--space-3); /* lo que crece la enfocada */ }
 .home__track--upnext .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
 
+/* Seguir viendo y Mi lista: las portadas de Películas y series, un paso más bajas (lo de arriba ya dice cuál es). */
+.home__track--posters { --card-height: 9.6rem; --card-focus-scale: 1.1; gap: var(--card-gap); padding-bottom: var(--space-3); }
+.home__track--posters .is-focused.card { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; }
+
 /* Tus consolas: tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más). La enfocada crece hacia
    arriba (la fila guarda ese alto: nada brinca). */
 .home__track--consoles { --console-size: 9.6rem; --console-grow: 1.4rem; height: calc(var(--console-size) + var(--console-grow)); }
@@ -49,14 +63,14 @@
 }
 .home__track--consoles > .is-focused.tile--console.tile { height: calc(var(--console-size) + var(--console-grow)); transform: none; }
 /* Arriba, las consolas solo asoman y se desvanecen hacia abajo: al bajar a ellas, el Inicio sube y se ven enteras. */
-.home:not([data-zone="consoles"]) .home__track--consoles {
+.home:not([data-zone="console"]) .home__track--consoles {
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 0, var(--mask-solid) var(--console-grow), transparent calc(var(--console-grow) + var(--home-peek)));
   mask-image: linear-gradient(180deg, var(--mask-solid) 0, var(--mask-solid) var(--console-grow), transparent calc(var(--console-grow) + var(--home-peek)));
 }
 
 /* Entrada (al abrir Orbital): lo de arriba, «A continuación» y las consolas una tras otra. */
 .home--intro .home__hero { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-1) both; }
-.home--intro .home__row-head, .home--intro .home__track--upnext { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
+.home--intro .home__row-head, .home--intro .home__track--upnext, .home--intro .home__track--posters { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
 .home--intro .tile--console { animation: home-in var(--duration-enter-long) var(--ease-out) calc(var(--delay-3) + (var(--i, 0) + 1) * var(--stagger)) both; }
 @keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
 

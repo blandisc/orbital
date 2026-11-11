@@ -4,18 +4,20 @@ import { buildHome } from "../core/home.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { Card } from "./card.js";
-import { ConsoleTile, FeatureHero } from "./tiles.js";
+import { ConsoleHero, ConsoleTile, FeatureHero } from "./tiles.js";
 import { SectionHead } from "./ui.js";
 
 /**
- * Inicio, como el Apple TV (Fernando, 31 oct 2026, dirección B «A continuación»): arriba, lo que te toca a pantalla completa
- * —su arte lo pone el fondo— con su porqué, su logo, su dato y sus botones; abajo, «A continuación»: lo que tenías a medias en
- * tarjetas anchas con su avance. Enfocar una tarjeta pone su título arriba (el arte y la luz cambian con ella). Más abajo,
- * Tus consolas: al bajar a ellas, el Inicio se desliza y lo de arriba se va. El foco se mueve por posición en pantalla
- * (core/spatial.js). LT/RT saltan entre «A continuación» y las consolas; B vuelve a la primera tarjeta.
+ * Inicio, como el Apple TV (Fernando, 31 oct 2026, dirección B «A continuación»; D4-B, 10 nov 2026): arriba, lo enfocado a
+ * pantalla completa —su arte lo pone el fondo— con su porqué, su logo, su dato y sus botones; abajo, las filas de lo tuyo:
+ * «A continuación» (tarjetas anchas con su avance), «Seguir viendo» y «Mi lista» (portadas) y Tus consolas. Lo de arriba
+ * sigue al foco en todas las filas (un episodio, una película de Mi lista, una consola con sus juegos y el último que
+ * jugaste) y se queda quieto bajo la barra: al bajar, las filas suben y la enfocada queda justo debajo de lo de arriba, con
+ * la siguiente asomando. El foco se mueve por filas (↑↓ recuerdan dónde ibas en cada una; ← → dentro de la fila); LT/RT
+ * saltan de fila; B vuelve a la primera tarjeta.
  *
  * Callbacks: onFocus(target) al cambiar de pieza; onPick(target) al tocarla con el dedo o el ratón;
- * onAction(action, target) para los botones de arriba. target = { kind, item?, console? }.
+ * onAction(action, target) para los botones de arriba. target = { kind, item?, console?, list? }.
  */
 /** Sin nada jugado todavía: con juegos, invita a Juegos; si los ocultaste todos, a mostrarlos; sin
  * ningún juego, a revisar qué falta (antes decía «Aún no encontré juegos» con 18 ocultos). */
@@ -28,56 +30,71 @@ function emptyFeature(hasGames, hidden = 0) {
     h("span", { class: "feature-hero__detail" }, detail));
 }
 
+/** Las filas del Inicio, de arriba abajo: la clave es el prefijo de su foco («card:3», «watch:0»…). */
+const ROWS = [
+  { key: "card", track: "home__track--upnext" },
+  { key: "watch", track: "home__track--posters" },
+  { key: "mine", track: "home__track--posters" },
+  { key: "console", track: "home__track--consoles", row: "home__consoles" },
+];
+
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hero = h("div", { class: "home__hero" });
-  const upnextHead = h("div", { class: "home__row-head" });
-  const upnextTrack = h("div", { class: "home__track home__track--upnext", role: "group" });
-  const upnextViewport = h("div", { class: "home__viewport" }, upnextTrack);
-  const upnext = h("div", { class: "home__row" }, upnextHead, upnextViewport);
-  const consolesHead = h("div", { class: "home__row-head" });
-  const consolesTrack = h("div", { class: "home__track home__track--consoles", role: "group" });
-  const consolesViewport = h("div", { class: "home__viewport" }, consolesTrack);
-  const consoles = h("div", { class: "home__row home__consoles" }, consolesHead, consolesViewport);
-  const scroller = h("div", { class: "home__scroll" }, hero, upnext, consoles);
-  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, scroller);
-  // Lo de arriba llena la pantalla hasta «A continuación»; de Tus consolas asoma su título. El alto se mide aquí (cambia con
+  const rows = ROWS.map(({ key, track: trackClass, row: rowClass }) => {
+    const head = h("div", { class: "home__row-head" });
+    const track = h("div", { class: ["home__track", trackClass], role: "group" });
+    const viewport = h("div", { class: "home__viewport" }, track);
+    const row = h("div", { class: ["home__row", rowClass], hidden: true, "data-row": key }, head, viewport);
+    // Con el dedo, como en el celular: las filas se deslizan de lado bajo el dedo.
+    dragScroll(viewport, track, { axis: "x", onScroll: (s) => edges(viewport, track, s) });
+    return { key, head, track, viewport, row };
+  });
+  const rowOf = Object.fromEntries(rows.map((r) => [r.key, r]));
+  const scroller = h("div", { class: "home__scroll" }, ...rows.map((r) => r.row));
+  const box = h("div", { class: "home__rows" }, scroller);
+  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, box, hero);
+  // Lo de arriba llena la pantalla hasta la fila enfocada; de la siguiente asoma su título. El alto se mide aquí (cambia con
   // la ventana y con el tamaño del texto).
-  { const watch = new ResizeObserver(() => fit()); [el, upnext, consoles].forEach((node) => watch.observe(node)); }
-  // Con el dedo, como en el celular: las filas se deslizan de lado bajo el dedo, y arrastrar hacia arriba sube el Inicio.
-  dragScroll(upnextViewport, upnextTrack, { axis: "x", onScroll: (s) => edges(upnextViewport, upnextTrack, s) });
-  dragScroll(consolesViewport, consolesTrack, { axis: "x", onScroll: (s) => edges(consolesViewport, consolesTrack, s) });
+  // También lo de arriba: un logo o una letra que llegan tarde lo hacen más alto, y no debe quedar cortado bajo la barra.
+  const watch = new ResizeObserver(() => fit());
+  [el, ...rows.map((r) => r.row)].forEach((node) => watch.observe(node));
+  let watchedStage = null;
+  // Arrastrar hacia arriba con el dedo sube las filas (como el celular).
   let pageFrom = 0;
-  dragArea(el, {
+  dragArea(box, {
     onStart: () => { pageFrom = Number(scroller.dataset.shift || 0); scroller.style.transition = "none"; },
-    onMove: (d) => setPage(pageFrom - d),
+    onMove: (d) => setShift(pageFrom - d),
     onEnd: () => { scroller.style.transition = ""; },
   });
 
   let model = null;
   let targets = new Map(); // focus id -> target
   let focusId = "card:0";
-  let lastTop = "card:0"; // LT/RT vuelven aquí desde las consolas
-  let lastConsole = "console:0";
+  const memory = {}; // fila -> el último que enfocaste en ella (↑↓ vuelven ahí)
   let introduced = false;
-  let options = { runningId: null, glyphs: {}, airing: {} };
-  let staged; // lo que enseña arriba ahora (lo enfocado de «A continuación»)
+  let options = { runningId: null, glyphs: {}, airing: {}, mylistEdit: null };
+  let staged; // qué enseña arriba ahora (su identidad)
   let hiddenCount = 0;
-  // Al recorrer rápido «A continuación» solo se mueve el foco; lo de arriba cambia cuando te detienes.
+  // Al recorrer rápido una fila solo se mueve el foco; lo de arriba cambia cuando te detienes.
   const stageWait = settler({ quick: 0, held: 240 });
   let stageTimer;
 
-  /** Qué es lo enfocado (no dónde está): un juego o una consola. */
+  /** Qué es lo enfocado (no dónde está): un título, un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
   const topId = () => (targets.has("card:0") ? "card:0" : "feature");
+  /** La fila de un foco: «feature» (la invitación) y la barra de arriba cuentan como la primera. */
+  const rowKey = (id) => (ROWS.some((r) => id.startsWith(`${r.key}:`)) ? id.split(":")[0] : "card");
+  const visibleRows = () => rows.filter((r) => !r.row.hidden);
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, offline = false } = {}) {
-    options = { runningId, glyphs, airing: airing || {} };
+  function render(libraryRows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, offline = false, mylist = [], mylistEdit = null } = {}) {
+    options = { runningId, glyphs, airing: airing || {}, mylistEdit };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
     // Al recargar (volver de un juego, deshacer), lo enfocado puede cambiar de lugar: el foco lo sigue
     // a él, no a la posición (antes quedaba sobre otro juego y Y abría el menú equivocado).
     const keep = identity(targets.get(focusId));
-    model = buildHome(rows, { runningId, offline });
+    const keepRow = rowKey(focusId);
+    model = buildHome(libraryRows, { runningId, offline, mylist });
     targets = new Map();
     const pick = (id) => () => onPick?.(targets.get(id), id);
 
@@ -91,42 +108,59 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       targets.set("feature", { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     }
     // Sin el próximo estreno a la derecha (Fernando, 2 nov: quitarlo; los estrenos viven en Para ti y en el calendario).
-    mount(upnextHead, queue.length > 0 && SectionHead("A continuación", { className: "home__upnext-head" }));
-    mount(upnextTrack, queue.map((item, i) => {
+    fill(rowOf.card, queue.length > 0 && SectionHead("A continuación", { className: "home__upnext-head" }), queue.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
       // Sin nombre debajo: lo enfocado ya lo dice arriba, en grande (como la fila de arriba del Apple TV). El logo va sobre su escena.
       const card = Card(item, { wide: true, onPress: pick(`card:${i}`) });
       card.dataset.focusId = `card:${i}`;
       return card;
     }));
-    upnext.hidden = !queue.length;
     // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
     queue.forEach((item) => { const src = item.hero || item.image; if (src) new Image().src = src; });
 
+    // Lo tuyo de películas y series (D4-B): las mismas portadas de Películas y series; el nombre lo dice lo de arriba.
+    for (const [key, title, items, extra] of [["watch", "Seguir viendo", model.watching, {}], ["mine", "Mi lista", model.mylist, { list: mylistEdit }]]) {
+      fill(rowOf[key], items.length > 0 && SectionHead(title), items.map((item, i) => {
+        targets.set(`${key}:${i}`, { kind: "item", item, ...extra });
+        const card = Card(item, { onPress: pick(`${key}:${i}`) });
+        card.dataset.focusId = `${key}:${i}`;
+        return card;
+      }));
+    }
+
     // Una sección, como en el iPhone (Fernando, 1 nov 2026): el rótulo con su ícono y su línea marca que de aquí para abajo
     // son tus juegos y no lo que sigue viendo; a la derecha, cuántos juegos hay.
-    mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
-      level: "section", icon: "gamepad", meta: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
-    }));
     model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
-    mount(consolesTrack, model.consoles.map((c, i) => ConsoleTile(c, {
-      focusId: `console:${i}`, index: i, onPress: pick(`console:${i}`),
-    })));
-    consoles.hidden = !model.consoles.length;
+    fill(rowOf.console, model.consoles.length > 0 && SectionHead("Tus consolas", {
+      level: "section", icon: "gamepad", meta: `${model.games} ${model.games === 1 ? "juego" : "juegos"}`,
+    }), model.consoles.map((c, i) => ConsoleTile(c, { focusId: `console:${i}`, index: i, onPress: pick(`console:${i}`) })));
 
     if (keep && identity(targets.get(focusId)) !== keep) {
       const same = [...targets].find(([, t]) => identity(t) === keep);
       if (same) focusId = same[0];
     }
-    if (!targets.has(focusId)) focusId = topId();
-    if (!targets.has(lastTop)) lastTop = topId();
-    if (!introduced) { // entrada: lo de arriba, «A continuación» y las consolas una tras otra
+    if (!targets.has(focusId)) {
+      // Su fila sigue ahí (se acortó): el último de ella; si no, arriba.
+      const inRow = [...targets.keys()].filter((id) => id.startsWith(`${keepRow}:`));
+      focusId = inRow.at(-1) ?? topId();
+    }
+    for (const key of Object.keys(memory)) if (!targets.has(memory[key])) delete memory[key];
+    if (!introduced) { // entrada: lo de arriba y las filas una tras otra
       introduced = true;
       el.classList.add("home--intro");
       setTimeout(() => el.classList.remove("home--intro"), 1400);
     }
     paint();
     fit();
+  }
+
+  /** Una fila con su título y sus piezas; sin piezas, no se ve. */
+  const titles = {};
+  function fill(row, head, pieces) {
+    titles[row.key] = head ? head.querySelector("h2, h3, .section-head__title")?.textContent ?? "" : "";
+    mount(row.head, head);
+    mount(row.track, pieces);
+    row.row.hidden = !pieces.length;
   }
 
   function queueStage() {
@@ -136,61 +170,76 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     else renderStage();
   }
 
-  /** Arriba: lo enfocado de «A continuación» (en las consolas se queda el último). Sin nada, la invitación a empezar. */
+  /** De qué habla lo de arriba: lo enfocado; en la barra (Buscar, Alexa), lo último que enfocaste en las filas. */
+  function stageTarget() {
+    if (focusId === "search" || focusId === "alexa") return targets.get(memory.last && targets.has(memory.last) ? memory.last : topId());
+    return targets.get(focusId);
+  }
+
+  /** Arriba: lo enfocado de cualquier fila (D4-B: también una consola). Sin nada, la invitación a empezar. */
   function renderStage() {
-    const target = targets.get(focusId);
-    const item = target?.kind === "item" ? target.item : focusId.startsWith("console:") && staged !== undefined ? staged : targets.get(lastTop)?.item ?? null;
-    if (staged === item && hero.firstChild) return;
-    staged = item;
-    const id = item ? [...targets].find(([, t]) => t.item === item)?.[0] : "feature";
-    const imdb = item?.extra?.meta_id;
-    const airing = imdb && options.airing[imdb];
-    mount(hero, item
-      ? FeatureHero(item, { runningId: options.runningId, glyphs: options.glyphs,
-        reason: airing ? (airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`) : null,
-        onAction: (action) => onAction?.(action, targets.get(id)) })
-      : emptyFeature(model.consoles.length > 0, hiddenCount));
+    const target = stageTarget();
+    const key = target?.kind === "item" || target?.kind === "console" ? identity(target) : "feature";
+    if (staged === key && hero.firstChild) return;
+    staged = key;
+    const id = [...targets].find(([, t]) => t === target)?.[0] ?? focusId;
+    const act = (action) => onAction?.(action, targets.get(id));
+    let stage;
+    if (target?.kind === "item") {
+      const imdb = target.item.extra?.meta_id ?? target.item.meta_id;
+      const airing = imdb && options.airing[imdb];
+      stage = FeatureHero(target.item, { runningId: options.runningId, glyphs: options.glyphs, onAction: act,
+        reason: airing ? (airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`) : null });
+    } else if (target?.kind === "console") {
+      stage = ConsoleHero(target.console, { glyphs: options.glyphs, onAction: act });
+    } else {
+      stage = emptyFeature(model.consoles.length > 0, hiddenCount);
+    }
+    mount(hero, stage);
+    if (watchedStage) watch.unobserve(watchedStage);
+    watchedStage = stage;
+    watch.observe(stage);
     markFocused(); // la invitación nace sin foco: se lo ponemos (paint() ya pasó si lo de arriba esperó su turno)
     hero.classList.remove("home__hero--swap");
     void hero.offsetWidth;
     hero.classList.add("home__hero--swap"); // lo nuevo entra con un fundido
+    fit();
   }
 
-  const room = () => {
-    const css = getComputedStyle(el);
-    return el.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
-  };
+  const room = () => box.clientHeight; // lo que va de la barra al pie (home.css · .home__rows)
 
-  /** Alto de lo de arriba: la pantalla menos «A continuación» y lo que asoma de Tus consolas (su título y la orilla de arriba
-   * de las consolas, que se desvanece: así se ve que hay más abajo sin decirlo, como «Seguir viendo» en el iPhone). */
+  /**
+   * Alto de lo de arriba: la pantalla menos la fila enfocada y lo que asoma de la siguiente (su título y la orilla de arriba de
+   * sus piezas, que se desvanece: así se ve que hay más abajo sin decirlo, como «Seguir viendo» en el iPhone). Nunca menos de
+   * lo que mide su contenido: si no cabe, cede lo que asoma, no se corta arriba bajo la barra.
+   */
   function fit() {
     if (el.hidden || !el.clientHeight) return;
+    const shown = visibleRows();
+    const at = Math.max(0, shown.findIndex((r) => r.key === rowKey(focusId)));
+    const row = shown[at];
+    const next = shown[at + 1];
     const gap = parseFloat(getComputedStyle(scroller).rowGap) || 0;
-    // --home-peek viene en rem; lo que asoma se cuenta desde la orilla de arriba de las consolas (su título, el aire y lo que
-    // crece la enfocada van antes).
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const peek = (parseFloat(getComputedStyle(el).getPropertyValue("--home-peek")) || 0) * rem;
-    const tile = consolesTrack.firstElementChild;
-    const lead = tile ? tile.getBoundingClientRect().top - consoles.getBoundingClientRect().top : consolesHead.offsetHeight;
-    const below = (upnext.hidden ? 0 : upnext.offsetHeight + gap) + (consoles.hidden ? 0 : lead + gap + peek);
-    // Un mínimo, no un alto: si lo de arriba crece después (llega «Seguir jugando» con el estado), crece entero y cede lo que
-    // asoma de las consolas (que de todos modos se desvanece) en vez de cortarse arriba.
-    hero.style.minHeight = `max(12rem, ${Math.max(0, room() - below)}px)`;
-    scrollToFocus();
+    const lead = next ? next.track.getBoundingClientRect().top - next.row.getBoundingClientRect().top : 0;
+    const below = (row ? row.row.offsetHeight : 0) + (next ? gap + lead + peek : 0);
+    const content = hero.firstElementChild ? hero.firstElementChild.offsetHeight + parseFloat(getComputedStyle(hero).paddingBottom || 0) : 0;
+    const stage = Math.max(content, Math.min(room(), Math.max(12 * rem, room() - below)));
+    el.style.setProperty("--home-stage", `${Math.round(stage)}px`);
+    box.classList.toggle("home__rows--more", !!next);
+    setShift((row ? row.row.offsetTop : 0) - stage);
   }
 
-  /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
-  const pageMax = () => Math.max(0, consoles.offsetTop + consoles.offsetHeight - room());
-  function scrollToFocus() {
-    setPage(focusId.startsWith("console:") ? pageMax() : 0);
-  }
-
-  /** Cuánto ha subido el Inicio (0 = arriba; pageMax = Tus consolas enteras). */
-  function setPage(shift) {
-    const s = Math.max(0, Math.min(pageMax(), shift));
+  /** Cuánto suben las filas: la enfocada queda justo debajo de lo de arriba (negativo: bajan para dejarle su lugar). */
+  function setShift(shift) {
+    const last = visibleRows().at(-1);
+    const stage = parseFloat(el.style.getPropertyValue("--home-stage")) || 0;
+    const max = last ? Math.max(-stage, last.row.offsetTop + last.row.offsetHeight - room()) : 0;
+    const s = Math.max(-stage, Math.min(max, shift));
     scroller.dataset.shift = String(s);
-    scroller.style.transform = s ? `translateY(${-s}px)` : "";
-    el.classList.toggle("home--scrolled", s > 0);
+    scroller.style.transform = `translateY(${-s}px)`;
+    el.classList.toggle("home--scrolled", rowKey(focusId) !== "card");
   }
 
   /** Marca el foco. También cuando la invitación se monta después (renderStage): si no, quedaba sin foco. */
@@ -205,13 +254,15 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
   /** Marca el foco, mantiene lo enfocado a la vista en su fila y cambia lo de arriba. */
   function paint() {
-    if (!focusId.startsWith("console:") && targets.has(focusId) && !["search", "alexa"].includes(focusId)) lastTop = focusId;
+    if (targets.has(focusId) && !["search", "alexa"].includes(focusId)) {
+      memory[rowKey(focusId)] = focusId;
+      memory.last = focusId;
+    }
     queueStage();
     markFocused();
-    el.dataset.zone = focusId.startsWith("console:") ? "consoles" : "top";
-    keepVisible(upnextViewport, upnextTrack);
-    keepVisible(consolesViewport, consolesTrack);
-    scrollToFocus();
+    el.dataset.zone = rowKey(focusId);
+    for (const r of rows) keepVisible(r.viewport, r.track);
+    fit();
     onFocus?.(targets.get(focusId));
   }
 
@@ -243,10 +294,18 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
   function focus(id) {
     if (!targets.has(id) || id === focusId) return false;
-    if (focusId.startsWith("console:")) lastConsole = focusId;
     focusId = id;
     paint();
     return true;
+  }
+
+  /** La fila de arriba o de abajo (con piezas), en la pieza que tenías en ella. */
+  function rowStep(step) {
+    const shown = visibleRows();
+    const at = shown.findIndex((r) => r.key === rowKey(focusId));
+    const to = shown[at + step];
+    if (!to) return null;
+    return memory[to.key] && targets.has(memory[to.key]) ? memory[to.key] : `${to.key}:0`;
   }
 
   /** Mueve el foco; devuelve true si se movió, "edge" si no hay nada hacia allá. */
@@ -259,18 +318,26 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       });
       // La barra de arriba es su propia fila: ← → van de Buscar a Alexa (no a la tarjeta más cercana).
       const onBar = bar.some((p) => p.id === focusId);
-      const pieces = onBar && (action === "left" || action === "right") ? bar : [...measureFocusables(el), ...bar];
-      // De las consolas, ↑ regresa a la tarjeta que tenías (no a la que quede encima).
-      if (focusId.startsWith("console:") && action === "up") return focus(targets.has(lastTop) ? lastTop : topId());
-      if (!focusId.startsWith("console:") && !onBar && action === "down" && model?.consoles.length) {
-        return focus(targets.has(lastConsole) ? lastConsole : "console:0");
+      if (!onBar && (action === "up" || action === "down")) {
+        // Entre filas, por fila (no por la pieza más cercana): ↑ desde una consola vuelve a Mi lista donde ibas.
+        const to = rowStep(action === "down" ? 1 : -1);
+        if (to) return focus(to);
+        if (action === "down") return "edge";
       }
+      if (!onBar && (action === "left" || action === "right")) {
+        const [key, n] = focusId.split(":");
+        if (n === undefined) return "edge";
+        const to = `${key}:${Number(n) + (action === "right" ? 1 : -1)}`;
+        return targets.has(to) ? focus(to) : "edge";
+      }
+      const pieces = onBar && (action === "left" || action === "right") ? bar : [...measureFocusables(rowOf.card.row), ...measureFocusables(hero), ...bar];
+      if (onBar && action === "down") return focus(memory.card && targets.has(memory.card) ? memory.card : topId());
       const next = nextFocus(pieces, focusId, dirs[action]);
       return next ? focus(next) : "edge";
     }
     if (action === "pageleft" || action === "pageright") {
-      if (!model?.consoles.length) return "edge";
-      return focus(focusId.startsWith("console:") ? (targets.has(lastTop) ? lastTop : topId()) : (targets.has(lastConsole) ? lastConsole : "console:0"));
+      const to = rowStep(action === "pageright" ? 1 : -1);
+      return to ? focus(to) : "edge";
     }
     if (action === "back") return focusId === topId() ? "edge" : focus(topId());
     return false;
@@ -303,5 +370,11 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     get focusId() { return focusId; },
     get visible() { return !el.hidden; },
     get hasConsoles() { return (model?.consoles.length ?? 0) > 0; },
+    /** El nombre de la fila a la que lleva RT desde aquí (el pie lo dice); null si no hay más abajo. */
+    get nextRow() {
+      const shown = visibleRows();
+      const to = shown[shown.findIndex((r) => r.key === rowKey(focusId)) + 1];
+      return to ? titles[to.key] || null : null;
+    },
   };
 }

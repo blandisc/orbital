@@ -114,7 +114,7 @@ concéntricas (`--radius-inner-row`) y los dibujos de aparatos (`ds-exception`) 
 | A los lados de la pantalla | `--page-gutter` | El margen de la TV (`--safe-x`, Ajustes › Márgenes de la TV), nunca menos de `--space-4` |
 | Lo que ocupa la barra de arriba | `--status-room` | `--space-5` + `--safe-y` + `--control-height` |
 | Del título a lo suyo | `--layout-title-to-content` | `--space-3` (el mismo 12 del iPhone) |
-| Entre filas del Inicio y de Juegos | `--layout-between-sections` (`.home__scroll`) | Cada fila mide un alto fijo y la siguiente asoma; entre ellas, el mismo espacio de sección que en el resto de la app |
+| Entre filas del Inicio y de Juegos | `--layout-between-sections` (`.home__scroll`) | Cada fila mide un alto fijo y la siguiente asoma; entre ellas, el mismo espacio de sección que en el resto de la app. En el Inicio, lo de arriba (`.home__hero`) ocupa lo que queda sobre la fila enfocada y nunca menos que lo suyo: no se mete bajo la barra |
 | Entre tarjetas de una fila | `--card-gap`, `--tile-gap`, `--space-6` (tarjetas anchas) | — |
 | Dentro de una tarjeta | `--inset-poster` · `--inset-row` · `--inset-card` · `--inset-feature` | Un margen por tarjeta, igual en los cuatro lados (§ 3) |
 | Entre botones de una fila | `--space-3` (`.button-row`) | Nunca se parte ni se corta |
@@ -174,6 +174,7 @@ Un aviso dice una cosa, se lee de un vistazo y no se pierde. Valen para los de l
 |---|---|---|
 | `GlassSwitch(items, { label, onPick })` | `ui` | El selector de vidrio del segundo piso (las consolas de Juegos): cada opción con su foto y su nombre; la elegida en blanco tenue, la enfocada invertida; si no caben, las demás quedan en su foto (`glass-switch--compact`). |
 | `FeatureHero(item, { runningId, glyphs, onAction, reason })` | `tiles` | El destacado sobre el arte del Inicio: porqué, logo o título, de dónde es y su dato, avance y botones. |
+| `ConsoleHero(system, { glyphs, onAction })` | `tiles` | Lo de arriba del Inicio cuando enfocas una consola: «N juegos nuevos» como porqué, su nombre, «9 juegos · Jugaste Hades hace 36 min» y «Entrar» · «Seguir Hades». |
 | `Card(item, { caption: "focus" })` | `card` | La portada que solo dice su nombre cuando está enfocada. |
 | `Button({ variant: "primary" })` · `Button({ icon })` | `button` | El principal en blanco · el secundario redondo de vidrio con su nombre debajo. |
 
@@ -185,7 +186,7 @@ Cada pantalla de la TV, con su estado en el lenguaje. «Por las piezas» quiere 
 | Pantalla | Estado |
 |---|---|
 | Barra de arriba | Vidrio con íconos; la sección elegida, en blanco con su nombre; se va al bajar en Juegos |
-| Inicio | Rediseñado: «A continuación» (B) |
+| Inicio | Rediseñado: «A continuación» (B); debajo, «Seguir viendo», «Mi lista» y «Tus consolas» (D4-B, 10 nov). Lo de arriba sigue al foco: el episodio, la película de Mi lista o la consola con sus juegos y lo último que jugaste; ↑↓ (o LT/RT) pasan de fila y cada fila recuerda dónde ibas |
 | Juegos | Rediseñado: dos pisos y el juego a pantalla (A); la página de cada juego (C) en Opciones › «Ver ficha» (A sigue jugando directo) |
 | Películas y series | Por las piezas: héroe con «Ver» en blanco y secundarios de vidrio, portadas que se levantan |
 | La ficha | Por las piezas: «Ver» en blanco, acciones de vidrio, episodios que se levantan |

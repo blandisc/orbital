@@ -130,3 +130,14 @@ test("«+N nuevos» se apaga en cuanto entras a esa consola (no espera los 7 dí
   assert.equal(buildHome([{ ...row, opened: 600 }]).consoles[0].fresh, 1); // solo lo que llegó después de entrar
   assert.equal(buildHome([{ ...row, opened: 1000 }]).consoles[0].fresh, 0);
 });
+
+test("D4-B: Seguir viendo (lo que tienes a medias) y Mi lista van en el Inicio; sin internet, no", () => {
+  const watching = [show, { id: "stremio:tt2", title: "Dune", source: "stremio", category: "continue", progress: .3, extra: { kind: "movie" } }];
+  const mine = [{ id: "cinemeta:movie:tt3", title: "Oppenheimer", source: "cinemeta", meta_id: "tt3", extra: { meta_id: "tt3" } }, { title: "sin id" }];
+  const home = buildHome([...rows, { id: "continue", items: [...watching, game("mario", "switch")] }], { mylist: mine });
+  assert.deepEqual(home.watching.map((i) => i.id), ["stremio:tt1", "stremio:tt2"]); // un juego no es «Seguir viendo»
+  assert.deepEqual(home.mylist.map((i) => i.title), ["Oppenheimer"]); // sin id de la ficha no se puede abrir: fuera
+  const offline = buildHome([...rows, { id: "continue", items: watching }], { mylist: mine, offline: true });
+  assert.equal(offline.watching.length + offline.mylist.length, 0);
+  assert.equal(buildHome(rows).watching.length, 0); // sin la fila «continue», vacía (la fila no se ve)
+});
