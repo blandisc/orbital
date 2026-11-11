@@ -54,6 +54,9 @@ public actor StreamFinder {
 
     /// Lo más que se espera a un complemento (C8): pasado esto se salta y se dice su nombre.
     public static let slowAfter: TimeInterval = 8
+    /// Lo más que se espera a un complemento aunque gotee (`waits.per_addon_s` de `design/streams-rules.json`: 10 s en las
+    /// dos apps). `slowAfter` es su `find_deadline_s`: a los 8 s se usa lo que llegó.
+    public static let perAddonWait: TimeInterval = 10
     private let http: HTTPClient
     private let registry: AddonRegistry
     private let clock: @Sendable () -> Date

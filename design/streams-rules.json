@@ -330,7 +330,7 @@
       "ios": 15,
       "proposed": 25,
       "changes": "ios",
-      "estado": "pendiente en el iPhone",
+      "estado": "vigente en las dos (el iPhone, desde el 11 nov: `Streams.tooBigGB`)",
       "why": "En todo lo demás 1440p cuenta como 1080p (res_class de la TV, `resolutionClass` del iPhone); el iPhone le aplica el tope de «sin calidad» (15 GB) y castiga una 1440p de 20 GB que la TV acepta."
     },
     {

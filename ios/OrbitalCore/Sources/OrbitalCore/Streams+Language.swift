@@ -57,8 +57,10 @@ extension Streams {
             guard var value = points(code) else { continue }
             if wanted != nil && code == "es" { value -= unspecifiedSpanish }   // español sin saber cuál: después del que pediste, antes que otro idioma
             else if let wanted, code != wanted {
-                if prefs.order.contains(code) { continue }   // el otro doblaje está en tu orden: vale lo de su lugar
-                value -= 250   // el otro doblaje
+                // El otro doblaje: si está en tu orden vale lo de su lugar; con tu lista y sin él, no cuenta (como la TV,
+                // `streams.language_score`: castellano, inglés, original → una latina es otro idioma). Sin lista, −250.
+                if !prefs.order.isEmpty { continue }
+                value -= 250
             }
             best = max(best, value)
         }

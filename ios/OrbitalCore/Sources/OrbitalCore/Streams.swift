@@ -525,15 +525,13 @@ public enum Streams {
         s += languageScore(src, prefs)
         let order = ["4K", "1080p", "720p", "480p", ""]
         let want = order.firstIndex(of: prefs.quality) ?? 1
-        let have = order.firstIndex(of: src.resolution == "1440p" ? "1080p" : src.resolution) ?? order.count - 1   // 1440p cuenta como 1080p
+        let have = order.firstIndex(of: resolutionClass(src.resolution)) ?? order.count - 1   // 1440p cuenta como 1080p
         s += 200 - 60 * Double(abs(have - want)) - (have > want ? 40 : 0)  // peor que lo pedido pesa más
         let gb = Double(src.size) / 1e9
-        let scale = kind == "movie" ? 1.0 : 0.3
-        // Demasiado grande para transmitir con soltura (REMUX de 95 GB); en 4K lo normal ya es 15-60 GB.
-        let tooBig = ["4K": 60.0, "1080p": 25.0][src.resolution, default: 15.0] * scale
-        if gb > tooBig { s -= 150 }
+        // Demasiado grande para transmitir con soltura (REMUX de 95 GB); en 4K lo normal ya es 15-60 GB. 1440p cuenta como 1080p.
+        if gb > tooBigGB(src.resolution, kind: kind) { s -= 150 }
         if purpose == .watch, prefs.device.problem(src, kind: kind) != nil { s += poorFit }   // N5-A: aquí no se ve bien
-        if src.size != 0 && gb < (kind == "movie" ? 0.7 : 0.12) { s -= 120 }  // sospechosamente pequeño: mala calidad
+        if src.size != 0 && gb < (kind == "movie" ? SizeRule.tooSmallMovie : SizeRule.tooSmallSeries) { s -= 120 }  // sospechosamente pequeño: mala calidad
         if src.hdr.contains("DV") && !src.hdr.contains("HDR") && !src.hdr.contains("HDR10+") { s -= 200 }  // DV sin HDR de respaldo
         if src.tags.contains("Tráiler") || src.tags.contains("CAM") { s -= 2000 }
         if src.tags.contains(otherTitleTag) || src.tags.contains(otherEpisodeTag) { s -= 1500 }   // otra película u otro episodio: nunca la recomendada
