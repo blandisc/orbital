@@ -56,7 +56,7 @@ class _Sources(_Mine):
     def addon_catalogs(self) -> list[dict]:
         """Los catálogos de tus complementos que agregan algo: uno por nombre, con sus tipos (series y películas) y de qué
         complemento salen. Salen de tu lista de Orbital (Ajustes › Complementos), nunca de tu cuenta de Stremio (4 nov)."""
-        registry = getattr(getattr(self.catalog, "watch", None), "addons", None)
+        registry = getattr(getattr(self.services, "watch", None), "addons", None)
         if registry is None:
             return []
         addons = self._listed(registry.known())
@@ -201,7 +201,7 @@ class _Sources(_Mine):
 
         def load() -> str:
             try:
-                return str(self.catalog.cinemeta.meta("movie", imdb, localized=False).get("released") or "")
+                return str(self.services.cinemeta.meta("movie", imdb, localized=False).get("released") or "")
             except Exception:  # noqa: BLE001 - sin fecha, se queda
                 return ""
         released = self.cache.get(f"released:{imdb}", SLOW_TTL, load) if imdb.startswith("tt") else ""
@@ -211,9 +211,9 @@ class _Sources(_Mine):
         """Lo que Orbital ya trajo de Stremio: «continue» (Seguir viendo), «mylist» (Mi lista) o
         «cinemeta» (lo popular de su catálogo público). Solo títulos con id de IMDb."""
         if which == "cinemeta":
-            found = [i for i in self.catalog.items() if i.source == "cinemeta"]
+            found = [i for i in self.services.items() if i.source == "cinemeta"]
         else:
-            mine = sorted((i for i in self.catalog.items() if i.source == "stremio"),
+            mine = sorted((i for i in self.services.items() if i.source == "stremio"),
                           key=lambda i: i.last_watched or 0, reverse=True)
             found = [i for i in mine if (i.category == "continue") == (which == "continue")
                      and (which == "continue" or i.extra.get("in_library"))]
@@ -372,14 +372,14 @@ class _Sources(_Mine):
 
     def _mark_owned(self, games: list[dict]) -> list[dict]:
         """Lo que ya tienes (por id de Steam o por nombre) se juega desde aquí: palomita y A = Jugar."""
-        library = [i for i in self.catalog.items() if i.category in GAME_CATEGORIES]
+        library = [i for i in self.services.items() if i.category in GAME_CATEGORIES]
         by_appid: dict = {i.steam_appid: i for i in library if i.steam_appid}  # la llave de RAWG puede venir vacía
         by_title = {fold(i.title): i for i in library}
         marked = []
         for g in games:
             mine = by_appid.get(g.get("steam_appid")) or by_title.get(fold(g["title"]))
             if mine:
-                g = {**g, "owned": True, "id": mine.id, "item": self.catalog.describe(mine), "action": "Jugar"}
+                g = {**g, "owned": True, "id": mine.id, "item": self.services.describe(mine), "action": "Jugar"}
             marked.append(g)
         return marked
 

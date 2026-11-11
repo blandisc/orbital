@@ -92,7 +92,7 @@ class _Agenda(_Titles):
     def local_games(self, seed: int | None = None, lucky: int = 3) -> list[dict]:
         """Favoritos, los más jugados, los que nunca has abierto y uno al azar (cambia cada día)."""
         rng = random.Random(seed if seed is not None else date.today().toordinal())
-        described = [self.catalog.describe(i) for i in self.catalog.items() if i.category in GAME_CATEGORIES]
+        described = [self.services.describe(i) for i in self.services.items() if i.category in GAME_CATEGORIES]
         last = lambda d: d.get("last_played") or 0  # noqa: E731
         played = lambda d: float(d.get("playtime") or 0)  # noqa: E731
         favorites = sorted((d for d in described if d.get("favorite")), key=last, reverse=True)[:8]
@@ -107,5 +107,5 @@ class _Agenda(_Titles):
         lucky_picks = rng.sample(rest, min(lucky, len(rest)))
         picks = ([game_item(d, "Tu favorito") for d in favorites] + [game_item(d, "Tu más jugado") for d in most]
                  + [game_item(d, "Sin jugar") for d in fresh] + [game_item(d, "Al azar") for d in lucky_picks])
-        hidden = self.catalog.state.dismissed()
+        hidden = self.services.state.dismissed()
         return [p for p in picks if p["key"] not in hidden]

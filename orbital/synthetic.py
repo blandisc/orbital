@@ -32,7 +32,7 @@ from .atomic import atomic_write
 from .library import cinemeta, streams, stremio_api
 
 if TYPE_CHECKING:
-    from .catalog import Catalog
+    from .tv import TvServices
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +186,7 @@ class Coverage:
 
 
 class SyntheticTV:
-    def __init__(self, catalog: Catalog, channels: list[SyntheticChannel] | None = None, clock=time.time,
+    def __init__(self, catalog: TvServices, channels: list[SyntheticChannel] | None = None, clock=time.time,
                  directory: Path | None = None) -> None:
         self.catalog = catalog
         self._base = list(CHANNELS if channels is None else channels)

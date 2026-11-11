@@ -30,6 +30,10 @@ from .library.iptv import OTHER, Channel
 if TYPE_CHECKING:
     from .catalog import Catalog
     from .config import Config
+    from .foryou import ForYou
+    from .launcher import Launcher
+    from .sessions import Sessions
+    from .watch import Watch
 
 log = logging.getLogger(__name__)
 
@@ -44,12 +48,31 @@ def cache_dir(config: Config) -> Path | None:
     return Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if config.source else None
 
 
+class TvServices:
+    """Lo único que la TV en vivo usa de Orbital (antes recibía el Catalog entero): Watch (el reproductor), las
+    sesiones y el Launcher (abrir mpv como un juego más), avisar a la interfaz y el «Para ti» de ahora (su Trakt, para
+    «Tus canales»). catalog.py lo arma con `TvServices.of(catalog)`; los canales de Orbital (synthetic.py) usan lo mismo."""
+
+    def __init__(self, *, watch: Watch, sessions: Sessions, launcher: Launcher, notify: Callable[[dict], None],
+                 foryou: Callable[[], ForYou | None]) -> None:
+        self.watch = watch
+        self.sessions = sessions
+        self.launcher = launcher
+        self.notify = notify
+        self.foryou = foryou  # se pide al usarlo: es el de ahora
+
+    @classmethod
+    def of(cls, catalog: Catalog) -> TvServices:
+        return cls(watch=catalog.watch, sessions=catalog.sessions, launcher=catalog.launcher, notify=catalog.notify,
+                   foryou=lambda: getattr(catalog, "foryou", None))
+
+
 class LiveTV:
-    def __init__(self, config: Config, catalog: Catalog | None = None, *, directory: Path | None = None,
+    def __init__(self, config: Config, services: TvServices | None = None, *, directory: Path | None = None,
                  download_fn: Callable[[], str] | None = None, fetch_fn: Callable | None = None,
                  online: Callable[[], bool] | None = None) -> None:
         self.config = config
-        self.catalog = catalog
+        self.services = services
         directory = directory if directory is not None else cache_dir(config)
         self._copy = directory / "tv-mx.m3u" if directory else None
         self.store = iptv_health.HealthStore(directory / "tv-health.json" if directory else None)
@@ -69,7 +92,7 @@ class LiveTV:
         self._thread: threading.Thread | None = None
         self.set_channels(iptv.read_copy(self._copy))
         # Los canales de Orbital (una serie al aire todo el día): sin lista ni salud, van primero.
-        self.synthetic = synthetic.SyntheticTV(catalog, directory=directory) if catalog is not None else None
+        self.synthetic = synthetic.SyntheticTV(services, directory=directory) if services is not None else None
 
     # --- la lista ------------------------------------------------------------------------------
     def set_channels(self, channels: list[Channel]) -> None:
@@ -115,7 +138,7 @@ class LiveTV:
 
     def playing(self) -> str | None:
         """El canal que está al aire ahora (en el reproductor), si lo hay."""
-        player_ = getattr(self.catalog.watch, "player", None) if self.catalog is not None else None
+        player_ = getattr(self.services.watch, "player", None) if self.services is not None else None
         segment = getattr(player_, "segment", None)
         if player_ is None or not getattr(player_, "playing", False) or segment is None:
             return None
@@ -153,7 +176,7 @@ class LiveTV:
     MINE_TTL = 600  # s: la lista se vuelve a leer a lo más cada 10 minutos (o al cambiarla desde aquí)
 
     def _trakt(self):
-        foryou = getattr(self.catalog, "foryou", None) if self.catalog is not None else None
+        foryou = self.services.foryou() if self.services is not None else None
         client = getattr(foryou, "trakt", None)
         return client if client is not None and client.linked else None
 
@@ -237,8 +260,8 @@ class LiveTV:
         finally:
             self.checking = False
             self._refreshing.release()
-            if self.catalog is not None:
-                self.catalog.notify({"type": "tv-changed"})  # la sección, si está abierta, se pone al día
+            if self.services is not None:
+                self.services.notify({"type": "tv-changed"})  # la sección, si está abierta, se pone al día
             self._warm_logos()
 
     def _warm_logos(self) -> None:
@@ -297,11 +320,11 @@ class LiveTV:
         mpv_exe = player.find_mpv()
         if not mpv_exe:
             raise LookupError("No encuentro mpv, el reproductor de Orbital. Instálalo desde Ajustes o revisa tu instalación.")
-        catalog = self.catalog
-        if catalog is None:
+        services = self.services
+        if services is None:
             raise LookupError("La TV en vivo no está lista todavía.")
         category, _ = self.zap_list(category)
-        sessions, watch = catalog.sessions, catalog.watch
+        sessions, watch = services.sessions, services.watch
         on_air = watch.player.segment if self.playing() and not fresh else None
         if on_air is not None:
             # Ya hay un canal al aire: se sintoniza en el mismo mpv (sin cerrar ni abrir nada) y quien llama solo trae la ventana.
@@ -315,9 +338,9 @@ class LiveTV:
         pinned = sessions.pin()
         try:
             watch.player.play(
-                catalog.launcher.run, mpv_exe, channel.url, channel.name, self.meta_for(channel, category),
+                services.launcher.run, mpv_exe, channel.url, channel.name, self.meta_for(channel, category),
                 audio="es", subtitles="", live=True, user_agent=channel.user_agent, referrer=channel.referrer,
-                started=lambda process: catalog.launcher.track("media:player", channel.name, process, runner="Reproductor"))
+                started=lambda process: services.launcher.track("media:player", channel.name, process, runner="Reproductor"))
         except BaseException:
             sessions.unpin(pinned)  # mpv no abrió: Orbital no se queda «siempre encima»
             raise
@@ -350,12 +373,12 @@ class LiveTV:
              retried: bool = False) -> bool:
         """Sintoniza ese canal en el mismo mpv. False si ya no se puede (mpv cerrado, el canal se ocultó)."""
         channel = self.channel(channel_id)
-        if channel is None or self.catalog is None:
+        if channel is None or self.services is None:
             return False
         category = category or meta.get("list") or ALL
-        ok = self.catalog.watch.player.tune(channel.url, channel.name, self.meta_for(channel, category, tried, retried),
+        ok = self.services.watch.player.tune(channel.url, channel.name, self.meta_for(channel, category, tried, retried),
                                             user_agent=channel.user_agent, referrer=channel.referrer)
-        running = getattr(self.catalog.launcher, "current", None)
+        running = getattr(self.services.launcher, "current", None)
         if ok and running is not None and getattr(running, "item_id", "") == "media:player":
             running.title = channel.name  # la barra de arriba dice el canal que ves, no el primero que abriste
         return ok
@@ -401,5 +424,5 @@ class LiveTV:
         if following is None:
             return False
         target = self.channel(following)
-        self.catalog.watch.player.toast(f"{meta.get('title')} no abre · pasando a {target.name if target else 'otro canal'}", 4)
+        self.services.watch.player.toast(f"{meta.get('title')} no abre · pasando a {target.name if target else 'otro canal'}", 4)
         return self.tune(meta, following, category, tried=tried)

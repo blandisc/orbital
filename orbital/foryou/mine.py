@@ -50,7 +50,7 @@ class _Mine(_Base):
         if where == "watchlist":
             self.trakt.set_watchlist(kind, imdb, add)
             self.cache.clear("trakt:watchlist")
-            library = getattr(getattr(self.catalog, "watch", None), "trakt_library", None)
+            library = getattr(getattr(self.services, "watch", None), "trakt_library", None)
             if library is not None:
                 library.note_watchlist(kind, imdb, add)
         elif where == "favorites":
@@ -93,8 +93,8 @@ class _Mine(_Base):
     def unfollowed(self) -> set[str]:
         """Las series que dejaste de seguir desde aquí (se recuerdan al momento; Trakt también las oculta) y las que
         escondiste en Trakt desde el iPhone (SS1-A): ninguna sale en el calendario ni en Lo nuevo de lo tuyo."""
-        local = set(self.catalog.state.settings().get("unfollowed_shows") or [])
-        library = getattr(getattr(self.catalog, "watch", None), "trakt_library", None)
+        local = set(self.services.state.settings().get("unfollowed_shows") or [])
+        library = getattr(getattr(self.services, "watch", None), "trakt_library", None)
         return local | set(getattr(library, "hidden", None) or ())
 
     def set_following(self, imdb: str, following: bool) -> None:
@@ -103,14 +103,14 @@ class _Mine(_Base):
         if not self.trakt.linked:
             raise trakt_api.TraktAuthError("Conecta Trakt en Ajustes › Cuentas para seguir o dejar de seguir una serie.")
         self.trakt.set_following(imdb, following)
-        library = getattr(getattr(self.catalog, "watch", None), "trakt_library", None)
+        library = getattr(getattr(self.services, "watch", None), "trakt_library", None)
         if library is not None:  # lo escondido en Trakt se vuelve a leer (SS1-A); volver a seguirla la saca de ahí
             library.forget("hidden")
             if following:
                 library.hidden.discard(imdb)
-        local = set(self.catalog.state.settings().get("unfollowed_shows") or [])
+        local = set(self.services.state.settings().get("unfollowed_shows") or [])
         gone = local - {imdb} if following else local | {imdb}
-        self.catalog.state.set_setting("unfollowed_shows", sorted(gone) or None)
+        self.services.state.set_setting("unfollowed_shows", sorted(gone) or None)
         self.cache.clear("trakt:calendar")
         self.publish({"type": "foryou-changed"})
 
@@ -140,13 +140,13 @@ class _Mine(_Base):
     def skip_today(self, imdb: str) -> None:
         """«Hoy no»: esa no vuelve a proponerse en 24 horas."""
         if re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
-            self.catalog.state.skip_today(imdb)
+            self.services.state.skip_today(imdb)
 
     # --- «No me interesa» ----------------------------------------------------------------------
     def dismiss(self, key: str) -> None:
         if not re.fullmatch(r"(video:tt[0-9]+|rawg:[0-9]+|game:.{1,300})", key or ""):
             raise ValueError("Sugerencia inválida")
-        self.catalog.state.dismiss(key)
+        self.services.state.dismiss(key)
 
     # --- conectar Trakt ------------------------------------------------------------------------
     def start_link(self) -> dict:

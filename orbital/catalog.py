@@ -31,7 +31,7 @@ from .credentials import Credentials
 from .downloads import Downloads
 from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
-from .foryou import ForYou
+from .foryou import ForYou, Services
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, localize, steam, steam_store, stremio, stremio_api, wiki_games
 from .library import onedrive as onedrive_api
@@ -45,7 +45,7 @@ from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
 from .text import normalize
-from .tv import LiveTV
+from .tv import LiveTV, TvServices
 from .watch import STREMIO_KEY, STREMIO_STALE_SECONDS, Watch, enrich_watch_item, source_label, stremio_item, time_left, trailer_id  # noqa: F401
 
 CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
@@ -194,12 +194,12 @@ class Catalog:
         self.names = localize.TitleNames(self.watch.localizer, cache / "title-names-v2.json" if cache else None,
                                          on_new=lambda: self.notify({"type": "library-changed"}))
         self.watch.localizer.on_name = self.names.remember
-        self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
+        self.foryou = ForYou(config, Services.of(self))  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
         self.watch.trakt_library.trakt = lambda: self.foryou.trakt  # y lo de Trakt (el iPhone) a Seguir viendo y Mi lista
         # En pausa, el título estilizado: el mismo logo recortado de la ficha (en blanco si es oscuro).
         self.watch.player.logo_provider = lambda meta: self.foryou.trimmed_logo(str(meta.get("meta_id") or ""))
-        self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
+        self.tv = LiveTV(config, TvServices.of(self))  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
         self.events.subscribe(self._on_event)
 
     # --- piezas y compatibilidad ----------------------------------------------------------------

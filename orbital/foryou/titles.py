@@ -52,7 +52,7 @@ class _Titles(_Sources):
 
             def load() -> float | None:
                 try:
-                    raw = self.catalog.cinemeta.meta(kind, imdb, localized=False).get("imdbRating")
+                    raw = self.services.cinemeta.meta(kind, imdb, localized=False).get("imdbRating")
                     return float(raw) if raw not in (None, "") else None
                 except Exception:  # noqa: BLE001 - sin calificación no pasa nada
                     return None
@@ -175,10 +175,10 @@ class _Titles(_Sources):
 
     def _with_art(self, item: dict) -> dict:
         """El póster o fondo que elegiste para ese título («Cambiar el arte»), en lugar del de siempre."""
-        name = self.catalog.names.name(item.get("kind"), item.get("meta_id")) if getattr(self.catalog, "names", None) else None
+        name = self.services.names.name(item.get("kind"), item.get("meta_id")) if getattr(self.services, "names", None) else None
         if name and name != item.get("title"):  # el mismo nombre que en la ficha y en Buscar (tu idioma)
             item = {**item, "title": name}
-        art = self.catalog.watch.art_for(item.get("meta_id")) if item.get("meta_id") else {}
+        art = self.services.watch.art_for(item.get("meta_id")) if item.get("meta_id") else {}
         if not art:
             return item
         return {**item, **({"image": art["poster"]} if art.get("poster") else {}),
@@ -195,7 +195,7 @@ class _Titles(_Sources):
             rawg_id = int(key.removeprefix("rawg:")) if key.removeprefix("rawg:").isdigit() else 0
             return self.cache.get(f"details:{key}", SLOW_TTL, lambda: self._rawg_details(rawg_id))
         if key.startswith("game:"):
-            item = self.catalog.get(key.removeprefix("game:"))
+            item = self.services.get(key.removeprefix("game:"))
             appid = item.steam_appid if item else None
             text = self.cache.get(f"steam:{appid}", SLOW_TTL, lambda: rawg_api.steam_description(appid)) if appid else ""
             # Su logo de Steam, si es oscuro, se pinta blanco (Cult of the Lamb: rojo oscuro sobre su arte rojo no se leía).
@@ -215,7 +215,7 @@ class _Titles(_Sources):
                     facts = [["Temporadas", str(found["seasons"])], ["Episodios", str(found.get("episodes") or "")]]
         if not overview:
             try:  # Cinemeta (en inglés): mejor eso que nada
-                overview = str(self.catalog.cinemeta.meta(kind, imdb).get("description") or "").strip()
+                overview = str(self.services.cinemeta.meta(kind, imdb).get("description") or "").strip()
             except Exception:  # noqa: BLE001 - sin sinopsis no pasa nada
                 overview = ""
         return {"overview": overview, "facts": [f for f in facts or [] if f[1]] or None,

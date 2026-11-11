@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from orbital import foryou as foryou_mod
 from orbital import net as net_lib
 from orbital.config import parse_config
-from orbital.foryou import Cache, ForYou, game_item, hours_text, runtime_text, video_item
+from orbital.foryou import Cache, ForYou, Services, game_item, hours_text, runtime_text, video_item
 from orbital.library import charts, rawg, tmdb, trakt
 from orbital.server import create_app
 
@@ -64,7 +64,7 @@ def make_foryou(library):
         p = library.config.para_ti
         p.trakt_client_id, p.trakt_client_secret = ("cid", "secret") if trakt_keys else ("", "")
         p.tmdb_key, p.rawg_key = tmdb_key, rawg_key
-        fy = ForYou(library.config, library)
+        fy = ForYou(library.config, Services.of(library))  # solo lo que «Para ti» usa del catálogo
         library.foryou = fy
         if linked:
             library.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "tok", "refresh_token": "ref",
@@ -131,7 +131,7 @@ def test_link_with_a_code_and_save_the_session(make_foryou, net, monkeypatch):
     net.on("POST", r"/oauth/device/token$", lambda url, body: next(replies))
     net.on("GET", r"/users/settings$", (200, {"user": {"username": "fer", "name": "Fernando"}}))
     events = []
-    fy.catalog.events.subscribe(events.append)
+    fy.services.events.subscribe(events.append)
     monkeypatch.setattr(foryou_mod.threading, "Thread", lambda **kw: type("T", (), {"start": lambda self: None})())
     code = fy.start_link()
     assert code["code"] == "4F7K2Q" and code["url"] == "trakt.tv/activate"
@@ -147,7 +147,7 @@ def test_an_expired_or_cancelled_code_stops_waiting(make_foryou, net):
     code = trakt.DeviceCode("dev", "ABC", "https://trakt.tv/activate", 1, time.time() + 60)
     net.on("POST", r"/oauth/device/token$", (410, None))
     events = []
-    fy.catalog.events.subscribe(events.append)
+    fy.services.events.subscribe(events.append)
     fy._link = code
     assert fy._wait_link(code, sleep=lambda s: None) == "expired"
     assert events[-1]["type"] == "trakt-link-failed" and not fy.trakt.linked
@@ -163,12 +163,12 @@ def test_linking_without_the_app_keys_says_what_is_missing(make_foryou):
 
 def test_an_old_session_is_renewed_and_a_rejected_one_is_forgotten(make_foryou, net):
     fy = make_foryou(linked=True)
-    fy.catalog.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
+    fy.services.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
     net.on("POST", r"/oauth/token$", (200, {"access_token": "new", "refresh_token": "ref2", "expires_in": 86400, "created_at": time.time()}))
     net.on("GET", r"/sync/watchlist", (200, []))
     assert fy.trakt.watchlist() == []
     assert any(c[1].endswith("/oauth/token") for c in net.calls)
-    assert json.loads(fy.catalog.credentials.get(trakt.TOKENS_KEY))["access_token"] == "new"
+    assert json.loads(fy.services.credentials.get(trakt.TOKENS_KEY))["access_token"] == "new"
     net.routes.insert(0, ("GET", r"/sync/watchlist", (401, None)))
     renewals = sum(c[1].endswith("/oauth/token") for c in net.calls)
     with pytest.raises(trakt.TraktAuthError):
@@ -469,7 +469,7 @@ def test_steam_games_carry_their_store_capsule_for_the_mosaic():
 
 def test_renewing_tries_the_https_redirect_and_then_the_old_one(make_foryou, net):
     fy = make_foryou(linked=True)
-    fy.catalog.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
+    fy.services.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
     sent = []
 
     def token(url, body):

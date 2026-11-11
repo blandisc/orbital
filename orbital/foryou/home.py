@@ -35,7 +35,7 @@ class _Home(_Shelves):
     # --- el mosaico ----------------------------------------------------------------------------
     def mosaic(self) -> list[dict]:
         """El mosaico de la caché (vencido o no, se renueva solo); solo la primera vez se espera a armarlo."""
-        hidden = self.catalog.state.dismissed()
+        hidden = self.services.state.dismissed()
         # series_only también aquí: lo guardado antes de la regla no espera a que se vuelva a armar.
         return [self._with_art(series_only(i)) for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True)
                 if i["key"] not in hidden]
@@ -138,7 +138,7 @@ class _Home(_Shelves):
                 pool += self.list_items(list_id)
             except (KeyError, *SERVICE_ERRORS):
                 continue
-        hidden = self.catalog.state.dismissed()
+        hidden = self.services.state.dismissed()
         return [i for i in pool if i.get("key") not in hidden]
 
     def _decide_details(self, items: list[dict]) -> dict[str, dict]:
@@ -148,7 +148,7 @@ class _Home(_Shelves):
 
             def load() -> dict:
                 try:
-                    meta = self.catalog.cinemeta.meta(kind, imdb, localized=False)
+                    meta = self.services.cinemeta.meta(kind, imdb, localized=False)
                 except Exception:  # noqa: BLE001 - sin datos, se decide con lo que hay
                     return {}
                 rating = meta.get("imdbRating")
@@ -171,7 +171,7 @@ class _Home(_Shelves):
         mood = mood if mood in decide_api.MOODS else None
         kind = kind if kind in ("movie", "series") else None
         stamp = now.timestamp()
-        exclude = self.catalog.state.skipped(decide_api.SKIP_HOURS * 3600, now=stamp)
+        exclude = self.services.state.skipped(decide_api.SKIP_HOURS * 3600, now=stamp)
         if not include_watched:
             exclude |= set(self.watched_ids())
         pool = self._decide_pool()

@@ -106,7 +106,7 @@ def build_board(watchlist: list[dict], watched: dict, dropped: set[str], dropped
 class Gestor:
     def __init__(self, foryou: ForYou) -> None:
         self.foryou = foryou
-        state = foryou.catalog.state
+        state = foryou.services.state
         self.outbox = TraktOutbox(lambda: state.settings().get("trakt_outbox"), lambda v: state.set_setting("trakt_outbox", v),
                                   lambda: state.settings().get(JOURNAL_KEY), lambda v: state.set_setting(JOURNAL_KEY, v))
         self.outbox.on_sent = self._sent_from_queue
@@ -134,10 +134,10 @@ class Gestor:
 
     @property
     def library(self):
-        return getattr(getattr(self.foryou.catalog, "watch", None), "trakt_library", None)
+        return getattr(getattr(self.foryou.services, "watch", None), "trakt_library", None)
 
     def _settings(self) -> dict:
-        return self.foryou.catalog.state.settings()
+        return self.foryou.services.state.settings()
 
     def _require(self) -> trakt_api.Trakt:
         if not self.trakt.linked:
@@ -170,7 +170,7 @@ class Gestor:
 
     def _remember_dropped(self, imdbs: list[str], dropped: bool) -> None:
         self.foryou.cache.clear("trakt:hidden")
-        state = self.foryou.catalog.state
+        state = self.foryou.services.state
         mine = set(state.settings().get("dropped_shows") or [])
         mine = mine | set(imdbs) if dropped else mine - set(imdbs)
         state.set_setting("dropped_shows", sorted(mine) or None)
@@ -254,7 +254,7 @@ class Gestor:
             if not dropped:
                 return "sent"
             result = self.set_watchlist([(kind, imdb)], False)
-            watch = getattr(self.foryou.catalog, "watch", None)
+            watch = getattr(self.foryou.services, "watch", None)
             if watch is not None:
                 try:
                     watch.dismiss_continue(imdb)
@@ -268,7 +268,7 @@ class Gestor:
         self._remember_dropped([imdb], dropped)
         bell = set(self._settings().get("unfollowed_shows") or [])
         bell = bell - {imdb} if not dropped and following else bell | {imdb}
-        self.foryou.catalog.state.set_setting("unfollowed_shows", sorted(bell) or None)
+        self.foryou.services.state.set_setting("unfollowed_shows", sorted(bell) or None)
         if dropped:
             if self.library is not None and self.library.in_watchlist(imdb):
                 self.set_watchlist([("series", imdb)], False)
@@ -296,7 +296,7 @@ class Gestor:
     def automatic_changes(self, board: dict) -> list[dict]:
         """Lo que cambió solo desde la última vez que abriste el tablero (`automaticChanges`): algo que pasó a Vistas o una
         vista que regresó a Viendo. Se recuerda el estado de cada título para la próxima."""
-        state = self.foryou.catalog.state
+        state = self.foryou.services.state
         before = state.settings().get("saved_statuses") or {}
         now: dict[str, str] = {}
         titles: dict[str, str] = {}
@@ -341,7 +341,7 @@ class Gestor:
             done = self._send_many(hidden, lambda: self.trakt.set_hidden(shows, True, sections))
             self._remember_dropped(shows, True)
             bell = set(self._settings().get("unfollowed_shows") or []) | set(shows)
-            self.foryou.catalog.state.set_setting("unfollowed_shows", sorted(bell))
+            self.foryou.services.state.set_setting("unfollowed_shows", sorted(bell))
         listed = [("series", i) for i in shows if self.library is not None and self.library.in_watchlist(i)] + movies
         if listed and self.set_watchlist(listed, False) == "queued":
             done = "queued"
@@ -405,7 +405,7 @@ class Gestor:
     def delete_list(self, where: str) -> None:
         list_id = self._list_id(where)
         self._require().delete_list(list_id)
-        self.foryou.catalog.state.set_setting(f"saved_order_{list_id}", None)
+        self.foryou.services.state.set_setting(f"saved_order_{list_id}", None)
         self._changed("trakt:lists", f"trakt:list:{list_id}")
 
     def duplicate_list(self, where: str, name: str) -> dict:
@@ -520,7 +520,7 @@ class Gestor:
 
     # Tu nota: con Trakt VIP vive en Trakt (privada); sin VIP, solo en esta tele (y la hoja lo dice). Como `NotesModel`.
     def vip(self) -> bool | None:
-        state = self.foryou.catalog.state
+        state = self.foryou.services.state
         try:
             found = self._require().is_vip()
         except trakt_api.TraktAuthError:
@@ -548,7 +548,7 @@ class Gestor:
                 if key not in notes:
                     self.outbox.enqueue({"target": NOTE, "imdb": key, "kind": k, "text": text, "add": True})
             if local:
-                self.foryou.catalog.state.set_setting("notes_local", None)
+                self.foryou.services.state.set_setting("notes_local", None)
                 self.outbox.kick(self.trakt)  # salen en segundo plano; la de este título ya se sabe
                 if imdb in local and imdb not in notes:
                     return {"text": local[imdb][0], "vip": True}
@@ -571,7 +571,7 @@ class Gestor:
             local[imdb] = [clean, kind]
         else:
             local.pop(imdb, None)
-        self.foryou.catalog.state.set_setting("notes_local", local or None)
+        self.foryou.services.state.set_setting("notes_local", local or None)
         return {"vip": vip, "queued": False}
 
     # Estrellas de temporada (G7-A): 1–5 aquí, el doble en Trakt.

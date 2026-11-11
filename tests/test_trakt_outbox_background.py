@@ -75,7 +75,7 @@ def make_gestor(t):
     settings: dict = {}
     state = SimpleNamespace(settings=lambda: settings, set_setting=lambda k, v: settings.__setitem__(k, v))
     events: list = []
-    foryou = SimpleNamespace(trakt=t, catalog=SimpleNamespace(state=state), cache=FakeCache(), publish=events.append,
+    foryou = SimpleNamespace(trakt=t, services=SimpleNamespace(state=state), cache=FakeCache(), publish=events.append,
                              unfollowed=lambda: set())
     g = Gestor(foryou)  # type: ignore[arg-type]
     return g, events
@@ -290,4 +290,4 @@ def test_every_definitive_discard_is_in_the_journal_and_in_diagnostics():
     assert row["why"] == "rechazado" and row["imdb"] == "tt404" and "404" in row["reason"]
     queue = trakt_queue(SimpleNamespace(foryou=SimpleNamespace(gestor=g)))
     assert queue == {"pending": 0, "discarded": [row]}
-    assert g.foryou.catalog.state.settings()["trakt_outbox_log"] == [row]  # se guarda en el estado: sobrevive un reinicio
+    assert g.foryou.services.state.settings()["trakt_outbox_log"] == [row]  # se guarda en el estado: sobrevive un reinicio
