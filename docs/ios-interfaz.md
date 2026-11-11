@@ -62,6 +62,13 @@ Un estado discreto dice «Stremio al día» o «N cambios por subir» (si no hub
   las tres y deja las capturas en `/tmp/orbital-bordes`. Lo que no cabe se reacomoda con `ViewThatFits` (de títulos con
   íconos a solo títulos y, al final, solo íconos) o se topa con `dynamicTypeSize` y el visor de contenido grande; nunca
   con un tamaño fijo. Un estado vacío va arriba, donde empezaría la lista, no al centro.
+- **Capturas con banderas o íconos** (revisión 2 del 11 nov 2026): se toman en un simulador **sin adelgazar** (sin simslim)
+  con el sistema más nuevo, que se crea para eso y se borra al terminar. El simulador adelgazado no trae los emojis de color
+  ni todas las fuentes de símbolos: las banderas salen como «?» en un cuadro y parecen un error de la app cuando no lo son.
+  Los simuladores del proyecto (adelgazados) sirven para todo lo demás.
+- **Después de tocar `TitleView*`** (la ficha): correr `ios/scripts/abrir-fichas.sh <Orbital.app> <udid>` en Debug y en
+  Release: abre la ficha de una película y la de una serie y dice si la app se cerró (el cierre de `oneColumnLayout` del
+  11 nov solo salía al abrir una ficha; las pruebas de lógica no lo ven).
 
 ### Íconos: uno por idea (revisión 2 del 11 nov 2026)
 
