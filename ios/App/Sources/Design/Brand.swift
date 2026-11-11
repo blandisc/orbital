@@ -39,8 +39,13 @@ struct MarkPlanet: Shape {
 
 /// Del centro de la caja, inclinado como el anillo: (x, y) en unidades de la caja de 32.
 private func markPoint(_ rect: CGRect, _ x: CGFloat, _ y: CGFloat) -> CGPoint {
-    let unit = rect.width / DS.Brand.box, a = DS.Brand.ringTilt * .pi / 180
-    return CGPoint(x: rect.midX + (x * cos(a) - y * sin(a)) * unit, y: rect.midY + (x * sin(a) + y * cos(a)) * unit)
+    // Por partes y con tipo: en una sola expresión el Xcode de la CI no alcanzaba a revisarla a tiempo.
+    let unit: CGFloat = rect.width / DS.Brand.box
+    let a: Double = DS.Brand.ringTilt * .pi / 180
+    let cosA = CGFloat(cos(a)), sinA = CGFloat(sin(a))
+    let dx: CGFloat = (x * cosA - y * sinA) * unit
+    let dy: CGFloat = (x * sinA + y * cosA) * unit
+    return CGPoint(x: rect.midX + dx, y: rect.midY + dy)
 }
 
 /// El anillo: la pincelada de la TV (icons.js · mark), dos curvas que se juntan en punta en las orillas y se separan al frente.

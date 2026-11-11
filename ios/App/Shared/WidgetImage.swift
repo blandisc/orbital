@@ -21,9 +21,12 @@ enum WidgetImage {
     /// La imagen reducida a `maxPixels` en su lado largo (nunca la agranda), en JPEG o, para logos, en PNG (con transparencia).
     static func reduce(_ data: Data, maxPixels: Double, png: Bool = false, quality: Double) -> (data: Data, image: UIImage)? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-        let long = pixelSize(source).map { max($0.width, $0.height) } ?? maxPixels
+        // Con tipos explícitos: el Xcode de la CI no junta solo el CGFloat del tamaño con el Double del tope.
+        let size: CGSize? = pixelSize(source)
+        let long: Double = size.map { Double(max($0.width, $0.height)) } ?? maxPixels
+        let side: Int = Int(min(long, maxPixels).rounded())
         let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
-                                        kCGImageSourceThumbnailMaxPixelSize: Int(min(long, maxPixels).rounded())]
+                                        kCGImageSourceThumbnailMaxPixelSize: side]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
         let image = UIImage(cgImage: cg)
         guard let bytes = png ? image.pngData() : image.jpegData(compressionQuality: quality) else { return nil }
