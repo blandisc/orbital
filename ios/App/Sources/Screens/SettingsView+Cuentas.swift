@@ -13,6 +13,21 @@ extension SettingsView {
         return Text("\(Text(verbatim: "Real-Debrid")) · \(value)")
     }
 
+    /// «N cosas no se pudieron guardar en Trakt» (revisión del 11 nov 2026): solo si hay algo; abre qué fue, cuándo y por qué.
+    @ViewBuilder private var traktDiscardsRow: some View {
+        let count: Int = discards.model.count
+        if count > 0 {
+            NavigationLink { TraktDiscardsView(model: discards.model) } label: {
+                if count == 1 {
+                    SettingsRow(title: "1 cosa no se pudo guardar en Trakt", symbol: "exclamationmark.icloud", tint: DS.warning)
+                } else {
+                    SettingsRow(title: "\(count) cosas no se pudieron guardar en Trakt", symbol: "exclamationmark.icloud", tint: DS.warning)
+                }
+            }
+            .accessibilityIdentifier("settings-trakt-discards")
+        }
+    }
+
     @ViewBuilder func accounts(_ model: SettingsModel) -> some View {
         if env.services.settingsEntries.realDebrid { debridSection }   // D1-B: Orbital (App Store) no trae Real-Debrid
         Section {
@@ -20,8 +35,10 @@ extension SettingsView {
             NavigationLink { page("Trakt") { traktSection(model) } } label: {
                 SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
             }
+            traktDiscardsRow
         } header: { Text("Trakt · principal") } footer: { Text("Guarda dónde te quedaste, lo que viste y Mi lista, para todos tus aparatos.") }
         .listRowBackground(DS.surface)
+        .onAppear { discards.model.reload() }   // la cola pudo descartar algo mientras tanto
         Section {
             NavigationLink { LetterboxdSettings() } label: {
                 SettingsRow(title: "Letterboxd", symbol: "star.bubble", tint: DS.Letterboxd.leaf, value: letterboxdValue)

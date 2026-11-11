@@ -44188,6 +44188,204 @@
           }
         }
       }
+    },
+    "%lld cosas no se pudieron guardar en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld things couldn't be saved to Trakt"
+          }
+        }
+      }
+    },
+    "1 cosa no se pudo guardar en Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 thing couldn't be saved to Trakt"
+          }
+        }
+      }
+    },
+    "No llegó a Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn't reach Trakt"
+          }
+        }
+      }
+    },
+    "Todo llegó a Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything reached Trakt"
+          }
+        }
+      }
+    },
+    "Borrar la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the list"
+          }
+        }
+      }
+    },
+    "Lo que vence puedes mandarlo otra vez. Lo que Trakt no aceptó, reintentarlo no lo arregla.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What expired you can send again. What Trakt refused won't be fixed by retrying."
+          }
+        }
+      }
+    },
+    "Marcar como vistos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as watched"
+          }
+        }
+      }
+    },
+    "Otra vista o una fecha cambiada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another watch or a changed date"
+          }
+        }
+      }
+    },
+    "Borrar vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete watches"
+          }
+        }
+      }
+    },
+    "Dónde te quedaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you left off"
+          }
+        }
+      }
+    },
+    "Series que dejaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows you dropped"
+          }
+        }
+      }
+    },
+    "Una de tus listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of your lists"
+          }
+        }
+      }
+    },
+    "Algo de tu cuenta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something in your account"
+          }
+        }
+      }
+    },
+    "Pasaron 30 días sin poder mandarlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 days went by without being able to send it"
+          }
+        }
+      }
+    },
+    "Trakt ya no lo encuentra (la lista o el título se borró)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt can't find it anymore (the list or the title was deleted)"
+          }
+        }
+      }
+    },
+    "Trakt no lo aceptó (código %lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt didn't accept it (code %lld)"
+          }
+        }
+      }
+    },
+    "Trakt no lo aceptó": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt didn't accept it"
+          }
+        }
+      }
+    },
+    "Trakt no reconoce el título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt doesn't recognize the title"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

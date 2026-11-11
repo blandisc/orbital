@@ -31,18 +31,22 @@ extension TraktQueue {
         }
         guard snapshot.hasTraktWork else { return snapshot }
         var retry = PendingWork()
-        retry.traktUnwatched = await attempt(snapshot.traktUnwatched, what: { "No vista · \(Self.label($0))" }, age: { _ in nil }) {
+        retry.traktUnwatched = await attempt(snapshot.traktUnwatched, what: { t in TraktAttempt(what: "No vista · \(Self.label(t))", kind: .unwatched, target: t, retry: .init(traktUnwatched: [t])) }, age: { _ in nil }) {
             try await trakt.removeFromHistory($0)
         }.retry
         // Pocos, uno por uno (sin duplicar lo que ya está en Trakt); muchos (una temporada, una serie), de 100 en 100.
         let watched = { (w: PendingWork.TraktWatched) in "Visto · \(Self.label(w.target))" }
+        let watchedAttempt = { (w: [PendingWork.TraktWatched]) in
+            TraktAttempt(what: w.count == 1 ? watched(w[0]) : "\(w.count) vistos · \(w.first.map(watched) ?? "")", kind: .watched, target: w.first?.target,
+                         count: w.count, retry: .init(traktWatched: w))
+        }
         if snapshot.traktWatched.count < WatchService.batchFrom {
-            retry.traktWatched = await attempt(snapshot.traktWatched, what: watched, age: { $0.queuedAt }) {
+            retry.traktWatched = await attempt(snapshot.traktWatched, what: { watchedAttempt([$0]) }, age: { $0.queuedAt }) {
                 try await trakt.addToHistory($0.target, watchedAt: Date(timeIntervalSince1970: $0.at))
             }.retry
         } else {
             let chunks = stride(from: 0, to: snapshot.traktWatched.count, by: 100).map { Array(snapshot.traktWatched[$0..<min($0 + 100, snapshot.traktWatched.count)]) }
-            retry.traktWatched = await attempt(chunks, what: { "\($0.count) vistos · \($0.first.map(watched) ?? "")" }, age: { $0.compactMap(\.queuedAt).min() }) { chunk in
+            retry.traktWatched = await attempt(chunks, what: watchedAttempt, age: { $0.compactMap(\.queuedAt).min() }) { chunk in
                 try await trakt.addToHistory(chunk.map { ($0.target, Date(timeIntervalSince1970: $0.at)) })
             }.retry.flatMap { $0 }
         }
@@ -50,7 +54,7 @@ extension TraktQueue {
         // rechazó, la vieja se queda: nunca se pierde la vista).
         var replaced: [Int] = []
         for item in snapshot.traktRewatched {
-            let (again, dropped) = await attempt([item], what: { "Otra vista · \(Self.label($0.target))" }, age: { $0.queuedAt }) {
+            let (again, dropped) = await attempt([item], what: { TraktAttempt(what: "Otra vista · \(Self.label($0.target))", kind: .rewatched, target: $0.target, retry: .init(traktRewatched: [$0])) }, age: { $0.queuedAt }) {
                 try await trakt.addToHistory([($0.target, Date(timeIntervalSince1970: $0.at))])
             }
             if again.isEmpty, dropped.isEmpty, let old = item.replaces, await Self.landed(item, in: trakt) { replaced.append(old) }
@@ -58,16 +62,17 @@ extension TraktQueue {
         }
         let removals = snapshot.traktViewingRemovals + replaced
         if !removals.isEmpty {
-            retry.traktViewingRemovals = await attempt([removals], what: { "Borrar \($0.count) vistas" }, age: { _ in nil }) {
+            retry.traktViewingRemovals = await attempt([removals], what: { TraktAttempt(what: "Borrar \($0.count) vistas", kind: .viewingRemovals, count: $0.count, retry: .init(traktViewingRemovals: $0)) }, age: { _ in nil }) {
                 try await trakt.removeViewings($0)
             }.retry.flatMap { $0 }
         }
-        retry.playbackRemovals = await attempt(snapshot.playbackRemovals, what: { "Quitar de Seguir viendo · \($0.target.imdb)" }, age: { $0.queuedAt }) { removal in
+        retry.playbackRemovals = await attempt(snapshot.playbackRemovals, what: { TraktAttempt(what: "Quitar de Seguir viendo · \($0.target.imdb)", kind: .continueRemoval, target: $0.target, retry: .init(playbackRemovals: [$0])) }, age: { $0.queuedAt }) { removal in
             let stale = try await trakt.playback(fresh: true).filter { $0.target.imdb == removal.target.imdb && $0.pausedAt.timeIntervalSince1970 <= removal.at + 1 }
             for item in stale { try await trakt.removePlayback(id: item.id) }
         }.retry
         if let checkpoint {
-            retry.traktProgress = await attempt(snapshot.traktProgress, what: { "Tu avance · \($0.metaID)" }, age: { $0.at }) { event in
+            // Un avance de hace 30 días ya no sirve: no se ofrece «Reintentar».
+            retry.traktProgress = await attempt(snapshot.traktProgress, what: { TraktAttempt(what: "Tu avance · \($0.metaID)", kind: .progress, target: TraktTarget(videoID: $0.videoID, kind: $0.kind), retry: .init()) }, age: { $0.at }) { event in
                 guard let target = TraktTarget(videoID: event.videoID, kind: event.kind) else { return }
                 // Lo viste en otro aparato mientras tanto (Trakt tiene uno más nuevo): el de aquí ya es viejo, se descarta.
                 if let remote = await trakt.paused(target), remote.pausedAt.timeIntervalSince1970 > event.at { return }
@@ -103,8 +108,10 @@ extension TraktQueue {
             // Varios seguidos a la misma lista (o a Mi lista), todos para poner o todos para quitar: un solo envío (G3-A).
             var run = [item]
             if !TraktOutbox.singles.contains(item.target) { run = Array(queue.prefix { $0.target == item.target && $0.add == item.add }) }
-            let (again, dropped) = await attempt([run], what: { "\(TraktOutbox.label($0[0].target)) · \($0.count == 1 ? $0[0].imdb : "\($0.count) títulos")" },
-                                           age: { $0.compactMap(\.queuedAt).min() }) { run in
+            let (again, dropped) = await attempt([run], what: { run in
+                TraktAttempt(what: "\(TraktOutbox.label(run[0].target)) · \(run.count == 1 ? run[0].imdb : "\(run.count) títulos")", kind: TraktOutbox.kind(run[0].target),
+                             target: TraktTarget(imdb: run[0].imdb), count: run.count, retry: .init(outbox: run))
+            }, age: { $0.compactMap(\.queuedAt).min() }) { run in
                 if run.count > 1 { try await trakt.setItems(target: item.target, run.map { ($0.imdb, $0.series) }, add: item.add) }
                 else { try await TraktOutbox.send(item, trakt) }
             }

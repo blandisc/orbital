@@ -20,6 +20,8 @@ struct SettingsView: View {
     @State var session: ModelObserver<SessionModel>
     /// Tu Real-Debrid (Ajustes › Cuentas).
     @State var debrid: ModelObserver<DebridModel>
+    /// Lo que no llegó a Trakt (Ajustes › Cuentas, solo si hay algo).
+    @State var discards: ModelObserver<TraktDiscardsModel>
     @State private var tmdbKey = ""
     @AppStorage("scare-marks") private var scareMarks = true
     @State private var confirmUnlink = false
@@ -27,6 +29,7 @@ struct SettingsView: View {
     @State private var editingAvatar = false
     @State private var showsYear = false
     @State private var showsTrakt = false
+    @State private var showsDiscards = false
     @State private var showsFollowed = false
     @State private var showsPlayback = false
     @State private var showsOrbital = false
@@ -42,6 +45,7 @@ struct SettingsView: View {
         _settings = State(wrappedValue: ModelObserver(SettingsModel(services)))
         _session = State(wrappedValue: ModelObserver(AppEnvironment.shared.session))
         _debrid = State(wrappedValue: ModelObserver(DebridModel(services)))
+        _discards = State(wrappedValue: ModelObserver(TraktDiscardsModel(services)))
     }
 
     // En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar todo el formulario de una vez.
@@ -211,6 +215,9 @@ struct SettingsView: View {
             .task { if Demo.isOn, Demo.open == "orbital-setup" { orbitalSetup = .connect } }
             .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
+            // `-demo-settings-page trakt-discards` (con `-demo-trakt-discards`): lo que no llegó a Trakt.
+            .navigationDestination(isPresented: $showsDiscards) { TraktDiscardsView(model: discards.model) }
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt-discards" { showsDiscards = true } }
             .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
             .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
             // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › Lo que pediste (RX1-A).

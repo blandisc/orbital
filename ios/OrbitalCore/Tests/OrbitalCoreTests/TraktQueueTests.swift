@@ -76,6 +76,31 @@ final class TraktQueueTests: XCTestCase {
         XCTAssertTrue(store.load().traktWatched.isEmpty)
         XCTAssertEqual(store.load().discards.map(\.reason), ["venció sin poder mandarse"])
         XCTAssertEqual(store.load().discards.first?.what, "Visto · tt1160419")
+        // Para Ajustes (11 nov 2026): qué fue, de qué título, por qué, y que se puede volver a mandar.
+        let discard = store.load().discards.first
+        XCTAssertEqual(discard?.kind, .watched)
+        XCTAssertEqual(discard?.target, dune)
+        XCTAssertEqual(discard?.cause, .expired)
+        XCTAssertEqual(discard?.canRetry, true)
+        // «Reintentar»: vuelve a la cola como nuevo (con red, sale; sin red, espera otros 30 días).
+        queue.retry(discard!)
+        XCTAssertTrue(store.load().discards.isEmpty)
+        await queue.flush(trakt)
+        XCTAssertEqual(store.load().traktWatched.map(\.target), [dune], "sin red: espera, no vence en seguida")
+        XCTAssertEqual(store.load().traktWatched.first?.queuedAt, clock.now.timeIntervalSince1970)
+    }
+
+    func testLoQueTraktRechazaQuedaConSuCodigoYSinReintentar() async {
+        let http = FakeHTTP(), clock = Clock(), store = InMemoryPendingStore()
+        let box = TraktOutbox(queue: TraktQueue(store: store, clock: { clock.now }), kv: InMemoryKeyValueStore(), clock: { clock.now })
+        http.json["\(api)/sync/ratings"] = [:]; http.statuses["\(api)/sync/ratings"] = 422
+        box.enqueue(.init(target: TraktOutbox.ratings, imdb: "tt1", series: false, add: true, rating: 8))
+        await box.flush(makeTrakt(http, clock: clock))
+        let discard = box.discards.first
+        XCTAssertEqual(discard?.kind, .rating)
+        XCTAssertEqual(discard?.cause, .refused)
+        XCTAssertEqual(discard?.status, 422)
+        XCTAssertEqual(discard?.canRetry, false, "reintentar no arregla lo que Trakt rechaza")
     }
 
     func testUnaFechaCambiadaQueTraktRechazaNoBorraLaVistaVieja() async {

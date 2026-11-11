@@ -154,6 +154,7 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-title series:tt0386676` | una ficha |
 | `-demo-open settings` · `sources` · `play` · `download` | Ajustes, la hoja de fuentes, el reproductor o una descarga (sobre la ficha) |
 | `-demo-settings-page trakt` | con `-demo-open settings`, abre Ajustes › Trakt (sin `-demo-trakt` y con `ORBITAL_TRAKT_CLIENT_ID=…` al compilar: «Conectar Trakt») |
+| `-demo-trakt-discards` | tres cosas que no llegaron a Trakt (una vencida con «Reintentar», una rechazada, una lista borrada): el renglón en Ajustes › Cuentas; con `-demo-open settings -demo-settings-page trakt-discards`, la lista |
 | `-demo-open save` | con `-demo-title`, la ficha con la hoja «Guardar en…» abierta (prende `-demo-trakt`) |
 | `-demo-trakt` | Trakt «conectado» de mentira: watchlist y cinco listas propias (unas recientes, otras viejas) que tardan ~1,5 s en llegar; guardar, quitar y «Nueva lista…» funcionan sin salir a internet |
 | `-demo-scroll 240` | con `-demo-title`, la ficha abre ya desplazada esos puntos (el arte a medio recoger) |

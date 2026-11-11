@@ -138,6 +138,18 @@ public final class TraktOutbox: Sendable {
         }
     }
 
+    /// Qué era, para la pantalla de lo que no llegó a Trakt.
+    static func kind(_ target: String) -> TraktDiscard.Kind {
+        switch target {
+        case watchlist: .watchlist
+        case favorites: .favorites
+        case ratings: .rating
+        case hidden: .hidden
+        case notes: .note
+        default: .list
+        }
+    }
+
     // MARK: tus listas, para elegirlas sin conexión
     public var cachedLists: [(id: String, name: String)] {
         let raw = kv.data(Self.listsKey).flatMap { try? JSONDecoder().decode([[String]].self, from: $0) } ?? []

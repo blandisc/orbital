@@ -23,7 +23,9 @@ enum AppComposition {
             }
             Demo.prefillScrobble(kv)
             if Demo.coach { kv.set(LearnModel.guideDoneKey, data: Data("1".utf8)) }
-            let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
+            let pending = InMemoryPendingStore()
+            Demo.seedTraktDiscards(pending)   // `-demo-trakt-discards`: lo que no llegó a Trakt, para Ajustes
+            let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: pending,
                                     downloadTransport: transport, downloadsRoot: Demo.demoDownloadsRoot,
                                     savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() },
                                     cacheRoot: Demo.persist ? AppFiles.swrCache.appendingPathComponent("demo") : nil,
