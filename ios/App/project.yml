@@ -16,11 +16,13 @@ options:
 packages:
   OrbitalCore:
     path: ../OrbitalCore
-  # Motor de video principal. Fija la versión exacta (es un proyecto joven que publica a menudo).
+  # Motor de video principal. Fijo en un commit exacto (la 7.35.1): es un proyecto joven que publica a menudo y una etiqueta
+  # se puede mover (F10, 11 nov 2026). Lo que trae (FFmpeg, LibDovi…) queda en el Package.resolved de cada copia, que vive
+  # dentro del .xcodeproj ignorado: guardarlo en git chocaría con el que ya tiene cada checkout al traer el cambio.
   # Si no compila con tu Xcode, quita este paquete y la bandera AETHER_ENGINE de abajo: la app usa AVPlayer.
   AetherEngine:
     url: https://github.com/superuser404notfound/AetherEngine
-    exactVersion: 7.35.1
+    revision: 60ac862285ec641d67a984964634b54b57151704   # 7.35.1
 
 targets:
   Orbital:
@@ -107,7 +109,7 @@ targets:
         NSSpeechRecognitionUsageDescription: "Para entender lo que le pides a tu Orbital."
         # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…
         CFBundleURLTypes:
-          - CFBundleURLName: com.example.orbital.ios.infuse-callback
+          - CFBundleURLName: mx.iracheta.orbital.infuse-callback   # solo un nombre; lo que cuenta es el esquema
             CFBundleURLSchemes: [orbital-ios]
         # Abrir videos que te pasen (AirDrop, Archivos, «Abrir con…»): se copian a la app y se reproducen; si se reconoce cuál es
         # (por el nombre del archivo), con sus subtítulos de OpenSubtitles.
@@ -127,7 +129,8 @@ targets:
         # Para poder preguntar si Infuse está instalado.
         LSApplicationQueriesSchemes: [infuse]
         # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.
-        # App personal: los complementos (y a veces sus archivos) pueden usar http, no solo https.
+        # App personal: los complementos (y a veces sus archivos) pueden usar http, no solo https. No basta
+        # NSAllowsLocalNetworking (solo la red de la casa): un complemento en internet con http dejaría de abrir (F10, 11 nov).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     scheme:

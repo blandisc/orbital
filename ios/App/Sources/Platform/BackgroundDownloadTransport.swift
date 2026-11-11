@@ -19,6 +19,8 @@ import OrbitalCore
 /// - **Relanzar la app**: una descarga que el sistema siguió en segundo plano se *adopta*, no se reinicia; si se cerró a media
 ///   unión de pedazos, la unión se retoma donde iba.
 final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSessionDownloadDelegate, URLSessionDataDelegate, @unchecked Sendable {
+    /// No se cambia aunque diga «com.example»: el sistema reconoce por este nombre las descargas que siguen con la app cerrada;
+    /// con otro, una actualización perdería las que iban a medias (F10, 11 nov 2026).
     static let identifier = "com.example.orbital.ios.downloads"
     /// Cuántos pedazos a la vez por archivo, y desde qué tamaño vale la pena partirlo.
     static let parts = 8
