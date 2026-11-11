@@ -57,6 +57,8 @@ final class PlayerHolder {
 /// El reproductor a pantalla completa, con gestos: un toque muestra los controles, doble toque a los lados salta ±10 s.
 struct PlayerScreen: View {
     let request: PlayRequest
+    /// A mano: el que arma Swift solo trae un argumento por cada `@State` y la CI tardaba en elegirlo.
+    init(request: PlayRequest) { self.request = request }
     @Environment(AppEnvironment.self) var env
     @Environment(\.dismiss) var dismiss
     @Environment(\.scenePhase) var scenePhase

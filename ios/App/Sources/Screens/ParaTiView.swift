@@ -21,45 +21,56 @@ struct ParaTiView: View {
 
     init() { _model = State(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 
+    /// El mosaico con su pie (la pieza elegida). Aparte del cuerpo: el compilador de la CI (Xcode 26.3) no alcanzaba a revisarlo.
+    private func mosaicPart(_ m: ParaTiModel) -> some View {
+        Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
+               onFocusChange: { new in
+                   // Sin nada elegido (al abrir, o al pasar de largo) no hay pie; elegir una lo muestra.
+                   focused = new
+                   if let new { focusedArt = new.wide }
+               }, onOpen: { openTitle = $0.route }, loading: m.isLoading, retry: { Task { await m.refresh() } })
+        // Deslizar de lado (a cualquier lado: el mosaico solo sube y baja) regresa a Explorar, como la flecha.
+        .simultaneousGesture(DragGesture(minimumDistance: DS.Gesture.axisThreshold).onEnded { value in
+            let dx = value.translation.width, dy = value.translation.height
+            if abs(dx) > DS.Mosaic.swipeBack, abs(dx) > abs(dy) * 2 { m.mode = .lists }
+        })
+        // La pieza elegida, contada sobre el pie del mosaico (flota: el mosaico no cambia de alto al elegir o soltar).
+        .overlay(alignment: .bottom) {
+            if DS.Mosaic.uniform, let item = focused {
+                // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
+                MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
+                              data: (factStrings(item, language: env.language).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
+                              open: { openTitle = item.route },
+                              watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
+                    SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
+                }
+                .padding(DS.Space.s4)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+                // Los avisos («Ya está en tu Orbital») salen encima del pie, no sobre sus botones.
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { env.ui.noticeLift = $0 }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .id(item.imdb)
+            }
+        }
+        .onChange(of: focused == nil) { _, none in if none, env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+        .onDisappear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+    }
+
+    /// Las listas (con su «Decidir» y «Match»).
+    private var listsPart: some View {
+        ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true })
+            .onAppear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+    }
+
     var body: some View {
         let m = model.model
         VStack(spacing: DS.Space.s2) {
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(verbatim: env.message(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
             case .mosaic:
-                Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
-                       onFocusChange: { new in
-                           // Sin nada elegido (al abrir, o al pasar de largo) no hay pie; elegir una lo muestra.
-                           focused = new
-                           if let new { focusedArt = new.wide }
-                       }, onOpen: { openTitle = $0.route }, loading: m.isLoading, retry: { Task { await m.refresh() } })
-                // Deslizar de lado (a cualquier lado: el mosaico solo sube y baja) regresa a Explorar, como la flecha.
-                .simultaneousGesture(DragGesture(minimumDistance: DS.Gesture.axisThreshold).onEnded { value in
-                    let dx = value.translation.width, dy = value.translation.height
-                    if abs(dx) > DS.Mosaic.swipeBack, abs(dx) > abs(dy) * 2 { m.mode = .lists }
-                })
-                // La pieza elegida, contada sobre el pie del mosaico (flota: el mosaico no cambia de alto al elegir o soltar).
-                .overlay(alignment: .bottom) {
-                    if DS.Mosaic.uniform, let item = focused {
-                        // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
-                        MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
-                                      data: (factStrings(item, language: env.language).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
-                                      open: { openTitle = item.route },
-                                      watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
-                            SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
-                        }
-                        .padding(DS.Space.s4)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                        .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
-                        // Los avisos («Ya está en tu Orbital») salen encima del pie, no sobre sus botones.
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { env.ui.noticeLift = $0 }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .id(item.imdb)
-                    }
-                }
-                .onChange(of: focused == nil) { _, none in if none, env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
-                .onDisappear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
-            case .lists: ListsView(observer: model, onDecide: { deciding = true }, onMatch: { matching = true }).onAppear { if env.ui.noticeLift != 0 { env.ui.noticeLift = 0 } }
+                mosaicPart(m)
+            case .lists: listsPart
             }
         }
         // El mismo aire bajo el título que Inicio. En listas va adentro de la lista: afuera la despegaba de la orilla y iOS

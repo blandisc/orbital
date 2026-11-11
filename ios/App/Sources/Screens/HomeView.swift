@@ -47,6 +47,72 @@ struct HomeView: View {
         _inbox = State(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
     }
 
+    /// Lo de arriba: «Aprende», sin internet, lo que se ve en la TV y lo que la TV te mandó. En partes: el compilador de la CI
+    /// (Xcode 26.3) no alcanzaba a revisar todo Inicio de una vez.
+    @ViewBuilder private func topCards(_ model: HomeModel) -> some View {
+        HomeLearnTop()   // los círculos de «Aprende» y «Termina de preparar Orbital»
+        if model.offline {
+            // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
+            DegradedNotice(state: .offline) { Task { await model.refresh() } }
+                .padding(.horizontal, DS.Space.gutter)
+        }
+        // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
+        // antes, en esta tarjeta.
+        if !Self.hasTabAccessory, let now = tvNow.model.now {
+            NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
+                          onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
+                          onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
+                .padding(.horizontal, DS.Space.gutter)
+                .transition(DS.Motion.appear(reduceMotion))
+        }
+        // Lo que la TV mandó con «Enviar al iPhone»: una tarjeta pequeña, bajo «Viendo en la TV».
+        ForEach(inbox.model.fromTV) { item in
+            FromTVCard(item: item,
+                       onWatch: { inbox.model.watched(item); Task { await env.play(item) } },
+                       onDownload: { Task { await inbox.model.downloadFromCard(item) } },
+                       onDismiss: { inbox.model.dismiss(item) })
+                .padding(.horizontal, DS.Space.gutter)
+                .transition(DS.Motion.appear(reduceMotion))
+        }
+    }
+
+    /// Las filas de abajo, escalonadas: lo que sale de tus series, sugerencias, «Porque viste», canales, Top 10 y Mi lista.
+    @ViewBuilder private func lowerRows(_ model: HomeModel, kind: String?, picks: [Suggestion], pending: [Suggestion]) -> some View {
+        // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
+        if kind != "movie", !model.timeline.isEmpty {
+            ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
+                .entrance("home:timeline", order: 0)   // las filas de abajo entran escalonadas
+        }
+        // Tus recomendaciones de Trakt.
+        if !picks.isEmpty {
+            Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt"), quiet: true) {
+                // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
+                ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
+            }
+            .entrance("home:picks", order: 1)
+        }
+        HomeBecause(model: because.model, kind: kind).entrance("home:because", order: 2)
+        if kind != "movie" {   // solo series; la dona de «Un Simpson al azar» va en su encabezado (I9)
+            HomeChannels(model: channels.model, simpsons: { rollingSimpsons = true }, simpsonsZoom: simpsonsZoom).entrance("home:channels", order: 3)
+        }
+        // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
+        if model.hasAnyTop { topTen(model).entrance("home:top", order: 4) }
+        if !pending.isEmpty { watchlist(model, items: pending).entrance("home:watchlist", order: 5) }
+    }
+
+    /// Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
+    private func spotlightPart(_ model: HomeModel) -> some View {
+        spotlightCarousel(model).perfTag("home.hero")
+            // Las primeras tarjetas: su fondo ligero se pide en cuanto se sabe cuáles son (no al pintarse). Los logos no:
+            // pesan ~350 KB y le quitaban red a la imagen grande.
+            .task(id: model.spotlight.first?.imdb) {
+                for case let preview? in model.spotlight.prefix(DS.Size.heroPrefetch).map({ Artwork.preview($0.wide) }) {
+                    let pixels = CGFloat(preview.pixels)
+                    if let url = URL(string: preview.url) { Task { _ = await ImagePipeline.shared.image(url, maxPixel: pixels, urgent: true) } }
+                }
+            }
+    }
+
     var body: some View {
         let model = home.model
         // El tipo de la barra (Todo · Películas · Series) filtra toda la página, no solo la portada.
@@ -57,42 +123,9 @@ struct HomeView: View {
         let pending = model.traktPending.filter { fits($0.kind) }
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Layout.betweenSections) {
-                HomeLearnTop()   // los círculos de «Aprende» y «Termina de preparar Orbital»
-                if model.offline {
-                    // Sin internet: lo del teléfono sigue a la vista, y la salida es Descargas (más reintentar).
-                    DegradedNotice(state: .offline) { Task { await model.refresh() } }
-                        .padding(.horizontal, DS.Space.gutter)
-                }
-                // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
-                // antes, en esta tarjeta.
-                if !Self.hasTabAccessory, let now = tvNow.model.now {
-                    NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
-                                  onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
-                                  onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
-                        .padding(.horizontal, DS.Space.gutter)
-                        .transition(DS.Motion.appear(reduceMotion))
-                }
-                // Lo que la TV mandó con «Enviar al iPhone»: una tarjeta pequeña, bajo «Viendo en la TV».
-                ForEach(inbox.model.fromTV) { item in
-                    FromTVCard(item: item,
-                               onWatch: { inbox.model.watched(item); Task { await env.play(item) } },
-                               onDownload: { Task { await inbox.model.downloadFromCard(item) } },
-                               onDismiss: { inbox.model.dismiss(item) })
-                        .padding(.horizontal, DS.Space.gutter)
-                        .transition(DS.Motion.appear(reduceMotion))
-                }
+                topCards(model)
                 // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
-                if !model.spotlight.isEmpty {
-                    spotlightCarousel(model).perfTag("home.hero")
-                        // Las primeras tarjetas: su fondo ligero se pide en cuanto se sabe cuáles son (no al pintarse). Los logos no:
-                        // pesan ~350 KB y le quitaban red a la imagen grande.
-                        .task(id: model.spotlight.first?.imdb) {
-                            for case let preview? in model.spotlight.prefix(DS.Size.heroPrefetch).map({ Artwork.preview($0.wide) }) {
-                                let pixels = CGFloat(preview.pixels)
-                                if let url = URL(string: preview.url) { Task { _ = await ImagePipeline.shared.image(url, maxPixel: pixels, urgent: true) } }
-                            }
-                        }
-                }
+                if !model.spotlight.isEmpty { spotlightPart(model) }
                 if model.spotlight.isEmpty, model.continueWatching.isEmpty, model.isLoading {
                     HeroSkeleton()   // la primera vez: el lugar ya reservado mientras llega
                 }
@@ -108,26 +141,7 @@ struct HomeView: View {
                 }
                 // ¿Qué tal …? (D2-A): calificar lo que terminaste, en su lugar de la página, bajo lo que tienes a medias.
                 RatingReminderHost()
-                // Lo que sale de tus series (solo series: con «Películas» en la barra, no se pinta).
-                if kind != "movie", !model.timeline.isEmpty {
-                    ReleaseTimeline(airings: model.timeline, onOpen: { openTitle = $0 }, onCalendar: { showingCalendar = true })
-                        .entrance("home:timeline", order: 0)   // las filas de abajo entran escalonadas
-                }
-                // Tus recomendaciones de Trakt.
-                if !picks.isEmpty {
-                    Rail(title: "Sugerencias para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas por Trakt"), quiet: true) {
-                        // Mantener el dedo abre el menú, como en Explorar (antes no había menú: al soltar se abría la ficha).
-                        ForEach(picks) { s in TitleLink(route: s.route).contextMenu { SuggestionActions(suggestion: s, onDismiss: dismissPick) } }
-                    }
-                    .entrance("home:picks", order: 1)
-                }
-                HomeBecause(model: because.model, kind: kind).entrance("home:because", order: 2)
-                if kind != "movie" {   // solo series; la dona de «Un Simpson al azar» va en su encabezado (I9)
-                    HomeChannels(model: channels.model, simpsons: { rollingSimpsons = true }, simpsonsZoom: simpsonsZoom).entrance("home:channels", order: 3)
-                }
-                // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
-                if model.hasAnyTop { topTen(model).entrance("home:top", order: 4) }
-                if !pending.isEmpty { watchlist(model, items: pending).entrance("home:watchlist", order: 5) }
+                lowerRows(model, kind: kind, picks: picks, pending: pending)
                 // Tus favoritos viven en Para ti › Tuyo (Fernando, 30 oct 2026): Inicio termina en Mi lista.
             }
             // El ancho es el de la pantalla, siempre (I2): si una fila pide más (letra grande, el SE), no empuja la página entera

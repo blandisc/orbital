@@ -7,6 +7,43 @@ import OrbitalModels
 extension PlayerScreen {
     // MARK: bloquear
 
+    /// Doble toque: tercio izquierdo −10 s, centro pausa o sigue, tercio derecho +10 s. (Aparte del gesto: la CI lo revisa solo.)
+    private func doubleTap(at location: CGPoint, width: CGFloat, _ model: PlayerModel) {
+        let third = width * DS.Gesture.edgeShare
+        // Si ya venías sumando de ese lado, el doble toque cuenta como dos toques (+20 s).
+        if location.x < third { skip(model, forward: false, taps: 2) }
+        else if location.x > width - third { skip(model, forward: true, taps: 2) }
+        else { userTogglePlay(model); flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
+    }
+
+    /// Un toque: sigue sumando en la orilla, cierra los subtítulos rápidos o muestra/esconde los controles.
+    private func singleTap(at location: CGPoint, width: CGFloat, _ model: PlayerModel) {
+        // Tras un doble toque en una orilla, cada toque sencillo del mismo lado suma otros 10 s (como YouTube).
+        if let forward = continuesSkip(at: location, width: width) { skip(model, forward: forward); return }
+        // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
+        if dockState.subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false }; return }
+        // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
+        if Date().timeIntervalSince(twoFingerTapAt) < DS.Gesture.twoFingerTapGuard { return }
+        singleTapAt = Date()
+        // Un toque justo mientras se desvanecen los vuelve a mostrar (no los alterna: «toqué y no salió nada»).
+        if !controlsVisible || Date().timeIntervalSince(controlsHiddenAt) < DS.Timing.controlsFadeGrace { controlsVisible = true } else { controlsVisible = false }
+        if controlsVisible { scheduleHide() }
+    }
+
+    /// Dos dedos: pausa o sigue, y deshace lo que el mismo toque alcanzó a hacer como pellizco o como toque de un dedo.
+    private func twoFingerTap(_ model: PlayerModel) {
+        twoFingerTapAt = Date()
+        // Un toque con dos dedos también le llega al pellizco (iOS lo mide como si los dedos se abrieran): si ya alcanzó a
+        // cambiar el zoom, se deshace. Así pausar con dos dedos nunca deja la imagen agrandada.
+        if let undo = framing.zoomBeforePinch, Date().timeIntervalSince(undo.at) < DS.Gesture.pinchTapGuard {
+            framing.zoomBeforePinch = nil; setZoom(undo.zoom, cause: "deshecho: era un toque con dos dedos")
+        }
+        // Si el mismo toque ya alcanzó a contar como uno de un dedo, se deshace lo que hizo con los controles.
+        if Date().timeIntervalSince(singleTapAt) < DS.Gesture.twoFingerTapGuard { controlsVisible.toggle(); singleTapAt = .distantPast }
+        userTogglePlay(model)
+        flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
+    }
+
     // MARK: gestos
     func gestureLayer(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
@@ -15,38 +52,10 @@ extension PlayerScreen {
             // toque caía en otra capa.
             Color.clear
             .contentShape(Rectangle())
-            .onTapGesture(count: 2) { location in
-                let third = geo.size.width * DS.Gesture.edgeShare
-                // Si ya venías sumando de ese lado, el doble toque cuenta como dos toques (+20 s).
-                if location.x < third { skip(model, forward: false, taps: 2) }
-                else if location.x > geo.size.width - third { skip(model, forward: true, taps: 2) }
-                else { userTogglePlay(model); flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
-            }
-            .onTapGesture { location in
-                // Tras un doble toque en una orilla, cada toque sencillo del mismo lado suma otros 10 s (como YouTube).
-                if let forward = continuesSkip(at: location, width: geo.size.width) { skip(model, forward: forward); return }
-                // Con los subtítulos rápidos abiertos, tocar el video los cierra (y nada más).
-                if dockState.subtitleDock { withAnimation(DS.Motion.base(reduceMotion)) { dockState.subtitleDock = false }; return }
-                // Un toque con dos dedos también puede contar como toque: ese no mueve los controles.
-                if Date().timeIntervalSince(twoFingerTapAt) < DS.Gesture.twoFingerTapGuard { return }
-                singleTapAt = Date()
-                // Un toque justo mientras se desvanecen los vuelve a mostrar (no los alterna: «toqué y no salió nada»).
-                if !controlsVisible || Date().timeIntervalSince(controlsHiddenAt) < DS.Timing.controlsFadeGrace { controlsVisible = true } else { controlsVisible = false }
-                if controlsVisible { scheduleHide() }
-            }
+            .onTapGesture(count: 2) { location in doubleTap(at: location, width: geo.size.width, model) }
+            .onTapGesture { location in singleTap(at: location, width: geo.size.width, model) }
             // Tocar con dos dedos, en cualquier parte: pausa o sigue (como en Infuse y en la app TV de Apple).
-            .gesture(TwoFingerTap {
-                twoFingerTapAt = Date()
-                // Un toque con dos dedos también le llega al pellizco (iOS lo mide como si los dedos se abrieran): si ya alcanzó a
-                // cambiar el zoom, se deshace. Así pausar con dos dedos nunca deja la imagen agrandada.
-                if let undo = framing.zoomBeforePinch, Date().timeIntervalSince(undo.at) < DS.Gesture.pinchTapGuard {
-                    framing.zoomBeforePinch = nil; setZoom(undo.zoom, cause: "deshecho: era un toque con dos dedos")
-                }
-                // Si el mismo toque ya alcanzó a contar como uno de un dedo, se deshace lo que hizo con los controles.
-                if Date().timeIntervalSince(singleTapAt) < DS.Gesture.twoFingerTapGuard { controlsVisible.toggle(); singleTapAt = .distantPast }
-                userTogglePlay(model)
-                flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill")
-            })
+            .gesture(TwoFingerTap { twoFingerTap(model) })
             .gesture(VideoPinch(changed: { magnification in
                 if framing.pinchStartedAt == nil { framing.pinchStartedAt = Date() }
                 // La guía en vivo: qué pasa si sueltas ahora (3 nov 2026: «una pequeña interfaz para que entienda qué está haciendo»).

@@ -71,44 +71,72 @@ struct RootView: View {
     /// Las pestañas con lo que se abre a pantalla completa encima (reproductor, guía, historias) y sus preguntas. Aparte del
     /// cuerpo: de una sola pieza, el Swift de la CI (Xcode 26.3) no lo alcanzaba a revisar.
     @ViewBuilder private func presented() -> some View {
-        @Bindable var env = env
         // Se entra sin cuenta de Stremio: lo tuyo vive en el teléfono (y viaja por Trakt). Stremio se conecta en Ajustes, como respaldo.
-        MainTabs().onAppear { Perf.mark("app.tabs") }
+        withPrompts(withCovers(MainTabs().onAppear { Perf.mark("app.tabs") }
         .environment(\.playerZoom, playerZoom)
         .background(DS.bg.ignoresSafeArea())
         .overlay { DownloadFlightLayer(flight: ui.downloadFlight).ignoresSafeArea() }
-        .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }
-        // El reproductor crece desde la tarjeta que se tocó y, al cerrar, se encoge de vuelta a ella (con su avance al día).
-        .fullScreenCover(item: $env.playing, onDismiss: { ui.playerSource = nil }) { request in
-            PlayerScreen(request: request).playerZoom(from: ui.playerSource, in: playerZoom)
-        }
-        // La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
-        .fullScreenCover(isPresented: Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 })) { OnboardingView { ui.showingGuide = false } }
-        // Una historia de «Aprende Orbital» (G3): desde los círculos de Inicio, Ajustes o «Ver la historia» de un aviso.
-        .fullScreenCover(item: Binding(get: { ui.openStory.map(StoryRoute.init) }, set: { ui.openStory = $0?.id })) { route in
-            StoryDeck(stories: LearnModel(env.services).deck, start: route.id,
-                      onSeen: { LearnModel(env.services).markSeen($0.id) },
-                      onAction: { destination in
-                          ui.openStory = nil
-                          Task { try? await Task.sleep(for: DS.Motion.tabSettle); env.open(destination) }
-                      },
-                      close: { ui.openStory = nil })
-        }
-        .dsFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
-        .sheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
-            ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: r.at) { date in Task { await env.redate(r, to: date) } }
-        }
-        .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
-            Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
-            Button("No", role: .cancel) { env.askFinished = nil }
-        } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
-        // Los avisos, siempre abajo (al alcance del pulgar, sobre la barra de pestañas) y del mismo tipo (`Toast`).
-        // «Sigue en tu Orbital · Deshacer» gana: los demás esperan a que se vaya.
+        .overlay { if splashing { LaunchSplash(target: ui.homeLogoFrame) { splashing = false; ui.splashing = false } } }))
+    }
+
+    /// Lo que se abre a pantalla completa: el reproductor, la guía y las historias (una pieza por cubierta: la CI los revisa
+    /// por separado).
+    private func withCovers<V: View>(_ content: V) -> some View {
+        withStories(withGuide(withPlayer(content)))
+    }
+
+    /// El reproductor crece desde la tarjeta que se tocó y, al cerrar, se encoge de vuelta a ella (con su avance al día).
+    private func withPlayer<V: View>(_ content: V) -> some View {
+        @Bindable var env = env
+        return content.fullScreenCover(item: $env.playing, onDismiss: { ui.playerSource = nil }, content: playerCover)
+    }
+
+    private func playerCover(_ request: PlayRequest) -> some View {
+        PlayerScreen(request: request).playerZoom(from: ui.playerSource, in: playerZoom)
+    }
+
+    /// La guía de la primera vez (y la de Ajustes › Aprende Orbital › «Ver la guía otra vez»).
+    private func withGuide<V: View>(_ content: V) -> some View {
+        content.fullScreenCover(isPresented: showingGuide) { OnboardingView { ui.showingGuide = false } }
+    }
+
+    /// Una historia de «Aprende Orbital» (G3): desde los círculos de Inicio, Ajustes o «Ver la historia» de un aviso.
+    private func withStories<V: View>(_ content: V) -> some View {
+        content.fullScreenCover(item: openStory) { (route: StoryRoute) in storyDeck(route) }
+    }
+
+    private var showingGuide: Binding<Bool> { Binding(get: { ui.showingGuide }, set: { ui.showingGuide = $0 }) }
+    private var openStory: Binding<StoryRoute?> { Binding(get: { ui.openStory.map(StoryRoute.init) }, set: { ui.openStory = $0?.id }) }
+
+    /// Una historia de «Aprende Orbital».
+    private func storyDeck(_ route: StoryRoute) -> some View {
+        StoryDeck(stories: LearnModel(env.services).deck, start: route.id,
+                  onSeen: { LearnModel(env.services).markSeen($0.id) },
+                  onAction: { destination in
+                      ui.openStory = nil
+                      Task { try? await Task.sleep(for: DS.Motion.tabSettle); env.open(destination) }
+                  },
+                  close: { ui.openStory = nil })
+    }
+
+    /// El toque al empezar, cambiar la fecha y «¿Terminaste de verlo?».
+    private func withPrompts(_ content: some View) -> some View {
+        content
+            .dsFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
+            .sheet(item: Binding(get: { ui.redate }, set: { ui.redate = $0 })) { r in
+                ViewingDatePicker(title: Text("¿Cuándo la viste?"), initial: r.at) { date in Task { await env.redate(r, to: date) } }
+            }
+            .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
+                Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
+                Button("No", role: .cancel) { env.askFinished = nil }
+            } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
     }
 
     var body: some View {
         let _ = services.model   // cualquier cambio de los servicios (idioma, cuenta) vuelve a pintar la raíz
         presented()
+        // Los avisos, siempre abajo (al alcance del pulgar, sobre la barra de pestañas) y del mismo tipo (`Toast`).
+        // «Sigue en tu Orbital · Deshacer» gana: los demás esperan a que se vaya.
         .overlay(alignment: .bottom) {
             Group {
                 if let h = ui.handoff {

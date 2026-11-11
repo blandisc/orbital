@@ -32,37 +32,33 @@ struct TouchPad: View {
             }
             .frame(minHeight: DS.Remote.padHeightFitted)
             .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        // Un toque nuevo empieza de cero: si la hoja canceló el anterior (sin `onEnded`), su origen viejo
-                        // convertía este toque en flecha y la A no llegaba («le toco varias veces y no abre»).
-                        if gestureStart != value.startLocation { gestureStart = value.startLocation; origin = nil; moved = false }
-                        touch = value.location
-                        let start = origin ?? value.startLocation
-                        if origin == nil { origin = start }
-                        let dx = value.location.x - start.x, dy = value.location.y - start.y
-                        guard max(abs(dx), abs(dy)) >= DS.Remote.swipeStep else { return }
-                        moved = true
-                        fire(abs(dx) > abs(dy) ? (dx > 0 ? .right : .left) : (dy > 0 ? .down : .up))
-                        origin = value.location   // la siguiente flecha cuenta desde aquí: seguir deslizando repite
-                    }
-                    .onEnded { value in
-                        let total = hypot(value.translation.width, value.translation.height)
-                        if !moved, total < DS.Remote.tapSlop { fire(.select) }
-                        origin = nil; moved = false; gestureStart = nil
-                        withAnimation(DS.Motion.base(reduceMotion)) { touch = nil }
-                    }
-            )
+            .gesture(padGesture)
             .dsFeedback(.selection, trigger: ticks)
-            .accessibilityElement()
-            .accessibilityLabel(Text("Pad de la TV"))
-            .accessibilityHint(selectLabel.map { Text("Desliza para moverte; toca para \($0)") } ?? Text("Desliza para moverte; toca para elegir"))
-            .accessibilityAction(named: Text("Arriba")) { onAction(.up) }
-            .accessibilityAction(named: Text("Abajo")) { onAction(.down) }
-            .accessibilityAction(named: Text("Izquierda")) { onAction(.left) }
-            .accessibilityAction(named: Text("Derecha")) { onAction(.right) }
-            .accessibilityAction { onAction(.select) }
+            .modifier(PadAccessibility(selectLabel: selectLabel, onAction: onAction))
+    }
+
+    /// En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar el pad de una vez.
+    private var padGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                // Un toque nuevo empieza de cero: si la hoja canceló el anterior (sin `onEnded`), su origen viejo
+                // convertía este toque en flecha y la A no llegaba («le toco varias veces y no abre»).
+                if gestureStart != value.startLocation { gestureStart = value.startLocation; origin = nil; moved = false }
+                touch = value.location
+                let start = origin ?? value.startLocation
+                if origin == nil { origin = start }
+                let dx = value.location.x - start.x, dy = value.location.y - start.y
+                guard max(abs(dx), abs(dy)) >= DS.Remote.swipeStep else { return }
+                moved = true
+                fire(abs(dx) > abs(dy) ? (dx > 0 ? .right : .left) : (dy > 0 ? .down : .up))
+                origin = value.location   // la siguiente flecha cuenta desde aquí: seguir deslizando repite
+            }
+            .onEnded { value in
+                let total = hypot(value.translation.width, value.translation.height)
+                if !moved, total < DS.Remote.tapSlop { fire(.select) }
+                origin = nil; moved = false; gestureStart = nil
+                withAnimation(DS.Motion.base(reduceMotion)) { touch = nil }
+            }
     }
 
     private func fire(_ action: OrbitalRemote.InputAction) {
@@ -487,5 +483,22 @@ extension OrbitalRemote.NowPlaying {
         guard !paused else { return position }
         let moved = position + max(0, date.timeIntervalSince(fetchedAt))
         return duration > 0 ? min(duration, moved) : moved
+    }
+}
+
+/// Lo que dice VoiceOver del pad y sus cinco acciones (aparte: así el cuerpo del pad se revisa en partes).
+private struct PadAccessibility: ViewModifier {
+    let selectLabel: String?
+    let onAction: (OrbitalRemote.InputAction) -> Void
+
+    func body(content: Content) -> some View {
+        content.accessibilityElement()
+            .accessibilityLabel(Text("Pad de la TV"))
+            .accessibilityHint(selectLabel.map { Text("Desliza para moverte; toca para \($0)") } ?? Text("Desliza para moverte; toca para elegir"))
+            .accessibilityAction(named: Text("Arriba")) { onAction(.up) }
+            .accessibilityAction(named: Text("Abajo")) { onAction(.down) }
+            .accessibilityAction(named: Text("Izquierda")) { onAction(.left) }
+            .accessibilityAction(named: Text("Derecha")) { onAction(.right) }
+            .accessibilityAction { onAction(.select) }
     }
 }

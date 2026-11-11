@@ -44,9 +44,8 @@ struct SettingsView: View {
         _debrid = State(wrappedValue: ModelObserver(DebridModel(services)))
     }
 
-    var body: some View {
-        let model = settings.model
-        let s = model.settings
+    // En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar todo el formulario de una vez.
+    private func settingsForm(_ model: SettingsModel, _ s: AppSettings) -> some View {
         Form {
             // CX4-A, IOS-10: la invitación de tu iPhone, lo primero de Ajustes (solo en un iPad sin conectar; nunca en la Mac).
             if env.services.allowsOrbital { IPadInviteCard { orbitalSetup = .connect } }
@@ -58,70 +57,11 @@ struct SettingsView: View {
             // Idiomas y subtítulos, arriba y juntos (N4-A, Fernando, 4 nov: «que sea fácil configurar los subtítulos y los
             // idiomas»; los mismos cuatro que la TV en Ajustes › Ver).
             languagesSection(model)
-            // Lo tuyo: cómo se ve y cómo se reproduce, con su título (I13: era el único grupo sin nombre).
-            Section {
-                NavigationLink { page("Apariencia") { appearance(model) } } label: {
-                    SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
-                }
-                NavigationLink { page("Idioma de la app") { appLanguage(model) } } label: {
-                    SettingsRow(title: "Idioma de la app", symbol: "character.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
-                }
-                NavigationLink { page("Reproducción") { playback(model) } } label: {
-                    SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
-                }
-                NavigationLink { page("Avisos") { alerts(model) } } label: {
-                    SettingsRow(title: "Avisos", symbol: "bell.badge", tint: DS.ListTint.flame, value: s.releaseAlerts ? Text("Estrenos") : Text("Apagados"))
-                }
-                NavigationLink { page("Descargas") { downloads(model) } } label: {
-                    SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
-                }
-                // La dona de Inicio, al final: es un detalle de Inicio, no algo que todos vengan a cambiar (I13, 10 nov).
-                NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
-                    SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
-                }
-            } header: { Text("Preferencias") }
-            .listRowBackground(DS.surface)
-            // Con qué se conecta.
-            Section {
-                // Real-Debrid, Trakt · principal, Stremio · respaldo y tu Orbital, cada una con su papel.
-                NavigationLink { page("Cuentas") { accounts(model) } } label: {
-                    SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: debridValue)
-                }
-                NavigationLink { AddonsSettings() } label: {
-                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
-                                value: addonsValue)
-                }
-                // Tus películas y series de OneDrive como una fuente más (como en la TV).
-                NavigationLink { OneDriveSettings() } label: {
-                    SettingsRow(title: "OneDrive", symbol: "folder", tint: DS.ListTint.library,
-                                value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
-                }
-            } header: { Text("Conexiones") }
-            .listRowBackground(DS.surface)
+            preferencesSection(model, s)
+            connectionsSection(model)
             // La app es de una sola pieza: lo de la consola sale solo con esto prendido (en la Mac no hay consola).
             if env.services.allowsOrbital { orbitalSettings(model) }
-            // Lo que casi no se toca: complementos, la clave de TMDB y el país.
-            Section {
-                NavigationLink { page("Avanzado") { suggestions(model) } } label: {
-                    SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
-                }
-                // Las historias, la guía otra vez y los avisos desde cero (G3).
-                NavigationLink { LearnView() } label: {
-                    SettingsRow(title: "Aprende Orbital", symbol: "sparkles", tint: DS.ListTint.spark)
-                }
-                .accessibilityIdentifier("settings-learn")
-                // Vivir otra vez la guía de bienvenida (Fernando, 4 nov: «que el onboarding sea accesible a través de ajustes»).
-                Button { env.ui.showingGuide = true } label: {
-                    SettingsRow(title: "Ver la guía de bienvenida", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
-                }
-                .accessibilityIdentifier("settings-welcome")
-                // Fer, 4 nov: «un botoncito en ajustes donde se reinicien ese tipo de tutoriales para verlos».
-                Button { confirmCoachReset = true } label: {
-                    SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.counterclockwise", tint: DS.ListTint.addon, linked: false)
-                }
-                .accessibilityIdentifier("settings-coach-reset")
-            }
-            .listRowBackground(DS.surface)
+            moreSection(model)
         }
         .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop())
@@ -130,37 +70,105 @@ struct SettingsView: View {
         .contentMargins(.bottom, DS.Space.s10, for: .scrollContent)
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .readableListWidth()   // iPad y Mac: los renglones al centro
-        .sheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
-        .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
-            Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
-        } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
-        .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmCoachReset, titleVisibility: .visible) {
-            Button("Volver a verlos") { LearnModel(env.services).reset() }
-            Button("Cancelar", role: .cancel) {}
-        } message: { Text("Las historias vuelven a decir que no las has visto.") }
-        .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
-            Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
-        } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
-        .sheet(isPresented: $editingAvatar) {
-            NavigationStack {
-                Form {
-                    Section("Cómo te llamamos") {
-                        TextField("Tu nombre", text: Binding(get: { settings.model.settings.displayName }, set: { v in settings.model.update { $0.displayName = v } }))
-                            .textInputAutocapitalization(.words).autocorrectionDisabled()
-                    }
-                    .listRowBackground(DS.surface)
-                    Section("Tu avatar") {
-                        AvatarPicker(selection: Binding(get: { settings.model.settings.avatar }, set: { v in settings.model.update { $0.avatar = v } }))
-                    }
-                    .listRowBackground(DS.surface)
-                }
-                .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
-                    .scrollContentBackground(.hidden).background(Backdrop())
-                    .navigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
+    }
+
+    @ViewBuilder private func preferencesSection(_ model: SettingsModel, _ s: AppSettings) -> some View {
+        // Lo tuyo: cómo se ve y cómo se reproduce, con su título (I13: era el único grupo sin nombre).
+        Section {
+            NavigationLink { page("Apariencia") { appearance(model) } } label: {
+                SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
             }
-            .presentationDetents([.medium])
+            NavigationLink { page("Idioma de la app") { appLanguage(model) } } label: {
+                SettingsRow(title: "Idioma de la app", symbol: "character.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
+            }
+            NavigationLink { page("Reproducción") { playback(model) } } label: {
+                SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
+            }
+            NavigationLink { page("Avisos") { alerts(model) } } label: {
+                SettingsRow(title: "Avisos", symbol: "bell.badge", tint: DS.ListTint.flame, value: s.releaseAlerts ? Text("Estrenos") : Text("Apagados"))
+            }
+            NavigationLink { page("Descargas") { downloads(model) } } label: {
+                SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
+            }
+            // La dona de Inicio, al final: es un detalle de Inicio, no algo que todos vengan a cambiar (I13, 10 nov).
+            NavigationLink { page("Un Simpson al azar") { SimpsonsSeasonsSection { seasons in model.update { $0.simpsonsSeasons = seasons } } } } label: {
+                SettingsRow(title: "Un Simpson al azar", symbol: "dice", tint: DS.ListTint.watching, value: SimpsonsSeasonsSection.summary(s.simpsonsSeasons))
+            }
+        } header: { Text("Preferencias") }
+        .listRowBackground(DS.surface)
+    }
+
+    @ViewBuilder private func connectionsSection(_ model: SettingsModel) -> some View {
+        // Con qué se conecta.
+        Section {
+            // Real-Debrid, Trakt · principal, Stremio · respaldo y tu Orbital, cada una con su papel.
+            NavigationLink { page("Cuentas") { accounts(model) } } label: {
+                SettingsRow(title: "Cuentas", symbol: "person.2.circle", tint: DS.ListTint.chart, value: debridValue)
+            }
+            NavigationLink { AddonsSettings() } label: {
+                SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon,
+                            value: addonsValue)
+            }
+            // Tus películas y series de OneDrive como una fuente más (como en la TV).
+            NavigationLink { OneDriveSettings() } label: {
+                SettingsRow(title: "OneDrive", symbol: "folder", tint: DS.ListTint.library,
+                            value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
+            }
+        } header: { Text("Conexiones") }
+        .listRowBackground(DS.surface)
+    }
+
+    @ViewBuilder private func moreSection(_ model: SettingsModel) -> some View {
+        // Lo que casi no se toca: complementos, la clave de TMDB y el país.
+        Section {
+            NavigationLink { page("Avanzado") { suggestions(model) } } label: {
+                SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("TMDB, país"))
+            }
+            // Las historias, la guía otra vez y los avisos desde cero (G3).
+            NavigationLink { LearnView() } label: {
+                SettingsRow(title: "Aprende Orbital", symbol: "sparkles", tint: DS.ListTint.spark)
+            }
+            .accessibilityIdentifier("settings-learn")
+            // Vivir otra vez la guía de bienvenida (Fernando, 4 nov: «que el onboarding sea accesible a través de ajustes»).
+            Button { env.ui.showingGuide = true } label: {
+                SettingsRow(title: "Ver la guía de bienvenida", symbol: "play.circle", tint: DS.ListTint.spark, linked: false)
+            }
+            .accessibilityIdentifier("settings-welcome")
+            // Fer, 4 nov: «un botoncito en ajustes donde se reinicien ese tipo de tutoriales para verlos».
+            Button { confirmCoachReset = true } label: {
+                SettingsRow(title: "Volver a ver los avisos", symbol: "arrow.counterclockwise", tint: DS.ListTint.addon, linked: false)
+            }
+            .accessibilityIdentifier("settings-coach-reset")
         }
+        .listRowBackground(DS.surface)
+    }
+
+    private var profileSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Cómo te llamamos") {
+                    TextField("Tu nombre", text: Binding(get: { settings.model.settings.displayName }, set: { v in settings.model.update { $0.displayName = v } }))
+                        .textInputAutocapitalization(.words).autocorrectionDisabled()
+                }
+                .listRowBackground(DS.surface)
+                Section("Tu avatar") {
+                    AvatarPicker(selection: Binding(get: { settings.model.settings.avatar }, set: { v in settings.model.update { $0.avatar = v } }))
+                }
+                .listRowBackground(DS.surface)
+            }
+            .readableListWidth()   // iPad y Mac: al centro, no estirada a todo lo ancho
+                .scrollContentBackground(.hidden).background(Backdrop())
+                .navigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
+        }
+        .presentationDetents([.medium])
+    }
+
+    var body: some View {
+        let model = settings.model
+        let s = model.settings
+        // En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar todo Ajustes de una vez.
+        withDemoPages(withDialogs(settingsForm(model, s), s), model)
         .task { await model.loadTraktName(); await debrid.model.load() }
         .navigationDestination(isPresented: $showsLanguages) { YourLanguagesView(settings: settings) }
         .onChange(of: env.ui.openLanguages, initial: true) { _, open in
@@ -168,25 +176,49 @@ struct SettingsView: View {
             env.ui.openLanguages = false
             showsLanguages = true
         }
+    }
+
+    /// Las hojas y preguntas de Ajustes: conectar tu Orbital, apagarla, los avisos, desconectar Trakt y tu perfil.
+    private func withDialogs(_ content: some View, _ s: AppSettings) -> some View {
+        content
+            .sheet(item: $orbitalSetup) { start in OrbitalSetupView(tutorialOnly: start == .tutorial) }
+            .confirmationDialog("¿Dejar de usar tu Orbital?", isPresented: $confirmOrbitalOff, titleVisibility: .visible) {
+                Button("Apagar", role: .destructive) { env.services.turnOffOrbital(); ReleaseNotifier.registerCategory(language: s.uiLanguage, tv: false) }
+            } message: { Text("Se esconden «Ver en la TV», el control y la voz. Lo que viste se queda: viaja por Trakt.") }
+            .confirmationDialog("¿Volver a ver los avisos?", isPresented: $confirmCoachReset, titleVisibility: .visible) {
+                Button("Volver a verlos") { LearnModel(env.services).reset() }
+                Button("Cancelar", role: .cancel) {}
+            } message: { Text("Las historias vuelven a decir que no las has visto.") }
+            .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
+                Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
+            } message: { Text("Dejan de salir Mi lista, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
+            .sheet(isPresented: $editingAvatar) { profileSheet }
+    }
+
+    /// `-demo-open` y `-demo-settings-page`: abrir una página de Ajustes para las capturas (solo en Debug).
+    @ViewBuilder private func withDemoPages(_ content: some View, _ model: SettingsModel) -> some View {
         #if DEBUG
-        .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
-        .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
-        // `-demo-open orbital-setup`: «Conecta tu Orbital» (Escanear el código), para capturas; con `-demo-scan [v2]`, ya conectada.
-        .task { if Demo.isOn, Demo.open == "orbital-setup" { orbitalSetup = .connect } }
-        .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
-        .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
-        // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › Real-Debrid · bajando para ti (RX1-A).
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { env.openTab = AppEnvironment.downloadsTab } }
-        .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "languages" { showsLanguages = true } }   // N4-A
-        .navigationDestination(isPresented: $showsOrbital) { page("Tu Orbital") { orbitalSection(model) } }   // `-demo-settings-page orbital` (K1)
-        .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "orbital" { showsOrbital = true } }
-        // `-demo-settings-page torrentio|addons|realdebrid`: Complementos, Torrentio y tu cuenta de Real-Debrid (Fase 3).
-        .navigationDestination(isPresented: $showsDemoPage) { DemoSettingsPage(name: Demo.value(after: "-demo-settings-page") ?? "", debrid: debrid.model) }
-        .task { if Demo.isOn, ["torrentio", "addons", "realdebrid"].contains(Demo.value(after: "-demo-settings-page") ?? "") { showsDemoPage = true } }
+        content
+            .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
+            .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
+            // `-demo-open orbital-setup`: «Conecta tu Orbital» (Escanear el código), para capturas; con `-demo-scan [v2]`, ya conectada.
+            .task { if Demo.isOn, Demo.open == "orbital-setup" { orbitalSetup = .connect } }
+            .navigationDestination(isPresented: $showsTrakt) { page("Trakt") { traktSection(model) } }   // `-demo-settings-page trakt`: capturas
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "trakt" { showsTrakt = true } }
+            .navigationDestination(isPresented: $showsFollowed) { FollowedSeriesView() }   // `-demo-settings-page series`: capturas
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "series" { showsFollowed = true } }
+            // `-demo-settings-page requests`: Tus pedidos (D3), que viven en Descargas › Real-Debrid · bajando para ti (RX1-A).
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "requests" { env.openTab = AppEnvironment.downloadsTab } }
+            .navigationDestination(isPresented: $showsPlayback) { page("Reproducción") { playback(model) } }   // `-demo-settings-page playback`
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "playback" { showsPlayback = true } }
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "languages" { showsLanguages = true } }   // N4-A
+            .navigationDestination(isPresented: $showsOrbital) { page("Tu Orbital") { orbitalSection(model) } }   // `-demo-settings-page orbital` (K1)
+            .task { if Demo.isOn, Demo.value(after: "-demo-settings-page") == "orbital" { showsOrbital = true } }
+            // `-demo-settings-page torrentio|addons|realdebrid`: Complementos, Torrentio y tu cuenta de Real-Debrid (Fase 3).
+            .navigationDestination(isPresented: $showsDemoPage) { DemoSettingsPage(name: Demo.value(after: "-demo-settings-page") ?? "", debrid: debrid.model) }
+            .task { if Demo.isOn, ["torrentio", "addons", "realdebrid"].contains(Demo.value(after: "-demo-settings-page") ?? "") { showsDemoPage = true } }
+        #else
+        content
         #endif
     }
 

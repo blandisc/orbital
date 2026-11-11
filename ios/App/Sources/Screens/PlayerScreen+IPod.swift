@@ -6,6 +6,29 @@ import OrbitalModels
 /// El modo iPod (la pantalla y la rueda). (Parte de `PlayerScreen`, separada por responsabilidad.)
 extension PlayerScreen {
     // MARK: modo iPod
+    /// Arriba: ✕, AirPlay y «⋯» (los de siempre).
+    private var ipodTopBar: some View {
+        HStack(spacing: DS.Space.s3) {
+            PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
+                .accessibilityIdentifier("player-close")
+            Spacer()
+            AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+                .accessibilityLabel(Text("AirPlay"))
+            PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
+                withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }
+            }
+            .accessibilityIdentifier("player-more")
+        }
+        .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+    }
+
+    /// Lo que dice la pantalla del iPod arriba.
+    private func ipodStatus(_ model: PlayerModel) -> LocalizedStringKey {
+        let state = model.snapshot.state
+        if state == .playing { return "Reproduciendo" }
+        return state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa"
+    }
+
     /// El iPod: arriba ✕, AirPlay y «⋯» (los de siempre); la pantalla con el video, el nombre, la versión y el avance; la rueda.
     func ipodChrome(_ model: PlayerModel, face: IPodFace) -> some View {
         GeometryReader { geo in
@@ -13,21 +36,9 @@ extension PlayerScreen {
             let held = wheelTarget ?? (drag.dragAxis == .horizontal ? drag.seekPreview : nil) ?? pendingSeek
             let state = model.snapshot.state
             ZStack(alignment: .topLeading) {
-                HStack(spacing: DS.Space.s3) {
-                    PlayerCircleButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
-                        .accessibilityIdentifier("player-close")
-                    Spacer()
-                    AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
-                        .accessibilityLabel(Text("AirPlay"))
-                    PlayerCircleButton(symbol: "ellipsis", label: "Más opciones") {
-                        withAnimation(DS.Motion.base(reduceMotion)) { moreOpen.toggle() }
-                    }
-                    .accessibilityIdentifier("player-more")
-                }
-                .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
-                .frame(width: geo.size.width)
+                ipodTopBar.frame(width: geo.size.width)
                 PlayerTimeReader(time: model.time) { position in
-                    IPodScreen(face: face, status: state == .playing ? "Reproduciendo" : state == .loading || state == .buffering || model.phase == .preparing ? "Cargando" : "En pausa",
+                    IPodScreen(face: face, status: ipodStatus(model),
                                playing: state == .playing, title: current.displayTitle, detail: ipodDetail(model),
                                position: held ?? position, duration: model.snapshot.duration)
                 }

@@ -44,9 +44,10 @@ struct DownloadsView: View {
         _observer = State(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
     }
 
-    var body: some View {
+    /// Las tres partes con su fondo, su selector fijo arriba y su título.
+    private var parts: some View {
         let model = observer.model
-        Group {
+        return Group {
             switch part {
             // iPad y Mac: la lista al centro, no estirada a todo lo ancho; Guardado también (sus montones van en un renglón y
             // sus listas a lo ancho de Descargas: antes dos tarjetas de 1000 pt con cuatro pósters chiquitos).
@@ -68,15 +69,26 @@ struct DownloadsView: View {
         .navigationTitle("Biblioteca").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .learnCoach(.downloads, title: "Biblioteca", detail: "Lo que guardes para ver sin internet vive aquí, en tu iPhone.")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
-        .titleDestinations()
-        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
-        .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
-        .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
-        .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
-        .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
-        .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
-        .navigationDestination(for: SavedStateRoute.self) { SavedStateScreen(observer: saved, status: TitleStatus(rawValue: $0.status) ?? .watching) }
-        .navigationDestination(for: HistoryRoute.self) { _ in HistoryScreen() }
+    }
+
+    /// A dónde lleva cada cosa que se toca en la Biblioteca.
+    private func withDestinations(_ content: some View) -> some View {
+        content
+            .titleDestinations()
+            .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+            .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
+            .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
+            .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
+            .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
+            .navigationDestination(for: SavedListRoute.self) { SavedListScreen(observer: saved, listID: $0.id) }
+            .navigationDestination(for: SavedStateRoute.self) { SavedStateScreen(observer: saved, status: TitleStatus(rawValue: $0.status) ?? .watching) }
+            .navigationDestination(for: HistoryRoute.self) { _ in HistoryScreen() }
+    }
+
+    var body: some View {
+        let model = observer.model
+        // En partes: el compilador de la CI (Xcode 26.3) no alcanzaba a revisar toda la Biblioteca de una vez.
+        withDestinations(parts)
         .task { await model.run() }
         .onChange(of: part) { _, new in
             #if DEBUG
