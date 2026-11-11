@@ -517,6 +517,10 @@ struct PlayerScreen: View {
     }
 
     var body: some View {
+        let _ = BodyCount.tick("player")   // V9: cuántas veces se pinta (`-perf-bodies`)
+        #if DEBUG
+        let _ = BodyCount.explains ? Self._printChanges() : ()   // `-perf-why`: qué la hizo pintarse
+        #endif
         let model = holder.model
         tracked(model)   // en partes (`dressed`, `alive`, `tracked`): de una pieza, el Swift de la CI no la revisaba a tiempo
         .confirmationDialog(Text("Real-Debrid aún no tiene esta versión"), isPresented: Binding(get: { dockState.slowPick != nil }, set: { if !$0 { dockState.slowPick = nil } }), titleVisibility: .visible) {

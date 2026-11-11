@@ -153,6 +153,10 @@ struct HomeView: View {
     }
 
     var body: some View {
+        let _ = BodyCount.tick("home")   // V9: cuántas veces se pinta (`-perf-bodies`)
+        #if DEBUG
+        let _ = BodyCount.explains ? Self._printChanges() : ()   // `-perf-why`: qué la hizo pintarse
+        #endif
         let model = home.model
         ScrollView { page(model, kind: model.spotlightKind) }   // el tipo de la barra (Todo · Películas · Series) filtra toda la página
         // Un Bool (Equatable): el encabezado solo se vuelve a pintar al cruzar la línea, no en cada cuadro del desplazamiento.

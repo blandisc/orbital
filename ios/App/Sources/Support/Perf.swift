@@ -85,6 +85,37 @@ enum Perf {
     }
 }
 
+/// V9 · cuántas veces se evalúa el `body` de cada pantalla (con `-perf-bodies`, solo Debug): `ios/scripts/medir-repintado.sh`
+/// abre Inicio, una ficha y el reproductor con la demostración y lee el resumen («home 14», una línea por pantalla) de
+/// `tmp/orbital-bodies.txt` en el contenedor de la app. Sin la bandera no hace nada (y en Release no existe).
+enum BodyCount {
+    #if DEBUG
+    static let isOn = Demo.has("-perf-bodies")
+    /// `-perf-why`: además, cada pantalla medida dice en la consola qué la hizo volver a pintarse (`_printChanges`).
+    static let explains = Demo.has("-perf-why")
+    #else
+    static let isOn = false
+    #endif
+    static let file = FileManager.default.temporaryDirectory.appendingPathComponent("orbital-bodies.txt")
+    @MainActor private static var counts: [String: Int] = [:]
+    @MainActor private static var writing = false
+
+    /// Una evaluación más del `body` de `name`. El resumen se escribe medio segundo después (juntando las de esa ráfaga).
+    @MainActor static func tick(_ name: String) {
+        guard isOn else { return }
+        if counts.isEmpty { try? FileManager.default.removeItem(at: file) }
+        counts[name, default: 0] += 1
+        guard !writing else { return }
+        writing = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            writing = false
+            let text = counts.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: "\n") + "\n"
+            try? Data(text.utf8).write(to: file, options: .atomic)
+        }
+    }
+}
+
 /// Envuelve un `HTTPClient` y anota cada petición (`kind` api) con `-perf`.
 struct PerfHTTPClient: HTTPClient {
     let inner: any HTTPClient
