@@ -339,9 +339,10 @@
 
 /* «Reseñas en Letterboxd» (como el iPhone): tarjetas de vidrio en fila, la tuya primero con el borde verde de Letterboxd; las
    que traen spoilers, tapadas hasta que las abres. */
-.title__more-row--reviews { align-items: stretch; }
+/* P4: tres enteras a la vista (antes la tercera quedaba cortada por la orilla de la pantalla); title.js las pasa de tres en tres. */
+.title__more-row--reviews { --reviews-per-view: 3; align-items: stretch; }
 .title__review {
-  flex: none; display: flex; flex-direction: column; gap: var(--space-2); width: var(--review-width); padding: var(--inset-card);
+  flex: none; display: flex; flex-direction: column; gap: var(--space-2); width: calc((100% - (var(--reviews-per-view) - 1) * var(--card-gap)) / var(--reviews-per-view)); padding: var(--inset-card);
   border-radius: var(--tile-radius); background: var(--color-glass); box-shadow: var(--edge-glass-hairline);
   transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
 }

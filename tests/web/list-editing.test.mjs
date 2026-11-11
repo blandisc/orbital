@@ -64,3 +64,20 @@ test("las cuatro superficies: X y ☰ (mando y teclado), «Editar», la casilla 
   // Buscar eligiendo qué agregar va encima de la lista y se queda con los botones.
   assert.match(main, /ui\.search\.isPicking \? \[ui\.search, \.\.\.OVERLAYS\]/);
 });
+
+// P4: las reseñas de Letterboxd caben enteras (tres a la vista, de tres en tres) y la última parte de la ficha sube hasta su
+// lugar como las demás (antes se detenía al fondo y «Más como esto» quedaba a medias). Texto sobre el arte: vidrio legible.
+test("P4: la ficha no deja nada a medias y lo de encima del arte se lee", () => {
+  const read = (path) => readFileSync(new URL(`../../orbital/web/${path}`, import.meta.url), "utf8");
+  const js = read("js/components/title.js");
+  const css = read("styles/components/title.css");
+  assert.match(js, /const REVIEWS_PER_VIEW = 3;/);
+  assert.match(css, /\.title__more-row--reviews \{ --reviews-per-view: 3;/);
+  assert.match(css, /width: calc\(\(100% - \(var\(--reviews-per-view\) - 1\) \* var\(--card-gap\)\) \/ var\(--reviews-per-view\)\)/);
+  assert.match(js, /const shift = box \? Math\.max\(0, box\.offsetTop - track\.offsetTop\) : 0;/);
+  assert.doesNotMatch(js, /track\.scrollHeight - clip\.clientHeight/);
+  assert.match(read("styles/components/ui.css"), /\.glass-switch \{[^}]*background: var\(--color-glass-legible\)/);
+  assert.match(read("styles/components/status-bar.css"), /\.status-bar__tabs \{[^}]*background: var\(--color-glass-legible\)/);
+  assert.match(read("styles/components/ui.css"), /\.pill--tab \{[^}]*text-shadow: var\(--shadow-text-strong\)/);
+});
+

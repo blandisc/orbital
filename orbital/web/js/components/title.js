@@ -14,6 +14,8 @@ import { tokenMs, tokenPx } from "../core/tokens.js";
 import { actionStep, availability, episodeStates, episodesLed, finishedSeason, titleActions, titleProgress, titleStatus } from "../core/watch.js";
 import { Flag } from "./flag.js";
 
+const REVIEWS_PER_VIEW = 3; // como --reviews-per-view en title.css
+
 /**
  * La ficha de una película o serie, a pantalla completa sobre su arte y con el mando (como Apple TV): lo que manda es
  * la imagen; abajo a la izquierda, lo esencial (logo, un renglón de datos, la sinopsis) y los botones en un renglón.
@@ -331,11 +333,16 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
       const focused = "is-focused";
       [...p.row.children].forEach((node, i) => node.classList.toggle(focused, zone === id && i === p.index && id !== "details"));
       const node = p.row.children[p.index];
-      if (node && zone === id && id !== "details") p.row.scrollTo({ left: Math.max(0, node.offsetLeft - p.row.clientWidth * .3), behavior: motion("smooth") });
+      // P4: las reseñas caben enteras (tres a la vista) y se pasan de tres en tres: ninguna queda cortada por la orilla.
+      const page = id === "reviews" && node ? p.row.children[p.index - (p.index % REVIEWS_PER_VIEW)] : null;
+      const left = page ? page.offsetLeft - p.row.children[0].offsetLeft : node ? node.offsetLeft - p.row.clientWidth * .3 : 0;
+      if (node && zone === id && id !== "details") p.row.scrollTo({ left: Math.max(0, left), behavior: motion("smooth") });
       markMoreEdge(p.row); // también si no se movió (al aparecer la parte)
     }
     const box = inPanel() ? panel[zone].box : null;
-    const shift = box ? Math.max(0, Math.min(box.offsetTop - track.offsetTop, track.scrollHeight - clip.clientHeight)) : 0;
+    // P4: la última parte también sube hasta su lugar, como las demás (antes se detenía al llegar al fondo y la de arriba
+    // quedaba a medias: su título cortado y desvanecido, sus portadas nítidas). Lo de arriba se va entero; abajo queda aire.
+    const shift = box ? Math.max(0, box.offsetTop - track.offsetTop) : 0;
     track.style.transform = shift > 0 ? `translateY(${-shift}px)` : "";
     clip.classList.toggle("title__more-clip--scrolled", shift > 0);
   }

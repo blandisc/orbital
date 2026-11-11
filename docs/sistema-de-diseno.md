@@ -79,7 +79,7 @@ solo, por tamaño (su tracking óptico): por eso no hay token allá.
 |---|---|---|
 | Fondo | `--color-bg`, `--color-tinted-bg` (el tono del arte) | Grafito; el color lo pone lo enfocado |
 | Superficie | `--color-surface`, `--color-surface-raised` | Paneles de una pantalla completa (Ajustes, el calendario); sobre el arte, vidrio |
-| Vidrio | `--color-glass`, `--color-glass-hover`, `--color-glass-selected`, `--color-glass-strong`, `--edge-glass`, `--edge-glass-hairline`, `--edge-glass-selected` | Ver la receta |
+| Vidrio | `--color-glass`, `--color-glass-legible`, `--color-glass-hover`, `--color-glass-selected`, `--color-glass-strong`, `--edge-glass`, `--edge-glass-hairline`, `--edge-glass-selected` | Ver la receta. `--color-glass-legible` (P4): el vidrio que lleva nombres encima del arte (la barra de secciones y el selector de consolas), más oscuro debajo para que se lean (AA) sobre un arte claro |
 | Texto | `--color-text`, `--color-text-muted`, `--color-text-faint`, `--color-on-art-secondary` | El tenue (50 %) se lee (≥ 4,5:1); sobre el arte, `on-art-secondary` con su sombra |
 | Principal | `--color-primary` / `--color-on-primary` | Blanco con letra negra; también el foco invertido |
 | Porqué | `--color-reason` | Turquesa; solo porqués |
@@ -127,6 +127,7 @@ Cada una corrigió algo que se veía distinto en una pantalla poco común; las q
 | Regla | Dónde vive | Prueba |
 |---|---|---|
 | Una hoja del lado dice su título con un solo tamaño (`--type-heading`); el grande (`sheet__title--question`) es solo para una pregunta, un título que empieza con «¿». Un texto abajo no lo vuelve pregunta | `sheet.js` | smoke · `test_every_side_sheet_speaks_with_one_title_size` |
+| **Texto y logos sobre el arte se leen (AA, P4, medido)**: el vidrio que lleva nombres es `--color-glass-legible`; el texto sin cápsula (pestañas `pill--tab`, contadores `row-count`, la cuenta de una categoría de TV) lleva `--shadow-text-strong`; todo logo sobre el arte lleva su sombra (`--shadow-logo`, o `--shadow-drop-sm` en la tarjeta). Medido con el texto invisible y el fondo real debajo (1920×1080 y 1280×800): todo pasa contra la mediana del fondo; lo que se desvanece a propósito (la tarjeta que asoma en la orilla, una fila sin foco) no cuenta | `ui.css`, `status-bar.css`, `tv.css`, `title.css`, `card.css` | — |
 | El origen de algo (Trakt, Letterboxd, Stremio, Orbital) es su logo en sus colores, a la altura de la letra, centrado con ella; nunca una placa de color con su nombre | `collection-card.js · SourceBadge`, `.source-logo` | — |
 | Lo que crece al enfocarse tiene su aire arriba y a los lados dentro de su caja: nunca se monta en el título de su fila ni se le corta la sombra. Ninguna pieza enfocada se recorta, ya crecida y con su órbita, en ninguna fila ni rejilla (P4, 10 nov 2026: la de «A continuación» salía cortada 9 px por arriba; el aire es de la fila, `--row-grow` en `.home__viewport--*`) | `home.css`, `title.css`, `game-page.css` | smoke · `test_no_text_is_cut_in_half`, `test_focused_piece_is_never_cut` (Inicio, Juegos, Películas y series, TV en vivo, Buscar y la ficha, a 1920 × 1080 y 1280 × 800) |
 | Una cuadrícula que se desliza desvanece lo que quedó arriba (`is-above`, `browse.js · keepInView`) y lo que sigue abajo se funde; nada se corta en seco a media fila | `browse.css`, `list-screen.css`, `sources.css` | — |

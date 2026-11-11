@@ -35,6 +35,9 @@
      que baja de arriba sobre un fondo apenas oscuro (se lee encima de un arte claro), el filo de arriba más brillante que el de
      abajo y una sombra suave que lo despega. Todo quieto: no cuesta nada en reposo. */
   --color-glass: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05)), rgba(28, 28, 32, .3);
+  /* P4: el vidrio que lleva nombres encima del arte (el selector de consolas): la misma luz de arriba sobre un fondo más
+     oscuro, para que los nombres se lean (AA) aunque el arte de atrás sea claro (Hades: «PSP» quedaba en 1,7:1). */
+  --color-glass-legible: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05)), rgba(28, 28, 32, .72);
   --color-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .09)), rgba(28, 28, 32, .3);
   /* Lo elegido dentro de un vidrio (la sección de la barra): un vidrio más claro, con su propio filo. */
   --color-glass-selected: linear-gradient(180deg, rgba(255, 255, 255, .32), rgba(255, 255, 255, .16));
