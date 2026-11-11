@@ -3,7 +3,9 @@ falla, vuelve a la versión que tenías.
 
 Pasos de "Actualizar ahora":
   1. Solo si no hay cambios a medio hacer en la carpeta (nunca se pisa trabajo sin guardar).
-  2. git merge --ff-only con lo nuevo de la misma rama (sin mezclas raras).
+  2. git merge --ff-only con lo nuevo (sin mezclas raras). En `main`, si el repositorio tiene la etiqueta `tv-estable`
+     (la mueve la CI cuando todo pasa, D8-A), se actualiza hasta esa etiqueta y no hasta la punta de `main`: la TV nunca
+     baja algo que la CI no aprobó. Sin la etiqueta, como siempre: hasta lo último de la rama.
   3. Si cambiaron las dependencias (requirements.lock), se instalan.
   4. Se corren las pruebas. Si fallan: git reset a la versión anterior (y sus dependencias).
   5. Orbital se reabre solo con la versión nueva (el vigilante lo reabre: código RESTART).
@@ -22,6 +24,8 @@ log = logging.getLogger(__name__)
 
 REPO = Path(__file__).resolve().parents[1]
 CHECK_EVERY = 600.0  # s: no preguntar a GitHub más seguido
+STABLE_TAG = "tv-estable"  # la mueve la CI cuando todo pasa en main (D8-A)
+STABLE_BRANCH = "main"
 
 
 @dataclass
@@ -30,6 +34,7 @@ class UpdateInfo:
     changes: list[str] = field(default_factory=list)  # sus títulos
     branch: str = ""
     error: str = ""  # por qué no se puede (sin git, cambios sin guardar, sin red…)
+    ref: str = ""  # hasta dónde se actualiza: origin/<rama> o la etiqueta tv-estable (no se le enseña a nadie)
 
     def public(self) -> dict:
         return {"available": self.available, "changes": self.changes, "branch": self.branch, "error": self.error}
@@ -69,15 +74,24 @@ class Updater:
         try:
             info.branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
             self.git("fetch", "--quiet", "origin", info.branch, timeout=60)
-            log_lines = self.git("log", "--format=%s", f"HEAD..origin/{info.branch}")
+            info.ref = self._stable_ref() if info.branch == STABLE_BRANCH else ""
+            info.ref = info.ref or f"origin/{info.branch}"
+            log_lines = self.git("log", "--format=%s", f"HEAD..{info.ref}")
             info.changes = [line for line in log_lines.splitlines() if line][:20]
-            info.available = int(self.git("rev-list", "--count", f"HEAD..origin/{info.branch}"))
+            info.available = int(self.git("rev-list", "--count", f"HEAD..{info.ref}"))
             if info.available and self.dirty():
                 info.error = "Hay cambios sin guardar en la carpeta de Orbital: no actualizo para no perderlos."
         except (OSError, RuntimeError, subprocess.TimeoutExpired, ValueError) as exc:
             info.error = f"No pude buscar actualizaciones: {exc}"
         self._checked = (time.monotonic(), info)
         return info
+
+    def _stable_ref(self) -> str:
+        """La etiqueta tv-estable al día si existe en GitHub ("" si no). Se trae a la fuerza: la etiqueta se mueve."""
+        if not self.git("ls-remote", "--tags", "origin", f"refs/tags/{STABLE_TAG}", timeout=60):
+            return ""
+        self.git("fetch", "--quiet", "--force", "origin", f"+refs/tags/{STABLE_TAG}:refs/tags/{STABLE_TAG}", timeout=60)
+        return f"refs/tags/{STABLE_TAG}"
 
     def _lock_id(self) -> str:
         """Qué versión de requirements.lock hay ("" si no hay)."""
@@ -124,7 +138,7 @@ class Updater:
         lock_before = self._lock_id()
         try:
             progress(f"Descargando {info.available} cambio{'s' if info.available != 1 else ''}…")
-            self.git("merge", "--ff-only", f"origin/{info.branch}")
+            self.git("merge", "--ff-only", info.ref or f"origin/{info.branch}")
             if self._lock_id() != lock_before:
                 progress("Instalando lo que necesita…")
                 self._pip()

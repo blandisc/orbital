@@ -87,3 +87,34 @@ def test_update_api_reports_and_applies(library, repos):
         while event.get("type") != "update-done" and time.monotonic() < deadline:
             event = c.portal.call(queue.get)
     assert event["ok"] and (repos / "a.txt").read_text() == "2"
+
+
+def _stable(other, *, at="HEAD"):
+    git(other, "tag", "-f", "tv-estable", at)
+    git(other, "push", "-q", "--force", "origin", "refs/tags/tv-estable")
+
+
+def test_with_the_stable_tag_it_updates_only_to_the_tag(repos):
+    other = repos.parent / "otra"
+    _stable(other)  # la CI aprobó «Algo nuevo»
+    (other / "a.txt").write_text("3")
+    git(other, "commit", "-qam", "Sin aprobar todavía")
+    git(other, "push", "-q", "origin", "main")
+    info = Updater(repos).check()
+    assert info.available == 1 and info.changes == ["Algo nuevo"] and info.ref == "refs/tags/tv-estable"
+    run, _ = fake_run(0)
+    ok, _ = Updater(repos, run=run).apply()
+    assert ok and (repos / "a.txt").read_text() == "2"  # lo aprobado, no la punta de main
+    _stable(other)  # la CI aprobó también lo nuevo: la etiqueta se movió
+    assert Updater(repos).check().changes == ["Sin aprobar todavía"]
+
+
+def test_a_tag_that_is_behind_means_nothing_new(repos):
+    other = repos.parent / "otra"
+    _stable(other, at="HEAD~1")  # la etiqueta en lo que la TV ya tiene
+    assert Updater(repos).check().available == 0
+
+
+def test_without_the_tag_it_updates_from_the_branch_as_before(repos):
+    info = Updater(repos).check()
+    assert info.ref == "origin/main" and info.available == 1
