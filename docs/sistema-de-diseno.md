@@ -738,6 +738,20 @@ letras que bajan: g, p, j, y).
 > (mantener un botón) siempre tiene también un camino visible en el menú, y el menú dice el atajo. Nada se da por listo
 > sin evidencia en las cuatro.
 
+- **Los modelos de foco (R3-5, 11 nov 2026).** Hay tres maneras de decidir adónde va el foco con ↑↓←→, y cada pantalla
+  usa la que le queda a su acomodo. Las tres terminan igual: **una sola pieza con `.is-focused`, a la vista y sin nada
+  encima** (`tests/smoke/test_focus.py · test_focus_is_never_lost`: 300 teclas al azar con semilla fija desde cada pantalla,
+  con A, X, Y, B, LB/RB, LT/RT, ☰ y buscar; todo POST contesta 409, así que nada se abre de verdad).
+
+  | Modelo | Cómo decide | Dónde | Por qué ahí |
+  |---|---|---|---|
+  | **Fila y columna** | Un índice: ←→ ±1, ↑↓ ± las columnas (o fila `r`, tarjeta `c`, y cada fila recuerda su `c`) | Las filas de Películas y series (`shelf`), una lista o colección en cuadrícula (`list-screen`, `.card-grid`), el mosaico de Explorar (`foryou-mosaic`, por columnas), el calendario (7 por renglón), las hojas y los menús (una columna), la lámina de Ajustes | Piezas del mismo tamaño en renglones parejos: el destino se sabe sin medir nada (barato aun con cientos, junto con `.card--slot`), y volver a una fila te deja donde ibas |
+  | **Espacial** (`core/spatial.js`) | Mide las piezas (`data-focus-id`, `measureFocusables`) y `nextFocus()` elige la más cercana hacia ese lado, primero dentro de un cono de 45° | Inicio (destacado, «A continuación», Mi lista, Tus consolas), Juegos (filtros y cuadrícula), TV en vivo (categorías y canales), Buscar (teclado ↔ resultados), Colecciones | Piezas de tamaños distintos o dos bloques lado a lado: lo que está «abajo» depende de dónde cae, no de un índice; si el acomodo cambia (otro tamaño de pantalla, el dedo), sigue acertando |
+  | **`handle` propio** | La pantalla tiene zonas con nombre y cada flecha significa algo en cada zona | La ficha (botones → episodios → Reparto, Más como esto, Reseñas, Detalles; LB/RB temporadas), Elegir versión, Decide (pestañas y tres tarjetas), el mazo «Una por una» (las flechas deciden, no mueven: la carta de arriba es lo enfocado), Ajustes (riel ↔ lámina), Filtro avanzado, conectar cuentas | Las flechas no solo mueven: pasan de zona, cambian de temporada o deciden; un índice o una medida no saben eso |
+
+  Lo que encontró la prueba y se corrigió: en «Una por una» no había nada enfocado (ahora la carta de arriba lleva
+  `.is-focused`, sin órbita: es lo único al frente) y en la ficha, al bajar a «Detalles», el foco desaparecía (ahora la parte
+  entera es lo enfocado, con la placa de vidrio `--color-glass-legible`, sin que el texto se mueva).
 - **Navegación espacial** (`core/spatial.js`): las piezas llevan `data-focus-id`; `nextFocus()` decide a
   cuál vas con ↑↓←→. Sirve para cualquier acomodo, no solo filas.
 - **Vistas encima** (`OVERLAYS` en `main.js`): una vista nueva solo declara `{ handle, hints, isOpen }`.

@@ -127,7 +127,9 @@ export function createMatchDeck({ load, save, onOpen, onPlay, onSaved, onMove, o
     poster.addEventListener("error", () => poster.remove(), { once: true });
     if (behind) return h("div", { class: ["match__card", "match__card--behind"], "aria-hidden": "true" }, poster);
     const rating = Number(c.rating) > 0 ? Math.round(Number(c.rating) * 10) : null;
-    return h("div", { class: "match__card", role: "button", tabindex: "-1", "aria-label": `${c.title}: ver la ficha`, onClick: () => onOpen?.(c) },
+    // R3 (11 nov): la de arriba es lo enfocado del mazo (las flechas deciden sobre ella, no mueven el foco): lleva
+    // `.is-focused` (y con eso `aria-current`) para que el foco nunca se pierda; no lleva órbita, es lo único al frente.
+    return h("div", { class: ["match__card", "is-focused"], role: "button", tabindex: "-1", "aria-label": `${c.title}: ver la ficha`, onClick: () => onOpen?.(c) },
       poster,
       rating && h("span", { class: "match__rating", "aria-label": `Calificación en Trakt: ${rating} por ciento` },
         h("img", { class: "match__rating-mark", src: "img/ratings/trakt.svg", alt: "" }), `${rating} %`),

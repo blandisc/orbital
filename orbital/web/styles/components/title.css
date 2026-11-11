@@ -301,10 +301,18 @@
 .title__more-row--cast { align-items: flex-start; }
 /* «Detalles»: lo que es en gris y su valor en blanco, en dos columnas (el Grid del iPhone). R2-8: el texto no tiene foco
    que crezca, así que no lleva la orilla extra de la fila (--space-2): su columna de nombres va al ras del encabezado. */
-.title__details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0 0 0 calc(-1 * var(--space-2)); font-size: var(--type-secondary); font-weight: var(--type-secondary-weight); }
+.title__details {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6);
+  font-size: var(--type-secondary); font-weight: var(--type-secondary-weight);
+  /* R3-5: enfocada, «Detalles» se marca con una placa de vidrio (la misma que lleva nombres sobre el arte). Su lugar ya está
+     guardado (padding con margen negativo): al llegar, el texto no se mueve; solo aparece la placa. */
+  padding: var(--space-3) var(--space-4); margin: 0 0 0 calc(-1 * (var(--space-2) + var(--space-4)));
+  border-radius: var(--radius-lg); transition: background var(--duration-fast) var(--ease-out);
+}
+.is-focused.title__details { background: var(--color-glass-legible); }
 .title__details dt { color: var(--color-text-faint); }
 .title__details dd { margin: 0; color: var(--color-text); }
-.title__more-row--details { padding-top: 0; }
+.title__more-row--details { padding-top: 0; margin-top: calc(-1 * var(--space-3)); } /* sube lo que la placa ocupa arriba */
 
 @media (max-height: 820px) {
   .title__logo { max-height: 7rem; }

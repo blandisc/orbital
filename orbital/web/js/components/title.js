@@ -335,7 +335,8 @@ export function createTitle({ onPlay, onTrailer = () => {}, onSources, onSave = 
     for (const id of PANEL) {
       const p = panel[id];
       const focused = "is-focused";
-      [...p.row.children].forEach((node, i) => node.classList.toggle(focused, zone === id && i === p.index && id !== "details"));
+      // «Detalles» no tiene piezas: enfocada, la parte entera es lo enfocado (R3-5: antes ahí el foco se perdía).
+      [...p.row.children].forEach((node, i) => node.classList.toggle(focused, zone === id && i === p.index));
       const node = p.row.children[p.index];
       // P4: las reseñas caben enteras (tres a la vista) y se pasan de tres en tres: ninguna queda cortada por la orilla.
       const page = id === "reviews" && node ? p.row.children[p.index - (p.index % REVIEWS_PER_VIEW)] : null;
