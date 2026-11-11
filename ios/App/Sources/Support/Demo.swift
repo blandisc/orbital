@@ -101,7 +101,10 @@ enum Demo {
     /// Mi media; con `-demo-downloads`, Descargas).
     static var libraryPart: String? { value(after: "-demo-library") }
     /// `-demo-saved-empty`: Mi lista de Trakt vacía (el vacío de Guardado, con «Explorar»).
-    static var savedEmpty: Bool { has("-demo-saved-empty") }
+    static var savedEmpty: Bool { has("-demo-saved-empty") || empty }
+    /// `-demo-empty` (con `-demo-trakt`): una cuenta recién hecha, para revisar todos los vacíos (revisión del 11 nov): sin
+    /// «Seguir viendo», sin descargas, Mi lista, historial, vistas ni listas de Trakt.
+    static var empty: Bool { has("-demo-empty") }
     static var mediaTitle: String? { value(after: "-demo-media-title") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
@@ -115,8 +118,22 @@ enum Demo {
         return args[i + 1]
     }
 
-    /// `-demo-tab 2`: la pestaña con la que arranca (0 Inicio, 1 Explorar, 2 Buscar, 3 Biblioteca).
-    static var tab: Int { value(after: "-demo-tab").flatMap(Int.init) ?? 0 }
+    /// `-demo-tab 2`: la pestaña con la que arranca (0 Inicio, 1 Explorar, 2 Buscar, 3 Biblioteca). Sin ella, la de la
+    /// pantalla que pide `-demo-open` (Historial y Vistas viven en Biblioteca; Lo que ves y Colecciones, en Explorar): antes
+    /// la app volvía a Inicio al arrancar y el guion de bordes capturaba Inicio en vez de Historial (revisión del 11 nov).
+    static var tab: Int {
+        if let explicit = value(after: "-demo-tab").flatMap(Int.init) { return explicit }
+        return openTab(open, collection: repisa != nil)
+    }
+
+    /// La pestaña donde vive cada pantalla de `-demo-open` (sin `-demo-tab`).
+    static func openTab(_ open: String?, collection: Bool = false) -> Int {
+        switch open {
+        case "history", "vistas": 3   // Biblioteca (`AppEnvironment.downloadsTab`)
+        case "watching", "repisa": 1
+        default: collection ? 1 : 0
+        }
+    }
     /// `-demo-title series:tt0386676`: abre esa ficha en la pestaña de arranque.
     static var title: (kind: String, id: String)? {
         guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
@@ -293,7 +310,7 @@ enum Demo {
     /// Lo que tienes a medias en la demo («Seguir viendo»: The Office, Breaking Bad e Interstellar). Antes lo traía la cuenta
     /// de mentira de Stremio al abrir; sin Stremio (E1) se siembra aquí, igual que quedaba. Con `-demo-signed-out`, nada.
     @MainActor static func seedLibrary(_ services: Services) {
-        guard !has("-demo-signed-out") else { return }
+        guard !has("-demo-signed-out"), !empty else { return }
         let now = Date().timeIntervalSince1970
         let rows: [(id: String, kind: String, name: String, video: String, at: Double, length: Double, hoursAgo: Double)] = [
             ("tt0386676", "series", "The Office", "tt0386676:2:5", 120, 1_320, 2),

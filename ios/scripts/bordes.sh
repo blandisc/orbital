@@ -1,7 +1,7 @@
 #!/bin/zsh
 # bordes.sh — la pasada de «bordes» del iPhone (I12, revisión del 10 nov 2026).
 #
-# Toma las mismas pantallas en las tres condiciones donde la interfaz se rompe primero:
+# Toma las mismas pantallas (18 desde la revisión 2 del 11 nov) en las tres condiciones donde la interfaz se rompe primero:
 #   normal  · el iPhone grande, tamaño de letra normal, modo oscuro
 #   se      · el iPhone SE (pantalla chica), letra normal, oscuro
 #   se-xl   · el iPhone SE con letra de accesibilidad grande y modo claro
@@ -31,6 +31,15 @@ SCREENS=(
   "ficha|-demo-title movie:tt1160419 -demo-trakt"
   "version|-demo-title movie:tt1160419 -demo-open sources"
   "guardar|-demo-title movie:tt1160419 -demo-open save"
+  # Revisión 2 del 11 nov: más pantallas que se rompían en los bordes.
+  "buscar-nada|-demo-tab 2 -demo-search zzqxw"
+  "control|-demo-open remote-idle"
+  "control-tv|-demo-open remote-pad -demo-tv-now"
+  "lo-que-ves|-demo-open watching -demo-trakt"
+  "vistas|-demo-open vistas -demo-trakt"
+  "perfil|-demo-open settings-avatar"
+  "historias|-demo-stories-open"
+  "vacio-biblioteca|-demo-tab 3 -demo-empty -demo-trakt"
 )
 
 shoot() {   # shoot <udid> <condición>

@@ -106,6 +106,11 @@ extension DemoHTTPClient {
 
     func traktDemo(_ request: HTTPRequest) async -> HTTPResponse? {
         let path = request.url.path, post = request.method == "POST"
+        // `-demo-empty`: todo lo tuyo de Trakt, vacío (lo que se lee; lo que mandas se contesta como siempre).
+        let lists = ["/sync/watchlist", "/sync/history", "/sync/watched", "/sync/playback", "/sync/ratings", "/users/me/lists", "/users/me/history", "/users/me/watched", "/users/me/watchlist"]
+        if Demo.empty, !post, lists.contains(where: { path.hasPrefix($0) }) {
+            return HTTPResponse(status: 200, data: JSON.array([]).serialized())
+        }
         if let found = historyDemo(request) { return found }   // historial, VIP, notas y temporadas (O3-B)
         let body = request.body.flatMap(JSON.parse)
         func iso(_ hoursAgo: Double) -> JSON { .string(LibraryRules.iso(Date().timeIntervalSince1970 - hoursAgo * 3600)) }

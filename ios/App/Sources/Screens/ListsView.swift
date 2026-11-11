@@ -145,7 +145,7 @@ struct ListsView: View {
                     // «Lo que se ve hoy» (antes «Ahora», que no decía qué era): su flama, qué trae, y el tipo con palabras debajo
                     // (los tres íconos solos no se entendían). Fernando, 30 oct 2026. Sus estantes son subsecciones: a 24 entre sí.
                     VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
-                    if !generalShelves.isEmpty || model.isLoading {
+                    if !generalShelves.isEmpty || model.showsFirstSkeleton {
                         VStack(alignment: .leading, spacing: DS.Layout.titleToContent) {
                             DSChapterHead(label: CollectionSection.forYou.title, symbol: CollectionSection.forYou.symbol)
                             if model.hasKindSplit {
@@ -156,7 +156,7 @@ struct ListsView: View {
                         }
                         .id("ahora")   // `-demo-shelf ahora` baja hasta aquí
                     }
-                    if walls.isEmpty, model.shelves.isEmpty, model.isLoading { HeroSkeleton() }   // la primera vez, mientras llega
+                    if walls.isEmpty, generalShelves.isEmpty, model.showsFirstSkeleton { HeroSkeleton() }   // desde el primer cuadro, mientras llega
                     VStack(alignment: .leading, spacing: DS.Layout.betweenSubsections) {
                     ForEach(Array(generalShelves.enumerated()), id: \.element.id) { i, plan in
                         shelf(plan).entrance("shelf:" + plan.id, order: i).id(plan.id).perfTag("paraTi.shelf")   // entran escalonados
