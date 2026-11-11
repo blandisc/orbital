@@ -160,6 +160,9 @@ struct DSEmptyState<Actions: View>: View {
         } actions: {
             actions().dsGlassButton().controlSize(.large)
         }
+        // Arriba, donde empezaría la lista (regla de bordes, §4): sin esto el vacío del sistema se estira y queda al centro
+        // aunque lo pongan arriba (revisión del 11 nov: Descargas vacía seguía al centro).
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

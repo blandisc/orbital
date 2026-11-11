@@ -53,8 +53,10 @@ dark: String, light: String, highDark: String? = nil, highLight: String? = nil, 
     static let surface = role(.surface)
     static let surfaceRaised = role(.surfaceRaised)
     static let text = role(.label)
-    static let textMuted = role(.secondaryLabel)
-    static let textFaint = role(.tertiaryLabel)
+    /// El texto atenuado y el más tenue: se leen (AA) también sobre el fondo teñido por el arte (`PhoneRole.mutedOnArt`,
+    /// revisión del 11 nov), no solo sobre el fondo liso.
+    static let textMuted = role(DesignTokens.PhoneRole.mutedOnArt)
+    static let textFaint = role(DesignTokens.PhoneRole.faintOnArt)
     static let ink500 = role(.decorative)
     static let primary = role(.primary)
     static let onPrimary = role(.onPrimary)

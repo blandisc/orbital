@@ -110,14 +110,27 @@ struct HistoryScreen: View {
 
     @State private var pickedReady: SearchResult?
 
+    /// «Ayer · 21:30 · Repetida» en un renglón; si no cabe (letra grande), «Repetida» en el suyo: un renglón nunca empieza
+    /// con «·» (revisión del 11 nov).
+    private func whenLine(_ e: TraktHistoryEntry, repeated: Bool) -> some View {
+        let when = Self.when(e.at, locale: env.uiLocale)
+        return ViewThatFits(in: .horizontal) {
+            (repeated ? Text("\(when) · \(Text("Repetida"))") : when).lineLimit(1)
+            VStack(alignment: .leading, spacing: 0) {
+                when
+                if repeated { Text("Repetida") }
+            }
+        }
+        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+    }
+
     private func row(_ e: TraktHistoryEntry, repeated: Bool) -> some View {
         Button { editing = e } label: {
             HStack(spacing: DS.Space.s3) {
                 PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: e.title).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: name(e)).recipe(.cardTitle, color: DS.text).lineLimit(2)
-                    (Self.when(e.at, locale: env.uiLocale) + (repeated ? Text(verbatim: " · ") + Text("Repetida") : Text(verbatim: "")))
-                        .recipe(.footnote, color: DS.textMuted)
+                    whenLine(e, repeated: repeated)
                 }
                 Spacer(minLength: 0)
             }
@@ -130,7 +143,7 @@ struct HistoryScreen: View {
 
     /// «Hoy · 21:30», «Ayer · 21:30», «Lunes · 21:30» en la última semana; antes, la fecha («3 nov 2026 · 21:30») (I5).
     static func when(_ date: Date, locale: Locale, now: Date = Date(), calendar: Calendar = .current) -> Text {
-        let time = Text(verbatim: " · " + date.formatted(date: .omitted, time: .shortened))
+        let time = Text(verbatim: " · " + Strings.date(date, .time, language: locale.identifier))   // la misma hora que Inicio (revisión del 11 nov)
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 99
         switch days {
         case 0: return Text("Hoy") + time

@@ -209,7 +209,7 @@ struct ViewingsSheet: View {
     }
 
     static func stamp(_ date: Date, language: String) -> String {
-        "\(Strings.date(date, .dayMonthYear, language: language)) · \(date.formatted(date: .omitted, time: .shortened))"
+        "\(Strings.date(date, .dayMonthYear, language: language)) · \(Strings.date(date, .time, language: language))"
     }
 
     private func remove(_ v: TraktViewing) {
