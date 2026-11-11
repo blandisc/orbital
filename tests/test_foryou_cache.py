@@ -82,3 +82,54 @@ def test_clear_and_the_save_timer_never_bring_back_what_was_cleared(tmp_path):
         saver.join()
         on_disk = _json.loads(path.read_text(encoding="utf-8"))
         assert not [k for k in on_disk if k.startswith("poster:")]
+
+
+def test_per_key_locks_leave_with_their_keys(monkeypatch):
+    """Revisión del 11 nov 2026: un candado por cada clave pedida alguna vez, para siempre (miles de pósters en un día)."""
+    from orbital.net import NetError
+
+    monkeypatch.setattr(Cache, "PREFIX_LIMIT", 10)
+    cache = Cache(clock=lambda: 0.0)
+    for i in range(500):
+        cache.get(f"poster:tt{i}", 999, lambda i=i: f"p{i}")
+    assert len(cache._locks) <= 10  # las que salieron por el tope se llevaron su candado
+
+    def offline():
+        raise NetError("sin internet")
+
+    for i in range(200):  # lo que nunca llegó tampoco deja el suyo
+        try:
+            cache.get(f"details:tt{i}", 999, offline)
+        except NetError:
+            pass
+    assert len(cache._locks) <= 10
+    cache.clear("poster")
+    assert cache._locks == {}
+    assert cache.get("poster:tt1", 999, lambda: "otra vez") == "otra vez"  # y la clave sigue funcionando
+
+
+def test_a_stale_refresh_still_runs_once_and_keeps_working_after_the_lock_is_gone():
+    import threading
+    import time
+
+    now = [0.0]
+    cache = Cache(clock=lambda: now[0])
+    cache.get("top:x", 10, lambda: "viejo")
+    now[0] = 20
+    started, go = threading.Event(), threading.Event()
+    calls = []
+
+    def slow():
+        calls.append(1)
+        started.set()
+        go.wait(5)
+        return "nuevo"
+
+    assert cache.get("top:x", 10, slow, stale=True) == "viejo"
+    assert started.wait(5)
+    assert cache.get("top:x", 10, slow, stale=True) == "viejo" and len(calls) == 1  # una sola renovación a la vez
+    go.set()
+    deadline = time.monotonic() + 5
+    while cache.peek("top:x") != "nuevo" and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert cache.peek("top:x") == "nuevo"

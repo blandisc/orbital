@@ -31,6 +31,21 @@ OBSERVED = ("pause", "time-pos", "duration", "idle-active", "eof-reached", "paus
             "cache-buffering-state", "chapter", "volume", "osd-width", "osd-height", "mute", "path")
 
 
+class _Abandoned:
+    """Aviso al hilo de comandos atorado: ya no es el tuyo; al soltarte mpv, cierra tu conexión y termina."""
+
+    def __init__(self, fh) -> None:
+        self.fh = fh
+
+    def close(self) -> None:
+        if self.fh is not None:
+            try:
+                self.fh.close()
+            except OSError:
+                pass
+            self.fh = None
+
+
 class Mpv:
     def __init__(self, pipe: str = PIPE, observe: tuple[str, ...] = OBSERVED) -> None:
         self.pipe = pipe
@@ -74,7 +89,9 @@ class Mpv:
             self._jobs.put((line, label, request_id, box, done))
             if not done.wait(self.TIMEOUT):
                 log.warning("mpv no contestó a %s en %.0f s: dejo esa conexión", label, self.TIMEOUT)
-                self._jobs.put(None)  # el hilo atorado termina en cuanto mpv suelte la lectura
+                # El hilo atorado termina en cuanto mpv suelte la lectura y entonces cierra la conexión que dejó (no se
+                # cierra desde aquí: en Windows cerrar una tubería con una lectura en curso puede quedarse esperando).
+                self._jobs.put(_Abandoned(self._fh))
                 self._jobs = None
                 self._fh = None
                 return None
@@ -88,20 +105,30 @@ class Mpv:
             job = jobs.get()
             if job is None:
                 return
+            if isinstance(job, _Abandoned):  # este hilo se quedó atorado y ya lo reemplazó otro
+                job.close()
+                return
             line, label, request_id, box, done = job
             try:
-                box["reply"] = self._exchange(line, label, request_id)
+                box["reply"] = self._exchange(line, label, request_id, jobs)
             except Exception:  # noqa: BLE001 - un comando raro no deja a Orbital sin hablar con mpv
                 log.exception("mpv: falló %s", label)
             finally:
                 done.set()
 
-    def _exchange(self, line: bytes, label, request_id: int | None = None) -> dict | None:
+    def _exchange(self, line: bytes, label, request_id: int | None = None,
+                  jobs: queue.Queue | None = None) -> dict | None:
         for attempt in (1, 2):  # si mpv se reinició, la conexión vieja ya no sirve: una nueva
+            if jobs is not None and self._jobs is not jobs:
+                return None  # un hilo abandonado por lento no abre otra conexión ni usa la del hilo nuevo
             fh = self._fh
             try:
                 if fh is None:
-                    fh = self._fh = self._connect()
+                    fh = self._connect()
+                    if jobs is not None and self._jobs is not jobs:  # se tardó tanto en abrir que ya lo reemplazaron
+                        fh.close()
+                        return None
+                    self._fh = fh
                 fh.write(line)
                 for _ in range(50):  # eventos y respuestas atrasadas de otros comandos se saltan
                     reply = fh.readline()

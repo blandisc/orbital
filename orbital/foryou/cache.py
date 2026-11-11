@@ -88,6 +88,14 @@ class Cache:
         keys = self._by_prefix.get(self._prefix(key))
         if keys is not None:
             keys.pop(key, None)
+        self._forget_lock(key)
+
+    def _forget_lock(self, key: str) -> None:
+        """Con self._lock tomado: el candado de una clave sin datos y que nadie usa se va con ella (antes `_locks` solo
+        crecía: un candado por cada clave pedida alguna vez, también las que salían del caché o nunca llegaron)."""
+        lock = self._locks.get(key)
+        if lock is not None and key not in self._data and not lock.locked():
+            del self._locks[key]
 
     def _purge(self) -> None:
         """Con self._lock tomado: borra lo que pasó de MAX_AGE."""
@@ -167,21 +175,25 @@ class Cache:
             if lock.acquire(blocking=False):  # una sola renovación a la vez
                 threading.Thread(target=self._refresh, args=(key, load, lock), daemon=True, name=f"cache:{key}").start()
             return hit[1]
-        with lock:
-            with self._lock:
-                hit = self._data.get(key)
-            if hit and self.clock() - hit[0] < ttl:
-                return hit[1]
-            try:
-                value = load()
-            except SERVICE_ERRORS:
-                if hit:  # sin internet: lo de la última vez
+        try:
+            with lock:
+                with self._lock:
+                    hit = self._data.get(key)
+                if hit and self.clock() - hit[0] < ttl:
                     return hit[1]
-                raise
-            with self._lock:
-                self._put(key, self.clock(), value)
-            self._schedule_save()
-            return value
+                try:
+                    value = load()
+                except SERVICE_ERRORS:
+                    if hit:  # sin internet: lo de la última vez
+                        return hit[1]
+                    raise
+                with self._lock:
+                    self._put(key, self.clock(), value)
+                self._schedule_save()
+                return value
+        finally:
+            with self._lock:  # lo que no se pudo traer no deja su candado para siempre
+                self._forget_lock(key)
 
     def _whole(self, key: str, ttl: float, load: Callable[[], Any]) -> Any:
         with self._lock:
@@ -218,6 +230,8 @@ class Cache:
             log.exception("Para ti: falló la renovación de %s", key)
         finally:
             lock.release()
+            with self._lock:
+                self._forget_lock(key)
 
     def clear(self, prefix: str = "") -> None:
         with self._lock:
