@@ -8,17 +8,22 @@ struct SavedStateTile: View {
     let title: Text
     let count: Int?
     let posters: [String]
+    /// Una pila sin número (Historial): una línea que dice qué hay en vez de cuántos.
+    var detail: Text? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(alignment: .firstTextBaseline) {
                 Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.text)
                 Spacer(minLength: DS.Space.s2)
-                Group { if let count { Text(count, format: .number) } else { Text(verbatim: "–") } }
-                    .font(DS.TextRecipe.section.font.monospacedDigit()).foregroundStyle(DS.text)
-                    .contentTransition(.numericText())
+                if detail == nil {
+                    Group { if let count { Text(count, format: .number) } else { Text(verbatim: "–") } }
+                        .font(DS.TextRecipe.section.font.monospacedDigit()).foregroundStyle(DS.text)
+                        .contentTransition(.numericText())
+                }
             }
             title.recipe(.secondary, color: DS.text).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            if let detail { detail.recipe(.caption, color: DS.textMuted).lineLimit(2) }
             HStack(spacing: DS.Space.s1) {
                 ForEach(Array(posters.prefix(DS.SavedBoard.miniPosters).enumerated()), id: \.offset) { _, url in
                     PosterView(url: url, title: "").frame(width: DS.SavedBoard.miniPoster)

@@ -4,8 +4,8 @@ import OrbitalModels
 
 /// «Historial» (G5-B, gestor ola 3, Fernando, 10 nov 2026: «Vamos con todo y tus sugerencias»): todo lo que viste, por mes y
 /// con su hora. Las repetidas (el mismo título o capítulo con menos de una hora de otra) salen marcadas y se borran juntas;
-/// tocar uno cambia su fecha, el bote lo borra y «Agregar» busca algo que viste fuera de Orbital. Se abre desde Guardado ›
-/// Vistas. docs/producto/live-activity-2026-11-08/gestor-ola3.html
+/// tocar uno cambia su fecha, deslizarlo (o «Editar») lo borra y «Agregar» busca algo que viste fuera de Orbital. Es la
+/// quinta pila de Guardado (D7-A). docs/producto/live-activity-2026-11-08/gestor-ola3.html
 struct HistoryRoute: Hashable {}
 
 struct HistoryScreen: View {
@@ -28,19 +28,15 @@ struct HistoryScreen: View {
 
     var body: some View {
         List {
-            if !repeats.isEmpty {
-                Section {
-                    Button { confirmRepeats = true } label: {
-                        Label { Text(repeats.count == 1 ? "Borrar 1 vista repetida" : "Borrar \(repeats.count) vistas repetidas") } icon: { Image(systemName: "trash") }
-                    }
-                    .foregroundStyle(DS.warning)
-                    .accessibilityIdentifier("history-clean-repeats")
-                } footer: { Text("Repetida: el mismo título o capítulo con menos de una hora de otra vista. Se queda la primera.") }
-            }
             ForEach(months, id: \.0) { month, group in
                 Section {
-                    ForEach(group) { e in row(e) }
-                } header: { Text(verbatim: month) }
+                    // Borrar deslizando el renglón o con «Editar» (D7-A, 10 nov): sin un bote rojo en cada uno.
+                    ForEach(group) { e in row(e).listRowBackground(Color.clear) }
+                        .onDelete { offsets in for i in offsets { remove(group[i]) } }
+                } header: {
+                    // El mismo encabezado de mes que Vistas (I5).
+                    DSSectionHead(title: Text(verbatim: month), count: group.count, level: .subsection).textCase(nil)
+                }
             }
             if failed {
                 DSEmptyState(symbol: "wifi.slash", title: Text("No pude traer tu historial"), message: Text("Revisa tu conexión e inténtalo otra vez.")) {
@@ -53,14 +49,31 @@ struct HistoryScreen: View {
                 DSEmptyState(symbol: "clock", title: Text("Nada en tu historial"), message: Text("Lo que veas o marques como visto aparece aquí."))
                     .listRowBackground(Color.clear)
             } else if more {
-                Button("Ver más") { Task { await loadMore() } }.accessibilityIdentifier("history-more")
+                Button("Ver más") { Task { await loadMore() } }.accessibilityIdentifier("history-more").listRowBackground(Color.clear)
+            }
+            // Las repetidas, al final y sin alarma (D7-A): es limpieza, no un error.
+            if !repeats.isEmpty {
+                Section {
+                    Button { confirmRepeats = true } label: {
+                        Label { Text(repeats.count == 1 ? "Quitar 1 vista repetida" : "Quitar \(repeats.count) vistas repetidas") } icon: { Image(systemName: "square.on.square") }
+                            .recipe(.label, color: DS.text)
+                    }
+                    .listRowBackground(Color.clear)
+                    .accessibilityIdentifier("history-clean-repeats")
+                } footer: { Text("Repetida: el mismo título o capítulo con menos de una hora de otra vista. Se queda la primera.") }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Backdrop())   // el cielo del resto de la app (I5)
         .navigationTitle(Text("Historial")).navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { adding = true } label: { Label("Agregar", systemImage: "plus") }
                     .accessibilityIdentifier("history-add")
+            }
+            if !entries.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) { EditButton().accessibilityIdentifier("history-edit") }
             }
         }
         .refreshable { await reload() }
@@ -85,8 +98,8 @@ struct HistoryScreen: View {
                 NavigationStack { TitleView(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster)) }
             }
         }
-        .confirmationDialog(Text("¿Borrar las vistas repetidas?"), isPresented: $confirmRepeats, titleVisibility: .visible) {
-            Button("Borrar", role: .destructive) { cleanRepeats() }
+        .confirmationDialog(Text("¿Quitar las vistas repetidas?"), isPresented: $confirmRepeats, titleVisibility: .visible) {
+            Button("Quitar", role: .destructive) { cleanRepeats() }
         } message: { Text("De cada título se queda la primera vista.") }
     }
 
@@ -94,27 +107,33 @@ struct HistoryScreen: View {
 
     private func row(_ e: TraktHistoryEntry) -> some View {
         let repeated = repeats.contains(e.id)
-        return HStack(spacing: DS.Space.s3) {
-            Button { editing = e } label: {
-                HStack(spacing: DS.Space.s3) {
-                    PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: e.title).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text(verbatim: name(e)).recipe(.cardTitle, color: repeated ? DS.warning : DS.text).lineLimit(1)
-                        (Text(verbatim: ViewingsSheet.stamp(e.at, language: language)) + (repeated ? Text(verbatim: " · ") + Text("Repetida") : Text(verbatim: "")))
-                            .recipe(.footnote, color: DS.textMuted)
-                    }
-                    Spacer(minLength: 0)
+        return Button { editing = e } label: {
+            HStack(spacing: DS.Space.s3) {
+                PosterView(url: String(format: ForYou.metahubPoster, e.target.imdb), title: e.title).frame(width: DS.Collections.stackPoster).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text(verbatim: name(e)).recipe(.cardTitle, color: DS.text).lineLimit(2)
+                    (Self.when(e.at, locale: env.uiLocale) + (repeated ? Text(verbatim: " · ") + Text("Repetida") : Text(verbatim: "")))
+                        .recipe(.footnote, color: DS.textMuted)
                 }
-                .contentShape(Rectangle())
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text("Cambiar la fecha"))
-            Button(role: .destructive) { remove(e) } label: { Image(systemName: "trash") }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(Text("Borrar esta vista"))
+            .contentShape(Rectangle())
         }
-        .accessibilityElement(children: .contain)
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("Cambiar la fecha"))
         .accessibilityIdentifier(repeated ? "history-row-repeat" : "history-row")
+    }
+
+    /// «Hoy · 21:30», «Ayer · 21:30», «Lunes · 21:30» en la última semana; antes, la fecha («3 nov 2026 · 21:30») (I5).
+    static func when(_ date: Date, locale: Locale, now: Date = Date(), calendar: Calendar = .current) -> Text {
+        let time = Text(verbatim: " · " + date.formatted(date: .omitted, time: .shortened))
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 99
+        switch days {
+        case 0: return Text("Hoy") + time
+        case 1: return Text("Ayer") + time
+        case 2...6: return dayName(date, locale: locale, calendar: calendar) + time
+        default: return Text(verbatim: ViewingsSheet.stamp(date, language: locale.identifier))
+        }
     }
 
     private func name(_ e: TraktHistoryEntry) -> String {
@@ -127,12 +146,12 @@ struct HistoryScreen: View {
         months = Self.months(entries, language: language)
     }
 
-    /// Por mes, lo más nuevo primero: «Noviembre 2026».
+    /// Por mes, lo más nuevo primero: «Noviembre», «Octubre 2025».
     private static func months(_ entries: [TraktHistoryEntry], language: String) -> [(String, [TraktHistoryEntry])] {
         var order: [String] = []
         var groups: [String: [TraktHistoryEntry]] = [:]
         for e in entries {
-            let raw = Strings.date(e.at, .monthYear, language: language), key = raw.prefix(1).uppercased() + raw.dropFirst()
+            let key = SavedStateScreen.month(e.at, language: language)   // «Noviembre»; con el año si no es este (como Vistas)
             if groups[key] == nil { order.append(key) }
             groups[key, default: []].append(e)
         }

@@ -197,6 +197,15 @@ struct LibrarySavedView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, DS.Space.gutter)
                     .accessibilityElement(children: .contain).accessibilityIdentifier("saved-board")
+                    // La quinta pila (D7-A, 10 nov): «Historial», cada vista con su fecha, a dos toques desde Biblioteca.
+                    NavigationLink(value: HistoryRoute()) {
+                        SavedStateTile(symbol: "clock.arrow.circlepath", title: Text("Historial"), count: nil, posters: recentPosters(board),
+                                       detail: Text("Cada vista con su fecha"))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, DS.Space.gutter)
+                    .padding(.top, DS.Space.s2 - DS.Layout.betweenSections)   // pegada a las otras cuatro, como una más
+                    .accessibilityIdentifier("saved-history")
                     lists
                 } else {
                     noTrakt
@@ -242,6 +251,11 @@ struct LibrarySavedView: View {
         case .dropped: Text("Las dejé")
         case .none: Text(verbatim: "")
         }
+    }
+
+    /// Lo último que viste, para los pósters chicos de «Historial».
+    private func recentPosters(_ board: SavedBoard) -> [String] {
+        board.items(.watched).sorted { (board.lastWatched[$0.imdb] ?? .distantPast) > (board.lastWatched[$1.imdb] ?? .distantPast) }.map(\.poster)
     }
 
     private func tile(_ status: TitleStatus, _ title: Text, _ board: SavedBoard, ready: Bool) -> some View {
@@ -354,17 +368,9 @@ struct SavedStateScreen: View {
             .padding(.bottom, DS.Layout.screenBottom)
             .selectionDrag(selection)
         }
+        .background(Backdrop())   // el cielo del resto de la app (I5)
         .navigationTitle(LibrarySavedView.name(status)).navigationBarTitleDisplayMode(.inline)
         .toolbar { if !every.isEmpty || selection.editing { ListSelectToolbar(selection: selection, all: every.map(\.imdb)) } }
-        .toolbar {
-            // G5-B (gestor ola 3): en Vistas, «Historial» con cada vista y su fecha.
-            if status == .watched, !selection.editing {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: HistoryRoute()) { Label("Historial", systemImage: "clock.arrow.circlepath") }
-                        .accessibilityIdentifier("saved-history")
-                }
-            }
-        }
         .safeAreaInset(edge: .bottom) {
             if selection.editing {
                 SavedSelectionBar(model: model, selection: selection, listID: nil, pile: status, items: every)
@@ -401,7 +407,7 @@ struct SavedStateScreen: View {
     }
 
     /// «Noviembre», «Octubre»… (con el año si no es este): solo la primera letra en mayúscula.
-    private func month(_ date: Date, language: String) -> String {
+    static func month(_ date: Date, language: String) -> String {
         let thisYear = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
         let text = thisYear ? date.formatted(.dateTime.month(.wide).locale(Locale(identifier: language)))
                             : Strings.date(date, .monthYear, language: language)
@@ -413,7 +419,7 @@ struct SavedStateScreen: View {
         let language = env.services.appSettings.uiLanguage
         var out: [(String, [Suggestion])] = []
         for s in items {
-            let key = board.lastWatched[s.imdb].map { month($0, language: language) } ?? Strings.tr("Sin fecha", language: language)
+            let key = board.lastWatched[s.imdb].map { Self.month($0, language: language) } ?? Strings.tr("Sin fecha", language: language)
             if out.last?.0 == key { out[out.count - 1].1.append(s) } else { out.append((key, [s])) }
         }
         return out
