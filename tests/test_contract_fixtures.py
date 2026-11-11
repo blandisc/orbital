@@ -215,3 +215,51 @@ def test_device_shapes(apps):
     call(public, "realdebrid_requests", "GET", "/api/realdebrid/requests", tmp, headers=key)
     call(public, "addons", "GET", "/api/addons", tmp, headers=key)
     call(public, "devices_key_required", "GET", "/api/addons", tmp)  # el token del túnel ya no basta
+
+
+def test_device_upgrade_shapes(apps):
+    """CX8-A: un iPhone que aún usa el token de antes pide su llave; la TV pregunta y el iPhone consulta hasta el sí."""
+    local, public, main, _, tmp = apps
+
+    def record(name, method, path, response, shown_path=None, body=None, secret=()):
+        data = response.json()
+        data = {k: (f"<{k}>" if k in secret else v) for k, v in data.items()}
+        check(name, {"request": {"method": method, "path": shown_path or path, **({"body": body} if body else {})},
+                     "status": response.status_code, "response": normalize(data, tmp)}, tmp)
+        return response
+
+    ask = {"name": "iPhone de Fernando", "platform": "iphone"}
+    asked = record("devices_upgrade", "POST", "/api/devices/upgrade",
+                   public.post("/api/devices/upgrade", headers=TUNNEL, json=ask), body=ask, secret=("id",))
+    ident = asked.json()["id"]
+    shown = "/api/devices/upgrade/<id>"
+    record("devices_upgrade_waiting", "GET", shown, public.get(f"/api/devices/upgrade/{ident}", headers=TUNNEL))
+    assert local.post(f"/api/devices/upgrade/{ident}", json={"yes": True}).status_code == 200  # el sí en la TV
+    record("devices_upgrade_ok", "GET", shown, public.get(f"/api/devices/upgrade/{ident}", headers=TUNNEL),
+           secret=("key", "device_id"))
+    record("devices_upgrade_gone", "GET", shown, public.get(f"/api/devices/upgrade/{ident}", headers=TUNNEL))  # una vez
+    again = public.post("/api/devices/upgrade", headers=TUNNEL, json=ask).json()["id"]
+    assert local.post(f"/api/devices/upgrade/{again}", json={"yes": False}).status_code == 200
+    record("devices_upgrade_denied", "GET", shown, public.get(f"/api/devices/upgrade/{again}", headers=TUNNEL))
+
+
+def test_art_shapes(apps):
+    """El arte de un juego para el iPhone: la imagen tal cual (con su tipo y caché) o un 404 si no tiene."""
+    _, public, _, library, tmp = apps
+    item = library.get("steam:367520")
+    assert item is not None
+    png = Path(tmp) / "portada.png"
+    png.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\0" * 32)
+    item.art_path = str(png)
+
+    def record(name, path, params=None):
+        got = public.get(path, headers=TUNNEL, params=params)
+        is_json = got.headers.get("content-type", "").startswith("application/json")
+        response = normalize(got.json(), tmp) if is_json else {
+            "content_type": got.headers.get("content-type"), "cache_control": got.headers.get("cache-control"),
+            "bytes": len(got.content)}
+        check(name, {"request": {"method": "GET", "path": path, **({"query": params} if params else {})},
+                     "status": got.status_code, "response": response}, tmp)
+
+    record("art", "/api/art/steam:367520", {"kind": "cover"})
+    record("art_missing", "/api/art/steam:367520", {"kind": "logo"})

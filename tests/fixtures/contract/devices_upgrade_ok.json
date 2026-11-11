@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/devices/upgrade/<id>"
+  },
+  "response": {
+    "device_id": "<device_id>",
+    "key": "<key>",
+    "tv_id": "<tv_id>",
+    "tv_name": "Orbital"
+  },
+  "status": 200
+}

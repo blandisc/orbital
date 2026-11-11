@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/art/steam:367520",
+    "query": {
+      "kind": "cover"
+    }
+  },
+  "response": {
+    "bytes": 40,
+    "cache_control": "max-age=86400",
+    "content_type": "image/png"
+  },
+  "status": 200
+}
