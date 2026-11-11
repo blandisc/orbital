@@ -119,7 +119,10 @@ class Launcher:
         from . import supervisor
         if not isinstance(running, Running):
             return supervisor.write_busy(None, self._marker)
-        pids = sorted({*(running.followers or ()), *([running.process.pid] if running.process is not None else [])})
+        found: set[int] = {int(pid) for pid in (running.followers or ())}
+        if running.process is not None:
+            found.add(int(running.process.pid))
+        pids: list[int] = sorted(found)
         if sys.platform == "win32":
             from . import windows
             named = {str(pid): windows.exe_name(pid) for pid in pids}
