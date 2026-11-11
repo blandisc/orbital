@@ -20,12 +20,12 @@ extension TitleView {
             // Sin permiso no se promete: el renglón lo dice y la salida de al lado es «Ajustes» («Ya no avisarme», en la hoja).
             let opensNotificationSettings: (title: Text, symbol: String, action: () -> Void) = (Text("Ajustes"), "gear", { DebridRequestNotifier.openSystemSettings() })
             return ContinueAction(title: notifies ? Text("Te aviso cuando aparezca") : Text("Lo reviso cada día"), symbol: notifies ? "bell.fill" : "bell.slash",
-                                  version: notifies ? Text("Reviso una vez al día, hasta el \(until)") : Text("Avisos apagados · actívalos"), play: { debridSheet = .appear },
+                                  note: notifies ? Text("Reviso una vez al día, hasta el \(until)") : Text("Avisos apagados · actívalos"), play: { debridSheet = .appear },
                                   aside: notifies ? stop : opensNotificationSettings, warn: !notifies, tint: artAccent)
         }
         let why = model.unavailableCause.map { cause in Text(verbatim: cause.title { Strings.tr($0, language: ui) }) } ?? Text("Nadie lo tiene todavía en internet")
         return ContinueAction(title: Text("Avisarme cuando aparezca"), symbol: "bell",
-                              version: why,
+                              note: why,
                               play: { watchForIt(model) }, tint: artAccent)
     }
 

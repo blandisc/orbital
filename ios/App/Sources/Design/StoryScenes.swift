@@ -375,22 +375,26 @@ struct SceneLanguages: View {
     }
 }
 
-/// La ficha: el dedo toca la versión, debajo de «Ver» (I7: ya no es un botón aparte), y sube la lista, «Al instante» arriba
-/// y «Por pedir» abajo.
+/// La ficha: el dedo toca la versión, en la zona derecha de «Ver» (el botón partido, L3 del 11 nov), y sube la lista,
+/// «Al instante» arriba y «Por pedir» abajo.
 struct SceneVersionsSheet: View {
     var body: some View {
         SceneLoop(steps: 3) { step in
             ZStack(alignment: .bottom) {
                 VStack(spacing: DS.Space.s2) {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.ListTint.series.opacity(DS.Opacity.dimmed))
-                    SceneButton(title: "Ver", symbol: "play.fill")
-                    HStack(spacing: DS.Space.s1) {
-                        Text(verbatim: "🇲🇽 · 1080p")
-                        Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font)
+                    HStack(spacing: DS.SplitPlay.divider) {
+                        SceneButton(title: "Ver", symbol: "play.fill")
+                        HStack(spacing: DS.SplitPlay.gap) {
+                            Text(verbatim: "🇲🇽 1080p")
+                            Image(systemName: "chevron.down").font(DS.TextRecipe.caption.font)
+                        }
+                        .font(DS.TextRecipe.label.font).foregroundStyle(DS.onPrimary)
+                        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                        .background(DS.primary, in: Capsule())
+                        .scaleEffect(step == 1 ? DS.Scene.pressed : 1)
+                        .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
                     }
-                    .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
-                    .scaleEffect(step == 1 ? DS.Scene.pressed : 1)
-                    .overlay { SceneFinger(pressed: step == 1, shown: step == 1) }
                     SceneLines(count: 2)
                 }
                 .padding(DS.Space.s3)

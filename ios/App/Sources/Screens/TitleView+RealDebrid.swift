@@ -31,7 +31,7 @@ extension TitleView {
         case .onTV?:
             // FQ5-A: lo tiene tu TV con otra cuenta; se manda el título y el episodio (nunca el enlace) y aparte se puede pedir aquí.
             let here: (title: Text, symbol: String, action: () -> Void)? = model.debridOffer.map { _ in (Text("Pedir a la nube aquí"), DS.Symbol.cloud, { requestFromDebrid(model) }) }
-            return ContinueAction(title: Text("Ver en la TV"), symbol: "tv.and.mediabox", version: Text("Lo tiene tu TV con otra cuenta"),
+            return ContinueAction(title: Text("Ver en la TV"), symbol: "tv.and.mediabox", note: Text("Lo tiene tu TV con otra cuenta"),
                                   play: { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.kind == "series" ? model.continueVideoID : nil,
                                                                     title: model.title.isEmpty ? model.originalTitle : model.title) } },   // no-es-título: el nombre que se manda a la TV (ella lo traduce)
                                   aside: here, tint: artAccent)
@@ -47,12 +47,12 @@ extension TitleView {
             // IOS-9: atorado o rechazado, el botón dice la acción («Probar otra versión») y el estado va abajo, en ámbar.
             if DebridRequestWords.suggestsOtherVersion(request, now: now), let video = model.continueVideoID {
                 return ContinueAction(title: Text("Probar otra versión"), symbol: "list.bullet.rectangle",
-                                      version: Text(verbatim: [episode, DebridRequestWords.title(request, tr)].compactMap { $0 }.joined(separator: " · ")),
+                                      note: Text(verbatim: [episode, DebridRequestWords.title(request, tr)].compactMap { $0 }.joined(separator: " · ")),
                                       play: { openVersions(video) }, aside: alternative ?? cancel, warn: true, tint: artAccent)
             }
             return ContinueAction(title: Text(verbatim: DebridRequestWords.title(request, tr)), symbol: DebridRequestWords.symbol(request.state),
                                   progress: request.state == .downloading ? Double(request.percent) / 100 : nil,
-                                  version: Text(verbatim: [episode, detail].compactMap { $0 }.joined(separator: " · ")),
+                                  note: Text(verbatim: [episode, detail].compactMap { $0 }.joined(separator: " · ")),
                                   play: { debridSheet = .request }, aside: alternative ?? cancel, tint: artAccent)
         }
         guard let offer = model.debridOffer else { return nil }
@@ -62,7 +62,7 @@ extension TitleView {
             // descarga para hacer lugar»: lo que contestó la última vez.
             ?? model.debridRequest.flatMap { $0.state == .tooMany ? DebridRequestWords.tooManyLine($0, tr) : nil }
         return ContinueAction(title: Text("Pedir a la nube"), symbol: DS.Symbol.cloud,
-                              version: Text(verbatim: others ?? UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
+                              note: Text(verbatim: others ?? UnavailableCause.notInDebrid(language: offer.language ?? "").title(tr)),
                               play: { requestFromDebrid(model) }, aside: instantAside(offer), tint: artAccent)
     }
 

@@ -95,7 +95,7 @@ struct TitleView: View {
         framed(model)
         .task { await model.followDownloads() }
         // F3: la primera vez que abres una ficha (si nunca has visto nada aquí), el foco en «Ver».
-        .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca la versión, debajo de «Ver».",
+        .learnCoach(.titlePlay, title: "«Ver» elige la mejor versión en tu idioma.", detail: "Si quieres otra, toca la bandera, a la derecha de «Ver».",
                     used: env.services.library.all.contains { $0.position > 0 || !$0.seen.isEmpty })
         // De vuelta a la app (quizá viste algo en la TV): lo visto, por dónde vas y lo que sigue, al día.
         .onChange(of: appEnv?.ui.returnedToApp) { Task { await model.refreshState() } }
@@ -345,31 +345,27 @@ struct TitleView: View {
     /// sobre papel no pasaba el contraste AA (I13, «más» de la sinopsis). En el iPad y la Mac la ficha siempre es oscura.
     var artInk: Color { scheme == .light && sizeClass != .regular ? artAccent.mix(with: DS.backdropDeep, by: DS.TitleAction.lightTextDeepen) : artAccent }
 
-    /// El botón principal (`ContinueAction`: el botón dice una sola cosa; el avance, la versión y «Desde el principio» van
-    /// debajo) y las acciones del mismo tamaño: Mi lista, Descargar y Tráiler. Cada una cambia en su lugar (Guardada, el anillo
-    /// de la descarga): nada brinca. «Versión» ya no es un botón más (I7): se abre tocando la versión, debajo de «Ver».
+    /// El botón principal (`ContinueAction`: el botón dice una sola cosa y, partido, la versión que va a sonar; el avance y
+    /// «Desde el principio» van debajo) y las acciones del mismo tamaño: Mi lista, Descargar y Tráiler. Cada una cambia en su
+    /// lugar (Guardada, el anillo de la descarga): nada brinca. «Versión» se abre desde la zona derecha de «Ver» (L3, 11 nov).
     private func actions(_ model: TitleModel) -> some View {
-        let primary = continueAction(model)
-        return VStack(spacing: DS.Space.s4) {
-            primary
+        VStack(spacing: DS.Space.s4) {
+            continueAction(model)
             debridWhere(model)   // mientras Real-Debrid lo baja: dónde y cómo (3 nov, la 1729)
-            VStack(spacing: DS.Space.s2) {   // L2 (prueba del 11 nov): la versión, a la distancia que hay entre las tarjetas
-                versionRowTile(primary)
-                // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize || model.extras?.trailer?.url == nil ? 2 : 3),
-                          spacing: DS.Space.s2) {
-                    // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
-                    statusAction(model).frame(maxWidth: .infinity)
-                    downloadAction(model).frame(maxWidth: .infinity)
-                    if let url = model.extras?.trailer?.url {
-                        Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
-                            .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
-                    }
+            // Con letra de accesibilidad, en dos columnas (en un renglón los nombres se encimaban: «Guardada Descargar»).
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s2, alignment: .top), count: typeSize.isAccessibilitySize || model.extras?.trailer?.url == nil ? 2 : 3),
+                      spacing: DS.Space.s2) {
+                // G1-A: un solo botón dice cómo vas (antes «Ya la vi» o «Seguir», y «Guardar»).
+                statusAction(model).frame(maxWidth: .infinity)
+                downloadAction(model).frame(maxWidth: .infinity)
+                if let url = model.extras?.trailer?.url {
+                    Link(destination: url) { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }   // V9: `Link` lee `openURL` por su cuenta (en la ficha, pintaba todo con cada cambio)
+                        .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
-                // Aire parejo (11 nov 2026): si «Guardar» lleva su estado («Viendo»), las tres reservan ese renglón y crecen igual.
-                .actionTileRow(reservesDetail: hasStatusLine(model))
-                .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
             }
+            // Aire parejo (11 nov 2026): si «Guardar» lleva su estado («Viendo»), las tres reservan ese renglón y crecen igual.
+            .actionTileRow(reservesDetail: hasStatusLine(model))
+            .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
     }
 
@@ -500,7 +496,7 @@ struct TitleView: View {
         // la serie, su cápsula gemela; abajo, el avance de la temporada.
         // ET1 (Fernando, 9 nov): la temporada con cuántos llevas debajo, y a su lado dos botones de ícono (⬇︎ bajarla, ✓ marcarla
         // vista) con su texto chico. La versión de la serie ya no va aquí (revisión del 11 nov: eran dos controles de versión
-        // en la misma ficha): es el renglón bajo «Continuar», que abre la hoja «Versión».
+        // en la misma ficha): es la zona derecha de «Continuar» (botón partido, L3), que abre la hoja «Versión».
         let progress = model.seasonProgress
         if !model.seasons.isEmpty || model.continueVideoID != nil {
             HStack(alignment: .top, spacing: DS.Space.s3) { seasonHeading(model, progress); Spacer(minLength: DS.Space.s2); seasonActions(model, progress) }

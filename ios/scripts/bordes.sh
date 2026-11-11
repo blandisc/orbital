@@ -32,6 +32,7 @@ SCREENS=(
   "version|-demo-title movie:tt1160419 -demo-open sources"
   "guardar|-demo-title movie:tt1160419 -demo-open save"
   # 11 nov: «Guardar» con su estado («Viendo»): el mismo aire arriba y abajo en las tres tarjetas (docs/ios-interfaz.md).
+  # También el botón partido «Continuar T2 E5 │ 🇲🇽 1080p ⌄»: el nombre entero y la versión a la derecha (no hay renglón aparte).
   "ficha-viendo|-demo-title series:tt0386676"
   # Revisión 2 del 11 nov: más pantallas que se rompían en los bordes.
   "buscar-nada|-demo-tab 2 -demo-search zzqxw"

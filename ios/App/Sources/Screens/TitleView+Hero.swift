@@ -32,7 +32,7 @@ extension TitleView {
 
     /// Bajo el arte, al centro, un bloque chico de datos en gris: un renglón con año · Serie/Película · géneros · duración y la
     /// clasificación («TV-MA») como insignia con contorno al final; pegadas debajo, las calificaciones, discretas (logos chicos,
-    /// números en gris). El año va sin el guion colgante («2026–» parecía un error). La calidad de la que va a sonar vive bajo «Ver».
+    /// números en gris). El año va sin el guion colgante («2026–» parecía un error). La versión que va a sonar vive en el botón principal.
     /// `leading`: a la izquierda, sobre el arte (la ficha ancha del iPad y la Mac, como la TV).
     func facts(_ model: TitleModel, leading: Bool = false) -> some View {
         let language = env.services.appSettings.uiLanguage
@@ -49,7 +49,6 @@ extension TitleView {
             // Su propio tipo (no anidado en el de la ficha): ver `TitleFactsLine`.
             TitleFactsLine(line: line, certification: certification, leading: leading, lineLimit: typeSize.isAccessibilitySize ? 4 : 2)
             RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, letterboxd: letterboxdInfo?.average, centered: !leading)
-            versionRowWithFacts(model, leading: leading)   // L1 (prueba del 11 nov, `VersionRowStyle`)
         }
         .frame(maxWidth: .infinity, alignment: leading ? .leading : .center)
     }

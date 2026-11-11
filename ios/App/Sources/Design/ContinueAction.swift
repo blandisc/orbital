@@ -1,10 +1,11 @@
 import SwiftUI
 
 /// El botón principal de la ficha y lo que lo acompaña. El botón dice una sola cosa («▶ Continuar», «▶ Ver T2 E6», «Cargando»).
-/// Debajo, si ibas a medias, la barrita de avance a todo lo ancho del botón; y un solo renglón: a la izquierda el estado en gris
-/// («quedan 50 min · 🇲🇽 Latino · 1080p»), a la derecha la acción «Desde el principio» en color, para que se vea que se toca.
-/// Antes eran dos renglones que mezclaban estado y acción con la misma letra gris, y la barrita iba apretada junto a «quedan…»
-/// (pulida del 29 oct).
+/// Si hay versión que elegir, el botón va partido (`SplitPlayButton`, L3, Fernando, 11 nov 2026): a la derecha, la versión que
+/// va a sonar («🇲🇽 1080p ⌄») abre «Versión». No hay un renglón de versión aparte (docs/ios-interfaz.md § «La versión vive en
+/// el botón»). Debajo, si ibas a medias, la barrita de avance a todo lo ancho del botón; y un solo renglón: a la izquierda el
+/// estado en gris («quedan 50 min», o un aviso: «Sin versiones por ahora»), a la derecha la acción «Desde el principio» en
+/// color, para que se vea que se toca (pulida del 29 oct).
 struct ContinueAction: View {
     let title: Text
     /// nil: sin ícono («Sin conexión», «Aún sin episodios»).
@@ -15,12 +16,11 @@ struct ContinueAction: View {
     var progress: Double?
     /// «quedan 1 h 59 min».
     var left: Text?
-    /// «🇲🇽 Latino · 1080p», «Buscando versión…»; nil: ese renglón no va.
-    var version: Text?
-    /// Aún buscando versión: el renglón con su forma en gris (esqueleto), no «Buscando versión…» en letras.
-    var versionPending = false
-    /// Lo que lee VoiceOver en vez de `version` (sin las banderas).
-    var versionLabel: Text?
+    /// El aviso de abajo, que solo informa: «Sin versiones por ahora», «Lo tiene tu TV con otra cuenta», «T1 E2 · En cola».
+    var note: Text?
+    /// La versión que va a sonar: la zona derecha del botón partido. nil: el botón entero (sin versiones, sin red, Real-Debrid
+    /// o una versión de la app que no deja elegir).
+    var version: VersionSummary?
     let play: () -> Void
     /// «Desde el principio»: solo si ibas a medias.
     var restart: (() -> Void)?
@@ -28,26 +28,20 @@ struct ContinueAction: View {
     /// instante» o «Cancelar pedido». Mismo lugar y mismo estilo: una acción en color.
     var aside: (title: Text, symbol: String, action: () -> Void)?
     /// N5-A · por qué «Ver» no es la de un idioma que va antes en tu orden («La de inglés pesa 64 GB y aquí no se ve bien»):
-    /// un renglón aparte, debajo de la versión.
+    /// un renglón aparte, debajo del estado.
     var why: Text?
     /// IOS-9 · el renglón de abajo dice un problema (atorado, rechazado): en ámbar, mientras el botón dice la acción.
     var warn = false
-    /// I7 · tocar la versión («🇲🇽 · 1080p ›») abre «Versión»: antes era un cuarto botón abajo. nil: el renglón solo informa.
-    var versions: (() -> Void)?
     /// El color de «Desde el principio»: el del arte, como los mosaicos de abajo.
     var tint: Color = DS.accent
-    /// La prueba del renglón de la versión (`VersionRowStyle`, 11 nov 2026): con una de L1, L2 o L3, la versión sale de este
-    /// renglón (L1 y L2 las pinta la ficha; L3, el botón partido de aquí). nil: hoy.
-    var summary: VersionSummary?
-    private var style: VersionRowStyle { summary == nil ? .today : VersionRowStyle.current }
     @Environment(\.colorScheme) private var scheme
     /// En claro, el color del arte se oscurece como en las acciones de abajo (`TitleActions`): el tono claro sobre papel no se leía.
     private var ink: Color { scheme == .light ? tint.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : tint }
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            if style == .split, let summary {
-                SplitPlayButton(title: label, summary: summary, enabled: enabled, play: play)
+            if let version {
+                SplitPlayButton(title: label, version: version, enabled: enabled, play: play)
             } else {
                 Button(action: play) { label }
                     .dsSolidPrimaryButton().disabled(!enabled)
@@ -55,31 +49,22 @@ struct ContinueAction: View {
                     .coachAnchor("title-play")   // F3: el aviso con foco de la ficha señala este botón
             }
             if let progress { DSProgress(fraction: progress).padding(.top, DS.Space.s1) }
-            if versionPending && style == .today {
-                // «quedan…» y «Desde el principio» como siempre; solo la versión, en gris con su forma.
-                HStack(spacing: DS.Space.s3) {
-                    status(leftText, nil)
-                    Text(verbatim: "🇲🇽 · 1080p · CC").recipe(.footnote).redacted(reason: .placeholder)
-                        .accessibilityLabel(Text("Buscando versión"))
-                    if restart == nil && aside == nil { Spacer(minLength: 0) }
-                    restartRow
-                }
-            } else if left != nil || versionText != nil || restart != nil || aside != nil {
-                // Si no cabe todo en un renglón (versión larga, letra grande), «quedan…» y «Desde el principio» se quedan juntos
-                // (son el mismo asunto: el avance) y la versión baja sola.
+            if left != nil || note != nil || restart != nil || aside != nil {
+                // Si no cabe todo en un renglón (aviso largo, letra grande), «quedan…» y «Desde el principio» se quedan juntos
+                // (son el mismo asunto: el avance) y el aviso baja solo.
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s3) { status(leftText, versionText); restartRow }
+                    HStack(spacing: DS.Space.s3) { status(left, note); restartRow }
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        HStack(spacing: DS.Space.s3) { status(leftText, nil); restartRow }
-                        status(nil, versionText)
+                        HStack(spacing: DS.Space.s3) { status(left, nil); restartRow }
+                        status(nil, note)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // Letra de accesibilidad: ni «quedan…» y «Desde el principio» caben juntos (revisión 2: «quedan 20…»,
                     // «Desde el…»); cada uno en su renglón, completo.
                     VStack(alignment: .leading, spacing: DS.Space.s2) {
-                        status(leftText, nil)
+                        status(left, nil)
                         restartButton
-                        status(nil, versionText)
+                        status(nil, note)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -103,34 +88,12 @@ struct ContinueAction: View {
         .frame(maxWidth: .infinity, minHeight: DS.TitleAction.primaryHeight - DS.Space.s3 * 2)
     }
 
-    private var leftText: Text? { left }
-    private var versionText: Text? { style == .today ? version : nil }
-
-    /// «quedan 50 min · 🇺🇸 Inglés · 1080p»: cuánto falta y la versión, en un solo texto gris.
-    @ViewBuilder private func status(_ left: Text?, _ version: Text?) -> some View {
-        if let version, let versions {
-            // La versión se toca: con su flechita, del alto de un dedo, y VoiceOver dice que abre «Versión».
-            Button(action: versions) {
-                HStack(spacing: DS.Space.s1) {
-                    statusText(left, version)
-                    Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).accessibilityHidden(true)
-                }
-                .frame(minHeight: DS.Size.touchTarget).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text("Toca para elegir otra versión"))
-            .accessibilityIdentifier("title-sources")
-        } else {
-            statusText(left, version)
-        }
-    }
-
-    @ViewBuilder private func statusText(_ left: Text?, _ version: Text?) -> some View {
-        if let text = Self.join(left, version) {
-            // Solo la versión (sin «quedan…»): hasta dos renglones («Muchas descargas activas · Lo vuelvo a pedir cuando se
+    /// «quedan 50 min · Sin conexión»: cuánto falta y el aviso, en un solo texto gris (ámbar si es un problema).
+    @ViewBuilder private func status(_ left: Text?, _ note: Text?) -> some View {
+        if let text = Self.join(left, note) {
+            // Solo el aviso (sin «quedan…»): hasta dos renglones («Muchas descargas activas · Lo vuelvo a pedir cuando se
             // libere un lugar» se cortaba a la mitad).
             text.recipe(.footnote, color: warn ? DS.warning : DS.textMuted).lineLimit(left == nil ? 2 : 1)
-                .accessibilityLabel(version == nil ? text : Self.join(left, versionLabel ?? version) ?? text)
         }
     }
 

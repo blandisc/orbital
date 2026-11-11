@@ -3772,7 +3772,7 @@
         }
       }
     },
-    "Si quieres otra, toca la versión, debajo de «Ver».": {
+    "Si quieres otra, toca la bandera, a la derecha de «Ver».": {
       "extractionState": "manual",
       "localizations": {
         "es": {
@@ -3781,25 +3781,25 @@
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, toca la versión, debajo de «Ver»."
+                  "value": "Si quieres otra, toca la bandera, a la derecha de «Ver»."
                 }
               },
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, toca la versión, debajo de «Ver»."
+                  "value": "Si quieres otra, toca la bandera, a la derecha de «Ver»."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, haz clic en la versión, debajo de «Ver»."
+                  "value": "Si quieres otra, haz clic en la bandera, a la derecha de «Ver»."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Si quieres otra, toca la versión, debajo de «Ver»."
+                  "value": "Si quieres otra, toca la bandera, a la derecha de «Ver»."
                 }
               }
             }
@@ -3811,25 +3811,25 @@
               "iphone": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, tap the version under “Watch”."
+                  "value": "If you want another one, tap the flag to the right of “Watch”."
                 }
               },
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, tap the version under “Watch”."
+                  "value": "If you want another one, tap the flag to the right of “Watch”."
                 }
               },
               "mac": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, click the version under “Watch”."
+                  "value": "If you want another one, click the flag to the right of “Watch”."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "If you want another one, tap the version under “Watch”."
+                  "value": "If you want another one, tap the flag to the right of “Watch”."
                 }
               }
             }
@@ -11669,6 +11669,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Searching online for versions…"
+          }
+        }
+      }
+    },
+    "Buscando versión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding a version"
           }
         }
       }
@@ -28733,17 +28744,6 @@
         }
       }
     },
-    "Se va a ver en: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It will play in: %@"
-          }
-        }
-      }
-    },
     "Se ven al instante y se pueden descargar": {
       "extractionState": "manual",
       "localizations": {
@@ -35489,6 +35489,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next version"
+          }
+        }
+      }
+    },
+    "Versión: %@. Cambiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version: %@. Change"
           }
         }
       }
@@ -44011,17 +44022,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Which add-on it comes from: Ⓣ Torrentio and Ⓒ Comet. Versions from other add-ons have no mark."
-          }
-        }
-      }
-    },
-    "Toca para elegir otra versión": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap to choose another version"
           }
         }
       }

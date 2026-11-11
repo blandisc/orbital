@@ -140,8 +140,8 @@ extension TitleView {
     }
 
     /// «▶ Ver» o «▶ Continuar T2 E6»; si ibas a medias, la barrita con cuánto falta y «Desde el principio» (como la TV,
-    /// `core/watch.js`); y la versión que va a sonar («🇲🇽 Latino · 1080p · Dolby Vision»; «Latino» o «Castellano» solo si se
-    /// sabe, si no «Español» a secas). Mientras carga, «Cargando» y la versión «Buscando…»: su lugar apartado, nada brinca.
+    /// `core/watch.js`). La versión que va a sonar va en la zona derecha del botón («🇲🇽 1080p ⌄», `playVersion`); sin
+    /// versiones o sin red, el botón va entero y el aviso abajo. Mientras carga, «Cargando» y la zona en gris: nada brinca.
     func continueAction(_ model: TitleModel) -> ContinueAction {
         let label = model.continueLabel
         let go = { play(model) }
@@ -152,8 +152,7 @@ extension TitleView {
             return ContinueAction(title: failed ?? Text("Aún sin episodios"), symbol: nil, enabled: false, play: go)
         }
         if model.continueVideoID == nil {
-            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, versionPending: true, play: go,
-                                  summary: versionSummary(model, languageName: nil, pending: true))
+            return ContinueAction(title: Text("Cargando"), loading: true, enabled: false, version: playVersion(model, languageName: nil, pending: true), play: go)
         }
         // Real-Debrid: «Pedirlo y avisarme» en lugar de «Ver» (R2-A) o cuánto lleva lo pedido (R3, R13).
         if let debrid = debridContinueAction(model) { return debrid }
@@ -162,26 +161,18 @@ extension TitleView {
             // Todavía no sale: la fecha en lugar de «Ver» (antes abría un reproductor que fallaba).
             return ContinueAction(title: Text("Sale el \(Strings.date(airs, .dayMonth, language: env.services.appSettings.uiLanguage))"), symbol: "calendar", enabled: false, play: go)
         }
-        let languageName = model.recommendedLanguage.map { $0 == "es" ? Strings.tr("Español", language: env.services.appSettings.uiLanguage)
-                                                                  : Streams.versionLanguageName($0, in: env.services.appSettings.uiLanguage) }
-        // «🇲🇽 Latino · 1080p»: la bandera con su idioma escrito (revisión del 11 nov: la bandera sola a 16 pt, sobre todo la de
-        // mitad España y mitad México, parecía un ícono roto). Es el único control de versión de la ficha.
-        let language = languageName.map { LanguageFlags.flagged($0, model.recommendedLanguage) }
-        let quality = model.recommendedSource.map { [language].compactMap { $0 } + $0.qualitySummary } ?? []
-        let spoken = model.recommendedSource.map { [languageName].compactMap { $0 } + $0.qualitySummary } ?? []
-        let cause = model.unavailableCause.map { Text(verbatim: $0.title { Strings.tr($0, language: env.services.appSettings.uiLanguage) }) }
-        let version: Text = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (!env.isOnline ? Text("Sin conexión") : model.offersInstant ? Text("Tus complementos no contestan") : Text("La búsqueda de versiones no contesta"))   // edición: el primero solo con instantStreams
-            : Text.withFlagImages(quality.joined(separator: " · "))
-        let pending = model.sourceCheck != .none && model.sourceCheck != .offline && quality.isEmpty
+        let ui = env.services.appSettings.uiLanguage
+        let languageName = model.recommendedLanguage.map { $0 == "es" ? Strings.tr("Español", language: ui) : Streams.versionLanguageName($0, in: ui) }
+        let cause = model.unavailableCause.map { Text(verbatim: $0.title { Strings.tr($0, language: ui) }) }
+        // Sin versiones o sin respuesta: el aviso abajo y el botón entero (no hay versión que elegir).
+        let note: Text? = model.sourceCheck == .none ? (cause ?? Text("Sin versiones por ahora")) : model.sourceCheck == .offline ? (!env.isOnline ? Text("Sin conexión") : model.offersInstant ? Text("Tus complementos no contestan") : Text("La búsqueda de versiones no contesta"))   // edición: el primero solo con instantStreams
+            : nil
+        let pending = note == nil && model.recommendedSource == nil
         let left = label.isResume ? Vocabulary.runtimeText(minutes: model.minutesToFinish).map { Text("quedan \($0)") } : nil
-        return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, version: pending ? nil : version,
-                              versionPending: pending,
-                              versionLabel: spoken.isEmpty ? nil : Text("Se va a ver en: \(spoken.joined(separator: ", "))"),
+        return ContinueAction(title: primaryLabel(label, model), progress: model.resumeFraction, left: left, note: note,
+                              version: playVersion(model, languageName: languageName, pending: pending),
                               play: go, restart: label.isResume ? { start(model, videoID: nil, fromStart: true) } : nil, aside: wantedAside(model),
-                              why: model.poorFit.map(poorFitReason),
-                              versions: model.sourceCheck == .none || model.sourceCheck == .offline ? nil
-                                  : model.continueVideoID.map { video in { openVersions(video) } },
-                              tint: artAccent, summary: versionSummary(model, languageName: languageName, pending: pending))
+                              why: model.poorFit.map(poorFitReason), tint: artAccent)
     }
 
     /// N5-A · «La de inglés pesa 64 GB y aquí no se ve bien» (o «…viene en AV1…»).
